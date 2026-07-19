@@ -1834,8 +1834,6 @@ checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
 name = "hop-desktop"
 version = "0.3.1"
 dependencies = [
- "objc2-app-kit",
- "objc2-foundation",
  "open",
  "pdf-writer",
  "rhwp",

@@ -12,7 +12,6 @@ type DesktopRuntimeBridge = Partial<
     | 'createNewDocumentAsync'
     | 'confirmWindowClose'
     | 'destroyCurrentWindow'
-    | 'cancelAppQuit'
     | 'hasUnsavedChanges'
     | 'getUpdateState'
   >
@@ -56,10 +55,6 @@ export async function setupDesktopEvents({
   await currentWindow.listen('hop-menu-command', (event) => {
     const command = String(event.payload || '');
     if (command) dispatcher.dispatch(command);
-  });
-
-  await currentWindow.listen('hop-app-quit-requested', async () => {
-    await handleDesktopAppQuitRequest(desktop, setMessage);
   });
 
   await currentWindow.listen('hop-open-paths', async (event) => {
@@ -130,19 +125,6 @@ async function handleDesktopCloseRequest(
   });
 }
 
-async function handleDesktopAppQuitRequest(
-  desktop: DesktopRuntimeBridge,
-  setMessage: (message: string) => void,
-): Promise<void> {
-  if (!desktop.destroyCurrentWindow) return;
-  await confirmAndDestroyWindow(desktop, {
-    context: 'app quit request',
-    errorPrefix: '앱 종료 실패',
-    onCancel: () => desktop.cancelAppQuit?.(),
-    setMessage,
-  });
-}
-
 function setDesktopDragActive(active: boolean): void {
   document.getElementById('scroll-container')?.classList.toggle('drag-over', active);
 }
@@ -152,12 +134,10 @@ async function confirmAndDestroyWindow(
   {
     context,
     errorPrefix,
-    onCancel,
     setMessage,
   }: {
     context: string;
     errorPrefix: string;
-    onCancel?: () => Promise<void> | void;
     setMessage: (message: string) => void;
   },
 ): Promise<void> {
@@ -167,8 +147,6 @@ async function confirmAndDestroyWindow(
     const canClose = desktop.confirmWindowClose ? await desktop.confirmWindowClose() : true;
     if (canClose) {
       await desktop.destroyCurrentWindow();
-    } else {
-      await onCancel?.();
     }
   } catch (error) {
     console.error(`[desktop-events] ${context} failed:`, error);
@@ -176,7 +154,6 @@ async function confirmAndDestroyWindow(
       await desktop.destroyCurrentWindow();
     } else {
       setMessage(`${errorPrefix}: ${error}`);
-      await onCancel?.();
     }
   }
 }

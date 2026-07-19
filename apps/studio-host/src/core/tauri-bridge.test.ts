@@ -88,9 +88,6 @@ describe('TauriBridge', () => {
         contentHash: hashBytes(new Uint8Array([10, 20, 30])),
       },
     });
-    expect(invokeMock).toHaveBeenCalledWith('note_finder_recent_document', {
-      path: '/tmp/opened.hwp',
-    });
     expect(invokeMock).toHaveBeenCalledWith('record_recent_document', {
       path: '/tmp/opened.hwp',
     });
@@ -169,7 +166,6 @@ describe('TauriBridge', () => {
       .mockResolvedValueOnce(readHandle([2]));
     invokeMock.mockImplementation(async (command: string, args: Record<string, unknown>) => {
       if (command === 'prepare_document_open') return undefined;
-      if (command === 'note_finder_recent_document') return undefined;
       if (command === 'record_recent_document') return undefined;
       if (command === 'close_document') return undefined;
       if (command === 'open_document_tracking') {
@@ -244,7 +240,6 @@ describe('TauriBridge', () => {
           format: 'hwp',
         });
       }
-      if (command === 'note_finder_recent_document') return undefined;
       if (command === 'record_recent_document') return undefined;
       if (command === 'close_document') return undefined;
       throw new Error(`unexpected command ${command}`);
@@ -272,7 +267,6 @@ describe('TauriBridge', () => {
           format: 'hwp',
         });
       }
-      if (command === 'note_finder_recent_document') return undefined;
       if (command === 'record_recent_document') return undefined;
       throw new Error(`unexpected command ${command}`);
     });
@@ -314,7 +308,6 @@ describe('TauriBridge', () => {
     invokeMock
       .mockResolvedValueOnce({ status: 'available', version: '0.1.3' })
       .mockResolvedValueOnce(undefined)
-      .mockResolvedValueOnce(undefined)
       .mockResolvedValueOnce(undefined);
 
     await expect(bridge.getUpdateState()).resolves.toEqual({
@@ -323,12 +316,10 @@ describe('TauriBridge', () => {
     });
     await expect(bridge.startUpdateInstall()).resolves.toBeUndefined();
     await expect(bridge.restartToApplyUpdate()).resolves.toBeUndefined();
-    await expect(bridge.cancelAppQuit()).resolves.toBeUndefined();
 
     expect(invokeMock).toHaveBeenNthCalledWith(1, 'get_update_state', {});
     expect(invokeMock).toHaveBeenNthCalledWith(2, 'start_update_install', {});
     expect(invokeMock).toHaveBeenNthCalledWith(3, 'restart_to_apply_update', {});
-    expect(invokeMock).toHaveBeenNthCalledWith(4, 'cancel_app_quit', {});
   });
 
   it('proxies recent document commands through the Tauri bridge', async () => {
@@ -402,7 +393,6 @@ describe('TauriBridge', () => {
           warnings: [],
         };
       }
-      if (command === 'note_finder_recent_document') return undefined;
       throw new Error(`unexpected command ${command}`);
     });
 
@@ -422,9 +412,6 @@ describe('TauriBridge', () => {
     );
     expect(statMock).toHaveBeenCalledWith('/tmp/report.hwp.hop-save-1234abcd.tmp');
     expect(removeMock).toHaveBeenCalledWith('/tmp/report.hwp.hop-save-1234abcd.tmp');
-    expect(invokeMock).toHaveBeenCalledWith('note_finder_recent_document', {
-      path: '/tmp/report.hwp',
-    });
     expect(result?.sourcePath).toBe('/tmp/report.hwp');
     expect(result?.revision).toBe(6);
     expect(bridge.hasUnsavedChanges()).toBe(false);
@@ -463,7 +450,6 @@ describe('TauriBridge', () => {
           warnings: [],
         };
       }
-      if (command === 'note_finder_recent_document') return undefined;
       throw new Error(`unexpected command ${command}`);
     });
 

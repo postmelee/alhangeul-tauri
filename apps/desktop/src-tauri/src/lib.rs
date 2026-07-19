@@ -1,33 +1,25 @@
-mod app_quit;
 mod commands;
 mod font_catalog;
 #[cfg(target_os = "linux")]
 mod linux_runtime;
-#[cfg(target_os = "macos")]
-mod macos_recent_documents;
-#[cfg(target_os = "macos")]
-mod menu;
 mod pdf_export;
 mod pdf_font_fallbacks;
 mod pending_open;
 mod recent_documents;
 mod state;
-#[cfg(any(target_os = "macos", windows, target_os = "linux"))]
+#[cfg(any(windows, target_os = "linux"))]
 mod updates;
 mod windows;
 
 use std::path::{Path, PathBuf};
 use std::{env, ffi::OsStr};
-#[cfg(target_os = "macos")]
-use tauri::RunEvent;
 use tauri::{AppHandle, Emitter, Manager};
 
 use commands::{
-    cancel_app_quit, check_external_modification, clear_recent_documents, close_document,
-    commit_staged_hwp_save, create_document, create_editor_window, desktop_platform,
-    destroy_current_window, export_pdf, export_pdf_from_hwp_path, list_local_fonts,
-    list_recent_documents, mark_document_dirty, mutate_document, note_finder_recent_document,
-    open_document_tracking, prepare_document_open, prepare_staged_hwp_pdf_export,
+    check_external_modification, clear_recent_documents, close_document, commit_staged_hwp_save,
+    create_document, create_editor_window, desktop_platform, destroy_current_window, export_pdf,
+    export_pdf_from_hwp_path, list_local_fonts, list_recent_documents, mark_document_dirty,
+    mutate_document, open_document_tracking, prepare_document_open, prepare_staged_hwp_pdf_export,
     prepare_staged_hwp_save, print_webview, query_document, read_local_font,
     record_recent_document, render_document_preview, render_page_svg, reveal_in_folder,
     take_pending_open_paths,
@@ -40,7 +32,6 @@ pub fn run() {
     linux_runtime::apply_linux_runtime_fixes();
 
     let app = tauri::Builder::default()
-        .enable_macos_default_menu(false)
         .manage(AppState::default())
         .plugin(tauri_plugin_log::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
@@ -53,28 +44,19 @@ pub fn run() {
             if paths.is_empty() {
                 return;
             }
-            #[cfg(target_os = "macos")]
-            queue_open_paths(app, paths);
-            #[cfg(not(target_os = "macos"))]
-            {
-                let app = app.clone();
-                tauri::async_runtime::spawn_blocking(move || {
-                    open_paths_in_new_windows(&app, paths);
-                });
-            }
+            let app = app.clone();
+            tauri::async_runtime::spawn_blocking(move || {
+                open_paths_in_new_windows(&app, paths);
+            });
         }))
         .setup(|app| {
-            #[cfg(target_os = "macos")]
-            menu::install(app)?;
-            #[cfg(not(target_os = "macos"))]
             app.set_menu(tauri::menu::Menu::new(app)?)?;
-            #[cfg(not(target_os = "macos"))]
             queue_open_paths(app.handle(), startup_document_paths());
             if let Some(window) = app.get_webview_window("main") {
                 windows::install_editor_window_minimum(&window);
                 windows::attach_document_drop_handler(app.handle(), &window);
             }
-            #[cfg(any(target_os = "macos", windows, target_os = "linux"))]
+            #[cfg(any(windows, target_os = "linux"))]
             updates::install_startup_update_check(app.handle());
             Ok(())
         })
@@ -90,7 +72,6 @@ pub fn run() {
             export_pdf_from_hwp_path,
             print_webview,
             destroy_current_window,
-            cancel_app_quit,
             desktop_platform,
             list_local_fonts,
             read_local_font,
@@ -105,7 +86,6 @@ pub fn run() {
             list_recent_documents,
             clear_recent_documents,
             record_recent_document,
-            note_finder_recent_document,
             render_document_preview,
             get_update_state,
             start_update_install,
@@ -114,27 +94,7 @@ pub fn run() {
         .build(tauri::generate_context!())
         .expect("failed to build HOP desktop app");
 
-    app.run(|_app, _event| {
-        #[cfg(target_os = "macos")]
-        {
-            let app = _app;
-            let event = _event;
-
-            if let RunEvent::Opened { urls } = &event {
-                let paths = urls
-                    .clone()
-                    .into_iter()
-                    .filter_map(|url| url.to_file_path().ok())
-                    .filter_map(document_path_from_path)
-                    .collect();
-                queue_open_paths(app, paths);
-            }
-
-            if let Err(error) = app_quit::handle_run_event(app, &event) {
-                eprintln!("[quit] 앱 종료 흐름 처리 실패: {}", error);
-            }
-        }
-    });
+    app.run(|_, _| {});
 }
 
 fn queue_open_paths(app: &AppHandle, paths: Vec<String>) {
@@ -154,7 +114,6 @@ fn queue_open_paths(app: &AppHandle, paths: Vec<String>) {
     }
 }
 
-#[cfg(not(target_os = "macos"))]
 fn open_paths_in_new_windows(app: &AppHandle, paths: Vec<String>) {
     for path in paths {
         if let Err(error) = open_path_in_new_window(app, path) {
@@ -163,7 +122,6 @@ fn open_paths_in_new_windows(app: &AppHandle, paths: Vec<String>) {
     }
 }
 
-#[cfg(not(target_os = "macos"))]
 fn open_path_in_new_window(app: &AppHandle, path: String) -> Result<(), String> {
     let label = crate::windows::new_editor_window_label();
     app.state::<AppState>()
@@ -186,7 +144,6 @@ fn document_paths_from_args(args: &[String], cwd: &str) -> Vec<String> {
         .collect()
 }
 
-#[cfg(not(target_os = "macos"))]
 fn startup_document_paths() -> Vec<String> {
     let cwd = env::current_dir().ok();
     env::args_os()

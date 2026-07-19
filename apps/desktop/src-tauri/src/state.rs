@@ -108,7 +108,6 @@ pub struct DocumentSessionManager {
 pub struct AppState {
     pub sessions: Mutex<DocumentSessionManager>,
     pub(crate) pending_open_paths: PendingOpenPaths,
-    pub quit_requests: Mutex<crate::app_quit::AppQuitState>,
     pub updater: Mutex<crate::updates::UpdateManagerState>,
 }
 

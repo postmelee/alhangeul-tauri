@@ -39,7 +39,6 @@
       "../../../assets/logo/logo-128.png",
       "../../../assets/logo/logo-256.png",
       "../../../assets/logo/logo-512.png",
-      "../../../assets/logo/icon.icns",
       "../../../assets/logo/favicon.ico"
     ],
     "fileAssociations": [
@@ -47,44 +46,15 @@
         "ext": ["hwp"],
         "name": "HWP Document",
         "description": "Hangul Word Processor document",
-        "mimeType": "application/x-hwp",
-        "role": "Editor",
-        "rank": "Owner",
-        "contentTypes": [
-          "net.golbin.hop.hwp",
-          "com.hancom.hwp",
-          "com.haansoft.hancomofficeviewer.mac.hwp"
-        ],
-        "exportedType": {
-          "identifier": "net.golbin.hop.hwp",
-          "conformsTo": ["public.data"]
-        }
+        "mimeType": "application/x-hwp"
       },
       {
         "ext": ["hwpx"],
         "name": "HWPX Document",
         "description": "Hangul Word Processor XML document",
-        "mimeType": "application/vnd.hancom.hwpx",
-        "role": "Editor",
-        "rank": "Owner",
-        "contentTypes": [
-          "net.golbin.hop.hwpx",
-          "com.hancom.hwpx",
-          "com.haansoft.hancomofficeviewer.mac.hwpx"
-        ],
-        "exportedType": {
-          "identifier": "net.golbin.hop.hwpx",
-          "conformsTo": ["public.data", "public.zip-archive"]
-        }
+        "mimeType": "application/vnd.hancom.hwpx"
       }
     ],
-    "macOS": {
-      "minimumSystemVersion": "12.0",
-      "files": {
-        "PlugIns/HopQuickLookPreview.appex": "target/quicklook/PlugIns/HopQuickLookPreview.appex",
-        "PlugIns/HopQuickLookThumbnail.appex": "target/quicklook/PlugIns/HopQuickLookThumbnail.appex"
-      }
-    },
     "windows": {
       "wix": {
         "template": "windows/main.wxs"

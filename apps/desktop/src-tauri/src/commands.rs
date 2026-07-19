@@ -150,23 +150,6 @@ pub fn record_recent_document(app: AppHandle, path: String) -> Result<(), String
 }
 
 #[tauri::command]
-pub fn note_finder_recent_document(app: AppHandle, path: String) -> Result<(), String> {
-    let path = PathBuf::from(path);
-    ensure_document_open_path(&path)?;
-    note_platform_recent_document(&app, &path)
-}
-
-#[cfg(target_os = "macos")]
-fn note_platform_recent_document(app: &AppHandle, path: &Path) -> Result<(), String> {
-    crate::macos_recent_documents::note_recent_document(app, path)
-}
-
-#[cfg(not(target_os = "macos"))]
-fn note_platform_recent_document(_app: &AppHandle, _path: &Path) -> Result<(), String> {
-    Ok(())
-}
-
-#[tauri::command]
 pub fn render_document_preview(path: String) -> Result<String, String> {
     let path = PathBuf::from(path);
     ensure_document_open_path(&path)?;
@@ -319,15 +302,8 @@ pub fn destroy_current_window(window: WebviewWindow) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn cancel_app_quit(app: AppHandle) -> Result<(), String> {
-    crate::app_quit::cancel_app_quit_request(&app)
-}
-
-#[tauri::command]
 pub fn desktop_platform() -> &'static str {
-    if cfg!(target_os = "macos") {
-        "macos"
-    } else if cfg!(windows) {
+    if cfg!(windows) {
         "windows"
     } else if cfg!(target_os = "linux") {
         "linux"
