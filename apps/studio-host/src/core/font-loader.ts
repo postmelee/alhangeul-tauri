@@ -81,7 +81,6 @@ const CRITICAL_FONTS = new Set(['함초롬바탕', '함초롬돋움']);
 const OS_FONT_CANDIDATES = [
   '맑은 고딕', 'Malgun Gothic', '바탕', 'Batang', '돋움', 'Dotum',
   '굴림', 'Gulim', '굴림체', 'GulimChe', '바탕체', 'BatangChe', '궁서', 'Gungsuh',
-  'Apple SD Gothic Neo', 'AppleMyungjo', 'AppleGothic',
   'Noto Sans KR', 'Noto Serif KR',
 ];
 

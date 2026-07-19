@@ -1,12 +1,9 @@
 import { createBridge, isTauriRuntime } from '@/core/bridge-factory';
-import {
-  applyDesktopChromePlatformState,
-  installNonEditorContextMenuGuards,
-} from '@/core/desktop-chrome';
+import { installNonEditorContextMenuGuards } from '@/core/desktop-chrome';
 import type { DocumentInfo } from '@/core/types';
 import { EventBus } from '@/core/event-bus';
 import { createDesktopDocument, setupDesktopEvents } from '@/core/desktop-events';
-import { detectDesktopPlatform, hasPrimaryModifier, hydrateDesktopPlatform } from '@/core/platform';
+import { detectDesktopPlatform, hydrateDesktopPlatform } from '@/core/platform';
 import { CanvasView } from '@/view/canvas-view';
 import { InputHandler } from '@upstream/engine/input-handler';
 import { Toolbar } from '@/ui/toolbar';
@@ -115,7 +112,6 @@ async function initialize(): Promise<void> {
   const msg = sbMessage();
   try {
     desktopPlatform = await hydrateDesktopPlatform();
-    applyDesktopChromePlatformState(document, desktopPlatform);
     msg.textContent = '웹폰트 로딩 중...';
     await loadWebFonts([]);  // CSS @font-face 등록 + CRITICAL 폰트만 로드
     msg.textContent = '문서 엔진 로딩 중...';
@@ -265,7 +261,7 @@ function setupGlobalShortcuts(): void {
     // InputHandler가 활성 상태이면 자체 처리에 맡김
     if (inputHandler?.isActive()) return;
 
-    const primaryModifier = hasPrimaryModifier(e, desktopPlatform);
+    const primaryModifier = e.ctrlKey;
 
     // Alt+N / Alt+ㅜ → 새 문서 (문서 미로드 상태에서도 동작)
     if (e.altKey && !primaryModifier && !e.shiftKey) {

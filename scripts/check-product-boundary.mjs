@@ -22,6 +22,12 @@ const historicalAllowlist = new Set([
   'scripts/check-product-boundary.mjs',
 ]);
 
+const unsupportedPlatformAllowlist = new Set([
+  'docs/architecture/PROVENANCE.md',
+  'pnpm-lock.yaml',
+  'scripts/check-product-boundary.mjs',
+]);
+
 const legacyRules = [
   ['legacy product name', /(^|[^A-Za-z])HOP([^A-Za-z]|$)/],
   ['legacy repository', /(?:github\.com\/)?golbin\/hop/i],
@@ -31,6 +37,7 @@ const legacyRules = [
 ];
 
 const unsupportedPlatformRules = [
+  ['unsupported platform identifier', /\b(?:macos|darwin|apple)\b/i],
   ['removed preview extension', /quick[ -]?look/i],
   ['unsupported Rust target', /aarch64-apple|x86_64-apple/i],
   ['unsupported native cfg', /target_os\s*=\s*["']macos["']/i],
@@ -111,7 +118,7 @@ for (const file of files.sort()) {
   }
 
   const platformViolation = findRuleViolation(content, unsupportedPlatformRules);
-  if (platformViolation && repositoryPath !== 'scripts/check-product-boundary.mjs') {
+  if (platformViolation && !unsupportedPlatformAllowlist.has(repositoryPath)) {
     violations.push(
       `${repositoryPath}:${platformViolation.line}: ${platformViolation.label}`,
     );

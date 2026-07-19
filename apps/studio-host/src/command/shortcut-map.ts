@@ -2,7 +2,6 @@ import {
   defaultShortcuts as upstreamDefaultShortcuts,
 } from '@upstream/command/shortcut-map';
 import type { ShortcutDef } from '@upstream/command/shortcut-map';
-import { hasPrimaryModifier } from '../core/platform';
 
 export type { ShortcutDef };
 
@@ -24,7 +23,7 @@ export function matchShortcut(
   event: Pick<KeyboardEvent, 'key' | 'ctrlKey' | 'metaKey' | 'shiftKey' | 'altKey'>,
   shortcuts: [ShortcutDef, string][],
 ): string | null {
-  const primaryModifier = hasPrimaryModifier(event);
+  const primaryModifier = event.ctrlKey;
 
   for (const [def, commandId] of shortcuts) {
     if ((def.ctrl ?? false) !== primaryModifier) continue;

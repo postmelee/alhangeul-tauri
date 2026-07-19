@@ -11,9 +11,9 @@ describe('platform', () => {
     resetDesktopPlatformOverride();
   });
 
-  it('hydrates and reuses the resolved desktop platform', async () => {
-    await expect(hydrateDesktopPlatform(async () => 'macos')).resolves.toBe('macos');
-    expect(detectDesktopPlatform({ platform: 'Win32', userAgent: 'Windows NT 10.0' })).toBe('macos');
+  it('hydrates and reuses a supported desktop platform', async () => {
+    await expect(hydrateDesktopPlatform(async () => 'linux')).resolves.toBe('linux');
+    expect(detectDesktopPlatform({ platform: 'Win32', userAgent: 'Windows NT 10.0' })).toBe('linux');
   });
 
   it('falls back to navigator detection when hydration fails', async () => {

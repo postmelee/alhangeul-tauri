@@ -1,7 +1,6 @@
-export type DesktopPlatform = 'macos' | 'windows' | 'linux' | 'unknown';
+export type DesktopPlatform = 'windows' | 'linux' | 'unknown';
 
 type NavigatorLike = Pick<Navigator, 'platform' | 'userAgent'> | undefined;
-type ModifierEvent = Pick<KeyboardEvent, 'ctrlKey' | 'metaKey'>;
 type PlatformResolver = () => Promise<DesktopPlatform>;
 
 let desktopPlatformOverride: DesktopPlatform | null = null;
@@ -14,7 +13,6 @@ export function detectDesktopPlatform(
   const platform = (nav?.platform ?? '').toLowerCase();
   const userAgent = (nav?.userAgent ?? '').toLowerCase();
 
-  if (platform.includes('mac') || userAgent.includes('mac os')) return 'macos';
   if (platform.includes('win') || userAgent.includes('windows')) return 'windows';
   if (platform.includes('linux') || userAgent.includes('linux')) return 'linux';
   return 'unknown';
@@ -30,35 +28,6 @@ export async function hydrateDesktopPlatform(
 
 export function resetDesktopPlatformOverride(): void {
   desktopPlatformOverride = null;
-}
-
-export function usesMetaAsPrimaryModifier(platform = detectDesktopPlatform()): boolean {
-  return platform === 'macos';
-}
-
-export function hasPrimaryModifier(
-  event: ModifierEvent,
-  platform = detectDesktopPlatform(),
-): boolean {
-  return usesMetaAsPrimaryModifier(platform) ? event.metaKey : event.ctrlKey;
-}
-
-export function normalizeShortcutLabel(
-  label: string,
-  platform = detectDesktopPlatform(),
-): string {
-  if (platform !== 'macos') return label;
-
-  return label
-    .replace(/CmdOrCtrl/gi, '⌘')
-    .replace(/\bCmd\b/gi, '⌘')
-    .replace(/\bCtrl\b/gi, '⌘')
-    .replace(/\bAlt\b/gi, '⌥')
-    .replace(/\bOption\b/gi, '⌥')
-    .replace(/\bShift\b/gi, '⇧')
-    .replace(/\bNum\s+/gi, '')
-    .replace(/\+/g, '')
-    .replace(/,\s*/g, ' ');
 }
 
 async function invokeDesktopPlatform(): Promise<DesktopPlatform> {
