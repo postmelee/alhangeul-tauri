@@ -1,4 +1,4 @@
-name: HOP CI
+name: Alhangeul CI
 
 on:
   workflow_dispatch:
@@ -7,7 +7,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: hop-ci-${{ github.ref }}
+  group: alhangeul-ci-${{ github.ref }}
   cancel-in-progress: true
 
 env:
@@ -89,5 +89,20 @@ jobs:
       - name: Install Node dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run unit tests
-        run: pnpm test
+      - name: Check product boundary
+        run: pnpm run check:product-boundary
+
+      - name: Test upstream integration
+        run: pnpm run test:upstream
+
+      - name: Test studio host
+        run: pnpm run test:studio
+
+      - name: Build studio host
+        run: pnpm run build:studio
+
+      - name: Test desktop Rust
+        run: pnpm run test:desktop
+
+      - name: Lint desktop Rust
+        run: pnpm run clippy:desktop

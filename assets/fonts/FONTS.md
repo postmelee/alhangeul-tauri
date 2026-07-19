@@ -1,6 +1,6 @@
 # 번들 웹폰트
 
-HOP는 studio host에서 fallback으로 사용할 수 있는 재배포 가능 폰트만 번들에 포함한다.
+Alhangeul은 studio host에서 fallback으로 사용할 수 있는 재배포 가능 폰트만 번들에 포함한다.
 저작권 제한이 있는 한컴, Microsoft, OS 기본 폰트 파일은 포함하지 않는다.
 
 ## 포함된 폰트

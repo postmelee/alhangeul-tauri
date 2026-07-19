@@ -7,6 +7,7 @@
   "type": "module",
   "packageManager": "pnpm@10.33.0",
   "scripts": {
+    "check:product-boundary": "node scripts/check-product-boundary.mjs",
     "build:studio": "pnpm --filter @postmelee/alhangeul-studio-host build",
     "build:before-tauri": "pnpm run build:studio",
     "build:desktop": "pnpm --filter alhangeul-desktop build",

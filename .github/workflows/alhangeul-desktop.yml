@@ -1,0 +1,138 @@
+name: Alhangeul Desktop Artifact Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_ref:
+        description: Branch, tag, or commit to build. Empty uses the selected workflow commit.
+        required: false
+        default: ""
+        type: string
+      run_tests:
+        description: Run platform-neutral tests before the native build.
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: alhangeul-desktop-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+  NODE_VERSION: "24"
+
+jobs:
+  build:
+    name: Build ${{ matrix.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows-x64
+            os: windows-2025
+            target: x86_64-pc-windows-msvc
+            bundle_args: ""
+          - name: linux-x64
+            os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            bundle_args: ""
+          - name: linux-arm64
+            os: ubuntu-22.04-arm
+            target: aarch64-unknown-linux-gnu
+            bundle_args: "--bundles deb"
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.build_ref || github.sha }}
+          submodules: true
+
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            curl \
+            file \
+            libayatana-appindicator3-dev \
+            libgtk-3-dev \
+            librsvg2-dev \
+            libssl-dev \
+            libwebkit2gtk-4.1-dev \
+            libxdo-dev \
+            pkg-config
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Enable pnpm
+        run: corepack enable
+
+      - name: Resolve pnpm store path
+        id: pnpm-store
+        shell: bash
+        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache pnpm store
+        uses: actions/cache@v5
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: desktop-${{ matrix.name }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            desktop-${{ matrix.name }}-pnpm-
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Cache Cargo
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            apps/desktop/src-tauri/target
+          key: desktop-${{ matrix.name }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            desktop-${{ matrix.name }}-cargo-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check product boundary
+        if: inputs.run_tests
+        run: pnpm run check:product-boundary
+
+      - name: Test upstream integration
+        if: inputs.run_tests
+        run: pnpm run test:upstream
+
+      - name: Test studio host
+        if: inputs.run_tests
+        run: pnpm run test:studio
+
+      - name: Build Tauri bundles
+        shell: bash
+        run: pnpm tauri build --target "${{ matrix.target }}" ${{ matrix.bundle_args }}
+
+      - name: Upload bundle artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: alhangeul-desktop-${{ matrix.name }}
+          path: apps/desktop/src-tauri/target/${{ matrix.target }}/release/bundle/**
+          if-no-files-found: error
+          retention-days: 14
