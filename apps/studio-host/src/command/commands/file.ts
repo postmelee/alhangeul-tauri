@@ -114,7 +114,7 @@ const desktopCommands = new Map<string, CommandDef>([
   })],
 ]);
 
-const hopOnlyCommands: CommandDef[] = [
+const alhangeulOnlyCommands: CommandDef[] = [
   {
     id: 'file:new-window',
     label: '새 창',
@@ -135,7 +135,7 @@ const hopOnlyCommands: CommandDef[] = [
     async execute(services) {
       const desktop = recentBridge(services.wasm);
       if (!desktop) {
-        alert('최근 문서는 HOP 데스크톱 앱에서 지원합니다.');
+        alert('최근 문서는 Alhangeul 데스크톱 앱에서 지원합니다.');
         return;
       }
 
@@ -192,7 +192,7 @@ const hopOnlyCommands: CommandDef[] = [
     async execute(services) {
       const desktop = desktopBridge(services.wasm);
       if (!desktop) {
-        alert('PDF 내보내기는 HOP 데스크톱 앱에서 지원합니다.');
+        alert('PDF 내보내기는 Alhangeul 데스크톱 앱에서 지원합니다.');
         return;
       }
 
@@ -205,5 +205,5 @@ const hopOnlyCommands: CommandDef[] = [
 
 export const fileCommands: CommandDef[] = [
   ...upstreamFileCommands.map((command) => desktopCommands.get(command.id) ?? command),
-  ...hopOnlyCommands,
+  ...alhangeulOnlyCommands,
 ];

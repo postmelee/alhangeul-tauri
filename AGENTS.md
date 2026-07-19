@@ -7,11 +7,10 @@
 **목표**: Windows와 Linux에서 HWP/HWPX 문서를 열고 편집·저장·인쇄·내보내기할 수 있는 Tauri 기반 Alhangeul 데스크톱 앱 개발
 
 - 제품명은 **Alhangeul**, 구현 저장소명은 `alhangeul-tauri`
-- 지원 범위는 Windows와 Linux로 한정하며 macOS 빌드, CI, 개발 검증, 패키징, 배포는 수행하지 않음
-- macOS 제품은 별도 `postmelee/alhangeul-macos` 저장소가 소유
-- `golbin/hop`은 최초 코드와 Git 이력의 출처일 뿐 upstream으로 사용하지 않음
+- 지원 범위는 Windows와 Linux로 한정하며 다른 운영체제의 빌드, CI, 개발 검증, 패키징, 배포는 수행하지 않음
+- `golbin/hop`은 최초 코드와 Git 이력의 출처일 뿐 upstream으로 사용하지 않으며 자세한 이력은 `docs/architecture/PROVENANCE.md`에 둠
 - 제품의 유일한 지속 upstream은 `edwardkim/rhwp`; Stable release tag와 resolved commit을 함께 고정하고 Rust core와 bundled `rhwp-studio`를 같은 release 기준으로 관리
-- 현재 HOP 유래 코드와 구조의 제품 전환은 Hyper-Waterfall 적용 이후 별도 GitHub Issue에서 단계적으로 수행
+- 초기 코드에서 이어진 제품 전환 이력과 현재 소유 경계를 혼동하지 않음
 - JavaScript 패키지 관리는 `pnpm`만 사용하며 npm/yarn lockfile, 명령, workflow cache key를 추가하지 않음
 
 ## 하이퍼-워터폴 핵심 규칙
@@ -49,20 +48,23 @@
 
 - 핵심 스택은 Tauri 2, Rust, TypeScript, Vite, Vitest이며 adapter와 native 경계를 얇고 명시적으로 유지
 - TypeScript UI는 명확한 bridge API를 호출하고, Rust는 native filesystem, document session, save/export/print, OS integration을 소유
-- 경로, 인코딩, 날짜/시간, 프로세스 실행은 Windows와 Linux 차이를 고려하며 macOS 전용 분기나 검증 범위를 새로 추가하지 않음
-- `third_party/rhwp`는 HOP에서 가져온 전환 전 의존성이다. 독립적인 release pin 구조가 승인된 task에서 도입되기 전까지 수동 수정하지 않음
+- 경로, 인코딩, 날짜/시간, 프로세스 실행은 Windows와 Linux 차이를 고려하며 지원 범위 밖의 전용 분기나 검증 범위를 새로 추가하지 않음
+- `third_party/rhwp`는 현재 읽기 전용 submodule 의존성이다. 독립적인 release pin 구조가 승인된 task에서 도입되기 전까지 수동 수정하지 않음
 - `rhwp` 갱신은 Stable release tag + resolved commit provenance를 기록하고 Rust core와 bundled `rhwp-studio`의 동일 release 정합성을 검증하는 전용 task로만 수행
-- 제품 코드, 빌드, CI, 패키징, 배포에서 macOS를 지원 대상으로 간주하지 않음
+- 제품 코드, 빌드, CI, 패키징, 배포의 지원 대상은 Windows와 Linux로 한정
 - 비밀, 서명 인증서, 토큰, 개인 문서 내용은 로그나 저장소에 기록하지 않음
 - release tag 이동, force push, history rewrite는 작업지시자의 명시 승인 없이 수행하지 않음
 - release, 배포, 서명, 패키지 게시, updater 활성화는 작업지시자의 명시 지시가 있을 때만 수행
 - 변경 유형별 검증 범위와 Windows/Linux 실행 환경은 각 task 수행계획서에서 승인받음
-- 현재 부트스트랩에서 사용할 수 있는 검증 명령은 `pnpm test`, `pnpm run test:upstream`, `pnpm run test:studio`, `pnpm run test:desktop`, `pnpm run clippy:desktop`, `pnpm run build:studio`이며 제품 전환 task에서 실제 스크립트와 함께 갱신
+- 모든 호스트에서 실행할 수 있는 기본 검증 명령은 `pnpm run check:product-boundary`, `pnpm run test:upstream`, `pnpm run test:studio`, `pnpm run build:studio`임. Rust desktop 검증과 Tauri build는 Windows/Linux 환경에서만 수행
 - 파일과 함수는 역할이 흐려지기 전에 분리하고, 권장 상한은 파일 300 LOC, 함수 50 LOC, 매개변수 5개, 순환 복잡도 10으로 둠. 초과가 필요하면 수행계획서에 이유를 기록
 
 ## 필수 참조 문서
 
 - [`README.md`](README.md) — 프로젝트 개요, 초기 설정, 빌드
+- [`docs/architecture/UPSTREAM.md`](docs/architecture/UPSTREAM.md) — 현재 `rhwp` 의존 경계와 후속 release pin 기준
+- [`docs/architecture/PROVENANCE.md`](docs/architecture/PROVENANCE.md) — 초기 코드와 제품 자산 출처
+- [`docs/operations/DESKTOP_RELEASE.md`](docs/operations/DESKTOP_RELEASE.md) — artifact 검증과 후속 배포 준비 경계
 - [`mydocs/manual/document_structure_guide.md`](mydocs/manual/document_structure_guide.md) — `mydocs/` 폴더 역할, 문서 파일명, 외부 PR 폴더 정책, Skills 위치 정책
 - [`mydocs/manual/task_workflow_guide.md`](mydocs/manual/task_workflow_guide.md) — 타스크 진행 15단계, 커밋 메시지 규칙, 작업 시간 규칙
 - [`mydocs/manual/git_workflow_guide.md`](mydocs/manual/git_workflow_guide.md) — 브랜치 정책, Git 다이어그램, 메인테이너/컨트리뷰터 워크플로우

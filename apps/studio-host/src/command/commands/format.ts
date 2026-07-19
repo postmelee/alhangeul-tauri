@@ -3,7 +3,7 @@ import type { CommandDef } from '@upstream/command/types';
 import { CharShapeDialog } from '@/ui/char-shape-dialog';
 import { resolveCharShapeFontMods } from '@/core/font-application';
 
-const hopFormatCommandById = new Map<string, CommandDef>([
+const alhangeulFormatCommandById = new Map<string, CommandDef>([
   ['format:char-shape', {
     id: 'format:char-shape',
     label: '글자 모양',
@@ -34,5 +34,5 @@ const hopFormatCommandById = new Map<string, CommandDef>([
 ]);
 
 export const formatCommands: CommandDef[] = upstreamFormatCommands.map((command) =>
-  hopFormatCommandById.get(command.id) ?? command,
+  alhangeulFormatCommandById.get(command.id) ?? command,
 );

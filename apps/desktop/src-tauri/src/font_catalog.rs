@@ -18,13 +18,6 @@ pub struct LocalFontEntry {
 pub fn desktop_extra_font_dirs() -> Vec<PathBuf> {
     let mut dirs = Vec::new();
 
-    #[cfg(target_os = "macos")]
-    {
-        if let Some(home_dir) = env_path("HOME") {
-            dirs.push(home_dir.join("Library/Fonts"));
-        }
-    }
-
     #[cfg(target_os = "linux")]
     {
         if let Some(home_dir) = env_path("HOME") {
@@ -173,13 +166,6 @@ fn apply_pdf_font_defaults(fontdb: &mut fontdb::Database) {
     fontdb.set_serif_family("바탕");
     fontdb.set_sans_serif_family("맑은 고딕");
     fontdb.set_monospace_family("D2Coding");
-
-    #[cfg(target_os = "macos")]
-    {
-        fontdb.set_serif_family("AppleMyungjo");
-        fontdb.set_sans_serif_family("Apple SD Gothic Neo");
-        fontdb.set_monospace_family("Menlo");
-    }
 }
 
 fn classify_source(path: Option<&str>, file_backed_dirs: &[PathBuf]) -> &'static str {
@@ -265,7 +251,7 @@ mod tests {
     fn collect_local_font_entries_keeps_localized_family_aliases() {
         let faces = vec![FaceInfo {
             id: ID::dummy(),
-            source: Source::File(PathBuf::from("/Library/Fonts/Test.ttf")),
+            source: Source::File(PathBuf::from("/usr/share/fonts/truetype/Test.ttf")),
             index: 0,
             families: vec![
                 (
@@ -329,7 +315,7 @@ mod tests {
         );
         assert_eq!(
             classify_source(
-                Some("/System/Library/Fonts/Supplemental/Apple SD Gothic Neo.ttc"),
+                Some("/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf"),
                 &[]
             ),
             "system-installed"

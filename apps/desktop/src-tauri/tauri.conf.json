@@ -1,10 +1,10 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "HOP",
+  "productName": "Alhangeul",
   "version": "0.3.1",
-  "identifier": "net.golbin.hop",
+  "identifier": "io.github.postmelee.alhangeul",
   "build": {
-    "beforeDevCommand": "cd ../.. && pnpm --filter @golbin/hop-studio-host dev",
+    "beforeDevCommand": "cd ../.. && pnpm --filter @postmelee/alhangeul-studio-host dev",
     "beforeBuildCommand": "cd ../.. && pnpm run build:before-tauri",
     "devUrl": "http://127.0.0.1:7700",
     "frontendDist": "../../studio-host/dist"
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "HOP",
+        "title": "Alhangeul",
         "label": "main",
         "url": "index.html",
         "width": 1280,
@@ -29,17 +29,16 @@
   "bundle": {
     "active": true,
     "targets": "all",
-    "publisher": "golbin.net",
+    "publisher": "postmelee",
     "shortDescription": "Open desktop editor for HWP and HWPX documents",
-    "longDescription": "HOP is Open HWP. HOP opens, edits, saves, and exports HWP/HWPX documents.",
+    "longDescription": "Alhangeul opens, edits, saves, and exports HWP/HWPX documents.",
     "category": "Productivity",
-    "copyright": "Copyright (c) 2026 HOP contributors",
+    "copyright": "Alhangeul contributors",
     "icon": [
       "../../../assets/logo/logo-32.png",
       "../../../assets/logo/logo-128.png",
       "../../../assets/logo/logo-256.png",
       "../../../assets/logo/logo-512.png",
-      "../../../assets/logo/icon.icns",
       "../../../assets/logo/favicon.ico"
     ],
     "fileAssociations": [
@@ -47,58 +46,18 @@
         "ext": ["hwp"],
         "name": "HWP Document",
         "description": "Hangul Word Processor document",
-        "mimeType": "application/x-hwp",
-        "role": "Editor",
-        "rank": "Owner",
-        "contentTypes": [
-          "net.golbin.hop.hwp",
-          "com.hancom.hwp",
-          "com.haansoft.hancomofficeviewer.mac.hwp"
-        ],
-        "exportedType": {
-          "identifier": "net.golbin.hop.hwp",
-          "conformsTo": ["public.data"]
-        }
+        "mimeType": "application/x-hwp"
       },
       {
         "ext": ["hwpx"],
         "name": "HWPX Document",
         "description": "Hangul Word Processor XML document",
-        "mimeType": "application/vnd.hancom.hwpx",
-        "role": "Editor",
-        "rank": "Owner",
-        "contentTypes": [
-          "net.golbin.hop.hwpx",
-          "com.hancom.hwpx",
-          "com.haansoft.hancomofficeviewer.mac.hwpx"
-        ],
-        "exportedType": {
-          "identifier": "net.golbin.hop.hwpx",
-          "conformsTo": ["public.data", "public.zip-archive"]
-        }
+        "mimeType": "application/vnd.hancom.hwpx"
       }
     ],
-    "macOS": {
-      "minimumSystemVersion": "12.0",
-      "files": {
-        "PlugIns/HopQuickLookPreview.appex": "target/quicklook/PlugIns/HopQuickLookPreview.appex",
-        "PlugIns/HopQuickLookThumbnail.appex": "target/quicklook/PlugIns/HopQuickLookThumbnail.appex"
-      }
-    },
     "windows": {
       "wix": {
         "template": "windows/main.wxs"
-      }
-    }
-  },
-  "plugins": {
-    "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEZGQzA1Qzc3QkQ0ODhFM0YKUldRL2praTlkMXpBL3pTcUFUczdzWFBFSjV3QnBPczhJTy8zMG5OcVhYNi9sbDJtRS9JY2wxN00K",
-      "endpoints": [
-        "https://github.com/golbin/hop/releases/latest/download/latest.json"
-      ],
-      "windows": {
-        "installMode": "passive"
       }
     }
   }

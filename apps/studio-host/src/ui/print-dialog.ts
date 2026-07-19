@@ -12,8 +12,8 @@ interface PrintDialogOptions {
   print?(): void | Promise<void>;
 }
 
-const PRINT_ROOT_ID = 'hop-print-root';
-const PRINT_STYLE_ID = 'hop-print-style';
+const PRINT_ROOT_ID = 'alhangeul-print-root';
+const PRINT_STYLE_ID = 'alhangeul-print-style';
 
 export async function openPrintDialog(
   document: PrintableDocument,
@@ -97,7 +97,7 @@ function renderPrintDocumentShell(payload: {
       padding: 0 !important;
       background: #fff !important;
     }
-    #${PRINT_ROOT_ID} .hop-print-page {
+    #${PRINT_ROOT_ID} .alhangeul-print-page {
       width: ${payload.widthMm}mm;
       height: ${payload.heightMm}mm;
       margin: 0 !important;
@@ -107,7 +107,7 @@ function renderPrintDocumentShell(payload: {
       page-break-after: always;
       background: #fff;
     }
-    #${PRINT_ROOT_ID} .hop-print-page:last-child {
+    #${PRINT_ROOT_ID} .alhangeul-print-page:last-child {
       break-after: auto;
       page-break-after: auto;
     }
@@ -132,7 +132,7 @@ function renderPrintDocumentShell(payload: {
 
 function appendPrintPage(root: HTMLElement, svg: string): void {
   const page = document.createElement('div');
-  page.className = 'hop-print-page';
+  page.className = 'alhangeul-print-page';
   const svgNode = parsePrintableSvg(svg);
   if (svgNode) page.appendChild(svgNode);
   root.appendChild(page);

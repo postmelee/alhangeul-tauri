@@ -5,14 +5,14 @@ export class AboutDialog extends UpstreamAboutDialog {
     const body = super.createBody();
     const version = body.querySelector('.about-version');
 
-    const hopVersion = document.createElement('div');
-    hopVersion.className = 'about-hop-version';
-    hopVersion.textContent = `HOP ${__HOP_VERSION__}`;
+    const alhangeulVersion = document.createElement('div');
+    alhangeulVersion.className = 'about-alhangeul-version';
+    alhangeulVersion.textContent = `Alhangeul ${__ALHANGEUL_VERSION__}`;
 
     if (version?.parentNode) {
-      version.parentNode.insertBefore(hopVersion, version.nextSibling);
+      version.parentNode.insertBefore(alhangeulVersion, version.nextSibling);
     } else {
-      body.appendChild(hopVersion);
+      body.appendChild(alhangeulVersion);
     }
 
     return body;

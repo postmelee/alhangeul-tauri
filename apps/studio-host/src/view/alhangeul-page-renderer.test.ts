@@ -106,7 +106,7 @@ vi.mock('@upstream/view/page-renderer', () => ({
   },
 }));
 
-import { HopPageRenderer } from './hop-page-renderer';
+import { AlhangeulPageRenderer } from './alhangeul-page-renderer';
 
 function createMockCanvas(): HTMLCanvasElement {
   return {
@@ -121,7 +121,7 @@ function createMockCanvas(): HTMLCanvasElement {
   } as HTMLCanvasElement;
 }
 
-describe('HopPageRenderer', () => {
+describe('AlhangeulPageRenderer', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     upstreamCancelReRenderMock.mockReset();
@@ -141,7 +141,7 @@ describe('HopPageRenderer', () => {
     const canvas = createMockCanvas();
     parent.appendChild(canvas as unknown as MockNode);
 
-    const renderer = new HopPageRenderer(wasm as never);
+    const renderer = new AlhangeulPageRenderer(wasm as never);
     renderer.renderPage(0, canvas, 2, 2, 1);
 
     expect(parent.children[1].dataset.rhwpOverlay).toBe('front-0');
@@ -166,7 +166,7 @@ describe('HopPageRenderer', () => {
     const canvas = createMockCanvas();
     parent.appendChild(canvas as unknown as MockNode);
 
-    const renderer = new HopPageRenderer(wasm as never);
+    const renderer = new AlhangeulPageRenderer(wasm as never);
     renderer.renderPage(0, canvas, 2, 2, 1);
     renderer.cancelReRender(0);
 

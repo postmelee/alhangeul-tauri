@@ -2,7 +2,7 @@ import type { CommandDispatcher } from '@/command/dispatcher';
 import type { EventBus } from '@/core/event-bus';
 import { isTauriRuntime } from '@/core/bridge-factory';
 import { findLatestSupportedDocumentPath, hasSupportedDocumentPath } from '@/core/document-files';
-import type { DesktopBridgeApi, DesktopLoadPayload, DesktopUpdateState } from './tauri-bridge';
+import type { DesktopBridgeApi, DesktopLoadPayload } from './tauri-bridge';
 
 type DesktopRuntimeBridge = Partial<
   Pick<
@@ -12,9 +12,7 @@ type DesktopRuntimeBridge = Partial<
     | 'createNewDocumentAsync'
     | 'confirmWindowClose'
     | 'destroyCurrentWindow'
-    | 'cancelAppQuit'
     | 'hasUnsavedChanges'
-    | 'getUpdateState'
   >
 >;
 
@@ -23,7 +21,6 @@ interface DesktopEventsOptions {
   dispatcher: CommandDispatcher;
   eventBus: EventBus;
   setMessage(message: string): void;
-  onUpdateState(state: DesktopUpdateState): void;
 }
 
 interface CloseRequestEvent {
@@ -35,7 +32,6 @@ export async function setupDesktopEvents({
   dispatcher,
   eventBus,
   setMessage,
-  onUpdateState,
 }: DesktopEventsOptions): Promise<void> {
   if (!isTauriRuntime()) return;
 
@@ -44,25 +40,17 @@ export async function setupDesktopEvents({
   const { getCurrentWebviewWindow } = await import('@tauri-apps/api/webviewWindow');
   const currentWindow = getCurrentWebviewWindow();
 
-  await listen('hop-job-progress', (event) => {
+  await listen('alhangeul-job-progress', (event) => {
     const payload = event.payload as { message?: string };
     if (payload?.message) setMessage(payload.message);
   });
 
-  await listen('hop-update-state', (event) => {
-    onUpdateState(event.payload as DesktopUpdateState);
-  });
-
-  await currentWindow.listen('hop-menu-command', (event) => {
+  await currentWindow.listen('alhangeul-menu-command', (event) => {
     const command = String(event.payload || '');
     if (command) dispatcher.dispatch(command);
   });
 
-  await currentWindow.listen('hop-app-quit-requested', async () => {
-    await handleDesktopAppQuitRequest(desktop, setMessage);
-  });
-
-  await currentWindow.listen('hop-open-paths', async (event) => {
+  await currentWindow.listen('alhangeul-open-paths', async (event) => {
     const payload = event.payload as { paths?: string[] };
     const pending = await desktop.takePendingOpenPaths?.();
     await openLatestDesktopDocument({
@@ -100,14 +88,6 @@ export async function setupDesktopEvents({
     paths: pending ?? [],
     setMessage,
   });
-
-  if (desktop.getUpdateState) {
-    try {
-      onUpdateState(await desktop.getUpdateState());
-    } catch (error) {
-      console.warn('[desktop-events] updater state hydrate failed:', error);
-    }
-  }
 }
 
 export async function createDesktopDocument(bridge: unknown): Promise<DesktopLoadPayload | null> {
@@ -130,19 +110,6 @@ async function handleDesktopCloseRequest(
   });
 }
 
-async function handleDesktopAppQuitRequest(
-  desktop: DesktopRuntimeBridge,
-  setMessage: (message: string) => void,
-): Promise<void> {
-  if (!desktop.destroyCurrentWindow) return;
-  await confirmAndDestroyWindow(desktop, {
-    context: 'app quit request',
-    errorPrefix: '앱 종료 실패',
-    onCancel: () => desktop.cancelAppQuit?.(),
-    setMessage,
-  });
-}
-
 function setDesktopDragActive(active: boolean): void {
   document.getElementById('scroll-container')?.classList.toggle('drag-over', active);
 }
@@ -152,12 +119,10 @@ async function confirmAndDestroyWindow(
   {
     context,
     errorPrefix,
-    onCancel,
     setMessage,
   }: {
     context: string;
     errorPrefix: string;
-    onCancel?: () => Promise<void> | void;
     setMessage: (message: string) => void;
   },
 ): Promise<void> {
@@ -167,8 +132,6 @@ async function confirmAndDestroyWindow(
     const canClose = desktop.confirmWindowClose ? await desktop.confirmWindowClose() : true;
     if (canClose) {
       await desktop.destroyCurrentWindow();
-    } else {
-      await onCancel?.();
     }
   } catch (error) {
     console.error(`[desktop-events] ${context} failed:`, error);
@@ -176,7 +139,6 @@ async function confirmAndDestroyWindow(
       await desktop.destroyCurrentWindow();
     } else {
       setMessage(`${errorPrefix}: ${error}`);
-      await onCancel?.();
     }
   }
 }

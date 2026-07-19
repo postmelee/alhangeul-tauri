@@ -1,32 +1,40 @@
-# HOP 개발하기
+# Alhangeul 개발하기
 
-이 문서는 HOP를 로컬에서 실행하거나 수정할 때 필요한 기본 정보를 정리합니다.
+이 문서는 Windows와 Linux에서 Alhangeul을 실행하거나 수정할 때 필요한 기본 정보를 정리한다.
 
-## 빠른 시작
+## 준비
 
-처음 한 번 의존성과 submodule을 준비합니다.
+- Node.js 24
+- Corepack과 `pnpm@10.33.0`
+- Rust stable
+- 대상 운영체제의 [Tauri 2 prerequisites](https://v2.tauri.app/start/prerequisites/)
+
+처음 한 번 의존성과 submodule을 준비한다.
 
 ```sh
 git submodule update --init --recursive
+corepack enable
 pnpm install --frozen-lockfile
 ```
 
-studio host를 빌드합니다.
+## 실행과 빌드
+
+studio host만 빌드한다.
 
 ```sh
 pnpm run build:studio
 ```
 
-데스크톱 앱을 개발 모드로 실행합니다.
+지원 플랫폼에서 데스크톱 앱을 개발 모드로 실행한다.
 
 ```sh
-pnpm --filter hop-desktop dev
+pnpm tauri dev
 ```
 
-debug 번들을 만들 때는 다음 명령을 사용합니다.
+로컬 bundle은 배포물이 아니라 개발 검증용으로만 생성한다.
 
 ```sh
-pnpm --filter hop-desktop tauri build --debug --bundles app
+pnpm tauri build --debug
 ```
 
 ## 프로젝트 구조
@@ -34,83 +42,64 @@ pnpm --filter hop-desktop tauri build --debug --bundles app
 ```text
 apps/
   desktop/       Tauri 2 데스크톱 앱
-  studio-host/   upstream rhwp-studio 위에 얹는 HOP overlay
+  studio-host/   upstream rhwp-studio 위의 Alhangeul adapter
 third_party/
-  rhwp/          read-only upstream submodule
-assets/          아이콘, 폰트, 스크린샷
-docs/            스펙, 아키텍처, 운영 문서
-scripts/         유지보수 스크립트
+  rhwp/          현재 읽기 전용 upstream submodule
+assets/          아이콘과 재배포 가능한 폰트
+docs/            사용자·기여자·아키텍처·운영 문서
+scripts/         검증과 의존성 유지보수 script
 ```
 
-HOP 전용 동작은 `apps/desktop`과 `apps/studio-host`에 둡니다. `third_party/rhwp`는 upstream submodule로 유지하고, HOP 제품 기능 때문에 직접 수정하지 않는 것을 원칙으로 합니다.
+Alhangeul 전용 동작은 `apps/desktop`과 `apps/studio-host`에 둔다. `third_party/rhwp`는 제품 기능 때문에 직접 수정하지 않는다.
 
-## rhwp와의 관계
+## 소유 경계
 
-HOP는 `rhwp`의 문서 엔진과 웹 에디터를 기반으로 합니다. HOP가 맡는 부분은 데스크톱 앱에서 필요한 얇은 제품 레이어입니다.
+Alhangeul은 `rhwp`의 문서 엔진과 웹 editor를 기반으로 다음 제품 레이어를 소유한다.
 
-* Tauri 2 앱 셸
-* native menu와 파일 명령 연결
-* Rust document session 관리
-* atomic save
-* native SVG-to-PDF export 경로
-* webview print 경로
-* single-instance와 파일 open event 라우팅
-* 새 창 생성과 창별 drag/drop 처리
-* GitHub Actions 기반 desktop build/release 초안
+- Tauri 2 앱 셸과 native menu
+- Rust document session과 atomic save
+- PDF export와 webview print 연결
+- single-instance, file open event, drag/drop과 다중 창
+- 로컬 폰트 catalog와 editor bridge
+- Windows/Linux 파일 연결과 bundle 설정
 
-upstream이 업데이트되면 submodule pointer를 올리고, HOP overlay에서 필요한 호환성만 조정하는 구조를 목표로 합니다.
+현재 submodule과 bundled WASM은 동일한 `rhwp` 기준으로 맞춰져 있다. Stable release tag와 resolved commit을 함께 기록하는 독립 release pin 전환은 후속 전용 작업에서 수행한다. 자세한 경계는 [UPSTREAM.md](architecture/UPSTREAM.md)를 따른다.
 
-## 아직 준비 중인 부분
+## 개발 상태
 
-public beta 전까지는 아래 항목이 더 필요합니다.
+- HWPX 문서는 열 수 있지만 저장은 지원하지 않는다.
+- autosave/recovery와 외부 파일 변경 감지는 아직 없다.
+- 큰 문서에서는 WASM mirror를 거치는 구간이 남아 있다.
+- 공식 설치 파일, 서명, 패키지 게시와 자동 업데이트는 준비되지 않았다.
+- GitHub Actions workflow 파일은 정적 검토용이며 저장소 수준 실행은 별도 승인 전까지 비활성 상태다.
 
-* HWPX 저장은 아직 막아 두었습니다. HWPX 열기는 가능하지만, 안전한 HWPX serializer가 준비되기 전까지 저장은 지원하지 않습니다.
-* autosave/recovery는 아직 없습니다.
-* 외부 파일 변경 감지는 아직 없습니다.
-* 큰 문서에서는 현재 WASM mirror를 거치는 구간이 있어 native-authoritative 구조로 더 개선해야 합니다.
-* signing, notarization, updater manifest는 배포 자격증명이 준비된 뒤 활성화할 예정입니다.
+## 검증 명령
 
-현재 상태에서도 HWP 문서를 열고, 가볍게 편집하고, 저장하고, PDF로 내보내는 기본 데스크톱 흐름은 확인할 수 있습니다.
-
-## 개발 명령
-
-전체 단위 테스트:
+모든 호스트에서 실행 가능한 기본 검증:
 
 ```sh
-pnpm test
-```
-
-upstream submodule 갱신 스크립트 테스트:
-
-```sh
+pnpm run check:product-boundary
 pnpm run test:upstream
-```
-
-studio host TypeScript 테스트:
-
-```sh
 pnpm run test:studio
+pnpm run build:studio
 ```
 
-desktop Rust 테스트:
+Windows/Linux에서 native Rust 변경을 검증할 때 추가 실행한다.
 
 ```sh
 pnpm run test:desktop
-```
-
-desktop Rust clippy:
-
-```sh
 pnpm run clippy:desktop
 ```
 
-upstream 갱신:
+`rhwp` 갱신은 일반 기능 작업에 포함하지 않는다. 승인된 의존성 갱신 작업에서만 다음 script를 사용하고 결과 commit을 명시적으로 검토한다.
 
 ```sh
-RUN_CHECKS=1 scripts/update-upstream.sh
+UPSTREAM_REF=<release-tag-or-commit> RUN_CHECKS=1 scripts/update-upstream.sh
 ```
 
 ## 관련 문서
 
-* [upstream 경계와 업데이트 방식](architecture/UPSTREAM.md)
-* [데스크톱 릴리즈 노트](operations/DESKTOP_RELEASE.md)
+- [upstream 경계](architecture/UPSTREAM.md)
+- [초기 코드와 자산 출처](architecture/PROVENANCE.md)
+- [로컬 폰트 규칙](architecture/LOCAL_FONTS.md)
+- [desktop artifact와 배포 준비](operations/DESKTOP_RELEASE.md)

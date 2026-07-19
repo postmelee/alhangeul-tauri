@@ -27,7 +27,7 @@ pub fn create_editor_window_with_label(app: &AppHandle, label: &str) -> Result<(
     let geometry = new_window_geometry(app);
 
     let builder = WebviewWindowBuilder::new(app, label, WebviewUrl::App("index.html".into()))
-        .title("HOP")
+        .title("Alhangeul")
         .inner_size(geometry.width, geometry.height)
         .min_inner_size(geometry.min_width, geometry.min_height)
         .prevent_overflow_with_margin(Size::Logical(LogicalSize::new(
@@ -179,7 +179,7 @@ pub fn attach_document_drop_handler(app: &AppHandle, window: &WebviewWindow) {
         }
         let _ = app.emit_to(
             label.as_str(),
-            "hop-open-paths",
+            "alhangeul-open-paths",
             serde_json::json!({ "paths": paths }),
         );
     });

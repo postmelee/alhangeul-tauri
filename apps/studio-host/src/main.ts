@@ -1,12 +1,9 @@
 import { createBridge, isTauriRuntime } from '@/core/bridge-factory';
-import {
-  applyDesktopChromePlatformState,
-  installNonEditorContextMenuGuards,
-} from '@/core/desktop-chrome';
+import { installNonEditorContextMenuGuards } from '@/core/desktop-chrome';
 import type { DocumentInfo } from '@/core/types';
 import { EventBus } from '@/core/event-bus';
 import { createDesktopDocument, setupDesktopEvents } from '@/core/desktop-events';
-import { detectDesktopPlatform, hasPrimaryModifier, hydrateDesktopPlatform } from '@/core/platform';
+import { detectDesktopPlatform, hydrateDesktopPlatform } from '@/core/platform';
 import { CanvasView } from '@/view/canvas-view';
 import { InputHandler } from '@upstream/engine/input-handler';
 import { Toolbar } from '@/ui/toolbar';
@@ -34,9 +31,7 @@ import { TableObjectRenderer } from '@upstream/engine/table-object-renderer';
 import { TableResizeRenderer } from '@upstream/engine/table-resize-renderer';
 import { Ruler } from '@/view/ruler';
 import { enhanceCustomSelects } from '@/ui/custom-select';
-import { UpdateNotice, type UpdateNoticeActions } from '@/ui/update-notice';
 import { HomeScreen } from '@/ui/home-screen';
-import type { DesktopBridgeApi } from '@/core/tauri-bridge';
 
 const wasm = createBridge();
 const eventBus = new EventBus();
@@ -116,9 +111,7 @@ const ZOOM_STEP = 0.1;
 async function initialize(): Promise<void> {
   const msg = sbMessage();
   try {
-    const tauriRuntime = isTauriRuntime();
     desktopPlatform = await hydrateDesktopPlatform();
-    applyDesktopChromePlatformState(document, desktopPlatform);
     msg.textContent = '웹폰트 로딩 중...';
     await loadWebFonts([]);  // CSS @font-face 등록 + CRITICAL 폰트만 로드
     msg.textContent = '문서 엔진 로딩 중...';
@@ -225,18 +218,12 @@ async function initialize(): Promise<void> {
     setupZoomControls();
     setupEventListeners();
     setupGlobalShortcuts();
-    const updateNotice = tauriRuntime
-      ? new UpdateNotice(updateNoticeActions(wasm))
-      : null;
     void setupDesktopEvents({
       bridge: wasm,
       dispatcher,
       eventBus,
       setMessage: (message) => {
         sbMessage().textContent = message;
-      },
-      onUpdateState: (state) => {
-        updateNotice?.setState(state);
       },
     }).catch((error) => {
       console.error('[main] desktop event setup failed:', error);
@@ -253,21 +240,6 @@ async function initialize(): Promise<void> {
     msg.textContent = `문서 엔진 초기화 실패: ${error}`;
     console.error('[main] 문서 엔진 초기화 실패:', error);
   }
-}
-
-function updateNoticeActions(bridge: unknown): UpdateNoticeActions {
-  const desktop = bridge as Partial<
-    Pick<DesktopBridgeApi, 'startUpdateInstall' | 'restartToApplyUpdate'>
-  >;
-
-  return {
-    startUpdateInstall: desktop.startUpdateInstall
-      ? () => desktop.startUpdateInstall!()
-      : undefined,
-    restartToApplyUpdate: desktop.restartToApplyUpdate
-      ? () => desktop.restartToApplyUpdate!()
-      : undefined,
-  };
 }
 
 /**
@@ -289,7 +261,7 @@ function setupGlobalShortcuts(): void {
     // InputHandler가 활성 상태이면 자체 처리에 맡김
     if (inputHandler?.isActive()) return;
 
-    const primaryModifier = hasPrimaryModifier(e, desktopPlatform);
+    const primaryModifier = e.ctrlKey;
 
     // Alt+N / Alt+ㅜ → 새 문서 (문서 미로드 상태에서도 동작)
     if (e.altKey && !primaryModifier && !e.shiftKey) {

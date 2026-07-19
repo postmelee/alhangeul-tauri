@@ -3,7 +3,7 @@ import { PageRenderer as UpstreamPageRenderer } from '@upstream/view/page-render
 
 const RE_RENDER_DELAYS_MS = [200, 600];
 
-export class HopPageRenderer {
+export class AlhangeulPageRenderer {
   private readonly upstream: UpstreamPageRenderer;
   private reRenderTimers = new Map<number, ReturnType<typeof setTimeout>[]>();
 

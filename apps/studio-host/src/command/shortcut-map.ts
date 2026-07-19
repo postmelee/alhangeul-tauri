@@ -2,29 +2,28 @@ import {
   defaultShortcuts as upstreamDefaultShortcuts,
 } from '@upstream/command/shortcut-map';
 import type { ShortcutDef } from '@upstream/command/shortcut-map';
-import { hasPrimaryModifier } from '../core/platform';
 
 export type { ShortcutDef };
 
-const hopShortcuts: [ShortcutDef, string][] = [
+const alhangeulShortcuts: [ShortcutDef, string][] = [
   [{ key: 'n', ctrl: true, shift: true }, 'file:new-window'],
   [{ key: 'o', ctrl: true, alt: true }, 'file:open-recent'],
   [{ key: 's', ctrl: true, shift: true }, 'file:save-as'],
   [{ key: 't', ctrl: true, alt: true }, 'table:cell-selection-enter'],
 ];
 
-const hopShortcutKeys = new Set(hopShortcuts.map(([shortcut]) => shortcutKey(shortcut)));
+const alhangeulShortcutKeys = new Set(alhangeulShortcuts.map(([shortcut]) => shortcutKey(shortcut)));
 
 export const defaultShortcuts: [ShortcutDef, string][] = [
-  ...hopShortcuts,
-  ...upstreamDefaultShortcuts.filter(([shortcut]) => !hopShortcutKeys.has(shortcutKey(shortcut))),
+  ...alhangeulShortcuts,
+  ...upstreamDefaultShortcuts.filter(([shortcut]) => !alhangeulShortcutKeys.has(shortcutKey(shortcut))),
 ];
 
 export function matchShortcut(
   event: Pick<KeyboardEvent, 'key' | 'ctrlKey' | 'metaKey' | 'shiftKey' | 'altKey'>,
   shortcuts: [ShortcutDef, string][],
 ): string | null {
-  const primaryModifier = hasPrimaryModifier(event);
+  const primaryModifier = event.ctrlKey;
 
   for (const [def, commandId] of shortcuts) {
     if ((def.ctrl ?? false) !== primaryModifier) continue;

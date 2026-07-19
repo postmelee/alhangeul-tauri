@@ -1,22 +1,21 @@
 {
-  "name": "hop",
+  "name": "alhangeul-tauri",
   "version": "0.3.1",
   "private": true,
-  "description": "HOP is Open HWP",
+  "description": "Alhangeul desktop app for HWP and HWPX documents",
   "license": "MIT",
   "type": "module",
   "packageManager": "pnpm@10.33.0",
   "scripts": {
-    "build:studio": "pnpm --filter @golbin/hop-studio-host build",
-    "build:quicklook:macos": "node scripts/build-quicklook-macos.mjs",
-    "build:before-tauri": "pnpm run build:studio && pnpm run build:quicklook:macos",
-    "build:desktop": "pnpm --filter hop-desktop build",
-    "tauri": "pnpm --filter hop-desktop tauri",
-    "test": "pnpm run test:upstream && pnpm run test:studio && pnpm run test:desktop && pnpm run test:quicklook:macos",
+    "check:product-boundary": "node scripts/check-product-boundary.mjs",
+    "build:studio": "pnpm --filter @postmelee/alhangeul-studio-host build",
+    "build:before-tauri": "pnpm run build:studio",
+    "build:desktop": "pnpm --filter alhangeul-desktop build",
+    "tauri": "pnpm --filter alhangeul-desktop tauri",
+    "test": "pnpm run test:upstream && pnpm run test:studio && pnpm run test:desktop",
     "test:upstream": "node --test tests/update-upstream.test.mjs tests/rhwp-baseline.test.mjs",
-    "test:studio": "pnpm --filter @golbin/hop-studio-host test",
+    "test:studio": "pnpm --filter @postmelee/alhangeul-studio-host test",
     "test:desktop": "cd apps/desktop/src-tauri && cargo test",
-    "test:quicklook:macos": "node scripts/test-quicklook-macos.mjs",
     "clippy:desktop": "cd apps/desktop/src-tauri && cargo clippy -- -D warnings"
   }
 }

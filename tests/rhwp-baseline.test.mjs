@@ -9,7 +9,7 @@ const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const expectedRhwpVersion = '0.7.13';
 const expectedRhwpCommit = 'b3e16ef212af81ef37d973ddb86d6816d3804642';
 
-test('HOP keeps the rhwp renderer baseline aligned across submodule, vendored WASM, and native lockfile', async () => {
+test('Alhangeul keeps the rhwp renderer baseline aligned across submodule, vendored WASM, and native lockfile', async () => {
   const wasmPackage = JSON.parse(
     await readFile(join(repoRoot, 'apps/studio-host/vendor/rhwp-core/package.json'), 'utf8'),
   );
@@ -34,9 +34,9 @@ test('HOP keeps the rhwp renderer baseline aligned across submodule, vendored WA
   assert.match(submoduleStatus, new RegExp(`^[ +-]?${expectedRhwpCommit} third_party/rhwp\\b`));
 });
 
-test('HOP preserves upstream lineseg validation and auto-reflow on document load', async () => {
+test('Alhangeul preserves upstream lineseg validation and auto-reflow on document load', async () => {
   const mainSource = await readFile(join(repoRoot, 'apps/studio-host/src/main.ts'), 'utf8');
-  const overrides = await readFile(join(repoRoot, 'apps/studio-host/hop-overrides.ts'), 'utf8');
+  const overrides = await readFile(join(repoRoot, 'apps/studio-host/alhangeul-overrides.ts'), 'utf8');
   const validationModal = await readFile(join(repoRoot, 'apps/studio-host/src/ui/validation-modal.ts'), 'utf8');
 
   assert.match(mainSource, /showValidationModalIfNeeded/);
@@ -62,7 +62,7 @@ test('HOP preserves upstream lineseg validation and auto-reflow on document load
   assert.doesNotMatch(validationModal, /HWPX 비표준 감지/);
 });
 
-test('HOP keeps unsaved-document guards on local file and new-document replacement paths', async () => {
+test('Alhangeul keeps unsaved-document guards on local file and new-document replacement paths', async () => {
   const mainSource = await readFile(join(repoRoot, 'apps/studio-host/src/main.ts'), 'utf8');
 
   assert.match(mainSource, /import \{ confirmSaveBeforeReplacingDocument \} from ['"]@upstream\/command\/commands\/file['"]/);
@@ -73,8 +73,8 @@ test('HOP keeps unsaved-document guards on local file and new-document replaceme
   assert.match(mainSource, /if \(isTauriRuntime\(\) \|\| !await canReplaceCurrentDocument\(\)\) return/);
 });
 
-test('HOP defers editor engine and table command behavior to upstream rhwp', async () => {
-  const overrides = await readFile(join(repoRoot, 'apps/studio-host/hop-overrides.ts'), 'utf8');
+test('Alhangeul defers editor engine and table command behavior to upstream rhwp', async () => {
+  const overrides = await readFile(join(repoRoot, 'apps/studio-host/alhangeul-overrides.ts'), 'utf8');
 
   assert.doesNotMatch(overrides, /['"]engine\//);
   assert.doesNotMatch(overrides, /['"]command\/commands\/table['"]/);
@@ -89,18 +89,18 @@ test('HOP defers editor engine and table command behavior to upstream rhwp', asy
   }
 });
 
-test('HOP product info keeps the upstream rhwp version and adds HOP version separately', async () => {
+test('Alhangeul product info keeps the upstream rhwp version and adds Alhangeul version separately', async () => {
   const viteConfig = await readFile(join(repoRoot, 'apps/studio-host/vite.config.ts'), 'utf8');
   const aboutDialog = await readFile(join(repoRoot, 'apps/studio-host/src/ui/about-dialog.ts'), 'utf8');
 
   assert.match(viteConfig, /__APP_VERSION__:\s*JSON\.stringify\(rhwpWasmPackage\.version\)/);
-  assert.match(viteConfig, /__HOP_VERSION__:\s*JSON\.stringify\(desktopConfig\.version\)/);
+  assert.match(viteConfig, /__ALHANGEUL_VERSION__:\s*JSON\.stringify\(desktopConfig\.version\)/);
   assert.match(aboutDialog, /extends UpstreamAboutDialog/);
   assert.match(aboutDialog, /super\.createBody\(\)/);
-  assert.match(aboutDialog, /HOP \$\{__HOP_VERSION__\}/);
+  assert.match(aboutDialog, /Alhangeul \$\{__ALHANGEUL_VERSION__\}/);
 });
 
-test('HOP keeps PDF export menu-only without a stale Ctrl+E label', async () => {
+test('Alhangeul keeps PDF export menu-only without a stale Ctrl+E label', async () => {
   const fileCommands = await readFile(join(repoRoot, 'apps/studio-host/src/command/commands/file.ts'), 'utf8');
   const indexHtml = await readFile(join(repoRoot, 'apps/studio-host/index.html'), 'utf8');
   const pdfMenuItem = indexHtml.match(/<div class="md-item disabled" data-cmd="file:export-pdf">.*?<\/div>/);

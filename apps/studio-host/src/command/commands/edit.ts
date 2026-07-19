@@ -5,7 +5,7 @@ type PasteCapableInputHandler = {
   performPaste?: () => void | Promise<void>;
 };
 
-const hopEditCommandById = new Map<string, CommandDef>([
+const alhangeulEditCommandById = new Map<string, CommandDef>([
   ['edit:paste', {
     id: 'edit:paste',
     label: '붙이기',
@@ -19,5 +19,5 @@ const hopEditCommandById = new Map<string, CommandDef>([
 ]);
 
 export const editCommands: CommandDef[] = upstreamEditCommands.map((command) =>
-  hopEditCommandById.get(command.id) ?? command,
+  alhangeulEditCommandById.get(command.id) ?? command,
 );

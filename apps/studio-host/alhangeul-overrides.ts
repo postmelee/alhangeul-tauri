@@ -24,7 +24,6 @@ const overrideIds = [
   'ui/recent-documents-dialog',
   'ui/style-edit-dialog',
   'ui/toolbar',
-  'ui/update-notice',
   'ui/validation-modal',
   'view/canvas-view',
   'view/ruler',
@@ -32,13 +31,12 @@ const overrideIds = [
   'styles/custom-select.css',
   'styles/font-set-dialog.css',
   'styles/home-screen.css',
-  'styles/update-notice.css',
   'styles/recent-documents-dialog.css',
 ] as const;
 
-export function createHopOverrides(hopSrc: string) {
+export function createAlhangeulOverrides(alhangeulSrc: string) {
   return overrideIds.map((id) => ({
     find: `@/${id}`,
-    replacement: resolve(hopSrc, id),
+    replacement: resolve(alhangeulSrc, id),
   }));
 }

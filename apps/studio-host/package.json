@@ -1,8 +1,8 @@
 {
-  "name": "@golbin/hop-studio-host",
+  "name": "@postmelee/alhangeul-studio-host",
   "version": "0.1.0",
   "private": true,
-  "description": "HOP studio host overlay for upstream rhwp-studio",
+  "description": "Alhangeul studio host overlay for upstream rhwp-studio",
   "license": "MIT",
   "type": "module",
   "dependencies": {

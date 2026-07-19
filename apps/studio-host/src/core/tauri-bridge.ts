@@ -28,28 +28,6 @@ interface ExternalModificationStatus {
   reason?: string | null;
 }
 
-export type DesktopUpdateState =
-  | { status: 'idle' }
-  | {
-      status: 'available';
-      version: string;
-    }
-  | {
-      status: 'downloading';
-      version: string;
-      downloadedBytes: number;
-      totalBytes?: number | null;
-    }
-  | {
-      status: 'ready';
-      version: string;
-    }
-  | {
-      status: 'error';
-      version: string;
-      message: string;
-    };
-
 export interface DesktopSaveResult {
   docId: string;
   sourcePath?: string | null;
@@ -80,14 +58,10 @@ export interface DesktopBridgeApi {
   exportPdfFromCommand(): Promise<string | null>;
   printCurrentWebview(): Promise<void>;
   destroyCurrentWindow(): Promise<void>;
-  cancelAppQuit(): Promise<void>;
   revealInFolder(): Promise<void>;
   listRecentDocuments(): Promise<RecentDocument[]>;
   clearRecentDocuments(): Promise<void>;
   renderDocumentPreview(path: string): Promise<string>;
-  getUpdateState(): Promise<DesktopUpdateState>;
-  startUpdateInstall(): Promise<void>;
-  restartToApplyUpdate(): Promise<void>;
   hasUnsavedChanges(): boolean;
   markDocumentDirty(): void;
   confirmWindowClose(): Promise<boolean>;
@@ -123,7 +97,6 @@ export class TauriBridge extends WasmBridge implements DesktopBridgeApi {
     try {
       const info = super.loadDocument(bytes, result.fileName);
       this.applyNativeOpenResult(result, this.normalizedSourceFormat(super.getSourceFormat()));
-      await this.noteFinderRecentDocument(path);
       await this.recordRecentDocument(path);
       await this.closeReplacedDocument(previousDocId, result.docId);
       return {
@@ -214,10 +187,6 @@ export class TauriBridge extends WasmBridge implements DesktopBridgeApi {
     await this.invoke<void>('destroy_current_window');
   }
 
-  async cancelAppQuit(): Promise<void> {
-    await this.invoke<void>('cancel_app_quit');
-  }
-
   async revealInFolder(): Promise<void> {
     if (!this.sourcePath) return;
     await this.invoke<void>('reveal_in_folder', { path: this.sourcePath });
@@ -233,18 +202,6 @@ export class TauriBridge extends WasmBridge implements DesktopBridgeApi {
 
   async renderDocumentPreview(path: string): Promise<string> {
     return this.invoke<string>('render_document_preview', { path });
-  }
-
-  async getUpdateState(): Promise<DesktopUpdateState> {
-    return this.invoke<DesktopUpdateState>('get_update_state');
-  }
-
-  async startUpdateInstall(): Promise<void> {
-    await this.invoke<void>('start_update_install');
-  }
-
-  async restartToApplyUpdate(): Promise<void> {
-    await this.invoke<void>('restart_to_apply_update');
   }
 
   hasUnsavedChanges(): boolean {
@@ -282,12 +239,6 @@ export class TauriBridge extends WasmBridge implements DesktopBridgeApi {
   private async recordRecentDocument(path: string): Promise<void> {
     await this.invoke<void>('record_recent_document', { path }).catch((error: unknown) => {
       console.warn('[TauriBridge] recent document update failed:', error);
-    });
-  }
-
-  private async noteFinderRecentDocument(path: string): Promise<void> {
-    await this.invoke<void>('note_finder_recent_document', { path }).catch((error: unknown) => {
-      console.warn('[TauriBridge] Finder recent document update failed:', error);
     });
   }
 
@@ -345,7 +296,6 @@ export class TauriBridge extends WasmBridge implements DesktopBridgeApi {
         allowExternalOverwrite,
       });
       this.applyNativeSaveResult(result);
-      await this.noteFinderRecentDocument(finalPath);
       return result;
     } finally {
       await remove(stagedPath).catch(() => undefined);
@@ -368,7 +318,7 @@ export class TauriBridge extends WasmBridge implements DesktopBridgeApi {
     const cancelLabel = '저장 취소';
     const result = await message(
       [
-        '원본 파일이 HOP 밖에서 변경되었습니다.',
+        '원본 파일이 Alhangeul 밖에서 변경되었습니다.',
         status.sourcePath ? `파일: ${status.sourcePath}` : '',
         status.reason ?? '',
         '',
@@ -530,7 +480,7 @@ export class TauriBridge extends WasmBridge implements DesktopBridgeApi {
   }
 
   private updateDocumentTitle(): void {
-    const name = this.docId ? this.fileName || '문서' : 'HOP';
-    document.title = `${this.dirty ? '• ' : ''}${name} - HOP`;
+    const name = this.docId ? this.fileName || '문서' : 'Alhangeul';
+    document.title = `${this.dirty ? '• ' : ''}${name} - Alhangeul`;
   }
 }
