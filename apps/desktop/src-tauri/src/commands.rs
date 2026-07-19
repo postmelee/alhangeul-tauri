@@ -362,7 +362,7 @@ fn ensure_hwp_target_path(path: &Path) -> Result<(), String> {
 }
 
 fn staged_hwp_save_path(target_path: &Path) -> Result<PathBuf, String> {
-    staged_sibling_path(target_path, ".hop-save-", ".tmp")
+    staged_sibling_path(target_path, ".alhangeul-save-", ".tmp")
 }
 
 fn ensure_pdf_target_path(path: &Path) -> Result<(), String> {
@@ -371,7 +371,7 @@ fn ensure_pdf_target_path(path: &Path) -> Result<(), String> {
 }
 
 fn staged_hwp_pdf_export_path(target_path: &Path) -> Result<PathBuf, String> {
-    staged_sibling_path(target_path, ".hop-export-", ".hwp")
+    staged_sibling_path(target_path, ".alhangeul-export-", ".hwp")
 }
 
 fn ensure_target_parent(path: &Path, context: &str) -> Result<(), String> {
@@ -455,7 +455,7 @@ fn export_pdf_from_core(
 
 fn emit_progress(app: &AppHandle, job_id: &str, phase: &str, done: u32, total: u32, message: &str) {
     let _ = app.emit(
-        "hop-job-progress",
+        "alhangeul-job-progress",
         JobProgress {
             job_id: job_id.to_string(),
             phase: phase.to_string(),
@@ -522,7 +522,7 @@ mod tests {
             .file_name()
             .unwrap()
             .to_string_lossy()
-            .starts_with("saved.hwp.hop-save-"));
+            .starts_with("saved.hwp.alhangeul-save-"));
         assert!(staged_path
             .file_name()
             .unwrap()
@@ -543,7 +543,7 @@ mod tests {
             .file_name()
             .unwrap()
             .to_string_lossy()
-            .starts_with("export.pdf.hop-export-"));
+            .starts_with("export.pdf.alhangeul-export-"));
         assert_eq!(
             staged_path
                 .extension()

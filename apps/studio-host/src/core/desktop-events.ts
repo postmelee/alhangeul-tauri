@@ -2,7 +2,7 @@ import type { CommandDispatcher } from '@/command/dispatcher';
 import type { EventBus } from '@/core/event-bus';
 import { isTauriRuntime } from '@/core/bridge-factory';
 import { findLatestSupportedDocumentPath, hasSupportedDocumentPath } from '@/core/document-files';
-import type { DesktopBridgeApi, DesktopLoadPayload, DesktopUpdateState } from './tauri-bridge';
+import type { DesktopBridgeApi, DesktopLoadPayload } from './tauri-bridge';
 
 type DesktopRuntimeBridge = Partial<
   Pick<
@@ -13,7 +13,6 @@ type DesktopRuntimeBridge = Partial<
     | 'confirmWindowClose'
     | 'destroyCurrentWindow'
     | 'hasUnsavedChanges'
-    | 'getUpdateState'
   >
 >;
 
@@ -22,7 +21,6 @@ interface DesktopEventsOptions {
   dispatcher: CommandDispatcher;
   eventBus: EventBus;
   setMessage(message: string): void;
-  onUpdateState(state: DesktopUpdateState): void;
 }
 
 interface CloseRequestEvent {
@@ -34,7 +32,6 @@ export async function setupDesktopEvents({
   dispatcher,
   eventBus,
   setMessage,
-  onUpdateState,
 }: DesktopEventsOptions): Promise<void> {
   if (!isTauriRuntime()) return;
 
@@ -43,21 +40,17 @@ export async function setupDesktopEvents({
   const { getCurrentWebviewWindow } = await import('@tauri-apps/api/webviewWindow');
   const currentWindow = getCurrentWebviewWindow();
 
-  await listen('hop-job-progress', (event) => {
+  await listen('alhangeul-job-progress', (event) => {
     const payload = event.payload as { message?: string };
     if (payload?.message) setMessage(payload.message);
   });
 
-  await listen('hop-update-state', (event) => {
-    onUpdateState(event.payload as DesktopUpdateState);
-  });
-
-  await currentWindow.listen('hop-menu-command', (event) => {
+  await currentWindow.listen('alhangeul-menu-command', (event) => {
     const command = String(event.payload || '');
     if (command) dispatcher.dispatch(command);
   });
 
-  await currentWindow.listen('hop-open-paths', async (event) => {
+  await currentWindow.listen('alhangeul-open-paths', async (event) => {
     const payload = event.payload as { paths?: string[] };
     const pending = await desktop.takePendingOpenPaths?.();
     await openLatestDesktopDocument({
@@ -95,14 +88,6 @@ export async function setupDesktopEvents({
     paths: pending ?? [],
     setMessage,
   });
-
-  if (desktop.getUpdateState) {
-    try {
-      onUpdateState(await desktop.getUpdateState());
-    } catch (error) {
-      console.warn('[desktop-events] updater state hydrate failed:', error);
-    }
-  }
 }
 
 export async function createDesktopDocument(bridge: unknown): Promise<DesktopLoadPayload | null> {

@@ -99,7 +99,7 @@ describe('TauriBridge', () => {
       docInfo: { pageCount: 2, fontsUsed: [] },
       message: 'opened.hwp — 2페이지',
     });
-    expect(document.title).toBe('opened.hwp - HOP');
+    expect(document.title).toBe('opened.hwp - Alhangeul');
     expect(bridge.hasUnsavedChanges()).toBe(false);
   });
 
@@ -180,7 +180,7 @@ describe('TauriBridge', () => {
     await bridge.openDocumentByPath('/tmp/new.hwp');
 
     expect(invokeMock).toHaveBeenLastCalledWith('close_document', { docId: 'old-doc' });
-    expect(document.title).toBe('new.hwp - HOP');
+    expect(document.title).toBe('new.hwp - Alhangeul');
   });
 
   it('opens a document selected from the Tauri dialog', async () => {
@@ -291,7 +291,7 @@ describe('TauriBridge', () => {
       warnings: [],
     });
 
-    expect(document.title).toBe('source.hwp - HOP');
+    expect(document.title).toBe('source.hwp - Alhangeul');
     expect(bridge.hasUnsavedChanges()).toBe(false);
 
     bridge.markDocumentDirty();
@@ -300,26 +300,7 @@ describe('TauriBridge', () => {
     });
 
     expect(bridge.hasUnsavedChanges()).toBe(true);
-    expect(document.title).toBe('• source.hwp - HOP');
-  });
-
-  it('proxies updater commands through the Tauri bridge', async () => {
-    const bridge = new TauriBridge();
-    invokeMock
-      .mockResolvedValueOnce({ status: 'available', version: '0.1.3' })
-      .mockResolvedValueOnce(undefined)
-      .mockResolvedValueOnce(undefined);
-
-    await expect(bridge.getUpdateState()).resolves.toEqual({
-      status: 'available',
-      version: '0.1.3',
-    });
-    await expect(bridge.startUpdateInstall()).resolves.toBeUndefined();
-    await expect(bridge.restartToApplyUpdate()).resolves.toBeUndefined();
-
-    expect(invokeMock).toHaveBeenNthCalledWith(1, 'get_update_state', {});
-    expect(invokeMock).toHaveBeenNthCalledWith(2, 'start_update_install', {});
-    expect(invokeMock).toHaveBeenNthCalledWith(3, 'restart_to_apply_update', {});
+    expect(document.title).toBe('• source.hwp - Alhangeul');
   });
 
   it('proxies recent document commands through the Tauri bridge', async () => {
@@ -370,7 +351,7 @@ describe('TauriBridge', () => {
     invokeMock.mockImplementation(async (command: string, args: Record<string, unknown>) => {
       if (command === 'prepare_staged_hwp_save') {
         expect(args).toEqual({ targetPath: '/tmp/report.hwp' });
-        return '/tmp/report.hwp.hop-save-1234abcd.tmp';
+        return '/tmp/report.hwp.alhangeul-save-1234abcd.tmp';
       }
       if (command === 'check_external_modification') {
         expect(args).toEqual({ docId: 'doc-1', targetPath: '/tmp/report.hwp' });
@@ -379,7 +360,7 @@ describe('TauriBridge', () => {
       if (command === 'commit_staged_hwp_save') {
         expect(args).toEqual({
           docId: 'doc-1',
-          stagedPath: '/tmp/report.hwp.hop-save-1234abcd.tmp',
+          stagedPath: '/tmp/report.hwp.alhangeul-save-1234abcd.tmp',
           targetPath: '/tmp/report.hwp',
           expectedRevision: 5,
           allowExternalOverwrite: false,
@@ -398,7 +379,7 @@ describe('TauriBridge', () => {
 
     const result = await bridge.saveDocumentAsFromCommand();
 
-    expect(fsOpenMock).toHaveBeenCalledWith('/tmp/report.hwp.hop-save-1234abcd.tmp', {
+    expect(fsOpenMock).toHaveBeenCalledWith('/tmp/report.hwp.alhangeul-save-1234abcd.tmp', {
       write: true,
       create: true,
       truncate: true,
@@ -410,12 +391,12 @@ describe('TauriBridge', () => {
     expect(handle.close.mock.invocationCallOrder[0]).toBeLessThan(
       invokeMock.mock.invocationCallOrder[commitCallIndex]!,
     );
-    expect(statMock).toHaveBeenCalledWith('/tmp/report.hwp.hop-save-1234abcd.tmp');
-    expect(removeMock).toHaveBeenCalledWith('/tmp/report.hwp.hop-save-1234abcd.tmp');
+    expect(statMock).toHaveBeenCalledWith('/tmp/report.hwp.alhangeul-save-1234abcd.tmp');
+    expect(removeMock).toHaveBeenCalledWith('/tmp/report.hwp.alhangeul-save-1234abcd.tmp');
     expect(result?.sourcePath).toBe('/tmp/report.hwp');
     expect(result?.revision).toBe(6);
     expect(bridge.hasUnsavedChanges()).toBe(false);
-    expect(document.title).toBe('report.hwp - HOP');
+    expect(document.title).toBe('report.hwp - Alhangeul');
   });
 
   it('writes large staged saves in multiple fs chunks', async () => {
@@ -439,7 +420,7 @@ describe('TauriBridge', () => {
     });
     invokeMock.mockImplementation(async (command: string) => {
       if (command === 'check_external_modification') return { changed: false };
-      if (command === 'prepare_staged_hwp_save') return '/tmp/source.hwp.hop-save-large.tmp';
+      if (command === 'prepare_staged_hwp_save') return '/tmp/source.hwp.alhangeul-save-large.tmp';
       if (command === 'commit_staged_hwp_save') {
         return {
           docId: 'doc-1',
@@ -480,7 +461,7 @@ describe('TauriBridge', () => {
     });
     invokeMock.mockImplementation(async (command: string) => {
       if (command === 'check_external_modification') return { changed: false };
-      if (command === 'prepare_staged_hwp_save') return '/tmp/source.hwp.hop-save-short.tmp';
+      if (command === 'prepare_staged_hwp_save') return '/tmp/source.hwp.alhangeul-save-short.tmp';
       if (command === 'commit_staged_hwp_save') throw new Error('commit should not run');
       throw new Error(`unexpected command ${command}`);
     });
@@ -489,7 +470,7 @@ describe('TauriBridge', () => {
 
     expect(handle.close).toHaveBeenCalled();
     expect(invokeMock.mock.calls.some(([command]) => command === 'commit_staged_hwp_save')).toBe(false);
-    expect(removeMock).toHaveBeenCalledWith('/tmp/source.hwp.hop-save-short.tmp');
+    expect(removeMock).toHaveBeenCalledWith('/tmp/source.hwp.alhangeul-save-short.tmp');
   });
 
   it('exports PDF through a staged hwp file instead of byte IPC', async () => {
@@ -510,11 +491,11 @@ describe('TauriBridge', () => {
     invokeMock.mockImplementation(async (command: string, args: Record<string, unknown>) => {
       if (command === 'prepare_staged_hwp_pdf_export') {
         expect(args).toEqual({ targetPath: '/tmp/report.pdf' });
-        return '/tmp/report.pdf.hop-export-abcd1234.hwp';
+        return '/tmp/report.pdf.alhangeul-export-abcd1234.hwp';
       }
       if (command === 'export_pdf_from_hwp_path') {
         expect(args).toEqual({
-          stagedPath: '/tmp/report.pdf.hop-export-abcd1234.hwp',
+          stagedPath: '/tmp/report.pdf.alhangeul-export-abcd1234.hwp',
           targetPath: '/tmp/report.pdf',
           pageRange: null,
           openAfter: true,
@@ -527,13 +508,13 @@ describe('TauriBridge', () => {
     const result = await bridge.exportPdfFromCommand();
 
     expect(result).toBe('job-1');
-    expect(fsOpenMock).toHaveBeenCalledWith('/tmp/report.pdf.hop-export-abcd1234.hwp', {
+    expect(fsOpenMock).toHaveBeenCalledWith('/tmp/report.pdf.alhangeul-export-abcd1234.hwp', {
       write: true,
       create: true,
       truncate: true,
     });
     expect(handle.write).toHaveBeenCalledWith(new Uint8Array([1, 2, 3]));
-    expect(removeMock).toHaveBeenCalledWith('/tmp/report.pdf.hop-export-abcd1234.hwp');
+    expect(removeMock).toHaveBeenCalledWith('/tmp/report.pdf.alhangeul-export-abcd1234.hwp');
   });
 
   it('removes the staged export file when PDF export fails', async () => {
@@ -553,7 +534,7 @@ describe('TauriBridge', () => {
     });
     invokeMock.mockImplementation(async (command: string) => {
       if (command === 'prepare_staged_hwp_pdf_export') {
-        return '/tmp/report.pdf.hop-export-abcd1234.hwp';
+        return '/tmp/report.pdf.alhangeul-export-abcd1234.hwp';
       }
       if (command === 'export_pdf_from_hwp_path') {
         throw new Error('pdf export failed');
@@ -563,7 +544,7 @@ describe('TauriBridge', () => {
 
     await expect(bridge.exportPdfFromCommand()).rejects.toThrow('pdf export failed');
 
-    expect(removeMock).toHaveBeenCalledWith('/tmp/report.pdf.hop-export-abcd1234.hwp');
+    expect(removeMock).toHaveBeenCalledWith('/tmp/report.pdf.alhangeul-export-abcd1234.hwp');
   });
 
   it('returns null when the user cancels an external overwrite warning', async () => {
@@ -611,7 +592,7 @@ describe('TauriBridge', () => {
         return { changed: false };
       }
       if (command === 'prepare_staged_hwp_save') {
-        return '/tmp/source.hwp.hop-save-deadbeef.tmp';
+        return '/tmp/source.hwp.alhangeul-save-deadbeef.tmp';
       }
       if (command === 'commit_staged_hwp_save') {
         throw new Error('native commit failed');
@@ -623,7 +604,7 @@ describe('TauriBridge', () => {
 
     expect(handle.write).toHaveBeenCalledWith(new Uint8Array([1, 2, 3]));
     expect(handle.close).toHaveBeenCalled();
-    expect(removeMock).toHaveBeenCalledWith('/tmp/source.hwp.hop-save-deadbeef.tmp');
+    expect(removeMock).toHaveBeenCalledWith('/tmp/source.hwp.alhangeul-save-deadbeef.tmp');
   });
 });
 

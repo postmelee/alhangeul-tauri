@@ -28,28 +28,6 @@ interface ExternalModificationStatus {
   reason?: string | null;
 }
 
-export type DesktopUpdateState =
-  | { status: 'idle' }
-  | {
-      status: 'available';
-      version: string;
-    }
-  | {
-      status: 'downloading';
-      version: string;
-      downloadedBytes: number;
-      totalBytes?: number | null;
-    }
-  | {
-      status: 'ready';
-      version: string;
-    }
-  | {
-      status: 'error';
-      version: string;
-      message: string;
-    };
-
 export interface DesktopSaveResult {
   docId: string;
   sourcePath?: string | null;
@@ -84,9 +62,6 @@ export interface DesktopBridgeApi {
   listRecentDocuments(): Promise<RecentDocument[]>;
   clearRecentDocuments(): Promise<void>;
   renderDocumentPreview(path: string): Promise<string>;
-  getUpdateState(): Promise<DesktopUpdateState>;
-  startUpdateInstall(): Promise<void>;
-  restartToApplyUpdate(): Promise<void>;
   hasUnsavedChanges(): boolean;
   markDocumentDirty(): void;
   confirmWindowClose(): Promise<boolean>;
@@ -229,18 +204,6 @@ export class TauriBridge extends WasmBridge implements DesktopBridgeApi {
     return this.invoke<string>('render_document_preview', { path });
   }
 
-  async getUpdateState(): Promise<DesktopUpdateState> {
-    return this.invoke<DesktopUpdateState>('get_update_state');
-  }
-
-  async startUpdateInstall(): Promise<void> {
-    await this.invoke<void>('start_update_install');
-  }
-
-  async restartToApplyUpdate(): Promise<void> {
-    await this.invoke<void>('restart_to_apply_update');
-  }
-
   hasUnsavedChanges(): boolean {
     return Boolean(this.docId && this.dirty);
   }
@@ -355,7 +318,7 @@ export class TauriBridge extends WasmBridge implements DesktopBridgeApi {
     const cancelLabel = '저장 취소';
     const result = await message(
       [
-        '원본 파일이 HOP 밖에서 변경되었습니다.',
+        '원본 파일이 Alhangeul 밖에서 변경되었습니다.',
         status.sourcePath ? `파일: ${status.sourcePath}` : '',
         status.reason ?? '',
         '',
@@ -517,7 +480,7 @@ export class TauriBridge extends WasmBridge implements DesktopBridgeApi {
   }
 
   private updateDocumentTitle(): void {
-    const name = this.docId ? this.fileName || '문서' : 'HOP';
-    document.title = `${this.dirty ? '• ' : ''}${name} - HOP`;
+    const name = this.docId ? this.fileName || '문서' : 'Alhangeul';
+    document.title = `${this.dirty ? '• ' : ''}${name} - Alhangeul`;
   }
 }

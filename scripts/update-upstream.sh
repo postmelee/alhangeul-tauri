@@ -37,7 +37,7 @@ if [[ "$RUN_CHECKS" == "1" ]]; then
   (cd "$repo_root" && pnpm run build:studio)
   (cd "$repo_root/apps/desktop/src-tauri" && cargo test)
   (cd "$repo_root/apps/desktop/src-tauri" && cargo clippy -- -D warnings)
-  (cd "$repo_root" && pnpm --filter hop-desktop tauri build --debug --bundles app)
+  (cd "$repo_root" && pnpm --filter alhangeul-desktop tauri build --debug --bundles app)
 fi
 
 cat <<EOF
@@ -49,6 +49,6 @@ Commit: $new_commit
 
 Next:
 1. Review git diff for the submodule pointer and any compatibility fixes.
-2. If RUN_CHECKS was not set, run the HOP verification commands.
+2. If RUN_CHECKS was not set, run the Alhangeul verification commands.
 3. Update docs/architecture/UPSTREAM.md if this commit becomes the new pinned baseline.
 EOF

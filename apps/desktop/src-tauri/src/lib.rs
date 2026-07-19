@@ -7,8 +7,6 @@ mod pdf_font_fallbacks;
 mod pending_open;
 mod recent_documents;
 mod state;
-#[cfg(any(windows, target_os = "linux"))]
-mod updates;
 mod windows;
 
 use std::path::{Path, PathBuf};
@@ -25,7 +23,6 @@ use commands::{
     take_pending_open_paths,
 };
 use state::AppState;
-use updates::{get_update_state, restart_to_apply_update, start_update_install};
 
 pub fn run() {
     #[cfg(target_os = "linux")]
@@ -37,7 +34,6 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_store::Builder::default().build())
-        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .plugin(tauri_plugin_single_instance::init(|app, args, cwd| {
             let paths = document_paths_from_args(&args, &cwd);
@@ -56,8 +52,6 @@ pub fn run() {
                 windows::install_editor_window_minimum(&window);
                 windows::attach_document_drop_handler(app.handle(), &window);
             }
-            #[cfg(any(windows, target_os = "linux"))]
-            updates::install_startup_update_check(app.handle());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -87,12 +81,9 @@ pub fn run() {
             clear_recent_documents,
             record_recent_document,
             render_document_preview,
-            get_update_state,
-            start_update_install,
-            restart_to_apply_update,
         ])
         .build(tauri::generate_context!())
-        .expect("failed to build HOP desktop app");
+        .expect("failed to build Alhangeul desktop app");
 
     app.run(|_, _| {});
 }
@@ -108,9 +99,9 @@ fn queue_open_paths(app: &AppHandle, paths: Vec<String>) {
 
     let payload = serde_json::json!({ "paths": paths });
     if let Some(label) = crate::windows::target_window_label(app) {
-        let _ = app.emit_to(label, "hop-open-paths", payload);
+        let _ = app.emit_to(label, "alhangeul-open-paths", payload);
     } else {
-        let _ = app.emit("hop-open-paths", payload);
+        let _ = app.emit("alhangeul-open-paths", payload);
     }
 }
 
@@ -223,7 +214,10 @@ mod tests {
         let cwd = dir.path().to_string_lossy();
         let paths = document_paths_from_args(
             &[
-                dir.path().join("HOP.exe").to_string_lossy().to_string(),
+                dir.path()
+                    .join("Alhangeul.exe")
+                    .to_string_lossy()
+                    .to_string(),
                 "first.hwp".to_string(),
                 "notes.txt".to_string(),
                 "second.HWPX".to_string(),

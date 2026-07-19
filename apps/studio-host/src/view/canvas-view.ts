@@ -9,7 +9,7 @@ import {
   applyCanvasDisplayLayout,
   inferCanvasDevicePixelRatio,
 } from './canvas-layout';
-import { HopPageRenderer } from './hop-page-renderer';
+import { AlhangeulPageRenderer } from './alhangeul-page-renderer';
 import {
   applyPageOverlayDisplayLayout,
   removeAllPageOverlays,
@@ -19,7 +19,7 @@ import {
 export class CanvasView {
   private virtualScroll: VirtualScroll;
   private canvasPool: CanvasPool;
-  private pageRenderer: HopPageRenderer;
+  private pageRenderer: AlhangeulPageRenderer;
   private viewportManager: ViewportManager;
   private coordinateSystem: CoordinateSystem;
 
@@ -34,7 +34,7 @@ export class CanvasView {
   ) {
     this.virtualScroll = new VirtualScroll();
     this.canvasPool = new CanvasPool();
-    this.pageRenderer = new HopPageRenderer(wasm);
+    this.pageRenderer = new AlhangeulPageRenderer(wasm);
     this.viewportManager = new ViewportManager(eventBus);
     this.coordinateSystem = new CoordinateSystem(this.virtualScroll);
 

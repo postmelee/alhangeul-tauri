@@ -108,7 +108,6 @@ pub struct DocumentSessionManager {
 pub struct AppState {
     pub sessions: Mutex<DocumentSessionManager>,
     pub(crate) pending_open_paths: PendingOpenPaths,
-    pub updater: Mutex<crate::updates::UpdateManagerState>,
 }
 
 impl DocumentSessionManager {
@@ -536,7 +535,7 @@ impl DocumentSession {
             return Ok(ExternalModificationStatus {
                 changed: true,
                 source_path: Some(source_path.to_string_lossy().to_string()),
-                reason: Some("원본 파일이 HOP 밖에서 변경되었습니다".to_string()),
+                reason: Some("원본 파일이 Alhangeul 밖에서 변경되었습니다".to_string()),
             });
         }
 

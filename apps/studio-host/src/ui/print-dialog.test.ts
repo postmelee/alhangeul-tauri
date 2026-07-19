@@ -195,9 +195,9 @@ describe('openPrintDialog', () => {
 
     expect(doc.renderPageSvg).toHaveBeenCalledTimes(1);
 
-    const printRoot = fakeDocument.body.children.find((c) => c.id === 'hop-print-root');
+    const printRoot = fakeDocument.body.children.find((c) => c.id === 'alhangeul-print-root');
     expect(printRoot).toBeDefined();
-    const pageDiv = printRoot!.children.find((c) => c.className === 'hop-print-page');
+    const pageDiv = printRoot!.children.find((c) => c.className === 'alhangeul-print-page');
     expect(pageDiv).toBeDefined();
     expect(pageDiv!.children.length).toBe(0);
 

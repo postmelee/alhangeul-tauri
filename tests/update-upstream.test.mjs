@@ -85,7 +85,7 @@ upstreamScriptTest('honors UPSTREAM_REF for release tag pinning', async () => {
 });
 
 upstreamScriptTest('fails before fetch when the upstream submodule is missing', async () => {
-  const tmp = await mkdtemp(join(tmpdir(), 'hop-update-upstream-'));
+  const tmp = await mkdtemp(join(tmpdir(), 'alhangeul-update-upstream-'));
   try {
     git(['init', '-b', 'main'], { cwd: tmp });
 
@@ -127,18 +127,18 @@ upstreamScriptTest('RUN_CHECKS=1 runs verification commands in the documented or
     const logPath = join(fixture.tmp, 'commands.log');
     await writeFile(
       join(fakeBin, 'pnpm'),
-      `#!/usr/bin/env bash\nprintf 'pnpm %s\\n' "$*" >> "$HOP_COMMAND_LOG"\n`,
+      `#!/usr/bin/env bash\nprintf 'pnpm %s\\n' "$*" >> "$ALHANGEUL_COMMAND_LOG"\n`,
       { mode: 0o755 },
     );
     await writeFile(
       join(fakeBin, 'cargo'),
-      `#!/usr/bin/env bash\nprintf 'cargo %s\\n' "$*" >> "$HOP_COMMAND_LOG"\n`,
+      `#!/usr/bin/env bash\nprintf 'cargo %s\\n' "$*" >> "$ALHANGEUL_COMMAND_LOG"\n`,
       { mode: 0o755 },
     );
 
     const result = runUpdateScript(fixture.parent, {
       RUN_CHECKS: '1',
-      HOP_COMMAND_LOG: logPath,
+      ALHANGEUL_COMMAND_LOG: logPath,
       PATH: `${fakeBin}:${process.env.PATH}`,
     });
 
@@ -148,7 +148,7 @@ upstreamScriptTest('RUN_CHECKS=1 runs verification commands in the documented or
       'pnpm run build:studio',
       'cargo test',
       'cargo clippy -- -D warnings',
-      'pnpm --filter hop-desktop tauri build --debug --bundles app',
+      'pnpm --filter alhangeul-desktop tauri build --debug --bundles app',
     ]);
   } finally {
     await cleanup(fixture.tmp);
@@ -156,7 +156,7 @@ upstreamScriptTest('RUN_CHECKS=1 runs verification commands in the documented or
 });
 
 async function createFixture() {
-  const tmp = await mkdtemp(join(tmpdir(), 'hop-update-upstream-'));
+  const tmp = await mkdtemp(join(tmpdir(), 'alhangeul-update-upstream-'));
   const upstreamWork = join(tmp, 'upstream-work');
   const upstreamBare = join(tmp, 'upstream.git');
   const parent = join(tmp, 'parent');

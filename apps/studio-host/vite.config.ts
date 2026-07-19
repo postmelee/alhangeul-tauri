@@ -2,22 +2,22 @@ import { defineConfig, normalizePath } from 'vite';
 import { basename, dirname, relative, resolve } from 'node:path';
 import { copyFileSync, createReadStream, existsSync, mkdirSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import type { Plugin } from 'vite';
-import { createHopOverrides } from './hop-overrides';
+import { createAlhangeulOverrides } from './alhangeul-overrides';
 
 const desktopConfig = JSON.parse(
   readFileSync(resolve(__dirname, '../desktop/src-tauri/tauri.conf.json'), 'utf-8'),
 );
 const upstreamStudioDir = resolve(__dirname, '../../third_party/rhwp/rhwp-studio');
 const upstreamSrc = resolve(__dirname, '../../third_party/rhwp/rhwp-studio/src');
-const hopSrc = resolve(__dirname, 'src');
+const alhangeulSrc = resolve(__dirname, 'src');
 const rhwpWasmModule = normalizePath(resolve(__dirname, 'vendor/rhwp-core/rhwp.js'));
 const rhwpWasmDir = dirname(rhwpWasmModule);
 const rhwpWasmPackage = JSON.parse(readFileSync(resolve(rhwpWasmDir, 'package.json'), 'utf-8'));
 const fontAssetsDir = resolve(__dirname, '../../assets/fonts');
 
-function hopFontAssets(): Plugin {
+function alhangeulFontAssets(): Plugin {
   return {
-    name: 'hop-font-assets',
+    name: 'alhangeul-font-assets',
     configureServer(server) {
       server.middlewares.use('/fonts', (req, res, next) => {
         const fontName = basename(decodePath(req.url?.split('?')[0] ?? ''));
@@ -60,14 +60,14 @@ function decodePath(path: string): string {
 
 export default defineConfig({
   base: './',
-  plugins: [hopFontAssets()],
+  plugins: [alhangeulFontAssets()],
   define: {
     __APP_VERSION__: JSON.stringify(rhwpWasmPackage.version),
-    __HOP_VERSION__: JSON.stringify(desktopConfig.version),
+    __ALHANGEUL_VERSION__: JSON.stringify(desktopConfig.version),
   },
   resolve: {
     alias: [
-      ...createHopOverrides(hopSrc),
+      ...createAlhangeulOverrides(alhangeulSrc),
       { find: '@wasm/rhwp.js', replacement: rhwpWasmModule },
       { find: '@upstream', replacement: upstreamSrc },
       { find: '@', replacement: upstreamSrc },
