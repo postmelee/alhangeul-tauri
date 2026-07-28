@@ -54,6 +54,20 @@ jobs:
           ref: ${{ inputs.build_ref || github.sha }}
           submodules: true
 
+      - name: Verify checked out commit
+        shell: bash
+        env:
+          EXPECTED_BUILD_REF: ${{ inputs.build_ref || github.sha }}
+        run: |
+          set -euo pipefail
+          expected_sha="$(git rev-parse "${EXPECTED_BUILD_REF}^{commit}")"
+          actual_sha="$(git rev-parse HEAD)"
+          if [[ "$actual_sha" != "$expected_sha" ]]; then
+            echo "Checked out commit mismatch: $actual_sha != $expected_sha" >&2
+            exit 1
+          fi
+          echo "Building commit: $actual_sha"
+
       - name: Install Linux dependencies
         if: runner.os == 'Linux'
         shell: bash
@@ -117,6 +131,14 @@ jobs:
         if: inputs.run_tests
         run: pnpm run check:product-boundary
 
+      - name: Verify rhwp pin
+        if: inputs.run_tests
+        run: pnpm run check:rhwp-pin
+
+      - name: Test automation contracts
+        if: inputs.run_tests
+        run: pnpm run test:automation
+
       - name: Test upstream integration
         if: inputs.run_tests
         run: pnpm run test:upstream
@@ -128,6 +150,16 @@ jobs:
       - name: Build Tauri bundles
         shell: bash
         run: pnpm tauri build --target "${{ matrix.target }}" ${{ matrix.bundle_args }}
+
+      - name: Verify bundle artifact
+        shell: bash
+        env:
+          BUNDLE_ROOT: apps/desktop/src-tauri/target/${{ matrix.target }}/release/bundle
+        run: |
+          pnpm run check:desktop-artifacts -- \
+            --platform "${{ matrix.name }}" \
+            --root "$BUNDLE_ROOT" \
+            --write-inventory "$BUNDLE_ROOT/alhangeul-artifact-inventory.json"
 
       - name: Upload bundle artifact
         uses: actions/upload-artifact@v7
