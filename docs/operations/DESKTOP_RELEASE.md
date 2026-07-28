@@ -2,6 +2,12 @@
 
 Alhangeul은 아직 공식 설치 파일이나 공개 릴리스를 제공하지 않는다. `.github/workflows/alhangeul-desktop.yml`은 Windows/Linux native build 결과를 수동 검증하고 14일 동안 Actions artifact로 보존하지만 GitHub Release를 생성하지 않는다.
 
+## 제품 version 기준
+
+현재 저장소의 제품 source version은 M010에서 승인한 독립 Alhangeul 기준선 `0.1.0`이다. 초기 코드의 `0.3.1`은 이전 제품의 release 계보이며 아래 Task #5의 `0.3.1` artifact는 version 재정렬 전에 생성한 native build smoke 증적이다. 둘 다 Alhangeul의 공식 release 계보로 간주하지 않는다.
+
+root `package.json`을 source version의 기준으로 삼고 `pnpm run check:product-version`이 desktop package, Cargo manifest·lock과 Tauri 설정을 함께 검증한다. `0.1.0` exact-SHA native artifact 검증은 후속 단계이며, 아직 `0.1.0` tag나 GitHub Release를 만들지 않았다. 공식 release, 고정 다운로드 경로와 updater 활성화는 별도 Issue와 승인이 필요하다.
+
 ## 현재 workflow 범위
 
 `Alhangeul Desktop Artifact Build`는 `workflow_dispatch`로만 정의되어 있다.
@@ -16,7 +22,7 @@ workflow는 다음 작업만 수행한다.
 
 1. submodule을 포함한 선택 commit checkout
 2. Node, pnpm, Rust와 Linux Tauri 의존성 준비
-3. 제품 경계, `rhwp` pin, automation, upstream과 studio 검증
+3. 제품 경계·version, `rhwp` pin, automation, upstream과 studio 검증
 4. Tauri bundle 생성
 5. 필수 installer 종류·크기·SHA-256 inventory 검증
 6. inventory를 포함한 Actions artifact 업로드
@@ -84,6 +90,7 @@ GitHub API가 반환한 Actions artifact archive metadata는 다음과 같다. �
 ```sh
 pnpm install --frozen-lockfile
 pnpm run check:product-boundary
+pnpm run check:product-version
 pnpm run check:rhwp-pin
 pnpm run test:automation
 pnpm run test:upstream

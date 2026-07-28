@@ -2,7 +2,7 @@
 
 Alhangeul은 Windows와 Linux에서 HWP/HWPX 문서를 열고 편집하기 위한 Tauri 기반 오픈소스 데스크톱 앱입니다. 문서 파싱과 렌더링은 [rhwp](https://github.com/edwardkim/rhwp)를 사용하고, 이 저장소는 데스크톱 셸과 파일·창·인쇄 같은 제품 통합을 소유합니다.
 
-> 현재 독립 제품 전환과 배포 기반을 준비하는 개발 단계입니다. 공식 설치 파일이나 공개 릴리스는 아직 제공하지 않습니다.
+> 현재 소스의 제품 버전은 독립 Alhangeul의 M010 기준선인 `0.1.0`입니다. 공식 설치 파일, 태그나 공개 릴리스는 아직 제공하지 않습니다.
 
 ## 현재 기능
 
@@ -21,7 +21,7 @@ HWPX 저장, autosave/recovery와 외부 파일 변경 감지는 아직 지원�
 - Linux x64
 - Linux arm64
 
-실제 native build와 배포물 검증은 후속 CI 작업에서 진행합니다. 현재 저장소의 GitHub Actions workflow는 비활성 상태를 유지하며 자동 배포하지 않습니다.
+GitHub Actions는 활성 상태이며 CI와 Windows/Linux native artifact workflow는 수동 `workflow_dispatch` 전용입니다. exact commit의 native build smoke는 검증했지만 14일 보존 Actions artifact는 공식 설치 파일이나 공개 릴리스가 아니며, workflow는 자동 배포하지 않습니다.
 
 ## 개발 시작
 
@@ -32,6 +32,7 @@ git submodule update --init --recursive
 corepack enable
 pnpm install --frozen-lockfile
 pnpm run check:product-boundary
+pnpm run check:product-version
 pnpm run test:upstream
 pnpm run test:studio
 pnpm run build:studio

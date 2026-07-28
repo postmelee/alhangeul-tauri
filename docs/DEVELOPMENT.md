@@ -70,6 +70,7 @@ Alhangeul은 `rhwp`의 문서 엔진과 웹 editor를 기반으로 다음 제품
 - HWPX 문서는 열 수 있지만 저장은 지원하지 않는다.
 - autosave/recovery와 외부 파일 변경 감지는 아직 없다.
 - 큰 문서에서는 WASM mirror를 거치는 구간이 남아 있다.
+- 현재 제품 source version은 독립 Alhangeul의 M010 기준선인 `0.1.0`이며, 공식 release나 tag를 뜻하지 않는다.
 - 공식 설치 파일, 서명, 패키지 게시와 자동 업데이트는 준비되지 않았다.
 - GitHub Actions는 활성 상태지만 CI와 Windows/Linux native artifact workflow는 수동 `workflow_dispatch` 전용이다. Actions artifact는 build smoke 결과이며 공식 설치 파일이나 공개 release가 아니다.
 
@@ -79,8 +80,9 @@ Alhangeul은 `rhwp`의 문서 엔진과 웹 editor를 기반으로 다음 제품
 
 ```sh
 pnpm install --frozen-lockfile
-pnpm run check:rhwp-pin
 pnpm run check:product-boundary
+pnpm run check:product-version
+pnpm run check:rhwp-pin
 pnpm run test:automation
 pnpm run test:upstream
 pnpm run test:studio
