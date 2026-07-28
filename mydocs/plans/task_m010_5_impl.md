@@ -191,6 +191,7 @@ repository 외부 상태:
 
 - `.github/workflows/ci.yml`
 - `.github/workflows/alhangeul-desktop.yml`
+- `apps/desktop/src-tauri/src/linux_runtime.rs`
 - `apps/desktop/src-tauri/src/state.rs`
 - `scripts/verify-desktop-artifacts.mjs`
 - `tests/desktop-artifacts.test.mjs`
@@ -264,7 +265,7 @@ gh workflow run alhangeul-desktop.yml \
   - artifact 세 개가 각각 만료되지 않은 상태로 존재
 - 실패 시 `gh run view <id> --log-failed`를 먼저 수집하고 다음처럼 처리한다.
   - workflow·runner tool 설정·검증기 문제이면 같은 Stage 범위에서 최소 보정
-  - 아래 첫 canary의 승인된 native API signature adapter 보정만 예외로 허용
+  - 아래 첫 canary의 승인된 native API signature adapter 보정과 두 번째 canary의 동작 불변 Linux Clippy 보정만 예외로 허용
   - 그 밖의 제품 기능, 새 native 동작, runner 교체, matrix 축소가 필요하면 진행을 멈추고 계획 변경 승인 요청
   - 근거 없이 재실행하지 않고 변경된 commit마다 다시 exact SHA를 확인
 - 첫 canary run [30353284044](https://github.com/postmelee/alhangeul-tauri/actions/runs/30353284044)는 Stage 2 SHA `80421cfdf61f02ead385c8560c5357d918fe45a9`에서 다음 사실을 확인했다.
@@ -282,11 +283,21 @@ gh workflow run alhangeul-desktop.yml \
 Task #5 [Stage 3.1]: rhwp v0.8.2 split paragraph adapter 호환성 보정
 ```
 
+- 두 번째 canary run [30354133936](https://github.com/postmelee/alhangeul-tauri/actions/runs/30354133936)은 Stage 3.1 SHA `ab312e95b7dca05f19b87e1da44c4743e410157e`에서 다음 사실을 확인했다.
+  - product boundary, pin, automation, upstream, Studio test/build와 Ubuntu `cargo test` 성공
+  - Ubuntu `cargo clippy -- -D warnings`에서 `apps/desktop/src-tauri/src/linux_runtime.rs:91`의 `clippy::needless_return` 발생
+  - 지적된 `return;`은 `apply_appimage_runtime_fixes_with_host_caches` 함수의 마지막 분기 안 마지막 문장이며, 이후 실행할 문장이 없어 제거 전후 제어 흐름이 같다.
+- 이 실패의 계획 보정은 `apps/desktop/src-tauri/src/linux_runtime.rs`에서 해당 `return;` 한 줄을 제거하는 것으로 제한한다. 주변 분기 재구성, Linux runtime 동작 변경, lint 허용 속성 추가는 금지한다.
+- 보정 뒤 로컬 platform-neutral suite와 Rust format을 통과시키고 다음 하위 단계 commit으로 `publish/task5`를 fast-forward한 뒤 CI를 먼저 재실행한다. 현재 macOS host에서는 Linux 전용 module의 Clippy 성공을 대신 주장하지 않고 remote Ubuntu 결과로 판정한다.
+
+```text
+Task #5 [Stage 3.2]: Linux runtime clippy 호환성 보정
+```
+
 - CI가 성공하기 전에는 native artifact workflow를 dispatch하지 않는다.
 - remote runner는 committed ref만 실행할 수 있으므로, Stage 3의 CI 보정은 일반 단계 묶음 커밋의 명시적 예외로 다음 하위 단계 메시지를 사용한다.
 
 ```text
-Task #5 [Stage 3.2]: <추가 runner 보정 내용>
 Task #5 [Stage 3.3]: <추가 runner 보정 내용>
 ```
 
@@ -572,6 +583,7 @@ Task #5 Stage 5: Actions 수용 기준 통합 검증
 - **Windows shell/path 차이**: artifact 검증 자체는 Node path API를 사용하고 workflow shell 문자열을 최소화한다. Windows fixture는 실제 Windows matrix의 `run_tests`에서도 실행한다.
 - **Linux arm64 가용성**: runner 자체가 제공되지 않거나 dependency가 달라 matrix 교체가 필요하면 Issue 범위를 자동 변경하지 않고 승인 요청한다.
 - **Task #3 native adapter 누락**: `rhwp v0.8.2` pin 뒤 Studio·platform-neutral 검증은 통과했지만 Ubuntu compile이 새 `restore_meta` 인자를 요구했다. upstream이 지정한 일반 경로 `None` 한 줄과 회귀 검사만 허용하고 remote CI로 실제 compile을 확인한다.
+- **Linux 전용 Clippy drift**: Stage 3.1의 Ubuntu `cargo test`는 성공했지만 함수 끝의 명시적 `return;`이 `-D warnings`에서 거부됐다. 해당 한 줄만 제거하고 local format과 remote Ubuntu Clippy로 동작 불변·lint 해소를 확인한다.
 - **artifact 위장 또는 stale file**: build 후 바로 필수 종류·0바이트·checksum을 검사하고 inventory를 같은 Actions artifact에 포함한다. 다운로드 후 inventory와 파일을 다시 비교한다.
 - **Pages와 배포의 우발 실행**: 대상 workflow allowlist만 dispatch하고 Pages baseline을 비교한다. release·deploy·secret 참조는 static test에서 거부한다.
 - **macOS 검증 혼입**: 현재 host에서는 platform-neutral test만 실행하며 native 성공 근거를 Windows/Linux Actions로 한정한다.
@@ -585,6 +597,7 @@ Task #5 Stage 5: Actions 수용 기준 통합 검증
 - Stage 3 시작 승인이 repository Actions 활성화, `publish/task5` 최초 push, 두 workflow dispatch와 hosted runner 사용을 포함하는 것으로 승인한다.
 - remote runner 보정에 한해 `[Stage 3.N]` commit을 먼저 push하고 최종 Stage 3 보고서에서 묶는 순서 예외를 승인한다.
 - 첫 canary run 30353284044가 발견한 `split_paragraph_native(..., None)` 한 줄과 `tests/rhwp-baseline.test.mjs` 회귀 검사만 Stage 3 범위에 추가하는 계획 보정을 승인한다.
+- 두 번째 canary run 30354133936이 발견한 `linux_runtime.rs` 함수 끝의 `return;` 한 줄 제거만 Stage 3 범위에 추가하는 계획 보정을 승인한다.
 - 중단 시 Actions를 초기 비활성 상태로 복구하고 remote branch 삭제는 별도 승인 또는 merge cleanup으로 넘기는 rollback 절차를 승인한다.
 - 현재 macOS host에서 native Rust test·clippy·Tauri build를 실행하지 않고 Windows/Linux Actions 결과만 native 근거로 사용하는 검증 경계를 승인한다.
 - Stage 4에서 실제 canary 성공 뒤에만 `DESKTOP_RELEASE.md`와 `DEVELOPMENT.md`를 갱신하는 문서 경계를 승인한다.
