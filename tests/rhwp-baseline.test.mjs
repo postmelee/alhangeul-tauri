@@ -87,6 +87,23 @@ test('Alhangeul defers editor engine and table command behavior to upstream rhwp
   }
 });
 
+test('Alhangeul native split adapter keeps the normal Enter metadata path', async () => {
+  const stateSource = await readFile(
+    join(repoRoot, 'apps/desktop/src-tauri/src/state.rs'),
+    'utf8',
+  );
+  const splitStart = stateSource.indexOf('"splitParagraph" =>');
+  const splitEnd = stateSource.indexOf('"mergeParagraph" =>', splitStart);
+  assert.notEqual(splitStart, -1, 'splitParagraph mutation adapter should exist');
+  assert.ok(splitEnd > splitStart, 'splitParagraph adapter should precede mergeParagraph');
+
+  const splitBlock = stateSource.slice(splitStart, splitEnd);
+  assert.match(
+    splitBlock,
+    /\.split_paragraph_native\(\s*sec as usize,\s*para as usize,\s*char_offset as usize,\s*None,\s*\)/,
+  );
+});
+
 test('Alhangeul product info keeps the upstream rhwp version and adds Alhangeul version separately', async () => {
   const viteConfig = await readFile(join(repoRoot, 'apps/studio-host/vite.config.ts'), 'utf8');
   const aboutDialog = await readFile(join(repoRoot, 'apps/studio-host/src/ui/about-dialog.ts'), 'utf8');
