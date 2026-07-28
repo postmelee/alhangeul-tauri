@@ -135,6 +135,9 @@ async function walk(rootPath, directory, excludedPath, files) {
       );
     }
     if (entry.isDirectory()) {
+      if (isTauriAppDirIntermediate(rootPath, absolutePath)) {
+        continue;
+      }
       await walk(rootPath, absolutePath, excludedPath, files);
       continue;
     }
@@ -153,6 +156,16 @@ async function walk(rootPath, directory, excludedPath, files) {
       sha256: await sha256File(absolutePath),
     });
   }
+}
+
+function isTauriAppDirIntermediate(rootPath, absolutePath) {
+  const segments = toRelativePath(rootPath, absolutePath).split('/');
+
+  return (
+    segments.length === 2
+    && segments[0] === 'appimage'
+    && segments[1].endsWith('.AppDir')
+  );
 }
 
 function assertArtifactContract(platform, requiredKinds, files) {

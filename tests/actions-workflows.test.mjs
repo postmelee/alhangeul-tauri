@@ -88,6 +88,18 @@ test('desktop workflow의 Windows/Linux matrix가 exact target을 유지한다',
   );
 });
 
+test('desktop workflow는 checkout 전에 Git LF byte를 command scope로 고정한다', () => {
+  const environment = getSectionAssignments(desktopWorkflow, 'env');
+
+  assert.equal(environment.get('GIT_CONFIG_COUNT'), '"1"');
+  assert.equal(environment.get('GIT_CONFIG_KEY_0'), 'core.autocrlf');
+  assert.equal(environment.get('GIT_CONFIG_VALUE_0'), '"false"');
+  assert.ok(
+    desktopWorkflow.indexOf('GIT_CONFIG_COUNT:') <
+      desktopWorkflow.indexOf('- name: Checkout'),
+  );
+});
+
 test('desktop workflow는 checkout commit을 검증하고 pretest를 순서대로 실행한다', () => {
   assert.match(
     desktopWorkflow,

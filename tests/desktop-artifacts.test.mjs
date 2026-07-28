@@ -79,6 +79,37 @@ for (const [platform, fixtureFiles] of Object.entries(platformFixtures)) {
   });
 }
 
+test('Linux x64는 Tauri AppDir 중간 트리만 inventory에서 제외한다', async () => {
+  const fixture = await createFixture({
+    ...platformFixtures['linux-x64'],
+    'appimage/Alhangeul.AppDir/.DirIcon': 'intermediate icon',
+    'appimage/Alhangeul.AppDir/usr/bin/alhangeul': 'intermediate binary',
+    'metadata/Preview.AppDir/keep.txt': 'must remain',
+  });
+  try {
+    const inventory = await verifyDesktopArtifacts({
+      platform: 'linux-x64',
+      root: fixture.root,
+    });
+
+    assert.ok(
+      inventory.files.every(
+        (file) => !file.path.startsWith('appimage/Alhangeul.AppDir/'),
+      ),
+    );
+    assert.ok(
+      inventory.files.some(
+        (file) => file.path === 'metadata/Preview.AppDir/keep.txt',
+      ),
+    );
+    assert.ok(inventory.files.some((file) => file.kind === 'deb'));
+    assert.ok(inventory.files.some((file) => file.kind === 'rpm'));
+    assert.ok(inventory.files.some((file) => file.kind === 'appimage'));
+  } finally {
+    await cleanup(fixture.tmp);
+  }
+});
+
 test('Windows x64의 NSIS bundle 누락을 거부한다', async () => {
   const fixture = await createFixture({
     'msi/Alhangeul_0.3.1_x64_en-US.msi': 'windows msi',
