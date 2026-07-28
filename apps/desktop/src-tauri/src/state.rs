@@ -381,7 +381,12 @@ impl DocumentSessionManager {
                 Some(parse_json_string(
                     session
                         .ensure_core_loaded()?
-                        .split_paragraph_native(sec as usize, para as usize, char_offset as usize)
+                        .split_paragraph_native(
+                            sec as usize,
+                            para as usize,
+                            char_offset as usize,
+                            None,
+                        )
                         .map_err(|e| e.to_string())?,
                 )?)
             }
