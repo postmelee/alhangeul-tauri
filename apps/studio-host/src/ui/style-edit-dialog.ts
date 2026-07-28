@@ -1,10 +1,13 @@
 import type { WasmBridge } from '@/core/wasm-bridge';
 import type { EventBus } from '@/core/event-bus';
-import type { CharProperties } from '@/core/types';
+import type { CharProperties, ParaProperties } from '@/core/types';
+import type { CommandServices } from '@/command/types';
 import { resolveCharShapeFontMods } from '@/core/font-application';
 import { ModalDialog } from './dialog';
 import { CharShapeDialog } from '@upstream/ui/char-shape-dialog';
 import { ParaShapeDialog } from '@upstream/ui/para-shape-dialog';
+
+export const MAX_STYLE_NAME_LEN = 250;
 
 interface StyleInfo {
   id: number;
@@ -12,6 +15,11 @@ interface StyleInfo {
   englishName: string;
   type: number;
   nextStyleId: number;
+}
+
+interface StyleBaseInfo {
+  charProps?: CharProperties;
+  paraProps?: ParaProperties;
 }
 
 export class StyleEditDialog extends ModalDialog {
@@ -26,6 +34,7 @@ export class StyleEditDialog extends ModalDialog {
   private pendingCharMods: Promise<void> | null = null;
   private addMode: boolean;
   private styleInfo: StyleInfo;
+  private baseInfo: StyleBaseInfo;
 
   onSave?: () => void;
   onClose?: () => void;
@@ -35,10 +44,13 @@ export class StyleEditDialog extends ModalDialog {
     private eventBus: EventBus,
     mode: 'add' | 'edit',
     styleInfo?: StyleInfo,
+    baseInfo?: StyleBaseInfo,
+    private services?: CommandServices,
   ) {
     super(mode === 'add' ? '스타일 추가하기' : '스타일 편집하기', 480);
     this.addMode = mode === 'add';
     this.styleInfo = styleInfo ?? { id: -1, name: '새 스타일', englishName: '', type: 0, nextStyleId: 0 };
+    this.baseInfo = baseInfo ?? {};
   }
 
   protected createBody(): HTMLElement {
@@ -55,6 +67,7 @@ export class StyleEditDialog extends ModalDialog {
     nameLabel.textContent = '스타일 이름(N):';
     this.nameInput = document.createElement('input');
     this.nameInput.className = 'se-field-input';
+    this.nameInput.maxLength = MAX_STYLE_NAME_LEN;
     this.nameInput.value = this.styleInfo.name;
     nameGroup.appendChild(nameLabel);
     nameGroup.appendChild(this.nameInput);
@@ -66,6 +79,7 @@ export class StyleEditDialog extends ModalDialog {
     enLabel.textContent = '영문 이름(E):';
     this.enNameInput = document.createElement('input');
     this.enNameInput.className = 'se-field-input';
+    this.enNameInput.maxLength = MAX_STYLE_NAME_LEN;
     this.enNameInput.value = this.styleInfo.englishName;
     enGroup.appendChild(enLabel);
     enGroup.appendChild(this.enNameInput);
@@ -186,7 +200,7 @@ export class StyleEditDialog extends ModalDialog {
       dialog.onApply = (mods: object) => {
         this.paraModsJson = JSON.stringify(mods);
       };
-      dialog.show({});
+      dialog.show(this.baseInfo.paraProps ?? {});
       return;
     }
     try {
@@ -208,7 +222,7 @@ export class StyleEditDialog extends ModalDialog {
     };
 
     if (this.addMode && this.styleInfo.id < 0) {
-      dialog.show({});
+      dialog.show(this.baseInfo.charProps ?? {});
       return;
     }
 
@@ -236,22 +250,54 @@ export class StyleEditDialog extends ModalDialog {
       alert('스타일 이름을 입력하세요.');
       return false;
     }
+    if (name.length > MAX_STYLE_NAME_LEN || englishName.length > MAX_STYLE_NAME_LEN) {
+      alert(`스타일 이름/영문 이름은 ${MAX_STYLE_NAME_LEN}자를 넘을 수 없습니다.`);
+      return false;
+    }
 
-    try {
+    const apply = (targetWasm: WasmBridge): void => {
       if (this.addMode) {
-        const newId = this.wasm.createStyle(JSON.stringify({
+        const baseParaShapeId = this.baseInfo.paraProps?.paraShapeId;
+        const baseCharShapeId = this.baseInfo.charProps?.charShapeId;
+        const newId = targetWasm.createStyle(JSON.stringify({
           name, englishName, type: styleType, nextStyleId,
+          ...(typeof baseParaShapeId === 'number' ? { baseParaShapeId } : {}),
+          ...(typeof baseCharShapeId === 'number' ? { baseCharShapeId } : {}),
         }));
+        if (!(newId >= 0)) {
+          throw new Error('[StyleEditDialog] 스타일 생성 실패');
+        }
         if (this.charModsJson !== '{}' || this.paraModsJson !== '{}') {
-          this.wasm.updateStyleShapes(newId, this.charModsJson, this.paraModsJson);
+          targetWasm.updateStyleShapes(newId, this.charModsJson, this.paraModsJson);
         }
       } else {
-        this.wasm.updateStyle(this.styleInfo.id, JSON.stringify({
+        targetWasm.updateStyle(this.styleInfo.id, JSON.stringify({
           name, englishName, nextStyleId,
         }));
         if (this.charModsJson !== '{}' || this.paraModsJson !== '{}') {
-          this.wasm.updateStyleShapes(this.styleInfo.id, this.charModsJson, this.paraModsJson);
+          targetWasm.updateStyleShapes(
+            this.styleInfo.id,
+            this.charModsJson,
+            this.paraModsJson,
+          );
         }
+      }
+    };
+
+    try {
+      const inputHandler = this.services?.getInputHandler();
+      if (inputHandler) {
+        inputHandler.executeOperation({
+          kind: 'snapshot',
+          operationType: this.addMode ? 'createStyle' : 'updateStyle',
+          operation: (targetWasm) => {
+            apply(targetWasm);
+            return inputHandler.getPosition();
+          },
+        });
+      } else {
+        apply(this.wasm);
+        this.eventBus.emit('document-changed');
       }
       this.onSave?.();
     } catch (err) {

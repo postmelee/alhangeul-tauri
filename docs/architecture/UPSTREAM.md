@@ -5,25 +5,27 @@ Alhangeul의 유일한 지속 upstream은 [`edwardkim/rhwp`](https://github.com/
 ## 현재 고정 상태
 
 - upstream URL: `https://github.com/edwardkim/rhwp.git`
-- 현재 submodule 경로: `third_party/rhwp`
-- 현재 resolved commit: `b3e16ef212af81ef37d973ddb86d6816d3804642`
-- 해당 release: `v0.7.13`
+- Stable release tag: `v0.8.2`
+- resolved commit: `9b16aa9e23f476e2b335d7c029fc9f24a199d63c`
+- 읽기 전용 source submodule: `third_party/rhwp`
+- 기계 검증 가능한 출처 lock: `rhwp-core.lock`
 - bundled WASM: `apps/studio-host/vendor/rhwp-core`
 - native Rust lockfile: `apps/desktop/src-tauri/Cargo.lock`
+- WASM 생성 도구: `wasm-pack 0.15.0`
+- WASM 생성 profile: `wasm-pack build --target web --release`
 
-현재 구조는 초기 저장소에서 이어진 읽기 전용 submodule 고정이다. 이 상태를 안정적인 독립 release pin 운영의 완성으로 간주하지 않는다.
+`rhwp-core.lock`은 repository, ref kind, release tag, resolved commit, upstream `Cargo.lock` SHA-256, WASM 도구·profile과 관리 artifact의 경로·크기·SHA-256을 기록한다. 관리 artifact는 `package.json`, JavaScript·TypeScript binding, WASM binary와 type declaration, upstream `LICENSE`다.
 
-## 목표 고정 정책
+## Stable pin 정책
 
-후속 의존성 작업은 Stable `rhwp` release tag와 resolved commit을 함께 기록해야 한다. 같은 release 기준으로 다음 세 경계를 원자적으로 맞춘다.
+의존성 갱신은 Stable `rhwp` release tag와 그 tag가 가리키는 resolved commit을 함께 입력해야 한다. 같은 release 기준으로 다음 경계를 원자적으로 맞춘다.
 
-1. Rust core dependency와 Cargo lockfile
-2. studio host가 사용하는 bundled WASM package
-3. 출처·검증 정보를 기록하는 dependency lock 문서
+1. `third_party/rhwp` source submodule
+2. native Rust dependency를 고정하는 `apps/desktop/src-tauri/Cargo.lock`
+3. 같은 source commit에서 새로 생성한 bundled WASM package
+4. 위 출처와 artifact hash를 기록하는 `rhwp-core.lock`
 
-branch나 이동 가능한 floating ref는 Stable 기준으로 사용하지 않는다. release tag가 없는 preview를 시험할 때만 resolved commit을 명시한 별도 작업 범위를 사용한다.
-
-현재 submodule을 위 구조로 바꾸는 작업은 이번 제품 독립화 단계에 포함하지 않는다. 전용 후속 Issue에서 dependency layout, lock 문서, 갱신 script와 rollback 기준을 함께 설계한다.
+branch, 이동 가능한 floating ref, tag 없이 전달된 commit은 Stable 갱신 입력으로 사용하지 않는다. preview 검증이 필요하면 Stable pin을 바꾸는 흐름과 분리된 별도 Issue에서 범위와 복구 기준을 먼저 정한다.
 
 ## 코드 소유권
 
@@ -35,25 +37,39 @@ branch나 이동 가능한 floating ref는 Stable 기준으로 사용하지 않�
 
 studio host는 Vite alias로 upstream `rhwp-studio`를 가져오며 제품이 반드시 소유해야 하는 파일만 같은 import 경로에서 대체한다. engine API나 renderer bug는 먼저 upstream에서 해결하고, 데스크톱 통합 차이는 Alhangeul adapter에 둔다.
 
-## 현재 갱신 script 경계
+## 갱신 자동화 경계
 
-`scripts/update-upstream.sh`는 현재 submodule pointer와 bundled WASM/native lockfile 정합성을 확인하기 위한 전환기 script다. 일반 기능 작업에서는 실행하지 않는다.
+`scripts/update-upstream.sh`는 승인된 의존성 갱신 작업에서만 실행한다. 입력은 Stable tag와 resolved commit이며, 둘이 같은 commit을 가리키는지 fetch 후 검증한다.
 
-승인된 의존성 갱신 작업에서 release tag 또는 commit을 명시한다.
+현재 pin을 재현하는 명령은 다음과 같다.
 
 ```sh
-UPSTREAM_REF=v0.7.13 RUN_CHECKS=1 scripts/update-upstream.sh
+scripts/update-upstream.sh \
+  --tag v0.8.2 \
+  --commit 9b16aa9e23f476e2b335d7c029fc9f24a199d63c \
+  --run-checks
 ```
 
-기본 branch 갱신 기능은 기존 script 호환성을 위해 남아 있지만 Stable 고정 절차로 사용하지 않는다. release pin 전환 작업에서는 floating 기본값을 제거하거나 preview 전용 흐름으로 분리한다.
+script는 dirty upstream source와 origin 불일치를 먼저 거부하고, source checkout → native Cargo lock 갱신 → 임시 경로의 fresh WASM build → managed artifact 동기화 → `rhwp-core.lock` 작성 → read-only 검증 순서로 처리한다. lock writer는 갱신 흐름에서만 사용하고 `pnpm run check:rhwp-pin`의 verifier는 파일을 수정하지 않는다.
 
-## 갱신 수용 기준
+실패 시 자동 reset을 하지 않으며 시작 commit과 실패 단계를 출력한다. 운영자는 `git status --short`와 `git diff --submodule=log`로 범위를 확인한 뒤 [DEVELOPMENT.md](../DEVELOPMENT.md)의 명시적 경로 rollback 절차를 사용한다.
+
+## 플랫폼 중립 수용 기준
 
 - tag와 resolved commit 출처가 기록되어 있다.
-- Rust core, bundled WASM과 lockfile이 같은 `rhwp` release를 가리킨다.
+- source submodule, native Cargo lock, bundled WASM과 `rhwp-core.lock`이 같은 `rhwp` release를 가리킨다.
 - `pnpm install --frozen-lockfile`이 통과한다.
+- `pnpm run check:rhwp-pin`, `pnpm run check:product-boundary`가 통과한다.
 - `pnpm run test:upstream`, `pnpm run test:studio`, `pnpm run build:studio`가 통과한다.
-- Windows/Linux에서 Rust test·clippy와 Tauri native smoke를 수행한다.
-- 파일 열기, HWP 저장, PDF export, 인쇄, drag/drop과 다중 창 동작을 지원 플랫폼에서 확인한다.
+- offline Cargo metadata와 Rust format 검사가 통과한다.
 
-갱신 실패 시 새 pin을 게시하지 않고 직전 검증 완료 commit을 유지한다.
+Windows/Linux native test·clippy, Tauri smoke, packaging과 배포는 각각 승인된 후속 플랫폼 작업에서 검증한다. 이 플랫폼 중립 수용 결과만으로 native 배포 준비가 완료되었다고 판단하지 않는다.
+
+## `v0.8.2` known issue 분류
+
+upstream `v0.8.2` changelog에는 다음 두 Studio E2E 실패가 known issue로 기록되어 있다.
+
+- `print-pdf-issue3126`: PDF 안내 modal assertion 실패. 인쇄 surface 자체는 수동 확인되었으나 원인은 아직 확정되지 않았다. upstream #3450에서 추적한다.
+- `issue-2214`: 페이지 로컬 repaint 계약 실패가 `v0.8.1`부터 이어진다. 회귀 여부는 확정되지 않았으며 upstream #3412에서 추적한다.
+
+known issue는 성공으로 간주하는 예외 목록이 아니다. pinned source commit에서 같은 upstream E2E와 같은 재현 조건·실패 지점이 확인될 때만 upstream known issue로 분류한다. Alhangeul adapter test/build에서만 발생하거나 실패 지점이 달라진 경우에는 Alhangeul 회귀 후보로 두고 원인을 조사한다. 이 작업에서는 upstream source를 backport하거나 두 known issue를 임의로 보정하지 않는다.
