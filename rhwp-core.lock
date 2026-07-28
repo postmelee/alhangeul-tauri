@@ -1,0 +1,38 @@
+lock_version = 1
+rhwp_repo = "https://github.com/edwardkim/rhwp.git"
+rhwp_ref_kind = "release-tag"
+rhwp_release_tag = "v0.8.2"
+rhwp_commit = "9b16aa9e23f476e2b335d7c029fc9f24a199d63c"
+source_cargo_lock_sha256 = "64ff4041c1874c01c7a901b28df2639082836ced44df392cd37b3227d4772279"
+wasm_pack_version = "0.15.0"
+wasm_build_profile = "wasm-pack build --target web --release"
+
+[[artifacts]]
+path = "apps/studio-host/vendor/rhwp-core/package.json"
+sha256 = "d2fd0f40bebc7aac38510e78ef45c7c20c8ea75a0fd94e79e6e444c0a911e636"
+size = 415
+
+[[artifacts]]
+path = "apps/studio-host/vendor/rhwp-core/rhwp.js"
+sha256 = "6854bbb4ff7a049f68a176e9605eb97fb9978960dce67834ae2e70f6efda976c"
+size = 347437
+
+[[artifacts]]
+path = "apps/studio-host/vendor/rhwp-core/rhwp.d.ts"
+sha256 = "50fde4eeb7aa8b65b46f9e65da75dee1b7ebc5978b8e6b0991510c697746f403"
+size = 135454
+
+[[artifacts]]
+path = "apps/studio-host/vendor/rhwp-core/rhwp_bg.wasm"
+sha256 = "04980aee98767f3280e2858f5ca03204e0c0d9a83ce26adeabac56d2acc647ff"
+size = 7189445
+
+[[artifacts]]
+path = "apps/studio-host/vendor/rhwp-core/rhwp_bg.wasm.d.ts"
+sha256 = "921bd64eb4d3d94349760c0f8fa2b895fa1b26295a0e419203f94fc528b3d088"
+size = 46842
+
+[[artifacts]]
+path = "apps/studio-host/vendor/rhwp-core/LICENSE"
+sha256 = "1c3a7d5643b163a3ead4965e1bea33b832caee5bfca265efe42afcd7bc696b5b"
+size = 1072

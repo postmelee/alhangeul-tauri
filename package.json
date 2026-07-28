@@ -8,12 +8,13 @@
   "packageManager": "pnpm@10.33.0",
   "scripts": {
     "check:product-boundary": "node scripts/check-product-boundary.mjs",
+    "check:rhwp-pin": "node scripts/verify-rhwp-pin.mjs",
     "build:studio": "pnpm --filter @postmelee/alhangeul-studio-host build",
     "build:before-tauri": "pnpm run build:studio",
     "build:desktop": "pnpm --filter alhangeul-desktop build",
     "tauri": "pnpm --filter alhangeul-desktop tauri",
     "test": "pnpm run test:upstream && pnpm run test:studio && pnpm run test:desktop",
-    "test:upstream": "node --test tests/update-upstream.test.mjs tests/rhwp-baseline.test.mjs",
+    "test:upstream": "node --test tests/update-upstream.test.mjs tests/rhwp-pin.test.mjs tests/rhwp-baseline.test.mjs",
     "test:studio": "pnpm --filter @postmelee/alhangeul-studio-host test",
     "test:desktop": "cd apps/desktop/src-tauri && cargo test",
     "clippy:desktop": "cd apps/desktop/src-tauri && cargo clippy -- -D warnings"

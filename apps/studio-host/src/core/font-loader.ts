@@ -8,6 +8,11 @@ interface FontEntry {
   unicodeRange?: string;
 }
 
+export interface CanvasKitBundledFontSource {
+  url: string;
+  aliases: string[];
+}
+
 const FONT_LIST: FontEntry[] = [
   { name: '함초롬돋움', file: '/fonts/NotoSansKR-Regular.woff2' },
   { name: '함초롬바탕', file: '/fonts/NotoSerifKR-Regular.woff2' },

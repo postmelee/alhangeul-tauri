@@ -3,6 +3,7 @@
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -13,6 +14,7 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "paths": {
       "@wasm/rhwp.js": ["./vendor/rhwp-core/rhwp.d.ts"],
+      "@noble/hashes/*": ["./node_modules/@noble/hashes/*"],
       "canvaskit-wasm": ["./node_modules/canvaskit-wasm"],
       "canvaskit-wasm/*": ["./node_modules/canvaskit-wasm/*"],
       "@upstream/*": ["../../third_party/rhwp/rhwp-studio/src/*"],

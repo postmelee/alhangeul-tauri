@@ -69,6 +69,10 @@ export default defineConfig({
     alias: [
       ...createAlhangeulOverrides(alhangeulSrc),
       { find: '@wasm/rhwp.js', replacement: rhwpWasmModule },
+      {
+        find: '@noble/hashes',
+        replacement: resolve(__dirname, 'node_modules/@noble/hashes'),
+      },
       { find: '@upstream', replacement: upstreamSrc },
       { find: '@', replacement: upstreamSrc },
     ],

@@ -1,5 +1,12 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import {
+  mkdir,
+  mkdtemp,
+  readFile,
+  readdir,
+  rm,
+  writeFile,
+} from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -10,74 +17,214 @@ const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const scriptPath = join(repoRoot, 'scripts/update-upstream.sh');
 const upstreamScriptTest = process.platform === 'win32' ? test.skip : test;
 
-upstreamScriptTest('updates a clean upstream submodule to the latest remote branch commit', async () => {
+upstreamScriptTest('updates source, Cargo lock, WASM, and pin from a verified lightweight tag', async () => {
   const fixture = await createFixture();
   try {
-    await commitUpstream(fixture.upstreamWork, 'second.txt', 'second');
-    const latestCommit = git(['rev-parse', 'HEAD'], { cwd: fixture.upstreamWork }).stdout.trim();
-    git(['push', 'origin', 'main'], { cwd: fixture.upstreamWork });
-
-    const result = runUpdateScript(fixture.parent);
+    const release = await createRelease(fixture, { tag: 'v0.1.0' });
+    const result = runUpdateScript(fixture, [
+      '--tag',
+      release.tag,
+      '--commit',
+      release.commit,
+    ]);
 
     assert.equal(result.status, 0, result.stderr);
-    assert.match(result.stdout, /Upstream submodule updated\./);
-    assert.match(result.stdout, new RegExp(`Commit: ${latestCommit}`));
+    assert.match(result.stdout, /Stable upstream pin updated and verified\./);
+    assert.match(result.stdout, /Release tag: v0\.1\.0/);
+    assert.match(result.stdout, new RegExp(`Resolved commit: ${release.commit}`));
     assert.equal(
       git(['rev-parse', 'HEAD'], { cwd: fixture.submodule }).stdout.trim(),
-      latestCommit,
+      release.commit,
     );
     assert.match(
-      git(['status', '--short'], { cwd: fixture.parent }).stdout,
-      /^ M third_party\/rhwp$/m,
+      await readFile(join(fixture.parent, 'apps/desktop/src-tauri/Cargo.lock'), 'utf8'),
+      /name = "rhwp"\nversion = "0\.1\.0"/,
+    );
+    const vendorPackage = JSON.parse(
+      await readFile(
+        join(fixture.parent, 'apps/studio-host/vendor/rhwp-core/package.json'),
+        'utf8',
+      ),
+    );
+    assert.equal(vendorPackage.version, '0.1.0');
+    assert.match(
+      await readFile(join(fixture.parent, 'rhwp-core.lock'), 'utf8'),
+      new RegExp(`${release.tag} ${release.commit}`),
+    );
+    assert.deepEqual(
+      (await readdir(fixture.submodule)).filter((name) =>
+        name.startsWith('.alhangeul-wasm-build.')),
+      [],
     );
   } finally {
     await cleanup(fixture.tmp);
   }
 });
 
-upstreamScriptTest('honors UPSTREAM_BRANCH and UPSTREAM_REMOTE overrides', async () => {
+upstreamScriptTest('resolves an annotated release tag to its commit', async () => {
   const fixture = await createFixture();
   try {
-    git(['checkout', '-b', 'devel'], { cwd: fixture.upstreamWork });
-    await commitUpstream(fixture.upstreamWork, 'devel.txt', 'devel');
-    const develCommit = git(['rev-parse', 'HEAD'], { cwd: fixture.upstreamWork }).stdout.trim();
-    git(['push', 'origin', 'devel'], { cwd: fixture.upstreamWork });
-
-    const result = runUpdateScript(fixture.parent, {
-      UPSTREAM_BRANCH: 'devel',
-      UPSTREAM_REMOTE: 'origin',
+    const release = await createRelease(fixture, {
+      tag: 'v0.2.0',
+      annotated: true,
     });
+    const result = runUpdateScript(fixture, [
+      '--tag',
+      release.tag,
+      '--commit',
+      release.commit,
+    ]);
 
     assert.equal(result.status, 0, result.stderr);
-    assert.match(result.stdout, /Target: origin\/devel/);
+    assert.match(result.stdout, /Release tag: v0\.2\.0/);
     assert.equal(
       git(['rev-parse', 'HEAD'], { cwd: fixture.submodule }).stdout.trim(),
-      develCommit,
+      release.commit,
     );
   } finally {
     await cleanup(fixture.tmp);
   }
 });
 
-upstreamScriptTest('honors UPSTREAM_REF for release tag pinning', async () => {
+upstreamScriptTest('requires immutable Stable tag and full commit arguments before fetch', async () => {
   const fixture = await createFixture();
   try {
-    const releaseCommit = git(['rev-parse', 'HEAD'], { cwd: fixture.upstreamWork }).stdout.trim();
-    git(['tag', 'v0.1.0'], { cwd: fixture.upstreamWork });
-    git(['push', 'origin', 'v0.1.0'], { cwd: fixture.upstreamWork });
+    const before = git(['rev-parse', 'HEAD'], { cwd: fixture.submodule }).stdout.trim();
+    const fullCommit = 'a'.repeat(40);
+    const cases = [
+      { args: [], error: /--tag is required/ },
+      { args: ['--tag', 'v0.1.0'], error: /--commit is required/ },
+      { args: ['--commit', fullCommit], error: /--tag is required/ },
+      {
+        args: ['--tag', 'main', '--commit', fullCommit],
+        error: /Stable release tag in vX\.Y\.Z form/,
+      },
+      {
+        args: ['--tag', 'v0.1.0-rc.1', '--commit', fullCommit],
+        error: /Stable release tag in vX\.Y\.Z form/,
+      },
+      {
+        args: ['--tag', 'v01.0.0', '--commit', fullCommit],
+        error: /Stable release tag in vX\.Y\.Z form/,
+      },
+      {
+        args: ['--tag', 'v0.1.0', '--commit', 'abc123'],
+        error: /lowercase 40-character SHA/,
+      },
+      {
+        args: ['--tag', 'v0.1.0', '--tag', 'v0.2.0', '--commit', fullCommit],
+        error: /--tag may only be specified once/,
+      },
+      {
+        args: ['--tag', 'v0.1.0', '--commit', fullCommit, '--commit', fullCommit],
+        error: /--commit may only be specified once/,
+      },
+    ];
 
-    await commitUpstream(fixture.upstreamWork, 'post-release.txt', 'post-release');
-    git(['push', 'origin', 'main'], { cwd: fixture.upstreamWork });
+    for (const entry of cases) {
+      const result = runUpdateScript(fixture, entry.args);
+      assert.equal(result.status, 2, result.stderr);
+      assert.match(result.stderr, entry.error);
+      assert.equal(
+        git(['rev-parse', 'HEAD'], { cwd: fixture.submodule }).stdout.trim(),
+        before,
+      );
+    }
+  } finally {
+    await cleanup(fixture.tmp);
+  }
+});
 
-    const result = runUpdateScript(fixture.parent, {
-      UPSTREAM_REF: 'v0.1.0',
-    });
+upstreamScriptTest('rejects a tag and commit mismatch without changing the checkout', async () => {
+  const fixture = await createFixture();
+  try {
+    const before = git(['rev-parse', 'HEAD'], { cwd: fixture.submodule }).stdout.trim();
+    const release = await createRelease(fixture, { tag: 'v0.3.0' });
+    const result = runUpdateScript(fixture, [
+      '--tag',
+      release.tag,
+      '--commit',
+      release.postReleaseCommit,
+    ]);
 
-    assert.equal(result.status, 0, result.stderr);
-    assert.match(result.stdout, /Target: v0\.1\.0/);
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /Release tag and expected commit do not match/);
+    assert.match(result.stderr, new RegExp(`Resolved: ${release.commit}`));
+    assert.match(result.stderr, new RegExp(`Expected: ${release.postReleaseCommit}`));
     assert.equal(
       git(['rev-parse', 'HEAD'], { cwd: fixture.submodule }).stdout.trim(),
-      releaseCommit,
+      before,
+    );
+  } finally {
+    await cleanup(fixture.tmp);
+  }
+});
+
+upstreamScriptTest('rejects branch, floating ref, and positional ref inputs', async () => {
+  const fixture = await createFixture();
+  try {
+    const before = git(['rev-parse', 'HEAD'], { cwd: fixture.submodule }).stdout.trim();
+    for (const args of [
+      ['--branch', 'main'],
+      ['--ref', 'origin/main'],
+      ['v0.1.0'],
+    ]) {
+      const result = runUpdateScript(fixture, args);
+      assert.equal(result.status, 2, result.stderr);
+      assert.match(result.stderr, /unknown option or positional ref/);
+      assert.equal(
+        git(['rev-parse', 'HEAD'], { cwd: fixture.submodule }).stdout.trim(),
+        before,
+      );
+    }
+  } finally {
+    await cleanup(fixture.tmp);
+  }
+});
+
+upstreamScriptTest('rejects legacy upstream environment variables', async () => {
+  const fixture = await createFixture();
+  try {
+    const before = git(['rev-parse', 'HEAD'], { cwd: fixture.submodule }).stdout.trim();
+    const args = ['--tag', 'v0.1.0', '--commit', 'a'.repeat(40)];
+    for (const name of [
+      'UPSTREAM_BRANCH',
+      'UPSTREAM_REMOTE',
+      'UPSTREAM_REF',
+      'RUN_CHECKS',
+    ]) {
+      const result = runUpdateScript(fixture, args, { [name]: 'legacy' });
+      assert.equal(result.status, 2, result.stderr);
+      assert.match(result.stderr, new RegExp(`${name} is no longer supported`));
+      assert.equal(
+        git(['rev-parse', 'HEAD'], { cwd: fixture.submodule }).stdout.trim(),
+        before,
+      );
+    }
+  } finally {
+    await cleanup(fixture.tmp);
+  }
+});
+
+upstreamScriptTest('rejects an origin that differs from .gitmodules before fetch', async () => {
+  const fixture = await createFixture();
+  try {
+    const before = git(['rev-parse', 'HEAD'], { cwd: fixture.submodule }).stdout.trim();
+    git(['remote', 'set-url', 'origin', `${fixture.upstreamBare}-other`], {
+      cwd: fixture.submodule,
+    });
+    const result = runUpdateScript(fixture, [
+      '--tag',
+      'v0.1.0',
+      '--commit',
+      'a'.repeat(40),
+    ]);
+
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /Upstream submodule origin does not match \.gitmodules/);
+    assert.equal(
+      git(['rev-parse', 'HEAD'], { cwd: fixture.submodule }).stdout.trim(),
+      before,
     );
   } finally {
     await cleanup(fixture.tmp);
@@ -88,8 +235,11 @@ upstreamScriptTest('fails before fetch when the upstream submodule is missing', 
   const tmp = await mkdtemp(join(tmpdir(), 'alhangeul-update-upstream-'));
   try {
     git(['init', '-b', 'main'], { cwd: tmp });
-
-    const result = runUpdateScript(tmp);
+    const result = spawnSync(
+      'bash',
+      [scriptPath, '--tag', 'v0.1.0', '--commit', 'a'.repeat(40)],
+      { cwd: tmp, encoding: 'utf8' },
+    );
 
     assert.notEqual(result.status, 0);
     assert.match(result.stderr, /Missing upstream submodule at third_party\/rhwp\./);
@@ -103,9 +253,14 @@ upstreamScriptTest('refuses to update when the upstream submodule has local chan
   const fixture = await createFixture();
   try {
     const before = git(['rev-parse', 'HEAD'], { cwd: fixture.submodule }).stdout.trim();
+    const release = await createRelease(fixture, { tag: 'v0.4.0' });
     await writeFile(join(fixture.submodule, 'dirty.txt'), 'local change');
-
-    const result = runUpdateScript(fixture.parent);
+    const result = runUpdateScript(fixture, [
+      '--tag',
+      release.tag,
+      '--commit',
+      release.commit,
+    ]);
 
     assert.notEqual(result.status, 0);
     assert.match(result.stderr, /Upstream submodule has local changes/);
@@ -118,38 +273,101 @@ upstreamScriptTest('refuses to update when the upstream submodule has local chan
   }
 });
 
-upstreamScriptTest('RUN_CHECKS=1 runs verification commands in the documented order', async () => {
+upstreamScriptTest('rejects a wasm-pack version mismatch before checkout', async () => {
   const fixture = await createFixture();
   try {
-    await mkdir(join(fixture.parent, 'apps/desktop/src-tauri'), { recursive: true });
-    const fakeBin = join(fixture.tmp, 'fake-bin');
-    await mkdir(fakeBin, { recursive: true });
-    const logPath = join(fixture.tmp, 'commands.log');
-    await writeFile(
-      join(fakeBin, 'pnpm'),
-      `#!/usr/bin/env bash\nprintf 'pnpm %s\\n' "$*" >> "$ALHANGEUL_COMMAND_LOG"\n`,
-      { mode: 0o755 },
-    );
-    await writeFile(
-      join(fakeBin, 'cargo'),
-      `#!/usr/bin/env bash\nprintf 'cargo %s\\n' "$*" >> "$ALHANGEUL_COMMAND_LOG"\n`,
-      { mode: 0o755 },
+    const before = git(['rev-parse', 'HEAD'], { cwd: fixture.submodule }).stdout.trim();
+    const release = await createRelease(fixture, { tag: 'v0.5.0' });
+    const result = runUpdateScript(
+      fixture,
+      ['--tag', release.tag, '--commit', release.commit],
+      { ALHANGEUL_FAKE_WASM_PACK_VERSION: '0.14.0' },
     );
 
-    const result = runUpdateScript(fixture.parent, {
-      RUN_CHECKS: '1',
-      ALHANGEUL_COMMAND_LOG: logPath,
-      PATH: `${fakeBin}:${process.env.PATH}`,
-    });
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /wasm-pack version mismatch/);
+    assert.match(result.stderr, /Expected: wasm-pack 0\.15\.0/);
+    assert.equal(
+      git(['rev-parse', 'HEAD'], { cwd: fixture.submodule }).stdout.trim(),
+      before,
+    );
+  } finally {
+    await cleanup(fixture.tmp);
+  }
+});
+
+upstreamScriptTest('cleans fresh WASM staging and preserves partial state on build failure', async () => {
+  const fixture = await createFixture();
+  try {
+    const release = await createRelease(fixture, { tag: 'v0.6.0' });
+    const result = runUpdateScript(
+      fixture,
+      ['--tag', release.tag, '--commit', release.commit],
+      { ALHANGEUL_FAKE_WASM_PACK_FAIL_BUILD: '1' },
+    );
+
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /Stable upstream update failed during: fresh WASM build/);
+    assert.match(result.stderr, /No automatic reset was performed/);
+    assert.equal(
+      git(['rev-parse', 'HEAD'], { cwd: fixture.submodule }).stdout.trim(),
+      release.commit,
+      '실패 시 checkout을 자동 reset하지 않아야 한다',
+    );
+    assert.deepEqual(
+      (await readdir(fixture.submodule)).filter((name) =>
+        name.startsWith('.alhangeul-wasm-build.')),
+      [],
+    );
+  } finally {
+    await cleanup(fixture.tmp);
+  }
+});
+
+upstreamScriptTest('--run-checks preserves the full platform-neutral order', async () => {
+  const fixture = await createFixture();
+  try {
+    const release = await createRelease(fixture, { tag: 'v0.7.0' });
+    const logPath = join(fixture.tmp, 'commands.log');
+    const result = runUpdateScript(
+      fixture,
+      [
+        '--tag',
+        release.tag,
+        '--commit',
+        release.commit,
+        '--run-checks',
+      ],
+      { ALHANGEUL_COMMAND_LOG: logPath },
+    );
 
     assert.equal(result.status, 0, result.stderr);
-    assert.deepEqual((await readFile(logPath, 'utf8')).trim().split('\n'), [
+    const commands = (await readFile(logPath, 'utf8')).trim().split('\n');
+    assert.equal(commands[0], 'wasm-pack --version');
+    assert.equal(
+      commands[1],
+      'cargo update --manifest-path apps/desktop/src-tauri/Cargo.toml -p rhwp',
+    );
+    assert.match(
+      commands[2],
+      /^wasm-pack build --target web --release --out-dir \.alhangeul-wasm-build\.[A-Za-z0-9]+$/,
+    );
+    assert.equal(
+      commands[3],
+      `node write-rhwp-pin --tag ${release.tag} --commit ${release.commit} --wasm-pack-version 0.15.0`,
+    );
+    assert.equal(commands[4], 'node verify-rhwp-pin');
+    assert.deepEqual(commands.slice(5), [
       'pnpm install --frozen-lockfile',
+      'pnpm run check:rhwp-pin',
+      'pnpm run check:product-boundary',
+      'pnpm run test:upstream',
+      'pnpm run test:studio',
       'pnpm run build:studio',
-      'cargo test',
-      'cargo clippy -- -D warnings',
-      'pnpm --filter alhangeul-desktop tauri build --debug --bundles app',
+      'cargo metadata --manifest-path apps/desktop/src-tauri/Cargo.toml --locked --offline --no-deps',
+      'cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml --all -- --check',
     ]);
+    assert.doesNotMatch(commands.join('\n'), /\btauri (?:build|dev)|cargo test|clippy/);
   } finally {
     await cleanup(fixture.tmp);
   }
@@ -161,11 +379,12 @@ async function createFixture() {
   const upstreamBare = join(tmp, 'upstream.git');
   const parent = join(tmp, 'parent');
   const submodule = join(parent, 'third_party/rhwp');
+  const fakeBin = join(tmp, 'fake-bin');
 
   await mkdir(upstreamWork, { recursive: true });
   git(['init', '-b', 'main'], { cwd: upstreamWork });
   configureGitIdentity(upstreamWork);
-  await commitUpstream(upstreamWork, 'README.md', 'initial');
+  await commitUpstream(upstreamWork, 'README.md', 'initial\n');
   git(['clone', '--bare', upstreamWork, upstreamBare], { cwd: tmp });
   git(['remote', 'add', 'origin', upstreamBare], { cwd: upstreamWork });
 
@@ -176,9 +395,150 @@ async function createFixture() {
     ['-c', 'protocol.file.allow=always', 'submodule', 'add', upstreamBare, 'third_party/rhwp'],
     { cwd: parent },
   );
-  git(['commit', '-am', 'add submodule'], { cwd: parent });
+  await createParentSupportFiles(parent);
+  await createFakeCommands(fakeBin);
+  git(['add', '.'], { cwd: parent });
+  git(['commit', '-m', 'add update fixture'], { cwd: parent });
 
-  return { tmp, upstreamWork, upstreamBare, parent, submodule };
+  return { tmp, upstreamWork, upstreamBare, parent, submodule, fakeBin };
+}
+
+async function createRelease(fixture, { tag, annotated = false }) {
+  const version = tag.slice(1);
+  await writeFile(
+    join(fixture.upstreamWork, 'Cargo.toml'),
+    `[package]\nname = "rhwp"\nversion = "${version}"\nedition = "2021"\n`,
+  );
+  await writeFile(
+    join(fixture.upstreamWork, 'Cargo.lock'),
+    `version = 4\n\n[[package]]\nname = "rhwp"\nversion = "${version}"\n`,
+  );
+  await writeFile(join(fixture.upstreamWork, 'LICENSE'), `license ${version}\n`);
+  git(['add', 'Cargo.toml', 'Cargo.lock', 'LICENSE'], { cwd: fixture.upstreamWork });
+  git(['commit', '-m', `release ${tag}`], { cwd: fixture.upstreamWork });
+  const commit = git(['rev-parse', 'HEAD'], { cwd: fixture.upstreamWork }).stdout.trim();
+
+  if (annotated) {
+    git(['tag', '-a', tag, '-m', `release ${tag}`], { cwd: fixture.upstreamWork });
+  } else {
+    git(['tag', tag], { cwd: fixture.upstreamWork });
+  }
+  git(['push', 'origin', 'main'], { cwd: fixture.upstreamWork });
+  git(['push', 'origin', tag], { cwd: fixture.upstreamWork });
+
+  await commitUpstream(fixture.upstreamWork, `post-${tag}.txt`, `post ${tag}\n`);
+  const postReleaseCommit = git(['rev-parse', 'HEAD'], {
+    cwd: fixture.upstreamWork,
+  }).stdout.trim();
+  git(['push', 'origin', 'main'], { cwd: fixture.upstreamWork });
+  return { tag, commit, postReleaseCommit };
+}
+
+async function createParentSupportFiles(parent) {
+  const desktopDir = join(parent, 'apps/desktop/src-tauri');
+  const vendorDir = join(parent, 'apps/studio-host/vendor/rhwp-core');
+  const scriptsDir = join(parent, 'scripts');
+  await mkdir(desktopDir, { recursive: true });
+  await mkdir(vendorDir, { recursive: true });
+  await mkdir(scriptsDir, { recursive: true });
+  await writeFile(
+    join(desktopDir, 'Cargo.toml'),
+    '[package]\nname = "fixture"\nversion = "0.0.0"\n',
+  );
+  await writeFile(
+    join(desktopDir, 'Cargo.lock'),
+    'version = 4\n\n[[package]]\nname = "rhwp"\nversion = "0.0.0"\n',
+  );
+  for (const name of [
+    'package.json',
+    'rhwp.js',
+    'rhwp.d.ts',
+    'rhwp_bg.wasm',
+    'rhwp_bg.wasm.d.ts',
+    'LICENSE',
+  ]) {
+    await writeFile(join(vendorDir, name), `old ${name}\n`);
+  }
+  await writeFile(
+    join(scriptsDir, 'write-rhwp-pin.mjs'),
+    `import { appendFileSync, writeFileSync } from 'node:fs';
+const args = process.argv.slice(2);
+if (process.env.ALHANGEUL_COMMAND_LOG) {
+  appendFileSync(process.env.ALHANGEUL_COMMAND_LOG, \`node write-rhwp-pin \${args.join(' ')}\\n\`);
+}
+const tag = args[args.indexOf('--tag') + 1];
+const commit = args[args.indexOf('--commit') + 1];
+writeFileSync('rhwp-core.lock', \`\${tag} \${commit}\\n\`);
+`,
+  );
+  await writeFile(
+    join(scriptsDir, 'verify-rhwp-pin.mjs'),
+    `import { appendFileSync, existsSync } from 'node:fs';
+if (process.env.ALHANGEUL_COMMAND_LOG) {
+  appendFileSync(process.env.ALHANGEUL_COMMAND_LOG, 'node verify-rhwp-pin\\n');
+}
+if (!existsSync('rhwp-core.lock')) process.exit(1);
+`,
+  );
+}
+
+async function createFakeCommands(fakeBin) {
+  await mkdir(fakeBin, { recursive: true });
+  await writeFile(
+    join(fakeBin, 'cargo'),
+    `#!/usr/bin/env node
+import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+const args = process.argv.slice(2);
+if (process.env.ALHANGEUL_COMMAND_LOG) {
+  appendFileSync(process.env.ALHANGEUL_COMMAND_LOG, \`cargo \${args.join(' ')}\\n\`);
+}
+if (args[0] === 'update') {
+  const cargo = readFileSync('third_party/rhwp/Cargo.toml', 'utf8');
+  const version = cargo.match(/^version = "([^"]+)"/m)[1];
+  mkdirSync('apps/desktop/src-tauri', { recursive: true });
+  writeFileSync(
+    'apps/desktop/src-tauri/Cargo.lock',
+    \`version = 4\\n\\n[[package]]\\nname = "rhwp"\\nversion = "\${version}"\\n\`,
+  );
+}
+`,
+    { mode: 0o755 },
+  );
+  await writeFile(
+    join(fakeBin, 'wasm-pack'),
+    `#!/usr/bin/env node
+import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+const args = process.argv.slice(2);
+if (process.env.ALHANGEUL_COMMAND_LOG) {
+  appendFileSync(process.env.ALHANGEUL_COMMAND_LOG, \`wasm-pack \${args.join(' ')}\\n\`);
+}
+if (args[0] === '--version') {
+  console.log(\`wasm-pack \${process.env.ALHANGEUL_FAKE_WASM_PACK_VERSION || '0.15.0'}\`);
+  process.exit(0);
+}
+if (process.env.ALHANGEUL_FAKE_WASM_PACK_FAIL_BUILD === '1') process.exit(31);
+const output = args[args.indexOf('--out-dir') + 1];
+const cargo = readFileSync('Cargo.toml', 'utf8');
+const version = cargo.match(/^version = "([^"]+)"/m)[1];
+mkdirSync(output, { recursive: true });
+writeFileSync(\`\${output}/package.json\`, JSON.stringify({ name: 'rhwp', version }, null, 2) + '\\n');
+writeFileSync(\`\${output}/rhwp.js\`, 'export default async function init() {}\\n');
+writeFileSync(\`\${output}/rhwp.d.ts\`, 'export default function init(): Promise<void>;\\n');
+writeFileSync(\`\${output}/rhwp_bg.wasm\`, Buffer.from([0, 97, 115, 109]));
+writeFileSync(\`\${output}/rhwp_bg.wasm.d.ts\`, 'export const memory: WebAssembly.Memory;\\n');
+`,
+    { mode: 0o755 },
+  );
+  await writeFile(
+    join(fakeBin, 'pnpm'),
+    `#!/usr/bin/env node
+import { appendFileSync } from 'node:fs';
+if (process.env.ALHANGEUL_COMMAND_LOG) {
+  appendFileSync(process.env.ALHANGEUL_COMMAND_LOG, \`pnpm \${process.argv.slice(2).join(' ')}\\n\`);
+}
+`,
+    { mode: 0o755 },
+  );
 }
 
 async function commitUpstream(cwd, name, content) {
@@ -192,12 +552,12 @@ function configureGitIdentity(cwd) {
   git(['config', 'user.name', 'Test User'], { cwd });
 }
 
-function runUpdateScript(cwd, env = {}) {
-  return spawnSync('bash', [scriptPath], {
-    cwd,
+function runUpdateScript(fixture, args = [], env = {}) {
+  return spawnSync('bash', [scriptPath, ...args], {
+    cwd: fixture.parent,
     env: {
       ...process.env,
-      RUN_CHECKS: '0',
+      PATH: `${fixture.fakeBin}:${process.env.PATH}`,
       ...env,
     },
     encoding: 'utf8',

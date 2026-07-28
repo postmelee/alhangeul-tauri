@@ -4,10 +4,12 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
+import { readRhwpPin } from '../scripts/verify-rhwp-pin.mjs';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
-const expectedRhwpVersion = '0.7.13';
-const expectedRhwpCommit = 'b3e16ef212af81ef37d973ddb86d6816d3804642';
+const rhwpPin = await readRhwpPin({ repoRoot });
+const expectedRhwpVersion = rhwpPin.rhwp_release_tag.slice(1);
+const expectedRhwpCommit = rhwpPin.rhwp_commit;
 
 test('Alhangeul keeps the rhwp renderer baseline aligned across submodule, vendored WASM, and native lockfile', async () => {
   const wasmPackage = JSON.parse(
@@ -25,10 +27,6 @@ test('Alhangeul keeps the rhwp renderer baseline aligned across submodule, vendo
     cargoLock,
     new RegExp(`name = "rhwp"\\r?\\nversion = "${escapeRegExp(expectedRhwpVersion)}"`),
   );
-
-  const upstreamDoc = await readFile(join(repoRoot, 'docs/architecture/UPSTREAM.md'), 'utf8');
-  assert.match(upstreamDoc, new RegExp(escapeRegExp(expectedRhwpCommit)));
-  assert.match(upstreamDoc, new RegExp(escapeRegExp(`v${expectedRhwpVersion}`)));
 
   const submoduleStatus = git(['submodule', 'status', 'third_party/rhwp']).stdout.trim();
   assert.match(submoduleStatus, new RegExp(`^[ +-]?${expectedRhwpCommit} third_party/rhwp\\b`));
