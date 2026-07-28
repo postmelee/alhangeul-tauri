@@ -265,7 +265,7 @@ gh workflow run alhangeul-desktop.yml \
   - artifact 세 개가 각각 만료되지 않은 상태로 존재
 - 실패 시 `gh run view <id> --log-failed`를 먼저 수집하고 다음처럼 처리한다.
   - workflow·runner tool 설정·검증기 문제이면 같은 Stage 범위에서 최소 보정
-  - 아래 첫 canary의 승인된 native API signature adapter 보정과 두 번째 canary의 동작 불변 Linux Clippy 보정만 예외로 허용
+  - 아래 첫 canary의 승인된 native API signature adapter 보정, 두 번째 canary의 동작 불변 Linux Clippy 보정과 첫 native canary의 checkout·artifact verifier 보정만 예외로 허용
   - 그 밖의 제품 기능, 새 native 동작, runner 교체, matrix 축소가 필요하면 진행을 멈추고 계획 변경 승인 요청
   - 근거 없이 재실행하지 않고 변경된 commit마다 다시 exact SHA를 확인
 - 첫 canary run [30353284044](https://github.com/postmelee/alhangeul-tauri/actions/runs/30353284044)는 Stage 2 SHA `80421cfdf61f02ead385c8560c5357d918fe45a9`에서 다음 사실을 확인했다.
@@ -294,11 +294,30 @@ Task #5 [Stage 3.1]: rhwp v0.8.2 split paragraph adapter 호환성 보정
 Task #5 [Stage 3.2]: Linux runtime clippy 호환성 보정
 ```
 
+- 세 번째 CI run [30355031203](https://github.com/postmelee/alhangeul-tauri/actions/runs/30355031203)은 Stage 3.2 SHA `b959d8bb68359625f8c88e96efdde62cffbb784e`에서 product boundary부터 Ubuntu `cargo test`, `cargo clippy -- -D warnings`까지 모두 성공했다.
+- 첫 native canary run [30355545016](https://github.com/postmelee/alhangeul-tauri/actions/runs/30355545016)은 같은 SHA에서 다음 결과를 확인했다.
+  - `linux-arm64`: checkout·pretest·DEB build·artifact verifier·upload 성공, `alhangeul-desktop-linux-arm64` artifact 생성
+  - `windows-x64`: checkout과 product boundary 성공 뒤 pin verifier에서 upstream `Cargo.lock` SHA-256 불일치
+  - Windows가 계산한 `069b59399bc60756c9450bf5e394b02cedf4c756710de07ba6fbc874f7ffdc37`는 같은 파일의 LF를 CRLF로 바꾼 byte hash와 정확히 같고, lock의 정규 LF hash는 `64ff4041c1874c01c7a901b28df2639082836ced44df392cd37b3227d4772279`
+  - `linux-x64`: checkout·pretest와 DEB·RPM·AppImage build 성공 뒤 `appimage/Alhangeul.AppDir/.DirIcon` symbolic link를 verifier가 거부해 upload 전 실패
+- Windows 보정은 `.github/workflows/alhangeul-desktop.yml`의 job environment에 Git command-scope 설정 `GIT_CONFIG_COUNT=1`, `GIT_CONFIG_KEY_0=core.autocrlf`, `GIT_CONFIG_VALUE_0=false`를 추가하는 것으로 제한한다. 이 설정은 `actions/checkout`의 main repository와 submodule checkout에 함께 적용해 Git config file보다 우선하며, pin verifier의 hash·size 기준은 바꾸지 않는다.
+- Linux x64 보정은 `scripts/verify-desktop-artifacts.mjs`가 bundle root 아래의 `appimage/*.AppDir` directory subtree를 Tauri 중간 산출물로 식별해 재귀 scan에서 제외하는 것으로 제한한다.
+  - 최종 `.AppImage`, `.deb`, `.rpm`과 그 밖의 regular file inventory 계약은 유지한다.
+  - bundle root와 제외 대상 밖 symbolic link 거부, root 탈출 거부, 필수 종류·0바이트·inventory 변조 거부는 유지한다.
+  - AppImage AppDir specification은 `.DirIcon`과 root icon/desktop entry가 symlink일 수 있음을 정의하므로 AppDir 내부 symlink 자체를 제품 artifact 변조로 판정하지 않는다.
+- `tests/actions-workflows.test.mjs`에는 native workflow의 Git command-scope LF checkout 설정을, `tests/desktop-artifacts.test.mjs`에는 `appimage/*.AppDir`만 inventory에서 제외되고 필수 Linux x64 bundle은 계속 검증되는 계약을 추가한다.
+- Tauri dependency/CLI upgrade, pin verifier 완화, matrix·필수 bundle 축소, arbitrary symlink 허용은 금지한다.
+- 보정 뒤 로컬 platform-neutral suite와 Rust format을 통과시키고 다음 하위 단계 commit으로 `publish/task5`를 fast-forward한다. 새 exact SHA에서 CI를 먼저 성공시킨 뒤 native canary를 재실행한다.
+
+```text
+Task #5 [Stage 3.3]: Windows pin과 AppImage artifact 검증 보정
+```
+
 - CI가 성공하기 전에는 native artifact workflow를 dispatch하지 않는다.
 - remote runner는 committed ref만 실행할 수 있으므로, Stage 3의 CI 보정은 일반 단계 묶음 커밋의 명시적 예외로 다음 하위 단계 메시지를 사용한다.
 
 ```text
-Task #5 [Stage 3.3]: <추가 runner 보정 내용>
+Task #5 [Stage 3.4]: <추가 runner 보정 내용>
 ```
 
 - 각 하위 단계 commit은 로컬 정적 검증 통과 후 `publish/task5`에 push하고 canary를 재실행한다. Stage 3 성공 뒤 최종 실행 증적과 모든 하위 commit을 `task_m010_5_stage3.md`에 모아 다음 단계 커밋으로 종료한다.
@@ -584,6 +603,8 @@ Task #5 Stage 5: Actions 수용 기준 통합 검증
 - **Linux arm64 가용성**: runner 자체가 제공되지 않거나 dependency가 달라 matrix 교체가 필요하면 Issue 범위를 자동 변경하지 않고 승인 요청한다.
 - **Task #3 native adapter 누락**: `rhwp v0.8.2` pin 뒤 Studio·platform-neutral 검증은 통과했지만 Ubuntu compile이 새 `restore_meta` 인자를 요구했다. upstream이 지정한 일반 경로 `None` 한 줄과 회귀 검사만 허용하고 remote CI로 실제 compile을 확인한다.
 - **Linux 전용 Clippy drift**: Stage 3.1의 Ubuntu `cargo test`는 성공했지만 함수 끝의 명시적 `return;`이 `-D warnings`에서 거부됐다. 해당 한 줄만 제거하고 local format과 remote Ubuntu Clippy로 동작 불변·lint 해소를 확인한다.
+- **Windows CRLF checkout**: pin verifier가 탐지한 hash 차이는 동일 LF file의 CRLF 변환 hash와 일치한다. verifier를 줄바꿈 무시 방식으로 완화하지 않고 checkout 전에 효력을 갖는 Git command-scope config로 repository와 submodule byte를 LF로 고정한다.
+- **Tauri AppDir symbolic link**: AppImage 표준 중간 directory에는 symlink가 포함될 수 있다. 최종 installer bundle이 아닌 `appimage/*.AppDir` subtree만 제외하고 나머지 symbolic link 거부와 필수 installer 검증을 보존한다.
 - **artifact 위장 또는 stale file**: build 후 바로 필수 종류·0바이트·checksum을 검사하고 inventory를 같은 Actions artifact에 포함한다. 다운로드 후 inventory와 파일을 다시 비교한다.
 - **Pages와 배포의 우발 실행**: 대상 workflow allowlist만 dispatch하고 Pages baseline을 비교한다. release·deploy·secret 참조는 static test에서 거부한다.
 - **macOS 검증 혼입**: 현재 host에서는 platform-neutral test만 실행하며 native 성공 근거를 Windows/Linux Actions로 한정한다.
@@ -598,6 +619,7 @@ Task #5 Stage 5: Actions 수용 기준 통합 검증
 - remote runner 보정에 한해 `[Stage 3.N]` commit을 먼저 push하고 최종 Stage 3 보고서에서 묶는 순서 예외를 승인한다.
 - 첫 canary run 30353284044가 발견한 `split_paragraph_native(..., None)` 한 줄과 `tests/rhwp-baseline.test.mjs` 회귀 검사만 Stage 3 범위에 추가하는 계획 보정을 승인한다.
 - 두 번째 canary run 30354133936이 발견한 `linux_runtime.rs` 함수 끝의 `return;` 한 줄 제거만 Stage 3 범위에 추가하는 계획 보정을 승인한다.
+- 첫 native canary run 30355545016이 발견한 Windows command-scope LF checkout 설정과 Tauri `appimage/*.AppDir` 중간 트리 제외 및 두 정적 회귀 검사만 Stage 3 범위에 추가하는 계획 보정을 승인한다.
 - 중단 시 Actions를 초기 비활성 상태로 복구하고 remote branch 삭제는 별도 승인 또는 merge cleanup으로 넘기는 rollback 절차를 승인한다.
 - 현재 macOS host에서 native Rust test·clippy·Tauri build를 실행하지 않고 Windows/Linux Actions 결과만 native 근거로 사용하는 검증 경계를 승인한다.
 - Stage 4에서 실제 canary 성공 뒤에만 `DESKTOP_RELEASE.md`와 `DEVELOPMENT.md`를 갱신하는 문서 경계를 승인한다.
