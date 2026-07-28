@@ -71,7 +71,7 @@ Alhangeul은 `rhwp`의 문서 엔진과 웹 editor를 기반으로 다음 제품
 - autosave/recovery와 외부 파일 변경 감지는 아직 없다.
 - 큰 문서에서는 WASM mirror를 거치는 구간이 남아 있다.
 - 공식 설치 파일, 서명, 패키지 게시와 자동 업데이트는 준비되지 않았다.
-- GitHub Actions workflow 파일은 정적 검토용이며 저장소 수준 실행은 별도 승인 전까지 비활성 상태다.
+- GitHub Actions는 활성 상태지만 CI와 Windows/Linux native artifact workflow는 수동 `workflow_dispatch` 전용이다. Actions artifact는 build smoke 결과이며 공식 설치 파일이나 공개 release가 아니다.
 
 ## 검증 명령
 
@@ -81,6 +81,7 @@ Alhangeul은 `rhwp`의 문서 엔진과 웹 editor를 기반으로 다음 제품
 pnpm install --frozen-lockfile
 pnpm run check:rhwp-pin
 pnpm run check:product-boundary
+pnpm run test:automation
 pnpm run test:upstream
 pnpm run test:studio
 pnpm run build:studio
@@ -102,6 +103,18 @@ Windows/Linux에서 native Rust 변경을 검증할 때 추가 실행한다.
 pnpm run test:desktop
 pnpm run clippy:desktop
 ```
+
+다운로드한 Actions artifact는 동봉된 inventory와 파일을 다시 계산해 검증한다.
+
+```sh
+pnpm run check:desktop-artifacts -- \
+  --platform <windows-x64|linux-x64|linux-arm64> \
+  --root <downloaded-artifact-root> \
+  --verify-inventory \
+  <downloaded-artifact-root>/alhangeul-artifact-inventory.json
+```
+
+검증된 canary commit·run과 platform별 installer SHA-256, 14일 retention 및 공식 배포와의 경계는 [desktop artifact와 배포 준비](operations/DESKTOP_RELEASE.md)를 따른다.
 
 ## `rhwp` Stable pin 갱신
 
