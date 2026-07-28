@@ -191,9 +191,11 @@ repository 외부 상태:
 
 - `.github/workflows/ci.yml`
 - `.github/workflows/alhangeul-desktop.yml`
+- `apps/desktop/src-tauri/src/state.rs`
 - `scripts/verify-desktop-artifacts.mjs`
 - `tests/desktop-artifacts.test.mjs`
 - `tests/actions-workflows.test.mjs`
+- `tests/rhwp-baseline.test.mjs`
 - `package.json`
 
 ### 변경 내용
@@ -262,13 +264,30 @@ gh workflow run alhangeul-desktop.yml \
   - artifact 세 개가 각각 만료되지 않은 상태로 존재
 - 실패 시 `gh run view <id> --log-failed`를 먼저 수집하고 다음처럼 처리한다.
   - workflow·runner tool 설정·검증기 문제이면 같은 Stage 범위에서 최소 보정
-  - 제품 기능, 새 native 동작, runner 교체, matrix 축소가 필요하면 진행을 멈추고 계획 변경 승인 요청
+  - 아래 첫 canary의 승인된 native API signature adapter 보정만 예외로 허용
+  - 그 밖의 제품 기능, 새 native 동작, runner 교체, matrix 축소가 필요하면 진행을 멈추고 계획 변경 승인 요청
   - 근거 없이 재실행하지 않고 변경된 commit마다 다시 exact SHA를 확인
+- 첫 canary run [30353284044](https://github.com/postmelee/alhangeul-tauri/actions/runs/30353284044)는 Stage 2 SHA `80421cfdf61f02ead385c8560c5357d918fe45a9`에서 다음 사실을 확인했다.
+  - product boundary, pin, automation, upstream, Studio test/build 성공
+  - Ubuntu `cargo test` compile에서 `apps/desktop/src-tauri/src/state.rs:384` E0061 발생
+  - `rhwp v0.8.2`의 `split_paragraph_native`가 네 번째 `restore_meta: Option<ParaMeta>`를 요구
+  - upstream source 문서와 모든 일반 분할 호출은 `None`을 사용
+- 이 실패의 계획 보정은 다음 두 변경으로 제한한다.
+  - `apps/desktop/src-tauri/src/state.rs`의 기존 `splitParagraph` adapter 호출에 네 번째 `None` 추가
+  - `tests/rhwp-baseline.test.mjs`에 native adapter가 `split_paragraph_native(..., None)` 계약을 유지하는 회귀 검사 추가
+- `None`은 upstream이 “일반 Enter 분할”로 정의한 경로이므로 새 기능이나 동작 변경을 추가하지 않는다. `restore_meta` 생성, 다른 mutation 변경, upstream source 수정은 금지한다.
+- 보정 뒤 로컬 platform-neutral suite와 Rust format을 통과시키고 다음 하위 단계 commit으로 `publish/task5`를 fast-forward한 뒤 CI를 먼저 재실행한다.
+
+```text
+Task #5 [Stage 3.1]: rhwp v0.8.2 split paragraph adapter 호환성 보정
+```
+
+- CI가 성공하기 전에는 native artifact workflow를 dispatch하지 않는다.
 - remote runner는 committed ref만 실행할 수 있으므로, Stage 3의 CI 보정은 일반 단계 묶음 커밋의 명시적 예외로 다음 하위 단계 메시지를 사용한다.
 
 ```text
-Task #5 [Stage 3.1]: <첫 runner 보정 내용>
 Task #5 [Stage 3.2]: <추가 runner 보정 내용>
+Task #5 [Stage 3.3]: <추가 runner 보정 내용>
 ```
 
 - 각 하위 단계 commit은 로컬 정적 검증 통과 후 `publish/task5`에 push하고 canary를 재실행한다. Stage 3 성공 뒤 최종 실행 증적과 모든 하위 commit을 `task_m010_5_stage3.md`에 모아 다음 단계 커밋으로 종료한다.
@@ -292,6 +311,12 @@ gh api --method PUT \
 ```bash
 gh api repos/postmelee/alhangeul-tauri/actions/permissions
 git ls-remote --heads origin refs/heads/publish/task5
+pnpm run test:upstream
+cargo fmt \
+  --manifest-path apps/desktop/src-tauri/Cargo.toml \
+  --all \
+  -- \
+  --check
 gh run view <ci-run-id> \
   --repo postmelee/alhangeul-tauri \
   --json databaseId,url,event,headBranch,headSha,status,conclusion,jobs
@@ -546,6 +571,7 @@ Task #5 Stage 5: Actions 수용 기준 통합 검증
 - **hosted runner 시간·쿼터 사용**: 실패 log를 분석하지 않은 재실행은 하지 않는다. 한 변경 commit당 필요한 workflow만 실행하고 최종 Stage에서 두 workflow를 한 번 더 검증한다.
 - **Windows shell/path 차이**: artifact 검증 자체는 Node path API를 사용하고 workflow shell 문자열을 최소화한다. Windows fixture는 실제 Windows matrix의 `run_tests`에서도 실행한다.
 - **Linux arm64 가용성**: runner 자체가 제공되지 않거나 dependency가 달라 matrix 교체가 필요하면 Issue 범위를 자동 변경하지 않고 승인 요청한다.
+- **Task #3 native adapter 누락**: `rhwp v0.8.2` pin 뒤 Studio·platform-neutral 검증은 통과했지만 Ubuntu compile이 새 `restore_meta` 인자를 요구했다. upstream이 지정한 일반 경로 `None` 한 줄과 회귀 검사만 허용하고 remote CI로 실제 compile을 확인한다.
 - **artifact 위장 또는 stale file**: build 후 바로 필수 종류·0바이트·checksum을 검사하고 inventory를 같은 Actions artifact에 포함한다. 다운로드 후 inventory와 파일을 다시 비교한다.
 - **Pages와 배포의 우발 실행**: 대상 workflow allowlist만 dispatch하고 Pages baseline을 비교한다. release·deploy·secret 참조는 static test에서 거부한다.
 - **macOS 검증 혼입**: 현재 host에서는 platform-neutral test만 실행하며 native 성공 근거를 Windows/Linux Actions로 한정한다.
@@ -558,6 +584,7 @@ Task #5 Stage 5: Actions 수용 기준 통합 검증
 - `tests/actions-workflows.test.mjs`와 `test:automation`으로 수동 trigger·최소 권한·matrix·artifact gate를 지속 검증하는 방향을 승인한다.
 - Stage 3 시작 승인이 repository Actions 활성화, `publish/task5` 최초 push, 두 workflow dispatch와 hosted runner 사용을 포함하는 것으로 승인한다.
 - remote runner 보정에 한해 `[Stage 3.N]` commit을 먼저 push하고 최종 Stage 3 보고서에서 묶는 순서 예외를 승인한다.
+- 첫 canary run 30353284044가 발견한 `split_paragraph_native(..., None)` 한 줄과 `tests/rhwp-baseline.test.mjs` 회귀 검사만 Stage 3 범위에 추가하는 계획 보정을 승인한다.
 - 중단 시 Actions를 초기 비활성 상태로 복구하고 remote branch 삭제는 별도 승인 또는 merge cleanup으로 넘기는 rollback 절차를 승인한다.
 - 현재 macOS host에서 native Rust test·clippy·Tauri build를 실행하지 않고 Windows/Linux Actions 결과만 native 근거로 사용하는 검증 경계를 승인한다.
 - Stage 4에서 실제 canary 성공 뒤에만 `DESKTOP_RELEASE.md`와 `DEVELOPMENT.md`를 갱신하는 문서 경계를 승인한다.

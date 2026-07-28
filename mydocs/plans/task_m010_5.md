@@ -38,6 +38,7 @@ Task #3에서 `rhwp v0.8.2` Stable pin과 source/native/WASM 동기화 기준을
 - 최종 commit을 가리키는 remote canary ref에서 workflow 실행
 - 실행 ID·URL·commit과 artifact 이름·종류·크기·SHA-256 inventory 기록
 - runner에서 드러난 workflow·도구 설정 문제의 최소 보정
+- 첫 Ubuntu canary에서 확인된 `rhwp v0.8.2` native API signature 호환성의 최소 adapter 보정
 - Desktop Release 운영 문서의 실제 검증 상태 갱신
 
 ### 제외
@@ -50,7 +51,7 @@ Task #3에서 `rhwp v0.8.2` Stable pin과 source/native/WASM 동기화 기준을
 - Pages workflow 실행 또는 변경
 - updater 구성
 - `rhwp` v0.8.2보다 이후 버전 반영
-- 제품 기능 또는 UI 변경
+- 위 native API signature adapter 보정을 넘는 제품 기능 또는 UI 변경
 - native runner 실패를 계기로 한 범위 밖 제품 동작 수정
 
 ## 설계 방향
@@ -102,7 +103,9 @@ Task #3에서 `rhwp v0.8.2` Stable pin과 source/native/WASM 동기화 기준을
 
 - `.github/workflows/ci.yml`
 - `.github/workflows/alhangeul-desktop.yml`
+- `apps/desktop/src-tauri/src/state.rs` — `rhwp v0.8.2` signature 호환을 위한 `None` 인자 추가만
 - `package.json`
+- `tests/rhwp-baseline.test.mjs` — 위 adapter 호출 계약 회귀 검사만
 - `docs/operations/DESKTOP_RELEASE.md`
 - `docs/DEVELOPMENT.md` — 기여자용 로컬 검증 명령 안내가 필요한 경우에만
 
@@ -134,6 +137,7 @@ Task #3에서 `rhwp v0.8.2` Stable pin과 source/native/WASM 동기화 기준을
   - Stage 2의 reviewable commit을 `publish/task5`에 push하여 canary ref로 사용한다.
   - CI와 native artifact workflow를 수동 dispatch하고 head SHA, 실행 ID, URL, job 결과를 수집한다.
   - runner 실패가 발생하면 Issue 범위 내 workflow·도구 설정만 최소 보정하고 같은 ref에서 재검증한다.
+  - 첫 CI run에서 확인된 `split_paragraph_native`의 네 번째 `restore_meta` 인자 누락은 upstream이 일반 Enter 경로로 명시한 `None`만 전달하고 회귀 검사를 추가한 뒤 같은 ref에서 재검증한다.
 - **Stage 4 — native artifact inventory와 운영 문서**
   - 성공한 native run의 artifact를 내려받아 필수 종류, 크기, SHA-256을 독립 재검증한다.
   - 실제 검증 일자·commit·run과 artifact inventory를 Desktop Release 운영 문서에 반영한다.
@@ -211,6 +215,7 @@ Task #3에서 `rhwp v0.8.2` Stable pin과 source/native/WASM 동기화 기준을
 - **artifact 이름 차이**: Tauri bundle의 실제 파일명이 예상과 다를 수 있다. 확장자와 installer 유형을 기준으로 검증하되, 필수 종류를 완화하지 않는다.
 - **검증과 배포의 혼동**: Actions artifact가 생성되어도 서명·설치·배포 검증이 된 것은 아니다. 공식 문서와 보고서에 smoke 범위와 제외 항목을 명시한다.
 - **범위 밖 제품 결함 발견**: native build 중 제품 코드 결함이 드러날 수 있다. workflow 설정으로 해결되지 않으면 별도 Issue 후보로 보고하고 이 task 범위를 임의 확장하지 않는다.
+- **v0.8.2 adapter signature 누락**: 첫 canary run [30353284044](https://github.com/postmelee/alhangeul-tauri/actions/runs/30353284044)에서 `split_paragraph_native`의 네 번째 `Option<ParaMeta>` 인자 누락으로 E0061이 발생했다. upstream 문서가 일반 Enter에 `None`을 지정하므로 이 한 호출과 회귀 검사만 명시적으로 포함하고, 의미 변경이나 다른 mutation 보정은 허용하지 않는다.
 
 ## 승인 요청 사항
 
@@ -218,6 +223,7 @@ Task #3에서 `rhwp v0.8.2` Stable pin과 source/native/WASM 동기화 기준을
 - Windows x64는 MSI·NSIS, Linux x64는 DEB·RPM·AppImage, Linux arm64는 DEB를 필수 artifact 계약으로 삼는 방향
 - Node.js 기반 artifact inventory 검증기와 fixture test를 추가하는 방향
 - Task #3의 `rhwp` Stable pin 검증을 두 workflow에 연결하는 방향
+- 첫 canary가 확인한 `rhwp v0.8.2` `split_paragraph_native(..., None)` adapter 호환성 한 줄과 해당 회귀 검사만 범위에 추가하는 계획 보정
 - Stage 3에서 별도 승인을 받은 뒤 reviewable commit을 `publish/task5`에 PR보다 먼저 push해 exact-ref canary를 수행하는 순서 예외
 - 수용 실패 또는 task 중단 시 저장소 Actions를 초기 비활성 상태로 복구하는 rollback 기준
 - macOS, 자동 trigger, required check, 설치 검증, 서명, secret, Release, tag, Pages, updater를 제외하는 범위
