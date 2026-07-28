@@ -1,6 +1,6 @@
 # Task #5 수행계획서 — Windows/Linux Actions와 native artifact smoke
 
-GitHub Issue: [#5](https://github.com/postmelee/alhangeul-tauri/issues/5)  
+GitHub Issue: [#5](https://github.com/postmelee/alhangeul-tauri/issues/5)
 마일스톤: M010
 
 ## 목적
