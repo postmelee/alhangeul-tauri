@@ -49,6 +49,49 @@ Windows ARM64 MSI·NSIS는 Issue #10의 별도 build·native 검증이 Go일 때
 
 `pnpm run check:release-metadata`는 package와 Tauri config의 제품명·version·identifier·publisher·설명·category·file association·license와 updater 비활성 경계를 읽기 전용으로 검사한다. `pnpm run create:release-checksums`는 명시한 artifact root에서 MSI·NSIS·AppImage·DEB·RPM만 받아 결정적인 `SHA256SUMS`를 생성한다.
 
+## Task #9 prerelease candidate build·checksum 검증
+
+2026-07-29에 Stage 2 승인 commit `6e0adc941b9eedbd2d7cceab12bf31dddf184c3a`를 `publish/task9`에 고정하고 같은 exact SHA를 수동 검증했다.
+
+- [CI run 30426710424](https://github.com/postmelee/alhangeul-tauri/actions/runs/30426710424): `workflow_dispatch`, `publish/task9`, exact SHA 일치, `Unit tests` 성공
+- [Native run 30426711693](https://github.com/postmelee/alhangeul-tauri/actions/runs/30426711693): `workflow_dispatch`, `publish/task9`, exact SHA 일치, `Build windows-x64`, `Build linux-x64`, `Build linux-arm64` 모두 성공
+
+native run의 artifact 세 개를 별도 임시 디렉터리에 내려받고 동봉된 inventory를 기준으로 모든 파일의 크기와 SHA-256을 다시 계산했다. 세 inventory는 build 시 기록된 값과 일치했다.
+
+GitHub API가 반환한 Actions artifact archive metadata는 다음과 같다. 확인 시점에 모두 `expired: false`였으며 API archive digest와 아래 installer SHA-256은 서로 다른 검증 대상이다.
+
+| Platform | Actions artifact | ID | Archive 크기 (bytes) | API archive digest | 만료 시각 (UTC) |
+|---|---|---:|---:|---|---|
+| Windows x64 | `alhangeul-desktop-windows-x64` | `8714152971` | 53,660,040 | `sha256:3577c43739592df2f992046f73c40beefc5ad2f968f08459ded3dcb68d6d1fc9` | `2026-08-12T06:13:55Z` |
+| Linux x64 | `alhangeul-desktop-linux-x64` | `8714085967` | 354,129,629 | `sha256:2751d8990c6e1234770268b25df9662008490d588fab647d7dc1c2ef4e34f8cc` | `2026-08-12T06:10:21Z` |
+| Linux arm64 | `alhangeul-desktop-linux-arm64` | `8714005780` | 90,029,873 | `sha256:e5806c1263b2c25453646421f279bf960faeeb8d2eb9c62840f51bf444c38b48` | `2026-08-12T06:06:25Z` |
+
+다운로드 후 독립 재검증한 필수 `0.1.0` installer inventory:
+
+| Platform | 종류 | 파일 | 크기 (bytes) | SHA-256 |
+|---|---|---|---:|---|
+| Windows x64 | MSI | `msi/Alhangeul_0.1.0_x64_en-US.msi` | 28,192,768 | `b7647416466cff7a3ac787d5d903f2950c2a1b735974482899e7778ce2de5aa4` |
+| Windows x64 | NSIS | `nsis/Alhangeul_0.1.0_x64-setup.exe` | 25,706,433 | `af7968393f05d042d62a0331640ab73cf29471021ee2eb35e8f1ca8112600fb9` |
+| Linux x64 | AppImage | `appimage/Alhangeul_0.1.0_amd64.AppImage` | 106,842,616 | `a21c422eff17e38a80f301d7bd97d1256a9b2e706668593acaae02f1d2475d23` |
+| Linux x64 | DEB | `deb/Alhangeul_0.1.0_amd64.deb` | 30,092,878 | `253ebe576131f62d8a1c1d2f2f8e885eea09ed9bc7947d739ed9502b2470ccd9` |
+| Linux x64 | RPM | `rpm/Alhangeul-0.1.0-1.x86_64.rpm` | 30,093,097 | `b4101b9cca740472103d262d14c11abafa7c8962b9c1551e27100e777da1463b` |
+| Linux arm64 | DEB | `deb/Alhangeul_0.1.0_arm64.deb` | 30,049,998 | `7cbd918634bbe6cc15d656cbc7a3e3caa67d0e06b6857c5334ef505ba8e7d62e` |
+
+Actions artifact에는 inventory와 Tauri의 DEB/RPM 중간 전개 파일도 들어 있으므로, 공개 후보 checksum은 위 installer 여섯 개만 깨끗한 임시 `release-assets` root에 평탄화해 생성했다. 결정적으로 정렬된 candidate `SHA256SUMS` 초안은 다음과 같으며 `shasum -a 256 -c SHA256SUMS`로 여섯 파일을 독립 재검증했다.
+
+```text
+b4101b9cca740472103d262d14c11abafa7c8962b9c1551e27100e777da1463b  Alhangeul-0.1.0-1.x86_64.rpm
+a21c422eff17e38a80f301d7bd97d1256a9b2e706668593acaae02f1d2475d23  Alhangeul_0.1.0_amd64.AppImage
+253ebe576131f62d8a1c1d2f2f8e885eea09ed9bc7947d739ed9502b2470ccd9  Alhangeul_0.1.0_amd64.deb
+7cbd918634bbe6cc15d656cbc7a3e3caa67d0e06b6857c5334ef505ba8e7d62e  Alhangeul_0.1.0_arm64.deb
+af7968393f05d042d62a0331640ab73cf29471021ee2eb35e8f1ca8112600fb9  Alhangeul_0.1.0_x64-setup.exe
+b7647416466cff7a3ac787d5d903f2950c2a1b735974482899e7778ce2de5aa4  Alhangeul_0.1.0_x64_en-US.msi
+```
+
+이 `SHA256SUMS` 파일 자체의 SHA-256은 `9e80f506fcc73f0b60018b383fba15b872e03bb9f69a8c6a9f90fb45a870cab2`였다. 검증용 임시 디렉터리와 checksum 초안은 검증 뒤 삭제했고 공개 release나 tag는 만들지 않았다.
+
+이 candidate는 필수 bundle의 exact-SHA build·inventory·checksum gate가 통과했다는 Stage 3 증거다. 이후 보고·운영 문서 commit이 추가되므로 최종 `v0.1.0` tag artifact나 공개 asset이 아니다. 실제 Windows/Linux 설치·실행·파일 연결·제거와 rollback은 Stage 4에서 별도로 통과해야 한다.
+
 ## 검증된 `0.1.0` 기준선
 
 2026-07-29에 다음 exact commit을 `publish/task7`에서 검증했다.
@@ -163,9 +206,10 @@ pnpm run check:desktop-artifacts -- \
   --verify-inventory \
   <downloaded-artifact-root>/alhangeul-artifact-inventory.json
 
+# 다운로드 artifact에서 공개할 installer만 깨끗한 임시 root로 선별한다.
 pnpm run create:release-checksums -- \
-  --root <temporary-directory> \
-  --output <temporary-directory>/SHA256SUMS
+  --root <temporary-release-assets-directory> \
+  --output <temporary-release-assets-directory>/SHA256SUMS
 ```
 
 검증이 끝난 임시 artifact는 별도 배포 경로로 옮기지 않고 정리한다.
