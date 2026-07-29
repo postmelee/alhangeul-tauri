@@ -1,6 +1,6 @@
 [package]
 name = "alhangeul-desktop"
-version = "0.3.1"
+version = "0.1.0"
 edition = "2021"
 description = "Alhangeul desktop app for HWP and HWPX documents"
 license = "MIT"

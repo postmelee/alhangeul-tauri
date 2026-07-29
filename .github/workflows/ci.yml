@@ -92,6 +92,9 @@ jobs:
       - name: Check product boundary
         run: pnpm run check:product-boundary
 
+      - name: Check product version
+        run: pnpm run check:product-version
+
       - name: Verify rhwp pin
         run: pnpm run check:rhwp-pin
 

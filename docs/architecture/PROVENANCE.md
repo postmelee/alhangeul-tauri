@@ -11,6 +11,15 @@
 
 기준 commit 이후의 Alhangeul 제품 코드, issue, release와 운영 자동화는 `postmelee/alhangeul-tauri`가 독립적으로 소유한다. HOP의 이후 변경을 자동으로 가져오지 않는다.
 
+## 제품 version 계보
+
+HOP 기준 commit에 기록된 `0.3.1`은 HOP의 release 계보에 속한다. Alhangeul은 제품명, package·crate 이름, Tauri identifier와 release channel을 분리했고, 독립 저장소에는 이를 계승한 공식 release, tag나 updater가 없다. M010에서 독립 제품의 첫 source 기준선을 `0.1.0`으로 승인했다.
+
+- Alhangeul 제품 SemVer 계보는 `0.1.0`부터 시작한다.
+- HOP `0.1.x`–`0.3.1` 이력과 Task #5의 `0.3.1` native build smoke는 출처와 과거 검증 증적으로 보존하며 Alhangeul release로 재분류하지 않는다.
+- root `package.json`을 source version의 기준으로 삼고 desktop package, Cargo manifest·lock과 Tauri 설정의 일치는 `pnpm run check:product-version`으로 검증한다.
+- `0.1.0`의 공식 release와 tag 생성은 별도 작업과 승인이 필요한 배포 단계다.
+
 ## 지속 upstream
 
 문서 engine과 renderer의 유일한 지속 upstream은 [`edwardkim/rhwp`](https://github.com/edwardkim/rhwp)다. 현재 고정 상태와 후속 Stable release pin 정책은 [UPSTREAM.md](UPSTREAM.md)에 기록한다.

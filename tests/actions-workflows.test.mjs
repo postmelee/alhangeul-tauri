@@ -37,10 +37,11 @@ test('대상 workflow는 수동 trigger와 최소 권한만 사용한다', () =>
   }
 });
 
-test('CI workflow는 pin과 automation 계약을 native 검사 전에 실행한다', () => {
+test('CI workflow는 제품 version·pin과 automation 계약을 native 검사 전에 실행한다', () => {
   assert.match(ciWorkflow, /^    runs-on: ubuntu-24\.04$/m);
   assertOrdered(ciWorkflow, [
     'pnpm run check:product-boundary',
+    'pnpm run check:product-version',
     'pnpm run check:rhwp-pin',
     'pnpm run test:automation',
     'pnpm run test:upstream',
@@ -117,6 +118,7 @@ test('desktop workflow는 checkout commit을 검증하고 pretest를 순서대�
 
   assertOrdered(desktopWorkflow, [
     'pnpm run check:product-boundary',
+    'pnpm run check:product-version',
     'pnpm run check:rhwp-pin',
     'pnpm run test:automation',
     'pnpm run test:upstream',
@@ -126,6 +128,7 @@ test('desktop workflow는 checkout commit을 검증하고 pretest를 순서대�
 
   for (const command of [
     'pnpm run check:product-boundary',
+    'pnpm run check:product-version',
     'pnpm run check:rhwp-pin',
     'pnpm run test:automation',
     'pnpm run test:upstream',
