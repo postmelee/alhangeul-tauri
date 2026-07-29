@@ -43,14 +43,16 @@ GitHub Issue: [#9](https://github.com/postmelee/alhangeul-tauri/issues/9)
   - 공개 등급: GitHub prerelease
   - 예정 version/tag: source `0.1.0`, 예정 immutable tag `v0.1.0`
   - checksum: release asset 전체를 정렬한 `SHA256SUMS`
-  - Windows signing: `signed-required` 또는 `unsigned-prerelease-allowed`
-  - candidate bundle: MSI, NSIS, AppImage, DEB, RPM과 Linux arm64 DEB의 포함 여부
+  - Windows signing: 첫 prerelease의 `unsigned-prerelease-allowed`
+  - baseline candidate bundle: Windows x64 MSI·NSIS, Linux x64 AppImage·DEB·RPM, Linux arm64 DEB 전체 필수
+  - 조건부 확장: Issue #10의 Windows ARM64 MSI·NSIS가 별도 Go일 때만 후속 게시 Issue에서 포함
   - print 경계: OS print dialog 또는 승인된 virtual printer
   - rollback: candidate 폐기, tag 불변, withdraw/supersede 또는 fix-forward
 - bundle별 build 환경, native install 환경, 자동/수동 검증 책임, fixture와 필수 증적을 표로 고정한다.
-- 실제 native 호환 환경이 없는 bundle은 다른 형식의 결과로 대체하지 않고 후보 제외 또는 No-Go 중 하나를 선택하도록 한다.
+- baseline bundle의 실제 native 호환 환경이 없으면 다른 형식의 결과로 대체하지 않고 Task #9를 No-Go로 처리한다.
 - 최초 보고서는 결정 필드를 `승인 대기`로 두고 추천안을 제시한다. 작업지시자 선택 뒤 같은 보고서에 승인값·승인일·Stage 2 제약을 반영한다.
-- signed release가 필수인데 인증서·secret이 준비되지 않았으면 signing 인프라를 별도 Issue로 분리하고 Stage 2로 진행하지 않는다.
+- unsigned 상태, SmartScreen 경고와 `SHA256SUMS` 필수 표시를 Stage 2 제약으로 고정하고 signing 인프라는 별도 Issue로 분리한다.
+- Stage 1.1에서는 승인된 범위 변경을 수행계획서·구현계획서·Stage 1 보고서와 오늘할일에 함께 반영한다.
 
 ### 검증
 
@@ -103,6 +105,7 @@ Stage 1에서 hosted runner install smoke를 승인하면 OS별 helper script를
 - metadata checker는 dependency 없이 JSON을 구조적으로 읽고 product name/version/identifier, publisher, descriptions, category, file association·MIME, updater 비활성 경계를 검사한다.
 - checker는 기본 repository root와 fixture용 `--root`를 지원하고 파일을 수정하지 않는다. 누락·오인 표현·구조 오류는 경로와 기대값을 포함해 실패한다.
 - checksum 도구는 명시적 artifact root만 읽고 지원 installer를 상대 경로로 정렬해 표준 SHA-256 줄 형식으로 출력한다. inventory·임시 파일·중간 AppDir은 제외하며 empty/duplicate/unsupported 입력을 거부한다.
+- checksum allowlist는 Windows x64 MSI·NSIS, Linux x64 AppImage·DEB·RPM, Linux arm64 DEB를 모두 포함하며 Windows ARM64는 Issue #10에서 별도로 확장한다.
 - `package.json`에 `check:release-metadata`, `create:release-checksums`를 추가하고 두 test를 `test:automation`에 연결한다.
 - CI와 native workflow는 dependency 설치 뒤 build·upstream 검증 전에 release metadata checker를 실행한다.
 - workflow는 계속 `workflow_dispatch`, `contents: read`, 14일 artifact와 비배포 경계를 유지하고 release action, secret과 write permission을 추가하지 않는다.
@@ -196,12 +199,12 @@ Task #9 Stage 3: exact-SHA prerelease candidate 검증
 ### 변경 내용
 
 - Stage 1에서 승인된 native 환경과 Task #9 candidate artifact만 사용한다.
-- Windows MSI·NSIS, Linux x64 AppImage·DEB·RPM, Linux arm64 DEB 중 후보에 포함된 모든 형식을 각각 native package 환경에서 검증한다.
+- Windows x64 MSI·NSIS, Linux x64 AppImage·DEB·RPM, Linux arm64 DEB 전체를 각각 native package 환경에서 검증한다.
 - clean install, launch/version, HWP/HWPX open·edit, HWP save/reopen, HWPX save block, PDF export, print 경계, file association, relaunch, uninstall과 rollback을 수행한다.
 - 비민감 fixture만 사용하고 사용자 문서가 uninstall·rollback 과정에서 삭제되지 않는지 확인한다.
 - 자동화할 수 없는 항목은 OS·architecture·package·exact SHA, 절차, 실제 관찰, 증적과 한계를 기록한다.
 - 필수 시나리오 누락, 다른 package manager/architecture의 대체 결과와 환경 미확보는 성공으로 처리하지 않는다.
-- 실패하면 candidate bundle 제외 또는 No-Go를 작업지시자에게 요청하고 Stage 4 보고서를 완료·commit하지 않는다.
+- baseline bundle 하나라도 실패하면 Task #9를 No-Go로 처리하고 Stage 4 보고서를 완료·commit하지 않는다.
 
 ### 검증
 
@@ -233,6 +236,7 @@ Task #9 Stage 4: Windows Linux prerelease 설치 시나리오 검증
 ### 변경 내용
 
 - Issue #9 수용 기준과 Stage 1 matrix의 모든 required 항목을 자동·remote·native 증적에 대조한다.
+- Issue #10은 Task #9 baseline과 분리된 조건부 확장으로 기록하고, 후속 게시 Issue가 별도 Go 결과를 확인하도록 입력에 포함한다.
 - signed/unsigned 상태, 후보 asset·checksum, 지원 환경, 미지원 기능, upstream known issue와 검증 한계를 release notes 초안으로 정리한다.
 - known issue는 pinned source의 동일 재현 조건·실패 지점이 확인된 경우만 분류하고 다른 실패는 No-Go로 둔다.
 - Go이면 후속 “v0.1.0 prerelease 게시와 배포 후 검증” Issue의 배경·범위·수용·검증 초안을 작성한다. 이 Stage에서 Issue를 생성하지 않는다.
@@ -267,7 +271,7 @@ Task #9 Stage 5: prerelease Go No-Go 판정과 게시 입력 확정
 ## 커밋
 
 - 단계 source·문서와 `mydocs/working/task_m010_9_stage{N}.md`는 같은 단계 커밋으로 묶는다.
-- Stage 1 정책 선택은 `Task #9 [Stage 1.1]: prerelease 후보 정책 승인 반영`으로 같은 보고서에 보존한다.
+- Stage 1 정책 선택과 승인된 범위 보정은 `Task #9 [Stage 1.1]: HOP bundle parity와 ARM64 조건부 지원 승인 반영`으로 계획서·보고서·오늘할일에 보존한다.
 
 ## 단계 의존성
 
@@ -280,7 +284,7 @@ Task #9 Stage 5: prerelease Go No-Go 판정과 게시 입력 확정
 
 ## 위험과 대응
 
-- **Stage 1 환경 미확정**: 실제 native 환경이 없는 package는 제외 또는 No-Go 중 하나를 승인받고 임의 면제하지 않는다.
+- **Stage 1 환경 미확정**: baseline package의 실제 native 환경이 없으면 Task #9를 No-Go로 처리하고 임의 면제하지 않는다.
 - **checksum 도구 범위 확장**: 명시적 root와 installer allowlist만 읽고 기존 파일을 암묵적으로 덮어쓰지 않는다.
 - **workflow 권한 확대**: Task #9 workflow는 `contents: read`와 build artifact만 유지하며 Release API를 호출하지 않는다.
 - **candidate SHA 이동**: run dispatch 뒤 `publish/task9`을 움직이지 않고 run head SHA를 먼저 확인한다.
@@ -293,7 +297,8 @@ Task #9 Stage 5: prerelease Go No-Go 판정과 게시 입력 확정
 - Stage 1 최초 보고와 정책 선택 반영을 Stage 1/1.1 두 commit으로 보존하는 방식
 - Stage 2에서 metadata checker와 checksum 도구를 독립 script/test로 추가하고 CI/native build 전에 연결하는 범위
 - Stage 3에서 승인 후 `publish/task9`을 remote canary ref로 사용하고 candidate artifact를 임시 경로에서만 검증하는 순서
-- Stage 4의 native package별 필수 시나리오와 미실행 bundle을 후보 제외 또는 No-Go로 처리하는 규칙
+- Stage 4의 baseline package별 필수 시나리오와 미실행 bundle을 Task #9 No-Go로 처리하는 규칙
+- Windows ARM64는 Issue #10에서 독립 구현·검증하고 후속 게시 Issue에서 별도 Go일 때만 포함하는 경계
 - Stage 5는 후속 게시 Issue 초안만 만들고 Issue·release PR·tag·GitHub Release를 생성하지 않는 경계
 
-승인되면 Stage 1 조사와 `task_m010_9_stage1.md` 작성만 시작한다. 이 구현계획서 승인만으로 unsigned prerelease, bundle 제외, remote push, Actions dispatch 또는 외부 공개가 승인된 것으로 간주하지 않는다.
+2026-07-29 Stage 1.1에서 unsigned prerelease, baseline bundle 전체 필수와 Windows ARM64 Issue #10 조건부 분리를 승인받았다. Stage 2 진입, remote push, Actions dispatch 또는 외부 공개는 별도 승인 없이는 수행하지 않는다.

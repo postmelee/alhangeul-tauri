@@ -5,13 +5,13 @@ GitHub Issue: [#9](https://github.com/postmelee/alhangeul-tauri/issues/9)
 
 ## 목적
 
-Alhangeul `v0.1.0`을 바로 공개하지 않고, GitHub prerelease로 게시할 수 있는 후보의 계약과 Go/No-Go 기준을 먼저 확정한다. 제품·패키지 설명을 실제 기능 범위와 맞추고, 최신 `devel`을 기준으로 한 exact-SHA Windows/Linux bundle 생성, artifact 무결성, 설치·실행·핵심 시나리오·제거와 rollback을 검증한다.
+Alhangeul `v0.1.0`을 바로 공개하지 않고, GitHub prerelease로 게시할 수 있는 후보의 계약과 Go/No-Go 기준을 먼저 확정한다. 제품·패키지 설명을 실제 기능 범위와 맞추고, 최신 `devel`을 기준으로 한 exact-SHA Windows/Linux bundle 생성, artifact 무결성, 설치·실행·핵심 시나리오·제거와 rollback을 검증한다. 공개 baseline은 HOP의 Windows/Linux direct-download bundle 범위를 계승하고, Windows ARM64는 별도 Issue의 성공 여부에 따라 게시 단계에서 추가할 수 있는 조건부 확장으로 둔다.
 
 이 task는 되돌리기 쉬운 준비와 검증까지만 소유한다. `devel → main` release PR, `v0.1.0` tag와 GitHub Release 게시는 Go 판정 후 별도 Issue에서 수행하며, Task #9의 Actions artifact를 공식 배포물로 재사용하지 않는다.
 
 ## 배경
 
-M010의 Task #1, #3, #5, #7에서 Alhangeul 독립 제품 경계, `rhwp v0.8.2` Stable pin, Windows/Linux native artifact build smoke와 독립 제품 버전 `0.1.0`을 확정했다. GitHub M010 이슈는 모두 닫혔지만 마일스톤은 공개 배포 준비를 위해 열린 상태다.
+M010의 Task #1, #3, #5, #7에서 Alhangeul 독립 제품 경계, `rhwp v0.8.2` Stable pin, Windows/Linux native artifact build smoke와 독립 제품 버전 `0.1.0`을 확정했다. 기존 구현 이슈는 닫혔고 공개 배포 준비 Issue #9와 조건부 Windows ARM64 Issue #10을 M010에서 계속 추적한다.
 
 - root 제품 version과 desktop package, Cargo, Tauri surface는 `0.1.0`으로 정렬되어 있다.
 - `rhwp`는 Stable tag `v0.8.2`, resolved commit `9b16aa9e23f476e2b335d7c029fc9f24a199d63c`에 고정되어 있다.
@@ -22,6 +22,7 @@ M010의 Task #1, #3, #5, #7에서 Alhangeul 독립 제품 경계, `rhwp v0.8.2` 
 - `README.md`와 `docs/DEVELOPMENT.md`는 HWPX 열기와 HWP 저장만 지원한다고 설명하지만 `apps/desktop/src-tauri/tauri.conf.json`의 long description은 HWPX 저장까지 지원하는 것으로 읽힐 수 있다.
 - HWPX 저장, autosave/recovery와 외부 파일 변경 감지는 현재 미지원 기능이며 이번 release 준비 task에서 구현하지 않는다.
 - `rhwp v0.8.2`에는 PDF 안내 modal과 페이지 repaint 관련 upstream known issue가 있으나, known issue라는 이유만으로 검증 성공으로 간주할 수 없다.
+- HOP v0.4.1의 Windows/Linux direct-download asset은 Windows x64 MSI·EXE, Linux x64 AppImage·DEB·RPM, Linux arm64 DEB이며, golbin/hop#80은 Windows ARM64 MSI·EXE를 추가로 요청한다.
 
 `docs/operations/DESKTOP_RELEASE.md`는 공개 배포 전 version/tag/bundle/checksum 정책, Windows signing과 Linux package metadata, 설치·실행과 rollback, 사용자 문서·지원 범위를 별도 승인 경계로 검증하도록 요구한다. Task #9는 이 후속 준비 범위를 하나의 release candidate 수용 매트릭스로 묶는다.
 
@@ -31,7 +32,8 @@ M010의 Task #1, #3, #5, #7에서 Alhangeul 독립 제품 경계, `rhwp v0.8.2` 
 
 - `v0.1.0` prerelease 후보의 version, 예정 tag, bundle 이름, 지원 artifact와 checksum 게시 계약
 - GitHub prerelease 표시, Windows signing과 unsigned 후보 허용 여부, Linux package metadata의 Go/No-Go 기준
-- Windows x64 MSI·NSIS, Linux x64 AppImage·DEB·RPM, Linux arm64 DEB의 build와 inventory 범위
+- HOP Windows/Linux bundle parity에 해당하는 Windows x64 MSI·NSIS, Linux x64 AppImage·DEB·RPM, Linux arm64 DEB의 필수 build·inventory·native 수용 범위
+- 별도 Issue #10의 Windows ARM64 결과를 후속 게시 Issue에서 조건부 asset으로 판정하기 위한 경계
 - package metadata, README와 공식 운영 문서가 실제 지원 기능·플랫폼·배포 상태를 정확히 설명하도록 정렬
 - 제품 설명의 HWPX 저장 오인 가능성을 제거하고 회귀 검증을 추가
 - 최신 `devel` 기반 reviewable exact SHA의 플랫폼 중립 검증과 native candidate build
@@ -53,6 +55,8 @@ M010의 Task #1, #3, #5, #7에서 Alhangeul 독립 제품 경계, `rhwp v0.8.2` 
 - HWPX 저장, autosave/recovery와 외부 파일 변경 감지 기능 구현
 - `rhwp` 갱신, `third_party/rhwp` 수정과 upstream known issue backport
 - macOS build, CI, 설치, 패키징과 배포 검증
+- Windows ARM64 workflow·artifact verifier·installer 구현과 native 검증 — Issue #10 소유
+- Arch Linux AUR와 같은 외부 배포 채널 게시
 - 물리 프린터나 특정 상용 애플리케이션을 필수 검증 의존성으로 추가
 - M010 마일스톤 close
 
@@ -78,6 +82,8 @@ Issue #9 본문의 “최종 `devel` exact SHA”는 두 exact-SHA gate로 구�
 
 Task #9 candidate SHA와 최종 tag SHA의 tree가 같아 보이더라도 artifact를 재사용하지 않는다. 이 해석은 하이퍼-워터폴의 task PR 완료 시점과 release PR·tag 생성 시점을 혼합하지 않기 위한 승인 대상이다.
 
+Issue #10은 Task #9 baseline을 차단하지 않는 조건부 Windows ARM64 확장이다. Task #9은 Windows x64와 Linux bundle의 Go/No-Go를 완결하고, 후속 게시 Issue는 Issue #10이 별도로 Go이면 ARM64 MSI·NSIS를 추가한다. Issue #10이 실패하거나 native 증적을 확보하지 못하면 Windows ARM64만 제외하며, Task #9에서 지원 성공으로 기록하지 않는다.
+
 ### release candidate 계약과 결정 게이트
 
 Stage 1에서 다음 항목을 증거표로 확정한다. 미결정 항목을 암묵적인 허용으로 처리하지 않는다.
@@ -87,12 +93,14 @@ Stage 1에서 다음 항목을 증거표로 확정한다. 미결정 항목을 �
 | 공개 등급 | GitHub `prerelease` | 미지원 기능과 위험을 release notes에 명시 | stable/latest로 오인될 표현이 남음 |
 | 예정 version/tag | source `0.1.0`, 예정 tag `v0.1.0` | 모든 product surface와 bundle 이름 일치 | version drift 또는 기존 tag 충돌 |
 | checksum | 모든 release asset의 immutable filename과 SHA-256을 `SHA256SUMS`로 게시 | 다운로드 후 독립 재계산 일치 | 누락 asset 또는 hash 불일치 |
-| Windows signing | signed/unsigned를 Stage 1에서 명시 선택 | 선택한 상태가 package와 release notes에 일치 | signing 필수 결정 후 인증서·secret 부재 |
+| Windows signing | 첫 prerelease는 unsigned 허용 | SmartScreen 경고와 `SHA256SUMS`가 package·release notes에 일치 | unsigned 상태가 누락되거나 stable로 오인됨 |
 | Linux metadata | package name, version, architecture, license, description, MIME/file association와 dependency 검토 | 각 bundle의 metadata가 실제 범위와 일치 | 허위 기능 설명, 잘못된 architecture/dependency |
+| baseline bundle | Windows x64 MSI·NSIS, Linux x64 AppImage·DEB·RPM, Linux arm64 DEB | 모든 형식의 build·checksum·native 수용 증적 | 하나라도 필수 gate 미충족 |
+| Windows ARM64 | Issue #10의 unsigned experimental MSI·NSIS | Issue #10 별도 Go와 후속 게시 시점 재검증 | 실패·미검증이면 ARM64만 제외 |
 | updater | 사용하지 않음 | binary와 문서에 update channel을 안내하지 않음 | updater 또는 latest channel이 암묵적으로 활성화됨 |
 | rollback | candidate는 폐기 가능, tag는 immutable | tag 이동 없는 withdraw/supersede/fix-forward 절차 승인 | tag 이동·덮어쓰기가 필요함 |
 
-서명되지 않은 Windows installer를 prerelease에서 허용할지는 Stage 1의 명시 승인 항목이다. signed release가 필수로 결정되면 signing 인프라는 별도 Issue로 분리하고 완료 전까지 Task #9를 Go로 판정하지 않는다. 인증 정보나 secret은 저장소, 로그와 작업 문서에 기록하지 않는다.
+첫 prerelease의 Windows installer는 unsigned를 허용하되 SmartScreen 경고와 `SHA256SUMS`를 필수로 표시한다. signing 인프라는 별도 Issue로 분리하며 인증 정보나 secret은 저장소, 로그와 작업 문서에 기록하지 않는다.
 
 ### artifact와 checksum 계약
 
@@ -109,11 +117,13 @@ macOS 호스트에서 Windows/Linux native 결과를 대신 판정하지 않는�
 
 | 플랫폼 | 후보 bundle | build·inventory | 설치·실행 smoke | 미충족 처리 |
 |---|---|---|---|---|
-| Windows x64 | MSI, NSIS | `windows-2025` exact-SHA build와 독립 checksum 검증 | 각각 clean install, launch, file association, uninstall을 native Windows에서 확인 | 검증하지 못한 형식은 release 후보에서 제외하거나 No-Go |
-| Linux x64 | AppImage, DEB, RPM | Linux x64 exact-SHA build와 독립 checksum 검증 | AppImage 실행, DEB는 Debian 계열, RPM은 RPM 계열 호환 환경에서 install·launch·uninstall 확인 | 다른 package manager 결과로 대체하지 않고 제외 또는 No-Go |
-| Linux arm64 | DEB | Linux arm64 exact-SHA build와 독립 checksum 검증 | arm64 Debian 계열 호환 환경에서 install·launch·uninstall 확인 | x64 결과로 대체하지 않고 제외 또는 No-Go |
+| Windows x64 | MSI, NSIS | `windows-2025` exact-SHA build와 독립 checksum 검증 | 각각 clean install, launch, file association, uninstall을 native Windows에서 확인 | Task #9 No-Go |
+| Linux x64 | AppImage, DEB, RPM | Linux x64 exact-SHA build와 독립 checksum 검증 | AppImage 실행, DEB는 Debian 계열, RPM은 RPM 계열 호환 환경에서 install·launch·uninstall 확인 | 다른 package manager 결과로 대체하지 않고 Task #9 No-Go |
+| Linux arm64 | DEB | Linux arm64 exact-SHA build와 독립 checksum 검증 | arm64 Debian 계열 호환 환경에서 install·launch·uninstall 확인 | x64 결과로 대체하지 않고 Task #9 No-Go |
 
 설치 뒤 핵심 시나리오는 개인·비공개 문서를 사용하지 않고 저장소에서 재현 가능한 비민감 fixture 또는 Stage 1에서 승인한 샘플을 사용한다.
+
+Windows ARM64 MSI·NSIS의 build·inventory·native 시나리오는 이 표에 대체 증적으로 넣지 않고 Issue #10에서 독립 검증한다. macOS bundle은 제품 지원 경계 밖이고 AUR은 GitHub Release bundle이 아닌 외부 배포 채널이므로 이번 공개 baseline에 포함하지 않는다.
 
 1. 앱 launch와 제품명·version 확인
 2. HWP와 HWPX 열기, 기본 rendering과 편집 확인
@@ -195,7 +205,8 @@ candidate 수용 매트릭스의 조사 결과, 실행 환경, checksum과 수�
 - **Stage 1 — prerelease 계약과 수용 매트릭스 확정**
   - version/tag/bundle/checksum, prerelease 표시, signing, package metadata, rollback과 release notes 필수 항목을 증거표로 정리한다.
   - Windows/Linux bundle별 build·설치·실행 환경, 자동/수동 시나리오와 필수 fixture를 확정한다.
-  - unsigned Windows prerelease 허용 여부, print 검증 경계와 실행 불가능 bundle의 제외/No-Go 규칙을 작업지시자 승인으로 결정한다.
+  - unsigned Windows prerelease, baseline bundle 전체의 필수 수용, print 검증 경계와 미충족 시 No-Go 규칙을 작업지시자 승인으로 결정한다.
+  - Windows ARM64는 Issue #10으로 분리하고 후속 게시 Issue에서 성공 시에만 포함하는 조건부 경계를 기록한다.
 - **Stage 2 — 제품 metadata·공식 문서와 자동 검증 정렬**
   - Tauri package description과 실제 HWP/HWPX 기능 범위를 정렬하고 관련 metadata를 함께 검토한다.
   - metadata drift를 거부하는 최소 read-only 검사와 회귀 테스트를 추가하고 CI/native workflow 연결을 검토한다.
@@ -207,7 +218,7 @@ candidate 수용 매트릭스의 조사 결과, 실행 환경, checksum과 수�
 - **Stage 4 — Windows/Linux 설치·실행·rollback 시나리오 검증**
   - Stage 1에서 승인한 native 환경에서 bundle별 clean install, launch, 핵심 문서 시나리오, file association, uninstall과 rollback을 수행한다.
   - 자동화할 수 없는 GUI 항목은 승인된 수동 절차의 환경·관찰 결과와 한계를 기록한다.
-  - 필수 형식이나 시나리오가 누락되면 Stage 4를 완료하지 않고 후보 제외 또는 No-Go 승인을 요청한다.
+  - 필수 형식이나 시나리오가 누락되면 Stage 4를 완료하지 않고 Task #9를 No-Go로 판정한다.
 - **Stage 5 — Go/No-Go 판정과 후속 게시 입력 확정**
   - 모든 자동·원격·수동 증적을 수용 매트릭스에 대조하고 upstream known issue와 Alhangeul 회귀를 구분한다.
   - prerelease notes 초안, asset·checksum 목록, signing 표시, rollback과 남은 위험을 정리한다.
@@ -274,21 +285,23 @@ candidate 수용 매트릭스의 조사 결과, 실행 환경, checksum과 수�
 
 - **task SHA와 release SHA 혼동**: task PR merge 전 candidate SHA는 최종 tag SHA가 아니다. 후속 게시 Issue에서 `main`과 tag exact SHA를 다시 build하고 artifact를 새로 만든다.
 - **main과 devel의 큰 차이**: 현재 `main`은 `devel`보다 42 commits 뒤다. Task #9에서 release PR을 만들지 않고 후속 Issue에서 diff와 승격 범위를 별도 검토한다.
-- **서명되지 않은 Windows installer**: SmartScreen과 사용자 신뢰에 영향을 준다. unsigned prerelease 허용 여부를 Stage 1에서 명시 결정하고 허용하지 않으면 signing Issue 완료 전 No-Go로 둔다.
-- **Linux 배포판 차이**: Ubuntu runner의 DEB 성공으로 RPM을 검증한 것으로 간주하지 않는다. 호환 native 환경이 없으면 해당 format을 제외하거나 No-Go로 판정한다.
+- **서명되지 않은 Windows installer**: SmartScreen과 사용자 신뢰에 영향을 준다. 첫 prerelease의 unsigned 허용 상태와 경고를 명시하고 `SHA256SUMS`를 제공하되 signing을 대체한다고 표현하지 않는다.
+- **Linux 배포판 차이**: Ubuntu runner의 DEB 성공으로 RPM을 검증한 것으로 간주하지 않는다. RPM 호환 native 환경이 없으면 Task #9를 No-Go로 판정한다.
 - **GUI smoke 자동화 한계**: hosted runner에서 file dialog, print와 desktop session이 불안정할 수 있다. 승인된 native 수동 시나리오를 사용하고 필수 검증 미실행을 성공으로 처리하지 않는다.
 - **package 설명과 실제 기능 불일치**: HWPX 저장을 지원하는 것으로 오인될 수 있다. metadata와 문서를 함께 수정하고 회귀 테스트로 보호한다.
 - **known issue의 과도한 면제**: upstream 기록과 재현 조건이 다른 실패는 Alhangeul 회귀일 수 있다. 실패 지점이 일치하지 않으면 Stage를 중지한다.
 - **artifact 만료와 잘못된 재사용**: candidate artifact는 14일 후 만료되고 공식 배포물이 아니다. 후속 release는 tag exact SHA에서 새로 생성한다.
 - **rollback 의미의 모호성**: 첫 공식 release라 이전 Alhangeul 버전이 없다. uninstall·candidate 재설치와 공개 후 withdraw/fix-forward를 분리해 정의한다.
 - **외부 상태 조기 변경**: tag, Release, signing secret과 package 게시를 Task #9 범위 밖으로 유지하고 단계별 명시 승인 없이 실행하지 않는다.
+- **계획 문서 LOC 초과**: 수행계획서와 구현계획서는 이미 역할별로 분리했지만 release 계약·5단계 검증·승인 이력을 한 task 안에서 추적하기 위해 권장 300 LOC를 소폭 초과한다. 추가 구현 상세는 단계 보고서와 역할별 script로 분리해 두 계획서를 더 확대하지 않는다.
 
 ## 승인 요청 사항
 
 - Task #9는 후보 준비·검증만 소유하고 `devel → main` release PR, tag, GitHub Release와 공개 후 검증은 별도 Issue로 분리하는 경계
 - Issue #9의 exact-SHA 수용 기준을 Task #9 reviewable candidate SHA와 후속 게시 Issue의 final `devel`·`main`·tag SHA 재검증이라는 두 gate로 구체화하는 해석
 - GitHub `prerelease`를 기본 공개 등급으로 두되 unsigned Windows installer 허용 여부는 Stage 1에서 별도 명시 결정하는 방식
-- 모든 후보 bundle에 native 호환 환경의 install/launch/uninstall 증적을 요구하고, 실행할 수 없는 bundle은 후보 제외 또는 No-Go로 처리하는 원칙
+- Windows x64 MSI·NSIS, Linux x64 AppImage·DEB·RPM, Linux arm64 DEB 전체에 native 호환 환경의 install/launch/uninstall 증적을 요구하고, 하나라도 미충족이면 Task #9를 No-Go로 처리하는 원칙
+- Windows ARM64는 Issue #10으로 분리하고 별도 Go일 때만 후속 게시 Issue에서 포함하는 조건부 경계
 - print는 물리 프린터가 아니라 지원 OS print dialog 또는 승인된 virtual printer까지를 기본 검증 경계로 두는 제안
 - `README.md`, `docs/operations/DESKTOP_RELEASE.md`, 조건부 `docs/DEVELOPMENT.md`만 공식 문서로 수정하고 candidate 증적과 release notes 초안은 `mydocs`에 두는 문서 위치 판단
 - 새 metadata verifier·test, CI/native workflow 변경은 Stage 1 계약에서 필요한 최소 범위를 확정한 뒤 도입하는 방향
@@ -296,4 +309,4 @@ candidate 수용 매트릭스의 조사 결과, 실행 환경, checksum과 수�
 - signing 인프라, updater, package repository, HWPX 저장 등 신규 기능, macOS, release PR·tag·Release와 M010 close를 제외하는 범위
 - 위 5개 단계와 단계별 승인·검증 계획
 
-승인되면 `task_m010_9_impl.md`에서 각 Stage의 산출물, 명령, remote canary 승인 경계와 커밋 메시지를 구체화한다. 수행계획서 승인만으로 unsigned prerelease, candidate bundle 제외, remote push, release PR, tag 또는 GitHub Release가 승인된 것으로 간주하지 않는다.
+2026-07-29 Stage 1.1에서 unsigned prerelease, HOP Windows/Linux bundle parity와 Windows ARM64 조건부 분리를 승인받았다. Stage 2 진입, remote push, Actions dispatch, release PR, tag 또는 GitHub Release는 각각 후속 승인 없이는 수행하지 않는다.

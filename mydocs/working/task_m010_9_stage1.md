@@ -14,8 +14,10 @@ Alhangeul `v0.1.0` prerelease 후보의 source, artifact, signing, checksum, nat
 
 | 파일 | 변경 요약 |
 |---|---|
-| `mydocs/working/task_m010_9_stage1.md` | 현재 release 상태, candidate bundle·signing·checksum·native 환경·rollback 수용 매트릭스와 추천안 |
-| `mydocs/orders/20260729.md` | Stage 1 완료와 정책 선택 승인 대기 상태 반영 |
+| `mydocs/plans/task_m010_9.md` | HOP Windows/Linux bundle parity와 Windows ARM64 Issue #10 조건부 분리 반영 |
+| `mydocs/plans/task_m010_9_impl.md` | baseline bundle 전체 필수 수용·No-Go와 Stage 1.1 산출 범위 보정 |
+| `mydocs/working/task_m010_9_stage1.md` | 현재 release 상태, candidate bundle·signing·checksum·native 환경·rollback 수용 매트릭스와 승인 기록 |
+| `mydocs/orders/20260729.md` | Stage 1.1 승인 반영과 Stage 2 진입 승인 대기 상태 기록 |
 
 ## 현재 기준선
 
@@ -62,18 +64,19 @@ Alhangeul `v0.1.0` prerelease 후보의 source, artifact, signing, checksum, nat
 
 Linux direct-download package도 이번 prerelease에서는 package signing을 추가하지 않고 GitHub HTTPS와 `SHA256SUMS`를 사용한다. package repository 게시나 Linux signing key 도입은 별도 Issue로 둔다.
 
-## candidate bundle 추천
+## candidate bundle 승인
 
-첫 prerelease는 생성 가능한 모든 format보다 native 검증 가능한 최소 surface를 우선한다. Windows MSI와 NSIS는 Tauri의 공식 installer 형식이며, AppImage는 설치 없이 실행 가능한 Linux direct-download 형식이다. 관련 배포 형식은 [Tauri Windows installer](https://v2.tauri.app/distribute/windows-installer/)와 [Tauri AppImage](https://v2.tauri.app/distribute/appimage/) 문서를 기준으로 한다.
+첫 prerelease의 baseline은 HOP v0.4.1이 제공하는 Windows/Linux direct-download 환경과 형식을 계승한다. Windows MSI와 NSIS는 Tauri의 공식 installer 형식이며, AppImage는 설치 없이 실행 가능한 Linux direct-download 형식이다. 관련 배포 형식은 [HOP v0.4.1](https://github.com/golbin/hop/releases/tag/v0.4.1), [Tauri Windows installer](https://v2.tauri.app/distribute/windows-installer/)와 [Tauri AppImage](https://v2.tauri.app/distribute/appimage/) 문서를 기준으로 한다.
 
-| Platform | Build 결과 | 공개 candidate 추천 | 필수 검증 |
+| Platform | Build 결과 | 승인된 공개 baseline | 필수 검증 |
 |---|---|---|---|
 | Windows x64 | MSI, NSIS | MSI·NSIS 모두 포함 | 각 installer install·launch·association·uninstall |
-| Linux x64 | AppImage, DEB, RPM | AppImage·DEB 포함 | AppImage 실행, Debian 계열 DEB install·launch·uninstall |
-| Linux x64 RPM | RPM | **이번 후보 제외** | RPM 계열 native host가 확보된 후 별도 포함 판단 |
+| Linux x64 | AppImage, DEB, RPM | AppImage·DEB·RPM 모두 포함 | AppImage 실행, Debian 계열 DEB와 RPM 계열 RPM install·launch·uninstall |
 | Linux arm64 | DEB | 포함 | arm64 Debian 계열 DEB install·launch·uninstall |
 
-현재 Linux x64 job은 Ubuntu에서 RPM을 만들지만 RPM 계열 환경에서 설치·실행하지 않는다. Ubuntu build 성공을 RPM native acceptance로 간주하지 않으므로 첫 후보에서는 RPM을 제외하는 것을 추천한다. workflow는 역사적 build smoke와 packaging 회귀를 위해 RPM 생성을 유지할 수 있지만 `SHA256SUMS`와 공개 asset allowlist에는 넣지 않는다.
+현재 Linux x64 job은 Ubuntu에서 RPM을 만들지만 RPM 계열 환경에서 설치·실행하지 않는다. Ubuntu build 성공을 RPM native acceptance로 간주하지 않는다. RPM은 `SHA256SUMS`와 공개 asset allowlist에 포함하되 Stage 4 전까지 RPM 호환 native 환경을 확보해야 하며, 설치·실행·제거 증적이 없으면 Task #9를 No-Go로 판정한다.
+
+HOP의 macOS x64·arm64 bundle은 Alhangeul의 Windows/Linux 제품 경계 밖이라 포함하지 않는다. AUR은 GitHub Release bundle이 아닌 외부 배포 채널이므로 별도 후속 범위다. [golbin/hop#80](https://github.com/golbin/hop/issues/80)의 Windows ARM64 MSI·EXE 요청은 M010 [Issue #10](https://github.com/postmelee/alhangeul-tauri/issues/10)으로 분리했다. Issue #10이 별도로 Go이면 후속 게시 Issue에서 ARM64 MSI·NSIS를 조건부로 추가하고, 실패하거나 native 검증을 완료하지 못하면 ARM64만 제외한다.
 
 ## checksum·tag·rollback 계약
 
@@ -95,10 +98,10 @@ bundle마다 package 동작이 다르므로 install 경계는 각 format에서 �
 
 | 환경 | bundle별 검증 | 대표 앱 시나리오 | 미충족 처리 |
 |---|---|---|---|
-| Windows x64 native | MSI·NSIS clean install, launch, registry association, uninstall | NSIS 또는 MSI에서 HWP/HWPX open·edit, HWP save/reopen, HWPX save block, PDF·print | 해당 installer 제외 또는 No-Go |
+| Windows x64 native | MSI·NSIS clean install, launch, registry association, uninstall | NSIS 또는 MSI에서 HWP/HWPX open·edit, HWP save/reopen, HWPX save block, PDF·print | Task #9 No-Go |
 | Linux x64 Debian 계열 | AppImage launch, DEB install·launch·uninstall, desktop/MIME 등록 | AppImage 또는 DEB에서 같은 문서 시나리오 | x64 Linux 후보 No-Go |
-| Linux arm64 Debian 계열 | DEB install·launch·uninstall, desktop/MIME 등록 | arm64에서 같은 문서 시나리오 | arm64 지원 범위 변경 승인 또는 No-Go |
-| Linux x64 RPM 계열 | 현재 환경 없음 | 이번 후보에서 수행하지 않음 | RPM 공개 asset 제외 |
+| Linux arm64 Debian 계열 | DEB install·launch·uninstall, desktop/MIME 등록 | arm64에서 같은 문서 시나리오 | Task #9 No-Go |
+| Linux x64 RPM 계열 | RPM install·launch·uninstall, desktop/MIME 등록 | RPM에서 같은 문서 시나리오 | Task #9 No-Go |
 
 - hosted runner는 package-level 자동 smoke에 사용할 수 있지만 현재 workflow에는 해당 단계가 없다.
 - GUI document scenario는 native desktop session에서 실제 관찰해야 한다. hosted runner만으로 충족하지 못하면 승인된 Windows/Linux 환경을 별도로 확보한다.
@@ -121,20 +124,20 @@ bundle마다 package 동작이 다르므로 install 경계는 각 format에서 �
 
 | 결정 항목 | 추천안 | 상태 |
 |---|---|---|
-| 공개 등급 | GitHub `prerelease`, stable/latest 아님 | 기존 작업 의도 확인됨 |
-| version·예정 tag | `0.1.0` / immutable `v0.1.0` | 선택 승인 대기 |
-| Windows signing | 첫 prerelease만 `unsigned-prerelease-allowed` | 선택 승인 대기 |
-| Linux signing | direct-download unsigned + `SHA256SUMS` | 선택 승인 대기 |
-| 공개 bundle | Windows MSI·NSIS, Linux x64 AppImage·DEB, Linux arm64 DEB | 선택 승인 대기 |
-| RPM | 이번 candidate 공개 asset에서 제외 | 선택 승인 대기 |
-| checksum | 공개 asset 전체의 `SHA256SUMS` | 선택 승인 대기 |
-| print | OS dialog 또는 virtual printer 도달 | 선택 승인 대기 |
-| rollback | tag 불변, withdraw/supersede 또는 fix-forward | 선택 승인 대기 |
-| native gate | 포함 bundle별 install smoke + OS/arch별 대표 문서 시나리오 | 선택 승인 대기 |
+| 공개 등급 | GitHub `prerelease`, stable/latest 아님 | 승인 — 2026-07-29 |
+| version·예정 tag | `0.1.0` / immutable `v0.1.0` | 승인 — 2026-07-29 |
+| Windows signing | 첫 prerelease만 `unsigned-prerelease-allowed` | 승인 — 2026-07-29 |
+| Linux signing | direct-download unsigned + `SHA256SUMS` | 승인 — 2026-07-29 |
+| 공개 baseline bundle | Windows x64 MSI·NSIS, Linux x64 AppImage·DEB·RPM, Linux arm64 DEB | 승인 — 2026-07-29 |
+| Windows ARM64 | Issue #10 별도 Go이면 후속 게시에서 MSI·NSIS 조건부 포함 | 승인 — 2026-07-29 |
+| checksum | 공개 asset 전체의 `SHA256SUMS` | 승인 — 2026-07-29 |
+| print | OS dialog 또는 virtual printer 도달 | 승인 — 2026-07-29 |
+| rollback | tag 불변, withdraw/supersede 또는 fix-forward | 승인 — 2026-07-29 |
+| native gate | baseline bundle별 install smoke + OS/arch별 대표 문서 시나리오 | 승인 — 2026-07-29 |
 
 ## 본문 변경 정도 / 본문 무손실 여부
 
-- 신규 Stage 1 조사 보고서와 오늘할일 비고만 변경했다.
+- Stage 1.1에서 수행계획서·구현계획서·Stage 1 결정표와 오늘할일 비고를 승인된 bundle 정책에 맞춰 보정했다.
 - 제품 코드, Tauri config, package, workflow와 공식 문서는 수정하지 않았다.
 - Task #5·#7의 run, artifact, inventory와 checksum 기록은 읽기만 했고 다시 쓰지 않았다.
 
@@ -147,6 +150,8 @@ gh release list --repo postmelee/alhangeul-tauri --limit 100
 git ls-remote --tags origin
 gh run view 30383886807 --repo postmelee/alhangeul-tauri --json headSha,status,conclusion,url
 gh run view 30384403366 --repo postmelee/alhangeul-tauri --json headSha,status,conclusion,url
+gh release view --repo golbin/hop --json tagName,assets,url
+gh issue view 10 --repo postmelee/alhangeul-tauri --json number,title,state,milestone,labels,url
 git rev-list --left-right --count origin/main...origin/devel
 rg -n 'HWPX|sign|checksum|rollback|GitHub Release|updater|known issue' README.md apps/desktop/src-tauri/tauri.conf.json docs
 git diff --check
@@ -160,25 +165,26 @@ git diff --check
 - OK — Task #7 artifact 3개는 미만료지만 임시 build smoke다.
 - OK — signing·updater·install smoke 구현이 없고 workflow는 `contents: read`다.
 - OK — HWPX 저장 기능 설명이 Tauri long description과 공식 문서에서 어긋남을 확인했다.
+- OK — HOP v0.4.1의 Windows/Linux direct-download asset이 승인된 baseline bundle과 일치한다.
+- OK — Windows ARM64 조건부 확장 Issue #10이 M010·`enhancement`·`OPEN`으로 등록됐다.
 - OK — Stage 1 product·official document diff는 없고 `git diff --check`가 통과했다.
 
 ## 잔여 위험
 
 - Windows/Linux native GUI session의 실제 가용성은 아직 확인되지 않았다. Stage 4 전까지 확보되지 않으면 해당 지원 범위는 No-Go다.
 - unsigned Windows prerelease는 SmartScreen 경고로 사용자 신뢰와 설치 성공률이 낮아질 수 있다.
-- RPM 제외는 생성 가능한 artifact와 공개 지원 asset이 달라지는 정책 변경이므로 명시 승인이 필요하다.
+- RPM 호환 native 환경이 아직 확보되지 않았다. Stage 4 전까지 확보하지 못하면 Task #9는 No-Go다.
 - Linux arm64 GUI 시나리오를 hosted arm64 runner에서 자동화할 수 있는지는 Stage 2 보정 전에 확인해야 한다.
+- GitHub의 Windows ARM64 runner는 public preview이며 Issue #10의 build 성공만으로 실제 사용자 환경 지원을 선언할 수 없다.
 - GitHub Release와 같은 위치의 checksum은 독립적인 publisher identity를 제공하지 않는다. signing을 대체한다고 표현하지 않는다.
 
 ## 다음 단계 영향
 
-- 추천안이 승인되면 Stage 1.1에서 이 보고서의 선택 상태·승인일을 갱신하고 Stage 2 constraint를 고정한다.
-- Stage 2 metadata/checksum 자동화는 승인된 공개 bundle allowlist와 unsigned 경고 계약을 기준으로 구현한다.
+- Stage 2 metadata/checksum 자동화는 RPM을 포함한 승인된 공개 baseline allowlist와 unsigned 경고 계약을 기준으로 구현한다.
 - hosted runner install helper가 필요하면 구현계획서를 먼저 보정하고 승인받는다.
-- 추천안 일부가 바뀌면 Stage 2로 진행하지 않고 변경된 bundle·signing·native 환경 영향을 다시 정리한다.
+- Issue #10은 아직 task-start하지 않으며 Task #9 구현 브랜치와 섞지 않는다. 후속 게시 Issue가 별도 Go 결과만 소비한다.
 
 ## 승인 요청
 
-- 위 표의 추천 정책 전체를 승인하려면 `추천안으로 진행`이라고 명시해 주기를 요청한다.
-- 다른 선택이 있으면 Windows signing, RPM 포함 여부, print 경계 또는 native 검증 범위를 항목별로 지정해 주기를 요청한다.
-- 선택 승인 후 Stage 1.1 commit으로 정책을 먼저 보존하고, 그 뒤 Stage 2 진입 승인을 별도로 확인한다.
+- 2026-07-29 작업지시자가 수정 추천안으로 진행을 승인했다.
+- Stage 1.1 commit으로 정책을 보존한 뒤 Stage 2 진입 승인을 별도로 요청한다.
