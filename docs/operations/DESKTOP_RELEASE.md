@@ -22,12 +22,32 @@ workflow는 다음 작업만 수행한다.
 
 1. submodule을 포함한 선택 commit checkout
 2. Node, pnpm, Rust와 Linux Tauri 의존성 준비
-3. 제품 경계·version, `rhwp` pin, automation, upstream과 studio 검증
+3. 제품 경계·version·release metadata, `rhwp` pin, automation, upstream과 studio 검증
 4. Tauri bundle 생성
 5. 필수 installer 종류·크기·SHA-256 inventory 검증
 6. inventory를 포함한 Actions artifact 업로드
 
 repository-level Actions는 활성 상태지만 대상 CI와 native workflow는 자동 trigger 없이 수동 `workflow_dispatch`로만 실행한다. Actions 활성 상태는 workflow 성공이나 artifact 가용성을 보장하지 않으므로 run의 exact commit과 job 결과를 함께 확인해야 한다.
+
+## `v0.1.0` prerelease 후보 계약
+
+첫 공개 후보는 stable/latest가 아닌 GitHub prerelease로만 검토한다. Task #9 candidate는 준비와 수용 검증용이며, 게시 task에서는 release PR로 승격된 `main`의 immutable `v0.1.0` tag exact SHA에서 bundle과 checksum을 새로 생성한다. Task #9 Actions artifact를 공개 asset으로 재사용하지 않는다.
+
+필수 baseline bundle:
+
+| 환경 | 공개 후보 bundle | 필수 수용 경계 |
+|---|---|---|
+| Windows x64 | MSI, NSIS | 각 installer 설치·실행·파일 연결·제거 |
+| Linux x64 | AppImage, DEB, RPM | AppImage 실행, DEB와 RPM의 호환 배포판 설치·실행·제거 |
+| Linux arm64 | DEB | arm64 Debian 계열 설치·실행·제거 |
+
+Windows ARM64 MSI·NSIS는 Issue #10의 별도 build·native 검증이 Go일 때만 후속 게시 task에서 조건부로 추가한다. 외부 배포 채널과 지원 범위 밖 운영체제 bundle은 이 baseline에 포함하지 않는다.
+
+첫 Windows prerelease installer는 unsigned를 허용한다. Release 제목과 본문에 unsigned 상태와 SmartScreen 경고 가능성을 명시하고, 모든 공개 installer를 상대 경로 순으로 정렬한 `SHA256SUMS`를 함께 제공한다. Linux direct-download package도 별도 package signing 없이 GitHub HTTPS와 같은 checksum 계약을 사용한다. checksum은 publisher identity나 code signing을 대체한다고 표현하지 않는다.
+
+필수 bundle 하나라도 build·inventory·checksum 또는 승인된 native 시나리오를 통과하지 못하면 Task #9는 No-Go다. candidate 실패 시 artifact를 폐기하고 공개 상태를 만들지 않는다. 게시 뒤 중대 결함은 tag나 asset을 덮어쓰지 않고 prerelease를 withdrawn/superseded로 표시하거나 수정 version으로 fix-forward한다. uninstall·rollback은 파일 연결을 정리하되 사용자 문서를 삭제하지 않아야 한다.
+
+`pnpm run check:release-metadata`는 package와 Tauri config의 제품명·version·identifier·publisher·설명·category·file association·license와 updater 비활성 경계를 읽기 전용으로 검사한다. `pnpm run create:release-checksums`는 명시한 artifact root에서 MSI·NSIS·AppImage·DEB·RPM만 받아 결정적인 `SHA256SUMS`를 생성한다.
 
 ## 검증된 `0.1.0` 기준선
 
@@ -122,6 +142,7 @@ GitHub API가 반환한 Actions artifact archive metadata는 다음과 같다. �
 pnpm install --frozen-lockfile
 pnpm run check:product-boundary
 pnpm run check:product-version
+pnpm run check:release-metadata
 pnpm run check:rhwp-pin
 pnpm run test:automation
 pnpm run test:upstream
@@ -141,6 +162,10 @@ pnpm run check:desktop-artifacts -- \
   --root <downloaded-artifact-root> \
   --verify-inventory \
   <downloaded-artifact-root>/alhangeul-artifact-inventory.json
+
+pnpm run create:release-checksums -- \
+  --root <temporary-directory> \
+  --output <temporary-directory>/SHA256SUMS
 ```
 
 검증이 끝난 임시 artifact는 별도 배포 경로로 옮기지 않고 정리한다.

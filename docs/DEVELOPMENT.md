@@ -82,6 +82,7 @@ Alhangeul은 `rhwp`의 문서 엔진과 웹 editor를 기반으로 다음 제품
 pnpm install --frozen-lockfile
 pnpm run check:product-boundary
 pnpm run check:product-version
+pnpm run check:release-metadata
 pnpm run check:rhwp-pin
 pnpm run test:automation
 pnpm run test:upstream
@@ -114,6 +115,14 @@ pnpm run check:desktop-artifacts -- \
   --root <downloaded-artifact-root> \
   --verify-inventory \
   <downloaded-artifact-root>/alhangeul-artifact-inventory.json
+```
+
+모든 platform artifact를 한 임시 root 아래에서 검증한 뒤 공개 후보 installer의 결정적 checksum 목록을 생성한다. 이 명령은 MSI·NSIS·AppImage·DEB·RPM만 허용하며 inventory, 기존 output과 AppDir 중간 산출물은 제외한다. 빈 installer, 지원하지 않는 파일과 중복 공개 파일명은 거부한다.
+
+```sh
+pnpm run create:release-checksums -- \
+  --root <downloaded-artifacts-root> \
+  --output <downloaded-artifacts-root>/SHA256SUMS
 ```
 
 검증된 canary commit·run과 platform별 installer SHA-256, 14일 retention 및 공식 배포와의 경계는 [desktop artifact와 배포 준비](operations/DESKTOP_RELEASE.md)를 따른다.

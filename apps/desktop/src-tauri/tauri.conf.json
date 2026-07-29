@@ -31,7 +31,7 @@
     "targets": "all",
     "publisher": "postmelee",
     "shortDescription": "Open desktop editor for HWP and HWPX documents",
-    "longDescription": "Alhangeul opens, edits, saves, and exports HWP/HWPX documents.",
+    "longDescription": "Alhangeul opens and edits HWP/HWPX documents, saves HWP documents, and exports PDF files.",
     "category": "Productivity",
     "copyright": "Alhangeul contributors",
     "icon": [
