@@ -166,6 +166,89 @@ test('desktop workflow는 build 뒤 bundle을 검증하고 inventory와 함께 �
   assert.match(desktopWorkflow, /^\s{10}retention-days: 14$/m);
 });
 
+test('fresh Windows installer smoke job은 build 결과와 무관하게 artifact를 소비한다', () => {
+  const job = getJob(desktopWorkflow, 'windows-installer-smoke');
+
+  assert.match(job, /^    needs: build$/m);
+  assert.match(job, /^    if: \$\{\{ always\(\) \}\}$/m);
+  assert.match(job, /^    runs-on: windows-2025$/m);
+  assert.doesNotMatch(job, /^\s+strategy:/m);
+  assertOrdered(job, [
+    '- name: Prepare installer smoke diagnostics',
+    '- name: Checkout installer smoke source',
+    '- name: Verify installer smoke commit',
+    '- name: Download Windows x64 bundle',
+    '- name: Run Windows installer smoke',
+    '- name: Record installer smoke outcome',
+    '- name: Upload installer smoke diagnostics',
+    '- name: Require Windows installer smoke success',
+  ]);
+});
+
+test('installer smoke job은 exact ref와 Windows x64 artifact를 고정한다', () => {
+  const job = getJob(desktopWorkflow, 'windows-installer-smoke');
+
+  assert.match(
+    job,
+    /ref: \$\{\{ inputs\.build_ref \|\| github\.sha \}\}/,
+  );
+  assert.match(
+    job,
+    /EXPECTED_BUILD_REF: \$\{\{ inputs\.build_ref \|\| github\.sha \}\}/,
+  );
+  assert.match(job, /git rev-parse "\$env:EXPECTED_BUILD_REF\^\{commit\}"/);
+  assert.match(job, /git rev-parse HEAD/);
+  assert.match(job, /uses: actions\/download-artifact@v8/);
+  assert.match(job, /name: alhangeul-desktop-windows-x64$/m);
+  assert.match(job, /path: artifacts\/windows-x64$/m);
+});
+
+test('installer smoke는 root version과 세 입력을 PowerShell script에 전달한다', () => {
+  const job = getJob(desktopWorkflow, 'windows-installer-smoke');
+  const step = getStepContaining(job, 'windows-installer-smoke.ps1');
+
+  assert.match(step, /^\s{8}id: run-installer-smoke$/m);
+  assert.match(step, /^\s{8}continue-on-error: true$/m);
+  assert.match(step, /^\s{8}shell: powershell$/m);
+  assert.match(step, /Get-Content -LiteralPath 'package\.json' -Raw/);
+  assert.match(step, /-ArtifactRoot 'artifacts\\windows-x64'/);
+  assert.match(
+    step,
+    /-OutputDirectory 'diagnostics\\windows-installer-smoke'/,
+  );
+  assert.match(step, /-ExpectedVersion \$expectedVersion/);
+});
+
+test('installer smoke 진단은 항상 보존되고 마지막 gate가 실패를 전달한다', () => {
+  const job = getJob(desktopWorkflow, 'windows-installer-smoke');
+  const recordStep = getStepContaining(job, 'step-outcomes.json');
+  const uploadStep = getStepContaining(
+    job,
+    'alhangeul-desktop-windows-x64-installer-smoke',
+  );
+  const gateStep = getStepContaining(job, 'Windows installer smoke gate failed');
+
+  assert.match(recordStep, /^\s{8}if: \$\{\{ always\(\) \}\}$/m);
+  assert.match(uploadStep, /^\s{8}if: \$\{\{ always\(\) \}\}$/m);
+  assert.match(uploadStep, /uses: actions\/upload-artifact@v7/);
+  assert.match(
+    uploadStep,
+    /path: diagnostics\/windows-installer-smoke\/\*\*/,
+  );
+  assert.match(uploadStep, /^\s{10}if-no-files-found: error$/m);
+  assert.match(uploadStep, /^\s{10}retention-days: 14$/m);
+  assert.match(gateStep, /^\s{8}if: \$\{\{ always\(\) \}\}$/m);
+  for (const outcome of [
+    'steps.smoke-checkout.outcome',
+    'steps.verify-smoke-commit.outcome',
+    'steps.download-windows-bundle.outcome',
+    'steps.run-installer-smoke.outcome',
+    'steps.upload-installer-smoke-diagnostics.outcome',
+  ]) {
+    assert.ok(gateStep.includes(outcome), `gate outcome이 필요합니다: ${outcome}`);
+  }
+});
+
 test('대상 workflow에는 release, Pages, deploy action이 없다', () => {
   const forbiddenPatterns = [
     /actions\/upload-pages-artifact/i,
@@ -214,6 +297,21 @@ function getSectionAssignments(source, name) {
     if (match) assignments.set(match[1], match[2]);
   }
   return assignments;
+}
+
+function getJob(source, name) {
+  const lines = source.split(/\r?\n/);
+  const start = lines.findIndex((line) => line === `  ${name}:`);
+  assert.notEqual(start, -1, `${name} job이 필요합니다`);
+
+  let end = lines.length;
+  for (let index = start + 1; index < lines.length; index += 1) {
+    if (/^  [A-Za-z0-9_-]+:/.test(lines[index])) {
+      end = index;
+      break;
+    }
+  }
+  return lines.slice(start, end).join('\n');
 }
 
 function assertOrdered(source, markers) {
