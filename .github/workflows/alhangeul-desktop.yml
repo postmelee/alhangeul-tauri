@@ -156,7 +156,7 @@ jobs:
 
       - name: Build Tauri bundles
         shell: bash
-        run: pnpm tauri build --target "${{ matrix.target }}" ${{ matrix.bundle_args }}
+        run: pnpm tauri build --verbose --target "${{ matrix.target }}" ${{ matrix.bundle_args }}
 
       - name: Verify bundle artifact
         shell: bash

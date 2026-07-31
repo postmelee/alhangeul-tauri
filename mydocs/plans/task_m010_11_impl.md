@@ -18,6 +18,8 @@ Stage 4 최종 canary run `30610672455`은 MSI·NSIS silent install과 uninstall
 
 Stage 6 첫 exact-SHA run `30612425879`은 Linux x64·arm64 build와 artifact upload를 통과했지만 Windows에서 `Alhangeul.exe` 생성 뒤 WiX `light.exe` validation이 실패했다. Stage 5의 `Path` file key path component 안에 `Advertise="no"` shortcut을 둔 구조가 비-advertised shortcut에는 HKCU registry key path가 필요하다는 ICE43 계약과 충돌한 packaging source 결함이다. 작업지시자는 Stage 6.1에서 shortcut을 같은 executable을 소유하는 advertised file shortcut으로 보정하고 source 계약을 강화한 뒤 새 exact-SHA 전체 workflow를 실행하는 범위를 승인했다. Handler, 기본 연결 불변 조건, smoke 수용 기준과 Task #9 인계 순서는 변경하지 않는다.
 
+Stage 6.1 exact-SHA run `30613439194`도 Linux x64·arm64를 통과하고 Windows `Alhangeul.exe`를 생성했지만 같은 `light.exe` 단계에서 중단됐다. Tauri CLI 2.10.1의 `output_ok`는 child stdout·stderr를 debug level에서만 기록하고 일반 실패에는 실행 파일명만 반환하므로 실제 WiX validation 메시지가 Actions log에 남지 않았다. 작업지시자는 Stage 6.2에서 Tauri build의 verbose logging과 그 source contract만 추가해 같은 수용 기준으로 새 exact-SHA run을 실행하고, 실제 오류를 확인하기 전 추가 packaging 변경은 하지 않는 범위를 승인했다.
+
 ## 단계 개요
 
 | Stage | 제목 | 주요 산출 | 검증 |
@@ -27,7 +29,7 @@ Stage 6 첫 exact-SHA run `30612425879`은 Linux x64·arm64 build와 artifact up
 | 3 | fresh Windows artifact-consumer job 연결 | desktop workflow, workflow test | 권한·exact SHA·진단 upload·실패 전달 |
 | 4 | 첫 exact-SHA 진단 canary | Actions run·diagnostic artifact | 재현 결과, log 완전성, 원인 분류 입력 |
 | 5 | 증거 기반 원인 판정·보정 | 조건부 WiX/Tauri/script 수정 | 원인별 최소 변경과 플랫폼 중립 회귀 |
-| 6 / 6.1 | 최종 exact-SHA 수용 검증, ICE43 보정과 #9 handoff | 성공 run, 운영 문서, Stage 보고 | 전체 workflow·MSI/NSIS smoke·무결성 |
+| 6 / 6.1 / 6.2 | 최종 exact-SHA 수용 검증, ICE43·진단 보정과 #9 handoff | 성공 run, 운영 문서, Stage 보고 | 전체 workflow·MSI/NSIS smoke·무결성 |
 
 ## 문서 위치 확인
 
@@ -318,6 +320,8 @@ repository 외부 상태:
 - 첫 run `30612425879`의 Linux x64·arm64 성공과 Windows WiX `light.exe` 실패, smoke artifact download 실패를 Stage 6.1 보정 입력으로 고정한다.
 - `Path` file 아래 Desktop·Start Menu shortcut은 executable을 default target으로 하는 advertised shortcut으로 바꾼다. MSI는 per-machine 설치이므로 `DesktopFolder`와 `ProgramMenuFolder`가 All Users 위치로 해석되는 기존 directory 계약을 유지한다.
 - Packaging source test는 file-owned shortcut의 `Advertise="yes"`, `Target` 미지정과 `Path` file key path를 함께 검증하고 비-advertised 회귀를 금지한다.
+- Stage 6.1 run `30613439194`의 반복된 generic `light.exe` 실패를 Stage 6.2 진단 입력으로 고정하고, Tauri build에 `--verbose`를 추가해 WiX child stdout·stderr를 Actions log에 보존한다.
+- Workflow source test는 verbose flag를 요구한다. Build matrix, bundle 종류, artifact와 installer smoke gate는 변경하지 않는다.
 - 전체 기존 build matrix와 Windows installer smoke job의 success를 요구한다. Linux는 기존 build 회귀만 확인하며 install 성공으로 주장하지 않는다.
 - MSI·NSIS summary에서 clean state, exit, version, handler, 기본 연결 불변, bounded launch, uninstall cleanup과 fixture hash를 각각 확인한다.
 - Windows artifact inventory와 run provenance를 독립 재검증하고 artifact·log 만료 시각을 기록한다.

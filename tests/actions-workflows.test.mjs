@@ -147,6 +147,10 @@ test('desktop workflow는 build 뒤 bundle을 검증하고 inventory와 함께 �
   ]);
   assert.match(
     desktopWorkflow,
+    /run: pnpm tauri build --verbose --target "\$\{\{ matrix\.target \}\}" \$\{\{ matrix\.bundle_args \}\}/,
+  );
+  assert.match(
+    desktopWorkflow,
     /BUNDLE_ROOT: apps\/desktop\/src-tauri\/target\/\$\{\{ matrix\.target \}\}\/release\/bundle/,
   );
   assert.match(
