@@ -162,7 +162,7 @@ function Get-CleanState {
   $residualPaths = @($msiInstallDirectory, $nsisInstallDirectory, $shortcutPaths) | Where-Object { Test-Path -LiteralPath $_ }
   $entries = @(Get-UninstallEntries)
   $registryCount = @($ownedKeys + $ownedOpenWith | Where-Object { $_.Exists }).Count
-  return [ordered]@{ Clean = $processes.Count -eq 0 -and $residualPaths.Count -eq 0 -and $entries.Count -eq 0 -and $registryCount -eq 0; Processes = @($processes.Id); Paths = @($residualPaths); Entries = $entries; OwnedRegistryCount = $registryCount }
+  return [ordered]@{ Clean = $processes.Count -eq 0 -and $residualPaths.Count -eq 0 -and $entries.Count -eq 0 -and $registryCount -eq 0; Processes = @($processes | ForEach-Object { $_.Id }); Paths = @($residualPaths); Entries = $entries; OwnedRegistryCount = $registryCount }
 }
 function Assert-InstalledRegistry($State, $Kind) {
   Assert-Condition (Test-Path -LiteralPath $State.Executable -PathType Leaf) 'Alhangeul.exe가 없습니다.'

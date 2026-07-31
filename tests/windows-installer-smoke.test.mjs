@@ -79,6 +79,11 @@ test('version, shortcut, 제한 실행과 targeted cleanup을 검사한다', () 
   assert.match(source, /Stop-Process -Id \$process\.Id -Force/);
   assert.doesNotMatch(source, /Stop-Process\s+-Name/);
   assert.match(source, /Get-CleanState/);
+  assert.ok(
+    source.includes('Processes = @($processes | ForEach-Object { $_.Id })'),
+    '빈 process 배열에서도 StrictMode-safe ID projection이 필요합니다.',
+  );
+  assert.doesNotMatch(source, /Processes = @\(\$processes\.Id\)/);
 });
 
 test('fixture, summary, failure category와 finally 증적을 항상 남긴다', () => {
