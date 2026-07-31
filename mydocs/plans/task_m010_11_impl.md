@@ -20,6 +20,8 @@ Stage 6 첫 exact-SHA run `30612425879`은 Linux x64·arm64 build와 artifact up
 
 Stage 6.1 exact-SHA run `30613439194`도 Linux x64·arm64를 통과하고 Windows `Alhangeul.exe`를 생성했지만 같은 `light.exe` 단계에서 중단됐다. Tauri CLI 2.10.1의 `output_ok`는 child stdout·stderr를 debug level에서만 기록하고 일반 실패에는 실행 파일명만 반환하므로 실제 WiX validation 메시지가 Actions log에 남지 않았다. 작업지시자는 Stage 6.2에서 Tauri build의 verbose logging과 그 source contract만 추가해 같은 수용 기준으로 새 exact-SHA run을 실행하고, 실제 오류를 확인하기 전 추가 packaging 변경은 하지 않는 범위를 승인했다.
 
+Stage 6.2 exact-SHA run `30614222090`의 verbose log는 Windows executable 생성 뒤 WiX `light.exe`가 canonical association registry path 두 개의 `ICE03 Invalid registry path`와 advertised shortcut 두 개의 `ICE50 icon/key-file extension mismatch`로 실패했음을 확인했다. Bootstrapper string overflow `ICE03`, `ICE40`, `ICE57`, `ICE61`은 warning으로 분리한다. 작업지시자는 Stage 6.3에서 `Software\Classes` registry path separator를 정규화하고 icon ID와 참조를 `.exe` 확장자로 정렬하며 source contract를 추가한 뒤 새 exact-SHA 전체 workflow를 실행하는 범위를 승인했다. Warning-only 항목, handler 소유 범위와 installer 수용 기준은 변경하지 않는다.
+
 ## 단계 개요
 
 | Stage | 제목 | 주요 산출 | 검증 |
@@ -29,7 +31,7 @@ Stage 6.1 exact-SHA run `30613439194`도 Linux x64·arm64를 통과하고 Window
 | 3 | fresh Windows artifact-consumer job 연결 | desktop workflow, workflow test | 권한·exact SHA·진단 upload·실패 전달 |
 | 4 | 첫 exact-SHA 진단 canary | Actions run·diagnostic artifact | 재현 결과, log 완전성, 원인 분류 입력 |
 | 5 | 증거 기반 원인 판정·보정 | 조건부 WiX/Tauri/script 수정 | 원인별 최소 변경과 플랫폼 중립 회귀 |
-| 6 / 6.1 / 6.2 | 최종 exact-SHA 수용 검증, ICE43·진단 보정과 #9 handoff | 성공 run, 운영 문서, Stage 보고 | 전체 workflow·MSI/NSIS smoke·무결성 |
+| 6 / 6.1 / 6.2 / 6.3 | 최종 exact-SHA 수용 검증, WiX·진단 보정과 #9 handoff | 성공 run, 운영 문서, Stage 보고 | 전체 workflow·MSI/NSIS smoke·무결성 |
 
 ## 문서 위치 확인
 
@@ -322,6 +324,8 @@ repository 외부 상태:
 - Packaging source test는 file-owned shortcut의 `Advertise="yes"`, `Target` 미지정과 `Path` file key path를 함께 검증하고 비-advertised 회귀를 금지한다.
 - Stage 6.1 run `30613439194`의 반복된 generic `light.exe` 실패를 Stage 6.2 진단 입력으로 고정하고, Tauri build에 `--verbose`를 추가해 WiX child stdout·stderr를 Actions log에 보존한다.
 - Workflow source test는 verbose flag를 요구한다. Build matrix, bundle 종류, artifact와 installer smoke gate는 변경하지 않는다.
+- Stage 6.2 run `30614222090`의 fatal `ICE03`·`ICE50`만 Stage 6.3 보정 입력으로 고정한다. Canonical class, `OpenWithProgids`와 deep-link 확장 지점의 `Software\Classes` 경로는 중복 separator를 남기지 않는다.
+- MSI icon table ID, ARP icon property와 두 advertised shortcut 참조를 `ProductIcon.exe`로 일치시키고 source test에서 registry path와 icon extension 계약을 검증한다.
 - 전체 기존 build matrix와 Windows installer smoke job의 success를 요구한다. Linux는 기존 build 회귀만 확인하며 install 성공으로 주장하지 않는다.
 - MSI·NSIS summary에서 clean state, exit, version, handler, 기본 연결 불변, bounded launch, uninstall cleanup과 fixture hash를 각각 확인한다.
 - Windows artifact inventory와 run provenance를 독립 재검증하고 artifact·log 만료 시각을 기록한다.

@@ -48,6 +48,7 @@ test('desktop binary와 Windows advertised shortcut은 Alhangeul.exe로 정렬�
 
     assert.ok(shortcut, `${shortcutId} 계약이 필요합니다.`);
     assert.match(shortcut, /\bAdvertise="yes"/);
+    assert.match(shortcut, /\bIcon="ProductIcon\.exe"/);
     assert.doesNotMatch(
       shortcut,
       /\bTarget=/,
@@ -55,12 +56,20 @@ test('desktop binary와 Windows advertised shortcut은 Alhangeul.exe로 정렬�
     );
   }
   assert.doesNotMatch(wixTemplate, /\bAdvertise="no"/);
+  assert.match(
+    wixTemplate,
+    /<Icon Id="ProductIcon\.exe" SourceFile="\{\{icon_path\}\}"\/>/,
+  );
+  assert.match(
+    wixTemplate,
+    /<Property Id="ARPPRODUCTICON" Value="ProductIcon\.exe" \/>/,
+  );
 });
 
 test('MSI는 canonical handler를 Open With에만 등록한다', () => {
   for (const contract of [
-    'Software\\Classes\\\\{{../../product_name}}.{{ext}}',
-    'Software\\Classes\\\\.{{ext}}\\OpenWithProgids',
+    'Software\\Classes\\{{../../product_name}}.{{ext}}',
+    'Software\\Classes\\.{{ext}}\\OpenWithProgids',
     'Name="{{../../product_name}}.{{ext}}" Type="string" Value=""',
     'Value="&quot;[#Path]&quot; &quot;%1&quot;"',
   ]) {
@@ -72,6 +81,11 @@ test('MSI는 canonical handler를 Open With에만 등록한다', () => {
   assert.doesNotMatch(
     wixTemplate,
     /Key="Software\\Classes\\\\\.\{\{ext\}\}">\s*<RegistryValue[^>]+Name=""/,
+  );
+  assert.doesNotMatch(
+    wixTemplate,
+    /Key="Software\\Classes\\\\/,
+    'Windows Installer registry path에는 중복 separator를 둘 수 없습니다.',
   );
 });
 
