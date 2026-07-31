@@ -14,6 +14,8 @@ Stage 4.2 보정 commit의 세 번째 canary run `30603734563`은 parser를 통�
 
 Stage 4.3 보정 commit의 네 번째 canary run `30604711021`은 installer별 summary와 fixture 검증을 생성했지만 install 경로와 shortcut 배열을 한 배열 식으로 결합해 nested array가 `Test-Path`에 전달됐고, 존재하지 않는 shortcut 후보 네 개를 잔여 상태로 오판했다. 작업지시자는 후보 경로 평탄화와 회귀 test의 최소 보정 및 새 exact-SHA 재실행을 승인했다. Packaging 설정과 installer 수용 기준은 변경하지 않는다.
 
+Stage 4 최종 canary run `30610672455`은 MSI·NSIS silent install과 uninstall을 모두 exit code `0`으로 완료하고 원본 log·summary·cleanup 증적을 보존했다. 실행 파일 `alhangeul-desktop.exe`, MSI advertised extension과 비어 있는 Shortcut table, NSIS legacy association·직접 default 변경을 packaging 결함으로 분류했다. Stage 5는 Cargo binary를 `Alhangeul`로 정렬하고, MSI는 file-owned shortcut과 명시적 canonical handler·`OpenWithProgids`를 사용하며, NSIS는 canonical association name·Start Menu folder·공식 installer hook으로 기존 default의 값과 존재 여부를 보존한다. 별도 packaging source test를 전체 automation에 연결하고 native bundle·installer 수용은 Stage 6에서 판정한다.
+
 ## 단계 개요
 
 | Stage | 제목 | 주요 산출 | 검증 |
@@ -240,12 +242,19 @@ Task #11 Stage 4: exact-SHA Windows installer 진단 canary
 
 조건부 수정:
 
+- `apps/desktop/src-tauri/Cargo.toml`
+- `apps/desktop/src-tauri/tauri.conf.json`
+- `apps/desktop/src-tauri/windows/main.wxs`
+- `package.json`
 - `scripts/windows-installer-smoke.ps1`
 - `tests/windows-installer-smoke.test.mjs`
 - `.github/workflows/alhangeul-desktop.yml`
 - `tests/actions-workflows.test.mjs`
-- `apps/desktop/src-tauri/windows/main.wxs`
-- `apps/desktop/src-tauri/tauri.conf.json`
+
+신규:
+
+- `apps/desktop/src-tauri/windows/nsis-hooks.nsh`
+- `tests/windows-packaging.test.mjs`
 
 조건부 신규:
 
