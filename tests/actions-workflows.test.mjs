@@ -174,8 +174,8 @@ test('fresh Windows installer smoke job은 build 결과와 무관하게 artifact
   assert.match(job, /^    runs-on: windows-2025$/m);
   assert.doesNotMatch(job, /^\s+strategy:/m);
   assertOrdered(job, [
-    '- name: Prepare installer smoke diagnostics',
     '- name: Checkout installer smoke source',
+    '- name: Prepare installer smoke diagnostics',
     '- name: Verify installer smoke commit',
     '- name: Download Windows x64 bundle',
     '- name: Run Windows installer smoke',
@@ -221,6 +221,7 @@ test('installer smoke는 root version과 세 입력을 PowerShell script에 전�
 
 test('installer smoke 진단은 항상 보존되고 마지막 gate가 실패를 전달한다', () => {
   const job = getJob(desktopWorkflow, 'windows-installer-smoke');
+  const prepareStep = getStepContaining(job, 'workflow-context.json');
   const recordStep = getStepContaining(job, 'step-outcomes.json');
   const uploadStep = getStepContaining(
     job,
@@ -228,6 +229,11 @@ test('installer smoke 진단은 항상 보존되고 마지막 gate가 실패를 
   );
   const gateStep = getStepContaining(job, 'Windows installer smoke gate failed');
 
+  assert.match(prepareStep, /^\s{8}if: \$\{\{ always\(\) \}\}$/m);
+  assert.match(
+    prepareStep,
+    /New-Item -ItemType Directory -Path \$output -Force/,
+  );
   assert.match(recordStep, /^\s{8}if: \$\{\{ always\(\) \}\}$/m);
   assert.match(uploadStep, /^\s{8}if: \$\{\{ always\(\) \}\}$/m);
   assert.match(uploadStep, /uses: actions\/upload-artifact@v7/);

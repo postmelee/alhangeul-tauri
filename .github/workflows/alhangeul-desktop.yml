@@ -183,7 +183,14 @@ jobs:
     runs-on: windows-2025
     timeout-minutes: 30
     steps:
+      - name: Checkout installer smoke source
+        id: smoke-checkout
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.build_ref || github.sha }}
+
       - name: Prepare installer smoke diagnostics
+        if: ${{ always() }}
         shell: powershell
         env:
           REQUESTED_BUILD_REF: ${{ inputs.build_ref || github.sha }}
@@ -195,12 +202,6 @@ jobs:
             runAttempt = '${{ github.run_attempt }}'
             requestedBuildRef = $env:REQUESTED_BUILD_REF
           } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $output 'workflow-context.json') -Encoding UTF8
-
-      - name: Checkout installer smoke source
-        id: smoke-checkout
-        uses: actions/checkout@v5
-        with:
-          ref: ${{ inputs.build_ref || github.sha }}
 
       - name: Verify installer smoke commit
         id: verify-smoke-commit

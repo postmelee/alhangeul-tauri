@@ -6,6 +6,8 @@ GitHub Issue: [#11](https://github.com/postmelee/alhangeul-tauri/issues/11)
 
 2026-07-31 작업지시자가 수행계획서의 범위, Task #9 통합 순서와 문서 위치를 승인했다. 이 구현계획서는 원인 확인 전 packaging 설정을 바꾸지 않도록 자동화 구현, 첫 진단 run, 증거 기반 보정과 최종 성공 run을 분리해 잠정 5단계를 6단계로 구체화한다.
 
+2026-07-31 첫 Stage 4 canary run `30600969373`에서 exact-SHA build와 Windows artifact는 성공했지만 checkout이 선행 생성한 diagnostic 디렉터리를 정리해 installer smoke가 실행 전에 중단됐다. 작업지시자는 같은 스레드에서 진행을 승인했으며, Stage 4 완료 조건을 회복하기 위한 workflow 순서와 회귀 test의 최소 보정 및 새 exact-SHA 재실행을 Stage 4 범위에 포함한다. Packaging 설정과 installer 수용 기준은 변경하지 않는다.
+
 ## 단계 개요
 
 | Stage | 제목 | 주요 산출 | 검증 |
@@ -169,26 +171,41 @@ Task #11 Stage 3: fresh Windows installer smoke workflow 연결
 repository 외부 상태:
 
 - `publish/task11` exact candidate ref
-- `Alhangeul Desktop Artifact Build` 첫 진단 run
+- `Alhangeul Desktop Artifact Build` 첫 진단 run과 필요 시 canary 선행 결함을 보정한 재실행
 - Windows build artifact와 installer-smoke diagnostic artifact
 
 신규:
 
 - `mydocs/working/task_m010_11_stage4.md`
 
+조건부 수정:
+
+- `.github/workflows/alhangeul-desktop.yml`
+- `tests/actions-workflows.test.mjs`
+- `mydocs/plans/task_m010_11_impl.md`
+
 ### 변경 내용
 
 - Stage 3 승인 commit을 exact SHA로 고정하고 별도 승인 뒤 `publish/task11`에 push한다.
 - desktop workflow를 해당 exact SHA로 dispatch하고 event, head branch·SHA, 모든 job conclusion을 확인한다.
+- 첫 canary가 installer 실행 전 workflow 순서 결함으로 중단되면 diagnostic 보존과 smoke 진입에 필요한 workflow 순서와 회귀 test만 최소 보정하고, 새 승인 commit의 exact SHA로 재실행한다.
 - Windows build artifact와 diagnostic artifact를 임시 디렉터리에 내려받아 inventory, summary, MSI log와 cleanup 결과를 검토한다.
 - MSI `1602`, NSIS handler 누락, script assertion 오류 또는 hosted runner 성공 중 하나로 결과를 분류한다.
 - installer assertion이 실패해도 원본 log·summary·cleanup 증적이 온전하고 다음 보정 원인이 특정되면 “진단 canary 목적 충족”으로 기록할 수 있다. 이를 installer 수용 성공으로 기록하지 않는다.
 - Windows artifact 미생성, smoke job 미실행, diagnostic upload 누락 또는 exact-SHA 불일치는 Stage 4 미완료다.
-- 이 Stage에서는 source를 임의 수정하지 않는다.
+- 이 Stage에서는 위 canary 선행 결함 외 source를 임의 수정하지 않으며 packaging 설정과 installer 판정 계약을 변경하지 않는다.
 
 ### 검증
 
 ```bash
+node --test tests/actions-workflows.test.mjs tests/windows-installer-smoke.test.mjs
+pnpm run test:automation
+pnpm run check:product-boundary
+pnpm run check:product-version
+pnpm run check:rhwp-pin
+pnpm run test:upstream
+pnpm run test:studio
+pnpm run build:studio
 git push origin HEAD:refs/heads/publish/task11
 git ls-remote --heads origin refs/heads/publish/task11
 gh workflow run alhangeul-desktop.yml --repo postmelee/alhangeul-tauri --ref publish/task11 -f build_ref=<candidate-sha> -f run_tests=true
