@@ -12,6 +12,8 @@ Stage 4.1 보정 commit의 두 번째 canary run `30602141411`은 checkout·diag
 
 Stage 4.2 보정 commit의 세 번째 canary run `30603734563`은 parser를 통과하고 summary와 sentinel 복원 증적을 생성했지만 StrictMode에서 빈 process 배열의 `.Id` 속성 투영이 fatal error를 일으켜 installer 실행 전에 중단됐다. 작업지시자는 pipeline 기반 process ID 투영과 회귀 test의 최소 보정 및 새 exact-SHA 재실행을 승인했다. Packaging 설정과 installer 수용 기준은 변경하지 않는다.
 
+Stage 4.3 보정 commit의 네 번째 canary run `30604711021`은 installer별 summary와 fixture 검증을 생성했지만 install 경로와 shortcut 배열을 한 배열 식으로 결합해 nested array가 `Test-Path`에 전달됐고, 존재하지 않는 shortcut 후보 네 개를 잔여 상태로 오판했다. 작업지시자는 후보 경로 평탄화와 회귀 test의 최소 보정 및 새 exact-SHA 재실행을 승인했다. Packaging 설정과 installer 수용 기준은 변경하지 않는다.
+
 ## 단계 개요
 
 | Stage | 제목 | 주요 산출 | 검증 |
@@ -197,6 +199,7 @@ repository 외부 상태:
 - 첫 canary가 installer 실행 전 workflow 순서 결함으로 중단되면 diagnostic 보존과 smoke 진입에 필요한 workflow 순서와 회귀 test만 최소 보정하고, 새 승인 commit의 exact SHA로 재실행한다.
 - 보정 canary가 Windows PowerShell 5.1의 UTF-8 source decoding 때문에 parser 단계에서 중단되면 script의 UTF-8 BOM과 byte-level 회귀 test만 보정하고 새 승인 commit의 exact SHA로 재실행한다.
 - 보정 canary가 StrictMode의 빈 process ID 투영 때문에 clean-state 단계에서 중단되면 pipeline 기반 ID 투영과 회귀 test만 보정하고 새 승인 commit의 exact SHA로 재실행한다.
+- 보정 canary가 nested shortcut 배열 때문에 존재하지 않는 경로를 잔여 상태로 오판하면 후보 경로 평탄화와 회귀 test만 보정하고 새 승인 commit의 exact SHA로 재실행한다.
 - Windows build artifact와 diagnostic artifact를 임시 디렉터리에 내려받아 inventory, summary, MSI log와 cleanup 결과를 검토한다.
 - MSI `1602`, NSIS handler 누락, script assertion 오류 또는 hosted runner 성공 중 하나로 결과를 분류한다.
 - installer assertion이 실패해도 원본 log·summary·cleanup 증적이 온전하고 다음 보정 원인이 특정되면 “진단 canary 목적 충족”으로 기록할 수 있다. 이를 installer 수용 성공으로 기록하지 않는다.

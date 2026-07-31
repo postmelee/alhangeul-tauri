@@ -159,7 +159,8 @@ function Get-CleanState {
   for ($index = 0; $index -lt $extensions.Count; $index += 1) { $ownedOpenWith += Get-RegistryValues "Software\Classes\$($extensions[$index])\OpenWithProgids" $canonicalProgIds[$index] }
   $shortcutPaths = @((Join-Path ([Environment]::GetFolderPath('CommonDesktopDirectory')) 'Alhangeul.lnk'), (Join-Path ([Environment]::GetFolderPath('CommonPrograms')) 'Alhangeul\Alhangeul.lnk'), (Join-Path ([Environment]::GetFolderPath('DesktopDirectory')) 'Alhangeul.lnk'), (Join-Path ([Environment]::GetFolderPath('Programs')) 'Alhangeul\Alhangeul.lnk'))
   $processes = @(Get-Process -Name 'Alhangeul' -ErrorAction SilentlyContinue)
-  $residualPaths = @($msiInstallDirectory, $nsisInstallDirectory, $shortcutPaths) | Where-Object { Test-Path -LiteralPath $_ }
+  $candidatePaths = @($msiInstallDirectory, $nsisInstallDirectory) + $shortcutPaths
+  $residualPaths = @($candidatePaths | Where-Object { Test-Path -LiteralPath $_ })
   $entries = @(Get-UninstallEntries)
   $registryCount = @($ownedKeys + $ownedOpenWith | Where-Object { $_.Exists }).Count
   return [ordered]@{ Clean = $processes.Count -eq 0 -and $residualPaths.Count -eq 0 -and $entries.Count -eq 0 -and $registryCount -eq 0; Processes = @($processes | ForEach-Object { $_.Id }); Paths = @($residualPaths); Entries = $entries; OwnedRegistryCount = $registryCount }

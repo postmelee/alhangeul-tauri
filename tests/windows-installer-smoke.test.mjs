@@ -80,6 +80,20 @@ test('version, shortcut, 제한 실행과 targeted cleanup을 검사한다', () 
   assert.doesNotMatch(source, /Stop-Process\s+-Name/);
   assert.match(source, /Get-CleanState/);
   assert.ok(
+    source.includes(
+      '$candidatePaths = @($msiInstallDirectory, $nsisInstallDirectory) + $shortcutPaths',
+    ),
+    'clean-state path 후보는 Test-Path 전에 평탄화해야 합니다.',
+  );
+  assert.match(
+    source,
+    /\$residualPaths = @\(\$candidatePaths \| Where-Object \{ Test-Path -LiteralPath \$_ \}\)/,
+  );
+  assert.doesNotMatch(
+    source,
+    /\$residualPaths = @\(\$msiInstallDirectory, \$nsisInstallDirectory, \$shortcutPaths\)/,
+  );
+  assert.ok(
     source.includes('Processes = @($processes | ForEach-Object { $_.Id })'),
     '빈 process 배열에서도 StrictMode-safe ID projection이 필요합니다.',
   );
