@@ -145,7 +145,7 @@
                         Directory="DesktopFolder"
                         Name="{{product_name}}"
                         Description="Runs {{product_name}}"
-                        Advertise="no"
+                        Advertise="yes"
                         Icon="ProductIcon"
                         WorkingDirectory="INSTALLDIR">
                         <ShortcutProperty Key="System.AppUserModel.ID" Value="{{bundle_id}}"/>
@@ -154,7 +154,7 @@
                         Directory="ApplicationProgramsFolder"
                         Name="{{product_name}}"
                         Description="Runs {{product_name}}"
-                        Advertise="no"
+                        Advertise="yes"
                         Icon="ProductIcon"
                         WorkingDirectory="INSTALLDIR">
                         <ShortcutProperty Key="System.AppUserModel.ID" Value="{{bundle_id}}"/>

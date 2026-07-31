@@ -15,7 +15,7 @@ const [cargoManifest, tauriConfigSource, wixTemplate, nsisHooks] =
   ]);
 const tauriConfig = JSON.parse(tauriConfigSource);
 
-test('desktop binary와 Windows shortcut은 Alhangeul.exe로 정렬한다', () => {
+test('desktop binary와 Windows advertised shortcut은 Alhangeul.exe로 정렬한다', () => {
   const binarySection = cargoManifest.match(
     /\[\[bin\]\]\s+name = "([^"]+)"\s+path = "src\/main\.rs"/,
   );
@@ -37,6 +37,24 @@ test('desktop binary와 Windows shortcut은 Alhangeul.exe로 정렬한다', () =
     wixTemplate,
     /Component Id="ApplicationShortcut(?:Desktop)?"/,
   );
+
+  for (const shortcutId of [
+    'ApplicationDesktopShortcut',
+    'ApplicationStartMenuShortcut',
+  ]) {
+    const shortcut = wixTemplate.match(
+      new RegExp(`<Shortcut Id="${shortcutId}"[\\s\\S]+?</Shortcut>`),
+    )?.[0];
+
+    assert.ok(shortcut, `${shortcutId} 계약이 필요합니다.`);
+    assert.match(shortcut, /\bAdvertise="yes"/);
+    assert.doesNotMatch(
+      shortcut,
+      /\bTarget=/,
+      'advertised shortcut은 별도 Target을 지정하지 않고 parent File을 사용해야 합니다.',
+    );
+  }
+  assert.doesNotMatch(wixTemplate, /\bAdvertise="no"/);
 });
 
 test('MSI는 canonical handler를 Open With에만 등록한다', () => {

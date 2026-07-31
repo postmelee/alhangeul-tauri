@@ -16,6 +16,8 @@ Stage 4.3 보정 commit의 네 번째 canary run `30604711021`은 installer별 s
 
 Stage 4 최종 canary run `30610672455`은 MSI·NSIS silent install과 uninstall을 모두 exit code `0`으로 완료하고 원본 log·summary·cleanup 증적을 보존했다. 실행 파일 `alhangeul-desktop.exe`, MSI advertised extension과 비어 있는 Shortcut table, NSIS legacy association·직접 default 변경을 packaging 결함으로 분류했다. Stage 5는 Cargo binary를 `Alhangeul`로 정렬하고, MSI는 file-owned shortcut과 명시적 canonical handler·`OpenWithProgids`를 사용하며, NSIS는 canonical association name·Start Menu folder·공식 installer hook으로 기존 default의 값과 존재 여부를 보존한다. 별도 packaging source test를 전체 automation에 연결하고 native bundle·installer 수용은 Stage 6에서 판정한다.
 
+Stage 6 첫 exact-SHA run `30612425879`은 Linux x64·arm64 build와 artifact upload를 통과했지만 Windows에서 `Alhangeul.exe` 생성 뒤 WiX `light.exe` validation이 실패했다. Stage 5의 `Path` file key path component 안에 `Advertise="no"` shortcut을 둔 구조가 비-advertised shortcut에는 HKCU registry key path가 필요하다는 ICE43 계약과 충돌한 packaging source 결함이다. 작업지시자는 Stage 6.1에서 shortcut을 같은 executable을 소유하는 advertised file shortcut으로 보정하고 source 계약을 강화한 뒤 새 exact-SHA 전체 workflow를 실행하는 범위를 승인했다. Handler, 기본 연결 불변 조건, smoke 수용 기준과 Task #9 인계 순서는 변경하지 않는다.
+
 ## 단계 개요
 
 | Stage | 제목 | 주요 산출 | 검증 |
@@ -25,7 +27,7 @@ Stage 4 최종 canary run `30610672455`은 MSI·NSIS silent install과 uninstall
 | 3 | fresh Windows artifact-consumer job 연결 | desktop workflow, workflow test | 권한·exact SHA·진단 upload·실패 전달 |
 | 4 | 첫 exact-SHA 진단 canary | Actions run·diagnostic artifact | 재현 결과, log 완전성, 원인 분류 입력 |
 | 5 | 증거 기반 원인 판정·보정 | 조건부 WiX/Tauri/script 수정 | 원인별 최소 변경과 플랫폼 중립 회귀 |
-| 6 | 최종 exact-SHA 수용 검증과 #9 handoff | 성공 run, 운영 문서, Stage 보고 | 전체 workflow·MSI/NSIS smoke·무결성 |
+| 6 / 6.1 | 최종 exact-SHA 수용 검증, ICE43 보정과 #9 handoff | 성공 run, 운영 문서, Stage 보고 | 전체 workflow·MSI/NSIS smoke·무결성 |
 
 ## 문서 위치 확인
 
@@ -313,6 +315,9 @@ repository 외부 상태:
 ### 변경 내용
 
 - `publish/task11`을 Stage 5 승인 commit으로 fast-forward하고 desktop workflow를 같은 exact SHA로 다시 실행한다.
+- 첫 run `30612425879`의 Linux x64·arm64 성공과 Windows WiX `light.exe` 실패, smoke artifact download 실패를 Stage 6.1 보정 입력으로 고정한다.
+- `Path` file 아래 Desktop·Start Menu shortcut은 executable을 default target으로 하는 advertised shortcut으로 바꾼다. MSI는 per-machine 설치이므로 `DesktopFolder`와 `ProgramMenuFolder`가 All Users 위치로 해석되는 기존 directory 계약을 유지한다.
+- Packaging source test는 file-owned shortcut의 `Advertise="yes"`, `Target` 미지정과 `Path` file key path를 함께 검증하고 비-advertised 회귀를 금지한다.
 - 전체 기존 build matrix와 Windows installer smoke job의 success를 요구한다. Linux는 기존 build 회귀만 확인하며 install 성공으로 주장하지 않는다.
 - MSI·NSIS summary에서 clean state, exit, version, handler, 기본 연결 불변, bounded launch, uninstall cleanup과 fixture hash를 각각 확인한다.
 - Windows artifact inventory와 run provenance를 독립 재검증하고 artifact·log 만료 시각을 기록한다.
