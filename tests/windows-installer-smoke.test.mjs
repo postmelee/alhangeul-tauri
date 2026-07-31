@@ -6,7 +6,16 @@ import test from 'node:test';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const scriptPath = join(repoRoot, 'scripts/windows-installer-smoke.ps1');
-const source = await readFile(scriptPath, 'utf8');
+const scriptBytes = await readFile(scriptPath);
+const source = scriptBytes.toString('utf8');
+
+test('Windows PowerShell 5.1이 UTF-8 source를 인식하도록 BOM을 유지한다', () => {
+  assert.deepEqual(
+    [...scriptBytes.subarray(0, 3)],
+    [0xef, 0xbb, 0xbf],
+    'PowerShell script는 UTF-8 BOM으로 시작해야 합니다.',
+  );
+});
 
 test('entry parameter는 artifact, output, expected version 세 개로 제한한다', () => {
   const parameterBlock = source.match(/param\(([\s\S]*?)\)\nSet-StrictMode/);

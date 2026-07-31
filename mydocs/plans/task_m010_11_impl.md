@@ -8,6 +8,8 @@ GitHub Issue: [#11](https://github.com/postmelee/alhangeul-tauri/issues/11)
 
 2026-07-31 첫 Stage 4 canary run `30600969373`에서 exact-SHA build와 Windows artifact는 성공했지만 checkout이 선행 생성한 diagnostic 디렉터리를 정리해 installer smoke가 실행 전에 중단됐다. 작업지시자는 같은 스레드에서 진행을 승인했으며, Stage 4 완료 조건을 회복하기 위한 workflow 순서와 회귀 test의 최소 보정 및 새 exact-SHA 재실행을 Stage 4 범위에 포함한다. Packaging 설정과 installer 수용 기준은 변경하지 않는다.
 
+Stage 4.1 보정 commit의 두 번째 canary run `30602141411`은 checkout·diagnostic 준비·exact-SHA 검증·artifact download까지 통과했지만 Windows PowerShell 5.1이 BOM 없는 UTF-8 script의 한국어 문자열을 잘못 해석해 parser error로 중단됐다. 작업지시자는 UTF-8 BOM과 byte-level 회귀 test의 최소 보정 및 새 exact-SHA 재실행을 승인했다. Script 동작, packaging 설정과 installer 수용 기준은 변경하지 않는다.
+
 ## 단계 개요
 
 | Stage | 제목 | 주요 산출 | 검증 |
@@ -182,6 +184,8 @@ repository 외부 상태:
 
 - `.github/workflows/alhangeul-desktop.yml`
 - `tests/actions-workflows.test.mjs`
+- `scripts/windows-installer-smoke.ps1`
+- `tests/windows-installer-smoke.test.mjs`
 - `mydocs/plans/task_m010_11_impl.md`
 
 ### 변경 내용
@@ -189,6 +193,7 @@ repository 외부 상태:
 - Stage 3 승인 commit을 exact SHA로 고정하고 별도 승인 뒤 `publish/task11`에 push한다.
 - desktop workflow를 해당 exact SHA로 dispatch하고 event, head branch·SHA, 모든 job conclusion을 확인한다.
 - 첫 canary가 installer 실행 전 workflow 순서 결함으로 중단되면 diagnostic 보존과 smoke 진입에 필요한 workflow 순서와 회귀 test만 최소 보정하고, 새 승인 commit의 exact SHA로 재실행한다.
+- 보정 canary가 Windows PowerShell 5.1의 UTF-8 source decoding 때문에 parser 단계에서 중단되면 script의 UTF-8 BOM과 byte-level 회귀 test만 보정하고 새 승인 commit의 exact SHA로 재실행한다.
 - Windows build artifact와 diagnostic artifact를 임시 디렉터리에 내려받아 inventory, summary, MSI log와 cleanup 결과를 검토한다.
 - MSI `1602`, NSIS handler 누락, script assertion 오류 또는 hosted runner 성공 중 하나로 결과를 분류한다.
 - installer assertion이 실패해도 원본 log·summary·cleanup 증적이 온전하고 다음 보정 원인이 특정되면 “진단 canary 목적 충족”으로 기록할 수 있다. 이를 installer 수용 성공으로 기록하지 않는다.
