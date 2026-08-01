@@ -12,6 +12,7 @@ GitHub Issue: [#9](https://github.com/postmelee/alhangeul-tauri/issues/9)
 | 2 | 제품 metadata·공식 문서와 자동 검증 정렬 | metadata/checksum 도구·테스트, Tauri config, workflow·문서 | 실제 기능 설명, 결정적 checksum, 비배포 경계 |
 | 3 | 플랫폼 중립 수용 검증과 exact-SHA candidate 생성 | exact-SHA CI/native run, artifact inventory·checksum | 전체 자동 검사, remote SHA, 다운로드 후 독립 검증 |
 | 4 | Windows/Linux 설치·실행·rollback 검증 | `task_m010_9_stage4.md` | bundle별 native install·launch·핵심 시나리오·uninstall |
+| 4.1 | Linux desktop entry 문서 인자 전달 보정 | 공통 desktop template, metadata 회귀 검증 | AppImage·DEB·RPM의 `Exec`·MIME 계약과 새 exact-SHA artifact |
 | 5 | Go/No-Go 판정과 후속 게시 입력 확정 | `task_m010_9_stage5.md`, release notes·후속 Issue 초안 | 모든 required gate 대조, 공개 작업 미실행 확인 |
 
 ## 문서 위치 확인
@@ -24,6 +25,7 @@ GitHub Issue: [#9](https://github.com/postmelee/alhangeul-tauri/issues/9)
 | release 운영 계약 | `docs/operations/` | `docs/operations/DESKTOP_RELEASE.md` | OK | checksum, signing, candidate와 게시 경계 |
 | 기여자 검증 명령 | `docs/` | `docs/DEVELOPMENT.md` | OK | 새 명령이 도입될 때만 수정 |
 | package metadata | Tauri config | `apps/desktop/src-tauri/tauri.conf.json` | OK | 실제 bundle 설명과 file association |
+| Linux desktop entry | desktop package template | `apps/desktop/src-tauri/linux/main.desktop` | OK | DEB·RPM과 DEB staging을 재사용하는 AppImage의 launcher 인자·MIME 계약 |
 | 단계 증적 | `mydocs/working/` | `mydocs/working/task_m010_9_stage*.md` | OK | 조사, run, hash와 native 시나리오 결과 |
 | 최종 판단·release notes 초안 | `mydocs/report/` | `mydocs/report/task_m010_9_report.md` | OK | 후속 게시 Issue 입력이며 공개 Release 본문이 아님 |
 
@@ -221,6 +223,68 @@ Linux arm64: arm64 Debian 계열 DEB install → launch → scenarios → uninst
 Task #9 Stage 4: Windows Linux prerelease 설치 시나리오 검증
 ```
 
+## Stage 4.1 — Linux desktop entry 문서 인자 전달 보정
+
+### 진입 사유와 승인
+
+2026-08-02 Stage 4 candidate `dd67d58f5367b478315417279ac8f6561bd5b718` 검증에서 AppImage는 payload를 실행했지만 HWP/HWPX 경로를 전달하지 않았다. DEB·RPM도 등록된 desktop entry가 `Exec=Alhangeul`이라 MIME 기본 앱 선택은 존재하지만 launcher가 문서 경로를 넘길 field code가 없다. 이 candidate는 폐기하고 공개 상태를 만들지 않는다.
+
+작업지시자는 같은 날 다음 보정 범위를 승인했다.
+
+- Task #9 안에서 Stage 4.1 하위 단계로 처리한다.
+- Freedesktop Desktop Entry의 복수 로컬 파일 field code `%F`를 사용한다.
+- DEB template을 재사용하는 AppImage와 별도 RPM template에 같은 계약을 적용한다.
+- metadata checker와 automation test로 template 경로, `Exec={{exec}} %F`, MIME 보존을 고정한다.
+- 보정 뒤 새 exact-SHA candidate를 만들고 기존 Stage 3·4 증적을 재사용하지 않는다.
+- Windows/Linux 필수 수동 시나리오가 남아 있는 동안 Task #9 No-Go를 유지한다.
+
+### 산출물
+
+신규:
+
+- `apps/desktop/src-tauri/linux/main.desktop`
+- `tests/linux-desktop-entry.test.mjs`
+
+수정:
+
+- `package.json`
+- `apps/desktop/src-tauri/tauri.conf.json`
+- `scripts/check-release-metadata.mjs`
+- `tests/release-metadata.test.mjs`
+- `mydocs/orders/20260802.md`
+- `mydocs/plans/task_m010_9_impl.md`
+
+Stage 4.1 검증이 모두 성공한 뒤 기존 `mydocs/working/task_m010_9_stage4.md`에 실패 원인, 보정 결과와 새 candidate 재검증 선행 조건을 기록한다. 새 artifact가 아직 없거나 필수 native 시나리오가 미완료이면 Stage 4 완료 보고서로 확정하거나 commit하지 않는다.
+
+### 변경 내용
+
+- Tauri 기본 desktop entry 구조와 template 변수는 유지하고 `Exec`에 독립 인자 `%F`만 추가한다.
+- `bundle.linux.deb.desktopTemplate`과 `bundle.linux.rpm.desktopTemplate`이 같은 template을 가리키게 한다. Tauri 2.8.1 AppImage bundler가 DEB staging의 desktop file을 복사하는 경계를 회귀 계약으로 기록한다.
+- template은 HWP/HWPX MIME 목록을 유지하고 `Terminal=false`, `Type=Application`, `StartupWMClass`, category, comment와 icon을 보존한다.
+- metadata checker는 template 경로가 repository 안의 일반 파일인지 확인하고 template의 필수 key, 단일 `%F`, 금지된 `%f`·`%u`·`%U`와 MIME 조건부 출력을 검증한다.
+- 기존 release metadata fixture는 template 누락과 DEB/RPM 경로 drift를 거부한다. 독립 Linux desktop entry test는 file field code 누락·중복과 MIME 누락을 각각 거부하며 `test:automation`에 연결한다. 이 분리는 기존 test를 권장 300 LOC 아래로 유지한다.
+- Stage 4 smoke는 직접 binary 실행만으로 file association 성공을 주장하지 않고 desktop launcher가 실제 경로를 전달했는지 process argv와 열린 문서 화면으로 확인한다.
+
+### 검증
+
+```bash
+pnpm run check:release-metadata
+pnpm run test:automation
+pnpm run check:product-boundary
+pnpm run test:upstream
+pnpm run test:studio
+pnpm run build:studio
+git diff --check
+```
+
+새 candidate 생성은 Stage 4.1 source correction commit 승인 뒤 `publish/task9` exact SHA를 이동하는 별도 승인 경계로 유지한다. 같은 SHA에서 CI, Windows x64, Linux x64, Linux arm64 workflow와 artifact inventory·checksum을 다시 검증한다.
+
+### 커밋
+
+```text
+Task #9 [Stage 4.1]: Linux 문서 연결 인자 전달 보정
+```
+
 ## Stage 5 — Go/No-Go 판정과 후속 게시 입력 확정
 
 ### 산출물
@@ -279,6 +343,7 @@ Task #9 Stage 5: prerelease Go No-Go 판정과 게시 입력 확정
 - Stage 2는 Stage 1.1 정책 기록 뒤에만 product metadata와 workflow를 변경한다.
 - Stage 3은 Stage 2 보고 승인과 remote push·Actions 실행의 별도 승인을 받은 뒤 진행한다.
 - Stage 4는 Stage 3 exact-SHA artifact 성공과 native 환경 확보 뒤 진행한다.
+- Stage 4.1은 Stage 4에서 확인한 Linux desktop entry 실패의 승인된 보정이며, 성공 commit 승인 뒤 새 exact-SHA candidate 생성으로 돌아간다.
 - Stage 5는 Stage 4의 모든 required 시나리오 승인 뒤 Go/No-Go를 판정한다.
 - 각 Stage 완료보고서 승인 전 다음 Stage를 시작하지 않는다.
 
@@ -289,6 +354,7 @@ Task #9 Stage 5: prerelease Go No-Go 판정과 게시 입력 확정
 - **workflow 권한 확대**: Task #9 workflow는 `contents: read`와 build artifact만 유지하며 Release API를 호출하지 않는다.
 - **candidate SHA 이동**: run dispatch 뒤 `publish/task9`을 움직이지 않고 run head SHA를 먼저 확인한다.
 - **GUI 검증 증적 부족**: 필수 시나리오는 수동이라도 환경·절차·관찰 결과를 남기며 미실행을 검증 한계로 낮추지 않는다.
+- **desktop MIME 등록과 실제 open 혼동**: 기본 앱 등록만으로 성공 판정하지 않고 launcher가 HWP/HWPX 경로를 process argv로 전달하고 앱이 해당 문서를 연 증적을 함께 요구한다.
 - **파일 크기 증가**: 신규 script/test는 역할별 300 LOC 미만으로 분리하고 기존 300 LOC 초과 test 파일은 확대하지 않는다.
 
 ## 승인 요청 사항
@@ -302,6 +368,8 @@ Task #9 Stage 5: prerelease Go No-Go 판정과 게시 입력 확정
 - Stage 5는 후속 게시 Issue 초안만 만들고 Issue·release PR·tag·GitHub Release를 생성하지 않는 경계
 
 2026-07-29 Stage 1.1에서 unsigned prerelease, baseline bundle 전체 필수와 Windows ARM64 Issue #10 조건부 분리를 승인받았다. Stage 2 진입, remote push, Actions dispatch 또는 외부 공개는 별도 승인 없이는 수행하지 않는다.
+
+2026-08-02 작업지시자는 Stage 4에서 확인한 Linux desktop entry 문서 인자 누락을 Task #9 Stage 4.1로 보정하고, 새 exact-SHA candidate 전까지 기존 `dd67d58…` artifact를 폐기하는 범위를 승인했다. source/report commit 뒤 remote push와 Actions dispatch는 별도 승인을 받는다.
 
 ## Stage 3 재검증 보정 — Task #11 merge 통합 (2026-08-02)
 

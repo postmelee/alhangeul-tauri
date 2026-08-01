@@ -73,6 +73,16 @@ for (const [name, path, mutate, expectedError] of [
     /hwp\.name 값이 다릅니다/,
   ],
   [
+    'DEB desktop template 경로 drift', 'apps/desktop/src-tauri/tauri.conf.json',
+    (value) => { value.bundle.linux.deb.desktopTemplate = 'linux/other.desktop'; },
+    /bundle\.linux\.deb\.desktopTemplate 값이 다릅니다/,
+  ],
+  [
+    'RPM desktop template 경로 drift', 'apps/desktop/src-tauri/tauri.conf.json',
+    (value) => { value.bundle.linux.rpm.desktopTemplate = 'linux/other.desktop'; },
+    /bundle\.linux\.rpm\.desktopTemplate 값이 다릅니다/,
+  ],
+  [
     '활성화된 updater 설정',
     'apps/desktop/src-tauri/tauri.conf.json',
     (value) => {
@@ -186,6 +196,10 @@ async function createFixture() {
       2,
     ),
     'apps/desktop/src-tauri/Cargo.toml': validCargoToml(),
+    'apps/desktop/src-tauri/linux/main.desktop': await readFile(
+      join(repositoryRoot, 'apps/desktop/src-tauri/linux/main.desktop'),
+      'utf8',
+    ),
   };
   for (const [path, content] of Object.entries(files)) {
     const outputPath = join(root, path);
@@ -227,6 +241,10 @@ function validTauriConfig() {
       category: RELEASE_METADATA_CONTRACT.category,
       copyright: RELEASE_METADATA_CONTRACT.copyright,
       fileAssociations: RELEASE_METADATA_CONTRACT.fileAssociations,
+      linux: {
+        deb: { desktopTemplate: RELEASE_METADATA_CONTRACT.linuxDesktopTemplate },
+        rpm: { desktopTemplate: RELEASE_METADATA_CONTRACT.linuxDesktopTemplate },
+      },
       windows: { wix: { template: RELEASE_METADATA_CONTRACT.wixTemplate } },
     },
   };

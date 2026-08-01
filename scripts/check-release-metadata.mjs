@@ -1,9 +1,7 @@
 #!/usr/bin/env node
-
-import { readFile } from 'node:fs/promises';
+import { lstat, readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-
 const defaultRepositoryRoot = resolve(
   dirname(fileURLToPath(import.meta.url)),
   '..',
@@ -25,6 +23,7 @@ export const RELEASE_METADATA_CONTRACT = Object.freeze({
   copyright: 'Alhangeul contributors',
   license: 'MIT',
   wixTemplate: 'windows/main.wxs',
+  linuxDesktopTemplate: 'linux/main.desktop',
   fileAssociations: Object.freeze([
     Object.freeze({
       ext: Object.freeze(['hwp']),
@@ -43,7 +42,7 @@ export const RELEASE_METADATA_CONTRACT = Object.freeze({
 
 export async function verifyReleaseMetadata(options = {}) {
   const repositoryRoot = resolve(options.repositoryRoot ?? defaultRepositoryRoot);
-  const [rootPackage, desktopPackage, tauriConfig, cargoSource] =
+  const [rootPackage, desktopPackage, tauriConfig, cargoSource, linuxDesktopSource] =
     await Promise.all([
       readJson(repositoryRoot, 'package.json'),
       readJson(repositoryRoot, 'apps/desktop/package.json'),
@@ -51,6 +50,10 @@ export async function verifyReleaseMetadata(options = {}) {
       readRepositoryFile(
         repositoryRoot,
         'apps/desktop/src-tauri/Cargo.toml',
+      ),
+      readRepositoryFile(
+        repositoryRoot,
+        `apps/desktop/src-tauri/${RELEASE_METADATA_CONTRACT.linuxDesktopTemplate}`,
       ),
     ]);
   const cargoPackage = readCargoPackage(cargoSource);
@@ -98,7 +101,10 @@ export async function verifyReleaseMetadata(options = {}) {
   assertEqual(tauriPath, 'bundle.category', tauriConfig.bundle?.category, RELEASE_METADATA_CONTRACT.category);
   assertEqual(tauriPath, 'bundle.copyright', tauriConfig.bundle?.copyright, RELEASE_METADATA_CONTRACT.copyright);
   assertEqual(tauriPath, 'bundle.windows.wix.template', tauriConfig.bundle?.windows?.wix?.template, RELEASE_METADATA_CONTRACT.wixTemplate);
+  assertEqual(tauriPath, 'bundle.linux.deb.desktopTemplate', tauriConfig.bundle?.linux?.deb?.desktopTemplate, RELEASE_METADATA_CONTRACT.linuxDesktopTemplate);
+  assertEqual(tauriPath, 'bundle.linux.rpm.desktopTemplate', tauriConfig.bundle?.linux?.rpm?.desktopTemplate, RELEASE_METADATA_CONTRACT.linuxDesktopTemplate);
   assertFileAssociations(tauriPath, tauriConfig.bundle?.fileAssociations);
+  verifyLinuxDesktopEntrySource(linuxDesktopSource);
   assertUpdaterDisabled(rootPackage, desktopPackage, tauriConfig, cargoSource);
 
   return {
@@ -112,6 +118,30 @@ export async function verifyReleaseMetadata(options = {}) {
   };
 }
 
+export function verifyLinuxDesktopEntrySource(source) {
+  const path = 'apps/desktop/src-tauri/linux/main.desktop';
+  const requiredLines = [
+    '[Desktop Entry]', 'Categories={{categories}}', 'Comment={{comment}}',
+    'StartupWMClass={{exec}}',
+    'Icon={{icon}}',
+    'Name={{name}}',
+    'Terminal=false',
+    'Type=Application',
+  ];
+  for (const line of requiredLines) {
+    if (!source.split(/\r?\n/).includes(line)) {
+      throw new Error(`${path} 필수 줄이 없습니다: ${line}`);
+    }
+  }
+  const execLines = source.match(/^Exec=.*$/gm) ?? [];
+  assertEqual(path, 'Exec', execLines, ['Exec={{exec}} %F']);
+  const fileFieldCodes = source.match(/%[fFuU]/g) ?? [];
+  assertEqual(path, 'file field code', fileFieldCodes, ['%F']);
+  if (!/{{#if mime_type}}\r?\nMimeType={{mime_type}}\r?\n{{\/if}}/.test(source)) {
+    throw new Error(`${path} MIME 조건부 출력이 필요합니다.`);
+  }
+}
+
 async function readJson(repositoryRoot, path) {
   const source = await readRepositoryFile(repositoryRoot, path);
   try {
@@ -123,7 +153,9 @@ async function readJson(repositoryRoot, path) {
 
 async function readRepositoryFile(repositoryRoot, path) {
   try {
-    return await readFile(resolve(repositoryRoot, path), 'utf8');
+    const filePath = resolve(repositoryRoot, path);
+    if (!(await lstat(filePath)).isFile()) throw new Error('일반 파일이 아닙니다.');
+    return await readFile(filePath, 'utf8');
   } catch (error) {
     throw new Error(`${path}을 읽을 수 없습니다: ${error.message}`);
   }

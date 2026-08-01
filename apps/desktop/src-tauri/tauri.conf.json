@@ -55,6 +55,14 @@
         "mimeType": "application/vnd.hancom.hwpx"
       }
     ],
+    "linux": {
+      "deb": {
+        "desktopTemplate": "linux/main.desktop"
+      },
+      "rpm": {
+        "desktopTemplate": "linux/main.desktop"
+      }
+    },
     "windows": {
       "wix": {
         "template": "windows/main.wxs"
