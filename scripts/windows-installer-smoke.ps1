@@ -137,7 +137,8 @@ function Get-ShortcutState($Kind, $Executable) {
   $valid = @($items | Where-Object { $_.Exists -and (Test-SamePath $_.Target $Executable) }).Count -eq 2
   return [ordered]@{ Items = $items; Valid = $valid }
 }
-function Test-SamePath($Left, $Right) { if ([string]::IsNullOrWhiteSpace($Left) -or [string]::IsNullOrWhiteSpace($Right)) { return $false }; return [IO.Path]::GetFullPath($Left).TrimEnd('\') -ieq [IO.Path]::GetFullPath($Right).TrimEnd('\') }
+function ConvertTo-NormalizedPath($Value) { if ([string]::IsNullOrWhiteSpace($Value)) { return $null }; return [IO.Path]::GetFullPath(([string]$Value).Trim().Trim('"')).TrimEnd('\') }
+function Test-SamePath($Left, $Right) { $leftPath = ConvertTo-NormalizedPath $Left; $rightPath = ConvertTo-NormalizedPath $Right; return $null -ne $leftPath -and $null -ne $rightPath -and $leftPath -ieq $rightPath }
 function Get-VersionState($Executable) { $version = (Get-Item -LiteralPath $Executable).VersionInfo; return [ordered]@{ ProductVersion = $version.ProductVersion; FileVersion = $version.FileVersion } }
 function Normalize-Version($Value) {
   $match = [regex]::Match($Value, '^\s*(\d+)\.(\d+)\.(\d+)(?:\.(\d+))?\s*$')

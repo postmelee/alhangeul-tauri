@@ -127,59 +127,43 @@
                 </RegistryKey>
                 <!-- Change the Root to HKCU for perUser installations -->
                 {{#each deep_link_protocols as |protocol| ~}}
-                <RegistryKey Root="HKLM" Key="Software\Classes\{{protocol}}">
-                    <RegistryValue Type="string" Name="URL Protocol" Value=""/>
-                    <RegistryValue Type="string" Value="URL:{{bundle_id}} protocol"/>
-                    <RegistryKey Key="DefaultIcon">
-                        <RegistryValue Type="string" Value="&quot;[!Path]&quot;,0" />
-                    </RegistryKey>
-                    <RegistryKey Key="shell\open\command">
-                        <RegistryValue Type="string" Value="&quot;[!Path]&quot; &quot;%1&quot;" />
+                <RegistryKey Root="HKLM" Key="Software\Classes">
+                    <RegistryKey Key="{{protocol}}">
+                        <RegistryValue Type="string" Name="URL Protocol" Value=""/>
+                        <RegistryValue Type="string" Value="URL:{{bundle_id}} protocol"/>
+                        <RegistryKey Key="DefaultIcon">
+                            <RegistryValue Type="string" Value="&quot;[!Path]&quot;,0" />
+                        </RegistryKey>
+                        <RegistryKey Key="shell\open\command">
+                            <RegistryValue Type="string" Value="&quot;[!Path]&quot; &quot;%1&quot;" />
+                        </RegistryKey>
                     </RegistryKey>
                 </RegistryKey>
                 {{/each~}}
             </Component>
             <Component Id="Path" Guid="{{path_component_guid}}" Win64="$(var.Win64)">
-                <File Id="Path" Source="{{main_binary_path}}" KeyPath="yes" Checksum="yes">
-                    <Shortcut Id="ApplicationDesktopShortcut"
-                        Directory="DesktopFolder"
-                        Name="{{product_name}}"
-                        Description="Runs {{product_name}}"
-                        Advertise="yes"
-                        Icon="ProductIcon.exe"
-                        WorkingDirectory="INSTALLDIR">
-                        <ShortcutProperty Key="System.AppUserModel.ID" Value="{{bundle_id}}"/>
-                    </Shortcut>
-                    <Shortcut Id="ApplicationStartMenuShortcut"
-                        Directory="ApplicationProgramsFolder"
-                        Name="{{product_name}}"
-                        Description="Runs {{product_name}}"
-                        Advertise="yes"
-                        Icon="ProductIcon.exe"
-                        WorkingDirectory="INSTALLDIR">
-                        <ShortcutProperty Key="System.AppUserModel.ID" Value="{{bundle_id}}"/>
-                    </Shortcut>
-                </File>
-                <RemoveFolder Id="RemoveApplicationProgramsFolder" Directory="ApplicationProgramsFolder" On="uninstall"/>
+                <File Id="Path" Source="{{main_binary_path}}" KeyPath="yes" Checksum="yes"/>
                 {{#each file_associations as |association| ~}}
                 {{#each association.ext as |ext| ~}}
-                <RegistryKey Root="HKLM" Key="Software\Classes\{{../../product_name}}.{{ext}}">
-                    <RegistryValue Type="string" Value="{{association.description}}"/>
-                    <RegistryKey Key="DefaultIcon">
-                        <RegistryValue Type="string" Value="&quot;[#Path]&quot;,0"/>
-                    </RegistryKey>
-                    <RegistryKey Key="shell">
-                        <RegistryValue Type="string" Value="open"/>
-                        <RegistryKey Key="open">
-                            <RegistryValue Type="string" Value="Open with {{../../product_name}}"/>
-                            <RegistryKey Key="command">
-                                <RegistryValue Type="string" Value="&quot;[#Path]&quot; &quot;%1&quot;"/>
+                <RegistryKey Root="HKLM" Key="Software\Classes">
+                    <RegistryKey Key="{{../../product_name}}.{{ext}}">
+                        <RegistryValue Type="string" Value="{{association.description}}"/>
+                        <RegistryKey Key="DefaultIcon">
+                            <RegistryValue Type="string" Value="&quot;[#Path]&quot;,0"/>
+                        </RegistryKey>
+                        <RegistryKey Key="shell">
+                            <RegistryValue Type="string" Value="open"/>
+                            <RegistryKey Key="open">
+                                <RegistryValue Type="string" Value="Open with {{../../product_name}}"/>
+                                <RegistryKey Key="command">
+                                    <RegistryValue Type="string" Value="&quot;[#Path]&quot; &quot;%1&quot;"/>
+                                </RegistryKey>
                             </RegistryKey>
                         </RegistryKey>
                     </RegistryKey>
-                </RegistryKey>
-                <RegistryKey Root="HKLM" Key="Software\Classes\.{{ext}}\OpenWithProgids">
-                    <RegistryValue Name="{{../../product_name}}.{{ext}}" Type="string" Value=""/>
+                    <RegistryKey Key=".{{ext}}\OpenWithProgids">
+                        <RegistryValue Name="{{../../product_name}}.{{ext}}" Type="string" Value=""/>
+                    </RegistryKey>
                 </RegistryKey>
                 {{/each~}}
                 {{/each~}}
@@ -221,6 +205,37 @@
             </Component>
         </DirectoryRef>
 
+        <DirectoryRef Id="DesktopFolder">
+            <Component Id="ApplicationShortcutDesktop" Guid="*" Win64="$(var.Win64)">
+                <Shortcut Id="ApplicationDesktopShortcut"
+                    Name="{{product_name}}"
+                    Description="Runs {{product_name}}"
+                    Target="[#Path]"
+                    Advertise="no"
+                    Icon="ProductIcon.exe"
+                    WorkingDirectory="INSTALLDIR">
+                    <ShortcutProperty Key="System.AppUserModel.ID" Value="{{bundle_id}}"/>
+                </Shortcut>
+                <RegistryValue Root="HKLM" Key="Software\\{{manufacturer}}\\{{product_name}}" Name="Desktop Shortcut" Type="integer" Value="1" KeyPath="yes"/>
+            </Component>
+        </DirectoryRef>
+
+        <DirectoryRef Id="ApplicationProgramsFolder">
+            <Component Id="ApplicationShortcut" Guid="*" Win64="$(var.Win64)">
+                <Shortcut Id="ApplicationStartMenuShortcut"
+                    Name="{{product_name}}"
+                    Description="Runs {{product_name}}"
+                    Target="[#Path]"
+                    Advertise="no"
+                    Icon="ProductIcon.exe"
+                    WorkingDirectory="INSTALLDIR">
+                    <ShortcutProperty Key="System.AppUserModel.ID" Value="{{bundle_id}}"/>
+                </Shortcut>
+                <RemoveFolder Id="RemoveApplicationProgramsFolder" Directory="ApplicationProgramsFolder" On="uninstall"/>
+                <RegistryValue Root="HKLM" Key="Software\\{{manufacturer}}\\{{product_name}}" Name="Start Menu Shortcut" Type="integer" Value="1" KeyPath="yes"/>
+            </Component>
+        </DirectoryRef>
+
         {{#each merge_modules as |msm| ~}}
         <DirectoryRef Id="TARGETDIR">
             <Merge Id="{{ msm.name }}" SourceFile="{{ msm.path }}" DiskId="1" Language="!(loc.TauriLanguage)" />
@@ -258,6 +273,8 @@
                 Level="1">
                 <ComponentRef Id="Path"/>
                 <ComponentRef Id="CMP_UninstallShortcut" />
+                <ComponentRef Id="ApplicationShortcut" />
+                <ComponentRef Id="ApplicationShortcutDesktop" />
             </Feature>
 
             <Feature

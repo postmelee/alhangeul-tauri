@@ -75,6 +75,9 @@ test('version, shortcut, 제한 실행과 targeted cleanup을 검사한다', () 
   assert.match(source, /FileVersion/);
   assert.match(source, /version 네 번째 성분은 0이어야 합니다/);
   assert.match(source, /CreateShortcut\(\$path\)\.TargetPath/);
+  assert.match(source, /function ConvertTo-NormalizedPath\(\$Value\)/);
+  assert.match(source, /\.Trim\(\)\.Trim\('\"'\)/);
+  assert.match(source, /\$leftPath = ConvertTo-NormalizedPath \$Left/);
   assert.match(source, /Start-Sleep -Seconds 5/);
   assert.match(source, /Stop-Process -Id \$process\.Id -Force/);
   assert.doesNotMatch(source, /Stop-Process\s+-Name/);

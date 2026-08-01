@@ -15,7 +15,7 @@ const [cargoManifest, tauriConfigSource, wixTemplate, nsisHooks] =
   ]);
 const tauriConfig = JSON.parse(tauriConfigSource);
 
-test('desktop binary와 Windows advertised shortcut은 Alhangeul.exe로 정렬한다', () => {
+test('desktop binary와 registry-keyed Windows shortcut은 Alhangeul.exe로 정렬한다', () => {
   const binarySection = cargoManifest.match(
     /\[\[bin\]\]\s+name = "([^"]+)"\s+path = "src\/main\.rs"/,
   );
@@ -23,20 +23,18 @@ test('desktop binary와 Windows advertised shortcut은 Alhangeul.exe로 정렬�
   assert.equal(binarySection?.[1], 'Alhangeul');
   assert.match(
     wixTemplate,
-    /<File Id="Path" Source="\{\{main_binary_path\}\}" KeyPath="yes" Checksum="yes">/,
+    /<File Id="Path" Source="\{\{main_binary_path\}\}" KeyPath="yes" Checksum="yes"\/>/,
   );
   assert.match(
     wixTemplate,
-    /<Shortcut[^>]+Directory="DesktopFolder"[^>]+Name="\{\{product_name\}\}"/,
+    /<DirectoryRef Id="DesktopFolder">[\s\S]+<Shortcut[^>]+Name="\{\{product_name\}\}"/,
   );
   assert.match(
     wixTemplate,
-    /<Shortcut[^>]+Directory="ApplicationProgramsFolder"[^>]+Name="\{\{product_name\}\}"/,
+    /<DirectoryRef Id="ApplicationProgramsFolder">[\s\S]+<Shortcut[^>]+Name="\{\{product_name\}\}"/,
   );
-  assert.doesNotMatch(
-    wixTemplate,
-    /Component Id="ApplicationShortcut(?:Desktop)?"/,
-  );
+  assert.match(wixTemplate, /Component Id="ApplicationShortcutDesktop"[^>]+Win64="\$\(var\.Win64\)"/);
+  assert.match(wixTemplate, /Component Id="ApplicationShortcut"[^>]+Win64="\$\(var\.Win64\)"/);
 
   for (const shortcutId of [
     'ApplicationDesktopShortcut',
@@ -47,15 +45,13 @@ test('desktop binary와 Windows advertised shortcut은 Alhangeul.exe로 정렬�
     )?.[0];
 
     assert.ok(shortcut, `${shortcutId} 계약이 필요합니다.`);
-    assert.match(shortcut, /\bAdvertise="yes"/);
+    assert.match(shortcut, /\bAdvertise="no"/);
     assert.match(shortcut, /\bIcon="ProductIcon\.exe"/);
-    assert.doesNotMatch(
-      shortcut,
-      /\bTarget=/,
-      'advertised shortcut은 별도 Target을 지정하지 않고 parent File을 사용해야 합니다.',
-    );
+    assert.match(shortcut, /\bTarget="\[#Path\]"/);
   }
-  assert.doesNotMatch(wixTemplate, /\bAdvertise="no"/);
+  assert.match(wixTemplate, /Name="Desktop Shortcut"[^>]+KeyPath="yes"/);
+  assert.match(wixTemplate, /Name="Start Menu Shortcut"[^>]+KeyPath="yes"/);
+  assert.doesNotMatch(wixTemplate, /\bAdvertise="yes"/);
   assert.match(
     wixTemplate,
     /<Icon Id="ProductIcon\.exe" SourceFile="\{\{icon_path\}\}"\/>/,
@@ -68,8 +64,10 @@ test('desktop binary와 Windows advertised shortcut은 Alhangeul.exe로 정렬�
 
 test('MSI는 canonical handler를 Open With에만 등록한다', () => {
   for (const contract of [
-    'Software\\Classes\\{{../../product_name}}.{{ext}}',
-    'Software\\Classes\\.{{ext}}\\OpenWithProgids',
+    'Key="Software\\Classes"',
+    'Key="{{protocol}}"',
+    'Key="{{../../product_name}}.{{ext}}"',
+    'Key=".{{ext}}\\OpenWithProgids"',
     'Name="{{../../product_name}}.{{ext}}" Type="string" Value=""',
     'Value="&quot;[#Path]&quot; &quot;%1&quot;"',
   ]) {
@@ -84,8 +82,8 @@ test('MSI는 canonical handler를 Open With에만 등록한다', () => {
   );
   assert.doesNotMatch(
     wixTemplate,
-    /Key="Software\\Classes\\\\/,
-    'Windows Installer registry path에는 중복 separator를 둘 수 없습니다.',
+    /Key="Software\\Classes\\+\{\{/,
+    'Handlebars expression 바로 앞에는 registry separator를 둘 수 없습니다.',
   );
 });
 
