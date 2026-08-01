@@ -440,3 +440,14 @@ Task #11 Stage 6: Windows installer smoke 수용 검증과 Task #9 handoff
 | NSIS default snapshot을 `Software\Classes\.{ext}`의 `*_backup` value에 보관 | 전용 key `Software\Alhangeul\FileAssocBackup\.{ext}`의 `State`/`Default` | 공유 key에 제품 bookkeeping을 남기지 않고, snapshot 부재를 "기본값 없음"과 구분해 사용자의 기존 기본 연결을 지우지 않기 위함 |
 
 Stage 1·3·5·6 보고서의 해당 서술은 당시 결정의 기록으로 두고 수정하지 않는다. 최종 계약과 근거는 [최종 보고서](../report/task_m010_11_report.md)의 "PR #12 리뷰 반영"을 따른다.
+
+## PR #12 최종 검토 추가 보정 (2026-08-02)
+
+작업지시자는 PR #12 최종 검토에서 확인된 두 실패 경로의 보정과 새 exact-SHA native 재검증을 승인했다. 기존 Stage 번호와 수용 범위는 늘리지 않고 PR 리뷰 보정 묶음으로 처리한다.
+
+| 지적 | 보정 계약 | 검증 |
+|---|---|---|
+| 중단된 NSIS 설치가 남긴 committed snapshot을 다음 설치·제거가 현재 기본값으로 덮어쓸 수 있음 | 기존 `State`가 있으면 새 snapshot을 만들지 않고, `Default` 뒤 `State`를 마지막 commit marker로 기록한다. 완전한 snapshot만 적용하고 복원 성공 또는 기본값 부재 확인 뒤 backup을 지운다 | `tests/windows-packaging.test.mjs`의 중단·재시도 transaction과 완전한 snapshot 계약, Windows native NSIS 정상 install/uninstall |
+| smoke 복구 시 원래 존재했던 extension key가 삭제되면 `continue`하여 사용자 상태를 복구하지 않음 | `KeyExisted`가 참인 record만 extension key를 재생성하고 원래 default 존재 여부와 값을 복원한다 | `tests/windows-installer-smoke.test.mjs`의 삭제 key 재생성 계약, Windows native MSI·NSIS smoke의 default·cleanup 판정 |
+
+플랫폼 중립 검증은 automation `60/60`, upstream `32/32`, Studio `114/114`와 production build, `actionlint`, `git diff --check`를 통과했다. 보정 commit `0a344d3ee63220e25ad2d920a583f7366b51c1d2`의 run `30706473386`에서 Windows x64·Linux x64·Linux arm64 build와 Windows installer smoke가 모두 성공했다. 강제 종료 뒤 재시도 자체는 runtime으로 주입하지 않았으며 source 회귀 계약으로 보호한다.

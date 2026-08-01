@@ -16,7 +16,7 @@ GitHub-hosted Windows에서는 MSI `1602`가 재현되지 않았고 양 installe
 
 최종 exact-SHA run `30695249890`은 source commit `83777562231d92d5bc8aab3fbfbb7b2e7bb7b81d`에서 Windows x64·Linux x64·Linux arm64 build와 Windows MSI·NSIS smoke를 모두 통과했다. 이 결과는 자동 package smoke 수용 증적이며 공개 release나 실제 GUI 문서 기능 성공을 뜻하지 않는다.
 
-2026-08-01 PR #12 리뷰로 진단 보존, NSIS 기본값 복원, workflow 실패 보고 경로를 보정한 뒤 `d698d407783bdc4b345f2d7fc8cae4676c41d8a0`에서 run `30697442296`을 다시 수행해 세 플랫폼 build와 Windows MSI·NSIS smoke 성공을 재확인했다. 현재 유효한 수용 증적은 이 run이다. 상세는 아래 "PR #12 리뷰 반영"을 따른다.
+2026-08-01 PR #12 리뷰로 진단 보존, NSIS 기본값 복원, workflow 실패 보고 경로를 보정한 뒤 `d698d407783bdc4b345f2d7fc8cae4676c41d8a0`에서 run `30697442296`을 수행했다. 2026-08-02 최종 검토에서는 중단된 NSIS transaction의 기존 snapshot 보존과 smoke의 삭제 key 복구를 추가로 보정했다. 현재 유효한 수용 증적은 commit `0a344d3ee63220e25ad2d920a583f7366b51c1d2`의 run `30706473386`이며 세 플랫폼 build와 Windows MSI·NSIS smoke가 모두 성공했다. 상세는 아래 "PR #12 최종 검토 추가 보정"을 따른다.
 
 ## 변경 파일 목록과 영향 범위
 
@@ -36,7 +36,7 @@ GitHub-hosted Windows에서는 MSI `1602`가 재현되지 않았고 양 installe
 | `mydocs/plans/task_m010_11*.md` | 승인 범위, 단계, 문서 위치와 실제 보정 이력 | Task #11 계획·handoff |
 | `mydocs/working/task_m010_11_stage{1..6}.md` | 단계별 계약, 구현, canary, 원인·수용 증적 | 단계 검토 기록 |
 | `mydocs/troubleshootings/task_m010_11_windows_installer.md` | MSI shortcut 미생성 원인·해결·재발 방지 | 후속 installer 진단 |
-| `mydocs/orders/20260731.md`, `mydocs/orders/20260801.md` | 일자별 진행과 완료 상태 | Hyper-Waterfall 작업 보드 |
+| `mydocs/orders/20260731.md`, `mydocs/orders/20260801.md`, `mydocs/orders/20260802.md` | 일자별 진행과 완료 상태 | Hyper-Waterfall 작업 보드 |
 
 제품 UI, HWP/HWPX 편집 동작, Rust native API, source version `0.1.0`, bundle identifier, publisher, `rhwp` pin과 Windows/Linux 지원 범위는 변경하지 않았다. Release, tag, signing, updater, package 게시와 공개 다운로드 경로도 만들지 않았다.
 
@@ -56,10 +56,10 @@ GitHub-hosted Windows에서는 MSI `1602`가 재현되지 않았고 양 installe
 | 지표 | 변경 전 | 변경 후 |
 |---|---|---|
 | Windows installer 자동 runtime gate | 없음; artifact build·inventory까지만 검증 | fresh `windows-2025`에서 MSI·NSIS 각각 11개 category와 fixture를 판정하고 diagnostic을 14일 보존 |
-| 전체 automation test | `36/36` | `58/58`, installer·workflow·packaging 계약 22개 증가 |
-| Windows smoke script | 없음 | `297 LOC`, 함수 50 LOC·parameter 5개 이하 |
+| 전체 automation test | `36/36` | `60/60`, installer·workflow·packaging 계약 24개 증가 |
+| Windows smoke script | 없음 | `299 LOC`, 함수 50 LOC·parameter 5개 이하 |
 | desktop workflow | `177 LOC` | `299 LOC`, fresh smoke job 1개와 final gate 추가 |
-| Windows installer packaging source test | 없음 | `7/7` 통과 |
+| Windows installer packaging source test | 없음 | `9/9` 통과 |
 | 실행 파일명 | `alhangeul-desktop.exe` | `Alhangeul.exe` |
 | handler 정책 | MSI advertised default 변경, NSIS legacy class와 default 직접 변경 | MSI·NSIS 모두 canonical `Alhangeul.hwp`·`Alhangeul.hwpx`를 Open With에 등록하고 기존 default·`UserChoice` 보존 |
 | final Windows runtime | VDI MSI `1602`; Stage 4 runtime은 설치 성공이나 package 수용 실패 | MSI·NSIS install/uninstall exit `0`, version·handler·default·shortcut·launch·cleanup·fixture 모두 통과 |
@@ -71,12 +71,12 @@ GitHub-hosted Windows에서는 MSI `1602`가 재현되지 않았고 양 installe
 |---|---|
 | 제품 경계와 version | OK — product boundary `185 files`, 5개 version surface `0.1.0` 일치 |
 | upstream 정합성 | OK — `rhwp v0.8.2`, commit `9b16aa9e23f476e2b335d7c029fc9f24a199d63c`, managed artifact 6개; upstream `32/32` |
-| automation·studio | OK — automation `58/58`, Studio `114/114`, TypeScript·Vite production build 성공 |
+| automation·studio | OK — automation `60/60`, Studio `114/114`, TypeScript·Vite production build 성공 |
 | workflow 보안·범위 | OK — `workflow_dispatch`, `contents: read`, 14일 artifact, release·deploy·secret·write permission 없음; `actionlint` 통과 |
-| exact-SHA native matrix | OK — run `30697442296`, head `d698d40…`; Windows x64·Linux x64·Linux arm64 build 모두 success |
+| exact-SHA native matrix | OK — run `30706473386`, head `0a344d3…`; Windows x64·Linux x64·Linux arm64 build 모두 success |
 | Windows installer 수용 | OK — MSI·NSIS 모두 clean state, exit, version, handler, 기본 연결 불변, shortcut, bounded launch, uninstall cleanup 통과 |
 | fixture 무손실 | OK — 실행 전후 SHA-256 일치 |
-| Windows artifact 무결성 | OK — 다운로드한 MSI `fcb2fe04…`, NSIS `7d6ff2dc…`의 inventory·크기·SHA-256 독립 재검증 통과 |
+| Windows artifact 무결성 | OK — 다운로드한 MSI `d6052ade…`, NSIS `44fb23ef…`의 inventory·크기·SHA-256 독립 재검증 통과 |
 | 진단 보존과 실패 전달 | OK — canary 실패에서도 summary·MSI 원본 log·outcome을 업로드하고 final gate가 실패를 전달 |
 | 작업 경계 | OK — release, tag, signing, updater, package 게시, Windows ARM64와 GUI 문서 기능 검증을 수행하지 않음 |
 
@@ -96,7 +96,7 @@ GitHub-hosted Windows에서는 MSI `1602`가 재현되지 않았고 양 installe
 | # | 지적 | 반영 | 파일 |
 |---|---|---|---|
 | 1 | sentinel 복원이 throw하면 `finally`의 summary 기록에 도달하지 못해 진단이 사라진다 | 복원·비교를 중첩 `try/catch`로 감싸고 summary 기록을 안쪽 `finally`로 분리, `sentinel-restore` category 추가 | `scripts/windows-installer-smoke.ps1` |
-| 2 | 삭제된 extension key에서 `OpenSubKey`가 `$null`을 반환하면 복원이 null 참조로 throw한다 | `if ($null -eq $key) { continue }` 가드 | 〃 |
+| 2 | 삭제된 extension key에서 `OpenSubKey`가 `$null`을 반환하면 복원이 null 참조로 throw한다 | 원래 존재했던 key는 재생성해 default를 복구하고 원래 없던 key만 건너뜀 | 〃 |
 | 3 | 빈 MSI log에서 `0..-1` 범위가 StrictMode 범위 초과 index를 만들어 실패 진단이 throw한다 | `$lines.Count -eq 0` 조기 반환 | 〃 |
 | 4 | `Set-AssociationSentinels`가 중간에 throw하면 이미 바꾼 registry가 복원되지 않는다 | record를 변경 전에 `$script:sentinels`로 누적해 부분 실패도 복원 대상에 포함 | 〃 |
 | 5 | NSIS 복원이 snapshot 부재와 "원래 기본값 없음"을 구분하지 못해 사용자의 기존 기본 연결을 지운다 | `ClearErrors` + `${IfNot} ${Errors}` 3-state 판정으로 snapshot 부재는 no-op | `apps/desktop/src-tauri/windows/nsis-hooks.nsh` |
@@ -123,6 +123,27 @@ GitHub-hosted Windows에서는 MSI `1602`가 재현되지 않았고 양 installe
 | WiX `[#Path]` 통일 | MSI validation 통과와 silent install exit `0`, `Return value 3` 없음 |
 | workflow `!cancelled()`·경로 정리 | diagnostic artifact 업로드 성공, step outcome 4개 모두 `success`, `checked-out-sha.txt`가 `d698d40…` 기록 |
 
+## PR #12 최종 검토 추가 보정
+
+2026-08-02 최종 검토에서 정상 install/uninstall 밖의 두 실패 경로를 추가로 확인하고 작업지시자 승인으로 commit `0a344d3`에서 보정했다.
+
+| 지적 | 반영 | 회귀 계약 |
+|---|---|---|
+| 중단된 NSIS 설치의 committed snapshot을 다음 PREINSTALL/PREUNINSTALL이 현재 기본값으로 덮어써 원래 연결을 잃을 수 있음 | 기존 `State`가 있으면 snapshot을 보존하고, `Default`를 먼저 기록한 뒤 `State`를 transaction commit marker로 기록. 완전한 snapshot만 복원하고 복원 성공 또는 기본값 부재 확인 뒤 backup 삭제 | `NSIS snapshot은 중단된 이전 transaction을 덮어쓰지 않는다`, `NSIS restore는 완전한 snapshot만 적용하고 성공 뒤에만 제거한다` |
+| smoke 복구에서 원래 존재했던 extension key가 삭제되면 가드가 `continue`하여 사용자 상태를 남겨둠 | `KeyExisted` record는 key를 재생성한 뒤 원래 default 존재 여부와 값을 복원하고, 원래 없던 key만 건너뜀 | `sentinel은 부분 실패에서도 복원 대상으로 남는다`의 삭제 key 재생성 assertion |
+
+플랫폼 중립 검증은 automation `60/60`, upstream `32/32`, Studio `114/114`, production build와 `actionlint`를 통과했다. exact source `0a344d3ee63220e25ad2d920a583f7366b51c1d2`의 [run 30706473386](https://github.com/postmelee/alhangeul-tauri/actions/runs/30706473386)에서 다음을 재확인했다.
+
+| 항목 | 결과 |
+|---|---|
+| Windows x64 build `91386363519` | bundle build·inventory 검증·artifact upload `success` |
+| Linux x64 build `91386363546` | bundle build·inventory 검증·artifact upload `success` |
+| Linux arm64 build `91386363548` | bundle build·inventory 검증·artifact upload `success` |
+| Windows installer smoke `91387110741` | exact SHA checkout, MSI·NSIS install/uninstall exit `0`, default 불변, cleanup, diagnostic upload와 final gate 모두 `success` |
+| Windows artifact 독립 재검증 | MSI 28,188,672 bytes / `d6052adea195c9e296a3732956ed407f5f6882465f8b81e72fffd75aea51865a`; NSIS 25,708,174 bytes / `44fb23efaa1ad6ea9a353df4c62ade31abf25e55f2f4e4ade3d2587890278143` |
+
+강제 종료 뒤 재시도 transaction 자체는 hosted runner에 주입하지 않았다. 이전 committed snapshot 보존과 불완전 snapshot no-op은 source 회귀 계약으로 검증했고, native run은 변경된 NSIS hook의 정상 install/uninstall과 backup cleanup을 검증했다.
+
 ## 잔여 위험과 후속 작업
 
 ### 잔여 위험
@@ -135,6 +156,7 @@ GitHub-hosted Windows에서는 MSI `1602`가 재현되지 않았고 양 installe
 - VDI MSI `1602`는 hosted runner에서 재현되지 않았고 원본 verbose log가 없어 interactive/session 발생 조건을 완전히 확정하지 못했다.
 - NSIS hook은 Tauri 기본 association 동작을 되돌리는 구조이므로 Tauri 갱신이 이 보존 계약을 조용히 되돌릴 수 있다. 유일한 방어선인 smoke job은 `workflow_dispatch` 전용이라 자동으로 돌지 않는다.
 - 자동 smoke는 install/uninstall 한 사이클만 검증한다. update·repair, 동일 제품의 MSI-NSIS 혼재 설치, 사용자가 `.hwp` 기본 앱을 Alhangeul로 직접 지정한 뒤의 제거 경로는 검증하지 않았다.
+- NSIS 설치 강제 종료 뒤 재시도는 runtime으로 주입하지 않았으며 committed snapshot 보존은 플랫폼 중립 source 계약으로 검증했다.
 
 ### 후속 작업 후보
 
@@ -147,4 +169,4 @@ GitHub-hosted Windows에서는 MSI `1602`가 재현되지 않았고 양 installe
 
 ## 작업지시자 승인 요청
 
-- 2026-08-01 작업지시자가 Stage 6 결과를 승인하고 최종 보고서·PR 게시 진행을 지시했다. 이 보고서와 ready PR을 검토한 뒤 Task #11 merge 여부를 승인한다.
+- 2026-08-02 작업지시자가 PR 최종 검토 추가 보정과 새 exact-SHA native 재검증을 지시했다. run `30706473386` 성공과 이 보고서 갱신을 확인한 뒤 Task #11 merge 여부를 승인한다.

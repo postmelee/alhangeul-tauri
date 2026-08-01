@@ -64,30 +64,30 @@ GitHub API가 반환한 Actions artifact archive metadata는 다음과 같다. �
 
 ## 검증된 Windows installer package smoke
 
-2026-08-01 Task #11은 다음 exact commit에서 Windows installer 자동 수용 기준과 기존 세 플랫폼 build matrix를 모두 통과했다.
+2026-08-02 Task #11은 PR #12 최종 검토 보정 뒤 다음 exact commit에서 Windows installer 자동 수용 기준과 기존 세 플랫폼 build matrix를 모두 통과했다.
 
-- Commit: `d698d407783bdc4b345f2d7fc8cae4676c41d8a0`
-- [Native run 30697442296](https://github.com/postmelee/alhangeul-tauri/actions/runs/30697442296): `workflow_dispatch`, `publish/task11`, 같은 exact SHA
-- Windows x64 build job `91362606487`, Linux x64 build job `91362606480`, Linux arm64 build job `91362606485`, Windows installer smoke job `91363222906`: 모두 `success`
+- Commit: `0a344d3ee63220e25ad2d920a583f7366b51c1d2`
+- [Native run 30706473386](https://github.com/postmelee/alhangeul-tauri/actions/runs/30706473386): `workflow_dispatch`, `publish/task11`, 같은 exact SHA
+- Windows x64 build job `91386363519`, Linux x64 build job `91386363546`, Linux arm64 build job `91386363548`, Windows installer smoke job `91387110741`: 모두 `success`
 - smoke job의 `checked-out-sha.txt`가 같은 SHA를 기록해 검증 대상과 소비 source가 일치함을 확인했다
 
-같은 날 선행 run [30695249890](https://github.com/postmelee/alhangeul-tauri/actions/runs/30695249890)(`8377756…`)도 성공했으나, 이후 PR #12 리뷰 반영으로 NSIS snapshot key 위치와 복원 분기, WiX protocol block, workflow 실패 보고가 바뀌었다. 현재 유효한 수용 증적은 위 `d698d40…` run이다.
+선행 run [30697442296](https://github.com/postmelee/alhangeul-tauri/actions/runs/30697442296)(`d698d40…`)도 성공했으나, 이후 최종 검토 보정으로 NSIS 중단 transaction의 기존 snapshot 보존과 smoke의 삭제 key 복구가 바뀌었다. 현재 유효한 수용 증적은 위 `0a344d3…` run이다.
 
 GitHub API가 반환한 Actions artifact archive metadata는 다음과 같다. 네 artifact는 14일 retention을 사용하며 아래 installer SHA-256과 API archive digest는 서로 다른 검증 대상이다.
 
 | 용도 | Actions artifact | ID | Archive 크기 (bytes) | API archive digest | 만료 시각 (UTC) |
 |---|---|---:|---:|---|---|
-| Windows installer 진단 | `alhangeul-desktop-windows-x64-installer-smoke` | `8817785639` | 29,039 | `sha256:863f11106c69ec73b0ad6da19da6eaa70846ccec4669f6fdca28cfa5696ce641` | `2026-08-15T11:27:05Z` |
-| Windows x64 bundle | `alhangeul-desktop-windows-x64` | `8817778179` | 53,658,548 | `sha256:caebe1f1744cf84589b02cba3388f253ba6c702f821c0ca8e149c80f80ce8755` | `2026-08-15T11:26:18Z` |
-| Linux x64 bundle | `alhangeul-desktop-linux-x64` | `8817777867` | 353,969,248 | `sha256:a8af2016c454429cdf6da14bfbf0093d982f366a6d0ce8e5339680ac132f70d6` | `2026-08-15T11:26:01Z` |
-| Linux arm64 bundle | `alhangeul-desktop-linux-arm64` | `8817746269` | 90,029,328 | `sha256:2022c61c2a400f438ff1ae291c90eaa1dc5bd8c4ac9567011868320176c54347` | `2026-08-15T11:22:56Z` |
+| Windows installer 진단 | `alhangeul-desktop-windows-x64-installer-smoke` | `8820566083` | 29,054 | `sha256:540b1641f3a387dd48cb1e81f227931b0d6b3b14ccef76600e19f57e6764112d` | `2026-08-15T15:49:51Z` |
+| Windows x64 bundle | `alhangeul-desktop-windows-x64` | `8820554656` | 53,661,343 | `sha256:2115c9dd0827dd5e8faa3442c9874c60f6c9cbb493d079fa9de142d4ce03684b` | `2026-08-15T15:48:50Z` |
+| Linux x64 bundle | `alhangeul-desktop-linux-x64` | `8820557797` | 353,970,140 | `sha256:7583130821b58b2273c537ddd5534bf2212546ac0cf220baef0ff28338b53376` | `2026-08-15T15:48:51Z` |
+| Linux arm64 bundle | `alhangeul-desktop-linux-arm64` | `8820517301` | 90,030,122 | `sha256:ad23e638bb0cb93cd4bf1cb7a053f054ed993d948e9f969d9e495a3987a32799` | `2026-08-15T15:45:29Z` |
 
 Windows bundle을 별도 임시 디렉터리에 내려받아 동봉 inventory와 파일을 독립 재검증했다.
 
 | 종류 | 파일 | 크기 (bytes) | SHA-256 |
 |---|---|---:|---|
-| MSI | `msi/Alhangeul_0.1.0_x64_en-US.msi` | 28,188,672 | `fcb2fe04b5a14f396d6d0f9519956fed161e762779c2d20167dd347e64f11782` |
-| NSIS | `nsis/Alhangeul_0.1.0_x64-setup.exe` | 25,705,391 | `7d6ff2dc2fa0850223151a544f89361e9feccfb773b6db7f11befc967a643276` |
+| MSI | `msi/Alhangeul_0.1.0_x64_en-US.msi` | 28,188,672 | `d6052adea195c9e296a3732956ed407f5f6882465f8b81e72fffd75aea51865a` |
+| NSIS | `nsis/Alhangeul_0.1.0_x64-setup.exe` | 25,708,174 | `44fb23efaa1ad6ea9a353df4c62ade31abf25e55f2f4e4ade3d2587890278143` |
 
 MSI와 NSIS는 각각 clean state, silent install exit `0`, 제품 version `0.1.0`, canonical HWP/HWPX handler, 기존 기본 연결 불변, Desktop·Start Menu shortcut, bounded process launch, uninstall exit `0`, 제품 소유 상태 cleanup을 통과했다. Fixture는 실행 전후 SHA-256이 동일했다. MSI verbose log에는 Desktop·Start Menu·uninstall shortcut의 `ShortcutCreate` 세 개와 대응하는 세 `ShortcutRemove`가 기록됐고 `Return value 3`은 없었다.
 
@@ -96,7 +96,9 @@ MSI와 NSIS는 각각 clean state, silent install exit `0`, 제품 version `0.1.
 | 변경 | 확인 방법 |
 |---|---|
 | NSIS snapshot key를 `Software\Alhangeul\FileAssocBackup`으로 이동 | NSIS `default-mutation` 판정 통과. Tauri NSIS는 설치 중 `.hwp`/`.hwpx` 기본값을 덮어쓰므로, 새 key로의 snapshot·복원이 실제로 동작하지 않으면 baseline과 달라져 실패한다 |
+| 중단된 NSIS transaction의 committed snapshot 보존 | 기존 `State`가 있으면 snapshot을 덮어쓰지 않고 `Default` 뒤 `State`를 기록하는 source 계약 통과. Native smoke는 변경된 hook의 정상 install/uninstall과 backup cleanup을 확인했으며 강제 종료·재시도 주입은 수행하지 않았다 |
 | 새 backup key의 cleanup | uninstall 뒤 clean-state의 소유 registry 수 `0`. 판정 대상에 backup key의 `State` value를 포함했다 |
+| smoke의 삭제 extension key 복구 | 원래 존재한 key만 재생성하는 source 계약 통과. MSI·NSIS smoke의 default 불변과 최종 clean state 모두 통과 |
 | WiX protocol block `[#Path]` 통일 | MSI validation 통과와 silent install exit `0` |
 | workflow `!cancelled()`와 `Join-Path` 경로 정리 | diagnostic artifact 업로드 성공과 step outcome 4개 모두 `success` |
 
