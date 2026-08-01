@@ -15,6 +15,17 @@ const [cargoManifest, tauriConfigSource, wixTemplate, nsisHooks] =
   ]);
 const tauriConfig = JSON.parse(tauriConfigSource);
 
+test('MSI는 일반 설치와 재설치에서 shortcut 처리 mode를 유지한다', () => {
+  assert.match(
+    wixTemplate,
+    /<Property Id="REINSTALLMODE" Value="amus" \/>/,
+  );
+  assert.doesNotMatch(
+    wixTemplate,
+    /<Property Id="REINSTALLMODE" Value="amu" \/>/,
+  );
+});
+
 test('desktop binary와 registry-keyed Windows shortcut은 Alhangeul.exe로 정렬한다', () => {
   const binarySection = cargoManifest.match(
     /\[\[bin\]\]\s+name = "([^"]+)"\s+path = "src\/main\.rs"/,

@@ -180,7 +180,7 @@ jobs:
     name: Smoke Windows x64 installers
     needs: build
     if: ${{ always() }}
-    runs-on: windows-2022
+    runs-on: windows-2025
     timeout-minutes: 30
     steps:
       - name: Checkout installer smoke source

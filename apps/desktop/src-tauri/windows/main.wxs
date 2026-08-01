@@ -29,8 +29,8 @@
                  SummaryCodepage="!(loc.TauriCodepage)"/>
 
         <!-- https://docs.microsoft.com/en-us/windows/win32/msi/reinstallmode -->
-        <!-- reinstall all files and rewrite registry entries, but do not recreate user-deleted shortcuts on update -->
-        <Property Id="REINSTALLMODE" Value="amu" />
+        <!-- reinstall all files, rewrite registry entries, and process shortcuts during normal install or reinstall -->
+        <Property Id="REINSTALLMODE" Value="amus" />
 
         <!-- Auto launch app after installation, useful for passive mode which usually used in updates -->
         <Property Id="AUTOLAUNCHAPP" Secure="yes" />
