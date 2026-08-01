@@ -175,7 +175,7 @@ test('fresh Windows installer smoke job은 build 결과와 무관하게 artifact
 
   assert.match(job, /^    needs: build$/m);
   assert.match(job, /^    if: \$\{\{ always\(\) \}\}$/m);
-  assert.match(job, /^    runs-on: windows-2025$/m);
+  assert.match(job, /^    runs-on: windows-2022$/m);
   assert.doesNotMatch(job, /^\s+strategy:/m);
   assertOrdered(job, [
     '- name: Checkout installer smoke source',
