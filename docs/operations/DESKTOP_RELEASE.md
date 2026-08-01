@@ -1,6 +1,6 @@
 # 데스크톱 artifact와 배포 준비
 
-Alhangeul은 아직 공식 설치 파일이나 공개 릴리스를 제공하지 않는다. `.github/workflows/alhangeul-desktop.yml`은 Windows/Linux native build 결과를 수동 검증하고 14일 동안 Actions artifact로 보존하지만 GitHub Release를 생성하지 않는다.
+Alhangeul은 아직 공식 설치 파일이나 공개 릴리스를 제공하지 않는다. `.github/workflows/alhangeul-desktop.yml`은 Windows/Linux native build 결과와 Windows installer package smoke 진단을 수동 검증하고 14일 동안 Actions artifact로 보존하지만 GitHub Release를 생성하지 않는다.
 
 ## 제품 version 기준
 
@@ -26,6 +26,8 @@ workflow는 다음 작업만 수행한다.
 4. Tauri bundle 생성
 5. 필수 installer 종류·크기·SHA-256 inventory 검증
 6. inventory를 포함한 Actions artifact 업로드
+7. fresh `windows-2025` runner에서 Windows MSI·NSIS 설치·제한 실행·제거 package smoke
+8. installer별 summary와 원본 log를 diagnostic artifact로 항상 업로드하고 build matrix와 smoke 결과를 함께 판정
 
 repository-level Actions는 활성 상태지만 대상 CI와 native workflow는 자동 trigger 없이 수동 `workflow_dispatch`로만 실행한다. Actions 활성 상태는 workflow 성공이나 artifact 가용성을 보장하지 않으므로 run의 exact commit과 job 결과를 함께 확인해야 한다.
 
@@ -58,7 +60,37 @@ GitHub API가 반환한 Actions artifact archive metadata는 다음과 같다. �
 | Linux x64 | RPM | `rpm/Alhangeul-0.1.0-1.x86_64.rpm` | 30,093,069 | `2fa1997d1932085f21030da0ed60c990e73f6c4e6b43ce4bccf4563822d6dd19` |
 | Linux arm64 | DEB | `deb/Alhangeul_0.1.0_arm64.deb` | 30,049,994 | `15124f7a98d508aec74e930a542705ee5eeaeda0d03bcfc6bdf99399e0cfd737` |
 
-이 결과는 `0.1.0` source version이 exact source에서 installer 파일명과 package metadata에 반영되고 Actions upload 뒤에도 inventory가 보존됐다는 build smoke 증거다. installer 설치·실행, 코드 서명, GitHub Release, package 게시와 updater는 검증하지 않았다.
+이 결과는 `0.1.0` source version이 exact source에서 installer 파일명과 package metadata에 반영되고 Actions upload 뒤에도 inventory가 보존됐다는 Task #7 당시의 build smoke 증거다. 이 Task #7 run 자체에서는 installer 설치·실행, 코드 서명, GitHub Release, package 게시와 updater를 검증하지 않았다.
+
+## 검증된 Windows installer package smoke
+
+2026-08-01 Task #11은 다음 exact commit에서 Windows installer 자동 수용 기준과 기존 세 플랫폼 build matrix를 모두 통과했다.
+
+- Commit: `83777562231d92d5bc8aab3fbfbb7b2e7bb7b81d`
+- [Native run 30695249890](https://github.com/postmelee/alhangeul-tauri/actions/runs/30695249890): `workflow_dispatch`, `publish/task11`, 같은 exact SHA
+- Windows x64 build job `91356899435`, Linux x64 build job `91356899470`, Linux arm64 build job `91356899425`, Windows installer smoke job `91357628850`: 모두 `success`
+
+GitHub API가 반환한 Actions artifact archive metadata는 다음과 같다. 네 artifact는 14일 retention을 사용하며 아래 installer SHA-256과 API archive digest는 서로 다른 검증 대상이다.
+
+| 용도 | Actions artifact | ID | Archive 크기 (bytes) | API archive digest | 만료 시각 (UTC) |
+|---|---|---:|---:|---|---|
+| Windows installer 진단 | `alhangeul-desktop-windows-x64-installer-smoke` | `8817118783` | 29,081 | `sha256:126502d24452da817fe0b80fbfe6f2a284d42d8778a971cacd0eb60b81932eb7` | `2026-08-15T10:21:15Z` |
+| Windows x64 bundle | `alhangeul-desktop-windows-x64` | `8817109545` | 53,658,704 | `sha256:ce99efdaae9297c9d71ca2d424c358884659951476b3b855c4f097ed8da44385` | `2026-08-15T10:20:17Z` |
+| Linux x64 bundle | `alhangeul-desktop-linux-x64` | `8817102462` | 353,970,093 | `sha256:254858e62e24eacb06456ee3773a1147dde70093fcf908d4df214a6cd477008d` | `2026-08-15T10:19:20Z` |
+| Linux arm64 bundle | `alhangeul-desktop-linux-arm64` | `8817075188` | 90,029,526 | `sha256:3b022eb5a09f305b10c0d59e88235d31eb44ac29ec22812b77890ec8f1ff2028` | `2026-08-15T10:16:51Z` |
+
+Windows bundle을 별도 임시 디렉터리에 내려받아 동봉 inventory와 파일을 독립 재검증했다.
+
+| 종류 | 파일 | 크기 (bytes) | SHA-256 |
+|---|---|---:|---|
+| MSI | `msi/Alhangeul_0.1.0_x64_en-US.msi` | 28,188,672 | `9c8b43187f8a613131dc052a075fef8202476a84c3b2ab9e7d77c474fb162c07` |
+| NSIS | `nsis/Alhangeul_0.1.0_x64-setup.exe` | 25,705,538 | `2b208f665319fab42572662e4ac5ee96cf691f57f6cbb6021901b1769adf1af8` |
+
+MSI와 NSIS는 각각 clean state, silent install exit `0`, 제품 version `0.1.0`, canonical HWP/HWPX handler, 기존 기본 연결 불변, Desktop·Start Menu shortcut, bounded process launch, uninstall exit `0`, 제품 소유 상태 cleanup을 통과했다. Fixture는 실행 전후 SHA-256 `5B1B2C78885979086ACC790098BB28E71DAC9FB0FC1335D6C32CF3B091BDAE4B`로 동일했다. MSI verbose log에는 Desktop·Start Menu·uninstall shortcut의 `ShortcutCreate`와 대응하는 세 `ShortcutRemove`가 기록됐다.
+
+이 결과는 fresh hosted runner의 반복 가능한 비대화형 package smoke다. 실제 GUI에서 HWP/HWPX 열기·저장·인쇄, Explorer 기본 앱 선택 UI, 장시간 사용과 Windows 실제 사용자 환경의 최종 수동 검증을 대신하지 않는다. Artifact는 공개 배포물이 아니며 만료 뒤 재사용할 수 없다.
+
+Task #9 prerelease 준비는 Task #11 merge 뒤 최신 `devel`을 통합하고 과거 candidate를 폐기한 다음, `check:release-metadata`를 포함하는 새 exact-SHA candidate를 만들어 다시 검증해야 한다. 위 Task #11 artifact나 SHA를 그대로 공개 후보로 승계하지 않는다.
 
 ## 검증된 native canary
 
@@ -108,9 +140,11 @@ GitHub API가 반환한 Actions artifact archive metadata는 다음과 같다. �
 
 1. 배포 version·tag·bundle 이름과 checksum 게시 정책 확정
 2. Windows signing과 Linux package metadata 검토
-3. installer 설치·실행 smoke와 rollback 검증
+3. Linux installer/package 설치·실행·rollback과 Windows 실제 GUI HWP/HWPX·Explorer 기본 앱 수동 gate 검증
 4. 사용자 다운로드 문서와 지원 범위 작성
 5. 필요할 경우 독립 updater 보안 모델과 key 보관 정책 설계
+
+Windows MSI·NSIS의 자동 설치·제한 실행·제거 package smoke는 Task #11에서 완료했다. 공개 prerelease 후보는 Task #9에서 Task #11 merge 뒤 새 exact SHA로 다시 생성·검증한다.
 
 릴리스·서명·패키지 게시·updater 활성화는 작업지시자의 명시 승인 없이는 수행하지 않는다.
 

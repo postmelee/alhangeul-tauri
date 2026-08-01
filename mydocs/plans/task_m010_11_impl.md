@@ -32,6 +32,8 @@ Stage 6.6 exact-SHA run `30692813844`는 Windows x64·Linux x64·Linux arm64 bui
 
 Stage 6.7 exact-SHA run `30693805318`은 Windows x64·Linux x64·Linux arm64 build와 artifact 검증을 모두 통과했고 `windows-2022` installer smoke에서도 Stage 6.6과 동일하게 NSIS는 전부 성공하고 MSI shortcut 두 개만 생성되지 않았다. MSI table과 component·feature 상태는 정상이며 `CreateShortcuts` 실행 script에는 `IconCreate`만 있고 `ShortcutCreate` operation이 없다. 따라서 `windows-2025` hosted-runner 특이성을 배제한다. Microsoft 계약상 `REINSTALLMODE`는 일반 설치에도 적용될 수 있고 `s`가 shortcut 재설치·icon 재캐시를 담당하지만, 현재 template은 최초 hop 계승값 `amu`로 `s`를 제외하며 Tauri CLI 2.10.1 기본 template은 `amus`를 사용한다. 작업지시자는 2026-08-01 Stage 6.8에서 `REINSTALLMODE`를 `amus`로 복원하고 source contract를 추가하며 smoke runner를 `windows-2025`로 되돌린 뒤 새 exact-SHA 전체 workflow를 실행하는 범위를 승인했다. 사용자 삭제 shortcut이 update·repair에서 복원될 수 있는 Tauri 기본 동작을 수용하고 target·handler·smoke 수용 기준은 변경하지 않는다.
 
+Stage 6.8 exact-SHA run `30695249890`은 commit `83777562231d92d5bc8aab3fbfbb7b2e7bb7b81d`에서 Windows x64·Linux x64·Linux arm64 build와 Windows MSI·NSIS smoke를 모두 통과했다. MSI verbose log에 Desktop·Start Menu·uninstall shortcut의 `ShortcutCreate`와 대응하는 `ShortcutRemove`가 기록되어 `REINSTALLMODE="amus"` 보정이 원인과 해결을 닫았다. Windows artifact inventory도 다운로드 뒤 독립 재검증했다. 이 성공은 자동 package smoke 범위이며 GUI HWP/HWPX·Explorer 기본 앱 수동 gate, Linux 설치 실행, 서명·tag·Release·updater·package 게시는 포함하지 않는다. Task #9은 Task #11 merge 뒤 최신 `devel`에서 과거 candidate를 폐기하고 `check:release-metadata`를 포함한 새 exact-SHA prerelease candidate를 검증한다.
+
 ## 단계 개요
 
 | Stage | 제목 | 주요 산출 | 검증 |
@@ -49,7 +51,7 @@ Stage 6.7 exact-SHA run `30693805318`은 Windows x64·Linux x64·Linux arm64 bui
 |---|---|---|---|---|
 | installer 운영 계약 | `docs/operations/` | `docs/operations/DESKTOP_RELEASE.md` | OK | Stage 6에서 자동 package smoke와 GUI gate 경계를 반영 |
 | 단계 증적 | `mydocs/working/` | `mydocs/working/task_m010_11_stage{1..6}.md` | OK | exact SHA, run, log와 판정을 단계별 보존 |
-| 재발 방지 기록 | `mydocs/troubleshootings/` | `mydocs/troubleshootings/task_m010_11_windows_installer.md` | OK | Stage 5에서 원인·해결을 검증한 경우에만 생성 |
+| 재발 방지 기록 | `mydocs/troubleshootings/` | `mydocs/troubleshootings/task_m010_11_windows_installer.md` | OK | Stage 6.8에서 원인·해결을 runtime 검증한 뒤 생성 |
 | 최종 handoff | `mydocs/report/` | `mydocs/report/task_m010_11_report.md` | OK | Stage 6 승인 뒤 final-report 절차에서 작성 |
 
 `mydocs/manual/`에는 제품·installer 문서를 추가하지 않는다. Windows VDI 원본 보고서는 저장소로 복사하지 않고 SHA-256과 필요한 관찰만 단계 보고서에서 인용한다.
@@ -320,10 +322,12 @@ repository 외부 상태:
 수정:
 
 - `docs/operations/DESKTOP_RELEASE.md`
-- `mydocs/orders/20260731.md`
+- `mydocs/plans/task_m010_11_impl.md`
 
 신규:
 
+- `mydocs/orders/20260801.md`
+- `mydocs/troubleshootings/task_m010_11_windows_installer.md`
 - `mydocs/working/task_m010_11_stage6.md`
 
 ### 변경 내용
@@ -342,6 +346,7 @@ repository 외부 상태:
 - Stage 6.5 run `30692282041`에서 MSI shortcut만 생성되지 않은 결과와 `CreateShortcuts` action에 `ShortcutCreate` operation이 없는 log를 Stage 6.6 입력으로 고정한다. Shortcut target 두 개만 `[INSTALLDIR]Alhangeul.exe`로 바꿔 다른 component의 file key를 참조하는 `ICE69`를 제거한다.
 - Stage 6.6 run `30692813844`에서 `ICE69` 제거 뒤에도 MSI shortcut만 생성되지 않고 원본 MSI table은 온전한 결과를 Stage 6.7 입력으로 고정한다. Windows build는 `windows-2025`에서 유지하고, 동일 artifact를 소비하는 installer smoke만 `windows-2022` fresh runner로 옮겨 packaging 결함과 hosted-runner 환경 특이성을 분리한다.
 - Stage 6.7 run `30693805318`에서 `windows-2022`도 같은 MSI shortcut 미생성을 보인 결과를 Stage 6.8 입력으로 고정한다. `REINSTALLMODE`에 shortcut 처리 플래그 `s`를 복원해 Tauri 기본 `amus`와 정렬하고 source contract로 고정하며, 진단용 smoke runner는 `windows-2025`로 복귀한다.
+- Stage 6.8 run `30695249890`에서 세 플랫폼 build와 Windows MSI·NSIS smoke가 모두 성공하고 MSI log의 shortcut 생성·제거 operation을 확인한 결과를 최종 수용 증적으로 고정한다.
 - 전체 기존 build matrix와 Windows installer smoke job의 success를 요구한다. Linux는 기존 build 회귀만 확인하며 install 성공으로 주장하지 않는다.
 - MSI·NSIS summary에서 clean state, exit, version, handler, 기본 연결 불변, bounded launch, uninstall cleanup과 fixture hash를 각각 확인한다.
 - Windows artifact inventory와 run provenance를 독립 재검증하고 artifact·log 만료 시각을 기록한다.
