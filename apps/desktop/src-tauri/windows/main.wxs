@@ -210,7 +210,7 @@
                 <Shortcut Id="ApplicationDesktopShortcut"
                     Name="{{product_name}}"
                     Description="Runs {{product_name}}"
-                    Target="[#Path]"
+                    Target="[INSTALLDIR]Alhangeul.exe"
                     Advertise="no"
                     Icon="ProductIcon.exe"
                     WorkingDirectory="INSTALLDIR">
@@ -225,7 +225,7 @@
                 <Shortcut Id="ApplicationStartMenuShortcut"
                     Name="{{product_name}}"
                     Description="Runs {{product_name}}"
-                    Target="[#Path]"
+                    Target="[INSTALLDIR]Alhangeul.exe"
                     Advertise="no"
                     Icon="ProductIcon.exe"
                     WorkingDirectory="INSTALLDIR">
