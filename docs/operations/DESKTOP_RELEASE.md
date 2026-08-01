@@ -53,6 +53,54 @@ Windows ARM64 MSI·NSIS는 Issue #10의 별도 build·native 검증이 Go일 때
 
 ## Task #9 prerelease candidate build·checksum 검증
 
+### 현재 candidate — Task #11 통합 재검증
+
+2026-08-02에 Task #11 merge를 포함한 통합 commit `dd67d58f5367b478315417279ac8f6561bd5b718`을 `publish/task9`에 고정하고 같은 exact SHA를 수동 검증했다.
+
+- [CI run 30707725441](https://github.com/postmelee/alhangeul-tauri/actions/runs/30707725441): `workflow_dispatch`, `publish/task9`, exact SHA 일치, `Unit tests` 성공
+- [Native run 30707721476](https://github.com/postmelee/alhangeul-tauri/actions/runs/30707721476): `workflow_dispatch`, `publish/task9`, exact SHA 일치, `Build windows-x64`, `Build linux-x64`, `Build linux-arm64`, `Smoke Windows x64 installers` 모두 성공
+
+native run의 build artifact 세 개와 installer smoke 진단 artifact를 별도 임시 디렉터리에 내려받았다. 동봉된 inventory를 기준으로 모든 파일의 크기와 SHA-256을 다시 계산했으며 세 platform inventory가 build 시 기록된 값과 일치했다.
+
+GitHub API가 반환한 Actions artifact archive metadata는 다음과 같다. 확인 시점에 모두 `expired: false`였으며 API archive digest와 아래 installer SHA-256은 서로 다른 검증 대상이다.
+
+| 대상 | Actions artifact | ID | Archive 크기 (bytes) | API archive digest | 만료 시각 (UTC) |
+|---|---|---:|---:|---|---|
+| Windows x64 | `alhangeul-desktop-windows-x64` | `8820936566` | 53,661,441 | `sha256:ecd2acfeedc05a0662e491fb0db940ff6200dd97d6b3a883532d1369d78d0232` | `2026-08-15T16:23:30Z` |
+| Linux x64 | `alhangeul-desktop-linux-x64` | `8820940757` | 353,969,511 | `sha256:0c7fedc1226e6fa563df72c11e7edc3751e6f568fc8cd3dfe2e5f5fa26c81272` | `2026-08-15T16:23:35Z` |
+| Linux arm64 | `alhangeul-desktop-linux-arm64` | `8820883528` | 90,029,396 | `sha256:3e2e54b86297e0abcce0289d99b90ef1bb24e8ec5dee568c54af1fce140cd747` | `2026-08-15T16:19:04Z` |
+| Windows smoke | `alhangeul-desktop-windows-x64-installer-smoke` | `8820953739` | 28,948 | `sha256:e933e52682279c15b2fe541c09363a9ba4d0d400b2534095965772ef1f0e2204` | `2026-08-15T16:24:57Z` |
+
+다운로드 후 독립 재검증한 필수 `0.1.0` installer inventory:
+
+| Platform | 종류 | 파일 | 크기 (bytes) | SHA-256 |
+|---|---|---|---:|---|
+| Windows x64 | MSI | `msi/Alhangeul_0.1.0_x64_en-US.msi` | 28,188,672 | `065e5d8e073128f4d6ffb6a764fd31c36843d38933efeb55796bf81e8df13c02` |
+| Windows x64 | NSIS | `nsis/Alhangeul_0.1.0_x64-setup.exe` | 25,708,275 | `20463d0021610a6607f7bb8752d185bcf7b8cf4be4d5437f02c1389492e1ecec` |
+| Linux x64 | AppImage | `appimage/Alhangeul_0.1.0_amd64.AppImage` | 106,838,520 | `5478ab6beff2e46e2a1290c35ae38ab27b8eb35d77e4678638c5595fb6c8bf1e` |
+| Linux x64 | DEB | `deb/Alhangeul_0.1.0_amd64.deb` | 30,092,908 | `67312f5720a4013388bd7d962f76ea73ff52dec29519e6428bd9766a90d8f040` |
+| Linux x64 | RPM | `rpm/Alhangeul-0.1.0-1.x86_64.rpm` | 30,093,106 | `54436f3e689760978031dcf1fe2d6ce035c4958c1d7ca34c07fd72996b78f259` |
+| Linux arm64 | DEB | `deb/Alhangeul_0.1.0_arm64.deb` | 30,050,132 | `9c45634f7486be1effa5983f76f1eb33acaa4f376fc94c7dfee79841572658e4` |
+
+installer 여섯 개만 깨끗한 임시 `release-assets` root에 평탄화해 생성하고 독립 재검증한 candidate `SHA256SUMS` 초안:
+
+```text
+54436f3e689760978031dcf1fe2d6ce035c4958c1d7ca34c07fd72996b78f259  Alhangeul-0.1.0-1.x86_64.rpm
+5478ab6beff2e46e2a1290c35ae38ab27b8eb35d77e4678638c5595fb6c8bf1e  Alhangeul_0.1.0_amd64.AppImage
+67312f5720a4013388bd7d962f76ea73ff52dec29519e6428bd9766a90d8f040  Alhangeul_0.1.0_amd64.deb
+9c45634f7486be1effa5983f76f1eb33acaa4f376fc94c7dfee79841572658e4  Alhangeul_0.1.0_arm64.deb
+20463d0021610a6607f7bb8752d185bcf7b8cf4be4d5437f02c1389492e1ecec  Alhangeul_0.1.0_x64-setup.exe
+065e5d8e073128f4d6ffb6a764fd31c36843d38933efeb55796bf81e8df13c02  Alhangeul_0.1.0_x64_en-US.msi
+```
+
+`shasum -a 256 -c SHA256SUMS`는 여섯 파일을 모두 `OK`로 판정했다. 568 bytes인 `SHA256SUMS` 자체 SHA-256은 `856f8aeb90a4b9c7e2cf507662c83b26b7d68ea33c7aff7e875591c053b940fc`였다.
+
+Windows installer smoke 진단은 MSI와 NSIS 각각에 대해 설치·version·경로·canonical ProgID·shortcut·기존 기본 연결 보존·5초 제한 실행·제거를 통과했다. 두 installer 모두 설치·제거 exit code가 `0`이고 최종 경로·process clean은 `true`, 소유 registry 잔여는 `0`이었다. installer 범위 밖 fixture의 전후 SHA-256도 같았다. 이 결과는 package 자동 수용 증거이며 실제 Explorer UI와 HWP/HWPX 편집 시나리오를 대체하지 않는다.
+
+검증용 임시 디렉터리와 checksum 초안은 검증 뒤 삭제했고 공개 release나 tag는 만들지 않았다. 이 candidate는 Task #11 계약을 포함한 Stage 3 exact-SHA build·inventory·checksum·Windows package smoke 증거다. 이후 보고·운영 문서 commit이 추가되므로 최종 `v0.1.0` tag artifact나 공개 asset이 아니다.
+
+### 폐기한 과거 candidate — 역사 증적 전용
+
 2026-07-29에 Stage 2 승인 commit `6e0adc941b9eedbd2d7cceab12bf31dddf184c3a`를 `publish/task9`에 고정하고 같은 exact SHA를 수동 검증했다.
 
 - [CI run 30426710424](https://github.com/postmelee/alhangeul-tauri/actions/runs/30426710424): `workflow_dispatch`, `publish/task9`, exact SHA 일치, `Unit tests` 성공
@@ -92,7 +140,7 @@ b7647416466cff7a3ac787d5d903f2950c2a1b735974482899e7778ce2de5aa4  Alhangeul_0.1.
 
 이 `SHA256SUMS` 파일 자체의 SHA-256은 `9e80f506fcc73f0b60018b383fba15b872e03bb9f69a8c6a9f90fb45a870cab2`였다. 검증용 임시 디렉터리와 checksum 초안은 검증 뒤 삭제했고 공개 release나 tag는 만들지 않았다.
 
-이 candidate는 필수 bundle의 exact-SHA build·inventory·checksum gate가 통과했다는 Stage 3 증거다. 이후 보고·운영 문서 commit이 추가되므로 최종 `v0.1.0` tag artifact나 공개 asset이 아니다. 실제 Windows/Linux 설치·실행·파일 연결·제거와 rollback은 Stage 4에서 별도로 통과해야 한다.
+이 과거 candidate는 당시 필수 bundle의 exact-SHA build·inventory·checksum gate를 통과했지만 Task #11 installer 계약을 포함하지 않는다. 현재 수용 결과와 후속 Go/No-Go 입력에서는 폐기하며 artifact와 checksum을 현재 candidate 또는 공개 asset으로 재사용하지 않는다.
 
 ## 검증된 `0.1.0` 기준선
 
