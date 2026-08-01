@@ -179,7 +179,7 @@ jobs:
   windows-installer-smoke:
     name: Smoke Windows x64 installers
     needs: build
-    if: ${{ always() }}
+    if: ${{ !cancelled() }}
     runs-on: windows-2025
     timeout-minutes: 30
     steps:
@@ -209,17 +209,21 @@ jobs:
         env:
           EXPECTED_BUILD_REF: ${{ inputs.build_ref || github.sha }}
         run: |
-          $expectedSha = (git rev-parse "$env:EXPECTED_BUILD_REF^{commit}").Trim()
-          if ($LASTEXITCODE -ne 0) {
+          $output = Join-Path $env:GITHUB_WORKSPACE 'diagnostics\windows-installer-smoke'
+          $expectedSha = git rev-parse "$env:EXPECTED_BUILD_REF^{commit}"
+          if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($expectedSha)) {
             throw "Cannot resolve expected build ref: $env:EXPECTED_BUILD_REF"
           }
-          $actualSha = (git rev-parse HEAD).Trim()
-          if ($LASTEXITCODE -ne 0 -or $actualSha -ne $expectedSha) {
+          $actualSha = git rev-parse HEAD
+          if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($actualSha)) {
+            throw "Cannot resolve checked out commit"
+          }
+          if ($actualSha.Trim() -ne $expectedSha.Trim()) {
             throw "Checked out commit mismatch: $actualSha != $expectedSha"
           }
           Set-Content `
-            -LiteralPath 'diagnostics\windows-installer-smoke\checked-out-sha.txt' `
-            -Value $actualSha `
+            -LiteralPath (Join-Path $output 'checked-out-sha.txt') `
+            -Value $actualSha.Trim() `
             -Encoding UTF8
 
       - name: Download Windows x64 bundle
@@ -237,7 +241,7 @@ jobs:
           $package = Get-Content -LiteralPath 'package.json' -Raw | ConvertFrom-Json
           $expectedVersion = [string]$package.version
           if ($expectedVersion -notmatch '^\d+\.\d+\.\d+$') {
-            throw "Root package version must have three components: $expectedVersion"
+            throw "MSI ProductVersion requires three components with no prerelease suffix: $expectedVersion"
           }
           & '.\scripts\windows-installer-smoke.ps1' `
             -ArtifactRoot 'artifacts\windows-x64' `
@@ -253,7 +257,7 @@ jobs:
           DOWNLOAD_OUTCOME: ${{ steps.download-windows-bundle.outcome }}
           SMOKE_OUTCOME: ${{ steps.run-installer-smoke.outcome }}
         run: |
-          $output = 'diagnostics\windows-installer-smoke'
+          $output = Join-Path $env:GITHUB_WORKSPACE 'diagnostics\windows-installer-smoke'
           New-Item -ItemType Directory -Path $output -Force | Out-Null
           [ordered]@{
             checkout = $env:CHECKOUT_OUTCOME

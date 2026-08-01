@@ -174,7 +174,12 @@ test('fresh Windows installer smoke job은 build 결과와 무관하게 artifact
   const job = getJob(desktopWorkflow, 'windows-installer-smoke');
 
   assert.match(job, /^    needs: build$/m);
-  assert.match(job, /^    if: \$\{\{ always\(\) \}\}$/m);
+  assert.match(job, /^    if: \$\{\{ !cancelled\(\) \}\}$/m);
+  assert.doesNotMatch(
+    job,
+    /^    if: \$\{\{ always\(\) \}\}$/m,
+    'job 조건은 취소된 workflow까지 계속 실행하지 않아야 합니다.',
+  );
   assert.match(job, /^    runs-on: windows-2025$/m);
   assert.doesNotMatch(job, /^\s+strategy:/m);
   assertOrdered(job, [
@@ -202,6 +207,13 @@ test('installer smoke job은 exact ref와 Windows x64 artifact를 고정한다',
   );
   assert.match(job, /git rev-parse "\$env:EXPECTED_BUILD_REF\^\{commit\}"/);
   assert.match(job, /git rev-parse HEAD/);
+  assert.doesNotMatch(
+    job,
+    /\(git rev-parse [^\n]*\)\.Trim\(\)/,
+    'git 실패는 null 참조가 아니라 exit code 검사로 보고돼야 합니다.',
+  );
+  assert.match(job, /\[string\]::IsNullOrWhiteSpace\(\$expectedSha\)/);
+  assert.match(job, /\[string\]::IsNullOrWhiteSpace\(\$actualSha\)/);
   assert.match(job, /uses: actions\/download-artifact@v8/);
   assert.match(job, /name: alhangeul-desktop-windows-x64$/m);
   assert.match(job, /path: artifacts\/windows-x64$/m);
@@ -239,6 +251,16 @@ test('installer smoke 진단은 항상 보존되고 마지막 gate가 실패를 
     /New-Item -ItemType Directory -Path \$output -Force/,
   );
   assert.match(recordStep, /^\s{8}if: \$\{\{ always\(\) \}\}$/m);
+  for (const [name, step] of [
+    ['prepare', prepareStep],
+    ['record', recordStep],
+  ]) {
+    assert.match(
+      step,
+      /\$output = Join-Path \$env:GITHUB_WORKSPACE 'diagnostics\\windows-installer-smoke'/,
+      `${name} step은 diagnostic 경로를 workspace 기준으로 해석해야 합니다.`,
+    );
+  }
   assert.match(uploadStep, /^\s{8}if: \$\{\{ always\(\) \}\}$/m);
   assert.match(uploadStep, /uses: actions\/upload-artifact@v7/);
   assert.match(

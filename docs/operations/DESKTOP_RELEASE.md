@@ -90,6 +90,21 @@ MSI와 NSIS는 각각 clean state, silent install exit `0`, 제품 version `0.1.
 
 이 결과는 fresh hosted runner의 반복 가능한 비대화형 package smoke다. 실제 GUI에서 HWP/HWPX 열기·저장·인쇄, Explorer 기본 앱 선택 UI, 장시간 사용과 Windows 실제 사용자 환경의 최종 수동 검증을 대신하지 않는다. Artifact는 공개 배포물이 아니며 만료 뒤 재사용할 수 없다.
 
+위 증적은 `8377756…`에 한정된다. 이후 PR #12 리뷰 반영으로 NSIS snapshot key 위치와 복원 분기, WiX protocol block, workflow 실패 보고가 바뀌었으므로 새 head SHA로 다시 dispatch해 재확인해야 한다.
+
+### Windows installer 자동 gate를 다시 돌려야 하는 변경
+
+이 workflow는 `workflow_dispatch` 전용이라 push나 PR로 자동 실행되지 않는다. 다음 변경은 자동으로 검증되지 않으므로 수동 dispatch가 필요하다.
+
+| 변경 | 이유 |
+|---|---|
+| Tauri 버전 상향 | NSIS hook은 Tauri 기본 file association 동작을 되돌리는 구조다. upstream이 association 처리나 내부 `UPDATEFILEASSOC` macro를 바꾸면 기존 기본 연결 보존이 조용히 깨진다 |
+| `windows/main.wxs`, `windows/nsis-hooks.nsh`, `tauri.conf.json`의 bundle 항목 | installer가 실제로 쓰는 registry·shortcut 계약이 바뀐다 |
+| `[[bin]] name`, `productName` | 실행 파일명, 설치 경로, ProgID, shortcut 이름이 함께 움직인다 |
+| `scripts/windows-installer-smoke.ps1`, smoke job | 판정 자체가 바뀌므로 source test만으로는 runtime 동작을 보증하지 못한다 |
+
+플랫폼 중립 test(`pnpm run test:automation`)는 이들 source 계약을 고정하지만 실제 설치·제거 동작은 확인하지 않는다.
+
 Task #9 prerelease 준비는 Task #11 merge 뒤 최신 `devel`을 통합하고 과거 candidate를 폐기한 다음, `check:release-metadata`를 포함하는 새 exact-SHA candidate를 만들어 다시 검증해야 한다. 위 Task #11 artifact나 SHA를 그대로 공개 후보로 승계하지 않는다.
 
 ## 검증된 native canary

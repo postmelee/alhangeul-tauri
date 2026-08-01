@@ -37,7 +37,7 @@ function Resolve-BundleArtifacts($Root) {
   Assert-Condition ($msiFiles.Count -eq 1) 'MSI bundle이 정확히 하나여야 합니다.'
   Assert-Condition ($nsisFiles.Count -eq 1) 'NSIS bundle이 정확히 하나여야 합니다.'
   Assert-Condition ($msiFiles[0].Directory.Name -ieq 'msi') 'MSI는 msi 디렉터리에 있어야 합니다.'
-  Assert-Condition ($files.Count -eq 3) 'inventory, MSI, NSIS 외 파일을 허용하지 않습니다.'
+  Assert-Condition ($files.Count -eq 3) 'inventory, MSI, NSIS 외 파일을 허용하지 않습니다. updater sidecar 도입 시 이 cardinality를 갱신합니다.'
   $inventory = Get-Content -LiteralPath $inventories[0].FullName -Raw | ConvertFrom-Json
   Assert-Condition ($inventory.platform -eq 'windows-x64') 'windows-x64 inventory가 필요합니다.'
   Assert-InventoryRecord 'msi' $msiFiles[0] $inventory $rootItem.FullName
@@ -67,7 +67,7 @@ function Get-DefaultState {
   return $state
 }
 function Set-AssociationSentinels {
-  $base = [Microsoft.Win32.RegistryKey]::OpenBaseKey([Microsoft.Win32.RegistryHive]::CurrentUser, [Microsoft.Win32.RegistryView]::Registry64); $records = @()
+  $base = [Microsoft.Win32.RegistryKey]::OpenBaseKey([Microsoft.Win32.RegistryHive]::CurrentUser, [Microsoft.Win32.RegistryView]::Registry64); $script:sentinels = @()
   try {
     $classes = $base.CreateSubKey('Software\Classes')
     foreach ($extension in $extensions) {
@@ -75,19 +75,19 @@ function Set-AssociationSentinels {
       $keyExisted = $null -ne $key
       if (-not $keyExisted) { $key = $classes.CreateSubKey($extension) }
       $valueExisted = $key.GetValueNames() -contains ''
-      $records += [ordered]@{ Extension = $extension; KeyExisted = $keyExisted; ValueExisted = $valueExisted; Value = $key.GetValue('') }
+      $script:sentinels += [ordered]@{ Extension = $extension; KeyExisted = $keyExisted; ValueExisted = $valueExisted; Value = $key.GetValue('') }
       $key.SetValue('', "AlhangeulSmoke.Existing$extension", [Microsoft.Win32.RegistryValueKind]::String)
       $key.Close()
     }
     $classes.Close()
   } finally { $base.Close() }
-  return $records
+  return $script:sentinels
 }
 function Restore-AssociationSentinels($Records) {
   $base = [Microsoft.Win32.RegistryKey]::OpenBaseKey([Microsoft.Win32.RegistryHive]::CurrentUser, [Microsoft.Win32.RegistryView]::Registry64); try {
     $classes = $base.OpenSubKey('Software\Classes', $true)
     foreach ($record in $Records) {
-      $key = $classes.OpenSubKey($record.Extension, $true)
+      $key = $classes.OpenSubKey($record.Extension, $true); if ($null -eq $key) { continue }
       if ($record.ValueExisted) { $key.SetValue('', $record.Value) } else { $key.DeleteValue('', $false) }
       $empty = $key.SubKeyCount -eq 0 -and $key.ValueCount -eq 0
       $key.Close()
@@ -134,13 +134,13 @@ function Get-ShortcutState($Kind, $Executable) {
     $target = if ($exists) { $shell.CreateShortcut($path).TargetPath } else { $null }
     $items += [ordered]@{ Path = $path; Exists = $exists; Target = $target }
   }
-  $valid = @($items | Where-Object { $_.Exists -and (Test-SamePath $_.Target $Executable) }).Count -eq 2
+  [void][Runtime.InteropServices.Marshal]::ReleaseComObject($shell); $valid = @($items | Where-Object { $_.Exists -and (Test-SamePath $_.Target $Executable) }).Count -eq 2
   return [ordered]@{ Items = $items; Valid = $valid }
 }
 function ConvertTo-NormalizedPath($Value) { if ([string]::IsNullOrWhiteSpace($Value)) { return $null }; return [IO.Path]::GetFullPath(([string]$Value).Trim().Trim('"')).TrimEnd('\') }
 function Test-SamePath($Left, $Right) { $leftPath = ConvertTo-NormalizedPath $Left; $rightPath = ConvertTo-NormalizedPath $Right; return $null -ne $leftPath -and $null -ne $rightPath -and $leftPath -ieq $rightPath }
 function Get-VersionState($Executable) { $version = (Get-Item -LiteralPath $Executable).VersionInfo; return [ordered]@{ ProductVersion = $version.ProductVersion; FileVersion = $version.FileVersion } }
-function Normalize-Version($Value) {
+function ConvertTo-NormalizedVersion($Value) {
   $match = [regex]::Match($Value, '^\s*(\d+)\.(\d+)\.(\d+)(?:\.(\d+))?\s*$')
   Assert-Condition $match.Success "version 형식이 올바르지 않습니다: $Value"
   Assert-Condition (-not $match.Groups[4].Success -or $match.Groups[4].Value -eq '0') "version 네 번째 성분은 0이어야 합니다: $Value"; return "$($match.Groups[1].Value).$($match.Groups[2].Value).$($match.Groups[3].Value)"
@@ -156,6 +156,7 @@ function Get-ProductState($Kind, $InstallDirectory) {
 function Get-CleanState {
   $ownedKeys = @()
   foreach ($progId in @($canonicalProgIds + $legacyProgIds)) { $ownedKeys += Get-RegistryValues "Software\Classes\$ProgId" '' }
+  foreach ($extension in $extensions) { $ownedKeys += Get-RegistryValues "Software\Alhangeul\FileAssocBackup\$extension" 'State' }
   $ownedOpenWith = @()
   for ($index = 0; $index -lt $extensions.Count; $index += 1) { $ownedOpenWith += Get-RegistryValues "Software\Classes\$($extensions[$index])\OpenWithProgids" $canonicalProgIds[$index] }
   $shortcutPaths = @((Join-Path ([Environment]::GetFolderPath('CommonDesktopDirectory')) 'Alhangeul.lnk'), (Join-Path ([Environment]::GetFolderPath('CommonPrograms')) 'Alhangeul\Alhangeul.lnk'), (Join-Path ([Environment]::GetFolderPath('DesktopDirectory')) 'Alhangeul.lnk'), (Join-Path ([Environment]::GetFolderPath('Programs')) 'Alhangeul\Alhangeul.lnk'))
@@ -176,7 +177,7 @@ function Assert-InstalledRegistry($State, $Kind) {
   if ($Kind -eq 'nsis') { Assert-Condition ($State.Entry.MainBinaryName -eq 'Alhangeul.exe') 'MainBinaryName이 다릅니다.' }; return $true
 }
 function Assert-InstalledVersion($State) {
-  Assert-Condition ($null -ne $State.Version) 'version resource를 읽을 수 없습니다.'; Assert-Condition ((Normalize-Version $State.Version.ProductVersion) -eq $ExpectedVersion) 'ProductVersion이 다릅니다.'; Assert-Condition ((Normalize-Version $State.Version.FileVersion) -eq $ExpectedVersion) 'FileVersion이 다릅니다.'; return $true
+  Assert-Condition ($null -ne $State.Version) 'version resource를 읽을 수 없습니다.'; Assert-Condition ((ConvertTo-NormalizedVersion $State.Version.ProductVersion) -eq $ExpectedVersion) 'ProductVersion이 다릅니다.'; Assert-Condition ((ConvertTo-NormalizedVersion $State.Version.FileVersion) -eq $ExpectedVersion) 'FileVersion이 다릅니다.'; return $true
 }
 function Assert-InstalledHandlers($State) { Assert-Condition (@($State.Handlers | Where-Object { -not $_.Valid }).Count -eq 0) 'canonical ProgID 또는 OpenWithProgids가 없습니다.'; return $true }
 function Invoke-Installer($Kind, $Path, $LogPath) {
@@ -208,7 +209,7 @@ function Invoke-Launch($Executable) {
 }
 function Write-MsiFailureContext($LogPath) {
   if (-not (Test-Path -LiteralPath $LogPath -PathType Leaf)) { return $null }
-  $lines = @(Get-Content -LiteralPath $LogPath)
+  $lines = @(Get-Content -LiteralPath $LogPath); if ($lines.Count -eq 0) { return $null }
   $indexes = @(0..($lines.Count - 1) | Where-Object { $lines[$_] -match 'Return value 3' })
   $context = @()
   foreach ($index in $indexes) {
@@ -266,10 +267,10 @@ function Invoke-BundleSmoke($Kind, $Path, $InstallDirectory, $BaselineDefaults) 
   return $result
 }
 # Main
-Assert-Condition ($ExpectedVersion -match '^\d+\.\d+\.\d+$') 'ExpectedVersion은 3성분 version이어야 합니다.'
+Assert-Condition ($ExpectedVersion -match '^\d+\.\d+\.\d+$') 'ExpectedVersion은 MSI ProductVersion 제약상 prerelease suffix 없는 3성분 version이어야 합니다.'
 New-Item -ItemType Directory -Path $OutputDirectory -Force | Out-Null; $summaryPath = Join-Path $OutputDirectory 'windows-installer-smoke-summary.json'
 $summary = [ordered]@{ SchemaVersion = 1; ExpectedVersion = $ExpectedVersion; StartedAt = [DateTime]::UtcNow.ToString('o'); Status = 'failed'; Failures = @(); Installers = @() }
-$sentinels = $null
+$sentinels = @()
 try {
   $artifacts = Resolve-BundleArtifacts $ArtifactRoot
   $summary.Artifacts = $artifacts
@@ -286,11 +287,11 @@ try {
   if (@($summary.Installers | Where-Object { $_.Status -ne 'passed' }).Count -eq 0 -and $summary.Fixture.Status -eq 'passed') { $summary.Status = 'passed' }
 } catch { $summary.FatalError = $_.Exception.Message
 } finally {
-  if ($null -ne $sentinels) { Restore-AssociationSentinels $sentinels }
-  $summary.RestoredDefaults = Get-DefaultState
-  if ($null -ne $sentinels -and (ConvertTo-Json $originalDefaults -Depth 12 -Compress) -ne (ConvertTo-Json $summary.RestoredDefaults -Depth 12 -Compress)) { $summary.Status = 'failed'; $summary.Failures += [ordered]@{ Category = 'default-mutation'; Message = 'smoke 종료 뒤 원래 기본 연결이 복원되지 않았습니다.' } }
-  $summary.FinishedAt = [DateTime]::UtcNow.ToString('o')
-  $summary | ConvertTo-Json -Depth 16 | Set-Content -LiteralPath $summaryPath -Encoding UTF8
+  try {
+    if ($sentinels.Count -gt 0) { Restore-AssociationSentinels $sentinels }
+    $summary.RestoredDefaults = Get-DefaultState
+    if ($sentinels.Count -gt 0 -and (ConvertTo-Json $originalDefaults -Depth 12 -Compress) -ne (ConvertTo-Json $summary.RestoredDefaults -Depth 12 -Compress)) { $summary.Status = 'failed'; $summary.Failures += [ordered]@{ Category = 'default-mutation'; Message = 'smoke 종료 뒤 원래 기본 연결이 복원되지 않았습니다.' } }
+  } catch { $summary.Status = 'failed'; $summary.Failures += [ordered]@{ Category = 'sentinel-restore'; Message = $_.Exception.Message } } finally { $summary.FinishedAt = [DateTime]::UtcNow.ToString('o'); $summary | ConvertTo-Json -Depth 16 | Set-Content -LiteralPath $summaryPath -Encoding UTF8 }
 }
-if ($summary.Status -ne 'passed') { Write-Error "Windows installer smoke가 실패했습니다. summary: $summaryPath"; exit 1 }
+if ($summary.Status -ne 'passed') { Write-Error "Windows installer smoke가 실패했습니다. summary: $summaryPath" -ErrorAction Continue; exit 1 }
 Write-Output "Windows installer smoke passed: $summaryPath"

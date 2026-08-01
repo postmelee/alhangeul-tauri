@@ -98,20 +98,34 @@ test('MSI는 canonical handler를 Open With에만 등록한다', () => {
     /Key="Software\\Classes\\+\{\{/,
     'Handlebars expression 바로 앞에는 registry separator를 둘 수 없습니다.',
   );
+  assert.doesNotMatch(
+    wixTemplate,
+    /\[!Path\]/,
+    'File 참조는 [#Path] 하나로 통일해야 합니다.',
+  );
 });
 
 test('NSIS는 canonical handler와 제품명 Start Menu 폴더를 사용한다', () => {
+  // MSI ProgId는 {{product_name}}에서, NSIS ProgId는 fileAssociations[].name에서,
+  // hook과 smoke script는 리터럴에서 나온다. 네 경로가 갈라지지 않도록 productName을 고정한다.
+  assert.equal(tauriConfig.productName, 'Alhangeul');
   assert.deepEqual(
     tauriConfig.bundle.fileAssociations.map(({ ext, name }) => ({ ext, name })),
     [
-      { ext: ['hwp'], name: 'Alhangeul.hwp' },
-      { ext: ['hwpx'], name: 'Alhangeul.hwpx' },
+      { ext: ['hwp'], name: `${tauriConfig.productName}.hwp` },
+      { ext: ['hwpx'], name: `${tauriConfig.productName}.hwpx` },
     ],
   );
   assert.deepEqual(tauriConfig.bundle.windows.nsis, {
-    startMenuFolder: 'Alhangeul',
+    startMenuFolder: tauriConfig.productName,
     installerHooks: 'windows/nsis-hooks.nsh',
   });
+  for (const { name } of tauriConfig.bundle.fileAssociations) {
+    assert.ok(
+      nsisHooks.includes(`"${name}"`),
+      `NSIS hook은 canonical ProgID를 등록해야 합니다: ${name}`,
+    );
+  }
 });
 
 test('NSIS hook은 설치·제거 중 extension 기본값을 보존한다', () => {
@@ -126,7 +140,13 @@ test('NSIS hook은 설치·제거 중 extension 기본값을 보존한다', () =
 
   assert.ok(
     nsisHooks.includes(
-      'ReadRegDWORD $R1 SHELL_CONTEXT "Software\\Classes\\.${EXT}" "${PROGID}_default_present"',
+      '!define ALHANGEUL_ASSOC_BACKUP_KEY "Software\\Alhangeul\\FileAssocBackup"',
+    ),
+    'snapshot은 제품 전용 key에 기록해야 합니다.',
+  );
+  assert.ok(
+    nsisHooks.includes(
+      'ReadRegDWORD $R1 SHELL_CONTEXT "${ALHANGEUL_ASSOC_BACKUP_KEY}\\.${EXT}" "State"',
     ),
   );
   assert.ok(
@@ -142,11 +162,6 @@ test('NSIS hook은 설치·제거 중 extension 기본값을 보존한다', () =
   assert.ok(
     nsisHooks.includes(
       'ReadRegStr $R0 SHELL_CONTEXT "Software\\Classes\\.${EXT}" ""',
-    ),
-  );
-  assert.ok(
-    nsisHooks.includes(
-      'WriteRegStr SHELL_CONTEXT "Software\\Classes\\.${EXT}" "${PROGID}_backup" "$R0"',
     ),
   );
   assert.ok(
@@ -167,4 +182,51 @@ test('NSIS hook은 설치·제거 중 extension 기본값을 보존한다', () =
     nsisHooks,
     /DeleteRegKey SHELL_CONTEXT "Software\\Classes\\\.\$\{EXT\}"/,
   );
+  assert.doesNotMatch(
+    nsisHooks,
+    /(?:WriteRegStr|WriteRegDWORD) SHELL_CONTEXT "Software\\Classes\\\.\$\{EXT\}" "\$\{PROGID\}_/,
+    '공유 extension key에 제품 bookkeeping value를 남기지 않아야 합니다.',
+  );
+  assert.doesNotMatch(
+    nsisHooks,
+    /_backup/,
+    '읽지 않는 backup value를 남기지 않아야 합니다.',
+  );
+});
+
+test('NSIS restore는 snapshot이 없으면 기존 기본값을 건드리지 않는다', () => {
+  const restore = nsisHooks.match(
+    /!macro ALHANGEUL_RESTORE_EXTENSION_DEFAULT[\s\S]+?!macroend/,
+  )?.[0];
+
+  assert.ok(restore, 'ALHANGEUL_RESTORE_EXTENSION_DEFAULT 계약이 필요합니다.');
+  assert.match(
+    restore,
+    /ClearErrors[\s\S]+ReadRegDWORD[\s\S]+\$\{IfNot\} \$\{Errors\}/,
+    'snapshot 부재는 복원을 건너뛰어야 합니다.',
+  );
+  assert.ok(
+    restore.indexOf('${IfNot} ${Errors}') <
+      restore.indexOf('DeleteRegValue SHELL_CONTEXT "Software\\Classes\\.${EXT}" ""'),
+    '기본값 삭제는 snapshot이 있을 때만 도달해야 합니다.',
+  );
+});
+
+test('NSIS hook macro는 사용하는 register를 보존한다', () => {
+  for (const macro of [
+    'ALHANGEUL_SNAPSHOT_EXTENSION_DEFAULT',
+    'ALHANGEUL_RESTORE_EXTENSION_DEFAULT',
+  ]) {
+    const body = nsisHooks.match(
+      new RegExp(`!macro ${macro}[\\s\\S]+?!macroend`),
+    )?.[0];
+
+    assert.ok(body, `${macro} 계약이 필요합니다.`);
+    for (const register of [...new Set(body.match(/\$R\d/g) ?? [])]) {
+      assert.ok(
+        body.includes(`Push ${register}`) && body.includes(`Pop ${register}`),
+        `${macro}는 ${register}를 Push/Pop으로 보존해야 합니다.`,
+      );
+    }
+  }
 });

@@ -429,3 +429,14 @@ Task #11 Stage 6: Windows installer smoke 수용 검증과 Task #9 handoff
 - release·tag·signing·게시와 실제 GUI 문서 기능 검증을 계속 제외하는 경계
 
 승인되면 Stage 1의 read-only 조사와 상태·판정 계약 보고부터 진행한다.
+
+## PR #12 리뷰 반영 보정 (2026-08-01)
+
+작업지시자 승인으로 PR #12 리뷰 지적을 반영하면서 위 계획의 두 계약을 교체했다. 나머지 항목은 그대로 유효하다.
+
+| 원래 계약 | 교체 후 | 이유 |
+|---|---|---|
+| smoke job 실행 조건 `always()` | `!cancelled()` | `always()`는 취소된 workflow까지 job을 계속 돌린다. "build 실패와 무관하게 artifact 소비를 시도한다"는 원래 의도는 `!cancelled()`로 그대로 유지된다. step-level `always()`(diagnostic upload, outcome 기록, final gate)는 변경하지 않았다 |
+| NSIS default snapshot을 `Software\Classes\.{ext}`의 `*_backup` value에 보관 | 전용 key `Software\Alhangeul\FileAssocBackup\.{ext}`의 `State`/`Default` | 공유 key에 제품 bookkeeping을 남기지 않고, snapshot 부재를 "기본값 없음"과 구분해 사용자의 기존 기본 연결을 지우지 않기 위함 |
+
+Stage 1·3·5·6 보고서의 해당 서술은 당시 결정의 기록으로 두고 수정하지 않는다. 최종 계약과 근거는 [최종 보고서](../report/task_m010_11_report.md)의 "PR #12 리뷰 반영"을 따른다.
