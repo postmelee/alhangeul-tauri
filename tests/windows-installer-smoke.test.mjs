@@ -91,10 +91,14 @@ test('sentinel은 부분 실패에서도 복원 대상으로 남는다', () => {
     'sentinel 누적은 throw 이후에도 조회 가능해야 합니다.',
   );
   assert.match(source, /^\$sentinels = @\(\)$/m);
+  const restore = source.match(
+    /function Restore-AssociationSentinels\(\$Records\) \{[\s\S]+?\n\}/,
+  )?.[0];
+  assert.ok(restore, 'Restore-AssociationSentinels 계약이 필요합니다.');
   assert.match(
-    source,
-    /\$key = \$classes\.OpenSubKey\(\$record\.Extension, \$true\); if \(\$null -eq \$key\) \{ continue \}/,
-    '삭제된 extension key에서 복원이 throw하면 안 됩니다.',
+    restore,
+    /if \(\$null -eq \$key -and \$record\.KeyExisted\) \{ \$key = \$classes\.CreateSubKey\(\$record\.Extension\) \}[\s\S]+?if \(\$null -eq \$key\) \{ continue \}/,
+    '원래 존재했던 extension key는 삭제되어도 재생성해 복원해야 합니다.',
   );
 });
 

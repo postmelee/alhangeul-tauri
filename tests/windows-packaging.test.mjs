@@ -212,6 +212,66 @@ test('NSIS restore는 snapshot이 없으면 기존 기본값을 건드리지 않
   );
 });
 
+test('NSIS snapshot은 중단된 이전 transaction을 덮어쓰지 않는다', () => {
+  const snapshot = nsisHooks.match(
+    /!macro ALHANGEUL_SNAPSHOT_EXTENSION_DEFAULT[\s\S]+?!macroend/,
+  )?.[0];
+
+  assert.ok(snapshot, 'ALHANGEUL_SNAPSHOT_EXTENSION_DEFAULT 계약이 필요합니다.');
+  assert.match(
+    snapshot,
+    /ReadRegDWORD \$R1[\s\S]+?"State"[\s\S]+?\$\{If\} \$\{Errors\}[\s\S]+?ReadRegStr \$R0 SHELL_CONTEXT "Software\\Classes/,
+    '기존 committed snapshot이 없을 때만 현재 기본값을 읽어야 합니다.',
+  );
+  const defaultWrite = snapshot.indexOf(
+    'WriteRegStr SHELL_CONTEXT "${ALHANGEUL_ASSOC_BACKUP_KEY}\\.${EXT}" "Default"',
+  );
+  const committedState = snapshot.indexOf(
+    'WriteRegDWORD SHELL_CONTEXT "${ALHANGEUL_ASSOC_BACKUP_KEY}\\.${EXT}" "State" 1',
+  );
+  assert.notEqual(defaultWrite, -1);
+  assert.notEqual(committedState, -1);
+  assert.ok(
+    defaultWrite < committedState,
+    'Default를 먼저 기록하고 State를 transaction commit marker로 마지막에 기록해야 합니다.',
+  );
+});
+
+test('NSIS restore는 완전한 snapshot만 적용하고 성공 뒤에만 제거한다', () => {
+  const restore = nsisHooks.match(
+    /!macro ALHANGEUL_RESTORE_EXTENSION_DEFAULT[\s\S]+?!macroend/,
+  )?.[0];
+
+  assert.ok(restore, 'ALHANGEUL_RESTORE_EXTENSION_DEFAULT 계약이 필요합니다.');
+  assert.match(
+    restore,
+    /\$\{If\} \$R1 = 1[\s\S]+?ClearErrors[\s\S]+?ReadRegStr[\s\S]+?\$\{IfNot\} \$\{Errors\}[\s\S]+?WriteRegStr/,
+    'State=1이어도 Default가 없으면 공유 기본값을 변경하지 않아야 합니다.',
+  );
+  assert.match(
+    restore,
+    /\$\{ElseIf\} \$R1 = 0/,
+    '알 수 없는 State를 원래 기본값 부재로 취급하면 안 됩니다.',
+  );
+  assert.match(
+    restore,
+    /\$\{ElseIf\} \$R1 = 0[\s\S]+?DeleteRegValue[\s\S]+?ReadRegStr[\s\S]+?\$\{If\} \$\{Errors\}[\s\S]+?DeleteRegKey/,
+    '원래 기본값이 없으면 삭제 뒤의 실제 부재를 확인하고 snapshot을 정리해야 합니다.',
+  );
+  const defaultRestore = restore.indexOf(
+    'WriteRegStr SHELL_CONTEXT "Software\\Classes\\.${EXT}" "" "$R0"',
+  );
+  const snapshotDelete = restore.indexOf(
+    'DeleteRegKey SHELL_CONTEXT "${ALHANGEUL_ASSOC_BACKUP_KEY}\\.${EXT}"',
+  );
+  assert.notEqual(defaultRestore, -1);
+  assert.notEqual(snapshotDelete, -1);
+  assert.ok(
+    defaultRestore < snapshotDelete,
+    '공유 기본값 복원 성공을 확인하기 전에 snapshot을 제거하면 안 됩니다.',
+  );
+});
+
 test('NSIS hook macro는 사용하는 register를 보존한다', () => {
   for (const macro of [
     'ALHANGEUL_SNAPSHOT_EXTENSION_DEFAULT',

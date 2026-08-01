@@ -87,7 +87,9 @@ function Restore-AssociationSentinels($Records) {
   $base = [Microsoft.Win32.RegistryKey]::OpenBaseKey([Microsoft.Win32.RegistryHive]::CurrentUser, [Microsoft.Win32.RegistryView]::Registry64); try {
     $classes = $base.OpenSubKey('Software\Classes', $true)
     foreach ($record in $Records) {
-      $key = $classes.OpenSubKey($record.Extension, $true); if ($null -eq $key) { continue }
+      $key = $classes.OpenSubKey($record.Extension, $true)
+      if ($null -eq $key -and $record.KeyExisted) { $key = $classes.CreateSubKey($record.Extension) }
+      if ($null -eq $key) { continue }
       if ($record.ValueExisted) { $key.SetValue('', $record.Value) } else { $key.DeleteValue('', $false) }
       $empty = $key.SubKeyCount -eq 0 -and $key.ValueCount -eq 0
       $key.Close()

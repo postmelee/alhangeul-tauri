@@ -9,6 +9,8 @@
 ;   bookkeeping value를 남기지 않는다.
 ; - snapshot이 없으면 복원은 no-op이다. "기본값이 원래 없었음"과 "snapshot 자체가 없음"을
 ;   구분하지 못하면 사용자의 기존 기본 연결을 지우게 된다.
+; - State는 snapshot의 마지막 commit marker다. 중단된 이전 작업의 committed snapshot이 있으면
+;   다음 설치·제거가 덮어쓰지 않고 같은 원래 기본값을 복원한다.
 ; - 모든 macro는 사용하는 $R0/$R1을 Push/Pop으로 보존한다. hook 본문은 Tauri installer.nsi
 ;   안으로 삽입되며 주변 코드의 register 사용을 알 수 없다.
 ; - UPDATEFILEASSOC는 Tauri installer.nsi가 제공하는 내부 macro이며 installerHooks 공개
@@ -18,15 +20,21 @@
 
 !macro ALHANGEUL_SNAPSHOT_EXTENSION_DEFAULT EXT
   Push $R0
+  Push $R1
   ClearErrors
-  ReadRegStr $R0 SHELL_CONTEXT "Software\Classes\.${EXT}" ""
+  ReadRegDWORD $R1 SHELL_CONTEXT "${ALHANGEUL_ASSOC_BACKUP_KEY}\.${EXT}" "State"
   ${If} ${Errors}
-    WriteRegDWORD SHELL_CONTEXT "${ALHANGEUL_ASSOC_BACKUP_KEY}\.${EXT}" "State" 0
-    DeleteRegValue SHELL_CONTEXT "${ALHANGEUL_ASSOC_BACKUP_KEY}\.${EXT}" "Default"
-  ${Else}
-    WriteRegDWORD SHELL_CONTEXT "${ALHANGEUL_ASSOC_BACKUP_KEY}\.${EXT}" "State" 1
-    WriteRegStr SHELL_CONTEXT "${ALHANGEUL_ASSOC_BACKUP_KEY}\.${EXT}" "Default" "$R0"
+    ClearErrors
+    ReadRegStr $R0 SHELL_CONTEXT "Software\Classes\.${EXT}" ""
+    ${If} ${Errors}
+      DeleteRegValue SHELL_CONTEXT "${ALHANGEUL_ASSOC_BACKUP_KEY}\.${EXT}" "Default"
+      WriteRegDWORD SHELL_CONTEXT "${ALHANGEUL_ASSOC_BACKUP_KEY}\.${EXT}" "State" 0
+    ${Else}
+      WriteRegStr SHELL_CONTEXT "${ALHANGEUL_ASSOC_BACKUP_KEY}\.${EXT}" "Default" "$R0"
+      WriteRegDWORD SHELL_CONTEXT "${ALHANGEUL_ASSOC_BACKUP_KEY}\.${EXT}" "State" 1
+    ${EndIf}
   ${EndIf}
+  Pop $R1
   Pop $R0
 !macroend
 
@@ -37,12 +45,24 @@
   ReadRegDWORD $R1 SHELL_CONTEXT "${ALHANGEUL_ASSOC_BACKUP_KEY}\.${EXT}" "State"
   ${IfNot} ${Errors}
     ${If} $R1 = 1
+      ClearErrors
       ReadRegStr $R0 SHELL_CONTEXT "${ALHANGEUL_ASSOC_BACKUP_KEY}\.${EXT}" "Default"
-      WriteRegStr SHELL_CONTEXT "Software\Classes\.${EXT}" "" "$R0"
-    ${Else}
+      ${IfNot} ${Errors}
+        ClearErrors
+        WriteRegStr SHELL_CONTEXT "Software\Classes\.${EXT}" "" "$R0"
+        ${IfNot} ${Errors}
+          DeleteRegKey SHELL_CONTEXT "${ALHANGEUL_ASSOC_BACKUP_KEY}\.${EXT}"
+        ${EndIf}
+      ${EndIf}
+    ${ElseIf} $R1 = 0
+      ClearErrors
       DeleteRegValue SHELL_CONTEXT "Software\Classes\.${EXT}" ""
+      ClearErrors
+      ReadRegStr $R0 SHELL_CONTEXT "Software\Classes\.${EXT}" ""
+      ${If} ${Errors}
+        DeleteRegKey SHELL_CONTEXT "${ALHANGEUL_ASSOC_BACKUP_KEY}\.${EXT}"
+      ${EndIf}
     ${EndIf}
-    DeleteRegKey SHELL_CONTEXT "${ALHANGEUL_ASSOC_BACKUP_KEY}\.${EXT}"
   ${EndIf}
   Pop $R1
   Pop $R0
