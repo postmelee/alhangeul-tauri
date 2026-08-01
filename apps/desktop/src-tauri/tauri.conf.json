@@ -44,13 +44,13 @@
     "fileAssociations": [
       {
         "ext": ["hwp"],
-        "name": "HWP Document",
+        "name": "Alhangeul.hwp",
         "description": "Hangul Word Processor document",
         "mimeType": "application/x-hwp"
       },
       {
         "ext": ["hwpx"],
-        "name": "HWPX Document",
+        "name": "Alhangeul.hwpx",
         "description": "Hangul Word Processor XML document",
         "mimeType": "application/vnd.hancom.hwpx"
       }
@@ -58,6 +58,10 @@
     "windows": {
       "wix": {
         "template": "windows/main.wxs"
+      },
+      "nsis": {
+        "startMenuFolder": "Alhangeul",
+        "installerHooks": "windows/nsis-hooks.nsh"
       }
     }
   }

@@ -160,7 +160,7 @@ jobs:
 
       - name: Build Tauri bundles
         shell: bash
-        run: pnpm tauri build --target "${{ matrix.target }}" ${{ matrix.bundle_args }}
+        run: pnpm tauri build --verbose --target "${{ matrix.target }}" ${{ matrix.bundle_args }}
 
       - name: Verify bundle artifact
         shell: bash
@@ -179,3 +179,125 @@ jobs:
           path: apps/desktop/src-tauri/target/${{ matrix.target }}/release/bundle/**
           if-no-files-found: error
           retention-days: 14
+
+  windows-installer-smoke:
+    name: Smoke Windows x64 installers
+    needs: build
+    if: ${{ !cancelled() }}
+    runs-on: windows-2025
+    timeout-minutes: 30
+    steps:
+      - name: Checkout installer smoke source
+        id: smoke-checkout
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.build_ref || github.sha }}
+
+      - name: Prepare installer smoke diagnostics
+        if: ${{ always() }}
+        shell: powershell
+        env:
+          REQUESTED_BUILD_REF: ${{ inputs.build_ref || github.sha }}
+        run: |
+          $output = Join-Path $env:GITHUB_WORKSPACE 'diagnostics\windows-installer-smoke'
+          New-Item -ItemType Directory -Path $output -Force | Out-Null
+          [ordered]@{
+            runId = '${{ github.run_id }}'
+            runAttempt = '${{ github.run_attempt }}'
+            requestedBuildRef = $env:REQUESTED_BUILD_REF
+          } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $output 'workflow-context.json') -Encoding UTF8
+
+      - name: Verify installer smoke commit
+        id: verify-smoke-commit
+        shell: powershell
+        env:
+          EXPECTED_BUILD_REF: ${{ inputs.build_ref || github.sha }}
+        run: |
+          $output = Join-Path $env:GITHUB_WORKSPACE 'diagnostics\windows-installer-smoke'
+          $expectedSha = git rev-parse "$env:EXPECTED_BUILD_REF^{commit}"
+          if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($expectedSha)) {
+            throw "Cannot resolve expected build ref: $env:EXPECTED_BUILD_REF"
+          }
+          $actualSha = git rev-parse HEAD
+          if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($actualSha)) {
+            throw "Cannot resolve checked out commit"
+          }
+          if ($actualSha.Trim() -ne $expectedSha.Trim()) {
+            throw "Checked out commit mismatch: $actualSha != $expectedSha"
+          }
+          Set-Content `
+            -LiteralPath (Join-Path $output 'checked-out-sha.txt') `
+            -Value $actualSha.Trim() `
+            -Encoding UTF8
+
+      - name: Download Windows x64 bundle
+        id: download-windows-bundle
+        uses: actions/download-artifact@v8
+        with:
+          name: alhangeul-desktop-windows-x64
+          path: artifacts/windows-x64
+
+      - name: Run Windows installer smoke
+        id: run-installer-smoke
+        continue-on-error: true
+        shell: powershell
+        run: |
+          $package = Get-Content -LiteralPath 'package.json' -Raw | ConvertFrom-Json
+          $expectedVersion = [string]$package.version
+          if ($expectedVersion -notmatch '^\d+\.\d+\.\d+$') {
+            throw "MSI ProductVersion requires three components with no prerelease suffix: $expectedVersion"
+          }
+          & '.\scripts\windows-installer-smoke.ps1' `
+            -ArtifactRoot 'artifacts\windows-x64' `
+            -OutputDirectory 'diagnostics\windows-installer-smoke' `
+            -ExpectedVersion $expectedVersion
+
+      - name: Record installer smoke outcome
+        if: ${{ always() }}
+        shell: powershell
+        env:
+          CHECKOUT_OUTCOME: ${{ steps.smoke-checkout.outcome }}
+          VERIFY_OUTCOME: ${{ steps.verify-smoke-commit.outcome }}
+          DOWNLOAD_OUTCOME: ${{ steps.download-windows-bundle.outcome }}
+          SMOKE_OUTCOME: ${{ steps.run-installer-smoke.outcome }}
+        run: |
+          $output = Join-Path $env:GITHUB_WORKSPACE 'diagnostics\windows-installer-smoke'
+          New-Item -ItemType Directory -Path $output -Force | Out-Null
+          [ordered]@{
+            checkout = $env:CHECKOUT_OUTCOME
+            verifyCommit = $env:VERIFY_OUTCOME
+            download = $env:DOWNLOAD_OUTCOME
+            smoke = $env:SMOKE_OUTCOME
+          } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $output 'step-outcomes.json') -Encoding UTF8
+
+      - name: Upload installer smoke diagnostics
+        id: upload-installer-smoke-diagnostics
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: alhangeul-desktop-windows-x64-installer-smoke
+          path: diagnostics/windows-installer-smoke/**
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Require Windows installer smoke success
+        if: ${{ always() }}
+        shell: powershell
+        env:
+          CHECKOUT_OUTCOME: ${{ steps.smoke-checkout.outcome }}
+          VERIFY_OUTCOME: ${{ steps.verify-smoke-commit.outcome }}
+          DOWNLOAD_OUTCOME: ${{ steps.download-windows-bundle.outcome }}
+          SMOKE_OUTCOME: ${{ steps.run-installer-smoke.outcome }}
+          UPLOAD_OUTCOME: ${{ steps.upload-installer-smoke-diagnostics.outcome }}
+        run: |
+          $outcomes = [ordered]@{
+            checkout = $env:CHECKOUT_OUTCOME
+            verifyCommit = $env:VERIFY_OUTCOME
+            download = $env:DOWNLOAD_OUTCOME
+            smoke = $env:SMOKE_OUTCOME
+            uploadDiagnostics = $env:UPLOAD_OUTCOME
+          }
+          $failed = @($outcomes.GetEnumerator() | Where-Object { $_.Value -ne 'success' })
+          if ($failed.Count -gt 0) {
+            throw "Windows installer smoke gate failed: $($failed | ConvertTo-Json -Compress)"
+          }

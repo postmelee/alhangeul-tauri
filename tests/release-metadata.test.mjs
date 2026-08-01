@@ -65,6 +65,14 @@ for (const [name, path, mutate, expectedError] of [
     /bundle\.fileAssociations 개수가 다릅니다/,
   ],
   [
+    'legacy HWP association 이름',
+    'apps/desktop/src-tauri/tauri.conf.json',
+    (value) => {
+      value.bundle.fileAssociations[0].name = 'HWP Document';
+    },
+    /hwp\.name 값이 다릅니다/,
+  ],
+  [
     '활성화된 updater 설정',
     'apps/desktop/src-tauri/tauri.conf.json',
     (value) => {

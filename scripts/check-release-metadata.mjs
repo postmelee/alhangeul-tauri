@@ -28,13 +28,13 @@ export const RELEASE_METADATA_CONTRACT = Object.freeze({
   fileAssociations: Object.freeze([
     Object.freeze({
       ext: Object.freeze(['hwp']),
-      name: 'HWP Document',
+      name: 'Alhangeul.hwp',
       description: 'Hangul Word Processor document',
       mimeType: 'application/x-hwp',
     }),
     Object.freeze({
       ext: Object.freeze(['hwpx']),
-      name: 'HWPX Document',
+      name: 'Alhangeul.hwpx',
       description: 'Hangul Word Processor XML document',
       mimeType: 'application/vnd.hancom.hwpx',
     }),

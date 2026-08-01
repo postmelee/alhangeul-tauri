@@ -302,3 +302,15 @@ Task #9 Stage 5: prerelease Go No-Go 판정과 게시 입력 확정
 - Stage 5는 후속 게시 Issue 초안만 만들고 Issue·release PR·tag·GitHub Release를 생성하지 않는 경계
 
 2026-07-29 Stage 1.1에서 unsigned prerelease, baseline bundle 전체 필수와 Windows ARM64 Issue #10 조건부 분리를 승인받았다. Stage 2 진입, remote push, Actions dispatch 또는 외부 공개는 별도 승인 없이는 수행하지 않는다.
+
+## Stage 3 재검증 보정 — Task #11 merge 통합 (2026-08-02)
+
+작업지시자는 PR #12 merge 뒤 Task #9의 과거 candidate를 폐기하고 최신 `devel`을 통합해 새 exact-SHA candidate를 검증하는 범위를 승인했다. 진행 중 branch의 history를 다시 쓰지 않도록 `devel` merge로 통합하며 release metadata/checksum과 Windows installer smoke/packaging 계약을 합집합으로 유지한다.
+
+| 통합 지점 | 보정 계약 | 검증 |
+|---|---|---|
+| `package.json`의 `test:automation` 충돌 | `release-metadata`, `release-checksums`, `windows-installer-smoke`, `windows-packaging` test를 모두 실행 | 통합 automation 전체 통과 |
+| Task #9의 legacy association 이름과 Task #11 canonical ProgID 불일치 | metadata checker가 `Alhangeul.hwp`·`Alhangeul.hwpx`를 승인하고 legacy `HWP Document`를 거부 | `check:release-metadata`, release metadata 회귀 test, Windows packaging 계약 |
+| 과거 Stage 3 candidate `6e0adc9…`와 run `30426710424`·`30426711693` | 역사 증적으로만 보존하고 현재 candidate·Go 판정 근거로 재사용하지 않음 | 새 통합 commit을 `publish/task9`에 고정한 뒤 CI/native workflow와 artifact·checksum 재검증 |
+
+통합 commit의 플랫폼 중립 검증이 모두 통과한 뒤 작업지시자 승인으로만 `publish/task9`을 새 SHA로 이동하고 Actions를 dispatch한다. 새 run 성공 전에는 `docs/operations/DESKTOP_RELEASE.md`와 Stage 3 보고서의 과거 성공 증적을 현재 수용 결과로 교체하지 않는다. Release PR, tag, GitHub Release와 asset 게시는 계속 범위 밖이다.
