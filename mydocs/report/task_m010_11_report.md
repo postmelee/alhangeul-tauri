@@ -16,7 +16,7 @@ GitHub-hosted Windows에서는 MSI `1602`가 재현되지 않았고 양 installe
 
 최종 exact-SHA run `30695249890`은 source commit `83777562231d92d5bc8aab3fbfbb7b2e7bb7b81d`에서 Windows x64·Linux x64·Linux arm64 build와 Windows MSI·NSIS smoke를 모두 통과했다. 이 결과는 자동 package smoke 수용 증적이며 공개 release나 실제 GUI 문서 기능 성공을 뜻하지 않는다.
 
-2026-08-01 PR #12 리뷰로 진단 보존, NSIS 기본값 복원, workflow 실패 보고 경로를 보정했다. 이 보정은 `8377756` 이후 변경이므로 **위 native run은 현재 head에 대한 수용 증적이 아니다.** 상세는 아래 "PR #12 리뷰 반영"을 따른다.
+2026-08-01 PR #12 리뷰로 진단 보존, NSIS 기본값 복원, workflow 실패 보고 경로를 보정한 뒤 `d698d407783bdc4b345f2d7fc8cae4676c41d8a0`에서 run `30697442296`을 다시 수행해 세 플랫폼 build와 Windows MSI·NSIS smoke 성공을 재확인했다. 현재 유효한 수용 증적은 이 run이다. 상세는 아래 "PR #12 리뷰 반영"을 따른다.
 
 ## 변경 파일 목록과 영향 범위
 
@@ -73,10 +73,10 @@ GitHub-hosted Windows에서는 MSI `1602`가 재현되지 않았고 양 installe
 | upstream 정합성 | OK — `rhwp v0.8.2`, commit `9b16aa9e23f476e2b335d7c029fc9f24a199d63c`, managed artifact 6개; upstream `32/32` |
 | automation·studio | OK — automation `58/58`, Studio `114/114`, TypeScript·Vite production build 성공 |
 | workflow 보안·범위 | OK — `workflow_dispatch`, `contents: read`, 14일 artifact, release·deploy·secret·write permission 없음; `actionlint` 통과 |
-| exact-SHA native matrix | OK — run `30695249890`, head `8377756…`; Windows x64·Linux x64·Linux arm64 build 모두 success |
+| exact-SHA native matrix | OK — run `30697442296`, head `d698d40…`; Windows x64·Linux x64·Linux arm64 build 모두 success |
 | Windows installer 수용 | OK — MSI·NSIS 모두 clean state, exit, version, handler, 기본 연결 불변, shortcut, bounded launch, uninstall cleanup 통과 |
-| fixture 무손실 | OK — 전후 SHA-256 `5B1B2C78885979086ACC790098BB28E71DAC9FB0FC1335D6C32CF3B091BDAE4B` 일치 |
-| Windows artifact 무결성 | OK — 다운로드한 MSI `9c8b4318…`, NSIS `2b208f66…`의 inventory·크기·SHA-256 독립 재검증 통과 |
+| fixture 무손실 | OK — 실행 전후 SHA-256 일치 |
+| Windows artifact 무결성 | OK — 다운로드한 MSI `fcb2fe04…`, NSIS `7d6ff2dc…`의 inventory·크기·SHA-256 독립 재검증 통과 |
 | 진단 보존과 실패 전달 | OK — canary 실패에서도 summary·MSI 원본 log·outcome을 업로드하고 final gate가 실패를 전달 |
 | 작업 경계 | OK — release, tag, signing, updater, package 게시, Windows ARM64와 GUI 문서 기능 검증을 수행하지 않음 |
 
@@ -114,6 +114,15 @@ GitHub-hosted Windows에서는 MSI `1602`가 재현되지 않았고 양 installe
 
 회귀 test는 12개 신규 계약을 추가했고, 각 assertion이 보정 전 source에서 실패하는 것을 확인해 무효 계약이 아님을 검증했다. automation suite는 `53/53`에서 `58/58`로 늘었다.
 
+보정 뒤 `d698d40`에서 run `30697442296`을 다시 수행해 세 플랫폼 build와 Windows installer smoke 성공을 재확인했다. 바뀐 경로의 증적은 다음과 같다.
+
+| 변경 | 확인 방법 |
+|---|---|
+| NSIS snapshot key 이동 | NSIS `default-mutation` 판정 통과. Tauri NSIS는 설치 중 `.hwp`/`.hwpx` 기본값을 덮어쓰므로 새 key로의 snapshot·복원이 동작하지 않으면 baseline과 달라져 실패한다 |
+| 새 backup key cleanup | uninstall 뒤 소유 registry 수 `0`. 판정 대상에 backup key의 `State` value를 포함했다 |
+| WiX `[#Path]` 통일 | MSI validation 통과와 silent install exit `0`, `Return value 3` 없음 |
+| workflow `!cancelled()`·경로 정리 | diagnostic artifact 업로드 성공, step outcome 4개 모두 `success`, `checked-out-sha.txt`가 `d698d40…` 기록 |
+
 ## 잔여 위험과 후속 작업
 
 ### 잔여 위험
@@ -124,8 +133,8 @@ GitHub-hosted Windows에서는 MSI `1602`가 재현되지 않았고 양 installe
 - `REINSTALLMODE="amus"`는 update·repair에서 사용자가 삭제한 shortcut을 다시 만들 수 있는 Tauri 기본 trade-off다.
 - Windows artifact와 diagnostic은 서명되지 않은 14일 보존물이며 GitHub Release나 공개 배포물이 아니다.
 - VDI MSI `1602`는 hosted runner에서 재현되지 않았고 원본 verbose log가 없어 interactive/session 발생 조건을 완전히 확정하지 못했다.
-- **PR #12 리뷰 반영은 native 재검증 전이다.** run `30695249890`은 `8377756`의 증적이며, 이후 NSIS snapshot key 위치와 복원 분기, WiX protocol block, workflow 실패 보고가 바뀌었다. merge 전에 새 head SHA로 workflow를 다시 dispatch해 MSI·NSIS 수용을 재확인해야 한다. 플랫폼 중립 검증(`58/58`, upstream `32/32`, Studio `114/114`, `actionlint`)은 현재 head에서 통과했다.
 - NSIS hook은 Tauri 기본 association 동작을 되돌리는 구조이므로 Tauri 갱신이 이 보존 계약을 조용히 되돌릴 수 있다. 유일한 방어선인 smoke job은 `workflow_dispatch` 전용이라 자동으로 돌지 않는다.
+- 자동 smoke는 install/uninstall 한 사이클만 검증한다. update·repair, 동일 제품의 MSI-NSIS 혼재 설치, 사용자가 `.hwp` 기본 앱을 Alhangeul로 직접 지정한 뒤의 제거 경로는 검증하지 않았다.
 
 ### 후속 작업 후보
 
