@@ -24,6 +24,8 @@ Stage 6.2 exact-SHA run `30614222090`의 verbose log는 Windows executable 생�
 
 Stage 6.3 exact-SHA run `30614988826`은 Windows x64·Linux x64·Linux arm64 build와 artifact 검증을 모두 통과해 MSI·NSIS bundle을 생성했다. Fresh Windows smoke에서 양 installer의 silent install·제한 실행·uninstall·cleanup은 exit code `0`으로 성공했지만, MSI canonical key가 `Software\Classes{{../../product_name}}...` literal로 생성되고 advertised shortcut 두 개가 생성되지 않았으며 NSIS uninstall metadata의 따옴표 포함 `InstallLocation`을 smoke가 path로 정규화하지 못했다. 작업지시자는 2026-08-01 Stage 6.4에서 `Software\Classes` parent와 치환 key를 분리하고, HKLM registry key path를 가진 비광고 shortcut component와 `[#Path]` target을 복원하며, path 비교 전에 바깥따옴표를 제거하는 최소 보정 및 새 exact-SHA 전체 workflow를 승인했다. Handler·기본 연결·GUI gate와 installer 수용 기준은 변경하지 않는다.
 
+Stage 6.4 exact-SHA run `30691898908`은 Linux x64·arm64 build와 artifact 검증을 통과했지만 Windows WiX `light.exe`가 Desktop·Start Menu shortcut component의 HKLM key path를 `ICE38`, `ICE43`, `ICE57` fatal로 거부했다. Windows Installer는 per-machine 설치에서도 `DesktopFolder`와 `ApplicationProgramsFolder`를 user-profile component로 분류하므로 두 비광고 shortcut의 registry key path는 HKCU여야 한다. `[#Path]` cross-component `ICE69`는 같은 feature 안의 warning이고 handler parent/child 구조에는 오류가 없었다. 작업지시자는 Stage 6.5에서 두 shortcut tracking value의 Root만 HKCU로 정렬하고 source contract를 갱신한 뒤 새 exact-SHA 전체 workflow를 실행하는 범위를 승인했다. Shortcut target, handler, smoke와 수용 기준은 변경하지 않는다.
+
 ## 단계 개요
 
 | Stage | 제목 | 주요 산출 | 검증 |
@@ -33,7 +35,7 @@ Stage 6.3 exact-SHA run `30614988826`은 Windows x64·Linux x64·Linux arm64 bui
 | 3 | fresh Windows artifact-consumer job 연결 | desktop workflow, workflow test | 권한·exact SHA·진단 upload·실패 전달 |
 | 4 | 첫 exact-SHA 진단 canary | Actions run·diagnostic artifact | 재현 결과, log 완전성, 원인 분류 입력 |
 | 5 | 증거 기반 원인 판정·보정 | 조건부 WiX/Tauri/script 수정 | 원인별 최소 변경과 플랫폼 중립 회귀 |
-| 6 / 6.1 / 6.2 / 6.3 / 6.4 | 최종 exact-SHA 수용 검증, WiX·진단 보정과 #9 handoff | 성공 run, 운영 문서, Stage 보고 | 전체 workflow·MSI/NSIS smoke·무결성 |
+| 6 / 6.1 / 6.2 / 6.3 / 6.4 / 6.5 | 최종 exact-SHA 수용 검증, WiX·진단 보정과 #9 handoff | 성공 run, 운영 문서, Stage 보고 | 전체 workflow·MSI/NSIS smoke·무결성 |
 
 ## 문서 위치 확인
 
@@ -330,6 +332,7 @@ repository 외부 상태:
 - MSI icon table ID, ARP icon property와 두 advertised shortcut 참조를 `ProductIcon.exe`로 일치시키고 source test에서 registry path와 icon extension 계약을 검증한다.
 - Stage 6.3 run `30614988826`의 실제 MSI registry literal, shortcut 미생성과 NSIS path parsing 예외를 Stage 6.4 입력으로 고정한다. Handlebars expression 바로 앞의 separator를 없애도록 `Software\Classes` parent key와 치환 child key를 분리한다.
 - MSI shortcut은 각각 HKLM registry key path를 가진 전용 component에서 `Advertise="no"`, `Target="[#Path]"`로 생성해 ICE43과 fresh-install target 검사를 함께 만족시킨다. NSIS uninstall metadata의 바깥따옴표는 filesystem path 비교 전에만 제거한다.
+- Stage 6.4 run `30691898908`의 fatal `ICE38`·`ICE43`·`ICE57`을 Stage 6.5 입력으로 고정한다. User-profile shortcut component의 tracking value 두 개만 HKCU key path로 정렬하고 `[#Path]` target과 동일 feature의 `ICE69` warning은 유지한다.
 - 전체 기존 build matrix와 Windows installer smoke job의 success를 요구한다. Linux는 기존 build 회귀만 확인하며 install 성공으로 주장하지 않는다.
 - MSI·NSIS summary에서 clean state, exit, version, handler, 기본 연결 불변, bounded launch, uninstall cleanup과 fixture hash를 각각 확인한다.
 - Windows artifact inventory와 run provenance를 독립 재검증하고 artifact·log 만료 시각을 기록한다.

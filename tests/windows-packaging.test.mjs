@@ -49,8 +49,9 @@ test('desktop binary와 registry-keyed Windows shortcut은 Alhangeul.exe로 정�
     assert.match(shortcut, /\bIcon="ProductIcon\.exe"/);
     assert.match(shortcut, /\bTarget="\[#Path\]"/);
   }
-  assert.match(wixTemplate, /Name="Desktop Shortcut"[^>]+KeyPath="yes"/);
-  assert.match(wixTemplate, /Name="Start Menu Shortcut"[^>]+KeyPath="yes"/);
+  assert.match(wixTemplate, /RegistryValue Root="HKCU"[^>]+Name="Desktop Shortcut"[^>]+KeyPath="yes"/);
+  assert.match(wixTemplate, /RegistryValue Root="HKCU"[^>]+Name="Start Menu Shortcut"[^>]+KeyPath="yes"/);
+  assert.doesNotMatch(wixTemplate, /RegistryValue Root="HKLM"[^>]+Name="(?:Desktop|Start Menu) Shortcut"/);
   assert.doesNotMatch(wixTemplate, /\bAdvertise="yes"/);
   assert.match(
     wixTemplate,
