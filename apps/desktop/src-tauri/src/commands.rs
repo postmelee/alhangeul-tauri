@@ -4,11 +4,23 @@ use crate::state::{
     editable_core_from_bytes, AppState, DocumentFormat, DocumentOpenResult,
     ExternalModificationStatus, FileFingerprint, MutationResult, PageSvgResult, SaveResult,
 };
+use serde::Deserialize;
 use serde_json::Value;
 use std::path::{Path, PathBuf};
 use tauri::{AppHandle, State, WebviewWindow};
 use tauri_plugin_fs::FsExt;
 use uuid::Uuid;
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CommitStagedDocumentSaveRequest {
+    doc_id: String,
+    staged_path: String,
+    target_path: String,
+    format: DocumentFormat,
+    expected_revision: Option<u64>,
+    allow_external_overwrite: Option<bool>,
+}
 
 #[tauri::command]
 pub fn create_document(state: State<'_, AppState>) -> Result<DocumentOpenResult, String> {
@@ -83,14 +95,17 @@ pub fn prepare_staged_document_save(
 #[tauri::command]
 pub fn commit_staged_document_save(
     app: AppHandle,
-    doc_id: String,
-    staged_path: String,
-    target_path: String,
-    format: DocumentFormat,
-    expected_revision: Option<u64>,
-    allow_external_overwrite: Option<bool>,
+    request: CommitStagedDocumentSaveRequest,
     state: State<'_, AppState>,
 ) -> Result<SaveResult, String> {
+    let CommitStagedDocumentSaveRequest {
+        doc_id,
+        staged_path,
+        target_path,
+        format,
+        expected_revision,
+        allow_external_overwrite,
+    } = request;
     let target_path = PathBuf::from(target_path);
     let result = state
         .sessions

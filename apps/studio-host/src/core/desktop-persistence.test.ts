@@ -14,10 +14,11 @@ describe('desktop persistence', () => {
         return args?.format === 'hwpx' ? '/tmp/staged.hwpx' : '/tmp/staged.hwp';
       }
       if (command === 'commit_staged_document_save') {
+        const request = args?.request as Record<string, unknown>;
         return nativeSave({
-          sourcePath: args?.targetPath,
-          format: args?.format,
-          revision: args?.format === 'hwpx' ? 2 : 3,
+          sourcePath: request.targetPath,
+          format: request.format,
+          revision: request.format === 'hwpx' ? 2 : 3,
         });
       }
       throw new Error(`unexpected command: ${command}`);
@@ -37,6 +38,30 @@ describe('desktop persistence', () => {
     expect(hwp?.state).toMatchObject({
       format: 'hwp', sourcePath: '/exports/converted.hwp', fileName: 'converted.hwp',
     });
+    expect(fixture.invoke.mock.calls
+      .filter(([command]) => command === 'commit_staged_document_save'))
+      .toEqual([
+        ['commit_staged_document_save', {
+          request: {
+            docId: 'doc',
+            stagedPath: '/tmp/staged.hwpx',
+            targetPath: '/documents/source.hwpx',
+            format: 'hwpx',
+            expectedRevision: 1,
+            allowExternalOverwrite: false,
+          },
+        }],
+        ['commit_staged_document_save', {
+          request: {
+            docId: 'doc',
+            stagedPath: '/tmp/staged.hwp',
+            targetPath: '/exports/converted.hwp',
+            format: 'hwp',
+            expectedRevision: 1,
+            allowExternalOverwrite: false,
+          },
+        }],
+      ]);
     expect(fixture.handlers.exportHwp).toHaveBeenCalledOnce();
     expect(fixture.handlers.notifySaved).not.toHaveBeenCalled();
   });

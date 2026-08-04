@@ -51,12 +51,14 @@ export class DesktopPersistence {
         : await handlers.exportHwp();
       await this.dependencies.writeDocument(stagedPath, bytes);
       const result = await this.invoke<NativeSaveResult>('commit_staged_document_save', {
-        docId: active.docId,
-        stagedPath,
-        targetPath,
-        format: requestedFormat,
-        expectedRevision: active.revision,
-        allowExternalOverwrite,
+        request: {
+          docId: active.docId,
+          stagedPath,
+          targetPath,
+          format: requestedFormat,
+          expectedRevision: active.revision,
+          allowExternalOverwrite,
+        },
       });
       return {
         state: { ...result, fileName: fileNameFromPath(targetPath) },

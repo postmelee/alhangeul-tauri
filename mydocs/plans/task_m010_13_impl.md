@@ -245,6 +245,17 @@ release tag·GitHub Release·서명·updater·package 게시는 하지 않는다
 
 보정 commit 메시지는 `Task #13 [Stage 6.1]: Actions rhwp release tag 확보 보정`으로 고정한다.
 
+### Stage 6.2 — 저장 command request 구조화와 Clippy 보정
+
+Stage 6.1 후보 `3dc4734abafccdda2e4e90b8bd73b0be3f91b342`는 pinned tag gate와 Windows/Linux native build·Windows installer smoke를 통과했지만, CI의 Rust 1.97 Clippy가 Stage 4에서 추가한 `commit_staged_document_save`의 8개 인자를 `too_many_arguments`로 거부했다. 작업지시자는 저장 동작을 바꾸지 않는 request 구조화를 승인했다.
+
+- 여섯 frontend 저장 필드를 camelCase `CommitStagedDocumentSaveRequest`로 묶고 Tauri command는 `AppHandle`, request, `State` 세 인자만 받는다.
+- TypeScript invoke는 같은 필드를 `request` 아래 전달하며 test가 중첩 IPC 계약과 HWP/HWPX 값을 고정한다.
+- 저장 format·revision·external overwrite·atomic replace·recent 기록 로직은 변경하지 않는다. lint 예외 annotation은 추가하지 않는다.
+- 전체 중립 gate 뒤 새 exact SHA를 게시하고 CI와 native workflow를 모두 재실행한다. Stage 6.1 artifact는 최종 후보 증거로 재사용하지 않는다.
+
+보정 commit 메시지는 `Task #13 [Stage 6.2]: 저장 command request 구조화와 Clippy 보정`으로 고정한다.
+
 ## 공통 검증·의존성
 
 - 각 Stage는 검증 통과와 단계 보고서 승인 뒤 다음 Stage로 간다. 계획·문서 위치 변경은 먼저 승인받는다.
