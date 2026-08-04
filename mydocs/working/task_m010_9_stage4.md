@@ -4,11 +4,11 @@ GitHub Issue: [#9](https://github.com/postmelee/alhangeul-tauri/issues/9)
 구현계획서: [`task_m010_9_impl.md`](../plans/task_m010_9_impl.md)
 Stage: 4 (진행 중)
 
-> 이 문서는 Stage 4 진행 중 증적이다. Stage 4.2 보정의 새 exact-SHA candidate 재생성과 Linux UI 재검증, Windows x64 실제 GUI native gate가 남아 있으므로 완료 보고서가 아니며 현재 판정은 No-Go다.
+> 이 문서는 Stage 4 진행 중 증적이다. Stage 4.3 Actions 보정 뒤 Stage 4.2 UI의 새 exact-SHA candidate 재생성과 Linux UI 재검증, Windows x64 실제 GUI native gate가 남아 있으므로 완료 보고서가 아니며 현재 판정은 No-Go다.
 
 ## 단계 목적
 
-Stage 4는 승인된 Windows/Linux baseline bundle의 native 설치·실행·문서·제거와 rollback을 검증한다. 하위 Stage 4.2는 Linux x64 화면에서 발견한 Alhangeul host 서식 ribbon 구조 불일치와 한글 button 글리프 손실을 Windows/Linux 공통 source에서 보정하고, 새 exact-SHA candidate 재검증의 입력을 확정한다.
+Stage 4는 승인된 Windows/Linux baseline bundle의 native 설치·실행·문서·제거와 rollback을 검증한다. 하위 Stage 4.2는 Linux x64 화면에서 발견한 Alhangeul host 서식 ribbon 구조 불일치와 한글 button 글리프 손실을 Windows/Linux 공통 source에서 보정한다. Stage 4.3은 upstream 기본 브랜치 이동 뒤 shallow submodule checkout에서 누락된 pinned stable tag를 exact ref로 확보해 새 candidate 재검증 입력을 재현 가능하게 만든다.
 
 ## 산출물
 
@@ -17,16 +17,21 @@ Stage 4는 승인된 Windows/Linux baseline bundle의 native 설치·실행·문
 | `apps/studio-host/index.html` | current upstream CSS가 전제하는 grouped ribbon markup으로 서식 도구 모음 정렬 |
 | `apps/studio-host/src/style.css` | form control이 bundle UI font를 상속하는 host 규칙 추가 |
 | `tests/studio-shell.test.mjs` | host ribbon 계층·필수 field·UI font 상속 회귀 계약 추가 |
-| `package.json` | host shell contract를 `test:automation`에 연결 |
-| `mydocs/plans/task_m010_9_impl.md` | 승인된 Stage 4.2 범위·검증·commit·native 재검증 경계 기록 |
+| `scripts/fetch-rhwp-pin-tag.mjs` | lock의 exact stable tag만 shallow fetch하고 origin·HEAD·resolved commit 검증 |
+| `tests/rhwp-pin-fetch.test.mjs` | 최소 refspec·실패 방어·CI/desktop workflow 순서 계약 추가 |
+| `.github/workflows/ci.yml` | pin 검증 전 exact tag fetch 연결 |
+| `.github/workflows/alhangeul-desktop.yml` | Windows/Linux pretest에서 exact tag fetch 연결 |
+| `package.json` | host shell 및 rhwp pin fetch contract를 automation 명령에 연결 |
+| `mydocs/plans/task_m010_9_impl.md` | 승인된 Stage 4.2·4.3 범위·검증·commit·native 재검증 경계 기록 |
 | `mydocs/orders/20260802.md` | Stage 4.1과 Linux arm64·x64 native 완료 시각·판정 보존 |
-| `mydocs/orders/20260804.md` | Stage 4.2 완료와 exact-SHA 재검증 진행 상태 기록 |
-| `mydocs/working/task_m010_9_stage4.md` | 기존 native 증적을 보존하고 Stage 4.2 원인·보정·잔여 gate 추가 |
+| `mydocs/orders/20260804.md` | Stage 4.2·4.3 완료와 exact-SHA 재검증 진행 상태 기록 |
+| `mydocs/working/task_m010_9_stage4.md` | 기존 native 증적을 보존하고 Stage 4.2·4.3 원인·보정·잔여 gate 추가 |
 
 ## 본문 변경 정도 / 본문 무손실 여부
 
 - 제품 기능 API와 Toolbar control ID·event 계약은 보존했다.
 - `apps/studio-host/index.html`은 style bar 영역만 current grouped ribbon 구조로 재배치했고 메뉴·editor·상태표시줄과 문서 처리 본문은 수정하지 않았다.
+- Stage 4.3은 Actions와 pin 준비 script만 변경했으며 Stage 4.2 UI source와 제품 기능 동작을 다시 수정하지 않았다.
 - `third_party/rhwp`는 수정하지 않았다.
 - 기존 Stage 4.1 candidate의 build·설치·기능 증적은 삭제하거나 성공으로 재해석하지 않고, UI 결함 발견 뒤 최종 release 수용만 폐기한 이력으로 보존했다.
 
@@ -182,11 +187,60 @@ Linux x64 native 캡처를 Mac browser extension의 current `rhwp-studio` 화면
 
 이 결과는 source correction의 정적·build 수용이며 Windows/Linux native 화면을 대체하지 않는다. 새 exact-SHA candidate에서 Linux toolbar·서식 ribbon·문서 보정 modal의 한글 label과 배치를 다시 확인해야 한다.
 
+## Stage 4.3 exact-SHA Actions rhwp release tag 확보 보정
+
+2026-08-04 작업지시자 승인에 따라 Stage 4.2 correction을 다음 commit으로 확정하고 `publish/task9`에 push했다.
+
+- candidate source commit: `d5c2447a64a7adafe8c8cd13dfd485151816ea82`
+- commit message: `Task #9 [Stage 4.2]: Windows Linux UI 리본과 한글 글꼴 보정`
+- CI run: `30875968531`
+- desktop artifact run: `30875969765`
+
+두 workflow의 head SHA와 build ref는 candidate source commit과 일치했다. 그러나 CI와 Windows x64·Linux x64·Linux arm64 build job이 모두 source build 전 `Verify rhwp pin`에서 다음 오류로 실패했으며 bundle artifact는 생성되지 않았다.
+
+```text
+rhwp pin verification failed: git rev-parse --verify refs/tags/v0.8.2^{commit} 실패
+fatal: Needed a single revision
+```
+
+원격 tag와 lock을 다시 대조한 결과 `refs/tags/v0.8.2`는 계속 `9b16aa9e23f476e2b335d7c029fc9f24a199d63c`을 가리켜 pin 이동이나 upstream release 결함은 없었다. 실패 원인은 checkout 입력의 시간 의존성이었다.
+
+- 2026-08-01 성공 run `30713325005`, `30713326496`은 `fetch-depth: 1`, `fetch-tags: false`였지만 당시 shallow submodule clone에 pinned commit과 tag가 함께 포함돼 pin 검증이 통과했다.
+- 현재 upstream 기본 브랜치 HEAD는 `2dced7bfe10c6597cead634264c7c1781c01f1e7`로 이동했다.
+- 실패 run에서 checkout은 pinned commit을 SHA로 `FETCH_HEAD`에 보충해 worktree HEAD는 올바르게 만들었지만 `refs/tags/v0.8.2`를 만들지 않았다.
+- pin verifier는 stable release tag와 commit의 동시 고정을 검증하기 위해 local tag ref를 요구하므로 세 runner에서 같은 실패가 발생했다.
+
+실패 candidate는 artifact가 없으며 native 수용 근거로 사용할 수 없다. 승인된 Stage 4.3은 lock의 exact release tag 하나만 shallow fetch하고 origin·HEAD·resolved tag commit을 전후 검증하는 cross-platform script를 두 workflow의 `check:rhwp-pin` 앞에 연결한다. 전체 history·모든 tag fetch나 `third_party/rhwp` source 변경은 범위에서 제외한다.
+
+보정 구현과 회귀 계약은 다음과 같다.
+
+- `scripts/fetch-rhwp-pin-tag.mjs`가 `rhwp-core.lock`을 읽고 fetch 전 submodule origin·HEAD를 lock과 대조한다.
+- fetch refspec은 `+refs/tags/v0.8.2:refs/tags/v0.8.2` 하나이며 `--no-tags --depth=1`로 전체 history·다른 tag를 제외한다.
+- fetch 직후 tag commit을 lock commit과 다시 대조하고, 이후 기존 `check:rhwp-pin`이 source·tag·managed artifact 전체 계약을 검증한다.
+- CI는 항상, desktop matrix는 `run_tests`가 켜진 pretest에서만 같은 script를 실행한다.
+- 독립 테스트는 origin·HEAD 불일치의 fetch 전 거부, tag 이동 거부, exact refspec과 두 workflow의 fetch→verify 순서를 검사한다. 기존 300 LOC 초과 workflow test 집중 파일에는 새 계약을 누적하지 않았다.
+
+Stage 4.3 플랫폼 중립 검증 결과는 모두 통과했다.
+
+| 검증 | 결과 |
+|---|---|
+| `pnpm run fetch:rhwp-pin-tag` | 통과 — `v0.8.2` exact tag가 `9b16aa9e23f476e2b335d7c029fc9f24a199d63c`으로 resolve |
+| `pnpm run check:rhwp-pin` | 통과 — release tag·commit·managed artifact 6개 정합 |
+| `pnpm run check:product-boundary` | 통과 — 194 files |
+| `pnpm run test:automation` | 통과 — 91 tests, pin fetch·workflow contract 6건 포함 |
+| `pnpm run test:upstream` | 통과 — 32 tests |
+| `pnpm run test:studio` | 통과 — 21 files, 114 tests |
+| `pnpm run build:studio` | 통과 — TypeScript·Vite production build, 기존 warning만 유지 |
+| `git diff --check` | 통과 |
+| submodule 무손실 | 통과 — clean `9b16aa9e… (v0.8.2)`, gitlink 변경 없음 |
+
+이 보고서와 source correction을 같은 Stage 4.3 commit으로 묶고 그 commit을 새 candidate exact SHA로 사용한다. Actions 성공과 artifact 생성은 아직 수행 전이므로 Stage 4 전체 판정은 계속 No-Go다.
+
 ## 현재 판정과 잔여 gate
 
 Stage 4.2 source correction과 플랫폼 중립 검증은 통과했다. 그러나 Stage 4.1 candidate는 폐기했으므로 다음 Stage 4 필수 조건은 아직 충족되지 않았다.
 
-- Stage 4.2 correction commit을 exact SHA로 고정하고 CI·Windows x64·Linux x64·Linux arm64 bundle과 Windows installer smoke, inventory·checksum을 다시 검증
+- Stage 4.3 correction commit을 새 exact SHA로 고정하고 CI·Windows x64·Linux x64·Linux arm64 bundle과 Windows installer smoke, inventory·checksum을 다시 검증
 - Linux x64 native에서 toolbar·서식 ribbon·문서 보정 modal의 배치와 모든 한글 button label을 화면으로 재검증
 - Windows x64 실제 GUI 환경에서 MSI와 NSIS 각각 HWP/HWPX open·edit, HWP save/reopen, HWPX save block, PDF export, print 경계, Explorer file association, relaunch, uninstall·rollback
 - Windows 시나리오의 OS·architecture·installer·candidate SHA, 절차, 실제 관찰과 지속 가능한 증적

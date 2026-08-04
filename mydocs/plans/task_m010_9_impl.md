@@ -342,6 +342,71 @@ git diff --check
 Task #9 [Stage 4.2]: Windows Linux UI 리본과 한글 글꼴 보정
 ```
 
+## Stage 4.3 — exact-SHA Actions rhwp release tag 확보 보정
+
+### 진입 사유와 승인
+
+2026-08-04 Stage 4.2 correction commit `d5c2447a64a7adafe8c8cd13dfd485151816ea82`를 `publish/task9`에 exact SHA로 push하고 CI·desktop artifact workflow를 실행했다. 세 지원 matrix 모두 source build 전에 `check:rhwp-pin`이 `refs/tags/v0.8.2^{commit}`을 찾지 못해 실패했으며 bundle은 생성되지 않았다.
+
+원격 `v0.8.2`는 계속 lock commit `9b16aa9e23f476e2b335d7c029fc9f24a199d63c`을 가리킨다. 2026-08-01 성공 실행 당시에는 upstream 기본 브랜치의 shallow clone에 pinned commit과 tag가 함께 포함됐지만, 현재 upstream `main`이 `2dced7bfe10c6597cead634264c7c1781c01f1e7`로 이동해 `actions/checkout@v5`가 pinned commit만 `FETCH_HEAD`로 보충하고 tag ref는 가져오지 않는다. 따라서 pin 또는 source 불일치가 아니라 현재 workflow가 shallow submodule에서 stable release tag provenance를 재현 가능하게 확보하지 못한 자동화 결함이다.
+
+작업지시자는 같은 날 다음 보정 범위를 승인했다.
+
+- Task #9 안에서 Stage 4.3 하위 단계로 처리한다.
+- `rhwp-core.lock`의 repository·release tag·commit을 입력으로 exact tag ref 하나만 shallow fetch한다.
+- fetch 전 submodule origin과 HEAD가 lock과 일치하는지 확인하고, fetch 직후 tag가 같은 lock commit으로 resolve되는지 확인한다.
+- CI와 Windows/Linux desktop artifact workflow가 `check:rhwp-pin` 전에 같은 cross-platform script를 실행하게 한다.
+- workflow 순서와 최소 fetch refspec을 automation contract test로 고정한다.
+- 전체 submodule history, 모든 tag, 다른 branch는 가져오지 않고 `third_party/rhwp` worktree와 gitlink는 수정하지 않는다.
+- 보정 commit을 새 exact SHA로 고정한 뒤 실패 실행의 artifact나 증적을 재사용하지 않고 CI·bundle·Linux UI를 다시 검증한다.
+
+### 산출물
+
+신규:
+
+- `scripts/fetch-rhwp-pin-tag.mjs`
+- `tests/rhwp-pin-fetch.test.mjs`
+
+수정:
+
+- `.github/workflows/ci.yml`
+- `.github/workflows/alhangeul-desktop.yml`
+- `package.json`
+- `mydocs/orders/20260804.md`
+- `mydocs/plans/task_m010_9_impl.md`
+- `mydocs/working/task_m010_9_stage4.md`
+
+새 공식 제품 문서와 `mydocs/manual` 문서는 만들지 않는다. 실패 실행·원인·보정·재실행 결과는 진행 중인 Stage 4 보고서에 보존한다.
+
+### 변경 내용
+
+- fetch script는 repository root의 `rhwp-core.lock`을 읽고 기존 pin parser의 shape validation을 재사용한다.
+- submodule origin과 HEAD가 lock repository·commit과 일치하지 않으면 network fetch 전에 실패한다.
+- `git fetch --no-tags --depth=1 origin +refs/tags/{release}:refs/tags/{release}` 형태로 lock tag 하나만 갱신한다. remote tag가 이동했더라도 fetch 뒤 lock commit 비교가 실패하므로 provenance gate를 우회하지 않는다.
+- CI와 desktop artifact workflow의 모든 지원 runner에서 Node·pnpm 설정 뒤 `pnpm run fetch:rhwp-pin-tag`를 실행하고, 이후 기존 `check:rhwp-pin`이 source·tag·artifact 전체 계약을 다시 검증한다.
+- 독립 script·workflow contract test는 exact refspec, origin·HEAD 선검증, fetch 뒤 tag mismatch 거부, 두 workflow의 fetch→pin verify 순서와 desktop pretest 조건을 고정한다. 기존 workflow test 집중 파일은 더 키우지 않는다.
+
+### 검증
+
+```bash
+pnpm run fetch:rhwp-pin-tag
+pnpm run check:rhwp-pin
+pnpm run check:product-boundary
+pnpm run test:automation
+pnpm run test:upstream
+pnpm run test:studio
+pnpm run build:studio
+git diff --check
+```
+
+로컬 fetch 검증은 pinned tag ref만 갱신하며 worktree·gitlink가 변하지 않았음을 `git status --short`와 `git submodule status`로 확인한다. 성공 commit 승인 뒤 `publish/task9`를 새 exact SHA로 이동하고 CI·Windows x64·Linux x64·Linux arm64 artifact workflow, Windows installer smoke, artifact inventory·checksum과 Linux x64 native UI 화면을 새 candidate에서만 다시 검증한다.
+
+### 커밋
+
+```text
+Task #9 [Stage 4.3]: Actions rhwp release tag 확보 보정
+```
+
 ## Stage 5 — Go/No-Go 판정과 후속 게시 입력 확정
 
 ### 산출물
