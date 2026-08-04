@@ -14,7 +14,7 @@ Alhangeul은 `third_party/rhwp`를 수정하지 않고 desktop shell과 studio h
 2. 지원된 file-backed 폰트
 3. Alhangeul 번들 substitute 웹폰트
 
-`apps/desktop/src-tauri/src/font_catalog.rs`가 native font catalog와 추가 스캔 root를 소유한다. `apps/studio-host/src/core/local-fonts.ts`는 이 catalog를 읽어 webview에 필요한 file-backed 폰트만 `FontFace`로 등록한다. `apps/studio-host/src/core/font-loader.ts`는 실제 사용 가능한 폰트 집합을 기준으로 substitute `@font-face`를 다시 계산한다.
+`apps/desktop/src-tauri/src/font_catalog.rs`가 native font catalog와 추가 스캔 root를 소유한다. `apps/studio-host/src/core/font-loader.ts`는 upstream loader를 그대로 다시 내보내며, `local-fonts.ts`와 분리된 provider·record adapter만 native catalog를 읽어 webview에 필요한 file-backed 폰트를 `FontFace`로 등록한다.
 
 ## 지원 스캔 root
 
@@ -36,4 +36,7 @@ Alhangeul은 `third_party/rhwp`를 수정하지 않고 desktop shell과 studio h
 ## Editor / PDF 일관성
 
 - editor: `list_local_fonts`와 `read_local_font` Tauri command로 system-installed/file-backed 폰트를 구분하고 필요할 때 lazy load한다.
-- PDF export: `font_catalog::create_pdf_font_database()`로 같은 추가 스캔 root를 공유한다.
+- PDF export: `font_catalog::create_pdf_font_database()`로 같은 추가 스캔 root를 공유하고, 페이지 SVG를 임시 저장하기 전에 제한 폰트 family를 안전한 serif/sans fallback으로 바꾼다.
+- PDF text: `svg2pdf`의 `embed_text: true`를 먼저 사용한다. 변환 자체가 실패할 때만 같은 SVG를 `embed_text: false`로 다시 변환하며, 결과를 `outlined-fallback`으로 표시하고 사용자에게 경고한다.
+
+검색·선택 가능한 텍스트와 font subset의 실제 결과, 제한 폰트 대체의 시각 정합은 Windows/Linux exact-SHA native 검증 대상이다. 플랫폼 중립 test는 searchable 경로 우선, 명시적 fallback과 경고 계약만 보증하며 실제 PDF 수용을 대신하지 않는다.

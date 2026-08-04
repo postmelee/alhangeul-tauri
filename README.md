@@ -7,13 +7,13 @@ Alhangeul은 Windows와 Linux에서 HWP/HWPX 문서를 열고 편집하기 위�
 ## 현재 기능
 
 - HWP/HWPX 문서 열기
-- HWP 문서 저장 및 다른 이름으로 저장
-- PDF 내보내기
+- HWP/HWPX 문서 저장, 다른 이름으로 저장과 형식 변환 저장
+- 현재 편집 상태의 페이지 SVG를 이용한 직접 PDF 저장
 - 인쇄
 - 파일 드래그 앤 드롭과 파일 연결
 - 여러 창에서 문서 열기
 
-HWPX 저장, autosave/recovery와 외부 파일 변경 감지는 아직 지원하지 않습니다.
+HWPX 저장과 직접 PDF 저장은 소스·플랫폼 중립 test/build에서 확인했습니다. Windows/Linux native 실행, 실제 PDF 검색 가능성과 설치 패키지 수용은 새 exact-SHA 후보를 만드는 후속 검증 전에는 완료로 간주하지 않습니다. upstream Studio의 브라우저 autosave/recovery는 상속하지만 별도 native recovery 저장소는 제공하지 않으며, native 원본 저장의 외부 파일 변경 감지도 같은 후속 수용 대상입니다.
 
 ## 지원 범위
 

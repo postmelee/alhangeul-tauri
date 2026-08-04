@@ -117,7 +117,9 @@ MSI와 NSIS는 각각 clean state, silent install exit `0`, 제품 version `0.1.
 
 플랫폼 중립 test(`pnpm run test:automation`)는 이들 source 계약을 고정하지만 실제 설치·제거 동작은 확인하지 않는다.
 
-Task #9 prerelease 준비는 Task #11 merge 뒤 최신 `devel`을 통합하고 과거 candidate를 폐기한 다음, `check:release-metadata`를 포함하는 새 exact-SHA candidate를 만들어 다시 검증해야 한다. 위 Task #11 artifact나 SHA를 그대로 공개 후보로 승계하지 않는다.
+Task #13은 exact upstream `v0.8.2` Studio entry, HWPX native 저장과 현재 페이지 SVG 기반 직접 PDF 경계를 다시 구성했다. 따라서 Task #9의 기존 candidate와 위 Task #11 artifact·SHA는 Task #13의 기능 수용이나 공개 후보로 승계하지 않는다. Stage 5의 플랫폼 중립 gate가 통과해도 native 수용 증거는 아니며, 별도 승인한 Stage 6에서 Stage 5 commit을 포함한 새 exact SHA로 Windows/Linux bundle과 GUI·저장·PDF·package gate를 다시 검증해야 한다. 그 결과가 Go일 때만 해당 exact SHA를 Task #9 prerelease 후보 재개 입력으로 사용한다.
+
+Stage 6 전에는 branch push·workflow dispatch·artifact 생성을 하지 않는다. Stage 6에서도 release tag, GitHub Release, 서명, package 게시, updater 활성화는 범위 밖이다.
 
 ## 검증된 native canary
 
@@ -171,7 +173,7 @@ GitHub API가 반환한 Actions artifact archive metadata는 다음과 같다. �
 4. 사용자 다운로드 문서와 지원 범위 작성
 5. 필요할 경우 독립 updater 보안 모델과 key 보관 정책 설계
 
-Windows MSI·NSIS의 자동 설치·제한 실행·제거 package smoke는 Task #11에서 완료했다. 공개 prerelease 후보는 Task #9에서 Task #11 merge 뒤 새 exact SHA로 다시 생성·검증한다.
+Windows MSI·NSIS의 자동 설치·제한 실행·제거 package smoke는 Task #11에서 완료했다. 공개 prerelease 후보는 Task #13 Stage 6의 새 exact-SHA native 수용이 Go로 확정된 뒤 Task #9에서 다시 생성·검증한다.
 
 릴리스·서명·패키지 게시·updater 활성화는 작업지시자의 명시 승인 없이는 수행하지 않는다.
 
@@ -183,6 +185,7 @@ Windows MSI·NSIS의 자동 설치·제한 실행·제거 package smoke는 Task 
 pnpm install --frozen-lockfile
 pnpm run check:product-boundary
 pnpm run check:product-version
+pnpm run check:release-metadata
 pnpm run check:rhwp-pin
 pnpm run test:automation
 pnpm run test:upstream

@@ -135,6 +135,15 @@ describe('upstream Studio override boundary', () => {
     expect(finalForbiddenStudioEntryPaths).toEqual(['index.html', 'src/main.ts']);
   });
 
+  it('keeps every remaining override within the leaf adapter size boundary', () => {
+    const replacements = createAlhangeulOverrides(resolve(repositoryRoot, 'apps/studio-host/src'));
+    for (const { find, replacement } of replacements) {
+      const source = readFileSync(`${replacement}.ts`, 'utf8');
+      const lineCount = source.trimEnd().split(/\r?\n/).length;
+      expect(lineCount, `${find} leaf adapter exceeds 300 LOC`).toBeLessThanOrEqual(300);
+    }
+  });
+
   it('keeps the Stage 2 Studio entry and renderer shadows physically absent', () => {
     const studioHostRoot = resolve(repositoryRoot, 'apps/studio-host');
     for (const path of removedStageTwoPaths) {
