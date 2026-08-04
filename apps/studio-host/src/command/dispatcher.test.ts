@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CommandDispatcher } from './dispatcher';
 
 const ensureDesktopEvents = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
+const installDesktopToolbarModeSync = vi.hoisted(() => vi.fn());
 const host = vi.hoisted(() => ({ bindCommandServices: vi.fn() }));
 
 vi.mock('@upstream/command/dispatcher', () => ({
@@ -11,6 +12,7 @@ vi.mock('@upstream/command/dispatcher', () => ({
 }));
 vi.mock('../core/desktop-host', () => ({ getDesktopHost: () => host }));
 vi.mock('../core/desktop-events', () => ({ ensureDesktopEvents }));
+vi.mock('../core/desktop-toolbar-mode-sync', () => ({ installDesktopToolbarModeSync }));
 
 describe('desktop command dispatcher adapter', () => {
   beforeEach(() => {
@@ -24,6 +26,7 @@ describe('desktop command dispatcher adapter', () => {
 
     expect(host.bindCommandServices).not.toHaveBeenCalled();
     expect(ensureDesktopEvents).not.toHaveBeenCalled();
+    expect(installDesktopToolbarModeSync).not.toHaveBeenCalled();
   });
 
   it('binds native events to the same upstream dispatcher and services', async () => {
@@ -33,10 +36,12 @@ describe('desktop command dispatcher adapter', () => {
     };
     (globalThis as { document?: unknown }).document = { getElementById: vi.fn(() => null) };
     const services = {};
-    const dispatcher = new CommandDispatcher({} as never, services as never, {} as never);
+    const eventBus = {};
+    const dispatcher = new CommandDispatcher({} as never, services as never, eventBus as never);
 
     await vi.waitFor(() => expect(ensureDesktopEvents).toHaveBeenCalledOnce());
     expect(host.bindCommandServices).toHaveBeenCalledWith(services);
+    expect(installDesktopToolbarModeSync).toHaveBeenCalledWith(eventBus);
     expect(ensureDesktopEvents).toHaveBeenCalledWith(expect.objectContaining({
       host,
       dispatcher,

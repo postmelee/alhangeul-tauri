@@ -256,6 +256,18 @@ Stage 6.1 후보 `3dc4734abafccdda2e4e90b8bd73b0be3f91b342`는 pinned tag gate�
 
 보정 commit 메시지는 `Task #13 [Stage 6.2]: 저장 command request 구조화와 Clippy 보정`으로 고정한다.
 
+### Stage 6.3 — 상황별 도구 모음 상태 동기화 보정
+
+Stage 6.2 exact-SHA Windows GUI 검증에서 PDF 직접 저장, HWP/HWPX 저장과 drag-in 중앙 열기는 통과했지만, 그림 회전·머리말/꼬리말·주석 상황별 도구 그룹이 기본 리본과 동시에 남아 두 줄로 표시됐다. `rhwp v0.8.2`와 Alhangeul macOS bundle은 동일한 숨김 markup과 독립 event handler를 포함하므로 Tauri 전용 메뉴 추가가 아니라 upstream에 잠재된 상태 전환 결함으로 판정한다. macOS에서는 같은 전환 순서가 재현되지 않았으며 WKWebView host script의 별도 toolbar 보정도 없다. 작업지시자는 Tauri 후보의 최소 leaf 보정을 승인했다.
+
+- `third_party/rhwp`와 Alhangeul macOS는 수정하지 않는다. exact upstream entry·메뉴·버튼과 기존 12개 alias override 경계를 유지한다.
+- Tauri command adapter가 이미 받는 upstream `EventBus`에 작은 상태 coordinator를 연결한다. 머리말/꼬리말, 각주/미주, 그림 선택 상태를 한곳에서 계산하고 upstream 동기 handler가 끝난 microtask에 최종 DOM 표시를 투영한다.
+- 머리말/꼬리말과 주석 편집 모드는 상호 배타적으로 처리하고, 비활성 event가 다른 활성 모드의 도구 모음을 덮어쓰지 못하게 한다. 그림 회전 그룹은 upstream 규칙대로 그림 선택 중이며 주석 모드가 아닐 때만 표시한다.
+- 초기 숨김, 머리말→주석 비활성, 주석→머리말 비활성, 그림 선택과 주석 전환 순서를 focused test로 고정하고 기존 upstream boundary test에서 local entry·toolbar shadow가 추가되지 않았음을 유지한다.
+- 플랫폼 중립 test·build 뒤 새 exact SHA를 게시하고 CI/native workflow를 모두 재실행한다. Stage 6.2 artifact는 기능 통과 참고로만 남기고 최종 후보 증거로 재사용하지 않는다.
+
+보정 commit 메시지는 `Task #13 [Stage 6.3]: 상황별 도구 모음 상태 동기화 보정`으로 고정한다.
+
 ## 공통 검증·의존성
 
 - 각 Stage는 검증 통과와 단계 보고서 승인 뒤 다음 Stage로 간다. 계획·문서 위치 변경은 먼저 승인받는다.

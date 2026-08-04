@@ -4,12 +4,14 @@ import type { CommandServices } from '@upstream/command/types';
 import type { EventBus } from '@upstream/core/event-bus';
 import { getDesktopHost } from '../core/desktop-host';
 import { ensureDesktopEvents } from '../core/desktop-events';
+import { installDesktopToolbarModeSync } from '../core/desktop-toolbar-mode-sync';
 import { isTauriRuntime } from '../core/platform';
 
 export class CommandDispatcher extends UpstreamCommandDispatcher {
   constructor(registry: CommandRegistry, services: CommandServices, eventBus: EventBus) {
     super(registry, services, eventBus);
     if (!isTauriRuntime()) return;
+    installDesktopToolbarModeSync(eventBus);
     const host = getDesktopHost();
     host.bindCommandServices(services);
     void ensureDesktopEvents({
