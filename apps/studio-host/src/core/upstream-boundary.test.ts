@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
@@ -26,31 +26,15 @@ const expectedIdsByOwner = {
     'core/platform',
     'core/tauri-bridge',
     'command/commands/file',
+    'embed/runtime',
   ],
   'product-ux': [
-    'core/desktop-chrome',
     'ui/about-dialog',
-    'styles/about-dialog.css',
   ],
   'legacy-upstream-copy': [
     'command/shortcut-map',
     'command/commands/edit',
     'command/commands/format',
-    'ui/custom-select',
-    'ui/dialog',
-    'ui/home-screen',
-    'ui/preview-svg',
-    'ui/print-dialog',
-    'ui/recent-documents-dialog',
-    'ui/style-edit-dialog',
-    'ui/toolbar',
-    'ui/validation-modal',
-    'view/canvas-view',
-    'view/ruler',
-    'styles/custom-select.css',
-    'styles/font-set-dialog.css',
-    'styles/home-screen.css',
-    'styles/recent-documents-dialog.css',
   ],
 } as const;
 
@@ -63,14 +47,41 @@ const expectedFinalLeafAdapters = [
   'core/desktop-events',
   'core/platform',
   'command/commands/file',
+  'embed/runtime',
   'ui/about-dialog',
 ] as const;
 
+const removedStageTwoPaths = [
+  'index.html',
+  'src/main.ts',
+  'src/core/desktop-chrome.ts',
+  'src/ui/custom-select.ts',
+  'src/ui/dialog.ts',
+  'src/ui/home-screen.ts',
+  'src/ui/preview-svg.ts',
+  'src/ui/print-dialog.ts',
+  'src/ui/recent-documents-dialog.ts',
+  'src/ui/style-edit-dialog.ts',
+  'src/ui/toolbar.ts',
+  'src/ui/validation-modal.ts',
+  'src/view/alhangeul-page-renderer.ts',
+  'src/view/canvas-layout.ts',
+  'src/view/canvas-view.ts',
+  'src/view/page-left.ts',
+  'src/view/page-overlays.ts',
+  'src/view/ruler.ts',
+  'src/styles/about-dialog.css',
+  'src/styles/custom-select.css',
+  'src/styles/font-set-dialog.css',
+  'src/styles/home-screen.css',
+  'src/styles/recent-documents-dialog.css',
+] as const;
+
 describe('upstream Studio override boundary', () => {
-  it('classifies all 31 aliases without changing the generated replacements', () => {
+  it('classifies the 15 remaining leaf and pending aliases', () => {
     const ids = alhangeulOverrideSpecs.map((spec) => spec.id);
-    expect(ids).toHaveLength(31);
-    expect(new Set(ids).size).toBe(31);
+    expect(ids).toHaveLength(15);
+    expect(new Set(ids).size).toBe(15);
     for (const [owner, expectedIds] of Object.entries(expectedIdsByOwner)) {
       expect(
         alhangeulOverrideSpecs
@@ -81,7 +92,9 @@ describe('upstream Studio override boundary', () => {
 
     const replacements = createAlhangeulOverrides('/product/studio-src');
     expect(replacements.map(({ find }) => find)).toEqual(ids.map((id) => `@/${id}`));
-    expect(replacements).toHaveLength(31);
+    expect(replacements).toHaveLength(15);
+    expect(replacements.find(({ find }) => find === '@/embed/runtime')?.replacement)
+      .toBe(resolve('/product/studio-src', 'embed/desktop-runtime'));
   });
 
   it('keeps removal stages and final leaf adapters explicit', () => {
@@ -110,6 +123,13 @@ describe('upstream Studio override boundary', () => {
         .map((spec) => spec.id),
     );
     expect(finalForbiddenStudioEntryPaths).toEqual(['index.html', 'src/main.ts']);
+  });
+
+  it('keeps the Stage 2 Studio entry and renderer shadows physically absent', () => {
+    const studioHostRoot = resolve(repositoryRoot, 'apps/studio-host');
+    for (const path of removedStageTwoPaths) {
+      expect(existsSync(resolve(studioHostRoot, path)), path).toBe(false);
+    }
   });
 
   it('pins the read-only source submodule to the resolved release commit', () => {

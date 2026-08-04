@@ -32,43 +32,38 @@ test('Alhangeul keeps the rhwp renderer baseline aligned across submodule, vendo
   assert.match(submoduleStatus, new RegExp(`^[ +-]?${expectedRhwpCommit} third_party/rhwp\\b`));
 });
 
-test('Alhangeul preserves upstream lineseg validation and auto-reflow on document load', async () => {
-  const mainSource = await readFile(join(repoRoot, 'apps/studio-host/src/main.ts'), 'utf8');
+test('Alhangeul inherits the upstream lineseg validation policy without a local modal shadow', async () => {
+  const mainSource = await readFile(join(repoRoot, 'third_party/rhwp/rhwp-studio/src/main.ts'), 'utf8');
   const overrides = await readFile(join(repoRoot, 'apps/studio-host/alhangeul-overrides.ts'), 'utf8');
-  const validationModal = await readFile(join(repoRoot, 'apps/studio-host/src/ui/validation-modal.ts'), 'utf8');
 
-  assert.match(mainSource, /showValidationModalIfNeeded/);
-  assert.doesNotMatch(mainSource, /currentSourceFormat/);
-  assert.match(mainSource, /wasm\.getValidationWarnings\(\)/);
-  assert.match(mainSource, /wasm\.reflowLinesegs\(\)/);
-  assert.match(mainSource, /canvasView\?\.loadDocument\(\)/);
-  assert.match(mainSource, /repairValidationWarningsIfNeeded/);
-
-  const validationStart = mainSource.indexOf('async function repairValidationWarningsIfNeeded');
-  assert.notEqual(validationStart, -1, 'validation block should call getValidationWarnings');
-  const validationEnd = mainSource.indexOf('/** 문서 초기화 공통 시퀀스', validationStart);
-  assert.ok(validationEnd > validationStart, 'validation helper should exist before document initialization');
-
-  const validationBlock = mainSource.slice(validationStart, validationEnd);
-  assert.doesNotMatch(validationBlock, /sourceFormat\s*===\s*['"]hwpx['"]/);
-  assert.match(validationBlock, /const report = wasm\.getValidationWarnings\(\)/);
-  assert.match(validationBlock, /catch \(error\)/);
-  assert.match(validationBlock, /return reflowedCount\s*>\s*0/);
-  assert.match(mainSource, /const normalizedDuringLoad = await repairValidationWarningsIfNeeded\(displayName\)/);
-  assert.match(overrides, /['"]ui\/validation-modal['"]/);
-  assert.match(validationModal, /문서 보정 확인/);
-  assert.doesNotMatch(validationModal, /HWPX 비표준 감지/);
+  assert.match(mainSource, /wasm\.getSourceFormat\(\) === ['"]hwpx['"]/);
+  assert.match(mainSource, /const report = wasm\.getValidationWarnings\(\)/);
+  assert.match(mainSource, /warnings — 그대로 보기/);
+  assert.doesNotMatch(mainSource, /wasm\.reflowLinesegs\(\)/);
+  assert.doesNotMatch(mainSource, /showValidationModalIfNeeded/);
+  assert.doesNotMatch(overrides, /['"]ui\/validation-modal['"]/);
+  await assert.rejects(
+    access(join(repoRoot, 'apps/studio-host/src/ui/validation-modal.ts')),
+    { code: 'ENOENT' },
+  );
 });
 
 test('Alhangeul keeps unsaved-document guards on local file and new-document replacement paths', async () => {
-  const mainSource = await readFile(join(repoRoot, 'apps/studio-host/src/main.ts'), 'utf8');
+  const mainSource = await readFile(join(repoRoot, 'third_party/rhwp/rhwp-studio/src/main.ts'), 'utf8');
+  const fileAdapter = await readFile(
+    join(repoRoot, 'apps/studio-host/src/command/commands/file.ts'),
+    'utf8',
+  );
 
-  assert.match(mainSource, /import \{ confirmSaveBeforeReplacingDocument \} from ['"]@upstream\/command\/commands\/file['"]/);
+  assert.match(mainSource, /import \{ confirmSaveBeforeReplacingDocument, fileCommands \} from ['"]@\/command\/commands\/file['"]/);
+  assert.match(fileAdapter, /confirmSaveBeforeReplacingDocument/);
+  assert.match(fileAdapter, /from ['"]@upstream\/command\/commands\/file['"]/);
   assert.match(mainSource, /async function canReplaceCurrentDocument\([\s\S]*confirmSaveBeforeReplacingDocument\(commandServices\)/);
   assert.match(mainSource, /const skipUnsavedGuard = input\.dataset\.skipUnsavedGuard === ['"]true['"]/);
   assert.match(mainSource, /await loadFile\(file, \{ skipUnsavedGuard \}\)/);
-  assert.match(mainSource, /if \(!await canReplaceCurrentDocument\(options\.skipUnsavedGuard\)\) return/);
-  assert.match(mainSource, /if \(isTauriRuntime\(\) \|\| !await canReplaceCurrentDocument\(\)\) return/);
+  assert.match(mainSource, /if \(!await canReplaceCurrentDocument\(options\?\.skipUnsavedGuard\)\) return/);
+  assert.match(mainSource, /if \(!await canReplaceCurrentDocument\(data\.skipUnsavedGuard\)\)/);
+  assert.match(mainSource, /if \(!await canReplaceCurrentDocument\(skipUnsavedGuard\)\)/);
 });
 
 test('Alhangeul defers editor engine and table command behavior to upstream rhwp', async () => {
@@ -115,14 +110,31 @@ test('Alhangeul product info keeps the upstream rhwp version and adds Alhangeul 
   assert.match(aboutDialog, /Alhangeul \$\{__ALHANGEUL_VERSION__\}/);
 });
 
-test('Alhangeul keeps PDF export menu-only without a stale Ctrl+E label', async () => {
-  const fileCommands = await readFile(join(repoRoot, 'apps/studio-host/src/command/commands/file.ts'), 'utf8');
-  const indexHtml = await readFile(join(repoRoot, 'apps/studio-host/index.html'), 'utf8');
-  const pdfMenuItem = indexHtml.match(/<div class="md-item disabled" data-cmd="file:export-pdf">.*?<\/div>/);
+test('Alhangeul builds the exact upstream Studio entry with only product shell transforms', async () => {
+  const viteConfig = await readFile(join(repoRoot, 'apps/studio-host/vite.config.ts'), 'utf8');
+  const overrides = await readFile(join(repoRoot, 'apps/studio-host/alhangeul-overrides.ts'), 'utf8');
 
-  assert.doesNotMatch(fileCommands, /id:\s*['"]file:export-pdf['"][\s\S]*?shortcutLabel:/);
+  assert.match(viteConfig, /root:\s*upstreamStudioDir/);
+  assert.match(viteConfig, /outDir:\s*resolve\(__dirname, ['"]dist['"]\)/);
+  assert.match(viteConfig, /transformIndexHtml/);
+  assert.match(viteConfig, /Alhangeul 문서 편집기/);
+  assert.doesNotMatch(overrides, /['"]ui\/toolbar['"]/);
+  assert.doesNotMatch(overrides, /['"]view\/canvas-view['"]/);
+  assert.doesNotMatch(overrides, /['"]view\/ruler['"]/);
+  await assert.rejects(access(join(repoRoot, 'apps/studio-host/index.html')), { code: 'ENOENT' });
+  await assert.rejects(access(join(repoRoot, 'apps/studio-host/src/main.ts')), { code: 'ENOENT' });
+});
+
+test('Alhangeul inherits upstream PDF and HWPX menu commands without a stale export command', async () => {
+  const fileCommands = await readFile(join(repoRoot, 'apps/studio-host/src/command/commands/file.ts'), 'utf8');
+  const indexHtml = await readFile(join(repoRoot, 'third_party/rhwp/rhwp-studio/index.html'), 'utf8');
+  const pdfMenuItem = indexHtml.match(/<div class="md-item disabled" data-cmd="file:print-to-pdf".*?<\/div>/);
+
+  assert.match(fileCommands, /from ['"]@upstream\/command\/commands\/file['"]/);
+  assert.doesNotMatch(fileCommands, /file:export-pdf/);
   assert.ok(pdfMenuItem, 'PDF export menu item should exist');
   assert.doesNotMatch(pdfMenuItem[0], /md-shortcut|Ctrl\+E|Cmd\+E/);
+  assert.match(indexHtml, /data-cmd="file:save-as-hwpx"/);
 });
 
 function git(args) {

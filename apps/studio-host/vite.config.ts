@@ -10,6 +10,8 @@ const desktopConfig = JSON.parse(
 const upstreamStudioDir = resolve(__dirname, '../../third_party/rhwp/rhwp-studio');
 const upstreamSrc = resolve(__dirname, '../../third_party/rhwp/rhwp-studio/src');
 const alhangeulSrc = resolve(__dirname, 'src');
+const productStylePath = resolve(__dirname, 'src/style.css');
+const productIconPath = resolve(__dirname, 'public/favicon.ico');
 const rhwpWasmModule = normalizePath(resolve(__dirname, 'vendor/rhwp-core/rhwp.js'));
 const rhwpWasmDir = dirname(rhwpWasmModule);
 const rhwpWasmPackage = JSON.parse(readFileSync(resolve(rhwpWasmDir, 'package.json'), 'utf-8'));
@@ -50,6 +52,36 @@ function alhangeulFontAssets(): Plugin {
   };
 }
 
+function alhangeulDesktopShell(): Plugin {
+  return {
+    name: 'alhangeul-desktop-shell',
+    configureServer(server) {
+      server.middlewares.use('/favicon.ico', (_req, res) => {
+        res.setHeader('Content-Type', 'image/x-icon');
+        createReadStream(productIconPath).pipe(res);
+      });
+    },
+    transformIndexHtml(html) {
+      return {
+        html: html
+          .replace('<title>rhwp-studio</title>', '<title>Alhangeul</title>')
+          .replace('rhwp-studio 문서 편집기', 'Alhangeul 문서 편집기'),
+        tags: [
+          {
+            tag: 'style',
+            attrs: { 'data-alhangeul-product-style': 'true' },
+            children: readFileSync(productStylePath, 'utf8'),
+            injectTo: 'head',
+          },
+        ],
+      };
+    },
+    closeBundle() {
+      copyFileSync(productIconPath, resolve(__dirname, 'dist/favicon.ico'));
+    },
+  };
+}
+
 function decodePath(path: string): string {
   try {
     return decodeURIComponent(path);
@@ -60,7 +92,9 @@ function decodePath(path: string): string {
 
 export default defineConfig({
   base: './',
-  plugins: [alhangeulFontAssets()],
+  root: upstreamStudioDir,
+  cacheDir: resolve(__dirname, 'node_modules/.vite'),
+  plugins: [alhangeulDesktopShell(), alhangeulFontAssets()],
   define: {
     __APP_VERSION__: JSON.stringify(rhwpWasmPackage.version),
     __ALHANGEUL_VERSION__: JSON.stringify(desktopConfig.version),
@@ -72,6 +106,10 @@ export default defineConfig({
       {
         find: '@noble/hashes',
         replacement: resolve(__dirname, 'node_modules/@noble/hashes'),
+      },
+      {
+        find: 'canvaskit-wasm',
+        replacement: resolve(__dirname, 'node_modules/canvaskit-wasm'),
       },
       { find: '@upstream', replacement: upstreamSrc },
       { find: '@', replacement: upstreamSrc },
@@ -88,5 +126,9 @@ export default defineConfig({
         upstreamStudioDir,
       ],
     },
+  },
+  build: {
+    outDir: resolve(__dirname, 'dist'),
+    emptyOutDir: true,
   },
 });

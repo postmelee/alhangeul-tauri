@@ -15,6 +15,7 @@ export type AlhangeulOverrideStage = 2 | 3 | 4;
 
 export interface AlhangeulOverrideSpec {
   id: string;
+  replacementId?: string;
   owner: AlhangeulOverrideOwner;
   targetDisposition: AlhangeulOverrideDisposition;
   transitionStage: AlhangeulOverrideStage;
@@ -47,10 +48,6 @@ export const alhangeulOverrideSpecs = [
     targetDisposition: 'retain-leaf-adapter', transitionStage: 3, removalStage: null,
   },
   {
-    id: 'core/desktop-chrome', owner: 'product-ux',
-    targetDisposition: 'remove-shadow', transitionStage: 2, removalStage: 2,
-  },
-  {
     id: 'core/desktop-events', owner: 'native-host',
     targetDisposition: 'replace-with-leaf-adapter', transitionStage: 3, removalStage: null,
   },
@@ -79,72 +76,12 @@ export const alhangeulOverrideSpecs = [
     targetDisposition: 'replace-with-leaf-adapter', transitionStage: 4, removalStage: null,
   },
   {
-    id: 'ui/about-dialog', owner: 'product-ux',
+    id: 'embed/runtime', replacementId: 'embed/desktop-runtime', owner: 'native-host',
     targetDisposition: 'retain-leaf-adapter', transitionStage: 2, removalStage: null,
   },
   {
-    id: 'ui/custom-select', owner: 'legacy-upstream-copy',
-    targetDisposition: 'remove-shadow', transitionStage: 2, removalStage: 2,
-  },
-  {
-    id: 'ui/dialog', owner: 'legacy-upstream-copy',
-    targetDisposition: 'remove-shadow', transitionStage: 2, removalStage: 2,
-  },
-  {
-    id: 'ui/home-screen', owner: 'legacy-upstream-copy',
-    targetDisposition: 'remove-shadow', transitionStage: 2, removalStage: 2,
-  },
-  {
-    id: 'ui/preview-svg', owner: 'legacy-upstream-copy',
-    targetDisposition: 'remove-shadow', transitionStage: 2, removalStage: 2,
-  },
-  {
-    id: 'ui/print-dialog', owner: 'legacy-upstream-copy',
-    targetDisposition: 'remove-shadow', transitionStage: 2, removalStage: 2,
-  },
-  {
-    id: 'ui/recent-documents-dialog', owner: 'legacy-upstream-copy',
-    targetDisposition: 'remove-shadow', transitionStage: 2, removalStage: 2,
-  },
-  {
-    id: 'ui/style-edit-dialog', owner: 'legacy-upstream-copy',
-    targetDisposition: 'remove-shadow', transitionStage: 2, removalStage: 2,
-  },
-  {
-    id: 'ui/toolbar', owner: 'legacy-upstream-copy',
-    targetDisposition: 'remove-shadow', transitionStage: 2, removalStage: 2,
-  },
-  {
-    id: 'ui/validation-modal', owner: 'legacy-upstream-copy',
-    targetDisposition: 'remove-shadow', transitionStage: 2, removalStage: 2,
-  },
-  {
-    id: 'view/canvas-view', owner: 'legacy-upstream-copy',
-    targetDisposition: 'remove-shadow', transitionStage: 2, removalStage: 2,
-  },
-  {
-    id: 'view/ruler', owner: 'legacy-upstream-copy',
-    targetDisposition: 'remove-shadow', transitionStage: 2, removalStage: 2,
-  },
-  {
-    id: 'styles/about-dialog.css', owner: 'product-ux',
-    targetDisposition: 'remove-shadow', transitionStage: 2, removalStage: 2,
-  },
-  {
-    id: 'styles/custom-select.css', owner: 'legacy-upstream-copy',
-    targetDisposition: 'remove-shadow', transitionStage: 2, removalStage: 2,
-  },
-  {
-    id: 'styles/font-set-dialog.css', owner: 'legacy-upstream-copy',
-    targetDisposition: 'remove-shadow', transitionStage: 2, removalStage: 2,
-  },
-  {
-    id: 'styles/home-screen.css', owner: 'legacy-upstream-copy',
-    targetDisposition: 'remove-shadow', transitionStage: 2, removalStage: 2,
-  },
-  {
-    id: 'styles/recent-documents-dialog.css', owner: 'legacy-upstream-copy',
-    targetDisposition: 'remove-shadow', transitionStage: 2, removalStage: 2,
+    id: 'ui/about-dialog', owner: 'product-ux',
+    targetDisposition: 'retain-leaf-adapter', transitionStage: 2, removalStage: null,
   },
 ] as const satisfies readonly AlhangeulOverrideSpec[];
 
@@ -158,8 +95,8 @@ export const finalForbiddenOverrideIds = alhangeulOverrideSpecs
   .map((spec) => spec.id);
 
 export function createAlhangeulOverrides(alhangeulSrc: string) {
-  return alhangeulOverrideSpecs.map(({ id }) => ({
+  return alhangeulOverrideSpecs.map(({ id, replacementId }: AlhangeulOverrideSpec) => ({
     find: `@/${id}`,
-    replacement: resolve(alhangeulSrc, id),
+    replacement: resolve(alhangeulSrc, replacementId ?? id),
   }));
 }

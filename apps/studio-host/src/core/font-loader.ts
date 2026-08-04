@@ -1,6 +1,8 @@
 import { detectLocalFontEntries, ensureLocalFontsAvailable } from './local-fonts';
 import { filterAuthoringFontFamilies, isAuthoringBlockedFontFamily } from './font-authoring-policy';
 
+export { resolveCanvasKitFontPlan } from '@upstream/core/font-loader';
+
 interface FontEntry {
   name: string;
   file: string;
