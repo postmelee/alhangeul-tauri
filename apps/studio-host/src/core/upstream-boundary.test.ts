@@ -8,6 +8,7 @@ import {
   createAlhangeulOverrides,
   finalForbiddenOverrideIds,
   finalForbiddenStudioEntryPaths,
+  type AlhangeulOverrideSpec,
 } from '../../alhangeul-overrides';
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..');
@@ -15,40 +16,47 @@ const expectedUpstreamCommit = '9b16aa9e23f476e2b335d7c029fc9f24a199d63c';
 const expectedIdsByOwner = {
   'font-policy': [
     'core/font-loader',
-    'core/font-application',
-    'core/font-authoring-policy',
     'core/local-fonts',
+    'core/wasm-bridge',
   ],
   'native-host': [
-    'core/bridge-factory',
     'core/document-files',
+    'core/document-dirty-state',
     'core/desktop-events',
     'core/platform',
-    'core/tauri-bridge',
+    'command/dispatcher',
     'command/commands/file',
     'embed/runtime',
+    'recent/recent-store',
   ],
   'product-ux': [
     'ui/about-dialog',
   ],
-  'legacy-upstream-copy': [
-    'command/shortcut-map',
-    'command/commands/edit',
-    'command/commands/format',
-  ],
+  'legacy-upstream-copy': [],
 } as const;
 
 const expectedFinalLeafAdapters = [
   'core/font-loader',
-  'core/font-application',
-  'core/font-authoring-policy',
   'core/local-fonts',
+  'core/wasm-bridge',
   'core/document-files',
+  'core/document-dirty-state',
   'core/desktop-events',
   'core/platform',
+  'command/dispatcher',
   'command/commands/file',
   'embed/runtime',
   'ui/about-dialog',
+  'recent/recent-store',
+] as const;
+
+const removedStageThreePaths = [
+  'src/core/bridge-factory.ts',
+  'src/core/tauri-bridge.ts',
+  'src/core/font-application.ts',
+  'src/command/shortcut-map.ts',
+  'src/command/commands/edit.ts',
+  'src/command/commands/format.ts',
 ] as const;
 
 const removedStageTwoPaths = [
@@ -78,10 +86,10 @@ const removedStageTwoPaths = [
 ] as const;
 
 describe('upstream Studio override boundary', () => {
-  it('classifies the 15 remaining leaf and pending aliases', () => {
+  it('classifies the 12 remaining leaf aliases', () => {
     const ids = alhangeulOverrideSpecs.map((spec) => spec.id);
-    expect(ids).toHaveLength(15);
-    expect(new Set(ids).size).toBe(15);
+    expect(ids).toHaveLength(12);
+    expect(new Set(ids).size).toBe(12);
     for (const [owner, expectedIds] of Object.entries(expectedIdsByOwner)) {
       expect(
         alhangeulOverrideSpecs
@@ -92,13 +100,16 @@ describe('upstream Studio override boundary', () => {
 
     const replacements = createAlhangeulOverrides('/product/studio-src');
     expect(replacements.map(({ find }) => find)).toEqual(ids.map((id) => `@/${id}`));
-    expect(replacements).toHaveLength(15);
+    expect(replacements).toHaveLength(12);
     expect(replacements.find(({ find }) => find === '@/embed/runtime')?.replacement)
       .toBe(resolve('/product/studio-src', 'embed/desktop-runtime'));
+    expect(replacements.find(({ find }) => find === '@/core/wasm-bridge')?.replacement)
+      .toBe(resolve('/product/studio-src', 'core/font-policy-wasm-bridge'));
   });
 
   it('keeps removal stages and final leaf adapters explicit', () => {
-    for (const spec of alhangeulOverrideSpecs) {
+    const specs = alhangeulOverrideSpecs as readonly AlhangeulOverrideSpec[];
+    for (const spec of specs) {
       if (spec.targetDisposition === 'remove-shadow') {
         expect(spec.removalStage).toBe(spec.transitionStage);
       } else {
@@ -106,12 +117,11 @@ describe('upstream Studio override boundary', () => {
       }
     }
 
-    const legacyCopies = alhangeulOverrideSpecs
+    const legacyCopies = specs
       .filter((spec) => spec.owner === 'legacy-upstream-copy');
-    expect(legacyCopies.length).toBeGreaterThan(0);
-    expect(legacyCopies.every((spec) => spec.targetDisposition === 'remove-shadow')).toBe(true);
+    expect(legacyCopies).toEqual([]);
 
-    const finalLeafAdapters = alhangeulOverrideSpecs
+    const finalLeafAdapters = specs
       .filter((spec) => spec.targetDisposition !== 'remove-shadow')
       .map((spec) => spec.id);
     expect(finalLeafAdapters).toEqual(expectedFinalLeafAdapters);
@@ -130,6 +140,14 @@ describe('upstream Studio override boundary', () => {
     for (const path of removedStageTwoPaths) {
       expect(existsSync(resolve(studioHostRoot, path)), path).toBe(false);
     }
+  });
+
+  it('keeps the Stage 3 native WasmBridge fork and command shadows physically absent', () => {
+    const studioHostRoot = resolve(repositoryRoot, 'apps/studio-host');
+    for (const path of removedStageThreePaths) {
+      expect(existsSync(resolve(studioHostRoot, path)), path).toBe(false);
+    }
+    expect(finalForbiddenOverrideIds).toEqual([]);
   });
 
   it('pins the read-only source submodule to the resolved release commit', () => {

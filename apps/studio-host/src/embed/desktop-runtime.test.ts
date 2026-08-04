@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { getDesktopStudioHandlers, installEmbedRuntime } from './desktop-runtime';
+import {
+  getDesktopStudioHandlers,
+  installEmbedRuntime,
+  waitForDesktopStudioHandlers,
+} from './desktop-runtime';
 
 const uninstallUpstream = vi.hoisted(() => vi.fn());
 const installUpstreamEmbedRuntime = vi.hoisted(() => vi.fn(() => uninstallUpstream));
@@ -45,6 +49,19 @@ describe('desktop embed runtime adapter', () => {
 
     uninstallSecond();
     expect(getDesktopStudioHandlers()).toBeNull();
+  });
+
+  it('releases pending desktop consumers when upstream registers handlers', async () => {
+    const pending = waitForDesktopStudioHandlers();
+    const options = runtimeOptions('pending');
+
+    const uninstall = installEmbedRuntime(options as never);
+
+    await expect(pending).resolves.toMatchObject({
+      loadFile: options.handlers.loadFile,
+      exportHwpx: options.handlers.exportHwpx,
+    });
+    uninstall();
   });
 });
 

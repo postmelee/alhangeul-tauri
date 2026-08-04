@@ -110,7 +110,7 @@ test('Alhangeul product info keeps the upstream rhwp version and adds Alhangeul 
   assert.match(aboutDialog, /Alhangeul \$\{__ALHANGEUL_VERSION__\}/);
 });
 
-test('Alhangeul builds the exact upstream Studio entry with only product shell transforms', async () => {
+test('Alhangeul builds the exact upstream Studio entry with only minimal product shell additions', async () => {
   const viteConfig = await readFile(join(repoRoot, 'apps/studio-host/vite.config.ts'), 'utf8');
   const overrides = await readFile(join(repoRoot, 'apps/studio-host/alhangeul-overrides.ts'), 'utf8');
 
@@ -118,6 +118,7 @@ test('Alhangeul builds the exact upstream Studio entry with only product shell t
   assert.match(viteConfig, /outDir:\s*resolve\(__dirname, ['"]dist['"]\)/);
   assert.match(viteConfig, /transformIndexHtml/);
   assert.match(viteConfig, /Alhangeul 문서 편집기/);
+  assert.match(viteConfig, /data-cmd="file:new-window"/);
   assert.doesNotMatch(overrides, /['"]ui\/toolbar['"]/);
   assert.doesNotMatch(overrides, /['"]view\/canvas-view['"]/);
   assert.doesNotMatch(overrides, /['"]view\/ruler['"]/);
@@ -132,9 +133,38 @@ test('Alhangeul inherits upstream PDF and HWPX menu commands without a stale exp
 
   assert.match(fileCommands, /from ['"]@upstream\/command\/commands\/file['"]/);
   assert.doesNotMatch(fileCommands, /file:export-pdf/);
+  assert.doesNotMatch(fileCommands, /\['file:print-to-pdf'/);
+  assert.doesNotMatch(fileCommands, /\['file:save-as-hwpx'/);
   assert.ok(pdfMenuItem, 'PDF export menu item should exist');
   assert.doesNotMatch(pdfMenuItem[0], /md-shortcut|Ctrl\+E|Cmd\+E/);
   assert.match(indexHtml, /data-cmd="file:save-as-hwpx"/);
+});
+
+test('Alhangeul reconnects native lifecycle through leaf adapters without a native WasmBridge fork', async () => {
+  const host = await readFile(join(repoRoot, 'apps/studio-host/src/core/desktop-host.ts'), 'utf8');
+  const dispatcher = await readFile(join(repoRoot, 'apps/studio-host/src/command/dispatcher.ts'), 'utf8');
+  const dirtyState = await readFile(join(repoRoot, 'apps/studio-host/src/core/document-dirty-state.ts'), 'utf8');
+  const recentStore = await readFile(join(repoRoot, 'apps/studio-host/src/recent/recent-store.ts'), 'utf8');
+  const fontBridge = await readFile(join(repoRoot, 'apps/studio-host/src/core/font-policy-wasm-bridge.ts'), 'utf8');
+
+  assert.match(host, /handlers\.loadFile\(bytes, result\.fileName, false, false\)/);
+  assert.match(host, /this\.session\.commitOpen\(result\)/);
+  assert.match(dispatcher, /extends UpstreamCommandDispatcher/);
+  assert.match(dirtyState, /extends UpstreamDocumentDirtyState/);
+  assert.match(recentStore, /const id = `desktop-recent-\$\{nativeListGeneration\}-\$\{index\}`/);
+  assert.doesNotMatch(recentStore, /sourcePath:/);
+  assert.match(fontBridge, /extends UpstreamWasmBridge/);
+  assert.match(fontBridge, /sanitizeAuthoringFontFamily/);
+
+  for (const path of [
+    'apps/studio-host/src/core/bridge-factory.ts',
+    'apps/studio-host/src/core/tauri-bridge.ts',
+    'apps/studio-host/src/command/commands/edit.ts',
+    'apps/studio-host/src/command/commands/format.ts',
+    'apps/studio-host/src/command/shortcut-map.ts',
+  ]) {
+    await assert.rejects(access(join(repoRoot, path)), { code: 'ENOENT' });
+  }
 });
 
 function git(args) {

@@ -65,7 +65,14 @@ function alhangeulDesktopShell(): Plugin {
       return {
         html: html
           .replace('<title>rhwp-studio</title>', '<title>Alhangeul</title>')
-          .replace('rhwp-studio 문서 편집기', 'Alhangeul 문서 편집기'),
+          .replace('rhwp-studio 문서 편집기', 'Alhangeul 문서 편집기')
+          .replace(
+            '<div class="md-item disabled" data-cmd="file:new-doc"><span class="md-icon icon-new-doc"></span><span class="md-label">새로 만들기</span></div>',
+            [
+              '<div class="md-item disabled" data-cmd="file:new-doc"><span class="md-icon icon-new-doc"></span><span class="md-label">새로 만들기</span></div>',
+              '<div class="md-item" data-cmd="file:new-window"><span class="md-icon"></span><span class="md-label">새 창</span><span class="md-shortcut">Ctrl+Shift+N</span></div>',
+            ].join('\n'),
+          ),
         tags: [
           {
             tag: 'style',

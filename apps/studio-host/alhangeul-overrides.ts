@@ -28,23 +28,19 @@ export const alhangeulOverrideSpecs = [
     targetDisposition: 'replace-with-leaf-adapter', transitionStage: 3, removalStage: null,
   },
   {
-    id: 'core/font-application', owner: 'font-policy',
-    targetDisposition: 'retain-leaf-adapter', transitionStage: 3, removalStage: null,
-  },
-  {
-    id: 'core/font-authoring-policy', owner: 'font-policy',
-    targetDisposition: 'retain-leaf-adapter', transitionStage: 3, removalStage: null,
-  },
-  {
     id: 'core/local-fonts', owner: 'font-policy',
     targetDisposition: 'replace-with-leaf-adapter', transitionStage: 3, removalStage: null,
   },
   {
-    id: 'core/bridge-factory', owner: 'native-host',
-    targetDisposition: 'remove-shadow', transitionStage: 3, removalStage: 3,
+    id: 'core/wasm-bridge', replacementId: 'core/font-policy-wasm-bridge', owner: 'font-policy',
+    targetDisposition: 'retain-leaf-adapter', transitionStage: 3, removalStage: null,
   },
   {
     id: 'core/document-files', owner: 'native-host',
+    targetDisposition: 'retain-leaf-adapter', transitionStage: 3, removalStage: null,
+  },
+  {
+    id: 'core/document-dirty-state', owner: 'native-host',
     targetDisposition: 'retain-leaf-adapter', transitionStage: 3, removalStage: null,
   },
   {
@@ -56,20 +52,8 @@ export const alhangeulOverrideSpecs = [
     targetDisposition: 'retain-leaf-adapter', transitionStage: 3, removalStage: null,
   },
   {
-    id: 'core/tauri-bridge', owner: 'native-host',
-    targetDisposition: 'remove-shadow', transitionStage: 3, removalStage: 3,
-  },
-  {
-    id: 'command/shortcut-map', owner: 'legacy-upstream-copy',
-    targetDisposition: 'remove-shadow', transitionStage: 3, removalStage: 3,
-  },
-  {
-    id: 'command/commands/edit', owner: 'legacy-upstream-copy',
-    targetDisposition: 'remove-shadow', transitionStage: 3, removalStage: 3,
-  },
-  {
-    id: 'command/commands/format', owner: 'legacy-upstream-copy',
-    targetDisposition: 'remove-shadow', transitionStage: 3, removalStage: 3,
+    id: 'command/dispatcher', owner: 'native-host',
+    targetDisposition: 'retain-leaf-adapter', transitionStage: 3, removalStage: null,
   },
   {
     id: 'command/commands/file', owner: 'native-host',
@@ -83,6 +67,10 @@ export const alhangeulOverrideSpecs = [
     id: 'ui/about-dialog', owner: 'product-ux',
     targetDisposition: 'retain-leaf-adapter', transitionStage: 2, removalStage: null,
   },
+  {
+    id: 'recent/recent-store', owner: 'native-host',
+    targetDisposition: 'retain-leaf-adapter', transitionStage: 3, removalStage: null,
+  },
 ] as const satisfies readonly AlhangeulOverrideSpec[];
 
 export const finalForbiddenStudioEntryPaths = [
@@ -90,7 +78,7 @@ export const finalForbiddenStudioEntryPaths = [
   'src/main.ts',
 ] as const;
 
-export const finalForbiddenOverrideIds = alhangeulOverrideSpecs
+export const finalForbiddenOverrideIds = (alhangeulOverrideSpecs as readonly AlhangeulOverrideSpec[])
   .filter((spec) => spec.targetDisposition === 'remove-shadow')
   .map((spec) => spec.id);
 

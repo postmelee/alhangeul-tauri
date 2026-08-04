@@ -1,25 +1,19 @@
-import type { CommandDispatcher } from '@/command/dispatcher';
-import type { EventBus } from '@/core/event-bus';
-import { isTauriRuntime } from '@/core/bridge-factory';
-import { findLatestSupportedDocumentPath, hasSupportedDocumentPath } from '@/core/document-files';
-import type { DesktopBridgeApi, DesktopLoadPayload } from './tauri-bridge';
+import type { CommandDispatcher } from '@upstream/command/dispatcher';
+import type { DesktopHost } from './desktop-host';
+import { findLatestSupportedDocumentPath, hasSupportedDocumentPath } from './document-files';
+import { isTauriRuntime } from './platform';
 
-type DesktopRuntimeBridge = Partial<
-  Pick<
-    DesktopBridgeApi,
-    | 'openDocumentByPath'
-    | 'takePendingOpenPaths'
-    | 'createNewDocumentAsync'
-    | 'confirmWindowClose'
-    | 'destroyCurrentWindow'
-    | 'hasUnsavedChanges'
-  >
+type DesktopEventHost = Pick<
+  DesktopHost,
+  | 'openDocumentByPath'
+  | 'takePendingOpenPaths'
+  | 'confirmWindowClose'
+  | 'destroyCurrentWindow'
 >;
 
 interface DesktopEventsOptions {
-  bridge: unknown;
-  dispatcher: CommandDispatcher;
-  eventBus: EventBus;
+  host: DesktopEventHost;
+  dispatcher: Pick<CommandDispatcher, 'dispatch'>;
   setMessage(message: string): void;
 }
 
@@ -27,15 +21,23 @@ interface CloseRequestEvent {
   preventDefault(): void;
 }
 
+const setupByHost = new WeakMap<object, Promise<void>>();
+
+export function ensureDesktopEvents(options: DesktopEventsOptions): Promise<void> {
+  const key = options.host as object;
+  const existing = setupByHost.get(key);
+  if (existing) return existing;
+  const pending = setupDesktopEvents(options);
+  setupByHost.set(key, pending);
+  return pending;
+}
+
 export async function setupDesktopEvents({
-  bridge,
+  host,
   dispatcher,
-  eventBus,
   setMessage,
 }: DesktopEventsOptions): Promise<void> {
   if (!isTauriRuntime()) return;
-
-  const desktop = bridge as DesktopRuntimeBridge;
   const { listen } = await import('@tauri-apps/api/event');
   const { getCurrentWebviewWindow } = await import('@tauri-apps/api/webviewWindow');
   const currentWindow = getCurrentWebviewWindow();
@@ -44,130 +46,64 @@ export async function setupDesktopEvents({
     const payload = event.payload as { message?: string };
     if (payload?.message) setMessage(payload.message);
   });
-
   await currentWindow.listen('alhangeul-menu-command', (event) => {
     const command = String(event.payload || '');
     if (command) dispatcher.dispatch(command);
   });
-
   await currentWindow.listen('alhangeul-open-paths', async (event) => {
     const payload = event.payload as { paths?: string[] };
-    const pending = await desktop.takePendingOpenPaths?.();
-    await openLatestDesktopDocument({
-      bridge: desktop,
-      eventBus,
-      paths: [...(payload.paths ?? []), ...(pending ?? [])],
-      setMessage,
-    });
+    const pending = await host.takePendingOpenPaths();
+    await openLatestDesktopDocument(host, [...(payload.paths ?? []), ...pending], setMessage);
   });
-
   await currentWindow.listen('tauri://drag-enter', (event) => {
     const payload = event.payload as { paths?: string[] };
-    if (hasSupportedDocumentPath(payload.paths ?? [])) {
-      setDesktopDragActive(true);
-      setMessage('HWP/HWPX 파일을 놓으면 문서를 엽니다');
-    }
+    if (!hasSupportedDocumentPath(payload.paths ?? [])) return;
+    setDesktopDragActive(true);
+    setMessage('HWP/HWPX 파일을 놓으면 문서를 엽니다');
   });
-
-  await currentWindow.listen('tauri://drag-leave', () => {
-    setDesktopDragActive(false);
-  });
-
-  await currentWindow.listen('tauri://drag-drop', () => {
-    setDesktopDragActive(false);
-  });
-
+  await currentWindow.listen('tauri://drag-leave', () => setDesktopDragActive(false));
+  await currentWindow.listen('tauri://drag-drop', () => setDesktopDragActive(false));
   await currentWindow.onCloseRequested(async (event) => {
-    await handleDesktopCloseRequest(event, desktop, setMessage);
+    await handleDesktopCloseRequest(event, host, setMessage);
   });
 
-  const pending = await desktop.takePendingOpenPaths?.();
-  await openLatestDesktopDocument({
-    bridge: desktop,
-    eventBus,
-    paths: pending ?? [],
-    setMessage,
-  });
-}
-
-export async function createDesktopDocument(bridge: unknown): Promise<DesktopLoadPayload | null> {
-  const desktop = bridge as DesktopRuntimeBridge;
-  if (!desktop.createNewDocumentAsync) return null;
-  return desktop.createNewDocumentAsync();
+  await openLatestDesktopDocument(host, await host.takePendingOpenPaths(), setMessage);
 }
 
 async function handleDesktopCloseRequest(
   event: CloseRequestEvent,
-  desktop: DesktopRuntimeBridge,
+  host: DesktopEventHost,
   setMessage: (message: string) => void,
 ): Promise<void> {
-  if (!desktop.destroyCurrentWindow) return;
   event.preventDefault();
-  await confirmAndDestroyWindow(desktop, {
-    context: 'close request',
-    errorPrefix: '창 닫기 실패',
-    setMessage,
-  });
+  try {
+    if (await host.confirmWindowClose()) await host.destroyCurrentWindow();
+  } catch (error) {
+    console.error('[desktop-events] close request failed:', error);
+    setMessage(`창 닫기 실패: ${error}`);
+  }
 }
 
 function setDesktopDragActive(active: boolean): void {
   document.getElementById('scroll-container')?.classList.toggle('drag-over', active);
 }
 
-async function confirmAndDestroyWindow(
-  desktop: DesktopRuntimeBridge,
-  {
-    context,
-    errorPrefix,
-    setMessage,
-  }: {
-    context: string;
-    errorPrefix: string;
-    setMessage: (message: string) => void;
-  },
+async function openLatestDesktopDocument(
+  host: DesktopEventHost,
+  paths: string[],
+  setMessage: (message: string) => void,
 ): Promise<void> {
-  if (!desktop.destroyCurrentWindow) return;
-
-  try {
-    const canClose = desktop.confirmWindowClose ? await desktop.confirmWindowClose() : true;
-    if (canClose) {
-      await desktop.destroyCurrentWindow();
-    }
-  } catch (error) {
-    console.error(`[desktop-events] ${context} failed:`, error);
-    if (!desktop.hasUnsavedChanges?.()) {
-      await desktop.destroyCurrentWindow();
-    } else {
-      setMessage(`${errorPrefix}: ${error}`);
-    }
-  }
-}
-
-async function openLatestDesktopDocument({
-  bridge,
-  eventBus,
-  paths,
-  setMessage,
-}: {
-  bridge: DesktopRuntimeBridge;
-  eventBus: EventBus;
-  paths: string[];
-  setMessage(message: string): void;
-}): Promise<void> {
-  const path = findLatestSupportedDocumentPath(paths);
+  const path = findLatestSupportedDocumentPath(Array.from(new Set(paths)));
   if (!path) {
     if (paths.length > 0) setMessage('HWP/HWPX 파일만 열 수 있습니다');
     return;
   }
-  if (!bridge.openDocumentByPath) return;
-
   try {
     setMessage('파일 로딩 중...');
-    const loaded = await bridge.openDocumentByPath(path);
-    if (loaded) eventBus.emit('desktop-document-loaded', loaded);
+    const loaded = await host.openDocumentByPath(path);
+    if (loaded) setMessage(`${loaded.fileName} — ${loaded.pageCount}페이지`);
   } catch (error) {
-    const errMsg = `파일 로드 실패: ${error}`;
-    setMessage(errMsg);
+    setMessage(`파일 로드 실패: ${error}`);
     console.error('[desktop-events] 데스크톱 파일 로드 실패:', error);
   }
 }

@@ -5,6 +5,16 @@ type PlatformResolver = () => Promise<DesktopPlatform>;
 
 let desktopPlatformOverride: DesktopPlatform | null = null;
 
+export function isTauriRuntime(
+  windowLike: (Pick<Window, 'location'> & { __TAURI_INTERNALS__?: unknown }) | undefined =
+    typeof window === 'undefined' ? undefined : window,
+): boolean {
+  return Boolean(
+    windowLike
+    && ('__TAURI_INTERNALS__' in windowLike || windowLike.location?.protocol === 'tauri:'),
+  );
+}
+
 export function detectDesktopPlatform(
   nav: NavigatorLike = typeof navigator === 'undefined' ? undefined : navigator,
 ): DesktopPlatform {
@@ -31,7 +41,7 @@ export function resetDesktopPlatformOverride(): void {
 }
 
 async function invokeDesktopPlatform(): Promise<DesktopPlatform> {
-  if (typeof window === 'undefined' || window.location?.protocol !== 'tauri:') {
+  if (!isTauriRuntime()) {
     return detectDesktopPlatform();
   }
 

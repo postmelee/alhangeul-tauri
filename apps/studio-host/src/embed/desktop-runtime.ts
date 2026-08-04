@@ -12,9 +12,15 @@ export type DesktopStudioHandlers = Pick<
 >;
 
 let activeHandlers: DesktopStudioHandlers | null = null;
+const handlerWaiters = new Set<(handlers: DesktopStudioHandlers) => void>();
 
 export function getDesktopStudioHandlers(): DesktopStudioHandlers | null {
   return activeHandlers;
+}
+
+export function waitForDesktopStudioHandlers(): Promise<DesktopStudioHandlers> {
+  if (activeHandlers) return Promise.resolve(activeHandlers);
+  return new Promise((resolve) => handlerWaiters.add(resolve));
 }
 
 export function installEmbedRuntime(
@@ -30,6 +36,8 @@ export function installEmbedRuntime(
     notifySaved: options.handlers.notifySaved,
   };
   activeHandlers = registeredHandlers;
+  for (const resolve of handlerWaiters) resolve(registeredHandlers);
+  handlerWaiters.clear();
 
   return () => {
     uninstallUpstream();
