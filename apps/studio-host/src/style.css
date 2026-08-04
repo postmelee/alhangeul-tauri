@@ -25,3 +25,11 @@
 @import '@/styles/home-screen.css';
 @import '@/styles/recent-documents-dialog.css';
 @import '@/styles/responsive.css';
+
+/* WebKitGTK form controls do not reliably inherit the bundled Hangul UI font. */
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}

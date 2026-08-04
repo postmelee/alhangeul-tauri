@@ -13,6 +13,7 @@ GitHub Issue: [#9](https://github.com/postmelee/alhangeul-tauri/issues/9)
 | 3 | 플랫폼 중립 수용 검증과 exact-SHA candidate 생성 | exact-SHA CI/native run, artifact inventory·checksum | 전체 자동 검사, remote SHA, 다운로드 후 독립 검증 |
 | 4 | Windows/Linux 설치·실행·rollback 검증 | `task_m010_9_stage4.md` | bundle별 native install·launch·핵심 시나리오·uninstall |
 | 4.1 | Linux desktop entry 문서 인자 전달 보정 | 공통 desktop template, metadata 회귀 검증 | AppImage·DEB·RPM의 `Exec`·MIME 계약과 새 exact-SHA artifact |
+| 4.2 | Windows/Linux UI 리본·한글 버튼 보정 | host 리본 markup, UI font 상속, 회귀 검증 | grouped ribbon 계약과 form control 한글 font 상속 |
 | 5 | Go/No-Go 판정과 후속 게시 입력 확정 | `task_m010_9_stage5.md`, release notes·후속 Issue 초안 | 모든 required gate 대조, 공개 작업 미실행 확인 |
 
 ## 문서 위치 확인
@@ -283,6 +284,62 @@ git diff --check
 
 ```text
 Task #9 [Stage 4.1]: Linux 문서 연결 인자 전달 보정
+```
+
+## Stage 4.2 — Windows/Linux UI 리본·한글 버튼 보정
+
+### 진입 사유와 승인
+
+2026-08-02 Linux x64 native 화면 증적을 재검토하면서 Alhangeul host의 서식 도구 모음이 현재 `rhwp-studio` CSS가 전제하는 grouped ribbon markup과 불일치하고, Linux WebKitGTK의 button 기본 글꼴에서 한글 label이 네모 글리프로 표시되는 것을 확인했다. 같은 구조 불일치는 Windows에도 적용되며 button 글꼴 상속 누락은 Windows system fallback에 따라 가려질 수 있으므로 두 지원 OS의 공통 제품 보정으로 처리한다.
+
+작업지시자는 같은 날 다음 범위를 승인했다.
+
+- Task #9 안에서 Stage 4.2 하위 단계로 처리한다.
+- Alhangeul host 서식 도구 모음을 현재 upstream grouped ribbon 구조와 정렬한다.
+- button·input·select·textarea가 bundle UI 글꼴을 상속하도록 host CSS 경계를 보정한다.
+- Linux와 Windows에 같은 source correction을 적용하고 정적 회귀 테스트와 studio build로 계약을 고정한다.
+- 새 candidate를 만들기 전까지 기존 Stage 4 native 증적을 최종 release 수용 근거로 재사용하지 않는다.
+
+### 산출물
+
+수정:
+
+- `apps/studio-host/index.html`
+- `apps/studio-host/src/style.css`
+- `package.json`
+- `mydocs/plans/task_m010_9_impl.md`
+
+신규:
+
+- `tests/studio-shell.test.mjs`
+
+새 공식 제품 문서와 `mydocs/manual` 문서는 만들지 않는다. 원인, 검증 결과와 candidate 폐기 판단은 진행 중인 `mydocs/working/task_m010_9_stage4.md`에 Stage 4.2 검증이 완료된 뒤 기록한다.
+
+### 변경 내용
+
+- `#style-bar`를 `sb-field-ribbon-group`, `sb-character-band`, `sb-color-ribbon-group`, `sb-paragraph-band` 계층으로 구성해 현재 upstream style·responsive selector가 host에도 동일하게 적용되게 한다.
+- style, 언어, 글꼴, 크기와 줄 간격을 같은 field grid에 배치하고 각 control의 기존 ID와 Toolbar event 계약을 보존한다.
+- `apps/studio-host/src/style.css`의 upstream import 뒤 form control `font-family` 상속을 명시해 dialog·toolbar button이 body의 bundle `맑은 고딕` alias를 사용하게 한다.
+- host shell contract test는 grouped ribbon 계층, 필수 control ID의 field grid 포함, ribbon label과 form control 글꼴 상속을 검사하고 `test:automation`에 연결한다.
+- `third_party/rhwp`는 수정하지 않는다.
+
+### 검증
+
+```bash
+pnpm run check:product-boundary
+pnpm run test:automation
+pnpm run test:upstream
+pnpm run test:studio
+pnpm run build:studio
+git diff --check
+```
+
+지원 범위 밖 macOS host에서는 정적·TypeScript·Vite 검증만 수행한다. 보정 source의 Linux x64 native 화면 재검증과 Windows x64 실제 GUI 검증은 새 exact-SHA candidate 생성 이후 Stage 4에서 수행한다.
+
+### 커밋
+
+```text
+Task #9 [Stage 4.2]: Windows Linux UI 리본과 한글 글꼴 보정
 ```
 
 ## Stage 5 — Go/No-Go 판정과 후속 게시 입력 확정
