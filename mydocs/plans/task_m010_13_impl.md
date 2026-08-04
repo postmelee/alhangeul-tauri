@@ -6,6 +6,8 @@ GitHub Issue: [#13](https://github.com/postmelee/alhangeul-tauri/issues/13)
 
 2026-08-04 작업지시자가 upstream-first 소유 원칙, 최소 typed Tauri adapter, upstream PDF 메뉴의 native 직접 저장 override, HWP/HWPX 형식 안전 저장, drag-in 정상 기능 분류, 문서 위치와 6개 Stage를 승인했다.
 
+같은 날 구현계획서 승인 전 PDF 경계를 추가 확정했다. PDF 메뉴·대상 경로·완료 UX는 Alhangeul이 소유하고, 현재 편집 상태의 페이지 SVG는 upstream handler에서 직접 받으며, Windows/Linux 공통 Rust `svg2pdf` 경로가 검색 가능한 PDF를 우선 생성한다. 플랫폼별 WebView PDF API는 도입하지 않고 text embedding 실패 시에만 명시적인 path fallback을 허용한다. PDF export는 source save가 아니므로 문서 dirty·recovery·path·format·revision을 변경하지 않는다.
+
 구현 target은 upstream `index.html`과 `src/main.ts`를 Vite 실제 entry로 쓰는 구조다. upstream main이 설치하는 embed runtime의 typed handler를 leaf wrapper가 받아 Tauri host에 직접 연결한다. open·export·notify-saved는 DOM 추측이나 same-window byte RPC 없이 이 handler로 호출한다. `third_party/rhwp`는 수정하지 않고 local 전체 main/view/toolbar 복제본을 유지하지 않는다.
 
 ## 단계 개요
@@ -15,7 +17,7 @@ GitHub Issue: [#13](https://github.com/postmelee/alhangeul-tauri/issues/13)
 | 1 | override 소유 계약과 drift guard | typed override spec·boundary test | 31개 override 분류·금지 shadow 계약 |
 | 2 | exact upstream Studio entry 전환 | upstream Vite root·embed seam·복제 UI 제거 | upstream index/main/view/menu build |
 | 3 | Tauri native lifecycle 재결합 | host·dispatcher·dirty·recent·font adapter | open/close/drag/print/recent/font test |
-| 4 | HWP/HWPX·PDF 저장 통합 | format-aware staging·atomic commit | round-trip·PDF·rollback test |
+| 4 | HWP/HWPX·PDF 저장 통합 | format-aware save·upstream SVG 기반 searchable PDF | round-trip·텍스트 추출·rollback test |
 | 5 | 플랫폼 중립 회귀·문서 정렬 | 전체 test/build·공식 문서 | 기본 gate·override 최소성 |
 | 6 | Windows/Linux exact-SHA 수용 | 지원 bundle·native 증적·#9 handoff | GUI/package/rollback·SHA-256 |
 
@@ -38,7 +40,7 @@ GitHub Issue: [#13](https://github.com/postmelee/alhangeul-tauri/issues/13)
 | embed 연결 | upstream handler를 등록하는 leaf wrapper | upstream `main.ts` 복사 |
 | command·dirty | dispatcher/document-state wrapper | 별도 command system·DOM dirty 추측 |
 | open·recent·drag | upstream load handler+Tauri path adapter | 별도 CanvasView 초기화 |
-| save·PDF·print | upstream command ID의 execute 교체 | 별도 file menu HTML |
+| save·PDF·print | upstream command ID의 execute와 native 저장 경계만 교체 | 별도 file menu HTML·플랫폼별 WebView PDF backend |
 | local font 정책 | upstream API re-export+provider/filter | font-loader·Toolbar 전체 복제 |
 | 제품 UX | 새 창·제품 정보·소형 CSS augmentation | index/dialog/style 전체 복제 |
 
@@ -134,9 +136,9 @@ git diff --check
 ### 산출물
 
 - 수정: `desktop-host.ts`, `desktop-session.ts`, `chunked-fs.ts`, `command/commands/file.ts`
-- 수정: Rust `commands.rs`, `state.rs`, `lib.rs`와 TypeScript·Rust·automation test
+- 수정: Rust `commands.rs`, `state.rs`, `lib.rs`, `pdf_export.rs`, font fallback 경계와 TypeScript·Rust·automation test
 - 제거: HWPX 저장 차단과 HWP 전용 staging/commit 명명, 별도 `file:export-pdf`
-- 신규: 필요 시 공통 save-format module, `mydocs/working/task_m010_13_stage4.md`
+- 신규: 필요 시 공통 save-format module과 page-at-a-time PDF job module, `mydocs/working/task_m010_13_stage4.md`
 
 ### 변경 내용
 
@@ -144,8 +146,12 @@ git diff --check
 - `file:save`는 commit된 native session format을 유지한다. save-as는 현재 format, 명시적 HWP/HWPX command는 선택 format으로 저장한 뒤 active path/format을 갱신한다.
 - `exportHwp()`/`exportHwpx()` bytes는 기존 chunked staging으로 쓰고 전체 byte IPC는 사용하지 않는다.
 - Rust 저장 API를 format-aware 이름으로 일반화한다. 요청 format·target extension·`DocumentCore::from_bytes` parser 결과가 일치한 뒤에만 atomic replace한다.
-- 성공 뒤 path/format/fingerprint/revision/dirty/cache/recent를 갱신한다. 실패·취소·충돌은 기존 target/session을 clean으로 확정하지 않는다.
-- upstream `file:print-to-pdf` 위치·label·활성 규칙은 유지하고 execute만 native direct PDF로 교체한다. 성공한 native commit 뒤에만 `notifySaved`로 dirty와 recovery draft를 정리한다.
+- HWP/HWPX source save가 성공한 뒤에만 path/format/fingerprint/revision/dirty/cache/recent를 갱신하고 `notifySaved`로 upstream dirty와 recovery draft를 정리한다. 실패·취소·충돌은 기존 target/session을 clean으로 확정하지 않는다.
+- upstream `file:print-to-pdf` 위치·label·활성 규칙은 유지하고 execute만 Alhangeul direct PDF adapter로 교체한다. 브라우저 인쇄 창은 열지 않으며 `file:print`의 실제 인쇄 경로와 분리한다.
+- PDF adapter는 active upstream handler의 `pageCount()`와 `getPageSvg(page)`를 호출한다. 편집 상태를 staged HWP로 export·재파싱하지 않고 HWP/HWPX 원본 형식과 무관하게 현재 미저장 편집 상태의 SVG를 사용한다.
+- native PDF job은 begin/append/commit/abort 수명주기를 갖고 SVG를 한 페이지씩 받아 임시 저장한다. 전체 페이지 SVG나 PDF byte를 TypeScript 메모리·단일 IPC payload에 쌓지 않고, 최종 target은 기존 atomic write 원칙으로 교체한다.
+- `svg2pdf`는 `embed_text: true`를 기본으로 사용한다. 기존 제한 폰트 family 제거·safe fallback 정책을 적용한 뒤 font subset을 만들며, searchable 변환 실패 시에만 같은 SVG를 `embed_text: false`로 다시 변환한다. fallback은 결과의 `textMode`와 사용자 경고로 드러내고 조용히 강등하지 않는다.
+- PDF 성공·실패·취소는 active source path/format/fingerprint/revision/dirty/cache/recent와 upstream recovery draft를 변경하지 않으며 `notifySaved`를 호출하지 않는다.
 
 ### 검증·커밋
 
@@ -158,7 +164,7 @@ pnpm run build:studio
 git diff --check
 ```
 
-Rust unit test·Clippy·Tauri build는 Windows/Linux Stage 6에서 실행하며 그전에는 native 성공을 주장하지 않는다.
+focused test는 source save에서만 `notifySaved`가 호출되는지, PDF가 current upstream SVG를 페이지 순서대로 전달하는지, begin/append/commit/abort 정리와 searchable/path 결과가 구분되는지를 고정한다. Rust unit test·Clippy·Tauri build와 실제 PDF text extraction은 Windows/Linux Stage 6에서 실행하며 그전에는 native 성공·검색 가능성을 주장하지 않는다.
 
 `Task #13 Stage 4: HWPX native 저장과 직접 PDF override 통합`
 
@@ -172,7 +178,7 @@ Rust unit test·Clippy·Tauri build는 Windows/Linux Stage 6에서 실행하며 
 ### 변경 내용
 
 - `legacy-upstream-copy` 0개, 남은 alias가 leaf adapter뿐인지 확정하고 300 LOC 초과 adapter는 책임별로 분리한다.
-- README는 검증된 HWPX 범위만, `UPSTREAM.md`는 exact entry·금지 shadow·drift guard를 기록한다. 폰트 문서는 경로가 바뀔 때만 보정한다.
+- README는 검증된 HWPX·PDF 범위만, `UPSTREAM.md`는 exact entry·금지 shadow·`getPageSvg` PDF 경계·drift guard를 기록한다. 폰트 문서는 text embedding과 제한 폰트 fallback 계약이 바뀌므로 그 범위만 보정한다.
 - release 문서는 과거 #9 candidate 폐기와 Stage 6 뒤 새 exact-SHA candidate 필요성을 기록한다.
 
 ### 검증·커밋
@@ -204,6 +210,7 @@ pnpm run build:studio
 - 별도 Stage 6 승인 뒤 Stage 5 승인 commit을 exact SHA로 push·dispatch한다.
 - Windows MSI·NSIS, Linux x64 AppImage·DEB·RPM과 arm64 DEB에서 승인된 package/native gate를 수행한다.
 - 메뉴·리본·초기 중앙 위치, HWP/HWPX open/edit/save/save-as/cross-format/reopen, HWPX parser/page/text, PDF 형식/page/원본 불변, print, 정상 drag-in, association, recent, close guard, uninstall·rollback을 확인한다.
+- PDF는 대표 한글·영문·숫자·표·도형·이미지·회전 텍스트 fixture에서 페이지 수·용지 크기·시각 정합을 확인하고 `pdftotext`와 실제 선택·검색으로 searchable 결과를 검증한다. font subset·제한 폰트 대체·fallback 경고·긴 문서 메모리·중간 실패 임시 파일 정리도 증적에 포함한다.
 - 미수행 gate는 면제하지 않고 No-Go로 기록한다. exact SHA·run·inventory·SHA-256·제한과 #9 handoff를 문서화한다.
 
 ### 검증·커밋
@@ -235,11 +242,13 @@ release tag·GitHub Release·서명·updater·package 게시는 하지 않는다
 ## 위험과 대응
 
 - **초기 event race**: handler ready 뒤 Rust pending queue를 drain하고 event와 dedupe한다.
-- **upstream autosave 효과**: upstream 동작만 상속하고 native recovery는 만들지 않는다. 저장 성공 후 `notifySaved` 완료를 기다린다.
+- **upstream autosave 효과**: upstream 동작만 상속하고 native recovery는 만들지 않는다. HWP/HWPX source save 성공 후에만 `notifySaved` 완료를 기다리며 PDF export에서는 호출하지 않는다.
 - **cross-format state**: 최초 WASM format이 아니라 commit된 native session format을 후속 저장 기준으로 둔다.
 - **HWPX fidelity**: extension/ZIP만이 아니라 parser·editable conversion·page/text round-trip을 검증한다.
 - **font regression**: upstream loader/Toolbar를 유지하고 file-backed face 준비만 leaf adapter test로 고정한다.
-- **large document memory**: embed legacy RPC/base64를 쓰지 않고 typed handler와 chunked staging을 직접 연결한다.
+- **PDF text·font regression**: SVG가 실제 `<text>`를 포함해도 문자별 배치·font subset·fallback 때문에 추출 순서나 외형이 달라질 수 있다. Windows/Linux의 `pdftotext`·선택·검색·시각 gate를 모두 통과해야 searchable을 기본으로 확정하고, 실패 시 path fallback을 명시한다.
+- **platform PDF drift**: WebView2/WebKitGTK 직접 PDF backend는 사용하지 않고 공통 Rust `svg2pdf` finalizer를 유지한다. 공통 경로가 수용 gate를 통과하지 못할 때만 별도 Issue에서 플랫폼 backend를 재검토한다.
+- **large document memory**: HWP/HWPX는 typed handler와 chunked staging을 연결하고, PDF는 page-at-a-time SVG job으로 단일 페이지보다 큰 payload를 만들지 않는다.
 - **Task #9 증거 폐기**: #13 이전 candidate와 GUI 증거를 최종 수용에 재사용하지 않는다.
 
 ## 승인 요청 사항
@@ -248,7 +257,8 @@ release tag·GitHub Release·서명·updater·package 게시는 하지 않는다
 - embed handler 직접 연결과 native recent·dirty·dispatcher·font leaf adapter 구조
 - upstream built-in recovery/autosave는 상속하되 native recovery 신규 구현은 제외하는 경계
 - cross-format commit 뒤 native session format을 후속 저장 진실 원천으로 두는 계약
-- `file:print-to-pdf` execute만 direct PDF로 교체하고 `file:export-pdf`를 제거하는 계약
+- `file:print-to-pdf` execute만 upstream current page SVG → 공통 searchable `svg2pdf` 경로로 교체하고 `file:export-pdf`를 제거하는 계약
+- PDF에서 staged-HWP 재파싱과 `notifySaved`를 제거하고 명시적 path fallback만 허용하는 계약
 - 6개 Stage 산출물·검증·커밋 메시지
 
 승인되면 Stage 1 override 소유 계약과 drift guard부터 구현한다.
