@@ -268,6 +268,32 @@ Stage 6.2 exact-SHA Windows GUI 검증에서 PDF 직접 저장, HWP/HWPX 저장�
 
 보정 commit 메시지는 `Task #13 [Stage 6.3]: 상황별 도구 모음 상태 동기화 보정`으로 고정한다.
 
+### Stage 6.4 — Tauri CSP 초기 숨김과 도구 상태 투영 보정
+
+Stage 6.3 exact-SHA Windows GUI 재검증에서 상황별 도구 그룹의 기본 노출은 해소됐지만,
+upstream HTML에서 `style="display:none"`인 `#file-input`이 계속 표시됐다. 같은 inline 숨김에
+의존하는 그림 회전·머리말/꼬리말·주석 그룹이 이전 후보에서 함께 노출된 사실과 Tauri가
+production asset CSP에 nonce/hash를 추가하는 계약을 대조해, 실행 직후 주원인을 event
+경합보다 앞선 CSP style attribute 차단으로 재판정한다. Stage 6.3 coordinator는 독립 event가
+다른 활성 모드를 덮는 동적 상태 결함을 막으므로 유지하되, inline style 투영을 CSP-safe class
+투영으로 바꾼다. 작업지시자는 이 최소 보정과 새 Windows/Linux exact-SHA 재검증을 승인했다.
+
+- Tauri CSP와 asset CSP 변환은 끄지 않고 `style-src-attr 'unsafe-inline'` 같은 광범위한 예외도
+  추가하지 않는다. `third_party/rhwp`와 Alhangeul macOS도 수정하지 않는다.
+- 제품 CSS는 coordinator 준비 전 세 상황별 그룹을 숨겨 첫 paint 노출을 막고, 제품 전용 숨김
+  class, 항상 숨겨야 하는 `#file-input`, 내용이 없을 때 숨겨야 하는 `#sb-field`를 관리한다.
+- toolbar coordinator는 hidden class를 진실 원천으로 사용한다. 표시 전환 시 upstream inline
+  `display` 잔여값을 제거하고 준비 완료 class를 설정하며, upstream handler가 먼저 실행된 뒤
+  microtask에서 최종 상태를 투영하는 Stage 6.3 순서는 유지한다.
+- upstream `index.html`의 inline `display:none` 요소 목록을 boundary test로 고정하고 다섯 요소가
+  모두 제품 CSS/coordinator 소유에 매핑되는지 검증한다. 향후 release pin에서 목록이 늘면
+  무조건 숨기는 generic selector 대신 별도 소유 판단을 요구한다.
+- 플랫폼 중립 test·build 뒤 새 exact SHA를 게시하고 CI/native workflow를 모두 재실행한다.
+  Windows에서는 실행 직후 상황별 그룹·파일 입력 비노출과 모드 전환, Linux에서는 production
+  화면과 bundle을 재검증한다. Stage 6.3 artifact는 최종 후보 증거로 재사용하지 않는다.
+
+보정 commit 메시지는 `Task #13 [Stage 6.4]: Tauri CSP 초기 숨김과 도구 상태 투영 보정`으로 고정한다.
+
 ## 공통 검증·의존성
 
 - 각 Stage는 검증 통과와 단계 보고서 승인 뒤 다음 Stage로 간다. 계획·문서 위치 변경은 먼저 승인받는다.

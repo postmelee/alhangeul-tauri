@@ -5,6 +5,16 @@ textarea {
   font-family: inherit;
 }
 
+/* Tauri production CSP의 nonce/hash는 upstream inline display:none을 차단할 수 있다. */
+html:not(.alhangeul-toolbar-ready) .tb-rotate-group,
+html:not(.alhangeul-toolbar-ready) .tb-headerfooter-group,
+html:not(.alhangeul-toolbar-ready) .tb-note-group,
+.alhangeul-toolbar-hidden,
+#file-input,
+#sb-field:empty {
+  display: none !important;
+}
+
 .about-alhangeul-version {
   margin-top: 2px;
   color: var(--color-text-muted);

@@ -3,7 +3,18 @@ import type { EventBus } from '@upstream/core/event-bus';
 type HeaderFooterMode = 'none' | 'header' | 'footer';
 type ScheduleRender = (callback: () => void) => void;
 
+export const DESKTOP_TOOLBAR_READY_CLASS = 'alhangeul-toolbar-ready';
+export const DESKTOP_TOOLBAR_HIDDEN_CLASS = 'alhangeul-toolbar-hidden';
+export const DESKTOP_CSP_INLINE_HIDDEN_SELECTORS = [
+  '.tb-rotate-group',
+  '.tb-headerfooter-group',
+  '.tb-note-group',
+  '#file-input',
+  '#sb-field',
+] as const;
+
 export interface ToolbarModeElements {
+  rootElement: HTMLElement | null;
   rotateGroup: HTMLElement | null;
   headerFooterGroup: HTMLElement | null;
   headerFooterLabel: HTMLElement | null;
@@ -65,12 +76,20 @@ export function installToolbarModeSync(
   ];
 
   renderToolbarMode(elements, state);
-  return () => unsubscribers.forEach((unsubscribe) => unsubscribe());
+  elements.rootElement?.classList.add(DESKTOP_TOOLBAR_READY_CLASS);
+  return () => {
+    unsubscribers.forEach((unsubscribe) => unsubscribe());
+    elements.rootElement?.classList.remove(DESKTOP_TOOLBAR_READY_CLASS);
+    managedElements(elements).forEach((element) => {
+      element?.classList.remove(DESKTOP_TOOLBAR_HIDDEN_CLASS);
+    });
+  };
 }
 
 function collectElements(root: Document): ToolbarModeElements {
   const headerFooterGroup = root.querySelector<HTMLElement>('.tb-headerfooter-group');
   return {
+    rootElement: root.documentElement,
     rotateGroup: root.querySelector<HTMLElement>('.tb-rotate-group'),
     headerFooterGroup,
     headerFooterLabel: headerFooterGroup?.querySelector<HTMLElement>('.tb-hf-label') ?? null,
@@ -101,7 +120,18 @@ function renderToolbarMode(elements: ToolbarModeElements, state: ToolbarModeStat
 }
 
 function setVisible(element: HTMLElement | null, visible: boolean): void {
-  if (element) element.style.display = visible ? '' : 'none';
+  if (!element) return;
+  element.classList.toggle(DESKTOP_TOOLBAR_HIDDEN_CLASS, !visible);
+  if (visible) element.style.removeProperty('display');
+}
+
+function managedElements(elements: ToolbarModeElements): Array<HTMLElement | null> {
+  return [
+    elements.rotateGroup,
+    elements.headerFooterGroup,
+    elements.noteGroup,
+    ...elements.defaultGroups,
+  ];
 }
 
 function toHeaderFooterMode(mode: unknown): HeaderFooterMode {

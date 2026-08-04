@@ -10,6 +10,7 @@ import {
   finalForbiddenStudioEntryPaths,
   type AlhangeulOverrideSpec,
 } from '../../alhangeul-overrides';
+import { DESKTOP_CSP_INLINE_HIDDEN_SELECTORS } from './desktop-toolbar-mode-sync';
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..');
 const expectedUpstreamCommit = '9b16aa9e23f476e2b335d7c029fc9f24a199d63c';
@@ -151,6 +152,26 @@ describe('upstream Studio override boundary', () => {
     }
   });
 
+  it('maps every upstream inline-hidden entry element to a CSP-safe product owner', () => {
+    const upstreamIndex = readFileSync(resolve(
+      repositoryRoot,
+      'third_party/rhwp/rhwp-studio/index.html',
+    ), 'utf8');
+    const productStyle = readFileSync(resolve(
+      repositoryRoot,
+      'apps/studio-host/src/style.css',
+    ), 'utf8');
+
+    expect(inlineHiddenSelectors(upstreamIndex)).toEqual(DESKTOP_CSP_INLINE_HIDDEN_SELECTORS);
+    for (const selector of ['#file-input', '#sb-field:empty']) {
+      expect(productStyle).toContain(selector);
+    }
+    for (const selector of DESKTOP_CSP_INLINE_HIDDEN_SELECTORS.slice(0, 3)) {
+      expect(productStyle).toContain(`html:not(.alhangeul-toolbar-ready) ${selector}`);
+    }
+    expect(productStyle).toContain('.alhangeul-toolbar-hidden');
+  });
+
   it('keeps the Stage 3 native WasmBridge fork and command shadows physically absent', () => {
     const studioHostRoot = resolve(repositoryRoot, 'apps/studio-host');
     for (const path of removedStageThreePaths) {
@@ -176,6 +197,20 @@ describe('upstream Studio override boundary', () => {
     expect(git(['status', '--porcelain', '--untracked-files=all'], submoduleRoot)).toBe('');
   });
 });
+
+function inlineHiddenSelectors(indexHtml: string): string[] {
+  return Array.from(indexHtml.matchAll(/<[^>]+style="display:none"[^>]*>/g), ([markup]) => {
+    const id = markup.match(/\sid="([^"]+)"/)?.[1];
+    if (id) return `#${id}`;
+
+    const classNames = markup.match(/\sclass="([^"]+)"/)?.[1].split(/\s+/) ?? [];
+    const stateClass = [...classNames]
+      .reverse()
+      .find((name) => name !== 'tb-group' && name.endsWith('-group'));
+    if (stateClass) return `.${stateClass}`;
+    throw new Error(`inline-hidden element has no managed selector: ${markup}`);
+  });
+}
 
 function git(args: string[], cwd = repositoryRoot): string {
   return execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();
