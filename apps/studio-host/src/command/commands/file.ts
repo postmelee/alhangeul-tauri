@@ -40,13 +40,19 @@ const desktopExecutors = new Map<string, CommandDef['execute']>([
     await runDesktopAction('최근 문서 열기', () => getDesktopHost().openDocumentByPath(path));
   }],
   ['file:save', async () => {
-    await runDesktopAction('저장', () => getDesktopHost().saveCurrentHwp());
+    await runDesktopAction('저장', () => getDesktopHost().saveCurrent());
   }],
   ['file:save-as', async () => {
-    await runDesktopAction('다른 이름으로 저장', () => getDesktopHost().saveCurrentHwp(true));
+    await runDesktopAction('다른 이름으로 저장', () => getDesktopHost().saveCurrent(undefined, true));
   }],
   ['file:save-as-hwp', async () => {
-    await runDesktopAction('HWP 형식으로 저장', () => getDesktopHost().saveCurrentHwp(true));
+    await runDesktopAction('HWP 형식으로 저장', () => getDesktopHost().saveCurrent('hwp', true));
+  }],
+  ['file:save-as-hwpx', async () => {
+    await runDesktopAction('HWPX 형식으로 저장', () => getDesktopHost().saveCurrent('hwpx', true));
+  }],
+  ['file:print-to-pdf', async () => {
+    await runDesktopAction('PDF 저장', () => getDesktopHost().exportCurrentPdf());
   }],
   ['file:print', async () => {
     await runDesktopAction('인쇄', () => getDesktopHost().printCurrentWebview());

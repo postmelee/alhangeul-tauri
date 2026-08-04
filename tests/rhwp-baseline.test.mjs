@@ -126,18 +126,40 @@ test('Alhangeul builds the exact upstream Studio entry with only minimal product
   await assert.rejects(access(join(repoRoot, 'apps/studio-host/src/main.ts')), { code: 'ENOENT' });
 });
 
-test('Alhangeul inherits upstream PDF and HWPX menu commands without a stale export command', async () => {
+test('Alhangeul keeps upstream PDF and HWPX menu metadata with native execute leaf overrides', async () => {
   const fileCommands = await readFile(join(repoRoot, 'apps/studio-host/src/command/commands/file.ts'), 'utf8');
   const indexHtml = await readFile(join(repoRoot, 'third_party/rhwp/rhwp-studio/index.html'), 'utf8');
   const pdfMenuItem = indexHtml.match(/<div class="md-item disabled" data-cmd="file:print-to-pdf".*?<\/div>/);
 
   assert.match(fileCommands, /from ['"]@upstream\/command\/commands\/file['"]/);
   assert.doesNotMatch(fileCommands, /file:export-pdf/);
-  assert.doesNotMatch(fileCommands, /\['file:print-to-pdf'/);
-  assert.doesNotMatch(fileCommands, /\['file:save-as-hwpx'/);
+  assert.match(fileCommands, /\['file:print-to-pdf'/);
+  assert.match(fileCommands, /\['file:save-as-hwpx'/);
   assert.ok(pdfMenuItem, 'PDF export menu item should exist');
   assert.doesNotMatch(pdfMenuItem[0], /md-shortcut|Ctrl\+E|Cmd\+E/);
   assert.match(indexHtml, /data-cmd="file:save-as-hwpx"/);
+});
+
+test('Alhangeul source save and PDF export keep format and current SVG boundaries explicit', async () => {
+  const persistence = await readFile(
+    join(repoRoot, 'apps/studio-host/src/core/desktop-persistence.ts'),
+    'utf8',
+  );
+  const commands = await readFile(join(repoRoot, 'apps/desktop/src-tauri/src/commands.rs'), 'utf8');
+  const state = await readFile(join(repoRoot, 'apps/desktop/src-tauri/src/state.rs'), 'utf8');
+  const pdfExport = await readFile(join(repoRoot, 'apps/desktop/src-tauri/src/pdf_export.rs'), 'utf8');
+
+  assert.match(persistence, /requestedFormat === 'hwpx'[\s\S]*handlers\.exportHwpx\(\)/);
+  assert.match(persistence, /handlers\.getPageSvg\(pageIndex\)/);
+  assert.match(persistence, /append_pdf_page/);
+  assert.doesNotMatch(persistence, /notifySaved/);
+  assert.match(commands, /prepare_staged_document_save/);
+  assert.match(commands, /begin_pdf_export/);
+  assert.doesNotMatch(commands, /prepare_staged_hwp_pdf_export/);
+  assert.doesNotMatch(commands, /export_pdf_from_hwp_path/);
+  assert.match(state, /DocumentFormat::from_bytes\(&bytes\)/);
+  assert.match(pdfExport, /render_pdf\(svg_paths, true\)/);
+  assert.match(pdfExport, /PdfTextMode::OutlinedFallback/);
 });
 
 test('Alhangeul reconnects native lifecycle through leaf adapters without a native WasmBridge fork', async () => {

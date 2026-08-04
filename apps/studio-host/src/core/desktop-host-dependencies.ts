@@ -5,6 +5,7 @@ import {
   waitForDesktopStudioHandlers,
   type DesktopStudioHandlers,
 } from '../embed/desktop-runtime';
+import type { DesktopDocumentFormat } from './desktop-session';
 
 export type NativeInvoke = (
   command: string,
@@ -14,7 +15,11 @@ export type NativeInvoke = (
 export interface DesktopHostDependencies {
   invoke: NativeInvoke;
   chooseOpenPath(): Promise<string | null>;
-  chooseHwpSavePath(defaultPath: string): Promise<string | null>;
+  chooseDocumentSavePath(
+    defaultPath: string,
+    format: DesktopDocumentFormat,
+  ): Promise<string | null>;
+  choosePdfSavePath(defaultPath: string): Promise<string | null>;
   showMessage(message: string, options: Record<string, unknown>): Promise<string | boolean>;
   readDocument(path: string): Promise<StableDocumentFile>;
   writeDocument(path: string, bytes: Uint8Array): Promise<void>;
@@ -36,9 +41,14 @@ export function createDefaultDesktopHostDependencies(): DesktopHostDependencies 
       });
       return typeof selected === 'string' ? selected : null;
     },
-    chooseHwpSavePath: async (defaultPath) => {
+    chooseDocumentSavePath: async (defaultPath, format) => {
       const { save } = await import('@tauri-apps/plugin-dialog');
-      return save({ defaultPath, filters: [{ name: 'HWP 문서', extensions: ['hwp'] }] });
+      const label = format === 'hwpx' ? 'HWPX 문서' : 'HWP 문서';
+      return save({ defaultPath, filters: [{ name: label, extensions: [format] }] });
+    },
+    choosePdfSavePath: async (defaultPath) => {
+      const { save } = await import('@tauri-apps/plugin-dialog');
+      return save({ defaultPath, filters: [{ name: 'PDF 문서', extensions: ['pdf'] }] });
     },
     showMessage: async (message, options) => {
       const dialog = await import('@tauri-apps/plugin-dialog');

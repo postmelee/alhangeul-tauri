@@ -26,13 +26,16 @@ describe('desktop session', () => {
     session.commitOpen(nativeState({ docId: 'active', dirty: true }));
     session.commitSave(nativeState({
       docId: 'active',
-      sourcePath: '/documents/saved.hwp',
+      fileName: 'saved.hwpx',
+      sourcePath: '/documents/saved.hwpx',
+      format: 'hwpx',
       revision: 4,
     }));
 
     expect(session.active).toMatchObject({
-      fileName: 'document.hwp',
-      sourcePath: '/documents/saved.hwp',
+      fileName: 'saved.hwpx',
+      sourcePath: '/documents/saved.hwpx',
+      format: 'hwpx',
       revision: 4,
       dirty: false,
     });

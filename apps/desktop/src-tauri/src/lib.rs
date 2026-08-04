@@ -4,6 +4,7 @@ mod font_catalog;
 mod linux_runtime;
 mod pdf_export;
 mod pdf_font_fallbacks;
+mod pdf_jobs;
 mod pending_open;
 mod recent_documents;
 mod state;
@@ -14,13 +15,13 @@ use std::{env, ffi::OsStr};
 use tauri::{AppHandle, Emitter, Manager};
 
 use commands::{
-    check_external_modification, clear_recent_documents, close_document, commit_staged_hwp_save,
-    create_document, create_editor_window, desktop_platform, destroy_current_window, export_pdf,
-    export_pdf_from_hwp_path, list_local_fonts, list_recent_documents, mark_document_dirty,
-    mutate_document, open_document_tracking, prepare_document_open, prepare_staged_hwp_pdf_export,
-    prepare_staged_hwp_save, print_webview, query_document, read_local_font,
-    record_recent_document, render_document_preview, render_page_svg, reveal_in_folder,
-    take_pending_open_paths,
+    abort_pdf_export, append_pdf_page, begin_pdf_export, check_external_modification,
+    clear_recent_documents, close_document, commit_pdf_export, commit_staged_document_save,
+    create_document, create_editor_window, desktop_platform, destroy_current_window,
+    list_local_fonts, list_recent_documents, mark_document_dirty, mutate_document,
+    open_document_tracking, prepare_document_open, prepare_staged_document_save, print_webview,
+    query_document, read_local_font, record_recent_document, render_document_preview,
+    render_page_svg, reveal_in_folder, take_pending_open_paths,
 };
 use state::AppState;
 
@@ -62,8 +63,10 @@ pub fn run() {
             render_page_svg,
             query_document,
             mutate_document,
-            export_pdf,
-            export_pdf_from_hwp_path,
+            begin_pdf_export,
+            append_pdf_page,
+            commit_pdf_export,
+            abort_pdf_export,
             print_webview,
             destroy_current_window,
             desktop_platform,
@@ -71,9 +74,8 @@ pub fn run() {
             read_local_font,
             prepare_document_open,
             open_document_tracking,
-            prepare_staged_hwp_pdf_export,
-            prepare_staged_hwp_save,
-            commit_staged_hwp_save,
+            prepare_staged_document_save,
+            commit_staged_document_save,
             check_external_modification,
             take_pending_open_paths,
             reveal_in_folder,

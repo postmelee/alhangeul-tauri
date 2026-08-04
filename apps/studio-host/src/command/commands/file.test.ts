@@ -12,7 +12,8 @@ const host = vi.hoisted(() => ({
   beginNewDocument: vi.fn(),
   openDocumentFromDialog: vi.fn(),
   openDocumentByPath: vi.fn(),
-  saveCurrentHwp: vi.fn(),
+  saveCurrent: vi.fn(),
+  exportCurrentPdf: vi.fn(),
   printCurrentWebview: vi.fn(),
   createNewWindow: vi.fn(),
   confirmDocumentReplacement: vi.fn(),
@@ -55,17 +56,30 @@ describe('native file command leaf adapters', () => {
   it('routes native open, save, print, and new-window through the desktop host', async () => {
     installTauriWindow();
     host.openDocumentFromDialog.mockResolvedValue({ fileName: 'opened.hwp', pageCount: 2 });
-    host.saveCurrentHwp.mockResolvedValue({ docId: 'doc' });
+    host.saveCurrent.mockResolvedValue({ docId: 'doc' });
+    host.exportCurrentPdf.mockResolvedValue({
+      path: '/documents/export.pdf', pageCount: 2, textMode: 'searchable',
+    });
     host.printCurrentWebview.mockResolvedValue(undefined);
     host.createNewWindow.mockResolvedValue('editor-2');
 
     await command('file:open').execute(services() as never);
     await command('file:save').execute(services() as never);
+    await command('file:save-as').execute(services() as never);
+    await command('file:save-as-hwp').execute(services() as never);
+    await command('file:save-as-hwpx').execute(services() as never);
+    await command('file:print-to-pdf').execute(services() as never);
     await command('file:print').execute(services() as never);
     await command('file:new-window').execute(services() as never);
 
     expect(host.openDocumentFromDialog).toHaveBeenCalledOnce();
-    expect(host.saveCurrentHwp).toHaveBeenCalledWith();
+    expect(host.saveCurrent.mock.calls).toEqual([
+      [],
+      [undefined, true],
+      ['hwp', true],
+      ['hwpx', true],
+    ]);
+    expect(host.exportCurrentPdf).toHaveBeenCalledOnce();
     expect(host.printCurrentWebview).toHaveBeenCalledOnce();
     expect(host.createNewWindow).toHaveBeenCalledOnce();
   });
@@ -93,7 +107,7 @@ describe('native file command leaf adapters', () => {
     expect(host.confirmDocumentReplacement).toHaveBeenCalledOnce();
   });
 
-  it('keeps upstream HWPX and PDF commands in place for Stage 4 overrides', () => {
+  it('keeps upstream HWPX and PDF command metadata while overriding only native execute', () => {
     expect(command('file:save-as-hwpx').label).toBe('Save HWPX');
     expect(command('file:print-to-pdf').label).toBe('PDF');
   });

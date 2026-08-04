@@ -1,25 +1,19 @@
 import type { CommandServices } from '@upstream/command/types';
 import {
   DesktopSession,
+  type DesktopDocumentFormat,
   type NativeDocumentState,
 } from './desktop-session';
 import {
   createDefaultDesktopHostDependencies,
   type DesktopHostDependencies,
 } from './desktop-host-dependencies';
+import { DesktopPersistence, type PdfExportResult } from './desktop-persistence';
 
 export type { DesktopHostDependencies } from './desktop-host-dependencies';
 
 interface NativeOpenResult extends NativeDocumentState {
   pageCount: number;
-}
-
-interface NativeSaveResult extends Omit<NativeDocumentState, 'fileName'> {}
-
-interface ExternalModificationStatus {
-  changed: boolean;
-  sourcePath?: string | null;
-  reason?: string | null;
 }
 
 export interface DesktopOpenResult {
@@ -30,12 +24,14 @@ export interface DesktopOpenResult {
 export class DesktopHost {
   private readonly session = new DesktopSession();
   private readonly dependencies: DesktopHostDependencies;
+  private readonly persistence: DesktopPersistence;
   private readonly openRequests = new Map<string, Promise<DesktopOpenResult | null>>();
   private commandServices: CommandServices | null = null;
   private pendingNewDocument: NativeOpenResult | null = null;
 
   constructor(dependencies: Partial<DesktopHostDependencies> = {}) {
     this.dependencies = { ...createDefaultDesktopHostDependencies(), ...dependencies };
+    this.persistence = new DesktopPersistence(this.dependencies);
   }
 
   get activeSession() {
@@ -107,39 +103,26 @@ export class DesktopHost {
     );
     if (result === '저장 안 함' || result === 'No') return true;
     if (result !== '저장' && result !== 'Yes') return false;
-    return (await this.saveCurrentHwp()) !== null;
+    return (await this.saveCurrent()) !== null;
   }
 
-  async saveCurrentHwp(forceSaveAs = false): Promise<NativeDocumentState | null> {
+  async saveCurrent(
+    format?: DesktopDocumentFormat,
+    forceSaveAs = false,
+  ): Promise<NativeDocumentState | null> {
     const active = this.session.active;
     if (!active) throw new Error('native 문서 세션이 없습니다');
-    let targetPath = active.sourcePath;
-    if (forceSaveAs || !targetPath || active.format === 'hwpx') {
-      const selected = await this.dependencies.chooseHwpSavePath(suggestedHwpName(active.fileName));
-      if (!selected) return null;
-      targetPath = withExtension(selected, 'hwp');
-    }
-    const allowExternalOverwrite = await this.confirmExternalOverwrite(active.docId, targetPath);
-    if (allowExternalOverwrite === null) return null;
-    const stagedPath = await this.invoke<string>('prepare_staged_hwp_save', { targetPath });
-    try {
-      const handlers = await this.dependencies.handlers();
-      await this.dependencies.writeDocument(stagedPath, await handlers.exportHwp());
-      const result = await this.invoke<NativeSaveResult>('commit_staged_hwp_save', {
-        docId: active.docId,
-        stagedPath,
-        targetPath,
-        expectedRevision: active.revision,
-        allowExternalOverwrite,
-      });
-      const saved = { ...result, fileName: fileNameFromPath(targetPath) };
-      this.session.commitSave(saved);
-      await handlers.notifySaved(saved.fileName);
-      this.updateDocumentTitle();
-      return saved;
-    } finally {
-      await this.dependencies.removeFile(stagedPath).catch(() => undefined);
-    }
+    const saved = await this.persistence.saveSource(active, format, forceSaveAs);
+    if (!saved) return null;
+    this.session.commitSave(saved.state);
+    await saved.handlers.notifySaved(saved.state.fileName);
+    this.updateDocumentTitle();
+    return saved.state;
+  }
+
+  async exportCurrentPdf(): Promise<PdfExportResult | null> {
+    const fileName = this.session.active?.fileName ?? 'document.hwp';
+    return this.persistence.exportPdf(fileName);
   }
 
   async confirmWindowClose(): Promise<boolean> {
@@ -191,31 +174,6 @@ export class DesktopHost {
     }
   }
 
-  private async confirmExternalOverwrite(
-    docId: string,
-    targetPath: string,
-  ): Promise<boolean | null> {
-    const status = await this.invoke<ExternalModificationStatus>('check_external_modification', {
-      docId,
-      targetPath,
-    });
-    if (!status.changed) return false;
-    const result = await this.dependencies.showMessage(
-      [
-        '원본 파일이 Alhangeul 밖에서 변경되었습니다.',
-        status.sourcePath ? `파일: ${status.sourcePath}` : '',
-        status.reason ?? '',
-        '그대로 저장하면 외부에서 변경된 내용이 사라질 수 있습니다.',
-      ].filter(Boolean).join('\n'),
-      {
-        title: '외부 변경 감지',
-        kind: 'warning',
-        buttons: { yes: '덮어쓰기', no: '저장 취소', cancel: '취소' },
-      },
-    );
-    return result === '덮어쓰기' || result === 'Yes' ? true : null;
-  }
-
   private async abortPendingNewDocument(): Promise<void> {
     const pending = this.pendingNewDocument;
     this.pendingNewDocument = null;
@@ -249,16 +207,4 @@ export function getDesktopHost(): DesktopHost {
 
 export function setDesktopHostForTests(host: DesktopHost): void {
   desktopHost = host;
-}
-
-function suggestedHwpName(fileName: string): string {
-  return `${fileName.replace(/\.(hwp|hwpx)$/i, '') || 'document'}.hwp`;
-}
-
-function withExtension(path: string, extension: string): string {
-  return new RegExp(`\\.${extension}$`, 'i').test(path) ? path : `${path}.${extension}`;
-}
-
-function fileNameFromPath(path: string): string {
-  return path.split(/[\\/]/).pop() || 'document.hwp';
 }

@@ -76,7 +76,7 @@ describe('desktop host', () => {
     expect(fixture.handlers.loadFile).toHaveBeenCalledOnce();
   });
 
-  it('syncs dirty state and saves exported HWP bytes through native staging', async () => {
+  it('syncs dirty state and saves the active HWP format through native staging', async () => {
     const fixture = createFixture();
     fixture.invoke.mockImplementation(async (command) => {
       if (command === 'prepare_document_open') return undefined;
@@ -84,8 +84,8 @@ describe('desktop host', () => {
       if (command === 'record_recent_document') return undefined;
       if (command === 'mark_document_dirty') return undefined;
       if (command === 'check_external_modification') return { changed: false };
-      if (command === 'prepare_staged_hwp_save') return '/tmp/staged.hwp';
-      if (command === 'commit_staged_hwp_save') {
+      if (command === 'prepare_staged_document_save') return '/tmp/staged.hwp';
+      if (command === 'commit_staged_document_save') {
         return nativeSave({ docId: 'saved', sourcePath: '/documents/opened.hwp', revision: 2 });
       }
       throw new Error(`unexpected command: ${command}`);
@@ -95,7 +95,7 @@ describe('desktop host', () => {
 
     host.markDocumentDirty();
     host.markDocumentDirty();
-    const result = await host.saveCurrentHwp();
+    const result = await host.saveCurrent();
 
     expect(fixture.invoke).toHaveBeenCalledTimes(7);
     expect(fixture.invoke).toHaveBeenCalledWith('mark_document_dirty', { docId: 'saved' });
@@ -103,6 +103,11 @@ describe('desktop host', () => {
       '/tmp/staged.hwp',
       new Uint8Array([7, 8, 9]),
     );
+    expect(fixture.invoke).toHaveBeenCalledWith('prepare_staged_document_save', {
+      targetPath: '/documents/opened.hwp',
+      format: 'hwp',
+    });
+    expect(fixture.handlers.exportHwpx).not.toHaveBeenCalled();
     expect(fixture.handlers.notifySaved).toHaveBeenCalledWith('opened.hwp');
     expect(result).toMatchObject({ revision: 2, dirty: false });
     expect(host.activeSession).toMatchObject({ revision: 2, dirty: false });
@@ -137,13 +142,14 @@ function createFixture() {
     pageCount: vi.fn().mockResolvedValue(2),
     getPageSvg: vi.fn().mockResolvedValue('<svg/>'),
     exportHwp: vi.fn().mockResolvedValue(new Uint8Array([7, 8, 9])),
-    exportHwpx: vi.fn().mockResolvedValue(new Uint8Array()),
+    exportHwpx: vi.fn().mockResolvedValue(new Uint8Array([4, 5, 6])),
     notifySaved: vi.fn().mockResolvedValue({ ok: true, wasDirty: true }),
   };
   const dependencies: DesktopHostDependencies = {
     invoke,
     chooseOpenPath: vi.fn().mockResolvedValue(null),
-    chooseHwpSavePath: vi.fn().mockResolvedValue(null),
+    chooseDocumentSavePath: vi.fn().mockResolvedValue(null),
+    choosePdfSavePath: vi.fn().mockResolvedValue(null),
     showMessage: vi.fn().mockResolvedValue('취소'),
     readDocument: vi.fn().mockResolvedValue({ bytes: new Uint8Array([1, 2, 3]) }),
     writeDocument,
