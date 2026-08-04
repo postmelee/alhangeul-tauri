@@ -232,6 +232,19 @@ release tag·GitHub Release·서명·updater·package 게시는 하지 않는다
 
 `Task #13 Stage 6: Windows Linux native 수용과 Task #9 handoff`
 
+### Stage 6.1 — Actions shallow checkout의 pinned tag 확보 보정
+
+2026-08-04 최초 exact-SHA 후보 `a006936ae9838da71cbb23f5e24156a5090a5b6b`의 CI와 세 native build가 모두 `Verify rhwp pin`에서 중단됐다. `actions/checkout`은 lock commit의 submodule worktree는 만들었지만 shallow checkout에 `refs/tags/v0.8.2`를 제공하지 않았고, 검증기는 해당 stable tag를 해석할 수 없었다. 이는 제품 코드나 pin 불일치가 아니라 Actions 입력 준비 결함으로 판정했으며 작업지시자가 최소 보정을 승인했다.
+
+- Task #9 Stage 4.3에서 검증한 방식을 현재 Task #13 파일에 선택 이식한다. Task #9 문서·branch·다른 변경은 가져오지 않는다.
+- lock의 repository와 현재 submodule origin, lock commit과 현재 HEAD를 network fetch 전에 확인한다.
+- `+refs/tags/v0.8.2:refs/tags/v0.8.2`처럼 lock의 exact tag 하나만 `--no-tags --depth=1`로 fetch한다. 전체 history나 모든 tag는 받지 않는다.
+- fetch 뒤 tag가 lock commit으로 resolve되는지 재검증하며 pin·gitlink·submodule worktree·제품 코드는 변경하지 않는다.
+- CI와 `run_tests=true` native matrix에서 기존 pin 검증 전에 실행하고 workflow 순서·최소 fetch 계약을 자동화 test로 고정한다.
+- 보정 commit을 새 exact SHA로 `publish/task13`에 fast-forward하고 CI/native workflow를 새로 dispatch한다. 실패한 최초 run과 artifact는 수용 증거로 사용하지 않는다.
+
+보정 commit 메시지는 `Task #13 [Stage 6.1]: Actions rhwp release tag 확보 보정`으로 고정한다.
+
 ## 공통 검증·의존성
 
 - 각 Stage는 검증 통과와 단계 보고서 승인 뒤 다음 Stage로 간다. 계획·문서 위치 변경은 먼저 승인받는다.

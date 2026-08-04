@@ -98,6 +98,10 @@ jobs:
       - name: Enable pnpm
         run: corepack enable
 
+      - name: Fetch rhwp pinned release tag
+        if: inputs.run_tests
+        run: pnpm run fetch:rhwp-pin-tag
+
       - name: Resolve pnpm store path
         id: pnpm-store
         shell: bash
