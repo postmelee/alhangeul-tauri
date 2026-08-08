@@ -34,7 +34,10 @@ describe('desktop persistence', () => {
     expect(fixture.dependencies.chooseDocumentSavePath).not.toHaveBeenCalled();
 
     const hwp = await persistence.saveSource(active, 'hwp', true);
-    expect(fixture.dependencies.chooseDocumentSavePath).toHaveBeenCalledWith('source.hwp', 'hwp');
+    expect(fixture.dependencies.resolveSaveDefaultPath)
+      .toHaveBeenCalledWith('source.hwp', '/documents/source.hwpx');
+    expect(fixture.dependencies.chooseDocumentSavePath)
+      .toHaveBeenCalledWith('/documents/source.hwp', 'hwp');
     expect(hwp?.state).toMatchObject({
       format: 'hwp', sourcePath: '/exports/converted.hwp', fileName: 'converted.hwp',
     });
@@ -100,10 +103,14 @@ describe('desktop persistence', () => {
     });
     const persistence = new DesktopPersistence(fixture.dependencies);
 
-    await expect(persistence.exportPdf('source.hwpx')).resolves.toEqual({
+    await expect(persistence.exportPdf('source.hwpx', '/documents/source.hwpx')).resolves.toEqual({
       path: '/exports/current.pdf', pageCount: 3, textMode: 'searchable',
     });
 
+    expect(fixture.dependencies.resolveSaveDefaultPath)
+      .toHaveBeenCalledWith('source.pdf', '/documents/source.hwpx');
+    expect(fixture.dependencies.choosePdfSavePath)
+      .toHaveBeenCalledWith('/documents/source.pdf');
     expect(fixture.handlers.getPageSvg.mock.calls.map(([page]) => page)).toEqual([0, 1, 2]);
     expect(fixture.invoke.mock.calls.filter(([command]) => command === 'append_pdf_page'))
       .toEqual([
@@ -180,6 +187,7 @@ function createFixture() {
     chooseOpenPath: vi.fn().mockResolvedValue(null),
     chooseDocumentSavePath: vi.fn().mockResolvedValue(null),
     choosePdfSavePath: vi.fn().mockResolvedValue(null),
+    resolveSaveDefaultPath: vi.fn(async (fileName) => `/documents/${fileName}`),
     showMessage: vi.fn().mockResolvedValue(true),
     readDocument: vi.fn(),
     writeDocument: vi.fn().mockResolvedValue(undefined),

@@ -121,8 +121,11 @@ export class DesktopHost {
   }
 
   async exportCurrentPdf(): Promise<PdfExportResult | null> {
-    const fileName = this.session.active?.fileName ?? 'document.hwp';
-    return this.persistence.exportPdf(fileName);
+    const active = this.session.active;
+    return this.persistence.exportPdf(
+      active?.fileName ?? 'document.hwp',
+      active?.sourcePath ?? null,
+    );
   }
 
   async confirmWindowClose(): Promise<boolean> {

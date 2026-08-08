@@ -6,6 +6,7 @@ import {
   type DesktopStudioHandlers,
 } from '../embed/desktop-runtime';
 import type { DesktopDocumentFormat } from './desktop-session';
+import { resolveSaveDialogDefaultPath } from './save-dialog-default-path';
 
 export type NativeInvoke = (
   command: string,
@@ -20,6 +21,7 @@ export interface DesktopHostDependencies {
     format: DesktopDocumentFormat,
   ): Promise<string | null>;
   choosePdfSavePath(defaultPath: string): Promise<string | null>;
+  resolveSaveDefaultPath(fileName: string, sourcePath: string | null): Promise<string>;
   showMessage(message: string, options: Record<string, unknown>): Promise<string | boolean>;
   readDocument(path: string): Promise<StableDocumentFile>;
   writeDocument(path: string, bytes: Uint8Array): Promise<void>;
@@ -50,6 +52,7 @@ export function createDefaultDesktopHostDependencies(): DesktopHostDependencies 
       const { save } = await import('@tauri-apps/plugin-dialog');
       return save({ defaultPath, filters: [{ name: 'PDF 문서', extensions: ['pdf'] }] });
     },
+    resolveSaveDefaultPath: resolveSaveDialogDefaultPath,
     showMessage: async (message, options) => {
       const dialog = await import('@tauri-apps/plugin-dialog');
       return dialog.message(message, options as never);

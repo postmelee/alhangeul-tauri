@@ -294,6 +294,30 @@ production asset CSP에 nonce/hash를 추가하는 계약을 대조해, 실행 �
 
 보정 commit 메시지는 `Task #13 [Stage 6.4]: Tauri CSP 초기 숨김과 도구 상태 투영 보정`으로 고정한다.
 
+### Stage 6.5 — Linux AppImage 절대 저장 기본 경로 보정
+
+Stage 6.4 exact-SHA `ba888ff28893455f5da583f3225f1341fa670987`는 CI와 Windows/Linux
+native build·artifact inventory를 통과했고 Windows와 Linux 화면에서 CSP-safe 초기 숨김을
+확인했다. 이후 Linux AppImage 실기에서 PDF 저장 대화상자의 상대 `defaultPath`가
+`/tmp/.mount_Alhangeul…` 아래 읽기 전용 실행 위치로 해석되어 `Read-only file system
+(os error 30)`으로 PDF 임시 디렉터리 생성이 실패했다. 이는 `file:print`나 공통 `svg2pdf`
+finalizer 결함이 아니라 변환 전에 발생한 native 저장 경로 결함이다. 같은 상대 기본 경로를
+쓰는 HWP/HWPX save-as·교차 형식 저장도 잠재 영향 범위로 판정하며, 작업지시자는 이 최소
+보정과 새 exact-SHA Windows/Linux 재검증을 승인했다.
+
+- 저장 대화상자에는 파일명만 전달하지 않고 항상 절대 `defaultPath`를 전달한다. 기존 문서는
+  absolute source parent를 유지하고, 새 문서나 상대·유효하지 않은 source는 사용자 Documents,
+  Documents를 해석할 수 없으면 home directory를 사용한다.
+- 실행 cwd와 AppImage mount를 저장 위치 판단에 사용하지 않는다. 선택 결과의 확장자 보정,
+  atomic save/PDF job, active source state, dirty·recovery 계약은 변경하지 않는다.
+- PDF뿐 아니라 같은 chooser 경계를 쓰는 HWP/HWPX save-as와 cross-format save를 focused test에
+  포함한다. Linux AppImage에서는 기본 위치 그대로 PDF를 저장하고 PDF 형식·page·text를 확인하며,
+  HWP/HWPX 저장을 재검증한다. Windows에서는 저장 경로와 기존 PDF/HWP/HWPX 동작을 회귀검증한다.
+- 전체 중립 gate 뒤 새 exact SHA를 게시하고 CI/native workflow를 모두 재실행한다. Stage 6.4
+  artifact는 CSP 화면 통과 참고로만 남기고 최종 후보 증거로 재사용하지 않는다.
+
+보정 commit 메시지는 `Task #13 [Stage 6.5]: Linux AppImage 절대 저장 기본 경로 보정`으로 고정한다.
+
 ## 공통 검증·의존성
 
 - 각 Stage는 검증 통과와 단계 보고서 승인 뒤 다음 Stage로 간다. 계획·문서 위치 변경은 먼저 승인받는다.

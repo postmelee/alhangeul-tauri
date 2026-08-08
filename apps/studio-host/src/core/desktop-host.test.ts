@@ -150,6 +150,7 @@ function createFixture() {
     chooseOpenPath: vi.fn().mockResolvedValue(null),
     chooseDocumentSavePath: vi.fn().mockResolvedValue(null),
     choosePdfSavePath: vi.fn().mockResolvedValue(null),
+    resolveSaveDefaultPath: vi.fn(async (fileName) => `/documents/${fileName}`),
     showMessage: vi.fn().mockResolvedValue('취소'),
     readDocument: vi.fn().mockResolvedValue({ bytes: new Uint8Array([1, 2, 3]) }),
     writeDocument,

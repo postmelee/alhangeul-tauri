@@ -30,8 +30,12 @@ export class DesktopPersistence {
   ): Promise<SourceSaveResult | null> {
     let targetPath = active.sourcePath;
     if (forceSaveAs || !targetPath || requestedFormat !== active.format) {
-      const selected = await this.dependencies.chooseDocumentSavePath(
+      const defaultPath = await this.dependencies.resolveSaveDefaultPath(
         suggestedDocumentName(active.fileName, requestedFormat),
+        active.sourcePath,
+      );
+      const selected = await this.dependencies.chooseDocumentSavePath(
+        defaultPath,
         requestedFormat,
       );
       if (!selected) return null;
@@ -69,13 +73,20 @@ export class DesktopPersistence {
     }
   }
 
-  async exportPdf(fileName: string): Promise<PdfExportResult | null> {
+  async exportPdf(
+    fileName: string,
+    sourcePath: string | null = null,
+  ): Promise<PdfExportResult | null> {
     const handlers = await this.dependencies.handlers();
     const pageCount = await handlers.pageCount();
     if (!Number.isSafeInteger(pageCount) || pageCount <= 0) {
       throw new Error('PDF로 저장할 페이지가 없습니다');
     }
-    const selected = await this.dependencies.choosePdfSavePath(suggestedPdfName(fileName));
+    const defaultPath = await this.dependencies.resolveSaveDefaultPath(
+      suggestedPdfName(fileName),
+      sourcePath,
+    );
+    const selected = await this.dependencies.choosePdfSavePath(defaultPath);
     if (!selected) return null;
     const targetPath = withExtension(selected, 'pdf');
     let jobId: string | null = await this.invoke<string>('begin_pdf_export', {
