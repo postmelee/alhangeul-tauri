@@ -223,6 +223,29 @@ describe('upstream Studio override boundary', () => {
     expect(finalForbiddenOverrideIds).toEqual([]);
   });
 
+  it('pins upstream printing to the dedicated page SVG preview surface', () => {
+    const upstreamCommand = readFileSync(resolve(
+      repositoryRoot,
+      'third_party/rhwp/rhwp-studio/src/command/commands/file.ts',
+    ), 'utf8');
+    const upstreamSurface = readFileSync(resolve(
+      repositoryRoot,
+      'third_party/rhwp/rhwp-studio/src/command/print-surface.ts',
+    ), 'utf8');
+
+    expect(upstreamCommand).toContain("id: 'file:print'");
+    expect(upstreamCommand).toContain('await runPrintPreview(services)');
+    expect(upstreamCommand).toContain("renderPageSvgWithProfile(i, 'print')");
+    expect(upstreamCommand).toContain('const surfacePromise = createPrintPreviewSurface()');
+    expect(upstreamCommand).toContain(
+      'setupPrintDocument(surface.document, wasm.fileName, printPages, surface.window)',
+    );
+    expect(upstreamCommand).toContain(
+      "printButton.addEventListener('click', () => printWindow.print())",
+    );
+    expect(upstreamSurface).toContain("hostWindow.open(surfaceUrl, '_blank')");
+  });
+
   it('pins the read-only source submodule to the resolved release commit', () => {
     const lock = readFileSync(resolve(repositoryRoot, 'rhwp-core.lock'), 'utf8');
     const lockCommit = lock.match(/^rhwp_commit = "([0-9a-f]{40})"$/m)?.[1];
