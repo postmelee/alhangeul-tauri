@@ -31,7 +31,7 @@ branch, 이동 가능한 floating ref, tag 없이 전달된 commit은 Stable 갱
 
 `third_party/rhwp`는 vendor source로 취급하고 Alhangeul 기능을 구현하기 위해 직접 수정하지 않는다.
 
-- `apps/desktop/`: Tauri shell, native document session, 저장·내보내기·인쇄, 창 관리, 파일 연결과 packaging
+- `apps/desktop/`: Tauri shell, native document session, 저장·내보내기, 필요한 인쇄 창 host, 창 관리, 파일 연결과 packaging
 - `apps/studio-host/`: exact upstream Studio entry를 쓰는 Vite host, Tauri bridge와 desktop event·command·font leaf adapter, 최소 제품 UX 보정
 - `assets/`, `docs/`, `scripts/`: 제품 자산, 공식 문서와 운영 자동화
 
@@ -39,11 +39,13 @@ studio host의 실제 Vite root와 entry는 각각 `third_party/rhwp/rhwp-studio
 
 `apps/studio-host/alhangeul-overrides.ts`가 adapter owner와 disposition의 진실 원천이다. `apps/studio-host/src/core/upstream-boundary.test.ts`는 12개 alias, `legacy-upstream-copy` 0개, 금지 entry와 제거된 shadow의 물리적 부재, adapter 300 LOC 상한을 검사한다. `tests/rhwp-baseline.test.mjs`는 exact entry, upstream 메뉴 command와 HWPX/PDF 실행 경계를 함께 고정한다. engine API나 renderer bug는 먼저 upstream에서 해결하고, 데스크톱 통합 차이는 이 경계 안의 leaf adapter에 둔다.
 
-## 문서 저장과 PDF 경계
+## 문서 저장, PDF와 실제 인쇄 경계
 
 upstream embed runtime을 상속하는 local leaf wrapper는 `getDesktopStudioHandlers()`로 `loadFile`, `pageCount`, `getPageSvg`, `exportHwp`, `exportHwpx`, `notifySaved`만 native host에 노출한다. HWP/HWPX source save는 현재 형식에 맞는 exporter bytes를 chunk staging하고 Rust에서 요청 형식·확장자·parser 결과가 일치한 뒤 원자적으로 교체한다. native commit 성공 뒤에만 `notifySaved`로 upstream dirty/recovery 상태를 정리한다.
 
 PDF command는 upstream `file:print-to-pdf` 메뉴 위치와 활성 규칙을 유지하되 실행만 Alhangeul이 소유한다. active handler의 `getPageSvg(page)` 결과를 페이지 순서대로 native PDF job에 전달하며 staged HWP를 재파싱하지 않는다. PDF 성공·실패·취소는 source path·format·revision·dirty·recent와 upstream recovery draft를 바꾸지 않고 `notifySaved`를 호출하지 않는다.
+
+실제 인쇄 `file:print`는 local native command로 교체하지 않고 upstream execute를 상속한다. pagination flush, 모든 페이지의 `profile=print` SVG 생성, `print.html` same-origin 미리보기 document와 최종 preview `window.print()`는 upstream이 소유한다. Tauri runtime이 표준 `window.open()`을 host하지 못하는 것이 exact bundle에서 확인될 때만 Alhangeul이 전용 WebviewWindow 생성 경계를 보충할 수 있으며, 이 경우에도 페이지 조립·preview DOM·style을 복제하지 않는다. editor Studio WebView 전체를 직접 인쇄하거나 direct PDF pipeline을 실제 인쇄 대신 사용하는 것은 허용하지 않는다.
 
 ## 갱신 자동화 경계
 

@@ -119,6 +119,21 @@ MSI와 NSIS는 각각 clean state, silent install exit `0`, 제품 version `0.1.
 
 Task #13은 exact upstream `v0.8.2` Studio entry, HWPX native 저장과 현재 페이지 SVG 기반 직접 PDF 경계를 다시 구성했다. 따라서 Task #9의 기존 candidate와 위 Task #11 artifact·SHA는 Task #13의 기능 수용이나 공개 후보로 승계하지 않는다. Stage 5의 플랫폼 중립 gate가 통과해도 native 수용 증거는 아니며, 별도 승인한 Stage 6에서 Stage 5 commit을 포함한 새 exact SHA로 Windows/Linux bundle과 GUI·저장·PDF·package gate를 다시 검증해야 한다. 그 결과가 Go일 때만 해당 exact SHA를 Task #9 prerelease 후보 재개 입력으로 사용한다.
 
+### 실제 인쇄와 PDF 직접 저장의 분리 gate
+
+PDF 직접 저장 성공은 실제 인쇄 성공을 대신하지 않는다. `file:print-to-pdf`는 Alhangeul의 Rust searchable PDF job이고, `file:print`는 upstream이 모든 문서 페이지를 `profile=print` SVG로 만들어 전용 `print.html` 미리보기 surface에 배치한 뒤 그 surface만 system print로 보내는 경로다.
+
+Windows/Linux exact 후보에서 `인쇄`를 선택하면 먼저 다음 항목을 확인한다.
+
+1. editor Studio WebView가 아니라 별도 인쇄 미리보기 surface가 열린다.
+2. 미리보기 제목·쪽 수·세로/가로 방향과 본문이 열린 문서와 일치한다.
+3. 메뉴·리본·상태 표시줄 같은 Studio chrome이나 빈 editor 한 쪽이 문서 대신 표시되지 않는다.
+4. 미리보기의 `인쇄` 버튼이 system print dialog를 열며 닫기·반복 인쇄 뒤 orphan 창이 남지 않는다.
+5. Windows에서는 단일·다중 페이지 한글 문서를 Microsoft Print to PDF 또는 사용 가능한 프린터로 보내고 결과 쪽 수·내용을 확인한다.
+6. Linux에서는 전용 surface의 전체 페이지·한글 표시와 system print dialog 진입을 확인한다.
+
+popup 차단, same-origin 접근 실패, 빈 페이지, 쪽 수·방향 불일치는 No-Go다. 이 경우 editor WebView 직접 인쇄로 fallback하지 않고 Tauri 전용 window host 경계를 별도 보정한다.
+
 Stage 6 전에는 branch push·workflow dispatch·artifact 생성을 하지 않는다. Stage 6에서도 release tag, GitHub Release, 서명, package 게시, updater 활성화는 범위 밖이다.
 
 ## 검증된 native canary
