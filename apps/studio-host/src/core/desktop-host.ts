@@ -145,10 +145,6 @@ export class DesktopHost {
     return this.invoke<string>('create_editor_window');
   }
 
-  printCurrentWebview(): Promise<void> {
-    return this.invoke<void>('print_webview');
-  }
-
   destroyCurrentWindow(): Promise<void> {
     return this.invoke<void>('destroy_current_window');
   }

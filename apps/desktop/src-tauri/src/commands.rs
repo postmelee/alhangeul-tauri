@@ -278,13 +278,6 @@ pub fn reveal_in_folder(path: String) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn print_webview(window: WebviewWindow) -> Result<(), String> {
-    window
-        .print()
-        .map_err(|e| format!("인쇄 대화상자를 열 수 없습니다: {}", e))
-}
-
-#[tauri::command]
 pub fn destroy_current_window(window: WebviewWindow) -> Result<(), String> {
     window
         .destroy()

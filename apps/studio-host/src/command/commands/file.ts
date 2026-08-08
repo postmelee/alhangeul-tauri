@@ -54,9 +54,6 @@ const desktopExecutors = new Map<string, CommandDef['execute']>([
   ['file:print-to-pdf', async () => {
     await runDesktopAction('PDF 저장', () => getDesktopHost().exportCurrentPdf());
   }],
-  ['file:print', async () => {
-    await runDesktopAction('인쇄', () => getDesktopHost().printCurrentWebview());
-  }],
 ]);
 
 export const fileCommands: CommandDef[] = [

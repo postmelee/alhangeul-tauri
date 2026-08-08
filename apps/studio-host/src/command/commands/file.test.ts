@@ -5,6 +5,7 @@ import {
 } from './file';
 
 const upstreamOpen = vi.hoisted(() => vi.fn());
+const upstreamPrint = vi.hoisted(() => vi.fn());
 const upstreamConfirm = vi.hoisted(() => vi.fn());
 const resolveRecentPath = vi.hoisted(() => vi.fn());
 const host = vi.hoisted(() => ({
@@ -14,7 +15,6 @@ const host = vi.hoisted(() => ({
   openDocumentByPath: vi.fn(),
   saveCurrent: vi.fn(),
   exportCurrentPdf: vi.fn(),
-  printCurrentWebview: vi.fn(),
   createNewWindow: vi.fn(),
   confirmDocumentReplacement: vi.fn(),
 }));
@@ -30,7 +30,7 @@ vi.mock('@upstream/command/commands/file', () => ({
     { id: 'file:save-as-hwp', label: 'Save HWP', execute: vi.fn() },
     { id: 'file:save-as-hwpx', label: 'Save HWPX', execute: vi.fn() },
     { id: 'file:print-to-pdf', label: 'PDF', execute: vi.fn() },
-    { id: 'file:print', label: 'Print', execute: vi.fn() },
+    { id: 'file:print', label: 'Print', execute: upstreamPrint },
   ],
 }));
 vi.mock('../../core/desktop-host', () => ({ getDesktopHost: () => host }));
@@ -53,14 +53,14 @@ describe('native file command leaf adapters', () => {
     expect(host.openDocumentFromDialog).not.toHaveBeenCalled();
   });
 
-  it('routes native open, save, print, and new-window through the desktop host', async () => {
+  it('routes native file actions while keeping upstream page-surface printing', async () => {
     installTauriWindow();
     host.openDocumentFromDialog.mockResolvedValue({ fileName: 'opened.hwp', pageCount: 2 });
     host.saveCurrent.mockResolvedValue({ docId: 'doc' });
     host.exportCurrentPdf.mockResolvedValue({
       path: '/documents/export.pdf', pageCount: 2, textMode: 'searchable',
     });
-    host.printCurrentWebview.mockResolvedValue(undefined);
+    upstreamPrint.mockResolvedValue(undefined);
     host.createNewWindow.mockResolvedValue('editor-2');
 
     await command('file:open').execute(services() as never);
@@ -80,7 +80,7 @@ describe('native file command leaf adapters', () => {
       ['hwpx', true],
     ]);
     expect(host.exportCurrentPdf).toHaveBeenCalledOnce();
-    expect(host.printCurrentWebview).toHaveBeenCalledOnce();
+    expect(upstreamPrint).toHaveBeenCalledOnce();
     expect(host.createNewWindow).toHaveBeenCalledOnce();
   });
 
@@ -107,9 +107,10 @@ describe('native file command leaf adapters', () => {
     expect(host.confirmDocumentReplacement).toHaveBeenCalledOnce();
   });
 
-  it('keeps upstream HWPX and PDF command metadata while overriding only native execute', () => {
+  it('keeps upstream HWPX, PDF, and print command metadata', () => {
     expect(command('file:save-as-hwpx').label).toBe('Save HWPX');
     expect(command('file:print-to-pdf').label).toBe('PDF');
+    expect(command('file:print').label).toBe('Print');
   });
 });
 
