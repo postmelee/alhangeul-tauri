@@ -28,6 +28,7 @@ GitHub Issue: [#13](https://github.com/postmelee/alhangeul-tauri/issues/13)
 | 제품 기능 | 저장소 루트 | `README.md` | OK | Stage 5 실제 수용 범위만 반영 |
 | upstream 계약 | `docs/architecture/` | `docs/architecture/UPSTREAM.md` | OK | exact entry·허용 adapter·drift guard |
 | 로컬 폰트 | `docs/architecture/` | `docs/architecture/LOCAL_FONTS.md` | OK | 구현 경로 변경 시에만 보정 |
+| 번들 폰트 자산·고지 | `assets/fonts/` | `assets/fonts/pdf/`, `assets/fonts/licenses/`, `assets/fonts/FONTS.md` | Stage 6.6 예정 | 원본 파일·release tag·SHA-256·저작권·라이선스 기록 |
 | release gate | `docs/operations/` | `docs/operations/DESKTOP_RELEASE.md` | OK | Stage 6 증적·#9 재개 조건 |
 | 단계·최종 보고 | `mydocs/working/`, `mydocs/report/` | `task_m010_13_stage{1..6}.md`, `_report.md` | OK | task 산출물 |
 
@@ -317,6 +318,51 @@ finalizer 결함이 아니라 변환 전에 발생한 native 저장 경로 결�
   artifact는 CSP 화면 통과 참고로만 남기고 최종 후보 증거로 재사용하지 않는다.
 
 보정 commit 메시지는 `Task #13 [Stage 6.5]: Linux AppImage 절대 저장 기본 경로 보정`으로 고정한다.
+
+### Stage 6.6 — 번들 한글 fallback과 searchable PDF 판정 보정
+
+Stage 6.5 exact-SHA `582ca9537bdaefe3b649486cfffeaa5d1aa671bc`는 CI와 Windows/Linux
+native build·artifact inventory를 통과했고 Linux exact AppDir에서 PDF/HWPX/HWP 저장도 성공했다.
+그러나 system CJK font가 없는 최소 Linux에서는 PDF 변환 로그에 `함초롬바탕, 바탕, serif`,
+`함초롬돋움, 맑은 고딕, sans-serif` 등의 font match 실패가 반복됐고, 4페이지 PDF가 생성돼도
+본문 한글이 누락되며 `pdffonts`에 font가 없고 `pdftotext`가 page separator만 반환했다. Noto CJK를
+system에 설치한 재검증도 일부 텍스트만 복원돼, 현재 `svg2pdf(embed_text: true)` 성공 여부만으로
+`searchable`을 확정하는 판정은 Stage 6 수용 기준을 충족하지 못한다. 같은 최소 환경에서 메뉴·리본·
+모달 한글이 네모로 표시된 현상은 WebView UI fallback 문제로 분리하되, 오프라인 bundle이 이미 가진
+Noto Sans KR WOFF2를 명시적 UI fallback으로 사용하는 범위까지 함께 검증한다. 작업지시자는
+2026-08-08 Stage 6.6 계획 진입을 승인했다.
+
+- PDF용 원본은 `notofonts/noto-cjk`의 공식 release tag에 있는 KR subset OTF Regular 두 개만
+  `assets/fonts/pdf/`에 둔다. Sans는 `Sans2.004/Sans/SubsetOTF/KR/NotoSansKR-Regular.otf`,
+  Serif는 `Serif2.003/Serif/SubsetOTF/KR/NotoSerifKR-Regular.otf`를 변환·개명 없이 사용한다.
+  구현 시 내려받은 원본 SHA-256을 `assets/fonts/FONTS.md`에 고정하며, 다른 proprietary·OS·vendor
+  폰트나 전체 weight 묶음은 추가하지 않는다.
+- upstream 원본 OFL 1.1과 저작권 고지는 `assets/fonts/licenses/`에 사람이 읽을 수 있는 원문으로
+  보존한다. `assets/fonts/FONTS.md`는 기존 웹폰트 목록에 더해 파일별 용도, source URL, release tag,
+  SHA-256, 라이선스 파일을 manifest로 기록한다. 제품 폰트 정책은 기존 공식 위치인
+  `docs/architecture/LOCAL_FONTS.md`만 보정하고 새 문서 루트나 `mydocs/manual` 문서를 만들지 않는다.
+- Rust PDF font database는 system·허용 local font를 먼저 유지하고, 두 번들 OTF를 항상 마지막
+  fallback으로 load한다. generic serif/sans 기본값은 실제 load된 번들 family로 지정해 system CJK
+  font가 전혀 없어도 SVG의 한글 `<text>`가 parse 단계에서 조용히 삭제되지 않게 한다. PDF 전용
+  OTF는 앱의 authoring font 목록이나 사용자 local-font 경로로 노출하지 않는다.
+- PDF job은 원본 SVG의 text 존재와 변환 결과의 searchable 근거를 함께 점검한다. 한글 text node가
+  font match 실패로 사라지거나 text embedding 결과를 확인할 수 없으면 `searchable` 성공으로
+  반환하지 않는다. 안전하게 입증할 수 있는 범위에서는 명시적 오류 또는 기존
+  `outlined-fallback` 경고로 강등하며, source 문서 상태·임시 파일 정리·atomic target 계약은 바꾸지 않는다.
+- Studio UI는 기존 `assets/fonts/NotoSansKR-Regular.woff2`를 제품 전용 `@font-face`와 UI font chain의
+  마지막 CJK fallback으로 연결한다. upstream 문서 글꼴 치환·CanvasKit font loader는 변경하지 않고,
+  메뉴·리본·status bar·native validation modal 같은 chrome text에만 적용한다. 이 보정은 Windows의
+  Malgun Gothic과 일반 Ubuntu Desktop의 system UI font 우선순위를 유지해야 한다.
+- focused test는 system font를 load하지 않은 `fontdb`에서도 serif/sans 한글 SVG text가 살아 있고
+  번들 family가 선택되는지, 번들 자산·license·manifest가 서로 일치하는지, UI fallback CSS가 exact
+  WOFF2를 참조하는지를 고정한다. 플랫폼 중립 gate 뒤 새 exact SHA를 게시하고 CI/native workflow를
+  모두 재실행한다.
+- Linux x64 exact bundle은 CJK system font가 없는 최소 환경에서 앱을 재시작해 UI 한글 비깨짐,
+  PDF 페이지·시각·`pdffonts`·`pdftotext`·선택·검색을 확인한다. 일반 Ubuntu 환경에서도 system font
+  우선과 시각 회귀가 없는지 확인한다. Windows에서는 기존 메뉴/PDF/HWP/HWPX 동작과 PDF 한글
+  검색을 회귀검증한다. 이 gate를 통과하기 전 Stage 6 또는 Task #13을 완료로 판정하지 않는다.
+
+보정 commit 메시지는 `Task #13 [Stage 6.6]: 번들 한글 fallback과 searchable PDF 판정 보정`으로 고정한다.
 
 ## 공통 검증·의존성
 

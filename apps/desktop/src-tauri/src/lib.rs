@@ -1,3 +1,4 @@
+mod bundled_pdf_fonts;
 mod commands;
 mod font_catalog;
 #[cfg(target_os = "linux")]
@@ -5,6 +6,7 @@ mod linux_runtime;
 mod pdf_export;
 mod pdf_font_fallbacks;
 mod pdf_jobs;
+mod pdf_text_audit;
 mod pending_open;
 mod recent_documents;
 mod state;

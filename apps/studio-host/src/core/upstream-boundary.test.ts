@@ -1,4 +1,5 @@
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -170,6 +171,48 @@ describe('upstream Studio override boundary', () => {
       expect(productStyle).toContain(`html:not(.alhangeul-toolbar-ready) ${selector}`);
     }
     expect(productStyle).toContain('.alhangeul-toolbar-hidden');
+  });
+
+  it('pins redistributable PDF fonts and keeps the UI fallback in the web bundle', () => {
+    const fontAssets = [
+      {
+        path: 'assets/fonts/pdf/NotoSansKR-Regular.otf',
+        sha256: '69975a0ac8472717870aefeab0a4d52739308d90856b9955313b2ad5e0148d68',
+        license: 'assets/fonts/licenses/NotoSansKR-OFL-1.1.txt',
+      },
+      {
+        path: 'assets/fonts/pdf/NotoSerifKR-Regular.otf',
+        sha256: '5ea012e15cb7eacc1f680aee1703f3b164791b1443ea3e52b65080cca5d179cf',
+        license: 'assets/fonts/licenses/NotoSerifKR-OFL-1.1.txt',
+      },
+    ] as const;
+    const manifest = readFileSync(resolve(repositoryRoot, 'assets/fonts/FONTS.md'), 'utf8');
+    const desktopConfig = JSON.parse(readFileSync(resolve(
+      repositoryRoot,
+      'apps/desktop/src-tauri/tauri.conf.json',
+    ), 'utf8')) as { bundle: { resources: Record<string, string> } };
+    const productStyle = readFileSync(resolve(
+      repositoryRoot,
+      'apps/studio-host/src/style.css',
+    ), 'utf8');
+
+    for (const asset of fontAssets) {
+      const bytes = readFileSync(resolve(repositoryRoot, asset.path));
+      expect(createHash('sha256').update(bytes).digest('hex')).toBe(asset.sha256);
+      expect(readFileSync(resolve(repositoryRoot, asset.license), 'utf8'))
+        .toContain('SIL OPEN FONT LICENSE Version 1.1');
+      expect(manifest).toContain(`\`${asset.path.replace('assets/fonts/', '')}\``);
+      expect(manifest).toContain(`\`${asset.sha256}\``);
+      expect(desktopConfig.bundle.resources[`../../../${asset.license}`])
+        .toBe(`licenses/fonts/${asset.license.slice(asset.license.lastIndexOf('/') + 1)}`);
+    }
+    expect(desktopConfig.bundle.resources['../../../assets/fonts/FONTS.md'])
+      .toBe('licenses/fonts/FONTS.md');
+    expect(productStyle).toContain("font-family: 'Alhangeul UI Fallback'");
+    expect(productStyle).toContain("url('./fonts/NotoSansKR-Regular.woff2')");
+    expect(productStyle).toMatch(
+      /'Malgun Gothic', 'Segoe UI',\s*'Alhangeul UI Fallback'/,
+    );
   });
 
   it('keeps the Stage 3 native WasmBridge fork and command shadows physically absent', () => {

@@ -1,8 +1,27 @@
+@font-face {
+  font-family: 'Alhangeul UI Fallback';
+  src: url('./fonts/NotoSansKR-Regular.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+:root {
+  --alhangeul-font-family-ui: '맑은 고딕', 'Malgun Gothic', 'Segoe UI',
+    'Alhangeul UI Fallback', sans-serif;
+  --font-family-ui: var(--alhangeul-font-family-ui) !important;
+}
+
 button,
 input,
 select,
 textarea {
   font-family: inherit;
+}
+
+.style-bar,
+.status-bar {
+  font-family: var(--alhangeul-font-family-ui) !important;
 }
 
 /* Tauri production CSP의 nonce/hash는 upstream inline display:none을 차단할 수 있다. */

@@ -41,6 +41,11 @@
       "../../../assets/logo/logo-512.png",
       "../../../assets/logo/favicon.ico"
     ],
+    "resources": {
+      "../../../assets/fonts/FONTS.md": "licenses/fonts/FONTS.md",
+      "../../../assets/fonts/licenses/NotoSansKR-OFL-1.1.txt": "licenses/fonts/NotoSansKR-OFL-1.1.txt",
+      "../../../assets/fonts/licenses/NotoSerifKR-OFL-1.1.txt": "licenses/fonts/NotoSerifKR-OFL-1.1.txt"
+    },
     "fileAssociations": [
       {
         "ext": ["hwp"],

@@ -158,7 +158,9 @@ test('Alhangeul source save and PDF export keep format and current SVG boundarie
   assert.doesNotMatch(commands, /prepare_staged_hwp_pdf_export/);
   assert.doesNotMatch(commands, /export_pdf_from_hwp_path/);
   assert.match(state, /DocumentFormat::from_bytes\(&bytes\)/);
-  assert.match(pdfExport, /render_pdf\(svg_paths, true\)/);
+  assert.match(pdfExport, /let pages = prepare_pdf_pages\(svg_paths\)\?/);
+  assert.match(pdfExport, /render_pdf\(&pages, true\)/);
+  assert.match(pdfExport, /pdf_has_to_unicode\(&bytes\)/);
   assert.match(pdfExport, /PdfTextMode::OutlinedFallback/);
 });
 
