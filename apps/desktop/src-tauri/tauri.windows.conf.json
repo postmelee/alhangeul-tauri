@@ -2,7 +2,6 @@
   "app": {
     "windows": [
       {
-        "create": false,
         "label": "main",
         "title": "Alhangeul",
         "url": "index.html",

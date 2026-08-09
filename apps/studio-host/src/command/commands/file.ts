@@ -3,6 +3,7 @@ import {
   fileCommands as upstreamFileCommands,
 } from '@upstream/command/commands/file';
 import type { CommandDef, CommandServices } from '@upstream/command/types';
+import { printDirectlyFromPageSurface } from '../direct-print';
 import { getDesktopHost } from '../../core/desktop-host';
 import { isTauriRuntime } from '../../core/platform';
 import { resolveDesktopRecentPath } from '../../recent/recent-store';
@@ -53,6 +54,9 @@ const desktopExecutors = new Map<string, CommandDef['execute']>([
   }],
   ['file:print-to-pdf', async () => {
     await runDesktopAction('PDF 저장', () => getDesktopHost().exportCurrentPdf());
+  }],
+  ['file:print', async (services) => {
+    await runDesktopAction('인쇄', () => printDirectlyFromPageSurface(services));
   }],
 ]);
 

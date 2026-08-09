@@ -121,6 +121,36 @@ exact Windows 또는 Linux에서 `window.open()`이 null을 반환하거나 prev
 - native 파일 책임은 `windows.rs`의 editor lifecycle, `window_geometry.rs`의 work-area 계산, `print_preview.rs`의 제한적 popup host로 분리해 파일 300 LOC 권장 상한을 지킨다.
 - popup lifecycle·title·close·반복 인쇄를 native test와 exact GUI로 재검증한다.
 
+### Stage 2.2 — Tauri hidden page surface 직접 인쇄
+
+2026-08-09 Windows exact 후보에서 Stage 2.1의 제한적 popup host가 정상 동작하고 별도 preview 창에서 실제 인쇄까지 완료됨을 확인했다. 다만 작업지시자는 Alhangeul preview를 한 번 더 거치지 않고 Windows 시스템 인쇄 대화상자로 바로 진입하는 UX를 요청했다. 이는 popup 차단 회복과 별개의 새 기능이 아니라 같은 `file:print` acceptance gate의 후속 보정이므로 Issue #15 범위에서 처리한다.
+
+- browser의 upstream `file:print`와 visible `print.html` preview는 그대로 유지한다.
+- Tauri에서만 local leaf adapter가 upstream의 `createPrintSurface`, `createPrintPage`, `buildPrintStyleText`/`appendPrintStyle`, `appendSvgPage`, `waitForPrintSurfaceReady`를 재사용한다. production에서는 Tauri가 정적 `print.html` style에 부여한 CSP nonce를 보존하도록 기존 style element의 내용만 교체한다.
+- adapter는 upstream `renderPageSvgWithProfile(page, 'print')` 결과를 hidden same-origin iframe에 조립하고 그 surface의 `window.print()`를 호출한다. editor WebView 전체나 Rust `WebviewWindow::print`는 사용하지 않는다.
+- local이 소유하는 범위는 Tauri command 분기, 명시적 출력 전 deferred pagination flush, 진행 상태, hidden surface lifecycle뿐이다. pagination, page SVG, print stylesheet와 page DOM primitive는 upstream 소유를 유지한다.
+- 별도 popup이 더 이상 필요하지 않으므로 `print_preview.rs`, editor builder의 `on_new_window`, initial main 수동 생성과 config의 `create: false`를 제거한다. Stage 2.1에서 분리한 공용 `window_geometry.rs`는 dynamic editor lifecycle에 계속 사용한다.
+- hidden `print.html`을 같은 출처 iframe으로 host할 수 있도록 `frame-ancestors`는 `'none'`에서 `'self'`로만 최소 완화한다. upstream 동적 iframe inline style이 nonce 정책에서 무시돼도 surface가 노출되지 않도록 제품 외부 CSS의 `#rhwp-print-surface` 규칙을 함께 둔다.
+- Windows exact 후보에서는 `인쇄`가 별도 Alhangeul preview 없이 시스템 대화상자를 직접 여는지 수동 검증한다. Linux는 동일 구현의 build/native gate까지 수행하고 GUI 인쇄 결과는 실제 환경 검증 전까지 미확정으로 둔다.
+
+검증:
+
+```bash
+pnpm --filter @postmelee/alhangeul-studio-host test -- src/command/direct-print.test.ts src/command/commands/file.test.ts src/core/upstream-boundary.test.ts
+pnpm run test:studio
+pnpm run build:studio
+pnpm run check:product-boundary
+git diff --check
+```
+
+Rust unit test·Clippy·Tauri build는 지원 Windows/Linux exact workflow에서 실행한다.
+
+커밋:
+
+```text
+Task #15 [Stage 2.2]: Tauri hidden page surface 직접 인쇄
+```
+
 ## Stage 3 — 플랫폼 중립 회귀와 공식 문서 정렬
 
 ### 산출물
@@ -225,6 +255,7 @@ Stage 4 보고서는 수동 Windows 결과 전에는 “다운로드 후보 준�
 ## 위험과 대응
 
 - **popup runtime 차이**: browser에서 동작하는 `window.open()`이 Tauri WebView2/WebKitGTK에서 차단될 수 있다. 먼저 최소 계승 후보를 검증하고, 실제 실패 증거가 있을 때만 공식 Tauri `on_new_window` fallback을 추가한다.
+- **hidden surface lifecycle**: `window.print()` 반환 뒤 surface를 정리하는 순서는 upstream direct-print 경로와 동일하게 유지한다. Windows/Linux WebView 차이는 exact native workflow와 GUI gate로 구분해 기록한다.
 - **same-origin realm**: preview `Window`의 DOM 접근이 끊기면 upstream setup이 실패한다. Tauri related view/environment 계약을 사용하되 페이지 조립은 upstream에 남긴다.
 - **CSP**: `print.html`과 동적 print style이 production CSP에 막힐 수 있다. exact 후보에서 computed style과 페이지 visibility를 확인하고 필요하면 local external CSS/non-inline state만 보충한다.
 - **의존 branch**: #13 merge 전 #15를 devel PR로 만들지 않으며, candidate SHA가 #13 base를 포함한다고 inventory에 명시한다.

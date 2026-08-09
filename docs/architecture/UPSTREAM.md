@@ -45,7 +45,7 @@ upstream embed runtime을 상속하는 local leaf wrapper는 `getDesktopStudioHa
 
 PDF command는 upstream `file:print-to-pdf` 메뉴 위치와 활성 규칙을 유지하되 실행만 Alhangeul이 소유한다. active handler의 `getPageSvg(page)` 결과를 페이지 순서대로 native PDF job에 전달하며 staged HWP를 재파싱하지 않는다. PDF 성공·실패·취소는 source path·format·revision·dirty·recent와 upstream recovery draft를 바꾸지 않고 `notifySaved`를 호출하지 않는다.
 
-실제 인쇄 `file:print`는 local native command로 교체하지 않고 upstream execute를 상속한다. pagination flush, 모든 페이지의 `profile=print` SVG 생성, `print.html` same-origin 미리보기 document와 최종 preview `window.print()`는 upstream이 소유한다. Tauri runtime이 표준 `window.open()`을 host하지 못하는 것이 exact bundle에서 확인될 때만 Alhangeul이 전용 WebviewWindow 생성 경계를 보충할 수 있으며, 이 경우에도 페이지 조립·preview DOM·style을 복제하지 않는다. editor Studio WebView 전체를 직접 인쇄하거나 direct PDF pipeline을 실제 인쇄 대신 사용하는 것은 허용하지 않는다.
+실제 인쇄 `file:print`의 페이지 pagination, 모든 페이지의 `profile=print` SVG, print stylesheet와 page DOM primitive는 upstream이 소유한다. 일반 browser는 upstream execute와 visible `print.html` preview를 그대로 사용한다. Tauri에서는 local leaf adapter가 upstream `createPrintSurface`, `createPrintPage`, `buildPrintStyleText`/`appendPrintStyle`, `appendSvgPage`, `waitForPrintSurfaceReady`를 조합해 hidden same-origin surface를 만들고 그 surface의 `window.print()`를 호출하여 별도 Alhangeul preview 없이 system print dialog로 진입한다. Tauri asset CSP의 nonce를 유지하기 위해 정적 `print.html` style element의 내용만 교체하며 `frame-ancestors 'self'`는 외부 origin이 아닌 동일 bundle iframe만 허용한다. local 책임은 Tauri command 분기, 명시적 출력 전 pagination flush, 진행 상태와 surface lifecycle로 제한한다. editor Studio WebView 전체를 직접 인쇄하거나 Rust `WebviewWindow::print`, direct PDF pipeline을 실제 인쇄 대신 사용하는 것은 허용하지 않는다.
 
 ## 갱신 자동화 경계
 

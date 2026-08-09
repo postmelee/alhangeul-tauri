@@ -6,6 +6,7 @@ import {
 
 const upstreamOpen = vi.hoisted(() => vi.fn());
 const upstreamPrint = vi.hoisted(() => vi.fn());
+const directPrint = vi.hoisted(() => vi.fn());
 const upstreamConfirm = vi.hoisted(() => vi.fn());
 const resolveRecentPath = vi.hoisted(() => vi.fn());
 const host = vi.hoisted(() => ({
@@ -34,6 +35,7 @@ vi.mock('@upstream/command/commands/file', () => ({
   ],
 }));
 vi.mock('../../core/desktop-host', () => ({ getDesktopHost: () => host }));
+vi.mock('../direct-print', () => ({ printDirectlyFromPageSurface: directPrint }));
 vi.mock('../../recent/recent-store', () => ({
   resolveDesktopRecentPath: resolveRecentPath,
 }));
@@ -53,14 +55,14 @@ describe('native file command leaf adapters', () => {
     expect(host.openDocumentFromDialog).not.toHaveBeenCalled();
   });
 
-  it('routes native file actions while keeping upstream page-surface printing', async () => {
+  it('routes native file actions and Tauri print through the hidden page surface', async () => {
     installTauriWindow();
     host.openDocumentFromDialog.mockResolvedValue({ fileName: 'opened.hwp', pageCount: 2 });
     host.saveCurrent.mockResolvedValue({ docId: 'doc' });
     host.exportCurrentPdf.mockResolvedValue({
       path: '/documents/export.pdf', pageCount: 2, textMode: 'searchable',
     });
-    upstreamPrint.mockResolvedValue(undefined);
+    directPrint.mockResolvedValue(undefined);
     host.createNewWindow.mockResolvedValue('editor-2');
 
     await command('file:open').execute(services() as never);
@@ -80,8 +82,18 @@ describe('native file command leaf adapters', () => {
       ['hwpx', true],
     ]);
     expect(host.exportCurrentPdf).toHaveBeenCalledOnce();
-    expect(upstreamPrint).toHaveBeenCalledOnce();
+    expect(directPrint).toHaveBeenCalledOnce();
+    expect(upstreamPrint).not.toHaveBeenCalled();
     expect(host.createNewWindow).toHaveBeenCalledOnce();
+  });
+
+  it('keeps the upstream visible print preview outside Tauri', async () => {
+    upstreamPrint.mockResolvedValue(undefined);
+
+    await command('file:print').execute(services() as never);
+
+    expect(upstreamPrint).toHaveBeenCalledOnce();
+    expect(directPrint).not.toHaveBeenCalled();
   });
 
   it('resolves opaque recent ids inside the adapter before native open', async () => {

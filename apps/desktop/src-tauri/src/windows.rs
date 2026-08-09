@@ -9,26 +9,6 @@ use tauri::{
 };
 use uuid::Uuid;
 
-pub fn create_initial_editor_window(app: &AppHandle) -> Result<(), String> {
-    let config = app
-        .config()
-        .app
-        .windows
-        .iter()
-        .find(|config| config.label == "main")
-        .ok_or_else(|| "main 창 설정을 찾을 수 없습니다.".to_string())?;
-    let builder = WebviewWindowBuilder::from_config(app, config)
-        .map_err(|e| format!("main 창 설정 적용 실패: {}", e))?
-        .on_new_window(crate::print_preview::handler(app));
-    let window = builder
-        .build()
-        .map_err(|e| format!("main 창 생성 실패: {}", e))?;
-    install_editor_window_minimum(&window);
-    attach_document_drop_handler(app, &window);
-
-    Ok(())
-}
-
 pub fn create_editor_window(app: &AppHandle) -> Result<String, String> {
     let label = new_editor_window_label();
     create_editor_window_with_label(app, &label)?;
@@ -49,8 +29,7 @@ pub fn create_editor_window_with_label(app: &AppHandle, label: &str) -> Result<(
         .prevent_overflow_with_margin(Size::Logical(LogicalSize::new(
             NEW_WINDOW_WORK_AREA_MARGIN,
             NEW_WINDOW_WORK_AREA_MARGIN,
-        )))
-        .on_new_window(crate::print_preview::handler(app));
+        )));
     let builder = if let Some((x, y)) = geometry.position {
         builder.position(x, y)
     } else {

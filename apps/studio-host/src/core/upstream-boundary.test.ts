@@ -246,11 +246,16 @@ describe('upstream Studio override boundary', () => {
     expect(upstreamSurface).toContain("hostWindow.open(surfaceUrl, '_blank')");
   });
 
-  it('hosts only the upstream print surface in a related Tauri window', () => {
+  it('uses an upstream hidden page surface only for Tauri direct printing', () => {
     const desktopConfig = JSON.parse(readFileSync(resolve(
       repositoryRoot,
       'apps/desktop/src-tauri/tauri.conf.json',
-    ), 'utf8')) as { app: { windows: Array<{ label: string; create?: boolean }> } };
+    ), 'utf8')) as {
+      app: {
+        windows: Array<{ label: string; create?: boolean }>;
+        security: { csp: string; devCsp: string };
+      };
+    };
     const windowsConfig = JSON.parse(readFileSync(resolve(
       repositoryRoot,
       'apps/desktop/src-tauri/tauri.windows.conf.json',
@@ -263,19 +268,44 @@ describe('upstream Studio override boundary', () => {
       repositoryRoot,
       'apps/desktop/src-tauri/src/lib.rs',
     ), 'utf8');
+    const localFileCommand = readFileSync(resolve(
+      repositoryRoot,
+      'apps/studio-host/src/command/commands/file.ts',
+    ), 'utf8');
+    const directPrint = readFileSync(resolve(
+      repositoryRoot,
+      'apps/studio-host/src/command/direct-print.ts',
+    ), 'utf8');
+    const productStyle = readFileSync(resolve(
+      repositoryRoot,
+      'apps/studio-host/src/style.css',
+    ), 'utf8');
 
-    expect(desktopConfig.app.windows[0]).toMatchObject({ label: 'main', create: false });
-    expect(windowsConfig.app.windows[0]).toMatchObject({ label: 'main', create: false });
-    expect(nativeEntry).toContain('windows::create_initial_editor_window(app.handle())');
-    expect(nativeWindows.match(/\.on_new_window\(crate::print_preview::handler\(app\)\)/g))
-      .toHaveLength(2);
-    const printPreviewHost = readFileSync(resolve(
+    expect(desktopConfig.app.windows[0]).toMatchObject({ label: 'main' });
+    expect(desktopConfig.app.windows[0].create).toBeUndefined();
+    expect(desktopConfig.app.security.csp).toContain("frame-ancestors 'self'");
+    expect(desktopConfig.app.security.devCsp).toContain("frame-ancestors 'self'");
+    expect(windowsConfig.app.windows[0]).toMatchObject({ label: 'main' });
+    expect(windowsConfig.app.windows[0].create).toBeUndefined();
+    expect(nativeEntry).toContain('app.get_webview_window("main")');
+    expect(nativeEntry).not.toContain('create_initial_editor_window');
+    expect(nativeWindows).not.toContain('.on_new_window(');
+    expect(existsSync(resolve(
       repositoryRoot,
       'apps/desktop/src-tauri/src/print_preview.rs',
-    ), 'utf8');
-    expect(printPreviewHost).toContain('.window_features(features)');
-    expect(printPreviewHost).toContain('if !is_allowed_url(&url)');
-    expect(printPreviewHost).toContain('NewWindowResponse::Deny');
+    ))).toBe(false);
+
+    expect(localFileCommand).toContain("['file:print', async (services) => {");
+    expect(localFileCommand).toContain('printDirectlyFromPageSurface(services)');
+    expect(directPrint).toContain('createPrintSurface()');
+    expect(directPrint).toContain("renderPageSvgWithProfile(pageIndex, 'print')");
+    expect(directPrint).toContain('createPrintPage(');
+    expect(directPrint).toContain('appendPrintStyle(target, pages)');
+    expect(directPrint).toContain('buildPrintStyleText(pages)');
+    expect(directPrint).toContain('appendSvgPage(target, target.body, page)');
+    expect(directPrint).toContain('await waitForPrintSurfaceReady(surface)');
+    expect(directPrint).toContain('surface.window.print()');
+    expect(productStyle).toContain('#rhwp-print-surface');
   });
 
   it('pins the read-only source submodule to the resolved release commit', () => {
