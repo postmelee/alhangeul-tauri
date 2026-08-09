@@ -8,6 +8,7 @@ const appendSvgPage = vi.hoisted(() => vi.fn());
 const buildPrintStyleText = vi.hoisted(() => vi.fn(() => 'print css'));
 const createPrintSurface = vi.hoisted(() => vi.fn());
 const waitForPrintSurfaceReady = vi.hoisted(() => vi.fn());
+const hydrateDesktopPlatform = vi.hoisted(() => vi.fn(() => Promise.resolve('windows')));
 
 vi.mock('@upstream/command/print-pages', () => ({
   appendPrintStyle,
@@ -23,9 +24,12 @@ vi.mock('@upstream/command/print-surface', () => ({
   waitForPrintSurfaceReady,
 }));
 
+vi.mock('../core/platform', () => ({ hydrateDesktopPlatform }));
+
 describe('Tauri direct print surface', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    hydrateDesktopPlatform.mockResolvedValue('windows');
     installHostDocument();
   });
 
@@ -34,6 +38,8 @@ describe('Tauri direct print surface', () => {
     createPrintSurface.mockResolvedValue(surface);
     createPrintPage.mockImplementation((_svg, _info, index) => ({
       pageName: `page-${index}`,
+      className: `page-${index}`,
+      heightMm: 297.127,
     }));
     const inputHandler = {
       flushDeferredPaginationIfNeeded: vi.fn(),
@@ -51,14 +57,14 @@ describe('Tauri direct print surface', () => {
     expect(services.wasm.getPageInfo.mock.calls).toEqual([[0], [1]]);
     expect(createPrintPage).toHaveBeenCalledTimes(2);
     expect(buildPrintStyleText).toHaveBeenCalledWith([
-      { pageName: 'page-0' },
-      { pageName: 'page-1' },
+      { pageName: 'page-0', className: 'page-0', heightMm: 297.127 },
+      { pageName: 'page-1', className: 'page-1', heightMm: 297.127 },
     ]);
     expect(surface.bundledStyle.textContent).toBe('print css');
     expect(appendPrintStyle).not.toHaveBeenCalled();
     expect(appendSvgPage.mock.calls.map((call) => call[2])).toEqual([
-      { pageName: 'page-0' },
-      { pageName: 'page-1' },
+      { pageName: 'page-0', className: 'page-0', heightMm: 297.127 },
+      { pageName: 'page-1', className: 'page-1', heightMm: 297.127 },
     ]);
     expect(waitForPrintSurfaceReady).toHaveBeenCalledWith(surface);
     expect(surface.window.print).toHaveBeenCalledOnce();
@@ -66,6 +72,26 @@ describe('Tauri direct print surface', () => {
     expect((globalThis.document as unknown as { title: string }).title).toBe('Alhangeul');
     expect(waitForPrintSurfaceReady.mock.invocationCallOrder[0])
       .toBeLessThan(surface.window.print.mock.invocationCallOrder[0]);
+  });
+
+  it('adds a one-pixel print-fragment tolerance only on Linux', async () => {
+    hydrateDesktopPlatform.mockResolvedValue('linux');
+    const surface = createSurface();
+    createPrintSurface.mockResolvedValue(surface);
+    createPrintPage.mockImplementation((_svg, _info, index) => ({
+      pageName: `page-${index}`,
+      className: `page-${index}`,
+      heightMm: index === 0 ? 297.127 : 210.079,
+    }));
+
+    await printDirectlyFromPageSurface(createServices());
+
+    expect(surface.bundledStyle.textContent).toContain('print css');
+    expect(surface.bundledStyle.textContent).toContain('@media print');
+    expect(surface.bundledStyle.textContent)
+      .toContain('.page-0 { height: calc(297.127mm - 1px); }');
+    expect(surface.bundledStyle.textContent)
+      .toContain('.page-1 { height: calc(210.079mm - 1px); }');
   });
 
   it('disposes the hidden surface when page assembly fails', async () => {
@@ -116,6 +142,7 @@ function createSurface() {
   const targetDocument = {
     documentElement: { lang: '' },
     head: { querySelector: vi.fn(() => bundledStyle) },
+    createElement: vi.fn(() => ({ textContent: '' })),
     body: { replaceChildren: vi.fn(), className: '' },
     title: '',
   };

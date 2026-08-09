@@ -13,8 +13,13 @@ import {
   type PrintSurface,
 } from '@upstream/command/print-surface';
 import type { CommandServices } from '@upstream/command/types';
+import {
+  hydrateDesktopPlatform,
+  type DesktopPlatform,
+} from '../core/platform';
 
 let printJobActive = false;
+const LINUX_PRINT_FRAGMENT_TOLERANCE_PX = 1;
 
 export async function printDirectlyFromPageSurface(
   services: CommandServices,
@@ -33,11 +38,12 @@ export async function printDirectlyFromPageSurface(
     flushDeferredPagination(services);
     const pageCount = wasm.pageCount;
     if (pageCount === 0) return;
+    const platform = await hydrateDesktopPlatform();
 
     setStatus(printProgressText('print', 0, pageCount));
     surface = await createPrintSurface();
     const printPages = await preparePrintPages(services, pageCount);
-    setupPrintDocument(surface.document, wasm.fileName, printPages);
+    setupPrintDocument(surface.document, wasm.fileName, printPages, platform);
     await waitForPrintSurfaceReady(surface);
 
     setStatus('시스템 인쇄 대화상자 여는 중...');
@@ -45,7 +51,7 @@ export async function printDirectlyFromPageSurface(
     document.title = pdfPrintTitle(wasm.fileName);
     console.info(
       `[file:print] 시스템 인쇄 호출 `
-      + `(surface=iframe, pages=${pageCount}, profile=print)`,
+      + `(surface=iframe, pages=${pageCount}, profile=print, platform=${platform})`,
     );
     surface.window.print();
   } finally {
@@ -89,10 +95,11 @@ function setupPrintDocument(
   target: Document,
   fileName: string,
   pages: PrintPage[],
+  platform: DesktopPlatform,
 ): void {
   target.documentElement.lang = 'ko';
   target.title = pdfPrintTitle(fileName);
-  applyPrintStyle(target, pages);
+  applyPrintStyle(target, pages, platform);
 
   target.body.replaceChildren();
   target.body.className = '';
@@ -101,14 +108,45 @@ function setupPrintDocument(
   }
 }
 
-function applyPrintStyle(target: Document, pages: PrintPage[]): void {
+function applyPrintStyle(
+  target: Document,
+  pages: PrintPage[],
+  platform: DesktopPlatform,
+): void {
+  const linuxFragmentOverride = buildLinuxPrintFragmentOverride(pages, platform);
   const bundledStyle = target.head.querySelector('style');
   if (bundledStyle) {
     // Tauri가 print.html의 정적 style에 부여한 CSP nonce를 유지한다.
-    bundledStyle.textContent = buildPrintStyleText(pages);
+    bundledStyle.textContent = buildPrintStyleText(pages) + linuxFragmentOverride;
     return;
   }
   appendPrintStyle(target, pages);
+  if (linuxFragmentOverride) {
+    const overrideStyle = target.createElement('style');
+    overrideStyle.textContent = linuxFragmentOverride;
+    target.head.appendChild(overrideStyle);
+  }
+}
+
+function buildLinuxPrintFragmentOverride(
+  pages: PrintPage[],
+  platform: DesktopPlatform,
+): string {
+  if (platform !== 'linux') return '';
+  const fragmentRules = pages
+    .map((page) => (
+      `.${page.className} { `
+      + `height: calc(${page.heightMm}mm - ${LINUX_PRINT_FRAGMENT_TOLERANCE_PX}px); `
+      + '}'
+    ))
+    .join('\n');
+
+  return `
+@media print {
+  /* WebKitGTK fragments a full-height page onto an extra blank sheet. */
+  ${fragmentRules}
+}
+`;
 }
 
 function setStatus(message: string): void {

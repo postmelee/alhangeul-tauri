@@ -21,6 +21,7 @@ Stage 1 사전 조사에서 rhwp v0.8.2의 `file:print`는 사용자 동기 클�
 |---|---|---|---|
 | 1 | upstream 인쇄 소유 경계와 drift guard | `upstream-boundary.test.ts`, 조사·계획 | upstream page SVG/preview command source 계약 |
 | 2 | editor 직접 인쇄 override 제거 | file command·desktop host·Rust command와 focused test | Tauri에서도 upstream `file:print` execute 호출 |
+| 2.3 | Linux WebKitGTK 빈 쪽 보정 | 최소 재현·Tauri print style adapter·focused test | 실제 6쪽 문서가 system print에서도 6쪽 |
 | 3 | 플랫폼 중립 회귀와 공식 문서 정렬 | 전체 test/build, `UPSTREAM.md`, release gate | product/upstream/Studio 전체 gate |
 | 4 | exact-SHA Windows/Linux 후보 | `publish/task15` 후보·CI/native artifact | Windows 다운로드와 수동 인쇄 handoff |
 
@@ -149,6 +150,53 @@ Rust unit test·Clippy·Tauri build는 지원 Windows/Linux exact workflow에서
 
 ```text
 Task #15 [Stage 2.2]: Tauri hidden page surface 직접 인쇄
+```
+
+### Stage 2.3 — Linux WebKitGTK 빈 쪽 삽입 보정
+
+2026-08-09 exact Linux x64 후보 `33e6287e397b6aee47963ef5460e7d15ae67b904`를
+Ubuntu 24.04.4 x64, WebKitGTK 2.52.3, GTK 3.24.41에서 GUI 검증했다. 별도
+Alhangeul preview 없이 system print dialog가 직접 열리고 취소·재호출·출력은
+성공했지만, 6쪽 `biz_plan.hwp`가 CUPS-PDF와 GTK `Print to File` 양쪽에서
+12쪽으로 출력되고 원본 각 쪽 뒤에 빈 A4 쪽이 삽입됐다. 같은 surface를 사용하는
+`파일 > PDF로 저장`은 정상 6쪽이므로 프린터나 page SVG가 아니라 WebKitGTK
+인쇄 pagination과 upstream print stylesheet 조합의 문제로 범위를 좁힌다.
+
+- 먼저 동일 WebKitGTK에서 고정 page size, named `@page`, `break-after: page`,
+  `page-break-after: always`을 독립적으로 켜고 끄는 최소 HTML을 실제
+  `Print to File`로 출력해 빈 쪽을 직접 유발하는 규칙을 확정한다.
+- 원인이 확정되기 전에는 print stylesheet를 변경하지 않는다. Chromium/WebView2
+  추정만으로 Windows 동작을 바꾸지 않는다.
+- `third_party/rhwp`는 읽기 전용이므로 수정하지 않는다. browser의 upstream visible
+  preview도 그대로 둔다. 보정은 Tauri hidden surface에 적용하는 adapter leaf로
+  제한하고 direct PDF/HWP/HWPX 저장 데이터는 건드리지 않는다.
+- 플랫폼 차등이 필요하면 Tauri runtime의 실제 desktop platform을 명시적으로
+  사용한다. user agent 추정이나 CSS engine sniffing은 사용하지 않는다.
+- focused test는 upstream stylesheet를 그대로 계승하는 Windows 계약과 Linux에서만
+  확정된 충돌 규칙을 제거·대체하는 계약, 페이지 수·named page size·마지막 페이지
+  break 계약을 고정한다.
+- exact Windows/Linux native 후보를 다시 만들고 Windows는 기존 system dialog
+  직접 진입을 회귀 확인한다. Linux는 실제 6쪽 문서가 CUPS-PDF와 GTK
+  `Print to File`에서 모두 6쪽이고 빈 쪽이 없으며, direct PDF가 계속 searchable
+  6쪽인지 GUI로 확인한다.
+
+검증:
+
+```bash
+pnpm --filter @postmelee/alhangeul-studio-host test -- src/command/direct-print.test.ts src/core/upstream-boundary.test.ts
+pnpm run test:studio
+pnpm run build:studio
+pnpm run check:product-boundary
+git diff --check
+```
+
+Rust unit test·Clippy·Tauri build는 지원 Windows/Linux exact workflow에서 실행한다.
+최소 재현 또는 exact Linux GUI에서 빈 쪽이 남으면 Stage 2.3을 완료로 처리하지 않는다.
+
+커밋:
+
+```text
+Task #15 [Stage 2.3]: Linux WebKitGTK 빈 쪽 삽입 보정
 ```
 
 ## Stage 3 — 플랫폼 중립 회귀와 공식 문서 정렬
