@@ -8,8 +8,10 @@ mod pdf_font_fallbacks;
 mod pdf_jobs;
 mod pdf_text_audit;
 mod pending_open;
+mod print_preview;
 mod recent_documents;
 mod state;
+mod window_geometry;
 mod windows;
 
 use std::path::{Path, PathBuf};
@@ -51,10 +53,7 @@ pub fn run() {
         .setup(|app| {
             app.set_menu(tauri::menu::Menu::new(app)?)?;
             queue_open_paths(app.handle(), startup_document_paths());
-            if let Some(window) = app.get_webview_window("main") {
-                windows::install_editor_window_minimum(&window);
-                windows::attach_document_drop_handler(app.handle(), &window);
-            }
+            windows::create_initial_editor_window(app.handle()).map_err(std::io::Error::other)?;
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

@@ -246,6 +246,38 @@ describe('upstream Studio override boundary', () => {
     expect(upstreamSurface).toContain("hostWindow.open(surfaceUrl, '_blank')");
   });
 
+  it('hosts only the upstream print surface in a related Tauri window', () => {
+    const desktopConfig = JSON.parse(readFileSync(resolve(
+      repositoryRoot,
+      'apps/desktop/src-tauri/tauri.conf.json',
+    ), 'utf8')) as { app: { windows: Array<{ label: string; create?: boolean }> } };
+    const windowsConfig = JSON.parse(readFileSync(resolve(
+      repositoryRoot,
+      'apps/desktop/src-tauri/tauri.windows.conf.json',
+    ), 'utf8')) as { app: { windows: Array<{ label: string; create?: boolean }> } };
+    const nativeWindows = readFileSync(resolve(
+      repositoryRoot,
+      'apps/desktop/src-tauri/src/windows.rs',
+    ), 'utf8');
+    const nativeEntry = readFileSync(resolve(
+      repositoryRoot,
+      'apps/desktop/src-tauri/src/lib.rs',
+    ), 'utf8');
+
+    expect(desktopConfig.app.windows[0]).toMatchObject({ label: 'main', create: false });
+    expect(windowsConfig.app.windows[0]).toMatchObject({ label: 'main', create: false });
+    expect(nativeEntry).toContain('windows::create_initial_editor_window(app.handle())');
+    expect(nativeWindows.match(/\.on_new_window\(crate::print_preview::handler\(app\)\)/g))
+      .toHaveLength(2);
+    const printPreviewHost = readFileSync(resolve(
+      repositoryRoot,
+      'apps/desktop/src-tauri/src/print_preview.rs',
+    ), 'utf8');
+    expect(printPreviewHost).toContain('.window_features(features)');
+    expect(printPreviewHost).toContain('if !is_allowed_url(&url)');
+    expect(printPreviewHost).toContain('NewWindowResponse::Deny');
+  });
+
   it('pins the read-only source submodule to the resolved release commit', () => {
     const lock = readFileSync(resolve(repositoryRoot, 'rhwp-core.lock'), 'utf8');
     const lockCommit = lock.match(/^rhwp_commit = "([0-9a-f]{40})"$/m)?.[1];

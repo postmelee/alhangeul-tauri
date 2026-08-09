@@ -114,7 +114,11 @@ exact Windows 또는 Linux에서 `window.open()`이 null을 반환하거나 prev
 
 - `WebviewWindowBuilder::on_new_window`로 `print.html` 요청만 허용하고 다른 외부 URL은 거부한다.
 - Windows에서는 caller와 같은 WebView2 environment, Linux에서는 related view가 필요한 Tauri 계약을 따른다.
-- initial `main`과 동적 `main*` editor 모두 같은 builder helper로 만들어야 하므로 config 자동 창 생성 변경이 필요하면 구현계획서를 먼저 보정한다.
+- 2026-08-09 Windows exact 후보에서 upstream `window.open(print.html)`이 null을 반환하고 popup 차단 안내가 표시되어 이 조건이 충족됐다.
+- initial `main`은 `tauri.conf.json`과 `tauri.windows.conf.json`의 기존 window config에 `create: false`를 지정한 뒤 `WebviewWindowBuilder::from_config`로 수동 생성한다. 크기·제목·URL·Windows zoom hotkey metadata는 config에 그대로 보존한다.
+- initial `main`과 동적 `main*` editor 모두 동일한 제한적 `print_preview_handler`를 builder에 연결한다. handler는 production Tauri origin 또는 고정된 local dev origin의 정확한 `/print.html`만 허용하고, `window_features(features)`로 Windows WebView2 environment와 Linux related view를 계승한다.
+- preview window label은 요청마다 고유하게 만들고, preview가 전달한 document title을 native title에 반영한다. window 생성 실패와 허용되지 않은 URL은 `NewWindowResponse::Deny`로 닫힌 경계를 유지한다.
+- native 파일 책임은 `windows.rs`의 editor lifecycle, `window_geometry.rs`의 work-area 계산, `print_preview.rs`의 제한적 popup host로 분리해 파일 300 LOC 권장 상한을 지킨다.
 - popup lifecycle·title·close·반복 인쇄를 native test와 exact GUI로 재검증한다.
 
 ## Stage 3 — 플랫폼 중립 회귀와 공식 문서 정렬
