@@ -208,8 +208,8 @@ Task #15 Stage 3: 인쇄 소유 경계와 플랫폼 중립 gate 정렬
 - Stage 3 승인 commit을 `publish/task15`로 push하고 exact SHA를 고정한다.
 - CI와 `run_tests=true` native workflow를 실행해 Windows x64/x64 installer와 Linux 지원 bundle을 만든다.
 - artifact inventory와 SHA-256, head SHA를 확인하고 작업지시자에게 Windows x64 MSI·NSIS 다운로드 위치와 수동 검증 절차를 제공한다.
-- Windows 수동 gate는 단일·다중 페이지, 세로·가로, 한글, 반복 인쇄, 닫기, Microsoft Print to PDF, direct PDF 회귀를 포함한다.
-- 첫 exact 후보에서 upstream popup 차단이 관찰되면 Stage 2.x로 돌아가 새 commit·새 exact workflow를 만들고 실패 artifact는 최종 후보로 재사용하지 않는다.
+- Windows 수동 gate는 별도 Alhangeul preview 없이 system dialog 직접 진입, 단일·다중 페이지, 세로·가로, 한글, 취소·반복 인쇄, Microsoft Print to PDF, direct PDF 회귀를 포함한다.
+- exact 후보에서 system dialog 미진입 또는 빈·잘못된 page surface가 관찰되면 Stage 2.x로 돌아가 새 commit·새 exact workflow를 만들고 실패 artifact는 최종 후보로 재사용하지 않는다.
 
 ### 검증
 
@@ -256,7 +256,7 @@ Stage 4 보고서는 수동 Windows 결과 전에는 “다운로드 후보 준�
 
 - **popup runtime 차이**: browser에서 동작하는 `window.open()`이 Tauri WebView2/WebKitGTK에서 차단될 수 있다. 먼저 최소 계승 후보를 검증하고, 실제 실패 증거가 있을 때만 공식 Tauri `on_new_window` fallback을 추가한다.
 - **hidden surface lifecycle**: `window.print()` 반환 뒤 surface를 정리하는 순서는 upstream direct-print 경로와 동일하게 유지한다. Windows/Linux WebView 차이는 exact native workflow와 GUI gate로 구분해 기록한다.
-- **same-origin realm**: preview `Window`의 DOM 접근이 끊기면 upstream setup이 실패한다. Tauri related view/environment 계약을 사용하되 페이지 조립은 upstream에 남긴다.
+- **same-origin realm**: hidden iframe의 `print.html` DOM 접근이 끊기면 setup이 실패한다. CSP는 동일 bundle origin만 허용하고 페이지 조립 primitive는 upstream에 남긴다.
 - **CSP**: `print.html`과 동적 print style이 production CSP에 막힐 수 있다. exact 후보에서 computed style과 페이지 visibility를 확인하고 필요하면 local external CSS/non-inline state만 보충한다.
 - **의존 branch**: #13 merge 전 #15를 devel PR로 만들지 않으며, candidate SHA가 #13 base를 포함한다고 inventory에 명시한다.
 
