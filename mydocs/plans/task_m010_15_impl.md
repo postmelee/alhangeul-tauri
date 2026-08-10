@@ -180,6 +180,24 @@ Alhangeul preview 없이 system print dialog가 직접 열리고 취소·재호�
   `Print to File`에서 모두 6쪽이고 빈 쪽이 없으며, direct PDF가 계속 searchable
   6쪽인지 GUI로 확인한다.
 
+2026-08-11 첫 local exact 후보 `3688f80493fa2a6068282e224d61f07d29cd514c`의
+실제 GUI 재검증에서 1px 높이 tolerance만으로는 CUPS-PDF가 6쪽으로 통과했지만
+GTK `Print to File`은 12쪽과 교대 빈 쪽을 유지했다. 동일 GTK backend 최소 재현을
+확장한 결과, 같은 크기의 각 쪽에 서로 다른 named `@page`와 명시적
+`break-after`를 함께 적용하면 두 번 쪽이 나뉘며, 높이 축소만으로는 이를 제거할 수
+없음이 확인됐다. 같은 크기 문서를 default `@page` context로 전환하고 고유 named
+page를 해제한 뒤 기존 명시적 break와 1px tolerance를 함께 적용하면 정확한 쪽 수로
+출력된다.
+
+- Linux에서 모든 쪽의 물리 크기가 같을 때만 adapter가 default `@page` size와
+  `page: auto`를 덧붙인다. upstream의 고유 `pageName`은 SVG ID namespace에 계속
+  사용하며 page DOM이나 SVG payload를 바꾸지 않는다.
+- 혼합 크기 문서는 local이 하나의 크기로 평탄화하지 않고 upstream named page
+  context를 보존한다. 실제 GTK print dialog의 혼합 media 처리 한계는 이번 동일 크기
+  빈 쪽 회귀와 분리해 기록하며, 세로·가로 각각의 동일 크기 문서 gate를 유지한다.
+- 폐기 후보 `3688f80`의 CUPS-PDF 성공만으로 Stage 2.3을 완료하지 않는다. 보정 후
+  새 exact SHA에서 CUPS-PDF와 GTK `Print to File`을 모두 다시 실행한다.
+
 검증:
 
 ```bash

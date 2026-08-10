@@ -133,20 +133,40 @@ function buildLinuxPrintFragmentOverride(
   platform: DesktopPlatform,
 ): string {
   if (platform !== 'linux') return '';
+  const uniformPage = findUniformPageSize(pages);
   const fragmentRules = pages
     .map((page) => (
       `.${page.className} { `
+      + (uniformPage ? 'page: auto; ' : '')
       + `height: calc(${page.heightMm}mm - ${LINUX_PRINT_FRAGMENT_TOLERANCE_PX}px); `
       + '}'
     ))
     .join('\n');
+  const defaultPageRule = uniformPage
+    ? `@page { size: ${uniformPage.widthMm}mm ${uniformPage.heightMm}mm; margin: 0; }\n`
+    : '';
 
   return `
+${defaultPageRule}
 @media print {
-  /* WebKitGTK fragments a full-height page onto an extra blank sheet. */
+  /*
+   * WebKitGTK Print to File double-breaks uniform pages when each page uses
+   * both a unique named page and an explicit page break. Keep named pages for
+   * mixed-size documents, but use the default page context for uniform jobs.
+   */
   ${fragmentRules}
 }
 `;
+}
+
+function findUniformPageSize(pages: PrintPage[]): PrintPage | null {
+  const firstPage = pages[0];
+  if (!firstPage) return null;
+  return pages.every((page) => (
+    page.widthMm === firstPage.widthMm && page.heightMm === firstPage.heightMm
+  ))
+    ? firstPage
+    : null;
 }
 
 function setStatus(message: string): void {

@@ -39,6 +39,7 @@ describe('Tauri direct print surface', () => {
     createPrintPage.mockImplementation((_svg, _info, index) => ({
       pageName: `page-${index}`,
       className: `page-${index}`,
+      widthMm: 210.079,
       heightMm: 297.127,
     }));
     const inputHandler = {
@@ -57,14 +58,14 @@ describe('Tauri direct print surface', () => {
     expect(services.wasm.getPageInfo.mock.calls).toEqual([[0], [1]]);
     expect(createPrintPage).toHaveBeenCalledTimes(2);
     expect(buildPrintStyleText).toHaveBeenCalledWith([
-      { pageName: 'page-0', className: 'page-0', heightMm: 297.127 },
-      { pageName: 'page-1', className: 'page-1', heightMm: 297.127 },
+      { pageName: 'page-0', className: 'page-0', widthMm: 210.079, heightMm: 297.127 },
+      { pageName: 'page-1', className: 'page-1', widthMm: 210.079, heightMm: 297.127 },
     ]);
     expect(surface.bundledStyle.textContent).toBe('print css');
     expect(appendPrintStyle).not.toHaveBeenCalled();
     expect(appendSvgPage.mock.calls.map((call) => call[2])).toEqual([
-      { pageName: 'page-0', className: 'page-0', heightMm: 297.127 },
-      { pageName: 'page-1', className: 'page-1', heightMm: 297.127 },
+      { pageName: 'page-0', className: 'page-0', widthMm: 210.079, heightMm: 297.127 },
+      { pageName: 'page-1', className: 'page-1', widthMm: 210.079, heightMm: 297.127 },
     ]);
     expect(waitForPrintSurfaceReady).toHaveBeenCalledWith(surface);
     expect(surface.window.print).toHaveBeenCalledOnce();
@@ -74,20 +75,44 @@ describe('Tauri direct print surface', () => {
       .toBeLessThan(surface.window.print.mock.invocationCallOrder[0]);
   });
 
-  it('adds a one-pixel print-fragment tolerance only on Linux', async () => {
+  it('uses the default page context and one-pixel tolerance for uniform Linux pages', async () => {
     hydrateDesktopPlatform.mockResolvedValue('linux');
     const surface = createSurface();
     createPrintSurface.mockResolvedValue(surface);
     createPrintPage.mockImplementation((_svg, _info, index) => ({
       pageName: `page-${index}`,
       className: `page-${index}`,
-      heightMm: index === 0 ? 297.127 : 210.079,
+      widthMm: 210.079,
+      heightMm: 297.127,
     }));
 
     await printDirectlyFromPageSurface(createServices());
 
     expect(surface.bundledStyle.textContent).toContain('print css');
+    expect(surface.bundledStyle.textContent)
+      .toContain('@page { size: 210.079mm 297.127mm; margin: 0; }');
     expect(surface.bundledStyle.textContent).toContain('@media print');
+    expect(surface.bundledStyle.textContent)
+      .toContain('.page-0 { page: auto; height: calc(297.127mm - 1px); }');
+    expect(surface.bundledStyle.textContent)
+      .toContain('.page-1 { page: auto; height: calc(297.127mm - 1px); }');
+  });
+
+  it('preserves upstream named page contexts for mixed-size Linux pages', async () => {
+    hydrateDesktopPlatform.mockResolvedValue('linux');
+    const surface = createSurface();
+    createPrintSurface.mockResolvedValue(surface);
+    createPrintPage.mockImplementation((_svg, _info, index) => ({
+      pageName: `page-${index}`,
+      className: `page-${index}`,
+      widthMm: index === 0 ? 210.079 : 297.127,
+      heightMm: index === 0 ? 297.127 : 210.079,
+    }));
+
+    await printDirectlyFromPageSurface(createServices());
+
+    expect(surface.bundledStyle.textContent).not.toContain('@page { size:');
+    expect(surface.bundledStyle.textContent).not.toContain('page: auto;');
     expect(surface.bundledStyle.textContent)
       .toContain('.page-0 { height: calc(297.127mm - 1px); }');
     expect(surface.bundledStyle.textContent)
