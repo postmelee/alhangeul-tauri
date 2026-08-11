@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   getDesktopStudioHandlers,
   installEmbedRuntime,
@@ -18,6 +18,8 @@ describe('desktop embed runtime adapter', () => {
     uninstallUpstream.mockClear();
     getDesktopStudioHandlers();
   });
+
+  afterEach(() => vi.useRealTimers());
 
   it('delegates installation unchanged and exposes only desktop handler leaves', () => {
     const options = runtimeOptions('first');
@@ -62,6 +64,15 @@ describe('desktop embed runtime adapter', () => {
       exportHwpx: options.handlers.exportHwpx,
     });
     uninstall();
+  });
+
+  it('rejects consumers instead of waiting forever when handlers never register', async () => {
+    vi.useFakeTimers();
+    const pending = waitForDesktopStudioHandlers(250);
+
+    const expectation = expect(pending).rejects.toThrow('250ms를 초과');
+    await vi.advanceTimersByTimeAsync(250);
+    await expectation;
   });
 });
 

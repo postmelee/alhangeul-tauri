@@ -113,12 +113,21 @@ test('Alhangeul product info keeps the upstream rhwp version and adds Alhangeul 
 test('Alhangeul builds the exact upstream Studio entry with only minimal product shell additions', async () => {
   const viteConfig = await readFile(join(repoRoot, 'apps/studio-host/vite.config.ts'), 'utf8');
   const overrides = await readFile(join(repoRoot, 'apps/studio-host/alhangeul-overrides.ts'), 'utf8');
+  const indexHtml = await readFile(join(repoRoot, 'third_party/rhwp/rhwp-studio/index.html'), 'utf8');
 
   assert.match(viteConfig, /root:\s*upstreamStudioDir/);
   assert.match(viteConfig, /outDir:\s*resolve\(__dirname, ['"]dist['"]\)/);
   assert.match(viteConfig, /transformIndexHtml/);
   assert.match(viteConfig, /Alhangeul 문서 편집기/);
   assert.match(viteConfig, /data-cmd="file:new-window"/);
+  assert.match(viteConfig, /marker count must be 1/);
+  for (const marker of [
+    '<title>rhwp-studio</title>',
+    'rhwp-studio 문서 편집기',
+    '<div class="md-item disabled" data-cmd="file:new-doc"><span class="md-icon icon-new-doc"></span><span class="md-label">새로 만들기</span></div>',
+  ]) {
+    assert.equal(indexHtml.split(marker).length - 1, 1, `upstream HTML marker drift: ${marker}`);
+  }
   assert.doesNotMatch(overrides, /['"]ui\/toolbar['"]/);
   assert.doesNotMatch(overrides, /['"]view\/canvas-view['"]/);
   assert.doesNotMatch(overrides, /['"]view\/ruler['"]/);

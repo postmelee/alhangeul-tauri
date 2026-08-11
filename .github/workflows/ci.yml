@@ -98,6 +98,9 @@ jobs:
       - name: Check product version
         run: pnpm run check:product-version
 
+      - name: Check release metadata
+        run: pnpm run check:release-metadata
+
       - name: Verify rhwp pin
         run: pnpm run check:rhwp-pin
 

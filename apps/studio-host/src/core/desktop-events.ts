@@ -1,7 +1,8 @@
 import type { CommandDispatcher } from '@upstream/command/dispatcher';
 import type { DesktopHost } from './desktop-host';
 import { findLatestSupportedDocumentPath, hasSupportedDocumentPath } from './document-files';
-import { isTauriRuntime } from './platform';
+import { detectDesktopPlatform, isTauriRuntime } from './platform';
+import { installWindowsWheelZoomReroute } from './windows-wheel-zoom';
 
 type DesktopEventHost = Pick<
   DesktopHost,
@@ -41,6 +42,7 @@ export async function setupDesktopEvents({
   const { listen } = await import('@tauri-apps/api/event');
   const { getCurrentWebviewWindow } = await import('@tauri-apps/api/webviewWindow');
   const currentWindow = getCurrentWebviewWindow();
+  if (detectDesktopPlatform() === 'windows') installWindowsWheelZoomReroute();
 
   await listen('alhangeul-job-progress', (event) => {
     const payload = event.payload as { message?: string };

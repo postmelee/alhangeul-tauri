@@ -62,17 +62,28 @@ function alhangeulDesktopShell(): Plugin {
       });
     },
     transformIndexHtml(html) {
+      const withTitle = replaceRequired(
+        html,
+        '<title>rhwp-studio</title>',
+        '<title>Alhangeul</title>',
+        'document title',
+      );
+      const withAccessibleName = replaceRequired(
+        withTitle,
+        'rhwp-studio 문서 편집기',
+        'Alhangeul 문서 편집기',
+        'editor accessible name',
+      );
       return {
-        html: html
-          .replace('<title>rhwp-studio</title>', '<title>Alhangeul</title>')
-          .replace('rhwp-studio 문서 편집기', 'Alhangeul 문서 편집기')
-          .replace(
+        html: replaceRequired(
+          withAccessibleName,
+          '<div class="md-item disabled" data-cmd="file:new-doc"><span class="md-icon icon-new-doc"></span><span class="md-label">새로 만들기</span></div>',
+          [
             '<div class="md-item disabled" data-cmd="file:new-doc"><span class="md-icon icon-new-doc"></span><span class="md-label">새로 만들기</span></div>',
-            [
-              '<div class="md-item disabled" data-cmd="file:new-doc"><span class="md-icon icon-new-doc"></span><span class="md-label">새로 만들기</span></div>',
-              '<div class="md-item" data-cmd="file:new-window"><span class="md-icon"></span><span class="md-label">새 창</span><span class="md-shortcut">Ctrl+Shift+N</span></div>',
-            ].join('\n'),
-          ),
+            '<div class="md-item" data-cmd="file:new-window"><span class="md-icon"></span><span class="md-label">새 창</span><span class="md-shortcut">Ctrl+Shift+N</span></div>',
+          ].join('\n'),
+          'new window menu insertion point',
+        ),
         tags: [
           {
             tag: 'style',
@@ -87,6 +98,19 @@ function alhangeulDesktopShell(): Plugin {
       copyFileSync(productIconPath, resolve(__dirname, 'dist/favicon.ico'));
     },
   };
+}
+
+function replaceRequired(
+  html: string,
+  marker: string,
+  replacement: string,
+  label: string,
+): string {
+  const matches = html.split(marker).length - 1;
+  if (matches !== 1) {
+    throw new Error(`upstream HTML ${label} marker count must be 1, got ${matches}`);
+  }
+  return html.replace(marker, replacement);
 }
 
 function decodePath(path: string): string {

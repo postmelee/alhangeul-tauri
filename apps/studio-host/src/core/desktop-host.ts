@@ -26,6 +26,7 @@ export class DesktopHost {
   private readonly dependencies: DesktopHostDependencies;
   private readonly persistence: DesktopPersistence;
   private readonly openRequests = new Map<string, Promise<DesktopOpenResult | null>>();
+  private pdfExportRequest: Promise<PdfExportResult | null> | null = null;
   private commandServices: CommandServices | null = null;
   private pendingNewDocument: NativeOpenResult | null = null;
 
@@ -120,12 +121,17 @@ export class DesktopHost {
     return saved.state;
   }
 
-  async exportCurrentPdf(): Promise<PdfExportResult | null> {
+  exportCurrentPdf(): Promise<PdfExportResult | null> {
+    if (this.pdfExportRequest) return this.pdfExportRequest;
     const active = this.session.active;
-    return this.persistence.exportPdf(
+    const pending = this.persistence.exportPdf(
       active?.fileName ?? 'document.hwp',
       active?.sourcePath ?? null,
-    );
+    ).finally(() => {
+      if (this.pdfExportRequest === pending) this.pdfExportRequest = null;
+    });
+    this.pdfExportRequest = pending;
+    return pending;
   }
 
   async confirmWindowClose(): Promise<boolean> {

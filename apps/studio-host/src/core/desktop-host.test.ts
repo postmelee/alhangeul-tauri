@@ -132,6 +132,39 @@ describe('desktop host', () => {
     host.completePendingDocumentInitialization();
     expect(host.activeSession).toMatchObject({ docId: 'new-doc', sourcePath: null });
   });
+
+  it('coalesces concurrent PDF export requests in one WebView', async () => {
+    const fixture = createFixture();
+    fixture.dependencies.choosePdfSavePath = vi.fn().mockResolvedValue('/documents/document.pdf');
+    let finishCommit!: () => void;
+    fixture.invoke.mockImplementation(async (command) => {
+      if (command === 'begin_pdf_export') return 'job';
+      if (command === 'append_pdf_page') return undefined;
+      if (command === 'commit_pdf_export') {
+        return new Promise((resolve) => {
+          finishCommit = () => resolve({
+            path: '/documents/document.pdf',
+            pageCount: 2,
+            textMode: 'searchable',
+          });
+        });
+      }
+      throw new Error(`unexpected command: ${command}`);
+    });
+    const host = new DesktopHost(fixture.dependencies);
+
+    const first = host.exportCurrentPdf();
+    const second = host.exportCurrentPdf();
+    await vi.waitFor(() => expect(fixture.invoke).toHaveBeenCalledWith(
+      'commit_pdf_export',
+      { jobId: 'job' },
+    ));
+    finishCommit();
+    await Promise.all([first, second]);
+
+    expect(first).toBe(second);
+    expect(fixture.invoke.mock.calls.filter(([command]) => command === 'begin_pdf_export')).toHaveLength(1);
+  });
 });
 
 function createFixture() {

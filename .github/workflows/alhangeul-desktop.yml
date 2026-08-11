@@ -142,6 +142,10 @@ jobs:
         if: inputs.run_tests
         run: pnpm run check:product-version
 
+      - name: Check release metadata
+        if: inputs.run_tests
+        run: pnpm run check:release-metadata
+
       - name: Verify rhwp pin
         if: inputs.run_tests
         run: pnpm run check:rhwp-pin

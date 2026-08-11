@@ -22,7 +22,7 @@ export const RELEASE_METADATA_CONTRACT = Object.freeze({
   copyright: 'Alhangeul contributors',
   license: 'MIT',
   wixTemplate: 'windows/main.wxs',
-  associations: Object.freeze([
+  fileAssociations: Object.freeze([
     Object.freeze({
       ext: Object.freeze(['hwp']),
       name: 'Alhangeul.hwp',
@@ -77,7 +77,7 @@ export async function verifyReleaseMetadata(options = {}) {
     productName: tauriConfig.productName,
     version: versionResult.version,
     identifier: tauriConfig.identifier,
-    associations: tauriConfig.bundle.fileAssociations.map(({ ext }) => ext[0]),
+    fileAssociations: tauriConfig.bundle.fileAssociations.map(({ ext }) => ext[0]),
   };
 }
 
@@ -85,8 +85,8 @@ function assertAssociations(path, associations) {
   if (!Array.isArray(associations)) {
     throw new Error(`${path} bundle.fileAssociations 배열이 필요합니다.`);
   }
-  assertEqual(path, 'bundle.fileAssociations.length', associations.length, RELEASE_METADATA_CONTRACT.associations.length);
-  for (const expected of RELEASE_METADATA_CONTRACT.associations) {
+  assertEqual(path, 'bundle.fileAssociations.length', associations.length, RELEASE_METADATA_CONTRACT.fileAssociations.length);
+  for (const expected of RELEASE_METADATA_CONTRACT.fileAssociations) {
     const actual = associations.find(({ ext }) => Array.isArray(ext) && ext.length === 1 && ext[0] === expected.ext[0]);
     if (!actual) throw new Error(`${path} bundle.fileAssociations에 ${expected.ext[0]} 항목이 필요합니다.`);
     for (const field of ['ext', 'name', 'description', 'mimeType']) {

@@ -465,6 +465,41 @@ Task #15 Stage 4: Windows Linux exact 인쇄 후보와 검증 handoff
 
 Stage 4 보고서는 수동 Windows 결과 전에는 “다운로드 후보 준비”까지만 확정하고, Issue 완료나 release Go를 판정하지 않는다.
 
+### Stage 4.9 — Task #13 merge 통합과 최종 exact 후보
+
+Task #13 PR #18 merge 뒤 `devel`이 `9a3ffcc14a3b32447b22220ea3a4558fa47e451a`로
+전진했다. 기존 Task #15 exact 후보 `89718976a7fa44ebe7f8981ca01ce6bfcbebc979`은
+Windows/Linux GUI gate를 통과했지만 Task #13 Stage 6.7~6.8 리뷰 보정을 포함하지 않으므로
+최종 PR 후보로 재사용하지 않는다.
+
+- `devel`을 `local/task15`에 merge해 Task #15 단계 commit과 Task #13 merge 이력을 모두
+  보존한다. 임의 rebase나 history rewrite는 수행하지 않는다.
+- 충돌은 Task #15가 삭제한 editor `print_webview` command를 복원하지 않으면서 Task #13의
+  최근 문서 단건 삭제와 PDF job window-owner 회수 경계를 함께 유지하는 방향으로 해결한다.
+- release 문서는 Task #13 exact 후보의 실제 인쇄 No-Go 이력과 Task #15의 전용 page surface
+  수용 gate를 모두 보존한다.
+- merge commit에서 전체 플랫폼 중립 gate를 실행한 뒤 새 exact SHA를 `publish/task15`에
+  게시하고 CI, Windows x64·Linux x64·Linux arm64 native build와 Windows installer smoke를
+  다시 실행한다.
+- Task #13 통합이 Studio/native lifecycle을 변경하므로 Windows와 Linux x64의 인쇄 집중 GUI
+  회귀를 새 exact bundle에서 확인한다. 이전 SHA의 GUI 결과는 비교 기준으로만 사용한다.
+- exact gate 통과 뒤 최종 보고서와 `devel` 대상 PR을 게시한다. release·tag·배포와 Issue close,
+  PR merge는 수행하지 않는다.
+
+검증:
+
+```bash
+pnpm run check:product-boundary
+pnpm run check:product-version
+pnpm run check:release-metadata
+pnpm run check:rhwp-pin
+pnpm run test:automation
+pnpm run test:upstream
+pnpm run test:studio
+pnpm run build:studio
+git diff --check
+```
+
 ## 검증
 
 - 각 Stage 검증 명령은 단계 보고서 작성 전에 실행한다.

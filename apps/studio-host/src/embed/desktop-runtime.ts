@@ -12,15 +12,29 @@ export type DesktopStudioHandlers = Pick<
 >;
 
 let activeHandlers: DesktopStudioHandlers | null = null;
-const handlerWaiters = new Set<(handlers: DesktopStudioHandlers) => void>();
+interface HandlerWaiter {
+  resolve(handlers: DesktopStudioHandlers): void;
+  timer: ReturnType<typeof setTimeout>;
+}
+
+const handlerWaiters = new Set<HandlerWaiter>();
 
 export function getDesktopStudioHandlers(): DesktopStudioHandlers | null {
   return activeHandlers;
 }
 
-export function waitForDesktopStudioHandlers(): Promise<DesktopStudioHandlers> {
+export function waitForDesktopStudioHandlers(timeoutMs = 15_000): Promise<DesktopStudioHandlers> {
   if (activeHandlers) return Promise.resolve(activeHandlers);
-  return new Promise((resolve) => handlerWaiters.add(resolve));
+  return new Promise((resolve, reject) => {
+    const waiter: HandlerWaiter = {
+      resolve,
+      timer: setTimeout(() => {
+        handlerWaiters.delete(waiter);
+        reject(new Error(`Studio handler 준비 시간이 ${timeoutMs}ms를 초과했습니다`));
+      }, timeoutMs),
+    };
+    handlerWaiters.add(waiter);
+  });
 }
 
 export function installEmbedRuntime(
@@ -36,7 +50,10 @@ export function installEmbedRuntime(
     notifySaved: options.handlers.notifySaved,
   };
   activeHandlers = registeredHandlers;
-  for (const resolve of handlerWaiters) resolve(registeredHandlers);
+  for (const waiter of handlerWaiters) {
+    clearTimeout(waiter.timer);
+    waiter.resolve(registeredHandlers);
+  }
   handlerWaiters.clear();
 
   return () => {

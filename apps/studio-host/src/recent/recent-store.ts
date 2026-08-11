@@ -44,6 +44,10 @@ export async function listRecentDocs(): Promise<RecentDoc[]> {
 
 export async function removeRecentDoc(id: string): Promise<void> {
   if (!isTauriRuntime()) return removeUpstreamRecentDoc(id);
+  const path = nativePathsById.get(id);
+  if (!path) return;
+  const { invoke } = await import('@tauri-apps/api/core');
+  await invoke('remove_recent_document', { path });
   nativePathsById.delete(id);
 }
 

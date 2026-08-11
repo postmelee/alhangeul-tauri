@@ -43,7 +43,7 @@ pub fn create_editor_window_with_label(app: &AppHandle, label: &str) -> Result<(
         .map_err(|e| format!("새 창 생성 실패: {}", e))?;
     install_editor_window_minimum_with_size(&window, geometry.min_width, geometry.min_height);
     attach_document_drop_handler(app, &window);
-    attach_pending_open_cleanup(app, &window);
+    attach_window_cleanup(app, &window);
     let _ = window.set_focus();
 
     Ok(())
@@ -85,7 +85,7 @@ pub fn attach_document_drop_handler(app: &AppHandle, window: &WebviewWindow) {
     });
 }
 
-fn attach_pending_open_cleanup(app: &AppHandle, window: &WebviewWindow) {
+pub fn attach_window_cleanup(app: &AppHandle, window: &WebviewWindow) {
     let app = app.clone();
     let label = window.label().to_string();
     window.on_window_event(move |event| {
@@ -93,6 +93,9 @@ fn attach_pending_open_cleanup(app: &AppHandle, window: &WebviewWindow) {
             app.state::<crate::state::AppState>()
                 .pending_open_paths
                 .discard_for_window(&label);
+            if let Ok(mut jobs) = app.state::<crate::state::AppState>().pdf_jobs.lock() {
+                jobs.discard_for_window(&label);
+            }
         }
     });
 }
