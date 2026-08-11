@@ -56,7 +56,11 @@ const desktopExecutors = new Map<string, CommandDef['execute']>([
     await runDesktopAction('PDF 저장', () => getDesktopHost().exportCurrentPdf());
   }],
   ['file:print', async (services) => {
-    await runDesktopAction('인쇄', () => printDirectlyFromPageSurface(services));
+    await runDesktopAction(
+      '인쇄',
+      () => printDirectlyFromPageSurface(services),
+      'restore',
+    );
   }],
 ]);
 
@@ -82,16 +86,30 @@ export const fileCommands: CommandDef[] = [
   },
 ];
 
-async function runDesktopAction<T>(label: string, action: () => Promise<T>): Promise<T | null> {
+type CompletionStatus = 'complete' | 'restore';
+
+async function runDesktopAction<T>(
+  label: string,
+  action: () => Promise<T>,
+  completionStatus: CompletionStatus = 'complete',
+): Promise<T | null> {
+  const originalStatus = readStatus();
   try {
     setStatus(`${label} 중...`);
     const result = await action();
-    if (result !== null) setStatus(`${label} 완료`);
+    if (result !== null) {
+      setStatus(completionStatus === 'restore' ? originalStatus : `${label} 완료`);
+    }
     return result;
   } catch (error) {
     reportDesktopError(label, error);
     return null;
   }
+}
+
+function readStatus(): string {
+  const status = typeof document === 'undefined' ? null : document.getElementById('sb-message');
+  return status?.textContent || '';
 }
 
 function setStatus(message: string): void {

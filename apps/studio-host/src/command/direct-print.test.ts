@@ -31,6 +31,7 @@ describe('Tauri direct print surface', () => {
     vi.clearAllMocks();
     hydrateDesktopPlatform.mockResolvedValue('windows');
     installHostDocument();
+    delete (globalThis as { window?: unknown }).window;
   });
 
   it('prints upstream print-profile pages from a hidden surface', async () => {
@@ -73,6 +74,47 @@ describe('Tauri direct print surface', () => {
     expect((globalThis.document as unknown as { title: string }).title).toBe('Alhangeul');
     expect(waitForPrintSurfaceReady.mock.invocationCallOrder[0])
       .toBeLessThan(surface.window.print.mock.invocationCallOrder[0]);
+  });
+
+  it('keeps the print title and surface until the Windows driver modal returns focus', async () => {
+    let focused = false;
+    const focusListeners = new Set<() => void>();
+    const fakeWindow = {
+      addEventListener: vi.fn((type: string, listener: () => void) => {
+        if (type === 'focus') focusListeners.add(listener);
+      }),
+      removeEventListener: vi.fn((type: string, listener: () => void) => {
+        if (type === 'focus') focusListeners.delete(listener);
+      }),
+      setTimeout: vi.fn(() => 1),
+      clearTimeout: vi.fn(),
+    };
+    (globalThis as { window?: unknown }).window = fakeWindow;
+    const status = installHostDocument(() => focused);
+    const surface = createSurface();
+    createPrintSurface.mockResolvedValue(surface);
+    createPrintPage.mockImplementation((_svg, _info, index) => ({
+      pageName: `page-${index}`,
+      className: `page-${index}`,
+      widthMm: 210.079,
+      heightMm: 297.127,
+    }));
+
+    const pendingPrint = printDirectlyFromPageSurface(createServices());
+    await vi.waitFor(() => expect(surface.window.print).toHaveBeenCalledOnce());
+
+    expect((globalThis.document as unknown as { title: string }).title).toBe('document');
+    expect(surface.document.title).toBe('document');
+    expect(surface.dispose).not.toHaveBeenCalled();
+    expect(status.textContent).toBe('시스템 인쇄 처리 중...');
+
+    focused = true;
+    for (const listener of [...focusListeners]) listener();
+    await pendingPrint;
+
+    expect(surface.dispose).toHaveBeenCalledOnce();
+    expect((globalThis.document as unknown as { title: string }).title).toBe('Alhangeul');
+    expect(fakeWindow.clearTimeout).toHaveBeenCalledWith(1);
   });
 
   it('uses the default page context and one-pixel tolerance for uniform Linux pages', async () => {
@@ -179,10 +221,12 @@ function createSurface() {
   };
 }
 
-function installHostDocument() {
+function installHostDocument(hasFocus: () => boolean = () => true) {
   const status = { textContent: '' };
   (globalThis as { document?: unknown }).document = {
     title: 'Alhangeul',
+    hasFocus,
     getElementById: vi.fn(() => status),
   };
+  return status;
 }

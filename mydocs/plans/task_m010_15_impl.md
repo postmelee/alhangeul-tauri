@@ -22,6 +22,7 @@ Stage 1 사전 조사에서 rhwp v0.8.2의 `file:print`는 사용자 동기 클�
 | 1 | upstream 인쇄 소유 경계와 drift guard | `upstream-boundary.test.ts`, 조사·계획 | upstream page SVG/preview command source 계약 |
 | 2 | editor 직접 인쇄 override 제거 | file command·desktop host·Rust command와 focused test | Tauri에서도 upstream `file:print` execute 호출 |
 | 2.3 | Linux WebKitGTK 빈 쪽 보정 | 최소 재현·Tauri print style adapter·focused test | 실제 6쪽 문서가 system print에서도 6쪽 |
+| 2.4 | Windows system print lifecycle 보정 | title/surface lifecycle·상태 표시·focused test | PDF driver modal 동안 제목 유지, 거짓 완료 표시 없음 |
 | 3 | 플랫폼 중립 회귀와 공식 문서 정렬 | 전체 test/build, `UPSTREAM.md`, release gate | product/upstream/Studio 전체 gate |
 | 4 | exact-SHA Windows/Linux 후보 | `publish/task15` 후보·CI/native artifact | Windows 다운로드와 수동 인쇄 handoff |
 
@@ -215,6 +216,55 @@ Rust unit test·Clippy·Tauri build는 지원 Windows/Linux exact workflow에서
 
 ```text
 Task #15 [Stage 2.3]: Linux WebKitGTK 빈 쪽 삽입 보정
+```
+
+### Stage 2.4 — Windows system print lifecycle 보정
+
+2026-08-11 exact Windows 후보 `d194050194a754cded496422a2fe0cf37331f723`에서
+별도 Alhangeul preview 없이 Windows system print dialog가 직접 열리는 핵심 gate는
+통과했다. 그러나 `Microsoft Print to PDF`에서 `인쇄`를 누른 뒤 driver 저장창이
+열려 있는 동안 adapter가 `인쇄 완료`를 먼저 표시했고, 저장 파일명은 비어 있었다.
+
+- WebView2 system print UI는 출력 파일명과 driver 저장 완료 결과를 web content에
+  제공하지 않는다. `afterprint`도 인쇄 시작 또는 print UI 종료 시점이므로 저장·취소,
+  spool 완료를 판정하는 신호로 사용하지 않는다.
+- 현재 adapter는 hidden surface와 최상위 document title을 모두 원본 basename으로
+  설정한다. `window.print()` 반환 직후 이를 복원·폐기하지 않고, host document가
+  focus를 잃은 경우 Windows driver modal chain이 닫혀 focus가 돌아올 때까지
+  title과 surface를 유지한다. focus 신호가 없는 구현에서 영구 점유하지 않도록
+  bounded safety timeout만 둔다.
+- `window.print()` 반환 뒤 focus 대기 중에는 `시스템 인쇄 처리 중…`을 표시한다.
+  저장 성공과 취소를 구분할 수 없으므로 generic `인쇄 완료`를 표시하지 않고 기존
+  문서 상태를 복원한다.
+- 제목 유지로 Microsoft Print to PDF 기본 파일명이 채워지는지는 새 Windows exact
+  후보에서 best-effort gate로 확인한다. driver가 제목을 사용하지 않으면 OS 소유
+  제약으로 기록하며 Issue #15 완료를 막지 않는다. 보장되는 파일명·쓰기 완료 UX는
+  앱이 저장 경로를 먼저 소유하는 기존 `파일 > PDF로 저장`이 담당한다.
+- browser upstream preview, Linux pagination CSS, physical printer 선택 UI와 direct
+  PDF/HWP/HWPX 데이터는 변경하지 않는다.
+
+검증:
+
+```bash
+pnpm --filter @postmelee/alhangeul-studio-host test -- src/command/direct-print.test.ts src/command/commands/file.test.ts src/core/upstream-boundary.test.ts
+pnpm run test:studio
+pnpm run build:studio
+pnpm run check:product-boundary
+git diff --check
+```
+
+Windows exact 수동 gate:
+
+- system print dialog 직접 진입을 유지한다.
+- Microsoft Print to PDF 저장창이 열려 있는 동안 `인쇄 완료`가 표시되지 않는다.
+- 저장 또는 취소 후 기존 문서 상태가 복원되고 재인쇄할 수 있다.
+- 기본 파일명은 원본 basename 전달 여부를 기록하되 acceptance 필수 조건으로 두지
+  않는다.
+
+커밋:
+
+```text
+Task #15 [Stage 2.4]: Windows system print lifecycle 보정
 ```
 
 ## Stage 3 — 플랫폼 중립 회귀와 공식 문서 정렬

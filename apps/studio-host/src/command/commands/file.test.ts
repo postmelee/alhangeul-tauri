@@ -96,6 +96,23 @@ describe('native file command leaf adapters', () => {
     expect(directPrint).not.toHaveBeenCalled();
   });
 
+  it('restores the document status instead of claiming system print completion', async () => {
+    installTauriWindow();
+    const status = { textContent: 'document.hwp — 2페이지' };
+    (globalThis as { document?: unknown }).document = {
+      getElementById: vi.fn(() => status),
+    };
+    directPrint.mockImplementation(async () => {
+      expect(status.textContent).toBe('인쇄 중...');
+      status.textContent = '시스템 인쇄 처리 중...';
+    });
+
+    await command('file:print').execute(services() as never);
+
+    expect(status.textContent).toBe('document.hwp — 2페이지');
+    expect(status.textContent).not.toBe('인쇄 완료');
+  });
+
   it('resolves opaque recent ids inside the adapter before native open', async () => {
     installTauriWindow();
     resolveRecentPath.mockReturnValue('/private/document.hwpx');
