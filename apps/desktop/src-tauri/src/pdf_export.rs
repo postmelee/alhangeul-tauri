@@ -1,45 +1,67 @@
 use pdf_writer::{Finish, Pdf, Ref};
-use rhwp::DocumentCore;
+use serde::Serialize;
 use std::collections::HashMap;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
-use crate::commands::PageRange;
 use crate::font_catalog;
-use crate::pdf_font_fallbacks::add_font_fallbacks;
+use crate::pdf_text_audit;
 use crate::state::atomic_write;
 
-pub fn export_core_to_pdf(
-    core: &DocumentCore,
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "kebab-case")]
+pub enum PdfTextMode {
+    Searchable,
+    OutlinedFallback,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PdfExportResult {
+    pub path: String,
+    pub page_count: u32,
+    pub text_mode: PdfTextMode,
+    pub warning: Option<String>,
+}
+
+struct PreparedPage {
+    tree: usvg::Tree,
+    width: f32,
+    height: f32,
+    source_text_elements: usize,
+}
+
+pub fn export_svg_pages_to_pdf(
+    svg_paths: &[PathBuf],
     target_path: &Path,
-    page_range: Option<PageRange>,
-    mut on_progress: impl FnMut(&str, u32, u32, String),
-) -> Result<u32, String> {
+) -> Result<PdfExportResult, String> {
     ensure_pdf_path(target_path)?;
-    on_progress("start", 0, 1, "PDF 내보내기를 시작합니다".to_string());
-
-    let page_count = core.page_count();
-    let pages = resolve_page_range(page_range, page_count)?;
-    let total = pages.len() as u32;
-
-    let mut svg_pages = Vec::with_capacity(pages.len());
-    for (idx, page) in pages.iter().enumerate() {
-        let svg = core
-            .render_page_svg_native(*page)
-            .map_err(|e| format!("페이지 {} 렌더링 실패: {}", page + 1, e))?;
-        svg_pages.push(svg);
-        on_progress(
-            "render",
-            idx as u32 + 1,
-            total,
-            format!("{} / {} 페이지 렌더링", idx + 1, total),
-        );
-    }
-
-    let pdf_bytes = svgs_to_pdf(&svg_pages)?;
-    atomic_write(target_path, &pdf_bytes)?;
-    on_progress("write", total, total, "PDF 파일을 저장했습니다".to_string());
-
-    Ok(total)
+    let pages = prepare_pdf_pages(svg_paths)?;
+    let (bytes, text_mode, warning) = match render_pdf(&pages, true) {
+        Ok(bytes) => (bytes, PdfTextMode::Searchable, None),
+        Err(searchable_error) => {
+            let bytes = render_pdf(&pages, false).map_err(|fallback_error| {
+                format!(
+                    "검색 가능한 PDF 변환 실패: {}; 글자 윤곽선 fallback 실패: {}",
+                    searchable_error, fallback_error
+                )
+            })?;
+            (
+                bytes,
+                PdfTextMode::OutlinedFallback,
+                Some(format!(
+                    "검색 가능한 텍스트 변환에 실패해 글자 윤곽선으로 저장했습니다: {}",
+                    searchable_error
+                )),
+            )
+        }
+    };
+    atomic_write(target_path, &bytes)?;
+    Ok(PdfExportResult {
+        path: target_path.to_string_lossy().to_string(),
+        page_count: svg_paths.len() as u32,
+        text_mode,
+        warning,
+    })
 }
 
 pub(crate) fn ensure_pdf_path(path: &Path) -> Result<(), String> {
@@ -54,29 +76,9 @@ pub(crate) fn ensure_pdf_path(path: &Path) -> Result<(), String> {
     Ok(())
 }
 
-fn resolve_page_range(page_range: Option<PageRange>, page_count: u32) -> Result<Vec<u32>, String> {
-    if page_count == 0 {
-        return Err("내보낼 페이지가 없습니다".to_string());
-    }
-    let Some(range) = page_range else {
-        return Ok((0..page_count).collect());
-    };
-    let start = range.start.unwrap_or(0);
-    let end = range.end.unwrap_or(page_count - 1);
-    if start > end || end >= page_count {
-        return Err(format!(
-            "페이지 범위가 올바르지 않습니다: {}..{} / 총 {}페이지",
-            start + 1,
-            end + 1,
-            page_count
-        ));
-    }
-    Ok((start..=end).collect())
-}
-
-fn conversion_options() -> svg2pdf::ConversionOptions {
+fn conversion_options(embed_text: bool) -> svg2pdf::ConversionOptions {
     svg2pdf::ConversionOptions {
-        embed_text: false,
+        embed_text,
         ..svg2pdf::ConversionOptions::default()
     }
 }
@@ -92,27 +94,40 @@ fn parse_svg_tree_for_pdf(
     svg_content: &str,
     options: &usvg::Options<'static>,
 ) -> Result<usvg::Tree, String> {
-    let svg_with_fallback = add_font_fallbacks(svg_content);
-    usvg::Tree::from_str(&svg_with_fallback, options).map_err(|e| format!("SVG 파싱 실패: {}", e))
+    usvg::Tree::from_str(svg_content, options).map_err(|e| format!("SVG 파싱 실패: {}", e))
 }
 
-fn svg_to_pdf(svg_content: &str) -> Result<Vec<u8>, String> {
-    let options = pdf_usvg_options();
-    let tree = parse_svg_tree_for_pdf(svg_content, &options)?;
-    svg2pdf::to_pdf(&tree, conversion_options(), svg2pdf::PageOptions::default())
-        .map_err(|e| format!("PDF 변환 실패: {:?}", e))
-}
-
-fn svgs_to_pdf(svg_pages: &[String]) -> Result<Vec<u8>, String> {
-    if svg_pages.is_empty() {
+fn prepare_pdf_pages(svg_paths: &[PathBuf]) -> Result<Vec<PreparedPage>, String> {
+    if svg_paths.is_empty() {
         return Err("페이지가 없습니다".to_string());
     }
-    if svg_pages.len() == 1 {
-        return svg_to_pdf(&svg_pages[0]);
-    }
-
     let options = pdf_usvg_options();
+    let mut pages = Vec::with_capacity(svg_paths.len());
+    for path in svg_paths {
+        let svg = std::fs::read_to_string(path)
+            .map_err(|e| format!("PDF 페이지 SVG 읽기 실패: {} ({})", path.display(), e))?;
+        let tree = parse_svg_tree_for_pdf(&svg, &options)?;
+        let audit = pdf_text_audit::audit_svg_text(&svg, &tree).map_err(|error| {
+            format!(
+                "PDF 페이지 SVG text audit 실패: {} ({})",
+                path.display(),
+                error
+            )
+        })?;
+        let dpi_ratio = 72.0 / 96.0;
+        let width = tree.size().width() * dpi_ratio;
+        let height = tree.size().height() * dpi_ratio;
+        pages.push(PreparedPage {
+            tree,
+            width,
+            height,
+            source_text_elements: audit.source_elements,
+        });
+    }
+    Ok(pages)
+}
 
+fn render_pdf(pages: &[PreparedPage], embed_text: bool) -> Result<Vec<u8>, String> {
     let mut alloc = Ref::new(1);
     let catalog_ref = alloc.bump();
     let page_tree_ref = alloc.bump();
@@ -124,42 +139,29 @@ fn svgs_to_pdf(svg_pages: &[String]) -> Result<Vec<u8>, String> {
         height: f32,
     }
 
-    let mut page_datas: Vec<PageData> = Vec::new();
-
-    for svg in svg_pages {
-        let tree = parse_svg_tree_for_pdf(svg, &options)?;
-
-        let (chunk, svg_ref) = svg2pdf::to_chunk(&tree, conversion_options())
-            .map_err(|e| format!("SVG->chunk 변환 실패: {:?}", e))?;
-
-        let dpi_ratio = 72.0 / 96.0;
-        let w = tree.size().width() * dpi_ratio;
-        let h = tree.size().height() * dpi_ratio;
-
-        page_datas.push(PageData {
+    let mut page_data = Vec::with_capacity(pages.len());
+    for page in pages {
+        let (chunk, svg_ref) = svg2pdf::to_chunk(&page.tree, conversion_options(embed_text))
+            .map_err(|e| format!("SVG->PDF chunk 변환 실패: {:?}", e))?;
+        page_data.push(PageData {
             chunk,
             svg_ref,
-            width: w,
-            height: h,
+            width: page.width,
+            height: page.height,
         });
     }
 
-    let mut page_refs: Vec<Ref> = Vec::new();
-    let mut renumbered_chunks: Vec<pdf_writer::Chunk> = Vec::new();
-    let mut svg_refs_remapped: Vec<Ref> = Vec::new();
-
-    for pd in &page_datas {
-        let page_ref = alloc.bump();
-        page_refs.push(page_ref);
-
+    let mut page_refs = Vec::with_capacity(page_data.len());
+    let mut renumbered_chunks = Vec::with_capacity(page_data.len());
+    let mut remapped_svg_refs = Vec::with_capacity(page_data.len());
+    for data in &page_data {
+        page_refs.push(alloc.bump());
         let mut map = HashMap::new();
-        let renumbered = pd
+        let chunk = data
             .chunk
             .renumber(|old| *map.entry(old).or_insert_with(|| alloc.bump()));
-
-        let remapped_svg_ref = map.get(&pd.svg_ref).copied().unwrap_or(pd.svg_ref);
-        svg_refs_remapped.push(remapped_svg_ref);
-        renumbered_chunks.push(renumbered);
+        remapped_svg_refs.push(map.get(&data.svg_ref).copied().unwrap_or(data.svg_ref));
+        renumbered_chunks.push(chunk);
     }
 
     let mut pdf = Pdf::new();
@@ -167,40 +169,40 @@ fn svgs_to_pdf(svg_pages: &[String]) -> Result<Vec<u8>, String> {
     pdf.pages(page_tree_ref)
         .count(page_refs.len() as i32)
         .kids(page_refs.iter().copied());
-
     let svg_name = pdf_writer::Name(b"S1");
 
-    for (i, pd) in page_datas.iter().enumerate() {
-        let page_ref = page_refs[i];
+    for (index, data) in page_data.iter().enumerate() {
         let content_ref = alloc.bump();
-        let svg_ref = svg_refs_remapped[i];
-
-        let mut page = pdf.page(page_ref);
-        page.media_box(pdf_writer::Rect::new(0.0, 0.0, pd.width, pd.height));
+        let mut page = pdf.page(page_refs[index]);
+        page.media_box(pdf_writer::Rect::new(0.0, 0.0, data.width, data.height));
         page.parent(page_tree_ref);
         page.contents(content_ref);
-
         let mut resources = page.resources();
-        resources.x_objects().pair(svg_name, svg_ref);
+        resources
+            .x_objects()
+            .pair(svg_name, remapped_svg_refs[index]);
         resources.finish();
         page.finish();
 
         let mut content = pdf_writer::Content::new();
-        content.transform([pd.width, 0.0, 0.0, pd.height, 0.0, 0.0]);
+        content.transform([data.width, 0.0, 0.0, data.height, 0.0, 0.0]);
         content.x_object(svg_name);
-
         pdf.stream(content_ref, &content.finish());
     }
-
     for chunk in &renumbered_chunks {
         pdf.extend(chunk);
     }
-
     let info_ref = alloc.bump();
     pdf.document_info(info_ref)
         .producer(pdf_writer::TextStr("alhangeul-desktop"));
-
-    Ok(pdf.finish())
+    let bytes = pdf.finish();
+    if embed_text
+        && pages.iter().any(|page| page.source_text_elements > 0)
+        && !pdf_text_audit::pdf_has_to_unicode(&bytes)
+    {
+        return Err("검색 가능한 PDF에 ToUnicode mapping이 없습니다".to_string());
+    }
+    Ok(bytes)
 }
 
 #[cfg(test)]
@@ -219,68 +221,34 @@ mod tests {
             ensure_pdf_path(Path::new("out.hwp")).unwrap_err(),
             "PDF 파일 경로는 .pdf 확장자여야 합니다"
         );
-        assert!(ensure_pdf_path(Path::new("out")).is_err());
     }
 
     #[test]
-    fn resolve_page_range_defaults_to_all_pages() {
-        assert_eq!(resolve_page_range(None, 3).unwrap(), vec![0, 1, 2]);
+    fn render_pdf_rejects_an_empty_page_list() {
+        let error = prepare_pdf_pages(&[]).err().unwrap();
+        assert_eq!(error, "페이지가 없습니다");
     }
 
     #[test]
-    fn resolve_page_range_supports_open_ended_ranges() {
-        assert_eq!(
-            resolve_page_range(
-                Some(PageRange {
-                    start: Some(1),
-                    end: None,
-                }),
-                4,
-            )
-            .unwrap(),
-            vec![1, 2, 3]
-        );
-        assert_eq!(
-            resolve_page_range(
-                Some(PageRange {
-                    start: None,
-                    end: Some(1),
-                }),
-                4,
-            )
-            .unwrap(),
-            vec![0, 1]
-        );
+    fn searchable_conversion_is_the_primary_mode() {
+        assert!(conversion_options(true).embed_text);
+        assert!(!conversion_options(false).embed_text);
     }
 
     #[test]
-    fn resolve_page_range_rejects_empty_and_invalid_ranges() {
-        assert_eq!(
-            resolve_page_range(None, 0).unwrap_err(),
-            "내보낼 페이지가 없습니다"
-        );
-        assert!(resolve_page_range(
-            Some(PageRange {
-                start: Some(2),
-                end: Some(1),
-            }),
-            4,
+    fn bundled_fonts_preserve_korean_text_and_to_unicode_mapping() {
+        let dir = tempfile::tempdir().unwrap();
+        let svg_path = dir.path().join("page.svg");
+        std::fs::write(
+            &svg_path,
+            r#"<svg xmlns="http://www.w3.org/2000/svg" width="240" height="100"><text x="10" y="35" font-family="함초롬바탕, 바탕, serif">한글 Serif</text><text x="10" y="75" font-family="함초롬돋움, 맑은 고딕, sans-serif">한글 Sans</text></svg>"#,
         )
-        .unwrap_err()
-        .contains("페이지 범위가 올바르지 않습니다"));
-        assert!(resolve_page_range(
-            Some(PageRange {
-                start: Some(0),
-                end: Some(4),
-            }),
-            4,
-        )
-        .unwrap_err()
-        .contains("총 4페이지"));
-    }
+        .unwrap();
 
-    #[test]
-    fn svgs_to_pdf_rejects_empty_pages() {
-        assert_eq!(svgs_to_pdf(&[]).unwrap_err(), "페이지가 없습니다");
+        let pages = prepare_pdf_pages(&[svg_path]).unwrap();
+        let bytes = render_pdf(&pages, true).unwrap();
+
+        assert_eq!(pages[0].source_text_elements, 2);
+        assert!(pdf_text_audit::pdf_has_to_unicode(&bytes));
     }
 }

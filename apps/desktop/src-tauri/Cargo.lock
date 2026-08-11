@@ -35,6 +35,7 @@ dependencies = [
  "open",
  "pdf-writer",
  "rhwp",
+ "roxmltree 0.20.0",
  "serde",
  "serde_json",
  "svg2pdf",

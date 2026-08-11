@@ -4,29 +4,22 @@ use crate::state::{
     editable_core_from_bytes, AppState, DocumentFormat, DocumentOpenResult,
     ExternalModificationStatus, FileFingerprint, MutationResult, PageSvgResult, SaveResult,
 };
-use rhwp::DocumentCore;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use serde_json::Value;
 use std::path::{Path, PathBuf};
-use tauri::{AppHandle, Emitter, State, WebviewWindow};
+use tauri::{AppHandle, State, WebviewWindow};
 use tauri_plugin_fs::FsExt;
 use uuid::Uuid;
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct PageRange {
-    pub start: Option<u32>,
-    pub end: Option<u32>,
-}
-
-#[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct JobProgress {
-    pub job_id: String,
-    pub phase: String,
-    pub done: u32,
-    pub total: u32,
-    pub message: String,
+pub struct CommitStagedDocumentSaveRequest {
+    doc_id: String,
+    staged_path: String,
+    target_path: String,
+    format: DocumentFormat,
+    expected_revision: Option<u64>,
+    allow_external_overwrite: Option<bool>,
 }
 
 #[tauri::command]
@@ -86,47 +79,43 @@ pub fn mark_document_dirty(doc_id: String, state: State<'_, AppState>) -> Result
 }
 
 #[tauri::command]
-pub fn prepare_staged_hwp_save(app: AppHandle, target_path: String) -> Result<String, String> {
-    prepare_staged_file(
-        &app,
-        PathBuf::from(target_path),
-        ensure_hwp_target_path,
-        staged_hwp_save_path,
-    )
-}
-
-#[tauri::command]
-pub fn prepare_staged_hwp_pdf_export(
+pub fn prepare_staged_document_save(
     app: AppHandle,
     target_path: String,
+    format: DocumentFormat,
 ) -> Result<String, String> {
     prepare_staged_file(
         &app,
         PathBuf::from(target_path),
-        ensure_pdf_target_path,
-        staged_hwp_pdf_export_path,
+        |path| ensure_document_target_path(path, format),
+        staged_document_save_path,
     )
 }
 
 #[tauri::command]
-pub fn commit_staged_hwp_save(
+pub fn commit_staged_document_save(
     app: AppHandle,
-    doc_id: String,
-    staged_path: String,
-    target_path: String,
-    expected_revision: Option<u64>,
-    allow_external_overwrite: Option<bool>,
+    request: CommitStagedDocumentSaveRequest,
     state: State<'_, AppState>,
 ) -> Result<SaveResult, String> {
+    let CommitStagedDocumentSaveRequest {
+        doc_id,
+        staged_path,
+        target_path,
+        format,
+        expected_revision,
+        allow_external_overwrite,
+    } = request;
     let target_path = PathBuf::from(target_path);
     let result = state
         .sessions
         .lock()
         .map_err(|_| "문서 세션 잠금 실패".to_string())?
-        .commit_staged_hwp_save(
+        .commit_staged_document_save(
             &doc_id,
             PathBuf::from(staged_path),
             target_path.clone(),
+            format,
             expected_revision,
             allow_external_overwrite.unwrap_or(false),
         )?;
@@ -147,6 +136,11 @@ pub fn clear_recent_documents(app: AppHandle) -> Result<(), String> {
 #[tauri::command]
 pub fn record_recent_document(app: AppHandle, path: String) -> Result<(), String> {
     recent_documents::record_document(&app, &PathBuf::from(path))
+}
+
+#[tauri::command]
+pub fn remove_recent_document(app: AppHandle, path: String) -> Result<(), String> {
+    recent_documents::remove_document(&app, &PathBuf::from(path))
 }
 
 #[tauri::command]
@@ -222,51 +216,58 @@ pub fn mutate_document(
 }
 
 #[tauri::command]
-pub fn export_pdf(
-    app: AppHandle,
-    doc_id: String,
+pub fn begin_pdf_export(
     target_path: String,
-    page_range: Option<PageRange>,
-    open_after: bool,
+    page_count: u32,
+    window: WebviewWindow,
     state: State<'_, AppState>,
 ) -> Result<String, String> {
-    let job_id = Uuid::new_v4().to_string();
-
-    let mut sessions = state
-        .sessions
+    state
+        .pdf_jobs
         .lock()
-        .map_err(|_| "문서 세션 잠금 실패".to_string())?;
-    let session = sessions.session_mut(&doc_id)?;
-    let core = session.ensure_core_loaded()?;
-    export_pdf_from_core(&app, &job_id, core, target_path, page_range, open_after)?;
-    Ok(job_id)
+        .map_err(|_| "PDF 작업 잠금 실패".to_string())?
+        .begin(window.label(), PathBuf::from(target_path), page_count)
 }
 
 #[tauri::command]
-pub fn export_pdf_from_hwp_path(
-    app: AppHandle,
-    staged_path: String,
-    target_path: String,
-    page_range: Option<PageRange>,
-    open_after: bool,
-) -> Result<String, String> {
-    let job_id = Uuid::new_v4().to_string();
+pub fn append_pdf_page(
+    job_id: String,
+    page_index: u32,
+    svg: String,
+    window: WebviewWindow,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    state
+        .pdf_jobs
+        .lock()
+        .map_err(|_| "PDF 작업 잠금 실패".to_string())?
+        .append_page(window.label(), &job_id, page_index, &svg)
+}
 
-    let staged_path = PathBuf::from(staged_path);
-    let bytes = std::fs::read(&staged_path).map_err(|e| {
-        format!(
-            "PDF 내보내기용 staging 파일을 읽을 수 없습니다: {} ({})",
-            staged_path.display(),
-            e
-        )
-    })?;
-    let core = editable_core_from_bytes(
-        &bytes,
-        "문서 바이트 파싱 실패",
-        "PDF 내보내기용 문서 변환 실패",
-    )?;
-    export_pdf_from_core(&app, &job_id, &core, target_path, page_range, open_after)?;
-    Ok(job_id)
+#[tauri::command]
+pub fn commit_pdf_export(
+    job_id: String,
+    window: WebviewWindow,
+    state: State<'_, AppState>,
+) -> Result<crate::pdf_export::PdfExportResult, String> {
+    state
+        .pdf_jobs
+        .lock()
+        .map_err(|_| "PDF 작업 잠금 실패".to_string())?
+        .commit(window.label(), &job_id)
+}
+
+#[tauri::command]
+pub fn abort_pdf_export(
+    job_id: String,
+    window: WebviewWindow,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    state
+        .pdf_jobs
+        .lock()
+        .map_err(|_| "PDF 작업 잠금 실패".to_string())?
+        .abort(window.label(), &job_id)
 }
 
 #[tauri::command]
@@ -330,12 +331,15 @@ fn allow_frontend_fs_file(app: &AppHandle, path: &Path) -> Result<(), String> {
     Ok(())
 }
 
-fn prepare_staged_file(
+fn prepare_staged_file<F>(
     app: &AppHandle,
     target_path: PathBuf,
-    validate_target: fn(&Path) -> Result<(), String>,
+    validate_target: F,
     build_staged_path: fn(&Path) -> Result<PathBuf, String>,
-) -> Result<String, String> {
+) -> Result<String, String>
+where
+    F: FnOnce(&Path) -> Result<(), String>,
+{
     validate_target(&target_path)?;
     let staged_path = build_staged_path(&target_path)?;
     allow_frontend_fs_file(app, &staged_path)?;
@@ -350,28 +354,23 @@ fn ensure_document_open_path(path: &Path) -> Result<(), String> {
     Ok(())
 }
 
-fn ensure_hwp_target_path(path: &Path) -> Result<(), String> {
+fn ensure_document_target_path(
+    path: &Path,
+    requested_format: DocumentFormat,
+) -> Result<(), String> {
     ensure_target_parent(path, "저장 경로")?;
-    let format = DocumentFormat::from_path(path)?;
-    if format == DocumentFormat::Hwpx {
-        return Err(
-            "HWPX 경로에는 HWP 바이트를 저장할 수 없습니다. .hwp 파일로 저장하세요.".to_string(),
-        );
+    let target_format = DocumentFormat::from_path(path)?;
+    if target_format != requested_format {
+        return Err(format!(
+            "요청한 저장 형식({:?})과 대상 확장자({:?})가 일치하지 않습니다",
+            requested_format, target_format
+        ));
     }
     Ok(())
 }
 
-fn staged_hwp_save_path(target_path: &Path) -> Result<PathBuf, String> {
+fn staged_document_save_path(target_path: &Path) -> Result<PathBuf, String> {
     staged_sibling_path(target_path, ".alhangeul-save-", ".tmp")
-}
-
-fn ensure_pdf_target_path(path: &Path) -> Result<(), String> {
-    ensure_target_parent(path, "PDF 경로")?;
-    crate::pdf_export::ensure_pdf_path(path)
-}
-
-fn staged_hwp_pdf_export_path(target_path: &Path) -> Result<PathBuf, String> {
-    staged_sibling_path(target_path, ".alhangeul-export-", ".hwp")
 }
 
 fn ensure_target_parent(path: &Path, context: &str) -> Result<(), String> {
@@ -414,68 +413,21 @@ pub async fn create_editor_window(app: AppHandle) -> Result<String, String> {
         .map_err(|e| format!("새 창 생성 작업 실패: {}", e))?
 }
 
-fn export_pdf_from_core(
-    app: &AppHandle,
-    job_id: &str,
-    core: &DocumentCore,
-    target_path: String,
-    page_range: Option<PageRange>,
-    open_after: bool,
-) -> Result<(), String> {
-    let path = PathBuf::from(&target_path);
-    let total = crate::pdf_export::export_core_to_pdf(
-        core,
-        &path,
-        page_range,
-        |phase, done, total, message| {
-            emit_progress(app, job_id, phase, done, total, &message);
-        },
-    )?;
-
-    if open_after {
-        open::that(&path).map_err(|e| {
-            format!(
-                "파일은 저장됐지만 OS 기본 앱으로 열 수 없습니다: {} ({})",
-                path.display(),
-                e
-            )
-        })?;
-    }
-
-    emit_progress(
-        app,
-        job_id,
-        "done",
-        total,
-        total,
-        "PDF 내보내기가 완료되었습니다",
-    );
-    Ok(())
-}
-
-fn emit_progress(app: &AppHandle, job_id: &str, phase: &str, done: u32, total: u32, message: &str) {
-    let _ = app.emit(
-        "alhangeul-job-progress",
-        JobProgress {
-            job_id: job_id.to_string(),
-            phase: phase.to_string(),
-            done,
-            total,
-            message: message.to_string(),
-        },
-    );
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn ensure_hwp_target_path_accepts_existing_hwp_parent() {
+    fn ensure_document_target_path_accepts_matching_hwp_and_hwpx_extensions() {
         let dir = tempfile::tempdir().unwrap();
-        let path = dir.path().join("saved.hwp");
 
-        assert!(ensure_hwp_target_path(&path).is_ok());
+        assert!(
+            ensure_document_target_path(&dir.path().join("saved.hwp"), DocumentFormat::Hwp).is_ok()
+        );
+        assert!(
+            ensure_document_target_path(&dir.path().join("saved.hwpx"), DocumentFormat::Hwpx)
+                .is_ok()
+        );
     }
 
     #[test]
@@ -501,20 +453,23 @@ mod tests {
     }
 
     #[test]
-    fn ensure_hwp_target_path_rejects_invalid_parent_and_hwpx() {
+    fn ensure_document_target_path_rejects_invalid_parent_and_format_mismatch() {
         let dir = tempfile::tempdir().unwrap();
         let missing_parent = dir.path().join("missing").join("saved.hwp");
 
-        assert!(ensure_hwp_target_path(&missing_parent).is_err());
-        assert!(ensure_hwp_target_path(&dir.path().join("saved.hwpx")).is_err());
+        assert!(ensure_document_target_path(&missing_parent, DocumentFormat::Hwp).is_err());
+        assert!(
+            ensure_document_target_path(&dir.path().join("saved.hwpx"), DocumentFormat::Hwp)
+                .is_err()
+        );
     }
 
     #[test]
-    fn staged_hwp_save_path_keeps_parent_and_adds_unique_suffix() {
+    fn staged_document_save_path_keeps_parent_and_adds_unique_suffix() {
         let dir = tempfile::tempdir().unwrap();
         let target_path = dir.path().join("saved.hwp");
 
-        let staged_path = staged_hwp_save_path(&target_path).unwrap();
+        let staged_path = staged_document_save_path(&target_path).unwrap();
 
         assert_eq!(staged_path.parent(), target_path.parent());
         assert_ne!(staged_path, target_path);
@@ -528,27 +483,5 @@ mod tests {
             .unwrap()
             .to_string_lossy()
             .ends_with(".tmp"));
-    }
-
-    #[test]
-    fn staged_hwp_pdf_export_path_uses_hwp_sibling_file() {
-        let dir = tempfile::tempdir().unwrap();
-        let target_path = dir.path().join("export.pdf");
-
-        let staged_path = staged_hwp_pdf_export_path(&target_path).unwrap();
-
-        assert_eq!(staged_path.parent(), target_path.parent());
-        assert_ne!(staged_path, target_path);
-        assert!(staged_path
-            .file_name()
-            .unwrap()
-            .to_string_lossy()
-            .starts_with("export.pdf.alhangeul-export-"));
-        assert_eq!(
-            staged_path
-                .extension()
-                .and_then(|extension| extension.to_str()),
-            Some("hwp")
-        );
     }
 }

@@ -1,169 +1,135 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fileCommands } from './file';
+import {
+  confirmSaveBeforeReplacingDocument,
+  fileCommands,
+} from './file';
 
 const upstreamOpen = vi.hoisted(() => vi.fn());
-const upstreamSave = vi.hoisted(() => vi.fn());
-const openPrintDialog = vi.hoisted(() => vi.fn());
-const openRecentDocumentsDialog = vi.hoisted(() => vi.fn());
+const upstreamConfirm = vi.hoisted(() => vi.fn());
+const resolveRecentPath = vi.hoisted(() => vi.fn());
+const host = vi.hoisted(() => ({
+  activeSession: null as null | { docId: string },
+  beginNewDocument: vi.fn(),
+  openDocumentFromDialog: vi.fn(),
+  openDocumentByPath: vi.fn(),
+  saveCurrent: vi.fn(),
+  exportCurrentPdf: vi.fn(),
+  printCurrentWebview: vi.fn(),
+  createNewWindow: vi.fn(),
+  confirmDocumentReplacement: vi.fn(),
+}));
 
 vi.mock('@upstream/command/commands/file', () => ({
+  confirmSaveBeforeReplacingDocument: upstreamConfirm,
   fileCommands: [
+    { id: 'file:new-doc', label: 'New', execute: vi.fn() },
     { id: 'file:open', label: 'Open', execute: upstreamOpen },
-    { id: 'file:save', label: 'Save', execute: upstreamSave },
+    { id: 'file:open-recent', label: 'Recent', execute: vi.fn() },
+    { id: 'file:save', label: 'Save', execute: vi.fn() },
+    { id: 'file:save-as', label: 'Save as', execute: vi.fn() },
+    { id: 'file:save-as-hwp', label: 'Save HWP', execute: vi.fn() },
+    { id: 'file:save-as-hwpx', label: 'Save HWPX', execute: vi.fn() },
+    { id: 'file:print-to-pdf', label: 'PDF', execute: vi.fn() },
     { id: 'file:print', label: 'Print', execute: vi.fn() },
   ],
 }));
-
-vi.mock('@/ui/print-dialog', () => ({
-  openPrintDialog,
+vi.mock('../../core/desktop-host', () => ({ getDesktopHost: () => host }));
+vi.mock('../../recent/recent-store', () => ({
+  resolveDesktopRecentPath: resolveRecentPath,
 }));
 
-vi.mock('@/ui/recent-documents-dialog', () => ({
-  openRecentDocumentsDialog,
-}));
-
-describe('file command desktop overrides', () => {
+describe('native file command leaf adapters', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    openPrintDialog.mockReset();
-    openRecentDocumentsDialog.mockReset();
-    (globalThis as { alert?: unknown }).alert = vi.fn();
-    (globalThis as { window?: unknown }).window = { location: { href: 'http://localhost/' }, open: vi.fn() };
-    (globalThis as { document?: unknown }).document = {
-      getElementById: vi.fn(() => ({ textContent: 'ready' })),
-    };
+    host.activeSession = null;
+    (globalThis as { document?: unknown }).document = { getElementById: vi.fn(() => null) };
+    delete (globalThis as { window?: unknown }).window;
   });
 
-  it('falls back to upstream open when no desktop bridge is available', async () => {
-    await command('file:open').execute(services({ wasm: {} }) as never);
+  it('delegates unchanged upstream behavior outside Tauri', async () => {
+    await command('file:open').execute(services() as never);
 
     expect(upstreamOpen).toHaveBeenCalled();
+    expect(host.openDocumentFromDialog).not.toHaveBeenCalled();
   });
 
-  it('falls back to upstream save when no desktop bridge is available', async () => {
-    await command('file:save').execute(services({ wasm: {} }) as never);
-
-    expect(upstreamSave).toHaveBeenCalled();
-  });
-
-  it('emits saved events and status when desktop save succeeds', async () => {
-    const result = {
-      docId: 'doc-1',
-      sourcePath: '/tmp/doc.hwp',
-      format: 'hwp',
-      revision: 2,
-      dirty: false,
-      warnings: [],
-    };
-    const eventBus = { emit: vi.fn() };
-    const wasm = desktopBridge({
-      saveDocumentFromCommand: vi.fn().mockResolvedValue(result),
+  it('routes native open, save, print, and new-window through the desktop host', async () => {
+    installTauriWindow();
+    host.openDocumentFromDialog.mockResolvedValue({ fileName: 'opened.hwp', pageCount: 2 });
+    host.saveCurrent.mockResolvedValue({ docId: 'doc' });
+    host.exportCurrentPdf.mockResolvedValue({
+      path: '/documents/export.pdf', pageCount: 2, textMode: 'searchable',
     });
+    host.printCurrentWebview.mockResolvedValue(undefined);
+    host.createNewWindow.mockResolvedValue('editor-2');
 
-    await command('file:save').execute(services({ wasm, eventBus }) as never);
+    await command('file:open').execute(services() as never);
+    await command('file:save').execute(services() as never);
+    await command('file:save-as').execute(services() as never);
+    await command('file:save-as-hwp').execute(services() as never);
+    await command('file:save-as-hwpx').execute(services() as never);
+    await command('file:print-to-pdf').execute(services() as never);
+    await command('file:print').execute(services() as never);
+    await command('file:new-window').execute(services() as never);
 
-    expect(eventBus.emit).toHaveBeenCalledWith('desktop-status', '저장 중...');
-    expect(eventBus.emit).toHaveBeenCalledWith('desktop-document-saved', result);
-    expect(eventBus.emit).toHaveBeenCalledWith('desktop-status', '저장 완료');
+    expect(host.openDocumentFromDialog).toHaveBeenCalledOnce();
+    expect(host.saveCurrent.mock.calls).toEqual([
+      [],
+      [undefined, true],
+      ['hwp', true],
+      ['hwpx', true],
+    ]);
+    expect(host.exportCurrentPdf).toHaveBeenCalledOnce();
+    expect(host.printCurrentWebview).toHaveBeenCalledOnce();
+    expect(host.createNewWindow).toHaveBeenCalledOnce();
   });
 
-  it('reports desktop save failures through status and alert', async () => {
-    const eventBus = { emit: vi.fn() };
-    const wasm = desktopBridge({
-      saveDocumentFromCommand: vi.fn().mockRejectedValue(new Error('disk full')),
-    });
+  it('resolves opaque recent ids inside the adapter before native open', async () => {
+    installTauriWindow();
+    resolveRecentPath.mockReturnValue('/private/document.hwpx');
+    host.openDocumentByPath.mockResolvedValue({ fileName: 'document.hwpx', pageCount: 1 });
 
-    await command('file:save').execute(services({ wasm, eventBus }) as never);
+    await command('file:open-recent').execute(services() as never, { id: 'opaque-id' });
 
-    expect(eventBus.emit).toHaveBeenCalledWith('desktop-status', '저장 실패: disk full');
-    expect(globalThis.alert).toHaveBeenCalledWith('저장에 실패했습니다:\ndisk full');
+    expect(resolveRecentPath).toHaveBeenCalledWith('opaque-id');
+    expect(host.openDocumentByPath).toHaveBeenCalledWith('/private/document.hwpx');
   });
 
-  it('uses desktop print integration when available', async () => {
-    const wasm = desktopBridge({
-      printCurrentWebview: vi.fn().mockResolvedValue(undefined),
-    });
-    openPrintDialog.mockResolvedValue(undefined);
+  it('uses upstream replacement guard without a native session and host guard with one', async () => {
+    upstreamConfirm.mockResolvedValue(true);
+    await expect(confirmSaveBeforeReplacingDocument(services() as never)).resolves.toBe(true);
+    expect(upstreamConfirm).toHaveBeenCalledOnce();
 
-    await command('file:print').execute(services({ wasm }) as never);
-
-    expect(openPrintDialog).toHaveBeenCalledWith(
-      wasm,
-      expect.objectContaining({ print: expect.any(Function) }),
-    );
+    installTauriWindow();
+    host.activeSession = { docId: 'doc' };
+    host.confirmDocumentReplacement.mockResolvedValue(false);
+    await expect(confirmSaveBeforeReplacingDocument(services() as never)).resolves.toBe(false);
+    expect(host.confirmDocumentReplacement).toHaveBeenCalledOnce();
   });
 
-  it('keeps PDF export desktop-only', async () => {
-    await command('file:export-pdf').execute(services({ wasm: {} }) as never);
-
-    expect(globalThis.alert).toHaveBeenCalledWith('PDF 내보내기는 Alhangeul 데스크톱 앱에서 지원합니다.');
-  });
-
-  it('does not expose a PDF export shortcut label', () => {
-    expect(command('file:export-pdf').shortcutLabel).toBeUndefined();
-  });
-
-  it('opens a selected recent document through the desktop bridge', async () => {
-    const loaded = { docInfo: { pageCount: 1 }, message: 'loaded' };
-    const recent = { path: '/tmp/recent.hwp', fileName: 'recent.hwp' };
-    const eventBus = { emit: vi.fn() };
-    const wasm = {
-      openDocumentByPath: vi.fn().mockResolvedValue(loaded),
-      listRecentDocuments: vi.fn().mockResolvedValue([recent]),
-      clearRecentDocuments: vi.fn(),
-    };
-    openRecentDocumentsDialog.mockResolvedValue(recent);
-
-    await command('file:open-recent').execute(services({ wasm, eventBus }) as never);
-
-    expect(openRecentDocumentsDialog).toHaveBeenCalledWith(
-      [recent],
-      expect.objectContaining({ clearRecentDocuments: expect.any(Function) }),
-    );
-    expect(wasm.openDocumentByPath).toHaveBeenCalledWith('/tmp/recent.hwp');
-    expect(eventBus.emit).toHaveBeenCalledWith('desktop-document-loaded', loaded);
-  });
-
-  it('reports an empty recent document list without opening the dialog', async () => {
-    const eventBus = { emit: vi.fn() };
-    const wasm = {
-      openDocumentByPath: vi.fn(),
-      listRecentDocuments: vi.fn().mockResolvedValue([]),
-      clearRecentDocuments: vi.fn(),
-    };
-
-    await command('file:open-recent').execute(services({ wasm, eventBus }) as never);
-
-    expect(openRecentDocumentsDialog).not.toHaveBeenCalled();
-    expect(wasm.openDocumentByPath).not.toHaveBeenCalled();
-    expect(eventBus.emit).toHaveBeenCalledWith('desktop-status', '최근 문서가 없습니다');
+  it('keeps upstream HWPX and PDF command metadata while overriding only native execute', () => {
+    expect(command('file:save-as-hwpx').label).toBe('Save HWPX');
+    expect(command('file:print-to-pdf').label).toBe('PDF');
   });
 });
 
 function command(id: string) {
   const found = fileCommands.find((item) => item.id === id);
-  if (!found) throw new Error(`missing command ${id}`);
+  if (!found) throw new Error(`missing command: ${id}`);
   return found;
 }
 
-function services({
-  wasm,
-  eventBus = { emit: vi.fn() },
-}: {
-  wasm: unknown;
-  eventBus?: { emit: ReturnType<typeof vi.fn> };
-}) {
-  return { wasm, eventBus };
+function installTauriWindow() {
+  (globalThis as { window?: unknown }).window = {
+    __TAURI_INTERNALS__: {},
+    location: { protocol: 'tauri:' },
+  };
 }
 
-function desktopBridge(overrides: Record<string, unknown>) {
+function services() {
   return {
-    openDocumentFromDialog: vi.fn(),
-    createNewWindow: vi.fn(),
-    saveDocumentFromCommand: vi.fn(),
-    saveDocumentAsFromCommand: vi.fn(),
-    exportPdfFromCommand: vi.fn(),
-    printCurrentWebview: vi.fn(),
-    ...overrides,
+    eventBus: { emit: vi.fn() },
+    wasm: { fileName: 'document.hwp' },
+    getContext: () => ({ hasDocument: true, isDirty: false }),
   };
 }

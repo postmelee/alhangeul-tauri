@@ -31,7 +31,7 @@
     "targets": "all",
     "publisher": "postmelee",
     "shortDescription": "Open desktop editor for HWP and HWPX documents",
-    "longDescription": "Alhangeul opens, edits, saves, and exports HWP/HWPX documents.",
+    "longDescription": "Alhangeul opens and edits HWP/HWPX documents, saves HWP/HWPX documents, and exports PDF files.",
     "category": "Productivity",
     "copyright": "Alhangeul contributors",
     "icon": [
@@ -41,6 +41,11 @@
       "../../../assets/logo/logo-512.png",
       "../../../assets/logo/favicon.ico"
     ],
+    "resources": {
+      "../../../assets/fonts/FONTS.md": "licenses/fonts/FONTS.md",
+      "../../../assets/fonts/licenses/NotoSansKR-OFL-1.1.txt": "licenses/fonts/NotoSansKR-OFL-1.1.txt",
+      "../../../assets/fonts/licenses/NotoSerifKR-OFL-1.1.txt": "licenses/fonts/NotoSerifKR-OFL-1.1.txt"
+    },
     "fileAssociations": [
       {
         "ext": ["hwp"],

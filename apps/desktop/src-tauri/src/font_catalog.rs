@@ -1,3 +1,4 @@
+use crate::bundled_pdf_fonts;
 use serde::Serialize;
 use std::collections::BTreeSet;
 use std::fs;
@@ -47,7 +48,8 @@ pub fn collect_desktop_local_font_entries() -> Vec<LocalFontEntry> {
 
 pub fn create_pdf_font_database() -> fontdb::Database {
     let mut fontdb = create_font_database(&desktop_extra_font_dirs());
-    apply_pdf_font_defaults(&mut fontdb);
+    bundled_pdf_fonts::load_into(&mut fontdb);
+    bundled_pdf_fonts::apply_generic_defaults(&mut fontdb);
     fontdb
 }
 
@@ -160,12 +162,6 @@ fn source_path(source: &Source) -> Option<String> {
         }
         Source::Binary(_) => None,
     }
-}
-
-fn apply_pdf_font_defaults(fontdb: &mut fontdb::Database) {
-    fontdb.set_serif_family("바탕");
-    fontdb.set_sans_serif_family("맑은 고딕");
-    fontdb.set_monospace_family("D2Coding");
 }
 
 fn classify_source(path: Option<&str>, file_backed_dirs: &[PathBuf]) -> &'static str {

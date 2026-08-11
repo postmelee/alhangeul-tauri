@@ -32,10 +32,18 @@ branch, 이동 가능한 floating ref, tag 없이 전달된 commit은 Stable 갱
 `third_party/rhwp`는 vendor source로 취급하고 Alhangeul 기능을 구현하기 위해 직접 수정하지 않는다.
 
 - `apps/desktop/`: Tauri shell, native document session, 저장·내보내기·인쇄, 창 관리, 파일 연결과 packaging
-- `apps/studio-host/`: Tauri bridge, desktop event routing, command adapter, UI 보정과 upstream import shadowing
+- `apps/studio-host/`: exact upstream Studio entry를 쓰는 Vite host, Tauri bridge와 desktop event·command·font leaf adapter, 최소 제품 UX 보정
 - `assets/`, `docs/`, `scripts/`: 제품 자산, 공식 문서와 운영 자동화
 
-studio host는 Vite alias로 upstream `rhwp-studio`를 가져오며 제품이 반드시 소유해야 하는 파일만 같은 import 경로에서 대체한다. engine API나 renderer bug는 먼저 upstream에서 해결하고, 데스크톱 통합 차이는 Alhangeul adapter에 둔다.
+studio host의 실제 Vite root와 entry는 각각 `third_party/rhwp/rhwp-studio`, 그 아래 `index.html`과 `src/main.ts`다. local `index.html`, `src/main.ts`, Toolbar, CanvasView, Ruler, renderer와 범용 dialog·style 복제본은 허용하지 않는다. 제품 title·접근성 label·새 창 항목·제품 style/icon만 HTML transform으로 보충하고, upstream import를 대체하는 alias는 native host·font policy·제품 정보에 필요한 12개 leaf adapter로 제한한다.
+
+`apps/studio-host/alhangeul-overrides.ts`가 adapter owner와 disposition의 진실 원천이다. `apps/studio-host/src/core/upstream-boundary.test.ts`는 12개 alias, `legacy-upstream-copy` 0개, 금지 entry와 제거된 shadow의 물리적 부재, adapter 300 LOC 상한을 검사한다. `tests/rhwp-baseline.test.mjs`는 exact entry, upstream 메뉴 command와 HWPX/PDF 실행 경계를 함께 고정한다. engine API나 renderer bug는 먼저 upstream에서 해결하고, 데스크톱 통합 차이는 이 경계 안의 leaf adapter에 둔다.
+
+## 문서 저장과 PDF 경계
+
+upstream embed runtime을 상속하는 local leaf wrapper는 `getDesktopStudioHandlers()`로 `loadFile`, `pageCount`, `getPageSvg`, `exportHwp`, `exportHwpx`, `notifySaved`만 native host에 노출한다. HWP/HWPX source save는 현재 형식에 맞는 exporter bytes를 chunk staging하고 Rust에서 요청 형식·확장자·parser 결과가 일치한 뒤 원자적으로 교체한다. native commit 성공 뒤에만 `notifySaved`로 upstream dirty/recovery 상태를 정리한다.
+
+PDF command는 upstream `file:print-to-pdf` 메뉴 위치와 활성 규칙을 유지하되 실행만 Alhangeul이 소유한다. active handler의 `getPageSvg(page)` 결과를 페이지 순서대로 native PDF job에 전달하며 staged HWP를 재파싱하지 않는다. PDF 성공·실패·취소는 source path·format·revision·dirty·recent와 upstream recovery draft를 바꾸지 않고 `notifySaved`를 호출하지 않는다.
 
 ## 갱신 자동화 경계
 
@@ -59,11 +67,11 @@ script는 dirty upstream source와 origin 불일치를 먼저 거부하고, sour
 - tag와 resolved commit 출처가 기록되어 있다.
 - source submodule, native Cargo lock, bundled WASM과 `rhwp-core.lock`이 같은 `rhwp` release를 가리킨다.
 - `pnpm install --frozen-lockfile`이 통과한다.
-- `pnpm run check:rhwp-pin`, `pnpm run check:product-boundary`가 통과한다.
+- `pnpm run check:product-boundary`, `pnpm run check:product-version`, `pnpm run check:rhwp-pin`, `pnpm run check:release-metadata`가 통과한다.
+- `pnpm run test:automation`이 통과한다.
 - `pnpm run test:upstream`, `pnpm run test:studio`, `pnpm run build:studio`가 통과한다.
-- offline Cargo metadata와 Rust format 검사가 통과한다.
 
-Windows/Linux native test·clippy, Tauri smoke, packaging과 배포는 각각 승인된 후속 플랫폼 작업에서 검증한다. 이 플랫폼 중립 수용 결과만으로 native 배포 준비가 완료되었다고 판단하지 않는다.
+Rust desktop test·Clippy, Tauri build·GUI·packaging은 지원 대상인 Windows/Linux의 승인된 후속 플랫폼 작업에서 검증한다. 이 플랫폼 중립 수용 결과만으로 native 배포 준비가 완료되었다고 판단하지 않는다.
 
 ## `v0.8.2` known issue 분류
 
