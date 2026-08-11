@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CommandServices } from '@upstream/command/types';
 import { printDirectlyFromPageSurface } from './direct-print';
 
@@ -45,7 +45,12 @@ describe('Tauri direct print surface', () => {
     delete (globalThis as { window?: unknown }).window;
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('prints upstream print-profile pages from a hidden surface', async () => {
+    hydrateDesktopPlatform.mockResolvedValue('unknown');
     const surface = createSurface();
     createPrintSurface.mockResolvedValue(surface);
     createPrintPage.mockImplementation((_svg, _info, index) => ({
@@ -87,7 +92,8 @@ describe('Tauri direct print surface', () => {
       .toBeLessThan(surface.window.print.mock.invocationCallOrder[0]);
   });
 
-  it('keeps the print title and surface until the Windows driver modal returns focus', async () => {
+  it('keeps the print surface through the Windows print-to-save focus transition', async () => {
+    vi.useFakeTimers();
     let nativeFocused = true;
     const focusListeners = new Set<NativeFocusListener>();
     const unlisten = vi.fn();
@@ -99,8 +105,11 @@ describe('Tauri direct print surface', () => {
     const status = installHostDocument(() => true);
     const surface = createSurface();
     surface.window.print.mockImplementation(() => {
+      expect(status.textContent).toBe('시스템 인쇄 처리 중...');
       nativeFocused = false;
       for (const listener of [...focusListeners]) listener({ payload: false });
+      nativeFocused = true;
+      for (const listener of [...focusListeners]) listener({ payload: true });
     });
     createPrintSurface.mockResolvedValue(surface);
     createPrintPage.mockImplementation((_svg, _info, index) => ({
@@ -111,65 +120,32 @@ describe('Tauri direct print surface', () => {
     }));
 
     const pendingPrint = printDirectlyFromPageSurface(createServices());
-    await vi.waitFor(() => expect(surface.window.print).toHaveBeenCalledOnce());
+    await vi.advanceTimersByTimeAsync(0);
 
+    expect(surface.window.print).toHaveBeenCalledOnce();
+    expect(status.textContent).toBe('시스템 인쇄 처리 중...');
     expect((globalThis.document as unknown as { title: string }).title).toBe('document');
     expect(surface.document.title).toBe('document');
     expect(surface.dispose).not.toHaveBeenCalled();
-    expect(status.textContent).toBe('시스템 인쇄 처리 중...');
     expect(nativeWindow.onFocusChanged.mock.invocationCallOrder[0])
       .toBeLessThan(surface.window.print.mock.invocationCallOrder[0]);
 
+    nativeFocused = false;
+    for (const listener of [...focusListeners]) listener({ payload: false });
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(surface.dispose).not.toHaveBeenCalled();
+    expect(status.textContent).toBe('시스템 인쇄 처리 중...');
+
     nativeFocused = true;
     for (const listener of [...focusListeners]) listener({ payload: true });
+    await vi.advanceTimersByTimeAsync(999);
+    expect(surface.dispose).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1);
     await pendingPrint;
 
     expect(surface.dispose).toHaveBeenCalledOnce();
     expect((globalThis.document as unknown as { title: string }).title).toBe('Alhangeul');
     expect(unlisten).toHaveBeenCalledOnce();
-  });
-
-  it('falls back to DOM focus when native focus listener setup fails', async () => {
-    let domFocused = false;
-    const focusListeners = new Set<() => void>();
-    const fakeWindow = {
-      addEventListener: vi.fn((type: string, listener: () => void) => {
-        if (type === 'focus') focusListeners.add(listener);
-      }),
-      removeEventListener: vi.fn((type: string, listener: () => void) => {
-        if (type === 'focus') focusListeners.delete(listener);
-      }),
-    };
-    (globalThis as { window?: unknown }).window = fakeWindow;
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    nativeWindow.onFocusChanged.mockRejectedValue(new Error('native focus unavailable'));
-    const status = installHostDocument(() => domFocused);
-    const surface = createSurface();
-    createPrintSurface.mockResolvedValue(surface);
-    createPrintPage.mockImplementation((_svg, _info, index) => ({
-      pageName: `page-${index}`,
-      className: `page-${index}`,
-      widthMm: 210.079,
-      heightMm: 297.127,
-    }));
-
-    const pendingPrint = printDirectlyFromPageSurface(createServices());
-    await vi.waitFor(() => expect(surface.window.print).toHaveBeenCalledOnce());
-
-    expect(surface.dispose).not.toHaveBeenCalled();
-    expect(status.textContent).toBe('시스템 인쇄 처리 중...');
-    expect(warn).toHaveBeenCalledWith(
-      '[file:print] native window focus 감시를 시작하지 못했습니다.',
-      expect.any(Error),
-    );
-
-    domFocused = true;
-    for (const listener of [...focusListeners]) listener();
-    await pendingPrint;
-
-    expect(surface.dispose).toHaveBeenCalledOnce();
-    expect(fakeWindow.removeEventListener).toHaveBeenCalledWith('focus', expect.any(Function));
-    warn.mockRestore();
   });
 
   it('uses the default page context and one-pixel tolerance for uniform Linux pages', async () => {

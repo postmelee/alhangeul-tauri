@@ -2,10 +2,10 @@ import { getCurrentWindow, type Window as TauriWindow } from '@tauri-apps/api/wi
 import type { DesktopPlatform } from '../core/platform';
 
 const PRINT_UI_FOCUS_TIMEOUT_MS = 5 * 60 * 1000;
+const NATIVE_FOCUS_STABILITY_MS = 1000;
 
 export type PrintUiReturnReason =
-  | 'native-focus'
-  | 'native-already-focused'
+  | 'native-focus-stable'
   | 'native-timeout'
   | 'dom-focus'
   | 'dom-already-focused'
@@ -35,36 +35,51 @@ export async function preparePrintUiReturnWaiter(
 async function prepareNativeFocusWaiter(
   nativeWindow: NativeFocusWindow,
 ): Promise<PrintUiReturnWaiter> {
-  let sawUnfocused = false;
   let waitStarted = false;
   const deferred = createDeferredResult();
+  const stability = createNativeFocusStability(nativeWindow, deferred);
   const unlisten = await nativeWindow.onFocusChanged(({ payload: focused }) => {
-    if (!focused) {
-      sawUnfocused = true;
-    } else if (waitStarted && sawUnfocused) {
-      deferred.finish('native-focus');
-    }
+    if (waitStarted) stability.observe(focused);
   });
 
   return {
     async waitForReturn() {
       waitStarted = true;
       deferred.startTimeout('native-timeout');
-      const focused = await nativeWindow.isFocused();
-      if (!focused) {
-        sawUnfocused = true;
-      } else if (sawUnfocused) {
-        deferred.finish('native-focus');
-      } else {
-        deferred.finish('native-already-focused');
-      }
+      stability.observe(await nativeWindow.isFocused());
       return deferred.result;
     },
     dispose() {
       unlisten();
+      stability.dispose();
       deferred.dispose();
     },
   };
+}
+
+function createNativeFocusStability(
+  nativeWindow: NativeFocusWindow,
+  deferred: ReturnType<typeof createDeferredResult>,
+) {
+  let stabilityTimeoutId: ReturnType<typeof setTimeout> | null = null;
+  const cancel = () => {
+    if (stabilityTimeoutId === null) return;
+    clearTimeout(stabilityTimeoutId);
+    stabilityTimeoutId = null;
+  };
+  const observe = (focused: boolean) => {
+    cancel();
+    if (!focused) return;
+    stabilityTimeoutId = setTimeout(async () => {
+      stabilityTimeoutId = null;
+      try {
+        if (await nativeWindow.isFocused()) deferred.finish('native-focus-stable');
+      } catch (error) {
+        console.warn('[file:print] native window focus 안정성을 확인하지 못했습니다.', error);
+      }
+    }, NATIVE_FOCUS_STABILITY_MS);
+  };
+  return { observe, dispose: cancel };
 }
 
 function prepareDomFocusWaiter(): PrintUiReturnWaiter {

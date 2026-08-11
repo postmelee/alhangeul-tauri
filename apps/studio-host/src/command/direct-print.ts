@@ -51,16 +51,15 @@ export async function printDirectlyFromPageSurface(
     setupPrintDocument(surface.document, wasm.fileName, printPages, platform);
     await waitForPrintSurfaceReady(surface);
 
-    setStatus('시스템 인쇄 대화상자 여는 중...');
     originalDocumentTitle = document.title;
     document.title = pdfPrintTitle(wasm.fileName);
+    setStatus('시스템 인쇄 처리 중...');
     printUiReturnWaiter = await preparePrintUiReturnWaiter(platform);
     console.info(
       `[file:print] 시스템 인쇄 호출 `
       + `(surface=iframe, pages=${pageCount}, profile=print, platform=${platform})`,
     );
     surface.window.print();
-    setStatus('시스템 인쇄 처리 중...');
     const returnReason = await printUiReturnWaiter.waitForReturn();
     console.info(
       `[file:print] 시스템 인쇄 modal lifecycle 종료 `
