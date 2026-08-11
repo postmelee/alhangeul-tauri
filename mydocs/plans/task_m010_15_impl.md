@@ -23,6 +23,7 @@ Stage 1 사전 조사에서 rhwp v0.8.2의 `file:print`는 사용자 동기 클�
 | 2 | editor 직접 인쇄 override 제거 | file command·desktop host·Rust command와 focused test | Tauri에서도 upstream `file:print` execute 호출 |
 | 2.3 | Linux WebKitGTK 빈 쪽 보정 | 최소 재현·Tauri print style adapter·focused test | 실제 6쪽 문서가 system print에서도 6쪽 |
 | 2.4 | Windows system print lifecycle 보정 | title/surface lifecycle·상태 표시·focused test | PDF driver modal 동안 제목 유지, 거짓 완료 표시 없음 |
+| 2.5 | Windows native modal lifecycle 보정 | Tauri native focus waiter·focused test | PDF 저장창 종료까지 처리 중 상태 유지 |
 | 3 | 플랫폼 중립 회귀와 공식 문서 정렬 | 전체 test/build, `UPSTREAM.md`, release gate | product/upstream/Studio 전체 gate |
 | 4 | exact-SHA Windows/Linux 후보 | `publish/task15` 후보·CI/native artifact | Windows 다운로드와 수동 인쇄 handoff |
 
@@ -265,6 +266,52 @@ Windows exact 수동 gate:
 
 ```text
 Task #15 [Stage 2.4]: Windows system print lifecycle 보정
+```
+
+### Stage 2.5 — Windows native modal lifecycle 보정
+
+2026-08-11 Stage 2.4 exact Windows 후보 검증에서 system print dialog가 열린 동안에는
+`시스템 인쇄 처리 중...`이 유지됐지만, Microsoft Print to PDF의 파일 이름 지정
+저장창으로 전환되자 상태가 복원됐다. DOM `document.hasFocus()`는 WebView 인쇄 UI가
+닫힌 시점에 true가 되어 driver 소유 저장창의 생명주기를 관찰하지 못했다. 원본
+basename으로 유지한 top-level·surface title도 driver 기본 파일명에는 반영되지 않았다.
+
+- Windows에서는 Tauri native `Window.onFocusChanged()` listener를 `window.print()` 호출
+  전에 연결하고, 반환 뒤 `Window.isFocused()`를 함께 확인한다. system print dialog와
+  driver 저장창이 모두 main native window 바깥에 있는 동안 title, hidden surface,
+  `시스템 인쇄 처리 중...` 상태를 유지한다.
+- main native window가 다시 focus를 얻으면 저장 또는 취소로 modal chain이 닫힌 것으로
+  간주하고 기존 문서 상태를 복원한다. 성공·취소는 계속 구분하지 않으며 `인쇄 완료`를
+  표시하지 않는다.
+- native focus listener 등록이 실패한 경우와 Windows 외 플랫폼은 기존 DOM focus
+  fallback을 사용한다. bounded timeout은 유지한다.
+- Microsoft Print to PDF 기본 파일명은 WebView2 system print UI가 출력 경로·파일명
+  설정을 제공하지 않는 OS 소유 제약으로 확정한다. 보장되는 basename과 쓰기 완료 UX는
+  기존 `파일 > PDF로 저장`이 담당하며 Issue #15 acceptance를 막지 않는다.
+- browser upstream preview, Linux pagination CSS, physical printer 동작과 direct
+  PDF/HWP/HWPX 데이터는 변경하지 않는다.
+
+검증:
+
+```bash
+pnpm --filter @postmelee/alhangeul-studio-host test -- src/command/direct-print.test.ts src/command/commands/file.test.ts src/core/upstream-boundary.test.ts
+pnpm run test:studio
+pnpm run build:studio
+pnpm run check:product-boundary
+git diff --check
+```
+
+Windows exact 수동 gate:
+
+- system print dialog 직접 진입을 유지한다.
+- Microsoft Print to PDF 저장창이 열려 있는 동안 `시스템 인쇄 처리 중...`을 유지한다.
+- 저장 또는 취소 후 기존 문서 상태가 복원되고 재인쇄할 수 있다.
+- 기본 파일명 자동 입력은 acceptance에서 제외하고 system print UI 제약으로 기록한다.
+
+커밋:
+
+```text
+Task #15 [Stage 2.5]: Windows native modal lifecycle 보정
 ```
 
 ## Stage 3 — 플랫폼 중립 회귀와 공식 문서 정렬

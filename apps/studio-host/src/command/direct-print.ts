@@ -17,12 +17,13 @@ import {
   hydrateDesktopPlatform,
   type DesktopPlatform,
 } from '../core/platform';
+import {
+  preparePrintUiReturnWaiter,
+  type PrintUiReturnWaiter,
+} from './print-ui-lifecycle';
 
 let printJobActive = false;
 const LINUX_PRINT_FRAGMENT_TOLERANCE_PX = 1;
-const PRINT_UI_FOCUS_TIMEOUT_MS = 5 * 60 * 1000;
-
-type PrintUiReturnReason = 'already-focused' | 'focus' | 'timeout' | 'unsupported';
 
 export async function printDirectlyFromPageSurface(
   services: CommandServices,
@@ -36,6 +37,7 @@ export async function printDirectlyFromPageSurface(
   const { wasm } = services;
   let surface: PrintSurface | null = null;
   let originalDocumentTitle: string | null = null;
+  let printUiReturnWaiter: PrintUiReturnWaiter | null = null;
 
   try {
     flushDeferredPagination(services);
@@ -52,54 +54,26 @@ export async function printDirectlyFromPageSurface(
     setStatus('시스템 인쇄 대화상자 여는 중...');
     originalDocumentTitle = document.title;
     document.title = pdfPrintTitle(wasm.fileName);
+    printUiReturnWaiter = await preparePrintUiReturnWaiter(platform);
     console.info(
       `[file:print] 시스템 인쇄 호출 `
       + `(surface=iframe, pages=${pageCount}, profile=print, platform=${platform})`,
     );
     surface.window.print();
     setStatus('시스템 인쇄 처리 중...');
-    const returnReason = await waitForHostPrintUiReturn();
+    const returnReason = await printUiReturnWaiter.waitForReturn();
     console.info(
       `[file:print] 시스템 인쇄 modal lifecycle 종료 `
       + `(reason=${returnReason}, title=${JSON.stringify(document.title)})`,
     );
   } finally {
+    printUiReturnWaiter?.dispose();
     if (originalDocumentTitle !== null) {
       document.title = originalDocumentTitle;
     }
     surface?.dispose();
     printJobActive = false;
   }
-}
-
-async function waitForHostPrintUiReturn(): Promise<PrintUiReturnReason> {
-  if (
-    typeof window === 'undefined'
-    || typeof document === 'undefined'
-    || typeof document.hasFocus !== 'function'
-  ) {
-    return 'unsupported';
-  }
-  if (document.hasFocus()) return 'already-focused';
-
-  return new Promise<PrintUiReturnReason>((resolve) => {
-    let settled = false;
-    const finish = (reason: PrintUiReturnReason) => {
-      if (settled) return;
-      settled = true;
-      window.clearTimeout(timeoutId);
-      window.removeEventListener('focus', onFocus);
-      resolve(reason);
-    };
-    const onFocus = () => finish('focus');
-    const timeoutId = window.setTimeout(() => {
-      console.warn('[file:print] system print UI focus 복귀 대기 시간이 초과됐습니다.');
-      finish('timeout');
-    }, PRINT_UI_FOCUS_TIMEOUT_MS);
-
-    window.addEventListener('focus', onFocus);
-    if (document.hasFocus()) finish('already-focused');
-  });
 }
 
 function flushDeferredPagination(services: CommandServices): void {
