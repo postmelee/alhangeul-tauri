@@ -176,6 +176,66 @@ Task #9는 #13 merge 뒤 rebase하여 Linux prerelease 검사를 같은 guard에
 보정 source commit을 `publish/task13`에 fast-forward한 뒤 CI와 Windows/Linux native workflow를
 새 exact SHA로 다시 실행한다. 기존 `63a2703...` artifact는 Stage 6.7 수용 근거로 재사용하지 않는다.
 
+## Stage 6.8 — Windows CI 테스트 환경 계약 보정
+
+Stage 6.7 exact workflow에서 Windows `Test studio host`만 실패했다. 네 개의 실패는 모두
+`installWindowsWheelZoomReroute()`가 테스트용 `document.addEventListener`를 호출한 지점에서
+같은 `TypeError`로 발생했다. macOS와 Linux test host에서는 platform detection이 해당 leaf
+adapter를 실행하지 않아 숨겨졌고, 실제 Windows WebView가 아니라 테스트 double의 DOM 계약이
+부족한 것이 원인이었다.
+
+### 산출물
+
+| 파일 | 변경 요약 |
+|---|---|
+| `apps/studio-host/src/core/desktop-events.test.ts` | 테스트 `document`에 EventTarget 계약을 보충하고 모든 host에서 Windows wheel 등록 경로를 실행한다. |
+| `mydocs/plans/task_m010_13_impl.md` | Stage 6.8 원인·범위·exact 재검증 계획을 기록한다. |
+| `mydocs/orders/20260812.md` | Stage 6.8 보정과 exact workflow 대기 상태를 기록한다. |
+| `mydocs/working/task_m010_13_stage6.md` | Windows CI 실패 원인, 최소 보정과 검증 결과를 기록한다. |
+
+### 본문 변경 정도 / 본문 무손실 여부
+
+production TypeScript, Rust, upstream bundle, 저장·PDF·인쇄·wheel 동작은 변경하지 않았다.
+테스트 double만 실제 `Document`가 제공하는 listener 계약에 맞췄으며, Windows 분기를 모든
+개발 host에서 실행하도록 회귀 검출 범위를 강화했다.
+
+### 검증 결과
+
+실행 명령:
+
+```bash
+pnpm --filter @postmelee/alhangeul-studio-host exec vitest run \
+  src/core/desktop-events.test.ts src/core/windows-wheel-zoom.test.ts
+pnpm run check:product-boundary
+pnpm run check:product-version
+pnpm run check:release-metadata
+pnpm run check:rhwp-pin
+pnpm run test:automation
+pnpm run test:upstream
+pnpm run test:studio
+pnpm run build:studio
+git diff --check
+```
+
+결과:
+
+- OK — focused Windows wheel·desktop event 7/7.
+- OK — product boundary 179 files, version·release metadata `0.1.0`, rhwp `v0.8.2` pin.
+- OK — automation 71/71, upstream 35/35, Studio 19 files·78/78.
+- OK — production Studio build 211 modules와 `git diff --check`.
+- PENDING — 보정 commit의 새 exact SHA로 CI와 Windows/Linux native workflow를 재실행한다.
+
+### 잔여 위험
+
+- 새 exact workflow가 완료되기 전 Windows bundle 수용은 미확정이다.
+- Linux x64 Stage 6.7 build는 진행 중이더라도 실패한 Windows job과 같은 run이므로 최종
+  수용 근거로 사용하지 않는다.
+
+### 다음 단계 영향
+
+- Stage 6.8 commit을 `publish/task13`에 fast-forward하고 exact workflow가 통과하면 PR #18에
+  실패 원인·보정·새 검증 결과를 추가한다.
+
 ## 다음 단계 영향
 
 - Stage 6.7 보정 commit을 기존 `publish/task13`과 PR #18에 갱신하고 새 exact Windows/Linux

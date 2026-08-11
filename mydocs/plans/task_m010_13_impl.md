@@ -434,6 +434,25 @@ cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml
 
 보정 commit 메시지는 `Task #13 [Stage 6.7]: PR 리뷰 보정과 후속 책임 분리`로 고정한다.
 
+### Stage 6.8 — Windows CI 테스트 환경 계약 보정
+
+Stage 6.7 exact SHA `ebd30294be48e8150ba8567920d2f539459da69e`의 일반 CI와 Linux arm64
+native bundle은 통과했지만 Windows native job은 `Test studio host`에서 실패했다. Windows
+runner의 `navigator`가 wheel leaf adapter를 활성화한 반면 `desktop-events.test.ts`의 가짜
+`document`는 `getElementById`만 제공해, 실제 WebView에는 항상 존재하는 `addEventListener`를
+호출하지 못한 테스트 환경 결함이다. 작업지시자는 원인과 최소 보정 계획을 확인한 뒤 진행을
+승인했다.
+
+- production wheel adapter와 platform detection은 변경하지 않는다.
+- desktop event test의 `document` mock에 `addEventListener`와 `removeEventListener` 계약을
+  제공하고, 모든 개발 호스트에서 Windows navigator를 주입해 Windows 전용 등록 경로를 항상
+  실행한다.
+- focused test, 전체 플랫폼 중립 gate와 production Studio build를 통과한 뒤 새 exact SHA의
+  CI와 Windows/Linux native workflow를 다시 실행한다. `ebd3029...` workflow는 최종 수용
+  근거로 재사용하지 않는다.
+
+보정 commit 메시지는 `Task #13 [Stage 6.8]: Windows CI 테스트 환경 계약 보정`으로 고정한다.
+
 ## 공통 검증·의존성
 
 - 각 Stage는 검증 통과와 단계 보고서 승인 뒤 다음 Stage로 간다. 계획·문서 위치 변경은 먼저 승인받는다.

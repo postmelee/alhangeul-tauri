@@ -17,6 +17,7 @@ describe('desktop events', () => {
     vi.clearAllMocks();
     delete (globalThis as { window?: unknown }).window;
     delete (globalThis as { document?: unknown }).document;
+    delete (globalThis as { navigator?: unknown }).navigator;
   });
 
   it('does nothing outside the Tauri runtime', async () => {
@@ -67,6 +68,8 @@ describe('desktop events', () => {
     const dispatcher = { dispatch: vi.fn() };
     const classList = { toggle: vi.fn() };
     (globalThis as { document?: unknown }).document = {
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
       getElementById: vi.fn(() => ({ classList })),
     };
     await setupDesktopEvents(options({ host, dispatcher }));
@@ -102,13 +105,21 @@ describe('desktop events', () => {
 });
 
 function installTauriEnvironment() {
+  Object.defineProperty(globalThis, 'navigator', {
+    value: { platform: 'Win32', userAgent: 'Windows NT 10.0' },
+    configurable: true,
+  });
   (globalThis as { window?: unknown }).window = {
     __TAURI_INTERNALS__: {},
     location: { protocol: 'tauri:' },
   };
-  if (!(globalThis as { document?: unknown }).document) {
-    (globalThis as { document?: unknown }).document = { getElementById: vi.fn(() => null) };
-  }
+  const currentDocument = (globalThis as { document?: object }).document ?? {};
+  (globalThis as { document?: unknown }).document = {
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    getElementById: vi.fn(() => null),
+    ...currentDocument,
+  };
   const windowHandlers = new Map<string, (event: { payload: unknown }) => unknown>();
   let closeHandler: ((event: { preventDefault(): void }) => Promise<void>) | undefined;
   tauriListen.mockResolvedValue(vi.fn());
