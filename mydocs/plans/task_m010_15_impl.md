@@ -354,6 +354,12 @@ Windows exact 수동 gate:
 - 저장 또는 취소 후 1초 안팎으로 기존 문서 상태가 복원되고 재인쇄할 수 있다.
 - 기본 파일명 자동 입력은 acceptance에서 제외한다.
 
+2026-08-11 exact 후보 `89718976a7fa44ebe7f8981ca01ce6bfcbebc979`의 Windows
+WebView2 GUI 검증에서 위 필수 gate를 모두 통과했다. system print dialog와 Microsoft
+Print to PDF 저장창에서 처리 중 상태가 유지됐고, 최종 복귀 뒤 기존 문서 상태 복원과
+반복 인쇄를 확인했다. 빈 기본 파일명은 계획된 OS 소유 제약으로 기록하고 실패로 보지
+않는다.
+
 커밋:
 
 ```text
