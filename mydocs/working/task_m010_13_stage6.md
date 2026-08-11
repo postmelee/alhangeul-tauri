@@ -127,10 +127,59 @@ pnpm run check:desktop-artifacts -- --platform <platform> \
   주 수용 경로는 Windows installer와 Linux x64였다.
 - 공개 prerelease, release tag, 서명, updater와 package repository 게시는 미수행이다.
 
+## Stage 6.7 — PR 리뷰 보정과 후속 책임 분리
+
+PR #18의 maintainer review를 다시 코드와 exact 이력에 대조했다. Task #9의
+`check-release-metadata.mjs`와 Task #13 guard는 실제로 충돌하지만 리뷰에 언급된
+`6e0adc9`에는 Linux `desktopTemplate` 검사가 없고 이후 Task #9 commit에서 추가됐다.
+따라서 Task #13이 현재 HWP/HWPX·font resource metadata의 canonical guard를 소유하고,
+Task #9는 #13 merge 뒤 rebase하여 Linux prerelease 검사를 같은 guard에 확장하는 것으로
+소유권을 확정했다.
+
+### 즉시 보정
+
+- release metadata 반환 계약을 `fileAssociations`로 통일하고 CI/native workflow에 독립
+  `check:release-metadata` step을 추가했다.
+- README의 시스템 인쇄를 Issue #15 merge와 새 exact-SHA 수용 전 공개 후보 범위에서 제외했다.
+- upstream HTML의 title, accessible name과 새 창 menu marker가 정확히 한 번 존재하지 않으면
+  production build를 실패시키고 exact index marker test를 추가했다.
+- PDF job을 OS 임시 경로에 staging하고 WebView window owner를 검증한다. 같은 target의 동시
+  job을 거부하고 window 파괴 시 소유 job을 회수하며, 같은 WebView의 중복 export 요청은 하나로
+  합친다.
+- 최근 문서 단건 삭제를 native path store까지 전달하고 Rust·TypeScript test를 추가했다.
+- Windows WebView2에서 문서 surface 밖의 Ctrl/Meta+wheel도 upstream scroll container로
+  전달하는 40 LOC leaf adapter를 추가했다. upstream viewport zoom 구현은 복제하지 않는다.
+- Studio handler 준비의 무한 대기를 15초 timeout으로 바꾸고 generic monospace의 Noto Sans KR
+  선택이 고정폭 fidelity가 아닌 CJK coverage fallback임을 test와 공식 font 문서에 명시했다.
+
+### 후속 Issue
+
+- [#19](https://github.com/postmelee/alhangeul-tauri/issues/19) — PDF 내보내기의 immutable
+  revision snapshot, stale-job TTL과 시작 시 회수.
+- [#20](https://github.com/postmelee/alhangeul-tauri/issues/20) — dispatcher disposer,
+  idempotent adapter lifecycle과 dead native/platform bridge 정리.
+- [#21](https://github.com/postmelee/alhangeul-tauri/issues/21) — 1,168 LOC `state.rs`와
+  487 LOC `commands.rs`의 기능 무변경 책임별 분리.
+
+`state.rs`와 `commands.rs`는 기존 공개 command·session 경계를 흔들지 않기 위해 이번 보정에서
+분리하지 않았다. 새 PDF lifecycle은 244 LOC 전용 `pdf_jobs.rs`, Windows wheel 보정은 40 LOC
+전용 adapter에 두어 추가 비대화를 피했다.
+
+### 플랫폼 중립 검증
+
+- OK — product boundary 179 files, product version/release metadata `0.1.0`, rhwp `v0.8.2` pin.
+- OK — automation 71/71, upstream 35/35, Studio 19 files·78/78.
+- OK — exact upstream production build 211 modules와 `git diff --check`.
+- 참고 — Rust unit 86개는 source 진단으로 통과했지만 지원 대상 밖 host 결과를 native 수용
+  근거로 사용하지 않는다.
+
+보정 source commit을 `publish/task13`에 fast-forward한 뒤 CI와 Windows/Linux native workflow를
+새 exact SHA로 다시 실행한다. 기존 `63a2703...` artifact는 Stage 6.7 수용 근거로 재사용하지 않는다.
+
 ## 다음 단계 영향
 
-- Stage 6 승인 뒤 Task #13 최종 보고서를 작성하고 `publish/task13`을 갱신해 `devel` 대상
-  PR을 만든다.
+- Stage 6.7 보정 commit을 기존 `publish/task13`과 PR #18에 갱신하고 새 exact Windows/Linux
+  workflow 결과를 PR review 대응에 기록한다.
 - Task #13 merge 뒤 Task #15를 새 `devel`에 정렬하고 exact Windows/Linux workflow를
   다시 실행한다.
 - Task #15까지 merge·수용된 뒤에만 Task #9 prerelease 후보를 재생성한다.

@@ -3,6 +3,7 @@ import {
   addRecentDoc,
   clearRecentDocs,
   listRecentDocs,
+  removeRecentDoc,
   resetDesktopRecentPathsForTests,
   resolveDesktopRecentPath,
 } from './recent-store';
@@ -54,6 +55,24 @@ describe('desktop recent store adapter', () => {
 
     expect(addUpstream).not.toHaveBeenCalled();
     expect(invokeMock).not.toHaveBeenCalled();
+  });
+
+  it('removes the resolved path from the native store before dropping the opaque id', async () => {
+    (globalThis as { window?: unknown }).window = {
+      __TAURI_INTERNALS__: {},
+      location: { protocol: 'tauri:' },
+    };
+    invokeMock
+      .mockResolvedValueOnce([{ path: 'C:\\private\\old.hwp', fileName: 'old.hwp' }])
+      .mockResolvedValueOnce(undefined);
+    const [recent] = await listRecentDocs();
+
+    await removeRecentDoc(recent!.id);
+
+    expect(invokeMock).toHaveBeenLastCalledWith('remove_recent_document', {
+      path: 'C:\\private\\old.hwp',
+    });
+    expect(resolveDesktopRecentPath(recent!.id)).toBeNull();
   });
 
   it('clears the native store and delegates to upstream outside Tauri', async () => {

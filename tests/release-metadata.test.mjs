@@ -27,7 +27,7 @@ test('현재 HWP/HWPX release metadata를 읽기 전용으로 승인한다', asy
   );
   assert.equal(result.productName, 'Alhangeul');
   assert.equal(result.version, '0.1.0');
-  assert.deepEqual(result.associations, ['hwp', 'hwpx']);
+  assert.deepEqual(result.fileAssociations, ['hwp', 'hwpx']);
   assert.deepEqual(after, before);
 });
 

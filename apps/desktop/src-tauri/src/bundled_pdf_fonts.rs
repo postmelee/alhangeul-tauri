@@ -42,6 +42,12 @@ mod tests {
                 ..Query::default()
             })
             .expect("bundled sans family");
+        let monospace = database
+            .query(&Query {
+                families: &[Family::Monospace],
+                ..Query::default()
+            })
+            .expect("bundled monospace coverage fallback");
 
         assert!(database
             .face(serif)
@@ -51,6 +57,12 @@ mod tests {
             .any(|(family, _)| family == PDF_SERIF_FAMILY));
         assert!(database
             .face(sans)
+            .unwrap()
+            .families
+            .iter()
+            .any(|(family, _)| family == PDF_SANS_FAMILY));
+        assert!(database
+            .face(monospace)
             .unwrap()
             .families
             .iter()

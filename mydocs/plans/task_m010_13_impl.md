@@ -382,6 +382,58 @@ upstream-first·native save·direct PDF 범위는 최종 보고와 PR로 진행�
 Task #13과 #15가 순서대로 merge되고 새 exact SHA의 Windows/Linux gate가 통과할 때까지
 No-Go로 유지한다.
 
+### Stage 6.7 — PR 리뷰 보정과 후속 책임 분리
+
+2026-08-12 PR #18의 maintainer 리뷰는 release metadata guard 중복, workflow에서의 명시적
+gate 부재, README의 인쇄 범위 과장, HTML transform marker drift, PDF job 수명과 동시성,
+최근 문서 삭제 불일치, Windows 문서 밖 modified-wheel 회귀, handler 준비의 무한 대기와
+대형 Rust module 부채를 지적했다. 작업지시자는 PR에서 안전하게 닫을 수 있는 항목을 먼저
+보정하고 구조·수명 경계가 별도 설계를 요구하는 항목은 M010 후속 Issue로 분리하도록 승인했다.
+
+- Task #13의 `scripts/check-release-metadata.mjs`를 현재 제품 metadata의 canonical guard로
+  유지한다. 반환 계약은 Task #9와 충돌하지 않도록 `fileAssociations`로 통일하고 CI와 native
+  workflow에 독립 step을 추가한다. Task #9는 #13 merge 뒤 rebase하여 Linux desktop template과
+  prerelease metadata 검사를 이 guard에 확장하고 중복 파일은 제거한다.
+- README는 HWP/HWPX와 직접 PDF 저장의 검증 결과만 현재 기능으로 확정한다. 실제 시스템
+  인쇄는 Issue #15가 merge되고 새 exact 후보가 통과하기 전까지 공개 후보의 수용 기능으로
+  표현하지 않는다.
+- Vite의 upstream HTML 치환은 marker가 정확히 한 번 존재할 때만 수행하며 누락·중복 시 build를
+  실패시킨다. exact upstream index의 marker 수를 test로 고정한다.
+- PDF job은 사용자 target 옆이 아니라 OS 임시 위치에 staging하고 window owner를 검증한다.
+  같은 target의 동시 job을 거부하고 window 파괴 시 소유 job을 회수한다. 한 WebView 안의 중복
+  export 요청도 adapter에서 합친다. 편집 중 immutable snapshot과 장시간 stale-job TTL은 현재
+  page-at-a-time API를 넘어서는 설계이므로 후속 bug Issue #19로 분리한다.
+- 최근 문서 삭제는 opaque id mapping과 native path store를 함께 제거한다. Windows에서는 upstream
+  scroll container 밖에서 발생한 Ctrl/Meta+wheel을 leaf adapter가 scroll container로 전달해 기존
+  확대 동작을 복원한다. handler 준비 대기에는 유한 timeout을 둔다.
+- generic monospace의 bundled Noto Sans KR 선택은 CJK 글리프 누락을 막는 coverage fallback이며
+  고정폭 fidelity 보장이 아님을 공식 font 문서와 test에 명시한다. 별도 monospaced font bundle은
+  v0.1.0 범위에 추가하지 않는다.
+- dispatcher disposer/idempotency와 사용되지 않는 native/platform bridge 정리는 adapter lifecycle
+  후속 enhancement Issue #20으로 분리한다. `state.rs`와 `commands.rs`의 기존 300 LOC 초과는 이번 기능
+  보정 중 공개 API와 검증 경계를 흔들지 않기 위해 유지하되, 새 lifecycle 로직은 전용 module에
+  두고 책임별 분리를 별도 enhancement Issue #21로 등록한다.
+- 플랫폼 중립 gate와 Rust unit test를 통과한 뒤 Stage 6.7 보고서와 보정 commit을 PR #18에
+  fast-forward한다. Windows wheel/native lifecycle은 새 exact-SHA 후보에서 재검증해야 하며 기존
+  Stage 6 artifact는 보정 수용 증거로 재사용하지 않는다. release·merge·Issue close는 수행하지 않는다.
+
+검증 명령은 다음으로 고정한다.
+
+```bash
+git diff --check
+pnpm run check:product-boundary
+pnpm run check:product-version
+pnpm run check:rhwp-pin
+pnpm run check:release-metadata
+pnpm run test:automation
+pnpm run test:upstream
+pnpm run test:studio
+pnpm run build:studio
+cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml
+```
+
+보정 commit 메시지는 `Task #13 [Stage 6.7]: PR 리뷰 보정과 후속 책임 분리`로 고정한다.
+
 ## 공통 검증·의존성
 
 - 각 Stage는 검증 통과와 단계 보고서 승인 뒤 다음 Stage로 간다. 계획·문서 위치 변경은 먼저 승인받는다.

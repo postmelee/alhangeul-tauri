@@ -43,6 +43,7 @@ file-backed 폰트를 `FontFace`로 등록한다.
 
 - editor: `list_local_fonts`와 `read_local_font` Tauri command로 system-installed/file-backed 폰트를 구분하고 필요할 때 lazy load한다.
 - PDF export: `font_catalog::create_pdf_font_database()`로 같은 추가 스캔 root를 공유하고, 페이지 SVG를 임시 저장하기 전에 제한 폰트 family를 안전한 serif/sans fallback으로 바꾼다. system CJK font가 없는 환경에서도 번들 Noto Sans/Serif KR을 generic 기본값으로 사용해 `<text>`를 유지한다.
+- generic `monospace`도 최소 환경의 CJK 글리프 누락을 막기 위해 마지막에는 번들 Noto Sans KR로 해석한다. 이는 coverage fallback이며 고정폭 metric이나 monospaced 시각 fidelity를 보장하지 않는다. 문서가 명시한 설치 폰트와 지원된 file-backed 폰트는 이 fallback보다 우선한다.
 - PDF text: `svg2pdf`의 `embed_text: true`를 먼저 사용한다. 변환 자체가 실패할 때만 같은 SVG를 `embed_text: false`로 다시 변환하며, 결과를 `outlined-fallback`으로 표시하고 사용자에게 경고한다.
 
 PDF 변환 전에는 원본 SVG의 내용 있는 `<text>` 수와 `usvg` tree의 text·glyph를 비교한다. font 해석

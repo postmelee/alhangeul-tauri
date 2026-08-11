@@ -139,6 +139,11 @@ pub fn record_recent_document(app: AppHandle, path: String) -> Result<(), String
 }
 
 #[tauri::command]
+pub fn remove_recent_document(app: AppHandle, path: String) -> Result<(), String> {
+    recent_documents::remove_document(&app, &PathBuf::from(path))
+}
+
+#[tauri::command]
 pub fn render_document_preview(path: String) -> Result<String, String> {
     let path = PathBuf::from(path);
     ensure_document_open_path(&path)?;
@@ -214,13 +219,14 @@ pub fn mutate_document(
 pub fn begin_pdf_export(
     target_path: String,
     page_count: u32,
+    window: WebviewWindow,
     state: State<'_, AppState>,
 ) -> Result<String, String> {
     state
         .pdf_jobs
         .lock()
         .map_err(|_| "PDF 작업 잠금 실패".to_string())?
-        .begin(PathBuf::from(target_path), page_count)
+        .begin(window.label(), PathBuf::from(target_path), page_count)
 }
 
 #[tauri::command]
@@ -228,35 +234,40 @@ pub fn append_pdf_page(
     job_id: String,
     page_index: u32,
     svg: String,
+    window: WebviewWindow,
     state: State<'_, AppState>,
 ) -> Result<(), String> {
     state
         .pdf_jobs
         .lock()
         .map_err(|_| "PDF 작업 잠금 실패".to_string())?
-        .append_page(&job_id, page_index, &svg)
+        .append_page(window.label(), &job_id, page_index, &svg)
 }
 
 #[tauri::command]
 pub fn commit_pdf_export(
     job_id: String,
+    window: WebviewWindow,
     state: State<'_, AppState>,
 ) -> Result<crate::pdf_export::PdfExportResult, String> {
     state
         .pdf_jobs
         .lock()
         .map_err(|_| "PDF 작업 잠금 실패".to_string())?
-        .commit(&job_id)
+        .commit(window.label(), &job_id)
 }
 
 #[tauri::command]
-pub fn abort_pdf_export(job_id: String, state: State<'_, AppState>) -> Result<(), String> {
+pub fn abort_pdf_export(
+    job_id: String,
+    window: WebviewWindow,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
     state
         .pdf_jobs
         .lock()
         .map_err(|_| "PDF 작업 잠금 실패".to_string())?
-        .abort(&job_id);
-    Ok(())
+        .abort(window.label(), &job_id)
 }
 
 #[tauri::command]

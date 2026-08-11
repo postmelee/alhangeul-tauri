@@ -10,9 +10,10 @@ GitHub Issue: [#13](https://github.com/postmelee/alhangeul-tauri/issues/13)
 - 단계 수: 6
 - 작업 목적: `rhwp v0.8.2` Studio 전체 bundle을 제품 entry로 사용하면서 Windows/Linux에 필요한 Tauri lifecycle, HWP/HWPX 저장과 searchable PDF 경계만 얇은 adapter로 유지한다.
 
-기능 수용 exact SHA는 `63a2703cebf3a79d11a010974203fdaf4ccd3e76`이다. 이 SHA의
-Windows/Linux CI·native bundle·Windows installer smoke와 수동 GUI 결과를 수용 근거로
-사용하며, 뒤따르는 Stage 6·최종 보고서 commit은 문서 head로 구분한다.
+Stage 6의 이전 기능 수용 exact SHA는 `63a2703cebf3a79d11a010974203fdaf4ccd3e76`이다. 이 SHA의
+Windows/Linux CI·native bundle·Windows installer smoke와 수동 GUI 결과는 Stage 6 이력으로
+보존한다. PR 리뷰로 제품 코드가 Stage 6.7에서 다시 변경됐으므로 기존 artifact를 최종 후보로
+재사용하지 않고 보정 commit의 새 Windows/Linux exact 검증을 요구한다.
 
 ## 변경 파일 목록과 영향 범위
 
@@ -46,7 +47,7 @@ Windows/Linux CI·native bundle·Windows installer smoke와 수동 GUI 결과를
 | Studio entry 소유 | local `index.html`·`main.ts`·toolbar/view/dialog 복제 | `rhwp v0.8.2` upstream entry + 허용된 leaf adapter |
 | native 저장 형식 | HWP 중심 저장 경계 | HWP/HWPX source save·명시 저장·다른 이름으로 저장 |
 | 직접 PDF | editor/인쇄 경로에 의존 | upstream page SVG → staged Rust PDF job, 한글 searchable audit 포함 |
-| 플랫폼 중립 test | Task 시작 전 기준 | automation 71, upstream 35, Studio 73 모두 통과 |
+| 플랫폼 중립 test | Task 시작 전 기준 | automation 71, upstream 35, Studio 78 모두 통과 |
 | exact native 산출물 | Task #9 이전 후보는 승계하지 않음 | Windows MSI·NSIS, Linux x64 AppImage·DEB·RPM, Linux arm64 DEB 6개 inventory 통과 |
 
 ## 검증 결과
@@ -71,8 +72,11 @@ Windows/Linux CI·native bundle·Windows installer smoke와 수동 GUI 결과를
 - [Stage 5](../working/task_m010_13_stage5.md): 플랫폼 중립 회귀와 공식 제품·아키텍처·release 문서를 정렬했다.
 - [Stage 6](../working/task_m010_13_stage6.md): exact native·GUI·package를 수용하고 실제 인쇄를 Issue #15 의존성으로 분리했다.
 
-2026-08-12 최종 재검증에서는 product boundary 177 files, automation 71/71,
-upstream 35/35, Studio 18 files·73/73와 production build 210 modules가 통과했다.
+Stage 6 보고서의 Stage 6.7 절은 PR 리뷰 보정, 새 exact 검증 요구와 후속 Issue #19~#21의
+책임 경계를 기록한다.
+
+2026-08-12 Stage 6.7 재검증에서는 product boundary 179 files, automation 71/71,
+upstream 35/35, Studio 19 files·78/78와 production build 211 modules가 통과했다.
 CanvasKit `fs`/`path` browser externalization, ineffective dynamic import와 500kB chunk는 기존
 non-blocking build warning으로 남았다. Rust desktop test·Clippy와 Tauri build는 지원 대상인
 Windows/Linux exact Actions에서 통과했으며 macOS에서 native build를 실행하지 않았다.
@@ -85,10 +89,15 @@ Windows/Linux exact Actions에서 통과했으며 macOS에서 native build를 �
 - Linux arm64는 build·inventory까지만 검증했고 GUI 수용은 수행하지 않았다.
 - AppImage·RPM은 inventory와 Linux x64 실행 경계가 있으나 Stage 6의 주 package 수용은 Windows MSI·NSIS였다.
 - 공개 prerelease, release tag, 서명, updater와 package repository 게시는 수행하지 않았다.
+- PDF revision snapshot과 장시간 stale job 회수는 Issue #19, adapter lifecycle·dead bridge 정리는
+  Issue #20, 대형 Rust module 분리는 Issue #21로 등록했다.
 
 ### 후속 작업 후보
 
 - [Issue #15](https://github.com/postmelee/alhangeul-tauri/issues/15)를 Task #13 merge 뒤 새 `devel`에 정렬하고 Windows/Linux exact 인쇄 gate를 다시 실행한다.
+- [Issue #19](https://github.com/postmelee/alhangeul-tauri/issues/19)에서 PDF immutable snapshot과 stale job TTL을 다룬다.
+- [Issue #20](https://github.com/postmelee/alhangeul-tauri/issues/20)에서 desktop adapter lifecycle과 dead bridge를 정리한다.
+- [Issue #21](https://github.com/postmelee/alhangeul-tauri/issues/21)에서 native Rust 대형 module을 기능 변경 없이 분리한다.
 - Task #13과 #15가 모두 merge된 새 exact SHA만 Task #9 prerelease 후보 재개 입력으로 사용한다.
 
 ## 작업지시자 승인 요청
