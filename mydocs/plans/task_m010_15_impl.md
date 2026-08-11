@@ -201,6 +201,23 @@ page를 해제한 뒤 기존 명시적 break와 1px tolerance를 함께 적용�
 - 폐기 후보 `3688f80`의 CUPS-PDF 성공만으로 Stage 2.3을 완료하지 않는다. 보정 후
   새 exact SHA에서 CUPS-PDF와 GTK `Print to File`을 모두 다시 실행한다.
 
+2026-08-11 최종 exact 후보 `89718976a7fa44ebe7f8981ca01ce6bfcbebc979`의 Linux x64
+DEB를 Ubuntu 24.04.4 x64, WebKitGTK 2.52.3, GTK 3 환경에 설치해 다시 검증했다.
+6쪽 `biz_plan.hwp`는 CUPS-PDF, GTK `Print to File`, `파일 > PDF로 저장` 모두 정확히
+6쪽 A4로 출력됐고 교대 빈 쪽, 좌측 잘림, 페이지 누락이 없었다. 세 PDF 모두
+`pdftotext`에서 `사업수행계획서`를 추출할 수 있었으며, 150 dpi 대표 페이지 렌더링에서
+한글·표·페이지 경계가 정상임을 확인했다. 저장 또는 취소 뒤 기존 문서 상태가
+복원되고 같은 세션에서 system print dialog를 다시 열 수 있어 Stage 2.3 Linux 필수
+gate를 통과로 확정한다.
+
+- Linux system print dialog가 열린 동안 하단은 `인쇄 준비 중... (6/6)`을 유지했으며
+  조기 `인쇄 완료`나 문서 상태 복원은 발생하지 않았다. Windows처럼 native modal
+  전환 전 `시스템 인쇄 처리 중...`을 한 프레임 먼저 그리지 못하는 WebKitGTK 표시
+  차이는 출력 정확도나 lifecycle 완료 판정 실패로 보지 않고 비차단 UX 관찰로 남긴다.
+- CUPS-PDF Poppler 렌더링에서 기존과 같은 Type 3 glyph bounding-box 경고가 있었지만
+  6쪽 렌더링과 한글 텍스트 추출은 성공했다. GTK `Print to File`과 직접 PDF에는 같은
+  경고가 없었다.
+
 검증:
 
 ```bash
