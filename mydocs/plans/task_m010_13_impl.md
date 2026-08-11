@@ -364,6 +364,24 @@ Noto Sans KR WOFF2를 명시적 UI fallback으로 사용하는 범위까지 함�
 
 보정 commit 메시지는 `Task #13 [Stage 6.6]: 번들 한글 fallback과 searchable PDF 판정 보정`으로 고정한다.
 
+### Stage 6 최종 판정 — Task #13 PR 진행, Task #9 handoff 보류
+
+2026-08-08 exact 후보 `63a2703cebf3a79d11a010974203fdaf4ccd3e76`의 CI와
+Windows x64·Linux x64·Linux arm64 native build, artifact inventory, Windows MSI·NSIS
+installer smoke가 모두 통과했다. Windows VDI와 최소 Linux GUI에서는 upstream-first
+메뉴·리본, 문서 중앙 열기, HWP/HWPX 저장 경계와 직접 PDF 저장을 확인했고, Windows
+Edge에서 직접 PDF의 한글 검색·선택·복사가 가능했다. 플랫폼 중립 gate는 2026-08-12
+같은 branch에서 다시 실행해 automation 71개, upstream 35개, Studio 73개 test와
+production build가 통과했다.
+
+같은 exact 후보의 `file:print`는 editor WebView를 직접 인쇄해 Windows preview에 문서
+대신 빈 한 쪽이 표시됐다. PDF·HWP/HWPX 저장과 분리된 Tauri 인쇄 surface 결함으로
+확정하고 작업지시자의 승인에 따라 별도 Issue #15로 이관했다. 따라서 Task #13의
+upstream-first·native save·direct PDF 범위는 최종 보고와 PR로 진행할 수 있지만,
+`63a2703...` 자체를 Task #9 prerelease 후보 입력으로 넘기지는 않는다. Task #9 handoff는
+Task #13과 #15가 순서대로 merge되고 새 exact SHA의 Windows/Linux gate가 통과할 때까지
+No-Go로 유지한다.
+
 ## 공통 검증·의존성
 
 - 각 Stage는 검증 통과와 단계 보고서 승인 뒤 다음 Stage로 간다. 계획·문서 위치 변경은 먼저 승인받는다.
