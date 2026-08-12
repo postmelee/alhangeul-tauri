@@ -4,7 +4,7 @@ GitHub Issue: [#9](https://github.com/postmelee/alhangeul-tauri/issues/9)
 구현계획서: [`task_m010_9_impl.md`](../plans/task_m010_9_impl.md)
 Stage: 4 (진행 중)
 
-> 이 문서는 Stage 4 진행 중 증적이다. Stage 4.3 Actions 보정 뒤 Stage 4.2 UI의 새 exact-SHA candidate 재생성과 Linux UI 재검증, Windows x64 실제 GUI native gate가 남아 있으므로 완료 보고서가 아니며 현재 판정은 No-Go다.
+> 이 문서는 Stage 4 진행 중 증적이다. Stage 4.3 보정 commit의 exact-SHA candidate 생성과 Linux x64 UI 재검증은 통과했지만 Windows x64 실제 GUI native gate가 남아 있으므로 완료 보고서가 아니며 현재 판정은 No-Go다.
 
 ## 단계 목적
 
@@ -24,7 +24,7 @@ Stage 4는 승인된 Windows/Linux baseline bundle의 native 설치·실행·문
 | `package.json` | host shell 및 rhwp pin fetch contract를 automation 명령에 연결 |
 | `mydocs/plans/task_m010_9_impl.md` | 승인된 Stage 4.2·4.3 범위·검증·commit·native 재검증 경계 기록 |
 | `mydocs/orders/20260802.md` | Stage 4.1과 Linux arm64·x64 native 완료 시각·판정 보존 |
-| `mydocs/orders/20260804.md` | Stage 4.2·4.3 완료와 exact-SHA 재검증 진행 상태 기록 |
+| `mydocs/orders/20260804.md` | Stage 4.2·4.3과 exact-SHA bundle·Linux UI 재검증 완료 기록 |
 | `mydocs/working/task_m010_9_stage4.md` | 기존 native 증적을 보존하고 Stage 4.2·4.3 원인·보정·잔여 gate 추가 |
 
 ## 본문 변경 정도 / 본문 무손실 여부
@@ -234,14 +234,59 @@ Stage 4.3 플랫폼 중립 검증 결과는 모두 통과했다.
 | `git diff --check` | 통과 |
 | submodule 무손실 | 통과 — clean `9b16aa9e… (v0.8.2)`, gitlink 변경 없음 |
 
-이 보고서와 source correction을 같은 Stage 4.3 commit으로 묶고 그 commit을 새 candidate exact SHA로 사용한다. Actions 성공과 artifact 생성은 아직 수행 전이므로 Stage 4 전체 판정은 계속 No-Go다.
+Stage 4.3 source correction과 당시 보고서를 다음 commit으로 묶어 `publish/task9`에 push했고, 이 commit을 새 candidate exact SHA로 고정했다.
+
+- candidate: `96938d476cf5f47f1c4e64f5930acc67f376caf9`
+- commit message: `Task #9 [Stage 4.3]: Actions rhwp release tag 확보 보정`
+- CI: [30876932406](https://github.com/postmelee/alhangeul-tauri/actions/runs/30876932406) — success
+- desktop artifact: [30876933811](https://github.com/postmelee/alhangeul-tauri/actions/runs/30876933811) — success
+
+두 workflow의 `headBranch`는 `publish/task9`, `headSha`는 candidate full SHA와 일치했다. CI의 exact tag fetch, pin·release metadata, automation·upstream·studio, production build, desktop Rust test·Clippy가 모두 통과했다. Native workflow의 Windows x64, Linux x64, Linux arm64 build와 Windows installer smoke 네 job도 모두 통과했다.
+
+| Actions artifact | ID | 크기 (bytes) | API archive digest | 만료 시각 (UTC) |
+|---|---:|---:|---|---|
+| `alhangeul-desktop-windows-x64-installer-smoke` | `8880003730` | 29,102 | `sha256:a23119674cf681153a0d744a5aa0f7064d34747f3139651a4502f539ea947b87` | `2026-08-18T04:20:20Z` |
+| `alhangeul-desktop-windows-x64` | `8879988096` | 53,661,797 | `sha256:a5a1952e89de6cef12ee084ce0259307ae11244d7898893a3f9e0edb77a31d4b` | `2026-08-18T04:19:23Z` |
+| `alhangeul-desktop-linux-x64` | `8879956809` | 353,972,765 | `sha256:6a4f8ee2e1c9bc631ddced10fc38d5094451d812d76b80fd4e803cd697321e35` | `2026-08-18T04:17:21Z` |
+| `alhangeul-desktop-linux-arm64` | `8879922835` | 90,030,940 | `sha256:336a69d84936a2fdf64b6aec16c8af9d9063050c0fb8eb91e33497ace2dadebb` | `2026-08-18T04:15:28Z` |
+
+세 platform inventory를 독립 검증하고 여섯 필수 installer의 형식과 SHA-256을 다시 대조했다.
+
+| Platform | 종류 | SHA-256 |
+|---|---|---|
+| Windows x64 | MSI | `5007ae45d8fd3518983cd645001fd5fe7eeb893f29afab11f8ced9a4d954ff6e` |
+| Windows x64 | NSIS | `2eea2a5f1a2028cdc709c263686153827a5e49585bb62fe0ee7130560b80f160` |
+| Linux x64 | AppImage | `88202828feb6a9f9bb70afa24c1c1f0676f280f709f4216ebf0a17815fef9ed6` |
+| Linux x64 | DEB | `8595fefd1263ba9c0ed565dc8a9fecba6417ff984ae8c357cc07f01ebf7c6dfc` |
+| Linux x64 | RPM | `945d1640af38395da80d0f11d33b633ee33e8e66161816b250a24e271886fa3c` |
+| Linux arm64 | DEB | `f127ca919fe5c72305d42f43b96140b76de10b158ec675edb00c66c218cab6a4` |
+
+정렬한 여섯 installer hash line의 결합 digest는 `63b6c72ee5f3cd7a64d334227fe23e77a52cd15cc5c912187224c0a20973cd1a`다. Windows installer smoke summary는 expected version `0.1.0`, MSI·NSIS 모두 `passed`, failure 0건이며 smoke checkout SHA도 candidate와 일치했다. 이 자동 smoke는 아래의 실제 Windows GUI gate를 대체하지 않는다.
+
+## Stage 4.2 exact-SHA Linux x64 UI 재검증
+
+GitHub Codespaces의 2-core `basicLinux32gb` 머신 `task9-stage43-linux-ui-7w7j5w44v9php477`에서 candidate의 Linux x64 AppImage를 직접 실행했다.
+
+- host: Ubuntu 24.04.4 LTS, kernel·userland `x86_64`
+- checkout: `publish/task9`, exact SHA `96938d476cf5f47f1c4e64f5930acc67f376caf9`
+- AppImage: `Alhangeul_0.1.0_amd64.AppImage`, SHA-256 `88202828feb6a9f9bb70afa24c1c1f0676f280f709f4216ebf0a17815fef9ed6`
+- fixture: 공개 비민감 `form-002.hwpx`, SHA-256 `5ab8f7c368e02538f75f1cd2bd82bbd8de2f925a54ba7b38ec9395b2cdb804d4`
+- 실행: 일반 `codespace` 사용자, `APPIMAGE_EXTRACT_AND_RUN=1`, Xvfb 1280×900·Openbox
+- 최소 Codespace 이미지에 없던 `libEGL.so.1`, `libGLESv2.so.2`는 각각 `libegl1`, `libgles2`로 보충했다. 이는 UI source correction이 아니라 AppImage 실행 환경 준비다.
+
+payload process argv에서 AppImage와 `form-002.hwpx` 경로를 함께 확인한 뒤 문서 보정 modal과 자동 보정 뒤 화면을 각각 캡처했다.
+
+| 화면 | SHA-256 | 육안 판정 |
+|---|---|---|
+| `correction-modal.png` | `db51608b32bbefd669e3b40b52a0a258480676c0d0885ce44f7c5ca25e4b90c6` | 상단 명령 ribbon과 grouped style ribbon 정렬 정상, modal의 `자동 보정`·`그대로 열기` 한글 label 정상, 네모 글리프 없음 |
+| `grouped-ribbon-after-correction.png` | `c7a19e3c86bf7bcab7a15b2e60934592964a8f41d688758f2a01a497ffeb5471` | 선택 field와 명령 group의 수직 기준·구분선 정상, 상태표시줄의 `form-002.hwpx — 10페이지`와 자동 보정 완료 표시 확인 |
+
+두 PNG는 1280×900이며 로컬 임시 증적 `/private/tmp/alhangeul-task9-stage43-resume/evidence-linux-x64/evidence`에 환경·process argv·실행 로그와 함께 회수했다. 화면을 확대 대조해 Stage 4.2의 Linux ribbon 정렬과 form control 한글 글리프 gate를 **통과**로 판정했다. 증적 회수 뒤 이번 Codespace만 삭제했고, 기존 `edwardkim/rhwp` Codespace는 정지 상태 그대로 보존했다.
 
 ## 현재 판정과 잔여 gate
 
-Stage 4.2 source correction과 플랫폼 중립 검증은 통과했다. 그러나 Stage 4.1 candidate는 폐기했으므로 다음 Stage 4 필수 조건은 아직 충족되지 않았다.
+Stage 4.2 source correction, Stage 4.3 Actions 보정, candidate bundle과 Linux x64 UI 재검증은 통과했다. 다음 Stage 4 필수 조건만 남아 있다.
 
-- Stage 4.3 correction commit을 새 exact SHA로 고정하고 CI·Windows x64·Linux x64·Linux arm64 bundle과 Windows installer smoke, inventory·checksum을 다시 검증
-- Linux x64 native에서 toolbar·서식 ribbon·문서 보정 modal의 배치와 모든 한글 button label을 화면으로 재검증
 - Windows x64 실제 GUI 환경에서 MSI와 NSIS 각각 HWP/HWPX open·edit, HWP save/reopen, HWPX save block, PDF export, print 경계, Explorer file association, relaunch, uninstall·rollback
 - Windows 시나리오의 OS·architecture·installer·candidate SHA, 절차, 실제 관찰과 지속 가능한 증적
 
@@ -269,15 +314,14 @@ git diff --check
 
 ## 잔여 위험
 
-- 현재 macOS host의 플랫폼 중립 검증만 완료했으며 Linux WebKitGTK와 Windows WebView2 native 화면 결과는 아직 없다.
-- 새 exact-SHA artifact가 없으므로 Stage 4.1 candidate의 bundle·checksum·native 결과를 Stage 4.2 수용 근거로 재사용할 수 없다.
+- Linux WebKitGTK exact-SHA 화면은 통과했지만 Windows WebView2 실제 화면 결과는 아직 없다.
+- artifact archive는 `2026-08-18`에 만료되므로 Windows 실제 검증 입력은 위 candidate hash와 inventory로 먼저 고정하고 필요하면 같은 exact SHA에서 다시 받아야 한다.
 - Windows x64 MSI·NSIS 실제 GUI 전체 시나리오는 여전히 필수 gate다.
 
 ## 다음 단계 영향
 
-- Stage 4.2 묶음 commit을 새 exact SHA로 고정하고 `publish/task9`에 push한다.
-- 같은 SHA에서 CI와 Windows x64·Linux x64·Linux arm64 native workflow를 실행하고 inventory·checksum을 독립 검증한다.
-- Linux x64 native 화면에서 style ribbon의 한 줄 기준, toolbar·modal 한글 button label과 문서 기능 회귀를 확인한다.
+- candidate SHA `96938d476cf5f47f1c4e64f5930acc67f376caf9`의 Windows MSI·NSIS를 실제 Windows x64 GUI 환경에서 검증한다.
+- Windows gate 통과 뒤 Stage 4 최종 기록을 확정하고 Stage 5 진입 승인을 요청한다.
 
 ## 승인 요청
 
