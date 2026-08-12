@@ -500,6 +500,37 @@ pnpm run build:studio
 git diff --check
 ```
 
+### Stage 4.10 — 최종 exact 후보 수용 근거 확정
+
+최신 `devel` 통합 commit `da488a87e9c3b4ca325bebefc611aea853f714cc`를 최종
+제품 후보 source SHA로 고정했다. 이 SHA의 CI와 Windows/Linux native workflow는 모두
+성공했고, Windows MSI·NSIS smoke와 Windows x64, Linux x64, Linux arm64의 6개 installer
+inventory를 통과했다.
+
+- CI [#31523448691](https://github.com/postmelee/alhangeul-tauri/actions/runs/31523448691)은
+  platform-neutral gate, Rust test와 Clippy를 포함해 exact head SHA에서 성공했다.
+- Desktop Artifact Build
+  [#31523462948](https://github.com/postmelee/alhangeul-tauri/actions/runs/31523462948)은
+  Windows x64, Linux x64, Linux arm64와 Windows installer smoke를 모두 통과했다.
+- 최종 Linux arm64 DEB를 Ubuntu 24.04.4 aarch64, WebKitGTK 2.52.3에 설치해 upstream
+  `biz_plan.hwp` 6쪽을 직접 검증했다. CUPS-PDF는 6쪽 A4로 출력됐고 빈 쪽·잘림·누락과
+  한글 네모 깨짐이 없었으며, 같은 세션에서 system dialog를 다시 열 수 있었다.
+  `파일 > PDF로 저장`도 searchable 6쪽 A4를 만들고 원본 HWP SHA를 보존했다.
+- 최종 CUPS-PDF의 Type 3 glyph는 화면과 PDF 렌더링에서는 한글이 정상이나 이 환경의
+  `pdftotext`가 한글을 추출하지 못했다. Stage 4.8 Linux x64 CUPS-PDF에서는 같은 문서의
+  한글 추출이 성공했고, 최종 arm64 direct PDF도 모든 쪽의 한글 추출에 성공했으므로
+  system print의 쪽 구성 수용과 direct PDF 검색 가능 수용을 서로 분리해 판정한다.
+- 최종 SHA의 Windows GUI는 접근 가능한 VDI 세션이 없어 직접 반복하지 못했다. 다만
+  Windows GUI를 통과한 `89718976a7fa44ebe7f8981ca01ce6bfcbebc979`와 최종 SHA 사이의
+  Task #15 인쇄 구현 diff가 없고, 최종 Windows bundle·MSI·NSIS smoke가 통과했다.
+- 최종 Linux x64 GUI도 x86_64 WebKit 프로세스를 macOS ARM의 QEMU emulation에서 실행할
+  수 없어 반복하지 못했다. 이전 exact x64 GUI 수용과 인쇄 구현 무변경을 유지하고,
+  최종 exact common WebKitGTK 경로는 Linux arm64에서 직접 재검증했다.
+
+따라서 Issue #15의 Windows/Linux 인쇄 구현과 package gate는 PR 검토 단계로 넘긴다.
+이 판정은 공개 prerelease, release tag, 서명, updater 또는 Task #9 release Go를 승인하지
+않으며, 최종 SHA의 Windows/Linux x64 GUI 미반복 사실을 PR 제한사항에 그대로 공개한다.
+
 ## 검증
 
 - 각 Stage 검증 명령은 단계 보고서 작성 전에 실행한다.
