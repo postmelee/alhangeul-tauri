@@ -512,6 +512,10 @@ Task #9 [Stage 4.6]: 최신 통합 exact 후보 검증
 
 ## Stage 5 — Go/No-Go 판정과 후속 게시 입력 확정
 
+Stage 5는 Stage 4.7에 기록한 첫 공개 선행 task가 `devel`에 반영되고 새 exact-SHA
+Windows/Linux candidate 재검증이 성공한 뒤에만 시작한다. 기존 `8b4ae60…` 후보와 artifact는
+당시 통합 상태의 역사 증적이며 최종 Go 판정에 재사용하지 않는다.
+
 ### 산출물
 
 신규:
@@ -571,7 +575,8 @@ Task #9 Stage 5: prerelease Go No-Go 판정과 게시 입력 확정
 - Stage 4.1은 Stage 4에서 확인한 Linux desktop entry 실패의 승인된 보정이며, 성공 commit 승인 뒤 새 exact-SHA candidate 생성으로 돌아간다.
 - Stage 4.5는 PR #18·#22 최신 `devel`을 통합하고 플랫폼 중립 gate까지만 완료한다.
 - Stage 4.6은 Stage 4.5 승인 뒤 remote exact 후보와 Windows/Linux native 수용을 다시 수행한다.
-- Stage 5는 Stage 4의 모든 required 시나리오 승인 뒤 Go/No-Go를 판정한다.
+- Stage 4.7은 Stage 4.6 결과를 역사 증적으로 고정하고 첫 공개 선행 task와 새 exact 후보 재검증 조건을 확정한다.
+- Stage 5는 Stage 4의 required 시나리오뿐 아니라 upstream 자동 sync, `rhwp v0.8.4` 수용, Issue #14·#16·#17, 다운로드 Pages와 canonical URL 결정이 `devel`에 반영된 뒤 새 exact-SHA/native gate를 통과해야 Go/No-Go를 판정한다.
 - 각 Stage 완료보고서 승인 전 다음 Stage를 시작하지 않는다.
 
 ## 위험과 대응
@@ -593,6 +598,7 @@ Task #9 Stage 5: prerelease Go No-Go 판정과 게시 입력 확정
 - Stage 4의 baseline package별 필수 시나리오와 미실행 bundle을 Task #9 No-Go로 처리하는 규칙
 - Windows ARM64는 Issue #10에서 독립 구현·검증하고 후속 게시 Issue에서 별도 Go일 때만 포함하는 경계
 - Stage 5는 후속 게시 Issue 초안만 만들고 Issue·release PR·tag·GitHub Release를 생성하지 않는 경계
+- Stage 4.7 이후 Stage 5를 보류하고 별도 선행 Issue 완료 뒤 latest `devel` 후보를 다시 검증하는 경계
 
 2026-07-29 Stage 1.1에서 unsigned prerelease, baseline bundle 전체 필수와 Windows ARM64 Issue #10 조건부 분리를 승인받았다. Stage 2 진입, remote push, Actions dispatch 또는 외부 공개는 별도 승인 없이는 수행하지 않는다.
 
@@ -609,3 +615,38 @@ Task #9 Stage 5: prerelease Go No-Go 판정과 게시 입력 확정
 | 과거 Stage 3 candidate `6e0adc9…`와 run `30426710424`·`30426711693` | 역사 증적으로만 보존하고 현재 candidate·Go 판정 근거로 재사용하지 않음 | 새 통합 commit을 `publish/task9`에 고정한 뒤 CI/native workflow와 artifact·checksum 재검증 |
 
 통합 commit의 플랫폼 중립 검증이 모두 통과한 뒤 작업지시자 승인으로만 `publish/task9`을 새 SHA로 이동하고 Actions를 dispatch한다. 새 run 성공 전에는 `docs/operations/DESKTOP_RELEASE.md`와 Stage 3 보고서의 과거 성공 증적을 현재 수용 결과로 교체하지 않는다. Release PR, tag, GitHub Release와 asset 게시는 계속 범위 밖이다.
+
+## Stage 4.7 — 첫 공개 선행 task 재기준선 (2026-08-12)
+
+### 진입 사유와 승인
+
+Stage 4.6 exact 후보 `8b4ae60…`은 당시 source에서 CI/native·여섯 bundle inventory와
+checksum·Windows/Linux package/GUI/rollback gate를 통과했다. 그 뒤 upstream 최신 Stable이
+`v0.8.4`로 이동했고, 작업지시자는 첫 공개 전에 upstream 감시·자동 sync, 실제 `v0.8.4`
+수용과 Issue #14·#16·#17, 다운로드 안내 Pages·canonical URL 결정을 먼저 완료하는 순서를
+승인했다.
+
+### 산출물과 경계
+
+- `mydocs/plans/task_m010_9.md`, `mydocs/plans/task_m010_9_impl.md`에 Stage 5 보류와
+  선행 조건을 기록한다.
+- `mydocs/orders/20260812.md`에서 Task #9을 Stage 4.7 진행 상태로 되돌린다.
+- upstream 감시 자동화와 `v0.8.4` 실제 갱신은 중복 없는 별도 M010 Issue로 등록한다.
+- Issue #14·#16·#17과 Pages·URL 소유 task는 Task #9 안에서 구현하지 않는다.
+- 선행 task 병합 뒤 latest `devel`을 Task #9에 통합하고 새 exact-SHA candidate와
+  Windows/Linux native·artifact gate를 다시 수행한다.
+- release PR, tag, GitHub Release, updater endpoint 게시와 organization 이전은 수행하지 않는다.
+
+### 검증
+
+```bash
+pnpm run check:rhwp-pin
+pnpm run check:product-boundary
+git diff --check
+```
+
+### 커밋
+
+```text
+Task #9 [Stage 4.7]: 첫 공개 선행 작업 재정렬
+```

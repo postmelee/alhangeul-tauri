@@ -9,12 +9,15 @@ Alhangeul `v0.1.0`을 바로 공개하지 않고, GitHub prerelease로 게시할
 
 이 task는 되돌리기 쉬운 준비와 검증까지만 소유한다. `devel → main` release PR, `v0.1.0` tag와 GitHub Release 게시는 Go 판정 후 별도 Issue에서 수행하며, Task #9의 Actions artifact를 공식 배포물로 재사용하지 않는다.
 
+2026-08-12 공개 전 재기준선에서 Stage 5 진입을 보류한다. Stage 4.6 exact 후보 `8b4ae60…`의 성공은 당시 source에 대한 역사 증적으로 보존하되, 최신 `rhwp` Stable과 첫 공개에 필요한 updater·Windows/Linux 통합·다운로드 안내 경계가 반영되기 전에는 최종 공개 후보나 Go 판정 근거로 승격하지 않는다. 선행 task가 `devel`에 병합된 뒤 새 exact SHA에서 플랫폼 중립·Windows/Linux native·artifact gate를 다시 수행한다.
+
 ## 배경
 
 M010의 Task #1, #3, #5, #7에서 Alhangeul 독립 제품 경계, `rhwp v0.8.2` Stable pin, Windows/Linux native artifact build smoke와 독립 제품 버전 `0.1.0`을 확정했다. 기존 구현 이슈는 닫혔고 공개 배포 준비 Issue #9와 조건부 Windows ARM64 Issue #10을 M010에서 계속 추적한다.
 
 - root 제품 version과 desktop package, Cargo, Tauri surface는 `0.1.0`으로 정렬되어 있다.
 - `rhwp`는 Stable tag `v0.8.2`, resolved commit `9b16aa9e23f476e2b335d7c029fc9f24a199d63c`에 고정되어 있다.
+- 2026-08-12 현재 upstream 최신 Stable은 `v0.8.4`, resolved commit `496333b27d21ddb9114ba9ae340bcb895870c9a7`이며 현재 pin과 release drift가 있다.
 - Task #7 exact commit `02931beb43e2944083e78d792603bff82200478c`에서 CI와 Windows x64, Linux x64, Linux arm64 native artifact build·inventory가 성공했다.
 - Task #7 검증 SHA와 현재 `devel` merge SHA `a00000a5fa91c9f407eb4340c5df67060b5f6211` 사이에는 운영·작업 문서만 다르지만, 공식 release provenance는 최종 tag exact SHA에서 다시 검증해야 한다.
 - 현재 `main`은 `devel`보다 42 commits 뒤이며, 저장소 운영 규칙은 일반 task PR과 `devel → main` release PR을 분리한다.
@@ -83,6 +86,19 @@ Issue #9 본문의 “최종 `devel` exact SHA”는 두 exact-SHA gate로 구�
 Task #9 candidate SHA와 최종 tag SHA의 tree가 같아 보이더라도 artifact를 재사용하지 않는다. 이 해석은 하이퍼-워터폴의 task PR 완료 시점과 release PR·tag 생성 시점을 혼합하지 않기 위한 승인 대상이다.
 
 Issue #10은 Task #9 baseline을 차단하지 않는 조건부 Windows ARM64 확장이다. Task #9은 Windows x64와 Linux bundle의 Go/No-Go를 완결하고, 후속 게시 Issue는 Issue #10이 별도로 Go이면 ARM64 MSI·NSIS를 추가한다. Issue #10이 실패하거나 native 증적을 확보하지 못하면 Windows ARM64만 제외하며, Task #9에서 지원 성공으로 기록하지 않는다.
+
+### 첫 공개 선행 task와 Stage 5 재진입
+
+Stage 5는 단순히 Stage 4.6 결과만으로 진입하지 않는다. 다음 선행 조건을 공개 전 기준선으로 둔다.
+
+- `rhwp` Stable release 감시와 동일 release core·전체 Studio 동기화 PR 자동 생성 task 완료
+- 자동 생성 PR을 출발점으로 한 `rhwp v0.8.4` exact tag·resolved commit 갱신과 Windows/Linux native 수용 완료
+- Issue #14 Windows Explorer thumbnail과 Issue #17 Linux file manager thumbnail 완료
+- Issue #16 updater의 URL·서명·rollback 경계 완료
+- Windows/Linux 다운로드 안내 Pages와 공개 URL 소유 경계 완료
+- organization 이전을 수행할지, 현 `postmelee` URL을 첫 공개 canonical URL로 유지할지 결정하고 updater·Pages 입력에 반영
+
+위 항목의 구현은 각각 별도 Issue가 소유한다. Task #9는 선행 결과를 최신 `devel`에 통합한 뒤 새 exact 후보를 만들고 Stage 3·4의 관련 gate를 다시 실행하는 조정 책임만 가진다. `8b4ae60…` artifact와 checksum은 재사용하지 않는다.
 
 ### release candidate 계약과 결정 게이트
 
@@ -219,7 +235,12 @@ candidate 수용 매트릭스의 조사 결과, 실행 환경, checksum과 수�
   - Stage 1에서 승인한 native 환경에서 bundle별 clean install, launch, 핵심 문서 시나리오, file association, uninstall과 rollback을 수행한다.
   - 자동화할 수 없는 GUI 항목은 승인된 수동 절차의 환경·관찰 결과와 한계를 기록한다.
   - 필수 형식이나 시나리오가 누락되면 Stage 4를 완료하지 않고 Task #9를 No-Go로 판정한다.
+- **Stage 4.7 — 첫 공개 선행 task 재기준선 확정**
+  - Stage 4.6 후보를 역사 증적으로 고정하고 Stage 5 보류 사유와 선행 task를 수행·구현계획서에 기록한다.
+  - 별도 Issue가 소유할 upstream 자동화·v0.8.4 갱신·Issue #14·#16·#17·Pages·URL 소유 결정을 구분한다.
+  - 선행 task 병합 뒤 새 exact-SHA/native 후보를 다시 검증해야 한다는 재진입 조건을 고정한다.
 - **Stage 5 — Go/No-Go 판정과 후속 게시 입력 확정**
+  - 모든 첫 공개 선행 조건이 `devel`에 반영되고 새 exact-SHA/native gate가 통과한 경우에만 시작한다.
   - 모든 자동·원격·수동 증적을 수용 매트릭스에 대조하고 upstream known issue와 Alhangeul 회귀를 구분한다.
   - prerelease notes 초안, asset·checksum 목록, signing 표시, rollback과 남은 위험을 정리한다.
   - Go인 경우에만 후속 “v0.1.0 prerelease 게시와 배포 후 검증” Issue의 입력을 확정하며 release PR, tag와 Release는 생성하지 않는다.
@@ -263,6 +284,9 @@ candidate 수용 매트릭스의 조사 결과, 실행 환경, checksum과 수�
   - 제거 후 file association·실행 경로와 사용자 문서 보존 확인
   - 환경, package, exact SHA, 관찰 결과와 증적 위치 기록
 - Stage 5
+  - 첫 공개 선행 Issue의 merge/close 상태와 canonical 다운로드·updater URL 결정 확인
+  - latest Stable tag·resolved commit과 core·Studio pin 일치 확인
+  - 선행 task 병합 뒤 생성한 새 exact SHA와 Windows/Linux native·artifact gate 확인
   - Issue #9 수용 기준과 Stage 1 matrix의 모든 required 항목 대조
   - candidate exact SHA, workflow run, artifact IDs, inventory와 checksum 추적 가능성 확인
   - release notes 초안에 지원 플랫폼, 서명 상태, 미지원 기능과 known issue 포함
@@ -273,6 +297,7 @@ candidate 수용 매트릭스의 조사 결과, 실행 환경, checksum과 수�
 
 - package metadata와 사용자 문서에 실제 지원 범위와 다른 설명이 없다.
 - 승인된 candidate exact SHA에서 플랫폼 중립 검사와 Windows/Linux native build가 모두 성공한다.
+- 첫 공개 선행 task를 반영한 최신 `devel`에서 새 candidate를 생성했으며 과거 `8b4ae60…` artifact를 재사용하지 않는다.
 - 다운로드한 모든 후보 artifact의 inventory와 SHA-256이 일치한다.
 - release 후보에 포함할 모든 bundle의 승인된 설치·실행·핵심 시나리오·제거·rollback 결과가 있다.
 - signed/unsigned 상태, 미지원 기능, known issue와 검증 한계가 release notes 초안과 운영 문서에 일관되게 기록된다.
@@ -291,6 +316,7 @@ candidate 수용 매트릭스의 조사 결과, 실행 환경, checksum과 수�
 - **package 설명과 실제 기능 불일치**: HWPX 저장을 지원하는 것으로 오인될 수 있다. metadata와 문서를 함께 수정하고 회귀 테스트로 보호한다.
 - **known issue의 과도한 면제**: upstream 기록과 재현 조건이 다른 실패는 Alhangeul 회귀일 수 있다. 실패 지점이 일치하지 않으면 Stage를 중지한다.
 - **artifact 만료와 잘못된 재사용**: candidate artifact는 14일 후 만료되고 공식 배포물이 아니다. 후속 release는 tag exact SHA에서 새로 생성한다.
+- **upstream·공개 진입점 drift**: latest Stable, updater URL과 다운로드 Pages가 확정되기 전에 Go 판정을 내리면 첫 공개 직후 재빌드나 URL 이전이 필요해진다. 별도 선행 Issue와 새 exact 후보를 Stage 5 진입 조건으로 둔다.
 - **rollback 의미의 모호성**: 첫 공식 release라 이전 Alhangeul 버전이 없다. uninstall·candidate 재설치와 공개 후 withdraw/fix-forward를 분리해 정의한다.
 - **외부 상태 조기 변경**: tag, Release, signing secret과 package 게시를 Task #9 범위 밖으로 유지하고 단계별 명시 승인 없이 실행하지 않는다.
 - **계획 문서 LOC 초과**: 수행계획서와 구현계획서는 이미 역할별로 분리했지만 release 계약·5단계 검증·승인 이력을 한 task 안에서 추적하기 위해 권장 300 LOC를 소폭 초과한다. 추가 구현 상세는 단계 보고서와 역할별 script로 분리해 두 계획서를 더 확대하지 않는다.
@@ -308,5 +334,8 @@ candidate 수용 매트릭스의 조사 결과, 실행 환경, checksum과 수�
 - Stage 3에서 PR 전 remote canary ref로 `publish/task9`을 사용하고, exact-SHA CI/native artifact를 검증하는 순서 예외
 - signing 인프라, updater, package repository, HWPX 저장 등 신규 기능, macOS, release PR·tag·Release와 M010 close를 제외하는 범위
 - 위 5개 단계와 단계별 승인·검증 계획
+- 2026-08-12 Stage 4.7에서 Stage 5를 보류하고 upstream 자동화·v0.8.4 갱신·Issue #14·#16·#17·Pages·URL 소유 결정을 첫 공개 선행 조건으로 두는 재기준선
 
 2026-07-29 Stage 1.1에서 unsigned prerelease, HOP Windows/Linux bundle parity와 Windows ARM64 조건부 분리를 승인받았다. Stage 2 진입, remote push, Actions dispatch, release PR, tag 또는 GitHub Release는 각각 후속 승인 없이는 수행하지 않는다.
+
+2026-08-12 작업지시자는 Stage 5보다 upstream 감시·자동 동기화와 `rhwp v0.8.4` 수용을 먼저 진행하는 순서를 승인했다. Task #9은 관련 첫 공개 선행 task가 병합될 때까지 Stage 5를 보류하고, 이후 최신 `devel` exact SHA에서 Windows/Linux candidate gate를 다시 수행한다.
