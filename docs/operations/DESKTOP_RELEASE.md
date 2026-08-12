@@ -53,7 +53,50 @@ Windows ARM64 MSI·NSIS는 Issue #10의 별도 build·native 검증이 Go일 때
 
 ## Task #9 prerelease candidate build·checksum 검증
 
-### 현재 candidate — Task #11 통합 재검증
+### 현재 candidate — PR #18·#22 통합 exact 재검증
+
+2026-08-12에 PR #18의 upstream-first Studio·HWP/HWPX·direct PDF와 PR #22의
+Windows/Linux system print를 포함한 Stage 4.5 commit
+`8b4ae60bb0f9619caa6c1f4d9f5a3796a42edcd9`을 `publish/task9`에 고정했다.
+
+- [CI run 31584608310](https://github.com/postmelee/alhangeul-tauri/actions/runs/31584608310):
+  `workflow_dispatch`, `publish/task9`, exact SHA 일치, `Unit tests` 성공
+- [Native run 31584610236 attempt 2](https://github.com/postmelee/alhangeul-tauri/actions/runs/31584610236/attempts/2):
+  같은 exact SHA의 Windows x64·Linux x64·Linux arm64 build와 Windows installer smoke 성공
+
+첫 native attempt의 Windows pin tag fetch는 Corepack registry 연결 단절로 실패했으며 source
+failure가 아니다. 실패 job 재실행 attempt 2를 최종 증거로 사용하고 첫 attempt의 불완전 smoke
+artifact는 제외했다.
+
+| Platform | 종류 | 크기 (bytes) | SHA-256 |
+|---|---|---:|---|
+| Windows x64 | MSI | 52,785,152 | `5ac82b3a8298dcb3f05f1259d6b96701ffd39c34d1b465b04072a4646ab12864` |
+| Windows x64 | NSIS | 48,469,684 | `f13e7335d2737c5d74a775646ffb6416d32ff0fe2ec2a4124c26feb9e3d49384` |
+| Linux x64 | AppImage | 131,144,184 | `256becf050212db787f728f43f0dd1073bbeb0d77505f33f12f7ae5cc91d6dc4` |
+| Linux x64 | DEB | 54,729,740 | `e4edd4d794f2d88fccba39e9e8c9121811d889b02f6dca69c722b3460e6aab33` |
+| Linux x64 | RPM | 54,729,462 | `6689bd8658e16c498f6d6c105f5d143527c4f09f34f00725fab3d325d1580baf` |
+| Linux arm64 | DEB | 54,685,236 | `691b6e5835003f32a2169e38dc3380ff8106cfb4edee67b38d2f8408e48e57e9` |
+
+세 platform inventory를 다운로드 후 독립 검증했고 여섯 파일로 생성한 `SHA256SUMS`도 모두
+`OK`였다. `SHA256SUMS` 자체 SHA-256은
+`6c43efe3a3b3d84c9ebd3204b48a4b058ee4b54537c6f11bed2253d39a4d348a`다.
+
+Windows MSI·NSIS 자동 smoke는 설치·version·HWP/HWPX handler·Open With·기존 기본 연결
+보존·제한 실행·제거·최종 clean과 외부 fixture 무손실을 통과했다. Linux x64 AppImage·DEB·
+RPM과 Linux arm64 DEB는 native CPU 환경에서 설치 또는 integration, `%F` launcher 문서
+경로 전달, HWP/HWPX 표시와 제거·rollback을 직접 통과했다. x64 HWP 6쪽·HWPX 10쪽과 arm64
+HWP 6쪽이 중앙에서 열렸고 fixture hash가 유지됐다.
+
+Task #15 최종 제품 source `b5b75e2…`에서 이번 candidate까지 Studio·Rust runtime,
+`third_party/rhwp`와 font diff는 0건이다. Windows 저장·PDF·system print와 Linux 저장·PDF·
+인쇄 대표 기능은 Task #13·#15의 승인된 GUI 결과, 이 runtime 무변경과 새 exact package
+gate를 결합해 수용했다. 이번 exact Windows installer GUI를 직접 반복하지 않았다는 제한,
+5분 넘는 Windows print modal과 Linux 혼합 페이지 media 전환 미검증은 공개한다.
+
+Actions artifact는 최종 tag artifact가 아니며 공개 asset으로 재사용하지 않는다. 실제 게시
+task는 `main`의 immutable `v0.1.0` tag exact SHA에서 bundle과 checksum을 다시 만든다.
+
+### 폐기한 과거 candidate — Task #11 통합 재검증
 
 2026-08-02에 Task #11 merge를 포함한 통합 commit `dd67d58f5367b478315417279ac8f6561bd5b718`을 `publish/task9`에 고정하고 같은 exact SHA를 수동 검증했다.
 
