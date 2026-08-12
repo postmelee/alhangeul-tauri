@@ -5,6 +5,8 @@ import {
 } from './file';
 
 const upstreamOpen = vi.hoisted(() => vi.fn());
+const upstreamPrint = vi.hoisted(() => vi.fn());
+const directPrint = vi.hoisted(() => vi.fn());
 const upstreamConfirm = vi.hoisted(() => vi.fn());
 const resolveRecentPath = vi.hoisted(() => vi.fn());
 const host = vi.hoisted(() => ({
@@ -14,7 +16,6 @@ const host = vi.hoisted(() => ({
   openDocumentByPath: vi.fn(),
   saveCurrent: vi.fn(),
   exportCurrentPdf: vi.fn(),
-  printCurrentWebview: vi.fn(),
   createNewWindow: vi.fn(),
   confirmDocumentReplacement: vi.fn(),
 }));
@@ -30,10 +31,11 @@ vi.mock('@upstream/command/commands/file', () => ({
     { id: 'file:save-as-hwp', label: 'Save HWP', execute: vi.fn() },
     { id: 'file:save-as-hwpx', label: 'Save HWPX', execute: vi.fn() },
     { id: 'file:print-to-pdf', label: 'PDF', execute: vi.fn() },
-    { id: 'file:print', label: 'Print', execute: vi.fn() },
+    { id: 'file:print', label: 'Print', execute: upstreamPrint },
   ],
 }));
 vi.mock('../../core/desktop-host', () => ({ getDesktopHost: () => host }));
+vi.mock('../direct-print', () => ({ printDirectlyFromPageSurface: directPrint }));
 vi.mock('../../recent/recent-store', () => ({
   resolveDesktopRecentPath: resolveRecentPath,
 }));
@@ -53,14 +55,14 @@ describe('native file command leaf adapters', () => {
     expect(host.openDocumentFromDialog).not.toHaveBeenCalled();
   });
 
-  it('routes native open, save, print, and new-window through the desktop host', async () => {
+  it('routes native file actions and Tauri print through the hidden page surface', async () => {
     installTauriWindow();
     host.openDocumentFromDialog.mockResolvedValue({ fileName: 'opened.hwp', pageCount: 2 });
     host.saveCurrent.mockResolvedValue({ docId: 'doc' });
     host.exportCurrentPdf.mockResolvedValue({
       path: '/documents/export.pdf', pageCount: 2, textMode: 'searchable',
     });
-    host.printCurrentWebview.mockResolvedValue(undefined);
+    directPrint.mockResolvedValue(undefined);
     host.createNewWindow.mockResolvedValue('editor-2');
 
     await command('file:open').execute(services() as never);
@@ -80,8 +82,35 @@ describe('native file command leaf adapters', () => {
       ['hwpx', true],
     ]);
     expect(host.exportCurrentPdf).toHaveBeenCalledOnce();
-    expect(host.printCurrentWebview).toHaveBeenCalledOnce();
+    expect(directPrint).toHaveBeenCalledOnce();
+    expect(upstreamPrint).not.toHaveBeenCalled();
     expect(host.createNewWindow).toHaveBeenCalledOnce();
+  });
+
+  it('keeps the upstream visible print preview outside Tauri', async () => {
+    upstreamPrint.mockResolvedValue(undefined);
+
+    await command('file:print').execute(services() as never);
+
+    expect(upstreamPrint).toHaveBeenCalledOnce();
+    expect(directPrint).not.toHaveBeenCalled();
+  });
+
+  it('restores the document status instead of claiming system print completion', async () => {
+    installTauriWindow();
+    const status = { textContent: 'document.hwp — 2페이지' };
+    (globalThis as { document?: unknown }).document = {
+      getElementById: vi.fn(() => status),
+    };
+    directPrint.mockImplementation(async () => {
+      expect(status.textContent).toBe('인쇄 중...');
+      status.textContent = '시스템 인쇄 처리 중...';
+    });
+
+    await command('file:print').execute(services() as never);
+
+    expect(status.textContent).toBe('document.hwp — 2페이지');
+    expect(status.textContent).not.toBe('인쇄 완료');
   });
 
   it('resolves opaque recent ids inside the adapter before native open', async () => {
@@ -107,9 +136,10 @@ describe('native file command leaf adapters', () => {
     expect(host.confirmDocumentReplacement).toHaveBeenCalledOnce();
   });
 
-  it('keeps upstream HWPX and PDF command metadata while overriding only native execute', () => {
+  it('keeps upstream HWPX, PDF, and print command metadata', () => {
     expect(command('file:save-as-hwpx').label).toBe('Save HWPX');
     expect(command('file:print-to-pdf').label).toBe('PDF');
+    expect(command('file:print').label).toBe('Print');
   });
 });
 

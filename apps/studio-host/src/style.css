@@ -34,6 +34,18 @@ html:not(.alhangeul-toolbar-ready) .tb-note-group,
   display: none !important;
 }
 
+/* Tauri CSP가 upstream의 동적 iframe inline style을 무시해도 인쇄 surface는 숨긴다. */
+#rhwp-print-surface {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  border: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  z-index: -1 !important;
+}
+
 .about-alhangeul-version {
   margin-top: 2px;
   color: var(--color-text-muted);

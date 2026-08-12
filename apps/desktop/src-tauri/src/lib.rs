@@ -10,6 +10,7 @@ mod pdf_text_audit;
 mod pending_open;
 mod recent_documents;
 mod state;
+mod window_geometry;
 mod windows;
 
 use std::path::{Path, PathBuf};
@@ -21,8 +22,8 @@ use commands::{
     clear_recent_documents, close_document, commit_pdf_export, commit_staged_document_save,
     create_document, create_editor_window, desktop_platform, destroy_current_window,
     list_local_fonts, list_recent_documents, mark_document_dirty, mutate_document,
-    open_document_tracking, prepare_document_open, prepare_staged_document_save, print_webview,
-    query_document, read_local_font, record_recent_document, remove_recent_document,
+    open_document_tracking, prepare_document_open, prepare_staged_document_save, query_document,
+    read_local_font, record_recent_document, remove_recent_document,
     render_document_preview, render_page_svg, reveal_in_folder, take_pending_open_paths,
 };
 use state::AppState;
@@ -70,7 +71,6 @@ pub fn run() {
             append_pdf_page,
             commit_pdf_export,
             abort_pdf_export,
-            print_webview,
             destroy_current_window,
             desktop_platform,
             list_local_fonts,
