@@ -140,11 +140,16 @@ Task #23 Stage 1: Stable release 판정과 관리 참조 계약 추가
   값 노출 없이 preflight하고 `actions/create-github-app-token`으로 contents·pull-requests
   write installation token을 발급한다. App token은 push와 `gh pr create`에만 전달한다.
 - Rust, pnpm과 exact `wasm-pack 0.15.0`을 준비하고 다음을 순서대로 수행한다.
-  1. `scripts/update-upstream.sh --tag ... --commit ... --run-checks`
-  2. Stage 1 관리 참조 helper
-  3. changed-path allowlist 검증과 PR body 생성
-  4. explicit allowlist stage·commit·non-force push
-  5. `devel` 대상 draft PR 생성
+  1. Stage 1 관리 참조 helper의 전체 marker preflight와 local checkout 참조 갱신
+  2. `scripts/update-upstream.sh --tag ... --commit ... --run-checks`
+  3. 관리 참조 갱신 뒤 전체 플랫폼 중립 gate 재실행
+  4. changed-path allowlist 검증과 PR body 생성
+  5. explicit allowlist stage·commit·non-force push
+  6. `devel` 대상 draft PR 생성
+- 이 순서는 update script 내부의 `test:upstream`·`test:studio`가 실제 pin 기대값을 읽는
+  계약 때문에 필요하다. old pin 참조를 둔 채 update script부터 실행하면 source·lock 갱신 뒤
+  내부 gate가 반드시 실패한다. 참조 갱신은 ephemeral clean checkout 안에서만 먼저 수행하며,
+  이후 update script 또는 gate가 실패하면 App token 발급·commit·push·PR 생성에 도달하지 않는다.
 - changed-path allowlist는 update script 산출물과 Stage 1 관리 참조 파일만 허용한다.
   `.github/workflows`, task 문서, known issue 기록은 candidate가 수정할 수 없다.
 - existing PR·current·dry-run은 write job을 건너뛰고 summary만 남긴다. branch-only 또는
