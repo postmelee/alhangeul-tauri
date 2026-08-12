@@ -1,4 +1,22 @@
-import { filterAuthoringFontFamilies, isAuthoringBlockedFontFamily } from './font-authoring-policy';
+import { isAuthoringBlockedFontFamily } from './font-authoring-policy';
+import {
+  ensureDesktopFontFace,
+  listDesktopFontEntries,
+  readDesktopFontBytes,
+  resetDesktopFontProvider,
+} from './local-font-provider';
+import {
+  normalizeFontEntries,
+  normalizeFontName,
+  resolveRequestedFamilies,
+  toLocalFontRecord,
+  uniqueAuthoringFamilies,
+  type LocalFontEntry,
+  type LocalFontRecord,
+} from './local-font-records';
+import { isTauriRuntime } from './platform';
+
+export type { LocalFontEntry, LocalFontRecord } from './local-font-records';
 
 interface BrowserFontData {
   family: string;
@@ -7,25 +25,7 @@ interface BrowserFontData {
   style: string;
 }
 
-export interface LocalFontEntry {
-  family: string;
-  postScriptName: string;
-  style: string;
-  weight?: number;
-  sourceKind: 'system-installed' | 'file-backed';
-  path?: string | null;
-}
-
 export type LocalFontDetectionSource = 'local-font-access' | 'font-presence-probe';
-
-export interface LocalFontRecord {
-  family: string;
-  fullName: string;
-  postscriptName: string;
-  style: string;
-  displayName: string;
-  aliases: string[];
-}
 
 export interface LocalFontSnapshot {
   version: 2;
@@ -67,11 +67,9 @@ declare global {
 
 let cachedFontEntries: LocalFontEntry[] | null = null;
 let cachedDetectedAt: string | null = null;
-const loadedFileBackedEntryKeys = new Set<string>();
-const desktopFontBinaryCache = new Map<string, Promise<Uint8Array>>();
 
 export function isLocalFontSupported(): boolean {
-  return isDesktopTauriRuntime()
+  return isTauriRuntime()
     || (typeof window !== 'undefined' && typeof window.queryLocalFonts === 'function');
 }
 
@@ -83,15 +81,14 @@ export async function detectLocalFontEntries(force = false): Promise<LocalFontEn
   if (force) {
     cachedFontEntries = null;
     cachedDetectedAt = null;
-    desktopFontBinaryCache.clear();
-    loadedFileBackedEntryKeys.clear();
+    resetDesktopFontProvider();
   }
   if (cachedFontEntries) {
     return cachedFontEntries;
   }
 
-  const entries = isDesktopTauriRuntime()
-    ? await detectDesktopFontEntries()
+  const entries = isTauriRuntime()
+    ? await listDesktopFontEntries()
     : await detectBrowserFontEntries();
 
   cachedFontEntries = normalizeFontEntries(entries);
@@ -173,8 +170,7 @@ export async function loadStoredLocalFonts(): Promise<LocalFontSnapshot | null> 
 export async function clearStoredLocalFonts(): Promise<void> {
   cachedFontEntries = null;
   cachedDetectedAt = null;
-  desktopFontBinaryCache.clear();
-  loadedFileBackedEntryKeys.clear();
+  resetDesktopFontProvider();
 }
 
 export function getLocalFontState(): LocalFontState {
@@ -197,8 +193,7 @@ export function getLocalFontState(): LocalFontState {
 export function resetLocalFontsForTests(): void {
   cachedFontEntries = null;
   cachedDetectedAt = null;
-  desktopFontBinaryCache.clear();
-  loadedFileBackedEntryKeys.clear();
+  resetDesktopFontProvider();
 }
 
 export async function ensureLocalFontsAvailable(targetFamilies?: Iterable<string>): Promise<Set<string>> {
@@ -211,7 +206,7 @@ export async function ensureLocalFontsAvailable(targetFamilies?: Iterable<string
   );
   const requestedFamilies = resolveRequestedFamilies(entries, targetFamilies);
 
-  if (!isDesktopTauriRuntime() || !supportsBinaryFontLoading()) {
+  if (!isTauriRuntime() || !supportsBinaryFontLoading()) {
     return available;
   }
 
@@ -220,43 +215,16 @@ export async function ensureLocalFontsAvailable(targetFamilies?: Iterable<string
     && Boolean(entry.path)
     && requestedFamilies.has(entry.family),
   );
-  const entriesByPath = groupEntriesByPath(fileBackedEntries);
-
-  for (const [path, pathEntries] of entriesByPath) {
-    let fontBytes: Uint8Array;
+  for (const entry of fileBackedEntries) {
     try {
-      fontBytes = await readDesktopFontBytes(path);
+      await ensureDesktopFontFace(entry);
+      if (!isAuthoringBlockedFontFamily(entry.family)) available.add(entry.family);
     } catch {
-      continue;
-    }
-
-    for (const entry of pathEntries) {
-      const entryKey = fileBackedEntryKey(entry);
-      if (loadedFileBackedEntryKeys.has(entryKey)) {
-        if (!isAuthoringBlockedFontFamily(entry.family)) {
-          available.add(entry.family);
-        }
-        continue;
-      }
-
-      try {
-        await registerDesktopFontFace(entry, fontBytes);
-        loadedFileBackedEntryKeys.add(entryKey);
-        if (!isAuthoringBlockedFontFamily(entry.family)) {
-          available.add(entry.family);
-        }
-      } catch {
-        // File-backed fonts are best-effort; substitute fallback remains available.
-      }
+      // File-backed fonts are best-effort; substitute fallback remains available.
     }
   }
 
   return available;
-}
-
-async function detectDesktopFontEntries(): Promise<LocalFontEntry[]> {
-  const { invoke } = await import('@tauri-apps/api/core');
-  return invoke<LocalFontEntry[]>('list_local_fonts');
 }
 
 async function detectBrowserFontEntries(): Promise<LocalFontEntry[]> {
@@ -271,139 +239,6 @@ async function detectBrowserFontEntries(): Promise<LocalFontEntry[]> {
     style: font.style || 'normal',
     sourceKind: 'system-installed',
   }));
-}
-
-async function readDesktopFontBytes(path: string): Promise<Uint8Array> {
-  let pending = desktopFontBinaryCache.get(path);
-  if (!pending) {
-    pending = (async () => {
-      const { invoke } = await import('@tauri-apps/api/core');
-      const bytes = await invoke<number[]>('read_local_font', { path });
-      return new Uint8Array(bytes);
-    })();
-    desktopFontBinaryCache.set(path, pending);
-  }
-
-  try {
-    return await pending;
-  } catch (error) {
-    desktopFontBinaryCache.delete(path);
-    throw error;
-  }
-}
-
-async function registerDesktopFontFace(entry: LocalFontEntry, fontBytes: Uint8Array): Promise<void> {
-  const source = fontBytes.slice();
-  const descriptors: FontFaceDescriptors = {
-    style: entry.style || 'normal',
-  };
-  if (entry.weight) {
-    descriptors.weight = String(entry.weight);
-  }
-
-  const face = new FontFace(entry.family, source, descriptors);
-  document.fonts.add(await face.load());
-}
-
-function normalizeFontEntries(entries: LocalFontEntry[]): LocalFontEntry[] {
-  const seen = new Set<string>();
-  const normalized: LocalFontEntry[] = [];
-
-  for (const entry of entries) {
-    const family = entry.family.trim();
-    if (!family) continue;
-
-    const postScriptName = entry.postScriptName?.trim() || family;
-    const style = entry.style?.trim() || 'normal';
-    const sourceKind = entry.sourceKind ?? 'system-installed';
-    const path = entry.path ?? null;
-    const key = [family, postScriptName, style, sourceKind, path ?? ''].join('\u0000');
-    if (seen.has(key)) continue;
-    seen.add(key);
-
-    normalized.push({
-      family,
-      postScriptName,
-      style,
-      weight: entry.weight,
-      sourceKind,
-      path,
-    });
-  }
-
-  normalized.sort((left, right) =>
-    left.family.localeCompare(right.family, 'ko')
-    || left.style.localeCompare(right.style, 'en')
-    || left.postScriptName.localeCompare(right.postScriptName, 'en'),
-  );
-  return normalized;
-}
-
-function resolveRequestedFamilies(
-  entries: LocalFontEntry[],
-  targetFamilies?: Iterable<string>,
-): Set<string> {
-  if (!targetFamilies) {
-    return new Set(
-      entries
-        .map((entry) => entry.family)
-        .filter((family) => !isAuthoringBlockedFontFamily(family)),
-    );
-  }
-
-  return new Set(
-    Array.from(targetFamilies)
-      .map((family) => family.trim())
-      .filter((family) => family && !isAuthoringBlockedFontFamily(family)),
-  );
-}
-
-function groupEntriesByPath(entries: LocalFontEntry[]): Map<string, LocalFontEntry[]> {
-  const grouped = new Map<string, LocalFontEntry[]>();
-  for (const entry of entries) {
-    const path = entry.path;
-    if (!path) continue;
-    const pathEntries = grouped.get(path) ?? [];
-    pathEntries.push(entry);
-    grouped.set(path, pathEntries);
-  }
-  return grouped;
-}
-
-function fileBackedEntryKey(entry: LocalFontEntry): string {
-  return [
-    entry.family,
-    entry.postScriptName,
-    entry.style,
-    entry.weight ?? '',
-    entry.path ?? '',
-  ].join('\u0000');
-}
-
-function uniqueAuthoringFamilies(entries: LocalFontEntry[]): string[] {
-  const families = filterAuthoringFontFamilies(entries.map((entry) => entry.family));
-  return Array.from(new Set(families)).sort((a, b) => a.localeCompare(b, 'ko'));
-}
-
-function toLocalFontRecord(entry: LocalFontEntry): LocalFontRecord {
-  const aliases = Array.from(new Set([entry.family, entry.postScriptName].filter(Boolean)));
-  return {
-    family: entry.family,
-    fullName: entry.family,
-    postscriptName: entry.postScriptName,
-    style: entry.style,
-    displayName: entry.family,
-    aliases,
-  };
-}
-
-function normalizeFontName(value: string): string {
-  return value
-    .replace(/\u0000/g, '')
-    .normalize('NFC')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .toLocaleLowerCase('en-US');
 }
 
 function currentSnapshot(): LocalFontSnapshot | null {
@@ -422,12 +257,4 @@ function supportsBinaryFontLoading(): boolean {
   return typeof document !== 'undefined'
     && !!document.fonts
     && typeof FontFace === 'function';
-}
-
-function isDesktopTauriRuntime(): boolean {
-  return typeof window !== 'undefined'
-    && (
-      '__TAURI_INTERNALS__' in window
-      || window.location?.protocol === 'tauri:'
-    );
 }

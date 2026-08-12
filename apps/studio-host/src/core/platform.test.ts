@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import {
   detectDesktopPlatform,
   hydrateDesktopPlatform,
+  isTauriRuntime,
   resetDesktopPlatformOverride,
 } from './platform';
 
@@ -25,5 +26,14 @@ describe('platform', () => {
     await expect(hydrateDesktopPlatform(async () => {
       throw new Error('ipc unavailable');
     })).resolves.toBe('windows');
+  });
+
+  it('detects both injected and protocol Tauri runtimes', () => {
+    expect(isTauriRuntime({ location: { protocol: 'https:' } as Location })).toBe(false);
+    expect(isTauriRuntime({
+      __TAURI_INTERNALS__: {},
+      location: { protocol: 'https:' } as Location,
+    })).toBe(true);
+    expect(isTauriRuntime({ location: { protocol: 'tauri:' } as Location })).toBe(true);
   });
 });

@@ -14,6 +14,10 @@ GitHub Issue: [#9](https://github.com/postmelee/alhangeul-tauri/issues/9)
 | 4 | Windows/Linux 설치·실행·rollback 검증 | `task_m010_9_stage4.md` | bundle별 native install·launch·핵심 시나리오·uninstall |
 | 4.1 | Linux desktop entry 문서 인자 전달 보정 | 공통 desktop template, metadata 회귀 검증 | AppImage·DEB·RPM의 `Exec`·MIME 계약과 새 exact-SHA artifact |
 | 4.2 | Windows/Linux UI 리본·한글 버튼 보정 | host 리본 markup, UI font 상속, 회귀 검증 | grouped ribbon 계약과 form control 한글 font 상속 |
+| 4.3 | Actions rhwp release tag 확보 보정 | exact tag fetch script·workflow 계약 | stable tag·commit provenance 재현 |
+| 4.4 | 과거 exact 후보 증적 보존 | `96938d4…` CI·bundle·Linux UI 기록 | run·artifact digest와 당시 수용 범위 고정 |
+| 4.5 | PR #18·#22 최신 `devel` 통합 | upstream-first Studio·HWPX/PDF·system print와 Task #9 릴리즈 계약 합집합 | 플랫폼 중립 전체 gate, legacy shell 비복원 |
+| 4.6 | 새 exact-SHA 후보와 native 재검증 | CI/native artifact·inventory·checksum·Windows/Linux 수동 증적 | 최신 통합 SHA의 전체 baseline bundle 재수용 |
 | 5 | Go/No-Go 판정과 후속 게시 입력 확정 | `task_m010_9_stage5.md`, release notes·후속 Issue 초안 | 모든 required gate 대조, 공개 작업 미실행 확인 |
 
 ## 문서 위치 확인
@@ -407,6 +411,105 @@ git diff --check
 Task #9 [Stage 4.3]: Actions rhwp release tag 확보 보정
 ```
 
+## Stage 4.4 — 과거 exact 후보 증적 보존
+
+### 목적과 경계
+
+candidate `96938d476cf5f47f1c4e64f5930acc67f376caf9`의 성공 CI·native build,
+artifact inventory와 Linux x64 UI 증적을 Stage 4 진행 기록에 고정한다. 이 기록은 당시
+후보의 재현 근거이지만 PR #18·#22가 `devel`에 merge된 뒤에는 공개 prerelease 후보로
+재사용하지 않는다.
+
+### 산출물과 검증
+
+- `mydocs/orders/20260804.md`
+- `mydocs/working/task_m010_9_stage4.md`
+- GitHub Actions run `30876932406`, `30876933811`의 exact head SHA, conclusion,
+  artifact ID·digest·만료 시각 대조
+- Linux x64 화면 PNG hash와 launcher·fixture·환경 기록 보존
+
+### 커밋
+
+```text
+Task #9 [Stage 4.4]: Linux exact 후보 검증 증적 보존
+```
+
+## Stage 4.5 — PR #18·#22 최신 `devel` 통합
+
+### 진입 사유와 승인
+
+Task #13 PR #18과 Task #15 PR #22가 merge되어 제품의 Studio host, HWPX/PDF 저장과
+Windows/Linux 시스템 인쇄 경계가 과거 Task #9 candidate 이후 변경됐다. 2026-08-12
+작업지시자는 두 PR merge cleanup 뒤 Task #9를 이어서 진행하도록 승인했다.
+
+### 통합 원칙
+
+- 진행 중 Task #9 history는 rewrite하지 않고 최신 `devel`을 merge한다.
+- PR #18의 upstream v0.8.2 전체 Studio bundle과 얇은 Tauri adapter를 canonical 구조로
+  사용하며 과거 `apps/studio-host/index.html`과 자체 toolbar/view 구현을 되살리지 않는다.
+- PR #18의 HWP/HWPX 저장 설명, bundled PDF font·license resource와 PR #22의 print
+  surface CSP·system print lifecycle을 유지한다.
+- Task #9의 `SHA256SUMS` 생성기와 Linux `Exec={{exec}} %F` desktop template은 공개
+  bundle·문서 association 수용 계약이므로 최신 release metadata guard에 합친다.
+- 과거 host shell 구조를 검사하던 `tests/studio-shell.test.mjs`는 upstream-first 구조와
+  충돌하므로 복원하지 않는다. 현재 upstream boundary와 Studio test를 canonical guard로 쓴다.
+- 새 공식 제품 문서 위치는 추가하지 않는다. 기존 `docs/operations/DESKTOP_RELEASE.md`와
+  Task #13·#15 문서는 merge 결과 그대로 계승하고 통합 판단은 `mydocs/working/`에 기록한다.
+
+### 산출물
+
+- 최신 `devel` merge 결과 전체
+- `apps/desktop/src-tauri/linux/main.desktop`
+- `scripts/create-release-checksums.mjs`
+- `tests/linux-desktop-entry.test.mjs`
+- `tests/release-checksums.test.mjs`
+- 최신 HWPX metadata guard에 Linux template 계약을 합친
+  `scripts/check-release-metadata.mjs`, `tests/release-metadata.test.mjs`
+- `mydocs/working/task_m010_9_stage4_5.md`
+
+### 검증
+
+```bash
+pnpm install --frozen-lockfile
+pnpm run check:product-boundary
+pnpm run check:product-version
+pnpm run check:release-metadata
+pnpm run check:rhwp-pin
+pnpm run test:automation
+pnpm run test:upstream
+pnpm run test:studio
+pnpm run build:studio
+git diff --check
+```
+
+현재 macOS host에서는 Windows/Linux Rust·Tauri native 성공을 주장하지 않는다. Stage 4.5는
+플랫폼 중립 통합 gate까지만 완료하고 remote push·Actions dispatch는 Stage 4.6 승인 경계로
+남긴다.
+
+### 커밋
+
+```text
+Task #9 [Stage 4.5]: PR 18 22 최신 devel 통합
+```
+
+## Stage 4.6 — 새 exact-SHA 후보와 native 재검증
+
+Stage 4.5 승인 commit을 `publish/task9`에 push한 뒤 그 full SHA를 새 후보로 고정한다.
+같은 SHA에서 CI와 Windows x64·Linux x64·Linux arm64 native workflow를 실행하고 artifact
+inventory와 여섯 installer의 `SHA256SUMS`를 다시 생성·검증한다. 과거 `96938d4…`, PR #18,
+PR #22의 서로 다른 exact 후보 결과를 새 후보의 성공으로 대체하지 않는다.
+
+Windows MSI·NSIS와 Linux AppImage·DEB·RPM·arm64 DEB의 필수 native 시나리오는 Stage 1
+수용 매트릭스를 따른다. 새 통합 이후 변경되지 않은 항목의 증적 재사용 여부도 source diff와
+exact-SHA 원칙을 대조해 명시하고, 재실행이 필요한 항목은 면제하지 않는다. tag·Release·main
+PR과 공개 asset 게시는 계속 범위 밖이다.
+
+### 커밋
+
+```text
+Task #9 [Stage 4.6]: 최신 통합 exact 후보 검증
+```
+
 ## Stage 5 — Go/No-Go 판정과 후속 게시 입력 확정
 
 ### 산출물
@@ -466,6 +569,8 @@ Task #9 Stage 5: prerelease Go No-Go 판정과 게시 입력 확정
 - Stage 3은 Stage 2 보고 승인과 remote push·Actions 실행의 별도 승인을 받은 뒤 진행한다.
 - Stage 4는 Stage 3 exact-SHA artifact 성공과 native 환경 확보 뒤 진행한다.
 - Stage 4.1은 Stage 4에서 확인한 Linux desktop entry 실패의 승인된 보정이며, 성공 commit 승인 뒤 새 exact-SHA candidate 생성으로 돌아간다.
+- Stage 4.5는 PR #18·#22 최신 `devel`을 통합하고 플랫폼 중립 gate까지만 완료한다.
+- Stage 4.6은 Stage 4.5 승인 뒤 remote exact 후보와 Windows/Linux native 수용을 다시 수행한다.
 - Stage 5는 Stage 4의 모든 required 시나리오 승인 뒤 Go/No-Go를 판정한다.
 - 각 Stage 완료보고서 승인 전 다음 Stage를 시작하지 않는다.
 

@@ -228,7 +228,34 @@ MSI와 NSIS는 각각 clean state, silent install exit `0`, 제품 version `0.1.
 
 플랫폼 중립 test(`pnpm run test:automation`)는 이들 source 계약을 고정하지만 실제 설치·제거 동작은 확인하지 않는다.
 
-Task #9 prerelease 준비는 Task #11 merge 뒤 최신 `devel`을 통합하고 과거 candidate를 폐기한 다음, `check:release-metadata`를 포함하는 새 exact-SHA candidate를 만들어 다시 검증해야 한다. 위 Task #11 artifact나 SHA를 그대로 공개 후보로 승계하지 않는다.
+Task #13은 exact upstream `v0.8.2` Studio entry, HWPX native 저장과 현재 페이지 SVG 기반 직접 PDF 경계를 다시 구성했다. 따라서 Task #9의 기존 candidate와 위 Task #11 artifact·SHA는 Task #13의 기능 수용이나 공개 후보로 승계하지 않는다. Stage 5의 플랫폼 중립 gate가 통과해도 native 수용 증거는 아니며, 별도 승인한 Stage 6에서 Stage 5 commit을 포함한 새 exact SHA로 Windows/Linux bundle과 GUI·저장·PDF·package gate를 다시 검증해야 한다. 그 결과가 Go일 때만 해당 exact SHA를 Task #9 prerelease 후보 재개 입력으로 사용한다.
+
+2026-08-08 Task #13 Stage 6 exact SHA `63a2703cebf3a79d11a010974203fdaf4ccd3e76`은
+[CI run 31255124269](https://github.com/postmelee/alhangeul-tauri/actions/runs/31255124269)와
+[native run 31255131950](https://github.com/postmelee/alhangeul-tauri/actions/runs/31255131950)에서
+Windows x64·Linux x64·Linux arm64 build, inventory와 Windows MSI·NSIS installer smoke를
+통과했다. Windows와 최소 Linux에서 직접 PDF 저장이 성공했고 Windows PDF의 한글
+검색·선택·복사를 확인했다. 다만 같은 후보의 실제 인쇄가 editor WebView의 빈 한 쪽을
+출력해 별도 Issue #15로 분리됐다. Task #13 PR은 이 분리 경계를 기록한 뒤 진행할 수
+있지만, Task #9 prerelease 후보 재개는 Task #15 merge와 두 task를 포함한 새 exact SHA의
+Windows/Linux 수용 전까지 No-Go다.
+
+### 실제 인쇄와 PDF 직접 저장의 분리 gate
+
+PDF 직접 저장 성공은 실제 인쇄 성공을 대신하지 않는다. `file:print-to-pdf`는 Alhangeul의 Rust searchable PDF job이다. `file:print`는 모든 문서 페이지를 upstream `profile=print` SVG와 print-page primitive로 조립한 전용 surface만 system print로 보내며, browser는 upstream visible preview를, Tauri는 hidden same-origin surface의 직접 `window.print()`를 사용한다.
+
+Windows/Linux exact 후보에서 `인쇄`를 선택하면 먼저 다음 항목을 확인한다.
+
+1. Tauri에서는 별도 Alhangeul preview 창 없이 system print dialog가 직접 열린다.
+2. system preview의 제목·쪽 수·세로/가로 방향과 본문이 열린 문서와 일치한다.
+3. 메뉴·리본·상태 표시줄 같은 Studio chrome이나 빈 editor 한 쪽이 문서 대신 표시되지 않는다.
+4. 취소·완료·반복 인쇄 뒤 hidden surface나 orphan 창이 남지 않고 editor가 계속 동작한다.
+5. Windows에서는 단일·다중 페이지 한글 문서를 Microsoft Print to PDF 또는 사용 가능한 프린터로 보내고 결과 쪽 수·내용을 확인한다.
+6. Linux에서는 system print dialog 진입과 전용 surface의 전체 페이지·한글 표시를 확인한다.
+
+system dialog 미진입, same-origin hidden surface 접근 실패, 빈 페이지, 쪽 수·방향 불일치는 No-Go다. 이 경우 editor WebView 직접 인쇄로 fallback하지 않고 hidden surface lifecycle과 platform WebView 인쇄 경계를 보정한다.
+
+Stage 6 전에는 branch push·workflow dispatch·artifact 생성을 하지 않는다. Stage 6에서도 release tag, GitHub Release, 서명, package 게시, updater 활성화는 범위 밖이다.
 
 ## 검증된 native canary
 
@@ -282,7 +309,10 @@ GitHub API가 반환한 Actions artifact archive metadata는 다음과 같다. �
 4. 사용자 다운로드 문서와 지원 범위 작성
 5. 필요할 경우 독립 updater 보안 모델과 key 보관 정책 설계
 
-Windows MSI·NSIS의 자동 설치·제한 실행·제거 package smoke는 Task #11에서 완료했다. 공개 prerelease 후보는 Task #9에서 Task #11 merge 뒤 새 exact SHA로 다시 생성·검증한다.
+Windows MSI·NSIS의 자동 설치·제한 실행·제거 package smoke는 Task #11과 Task #13 exact
+native run에서 완료했다. 공개 prerelease 후보는 Task #13과 후속 Task #15가 merge된 뒤
+두 변경을 포함한 새 exact SHA의 Windows/Linux native 수용이 Go로 확정됐을 때 Task #9에서
+다시 생성·검증한다.
 
 릴리스·서명·패키지 게시·updater 활성화는 작업지시자의 명시 승인 없이는 수행하지 않는다.
 

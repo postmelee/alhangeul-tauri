@@ -4,7 +4,7 @@ GitHub Issue: [#9](https://github.com/postmelee/alhangeul-tauri/issues/9)
 구현계획서: [`task_m010_9_impl.md`](../plans/task_m010_9_impl.md)
 Stage: 4 (진행 중)
 
-> 이 문서는 Stage 4 진행 중 증적이다. Stage 4.3 보정 commit의 exact-SHA candidate 생성과 Linux x64 UI 재검증은 통과했지만 Windows x64 실제 GUI native gate가 남아 있으므로 완료 보고서가 아니며 현재 판정은 No-Go다.
+> 이 문서는 candidate `96938d4…` 시점의 Stage 4 진행 증적이다. 당시 CI·bundle·Linux x64 UI 재검증은 통과했지만, 이후 PR #18·#22가 merge되어 이 candidate는 공개 prerelease 후보에서 폐기됐다. 최신 통합 판단은 [`task_m010_9_stage4_5.md`](task_m010_9_stage4_5.md)에서 이어간다.
 
 ## 단계 목적
 
@@ -290,7 +290,7 @@ Stage 4.2 source correction, Stage 4.3 Actions 보정, candidate bundle과 Linux
 - Windows x64 실제 GUI 환경에서 MSI와 NSIS 각각 HWP/HWPX open·edit, HWP save/reopen, HWPX save block, PDF export, print 경계, Explorer file association, relaunch, uninstall·rollback
 - Windows 시나리오의 OS·architecture·installer·candidate SHA, 절차, 실제 관찰과 지속 가능한 증적
 
-현재 Task #9와 Stage 4의 판정은 **No-Go**다. 위 필수 gate를 임의 면제하거나 다른 architecture·package·자동 smoke 결과로 대체하지 않는다. Stage 4 완료 보고서 작성, Stage 4 commit과 Stage 5 진입은 보류한다.
+이 시점 Task #9와 Stage 4의 판정은 **No-Go**였다. 이후 PR #18·#22가 merge되어 위 candidate의 남은 Windows gate만 채워 Go로 전환하지 않으며, 최신 통합 SHA에서 Stage 4.6 수용 매트릭스를 다시 판단한다.
 
 ## 검증 결과
 

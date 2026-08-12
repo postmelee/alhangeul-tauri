@@ -1,209 +1,124 @@
-import { fileCommands as upstreamFileCommands } from '@upstream/command/commands/file';
-import type { CommandDef, CommandServices } from '@/command/types';
-import type { DesktopBridgeApi } from '@/core/tauri-bridge';
-import { openPrintDialog } from '@/ui/print-dialog';
-import { openRecentDocumentsDialog } from '@/ui/recent-documents-dialog';
-
-type DesktopFileBridge = Pick<
-  DesktopBridgeApi,
-  | 'openDocumentFromDialog'
-  | 'createNewWindow'
-  | 'saveDocumentFromCommand'
-  | 'saveDocumentAsFromCommand'
-  | 'exportPdfFromCommand'
-  | 'printCurrentWebview'
->;
-
-type DesktopRecentBridge = Pick<
-  DesktopBridgeApi,
-  | 'openDocumentByPath'
-  | 'listRecentDocuments'
-  | 'clearRecentDocuments'
->;
+import {
+  confirmSaveBeforeReplacingDocument as confirmUpstreamReplacement,
+  fileCommands as upstreamFileCommands,
+} from '@upstream/command/commands/file';
+import type { CommandDef, CommandServices } from '@upstream/command/types';
+import { printDirectlyFromPageSurface } from '../direct-print';
+import { getDesktopHost } from '../../core/desktop-host';
+import { isTauriRuntime } from '../../core/platform';
+import { resolveDesktopRecentPath } from '../../recent/recent-store';
 
 const upstreamById = new Map(upstreamFileCommands.map((command) => [command.id, command]));
 
-function desktopBridge(wasm: unknown): DesktopFileBridge | null {
-  if (!wasm || typeof wasm !== 'object') return null;
-  const candidate = wasm as Partial<DesktopFileBridge>;
-  return typeof candidate.openDocumentFromDialog === 'function'
-    && typeof candidate.createNewWindow === 'function'
-    && typeof candidate.saveDocumentFromCommand === 'function'
-    && typeof candidate.saveDocumentAsFromCommand === 'function'
-    && typeof candidate.exportPdfFromCommand === 'function'
-    && typeof candidate.printCurrentWebview === 'function'
-    ? candidate as DesktopFileBridge
-    : null;
+export async function confirmSaveBeforeReplacingDocument(
+  services: CommandServices,
+): Promise<boolean> {
+  if (!isTauriRuntime() || !getDesktopHost().activeSession) {
+    return confirmUpstreamReplacement(services);
+  }
+  try {
+    return await getDesktopHost().confirmDocumentReplacement(services);
+  } catch (error) {
+    reportDesktopError('저장 확인', error);
+    return false;
+  }
 }
 
-function recentBridge(wasm: unknown): DesktopRecentBridge | null {
-  if (!wasm || typeof wasm !== 'object') return null;
-  const candidate = wasm as Partial<DesktopRecentBridge>;
-  return typeof candidate.openDocumentByPath === 'function'
-    && typeof candidate.listRecentDocuments === 'function'
-    && typeof candidate.clearRecentDocuments === 'function'
-    ? candidate as DesktopRecentBridge
-    : null;
-}
-
-function upstream(id: string): CommandDef {
-  const command = upstreamById.get(id);
-  if (!command) throw new Error(`Upstream file command is missing: ${id}`);
-  return command;
-}
-
-function withDesktopOverride(id: string, execute: CommandDef['execute']): CommandDef {
-  return {
-    ...upstream(id),
-    execute,
-  };
-}
-
-function emitStatus(services: CommandServices, message: string): void {
-  services.eventBus.emit('desktop-status', message);
-}
-
-function reportCommandError(services: CommandServices, action: string, error: unknown): void {
-  const message = error instanceof Error ? error.message : String(error);
-  emitStatus(services, `${action} 실패: ${message}`);
-  alert(`${action}에 실패했습니다:\n${message}`);
-}
-
-const desktopCommands = new Map<string, CommandDef>([
-  ['file:open', withDesktopOverride('file:open', async (services) => {
-    const desktop = desktopBridge(services.wasm);
-    if (!desktop) return upstream('file:open').execute(services);
-
-    const payload = await desktop.openDocumentFromDialog();
-    if (payload) services.eventBus.emit('desktop-document-loaded', payload);
-  })],
-  ['file:save', withDesktopOverride('file:save', async (services) => {
-    const desktop = desktopBridge(services.wasm);
-    if (!desktop) return upstream('file:save').execute(services);
-
-    try {
-      emitStatus(services, '저장 중...');
-      const result = await desktop.saveDocumentFromCommand();
-      if (result) {
-        services.eventBus.emit('desktop-document-saved', result);
-        emitStatus(services, '저장 완료');
-      }
-    } catch (error) {
-      reportCommandError(services, '저장', error);
+const desktopExecutors = new Map<string, CommandDef['execute']>([
+  ['file:new-doc', async (services) => {
+    await getDesktopHost().beginNewDocument(services);
+  }],
+  ['file:open', async () => {
+    await runDesktopAction('파일 열기', () => getDesktopHost().openDocumentFromDialog());
+  }],
+  ['file:open-recent', async (_services, params) => {
+    const id = typeof params?.id === 'string' ? params.id : '';
+    const path = resolveDesktopRecentPath(id);
+    if (!path) {
+      setStatus('최근 문서 정보를 찾을 수 없습니다');
+      return;
     }
-  })],
-  ['file:print', withDesktopOverride('file:print', async (services) => {
-    const statusEl = document.getElementById('sb-message');
-    const previousStatus = statusEl?.textContent || '';
-    const desktop = desktopBridge(services.wasm);
-
-    try {
-      await openPrintDialog(services.wasm, {
-        onStatus: (message) => {
-          if (statusEl) statusEl.textContent = message;
-          emitStatus(services, message);
-        },
-        print: desktop ? () => desktop.printCurrentWebview() : undefined,
-      });
-      if (statusEl) statusEl.textContent = previousStatus;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      if (statusEl) statusEl.textContent = `인쇄 실패: ${message}`;
-      alert(`인쇄에 실패했습니다:\n${message}`);
-    }
-  })],
+    await runDesktopAction('최근 문서 열기', () => getDesktopHost().openDocumentByPath(path));
+  }],
+  ['file:save', async () => {
+    await runDesktopAction('저장', () => getDesktopHost().saveCurrent());
+  }],
+  ['file:save-as', async () => {
+    await runDesktopAction('다른 이름으로 저장', () => getDesktopHost().saveCurrent(undefined, true));
+  }],
+  ['file:save-as-hwp', async () => {
+    await runDesktopAction('HWP 형식으로 저장', () => getDesktopHost().saveCurrent('hwp', true));
+  }],
+  ['file:save-as-hwpx', async () => {
+    await runDesktopAction('HWPX 형식으로 저장', () => getDesktopHost().saveCurrent('hwpx', true));
+  }],
+  ['file:print-to-pdf', async () => {
+    await runDesktopAction('PDF 저장', () => getDesktopHost().exportCurrentPdf());
+  }],
+  ['file:print', async (services) => {
+    await runDesktopAction(
+      '인쇄',
+      () => printDirectlyFromPageSurface(services),
+      'restore',
+    );
+  }],
 ]);
 
-const alhangeulOnlyCommands: CommandDef[] = [
+export const fileCommands: CommandDef[] = [
+  ...upstreamFileCommands.map((command) => {
+    const desktopExecute = desktopExecutors.get(command.id);
+    if (!desktopExecute) return command;
+    return {
+      ...command,
+      execute(services: CommandServices, params?: Record<string, unknown>) {
+        if (!isTauriRuntime()) return command.execute(services, params);
+        return desktopExecute(services, params);
+      },
+    };
+  }),
   {
     id: 'file:new-window',
     label: '새 창',
     shortcutLabel: 'Ctrl+Shift+N',
-    async execute(services) {
-      const desktop = desktopBridge(services.wasm);
-      if (!desktop) {
-        window.open(window.location.href, '_blank');
-        return;
-      }
-      await desktop.createNewWindow();
-    },
-  },
-  {
-    id: 'file:open-recent',
-    label: '최근 문서',
-    shortcutLabel: 'Ctrl+Alt+O',
-    async execute(services) {
-      const desktop = recentBridge(services.wasm);
-      if (!desktop) {
-        alert('최근 문서는 Alhangeul 데스크톱 앱에서 지원합니다.');
-        return;
-      }
-
-      try {
-        const documents = await desktop.listRecentDocuments();
-        if (documents.length === 0) {
-          emitStatus(services, '최근 문서가 없습니다');
-          alert('최근 문서가 없습니다.');
-          return;
-        }
-
-        const selected = await openRecentDocumentsDialog(documents, {
-          clearRecentDocuments: () => desktop.clearRecentDocuments(),
-        });
-        if (!selected) {
-          emitStatus(services, '최근 문서 목록을 닫았습니다');
-          return;
-        }
-
-        emitStatus(services, '파일 로딩 중...');
-        const payload = await desktop.openDocumentByPath(selected.path);
-        if (payload) {
-          services.eventBus.emit('desktop-document-loaded', payload);
-        }
-      } catch (error) {
-        reportCommandError(services, '최근 문서 열기', error);
-      }
-    },
-  },
-  {
-    id: 'file:save-as',
-    label: '다른 이름으로 저장',
-    canExecute: (ctx) => ctx.hasDocument,
-    async execute(services) {
-      const desktop = desktopBridge(services.wasm);
-      if (!desktop) return upstream('file:save').execute(services);
-
-      try {
-        emitStatus(services, '다른 이름으로 저장 중...');
-        const result = await desktop.saveDocumentAsFromCommand();
-        if (result) {
-          services.eventBus.emit('desktop-document-saved', result);
-          emitStatus(services, '저장 완료');
-        }
-      } catch (error) {
-        reportCommandError(services, '다른 이름으로 저장', error);
-      }
-    },
-  },
-  {
-    id: 'file:export-pdf',
-    label: 'PDF 내보내기',
-    canExecute: (ctx) => ctx.hasDocument,
-    async execute(services) {
-      const desktop = desktopBridge(services.wasm);
-      if (!desktop) {
-        alert('PDF 내보내기는 Alhangeul 데스크톱 앱에서 지원합니다.');
-        return;
-      }
-
-      emitStatus(services, 'PDF 내보내기 중...');
-      const jobId = await desktop.exportPdfFromCommand();
-      if (jobId) emitStatus(services, 'PDF 내보내기 완료');
+    async execute() {
+      await runDesktopAction('새 창', () => getDesktopHost().createNewWindow());
     },
   },
 ];
 
-export const fileCommands: CommandDef[] = [
-  ...upstreamFileCommands.map((command) => desktopCommands.get(command.id) ?? command),
-  ...alhangeulOnlyCommands,
-];
+type CompletionStatus = 'complete' | 'restore';
+
+async function runDesktopAction<T>(
+  label: string,
+  action: () => Promise<T>,
+  completionStatus: CompletionStatus = 'complete',
+): Promise<T | null> {
+  const originalStatus = readStatus();
+  try {
+    setStatus(`${label} 중...`);
+    const result = await action();
+    if (result !== null) {
+      setStatus(completionStatus === 'restore' ? originalStatus : `${label} 완료`);
+    }
+    return result;
+  } catch (error) {
+    reportDesktopError(label, error);
+    return null;
+  }
+}
+
+function readStatus(): string {
+  const status = typeof document === 'undefined' ? null : document.getElementById('sb-message');
+  return status?.textContent || '';
+}
+
+function setStatus(message: string): void {
+  const status = typeof document === 'undefined' ? null : document.getElementById('sb-message');
+  if (status) status.textContent = message;
+}
+
+function reportDesktopError(label: string, error: unknown): void {
+  const message = error instanceof Error ? error.message : String(error);
+  setStatus(`${label} 실패: ${message}`);
+  if (typeof alert === 'function') alert(`${label}에 실패했습니다:\n${message}`);
+}

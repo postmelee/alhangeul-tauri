@@ -1,35 +1,53 @@
-@import '@/styles/base.css';
-@import '@/styles/menu-bar.css';
-@import '@/styles/toolbar.css';
-@import '@/styles/style-bar.css';
-@import '@/styles/editor.css';
-@import '@/styles/status-bar.css';
-@import '@/styles/dialogs.css';
-@import '@/styles/char-shape-dialog.css';
-@import '@/styles/table-selection.css';
-@import '@/styles/para-shape-dialog.css';
-@import '@/styles/picture-props.css';
-@import '@/styles/numbering-dialog.css';
-@import '@/styles/style-dialog.css';
-@import '@/styles/options-dialog.css';
-@import '@/styles/font-set-dialog.css';
-@import '@/styles/table-cell-props.css';
-@import '@/styles/form-overlay.css';
-@import '@/styles/find-dialog.css';
-@import '@/styles/symbols-dialog.css';
-@import '@/styles/bookmark-dialog.css';
-@import '@/styles/shape-picker.css';
-@import '@/styles/command-palette.css';
-@import '@/styles/about-dialog.css';
-@import '@/styles/custom-select.css';
-@import '@/styles/home-screen.css';
-@import '@/styles/recent-documents-dialog.css';
-@import '@/styles/responsive.css';
+@font-face {
+  font-family: 'Alhangeul UI Fallback';
+  src: url('./fonts/NotoSansKR-Regular.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
 
-/* WebKitGTK form controls do not reliably inherit the bundled Hangul UI font. */
+:root {
+  --alhangeul-font-family-ui: '맑은 고딕', 'Malgun Gothic', 'Segoe UI',
+    'Alhangeul UI Fallback', sans-serif;
+  --font-family-ui: var(--alhangeul-font-family-ui) !important;
+}
+
 button,
 input,
 select,
 textarea {
   font-family: inherit;
+}
+
+.style-bar,
+.status-bar {
+  font-family: var(--alhangeul-font-family-ui) !important;
+}
+
+/* Tauri production CSP의 nonce/hash는 upstream inline display:none을 차단할 수 있다. */
+html:not(.alhangeul-toolbar-ready) .tb-rotate-group,
+html:not(.alhangeul-toolbar-ready) .tb-headerfooter-group,
+html:not(.alhangeul-toolbar-ready) .tb-note-group,
+.alhangeul-toolbar-hidden,
+#file-input,
+#sb-field:empty {
+  display: none !important;
+}
+
+/* Tauri CSP가 upstream의 동적 iframe inline style을 무시해도 인쇄 surface는 숨긴다. */
+#rhwp-print-surface {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  border: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  z-index: -1 !important;
+}
+
+.about-alhangeul-version {
+  margin-top: 2px;
+  color: var(--color-text-muted);
+  font-size: 12px;
 }

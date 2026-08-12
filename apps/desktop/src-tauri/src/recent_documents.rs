@@ -32,6 +32,11 @@ pub fn record_document(app: &AppHandle, path: &Path) -> Result<(), String> {
     Ok(())
 }
 
+pub fn remove_document(app: &AppHandle, path: &Path) -> Result<(), String> {
+    remove_document_at(&store_path(app)?, path)?;
+    Ok(())
+}
+
 fn store_path(app: &AppHandle) -> Result<PathBuf, String> {
     let dir = app
         .path()
@@ -75,6 +80,20 @@ fn record_document_at(store_path: &Path, path: &Path) -> Result<bool, String> {
     );
     documents.truncate(MAX_RECENT_DOCUMENTS);
     write_store(store_path, &RecentDocumentStore { documents })?;
+    Ok(true)
+}
+
+fn remove_document_at(store_path: &Path, path: &Path) -> Result<bool, String> {
+    let normalized_path = normalized_document_path(path);
+    let mut store = read_store(store_path)?;
+    let before = store.documents.len();
+    store
+        .documents
+        .retain(|document| !same_document_path(&document.path, &normalized_path));
+    if store.documents.len() == before {
+        return Ok(false);
+    }
+    write_store(store_path, &store)?;
     Ok(true)
 }
 
@@ -173,6 +192,28 @@ mod tests {
 
         assert!(!record_document_at(&store, &dir.path().join("missing.hwp")).unwrap());
         assert!(!store.exists());
+    }
+
+    #[test]
+    fn remove_document_persists_the_native_path_deletion() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = dir.path().join("recent.json");
+        let first = dir.path().join("first.hwp");
+        let second = dir.path().join("second.hwpx");
+        fs::write(&first, b"first").unwrap();
+        fs::write(&second, b"second").unwrap();
+        record_document_at(&store, &first).unwrap();
+        record_document_at(&store, &second).unwrap();
+
+        assert!(remove_document_at(&store, &first).unwrap());
+        assert!(!remove_document_at(&store, &first).unwrap());
+        assert_eq!(
+            list_documents_at(&store).unwrap(),
+            vec![RecentDocument {
+                path: normalized_document_path(&second),
+                file_name: "second.hwpx".to_string(),
+            }]
+        );
     }
 
     #[test]
