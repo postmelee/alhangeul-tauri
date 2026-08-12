@@ -1,0 +1,277 @@
+name: rhwp Upstream Sync Candidate
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_tag:
+        description: Optional Stable rhwp tag. Empty uses the latest Stable release.
+        required: false
+        default: ""
+        type: string
+      dry_run:
+        description: Resolve and classify only; do not build, push, or create a PR.
+        required: true
+        default: true
+        type: boolean
+  schedule:
+    - cron: "23 1 * * *"
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: rhwp-upstream-sync
+  cancel-in-progress: false
+
+env:
+  BASE_BRANCH: devel
+  NODE_VERSION: "24"
+  WASM_PACK_VERSION: "0.15.0"
+
+jobs:
+  resolve:
+    name: Resolve Stable release candidate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    outputs:
+      current_tag: ${{ steps.release.outputs.current_tag }}
+      current_commit: ${{ steps.release.outputs.current_commit }}
+      target_tag: ${{ steps.release.outputs.target_tag }}
+      target_commit: ${{ steps.release.outputs.target_commit }}
+      release_url: ${{ steps.release.outputs.release_url }}
+      branch: ${{ steps.release.outputs.branch }}
+      decision: ${{ steps.release.outputs.decision }}
+      existing_pr_url: ${{ steps.release.outputs.existing_pr_url }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Checkout devel
+        uses: actions/checkout@v6
+        with:
+          ref: devel
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Resolve and classify release
+        id: release
+        shell: bash
+        env:
+          TARGET_TAG_INPUT: ${{ inputs.target_tag || '' }}
+          DRY_RUN_INPUT: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || false }}
+        run: |
+          set -euo pipefail
+          args=(--github-output "$GITHUB_OUTPUT")
+          if [[ -n "$TARGET_TAG_INPUT" ]]; then
+            args+=(--target-tag "$TARGET_TAG_INPUT")
+          fi
+          if [[ "$DRY_RUN_INPUT" == "true" ]]; then
+            args+=(--dry-run)
+          fi
+          node scripts/check-rhwp-upstream-release.mjs "${args[@]}"
+
+      - name: Summarize decision
+        if: ${{ always() }}
+        shell: bash
+        env:
+          CURRENT_TAG: ${{ steps.release.outputs.current_tag }}
+          CURRENT_COMMIT: ${{ steps.release.outputs.current_commit }}
+          TARGET_TAG: ${{ steps.release.outputs.target_tag }}
+          TARGET_COMMIT: ${{ steps.release.outputs.target_commit }}
+          DECISION: ${{ steps.release.outputs.decision }}
+          EXISTING_PR_URL: ${{ steps.release.outputs.existing_pr_url }}
+        run: |
+          {
+            echo "## rhwp upstream sync decision"
+            echo
+            echo "- current: \`${CURRENT_TAG:-unresolved}\` \`${CURRENT_COMMIT:-unresolved}\`"
+            echo "- target: \`${TARGET_TAG:-unresolved}\` \`${TARGET_COMMIT:-unresolved}\`"
+            echo "- decision: \`${DECISION:-failed}\`"
+            echo "- existing PR: ${EXISTING_PR_URL:-none}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Reject branch-only blocker
+        if: ${{ steps.release.outputs.decision == 'branch_blocker' }}
+        run: |
+          echo "Automation branch exists without an open PR; refusing to overwrite it." >&2
+          exit 1
+
+  candidate:
+    name: Build and publish draft candidate
+    needs: resolve
+    if: ${{ needs.resolve.outputs.decision == 'create_candidate' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - name: Checkout clean devel
+        uses: actions/checkout@v6
+        with:
+          ref: devel
+          fetch-depth: 0
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Verify base and automation configuration
+        shell: bash
+        env:
+          AUTOMATION_CLIENT_ID: ${{ vars.ALHANGEUL_AUTOMATION_CLIENT_ID }}
+          AUTOMATION_PRIVATE_KEY: ${{ secrets.ALHANGEUL_AUTOMATION_APP_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$(git rev-parse "origin/$BASE_BRANCH")"
+          test -z "$(git status --porcelain=v1 --untracked-files=all)"
+          if [[ -z "${AUTOMATION_CLIENT_ID:-}" ]]; then
+            echo "Missing repository variable: ALHANGEUL_AUTOMATION_CLIENT_ID" >&2
+            exit 1
+          fi
+          if [[ -z "${AUTOMATION_PRIVATE_KEY:-}" ]]; then
+            echo "Missing repository secret: ALHANGEUL_AUTOMATION_APP_PRIVATE_KEY" >&2
+            exit 1
+          fi
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Enable pnpm
+        run: corepack enable
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install exact wasm-pack
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo install wasm-pack --version "$WASM_PACK_VERSION" --locked
+          test "$(wasm-pack --version)" = "wasm-pack $WASM_PACK_VERSION"
+
+      - name: Update managed current-pin references
+        run: |
+          node scripts/update-rhwp-managed-references.mjs \
+            --from-tag "${{ needs.resolve.outputs.current_tag }}" \
+            --from-commit "${{ needs.resolve.outputs.current_commit }}" \
+            --to-tag "${{ needs.resolve.outputs.target_tag }}" \
+            --to-commit "${{ needs.resolve.outputs.target_commit }}"
+
+      - name: Update source, locks, WASM and provenance
+        run: |
+          scripts/update-upstream.sh \
+            --tag "${{ needs.resolve.outputs.target_tag }}" \
+            --commit "${{ needs.resolve.outputs.target_commit }}" \
+            --run-checks
+
+      - name: Re-run platform-neutral gates
+        run: |
+          pnpm run check:product-boundary
+          pnpm run check:product-version
+          pnpm run check:release-metadata
+          pnpm run check:rhwp-pin
+          pnpm run test:automation
+          pnpm run test:upstream
+          pnpm run test:studio
+          pnpm run build:studio
+
+      - name: Verify changed-path allowlist
+        shell: bash
+        run: |
+          set -euo pipefail
+          allowed_paths=(
+            README.md
+            apps/desktop/src-tauri/Cargo.lock
+            apps/studio-host/src/core/upstream-boundary.test.ts
+            apps/studio-host/vendor/rhwp-core/LICENSE
+            apps/studio-host/vendor/rhwp-core/package.json
+            apps/studio-host/vendor/rhwp-core/rhwp.d.ts
+            apps/studio-host/vendor/rhwp-core/rhwp.js
+            apps/studio-host/vendor/rhwp-core/rhwp_bg.wasm
+            apps/studio-host/vendor/rhwp-core/rhwp_bg.wasm.d.ts
+            docs/DEVELOPMENT.md
+            docs/architecture/UPSTREAM.md
+            rhwp-core.lock
+            tests/rhwp-pin.test.mjs
+            third_party/rhwp
+          )
+          declare -A allowed=()
+          for path in "${allowed_paths[@]}"; do allowed["$path"]=1; done
+          while IFS= read -r record; do
+            [[ -z "$record" ]] && continue
+            path="${record:3}"
+            if [[ -z "${allowed[$path]+x}" ]]; then
+              echo "Changed path is not allowed: $path" >&2
+              exit 1
+            fi
+          done < <(git status --porcelain=v1 --untracked-files=all)
+          mapfile -t changed_paths < <(git diff --name-only --)
+          if [[ "${#changed_paths[@]}" -eq 0 ]]; then
+            echo "Upstream sync produced no changes." >&2
+            exit 1
+          fi
+          printf '%s\n' "${changed_paths[@]}" | LC_ALL=C sort -u \
+            > "$RUNNER_TEMP/rhwp-sync-changed-paths.txt"
+          git diff --check
+
+      - name: Write draft PR body
+        run: |
+          node scripts/write-rhwp-sync-pr-body.mjs \
+            --current-tag "${{ needs.resolve.outputs.current_tag }}" \
+            --current-commit "${{ needs.resolve.outputs.current_commit }}" \
+            --target-tag "${{ needs.resolve.outputs.target_tag }}" \
+            --target-commit "${{ needs.resolve.outputs.target_commit }}" \
+            --release-url "${{ needs.resolve.outputs.release_url }}" \
+            --branch "${{ needs.resolve.outputs.branch }}" \
+            --changed-paths-file "$RUNNER_TEMP/rhwp-sync-changed-paths.txt" \
+            --output "$RUNNER_TEMP/rhwp-sync-pr-body.md"
+
+      - name: Create current-repository GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v3.2.0
+        with:
+          client-id: ${{ vars.ALHANGEUL_AUTOMATION_CLIENT_ID }}
+          private-key: ${{ secrets.ALHANGEUL_AUTOMATION_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Commit, push and open draft PR
+        id: publish
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
+          BRANCH: ${{ needs.resolve.outputs.branch }}
+          TARGET_TAG: ${{ needs.resolve.outputs.target_tag }}
+        run: |
+          set -euo pipefail
+          if git ls-remote --exit-code origin "refs/heads/$BRANCH" >/dev/null 2>&1; then
+            echo "Automation branch appeared after resolve; refusing to overwrite it." >&2
+            exit 1
+          fi
+          app_user_id="$(gh api "/users/${APP_SLUG}[bot]" --jq .id)"
+          git config user.name "${APP_SLUG}[bot]"
+          git config user.email "${app_user_id}+${APP_SLUG}[bot]@users.noreply.github.com"
+          gh auth setup-git
+          git switch -c "$BRANCH"
+          git add -- \
+            README.md apps/desktop/src-tauri/Cargo.lock \
+            apps/studio-host/src/core/upstream-boundary.test.ts \
+            apps/studio-host/vendor/rhwp-core \
+            docs/DEVELOPMENT.md docs/architecture/UPSTREAM.md \
+            rhwp-core.lock tests/rhwp-pin.test.mjs third_party/rhwp
+          git diff --cached --name-only | LC_ALL=C sort -u > "$RUNNER_TEMP/rhwp-sync-staged-paths.txt"
+          diff -u "$RUNNER_TEMP/rhwp-sync-changed-paths.txt" "$RUNNER_TEMP/rhwp-sync-staged-paths.txt"
+          git commit -m "Sync rhwp upstream to $TARGET_TAG"
+          git push origin "HEAD:refs/heads/$BRANCH"
+          pr_url="$(gh pr create --repo "$GITHUB_REPOSITORY" \
+            --base "$BASE_BRANCH" --head "$BRANCH" --draft \
+            --title "Sync rhwp upstream to $TARGET_TAG" \
+            --body-file "$RUNNER_TEMP/rhwp-sync-pr-body.md")"
+          echo "pr_url=$pr_url" >> "$GITHUB_OUTPUT"
+          echo "Draft candidate: $pr_url" >> "$GITHUB_STEP_SUMMARY"
