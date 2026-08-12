@@ -160,7 +160,7 @@ candidate writer에는 현재 repository에 설치된 GitHub App과 다음 Actio
 | Repository variable | `ALHANGEUL_AUTOMATION_CLIENT_ID` | 설치한 GitHub App의 Client ID |
 | Repository secret | `ALHANGEUL_AUTOMATION_APP_PRIVATE_KEY` | GitHub App private key의 PEM 전체 |
 
-GitHub App repository permission은 Contents `Read and write`, Pull requests `Read and write`만 허용한다. Issues, Actions, Administration, Workflows, Releases 권한은 부여하지 않는다. App은 이 repository에만 설치하고 credential 값, private key와 발급 token을 문서·로그·PR에 기록하지 않는다. resolve job은 기본 read-only `GITHUB_TOKEN`을 사용하며 App token은 모든 후보 검증 뒤 push와 draft PR 생성 단계에서만 발급된다.
+기존 Alhangeul Automation GitHub App인 `alhangeul-rhwp-sync-bot` 재사용을 기본으로 한다. 이 App의 다른 repository용 권한과 관계없이 Tauri workflow가 발급하는 installation token은 Contents `Read and write`, Pull requests `Read and write`만 명시적으로 요청한다. Issues, Actions, Administration, Workflows, Releases 권한은 Tauri token에 요청하거나 사용하지 않는다. installation의 repository 선택에는 이 repository를 명시하고 credential 값, private key와 발급 token을 문서·로그·PR에 기록하지 않는다. resolve job은 기본 read-only `GITHUB_TOKEN`을 사용하며 App token은 모든 후보 검증 뒤 push와 draft PR 생성 단계에서만 발급된다.
 
 생성된 draft PR은 자동 검증이 통과했더라도 Windows/Linux native 수용 전이다. [Issue #24](https://github.com/postmelee/alhangeul-tauri/issues/24)에서 Rust·Tauri build, GUI와 packaging을 검토하며 candidate PR 또는 Issue #24를 자동 merge·close하지 않는다.
 
