@@ -128,6 +128,21 @@ test('malformed tag와 요청 tag 불일치를 거부한다', () => {
   );
 });
 
+test('release URL은 exact upstream tag 경로만 허용한다', () => {
+  for (const html_url of [
+    `https://github.com/edwardkim/other/releases/tag/${targetTag}`,
+    `${releaseUrl(targetTag)}?x=$(id)`,
+    `${releaseUrl(targetTag)}#fragment`,
+    `https://user@github.com/edwardkim/rhwp/releases/tag/${targetTag}`,
+    `https://github.com:444/edwardkim/rhwp/releases/tag/${targetTag}`,
+  ]) {
+    assert.throws(
+      () => validateStableRelease(stableRelease({ html_url })),
+      /release URL이 올바르지 않습니다/,
+    );
+  }
+});
+
 test('annotated tag는 peeled commit을, lightweight tag는 base commit을 사용한다', () => {
   const tagObject = 'c'.repeat(40);
   assert.equal(

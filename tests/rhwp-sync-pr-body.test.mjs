@@ -27,8 +27,10 @@ test('provenance, changed paths, 검증과 native handoff를 포함한다', () =
   assert.ok(body.indexOf('- `rhwp-core.lock`') < body.indexOf('- `third_party/rhwp`'));
   assert.match(body, /scripts\/update-upstream\.sh --run-checks/);
   assert.match(body, /automation·upstream·Studio test/);
+  assert.match(body, /Ubuntu desktop Rust test와 Clippy preflight/);
+  assert.match(body, /release별 known issue 기록은 current pin 관리 참조가 아니므로 자동 갱신하지 않습니다/);
   assert.match(body, /Windows native build·설치·실행 검증/);
-  assert.match(body, /Linux native build·설치·실행 검증/);
+  assert.match(body, /Linux native Tauri build·설치·실행 검증/);
   assert.match(body, /Issue #24/);
   assert.doesNotMatch(body, /(?:close[sd]?|resolve[sd]?)\s+#24/i);
   assert.doesNotMatch(body, /자동 merge 또는 제품 수용 완료를 뜻합니다/);
@@ -80,6 +82,10 @@ test('잘못된 tag, commit, release URL과 branch 조합을 거부한다', () =
   );
   assert.throws(
     () => buildRhwpSyncPrBody(options({ releaseUrl: `${releaseUrl}?unsafe=true` })),
+    /release URL이 올바르지 않습니다/,
+  );
+  assert.throws(
+    () => buildRhwpSyncPrBody(options({ releaseUrl: `https://user@github.com/edwardkim/rhwp/releases/tag/${targetTag}` })),
     /release URL이 올바르지 않습니다/,
   );
   assert.throws(

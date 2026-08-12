@@ -105,7 +105,7 @@ jobs:
   candidate:
     name: Build and publish draft candidate
     needs: resolve
-    if: ${{ needs.resolve.outputs.decision == 'create_candidate' }}
+    if: ${{ needs.resolve.outputs.decision == 'create_candidate' && vars.ALHANGEUL_UPSTREAM_SYNC_ENABLED == 'true' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     steps:
@@ -147,6 +147,12 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Install Linux Rust dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libayatana-appindicator3-dev libgtk-3-dev \
+            librsvg2-dev libssl-dev libwebkit2gtk-4.1-dev libxdo-dev pkg-config
+
       - name: Install exact wasm-pack
         shell: bash
         run: |
@@ -179,6 +185,8 @@ jobs:
           pnpm run test:upstream
           pnpm run test:studio
           pnpm run build:studio
+          pnpm run test:desktop
+          pnpm run clippy:desktop
 
       - name: Verify changed-path allowlist
         shell: bash
@@ -210,7 +218,7 @@ jobs:
               exit 1
             fi
           done < <(git status --porcelain=v1 --untracked-files=all)
-          mapfile -t changed_paths < <(git diff --name-only --)
+          mapfile -t changed_paths < <({ git diff --name-only --; git ls-files --others --exclude-standard; } | LC_ALL=C sort -u)
           if [[ "${#changed_paths[@]}" -eq 0 ]]; then
             echo "Upstream sync produced no changes." >&2
             exit 1
@@ -220,13 +228,15 @@ jobs:
           git diff --check
 
       - name: Write draft PR body
+        env:
+          RELEASE_URL: ${{ needs.resolve.outputs.release_url }}
         run: |
           node scripts/write-rhwp-sync-pr-body.mjs \
             --current-tag "${{ needs.resolve.outputs.current_tag }}" \
             --current-commit "${{ needs.resolve.outputs.current_commit }}" \
             --target-tag "${{ needs.resolve.outputs.target_tag }}" \
             --target-commit "${{ needs.resolve.outputs.target_commit }}" \
-            --release-url "${{ needs.resolve.outputs.release_url }}" \
+            --release-url "$RELEASE_URL" \
             --branch "${{ needs.resolve.outputs.branch }}" \
             --changed-paths-file "$RUNNER_TEMP/rhwp-sync-changed-paths.txt" \
             --output "$RUNNER_TEMP/rhwp-sync-pr-body.md"
@@ -250,9 +260,14 @@ jobs:
           TARGET_TAG: ${{ needs.resolve.outputs.target_tag }}
         run: |
           set -euo pipefail
-          if git ls-remote --exit-code origin "refs/heads/$BRANCH" >/dev/null 2>&1; then
+          remote_status=0
+          git ls-remote --exit-code origin "refs/heads/$BRANCH" >/dev/null 2>&1 || remote_status=$?
+          if (( remote_status == 0 )); then
             echo "Automation branch appeared after resolve; refusing to overwrite it." >&2
             exit 1
+          elif (( remote_status != 2 )); then
+            echo "Failed to verify the automation branch (exit $remote_status)." >&2
+            exit "$remote_status"
           fi
           app_user_id="$(gh api "/users/${APP_SLUG}[bot]" --jq .id)"
           git config user.name "${APP_SLUG}[bot]"

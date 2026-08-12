@@ -151,16 +151,17 @@ node scripts/check-rhwp-upstream-release.mjs \
 - `target_tag`: 비워 두면 latest 공개 Stable, 값을 주면 exact `vX.Y.Z` Stable tag를 확인한다.
 - `dry_run`: 기본값 `true`. 판정과 summary만 실행하며 build, push와 PR 생성을 하지 않는다.
 
-`dry_run=false`는 clean `devel`에서 source·lock·WASM·관리 참조를 맞추고 전체 플랫폼 중립 gate와 changed-path allowlist를 통과한 경우에만 새 automation branch와 draft PR을 만든다. 수동 write dispatch는 task PR merge와 아래 external state 준비를 확인한 뒤 명시 승인으로만 실행한다. daily schedule은 실제 drift candidate 경로를 사용하지만 workflow가 default branch에 반영되고 credential이 준비되기 전에는 write candidate가 완성되지 않는다.
+`dry_run=false`는 clean `devel`에서 source·lock·WASM·관리 참조를 맞추고 전체 플랫폼 중립 gate, Ubuntu desktop Rust test·Clippy preflight와 changed-path allowlist를 통과한 경우에만 새 automation branch와 draft PR을 만든다. 수동 write dispatch는 task PR merge와 아래 external state 준비를 확인한 뒤 명시 승인으로만 실행한다. daily schedule은 read-only 판정을 계속하지만 `ALHANGEUL_UPSTREAM_SYNC_ENABLED`가 `true`가 아니면 candidate writer를 건너뛴다.
 
 candidate writer에는 현재 repository에 설치된 GitHub App과 다음 Actions 설정이 필요하다.
 
 | 종류 | 이름 | 내용 |
 |---|---|---|
+| Repository variable | `ALHANGEUL_UPSTREAM_SYNC_ENABLED` | credential 준비 뒤 마지막으로 `true`로 설정하는 writer 활성화 gate |
 | Repository variable | `ALHANGEUL_AUTOMATION_CLIENT_ID` | 설치한 GitHub App의 Client ID |
 | Repository secret | `ALHANGEUL_AUTOMATION_APP_PRIVATE_KEY` | GitHub App private key의 PEM 전체 |
 
-기존 Alhangeul Automation GitHub App인 `alhangeul-rhwp-sync-bot` 재사용을 기본으로 한다. 이 App의 다른 repository용 권한과 관계없이 Tauri workflow가 발급하는 installation token은 Contents `Read and write`, Pull requests `Read and write`만 명시적으로 요청한다. Issues, Actions, Administration, Workflows, Releases 권한은 Tauri token에 요청하거나 사용하지 않는다. installation의 repository 선택에는 이 repository를 명시하고 credential 값, private key와 발급 token을 문서·로그·PR에 기록하지 않는다. resolve job은 기본 read-only `GITHUB_TOKEN`을 사용하며 App token은 모든 후보 검증 뒤 push와 draft PR 생성 단계에서만 발급된다.
+기존 Alhangeul Automation GitHub App인 `alhangeul-rhwp-sync-bot` 재사용을 기본으로 한다. installation에 이 repository를 포함하고 Client ID와 private key를 준비한 뒤 activation variable을 마지막으로 `true`로 설정한다. rollback 또는 credential 교체 때는 activation variable을 먼저 `false`로 바꾼다. 이 App의 다른 repository용 권한과 관계없이 Tauri workflow가 발급하는 installation token은 Contents `Read and write`, Pull requests `Read and write`만 명시적으로 요청한다. Issues, Actions, Administration, Workflows, Releases 권한은 Tauri token에 요청하거나 사용하지 않는다. credential 값, private key와 발급 token을 문서·로그·PR에 기록하지 않는다. resolve job은 기본 read-only `GITHUB_TOKEN`을 사용하며 App token은 모든 후보 검증 뒤 push와 draft PR 생성 단계에서만 발급된다.
 
 생성된 draft PR은 자동 검증이 통과했더라도 Windows/Linux native 수용 전이다. [Issue #24](https://github.com/postmelee/alhangeul-tauri/issues/24)에서 Rust·Tauri build, GUI와 packaging을 검토하며 candidate PR 또는 Issue #24를 자동 merge·close하지 않는다.
 
@@ -170,7 +171,7 @@ candidate writer에는 현재 repository에 설치된 GitHub App과 다음 Actio
 - `branch_blocker`는 같은 automation branch가 있지만 열린 PR은 없는 상태다. branch를 자동 삭제하거나 force push하지 말고 commit과 작성자를 확인한다. 검증된 automation commit이면 동일 branch로 `devel` 대상 draft PR을 복구하고, 그 밖의 정리는 별도 승인을 받는다.
 - source 갱신, gate 또는 allowlist가 실패하면 App token 발급 전에 멈추므로 remote branch와 PR은 생기지 않는다. 실패 로그와 changed path를 조사하고 새 실행으로 재현한다.
 - push 뒤 PR 생성만 실패하면 다음 실행은 `branch_blocker`로 멈춘다. remote branch가 이번 run의 검증된 commit인지 확인한 뒤 draft PR 복구 또는 승인된 branch 정리를 선택한다. history rewrite와 force push는 사용하지 않는다.
-- 이미 열린 candidate가 있으면 새 PR을 만들지 않는다. 기존 PR에서 실패 원인과 native handoff 상태를 이어서 관리한다.
+- 동일 release tag의 열린 candidate가 있으면 새 PR을 만들지 않는다. 다른 tag의 candidate lifecycle과 누적 정책은 별도 운영 task에서 다룬다.
 
 ### 실패와 rollback
 

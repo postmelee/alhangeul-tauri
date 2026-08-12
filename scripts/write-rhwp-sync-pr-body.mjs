@@ -65,12 +65,15 @@ ${paths.map((path) => `- \`${path}\``).join('\n')}
 - [x] \`scripts/update-upstream.sh --run-checks\`
 - [x] product boundary·version·release metadata·rhwp pin 검사
 - [x] automation·upstream·Studio test와 Studio production build
+- [x] Ubuntu desktop Rust test와 Clippy preflight
 - [x] repository changed-path allowlist와 \`git diff --check\`
+
+release별 known issue 기록은 current pin 관리 참조가 아니므로 자동 갱신하지 않습니다.
 
 ### Native acceptance pending
 
 - [ ] Windows native build·설치·실행 검증
-- [ ] Linux native build·설치·실행 검증
+- [ ] Linux native Tauri build·설치·실행 검증
 - [ ] source diff와 adapter 영향 검토
 
 후속 수용 작업은 [Issue #24](https://github.com/postmelee/alhangeul-tauri/issues/24)에서
@@ -120,7 +123,7 @@ function assertSafePath(path) {
 function assertReleaseUrl(value, tag) {
   let url;
   try { url = new URL(value); } catch { throw new Error(`release URL이 올바르지 않습니다: ${value}`); }
-  if (url.protocol !== 'https:' || url.hostname !== 'github.com' || url.search || url.hash
+  if (url.origin !== 'https://github.com' || url.username || url.password || url.search || url.hash
     || url.pathname !== `/edwardkim/rhwp/releases/tag/${tag}`) {
     throw new Error(`release URL이 올바르지 않습니다: ${value}`);
   }

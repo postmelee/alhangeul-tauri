@@ -258,7 +258,7 @@ function assertSha(value, label) {
 function assertReleaseUrl(value, tag) {
   let url;
   try { url = new URL(value); } catch { throw new Error(`release URL이 올바르지 않습니다: ${value}`); }
-  if (url.protocol !== 'https:' || url.hostname !== 'github.com' || !url.pathname.endsWith(`/releases/tag/${tag}`)) {
+  if (url.origin !== 'https://github.com' || url.username || url.password || url.search || url.hash || url.pathname !== `/edwardkim/rhwp/releases/tag/${tag}`) {
     throw new Error(`release URL이 올바르지 않습니다: ${value}`);
   }
 }

@@ -52,11 +52,11 @@ test('resolve job은 devel의 full submodule에서 Node 24 read-only helper만 �
   assert.match(resolveJob, /refusing to overwrite it/);
 });
 
-test('candidate job은 create_candidate에서만 Ubuntu에 진입한다', () => {
+test('candidate job은 명시적으로 활성화한 create_candidate에서만 Ubuntu에 진입한다', () => {
   assert.match(candidateJob, /^    needs: resolve$/m);
   assert.match(
     candidateJob,
-    /^    if: \$\{\{ needs\.resolve\.outputs\.decision == 'create_candidate' \}\}$/m,
+    /^    if: \$\{\{ needs\.resolve\.outputs\.decision == 'create_candidate' && vars\.ALHANGEUL_UPSTREAM_SYNC_ENABLED == 'true' \}\}$/m,
   );
   assert.match(candidateJob, /^    runs-on: ubuntu-24\.04$/m);
   assert.deepEqual(candidateJob.match(/^    runs-on: .+$/gm), ['    runs-on: ubuntu-24.04']);
@@ -77,6 +77,8 @@ test('관리 참조를 먼저 맞춘 뒤 source update와 전체 gate를 실행�
     'pnpm run test:upstream',
     'pnpm run test:studio',
     'pnpm run build:studio',
+    'pnpm run test:desktop',
+    'pnpm run clippy:desktop',
     '- name: Verify changed-path allowlist',
     '- name: Write draft PR body',
     '- name: Create current-repository GitHub App token',
@@ -84,6 +86,7 @@ test('관리 참조를 먼저 맞춘 뒤 source update와 전체 gate를 실행�
   ]);
   assert.match(candidateJob, /cargo install wasm-pack --version "\$WASM_PACK_VERSION" --locked/);
   assert.match(candidateJob, /wasm-pack \$WASM_PACK_VERSION/);
+  assert.match(candidateJob, /libwebkit2gtk-4\.1-dev/);
 });
 
 test('changed path와 explicit staging 범위를 승인된 파일로 제한한다', () => {
@@ -106,6 +109,7 @@ test('changed path와 explicit staging 범위를 승인된 파일로 제한한�
   assert.deepEqual(readAllowedPaths(candidateJob), expected);
   assert.match(candidateJob, /git status --porcelain=v1 --untracked-files=all/);
   assert.match(candidateJob, /git diff --name-only --/);
+  assert.match(candidateJob, /git ls-files --others --exclude-standard/);
   assert.match(candidateJob, /Changed path is not allowed/);
   assert.match(candidateJob, /git add -- \\/);
   assert.match(candidateJob, /apps\/studio-host\/vendor\/rhwp-core \\/);
@@ -126,6 +130,16 @@ test('App token은 모든 검증 뒤 현재 저장소 최소 권한으로만 발
   assert.match(publish, /git push origin "HEAD:refs\/heads\/\$BRANCH"/);
   assert.match(publish, /gh pr create[\s\S]*--base "\$BASE_BRANCH" --head "\$BRANCH" --draft/);
   assert.match(publish, /--body-file "\$RUNNER_TEMP\/rhwp-sync-pr-body\.md"/);
+  assert.match(publish, /remote_status=0/);
+  assert.match(publish, /remote_status != 2/);
+  assert.match(publish, /Failed to verify the automation branch/);
+});
+
+test('release URL은 검증된 environment를 통해 PR body helper에 전달한다', () => {
+  const bodyStep = getStepContaining(candidateJob, 'write-rhwp-sync-pr-body.mjs');
+  assert.match(bodyStep, /RELEASE_URL: \$\{\{ needs\.resolve\.outputs\.release_url \}\}/);
+  assert.match(bodyStep, /--release-url "\$RELEASE_URL"/);
+  assert.doesNotMatch(bodyStep, /--release-url "\$\{\{/);
 });
 
 test('자동 merge, force push, release와 배포 동작을 포함하지 않는다', () => {

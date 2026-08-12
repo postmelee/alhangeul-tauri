@@ -74,17 +74,17 @@ candidate는 clean `devel` checkout에서 다음 순서를 지킨다.
 
 1. 허용된 current-pin 관리 참조를 ephemeral checkout 안에서 새 pin으로 맞춘다.
 2. `scripts/update-upstream.sh --run-checks`로 source, Cargo lock, WASM과 provenance를 갱신한다.
-3. 플랫폼 중립 gate 전체와 changed-path allowlist를 다시 검증한다.
+3. 플랫폼 중립 gate 전체, Ubuntu desktop Rust test·Clippy preflight와 changed-path allowlist를 다시 검증한다.
 4. 검증이 모두 끝난 뒤 현재 repository에 한정된 GitHub App token을 발급한다.
 5. explicit allowlist만 stage해 새 branch에 non-force push하고 `devel` 대상 draft PR을 만든다.
 
 token은 `contents: write`와 `pull-requests: write`만 요청하며 auto approval·merge, release/tag, issue close, package publish와 Pages deploy에는 사용하지 않는다. 후보 본문은 old/new tag·commit, Stable release URL, 변경 경로와 자동 검증을 기록한다.
 
-자동 candidate는 플랫폼 중립 갱신 제안일 뿐 native 수용 결과가 아니다. Windows/Linux Rust·Tauri build, GUI와 packaging은 [Issue #24](https://github.com/postmelee/alhangeul-tauri/issues/24)에서 검토하고 candidate 본문은 이 검증이 미실행임을 유지한다. Issue #24를 자동 종료하거나 candidate를 자동 merge하지 않는다.
+자동 candidate는 Ubuntu에서 새 pin의 desktop Rust test와 Clippy를 통과한 갱신 제안일 뿐 native 수용 결과가 아니다. Windows native와 Linux Tauri build, GUI와 packaging은 [Issue #24](https://github.com/postmelee/alhangeul-tauri/issues/24)에서 검토하고 candidate 본문은 이 검증이 미실행임을 유지한다. Issue #24를 자동 종료하거나 candidate를 자동 merge하지 않는다.
 
 known issue 기록은 current pin 참조가 아니다. 자동 관리 참조 갱신은 승인된 marker와 경로만 바꾸고, 특정 release의 known issue 이름·원인·추적 링크를 새 release 정보로 치환하지 않는다. 새 release에서 같은 실패가 보여도 아래 분류 기준에 따라 재현 조건과 실패 지점을 다시 확인한다.
 
-workflow를 task branch에 추가한 것만으로 live 자동화를 활성화하지 않는다. task PR merge 뒤 GitHub App installation과 repository variable·secret을 별도 승인으로 준비하고, 명시 tag의 실제 dispatch와 동일 입력 재실행으로 candidate·멱등성을 확인한 뒤에만 Task #23 close gate를 통과한다. 운영 입력과 복구 절차는 [DEVELOPMENT.md](../DEVELOPMENT.md)를 따른다.
+workflow를 default branch에 merge하면 read-only daily 판정은 시작되지만 candidate writer는 `ALHANGEUL_UPSTREAM_SYNC_ENABLED`가 정확히 `true`일 때만 활성화된다. task PR merge 뒤 GitHub App installation과 credential을 별도 승인으로 준비하고 활성화 variable을 마지막으로 켠다. 명시 tag의 실제 dispatch와 동일 입력 재실행으로 candidate·멱등성을 확인한 뒤에만 Task #23 close gate를 통과한다. 운영 입력과 복구 절차는 [DEVELOPMENT.md](../DEVELOPMENT.md)를 따른다.
 
 ## 플랫폼 중립 수용 기준
 
@@ -94,8 +94,9 @@ workflow를 task branch에 추가한 것만으로 live 자동화를 활성화하
 - `pnpm run check:product-boundary`, `pnpm run check:product-version`, `pnpm run check:rhwp-pin`, `pnpm run check:release-metadata`가 통과한다.
 - `pnpm run test:automation`이 통과한다.
 - `pnpm run test:upstream`, `pnpm run test:studio`, `pnpm run build:studio`가 통과한다.
+- candidate Ubuntu runner에서 `pnpm run test:desktop`, `pnpm run clippy:desktop`이 통과한다.
 
-Rust desktop test·Clippy, Tauri build·GUI·packaging은 지원 대상인 Windows/Linux의 승인된 후속 플랫폼 작업에서 검증한다. 이 플랫폼 중립 수용 결과만으로 native 배포 준비가 완료되었다고 판단하지 않는다.
+Windows native와 Linux Tauri build·GUI·packaging은 승인된 후속 플랫폼 작업에서 검증한다. Ubuntu Rust preflight와 플랫폼 중립 수용 결과만으로 native 배포 준비가 완료되었다고 판단하지 않는다.
 
 ## `v0.8.2` known issue 분류
 

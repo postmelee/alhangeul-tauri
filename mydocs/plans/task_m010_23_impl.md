@@ -12,6 +12,7 @@ GitHub Issue: [#23](https://github.com/postmelee/alhangeul-tauri/issues/23)
 | 2 | draft sync PR workflow와 본문 생성 | workflow·PR body helper와 계약 test | `test:automation` |
 | 3 | 공식 문서와 중립 통합 검증 | UPSTREAM·DEVELOPMENT 운영 절 | 전체 중립 gate·read-only dry-run |
 | 4 | task PR과 post-merge handoff 확정 | activation checklist와 Stage 보고 | 최종 중립 gate·close 조건 검토 |
+| 4.1 | PR 리뷰 안전성 보정 | activation gate·입력/경로·Rust preflight·문서 보정 | 집중 contract test·전체 중립 gate |
 
 각 Stage 끝에는 `mydocs/working/task_m010_23_stage{N}.md`를 작성하고 소스와 함께
 단계 커밋한다. Stage 4 승인 뒤 `task-final-report`로 최종 보고서와 task PR을 게시한다.
@@ -270,9 +271,53 @@ PR 본문과 최종 보고서에 명시한다.
 Task #23 Stage 4: post-merge activation handoff 확정
 ```
 
+## Stage 4.1 — PR 리뷰 안전성 보정
+
+PR #25의 maintainer 리뷰에서 확인된 merge 전 안전성 항목을 기존 Stage 4의 후속 하위
+단계로 보정한다. 작업지시자가 2026-08-13 같은 스레드에서 다음 여섯 항목의 구현을 승인했다.
+
+### 변경 내용
+
+- 별도 repository variable `ALHANGEUL_UPSTREAM_SYNC_ENABLED`가 정확히 `true`일 때만
+  candidate writer job에 진입한다. App credential을 준비한 뒤 이 값을 마지막으로 켜고,
+  rollback 시 먼저 끈다.
+- release URL을 GitHub expression에서 shell로 직접 보간하지 않고 environment를 통해
+  전달하며 exact upstream release 경로와 query·fragment·userinfo·port 부재를 검증한다.
+- remote branch 조회는 exit code 2만 branch 부재로 인정하고 인증·network 오류는 실패시킨다.
+- changed-path 목록에 tracked diff와 untracked 파일을 함께 포함한다.
+- candidate Ubuntu runner에서 새 Rust pin의 desktop test와 Clippy를 token 발급 전에 실행한다.
+  이는 Issue #24의 Windows/Linux Tauri build·GUI·packaging 수용을 대체하지 않는다.
+- 운영 문서와 candidate PR 본문에 activation 순서, 동일 tag candidate 중복 방지,
+  release별 known issue 기록 보존과 Linux Rust preflight 경계를 명확히 한다.
+
+### 검증
+
+```bash
+node --test \
+  tests/rhwp-upstream-release.test.mjs \
+  tests/rhwp-sync-pr-body.test.mjs \
+  tests/rhwp-upstream-sync-workflow.test.mjs
+pnpm run check:product-boundary
+pnpm run check:product-version
+pnpm run check:release-metadata
+pnpm run check:rhwp-pin
+pnpm run test:automation
+pnpm run test:upstream
+pnpm run test:studio
+pnpm run build:studio
+git diff --check
+```
+
+### 커밋
+
+```text
+Task #23 [Stage 4.1]: PR 리뷰 안전성 보정
+```
+
 ## 단계 의존성과 변경 통제
 
 - Stage 2는 Stage 1 보고서 승인 뒤, Stage 3은 Stage 2 승인 뒤, Stage 4는 Stage 3 승인 뒤 진행한다.
+  Stage 4.1은 PR #25 리뷰 범위에 대한 작업지시자 승인 뒤 진행한다.
 - 각 Stage 검증과 보고서 커밋 뒤 작업지시자 승인을 받기 전 다음 Stage 소스를 수정하지 않는다.
 - action 설치 방식, credential 체계, allowlist 또는 공식 문서 위치가 바뀌면 먼저 이 구현계획서를
   보정하고 승인을 받는다.
