@@ -131,6 +131,47 @@ scripts/update-upstream.sh \
 
 script는 다음 순서로 source submodule, native Cargo lock, 새로 빌드한 WASM artifact와 `rhwp-core.lock`을 맞춘 뒤 검증한다. branch, floating ref, 기존 `UPSTREAM_*`/`RUN_CHECKS` 환경 변수는 허용하지 않는다. script가 성공해도 변경된 submodule commit과 artifact diff는 커밋 전에 명시적으로 검토한다.
 
+### Stable candidate 읽기 전용 확인
+
+실제 source와 pin을 갱신하기 전에 release metadata, resolved tag commit, 현재 pin과 candidate branch·PR 상태만 확인할 수 있다. 명시 tag를 확인하는 local dry-run은 다음과 같다.
+
+```sh
+node scripts/check-rhwp-upstream-release.mjs \
+  --target-tag <vX.Y.Z> \
+  --dry-run \
+  --json-output <temporary-json-path>
+```
+
+`--target-tag`를 생략하면 latest 공개 Stable release를 판정한다. `--dry-run`은 candidate branch 조회와 repository write를 수행하지 않으며 결과 JSON의 `decision`은 `dry_run`이어야 한다. 실행 전후 `git status --porcelain=v1`을 비교해 tracked·untracked 상태가 같음을 확인한다. metadata 또는 tag 조회가 실패하면 current로 간주하지 말고 네트워크·release provenance 오류로 처리한다.
+
+### GitHub Actions candidate 운영
+
+`rhwp Upstream Sync Candidate` workflow는 daily schedule과 수동 `workflow_dispatch`를 제공한다. 수동 입력은 다음 두 개뿐이다.
+
+- `target_tag`: 비워 두면 latest 공개 Stable, 값을 주면 exact `vX.Y.Z` Stable tag를 확인한다.
+- `dry_run`: 기본값 `true`. 판정과 summary만 실행하며 build, push와 PR 생성을 하지 않는다.
+
+`dry_run=false`는 clean `devel`에서 source·lock·WASM·관리 참조를 맞추고 전체 플랫폼 중립 gate와 changed-path allowlist를 통과한 경우에만 새 automation branch와 draft PR을 만든다. 수동 write dispatch는 task PR merge와 아래 external state 준비를 확인한 뒤 명시 승인으로만 실행한다. daily schedule은 실제 drift candidate 경로를 사용하지만 workflow가 default branch에 반영되고 credential이 준비되기 전에는 write candidate가 완성되지 않는다.
+
+candidate writer에는 현재 repository에 설치된 GitHub App과 다음 Actions 설정이 필요하다.
+
+| 종류 | 이름 | 내용 |
+|---|---|---|
+| Repository variable | `ALHANGEUL_AUTOMATION_CLIENT_ID` | 설치한 GitHub App의 Client ID |
+| Repository secret | `ALHANGEUL_AUTOMATION_APP_PRIVATE_KEY` | GitHub App private key의 PEM 전체 |
+
+GitHub App repository permission은 Contents `Read and write`, Pull requests `Read and write`만 허용한다. Issues, Actions, Administration, Workflows, Releases 권한은 부여하지 않는다. App은 이 repository에만 설치하고 credential 값, private key와 발급 token을 문서·로그·PR에 기록하지 않는다. resolve job은 기본 read-only `GITHUB_TOKEN`을 사용하며 App token은 모든 후보 검증 뒤 push와 draft PR 생성 단계에서만 발급된다.
+
+생성된 draft PR은 자동 검증이 통과했더라도 Windows/Linux native 수용 전이다. [Issue #24](https://github.com/postmelee/alhangeul-tauri/issues/24)에서 Rust·Tauri build, GUI와 packaging을 검토하며 candidate PR 또는 Issue #24를 자동 merge·close하지 않는다.
+
+### candidate 장애 복구
+
+- `current`, `dry_run`, `existing_pr` 판정은 write가 없는 정상 종료다. Actions summary의 current/target/decision과 기존 PR URL을 확인한다.
+- `branch_blocker`는 같은 automation branch가 있지만 열린 PR은 없는 상태다. branch를 자동 삭제하거나 force push하지 말고 commit과 작성자를 확인한다. 검증된 automation commit이면 동일 branch로 `devel` 대상 draft PR을 복구하고, 그 밖의 정리는 별도 승인을 받는다.
+- source 갱신, gate 또는 allowlist가 실패하면 App token 발급 전에 멈추므로 remote branch와 PR은 생기지 않는다. 실패 로그와 changed path를 조사하고 새 실행으로 재현한다.
+- push 뒤 PR 생성만 실패하면 다음 실행은 `branch_blocker`로 멈춘다. remote branch가 이번 run의 검증된 commit인지 확인한 뒤 draft PR 복구 또는 승인된 branch 정리를 선택한다. history rewrite와 force push는 사용하지 않는다.
+- 이미 열린 candidate가 있으면 새 PR을 만들지 않는다. 기존 PR에서 실패 원인과 native handoff 상태를 이어서 관리한다.
+
 ### 실패와 rollback
 
 갱신 script는 실패 시 시작 commit을 출력하고 자동 reset을 하지 않는다. 먼저 실패 단계와 변경 범위를 확인한다.

@@ -64,6 +64,28 @@ script는 dirty upstream source와 origin 불일치를 먼저 거부하고, sour
 
 실패 시 자동 reset을 하지 않으며 시작 commit과 실패 단계를 출력한다. 운영자는 `git status --short`와 `git diff --submodule=log`로 범위를 확인한 뒤 [DEVELOPMENT.md](../DEVELOPMENT.md)의 명시적 경로 rollback 절차를 사용한다.
 
+### Stable 감시와 candidate PR 경계
+
+`.github/workflows/rhwp-upstream-sync.yml`은 공개 GitHub Release metadata와 Git tag를 함께 확인한다. release가 exact `vX.Y.Z` 형식이고 `draft=false`, `prerelease=false`인 경우에만 Stable 후보로 인정하며, annotated tag는 peeled commit을, lightweight tag는 tag commit을 resolved commit으로 사용한다. 현재 `rhwp-core.lock`, gitlink, submodule HEAD와 exact Studio entry가 서로 다르거나 이미 고정한 tag가 다른 commit을 가리키면 후보를 만들지 않는다.
+
+판정 job은 read-only token으로 `current`, `dry_run`, `existing_pr`, `branch_blocker`, `create_candidate`를 구분한다. `current`, `dry_run`, 기존 PR은 repository를 쓰지 않고 끝난다. PR 없는 automation branch는 사람이 만든 상태일 수 있으므로 삭제·reset·force push하지 않고 blocker로 실패한다.
+
+candidate는 clean `devel` checkout에서 다음 순서를 지킨다.
+
+1. 허용된 current-pin 관리 참조를 ephemeral checkout 안에서 새 pin으로 맞춘다.
+2. `scripts/update-upstream.sh --run-checks`로 source, Cargo lock, WASM과 provenance를 갱신한다.
+3. 플랫폼 중립 gate 전체와 changed-path allowlist를 다시 검증한다.
+4. 검증이 모두 끝난 뒤 현재 repository에 한정된 GitHub App token을 발급한다.
+5. explicit allowlist만 stage해 새 branch에 non-force push하고 `devel` 대상 draft PR을 만든다.
+
+token은 `contents: write`와 `pull-requests: write`만 요청하며 auto approval·merge, release/tag, issue close, package publish와 Pages deploy에는 사용하지 않는다. 후보 본문은 old/new tag·commit, Stable release URL, 변경 경로와 자동 검증을 기록한다.
+
+자동 candidate는 플랫폼 중립 갱신 제안일 뿐 native 수용 결과가 아니다. Windows/Linux Rust·Tauri build, GUI와 packaging은 [Issue #24](https://github.com/postmelee/alhangeul-tauri/issues/24)에서 검토하고 candidate 본문은 이 검증이 미실행임을 유지한다. Issue #24를 자동 종료하거나 candidate를 자동 merge하지 않는다.
+
+known issue 기록은 current pin 참조가 아니다. 자동 관리 참조 갱신은 승인된 marker와 경로만 바꾸고, 특정 release의 known issue 이름·원인·추적 링크를 새 release 정보로 치환하지 않는다. 새 release에서 같은 실패가 보여도 아래 분류 기준에 따라 재현 조건과 실패 지점을 다시 확인한다.
+
+workflow를 task branch에 추가한 것만으로 live 자동화를 활성화하지 않는다. task PR merge 뒤 GitHub App installation과 repository variable·secret을 별도 승인으로 준비하고, 명시 tag의 실제 dispatch와 동일 입력 재실행으로 candidate·멱등성을 확인한 뒤에만 Task #23 close gate를 통과한다. 운영 입력과 복구 절차는 [DEVELOPMENT.md](../DEVELOPMENT.md)를 따른다.
+
 ## 플랫폼 중립 수용 기준
 
 - tag와 resolved commit 출처가 기록되어 있다.

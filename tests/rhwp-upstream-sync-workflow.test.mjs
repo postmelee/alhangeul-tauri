@@ -59,7 +59,7 @@ test('candidate job은 create_candidate에서만 Ubuntu에 진입한다', () => 
     /^    if: \$\{\{ needs\.resolve\.outputs\.decision == 'create_candidate' \}\}$/m,
   );
   assert.match(candidateJob, /^    runs-on: ubuntu-24\.04$/m);
-  assert.doesNotMatch(candidateJob, /runs-on:\s+(?:macos|windows)/i);
+  assert.deepEqual(candidateJob.match(/^    runs-on: .+$/gm), ['    runs-on: ubuntu-24.04']);
   assert.match(candidateJob, /^          persist-credentials: false$/m);
   assert.match(candidateJob, /test -z "\$\(git status --porcelain=v1 --untracked-files=all\)"/);
 });
