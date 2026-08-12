@@ -1,5 +1,4 @@
 import {
-  appendPrintStyle,
   appendSvgPage,
   buildPrintStyleText,
   createPrintPage,
@@ -127,17 +126,11 @@ function applyPrintStyle(
 ): void {
   const linuxFragmentOverride = buildLinuxPrintFragmentOverride(pages, platform);
   const bundledStyle = target.head.querySelector('style');
-  if (bundledStyle) {
-    // Tauri가 print.html의 정적 style에 부여한 CSP nonce를 유지한다.
-    bundledStyle.textContent = buildPrintStyleText(pages) + linuxFragmentOverride;
-    return;
+  if (!bundledStyle) {
+    throw new Error('인쇄 surface의 bundled style을 찾을 수 없습니다.');
   }
-  appendPrintStyle(target, pages);
-  if (linuxFragmentOverride) {
-    const overrideStyle = target.createElement('style');
-    overrideStyle.textContent = linuxFragmentOverride;
-    target.head.appendChild(overrideStyle);
-  }
+  // Tauri가 print.html의 정적 style에 부여한 CSP nonce를 유지한다.
+  bundledStyle.textContent = buildPrintStyleText(pages) + linuxFragmentOverride;
 }
 
 function buildLinuxPrintFragmentOverride(
@@ -146,17 +139,17 @@ function buildLinuxPrintFragmentOverride(
 ): string {
   if (platform !== 'linux') return '';
   const uniformPage = findUniformPageSize(pages);
+  if (!uniformPage) return '';
   const fragmentRules = pages
     .map((page) => (
       `.${page.className} { `
-      + (uniformPage ? 'page: auto; ' : '')
+      + 'page: auto; '
       + `height: calc(${page.heightMm}mm - ${LINUX_PRINT_FRAGMENT_TOLERANCE_PX}px); `
       + '}'
     ))
     .join('\n');
-  const defaultPageRule = uniformPage
-    ? `@page { size: ${uniformPage.widthMm}mm ${uniformPage.heightMm}mm; margin: 0; }\n`
-    : '';
+  const defaultPageRule =
+    `@page { size: ${uniformPage.widthMm}mm ${uniformPage.heightMm}mm; margin: 0; }\n`;
 
   return `
 ${defaultPageRule}

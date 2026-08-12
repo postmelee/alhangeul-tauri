@@ -531,6 +531,71 @@ inventory를 통과했다.
 이 판정은 공개 prerelease, release tag, 서명, updater 또는 Task #9 release Go를 승인하지
 않으며, 최종 SHA의 Windows/Linux x64 GUI 미반복 사실을 PR 제한사항에 그대로 공개한다.
 
+### Stage 4.11 — PR #22 인쇄 lifecycle 리뷰 보정
+
+PR #22 review
+[#4914325092](https://github.com/postmelee/alhangeul-tauri/pull/22#pullrequestreview-4914325092)는
+Windows focus waiter의 비동기 순서 역전과 5분 terminal timeout, Linux 혼합 크기 CSS 범위,
+CSP style fallback과 upstream print frame ID drift를 지적했다. 코드·기존 Issue 경계를 대조한
+결과 1~5번 모두 Task #15에서 처리한다. Issue #20은 시스템 인쇄를 명시적으로 제외하므로
+Windows 인쇄 lifecycle 결함을 그쪽으로 이관하지 않는다.
+
+- `waitForReturn()`이 시작된 뒤 native focus event generation을 기록한다. initial
+  `isFocused()` IPC가 대기하는 동안 최신 event가 도착했다면 늦게 반환된 poll 결과를
+  무시해 stale `false`가 최신 `true` stability timer를 취소하지 못하게 한다.
+- 기존 5분 `native-timeout`은 정상 완료 reason에서 제거한다. 5분마다 현재 focus를
+  재확인하는 비종료 watchdog으로 바꾸고, 대화상자가 열린 상태에서는 surface, title,
+  처리 중 상태와 `printJobActive`를 계속 유지한다. focus가 안정적으로 돌아온 경우에만
+  lifecycle을 종료한다.
+- Linux 1px tolerance와 default `@page`/`page: auto` override 전체를 실제 수용한 동일
+  물리 크기 문서에만 적용한다. 혼합 크기 문서는 upstream stylesheet를 그대로 유지한다.
+- Tauri production `print.html`의 nonce가 보존된 정적 style element를 필수 계약으로 둔다.
+  누락 시 CSP에서 차단될 수 있는 동적 style fallback을 실행하지 않고 명시적 오류로
+  중단한다.
+- upstream `PRINT_FRAME_ID = 'rhwp-print-surface'`와 제품 CSS selector가 함께 유지되는지
+  boundary test로 고정한다.
+- host `document.title` 변경은 upstream도 Chromium/Edge 기본 인쇄 제목을 위해 사용하는
+  의도된 동작이므로 유지한다. 이는 Microsoft Print to PDF basename을 보장한다는 뜻은 아니다.
+
+검증:
+
+```bash
+pnpm --filter @postmelee/alhangeul-studio-host test -- src/command/print-ui-lifecycle.test.ts src/command/direct-print.test.ts src/core/upstream-boundary.test.ts
+pnpm run check:product-boundary
+pnpm run check:product-version
+pnpm run check:release-metadata
+pnpm run check:rhwp-pin
+pnpm run test:automation
+pnpm run test:upstream
+pnpm run test:studio
+pnpm run build:studio
+git diff --check
+```
+
+제품 코드가 변경되므로 기존 `da488a8` artifact는 최종 PR 후보로 재사용하지 않는다. Stage 4.11
+commit의 새 exact SHA를 `publish/task15`에 게시하고 CI, Windows x64·Linux x64·Linux arm64
+native build와 Windows installer smoke를 다시 실행한다. Windows GUI에서는 system dialog와
+Print-to-PDF 저장창의 정상 종료·반복 인쇄를 재확인하고, 접근 가능한 환경에서 5분 장시간
+dialog를 직접 재현하지 못하면 focused fake-timer test와 명시적 검증 한계로 남긴다.
+
+### Stage 4.12 — 리뷰 보정 exact 후보와 최종 PR 근거 갱신
+
+Stage 4.11 source·report commit을 exact 제품 후보로 고정해 `publish/task15`에 게시한다.
+CI와 Desktop Artifact Build의 event, head branch, head SHA, job conclusion을 확인하고 Windows
+x64·Linux x64·Linux arm64 bundle inventory와 MSI·NSIS smoke를 다시 검증한다. 제품 코드가
+바뀐 이후의 workflow만 최종 근거로 사용하며 이전 `da488a8` artifact는 비교 자료로만 남긴다.
+
+Windows GUI는 새 exact installer에서 system dialog 직접 진입, Print-to-PDF 저장창 handoff,
+상태 복원과 반복 인쇄를 확인한다. 5분 watchdog은 fake-timer focused test에서 surface와 job
+guard가 유지되는지 검증하고, 실제 대화상자를 5분 넘게 유지하는 수동 시나리오는 수행 여부를
+명시한다. Linux는 동일 크기 6쪽 인쇄의 source 변경이 없고 혼합 크기에서는 보정 전체를
+제거했으므로 native build·inventory를 필수로 수행하며, 접근 가능한 GUI 환경이 있으면 6쪽
+CUPS-PDF와 direct PDF를 다시 확인한다.
+
+exact gate 뒤 Stage 4.12 보고서, 최종 보고서, 오늘할일과 PR 본문을 새 HEAD 고정 링크로
+갱신하고 review에 1~5번의 처리 결과와 6번 의도 확인을 답한다. Issue close, merge, release,
+tag와 배포는 수행하지 않는다.
+
 ## 검증
 
 - 각 Stage 검증 명령은 단계 보고서 작성 전에 실행한다.

@@ -73,6 +73,107 @@ describe('Windows system print focus lifecycle', () => {
     waiter.dispose();
   });
 
+  it('ignores a stale initial poll after a newer focus event', async () => {
+    let resolveInitialFocus: (focused: boolean) => void = () => {};
+    const initialFocus = new Promise<boolean>((resolve) => {
+      resolveInitialFocus = resolve;
+    });
+    const listeners = new Set<NativeFocusListener>();
+    nativeWindow.isFocused
+      .mockImplementationOnce(() => initialFocus)
+      .mockResolvedValue(true);
+    nativeWindow.onFocusChanged.mockImplementation((listener) => {
+      listeners.add(listener);
+      return Promise.resolve(() => listeners.delete(listener));
+    });
+    const waiter = await preparePrintUiReturnWaiter('windows');
+    const result = waiter.waitForReturn();
+
+    emitFocus(listeners, true);
+    resolveInitialFocus(false);
+    await Promise.resolve();
+    await vi.advanceTimersByTimeAsync(1000);
+
+    await expect(result).resolves.toBe('native-focus-stable');
+    waiter.dispose();
+  });
+
+  it('uses the five-minute watchdog without completing the modal lifecycle', async () => {
+    let focused = false;
+    const listeners = new Set<NativeFocusListener>();
+    nativeWindow.isFocused.mockImplementation(() => Promise.resolve(focused));
+    nativeWindow.onFocusChanged.mockImplementation((listener) => {
+      listeners.add(listener);
+      return Promise.resolve(() => listeners.delete(listener));
+    });
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const waiter = await preparePrintUiReturnWaiter('windows');
+    const result = waiter.waitForReturn();
+    let settled = false;
+    void result.then(() => { settled = true; });
+    await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
+
+    expect(settled).toBe(false);
+    expect(nativeWindow.isFocused).toHaveBeenCalledTimes(2);
+    expect(warn).toHaveBeenCalledWith(
+      '[file:print] system print UI가 5분 넘게 열려 있어 focus 상태를 다시 확인합니다.',
+    );
+
+    focused = true;
+    emitFocus(listeners, true);
+    await vi.advanceTimersByTimeAsync(1000);
+    await expect(result).resolves.toBe('native-focus-stable');
+    waiter.dispose();
+    warn.mockRestore();
+  });
+
+  it('keeps the DOM fallback pending after five minutes', async () => {
+    let domFocused = false;
+    const focusListeners = new Set<() => void>();
+    (globalThis as { window?: unknown }).window = {
+      addEventListener: (type: string, listener: () => void) => {
+        if (type === 'focus') focusListeners.add(listener);
+      },
+      removeEventListener: (type: string, listener: () => void) => {
+        if (type === 'focus') focusListeners.delete(listener);
+      },
+    };
+    (globalThis as { document?: unknown }).document = {
+      hasFocus: () => domFocused,
+    };
+    nativeWindow.onFocusChanged.mockRejectedValue(new Error('native focus unavailable'));
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const waiter = await preparePrintUiReturnWaiter('windows');
+    const result = waiter.waitForReturn();
+    let settled = false;
+    void result.then(() => { settled = true; });
+
+    await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
+    expect(settled).toBe(false);
+
+    domFocused = true;
+    for (const listener of [...focusListeners]) listener();
+    await expect(result).resolves.toBe('dom-focus');
+    waiter.dispose();
+    warn.mockRestore();
+  });
+
+  it('does not create a stability timer from a late poll after disposal', async () => {
+    let resolveFocus: (focused: boolean) => void = () => {};
+    nativeWindow.isFocused.mockImplementation(() => new Promise<boolean>((resolve) => {
+      resolveFocus = resolve;
+    }));
+    nativeWindow.onFocusChanged.mockResolvedValue(vi.fn());
+    const waiter = await preparePrintUiReturnWaiter('windows');
+    void waiter.waitForReturn();
+
+    waiter.dispose();
+    resolveFocus(true);
+    await Promise.resolve();
+
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
   it('falls back to DOM focus when native listener setup fails', async () => {
     let domFocused = false;
     const focusListeners = new Set<() => void>();

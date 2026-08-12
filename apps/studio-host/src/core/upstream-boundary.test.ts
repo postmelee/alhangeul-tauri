@@ -276,6 +276,10 @@ describe('upstream Studio override boundary', () => {
       repositoryRoot,
       'apps/studio-host/src/command/direct-print.ts',
     ), 'utf8');
+    const upstreamPrintSurface = readFileSync(resolve(
+      repositoryRoot,
+      'third_party/rhwp/rhwp-studio/src/command/print-surface.ts',
+    ), 'utf8');
     const productStyle = readFileSync(resolve(
       repositoryRoot,
       'apps/studio-host/src/style.css',
@@ -300,11 +304,11 @@ describe('upstream Studio override boundary', () => {
     expect(directPrint).toContain('createPrintSurface()');
     expect(directPrint).toContain("renderPageSvgWithProfile(pageIndex, 'print')");
     expect(directPrint).toContain('createPrintPage(');
-    expect(directPrint).toContain('appendPrintStyle(target, pages)');
     expect(directPrint).toContain('buildPrintStyleText(pages)');
     expect(directPrint).toContain('appendSvgPage(target, target.body, page)');
     expect(directPrint).toContain('await waitForPrintSurfaceReady(surface)');
     expect(directPrint).toContain('surface.window.print()');
+    expect(upstreamPrintSurface).toContain("const PRINT_FRAME_ID = 'rhwp-print-surface';");
     expect(productStyle).toContain('#rhwp-print-surface');
   });
 

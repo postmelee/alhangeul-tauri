@@ -5,7 +5,6 @@ import { printDirectlyFromPageSurface } from './direct-print';
 type NativeFocusListener = (event: { payload: boolean }) => void;
 
 const createPrintPage = vi.hoisted(() => vi.fn());
-const appendPrintStyle = vi.hoisted(() => vi.fn());
 const appendSvgPage = vi.hoisted(() => vi.fn());
 const buildPrintStyleText = vi.hoisted(() => vi.fn(() => 'print css'));
 const createPrintSurface = vi.hoisted(() => vi.fn());
@@ -19,7 +18,6 @@ const nativeWindow = vi.hoisted(() => ({
 }));
 
 vi.mock('@upstream/command/print-pages', () => ({
-  appendPrintStyle,
   appendSvgPage,
   buildPrintStyleText,
   createPrintPage,
@@ -53,12 +51,7 @@ describe('Tauri direct print surface', () => {
     hydrateDesktopPlatform.mockResolvedValue('unknown');
     const surface = createSurface();
     createPrintSurface.mockResolvedValue(surface);
-    createPrintPage.mockImplementation((_svg, _info, index) => ({
-      pageName: `page-${index}`,
-      className: `page-${index}`,
-      widthMm: 210.079,
-      heightMm: 297.127,
-    }));
+    useUniformPrintPages();
     const inputHandler = {
       flushDeferredPaginationIfNeeded: vi.fn(),
       hasDeferredPaginationPending: vi.fn(() => false),
@@ -79,7 +72,6 @@ describe('Tauri direct print surface', () => {
       { pageName: 'page-1', className: 'page-1', widthMm: 210.079, heightMm: 297.127 },
     ]);
     expect(surface.bundledStyle.textContent).toBe('print css');
-    expect(appendPrintStyle).not.toHaveBeenCalled();
     expect(appendSvgPage.mock.calls.map((call) => call[2])).toEqual([
       { pageName: 'page-0', className: 'page-0', widthMm: 210.079, heightMm: 297.127 },
       { pageName: 'page-1', className: 'page-1', widthMm: 210.079, heightMm: 297.127 },
@@ -88,8 +80,9 @@ describe('Tauri direct print surface', () => {
     expect(surface.window.print).toHaveBeenCalledOnce();
     expect(surface.dispose).toHaveBeenCalledOnce();
     expect((globalThis.document as unknown as { title: string }).title).toBe('Alhangeul');
-    expect(waitForPrintSurfaceReady.mock.invocationCallOrder[0])
-      .toBeLessThan(surface.window.print.mock.invocationCallOrder[0]);
+    expect(waitForPrintSurfaceReady.mock.invocationCallOrder[0]).toBeLessThan(
+      surface.window.print.mock.invocationCallOrder[0],
+    );
   });
 
   it('keeps the print surface through the Windows print-to-save focus transition', async () => {
@@ -112,12 +105,7 @@ describe('Tauri direct print surface', () => {
       for (const listener of [...focusListeners]) listener({ payload: true });
     });
     createPrintSurface.mockResolvedValue(surface);
-    createPrintPage.mockImplementation((_svg, _info, index) => ({
-      pageName: `page-${index}`,
-      className: `page-${index}`,
-      widthMm: 210.079,
-      heightMm: 297.127,
-    }));
+    useUniformPrintPages();
 
     const pendingPrint = printDirectlyFromPageSurface(createServices());
     await vi.advanceTimersByTimeAsync(0);
@@ -127,8 +115,9 @@ describe('Tauri direct print surface', () => {
     expect((globalThis.document as unknown as { title: string }).title).toBe('document');
     expect(surface.document.title).toBe('document');
     expect(surface.dispose).not.toHaveBeenCalled();
-    expect(nativeWindow.onFocusChanged.mock.invocationCallOrder[0])
-      .toBeLessThan(surface.window.print.mock.invocationCallOrder[0]);
+    expect(nativeWindow.onFocusChanged.mock.invocationCallOrder[0]).toBeLessThan(
+      surface.window.print.mock.invocationCallOrder[0],
+    );
 
     nativeFocused = false;
     for (const listener of [...focusListeners]) listener({ payload: false });
@@ -148,30 +137,58 @@ describe('Tauri direct print surface', () => {
     expect(unlisten).toHaveBeenCalledOnce();
   });
 
+  it('keeps the Windows surface after the five-minute focus watchdog', async () => {
+    vi.useFakeTimers();
+    let nativeFocused = false;
+    const focusListeners = new Set<NativeFocusListener>();
+    nativeWindow.isFocused.mockImplementation(() => Promise.resolve(nativeFocused));
+    nativeWindow.onFocusChanged.mockImplementation((listener) => {
+      focusListeners.add(listener);
+      return Promise.resolve(() => focusListeners.delete(listener));
+    });
+    const surface = createSurface();
+    surface.window.print.mockImplementation(() => {
+      for (const listener of [...focusListeners]) listener({ payload: false });
+    });
+    createPrintSurface.mockResolvedValue(surface);
+    useUniformPrintPages();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const pendingPrint = printDirectlyFromPageSurface(createServices());
+    await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
+
+    expect(surface.dispose).not.toHaveBeenCalled();
+    nativeFocused = true;
+    for (const listener of [...focusListeners]) listener({ payload: true });
+    await vi.advanceTimersByTimeAsync(1000);
+    await pendingPrint;
+
+    expect(surface.dispose).toHaveBeenCalledOnce();
+    warn.mockRestore();
+  });
+
   it('uses the default page context and one-pixel tolerance for uniform Linux pages', async () => {
     hydrateDesktopPlatform.mockResolvedValue('linux');
     const surface = createSurface();
     createPrintSurface.mockResolvedValue(surface);
-    createPrintPage.mockImplementation((_svg, _info, index) => ({
-      pageName: `page-${index}`,
-      className: `page-${index}`,
-      widthMm: 210.079,
-      heightMm: 297.127,
-    }));
+    useUniformPrintPages();
 
     await printDirectlyFromPageSurface(createServices());
 
     expect(surface.bundledStyle.textContent).toContain('print css');
-    expect(surface.bundledStyle.textContent)
-      .toContain('@page { size: 210.079mm 297.127mm; margin: 0; }');
+    expect(surface.bundledStyle.textContent).toContain(
+      '@page { size: 210.079mm 297.127mm; margin: 0; }',
+    );
     expect(surface.bundledStyle.textContent).toContain('@media print');
-    expect(surface.bundledStyle.textContent)
-      .toContain('.page-0 { page: auto; height: calc(297.127mm - 1px); }');
-    expect(surface.bundledStyle.textContent)
-      .toContain('.page-1 { page: auto; height: calc(297.127mm - 1px); }');
+    expect(surface.bundledStyle.textContent).toContain(
+      '.page-0 { page: auto; height: calc(297.127mm - 1px); }',
+    );
+    expect(surface.bundledStyle.textContent).toContain(
+      '.page-1 { page: auto; height: calc(297.127mm - 1px); }',
+    );
   });
 
-  it('preserves upstream named page contexts for mixed-size Linux pages', async () => {
+  it('preserves the entire upstream stylesheet for mixed-size Linux pages', async () => {
     hydrateDesktopPlatform.mockResolvedValue('linux');
     const surface = createSurface();
     createPrintSurface.mockResolvedValue(surface);
@@ -184,12 +201,19 @@ describe('Tauri direct print surface', () => {
 
     await printDirectlyFromPageSurface(createServices());
 
-    expect(surface.bundledStyle.textContent).not.toContain('@page { size:');
-    expect(surface.bundledStyle.textContent).not.toContain('page: auto;');
-    expect(surface.bundledStyle.textContent)
-      .toContain('.page-0 { height: calc(297.127mm - 1px); }');
-    expect(surface.bundledStyle.textContent)
-      .toContain('.page-1 { height: calc(210.079mm - 1px); }');
+    expect(surface.bundledStyle.textContent).toBe('print css');
+  });
+
+  it('fails before printing when the nonce-bearing bundled style is missing', async () => {
+    const surface = createSurface(false);
+    createPrintSurface.mockResolvedValue(surface);
+    useUniformPrintPages();
+
+    await expect(printDirectlyFromPageSurface(createServices()))
+      .rejects.toThrow('인쇄 surface의 bundled style을 찾을 수 없습니다');
+
+    expect(surface.window.print).not.toHaveBeenCalled();
+    expect(surface.dispose).toHaveBeenCalledOnce();
   });
 
   it('disposes the hidden surface when page assembly fails', async () => {
@@ -235,11 +259,20 @@ function createServices(inputHandler: unknown = null) {
   };
 }
 
-function createSurface() {
+function useUniformPrintPages(): void {
+  createPrintPage.mockImplementation((_svg, _info, index) => ({
+    pageName: `page-${index}`,
+    className: `page-${index}`,
+    widthMm: 210.079,
+    heightMm: 297.127,
+  }));
+}
+
+function createSurface(hasBundledStyle = true) {
   const bundledStyle = { textContent: 'loading css' };
   const targetDocument = {
     documentElement: { lang: '' },
-    head: { querySelector: vi.fn(() => bundledStyle) },
+    head: { querySelector: vi.fn(() => (hasBundledStyle ? bundledStyle : null)) },
     createElement: vi.fn(() => ({ textContent: '' })),
     body: { replaceChildren: vi.fn(), className: '' },
     title: '',
