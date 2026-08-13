@@ -450,6 +450,7 @@ Task #23 [Stage 4.3]: clean-base automation gate 분리
 수정:
 
 - `apps/studio-host/src/core/upstream-boundary.test.ts`
+- `mydocs/plans/task_m010_23.md`
 - `mydocs/plans/task_m010_23_impl.md`
 - `mydocs/report/task_m010_23_report.md`
 - `mydocs/orders/20260813.md`

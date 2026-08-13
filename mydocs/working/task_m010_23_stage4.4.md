@@ -47,8 +47,9 @@ pnpm run check:rhwp-pin
 pnpm run test:upstream
 pnpm run test:studio
 pnpm run build:studio
-rg -n "ls-files.*--stage.*third_party/rhwp|gitlink가 current lock commit|pins the source lock" \
-  apps/studio-host/src/core/upstream-boundary.test.ts scripts tests
+rg -n --glob '*.{mjs,ts,rs,yml,yaml,sh}' \
+  'ls-files|ls-tree|rev-parse|submodule.+status|diff.+HEAD|HEAD:' \
+  .github apps scripts tests
 git diff --check
 ```
 
@@ -62,8 +63,10 @@ git diff --check
 - OK — upstream 35/35 통과
 - OK — Studio 21 files·97/97 통과
 - OK — Studio production build 213 modules 변환 완료
-- OK — post-update Studio test에서 상위 repository Git index 조회가 제거됐고 clean-base release
-  service의 `git ls-files --stage third_party/rhwp`는 유지됨
+- OK — 넓은 Git 명령 source inventory를 수동 검토해 post-update Studio test에서 상위 repository
+  Git index 조회가 제거됐고, committed gitlink 조회는 clean-base release service에만 남았음을
+  확인함. 이 inventory는 알려진 명령 형태에 대한 review-time 증적이며 신규 형태를 차단하는
+  영구 정적 guard로 해석하지 않음
 - OK — source test는 4 LOC 감소했으며 새 workflow·helper·공식 문서 변경 없음
 - OK — `git diff --check` 경고 없음
 - INFO — CanvasKit browser externalization, ineffective dynamic import와 500 kB chunk 경고는
