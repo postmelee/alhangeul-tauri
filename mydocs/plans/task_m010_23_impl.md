@@ -279,59 +279,6 @@ PR 본문과 최종 보고서에 명시한다.
 Task #23 Stage 4: post-merge activation handoff 확정
 ```
 
-## Stage 4.3 — clean-base automation gate 분리
-
-### 산출물
-
-수정:
-
-- `.github/workflows/rhwp-upstream-sync.yml`
-- `tests/rhwp-upstream-sync-workflow.test.mjs`
-- `mydocs/plans/task_m010_23_impl.md`
-- `mydocs/report/task_m010_23_report.md`
-
-신규:
-
-- `mydocs/working/task_m010_23_stage4.3.md`
-
-### 변경 내용
-
-- `pnpm install --frozen-lockfile`과 `pnpm run test:automation`을 managed current-pin reference와
-  비용이 큰 Rust·Linux·wasm-pack 준비 전의 `Verify clean-base automation contract` step으로 옮긴다.
-- post-update `Run platform-neutral gates`에는 target pin과 산출물을 검증하는 product boundary,
-  version, release metadata, current pin, upstream·Studio·build, desktop Rust test·clippy를 유지한다.
-- workflow contract test는 clean-base install·automation test → managed reference → source update →
-  target gate → changed-path allowlist → App token → publish 순서를 고정한다.
-- automation self-test와 frozen install이 각각 한 번만 실행되며 post-update target gate에 섞이지
-  않는지 검사한다.
-- current-pin integration invariant, update script, GitHub App 설정과 외부 writer 상태는 바꾸지
-  않는다.
-
-### 검증
-
-```bash
-node --test tests/rhwp-upstream-sync-workflow.test.mjs
-pnpm run test:automation
-pnpm run check:product-boundary
-pnpm run check:product-version
-pnpm run check:release-metadata
-pnpm run check:rhwp-pin
-pnpm run test:upstream
-pnpm run test:studio
-pnpm run build:studio
-git diff --check
-```
-
-Stage 커밋과 task PR merge 뒤에만 writer를 다시 활성화한다. default branch actual write run이
-draft candidate를 정확히 하나 생성하고 같은 입력 재실행이 추가 branch·PR·commit을 만들지
-않아야 Issue #23 live gate를 완료한다.
-
-### 커밋
-
-```text
-Task #23 [Stage 4.3]: clean-base automation gate 분리
-```
-
 ## Stage 4.1 — PR 리뷰 안전성 보정
 
 PR #25의 maintainer 리뷰에서 확인된 merge 전 안전성 항목을 기존 Stage 4의 후속 하위
@@ -439,10 +386,67 @@ git diff --check
 Task #23 [Stage 4.2]: upstream sync 운영 정책 보정
 ```
 
+## Stage 4.3 — clean-base automation gate 분리
+
+### 산출물
+
+수정:
+
+- `.github/workflows/rhwp-upstream-sync.yml`
+- `tests/rhwp-upstream-sync-workflow.test.mjs`
+- `mydocs/plans/task_m010_23_impl.md`
+- `mydocs/report/task_m010_23_report.md`
+
+신규:
+
+- `mydocs/working/task_m010_23_stage4.3.md`
+
+### 변경 내용
+
+- `pnpm install --frozen-lockfile`과 `pnpm run test:automation`을 managed current-pin reference와
+  비용이 큰 Rust·Linux·wasm-pack 준비 전의 `Verify clean-base automation contract` step으로 옮긴다.
+- post-update `Run platform-neutral gates`에는 target pin과 산출물을 검증하는 product boundary,
+  version, release metadata, current pin, upstream·Studio·build, desktop Rust test·clippy를 유지한다.
+- workflow contract test는 clean-base install·automation test → managed reference → source update →
+  target gate → changed-path allowlist → App token → publish 순서를 고정한다.
+- automation self-test와 frozen install이 각각 한 번만 실행되며 post-update target gate에 섞이지
+  않는지 검사한다.
+- current-pin integration invariant, update script, GitHub App 설정과 외부 writer 상태는 바꾸지
+  않는다.
+
+### 검증
+
+```bash
+node --test tests/rhwp-upstream-sync-workflow.test.mjs
+pnpm run test:automation
+pnpm run check:product-boundary
+pnpm run check:product-version
+pnpm run check:release-metadata
+pnpm run check:rhwp-pin
+pnpm run test:upstream
+pnpm run test:studio
+pnpm run build:studio
+git diff --check
+```
+
+Stage 커밋과 correction PR merge 뒤에만 writer를 다시 활성화한다. default branch actual write
+run이 draft candidate를 정확히 하나 생성하면 candidate branch ref로 `ci.yml`을 수동 dispatch한다.
+run head SHA가 candidate PR head와 같은지 확인하고 `Test automation contracts` step에서 새 pin의
+committed gitlink·lock 정합성이 통과해야 한다. 이후 같은 upstream sync 입력을 재실행해 추가
+branch·PR·commit이 생기지 않는 멱등성을 확인한다. CI의 후속 제품·native gate 실패는 Issue #24
+수용 입력으로 넘기며, 자동 PR CI 도입은 Issue #28이 소유한다.
+
+### 커밋
+
+```text
+Task #23 [Stage 4.3]: clean-base automation gate 분리
+```
+
 ## 단계 의존성과 변경 통제
 
 - Stage 2는 Stage 1 보고서 승인 뒤, Stage 3은 Stage 2 승인 뒤, Stage 4는 Stage 3 승인 뒤 진행한다.
-  Stage 4.1과 Stage 4.2는 각 PR #25 리뷰 범위에 대한 작업지시자 승인 뒤 진행한다.
+  Stage 4.1과 Stage 4.2는 각 PR #25 리뷰 범위, Stage 4.3은 post-merge live gate 보정 범위에 대한
+  작업지시자 승인 뒤 진행한다.
 - 각 Stage 검증과 보고서 커밋 뒤 작업지시자 승인을 받기 전 다음 Stage 소스를 수정하지 않는다.
 - action 설치 방식, credential 체계, allowlist 또는 공식 문서 위치가 바뀌면 먼저 이 구현계획서를
   보정하고 승인을 받는다.

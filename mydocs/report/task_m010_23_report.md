@@ -71,9 +71,9 @@ branch push와 PR 생성 전에 종료됐으며 writer는 보정 merge 전까지
 |---|---:|---:|
 | upstream sync workflow | 없음 | 1개, 291 LOC |
 | release·reference·PR body·change helper | 없음 | 6개, 합계 845 LOC |
-| 전용 contract test | 없음 | 6개, 합계 1,017 LOC |
+| 전용 contract test | 없음 | 6개, 합계 1,013 LOC |
 | 전체 `test:automation` | 71 tests | 119 tests |
-| task branch 변경 | 0 files | 초기 PR 28 files + Stage 4.3 correction 6 files |
+| task branch 변경 | 0 files | 초기 PR 28 files + Stage 4.3 correction 7 files |
 | 제품 rhwp pin | `v0.8.2` / `9b16aa9e...` | 변경 없음 |
 | Tauri Actions writer 설정 계약 | 없음 | App installation·variable 2개·secret 1개 구성, writer는 보정 merge까지 비활성 |
 
@@ -133,6 +133,9 @@ Vite의 기존 CanvasKit browser externalization, ineffective dynamic import와 
 - [Issue #26](https://github.com/postmelee/alhangeul-tauri/issues/26): Stable 선택·candidate lifecycle·base branch 범위를 PR #25 Stage 4.2에 흡수한 뒤 종료했다.
 - Stage 4.3 correction PR merge 뒤 activation variable을 마지막으로 다시 켠다.
 - `target_tag=v0.8.4`, `dry_run=false` dispatch 성공과 draft PR 1개를 확인하고, 동일 입력 재실행에서 추가 branch·PR·commit이 없음을 확인한다.
+- candidate branch ref로 `ci.yml`을 수동 dispatch하고 run head SHA와 candidate PR head가 같은지,
+  `Test automation contracts`가 committed gitlink·lock 기준으로 통과하는지 확인한다. 이후 제품·native
+  gate 실패는 Issue #24로 넘기며 자동 PR CI는 Issue #28에서 도입한다.
 - credential 비노출과 candidate provenance를 Issue #23에 기록하고 Issue #24에 연결한 뒤 작업지시자 승인으로 Issue #23을 닫는다.
 
 ## Issue #23 지연 close 예외

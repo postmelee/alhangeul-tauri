@@ -74,6 +74,9 @@ git diff --check
   위해 `ALHANGEUL_UPSTREAM_SYNC_ENABLED=false`로 유지 중이다.
 - 수정 PR merge 뒤 writer를 마지막에 다시 활성화하고 candidate draft PR 생성과 같은 입력의
   멱등성을 확인해야 한다.
+- candidate PR에는 CI가 자동 실행되지 않으므로 candidate branch ref로 `ci.yml`을 수동 dispatch해
+  run head SHA와 PR head가 같은지, `Test automation contracts`가 새 pin의 committed gitlink·lock
+  기준으로 통과하는지 확인해야 한다. 자동 PR CI 도입은 Issue #28 범위다.
 - `v0.8.4` Windows/Linux native 수용과 candidate merge는 Issue #24 범위다.
 
 ## 다음 단계 영향
@@ -82,6 +85,8 @@ git diff --check
 - PR merge 전에는 writer를 활성화하거나 live dispatch를 재실행하지 않는다.
 - PR merge 뒤 actual write run 성공, draft candidate 1개와 멱등 재실행을 확인한 뒤 Issue #23과
   #24에 증적을 기록하고 Issue #23 close 승인을 받는다.
+- candidate branch 수동 CI에서 automation step은 Issue #23 live gate 증적으로 남기고, 이후
+  제품·native gate 실패는 Issue #24 수용 작업으로 인계한다.
 
 ## 승인 요청
 
