@@ -533,10 +533,112 @@ git diff --check
 Task #23 [Stage 4.4]: pre-commit Studio gitlink 책임 분리
 ```
 
+## Stage 4.5 — porcelain changed-path parser 보정
+
+### 산출물
+
+수정:
+
+- `scripts/verify-rhwp-sync-changes.mjs`
+- `tests/rhwp-sync-changes.test.mjs`
+- `mydocs/plans/task_m010_23.md`
+- `mydocs/plans/task_m010_23_impl.md`
+- `mydocs/report/task_m010_23_report.md`
+- `mydocs/orders/20260813.md`
+
+신규:
+
+- `mydocs/working/task_m010_23_stage4.5.md`
+
+### 구현 순서
+
+1. `tests/rhwp-sync-changes.test.mjs`에 production runner 회귀 test를 먼저 추가한다.
+   - `mkdtemp`로 OS 임시 디렉터리 아래 독립 Git repository를 만든다.
+   - 로컬 test identity를 설정하고 allowlist 경로인 `README.md`를 초기 commit한다.
+   - `README.md`를 수정해 `git status --porcelain=v1`의 첫 번째이자 유일한 record가
+     ` M README.md`가 되게 한다.
+   - `run` option을 주입하지 않고 실제 `verifyRhwpSyncChanges`를 호출한다. output은 임시
+     repository 안의 별도 파일이 아니라 외부 임시 경로에 두어 untracked changed path에
+     섞이지 않게 한다.
+   - 반환 경로와 출력 파일이 각각 `['README.md']`, `README.md\n`인지 exact 비교한다.
+   - `t.after`에서 두 임시 디렉터리를 재귀 정리해 성공·실패 모두 부산물이 남지 않게 한다.
+2. 새 test가 현재 production `run().trim()`에서 `EADME.md` 오류로 실패하는 것을 확인한다.
+3. `scripts/verify-rhwp-sync-changes.mjs`의 성공 stdout 반환만 `trimEnd()`로 바꾼다.
+   - `spawnSync`, 오류 처리, environment, parser의 `slice(3)`과 allowlist는 수정하지 않는다.
+   - stderr 오류 메시지의 `trim()`은 사람이 읽는 진단용이므로 유지한다.
+4. focused test와 전체 automation test를 실행해 tracked·untracked·금지 경로·빈 변경 계약이
+   모두 유지되는지 확인한다.
+5. 나머지 플랫폼 중립 gate를 실행하고 단계 보고서에 최초 live 실패, red/green 회귀 증적과
+   writer `false` 상태를 기록한다.
+
+### test 구현 세부
+
+- test module import는 `node:fs/promises`의 `mkdtemp`, `readFile`, `rm`, `writeFile`,
+  `node:os`의 `tmpdir`, `node:path`의 `join`, `node:child_process`의 `spawnSync`를 사용한다.
+- test 전용 Git 실행 helper는 명령 실패 시 stderr를 포함해 즉시 실패하며 제품 helper의
+  구현을 복제하지 않는다.
+- repository root와 output root를 분리해 output 파일 자체가 `git ls-files --others` 결과에
+  들어가는 잘못된 test를 방지한다.
+- branch 이름, global Git config와 사용자의 repository 설정에는 의존하지 않는다.
+- 기존 injected runner test는 호출 순서와 exact allowlist 출력을 검증하는 단위 test로 유지한다.
+
+### 검증
+
+```bash
+node --test tests/rhwp-sync-changes.test.mjs
+pnpm run test:automation
+pnpm run check:product-boundary
+pnpm run check:product-version
+pnpm run check:release-metadata
+pnpm run check:rhwp-pin
+pnpm run test:upstream
+pnpm run test:studio
+pnpm run build:studio
+git diff --check
+```
+
+검증 판정:
+
+- production runner 회귀 test가 보정 전 `EADME.md`로 실패하고 보정 후 exact `README.md`로
+  성공한다.
+- 기존 allowlist 외 경로 거부와 변경 없음 거부 test가 계속 통과한다.
+- 변경 파일은 승인된 helper, test와 task 산출물로 제한된다.
+- macOS host에서는 Windows/Linux desktop Rust·GUI·packaging 검증을 실행하지 않는다.
+  correction merge 뒤 default branch live workflow가 Linux runner에서 실제 sync 전체 gate를
+  다시 수행한다.
+
+### 단계 종료와 correction PR
+
+- 검증 성공 뒤 `task-stage-report`로 `task_m010_23_stage4.5.md`를 작성하고 source와 묶어
+  `Task #23 [Stage 4.5]: porcelain changed-path parser 보정`으로 단계 커밋한다.
+- 단계 보고 승인 뒤 기존 최종 보고서와 오늘할일을 보정하고 `task-final-report`로
+  `publish/task23` correction PR을 게시한다. PR은 Issue #23을 자동 close하지 않는다.
+- correction PR merge 전 writer는 `false`로 유지하고 actual sync를 재실행하지 않는다.
+
+### merge 후 live gate
+
+1. correction merge SHA와 writer `false`, candidate branch·PR 부재를 확인한다.
+2. writer를 `true`로 설정하고 read-back한 뒤 exact `target_tag=v0.8.4`, `dry_run=false`를 한 번
+   dispatch한다.
+3. changed-path allowlist, App token 지연 발급, commit·push와 draft candidate 1개 생성을
+   확인한다. 실패하면 writer를 즉시 `false`로 되돌리고 token·branch·PR 상태를 기록한다.
+4. candidate PR head SHA로 `ci.yml`을 수동 dispatch하고 run head SHA 일치와 전체 CI 성공을
+   확인한다.
+5. 같은 upstream sync 입력을 다시 실행해 `existing_pr`로 종료되고 branch·PR·commit이 추가되지
+   않는지 확인한다.
+6. Issue #23과 #24에 run·candidate·CI·멱등성 증적을 기록하고 writer를 `false`로 되돌린다.
+7. 위 항목이 모두 통과한 뒤 Issue #23을 close하고 `task-start`로 Issue #24를 시작한다.
+
+### 커밋
+
+```text
+Task #23 [Stage 4.5]: porcelain changed-path parser 보정
+```
+
 ## 단계 의존성과 변경 통제
 
 - Stage 2는 Stage 1 보고서 승인 뒤, Stage 3은 Stage 2 승인 뒤, Stage 4는 Stage 3 승인 뒤 진행한다.
-  Stage 4.1과 Stage 4.2는 각 PR #25 리뷰 범위, Stage 4.3과 Stage 4.4는 post-merge live gate
+  Stage 4.1과 Stage 4.2는 각 PR #25 리뷰 범위, Stage 4.3부터 Stage 4.5는 post-merge live gate
   보정 범위에 대한 작업지시자 승인 뒤 진행한다.
 - 각 Stage 검증과 보고서 커밋 뒤 작업지시자 승인을 받기 전 다음 Stage 소스를 수정하지 않는다.
 - action 설치 방식, credential 체계, allowlist 또는 공식 문서 위치가 바뀌면 먼저 이 구현계획서를
@@ -558,6 +660,8 @@ Task #23 [Stage 4.4]: pre-commit Studio gitlink 책임 분리
   assertion을 제거하고 clean-base automation의 committed gitlink invariant는 그대로 유지한다.
 - **live gate 반복 실패**: writer는 correction merge 뒤 마지막에 활성화하며 모든 결과 확보 직후
   성공·실패와 무관하게 다시 `false`로 되돌린다.
+- **column-sensitive 출력 훼손**: 실제 Git subprocess 회귀 test로 첫 porcelain record의 선행
+  status 공백을 고정하고 성공 stdout에서는 후행 개행만 제거한다.
 
 ## 승인 요청 사항
 
@@ -569,5 +673,7 @@ Task #23 [Stage 4.4]: pre-commit Studio gitlink 책임 분리
   committed current-pin invariant, workflow·updater·credential은 유지하는 최소 보정
 - correction PR merge 뒤 actual candidate → candidate 수동 CI → 동일 입력 `existing_pr` 멱등성 →
   Issue 증적 → writer 비활성화 순서
+- Stage 4.5에서 production runner의 선행 whitespace만 보존하고 allowlist·workflow·credential은
+  유지하는 최소 보정과 실제 임시 Git repository 회귀 test
 
-승인되면 Stage 4.4 구현만 진행한다.
+승인되면 Stage 4.5 구현만 진행한다.
