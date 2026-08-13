@@ -312,15 +312,12 @@ describe('upstream Studio override boundary', () => {
     expect(productStyle).toContain('#rhwp-print-surface');
   });
 
-  it('pins the read-only source submodule to the resolved release commit', () => {
+  it('pins the source lock and read-only submodule worktree to the resolved release commit', () => {
     const lock = readFileSync(resolve(repositoryRoot, 'rhwp-core.lock'), 'utf8');
     const lockCommit = lock.match(/^rhwp_commit = "([0-9a-f]{40})"$/m)?.[1];
     const releaseTag = lock.match(/^rhwp_release_tag = "([^"]+)"$/m)?.[1];
     expect(lockCommit).toBe(expectedUpstreamCommit);
     expect(releaseTag).toBe('v0.8.2');
-
-    const gitlink = git(['ls-files', '--stage', 'third_party/rhwp']);
-    expect(gitlink).toMatch(new RegExp(`^160000 ${expectedUpstreamCommit} 0\\tthird_party/rhwp$`));
 
     const submoduleRoot = resolve(repositoryRoot, 'third_party/rhwp');
     expect(git(['rev-parse', 'HEAD'], submoduleRoot)).toBe(expectedUpstreamCommit);

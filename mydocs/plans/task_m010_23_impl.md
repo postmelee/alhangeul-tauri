@@ -15,6 +15,7 @@ GitHub Issue: [#23](https://github.com/postmelee/alhangeul-tauri/issues/23)
 | 4.1 | PR 리뷰 안전성 보정 | activation gate·입력/경로·Rust preflight·문서 보정 | 집중 contract test·전체 중립 gate |
 | 4.2 | PR 리뷰 운영 정책 보정 | Stable 선택·candidate lifecycle·단일 base·진단/성능 보정 | 정책 fixture·workflow inventory·전체 중립 gate |
 | 4.3 | clean-base automation gate 분리 | workflow gate 순서·contract test·live 재검증 handoff | 집중 contract test·전체 중립 gate |
+| 4.4 | pre-commit Studio gitlink 책임 분리 | Studio target-state boundary·live 재검증 handoff | focused Studio·automation·전체 중립 gate |
 
 각 Stage 끝에는 `mydocs/working/task_m010_23_stage{N}.md`를 작성하고 소스와 함께
 단계 커밋한다. Stage 4 승인 뒤 `task-final-report`로 최종 보고서와 task PR을 게시한다.
@@ -442,11 +443,101 @@ branch·PR·commit이 생기지 않는 멱등성을 확인한다. CI의 후속 �
 Task #23 [Stage 4.3]: clean-base automation gate 분리
 ```
 
+## Stage 4.4 — pre-commit Studio gitlink 책임 분리
+
+### 산출물
+
+수정:
+
+- `apps/studio-host/src/core/upstream-boundary.test.ts`
+- `mydocs/plans/task_m010_23.md`
+- `mydocs/plans/task_m010_23_impl.md`
+- `mydocs/report/task_m010_23_report.md`
+- `mydocs/orders/20260813.md`
+
+신규:
+
+- `mydocs/working/task_m010_23_stage4.4.md`
+
+### 변경 내용
+
+- `pins the read-only source submodule to the resolved release commit` test 이름을 lock과 실제
+  submodule worktree의 target-state provenance 책임이 드러나도록 조정한다.
+- 상위 repository에서 `git ls-files --stage third_party/rhwp`를 실행하고 아직 commit되지 않은
+  Git index gitlink가 managed expected commit과 같다고 요구하는 assertion만 제거한다.
+- 다음 검사는 그대로 유지한다.
+  - `rhwp-core.lock` commit과 release tag가 managed expected 값과 일치
+  - `third_party/rhwp` 실제 HEAD가 expected commit과 일치
+  - submodule의 release tag가 같은 commit으로 resolve
+  - submodule worktree에 tracked·untracked 변경이 없음
+- `scripts/rhwp-upstream-release-policy.mjs`의 `assertCurrentPinState`,
+  `tests/rhwp-upstream-release.test.mjs`와 clean-base `pnpm run test:automation`은 수정하지 않는다.
+  따라서 committed current lock·Git index gitlink·submodule HEAD invariant는 유지된다.
+- `.github/workflows/rhwp-upstream-sync.yml`, update helper, changed-path allowlist와 explicit publish
+  staging은 수정하지 않는다. index를 임시 stage/reset하는 우회도 추가하지 않는다.
+
+### 검증
+
+```bash
+pnpm --filter @postmelee/alhangeul-studio-host exec vitest run \
+  src/core/upstream-boundary.test.ts
+pnpm run test:automation
+pnpm run check:product-boundary
+pnpm run check:product-version
+pnpm run check:release-metadata
+pnpm run check:rhwp-pin
+pnpm run test:upstream
+pnpm run test:studio
+pnpm run build:studio
+git diff --check
+```
+
+검증 판정:
+
+- focused Studio와 전체 Studio test가 현재 committed pin에서 통과한다.
+- `test:automation`의 실제 저장소 current-pin integration test가 계속 committed gitlink·lock
+  정합성을 확인한다.
+- source 검색으로 post-update Studio target gate에 상위 repository Git index 전제가 더 남지
+  않았음을 확인한다.
+- macOS host에서는 Windows/Linux 전용 desktop Rust·GUI·packaging 검증을 실행하지 않는다.
+  correction merge 뒤 Linux workflow actual candidate gate와 Issue #24 native 수용에서 각각
+  automation handoff와 제품 동작을 검증한다.
+
+### 단계 종료와 correction PR
+
+- 검증 성공 뒤 `task-stage-report`로 `task_m010_23_stage4.4.md`를 작성하고 source와 묶어
+  단계 커밋한다.
+- 단계 보고 승인 뒤 기존 최종 보고서와 오늘할일을 보정하고 `task-final-report`로
+  `publish/task23` correction PR을 게시한다. PR은 Issue #23을 자동 close하지 않는다.
+- correction PR merge 전에는 writer를 활성화하거나 actual sync를 재실행하지 않는다.
+
+### merge 후 live gate
+
+1. default branch SHA와 writer `false`를 확인한다.
+2. writer를 `true`로 설정하고 read-back한 뒤 exact `target_tag=v0.8.4`, `dry_run=false`를 한 번
+   dispatch한다.
+3. clean-base, post-update Studio를 포함한 target gate, App token 지연 발급과 draft candidate
+   1개 생성을 확인한다. 실패하면 writer를 즉시 `false`로 되돌리고 branch·PR·token 노출 여부를
+   기록한다.
+4. 성공한 candidate head SHA로 `ci.yml`을 수동 dispatch하고 run head SHA 일치와
+   `Test automation contracts` 통과를 확인한다.
+5. 같은 upstream sync 입력을 다시 실행해 `existing_pr`로 종료되고 branch·PR·commit이 추가되지
+   않는지 확인한다.
+6. Issue #23과 #24에 run·candidate·CI·멱등성 증적을 기록하고 writer를 `false`로 되돌린다.
+7. 위 항목이 모두 통과한 뒤에만 Issue #23 close 승인을 요청한다. v0.8.4 source와
+   Windows/Linux 제품 수용은 Issue #24에서 시작한다.
+
+### 커밋
+
+```text
+Task #23 [Stage 4.4]: pre-commit Studio gitlink 책임 분리
+```
+
 ## 단계 의존성과 변경 통제
 
 - Stage 2는 Stage 1 보고서 승인 뒤, Stage 3은 Stage 2 승인 뒤, Stage 4는 Stage 3 승인 뒤 진행한다.
-  Stage 4.1과 Stage 4.2는 각 PR #25 리뷰 범위, Stage 4.3은 post-merge live gate 보정 범위에 대한
-  작업지시자 승인 뒤 진행한다.
+  Stage 4.1과 Stage 4.2는 각 PR #25 리뷰 범위, Stage 4.3과 Stage 4.4는 post-merge live gate
+  보정 범위에 대한 작업지시자 승인 뒤 진행한다.
 - 각 Stage 검증과 보고서 커밋 뒤 작업지시자 승인을 받기 전 다음 Stage 소스를 수정하지 않는다.
 - action 설치 방식, credential 체계, allowlist 또는 공식 문서 위치가 바뀌면 먼저 이 구현계획서를
   보정하고 승인을 받는다.
@@ -463,6 +554,10 @@ Task #23 [Stage 4.3]: clean-base automation gate 분리
 - **자동화 branch 충돌**: branch/PR 상태를 write 전에 분류하고 non-force 새 branch만 만든다.
 - **default branch에서만 가능한 실제 검증**: merge 전 helper dry-run·contract test로 제한하고
   live candidate와 멱등성은 Issue #23 post-merge close gate로 남긴다.
+- **Studio 검사가 current pin을 약화할 위험**: post-update target-state test에서만 상위 Git index
+  assertion을 제거하고 clean-base automation의 committed gitlink invariant는 그대로 유지한다.
+- **live gate 반복 실패**: writer는 correction merge 뒤 마지막에 활성화하며 모든 결과 확보 직후
+  성공·실패와 무관하게 다시 `false`로 되돌린다.
 
 ## 승인 요청 사항
 
@@ -470,5 +565,9 @@ Task #23 [Stage 4.3]: clean-base automation gate 분리
 - 각 Stage 검증 명령과 커밋 메시지
 - Stage 4 뒤 task PR을 게시하되 Issue #23은 live candidate 확인까지 닫지 않는 절차
 - 실제 credential 설정과 write dispatch를 task PR merge 뒤 별도 승인 gate로 두는 경계
+- Stage 4.4에서 Studio target-state test의 중복 Git index assertion만 제거하고 automation의
+  committed current-pin invariant, workflow·updater·credential은 유지하는 최소 보정
+- correction PR merge 뒤 actual candidate → candidate 수동 CI → 동일 입력 `existing_pr` 멱등성 →
+  Issue 증적 → writer 비활성화 순서
 
-승인되면 Stage 1 구현만 진행한다.
+승인되면 Stage 4.4 구현만 진행한다.
