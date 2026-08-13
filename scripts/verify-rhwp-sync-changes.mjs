@@ -66,7 +66,7 @@ function run(command, args, cwd) {
   if (result.status !== 0) {
     throw new Error(`${command} ${args[0]} 실패 (${result.status}): ${result.stderr.trim()}`);
   }
-  return result.stdout.trim();
+  return result.stdout.trimEnd();
 }
 
 function parseArguments(args) {
