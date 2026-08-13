@@ -7,7 +7,7 @@ GitHub Issue: [#23](https://github.com/postmelee/alhangeul-tauri/issues/23)
 
 - 대상 이슈: #23
 - 마일스톤: M010
-- 단계 수: 4 + PR 리뷰·post-merge 보정 하위 단계 3개
+- 단계 수: 4 + PR 리뷰·post-merge 보정 하위 단계 4개
 - 작업 목적: `edwardkim/rhwp` 공개 Stable release를 검증하고 core·전체 Studio가 같은 release인 draft 동기화 candidate PR을 안전하게 생성하는 자동화를 추가한다.
 
 공개 GitHub Release metadata와 dereferenced Git tag commit을 함께 검증하고, current pin·candidate branch·PR 상태를 write 이전에 분류한다. drift가 있을 때는 clean `devel` checkout에서 관리 참조, source submodule, Cargo lock, bundled WASM과 provenance를 같은 release로 맞춘 뒤 전체 플랫폼 중립 gate와 changed-path allowlist를 통과해야만 최소 권한 GitHub App token으로 non-force branch push와 draft PR 생성을 허용한다.
@@ -27,6 +27,13 @@ Post-merge Stage 4.3에서는 최초 actual write run `31668495052`가 source·l
 frozen install과 `test:automation`을 managed reference 갱신 전 clean-base self-test로 옮기고,
 post-update target pin·제품·Rust gate와 App token 지연 발급은 유지했다. 실패 run은 App token,
 branch push와 PR 생성 전에 종료됐으며 writer는 보정 merge 전까지 비활성화했다.
+
+PR #29 merge 뒤 두 번째 actual write run `31671732386`은 Stage 4.3 clean-base contract와
+source·lock·WASM·provenance 갱신, post-update product·pin·upstream gate를 통과했다. 다만 Studio
+boundary test에도 publish 전 Git index가 새 pin이라고 전제하는 중복 assertion이 남아 96/97에서
+중지됐다. Stage 4.4는 committed current pin 검사를 automation clean-base에 유지하고, Studio
+target-state test에서는 갱신된 lock·submodule HEAD·tag·clean worktree만 검사하도록 책임을
+분리했다. workflow, updater, credential과 publish staging은 변경하지 않았다.
 
 ## 변경 파일 목록과 영향 범위
 
@@ -48,6 +55,7 @@ branch push와 PR 생성 전에 종료됐으며 writer는 보정 merge 전까지
 | `package.json` | 신규 contract test를 `test:automation`에 편입 | 공통 자동 검증 |
 | `docs/architecture/UPSTREAM.md` | Stable 감시, candidate/native 경계와 activation gate | 공식 upstream 아키텍처·운영 계약 |
 | `docs/DEVELOPMENT.md` | dry-run, dispatch, GitHub App 설정과 장애 복구 | 유지관리자 운영 절차 |
+| `apps/studio-host/src/core/upstream-boundary.test.ts` | post-update target-state와 양립하지 않는 상위 Git index assertion 제거 | Studio lock·submodule provenance test 책임 분리 |
 | `mydocs/plans/task_m010_23*.md` | 승인된 범위, 위치 판단, 단계·검증·commit 계획 | 하이퍼-워터폴 수행 기준 |
 | `mydocs/working/task_m010_23_stage*.md` | Stage 1–4 구현·검증·잔여 위험 | 단계별 실행 증적 |
 | `mydocs/orders/20260812.md`, `mydocs/orders/20260813.md` | Task #23 진행과 완료 상태 | 일일 작업 보드 |
@@ -73,7 +81,7 @@ branch push와 PR 생성 전에 종료됐으며 writer는 보정 merge 전까지
 | release·reference·PR body·change helper | 없음 | 6개, 합계 845 LOC |
 | 전용 contract test | 없음 | 6개, 합계 1,013 LOC |
 | 전체 `test:automation` | 71 tests | 119 tests |
-| task branch 변경 | 0 files | 초기 PR 28 files + Stage 4.3 correction 7 files |
+| task branch 변경 | 0 files | 초기 PR 28 files + Stage 4.3 correction 7 files + Stage 4.4 correction 6 files |
 | 제품 rhwp pin | `v0.8.2` / `9b16aa9e...` | 변경 없음 |
 | Tauri Actions writer 설정 계약 | 없음 | App installation·variable 2개·secret 1개 구성, writer는 보정 merge까지 비활성 |
 
@@ -89,6 +97,7 @@ branch push와 PR 생성 전에 종료됐으며 writer는 보정 merge 전까지
 | 관리 참조 allowlist·무손실·멱등성 | OK — marker 불일치 write 0회, known issue와 역사 기록 보존 |
 | workflow read/write·권한·실행 순서 | OK — 검증 뒤 App token 발급, explicit staging과 non-force draft PR 계약 확인 |
 | clean-base·post-update gate 분리 | OK — automation self-test는 mutation 전 1회, target acceptance는 mutation 뒤 실행하도록 계약 확인 |
+| committed current pin·Studio target-state 책임 분리 | OK — automation은 lock·Git index gitlink·submodule HEAD invariant를 유지하고 Studio는 lock·submodule HEAD·tag·clean worktree를 검증 |
 | merge 전 writer activation 격리 | OK — activation variable이 정확히 `true`인 create candidate만 writer 진입 |
 | 새 pin Rust compile preflight | OK — Ubuntu candidate에서 desktop test·Clippy를 token 발급 전에 실행하도록 계약 고정 |
 | 입력·경로 fail-closed | OK — exact release URL, remote exit code 2, tracked+untracked changed paths 계약 확인 |
@@ -111,6 +120,7 @@ Vite의 기존 CanvasKit browser externalization, ineffective dynamic import와 
 - Stage 4.1: [`task_m010_23_stage4.1.md`](../working/task_m010_23_stage4.1.md) — 명시 activation, URL·branch·changed-path fail-closed와 Ubuntu Rust preflight를 PR 리뷰에 따라 보정했다.
 - Stage 4.2: [`task_m010_23_stage4.2.md`](../working/task_m010_23_stage4.2.md) — Stable semver 선택, 단일 candidate/base, 진단·shell·workflow 성능·구조 계약을 추가 리뷰에 따라 보정했다.
 - Stage 4.3: [`task_m010_23_stage4.3.md`](../working/task_m010_23_stage4.3.md) — 최초 live write run의 clean-base integration test 순서 오진단을 분리하고 target gate와 token 지연 발급을 보존했다.
+- Stage 4.4: [`task_m010_23_stage4.4.md`](../working/task_m010_23_stage4.4.md) — 두 번째 live run의 중복 Studio Git index 전제를 제거하고 clean-base committed pin invariant와 post-update target-state provenance 책임을 분리했다.
 
 ## 잔여 위험과 후속 작업
 
@@ -121,7 +131,9 @@ Vite의 기존 CanvasKit browser externalization, ineffective dynamic import와 
   실행 위치 문제로 App token 발급 전에 실패했다.
 - `alhangeul-rhwp-sync-bot` installation, Client ID variable과 private key secret은 구성됐지만
   반복 실패 방지를 위해 writer activation은 현재 `false`다.
-- Stage 4.3 correction PR merge 뒤 App token 발급, actual candidate branch·draft PR과 같은
+- Stage 4.3 correction PR #29 merge 뒤 actual run `31671732386`에서 clean-base 보정은
+  확인됐지만 Studio의 중복 pre-commit Git index assertion으로 App token 전에 다시 중지됐다.
+- Stage 4.4 correction PR merge 뒤 App token 발급, actual candidate branch·draft PR과 같은
   입력의 멱등성을 다시 검증해야 한다.
 - `v0.8.4` source·lock·WASM 반영과 Windows/Linux Rust·Tauri·GUI·packaging 수용은 이 task 범위가 아니다.
 - 저장소 전체 외부 Action immutable SHA 고정은 Issue #27, `devel` branch protection과
@@ -131,7 +143,7 @@ Vite의 기존 CanvasKit browser externalization, ineffective dynamic import와 
 
 - [Issue #24](https://github.com/postmelee/alhangeul-tauri/issues/24): 자동 candidate의 `v0.8.4` core·전체 Studio 변경을 정규 task branch에서 검토하고 Windows/Linux native 수용을 완료한다.
 - [Issue #26](https://github.com/postmelee/alhangeul-tauri/issues/26): Stable 선택·candidate lifecycle·base branch 범위를 PR #25 Stage 4.2에 흡수한 뒤 종료했다.
-- Stage 4.3 correction PR merge 뒤 activation variable을 마지막으로 다시 켠다.
+- Stage 4.4 correction PR merge 뒤 activation variable을 마지막으로 다시 켠다.
 - `target_tag=v0.8.4`, `dry_run=false` dispatch 성공과 draft PR 1개를 확인하고, 동일 입력 재실행에서 추가 branch·PR·commit이 없음을 확인한다.
 - candidate branch ref로 `ci.yml`을 수동 dispatch하고 run head SHA와 candidate PR head가 같은지,
   `Test automation contracts`가 committed gitlink·lock 기준으로 통과하는지 확인한다. 이후 제품·native
@@ -140,10 +152,10 @@ Vite의 기존 CanvasKit browser externalization, ineffective dynamic import와 
 
 ## Issue #23 지연 close 예외
 
-이 최종 보고서와 correction PR은 구현·로컬 수용 완료를 뜻하지만 Issue #23을 자동 close하지 않는다. PR 본문은 `Refs #23`만 사용한다. correction PR merge 뒤 [Stage 4 보고서](../working/task_m010_23_stage4.md)와 [Stage 4.3 보고서](../working/task_m010_23_stage4.3.md)의 live gate를 모두 통과하고 증적을 기록해야 Issue #23을 닫을 수 있다.
+이 최종 보고서와 correction PR은 구현·로컬 수용 완료를 뜻하지만 Issue #23을 자동 close하지 않는다. PR 본문은 `Refs #23`만 사용한다. correction PR merge 뒤 [Stage 4 보고서](../working/task_m010_23_stage4.md), [Stage 4.3 보고서](../working/task_m010_23_stage4.3.md)와 [Stage 4.4 보고서](../working/task_m010_23_stage4.4.md)의 live gate를 모두 통과하고 증적을 기록해야 Issue #23을 닫을 수 있다.
 
 ## 작업지시자 승인 요청
 
-- Stage 4.3 산출물과 수용 기준 검증 결과를 2026-08-13 14:21 승인받았으며,
+- Stage 4.4 산출물과 수용 기준 검증 결과를 2026-08-13 15:23 승인받았으며,
   `publish/task23` 원격 branch와 `devel` 대상 correction PR을 게시한다.
 - correction PR merge 뒤 writer 재활성화와 live write dispatch를 수행한다.
