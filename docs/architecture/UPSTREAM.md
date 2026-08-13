@@ -5,8 +5,8 @@ Alhangeul의 유일한 지속 upstream은 [`edwardkim/rhwp`](https://github.com/
 ## 현재 고정 상태
 
 - upstream URL: `https://github.com/edwardkim/rhwp.git`
-- Stable release tag: `v0.8.2`
-- resolved commit: `9b16aa9e23f476e2b335d7c029fc9f24a199d63c`
+- Stable release tag: `v0.8.4`
+- resolved commit: `496333b27d21ddb9114ba9ae340bcb895870c9a7`
 - 읽기 전용 source submodule: `third_party/rhwp`
 - 기계 검증 가능한 출처 lock: `rhwp-core.lock`
 - bundled WASM: `apps/studio-host/vendor/rhwp-core`
@@ -55,8 +55,8 @@ PDF command는 upstream `file:print-to-pdf` 메뉴 위치와 활성 규칙을 �
 
 ```sh
 scripts/update-upstream.sh \
-  --tag v0.8.2 \
-  --commit 9b16aa9e23f476e2b335d7c029fc9f24a199d63c \
+  --tag v0.8.4 \
+  --commit 496333b27d21ddb9114ba9ae340bcb895870c9a7 \
   --run-checks
 ```
 
