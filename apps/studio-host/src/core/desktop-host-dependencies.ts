@@ -1,4 +1,5 @@
 import { remove } from '@tauri-apps/plugin-fs';
+import { showHwpSavePasswordDialog } from '@upstream/ui/hwp-password-dialog';
 import { writeFileInChunks } from './chunked-fs';
 import { readStableDocumentFile, type StableDocumentFile } from './document-files';
 import {
@@ -22,6 +23,7 @@ export interface DesktopHostDependencies {
   ): Promise<string | null>;
   choosePdfSavePath(defaultPath: string): Promise<string | null>;
   resolveSaveDefaultPath(fileName: string, sourcePath: string | null): Promise<string>;
+  chooseDocumentSavePassword(fileName: string): Promise<string | null>;
   showMessage(message: string, options: Record<string, unknown>): Promise<string | boolean>;
   readDocument(path: string): Promise<StableDocumentFile>;
   writeDocument(path: string, bytes: Uint8Array): Promise<void>;
@@ -53,6 +55,7 @@ export function createDefaultDesktopHostDependencies(): DesktopHostDependencies 
       return save({ defaultPath, filters: [{ name: 'PDF 문서', extensions: ['pdf'] }] });
     },
     resolveSaveDefaultPath: resolveSaveDialogDefaultPath,
+    chooseDocumentSavePassword: showHwpSavePasswordDialog,
     showMessage: async (message, options) => {
       const dialog = await import('@tauri-apps/plugin-dialog');
       return dialog.message(message, options as never);
