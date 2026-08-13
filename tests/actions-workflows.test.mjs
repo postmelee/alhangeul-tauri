@@ -1,19 +1,32 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
-const ciPath = join(repoRoot, '.github/workflows/ci.yml');
+const workflowRoot = join(repoRoot, '.github/workflows');
+const ciPath = join(workflowRoot, 'ci.yml');
 const desktopPath = join(
-  repoRoot,
-  '.github/workflows/alhangeul-desktop.yml',
+  workflowRoot,
+  'alhangeul-desktop.yml',
 );
 const [ciWorkflow, desktopWorkflow] = await Promise.all([
   readFile(ciPath, 'utf8'),
   readFile(desktopPath, 'utf8'),
 ]);
+
+test('모든 workflow가 공통 또는 전용 contract test inventory에 등록된다', async () => {
+  const actual = (await readdir(workflowRoot))
+    .filter((name) => /\.ya?ml$/.test(name))
+    .sort();
+  assert.deepEqual(actual, [
+    'alhangeul-desktop.yml',
+    'ci.yml',
+    'pages.yml',
+    'rhwp-upstream-sync.yml',
+  ]);
+});
 
 test('대상 workflow는 수동 trigger와 최소 권한만 사용한다', () => {
   for (const [name, source] of [
