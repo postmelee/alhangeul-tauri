@@ -208,6 +208,7 @@ Task #24 Stage 3: v0.8.4 exact-SHA native artifact 확정
 - 앱 crash, HWP/HWPX 손상, 빈 PDF/인쇄, 문서 대신 editor chrome 출력, modal 종료 뒤 복원 실패는 No-Go다.
 - Microsoft Print to PDF의 기본 파일명 자동 입력처럼 Task #15에서 OS 소유 제약으로 확정한 항목은 회귀가 아니며, 앱이 소유하는 `PDF로 저장` UX와 혼동하지 않는다.
 - 환경 정책으로 특정 physical printer를 사용할 수 없으면 Microsoft Print to PDF와 system preview까지 검증하고 한계를 기록한다.
+- 이번 Task의 Windows VDI처럼 관리자 권한이 없어 MSI 수동 설치를 실행할 수 없으면, 같은 exact SHA의 Stage 3 MSI clean install·제한 실행·association·uninstall 자동 smoke와 NSIS 전체 GUI 수동 수용을 결합해 판정할 수 있다. 이 경우 MSI 수동 GUI를 통과했다고 표현하지 않고 환경과 미실행 범위를 Stage 보고서에 명시한다.
 
 ### 검증
 
