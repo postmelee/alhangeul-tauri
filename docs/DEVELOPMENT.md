@@ -63,7 +63,7 @@ Alhangeul은 `rhwp`의 문서 엔진과 웹 editor를 기반으로 다음 제품
 - 로컬 폰트 catalog와 editor bridge
 - Windows/Linux 파일 연결과 bundle 설정
 
-현재 source submodule, native Cargo lock과 bundled WASM은 `rhwp v0.8.2`의 resolved commit `9b16aa9e23f476e2b335d7c029fc9f24a199d63c`로 고정되어 있다. [rhwp-core.lock](../rhwp-core.lock)이 이 경계의 기계 검증 가능한 진실 원천이며, 자세한 계약은 [UPSTREAM.md](architecture/UPSTREAM.md)를 따른다.
+현재 source submodule, native Cargo lock과 bundled WASM은 `rhwp v0.8.4`의 resolved commit `496333b27d21ddb9114ba9ae340bcb895870c9a7`로 고정되어 있다. [rhwp-core.lock](../rhwp-core.lock)이 이 경계의 기계 검증 가능한 진실 원천이며, 자세한 계약은 [UPSTREAM.md](architecture/UPSTREAM.md)를 따른다.
 
 ## 개발 상태
 
@@ -124,8 +124,8 @@ pnpm run check:desktop-artifacts -- \
 
 ```sh
 scripts/update-upstream.sh \
-  --tag v0.8.2 \
-  --commit 9b16aa9e23f476e2b335d7c029fc9f24a199d63c \
+  --tag v0.8.4 \
+  --commit 496333b27d21ddb9114ba9ae340bcb895870c9a7 \
   --run-checks
 ```
 
