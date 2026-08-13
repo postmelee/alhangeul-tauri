@@ -7,7 +7,7 @@ GitHub Issue: [#23](https://github.com/postmelee/alhangeul-tauri/issues/23)
 
 - 대상 이슈: #23
 - 마일스톤: M010
-- 단계 수: 4 + PR 리뷰 보정 하위 단계 2개
+- 단계 수: 4 + PR 리뷰·post-merge 보정 하위 단계 3개
 - 작업 목적: `edwardkim/rhwp` 공개 Stable release를 검증하고 core·전체 Studio가 같은 release인 draft 동기화 candidate PR을 안전하게 생성하는 자동화를 추가한다.
 
 공개 GitHub Release metadata와 dereferenced Git tag commit을 함께 검증하고, current pin·candidate branch·PR 상태를 write 이전에 분류한다. drift가 있을 때는 clean `devel` checkout에서 관리 참조, source submodule, Cargo lock, bundled WASM과 provenance를 같은 release로 맞춘 뒤 전체 플랫폼 중립 gate와 changed-path allowlist를 통과해야만 최소 권한 GitHub App token으로 non-force branch push와 draft PR 생성을 허용한다.
@@ -21,6 +21,12 @@ PR #25 리뷰 뒤에는 별도 `ALHANGEUL_UPSTREAM_SYNC_ENABLED` gate를 추가�
 원천으로 전달하고 writer 비활성 시 branch blocker를 read-only 경고로 유지했다.
 미초기화 submodule 진단, shell environment 경계, wasm-pack 버전 대조, 중복 gate와
 workflow inventory·helper 크기 guard도 함께 보정해 Issue #26의 운영 정책 범위를 흡수했다.
+
+Post-merge Stage 4.3에서는 최초 actual write run `31668495052`가 source·lock·WASM·provenance
+갱신 뒤 clean repository 전용 automation integration test에서 중지된 원인을 확인했다.
+frozen install과 `test:automation`을 managed reference 갱신 전 clean-base self-test로 옮기고,
+post-update target pin·제품·Rust gate와 App token 지연 발급은 유지했다. 실패 run은 App token,
+branch push와 PR 생성 전에 종료됐으며 writer는 보정 merge 전까지 비활성화했다.
 
 ## 변경 파일 목록과 영향 범위
 
@@ -63,13 +69,13 @@ workflow inventory·helper 크기 guard도 함께 보정해 Issue #26의 운영 
 
 | 지표 | 변경 전 | 변경 후 |
 |---|---:|---:|
-| upstream sync workflow | 없음 | 1개, 288 LOC |
+| upstream sync workflow | 없음 | 1개, 291 LOC |
 | release·reference·PR body·change helper | 없음 | 6개, 합계 845 LOC |
-| 전용 contract test | 없음 | 6개, 합계 1,002 LOC |
+| 전용 contract test | 없음 | 6개, 합계 1,017 LOC |
 | 전체 `test:automation` | 71 tests | 119 tests |
-| task branch 변경 | 0 files | Stage 4.2 보고서 포함 28 files |
+| task branch 변경 | 0 files | 초기 PR 28 files + Stage 4.3 correction 6 files |
 | 제품 rhwp pin | `v0.8.2` / `9b16aa9e...` | 변경 없음 |
-| Tauri Actions writer 설정 계약 | 없음 | variable 2개·secret 1개, post-merge 승인 gate |
+| Tauri Actions writer 설정 계약 | 없음 | App installation·variable 2개·secret 1개 구성, writer는 보정 merge까지 비활성 |
 
 신규 workflow, helper와 test는 모두 파일 권장 상한 300 LOC 이하로 유지했다.
 
@@ -82,11 +88,12 @@ workflow inventory·helper 크기 guard도 함께 보정해 Issue #26의 운영 
 | current pin·source·exact Studio 정합성 | OK — `v0.8.2` / `9b16aa9e23f476e2b335d7c029fc9f24a199d63c`, 6 artifacts 확인 |
 | 관리 참조 allowlist·무손실·멱등성 | OK — marker 불일치 write 0회, known issue와 역사 기록 보존 |
 | workflow read/write·권한·실행 순서 | OK — 검증 뒤 App token 발급, explicit staging과 non-force draft PR 계약 확인 |
+| clean-base·post-update gate 분리 | OK — automation self-test는 mutation 전 1회, target acceptance는 mutation 뒤 실행하도록 계약 확인 |
 | merge 전 writer activation 격리 | OK — activation variable이 정확히 `true`인 create candidate만 writer 진입 |
 | 새 pin Rust compile preflight | OK — Ubuntu candidate에서 desktop test·Clippy를 token 발급 전에 실행하도록 계약 고정 |
 | 입력·경로 fail-closed | OK — exact release URL, remote exit code 2, tracked+untracked changed paths 계약 확인 |
 | 금지된 외부 동작 부재 | OK — auto merge·approval, force push, release/tag, issue close, package publish와 Pages deploy 없음 |
-| 제품 경계·version·release metadata | OK — 192 files, Alhangeul `0.1.0` 정합성 확인 |
+| 제품 경계·version·release metadata | OK — 197 files, Alhangeul `0.1.0` 정합성 확인 |
 | automation·upstream·Studio 회귀 | OK — 119 + 35 + 97 tests 통과 |
 | exact upstream Studio production build | OK — 213 modules 변환 완료 |
 | 실제 `v0.8.4` read-only dry-run | OK — target commit `496333b27d21ddb9114ba9ae340bcb895870c9a7`, `decision=dry_run` |
@@ -103,14 +110,19 @@ Vite의 기존 CanvasKit browser externalization, ineffective dynamic import와 
 - Stage 4: [`task_m010_23_stage4.md`](../working/task_m010_23_stage4.md) — 외부 상태 기준, post-merge activation·멱등성·Issue #24 handoff와 지연 close gate를 고정했다.
 - Stage 4.1: [`task_m010_23_stage4.1.md`](../working/task_m010_23_stage4.1.md) — 명시 activation, URL·branch·changed-path fail-closed와 Ubuntu Rust preflight를 PR 리뷰에 따라 보정했다.
 - Stage 4.2: [`task_m010_23_stage4.2.md`](../working/task_m010_23_stage4.2.md) — Stable semver 선택, 단일 candidate/base, 진단·shell·workflow 성능·구조 계약을 추가 리뷰에 따라 보정했다.
+- Stage 4.3: [`task_m010_23_stage4.3.md`](../working/task_m010_23_stage4.3.md) — 최초 live write run의 clean-base integration test 순서 오진단을 분리하고 target gate와 token 지연 발급을 보존했다.
 
 ## 잔여 위험과 후속 작업
 
 ### 잔여 위험
 
-- workflow는 아직 default branch `devel`에 없어 schedule과 live write 경로를 실행하지 않았다.
-- `alhangeul-rhwp-sync-bot`의 Tauri repository installation은 현재 사용자 token으로 확인할 수 없다. writer activation, GitHub App Client ID variable과 private key secret도 아직 준비되지 않았다.
-- App token 발급, actual candidate build·push·draft PR과 같은 입력의 멱등성은 task PR merge 뒤 별도 승인 gate에 남는다.
+- PR #25는 `devel`에 merge됐고 default-branch dry-run `31668192739`는 `v0.8.4` drift를
+  성공적으로 판정했다. 최초 actual write run `31668495052`는 clean-base integration test의
+  실행 위치 문제로 App token 발급 전에 실패했다.
+- `alhangeul-rhwp-sync-bot` installation, Client ID variable과 private key secret은 구성됐지만
+  반복 실패 방지를 위해 writer activation은 현재 `false`다.
+- Stage 4.3 correction PR merge 뒤 App token 발급, actual candidate branch·draft PR과 같은
+  입력의 멱등성을 다시 검증해야 한다.
 - `v0.8.4` source·lock·WASM 반영과 Windows/Linux Rust·Tauri·GUI·packaging 수용은 이 task 범위가 아니다.
 - 저장소 전체 외부 Action immutable SHA 고정은 Issue #27, `devel` branch protection과
   required checks 외부 설정은 Issue #28의 별도 승인 task에 남는다.
@@ -118,16 +130,17 @@ Vite의 기존 CanvasKit browser externalization, ineffective dynamic import와 
 ### 후속 작업 후보
 
 - [Issue #24](https://github.com/postmelee/alhangeul-tauri/issues/24): 자동 candidate의 `v0.8.4` core·전체 Studio 변경을 정규 task branch에서 검토하고 Windows/Linux native 수용을 완료한다.
-- [Issue #26](https://github.com/postmelee/alhangeul-tauri/issues/26): Stable 선택·candidate lifecycle·base branch 범위는 PR #25 Stage 4.2에 선반영했으며, PR merge 후 증적과 함께 종료한다.
-- Task #23 task PR merge 뒤 기존 App installation과 credential 두 개를 별도 승인으로 준비하고 activation variable을 마지막으로 켠다.
+- [Issue #26](https://github.com/postmelee/alhangeul-tauri/issues/26): Stable 선택·candidate lifecycle·base branch 범위를 PR #25 Stage 4.2에 흡수한 뒤 종료했다.
+- Stage 4.3 correction PR merge 뒤 activation variable을 마지막으로 다시 켠다.
 - `target_tag=v0.8.4`, `dry_run=false` dispatch 성공과 draft PR 1개를 확인하고, 동일 입력 재실행에서 추가 branch·PR·commit이 없음을 확인한다.
 - credential 비노출과 candidate provenance를 Issue #23에 기록하고 Issue #24에 연결한 뒤 작업지시자 승인으로 Issue #23을 닫는다.
 
 ## Issue #23 지연 close 예외
 
-이 최종 보고서와 task PR은 구현·로컬 수용 완료를 뜻하지만 Issue #23을 자동 close하지 않는다. PR 본문은 `Refs #23`만 사용한다. task PR merge 뒤 [Stage 4 보고서](../working/task_m010_23_stage4.md)의 activation 9단계를 모두 통과하고 증적을 기록해야 Issue #23을 닫을 수 있다.
+이 최종 보고서와 correction PR은 구현·로컬 수용 완료를 뜻하지만 Issue #23을 자동 close하지 않는다. PR 본문은 `Refs #23`만 사용한다. correction PR merge 뒤 [Stage 4 보고서](../working/task_m010_23_stage4.md)와 [Stage 4.3 보고서](../working/task_m010_23_stage4.3.md)의 live gate를 모두 통과하고 증적을 기록해야 Issue #23을 닫을 수 있다.
 
 ## 작업지시자 승인 요청
 
-- 최종 보고서와 수용 기준 검증 결과 승인에 따라 `publish/task23` 원격 branch와 `devel` 대상 Open PR을 게시한다.
-- PR merge 뒤 credential 설정과 live write dispatch는 별도 승인을 받아 수행한다.
+- Stage 4.3 최종 보고서와 수용 기준 검증 결과 승인에 따라 `publish/task23` 원격 branch와
+  `devel` 대상 correction PR을 게시한다.
+- correction PR merge 뒤 writer 재활성화와 live write dispatch를 수행한다.

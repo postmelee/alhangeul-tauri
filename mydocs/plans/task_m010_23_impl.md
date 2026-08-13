@@ -14,6 +14,7 @@ GitHub Issue: [#23](https://github.com/postmelee/alhangeul-tauri/issues/23)
 | 4 | task PR과 post-merge handoff 확정 | activation checklist와 Stage 보고 | 최종 중립 gate·close 조건 검토 |
 | 4.1 | PR 리뷰 안전성 보정 | activation gate·입력/경로·Rust preflight·문서 보정 | 집중 contract test·전체 중립 gate |
 | 4.2 | PR 리뷰 운영 정책 보정 | Stable 선택·candidate lifecycle·단일 base·진단/성능 보정 | 정책 fixture·workflow inventory·전체 중립 gate |
+| 4.3 | clean-base automation gate 분리 | workflow gate 순서·contract test·live 재검증 handoff | 집중 contract test·전체 중립 gate |
 
 각 Stage 끝에는 `mydocs/working/task_m010_23_stage{N}.md`를 작성하고 소스와 함께
 단계 커밋한다. Stage 4 승인 뒤 `task-final-report`로 최종 보고서와 task PR을 게시한다.
@@ -276,6 +277,59 @@ PR 본문과 최종 보고서에 명시한다.
 
 ```text
 Task #23 Stage 4: post-merge activation handoff 확정
+```
+
+## Stage 4.3 — clean-base automation gate 분리
+
+### 산출물
+
+수정:
+
+- `.github/workflows/rhwp-upstream-sync.yml`
+- `tests/rhwp-upstream-sync-workflow.test.mjs`
+- `mydocs/plans/task_m010_23_impl.md`
+- `mydocs/report/task_m010_23_report.md`
+
+신규:
+
+- `mydocs/working/task_m010_23_stage4.3.md`
+
+### 변경 내용
+
+- `pnpm install --frozen-lockfile`과 `pnpm run test:automation`을 managed current-pin reference와
+  비용이 큰 Rust·Linux·wasm-pack 준비 전의 `Verify clean-base automation contract` step으로 옮긴다.
+- post-update `Run platform-neutral gates`에는 target pin과 산출물을 검증하는 product boundary,
+  version, release metadata, current pin, upstream·Studio·build, desktop Rust test·clippy를 유지한다.
+- workflow contract test는 clean-base install·automation test → managed reference → source update →
+  target gate → changed-path allowlist → App token → publish 순서를 고정한다.
+- automation self-test와 frozen install이 각각 한 번만 실행되며 post-update target gate에 섞이지
+  않는지 검사한다.
+- current-pin integration invariant, update script, GitHub App 설정과 외부 writer 상태는 바꾸지
+  않는다.
+
+### 검증
+
+```bash
+node --test tests/rhwp-upstream-sync-workflow.test.mjs
+pnpm run test:automation
+pnpm run check:product-boundary
+pnpm run check:product-version
+pnpm run check:release-metadata
+pnpm run check:rhwp-pin
+pnpm run test:upstream
+pnpm run test:studio
+pnpm run build:studio
+git diff --check
+```
+
+Stage 커밋과 task PR merge 뒤에만 writer를 다시 활성화한다. default branch actual write run이
+draft candidate를 정확히 하나 생성하고 같은 입력 재실행이 추가 branch·PR·commit을 만들지
+않아야 Issue #23 live gate를 완료한다.
+
+### 커밋
+
+```text
+Task #23 [Stage 4.3]: clean-base automation gate 분리
 ```
 
 ## Stage 4.1 — PR 리뷰 안전성 보정

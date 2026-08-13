@@ -160,6 +160,11 @@ jobs:
       - name: Enable pnpm
         run: corepack enable
 
+      - name: Verify clean-base automation contract
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm run test:automation
+
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
 
@@ -200,12 +205,10 @@ jobs:
 
       - name: Run platform-neutral gates
         run: |
-          pnpm install --frozen-lockfile
           pnpm run check:product-boundary
           pnpm run check:product-version
           pnpm run check:release-metadata
           pnpm run check:rhwp-pin
-          pnpm run test:automation
           pnpm run test:upstream
           pnpm run test:studio
           pnpm run build:studio

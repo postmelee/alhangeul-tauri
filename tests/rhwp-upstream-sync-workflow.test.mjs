@@ -73,16 +73,20 @@ test('candidate job은 명시적으로 활성화한 create_candidate에서만 Ub
   assert.match(candidateJob, /test -z "\$\(git status --porcelain=v1 --untracked-files=all\)"/);
 });
 
-test('관리 참조를 먼저 맞춘 뒤 source update와 전체 gate를 실행한다', () => {
+test('clean-base automation 계약 뒤 관리 참조와 target gate를 실행한다', () => {
   assertOrdered(candidateJob, [
+    '- name: Verify clean-base automation contract',
+    'pnpm install --frozen-lockfile',
+    'pnpm run test:automation',
+    '- name: Setup Rust',
+    '- name: Install Linux Rust dependencies',
+    '- name: Install exact wasm-pack',
     'node scripts/update-rhwp-managed-references.mjs',
     'scripts/update-upstream.sh',
-    'pnpm install --frozen-lockfile',
     'pnpm run check:product-boundary',
     'pnpm run check:product-version',
     'pnpm run check:release-metadata',
     'pnpm run check:rhwp-pin',
-    'pnpm run test:automation',
     'pnpm run test:upstream',
     'pnpm run test:studio',
     'pnpm run build:studio',
@@ -93,6 +97,13 @@ test('관리 참조를 먼저 맞춘 뒤 source update와 전체 gate를 실행�
     '- name: Create current-repository GitHub App token',
     '- name: Commit, push and open draft PR',
   ]);
+  const cleanBaseStep = getStepContaining(candidateJob, 'Verify clean-base automation contract');
+  const targetGateStep = getStepContaining(candidateJob, 'Run platform-neutral gates');
+  assert.match(cleanBaseStep, /pnpm install --frozen-lockfile/);
+  assert.match(cleanBaseStep, /pnpm run test:automation/);
+  assert.doesNotMatch(targetGateStep, /pnpm install|test:automation/);
+  assert.equal((candidateJob.match(/pnpm install --frozen-lockfile/g) ?? []).length, 1);
+  assert.equal((candidateJob.match(/pnpm run test:automation/g) ?? []).length, 1);
   assert.match(candidateJob, /cargo install wasm-pack --version "\$WASM_PACK_VERSION" --locked/);
   assert.match(candidateJob, /wasm-pack \$WASM_PACK_VERSION/);
   assert.match(candidateJob, /libwebkit2gtk-4\.1-dev/);
