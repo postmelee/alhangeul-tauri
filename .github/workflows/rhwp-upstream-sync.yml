@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       target_tag:
-        description: Optional Stable rhwp tag. Empty uses the latest Stable release.
+        description: Optional Stable rhwp tag. Empty uses the maximum public Stable semver.
         required: false
         default: ""
         type: string
@@ -40,17 +40,19 @@ jobs:
       target_tag: ${{ steps.release.outputs.target_tag }}
       target_commit: ${{ steps.release.outputs.target_commit }}
       release_url: ${{ steps.release.outputs.release_url }}
+      base_branch: ${{ steps.release.outputs.base_branch }}
       branch: ${{ steps.release.outputs.branch }}
       decision: ${{ steps.release.outputs.decision }}
       existing_pr_url: ${{ steps.release.outputs.existing_pr_url }}
+      candidate_count: ${{ steps.release.outputs.candidate_count }}
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
-      - name: Checkout devel
+      - name: Checkout configured base
         uses: actions/checkout@v6
         with:
-          ref: devel
-          fetch-depth: 0
+          ref: ${{ env.BASE_BRANCH }}
+          fetch-depth: 1
           submodules: recursive
 
       - name: Setup Node.js
@@ -67,7 +69,7 @@ jobs:
           DRY_RUN_INPUT: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || false }}
         run: |
           set -euo pipefail
-          args=(--github-output "$GITHUB_OUTPUT")
+          args=(--github-output "$GITHUB_OUTPUT" --base-branch "$BASE_BRANCH")
           if [[ -n "$TARGET_TAG_INPUT" ]]; then
             args+=(--target-tag "$TARGET_TAG_INPUT")
           fi
@@ -84,21 +86,33 @@ jobs:
           CURRENT_COMMIT: ${{ steps.release.outputs.current_commit }}
           TARGET_TAG: ${{ steps.release.outputs.target_tag }}
           TARGET_COMMIT: ${{ steps.release.outputs.target_commit }}
+          BASE_BRANCH_OUTPUT: ${{ steps.release.outputs.base_branch }}
           DECISION: ${{ steps.release.outputs.decision }}
           EXISTING_PR_URL: ${{ steps.release.outputs.existing_pr_url }}
+          CANDIDATE_COUNT: ${{ steps.release.outputs.candidate_count }}
         run: |
           {
             echo "## rhwp upstream sync decision"
             echo
             echo "- current: \`${CURRENT_TAG:-unresolved}\` \`${CURRENT_COMMIT:-unresolved}\`"
             echo "- target: \`${TARGET_TAG:-unresolved}\` \`${TARGET_COMMIT:-unresolved}\`"
+            echo "- base branch: \`${BASE_BRANCH_OUTPUT:-unresolved}\`"
             echo "- decision: \`${DECISION:-failed}\`"
             echo "- existing PR: ${EXISTING_PR_URL:-none}"
+            echo "- open automation candidates: ${CANDIDATE_COUNT:-unresolved}"
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Reject branch-only blocker
+      - name: Handle branch-only blocker
         if: ${{ steps.release.outputs.decision == 'branch_blocker' }}
+        shell: bash
+        env:
+          WRITER_ENABLED: ${{ vars.ALHANGEUL_UPSTREAM_SYNC_ENABLED }}
         run: |
+          if [[ "$WRITER_ENABLED" != "true" ]]; then
+            echo "::warning::Automation branch exists without an open PR; writer is disabled."
+            echo "Writer disabled: branch-only blocker requires operator review." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
           echo "Automation branch exists without an open PR; refusing to overwrite it." >&2
           exit 1
 
@@ -108,11 +122,13 @@ jobs:
     if: ${{ needs.resolve.outputs.decision == 'create_candidate' && vars.ALHANGEUL_UPSTREAM_SYNC_ENABLED == 'true' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 120
+    env:
+      BASE_BRANCH: ${{ needs.resolve.outputs.base_branch }}
     steps:
-      - name: Checkout clean devel
+      - name: Checkout clean configured base
         uses: actions/checkout@v6
         with:
-          ref: devel
+          ref: ${{ env.BASE_BRANCH }}
           fetch-depth: 0
           submodules: recursive
           persist-credentials: false
@@ -161,22 +177,30 @@ jobs:
           test "$(wasm-pack --version)" = "wasm-pack $WASM_PACK_VERSION"
 
       - name: Update managed current-pin references
+        env:
+          CURRENT_TAG: ${{ needs.resolve.outputs.current_tag }}
+          CURRENT_COMMIT: ${{ needs.resolve.outputs.current_commit }}
+          TARGET_TAG: ${{ needs.resolve.outputs.target_tag }}
+          TARGET_COMMIT: ${{ needs.resolve.outputs.target_commit }}
         run: |
           node scripts/update-rhwp-managed-references.mjs \
-            --from-tag "${{ needs.resolve.outputs.current_tag }}" \
-            --from-commit "${{ needs.resolve.outputs.current_commit }}" \
-            --to-tag "${{ needs.resolve.outputs.target_tag }}" \
-            --to-commit "${{ needs.resolve.outputs.target_commit }}"
+            --from-tag "$CURRENT_TAG" \
+            --from-commit "$CURRENT_COMMIT" \
+            --to-tag "$TARGET_TAG" \
+            --to-commit "$TARGET_COMMIT"
 
       - name: Update source, locks, WASM and provenance
+        env:
+          TARGET_TAG: ${{ needs.resolve.outputs.target_tag }}
+          TARGET_COMMIT: ${{ needs.resolve.outputs.target_commit }}
         run: |
           scripts/update-upstream.sh \
-            --tag "${{ needs.resolve.outputs.target_tag }}" \
-            --commit "${{ needs.resolve.outputs.target_commit }}" \
-            --run-checks
+            --tag "$TARGET_TAG" \
+            --commit "$TARGET_COMMIT"
 
-      - name: Re-run platform-neutral gates
+      - name: Run platform-neutral gates
         run: |
+          pnpm install --frozen-lockfile
           pnpm run check:product-boundary
           pnpm run check:product-version
           pnpm run check:release-metadata
@@ -189,55 +213,27 @@ jobs:
           pnpm run clippy:desktop
 
       - name: Verify changed-path allowlist
-        shell: bash
         run: |
-          set -euo pipefail
-          allowed_paths=(
-            README.md
-            apps/desktop/src-tauri/Cargo.lock
-            apps/studio-host/src/core/upstream-boundary.test.ts
-            apps/studio-host/vendor/rhwp-core/LICENSE
-            apps/studio-host/vendor/rhwp-core/package.json
-            apps/studio-host/vendor/rhwp-core/rhwp.d.ts
-            apps/studio-host/vendor/rhwp-core/rhwp.js
-            apps/studio-host/vendor/rhwp-core/rhwp_bg.wasm
-            apps/studio-host/vendor/rhwp-core/rhwp_bg.wasm.d.ts
-            docs/DEVELOPMENT.md
-            docs/architecture/UPSTREAM.md
-            rhwp-core.lock
-            tests/rhwp-pin.test.mjs
-            third_party/rhwp
-          )
-          declare -A allowed=()
-          for path in "${allowed_paths[@]}"; do allowed["$path"]=1; done
-          while IFS= read -r record; do
-            [[ -z "$record" ]] && continue
-            path="${record:3}"
-            if [[ -z "${allowed[$path]+x}" ]]; then
-              echo "Changed path is not allowed: $path" >&2
-              exit 1
-            fi
-          done < <(git status --porcelain=v1 --untracked-files=all)
-          mapfile -t changed_paths < <({ git diff --name-only --; git ls-files --others --exclude-standard; } | LC_ALL=C sort -u)
-          if [[ "${#changed_paths[@]}" -eq 0 ]]; then
-            echo "Upstream sync produced no changes." >&2
-            exit 1
-          fi
-          printf '%s\n' "${changed_paths[@]}" | LC_ALL=C sort -u \
-            > "$RUNNER_TEMP/rhwp-sync-changed-paths.txt"
-          git diff --check
+          node scripts/verify-rhwp-sync-changes.mjs \
+            --output "$RUNNER_TEMP/rhwp-sync-changed-paths.txt"
 
       - name: Write draft PR body
         env:
+          CURRENT_TAG: ${{ needs.resolve.outputs.current_tag }}
+          CURRENT_COMMIT: ${{ needs.resolve.outputs.current_commit }}
+          TARGET_TAG: ${{ needs.resolve.outputs.target_tag }}
+          TARGET_COMMIT: ${{ needs.resolve.outputs.target_commit }}
           RELEASE_URL: ${{ needs.resolve.outputs.release_url }}
+          AUTOMATION_BRANCH: ${{ needs.resolve.outputs.branch }}
         run: |
           node scripts/write-rhwp-sync-pr-body.mjs \
-            --current-tag "${{ needs.resolve.outputs.current_tag }}" \
-            --current-commit "${{ needs.resolve.outputs.current_commit }}" \
-            --target-tag "${{ needs.resolve.outputs.target_tag }}" \
-            --target-commit "${{ needs.resolve.outputs.target_commit }}" \
+            --current-tag "$CURRENT_TAG" \
+            --current-commit "$CURRENT_COMMIT" \
+            --target-tag "$TARGET_TAG" \
+            --target-commit "$TARGET_COMMIT" \
             --release-url "$RELEASE_URL" \
-            --branch "${{ needs.resolve.outputs.branch }}" \
+            --base-branch "$BASE_BRANCH" \
+            --branch "$AUTOMATION_BRANCH" \
             --changed-paths-file "$RUNNER_TEMP/rhwp-sync-changed-paths.txt" \
             --output "$RUNNER_TEMP/rhwp-sync-pr-body.md"
 

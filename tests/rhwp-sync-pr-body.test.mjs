@@ -23,16 +23,17 @@ test('provenance, changed paths, 검증과 native handoff를 포함한다', () =
   assert.ok(body.includes(`| Resolved commit | \`${currentCommit}\` | \`${targetCommit}\` |`));
   assert.match(body, new RegExp(releaseUrl.replaceAll('.', '\\.')));
   assert.match(body, new RegExp(branch.replaceAll('.', '\\.')));
+  assert.match(body, /Base branch: `devel`/);
   assert.ok(body.indexOf('- `README.md`') < body.indexOf('- `rhwp-core.lock`'));
   assert.ok(body.indexOf('- `rhwp-core.lock`') < body.indexOf('- `third_party/rhwp`'));
-  assert.match(body, /scripts\/update-upstream\.sh --run-checks/);
+  assert.match(body, /scripts\/update-upstream\.sh` source·lock·WASM·provenance 갱신/);
   assert.match(body, /automation·upstream·Studio test/);
   assert.match(body, /Ubuntu desktop Rust test와 Clippy preflight/);
   assert.match(body, /release별 known issue 기록은 current pin 관리 참조가 아니므로 자동 갱신하지 않습니다/);
   assert.match(body, /Windows native build·설치·실행 검증/);
   assert.match(body, /Linux native Tauri build·설치·실행 검증/);
-  assert.match(body, /Issue #24/);
-  assert.doesNotMatch(body, /(?:close[sd]?|resolve[sd]?)\s+#24/i);
+  assert.match(body, /target release를 명시한 별도 GitHub Issue/);
+  assert.doesNotMatch(body, /Issue #24/);
   assert.doesNotMatch(body, /자동 merge 또는 제품 수용 완료를 뜻합니다/);
 });
 
@@ -92,6 +93,10 @@ test('잘못된 tag, commit, release URL과 branch 조합을 거부한다', () =
     () => buildRhwpSyncPrBody(options({ branch: 'automation/unrelated' })),
     /automation branch가 target tag와 다릅니다/,
   );
+  assert.throws(
+    () => buildRhwpSyncPrBody(options({ baseBranch: '../devel' })),
+    /base branch 형식이 올바르지 않습니다/,
+  );
 });
 
 test('writer는 changed paths와 output 경로를 모두 요구한다', async () => {
@@ -108,6 +113,7 @@ function options(overrides = {}) {
     targetTag,
     targetCommit,
     releaseUrl,
+    baseBranch: 'devel',
     branch,
     changedPaths: ['README.md'],
     ...overrides,

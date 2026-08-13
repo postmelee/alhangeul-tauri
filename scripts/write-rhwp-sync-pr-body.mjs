@@ -3,14 +3,19 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  assertBaseBranch,
+  assertReleaseUrl,
+  assertSha,
+  assertStableTag,
+  automationBranch,
+} from './rhwp-upstream-release-policy.mjs';
 
-const stableTagPattern = /^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/;
-const shaPattern = /^[0-9a-f]{40}$/;
 const safePathPattern = /^[A-Za-z0-9._/-]+$/;
 const usage = `Usage: node scripts/write-rhwp-sync-pr-body.mjs
   --current-tag <tag> --current-commit <sha>
   --target-tag <tag> --target-commit <sha>
-  --release-url <url> --branch <name>
+  --release-url <url> --base-branch <name> --branch <name>
   --changed-paths-file <path> --output <path>`;
 
 export async function writeRhwpSyncPrBody(options) {
@@ -52,7 +57,7 @@ export function buildRhwpSyncPrBody(options) {
 
 - Upstream release: ${values.releaseUrl}
 - Automation branch: \`${values.branch}\`
-- Base branch: \`devel\`
+- Base branch: \`${values.baseBranch}\`
 
 ### Changed paths
 
@@ -62,7 +67,7 @@ ${paths.map((path) => `- \`${path}\``).join('\n')}
 
 - [x] 공개 Stable release metadata와 dereferenced Git tag commit 검증
 - [x] 관리 참조 marker preflight와 exact allowlist 갱신
-- [x] \`scripts/update-upstream.sh --run-checks\`
+- [x] \`scripts/update-upstream.sh\` source·lock·WASM·provenance 갱신
 - [x] product boundary·version·release metadata·rhwp pin 검사
 - [x] automation·upstream·Studio test와 Studio production build
 - [x] Ubuntu desktop Rust test와 Clippy preflight
@@ -76,8 +81,8 @@ release별 known issue 기록은 current pin 관리 참조가 아니므로 자�
 - [ ] Linux native Tauri build·설치·실행 검증
 - [ ] source diff와 adapter 영향 검토
 
-후속 수용 작업은 [Issue #24](https://github.com/postmelee/alhangeul-tauri/issues/24)에서
-하이퍼-워터폴 절차로 진행합니다. 이 candidate는 Issue #24를 닫지 않으며 자동 release,
+후속 native 수용은 target release를 명시한 별도 GitHub Issue에서 하이퍼-워터폴
+절차로 진행합니다. 이 candidate는 수용 Issue를 자동으로 닫거나 release,
 tag 또는 package publish를 수행하지 않습니다.
 `;
 }
@@ -93,18 +98,16 @@ export function parseChangedPaths(source) {
 function validateOptions(options = {}) {
   const values = {};
   for (const key of ['currentTag', 'targetTag']) {
-    if (!stableTagPattern.test(options[key] ?? '')) {
-      throw new Error(`${key} Stable release tag 형식이 올바르지 않습니다: ${options[key]}`);
-    }
+    try { assertStableTag(options[key]); } catch { throw new Error(`${key} Stable release tag 형식이 올바르지 않습니다: ${options[key]}`); }
     values[key] = options[key];
   }
   for (const key of ['currentCommit', 'targetCommit']) {
-    if (!shaPattern.test(options[key] ?? '')) {
-      throw new Error(`${key} resolved commit 형식이 올바르지 않습니다: ${options[key]}`);
-    }
+    try { assertSha(options[key], `${key} resolved commit`); } catch { throw new Error(`${key} resolved commit 형식이 올바르지 않습니다: ${options[key]}`); }
     values[key] = options[key];
   }
-  const expectedBranch = `automation/rhwp-${values.targetTag}-full-sync`;
+  assertBaseBranch(options.baseBranch);
+  values.baseBranch = options.baseBranch;
+  const expectedBranch = automationBranch(values.targetTag);
   if (options.branch !== expectedBranch) {
     throw new Error(`automation branch가 target tag와 다릅니다: ${options.branch}`);
   }
@@ -120,21 +123,12 @@ function assertSafePath(path) {
   }
 }
 
-function assertReleaseUrl(value, tag) {
-  let url;
-  try { url = new URL(value); } catch { throw new Error(`release URL이 올바르지 않습니다: ${value}`); }
-  if (url.origin !== 'https://github.com' || url.username || url.password || url.search || url.hash
-    || url.pathname !== `/edwardkim/rhwp/releases/tag/${tag}`) {
-    throw new Error(`release URL이 올바르지 않습니다: ${value}`);
-  }
-}
-
 function parseArguments(args) {
   const options = {};
   if (args.length === 1 && args[0] === '--help') return { help: true };
   const allowed = new Set([
     '--current-tag', '--current-commit', '--target-tag', '--target-commit',
-    '--release-url', '--branch', '--changed-paths-file', '--output',
+    '--release-url', '--base-branch', '--branch', '--changed-paths-file', '--output',
   ]);
   for (let index = 0; index < args.length; index += 2) {
     const arg = args[index];

@@ -13,6 +13,7 @@ GitHub Issue: [#23](https://github.com/postmelee/alhangeul-tauri/issues/23)
 | 3 | 공식 문서와 중립 통합 검증 | UPSTREAM·DEVELOPMENT 운영 절 | 전체 중립 gate·read-only dry-run |
 | 4 | task PR과 post-merge handoff 확정 | activation checklist와 Stage 보고 | 최종 중립 gate·close 조건 검토 |
 | 4.1 | PR 리뷰 안전성 보정 | activation gate·입력/경로·Rust preflight·문서 보정 | 집중 contract test·전체 중립 gate |
+| 4.2 | PR 리뷰 운영 정책 보정 | Stable 선택·candidate lifecycle·단일 base·진단/성능 보정 | 정책 fixture·workflow inventory·전체 중립 gate |
 
 각 Stage 끝에는 `mydocs/working/task_m010_23_stage{N}.md`를 작성하고 소스와 함께
 단계 커밋한다. Stage 4 승인 뒤 `task-final-report`로 최종 보고서와 task PR을 게시한다.
@@ -38,7 +39,9 @@ Task #23은 task PR merge만으로 닫지 않고 post-merge live candidate gate�
   본문을 출력하지 않은 채 non-zero로 종료한다.
 - workflow는 orchestration만 소유한다. release 판정, exact 치환, PR Markdown escaping을
   긴 inline shell로 다시 구현하지 않는다.
-- `scripts/update-upstream.sh`와 `tests/actions-workflows.test.mjs`는 수정하지 않는다.
+- `scripts/update-upstream.sh`의 product 갱신 계약은 수정하지 않는다. Stage 4.2에서
+  실행 중복을 없애기 위해 workflow 호출 인자와 `tests/actions-workflows.test.mjs`의
+  workflow inventory 계약은 수정한다.
 - 신규 파일과 함수는 각각 300 LOC·50 LOC 권장 상한을 지킨다. test가 커지면 역할별
   fixture 모듈로 분리하며 기존 대형 test에 추가하지 않는다.
 
@@ -66,12 +69,14 @@ node scripts/check-rhwp-upstream-release.mjs \
   [--json-output <path>] [--github-output <path>]
 ```
 
-- target 미지정 시 GitHub latest release, 지정 시 release-by-tag를 조회한다.
+- target 미지정 시 GitHub 공개 Stable release 목록의 exact semver 최댓값, 지정 시
+  release-by-tag를 조회한다.
 - `draft=false`, `prerelease=false`, exact `vX.Y.Z`를 검사하고 `git ls-remote`의 tag와
   선택적 `^{}` ref로 annotated/lightweight tag의 40자리 resolved commit을 결정한다.
 - `rhwp-core.lock`, submodule gitlink, exact Studio entry의 current pin 정합성을 확인한다.
 - target branch `automation/rhwp-vX.Y.Z-full-sync`와 열린 PR 상태를 조회해
-  `current`, `dry_run`, `existing_pr`, `branch_blocker`, `create_candidate` 중 하나를 낸다.
+  `current`, `upstream_behind_current`, `dry_run`, `existing_pr`, `candidate_blocker`,
+  `branch_blocker`, `create_candidate` 중 하나를 낸다.
 - 출력에는 current/target tag·commit·release URL·branch·decision·기존 PR URL만 포함한다.
   helper 자체는 branch, commit, PR과 repository tracked file을 바꾸지 않는다.
 
@@ -135,15 +140,15 @@ Task #23 Stage 1: Stable release 판정과 관리 참조 계약 추가
   수동 input은 `target_tag`와 기본 `true`인 `dry_run`만 둔다. schedule은 실제 drift
   candidate 경로를 사용한다.
 - concurrency는 repository 단일 sync group, `cancel-in-progress: false`로 writer를 직렬화한다.
-- top-level permission은 read-only다. resolve job은 `ubuntu-24.04`, Node 24, `devel` checkout,
-  full history·recursive submodule에서 Stage 1 helper만 실행한다.
+- top-level permission은 read-only다. resolve job은 `ubuntu-24.04`, Node 24, 단일
+  `BASE_BRANCH` checkout, shallow history·recursive submodule에서 Stage 1 helper만 실행한다.
 - candidate job은 `decision == create_candidate`일 때만 실행한다. GitHub App 설정 이름을
   값 노출 없이 preflight하고 `actions/create-github-app-token`으로 contents·pull-requests
   write installation token을 발급한다. App token은 push와 `gh pr create`에만 전달한다.
 - Rust, pnpm과 exact `wasm-pack 0.15.0`을 준비하고 다음을 순서대로 수행한다.
   1. Stage 1 관리 참조 helper의 전체 marker preflight와 local checkout 참조 갱신
-  2. `scripts/update-upstream.sh --tag ... --commit ... --run-checks`
-  3. 관리 참조 갱신 뒤 전체 플랫폼 중립 gate 재실행
+  2. `scripts/update-upstream.sh --tag ... --commit ...`
+  3. frozen pnpm 의존성 준비 뒤 전체 플랫폼 중립 gate 단일 실행
   4. changed-path allowlist 검증과 PR body 생성
   5. explicit allowlist stage·commit·non-force push
   6. `devel` 대상 draft PR 생성
@@ -153,16 +158,18 @@ Task #23 Stage 1: Stable release 판정과 관리 참조 계약 추가
   이후 update script 또는 gate가 실패하면 App token 발급·commit·push·PR 생성에 도달하지 않는다.
 - changed-path allowlist는 update script 산출물과 Stage 1 관리 참조 파일만 허용한다.
   `.github/workflows`, task 문서, known issue 기록은 candidate가 수정할 수 없다.
-- existing PR·current·dry-run은 write job을 건너뛰고 summary만 남긴다. branch-only 또는
-  사람이 수정한 branch는 자동 삭제·reset·force push 없이 blocker로 실패한다.
+- existing PR·candidate blocker·current·upstream-behind·dry-run은 write job을 건너뛰고
+  summary만 남긴다. branch-only 또는 사람이 수정한 branch는 자동
+  삭제·reset·force push하지 않고 writer 활성 시에만 blocker로 실패한다.
 - auto merge/approval, release/tag, issue close, package publish와 Pages deploy 명령을 두지 않는다.
 
 ### PR body 계약
 
 - old/new tag·commit, Stable release URL, target branch, repository changed paths,
   실행한 자동 검증과 결과를 Markdown escaping해 기록한다.
-- Windows/Linux native 수용은 미실행임을 명시하고 Issue #24를 후속 검토 task로 연결하되
-  `Closes #24` 또는 자동 merge 가능 표현을 쓰지 않는다.
+- Windows/Linux native 수용은 미실행임을 명시하고 target release를 명시한 별도
+  Hyper-Waterfall Issue로 연결하되 특정 Issue를 영구 하드코딩하거나 자동 close·merge
+  가능 표현을 쓰지 않는다.
 
 ### 검증
 
@@ -314,10 +321,74 @@ git diff --check
 Task #23 [Stage 4.1]: PR 리뷰 안전성 보정
 ```
 
+## Stage 4.2 — PR 리뷰 운영 정책 보정
+
+PR #25의 추가 maintainer 리뷰와 Issue #26에서 확인한 장기 운영 공백을
+자동화 최초 도입 task에 흡수한다. 작업지시자가 2026-08-13 같은 스레드에서
+후속 Issue를 최소화하고 이 범위를 PR #25에 포함하는 방안을 승인했다.
+
+### 변경 내용
+
+- target 미지정 시 GitHub `releases/latest`가 아니라 공개 non-draft·non-prerelease
+  exact semver release 목록의 최댓값을 선택한다. 목록의 최댓값이 current pin보다
+  낮으면 자동 판정은 정상 no-op으로 기록하고, 사람이 명시한 낮은 target은 계속 거부한다.
+- 동일 tag의 열린 candidate는 `existing_pr`, 다른 tag의 열린 candidate는
+  `candidate_blocker`, PR 없는 target branch는 `branch_blocker`로 분류해 한 번에
+  열린 자동 candidate를 하나로 제한한다.
+- writer가 비활성이면 `branch_blocker`를 summary 경고로 남기고 read-only schedule을
+  성공 종료한다. writer가 명시적으로 활성인 경우에만 fail-closed로 멈춘다.
+- base branch는 workflow top-level `BASE_BRANCH`를 단일 원천으로 삼고 release helper,
+  candidate 조회, checkout, PR 본문과 `gh pr create`에 검증된 값을 전달한다.
+- release helper 출력을 shell `run` 본문에 GitHub expression으로 직접 보간하지
+  않고 step/job environment를 통해 전달한다.
+- `WASM_PACK_VERSION`, `scripts/update-upstream.sh`, `rhwp-core.lock`의 wasm-pack 버전을
+  workflow contract test에서 즉시 대조한다.
+- 미초기화 submodule이 superproject HEAD를 잘못 보고하지 않도록 worktree root를
+  먼저 확인하고 정확한 복구 진단을 낸다.
+- read-only resolve checkout은 current commit과 recursive submodule에 필요한 최소 history만
+  받고, candidate에서 `update-upstream.sh --run-checks`와 명시 gate를 중복 실행하지
+  않는다. 대신 fresh checkout의 `pnpm install --frozen-lockfile`을 명시 gate 앞에 둔다.
+- 저장소의 모든 workflow 파일이 전용 또는 공통 contract test inventory에 있는지
+  검사하고, release orchestration·service·policy를 분리해 각 파일 300 LOC 권장
+  상한과 크기 guard를 유지한다.
+- candidate PR 본문은 특정 Issue #24를 영구적 수용처로 하드코딩하지 않고,
+  target release를 명시한 별도 Hyper-Waterfall Issue에서 native 수용을 진행하도록 안내한다.
+
+### 범위 제외
+
+- 저장소 전체 외부 Action의 immutable SHA 고정과 갱신 정책은 Issue #27에 남긴다.
+- `devel` branch protection/ruleset과 필수 check 외부 설정은 Issue #28에 남긴다.
+- GitHub App credential, activation variable, live dispatch와 candidate PR 생성은 실행하지 않는다.
+
+### 검증
+
+```bash
+node --test \
+  tests/rhwp-upstream-release.test.mjs \
+  tests/rhwp-sync-pr-body.test.mjs \
+  tests/rhwp-upstream-sync-workflow.test.mjs \
+  tests/actions-workflows.test.mjs
+pnpm run check:product-boundary
+pnpm run check:product-version
+pnpm run check:release-metadata
+pnpm run check:rhwp-pin
+pnpm run test:automation
+pnpm run test:upstream
+pnpm run test:studio
+pnpm run build:studio
+git diff --check
+```
+
+### 커밋
+
+```text
+Task #23 [Stage 4.2]: upstream sync 운영 정책 보정
+```
+
 ## 단계 의존성과 변경 통제
 
 - Stage 2는 Stage 1 보고서 승인 뒤, Stage 3은 Stage 2 승인 뒤, Stage 4는 Stage 3 승인 뒤 진행한다.
-  Stage 4.1은 PR #25 리뷰 범위에 대한 작업지시자 승인 뒤 진행한다.
+  Stage 4.1과 Stage 4.2는 각 PR #25 리뷰 범위에 대한 작업지시자 승인 뒤 진행한다.
 - 각 Stage 검증과 보고서 커밋 뒤 작업지시자 승인을 받기 전 다음 Stage 소스를 수정하지 않는다.
 - action 설치 방식, credential 체계, allowlist 또는 공식 문서 위치가 바뀌면 먼저 이 구현계획서를
   보정하고 승인을 받는다.

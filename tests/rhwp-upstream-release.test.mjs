@@ -16,7 +16,6 @@ const currentTag = 'v0.8.2';
 const targetTag = 'v0.8.4';
 const currentCommit = 'a'.repeat(40);
 const targetCommit = 'b'.repeat(40);
-
 test('latest 공개 Stable release를 resolved commit과 함께 판정한다', async () => {
   let requestedTag = 'not-called';
   const result = await checkRhwpUpstreamRelease({
@@ -36,12 +35,13 @@ test('latest 공개 Stable release를 resolved commit과 함께 판정한다', a
     targetTag,
     targetCommit,
     releaseUrl: releaseUrl(targetTag),
+    baseBranch: 'devel',
     branch: `automation/rhwp-${targetTag}-full-sync`,
     decision: 'create_candidate',
     existingPrUrl: '',
+    candidateCount: 0,
   });
 });
-
 test('명시한 Stable release tag를 release-by-tag 입력으로 전달한다', async () => {
   let requestedTag;
   const result = await checkRhwpUpstreamRelease({
@@ -59,7 +59,6 @@ test('명시한 Stable release tag를 release-by-tag 입력으로 전달한다',
   assert.equal(requestedTag, targetTag);
   assert.equal(result.decision, 'dry_run');
 });
-
 test('현재 tag와 commit이 같으면 candidate 상태를 조회하지 않는다', async () => {
   const result = await checkRhwpUpstreamRelease({
     services: services({
@@ -69,8 +68,7 @@ test('현재 tag와 commit이 같으면 candidate 상태를 조회하지 않는�
   });
   assert.equal(result.decision, 'current');
 });
-
-test('고정 Stable tag 이동과 현재 pin보다 낮은 target을 거부한다', async () => {
+test('고정 Stable tag 이동과 명시적 downgrade를 거부한다', async () => {
   await assert.rejects(
     checkRhwpUpstreamRelease({
       services: services({ current: { tag: targetTag, commit: currentCommit } }),
@@ -79,10 +77,20 @@ test('고정 Stable tag 이동과 현재 pin보다 낮은 target을 거부한다
   );
   await assert.rejects(
     checkRhwpUpstreamRelease({
+      targetTag,
       services: services({ current: { tag: 'v0.9.0', commit: currentCommit } }),
     }),
     /현재 pin보다 낮은 release로 자동 동기화할 수 없습니다/,
   );
+});
+test('자동 선택한 최대 Stable이 current보다 낮으면 정상 no-op으로 분류한다', async () => {
+  const result = await checkRhwpUpstreamRelease({
+    services: services({
+      current: { tag: 'v0.9.0', commit: currentCommit },
+      readCandidate: async () => assert.fail('upstream behind는 candidate를 조회하지 않아야 한다'),
+    }),
+  });
+  assert.equal(result.decision, 'upstream_behind_current');
 });
 
 for (const [name, candidate, expectedDecision] of [
@@ -96,13 +104,23 @@ for (const [name, candidate, expectedDecision] of [
     { branchExists: true, prUrl: '' },
     'branch_blocker',
   ],
+  [
+    '다른 tag의 열린 candidate를 blocker로 분류한다',
+    {
+      branchExists: true,
+      prUrl: '',
+      otherPrUrl: 'https://github.com/postmelee/alhangeul-tauri/pull/98',
+      candidateCount: 1,
+    },
+    'candidate_blocker',
+  ],
 ]) {
   test(name, async () => {
     const result = await checkRhwpUpstreamRelease({
       services: services({ candidate }),
     });
     assert.equal(result.decision, expectedDecision);
-    assert.equal(result.existingPrUrl, candidate.prUrl);
+    assert.equal(result.existingPrUrl, candidate.prUrl || candidate.otherPrUrl || '');
   });
 }
 
@@ -219,7 +237,39 @@ test('JSON과 GitHub output은 구조화된 단일행 값만 기록한다', asyn
   assert.equal(JSON.parse(writes[0][1]).decision, 'dry_run');
   assert.match(appends[0][1], /^current_tag=v0\.8\.2$/m);
   assert.match(appends[0][1], /^target_commit=b{40}$/m);
+  assert.match(appends[0][1], /^base_branch=devel$/m);
   assert.match(appends[0][1], /^existing_pr_url=$/m);
+  assert.match(appends[0][1], /^candidate_count=0$/m);
+});
+
+test('base branch를 candidate 조회와 구조화 출력에 동일하게 전달한다', async () => {
+  let request;
+  const result = await checkRhwpUpstreamRelease({
+    baseBranch: 'integration/rhwp',
+    services: services({
+      readCandidate: async (value) => {
+        request = value;
+        return { branchExists: false, prUrl: '', candidateCount: 0 };
+      },
+    }),
+  });
+  assert.equal(request.baseBranch, 'integration/rhwp');
+  assert.equal(result.baseBranch, 'integration/rhwp');
+});
+
+test('동일 tag PR을 포함해 candidate가 둘 이상이면 운영 blocker로 분류한다', async () => {
+  const result = await checkRhwpUpstreamRelease({
+    services: services({
+      candidate: {
+        branchExists: true,
+        prUrl: 'https://github.com/postmelee/alhangeul-tauri/pull/99',
+        otherPrUrl: 'https://github.com/postmelee/alhangeul-tauri/pull/98',
+        candidateCount: 2,
+      },
+    }),
+  });
+  assert.equal(result.decision, 'candidate_blocker');
+  assert.equal(result.existingPrUrl, 'https://github.com/postmelee/alhangeul-tauri/pull/98');
 });
 
 function services(overrides = {}) {

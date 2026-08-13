@@ -66,21 +66,23 @@ script는 dirty upstream source와 origin 불일치를 먼저 거부하고, sour
 
 ### Stable 감시와 candidate PR 경계
 
-`.github/workflows/rhwp-upstream-sync.yml`은 공개 GitHub Release metadata와 Git tag를 함께 확인한다. release가 exact `vX.Y.Z` 형식이고 `draft=false`, `prerelease=false`인 경우에만 Stable 후보로 인정하며, annotated tag는 peeled commit을, lightweight tag는 tag commit을 resolved commit으로 사용한다. 현재 `rhwp-core.lock`, gitlink, submodule HEAD와 exact Studio entry가 서로 다르거나 이미 고정한 tag가 다른 commit을 가리키면 후보를 만들지 않는다.
+`.github/workflows/rhwp-upstream-sync.yml`은 공개 GitHub Release metadata와 Git tag를 함께 확인한다. target을 명시하지 않으면 release 목록 순서가 아니라 exact `vX.Y.Z` 형식이고 `draft=false`, `prerelease=false`인 공개 release의 semver 최댓값을 Stable 후보로 선택한다. annotated tag는 peeled commit을, lightweight tag는 tag commit을 resolved commit으로 사용한다. 현재 `rhwp-core.lock`, gitlink, submodule HEAD와 exact Studio entry가 서로 다르거나 이미 고정한 tag가 다른 commit을 가리키면 후보를 만들지 않는다. 자동 선택한 최대 Stable이 current pin보다 낮으면 `upstream_behind_current` 정상 no-op으로 기록하지만, 사람이 명시한 낮은 target은 거부한다.
 
-판정 job은 read-only token으로 `current`, `dry_run`, `existing_pr`, `branch_blocker`, `create_candidate`를 구분한다. `current`, `dry_run`, 기존 PR은 repository를 쓰지 않고 끝난다. PR 없는 automation branch는 사람이 만든 상태일 수 있으므로 삭제·reset·force push하지 않고 blocker로 실패한다.
+판정 job은 read-only token으로 `current`, `upstream_behind_current`, `dry_run`, `existing_pr`, `candidate_blocker`, `branch_blocker`, `create_candidate`를 구분한다. `current`, `upstream_behind_current`, `dry_run`, 동일 tag의 기존 PR과 다른 tag의 candidate blocker는 repository를 쓰지 않고 끝난다. 열린 자동 candidate는 base branch별로 하나만 유지하며 다른 tag candidate가 있으면 먼저 수용·종료한 뒤 새 후보를 만든다. PR 없는 automation branch는 사람이 만든 상태일 수 있으므로 삭제·reset·force push하지 않는다. writer 비활성 중에는 summary 경고로 남기고, writer 활성 중에만 blocker로 실패한다.
+
+base branch는 workflow top-level `BASE_BRANCH`가 단일 진실 원천이다. 검증된 값을 release helper의 candidate 조회·구조화 출력, checkout, candidate 본문과 `gh pr create` 모두에 전달한다.
 
 candidate는 clean `devel` checkout에서 다음 순서를 지킨다.
 
 1. 허용된 current-pin 관리 참조를 ephemeral checkout 안에서 새 pin으로 맞춘다.
-2. `scripts/update-upstream.sh --run-checks`로 source, Cargo lock, WASM과 provenance를 갱신한다.
-3. 플랫폼 중립 gate 전체, Ubuntu desktop Rust test·Clippy preflight와 changed-path allowlist를 다시 검증한다.
+2. `scripts/update-upstream.sh`로 source, Cargo lock, WASM과 provenance를 갱신한다.
+3. frozen pnpm 의존성을 준비한 뒤 플랫폼 중립 gate 전체, Ubuntu desktop Rust test·Clippy preflight와 changed-path allowlist를 한 번씩 검증한다.
 4. 검증이 모두 끝난 뒤 현재 repository에 한정된 GitHub App token을 발급한다.
 5. explicit allowlist만 stage해 새 branch에 non-force push하고 `devel` 대상 draft PR을 만든다.
 
 token은 `contents: write`와 `pull-requests: write`만 요청하며 auto approval·merge, release/tag, issue close, package publish와 Pages deploy에는 사용하지 않는다. 후보 본문은 old/new tag·commit, Stable release URL, 변경 경로와 자동 검증을 기록한다.
 
-자동 candidate는 Ubuntu에서 새 pin의 desktop Rust test와 Clippy를 통과한 갱신 제안일 뿐 native 수용 결과가 아니다. Windows native와 Linux Tauri build, GUI와 packaging은 [Issue #24](https://github.com/postmelee/alhangeul-tauri/issues/24)에서 검토하고 candidate 본문은 이 검증이 미실행임을 유지한다. Issue #24를 자동 종료하거나 candidate를 자동 merge하지 않는다.
+자동 candidate는 Ubuntu에서 새 pin의 desktop Rust test와 Clippy를 통과한 갱신 제안일 뿐 native 수용 결과가 아니다. Windows native와 Linux Tauri build, GUI와 packaging은 target release를 명시한 별도 Hyper-Waterfall Issue에서 검토하고 candidate 본문은 이 검증이 미실행임을 유지한다. 최초 `v0.8.4` candidate의 현재 수용 작업은 [Issue #24](https://github.com/postmelee/alhangeul-tauri/issues/24)이며, 자동화는 특정 수용 Issue를 PR 본문에 하드코딩하거나 자동 종료·merge하지 않는다.
 
 known issue 기록은 current pin 참조가 아니다. 자동 관리 참조 갱신은 승인된 marker와 경로만 바꾸고, 특정 release의 known issue 이름·원인·추적 링크를 새 release 정보로 치환하지 않는다. 새 release에서 같은 실패가 보여도 아래 분류 기준에 따라 재현 조건과 실패 지점을 다시 확인한다.
 
