@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { resolve } from 'node:path';
 import test from 'node:test';
 import {
   buildRhwpSyncPrBody,
@@ -39,16 +40,17 @@ test('provenance, changed paths, 검증과 native handoff를 포함한다', () =
 
 test('changed paths 파일을 읽어 output에 deterministic 본문을 쓴다', async () => {
   const writes = [];
+  const output = resolve('/tmp/pr-body.md');
   const body = await writeRhwpSyncPrBody({
     ...options(),
-    changedPathsFile: '/tmp/changed-paths.txt',
-    output: '/tmp/pr-body.md',
+    changedPathsFile: resolve('/tmp/changed-paths.txt'),
+    output,
     readFile: async () => 'third_party/rhwp\nREADME.md\n',
     writeFile: async (path, source) => writes.push([path, source]),
   });
 
   assert.equal(writes.length, 1);
-  assert.equal(writes[0][0], '/tmp/pr-body.md');
+  assert.equal(writes[0][0], output);
   assert.equal(writes[0][1], body);
   assert.ok(body.indexOf('- `README.md`') < body.indexOf('- `third_party/rhwp`'));
 });
