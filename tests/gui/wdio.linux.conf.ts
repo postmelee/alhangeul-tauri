@@ -10,6 +10,7 @@ export function createLinuxWdioConfig(
 ): WebdriverIO.Config {
   const inputs = readGuiHarnessInputs(env);
   const display = optionalDisplay(env.DISPLAY);
+  const shared = createSharedWdioConfig(inputs);
 
   const serviceOptions: TauriServiceOptions = {
     appBinaryPath: inputs.appPath,
@@ -27,7 +28,11 @@ export function createLinuxWdioConfig(
   }];
 
   return {
-    ...createSharedWdioConfig(inputs),
+    ...shared,
+    specs: [
+      ...(shared.specs ?? []),
+      join(import.meta.dirname, 'specs', 'linux-native.e2e.ts'),
+    ],
     autoXvfb: true,
     xvfbAutoInstall: false,
     xvfbMaxRetries: 1,
