@@ -11,9 +11,11 @@ const desktopPath = join(
   workflowRoot,
   'alhangeul-desktop.yml',
 );
-const [ciWorkflow, desktopWorkflow] = await Promise.all([
+const linuxGuiPath = join(workflowRoot, 'alhangeul-linux-gui.yml');
+const [ciWorkflow, desktopWorkflow, linuxGuiWorkflow] = await Promise.all([
   readFile(ciPath, 'utf8'),
   readFile(desktopPath, 'utf8'),
+  readFile(linuxGuiPath, 'utf8'),
 ]);
 
 test('모든 workflow가 공통 또는 전용 contract test inventory에 등록된다', async () => {
@@ -22,6 +24,7 @@ test('모든 workflow가 공통 또는 전용 contract test inventory에 등록�
     .sort();
   assert.deepEqual(actual, [
     'alhangeul-desktop.yml',
+    'alhangeul-linux-gui.yml',
     'ci.yml',
     'pages.yml',
     'rhwp-upstream-sync.yml',
@@ -48,6 +51,16 @@ test('대상 workflow는 수동 trigger와 최소 권한만 사용한다', () =>
     );
     assert.doesNotMatch(source, /secrets\./i, `${name}은 secret을 참조하지 않는다`);
   }
+
+  assert.deepEqual(
+    getSectionChildKeys(linuxGuiWorkflow, 'on'),
+    ['workflow_dispatch'],
+  );
+  assert.deepEqual(
+    getSectionAssignments(linuxGuiWorkflow, 'permissions'),
+    new Map([['actions', 'read'], ['contents', 'read']]),
+  );
+  assert.doesNotMatch(linuxGuiWorkflow, /secrets\./i);
 });
 
 test('CI workflow는 제품 version·pin과 automation 계약을 native 검사 전에 실행한다', () => {
@@ -309,6 +322,7 @@ test('대상 workflow에는 release, Pages, deploy action이 없다', () => {
   for (const [name, source] of [
     ['ci.yml', ciWorkflow],
     ['alhangeul-desktop.yml', desktopWorkflow],
+    ['alhangeul-linux-gui.yml', linuxGuiWorkflow],
   ]) {
     for (const pattern of forbiddenPatterns) {
       assert.doesNotMatch(source, pattern, `${name}에 배포 action을 허용하지 않는다`);

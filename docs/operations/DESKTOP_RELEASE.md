@@ -31,6 +31,32 @@ workflow는 다음 작업만 수행한다.
 
 repository-level Actions는 활성 상태지만 대상 CI와 native workflow는 자동 trigger 없이 수동 `workflow_dispatch`로만 실행한다. Actions 활성 상태는 workflow 성공이나 artifact 가용성을 보장하지 않으므로 run의 exact commit과 job 결과를 함께 확인해야 한다.
 
+## Linux x64 exact-SHA GUI acceptance
+
+`.github/workflows/alhangeul-linux-gui.yml`은 성공한 native build의 Linux x64 DEB를 별도 `ubuntu-22.04` standard runner에서 설치하고 실제 Tauri WebView·GTK dialog를 검사하는 수동 gate다. 이 workflow도 GitHub Release나 배포물을 만들지 않는다.
+
+실행 순서는 다음과 같다.
+
+1. `Alhangeul Desktop Artifact Build`를 수동 실행하고 대상 candidate의 정확한 40자리 commit SHA와 성공한 native run ID를 기록한다.
+2. `Alhangeul Linux GUI Acceptance`를 열어 같은 SHA를 `build_ref`, 같은 run ID를 `native_run_id`로 입력한다. branch, tag, latest run이나 artifact 이름만으로 대체하지 않는다.
+3. workflow가 checkout SHA, native run의 repository·workflow·event·conclusion, Linux x64 artifact ID·digest와 동봉 inventory를 검증한 뒤 단일 DEB만 설치하는지 확인한다.
+4. GUI job이 HWP/HWPX 열기·저장·재열기, drag-in, 직접 PDF, GTK Print to File와 CUPS-PDF 반복 인쇄를 통과하는지 확인한다.
+5. acceptance run의 `alhangeul-linux-gui-<run-id>` evidence artifact를 내려받아 아래 read-back 항목을 확인한다. 보존 기간은 7일이다.
+
+| Evidence | 확인 항목 |
+|---|---|
+| `workflow-context.json`, `checked-out-sha.txt` | 요청 SHA·native run ID와 checkout SHA가 candidate 기록과 같은가 |
+| `artifact-handoff.json`, inventory, `installed-deb.sha256` | 원본 native run·artifact ID·archive digest와 설치 DEB hash가 한 chain으로 결속되는가 |
+| `native-environment.txt`, `step-outcomes.json` | Node/pnpm/Rust/driver/WebKitGTK/GTK/CUPS/Poppler version과 GUI 실행 전 주요 step outcome이 기록됐는가 |
+| scenario manifest·screenshot·native UI tree | toolbar 초기 숨김, 문서 중앙 정렬, 한글 glyph, dialog 상태와 실패 지점이 summary와 일치하는가 |
+| 직접/GTK/CUPS PDF와 render PNG | 6쪽 A4, 한글 text, 빈 쪽·crop·tofu 이상이 없는가 |
+
+GUI 실패는 evidence 업로드를 위해 일시적으로 다음 step에 전달되지만 마지막 gate가 원래 실패를 다시 실패로 판정한다. 반대로 GUI가 성공해도 evidence 업로드가 실패하거나 파일이 없으면 run은 실패한다. 자동 재시도는 없으며 실패 원인을 확인한 뒤 새 run으로 다시 검증한다.
+
+이 gate가 자동화하는 범위는 hosted Linux x64의 production DEB와 가상 display·가상 PDF printer다. Linux arm64, RPM/AppImage 설치·desktop integration, GNOME/Nautilus와 Xfce/Thunar의 실제 사용자 세션, physical printer, Windows GUI는 여전히 별도 native 수용 대상이다. screenshot과 PDF render의 한글 glyph·배치 read-back도 prerelease 후보 확정 때 사람이 확인한다. GitHub Codespaces는 이 workflow의 실행 환경이 아니며, 무료 allowance와 spending limit을 먼저 확인한 경우의 선택적 troubleshooting에만 사용한다.
+
+Task #34 PR merge 전에는 workflow가 default branch에 없으므로 실제 dispatch 성공을 주장하지 않는다. merge 뒤 같은 exact SHA의 native build와 위 GUI run·evidence read-back이 성공해야 Issue #34의 live close gate가 완료된다.
+
 ## 검증된 `0.1.0` 기준선
 
 2026-07-29에 다음 exact commit을 `publish/task7`에서 검증했다.
