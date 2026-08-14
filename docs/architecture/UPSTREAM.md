@@ -82,7 +82,7 @@ candidate는 clean `devel` checkout에서 다음 순서를 지킨다.
 
 token은 `contents: write`와 `pull-requests: write`만 요청하며 auto approval·merge, release/tag, issue close, package publish와 Pages deploy에는 사용하지 않는다. 후보 본문은 old/new tag·commit, Stable release URL, 변경 경로와 자동 검증을 기록한다.
 
-자동 candidate는 Ubuntu에서 새 pin의 desktop Rust test와 Clippy를 통과한 갱신 제안일 뿐 native 수용 결과가 아니다. Windows native와 Linux Tauri build, GUI와 packaging은 target release를 명시한 별도 Hyper-Waterfall Issue에서 검토하고 candidate 본문은 이 검증이 미실행임을 유지한다. 최초 `v0.8.4` candidate의 현재 수용 작업은 [Issue #24](https://github.com/postmelee/alhangeul-tauri/issues/24)이며, 자동화는 특정 수용 Issue를 PR 본문에 하드코딩하거나 자동 종료·merge하지 않는다.
+자동 candidate는 Ubuntu에서 새 pin의 desktop Rust test와 Clippy를 통과한 갱신 제안일 뿐 native 수용 결과가 아니다. Windows native와 Linux Tauri build, GUI와 packaging은 target release를 명시한 별도 Hyper-Waterfall Issue에서 검토하고 candidate 본문은 이 검증이 미실행임을 유지한다. 최초 `v0.8.4` candidate의 수용은 [Issue #24](https://github.com/postmelee/alhangeul-tauri/issues/24)에서 수행하며, 자동화는 특정 수용 Issue를 PR 본문에 하드코딩하거나 자동 종료·merge하지 않는다.
 
 known issue 기록은 current pin 참조가 아니다. 자동 관리 참조 갱신은 승인된 marker와 경로만 바꾸고, 특정 release의 known issue 이름·원인·추적 링크를 새 release 정보로 치환하지 않는다. 새 release에서 같은 실패가 보여도 아래 분류 기준에 따라 재현 조건과 실패 지점을 다시 확인한다.
 
@@ -99,6 +99,21 @@ workflow를 default branch에 merge하면 read-only daily 판정은 시작되지
 - candidate Ubuntu runner에서 `pnpm run test:desktop`, `pnpm run clippy:desktop`이 통과한다.
 
 Windows native와 Linux Tauri build·GUI·packaging은 승인된 후속 플랫폼 작업에서 검증한다. Ubuntu Rust preflight와 플랫폼 중립 수용 결과만으로 native 배포 준비가 완료되었다고 판단하지 않는다.
+
+## `v0.8.4` native 수용 기준선
+
+Task #24는 `v0.8.4` / `496333b27d21ddb9114ba9ae340bcb895870c9a7`의 source,
+native Cargo lock, bundled WASM과 전체 Studio bundle을 exact Alhangeul commit
+`88baa5666ec55bf043844bae01ec4d422278851c`에서 함께 검증했다. 플랫폼 중립 CI와
+Windows x64·Linux x64·Linux arm64 native build, inventory, Windows installer smoke는
+같은 SHA에서 성공했다. Windows x64와 Linux x64에서는 대표 HWP/HWPX의 열기·저장·재열기,
+searchable PDF 직접 저장, system print dialog와 전체 페이지 출력까지 수동 수용했다.
+
+이 결과는 Alhangeul에서 현재 고정한 upstream release와 leaf adapter 경계의 native 수용
+기준선이다. Linux arm64는 hosted runner의 DEB build·inventory까지만 확인했고 실제 arm64
+GUI를 실행하지 않았다. GitHub Release, tag, 서명, package 게시, 고정 다운로드 URL과
+updater는 이 기준선에 포함되지 않는다. 상세 run, artifact와 플랫폼별 제한은
+[DESKTOP_RELEASE.md](../operations/DESKTOP_RELEASE.md)의 Task #24 절을 따른다.
 
 ## `v0.8.2` known issue 분류
 

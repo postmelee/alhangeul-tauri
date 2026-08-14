@@ -36,6 +36,8 @@ GitHub Issue: [#24](https://github.com/postmelee/alhangeul-tauri/issues/24)
 - PR #32 branch를 checkout해 수정하거나 push하지 않는다. candidate commit은 `local/task24`의 merge parent로 한 번만 연결하고 원본 bot author·SHA를 보존한다.
 - `third_party/rhwp`는 읽기 전용이며 source를 직접 수정하지 않는다. 필요 보정은 Alhangeul의 기존 Tauri leaf adapter와 그 test에만 둔다.
 - 현재 macOS host에서는 platform-neutral 분석·test/build만 수행한다. desktop Rust·Tauri bundle·GUI 성공은 Windows/Linux 또는 지정된 Ubuntu Actions에서만 판정한다.
+- 2026-08-14 작업지시자 승인에 따라 Stage 5 Linux x64 GUI는 별도 `local/task24` worktree와 GitHub Codespaces의 native `x86_64` Ubuntu 환경에서 수행한다. Stage 3 exact SHA `88baa5666ec55bf043844bae01ec4d422278851c`의 Linux x64 artifact를 그대로 설치하며 QEMU·Colima emulation 결과를 수용 근거로 사용하지 않는다.
+- Codespaces는 Task #24의 일회성 수동 native 수용 환경일 뿐 Task #34·#35의 GUI acceptance 자동화나 공식 workflow gate를 대신하지 않는다. Task #24에는 Codespaces 설정·harness·workflow를 제품 소스로 추가하지 않고, 환경 또는 GTK·CUPS native dialog 제약으로 필수 시나리오를 관찰할 수 없으면 성공으로 완화하지 않는다.
 - 원격 workflow는 Stage 3 승인을 받은 뒤 `publish/task24` canary ref에서만 실행한다. release/tag, GitHub Release, 서명, package 게시와 updater는 실행하지 않는다.
 - Stage 3 native SHA 뒤 실행 코드·workflow·generated artifact가 바뀌면 CI와 native matrix를 새 exact SHA에서 다시 실행한다. Stage 보고·공식 증적 문서만 바뀌면 path audit으로 실행 가능 SHA 계승을 입증한다.
 - 임시 artifact는 `mktemp -d`의 명시 경로에만 내려받고 inventory 재검증 뒤 그 임시 경로만 정리한다. artifact를 release asset이나 영구 다운로드 경로로 옮기지 않는다.
@@ -240,7 +242,7 @@ Task #24 Stage 4: Windows x64 v0.8.4 GUI 수용 확정
 
 ### Linux 수용
 
-- Linux x64 검증 환경·WebKitGTK·GTK·배포판 version을 기록하고 Stage 3 DEB/RPM/AppImage 중 실제 사용 bundle과 SHA-256을 명시한다.
+- GitHub Codespaces native `x86_64` 여부와 검증 환경·WebKitGTK·GTK·배포판 version을 기록하고 Stage 3 DEB/RPM/AppImage 중 실제 사용 bundle과 SHA-256을 명시한다. Codespace는 최소 사양·짧은 idle timeout으로 만들고 수용 종료 뒤 삭제한다.
 - 앱 실행, 파일 선택·drag-in, HWP/HWPX 저장·재열기, searchable PDF와 toolbar/dialog 한글 표시를 Windows와 같은 대표 문서로 확인한다.
 - system print dialog 직접 진입, 전체 페이지·방향·한글, 저장·취소 뒤 재인쇄를 확인한다. Task #15의 동일 크기 page context 보정이 v0.8.4 전체 Studio에서도 유지되는지 집중 검증한다.
 - Linux arm64는 hosted runner bundle, inventory와 checksum만 수용한다. 실제 arm64 GUI를 실행하지 않았다면 명시적 한계로 남긴다.
