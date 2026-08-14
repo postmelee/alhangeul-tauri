@@ -71,6 +71,16 @@ test('driver log는 크기를 제한하고 truncation을 명시한다', () => {
   assert.equal(collector.value(), 'abcd\n[log truncated]\n');
 });
 
+test('driver log는 chunk와 byte limit에서 UTF-8 문자를 쪼개지 않는다', () => {
+  const bytes = Buffer.from('한글');
+  const collector = createBoundedCollector(5);
+  collector.append(bytes.subarray(0, 2));
+  assert.equal(collector.value(), '');
+  collector.append(bytes.subarray(2));
+  assert.equal(collector.value(), '한\n[log truncated]\n');
+  assert.doesNotMatch(collector.value(), /�/);
+});
+
 test('external tauri-driver가 title과 root DOM을 읽고 evidence를 남긴다', async () => {
   const writes = new Map();
   const requests = [];
@@ -100,7 +110,7 @@ test('external tauri-driver가 title과 root DOM을 읽고 evidence를 남긴다
   assert.deepEqual(requests[1][2], {
     capabilities: {
       alwaysMatch: {
-        browserName: 'wry',
+        browserName: 'tauri',
         'tauri:options': { application: '/usr/bin/Alhangeul' },
       },
     },

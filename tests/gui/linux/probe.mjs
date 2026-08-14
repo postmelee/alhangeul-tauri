@@ -34,7 +34,7 @@ export async function runLinuxGuiProbe(options, services = {}) {
     const session = await request(runtime.baseUrl, 'POST', '/session', {
       capabilities: {
         alwaysMatch: {
-          browserName: 'wry',
+          browserName: 'tauri',
           'tauri:options': { application: runtime.appPath },
         },
       },

@@ -71,6 +71,7 @@ test('CI workflow는 제품 version·pin과 automation 계약을 native 검사 �
     'pnpm run check:release-metadata',
     'pnpm run check:rhwp-pin',
     'pnpm run test:automation',
+    'pnpm run typecheck:gui',
     'pnpm run test:upstream',
     'pnpm run test:studio',
     'pnpm run build:studio',

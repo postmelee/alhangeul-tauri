@@ -32,7 +32,7 @@ jobs:
     env:
       ARTIFACT_ROOT: ${{ github.workspace }}/artifacts/linux-x64
       EVIDENCE_ROOT: /home/runner/PDF
-      CUPS_PDF_OUTPUT: /home/runner/PDF/biz_plan.pdf
+      CUPS_PDF_OUTPUT: /home/runner/PDF/cups-output/biz_plan.pdf
     steps:
       - name: Validate dispatch inputs
         id: validate-inputs
@@ -182,18 +182,22 @@ jobs:
         run: |
           set -euo pipefail
           output_dir="$(dirname "$CUPS_PDF_OUTPUT")"
-          mkdir -p "$output_dir"
-          chmod 0777 "$output_dir"
+          install -d -m 0777 "$output_dir"
+          printf 'a4\n' | sudo tee /etc/papersize >/dev/null
           sudo sed -i "s|^Out .*|Out $output_dir|" /etc/cups/cups-pdf.conf
           sudo sed -i 's|^Label .*|Label 0|' /etc/cups/cups-pdf.conf
+          grep -Fqx "Out $output_dir" /etc/cups/cups-pdf.conf
+          grep -Fqx 'Label 0' /etc/cups/cups-pdf.conf
           sudo service cups restart
           if ! lpstat -p PDF >/dev/null 2>&1; then
             sudo lpadmin -p PDF -E -v cups-pdf:/ \
               -P /usr/share/ppd/cups-pdf/CUPS-PDF.ppd
           fi
+          sudo lpadmin -p PDF -o PageSize=A4 -o media=iso_a4_210x297mm
           sudo cupsenable PDF
           sudo cupsaccept PDF
           lpstat -p PDF
+          lpoptions -p PDF | grep -Eq '(^| )PageSize=A4( |$)'
 
       - name: Record native environment
         id: record-environment
@@ -226,7 +230,7 @@ jobs:
           ALHANGEUL_GUI_OUTPUT_DIR: ${{ env.EVIDENCE_ROOT }}
           ALHANGEUL_GUI_TIMEOUT_MS: ${{ env.GUI_TIMEOUT_MS }}
           ALHANGEUL_GUI_APP_VERSION: ${{ steps.install-pnpm.outputs.product_version }}
-          ALHANGEUL_GUI_DRIVER_VERSION: "tauri-driver 2.0.6"
+          ALHANGEUL_GUI_DRIVER_VERSION: "tauri-driver ${{ env.TAURI_DRIVER_VERSION }}"
           ALHANGEUL_GUI_CUPS_PDF_OUTPUT: ${{ env.CUPS_PDF_OUTPUT }}
           ALHANGEUL_GUI_CUPS_PDF_PRINTER: PDF
           NO_AT_BRIDGE: "0"

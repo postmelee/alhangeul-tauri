@@ -44,9 +44,9 @@ GitHub Issue: [#34](https://github.com/postmelee/alhangeul-tauri/issues/34)
 | GitHub Actions workflow inventory | 4개 | 5개 — 수동 Linux x64 GUI workflow 1개 추가 |
 | exact cross-run artifact provenance helper | 없음 | 259행 helper와 정상·변조·누락·중복·pagination 계약 30개 |
 | 공통/Linux GUI E2E scenario | 없음 | 공통 문서 UX 1개 + Linux native 4개 |
-| Linux native UI/PDF focused 계약 | 없음 | AT-SPI 5개 + drag 3개 + PDF 4개 |
+| Linux native UI/PDF focused 계약 | 없음 | AT-SPI 5개 + drag 4개 + PDF 5개 |
 | Linux GUI workflow 전용 source contract | 없음 | 9개, 공통 workflow와 합쳐 focused 21/21 |
-| 전체 automation 통과 수 | Stage 1 완료 시 162개 | 최종 194개 |
+| 전체 automation 통과 수 | Stage 1 완료 시 162개 | PR 리뷰 보정 후 199개 |
 | 신규 workflow 외부 Action immutable pin | 해당 없음 | 4/4 full commit SHA + version 주석 |
 | evidence 보존 | 수동·분산 | 성공·실패 모두 7일, context/handoff/hash/log/screenshot/PDF/summary 결속 |
 
@@ -61,7 +61,7 @@ GitHub Issue: [#34](https://github.com/postmelee/alhangeul-tauri/issues/34)
 | PDF 자동 판정 | OK — 6쪽 A4 metadata, 한글 text, 쪽별 content, blank/crop heuristic과 PNG evidence를 결합하며 시각 read-back 필요를 표시한다. |
 | workflow 최소 권한·비용·Action pin | OK — `actions: read`, `contents: read`, `ubuntu-22.04`, manual dispatch, 45분 job/25분 GUI timeout, exact candidate concurrency와 4개 SHA pin을 고정했다. |
 | 실패 증거·최종 판정 | OK — GUI failure와 evidence upload failure를 `always()` 뒤 final gate가 각각 실패로 전달하고 자동 retry를 금지한다. |
-| 전체 platform-neutral regression | OK — product boundary/version/metadata/pin, automation 194/194, upstream 35/35, Studio 97/97와 production build 통과. |
+| 전체 platform-neutral regression | OK — product boundary/version/metadata/pin, GUI TypeScript, automation 199/199, upstream 35/35, Studio 97/97와 production build 통과. |
 | 실제 hosted Linux x64 GUI | MISS — workflow가 default branch에 없어서 PR 전 dispatch 불가. PR merge 후 live close gate에서만 확정한다. |
 
 ### 단계별 검증 결과
@@ -71,6 +71,7 @@ GitHub Issue: [#34](https://github.com/postmelee/alhangeul-tauri/issues/34)
 - [Stage 3](../working/task_m010_34_stage3.md): Linux native UI/PDF focused 12/12, automation 185/185, TypeScript/Python 정적 검사 통과.
 - [Stage 4](../working/task_m010_34_stage4.md): workflow focused 21/21, automation 194/194, upstream 35/35, Studio 97/97·build와 actionlint 통과.
 - [Stage 5](../working/task_m010_34_stage5.md): frozen install, 전체 중립 gate, 최신 `origin/devel` ancestry, changed path·permission·Action pin 독립 점검 통과.
+- [Stage 5.1](../working/task_m010_34_stage5.1.md): PR #36 리뷰의 evidence 보존·GUI typecheck·현재 저장·A4/CUPS·PDF 임시 산출물과 저위험 진단 보정을 적용하고 automation 199/199을 통과.
 
 ## 잔여 위험과 후속 작업
 

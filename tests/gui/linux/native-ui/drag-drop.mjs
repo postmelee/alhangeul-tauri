@@ -58,11 +58,17 @@ function readScreenRect(xdotool, env, execute = spawnSync) {
 }
 
 function readSourceRect(xdotool, env, execute = spawnSync) {
-  const result = execute(xdotool, [
+  const search = execute(xdotool, [
     'search', '--name', '^Alhangeul GUI drag source$',
-    'getwindowgeometry', '--shell',
   ], { encoding: 'utf8', env, timeout: 5000 });
-  if (result.status !== 0) throw new Error('GTK drag source window를 찾을 수 없습니다');
+  const windowIds = String(search.stdout).trim().split(/\s+/).filter(Boolean);
+  if (search.status !== 0 || windowIds.length !== 1 || !/^\d+$/.test(windowIds[0])) {
+    throw new Error(`GTK drag source window는 정확히 1개여야 합니다: ${windowIds.length}`);
+  }
+  const result = execute(xdotool, [
+    'getwindowgeometry', '--shell', windowIds[0],
+  ], { encoding: 'utf8', env, timeout: 5000 });
+  if (result.status !== 0) throw new Error('GTK drag source geometry를 읽을 수 없습니다');
   const values = Object.fromEntries(
     String(result.stdout).trim().split('\n').map((line) => line.split('=', 2)),
   );

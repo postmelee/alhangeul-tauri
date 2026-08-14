@@ -14,3 +14,9 @@ export interface PdfAnalysisResult {
 }
 
 export function analyzePdf(options: PdfAnalysisOptions): Promise<PdfAnalysisResult>;
+export function popplerPagePath(
+  prefix: string,
+  page: number,
+  pageCount: number,
+  extension: string,
+): string;

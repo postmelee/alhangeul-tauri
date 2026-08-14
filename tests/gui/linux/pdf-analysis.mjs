@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { execFile } from 'node:child_process';
-import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { basename, isAbsolute, join } from 'node:path';
 import { promisify } from 'node:util';
 import { pathToFileURL } from 'node:url';
@@ -27,26 +28,31 @@ export async function analyzePdf(options, services = {}) {
     pageTextCounts.push(nonWhitespaceCount(text));
   }
 
-  const ppmPrefix = join(output, 'analysis');
+  const scratch = await mkdtemp(join(tmpdir(), `alhangeul-pdf-${input.label}-`));
+  const ppmPrefix = join(scratch, 'analysis');
   const pngPrefix = join(output, 'render');
-  await run('pdftoppm', [
-    '-f', '1', '-l', String(input.expectedPageCount), '-r', '72',
-    input.pdfPath, ppmPrefix,
-  ]);
-  await run('pdftoppm', [
-    '-f', '1', '-l', String(input.expectedPageCount), '-r', '144', '-png',
-    input.pdfPath, pngPrefix,
-  ]);
-
   const pageRenders = [];
   const renderPaths = [];
-  for (let page = 1; page <= input.expectedPageCount; page += 1) {
-    const ppmPath = `${ppmPrefix}-${page}.ppm`;
-    const pngPath = `${pngPrefix}-${page}.png`;
-    pageRenders.push(analyzePpm(await (services.readFile ?? readFile)(ppmPath)));
-    const png = await (services.stat ?? stat)(pngPath);
-    if (!png.isFile() || png.size <= 0) throw new Error(`PDF evidence render가 비어 있습니다: page ${page}`);
-    renderPaths.push(pngPath);
+  try {
+    await run('pdftoppm', [
+      '-f', '1', '-l', String(input.expectedPageCount), '-r', '72',
+      input.pdfPath, ppmPrefix,
+    ]);
+    await run('pdftoppm', [
+      '-f', '1', '-l', String(input.expectedPageCount), '-r', '144', '-png',
+      input.pdfPath, pngPrefix,
+    ]);
+
+    for (let page = 1; page <= input.expectedPageCount; page += 1) {
+      const ppmPath = popplerPagePath(ppmPrefix, page, input.expectedPageCount, 'ppm');
+      const pngPath = popplerPagePath(pngPrefix, page, input.expectedPageCount, 'png');
+      pageRenders.push(analyzePpm(await (services.readFile ?? readFile)(ppmPath)));
+      const png = await (services.stat ?? stat)(pngPath);
+      if (!png.isFile() || png.size <= 0) throw new Error(`PDF evidence render가 비어 있습니다: page ${page}`);
+      renderPaths.push(pngPath);
+    }
+  } finally {
+    await rm(scratch, { recursive: true, force: true });
   }
 
   const summary = {
@@ -84,6 +90,14 @@ export function parsePdfInfo(source, expectedPageCount) {
     throw new Error('pdfinfo Page size를 해석할 수 없습니다');
   }
   return { pageCount: pages, pageSizes };
+}
+
+export function popplerPagePath(prefix, page, pageCount, extension) {
+  if (!Number.isSafeInteger(page) || !Number.isSafeInteger(pageCount)
+      || page < 1 || page > pageCount || !/^[a-z0-9]+$/.test(extension)) {
+    throw new Error('Poppler page path 입력이 유효하지 않습니다');
+  }
+  return `${prefix}-${String(page).padStart(String(pageCount).length, '0')}.${extension}`;
 }
 
 export function analyzePpm(source) {

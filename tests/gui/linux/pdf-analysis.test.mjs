@@ -8,6 +8,7 @@ import {
   analyzePpm,
   assertPdfSummary,
   parsePdfInfo,
+  popplerPagePath,
 } from './pdf-analysis.mjs';
 
 test('pdfinfo의 6쪽 A4 metadata를 고정한다', () => {
@@ -24,6 +25,13 @@ test('P6 render는 content bounds와 blank ratio를 계산한다', () => {
   const whitespacePixel = Buffer.from('P6\n2 1\n255\n\n\u0014\u001e\u00ff\u00ff\u00ff', 'latin1');
   assert.equal(analyzePpm(whitespacePixel).nonWhiteRatio, 0.5);
   assert.throws(() => analyzePpm(Buffer.from('P3 1 1 255\n0 0 0')), /P6/);
+});
+
+test('Poppler render 파일명은 마지막 page 자릿수만큼 zero-pad한다', () => {
+  assert.equal(popplerPagePath('/tmp/render', 1, 6, 'png'), '/tmp/render-1.png');
+  assert.equal(popplerPagePath('/tmp/render', 1, 10, 'png'), '/tmp/render-01.png');
+  assert.equal(popplerPagePath('/tmp/render', 10, 10, 'ppm'), '/tmp/render-10.ppm');
+  assert.throws(() => popplerPagePath('/tmp/render', 11, 10, 'png'), /유효하지/);
 });
 
 test('Poppler 분석기는 page/text/render와 시각 read-back 필요를 summary에 남긴다', async () => {
@@ -61,6 +69,10 @@ test('Poppler 분석기는 page/text/render와 시각 read-back 필요를 summar
   assert.equal(result.summary.visualReadbackRequired, true);
   assert.equal(result.renderPaths.length, 2);
   assert.equal(commands.filter(([command]) => command === 'pdftoppm').length, 2);
+  const ppmPrefix = commands.find(([command, args]) => (
+    command === 'pdftoppm' && !args.includes('-png')
+  ))[1].at(-1);
+  assert.equal(ppmPrefix.startsWith(outputDir), false);
 });
 
 test('text extraction만 성공해도 blank/crop 또는 비A4면 실패한다', () => {

@@ -1,5 +1,4 @@
-import { createHash } from 'node:crypto';
-import { mkdir, readFile, stat, unlink } from 'node:fs/promises';
+import { mkdir, stat, unlink } from 'node:fs/promises';
 import { basename, isAbsolute, join } from 'node:path';
 import { browser, $, expect } from '@wdio/globals';
 import { analyzePdf } from '../linux/pdf-analysis.mjs';
@@ -10,12 +9,8 @@ import {
   resolveDocumentFixtures,
   type DocumentFixture,
 } from '../support/document-fixture.ts';
-import {
-  createScenarioEvidence,
-  describeEvidenceFile,
-  writeScenarioEvidence,
-  type EvidenceFile,
-} from '../support/evidence.ts';
+import { describeEvidenceFile, type EvidenceFile } from '../support/evidence.ts';
+import { runScenarioWithEvidence } from '../support/scenario-runner.ts';
 import {
   GUI_SELECTORS,
   parsePageIndicator,
@@ -27,6 +22,9 @@ import { readGuiHarnessInputs } from '../wdio.shared.conf.ts';
 
 const inputs = readGuiHarnessInputs();
 const generatedDir = join(inputs.outputDir, 'generated');
+// Task #15 Stage 4.8 Linux read-back 실측치의 50% 이하를 경로별 floor로 둔다.
+const DIRECT_PDF_MIN_TEXT_COUNTS = [20, 300, 200, 300, 200, 100];
+const SYSTEM_PDF_MIN_TEXT_COUNTS = [20, 25, 200, 300, 200, 100];
 let fixtures: DocumentFixture[] = [];
 
 describe('Alhangeul native Linux acceptance', () => {
@@ -47,7 +45,7 @@ describe('Alhangeul native Linux acceptance', () => {
         await waitForDocument(fixture.absolutePath, fixture.expectedPageCount);
         await runDocumentCommand('file:save-as', adapter);
         outputs.push(await assertGenerated(target));
-        await runDocumentCommand('file:save', adapter);
+        await runCurrentSave(adapter, target);
         outputs.push(await assertGenerated(target));
         await adapter.openDocument(target, () => triggerFileCommand('file:open'));
         await waitForDocument(target, fixture.expectedPageCount);
@@ -86,7 +84,9 @@ describe('Alhangeul native Linux acceptance', () => {
         () => triggerFileCommand('file:print-to-pdf'),
       );
       await waitForStatus(/PDF 저장 완료/);
-      const analysis = await analyzeBizPlanPdf(pdfPath, 'direct-pdf');
+      const analysis = await analyzeBizPlanPdf(
+        pdfPath, 'direct-pdf', DIRECT_PDF_MIN_TEXT_COUNTS,
+      );
       return [
         await describeEvidenceFile(inputs.outputDir, pdfPath, 'generated-document'),
         ...await describeRenderEvidence(analysis.renderPaths),
@@ -113,8 +113,12 @@ describe('Alhangeul native Linux acceptance', () => {
       await waitForFile(cups.outputPath);
       await waitForRestoredState(original);
 
-      const gtk = await analyzeBizPlanPdf(gtkPdf, 'gtk-print-to-file');
-      const cupsPdf = await analyzeBizPlanPdf(cups.outputPath, 'cups-pdf');
+      const gtk = await analyzeBizPlanPdf(
+        gtkPdf, 'gtk-print-to-file', SYSTEM_PDF_MIN_TEXT_COUNTS,
+      );
+      const cupsPdf = await analyzeBizPlanPdf(
+        cups.outputPath, 'cups-pdf', SYSTEM_PDF_MIN_TEXT_COUNTS,
+      );
       return [
         await describeEvidenceFile(inputs.outputDir, gtkPdf, 'generated-document'),
         await describeEvidenceFile(inputs.outputDir, cups.outputPath, 'generated-document'),
@@ -144,6 +148,26 @@ async function runDocumentCommand(
   });
   expect(result.after.page).toEqual(result.before.page);
   expect(result.after.status).not.toContain('중...');
+}
+
+async function runCurrentSave(
+  adapter: LinuxNativeUiAdapter,
+  path: string,
+): Promise<void> {
+  const beforeState = await captureStableDocumentState();
+  const beforeFile = await fileWriteState(path);
+  await adapter.complete('file:save', () => triggerFileCommand('file:save'));
+  await waitForStatus(/^저장 완료$/);
+  await browser.waitUntil(async () => {
+    const current = await fileWriteState(path);
+    return current.mtimeNs > beforeFile.mtimeNs;
+  }, {
+    timeout: inputs.timeoutMs,
+    timeoutMsg: `${basename(path)} 현재 저장이 파일 갱신으로 이어지지 않았습니다`,
+  });
+  const afterState = await captureDocumentState();
+  expect(afterState.page).toEqual(beforeState.page);
+  expect(afterState.status).toBe('저장 완료');
 }
 
 async function triggerFileCommand(command: string): Promise<void> {
@@ -206,7 +230,11 @@ async function appWindowBounds() {
   return result;
 }
 
-async function analyzeBizPlanPdf(pdfPath: string, label: string) {
+async function analyzeBizPlanPdf(
+  pdfPath: string,
+  label: string,
+  minTextCounts: number[],
+) {
   await waitForFile(pdfPath);
   return analyzePdf({
     pdfPath,
@@ -214,16 +242,22 @@ async function analyzeBizPlanPdf(pdfPath: string, label: string) {
     label,
     expectedPageCount: 6,
     expectedTitle: '사업수행계획서',
-    minTextCounts: [20, 20, 150, 300, 200, 100],
+    minTextCounts,
   });
 }
 
 async function assertGenerated(path: string): Promise<EvidenceFile> {
   await waitForFile(path);
-  const source = await readFile(path);
-  expect(source.length).toBeGreaterThan(1024);
-  expect(createHash('sha256').update(source).digest('hex')).toMatch(/^[0-9a-f]{64}$/);
+  expect((await stat(path)).size).toBeGreaterThan(1024);
   return describeEvidenceFile(inputs.outputDir, path, 'generated-document');
+}
+
+async function fileWriteState(path: string): Promise<{ size: bigint; mtimeNs: bigint }> {
+  const metadata = await stat(path, { bigint: true });
+  if (!metadata.isFile() || metadata.size <= 1024n) {
+    throw new Error(`${basename(path)} 저장 파일이 유효하지 않습니다`);
+  }
+  return { size: metadata.size, mtimeNs: metadata.mtimeNs };
 }
 
 async function waitForFile(path: string): Promise<void> {
@@ -256,23 +290,11 @@ async function runScenario(
   scenarioFixtures: readonly DocumentFixture[],
   action: () => Promise<EvidenceFile[]>,
 ): Promise<void> {
-  const startedAt = new Date();
-  let error: unknown;
-  let files: EvidenceFile[] = [];
-  try { files = await action(); } catch (caught) { error = caught; }
-  const screenshot = join(inputs.outputDir, 'scenarios', scenario, 'final.png');
-  await mkdir(join(inputs.outputDir, 'scenarios', scenario), { recursive: true });
-  await browser.saveScreenshot(screenshot).catch((caught) => { error ??= caught; });
-  files.push(await describeEvidenceFile(inputs.outputDir, screenshot, 'screenshot'));
-  await writeScenarioEvidence(inputs.outputDir, createScenarioEvidence({
+  await runScenarioWithEvidence({
     inputs,
     scenario,
-    status: error === undefined ? 'success' : 'failure',
-    startedAt,
-    completedAt: new Date(),
     fixtures: scenarioFixtures,
-    files,
-    ...(error === undefined ? {} : { error }),
-  }));
-  if (error !== undefined) throw error;
+    screenshotName: 'final.png',
+    captureScreenshot: (path) => browser.saveScreenshot(path),
+  }, action);
 }

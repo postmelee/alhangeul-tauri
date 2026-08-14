@@ -36,7 +36,8 @@ export function createAtspiRunner(options = {}) {
     });
     const response = parseDriverResponse(result.stdout);
     if (result.status !== 0 || !response.ok) {
-      throw new Error(`AT-SPI command failed: ${response.error ?? compactError(result)}`);
+      const responseError = typeof response.error === 'string' ? response.error.trim() : '';
+      throw new Error(`AT-SPI command failed: ${responseError || compactError(result)}`);
     }
     return response.result;
   };
@@ -204,7 +205,7 @@ function parseDriverResponse(stdout) {
 }
 
 function compactError(result) {
-  return String(result.error?.message ?? result.stderr ?? `exit ${result.status}`).trim().slice(0, 500);
+  return String(result.error?.message || result.stderr || `exit ${result.status}`).trim().slice(0, 500);
 }
 
 function validateAbsoluteFile(path, label) {

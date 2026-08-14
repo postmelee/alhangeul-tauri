@@ -97,6 +97,11 @@ test('native Linux dependency와 driver version이 명시되고 환경 증거를
   }
   assert.match(workflow, /^  TAURI_DRIVER_VERSION: "2\.0\.6"$/m);
   assert.match(workflow, /cargo install tauri-driver --version "\$TAURI_DRIVER_VERSION" --locked/);
+  assert.match(
+    workflow,
+    /ALHANGEUL_GUI_DRIVER_VERSION: "tauri-driver \$\{\{ env\.TAURI_DRIVER_VERSION \}\}"/,
+  );
+  assert.equal((workflow.match(/2\.0\.6/g) ?? []).length, 1);
   assert.doesNotMatch(workflow, /cargo install tauri-driver(?:\s|$)(?![^\n]*--version)/);
   const evidence = stepContaining(workflow, 'native-environment.txt');
   for (const command of [
@@ -112,6 +117,15 @@ test('native Linux dependency와 driver version이 명시되고 환경 증거를
 });
 
 test('Xvfb, DBus, AT-SPI와 CUPS-PDF는 repository fixture만 사용한다', () => {
+  const cups = stepContaining(workflow, 'Configure CUPS-PDF');
+  assert.match(workflow, /CUPS_PDF_OUTPUT: \/home\/runner\/PDF\/cups-output\/biz_plan\.pdf/);
+  assert.match(cups, /install -d -m 0777 "\$output_dir"/);
+  assert.doesNotMatch(cups, /chmod 0777 "\$output_dir"/);
+  assert.match(cups, /printf 'a4\\n' \| sudo tee \/etc\/papersize/);
+  assert.match(cups, /grep -Fqx "Out \$output_dir" \/etc\/cups\/cups-pdf\.conf/);
+  assert.match(cups, /grep -Fqx 'Label 0' \/etc\/cups\/cups-pdf\.conf/);
+  assert.match(cups, /lpadmin -p PDF -o PageSize=A4 -o media=iso_a4_210x297mm/);
+  assert.match(cups, /lpoptions -p PDF \| grep -Eq '\(\^\| \)PageSize=A4\( \|\$\)'/);
   const gui = stepContaining(workflow, 'pnpm run test:gui:linux');
   assert.match(gui, /^        timeout-minutes: 25$/m);
   assert.match(gui, /xvfb-run --auto-servernum/);

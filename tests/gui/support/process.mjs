@@ -40,29 +40,52 @@ export async function stopProcess(child, options = {}) {
   child.kill('SIGTERM');
   const graceMs = options.graceMs ?? 2000;
   const exited = once(child, 'exit').then(() => true);
-  const timeout = new Promise((resolve) => setTimeout(() => resolve(false), graceMs));
-  if (await Promise.race([exited, timeout])) return;
+  let timeoutId;
+  const timeout = new Promise((resolve) => {
+    timeoutId = setTimeout(() => resolve(false), graceMs);
+  });
+  const exitedDuringGrace = await Promise.race([exited, timeout]);
+  if (timeoutId !== undefined) clearTimeout(timeoutId);
+  if (exitedDuringGrace) return;
   child.kill('SIGKILL');
   await once(child, 'exit').catch(() => {});
 }
 
 export function createBoundedCollector(limit = DEFAULT_LOG_LIMIT) {
-  let text = '';
+  const chunks = [];
+  let byteLength = 0;
   let truncated = false;
   return Object.freeze({
     append(chunk) {
       if (truncated) return;
-      const remaining = limit - Buffer.byteLength(text);
+      const remaining = limit - byteLength;
       if (remaining <= 0) {
         truncated = true;
         return;
       }
       const source = Buffer.from(chunk);
-      text += source.subarray(0, remaining).toString('utf8');
+      const accepted = source.subarray(0, remaining);
+      chunks.push(accepted);
+      byteLength += accepted.length;
       if (source.length > remaining) truncated = true;
     },
     value() {
+      const buffer = Buffer.concat(chunks, byteLength);
+      const text = buffer.subarray(0, completeUtf8Length(buffer)).toString('utf8');
       return truncated ? `${text}\n[log truncated]\n` : text;
     },
   });
+}
+
+function completeUtf8Length(buffer) {
+  if (buffer.length === 0) return 0;
+  let start = buffer.length - 1;
+  while (start >= 0 && (buffer[start] & 0xc0) === 0x80) start -= 1;
+  if (start < 0) return 0;
+  const lead = buffer[start];
+  const expected = lead < 0x80 ? 1
+    : (lead & 0xe0) === 0xc0 ? 2
+      : (lead & 0xf0) === 0xe0 ? 3
+        : (lead & 0xf8) === 0xf0 ? 4 : 1;
+  return buffer.length - start < expected ? start : buffer.length;
 }

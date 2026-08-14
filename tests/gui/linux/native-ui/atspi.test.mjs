@@ -101,6 +101,11 @@ test('AT-SPI process bridge는 JSON 1건만 허용하고 driver 오류를 fail-c
     spawnSync: () => ({ status: 1, stdout: '{"ok":false,"error":"missing role"}\n', stderr: 'private' }),
   });
   await assert.rejects(failing({ command: 'wait' }), /missing role/);
+
+  const emptyError = createAtspiRunner({
+    spawnSync: () => ({ status: 1, stdout: '{"ok":false,"error":""}\n', stderr: 'driver stderr' }),
+  });
+  await assert.rejects(emptyError({ command: 'wait' }), /driver stderr/);
 });
 
 function createAdapter(override = {}) {

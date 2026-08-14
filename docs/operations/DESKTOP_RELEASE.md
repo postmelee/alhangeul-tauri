@@ -53,6 +53,17 @@ repository-level Actions는 활성 상태지만 대상 CI와 native workflow는 
 
 GUI 실패는 evidence 업로드를 위해 일시적으로 다음 step에 전달되지만 마지막 gate가 원래 실패를 다시 실패로 판정한다. 반대로 GUI가 성공해도 evidence 업로드가 실패하거나 파일이 없으면 run은 실패한다. 자동 재시도는 없으며 실패 원인을 확인한 뒤 새 run으로 다시 검증한다.
 
+CUPS-PDF 출력은 evidence root의 전용 writable 하위 디렉터리만 사용하고 system print 기본 용지는 A4로 고정한다. PDF text floor는 Task #15 Stage 4.8 Linux read-back의 직접 PDF `45/642/410/638/478/250`, GTK/CUPS `45/54/408/637/478/250` 실측치보다 충분히 낮은 경로별 값으로 판정한다. 임계값을 낮추거나 selector를 추가할 때는 실패 run의 PDF summary와 AT-SPI tree를 먼저 보존한다.
+
+전체 WDIO scenario 전에 external driver 연결만 분리 진단할 때는 Linux에서 DEB와 exact `tauri-driver`·`WebKitWebDriver`를 준비한 뒤 다음 진입점을 사용한다. 이 probe는 제품 수용 성공을 대신하지 않는다.
+
+```bash
+xvfb-run --auto-servernum -- \
+  pnpm run probe:gui:linux -- \
+  --app /usr/bin/Alhangeul \
+  --output-dir /tmp/alhangeul-gui-probe
+```
+
 이 gate가 자동화하는 범위는 hosted Linux x64의 production DEB와 가상 display·가상 PDF printer다. Linux arm64, RPM/AppImage 설치·desktop integration, GNOME/Nautilus와 Xfce/Thunar의 실제 사용자 세션, physical printer, Windows GUI는 여전히 별도 native 수용 대상이다. screenshot과 PDF render의 한글 glyph·배치 read-back도 prerelease 후보 확정 때 사람이 확인한다. GitHub Codespaces는 이 workflow의 실행 환경이 아니며, 무료 allowance와 spending limit을 먼저 확인한 경우의 선택적 troubleshooting에만 사용한다.
 
 Task #34 PR merge 전에는 workflow가 default branch에 없으므로 실제 dispatch 성공을 주장하지 않는다. merge 뒤 같은 exact SHA의 native build와 위 GUI run·evidence read-back이 성공해야 Issue #34의 live close gate가 완료된다.

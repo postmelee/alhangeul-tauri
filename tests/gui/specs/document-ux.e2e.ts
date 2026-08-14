@@ -1,5 +1,4 @@
-import { mkdir } from 'node:fs/promises';
-import { basename, join } from 'node:path';
+import { basename } from 'node:path';
 import { browser, $, $$, expect } from '@wdio/globals';
 import {
   fixtureById,
@@ -7,11 +6,7 @@ import {
   type DocumentFixture,
   type DocumentFixtureId,
 } from '../support/document-fixture.ts';
-import {
-  createScenarioEvidence,
-  describeEvidenceFile,
-  writeScenarioEvidence,
-} from '../support/evidence.ts';
+import { runScenarioWithEvidence } from '../support/scenario-runner.ts';
 import {
   centeredDelta,
   GUI_SELECTORS,
@@ -114,33 +109,11 @@ async function runWithEvidence(
   fixture: DocumentFixture,
   action: () => Promise<void>,
 ): Promise<void> {
-  const startedAt = new Date();
-  let error: unknown;
-  try {
-    await action();
-  } catch (caught) {
-    error = caught;
-  }
-
-  const scenarioDir = join(inputs.outputDir, 'scenarios', scenario);
-  const screenshotPath = join(scenarioDir, 'initial.png');
-  await mkdir(scenarioDir, { recursive: true });
-  const files = [];
-  try {
-    await browser.saveScreenshot(screenshotPath);
-    files.push(await describeEvidenceFile(inputs.outputDir, screenshotPath, 'screenshot'));
-  } catch (screenshotError) {
-    if (error === undefined) error = screenshotError;
-  }
-  await writeScenarioEvidence(inputs.outputDir, createScenarioEvidence({
+  await runScenarioWithEvidence({
     inputs,
     scenario,
-    status: error === undefined ? 'success' : 'failure',
-    startedAt,
-    completedAt: new Date(),
     fixtures: [fixture],
-    files,
-    ...(error === undefined ? {} : { error }),
-  }));
-  if (error !== undefined) throw error;
+    screenshotName: 'initial.png',
+    captureScreenshot: (path) => browser.saveScreenshot(path),
+  }, action);
 }

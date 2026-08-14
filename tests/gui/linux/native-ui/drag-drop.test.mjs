@@ -52,3 +52,29 @@ test('drag source readiness 실패도 helper process를 finally에서 종료한�
   }), /준비되지/);
   assert.equal(stopped, true);
 });
+
+test('동일한 drag source 창이 여러 개면 좌표 입력 전에 fail-closed 한다', async () => {
+  let stopped = false;
+  let gestureSent = false;
+  const child = { exitCode: null, signalCode: null };
+  const stdout = { value: () => 'READY\n' };
+  const stderr = { value: () => '' };
+  await assert.rejects(dragFileIntoWindow({
+    filePath: '/fixtures/biz_plan.hwp',
+    targetRect: { x: 200, y: 200, width: 800, height: 600 },
+    timeoutMs: 1000,
+    env: { DISPLAY: ':99', PATH: '/usr/bin' },
+  }, {
+    resolveExecutable: async (name) => `/usr/bin/${name}`,
+    spawnLoggedProcess: () => ({ child, stdout, stderr }),
+    stopProcess: async () => { stopped = true; },
+    spawnSync: (_command, args) => {
+      if (args[0] === 'getdisplaygeometry') return { status: 0, stdout: '1920 1080\n' };
+      if (args[0] === 'search') return { status: 0, stdout: '101\n102\n' };
+      gestureSent = true;
+      return { status: 0, stdout: '' };
+    },
+  }), /정확히 1개/);
+  assert.equal(gestureSent, false);
+  assert.equal(stopped, true);
+});

@@ -280,6 +280,36 @@ git status --short
 Task #34 Stage 5 + 최종 보고서: Linux GUI acceptance handoff 확정
 ```
 
+## Stage 5.1 — PR 리뷰 기반 fail-closed 보정
+
+PR #36 maintainer 리뷰와 작업지시자 승인에 따라 merge 전 evidence·typecheck·현재 저장·인쇄 환경 계약을 보정한다. screenshot 실패가 원래 scenario error나 manifest를 덮어쓰지 않도록 공통 runner로 통합하고, GUI TypeScript 검사를 CI에 연결한다. 현재 저장은 완료 상태와 파일 mtime 갱신을 함께 확인하며, CUPS/GTK 기본 A4·설정 read-back·전용 writable 경계를 고정한다.
+
+PDF text floor는 Task #15 Stage 4.8의 직접/GTK/CUPS 실측치를 경로별로 분리해 적용한다. Poppler 판정용 PPM은 evidence 밖 임시 경로에서 처리하고 10쪽 이상 파일명 zero-padding을 지원한다. driver version 단일화, bounded UTF-8 log·process timeout 정리, drag source cardinality와 빈 AT-SPI 오류 fallback, probe 공식 진입점도 같은 범위의 저위험 보정으로 포함한다.
+
+GTK Print-to-File file chooser selector는 actual AT-SPI tree 없이 추측 변경하지 않는다. 새 workflow는 default branch에 없으면 dispatch할 수 있으므로 exact-SHA hosted canary와 selector 측정은 PR merge 후 close gate에서 수행한다.
+
+### 검증
+
+```bash
+actionlint .github/workflows/ci.yml .github/workflows/alhangeul-linux-gui.yml
+pnpm run check:product-boundary
+pnpm run check:product-version
+pnpm run check:release-metadata
+pnpm run check:rhwp-pin
+pnpm run typecheck:gui
+pnpm run test:automation
+pnpm run test:upstream
+pnpm run test:studio
+pnpm run build:studio
+git diff --check
+```
+
+### 커밋
+
+```text
+Task #34 [Stage 5.1]: Linux GUI acceptance 리뷰 보정
+```
+
 ## 검증
 
 - 각 Stage 검증 명령은 단계 보고서 작성 전에 실행한다.
@@ -300,6 +330,7 @@ Task #34 Stage 5 + 최종 보고서: Linux GUI acceptance handoff 확정
 - Stage 3은 Stage 2의 공통 fixture·selector·evidence schema 확정 후 Linux native adapter만 추가한다.
 - Stage 4는 Stage 1~3 helper를 orchestration하며 workflow YAML 안에 같은 판정을 복제하지 않는다.
 - Stage 5는 Stage 4 보고 승인 후 진행하고, actual native canary는 task PR merge 뒤 close gate에서 실행한다.
+- Stage 5.1은 PR 리뷰 보정을 merge 전에 완료하되 actual selector 측정과 hosted canary는 Stage 5의 post-merge close gate를 유지한다.
 - #35는 Issue #34 live close gate 통과 뒤 시작한다. #24는 #35까지 merge된 다음 최신 `devel` exact SHA에서 재개한다.
 
 ## 위험과 대응

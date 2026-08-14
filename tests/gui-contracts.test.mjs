@@ -22,6 +22,7 @@ import {
   parsePageIndicator,
   runNativeDocumentCommand,
 } from './gui/support/document-ux.ts';
+import { runScenarioWithEvidence } from './gui/support/scenario-runner.ts';
 
 const repoRoot = fileURLToPath(new URL('..', import.meta.url));
 
@@ -90,6 +91,27 @@ test('evidence는 상대 경로·hash를 기록하고 경로와 token을 정규�
   assert.equal(written.identity.buildRef, 'a'.repeat(40));
 });
 
+test('scenario runner는 screenshot 실패에도 원래 error와 manifest를 보존한다', async () => {
+  const outputDir = await mkdtemp(join(tmpdir(), 'alhangeul-gui-failure-'));
+  const inputs = readGuiHarnessInputs(validEnv({ ALHANGEUL_GUI_OUTPUT_DIR: outputDir }));
+  await assert.rejects(runScenarioWithEvidence({
+    inputs,
+    scenario: 'failure-preservation',
+    fixtures: [],
+    screenshotName: 'final.png',
+    captureScreenshot: async () => { throw new Error('session lost'); },
+  }, async () => {
+    throw new Error('original scenario failure');
+  }), /original scenario failure/);
+  const manifest = JSON.parse(await readFile(
+    join(outputDir, 'scenarios', 'failure-preservation', 'evidence.json'),
+    'utf8',
+  ));
+  assert.equal(manifest.status, 'failure');
+  assert.equal(manifest.error, 'original scenario failure');
+  assert.deepEqual(manifest.files, []);
+});
+
 test('쪽 수와 중앙 정렬 판정을 순수 helper로 고정한다', () => {
   assert.deepEqual(parsePageIndicator('1 / 6 쪽'), { current: 1, total: 6 });
   assert.throws(() => parsePageIndicator('0 / 6 쪽'), /유효하지/);
@@ -127,6 +149,7 @@ test('공통 helper는 platform adapter를 import하지 않고 외부 driver만 
     'tests/gui/support/document-fixture.ts',
     'tests/gui/support/document-ux.ts',
     'tests/gui/support/evidence.ts',
+    'tests/gui/support/scenario-runner.ts',
   ];
   for (const path of commonPaths) {
     const source = await readFile(join(repoRoot, path), 'utf8');
@@ -138,6 +161,15 @@ test('공통 helper는 platform adapter를 import하지 않고 외부 driver만 
   assert.doesNotMatch(platformConfig, /driverProvider:\s*'(embedded|crabnebula)'/);
   const cargo = await readFile(join(repoRoot, 'apps/desktop/src-tauri/Cargo.toml'), 'utf8');
   assert.doesNotMatch(cargo, /wdio|webdriver/i);
+});
+
+test('Linux native 저장·PDF acceptance는 디스크 갱신과 경로별 실측 floor를 사용한다', async () => {
+  const source = await readFile(join(repoRoot, 'tests/gui/specs/linux-native.e2e.ts'), 'utf8');
+  assert.match(source, /current\.mtimeNs > beforeFile\.mtimeNs/);
+  assert.match(source, /waitForStatus\(\/\^저장 완료\$\//);
+  assert.doesNotMatch(source, /digest\('hex'\)\)\.toMatch/);
+  assert.match(source, /DIRECT_PDF_MIN_TEXT_COUNTS = \[20, 300, 200, 300, 200, 100\]/);
+  assert.match(source, /SYSTEM_PDF_MIN_TEXT_COUNTS = \[20, 25, 200, 300, 200, 100\]/);
 });
 
 function validEnv(override = {}) {
