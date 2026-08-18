@@ -220,7 +220,7 @@ jobs:
             pnpm --version
             rustc --version
             cargo --version
-            tauri-driver --version
+            printf 'tauri-driver %s\n' "$TAURI_DRIVER_VERSION"
             WebKitWebDriver --version
             dpkg-query -W libgtk-3-0 libwebkit2gtk-4.1-0 webkit2gtk-driver
             pdfinfo -v 2>&1 | head -n 1
