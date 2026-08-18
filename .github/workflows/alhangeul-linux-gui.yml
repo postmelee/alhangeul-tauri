@@ -1,0 +1,304 @@
+name: Alhangeul Linux GUI Acceptance
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_ref:
+        description: Exact 40-character commit SHA to accept.
+        required: true
+        type: string
+      native_run_id:
+        description: Successful Alhangeul Desktop Artifact Build run ID for build_ref.
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+concurrency:
+  group: alhangeul-linux-gui-${{ inputs.build_ref }}-${{ inputs.native_run_id }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "24"
+  TAURI_DRIVER_VERSION: "2.0.6"
+  GUI_TIMEOUT_MS: "120000"
+
+jobs:
+  accept-linux-x64:
+    name: Accept Linux x64 GUI
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    env:
+      ARTIFACT_ROOT: ${{ github.workspace }}/artifacts/linux-x64
+      EVIDENCE_ROOT: /home/runner/PDF
+      CUPS_PDF_OUTPUT: /home/runner/PDF/cups-output/biz_plan.pdf
+    steps:
+      - name: Validate dispatch inputs
+        id: validate-inputs
+        shell: bash
+        env:
+          BUILD_REF: ${{ inputs.build_ref }}
+          NATIVE_RUN_ID: ${{ inputs.native_run_id }}
+        run: |
+          set -euo pipefail
+          [[ "$BUILD_REF" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$NATIVE_RUN_ID" =~ ^[1-9][0-9]*$ ]]
+
+      - name: Checkout exact acceptance source
+        id: checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.build_ref }}
+          submodules: true
+
+      - name: Prepare evidence context
+        id: prepare-evidence
+        if: ${{ always() }}
+        shell: bash
+        env:
+          BUILD_REF: ${{ inputs.build_ref }}
+          NATIVE_RUN_ID: ${{ inputs.native_run_id }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$EVIDENCE_ROOT/generated"
+          printf '{"buildRef":"%s","nativeRunId":"%s","acceptanceRunId":"%s","runAttempt":"%s"}\n' \
+            "$BUILD_REF" "$NATIVE_RUN_ID" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" \
+            > "$EVIDENCE_ROOT/workflow-context.json"
+
+      - name: Verify checked out exact SHA
+        id: verify-source
+        shell: bash
+        env:
+          BUILD_REF: ${{ inputs.build_ref }}
+        run: |
+          set -euo pipefail
+          actual_sha="$(git rev-parse HEAD)"
+          [[ "$actual_sha" == "$BUILD_REF" ]]
+          printf '%s\n' "$actual_sha" > "$EVIDENCE_ROOT/checked-out-sha.txt"
+
+      - name: Setup Node.js
+        id: setup-node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Verify native run and exact artifact handoff
+        id: handoff
+        shell: bash
+        env:
+          BUILD_REF: ${{ inputs.build_ref }}
+          NATIVE_RUN_ID: ${{ inputs.native_run_id }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          node scripts/verify-workflow-artifact.mjs \
+            --repository "$GITHUB_REPOSITORY" \
+            --build-ref "$BUILD_REF" \
+            --run-id "$NATIVE_RUN_ID" \
+            --workflow-path .github/workflows/alhangeul-desktop.yml \
+            --artifact-name alhangeul-desktop-linux-x64 \
+            --json-output "$EVIDENCE_ROOT/artifact-handoff.json" \
+            --github-output "$GITHUB_OUTPUT"
+
+      - name: Download verified Linux x64 artifact
+        id: download-artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          artifact-ids: ${{ steps.handoff.outputs.artifact_id }}
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.native_run_id }}
+          path: ${{ env.ARTIFACT_ROOT }}
+          digest-mismatch: error
+
+      - name: Install pnpm dependencies
+        id: install-pnpm
+        shell: bash
+        run: |
+          set -euo pipefail
+          corepack enable
+          pnpm install --frozen-lockfile
+          printf 'product_version=%s\n' "$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Verify artifact inventory and select one DEB
+        id: verify-inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm run check:desktop-artifacts -- \
+            --platform linux-x64 \
+            --root "$ARTIFACT_ROOT" \
+            --verify-inventory "$ARTIFACT_ROOT/alhangeul-artifact-inventory.json"
+          mapfile -d '' packages < <(find "$ARTIFACT_ROOT/deb" -maxdepth 1 -type f -name '*.deb' -print0)
+          [[ "${#packages[@]}" -eq 1 ]]
+          printf 'deb_path=%s\n' "${packages[0]}" >> "$GITHUB_OUTPUT"
+          sha256sum "${packages[0]}" > "$EVIDENCE_ROOT/installed-deb.sha256"
+          cp "$ARTIFACT_ROOT/alhangeul-artifact-inventory.json" "$EVIDENCE_ROOT/"
+
+      - name: Install Linux GUI dependencies
+        id: install-linux-dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y \
+            at-spi2-core \
+            cups \
+            dbus-x11 \
+            fonts-noto-cjk \
+            fonts-unfonts-core \
+            gir1.2-gtk-3.0 \
+            libgtk-3-0 \
+            libwebkit2gtk-4.1-0 \
+            openbox \
+            poppler-utils \
+            printer-driver-cups-pdf \
+            python3-gi \
+            python3-pyatspi \
+            webkit2gtk-driver \
+            xdotool \
+            xvfb
+
+      - name: Install exact tauri-driver
+        id: install-tauri-driver
+        shell: bash
+        run: cargo install tauri-driver --version "$TAURI_DRIVER_VERSION" --locked
+
+      - name: Install verified DEB
+        id: install-deb
+        shell: bash
+        env:
+          DEB_PATH: ${{ steps.verify-inventory.outputs.deb_path }}
+        run: |
+          set -euo pipefail
+          sudo apt-get install -y "$DEB_PATH"
+          command -v Alhangeul
+
+      - name: Configure CUPS-PDF
+        id: configure-cups
+        shell: bash
+        run: |
+          set -euo pipefail
+          output_dir="$(dirname "$CUPS_PDF_OUTPUT")"
+          install -d -m 0777 "$output_dir"
+          printf 'a4\n' | sudo tee /etc/papersize >/dev/null
+          sudo sed -i "s|^Out .*|Out $output_dir|" /etc/cups/cups-pdf.conf
+          sudo sed -i 's|^Label .*|Label 0|' /etc/cups/cups-pdf.conf
+          grep -Fqx "Out $output_dir" /etc/cups/cups-pdf.conf
+          grep -Fqx 'Label 0' /etc/cups/cups-pdf.conf
+          sudo service cups restart
+          if ! lpstat -p PDF >/dev/null 2>&1; then
+            sudo lpadmin -p PDF -E -v cups-pdf:/ \
+              -P /usr/share/ppd/cups-pdf/CUPS-PDF.ppd
+          fi
+          sudo lpadmin -p PDF -o PageSize=A4 -o media=iso_a4_210x297mm
+          sudo cupsenable PDF
+          sudo cupsaccept PDF
+          lpstat -p PDF
+          lpoptions -p PDF | grep -Eq '(^| )PageSize=A4( |$)'
+
+      - name: Record native environment
+        id: record-environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            node --version
+            pnpm --version
+            rustc --version
+            cargo --version
+            tauri-driver --version
+            WebKitWebDriver --version
+            dpkg-query -W libgtk-3-0 libwebkit2gtk-4.1-0 webkit2gtk-driver
+            pdfinfo -v 2>&1 | head -n 1
+            cupsd -v
+          } > "$EVIDENCE_ROOT/native-environment.txt"
+
+      - name: Run Linux GUI acceptance
+        id: run-gui
+        continue-on-error: true
+        timeout-minutes: 25
+        shell: bash
+        env:
+          ALHANGEUL_GUI_APP_PATH: /usr/bin/Alhangeul
+          ALHANGEUL_GUI_BUILD_REF: ${{ inputs.build_ref }}
+          ALHANGEUL_GUI_NATIVE_RUN_ID: ${{ inputs.native_run_id }}
+          ALHANGEUL_GUI_DRIVER_PATH: /home/runner/.cargo/bin/tauri-driver
+          ALHANGEUL_GUI_FIXTURE_ROOT: ${{ github.workspace }}
+          ALHANGEUL_GUI_OUTPUT_DIR: ${{ env.EVIDENCE_ROOT }}
+          ALHANGEUL_GUI_TIMEOUT_MS: ${{ env.GUI_TIMEOUT_MS }}
+          ALHANGEUL_GUI_APP_VERSION: ${{ steps.install-pnpm.outputs.product_version }}
+          ALHANGEUL_GUI_DRIVER_VERSION: "tauri-driver ${{ env.TAURI_DRIVER_VERSION }}"
+          ALHANGEUL_GUI_CUPS_PDF_OUTPUT: ${{ env.CUPS_PDF_OUTPUT }}
+          ALHANGEUL_GUI_CUPS_PDF_PRINTER: PDF
+          NO_AT_BRIDGE: "0"
+          GTK_MODULES: gail:atk-bridge
+        run: |
+          set -euo pipefail
+          # shellcheck disable=SC2016
+          xvfb-run --auto-servernum --server-args='-screen 0 1920x1080x24 -nolisten tcp' \
+            dbus-run-session -- bash -euo pipefail -c '
+              openbox >"$ALHANGEUL_GUI_OUTPUT_DIR/openbox.log" 2>&1 &
+              window_manager_pid=$!
+              trap '\''kill "$window_manager_pid" 2>/dev/null || true'\'' EXIT
+              pnpm run test:gui:linux
+            '
+
+      - name: Record acceptance outcomes
+        if: ${{ always() }}
+        shell: bash
+        env:
+          VALIDATE: ${{ steps.validate-inputs.outcome }}
+          CHECKOUT: ${{ steps.checkout.outcome }}
+          SOURCE: ${{ steps.verify-source.outcome }}
+          HANDOFF: ${{ steps.handoff.outcome }}
+          DOWNLOAD: ${{ steps.download-artifact.outcome }}
+          INVENTORY: ${{ steps.verify-inventory.outcome }}
+          INSTALL: ${{ steps.install-deb.outcome }}
+          GUI: ${{ steps.run-gui.outcome }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$EVIDENCE_ROOT"
+          printf '{"validate":"%s","checkout":"%s","source":"%s","handoff":"%s","download":"%s","inventory":"%s","install":"%s","gui":"%s"}\n' \
+            "$VALIDATE" "$CHECKOUT" "$SOURCE" "$HANDOFF" "$DOWNLOAD" \
+            "$INVENTORY" "$INSTALL" "$GUI" > "$EVIDENCE_ROOT/step-outcomes.json"
+
+      - name: Upload Linux GUI evidence
+        id: upload-evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: alhangeul-linux-gui-${{ github.run_id }}
+          path: ${{ env.EVIDENCE_ROOT }}/**
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Require Linux GUI acceptance success
+        if: ${{ always() }}
+        shell: bash
+        env:
+          VALIDATE: ${{ steps.validate-inputs.outcome }}
+          CHECKOUT: ${{ steps.checkout.outcome }}
+          PREPARE: ${{ steps.prepare-evidence.outcome }}
+          SOURCE: ${{ steps.verify-source.outcome }}
+          NODE: ${{ steps.setup-node.outcome }}
+          HANDOFF: ${{ steps.handoff.outcome }}
+          DOWNLOAD: ${{ steps.download-artifact.outcome }}
+          PNPM: ${{ steps.install-pnpm.outcome }}
+          INVENTORY: ${{ steps.verify-inventory.outcome }}
+          LINUX_DEPS: ${{ steps.install-linux-dependencies.outcome }}
+          DRIVER: ${{ steps.install-tauri-driver.outcome }}
+          INSTALL: ${{ steps.install-deb.outcome }}
+          CUPS: ${{ steps.configure-cups.outcome }}
+          ENVIRONMENT: ${{ steps.record-environment.outcome }}
+          GUI: ${{ steps.run-gui.outcome }}
+          UPLOAD: ${{ steps.upload-evidence.outcome }}
+        run: |
+          set -euo pipefail
+          for outcome in "$VALIDATE" "$CHECKOUT" "$PREPARE" "$SOURCE" "$NODE" "$HANDOFF" \
+            "$DOWNLOAD" "$PNPM" "$INVENTORY" "$LINUX_DEPS" "$DRIVER" \
+            "$INSTALL" "$CUPS" "$ENVIRONMENT" "$GUI" "$UPLOAD"; do
+            [[ "$outcome" == success ]]
+          done

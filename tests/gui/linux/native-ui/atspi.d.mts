@@ -1,0 +1,23 @@
+import type {
+  NativeDialogAdapter,
+  NativeDocumentCommand,
+} from '../../support/document-ux.ts';
+
+export interface LinuxNativeUiOptions {
+  outputDir: string;
+  timeoutMs?: number;
+  applicationNames?: string[];
+  saveTargets?: Partial<Record<NativeDocumentCommand, string>>;
+  captureScreenshot?(path: string): Promise<unknown>;
+}
+
+export class LinuxNativeUiAdapter implements NativeDialogAdapter {
+  constructor(options: LinuxNativeUiOptions);
+  complete(command: NativeDocumentCommand, trigger: () => Promise<void>): Promise<void>;
+  openDocument(path: string, trigger: () => Promise<void>): Promise<void>;
+  saveDocument(command: string, path: string, trigger: () => Promise<void>): Promise<void>;
+  printToFile(path: string, trigger: () => Promise<void>): Promise<void>;
+  printWithVirtualPrinter(name: string, trigger: () => Promise<void>): Promise<void>;
+  cancelPrint(trigger: () => Promise<void>): Promise<void>;
+  withFailureEvidence<T>(label: string, action: () => Promise<T>): Promise<T>;
+}

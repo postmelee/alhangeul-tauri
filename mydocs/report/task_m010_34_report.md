@@ -1,0 +1,93 @@
+# Task #34 최종 보고서 — Linux exact-SHA GUI acceptance 자동화
+
+GitHub Issue: [#34](https://github.com/postmelee/alhangeul-tauri/issues/34)
+마일스톤: M010
+
+## 작업 요약
+
+- 대상 이슈: #34
+- 마일스톤: M010
+- 단계 수: 5
+- 작업 목적: 표준 GitHub-hosted Linux x64 runner에서 exact-SHA production DEB의 문서 UX·native dialog·PDF·system print를 반복 검증하고 증거를 보존하는 fail-closed acceptance gate를 구축한다.
+
+기존 Colima x86_64 수동 검증을 공식 반복 gate로 승격하지 않고, `build_ref`와 native run ID가 일치하는 성공 artifact만 별도 수동 workflow가 소비하도록 구성했다. 제품 binary에는 WebDriver 전용 plugin을 추가하지 않았고 외부 `tauri-driver`·WebKitWebDriver, 공통 WebView harness와 Linux AT-SPI adapter 경계를 분리해 후속 Issue #35가 공통 계층만 재사용할 수 있게 했다.
+
+## 변경 파일 목록과 영향 범위
+
+| 경로 | 변경 요약 | 영향 범위 |
+|---|---|---|
+| `.github/workflows/alhangeul-linux-gui.yml` | exact input, read-only metadata handoff, DEB 설치, Linux GUI 실행, evidence와 final gate | 수동 Linux x64 acceptance Actions |
+| `scripts/verify-workflow-artifact.mjs` | run/repository/SHA/workflow/event/conclusion과 exact artifact ID·digest 검증 | cross-run artifact 보안 경계 |
+| `tests/gui/wdio*.ts`, `tests/gui/specs/`, `tests/gui/support/` | 공통 WDIO 설정, 공개 fixture, DOM 문서 UX와 evidence schema | 플랫폼 중립 GUI harness |
+| `tests/gui/linux/`, `tests/gui/specs/linux-native.e2e.ts` | external driver probe, AT-SPI file/print adapter, bounded drag, Poppler PDF 분석 | Linux native dialog·출력 수용 |
+| `tests/*workflow*.test.mjs`, `tests/gui-contracts.test.mjs`, `tests/linux-gui-probe.test.mjs` | handoff·workflow·공통/전용 경계의 fail-closed 계약 | platform-neutral automation gate |
+| `package.json`, `pnpm-lock.yaml` | WebdriverIO/Tauri service와 TypeScript test toolchain 고정, 전체 test entrypoint | pnpm workspace 개발·CI 의존성 |
+| `docs/operations/DESKTOP_RELEASE.md` | native build → Linux GUI dispatch → evidence read-back과 잔여 수동 gate | 공식 release 운영 절차 |
+| `mydocs/plans/task_m010_34*.md`, `mydocs/working/task_m010_34_stage*.md`, `mydocs/orders/2026081*.md` | 승인 계획, 5개 Stage 증적과 작업 보드 | Hyper-Waterfall 작업 기록 |
+
+제품 Rust/TypeScript runtime과 `third_party/rhwp`, 기존 desktop build workflow는 변경하지 않았다.
+
+## 문서 위치 검증
+
+| 파일 | 계획된 위치 | 실제 위치 | 결과 | 근거 |
+|---|---|---|---|---|
+| Linux GUI release gate | `docs/operations/` | `docs/operations/DESKTOP_RELEASE.md` | OK | 수행계획의 장기 release 운영 계약 위치에 native build·GUI·evidence 순서를 추가했다. |
+| 개발·재현 진입점 | 필요할 때만 `docs/DEVELOPMENT.md` | 변경 없음 | OK | 로컬 macOS에서 production Linux GUI를 실행하는 명령을 제공하지 않으며 운영 workflow 절차만으로 충분해 불필요한 문서 증식을 피했다. |
+| 단계·최종 증적 | `mydocs/plans`, `working`, `report`, `orders` | 동일 | OK | 제품 문서와 내부 승인·검증 기록을 분리했다. |
+
+새 공식 문서 루트나 `mydocs/manual` 문서는 만들지 않았다.
+
+## 변경 전·후 정량 비교
+
+| 지표 | 변경 전 | 변경 후 |
+|---|---:|---:|
+| GitHub Actions workflow inventory | 4개 | 5개 — 수동 Linux x64 GUI workflow 1개 추가 |
+| exact cross-run artifact provenance helper | 없음 | 259행 helper와 정상·변조·누락·중복·pagination 계약 30개 |
+| 공통/Linux GUI E2E scenario | 없음 | 공통 문서 UX 1개 + Linux native 4개 |
+| Linux native UI/PDF focused 계약 | 없음 | AT-SPI 5개 + drag 4개 + PDF 5개 |
+| Linux GUI workflow 전용 source contract | 없음 | 9개, 공통 workflow와 합쳐 focused 21/21 |
+| 전체 automation 통과 수 | Stage 1 완료 시 162개 | PR 리뷰 보정 후 199개 |
+| 신규 workflow 외부 Action immutable pin | 해당 없음 | 4/4 full commit SHA + version 주석 |
+| evidence 보존 | 수동·분산 | 성공·실패 모두 7일, context/handoff/hash/log/screenshot/PDF/summary 결속 |
+
+## 검증 결과
+
+| 수용 기준 | 결과 |
+|---|---|
+| exact SHA/run/artifact 결속 | OK — repository·head repository·40자리 SHA·workflow path·manual event·completed/success와 단일 nonexpired artifact ID·digest를 설치 전에 검증한다. |
+| 변조·오결속 fail-closed | OK — 입력, run, artifact pagination/identity와 inventory 변조 fixture가 download/app 실행 전 실패한다. |
+| 플랫폼 중립 harness와 Linux adapter 분리 | OK — 공통 설정·fixture·selector·evidence가 Linux adapter를 import하지 않고 external provider만 구성한다. |
+| 문서 UX·저장·drag-in·출력 시나리오 | OK — 공개 HWP/HWPX fixture와 bounded timeout/no retry 계약으로 WDIO 5개 scenario를 구성했다. native 실행 결과는 merge 후 close gate로 남는다. |
+| PDF 자동 판정 | OK — 6쪽 A4 metadata, 한글 text, 쪽별 content, blank/crop heuristic과 PNG evidence를 결합하며 시각 read-back 필요를 표시한다. |
+| workflow 최소 권한·비용·Action pin | OK — `actions: read`, `contents: read`, `ubuntu-22.04`, manual dispatch, 45분 job/25분 GUI timeout, exact candidate concurrency와 4개 SHA pin을 고정했다. |
+| 실패 증거·최종 판정 | OK — GUI failure와 evidence upload failure를 `always()` 뒤 final gate가 각각 실패로 전달하고 자동 retry를 금지한다. |
+| 전체 platform-neutral regression | OK — product boundary/version/metadata/pin, GUI TypeScript, automation 199/199, upstream 35/35, Studio 97/97와 production build 통과. |
+| 실제 hosted Linux x64 GUI | MISS — workflow가 default branch에 없어서 PR 전 dispatch 불가. PR merge 후 live close gate에서만 확정한다. |
+
+### 단계별 검증 결과
+
+- [Stage 1](../working/task_m010_34_stage1.md): exact run/artifact handoff focused 30/30, automation 162/162, 제품 경계 202개 파일 통과.
+- [Stage 2](../working/task_m010_34_stage2.md): 공통 GUI 계약 11/11, automation 173/173, Studio 97/97·build 통과.
+- [Stage 3](../working/task_m010_34_stage3.md): Linux native UI/PDF focused 12/12, automation 185/185, TypeScript/Python 정적 검사 통과.
+- [Stage 4](../working/task_m010_34_stage4.md): workflow focused 21/21, automation 194/194, upstream 35/35, Studio 97/97·build와 actionlint 통과.
+- [Stage 5](../working/task_m010_34_stage5.md): frozen install, 전체 중립 gate, 최신 `origin/devel` ancestry, changed path·permission·Action pin 독립 점검 통과.
+- [Stage 5.1](../working/task_m010_34_stage5.1.md): PR #36 리뷰의 evidence 보존·GUI typecheck·현재 저장·A4/CUPS·PDF 임시 산출물과 저위험 진단 보정을 적용하고 automation 199/199을 통과.
+
+## 잔여 위험과 후속 작업
+
+### 잔여 위험
+
+- PR merge 전에는 새 workflow가 default branch에 없어 actual dispatch·DEB install·WebKitGTK/GTK/AT-SPI/CUPS-PDF 성공을 주장할 수 없다.
+- first canary에서 production binary external driver 연결, localized accessibility selector, CUPS-PDF output name이나 hosted image drift가 발견될 수 있다. 실패 evidence를 보존하고 correction PR로만 보정한다.
+- 자동 text/raster 판정만으로 한글 tofu를 확정하지 않는다. screenshot과 PDF render의 glyph·중앙 정렬·빈 쪽·crop을 사람이 read-back해야 한다.
+- Linux arm64, RPM/AppImage desktop integration, 실제 GNOME/Xfce file manager와 physical printer는 자동화 범위 밖이다.
+
+### 후속 작업 후보
+
+- PR merge 뒤 Issue #34 live close gate: same-SHA native build, Linux GUI dispatch, evidence hash 재검산과 시각 read-back.
+- Issue #35: 공통 harness를 계승한 Windows exact-SHA GUI E2E acceptance.
+- Issue #24: #34·#35 merge 뒤 최신 `devel` exact SHA에서 rhwp v0.8.4 제품 수용 Stage 3 재개.
+
+## 작업지시자 승인 요청
+
+- 최종 보고서와 PR 전 수용 기준을 승인하면 `devel` 대상 task PR을 리뷰·merge하고, merge 후 live Linux x64 close gate를 진행한다.
