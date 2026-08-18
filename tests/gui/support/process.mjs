@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process';
 import { constants } from 'node:fs';
 import { access } from 'node:fs/promises';
-import { delimiter as hostDelimiter, join as hostJoin } from 'node:path';
+import * as hostPath from 'node:path';
 import { once } from 'node:events';
 
 const DEFAULT_LOG_LIMIT = 1024 * 1024;
@@ -10,10 +10,12 @@ export async function resolveExecutable(command, options = {}) {
   if (!/^[A-Za-z0-9_.-]+$/.test(command)) throw new Error(`실행 파일 이름이 올바르지 않습니다: ${command}`);
   const pathValue = options.pathValue ?? process.env.PATH ?? '';
   const accessFile = options.accessFile ?? access;
-  const pathDelimiter = options.pathDelimiter ?? hostDelimiter;
-  const joinPath = options.joinPath ?? hostJoin;
-  for (const directory of pathValue.split(pathDelimiter).filter(Boolean)) {
-    const candidate = joinPath(directory, command);
+  const pathApi = options.pathApi ?? hostPath;
+  if (typeof pathApi.delimiter !== 'string' || typeof pathApi.join !== 'function') {
+    throw new Error('실행 파일 탐색 path API가 올바르지 않습니다.');
+  }
+  for (const directory of pathValue.split(pathApi.delimiter).filter(Boolean)) {
+    const candidate = pathApi.join(directory, command);
     try {
       await accessFile(candidate, constants.X_OK);
       return candidate;

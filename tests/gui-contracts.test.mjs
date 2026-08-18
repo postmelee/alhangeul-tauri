@@ -163,6 +163,31 @@ test('공통 helper는 platform adapter를 import하지 않고 외부 driver만 
   assert.doesNotMatch(cargo, /wdio|webdriver/i);
 });
 
+test('Linux runtime helper는 POSIX path API를 명시하고 분리된 path 조각 주입을 금지한다', async () => {
+  const linuxHelpers = [
+    'tests/gui/linux/probe.mjs',
+    'tests/gui/linux/pdf-analysis.mjs',
+    'tests/gui/linux/native-ui/atspi.mjs',
+    'tests/gui/linux/native-ui/drag-drop.mjs',
+  ];
+  for (const path of linuxHelpers) {
+    const source = await readFile(join(repoRoot, path), 'utf8');
+    assert.match(source, /\bposix\b/, path);
+    assert.doesNotMatch(
+      source,
+      /import\s*\{[^}]*(?:basename|dirname|isAbsolute|join|delimiter)[^}]*\}\s*from\s*['"]node:path['"]/s,
+      path,
+    );
+  }
+  const processHelper = await readFile(join(repoRoot, 'tests/gui/support/process.mjs'), 'utf8');
+  assert.match(processHelper, /options\.pathApi \?\? hostPath/);
+  assert.doesNotMatch(processHelper, /pathDelimiter|joinPath/);
+  for (const path of ['tests/gui/linux/probe.mjs', 'tests/gui/linux/native-ui/drag-drop.mjs']) {
+    const source = await readFile(join(repoRoot, path), 'utf8');
+    assert.match(source, /pathApi:\s*posix/, path);
+  }
+});
+
 test('Linux native 저장·PDF acceptance는 디스크 갱신과 경로별 실측 floor를 사용한다', async () => {
   const source = await readFile(join(repoRoot, 'tests/gui/specs/linux-native.e2e.ts'), 'utf8');
   assert.match(source, /current\.mtimeNs > beforeFile\.mtimeNs/);

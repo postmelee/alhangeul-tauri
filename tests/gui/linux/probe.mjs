@@ -81,8 +81,7 @@ export async function inspectProbeEnvironment(options = {}, services = {}) {
   const pathOptions = {
     pathValue: env.PATH,
     accessFile: services.accessFile,
-    pathDelimiter: posix.delimiter,
-    joinPath: posix.join,
+    pathApi: posix,
   };
   const driverPath = await find('tauri-driver', pathOptions);
   const nativeDriverPath = await find('WebKitWebDriver', pathOptions);

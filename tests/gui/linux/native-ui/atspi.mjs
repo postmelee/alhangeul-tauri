@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
-import { basename, dirname, isAbsolute, join } from 'node:path';
+import { posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const DRIVER_PATH = fileURLToPath(new URL('./atspi_driver.py', import.meta.url));
@@ -45,7 +45,8 @@ export function createAtspiRunner(options = {}) {
 
 export class LinuxNativeUiAdapter {
   constructor(options) {
-    if (!isAbsolute(options.outputDir)) throw new Error('native UI outputDir는 절대 경로여야 합니다');
+    this.pathApi = options.pathApi ?? posix;
+    if (!this.pathApi.isAbsolute(options.outputDir)) throw new Error('native UI outputDir는 절대 경로여야 합니다');
     this.outputDir = options.outputDir;
     this.timeoutMs = boundedTimeout(options.timeoutMs ?? 30000);
     this.applicationNames = validateNames(options.applicationNames ?? ['Alhangeul']);
@@ -66,7 +67,7 @@ export class LinuxNativeUiAdapter {
   }
 
   async openDocument(path, trigger) {
-    validateAbsoluteFile(path, 'open path');
+    validateAbsoluteFile(path, 'open path', this.pathApi);
     return this.withFailureEvidence('open-document', async () => {
       await trigger();
       await this.wait(FILE_DIALOG);
@@ -78,22 +79,22 @@ export class LinuxNativeUiAdapter {
   }
 
   async saveDocument(command, path, trigger) {
-    validateAbsoluteFile(path, 'save path');
+    validateAbsoluteFile(path, 'save path', this.pathApi);
     return this.withFailureEvidence(safeLabel(command), async () => {
       await trigger();
       await this.wait(FILE_DIALOG);
       await this.shortcut('ctrl+l');
-      await this.setText(LOCATION_ENTRY, dirname(path));
+      await this.setText(LOCATION_ENTRY, this.pathApi.dirname(path));
       await this.shortcut('Return');
       await this.wait(FILE_DIALOG);
-      await this.setText(NAME_ENTRY, basename(path));
+      await this.setText(NAME_ENTRY, this.pathApi.basename(path));
       await this.action({ roles: BUTTON_ROLES, names: ['save', '저장'] });
       await this.waitAbsent(FILE_DIALOG);
     });
   }
 
   async printToFile(path, trigger) {
-    validateAbsoluteFile(path, 'print path');
+    validateAbsoluteFile(path, 'print path', this.pathApi);
     return this.withFailureEvidence('print-to-file', async () => {
       await trigger();
       await this.wait(PRINT_DIALOG);
@@ -138,8 +139,8 @@ export class LinuxNativeUiAdapter {
 
   async dumpTree(label) {
     const result = await this.command({ command: 'snapshot' });
-    const path = join(this.outputDir, 'native-ui', `${safeLabel(label)}-tree.json`);
-    await mkdir(dirname(path), { recursive: true });
+    const path = this.pathApi.join(this.outputDir, 'native-ui', `${safeLabel(label)}-tree.json`);
+    await mkdir(this.pathApi.dirname(path), { recursive: true });
     await writeFile(path, `${JSON.stringify(result, null, 2)}\n`, { mode: 0o600 });
     return path;
   }
@@ -148,10 +149,10 @@ export class LinuxNativeUiAdapter {
     try {
       return await action();
     } catch (error) {
-      await mkdir(join(this.outputDir, 'native-ui'), { recursive: true });
+      await mkdir(this.pathApi.join(this.outputDir, 'native-ui'), { recursive: true });
       await Promise.allSettled([
         this.dumpTree(label),
-        this.captureScreenshot(join(this.outputDir, 'native-ui', `${safeLabel(label)}.png`)),
+        this.captureScreenshot(this.pathApi.join(this.outputDir, 'native-ui', `${safeLabel(label)}.png`)),
       ]);
       await this.runShortcut('Escape').catch(() => undefined);
       throw error;
@@ -208,8 +209,8 @@ function compactError(result) {
   return String(result.error?.message || result.stderr || `exit ${result.status}`).trim().slice(0, 500);
 }
 
-function validateAbsoluteFile(path, label) {
-  if (!isAbsolute(path) || /[\r\n\0]/.test(path)) throw new Error(`${label}는 단일행 절대 경로여야 합니다`);
+function validateAbsoluteFile(path, label, pathApi) {
+  if (!pathApi.isAbsolute(path) || /[\r\n\0]/.test(path)) throw new Error(`${label}는 단일행 절대 경로여야 합니다`);
 }
 
 function validateNames(names) {

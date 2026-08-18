@@ -349,6 +349,51 @@ git diff --check
 Task #34 [Stage 5.2]: Windows automation 경로 계약 보정
 ```
 
+## Stage 5.3 — PR #38 리뷰 기반 Linux path API 소유권 보정
+
+[PR #38 리뷰](https://github.com/postmelee/alhangeul-tauri/pull/38#issuecomment-5322303455)에서
+Stage 5.2의 delimiter와 join 개별 주입은 서로 다른 path 구현을 조합할 수 있고,
+`atspi.mjs`, `pdf-analysis.mjs`, `drag-drop.mjs`도 Windows runner에서 host path API를
+우발적으로 사용할 수 있음을 확인했다. 새 exact-SHA native build를 실행하기 전에
+Linux runtime helper의 경로 의미를 POSIX API 단위로 고정한다.
+
+- 공통 `resolveExecutable`은 `delimiter`와 `join`을 하나의 `pathApi`로 주입받고,
+  기본값은 현재 host의 `node:path` 전체 API로 유지한다.
+- Linux probe와 drag-in은 `node:path.posix` 전체 API를 넘겨 PATH 탐색 경계를
+  고정한다.
+- AT-SPI adapter와 PDF analyzer는 절대 경로 판정, basename/dirname/join을 같은
+  POSIX API가 소유하게 하고 unit test에서만 host API를 명시적으로 주입한다.
+- source contract test는 Linux runtime helper가 host path 함수를 구조 분해해
+  가져오거나 delimiter/join을 서로 다른 option으로 주입하는 회귀를 금지한다.
+- 상대 경로 input 확장처럼 이번 native gate 복구에 필요하지 않은 선택 보정은
+  포함하지 않는다.
+- 이 Stage의 local commit을 push한 정확한 PR head SHA로
+  `alhangeul-desktop.yml`을 `run_tests=true`로 실행한다. Windows automation,
+  upstream/studio test, Tauri build, Windows artifact/upload까지 모두 성공하지 않으면
+  Linux GUI artifact handoff로 진행하지 않는다.
+
+### 검증
+
+```bash
+node --test tests/linux-gui-probe.test.mjs tests/gui-contracts.test.mjs tests/gui/linux/*.test.mjs tests/gui/linux/native-ui/*.test.mjs tests/rhwp-sync-changes.test.mjs tests/rhwp-sync-pr-body.test.mjs
+pnpm run check:product-boundary
+pnpm run check:product-version
+pnpm run check:release-metadata
+pnpm run check:rhwp-pin
+pnpm run typecheck:gui
+pnpm run test:automation
+pnpm run test:upstream
+pnpm run test:studio
+pnpm run build:studio
+git diff --check
+```
+
+### 커밋
+
+```text
+Task #34 [Stage 5.3]: Linux path API 리뷰 보정
+```
+
 ## 검증
 
 - 각 Stage 검증 명령은 단계 보고서 작성 전에 실행한다.
@@ -371,6 +416,7 @@ Task #34 [Stage 5.2]: Windows automation 경로 계약 보정
 - Stage 5는 Stage 4 보고 승인 후 진행하고, actual native canary는 task PR merge 뒤 close gate에서 실행한다.
 - Stage 5.1은 PR 리뷰 보정을 merge 전에 완료하되 actual selector 측정과 hosted canary는 Stage 5의 post-merge close gate를 유지한다.
 - Stage 5.2는 첫 merged exact-SHA native run의 Windows 계약 실패를 보정하고, 새 보정 PR merge 뒤 native build부터 close gate를 반복한다.
+- Stage 5.3은 PR #38 merge 전에 Linux runtime path 소유권을 API 단위로 고정한다. 이 commit을 push한 exact SHA의 Windows native gate가 성공해야 PR merge와 Linux GUI handoff로 진행한다.
 - #35는 Issue #34 live close gate 통과 뒤 시작한다. #24는 #35까지 merge된 다음 최신 `devel` exact SHA에서 재개한다.
 
 ## 위험과 대응

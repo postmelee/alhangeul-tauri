@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { mkdir, mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import * as hostPath from 'node:path';
 import test from 'node:test';
 import {
   analyzePdf,
@@ -35,9 +35,9 @@ test('Poppler render 파일명은 마지막 page 자릿수만큼 zero-pad한다'
 });
 
 test('Poppler 분석기는 page/text/render와 시각 read-back 필요를 summary에 남긴다', async () => {
-  const root = await mkdtemp(join(tmpdir(), 'alhangeul-pdf-'));
-  const pdfPath = join(root, 'source.pdf');
-  const outputDir = join(root, 'evidence');
+  const root = await mkdtemp(hostPath.join(tmpdir(), 'alhangeul-pdf-'));
+  const pdfPath = hostPath.join(root, 'source.pdf');
+  const outputDir = hostPath.join(root, 'evidence');
   await writeFile(pdfPath, 'pdf');
   const commands = [];
   const result = await analyzePdf({
@@ -48,12 +48,13 @@ test('Poppler 분석기는 page/text/render와 시각 read-back 필요를 summar
     expectedTitle: '사업수행계획서',
     minTextCounts: [2, 2],
   }, {
+    pathApi: hostPath,
     runCommand: async (command, args) => {
       commands.push([command, args]);
       if (command === 'pdfinfo') return 'Pages: 2\nPage size: 595.276 x 841.89 pts (A4)\n';
       if (command === 'pdftotext') return args.includes('-f') ? '쪽본문' : '사 업 수 행 계 획 서';
       const prefix = args.at(-1);
-      await mkdir(dirname(prefix), { recursive: true });
+      await mkdir(hostPath.dirname(prefix), { recursive: true });
       for (let page = 1; page <= 2; page += 1) {
         await writeFile(
           `${prefix}-${page}.${args.includes('-png') ? 'png' : 'ppm'}`,
