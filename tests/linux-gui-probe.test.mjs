@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { delimiter } from 'node:path';
+import { posix } from 'node:path';
 import test from 'node:test';
 import {
   inspectProbeEnvironment,
@@ -54,7 +54,8 @@ test('실행 가능하지 않은 app binary를 거부한다', async () => {
 test('PATH에서 실행 파일을 deterministic 순서로 찾는다', async () => {
   const checked = [];
   const value = await resolveExecutable('tauri-driver', {
-    pathValue: ['/missing', '/cargo/bin'].join(delimiter),
+    pathValue: ['/missing', '/cargo/bin'].join(posix.delimiter),
+    pathApi: posix,
     accessFile: async (path) => {
       checked.push(path);
       if (path.startsWith('/missing')) throw new Error('missing');
@@ -62,6 +63,13 @@ test('PATH에서 실행 파일을 deterministic 순서로 찾는다', async () =
   });
   assert.equal(value, '/cargo/bin/tauri-driver');
   assert.deepEqual(checked, ['/missing/tauri-driver', '/cargo/bin/tauri-driver']);
+});
+
+test('실행 파일 탐색은 delimiter와 join을 한 path API에서 받는다', async () => {
+  await assert.rejects(
+    resolveExecutable('tauri-driver', { pathValue: '/usr/bin', pathApi: { delimiter: ':' } }),
+    /path API/,
+  );
 });
 
 test('driver log는 크기를 제한하고 truncation을 명시한다', () => {

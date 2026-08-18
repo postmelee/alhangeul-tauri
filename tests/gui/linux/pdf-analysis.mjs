@@ -2,7 +2,7 @@
 import { execFile } from 'node:child_process';
 import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { basename, isAbsolute, join } from 'node:path';
+import { posix } from 'node:path';
 import { promisify } from 'node:util';
 import { pathToFileURL } from 'node:url';
 
@@ -10,9 +10,10 @@ const execFileAsync = promisify(execFile);
 const A4_POINTS = Object.freeze({ width: 595.276, height: 841.89 });
 
 export async function analyzePdf(options, services = {}) {
-  const input = validateOptions(options);
+  const pathApi = services.pathApi ?? posix;
+  const input = validateOptions(options, pathApi);
   const run = services.runCommand ?? runCommand;
-  const output = join(input.outputDir, 'pdf', input.label);
+  const output = pathApi.join(input.outputDir, 'pdf', input.label);
   await (services.mkdir ?? mkdir)(output, { recursive: true });
 
   const infoText = await run('pdfinfo', [
@@ -28,9 +29,9 @@ export async function analyzePdf(options, services = {}) {
     pageTextCounts.push(nonWhitespaceCount(text));
   }
 
-  const scratch = await mkdtemp(join(tmpdir(), `alhangeul-pdf-${input.label}-`));
-  const ppmPrefix = join(scratch, 'analysis');
-  const pngPrefix = join(output, 'render');
+  const scratch = await mkdtemp(pathApi.join(tmpdir(), `alhangeul-pdf-${input.label}-`));
+  const ppmPrefix = pathApi.join(scratch, 'analysis');
+  const pngPrefix = pathApi.join(output, 'render');
   const pageRenders = [];
   const renderPaths = [];
   try {
@@ -57,17 +58,17 @@ export async function analyzePdf(options, services = {}) {
 
   const summary = {
     schemaVersion: 1,
-    pdf: basename(input.pdfPath),
+    pdf: pathApi.basename(input.pdfPath),
     pageCount: metadata.pageCount,
     pageSizes: metadata.pageSizes,
     titleFound: normalizeText(fullText).includes(normalizeText(input.expectedTitle)),
     pageTextCounts,
     pageRenders,
     visualReadbackRequired: true,
-    renderPaths: renderPaths.map((path) => basename(path)),
+    renderPaths: renderPaths.map((path) => pathApi.basename(path)),
   };
   assertPdfSummary(summary, input);
-  const summaryPath = join(output, 'pdf-analysis.json');
+  const summaryPath = pathApi.join(output, 'pdf-analysis.json');
   await (services.writeFile ?? writeFile)(summaryPath, `${JSON.stringify(summary, null, 2)}\n`, {
     encoding: 'utf8', mode: 0o600,
   });
@@ -181,8 +182,8 @@ function readPpmHeader(buffer) {
   return { values, offset: index };
 }
 
-function validateOptions(options) {
-  if (!isAbsolute(options.pdfPath) || !isAbsolute(options.outputDir)) {
+function validateOptions(options, pathApi) {
+  if (!pathApi.isAbsolute(options.pdfPath) || !pathApi.isAbsolute(options.outputDir)) {
     throw new Error('PDF와 output directory는 절대 경로여야 합니다');
   }
   if (!/^[a-z0-9][a-z0-9-]{0,63}$/.test(options.label)) throw new Error('PDF label이 유효하지 않습니다');

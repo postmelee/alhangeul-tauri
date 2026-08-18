@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import * as hostPath from 'node:path';
 import test from 'node:test';
 import {
   createAtspiRunner,
@@ -64,10 +64,11 @@ test('print adapter는 Print to File만 고르고 save/cancel modal 종료를 �
 });
 
 test('adapter 실패는 tree와 screenshot을 남기고 Escape cleanup 후 원인을 보존한다', async () => {
-  const outputDir = await mkdtemp(join(tmpdir(), 'alhangeul-atspi-'));
+  const outputDir = await mkdtemp(hostPath.join(tmpdir(), 'alhangeul-atspi-'));
   const shortcuts = [];
   const adapter = createAdapter({
     outputDir,
+    pathApi: hostPath,
     runAtspi: async (request) => {
       if (request.command === 'snapshot') return { nodes: [{ role: 'dialog', name: '저장' }] };
       throw new Error('dialog drift');
@@ -76,11 +77,11 @@ test('adapter 실패는 tree와 screenshot을 남기고 Escape cleanup 후 원�
     captureScreenshot: async (path) => { await writeFile(path, 'png'); },
   });
   await assert.rejects(
-    adapter.saveDocument('file:save-as', '/tmp/output/fail.hwp', async () => {}),
+    adapter.saveDocument('file:save-as', hostPath.join(outputDir, 'fail.hwp'), async () => {}),
     /dialog drift/,
   );
   assert.deepEqual(shortcuts, ['Escape']);
-  const tree = JSON.parse(await readFile(join(outputDir, 'native-ui', 'file-save-as-tree.json')));
+  const tree = JSON.parse(await readFile(hostPath.join(outputDir, 'native-ui', 'file-save-as-tree.json')));
   assert.equal(tree.nodes[0].name, '저장');
 });
 

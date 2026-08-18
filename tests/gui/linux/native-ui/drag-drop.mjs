@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { isAbsolute } from 'node:path';
+import { posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   resolveExecutable,
@@ -17,8 +17,9 @@ export async function dragFileIntoWindow(options, services = {}) {
     throw new Error('bounded drag는 X11 DISPLAY에서만 실행할 수 있습니다');
   }
   const findExecutable = services.resolveExecutable ?? resolveExecutable;
-  const python = await findExecutable('python3', { pathValue: env.PATH });
-  const xdotool = await findExecutable('xdotool', { pathValue: env.PATH });
+  const pathOptions = { pathValue: env.PATH, pathApi: posix };
+  const python = await findExecutable('python3', pathOptions);
+  const xdotool = await findExecutable('xdotool', pathOptions);
   const sourceProcess = (services.spawnLoggedProcess ?? spawnLoggedProcess)(
     python,
     [SOURCE_PATH, options.filePath],
@@ -116,7 +117,7 @@ function center(rect) {
 }
 
 function validateFile(path) {
-  if (!isAbsolute(path) || /[\r\n\0]/.test(path)) throw new Error('drag fixture는 단일행 절대 경로여야 합니다');
+  if (!posix.isAbsolute(path) || /[\r\n\0]/.test(path)) throw new Error('drag fixture는 단일행 절대 경로여야 합니다');
 }
 
 function defaultDelay(ms) {
