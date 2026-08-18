@@ -199,11 +199,16 @@ jobs:
             sudo lpadmin -p PDF -E -v cups-pdf:/ \
               -P /usr/share/ppd/cups-pdf/CUPS-PDF.ppd
           fi
-          sudo lpadmin -p PDF -o PageSize=A4 -o media=iso_a4_210x297mm
+          sudo lpadmin -p PDF -o PageSize=A4
           sudo cupsenable PDF
           sudo cupsaccept PDF
           lpstat -p PDF
-          lpoptions -p PDF | grep -Eq '(^| )PageSize=A4( |$)'
+          queue_options="$(lpoptions -p PDF)"
+          page_size_options="$(lpoptions -p PDF -l | grep -E '^PageSize/')"
+          printf 'CUPS-PDF queue options: %s\n' "$queue_options"
+          printf 'CUPS-PDF PageSize options: %s\n' "$page_size_options"
+          printf '%s\n' "$page_size_options" \
+            | grep -Eq '(^|[[:space:]])\*(A4|iso_a4_210x297mm)([[:space:]]|$)'
 
       - name: Record native environment
         id: record-environment

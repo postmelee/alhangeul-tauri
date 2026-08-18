@@ -131,8 +131,14 @@ test('Xvfb, DBus, AT-SPI와 CUPS-PDF는 repository fixture만 사용한다', () 
   assert.doesNotMatch(cups, /sudo sed[^\n]*#\?/);
   assert.match(cups, /grep -Fqx "Out \$output_dir" "\$config"/);
   assert.match(cups, /grep -Fqx 'Label 0' "\$config"/);
-  assert.match(cups, /lpadmin -p PDF -o PageSize=A4 -o media=iso_a4_210x297mm/);
-  assert.match(cups, /lpoptions -p PDF \| grep -Eq '\(\^\| \)PageSize=A4\( \|\$\)'/);
+  assert.match(cups, /lpadmin -p PDF -o PageSize=A4/);
+  assert.doesNotMatch(cups, /lpadmin -p PDF[^\n]*-o media=/);
+  assert.ok(cups.includes('queue_options="$(lpoptions -p PDF)"'));
+  assert.ok(cups.includes('page_size_options="$(lpoptions -p PDF -l | grep -E \'^PageSize/\')"'));
+  assert.ok(cups.includes("printf 'CUPS-PDF queue options: %s\\n' \"$queue_options\""));
+  assert.ok(cups.includes("printf 'CUPS-PDF PageSize options: %s\\n' \"$page_size_options\""));
+  assert.ok(cups.includes("grep -Eq '(^|[[:space:]])\\*(A4|iso_a4_210x297mm)([[:space:]]|$)'"));
+  assert.doesNotMatch(cups, /lpoptions -p PDF \| grep -Eq/);
   const gui = stepContaining(workflow, 'pnpm run test:gui:linux');
   assert.match(gui, /^        timeout-minutes: 25$/m);
   assert.match(gui, /xvfb-run --auto-servernum/);
