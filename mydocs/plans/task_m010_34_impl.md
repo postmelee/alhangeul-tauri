@@ -503,6 +503,43 @@ git diff --check
 Task #34 [Stage 5.6]: CUPS A4 기본값 검증 보정
 ```
 
+## Stage 5.7 — post-merge tauri-driver 환경 증거 보정
+
+PR #40 merge SHA `52135bb4ec14d32f2e74730f3d503b815a67acfc`의 exact-SHA native
+build run `32099542661`은 Windows x64, Linux x64·arm64와 Windows installer
+smoke를 모두 통과했다. 같은 SHA와 Linux x64 artifact를 전달한 GUI canary run
+`32100313824`에서 Stage 5.6의 CUPS A4 gate는 실측 `PageSize/... *A4`로
+성공했다. 다음 `Record native environment` 단계는 exact `tauri-driver v2.0.6`
+설치를 성공한 뒤, 해당 CLI가 지원하지 않는 `tauri-driver --version`을 호출해
+실패했다. 제품 GUI 단계는 실행되지 않았다.
+
+- driver 설치 gate는 기존 `cargo install tauri-driver --version
+  "$TAURI_DRIVER_VERSION" --locked`를 그대로 유지한다. 실제 runner 로그가
+  `Installed package tauri-driver v2.0.6`을 확인했다.
+- 환경 증거 파일에는 지원하지 않는 binary flag 호출 대신 workflow의 exact install
+  input인 `TAURI_DRIVER_VERSION`을 `tauri-driver <version>` 형식으로 기록한다.
+- workflow 계약 test는 exact install command와 GUI evidence version 결속을 유지하고,
+  environment 단계의 pinned version 출력과 `tauri-driver --version` 부재를 고정한다.
+- CUPS 설정, 제품 코드, GUI runner·selector와 acceptance threshold는 변경하지 않는다.
+- 보정 PR merge 뒤 새 merge exact SHA에서 native build와 Linux GUI canary를 다시
+  실행하고, actual GUI까지 성공하기 전에는 Issue #34를 닫지 않는다.
+
+### 검증
+
+```bash
+node --test tests/linux-gui-workflow.test.mjs tests/actions-workflows.test.mjs
+pnpm run check:product-boundary
+pnpm run test:automation
+actionlint .github/workflows/alhangeul-linux-gui.yml
+git diff --check
+```
+
+### 커밋
+
+```text
+Task #34 [Stage 5.7]: tauri-driver 환경 증거 보정
+```
+
 ## 검증
 
 - 각 Stage 검증 명령은 단계 보고서 작성 전에 실행한다.
@@ -529,6 +566,7 @@ Task #34 [Stage 5.6]: CUPS A4 기본값 검증 보정
 - Stage 5.4는 PR #38 merge exact-SHA Linux GUI canary가 제품 실행 전에 발견한 CUPS-PDF 주석 directive 차이를 보정한다. 보정 PR merge 뒤 새 exact SHA에서 native build와 Linux GUI close gate를 다시 실행한다.
 - Stage 5.5는 PR #39 리뷰에서 확인한 진단 fatal gate와 정규화 부작용을 같은 CUPS-PDF 사전 설정 범위 안에서 제거한다. 보정 head 검증 뒤 PR을 merge하고 Stage 5.4의 post-merge close gate를 반복한다.
 - Stage 5.6은 PR #39 merge exact-SHA canary에서 확인한 CUPS queue option 직렬화 가정을 제거한다. 단일 A4 기본값과 `lpoptions -l` 선택값 계약을 보정한 뒤 새 merge exact SHA에서 close gate를 반복한다.
+- Stage 5.7은 PR #40 merge exact-SHA canary에서 Stage 5.6 성공 뒤 드러난 미지원 `tauri-driver --version` 환경 증거 호출을 제거한다. exact install input을 기록한 뒤 새 merge exact SHA에서 close gate를 반복한다.
 - #35는 Issue #34 live close gate 통과 뒤 시작한다. #24는 #35까지 merge된 다음 최신 `devel` exact SHA에서 재개한다.
 
 ## 위험과 대응
