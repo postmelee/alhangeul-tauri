@@ -188,10 +188,10 @@ jobs:
           directive_pattern='^[[:space:]]*#?[[:space:]]*(Out|Label)[[:space:]]'
           echo 'CUPS-PDF directives before normalization:'
           grep -En "$directive_pattern" "$config" || true
-          sudo sed -Ei "s|^[[:space:]]*#?[[:space:]]*Out[[:space:]].*$|Out $output_dir|" "$config"
-          sudo sed -Ei 's|^[[:space:]]*#?[[:space:]]*Label[[:space:]].*$|Label 0|' "$config"
+          sudo sed -Ei '/^[[:space:]]*(Out|Label)[[:space:]]/d' "$config"
+          printf 'Out %s\nLabel 0\n' "$output_dir" | sudo tee -a "$config" >/dev/null
           echo 'CUPS-PDF directives after normalization:'
-          grep -En "$directive_pattern" "$config"
+          grep -En "$directive_pattern" "$config" || true
           grep -Fqx "Out $output_dir" "$config"
           grep -Fqx 'Label 0' "$config"
           sudo service cups restart

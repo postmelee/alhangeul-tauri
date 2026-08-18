@@ -123,11 +123,12 @@ test('Xvfb, DBus, AT-SPI와 CUPS-PDF는 repository fixture만 사용한다', () 
   assert.doesNotMatch(cups, /chmod 0777 "\$output_dir"/);
   assert.match(cups, /printf 'a4\\n' \| sudo tee \/etc\/papersize/);
   assert.match(cups, /config=\/etc\/cups\/cups-pdf\.conf/);
-  assert.ok(cups.includes('^[[:space:]]*#?[[:space:]]*Out[[:space:]].*$'));
-  assert.ok(cups.includes('^[[:space:]]*#?[[:space:]]*Label[[:space:]].*$'));
+  assert.ok(cups.includes("sudo sed -Ei '/^[[:space:]]*(Out|Label)[[:space:]]/d' \"$config\""));
+  assert.ok(cups.includes("printf 'Out %s\\nLabel 0\\n' \"$output_dir\" | sudo tee -a \"$config\" >/dev/null"));
   assert.match(cups, /CUPS-PDF directives before normalization:/);
   assert.match(cups, /CUPS-PDF directives after normalization:/);
-  assert.match(cups, /grep -En "\$directive_pattern" "\$config"/);
+  assert.equal(cups.split('grep -En "$directive_pattern" "$config" || true').length - 1, 2);
+  assert.doesNotMatch(cups, /sudo sed[^\n]*#\?/);
   assert.match(cups, /grep -Fqx "Out \$output_dir" "\$config"/);
   assert.match(cups, /grep -Fqx 'Label 0' "\$config"/);
   assert.match(cups, /lpadmin -p PDF -o PageSize=A4 -o media=iso_a4_210x297mm/);
