@@ -394,6 +394,38 @@ git diff --check
 Task #34 [Stage 5.3]: Linux path API 리뷰 보정
 ```
 
+## Stage 5.4 — post-merge CUPS-PDF directive 보정
+
+PR #38 merge SHA `1ae4415f2547b535d809efcb0b05d1536392eee4`의 exact-SHA native
+build는 Windows x64, Linux x64·arm64와 Windows installer smoke를 모두 통과했다.
+같은 SHA와 native run을 전달한 Linux GUI canary는 제품 GUI 실행 전에
+`Configure CUPS-PDF` 단계에서 실패했다. Ubuntu의 `cups-pdf.conf` 기본값은 `Out`은
+활성 directive지만 `Label`은 주석 directive이므로, 활성 행만 치환하던 계약을 같은
+Issue의 post-merge close gate 보정으로 처리한다.
+
+- `Out`과 `Label` 치환은 선행 공백과 선택적인 주석 표식을 모두 허용한다.
+- 설정 전후의 관련 directive를 로그에 남겨 runner image 변경 시 실패 지점을
+  재현할 수 있게 한다. 사용자 문서 경로나 문서 내용은 출력하지 않는다.
+- workflow 계약 테스트는 주석 directive를 허용하는 정규식과 전후 진단을 고정한다.
+- 제품 코드, CUPS queue 설정, GUI selector와 acceptance threshold는 변경하지 않는다.
+- 보정 PR merge 뒤 새 merge exact SHA로 native build와 Linux GUI canary를 다시
+  실행한다. 해당 live gate 성공 전에는 Issue #34를 닫지 않는다.
+
+### 검증
+
+```bash
+node --test tests/linux-gui-workflow.test.mjs tests/actions-workflows.test.mjs
+pnpm run check:product-boundary
+pnpm run test:automation
+git diff --check
+```
+
+### 커밋
+
+```text
+Task #34 [Stage 5.4]: CUPS-PDF directive 보정
+```
+
 ## 검증
 
 - 각 Stage 검증 명령은 단계 보고서 작성 전에 실행한다.
@@ -417,6 +449,7 @@ Task #34 [Stage 5.3]: Linux path API 리뷰 보정
 - Stage 5.1은 PR 리뷰 보정을 merge 전에 완료하되 actual selector 측정과 hosted canary는 Stage 5의 post-merge close gate를 유지한다.
 - Stage 5.2는 첫 merged exact-SHA native run의 Windows 계약 실패를 보정하고, 새 보정 PR merge 뒤 native build부터 close gate를 반복한다.
 - Stage 5.3은 PR #38 merge 전에 Linux runtime path 소유권을 API 단위로 고정한다. 이 commit을 push한 exact SHA의 Windows native gate가 성공해야 PR merge와 Linux GUI handoff로 진행한다.
+- Stage 5.4는 PR #38 merge exact-SHA Linux GUI canary가 제품 실행 전에 발견한 CUPS-PDF 주석 directive 차이를 보정한다. 보정 PR merge 뒤 새 exact SHA에서 native build와 Linux GUI close gate를 다시 실행한다.
 - #35는 Issue #34 live close gate 통과 뒤 시작한다. #24는 #35까지 merge된 다음 최신 `devel` exact SHA에서 재개한다.
 
 ## 위험과 대응
