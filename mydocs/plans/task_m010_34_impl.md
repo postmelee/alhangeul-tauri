@@ -460,6 +460,49 @@ git diff --check
 Task #34 [Stage 5.5]: CUPS-PDF 정규화 리뷰 보정
 ```
 
+## Stage 5.6 — post-merge CUPS A4 기본값 검증 보정
+
+PR #39 merge SHA `4ab82ed214d513b72aa1162f61ea7f6727f3f191`의 exact-SHA native
+build run `32097086884`는 Windows x64, Linux x64·arm64와 Windows installer
+smoke를 모두 통과했다. 같은 SHA와 Linux x64 artifact를 전달한 GUI canary run
+`32097898631`은 CUPS-PDF 설정 정규화, CUPS 재시작, PDF queue 등록·활성화까지
+성공한 뒤 `lpoptions -p PDF` 출력에 exact `PageSize=A4` token을 요구하는 마지막
+검사에서 실패했다. exact SHA·artifact digest·설치 DEB checksum은 evidence artifact로
+재확인했고 제품 GUI 단계는 실행되지 않았다.
+
+CUPS 공식 계약에서 `lpoptions -p printer -l`은 printer-specific option과 현재 선택된
+기본값을 `*` 표식으로 보고한다. Stage 5.6은 특정 runner의 일반 option 직렬화에
+의존하지 않고 이 기본값 계약으로 좁게 보정한다.
+
+- queue 기본 용지는 `lpadmin -p PDF -o PageSize=A4` 한 가지 표현으로 설정하고,
+  같은 크기를 `media=iso_a4_210x297mm`으로 중복 지정하지 않는다.
+- 진단을 위해 일반 queue option과 `-l`의 `PageSize` 행을 로그에 남긴다. 사용자 문서
+  경로나 문서 내용은 출력하지 않는다.
+- 성공 gate는 `PageSize` 선택지 행에 선택 표식이 붙은 `A4` 또는 CUPS canonical
+  `iso_a4_210x297mm` 값이 있는지 검사한다. `PageSize` 행 부재나 다른 기본값은
+  fail-closed한다.
+- workflow 계약 test는 단일 A4 설정, 두 진단, `-l` 기반 선택값 검증과 기존 exact
+  문자열 assertion 제거를 고정한다.
+- 제품 코드, CUPS-PDF output directive, GUI selector와 PDF threshold는 변경하지 않는다.
+- 보정 PR merge 뒤 새 merge exact SHA에서 native build와 Linux GUI canary를 다시
+  실행하고, actual GUI·CUPS-PDF까지 성공하기 전에는 Issue #34를 닫지 않는다.
+
+### 검증
+
+```bash
+node --test tests/linux-gui-workflow.test.mjs tests/actions-workflows.test.mjs
+pnpm run check:product-boundary
+pnpm run test:automation
+actionlint .github/workflows/alhangeul-linux-gui.yml
+git diff --check
+```
+
+### 커밋
+
+```text
+Task #34 [Stage 5.6]: CUPS A4 기본값 검증 보정
+```
+
 ## 검증
 
 - 각 Stage 검증 명령은 단계 보고서 작성 전에 실행한다.
@@ -485,6 +528,7 @@ Task #34 [Stage 5.5]: CUPS-PDF 정규화 리뷰 보정
 - Stage 5.3은 PR #38 merge 전에 Linux runtime path 소유권을 API 단위로 고정한다. 이 commit을 push한 exact SHA의 Windows native gate가 성공해야 PR merge와 Linux GUI handoff로 진행한다.
 - Stage 5.4는 PR #38 merge exact-SHA Linux GUI canary가 제품 실행 전에 발견한 CUPS-PDF 주석 directive 차이를 보정한다. 보정 PR merge 뒤 새 exact SHA에서 native build와 Linux GUI close gate를 다시 실행한다.
 - Stage 5.5는 PR #39 리뷰에서 확인한 진단 fatal gate와 정규화 부작용을 같은 CUPS-PDF 사전 설정 범위 안에서 제거한다. 보정 head 검증 뒤 PR을 merge하고 Stage 5.4의 post-merge close gate를 반복한다.
+- Stage 5.6은 PR #39 merge exact-SHA canary에서 확인한 CUPS queue option 직렬화 가정을 제거한다. 단일 A4 기본값과 `lpoptions -l` 선택값 계약을 보정한 뒤 새 merge exact SHA에서 close gate를 반복한다.
 - #35는 Issue #34 live close gate 통과 뒤 시작한다. #24는 #35까지 merge된 다음 최신 `devel` exact SHA에서 재개한다.
 
 ## 위험과 대응
