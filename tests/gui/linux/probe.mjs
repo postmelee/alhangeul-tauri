@@ -2,7 +2,7 @@
 
 import { constants } from 'node:fs';
 import { access, mkdir, stat, writeFile } from 'node:fs/promises';
-import { isAbsolute, resolve } from 'node:path';
+import { posix, resolve as resolveHost } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   resolveExecutable,
@@ -78,7 +78,12 @@ export async function inspectProbeEnvironment(options = {}, services = {}) {
   const outputDir = resolveAbsolute(options.outputDir, 'output directory');
   await assertExecutable(appPath, services);
   const find = services.resolveExecutable ?? resolveExecutable;
-  const pathOptions = { pathValue: env.PATH, accessFile: services.accessFile };
+  const pathOptions = {
+    pathValue: env.PATH,
+    accessFile: services.accessFile,
+    pathDelimiter: posix.delimiter,
+    joinPath: posix.join,
+  };
   const driverPath = await find('tauri-driver', pathOptions);
   const nativeDriverPath = await find('WebKitWebDriver', pathOptions);
   const port = parsePort(options.port ?? 4444, 'WebDriver port');
@@ -139,10 +144,10 @@ async function writeProbeEvidence(runtime, process, result, io) {
     error: 'probe가 결과를 만들기 전에 종료되었습니다.',
   });
   await Promise.all([
-    io.writeFile(resolve(runtime.outputDir, 'tauri-driver.stdout.log'), process.stdout.value(), 'utf8'),
-    io.writeFile(resolve(runtime.outputDir, 'tauri-driver.stderr.log'), process.stderr.value(), 'utf8'),
+    io.writeFile(posix.resolve(runtime.outputDir, 'tauri-driver.stdout.log'), process.stdout.value(), 'utf8'),
+    io.writeFile(posix.resolve(runtime.outputDir, 'tauri-driver.stderr.log'), process.stderr.value(), 'utf8'),
     io.writeFile(
-      resolve(runtime.outputDir, 'probe-summary.json'),
+      posix.resolve(runtime.outputDir, 'probe-summary.json'),
       `${JSON.stringify(summary, null, 2)}\n`,
       'utf8',
     ),
@@ -165,8 +170,8 @@ function probeSummary(runtime, value) {
 }
 
 function resolveAbsolute(value, name) {
-  if (typeof value !== 'string' || !isAbsolute(value)) throw new Error(`${name}는 절대 경로여야 합니다.`);
-  return resolve(value);
+  if (typeof value !== 'string' || !posix.isAbsolute(value)) throw new Error(`${name}는 절대 경로여야 합니다.`);
+  return posix.resolve(value);
 }
 
 function parsePort(value, name) {
@@ -203,7 +208,7 @@ function parseArguments(args) {
   return options;
 }
 
-const isMain = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+const isMain = process.argv[1] && resolveHost(process.argv[1]) === fileURLToPath(import.meta.url);
 if (isMain) {
   try {
     const options = parseArguments(process.argv.slice(2));

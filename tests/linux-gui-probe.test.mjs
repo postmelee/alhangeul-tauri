@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { delimiter } from 'node:path';
+import { posix } from 'node:path';
 import test from 'node:test';
 import {
   inspectProbeEnvironment,
@@ -54,7 +54,9 @@ test('실행 가능하지 않은 app binary를 거부한다', async () => {
 test('PATH에서 실행 파일을 deterministic 순서로 찾는다', async () => {
   const checked = [];
   const value = await resolveExecutable('tauri-driver', {
-    pathValue: ['/missing', '/cargo/bin'].join(delimiter),
+    pathValue: ['/missing', '/cargo/bin'].join(posix.delimiter),
+    pathDelimiter: posix.delimiter,
+    joinPath: posix.join,
     accessFile: async (path) => {
       checked.push(path);
       if (path.startsWith('/missing')) throw new Error('missing');

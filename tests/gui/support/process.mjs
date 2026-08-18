@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process';
 import { constants } from 'node:fs';
 import { access } from 'node:fs/promises';
-import { delimiter, join } from 'node:path';
+import { delimiter as hostDelimiter, join as hostJoin } from 'node:path';
 import { once } from 'node:events';
 
 const DEFAULT_LOG_LIMIT = 1024 * 1024;
@@ -10,8 +10,10 @@ export async function resolveExecutable(command, options = {}) {
   if (!/^[A-Za-z0-9_.-]+$/.test(command)) throw new Error(`실행 파일 이름이 올바르지 않습니다: ${command}`);
   const pathValue = options.pathValue ?? process.env.PATH ?? '';
   const accessFile = options.accessFile ?? access;
-  for (const directory of pathValue.split(delimiter).filter(Boolean)) {
-    const candidate = join(directory, command);
+  const pathDelimiter = options.pathDelimiter ?? hostDelimiter;
+  const joinPath = options.joinPath ?? hostJoin;
+  for (const directory of pathValue.split(pathDelimiter).filter(Boolean)) {
+    const candidate = joinPath(directory, command);
     try {
       await accessFile(candidate, constants.X_OK);
       return candidate;

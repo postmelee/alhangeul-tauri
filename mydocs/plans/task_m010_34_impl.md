@@ -310,6 +310,45 @@ git diff --check
 Task #34 [Stage 5.1]: Linux GUI acceptance 리뷰 보정
 ```
 
+## Stage 5.2 — merged exact-SHA Windows 계약 경로 보정
+
+PR #36 merge 뒤 `run_tests=true`로 실행한 exact-SHA native build에서 Windows
+runner의 automation 계약 6건이 실패했다. 제품 build 이전에 Linux fixture의 POSIX
+경로가 Windows host `node:path`로 정규화되거나, 범용 writer test가 POSIX literal만
+기대해 발생한 결정적 실패이므로 live GUI canary를 우회하지 않고 같은 Issue 안에서
+보정 PR을 먼저 만든다.
+
+- Linux 전용 probe의 app·output·evidence·PATH 경로는 `node:path.posix`로 고정한다.
+- 공통 실행 파일 탐색 helper는 기본 host 동작을 보존하면서 path delimiter와 join
+  경계를 주입할 수 있게 한다.
+- 범용 upstream-sync writer test는 production helper가 사용하는 host `resolve()`
+  결과를 기대해 Windows와 Linux 양쪽 의미를 유지한다.
+- 첫 실패 run은 성공 artifact handoff로 사용하지 않는다. 보정 PR merge 뒤 새 merged
+  exact SHA로 native build를 다시 실행하고, 전체 성공 run만 Linux GUI workflow에
+  전달한다.
+
+### 검증
+
+```bash
+node --test tests/linux-gui-probe.test.mjs tests/rhwp-sync-changes.test.mjs tests/rhwp-sync-pr-body.test.mjs
+pnpm run check:product-boundary
+pnpm run check:product-version
+pnpm run check:release-metadata
+pnpm run check:rhwp-pin
+pnpm run typecheck:gui
+pnpm run test:automation
+pnpm run test:upstream
+pnpm run test:studio
+pnpm run build:studio
+git diff --check
+```
+
+### 커밋
+
+```text
+Task #34 [Stage 5.2]: Windows automation 경로 계약 보정
+```
+
 ## 검증
 
 - 각 Stage 검증 명령은 단계 보고서 작성 전에 실행한다.
@@ -331,6 +370,7 @@ Task #34 [Stage 5.1]: Linux GUI acceptance 리뷰 보정
 - Stage 4는 Stage 1~3 helper를 orchestration하며 workflow YAML 안에 같은 판정을 복제하지 않는다.
 - Stage 5는 Stage 4 보고 승인 후 진행하고, actual native canary는 task PR merge 뒤 close gate에서 실행한다.
 - Stage 5.1은 PR 리뷰 보정을 merge 전에 완료하되 actual selector 측정과 hosted canary는 Stage 5의 post-merge close gate를 유지한다.
+- Stage 5.2는 첫 merged exact-SHA native run의 Windows 계약 실패를 보정하고, 새 보정 PR merge 뒤 native build부터 close gate를 반복한다.
 - #35는 Issue #34 live close gate 통과 뒤 시작한다. #24는 #35까지 merge된 다음 최신 `devel` exact SHA에서 재개한다.
 
 ## 위험과 대응

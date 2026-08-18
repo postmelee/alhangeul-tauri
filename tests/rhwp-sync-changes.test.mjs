@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import test from 'node:test';
 import {
   RHWP_SYNC_ALLOWED_PATHS,
@@ -40,7 +40,7 @@ test('tracked·untracked changed path를 정렬한 exact allowlist로 쓴다', a
     writeFile: async (path, source) => writes.push([path, source]),
   });
   assert.deepEqual(result, ['README.md', 'rhwp-core.lock']);
-  assert.deepEqual(writes, [['/tmp/changed.txt', 'README.md\nrhwp-core.lock\n']]);
+  assert.deepEqual(writes, [[resolve('/tmp/changed.txt'), 'README.md\nrhwp-core.lock\n']]);
   assert.ok(calls.includes('diff --check'));
 });
 
