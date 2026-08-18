@@ -394,6 +394,72 @@ git diff --check
 Task #34 [Stage 5.3]: Linux path API 리뷰 보정
 ```
 
+## Stage 5.4 — post-merge CUPS-PDF directive 보정
+
+PR #38 merge SHA `1ae4415f2547b535d809efcb0b05d1536392eee4`의 exact-SHA native
+build는 Windows x64, Linux x64·arm64와 Windows installer smoke를 모두 통과했다.
+같은 SHA와 native run을 전달한 Linux GUI canary는 제품 GUI 실행 전에
+`Configure CUPS-PDF` 단계에서 실패했다. Ubuntu의 `cups-pdf.conf` 기본값은 `Out`은
+활성 directive지만 `Label`은 주석 directive이므로, 활성 행만 치환하던 계약을 같은
+Issue의 post-merge close gate 보정으로 처리한다.
+
+- `Out`과 `Label` 치환은 선행 공백과 선택적인 주석 표식을 모두 허용한다.
+- 설정 전후의 관련 directive를 로그에 남겨 runner image 변경 시 실패 지점을
+  재현할 수 있게 한다. 사용자 문서 경로나 문서 내용은 출력하지 않는다.
+- workflow 계약 테스트는 주석 directive를 허용하는 정규식과 전후 진단을 고정한다.
+- 제품 코드, CUPS queue 설정, GUI selector와 acceptance threshold는 변경하지 않는다.
+- 보정 PR merge 뒤 새 merge exact SHA로 native build와 Linux GUI canary를 다시
+  실행한다. 해당 live gate 성공 전에는 Issue #34를 닫지 않는다.
+
+### 검증
+
+```bash
+node --test tests/linux-gui-workflow.test.mjs tests/actions-workflows.test.mjs
+pnpm run check:product-boundary
+pnpm run test:automation
+git diff --check
+```
+
+### 커밋
+
+```text
+Task #34 [Stage 5.4]: CUPS-PDF directive 보정
+```
+
+## Stage 5.5 — PR #39 CUPS-PDF 정규화 리뷰 보정
+
+[PR #39 리뷰](https://github.com/postmelee/alhangeul-tauri/pull/39#issuecomment-5322798235)에서
+사후 진단 `grep`이 `set -e` 아래 의도치 않은 fatal gate가 되고, 주석 행 직접 치환은
+directive 부재·중복·산문 주석과 sed 치환 문자를 일반적으로 처리하지 못함을
+확인했다. merge 전 같은 CUPS-PDF 사전 설정 경계 안에서 보정한다.
+
+- 설정 전후 directive 출력은 모두 `|| true`를 사용해 진단으로만 유지한다.
+- 주석은 보존하고 활성 `Out`·`Label` directive만 삭제한 뒤 exact 두 행을 append한다.
+  따라서 directive가 없거나 활성 값이 중복된 입력도 단일 활성 값으로 수렴한다.
+- `$output_dir`는 sed 치환부가 아니라 `printf '%s'` 인자로 전달한다.
+- 뒤의 exact `grep -Fqx` 두 줄만 정규화 성공 gate로 유지한다.
+- workflow 계약 test는 활성 directive delete, exact append, 두 비필수 진단과 주석
+  비치환을 고정한다.
+- 실제 distro fixture를 실행하는 행위 test는 production shell 추출 또는 Linux 전용
+  실행 경계가 필요하므로 이번 좁은 PR에 복제하지 않는다. merge 후 exact-SHA live
+  canary를 필수 gate로 유지하고 재발할 때 별도 범위를 승인받는다.
+
+### 검증
+
+```bash
+node --test tests/linux-gui-workflow.test.mjs tests/actions-workflows.test.mjs
+pnpm run check:product-boundary
+pnpm run test:automation
+actionlint .github/workflows/alhangeul-linux-gui.yml
+git diff --check
+```
+
+### 커밋
+
+```text
+Task #34 [Stage 5.5]: CUPS-PDF 정규화 리뷰 보정
+```
+
 ## 검증
 
 - 각 Stage 검증 명령은 단계 보고서 작성 전에 실행한다.
@@ -417,6 +483,8 @@ Task #34 [Stage 5.3]: Linux path API 리뷰 보정
 - Stage 5.1은 PR 리뷰 보정을 merge 전에 완료하되 actual selector 측정과 hosted canary는 Stage 5의 post-merge close gate를 유지한다.
 - Stage 5.2는 첫 merged exact-SHA native run의 Windows 계약 실패를 보정하고, 새 보정 PR merge 뒤 native build부터 close gate를 반복한다.
 - Stage 5.3은 PR #38 merge 전에 Linux runtime path 소유권을 API 단위로 고정한다. 이 commit을 push한 exact SHA의 Windows native gate가 성공해야 PR merge와 Linux GUI handoff로 진행한다.
+- Stage 5.4는 PR #38 merge exact-SHA Linux GUI canary가 제품 실행 전에 발견한 CUPS-PDF 주석 directive 차이를 보정한다. 보정 PR merge 뒤 새 exact SHA에서 native build와 Linux GUI close gate를 다시 실행한다.
+- Stage 5.5는 PR #39 리뷰에서 확인한 진단 fatal gate와 정규화 부작용을 같은 CUPS-PDF 사전 설정 범위 안에서 제거한다. 보정 head 검증 뒤 PR을 merge하고 Stage 5.4의 post-merge close gate를 반복한다.
 - #35는 Issue #34 live close gate 통과 뒤 시작한다. #24는 #35까지 merge된 다음 최신 `devel` exact SHA에서 재개한다.
 
 ## 위험과 대응
