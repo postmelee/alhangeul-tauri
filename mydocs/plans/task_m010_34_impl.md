@@ -577,6 +577,57 @@ git diff --check
 Task #34 [Stage 5.8]: WebKitWebDriver 환경 증거 보정
 ```
 
+## Stage 5.9 — CUPS 환경 증거 보정과 pre-PR branch CI
+
+PR #42 merge SHA `fee06fb41de05586a8088b88821a95ca6e97cc16`의 exact-SHA native
+build run `32342945305`는 Windows x64, Linux x64·arm64와 Windows installer
+smoke를 모두 통과했다. 같은 SHA와 Linux x64 artifact를 전달한 GUI canary run
+`32343886835`은 exact handoff, DEB 설치, CUPS-PDF A4 구성, exact tauri-driver 설치와
+Stage 5.8의 WebKitWebDriver binary·패키지 증거까지 성공했다. 환경 증거의 마지막
+`cupsd -v`는 Ubuntu 22.04 `cupsd`가 지원하지 않는 option이라 usage를 출력하고
+exit 1을 반환했으며 제품 GUI 단계는 실행되지 않았다.
+
+- `cupsd -v`를 제거하고 기존 `dpkg-query -W` 대상에 `cups`를 추가해 CUPS package
+  version을 지원되는 OS package database 계약으로 기록한다. CUPS 실제 동작은 앞선
+  service restart, PDF queue와 A4 선택 기본값 gate가 계속 검증한다.
+- workflow 계약 test는 `cups` package version 증거와 `cupsd -v` 부재를 고정한다.
+- exact artifact handoff, driver 설치, CUPS 설정, 제품 코드, GUI selector와 PDF
+  threshold는 변경하지 않는다.
+- 로컬 gate 뒤 `local/task34`를 원격 `publish/task34`로 먼저 push하되 PR은 만들지
+  않는다. 이미 default branch에 존재하는 manual workflow를 `--ref
+  publish/task34`로 실행해 correction branch의 workflow 정의를 검증한다.
+- 이번 변경은 workflow evidence 명령·source contract·문서만 바꾸므로 branch GUI
+  진단은 검증된 제품 SHA `fee06fb41de05586a8088b88821a95ca6e97cc16`과 native run
+  `32342945305`를 재사용한다. branch GUI가 실패하면 같은 branch에서 보정·재실행하고,
+  완전히 성공한 뒤에만 correction PR을 생성한다.
+- PR merge 뒤에는 새 merge exact SHA의 native build와 Linux GUI canary를 한 번
+  실행하고 evidence read-back까지 성공해야 Issue #34를 닫는다.
+
+### 검증
+
+```bash
+node --test tests/linux-gui-workflow.test.mjs tests/actions-workflows.test.mjs
+pnpm run check:product-boundary
+pnpm run test:automation
+actionlint .github/workflows/alhangeul-linux-gui.yml
+git diff --check
+```
+
+pre-PR branch GUI:
+
+```bash
+git push origin local/task34:publish/task34
+gh workflow run alhangeul-linux-gui.yml --ref publish/task34 \
+  -f build_ref=fee06fb41de05586a8088b88821a95ca6e97cc16 \
+  -f native_run_id=32342945305
+```
+
+### 커밋
+
+```text
+Task #34 [Stage 5.9]: CUPS 환경 증거 보정
+```
+
 ## 검증
 
 - 각 Stage 검증 명령은 단계 보고서 작성 전에 실행한다.
@@ -605,6 +656,7 @@ Task #34 [Stage 5.8]: WebKitWebDriver 환경 증거 보정
 - Stage 5.6은 PR #39 merge exact-SHA canary에서 확인한 CUPS queue option 직렬화 가정을 제거한다. 단일 A4 기본값과 `lpoptions -l` 선택값 계약을 보정한 뒤 새 merge exact SHA에서 close gate를 반복한다.
 - Stage 5.7은 PR #40 merge exact-SHA canary에서 Stage 5.6 성공 뒤 드러난 미지원 `tauri-driver --version` 환경 증거 호출을 제거한다. exact install input을 기록한 뒤 새 merge exact SHA에서 close gate를 반복한다.
 - Stage 5.8은 PR #41 merge exact-SHA canary에서 Stage 5.7 성공 뒤 드러난 미지원 `WebKitWebDriver --version` 환경 증거 호출을 제거한다. binary 경로와 패키지 버전을 분리 기록한 뒤 새 merge exact SHA에서 close gate를 반복한다.
+- Stage 5.9는 PR #42 merge exact-SHA canary에서 Stage 5.8 성공 뒤 드러난 미지원 `cupsd -v` 환경 증거 호출을 제거한다. correction branch의 workflow를 PR 전에 수동 실행하고 성공한 변경만 PR로 게시한 뒤 merge exact-SHA close gate를 한 번 반복한다.
 - #35는 Issue #34 live close gate 통과 뒤 시작한다. #24는 #35까지 merge된 다음 최신 `devel` exact SHA에서 재개한다.
 
 ## 위험과 대응
