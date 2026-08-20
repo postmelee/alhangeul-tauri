@@ -617,6 +617,9 @@ exit 1을 반환했으며 제품 GUI 단계는 실행되지 않았다.
   `RESULT null`을 read-back해 upload 실패와 구분했다. headless acceptance는 OS 로컬 글꼴
   접근 권한을 요청하지 않고 `대체 글꼴로 보기`를 선택한다. 해당 제목이 아닌 modal은
   자동 진행하지 않고 fail-closed하며, 제품의 실제 기본·권장 UX는 변경하지 않는다.
+- 첫 modal handler run `32351859807`은 두 fixture 모두 모달까지 도달했지만 WebDriver의
+  `.dialog-title` text가 자식 닫기 버튼을 포함한 `로컬 글꼴 감지×`로 측정돼 fail-closed했다.
+  닫기 버튼의 고정 `×` 접미사만 제거한 뒤 정확한 제목 비교를 유지한다.
 - pre-PR 보정 중 acceptance harness만 바뀌어도 전체 native matrix를 재빌드하는 낭비를
   피한다. workflow source는 공식 immutable context `github.workflow_sha`로 checkout·검증하고,
   제품 artifact는 `build_ref`와 native run으로 독립 검증한다. evidence에는

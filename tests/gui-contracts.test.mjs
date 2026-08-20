@@ -150,6 +150,7 @@ test('숨은 file input upload와 글꼴 선택은 OS 권한·style 변경 없�
   );
   assert.match(source, /input\.addValue\(fixture\.absolutePath\)/);
   assert.doesNotMatch(source, /input\.setValue|display:\s*'block'|setAttribute\(['"]style/);
+  assert.match(source, /\.replace\(\/\\s\*×\\s\*\$\/, ''\)/);
   assert.match(source, /title !== '로컬 글꼴 감지'/);
   assert.match(source, /await button\.getText\(\) === '대체 글꼴로 보기'/);
   assert.doesNotMatch(source, /로컬 글꼴 감지 \(권장\)/);

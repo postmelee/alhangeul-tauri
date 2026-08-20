@@ -64,7 +64,8 @@ async function resolveDocumentLoadDialog(fixture: DocumentFixture): Promise<void
 
   const overlay = await $(GUI_SELECTORS.modalOverlay);
   if (!await overlay.isExisting()) return;
-  const title = await overlay.$(GUI_SELECTORS.modalTitle).getText();
+  const title = (await overlay.$(GUI_SELECTORS.modalTitle).getText())
+    .replace(/\s*×\s*$/, '');
   if (title !== '로컬 글꼴 감지') {
     throw new Error(`${fixture.id} 예상하지 않은 문서 로드 모달: ${title}`);
   }

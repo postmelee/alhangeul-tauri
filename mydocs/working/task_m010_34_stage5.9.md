@@ -72,6 +72,9 @@ git diff --check
   `로컬 글꼴 감지` 모달이 확인됐으며, 사용자 선택을 기다리는 동안 최종 basename 상태가
   되지 않아 timeout됐다. headless acceptance는 권한·host font 상태에 의존하지 않는
   `대체 글꼴로 보기`만 선택하고 다른 modal은 fail-closed하도록 후속 보정한다.
+- 첫 modal handler run `32351859807`은 두 fixture에서 모달을 찾았지만 WebDriver title
+  측정값이 닫기 버튼 text까지 포함한 `로컬 글꼴 감지×`여서 의도한 fail-closed가 작동했다.
+  제품 DOM을 바꾸지 않고 고정 닫기 기호 접미사만 정규화해 exact 제목 비교를 유지한다.
 
 ## 다음 단계 영향
 
