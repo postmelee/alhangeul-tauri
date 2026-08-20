@@ -19,7 +19,7 @@ version 증거를 지원되는 Debian package database 계약으로 교체한다
 | `.github/workflows/alhangeul-linux-gui.yml` | 미지원 `cupsd -v`를 제거하고 기존 `dpkg-query -W`에 `cups` package version 증거 추가 |
 | `tests/linux-gui-workflow.test.mjs` | CUPS package 증거와 `cupsd -v` 부재를 workflow source contract로 고정 |
 | `tests/gui/support/document-ux.ts` | 실패한 temporary style upload adapter 제거 |
-| `tests/gui/specs/document-ux.e2e.ts` | 숨은 file input에 clear 없이 `addValue`로 경로를 직접 전송 |
+| `tests/gui/specs/document-ux.e2e.ts` | 숨은 file input에 clear 없이 `addValue`로 경로를 전송하고 headless 환경의 로컬 글꼴 선택 모달을 fail-closed 처리 |
 | `tests/gui/wdio.linux.conf.ts` | WebKit file upload용 표준 `strictFileInteractability: false` 명시 |
 | `tests/gui-contracts.test.mjs` | `addValue` 직접 전송과 clear/style 변경 부재를 source contract로 고정 |
 | `mydocs/plans/task_m010_34_impl.md` | 두 hosted 실패 원인, acceptance/product SHA 분리와 pre-PR branch CI 순서 기록 |
@@ -67,6 +67,11 @@ git diff --check
   `elementClear`를 먼저 호출한 것이 확인됐다.
 - 최종 protocol 보정은 `addValue` 직접 send keys와 명시적 capability를 사용한다. 다음 GUI
   run에서 성공하더라도 최종 merge SHA provenance 성공을 대신하지 않는다.
+- acceptance/product SHA 분리를 적용한 GUI run `32350630637`은 exact handoff와 CUPS를
+  통과했고 file `Element Send Keys`도 성공했다. HWP가 실제 렌더된 screenshot에서
+  `로컬 글꼴 감지` 모달이 확인됐으며, 사용자 선택을 기다리는 동안 최종 basename 상태가
+  되지 않아 timeout됐다. headless acceptance는 권한·host font 상태에 의존하지 않는
+  `대체 글꼴로 보기`만 선택하고 다른 modal은 fail-closed하도록 후속 보정한다.
 
 ## 다음 단계 영향
 

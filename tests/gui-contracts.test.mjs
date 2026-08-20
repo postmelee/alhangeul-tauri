@@ -143,13 +143,16 @@ test('native dialog hook은 trigger 전후 document state를 공통 경계에서
   assert.equal(result.after.title, 'doc-2');
 });
 
-test('숨은 file input upload는 clear·style 변경 없이 WebDriver send keys를 사용한다', async () => {
+test('숨은 file input upload와 글꼴 선택은 OS 권한·style 변경 없이 결정적이다', async () => {
   const source = await readFile(
     join(repoRoot, 'tests/gui/specs/document-ux.e2e.ts'),
     'utf8',
   );
   assert.match(source, /input\.addValue\(fixture\.absolutePath\)/);
   assert.doesNotMatch(source, /input\.setValue|display:\s*'block'|setAttribute\(['"]style/);
+  assert.match(source, /title !== '로컬 글꼴 감지'/);
+  assert.match(source, /await button\.getText\(\) === '대체 글꼴로 보기'/);
+  assert.doesNotMatch(source, /로컬 글꼴 감지 \(권장\)/);
 });
 
 test('공통 helper는 platform adapter를 import하지 않고 외부 driver만 구성한다', async () => {

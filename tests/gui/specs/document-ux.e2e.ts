@@ -40,6 +40,7 @@ async function openFixture(fixture: DocumentFixture): Promise<void> {
   const input = await $(GUI_SELECTORS.fileInput);
   await input.waitForExist({ timeout: inputs.timeoutMs });
   await input.addValue(fixture.absolutePath);
+  await resolveDocumentLoadDialog(fixture);
   await browser.waitUntil(async () => {
     const canvas = await $(GUI_SELECTORS.documentCanvas);
     const status = await $(GUI_SELECTORS.statusMessage).getText();
@@ -48,6 +49,33 @@ async function openFixture(fixture: DocumentFixture): Promise<void> {
     timeout: inputs.timeoutMs,
     timeoutMsg: `${fixture.id} 문서 렌더가 완료되지 않았습니다`,
   });
+}
+
+async function resolveDocumentLoadDialog(fixture: DocumentFixture): Promise<void> {
+  const displayName = basename(fixture.absolutePath);
+  await browser.waitUntil(async () => {
+    const status = await $(GUI_SELECTORS.statusMessage).getText();
+    const overlay = await $(GUI_SELECTORS.modalOverlay);
+    return status.includes(displayName) || await overlay.isExisting();
+  }, {
+    timeout: inputs.timeoutMs,
+    timeoutMsg: `${fixture.id} 문서 로드 선택 화면이 준비되지 않았습니다`,
+  });
+
+  const overlay = await $(GUI_SELECTORS.modalOverlay);
+  if (!await overlay.isExisting()) return;
+  const title = await overlay.$(GUI_SELECTORS.modalTitle).getText();
+  if (title !== '로컬 글꼴 감지') {
+    throw new Error(`${fixture.id} 예상하지 않은 문서 로드 모달: ${title}`);
+  }
+  const buttons = await overlay.$$(GUI_SELECTORS.modalButtons);
+  for (const button of buttons) {
+    if (await button.getText() === '대체 글꼴로 보기') {
+      await button.click();
+      return;
+    }
+  }
+  throw new Error(`${fixture.id} 대체 글꼴 선택 버튼을 찾을 수 없습니다`);
 }
 
 async function assertKoreanDesktopUi(): Promise<void> {

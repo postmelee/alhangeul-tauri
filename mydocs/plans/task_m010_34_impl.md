@@ -611,6 +611,12 @@ exit 1을 반환했으며 제품 GUI 단계는 실행되지 않았다.
   WebDriver `Element Send Keys`로 직행하는 `addValue()`를 사용하며, WebKit capability
   `strictFileInteractability: false`를 명시한다. source contract는 `addValue` 사용과
   clear/style 변경 부재를 고정한다.
+- 이 protocol을 적용한 branch GUI run `32350630637`에서 file upload와 문서 렌더는
+  성공했지만, HWP가 로드 94%에서 사용자 선택형 `로컬 글꼴 감지` 모달을 띄워 최종
+  basename 상태를 기다리던 harness가 timeout됐다. 증거 screenshot과 send keys 응답
+  `RESULT null`을 read-back해 upload 실패와 구분했다. headless acceptance는 OS 로컬 글꼴
+  접근 권한을 요청하지 않고 `대체 글꼴로 보기`를 선택한다. 해당 제목이 아닌 modal은
+  자동 진행하지 않고 fail-closed하며, 제품의 실제 기본·권장 UX는 변경하지 않는다.
 - pre-PR 보정 중 acceptance harness만 바뀌어도 전체 native matrix를 재빌드하는 낭비를
   피한다. workflow source는 공식 immutable context `github.workflow_sha`로 checkout·검증하고,
   제품 artifact는 `build_ref`와 native run으로 독립 검증한다. evidence에는
