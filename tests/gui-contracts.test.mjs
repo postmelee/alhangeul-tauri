@@ -21,6 +21,7 @@ import {
   centeredDelta,
   parsePageIndicator,
   runNativeDocumentCommand,
+  setHiddenFileInputValue,
 } from './gui/support/document-ux.ts';
 import { runScenarioWithEvidence } from './gui/support/scenario-runner.ts';
 
@@ -141,6 +142,30 @@ test('native dialog hook은 trigger 전후 document state를 공통 경계에서
   ]);
   assert.equal(result.before.title, 'doc-1');
   assert.equal(result.after.title, 'doc-2');
+});
+
+test('숨은 file input upload는 성공과 실패 모두 원래 style을 복원한다', async () => {
+  const calls = [];
+  const adapter = {
+    captureStyle: async () => 'display:none',
+    reveal: async () => { calls.push('reveal'); },
+    setValue: async (path) => { calls.push(`set:${path}`); },
+    restoreStyle: async (style) => { calls.push(`restore:${style}`); },
+  };
+  await setHiddenFileInputValue('/fixtures/sample.hwp', adapter);
+  assert.deepEqual(calls, [
+    'reveal',
+    'set:/fixtures/sample.hwp',
+    'restore:display:none',
+  ]);
+
+  calls.length = 0;
+  adapter.setValue = async () => { throw new Error('upload failed'); };
+  await assert.rejects(
+    setHiddenFileInputValue('/fixtures/sample.hwpx', adapter),
+    /upload failed/,
+  );
+  assert.deepEqual(calls, ['reveal', 'restore:display:none']);
 });
 
 test('공통 helper는 platform adapter를 import하지 않고 외부 driver만 구성한다', async () => {
