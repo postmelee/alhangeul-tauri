@@ -540,6 +540,43 @@ git diff --check
 Task #34 [Stage 5.7]: tauri-driver 환경 증거 보정
 ```
 
+## Stage 5.8 — post-merge WebKitWebDriver 환경 증거 보정
+
+PR #41 merge SHA `3800b07530de187e17ecbfe8f6e1880c6124145d`의 exact-SHA native
+build run `32100884762`는 Windows x64, Linux x64·arm64와 Windows installer
+smoke를 모두 통과했다. 같은 SHA와 Linux x64 artifact를 전달한 GUI canary run
+`32101528891`은 exact checkout·artifact handoff, DEB 설치, CUPS-PDF 구성과 Stage
+5.6의 A4 gate, Stage 5.7의 exact `tauri-driver 2.0.6` 설치까지 성공했다. 다음
+`Record native environment` 단계에서 Ubuntu 22.04의 `WebKitWebDriver`가 지원하지
+않는 `--version`을 호출해 usage를 출력하고 exit 1을 반환했으며 제품 GUI 단계는
+실행되지 않았다.
+
+- `WebKitWebDriver --version` 호출을 제거한다. `command -v WebKitWebDriver`를
+  fail-closed 실행해 실제 binary 경로를 기록하고, 기존 `dpkg-query -W ...
+  webkit2gtk-driver`가 설치 패키지 버전을 기록하도록 역할을 분리한다.
+- workflow 계약 test는 binary 탐색, package version 증거와 두 driver의 미지원
+  `--version` 호출 부재를 고정한다.
+- exact driver 설치, CUPS 설정, 제품 코드, GUI runner·selector와 acceptance
+  threshold는 변경하지 않는다.
+- 보정 PR merge 뒤 새 merge exact SHA에서 native build와 Linux GUI canary를 다시
+  실행한다. GUI·PDF evidence read-back까지 성공하기 전에는 Issue #34를 닫지 않는다.
+
+### 검증
+
+```bash
+node --test tests/linux-gui-workflow.test.mjs tests/actions-workflows.test.mjs
+pnpm run check:product-boundary
+pnpm run test:automation
+actionlint .github/workflows/alhangeul-linux-gui.yml
+git diff --check
+```
+
+### 커밋
+
+```text
+Task #34 [Stage 5.8]: WebKitWebDriver 환경 증거 보정
+```
+
 ## 검증
 
 - 각 Stage 검증 명령은 단계 보고서 작성 전에 실행한다.
@@ -567,6 +604,7 @@ Task #34 [Stage 5.7]: tauri-driver 환경 증거 보정
 - Stage 5.5는 PR #39 리뷰에서 확인한 진단 fatal gate와 정규화 부작용을 같은 CUPS-PDF 사전 설정 범위 안에서 제거한다. 보정 head 검증 뒤 PR을 merge하고 Stage 5.4의 post-merge close gate를 반복한다.
 - Stage 5.6은 PR #39 merge exact-SHA canary에서 확인한 CUPS queue option 직렬화 가정을 제거한다. 단일 A4 기본값과 `lpoptions -l` 선택값 계약을 보정한 뒤 새 merge exact SHA에서 close gate를 반복한다.
 - Stage 5.7은 PR #40 merge exact-SHA canary에서 Stage 5.6 성공 뒤 드러난 미지원 `tauri-driver --version` 환경 증거 호출을 제거한다. exact install input을 기록한 뒤 새 merge exact SHA에서 close gate를 반복한다.
+- Stage 5.8은 PR #41 merge exact-SHA canary에서 Stage 5.7 성공 뒤 드러난 미지원 `WebKitWebDriver --version` 환경 증거 호출을 제거한다. binary 경로와 패키지 버전을 분리 기록한 뒤 새 merge exact SHA에서 close gate를 반복한다.
 - #35는 Issue #34 live close gate 통과 뒤 시작한다. #24는 #35까지 merge된 다음 최신 `devel` exact SHA에서 재개한다.
 
 ## 위험과 대응

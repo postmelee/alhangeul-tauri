@@ -108,13 +108,15 @@ test('native Linux dependency와 driver version이 명시되고 환경 증거를
     'node --version',
     'pnpm --version',
     'rustc --version',
-    'WebKitWebDriver --version',
+    'command -v WebKitWebDriver',
     'dpkg-query -W',
     'pdfinfo -v',
     'cupsd -v',
   ]) assert.ok(evidence.includes(command), `환경 증거 명령이 필요합니다: ${command}`);
   assert.ok(evidence.includes("printf 'tauri-driver %s\\n' \"$TAURI_DRIVER_VERSION\""));
+  assert.ok(evidence.includes("printf 'WebKitWebDriver %s\\n' \"$webkit_webdriver_path\""));
   assert.doesNotMatch(evidence, /tauri-driver --version/);
+  assert.doesNotMatch(evidence, /WebKitWebDriver --version/);
 });
 
 test('Xvfb, DBus, AT-SPI와 CUPS-PDF는 repository fixture만 사용한다', () => {
