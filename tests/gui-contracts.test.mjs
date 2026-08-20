@@ -6,7 +6,9 @@ import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import {
   createSharedWdioConfig,
+  pinSingleWebDriverWindow,
   readGuiHarnessInputs,
+  scenarioTimeoutMs,
 } from './gui/wdio.shared.conf.ts';
 import {
   resolveDocumentFixtures,
@@ -34,7 +36,33 @@ test('공통 config는 exact-SHA 입력과 bounded retry 없는 runner 계약을
   assert.equal(config.connectionRetryCount, 0);
   assert.equal(config.specFileRetries, 0);
   assert.equal(config.injectGlobals, false);
+  assert.equal(config.mochaOpts.timeout, 450000);
   assert.match(config.specs[0], /document-ux\.e2e\.ts$/);
+});
+
+test('시나리오 timeout은 operation timeout과 분리하고 workflow 상한 안에서 제한한다', () => {
+  assert.equal(scenarioTimeoutMs(5000), 25000);
+  assert.equal(scenarioTimeoutMs(120000), 600000);
+  assert.equal(scenarioTimeoutMs(300000), 900000);
+});
+
+test('공통 session hook은 단일 WebDriver window를 표준 명령으로 고정한다', async () => {
+  const calls = [];
+  await pinSingleWebDriverWindow({
+    getWindowHandles: async () => {
+      calls.push('getWindowHandles');
+      return ['window-1'];
+    },
+    switchToWindow: async (handle) => {
+      calls.push(`switchToWindow:${handle}`);
+    },
+  });
+  assert.deepEqual(calls, ['getWindowHandles', 'switchToWindow:window-1']);
+
+  await assert.rejects(pinSingleWebDriverWindow({
+    getWindowHandles: async () => ['window-1', 'window-2'],
+    switchToWindow: async () => assert.fail('여러 window에서는 전환하면 안 됩니다'),
+  }), /1개여야 합니다: 2개/);
 });
 
 for (const [name, override, error] of [
@@ -173,6 +201,9 @@ test('공통 helper는 platform adapter를 import하지 않고 외부 driver만 
   assert.match(platformConfig, /autoInstallTauriDriver:\s*false/);
   assert.match(platformConfig, /strictFileInteractability:\s*false/);
   assert.doesNotMatch(platformConfig, /driverProvider:\s*'(embedded|crabnebula)'/);
+  const sharedConfig = await readFile(join(repoRoot, 'tests/gui/wdio.shared.conf.ts'), 'utf8');
+  assert.match(sharedConfig, /browser\.switchToWindow\(handles\[0\]\)/);
+  assert.doesNotMatch(sharedConfig, /browser\.tauri|plugin:wdio/);
   const cargo = await readFile(join(repoRoot, 'apps/desktop/src-tauri/Cargo.toml'), 'utf8');
   assert.doesNotMatch(cargo, /wdio|webdriver/i);
 });

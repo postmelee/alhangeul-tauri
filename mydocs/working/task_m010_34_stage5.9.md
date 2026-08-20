@@ -1,4 +1,4 @@
-# Task #34 Stage 5.9 진행 보고서 — CUPS 환경 증거와 file upload protocol 보정
+# Task #34 Stage 5.9 진행 보고서 — CUPS·file upload·GUI session 보정
 
 GitHub Issue: [#34](https://github.com/postmelee/alhangeul-tauri/issues/34)
 구현계획서: [`task_m010_34_impl.md`](../plans/task_m010_34_impl.md)
@@ -21,7 +21,8 @@ version 증거를 지원되는 Debian package database 계약으로 교체한다
 | `tests/gui/support/document-ux.ts` | 실패한 temporary style upload adapter 제거 |
 | `tests/gui/specs/document-ux.e2e.ts` | 숨은 file input에 clear 없이 `addValue`로 경로를 전송하고 headless 환경의 로컬 글꼴 선택 모달을 fail-closed 처리 |
 | `tests/gui/wdio.linux.conf.ts` | WebKit file upload용 표준 `strictFileInteractability: false` 명시 |
-| `tests/gui-contracts.test.mjs` | `addValue` 직접 전송과 clear/style 변경 부재를 source contract로 고정 |
+| `tests/gui/wdio.shared.conf.ts` | operation·scenario timeout을 분리하고 단일 WebDriver window를 표준 명령으로 고정 |
+| `tests/gui-contracts.test.mjs` | upload protocol, bounded scenario timeout과 단일 window fail-closed 계약 고정 |
 | `mydocs/plans/task_m010_34_impl.md` | 두 hosted 실패 원인, acceptance/product SHA 분리와 pre-PR branch CI 순서 기록 |
 | `mydocs/orders/20260820.md` | Task #34 Stage 5.9 로컬 gate와 branch CI 대기 상태 반영 |
 | `mydocs/working/task_m010_34_stage5.9.md` | 단계 산출물·검증과 PR 전 원격 gate 기록 |
@@ -53,7 +54,8 @@ git diff --check
 - OK — 첫 보정 focused GUI·workflow contract test `36/36` 통과
 - OK — GUI TypeScript typecheck 통과
 - OK — product boundary `225 files scanned` 통과
-- OK — automation test `202/202` 통과
+- OK — GUI contract test `17/17` 통과
+- OK — automation test `204/204` 통과
 - OK — `actionlint` 오류 없음
 - OK — `git diff --check` 오류 없음
 
@@ -75,11 +77,16 @@ git diff --check
 - 첫 modal handler run `32351859807`은 두 fixture에서 모달을 찾았지만 WebDriver title
   측정값이 닫기 버튼 text까지 포함한 `로컬 글꼴 감지×`여서 의도한 fail-closed가 작동했다.
   제품 DOM을 바꾸지 않고 고정 닫기 기호 접미사만 정규화해 exact 제목 비교를 유지한다.
+- 제목 정규화 run `32352662110`은 `대체 글꼴로 보기` click까지 진행했지만 두 test가 각각
+  정확히 120초에 Mocha 전체-test timeout으로 종료됐다. timeout 뒤 계속된 async action이 다음
+  fixture와 screenshot을 오염시킨 증거도 확인했다. operation 상한과 scenario 상한을 분리하고,
+  시작 시 단일 WebDriver window를 표준 `switchToWindow`로 고정해 production에 없는 WDIO
+  plugin focus probe 반복을 제거했다. 이 보정은 아직 hosted GUI에서 실행하지 않았다.
 
 ## 다음 단계 영향
 
-- PR을 만들지 않은 상태로 `publish/task34`를 push하고, 성공한 제품 native run
-  `32347468978`을 재사용해 immutable acceptance workflow SHA의 branch GUI를 실행한다.
+- 현재 checkpoint를 `publish/task34`에 push한 뒤, 성공한 제품 native run `32347468978`을
+  재사용해 immutable acceptance workflow SHA의 branch GUI만 실행한다.
 - 실패하면 같은 branch에서 evidence를 읽고 보정하며, 완전히 성공해야 correction PR을
   생성한다.
 - PR merge 뒤 새 merge exact SHA의 native build·Linux GUI·evidence read-back을 한 번
@@ -87,4 +94,5 @@ git diff --check
 
 ## 승인 요청
 
-- Stage 5.9 산출물과 로컬 검증 결과를 승인하면 pre-PR branch GUI CI로 진행한다.
+- 작업지시자 요청으로 hosted run 전에 안전 중단했다. 재개 지시가 있으면 checkpoint 상태와
+  ancestry를 확인한 뒤 pre-PR branch GUI CI부터 진행한다.

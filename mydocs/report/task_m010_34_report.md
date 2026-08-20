@@ -46,7 +46,7 @@ GitHub Issue: [#34](https://github.com/postmelee/alhangeul-tauri/issues/34)
 | 공통/Linux GUI E2E scenario | 없음 | 공통 문서 UX 1개 + Linux native 4개 |
 | Linux native UI/PDF focused 계약 | 없음 | AT-SPI 5개 + drag 4개 + PDF 5개 |
 | Linux GUI workflow 전용 source contract | 없음 | 9개, 공통 workflow와 합쳐 focused 21/21 |
-| 전체 automation 통과 수 | Stage 1 완료 시 162개 | Stage 5.8 보정 후 201개 |
+| 전체 automation 통과 수 | Stage 1 완료 시 162개 | Stage 5.9 중단 checkpoint에서 204개 |
 | 신규 workflow 외부 Action immutable pin | 해당 없음 | 4/4 full commit SHA + version 주석 |
 | evidence 보존 | 수동·분산 | 성공·실패 모두 7일, context/handoff/hash/log/screenshot/PDF/summary 결속 |
 
@@ -61,7 +61,7 @@ GitHub Issue: [#34](https://github.com/postmelee/alhangeul-tauri/issues/34)
 | PDF 자동 판정 | OK — 6쪽 A4 metadata, 한글 text, 쪽별 content, blank/crop heuristic과 PNG evidence를 결합하며 시각 read-back 필요를 표시한다. |
 | workflow 최소 권한·비용·Action pin | OK — `actions: read`, `contents: read`, `ubuntu-22.04`, manual dispatch, 45분 job/25분 GUI timeout, exact candidate concurrency와 4개 SHA pin을 고정했다. |
 | 실패 증거·최종 판정 | OK — GUI failure와 evidence upload failure를 `always()` 뒤 final gate가 각각 실패로 전달하고 자동 retry를 금지한다. |
-| 전체 platform-neutral regression | OK — product boundary/version/metadata/pin, GUI TypeScript, 최신 automation 201/201, upstream 35/35, Studio 97/97와 production build 통과. |
+| 전체 platform-neutral regression | OK — product boundary 225 files, GUI TypeScript, 최신 automation 204/204, actionlint와 diff check 통과. upstream 35/35, Studio 97/97와 production build는 앞선 full gate에서 통과했다. |
 | 실제 hosted Linux x64 GUI | MISS — PR #41 merge SHA `3800b075` native run `32100884762`는 전 matrix·installer smoke를 통과했다. GUI run `32101528891`도 exact handoff·DEB 설치·CUPS `*A4`·exact tauri-driver 설치까지 성공했으나 environment evidence의 미지원 `WebKitWebDriver --version` 호출에서 중단됐다. Stage 5.8 correction merge 후 다시 확정한다. |
 
 ### 단계별 검증 결과
@@ -79,19 +79,20 @@ GitHub Issue: [#34](https://github.com/postmelee/alhangeul-tauri/issues/34)
 - [Stage 5.6](../working/task_m010_34_stage5.6.md): latest GUI canary가 발견한 exact `PageSize=A4` 직렬화 가정을 단일 A4 설정과 `lpoptions -l` 선택 기본값 판정으로 교체하고 automation 201/201을 통과.
 - [Stage 5.7](../working/task_m010_34_stage5.7.md): exact tauri-driver 설치와 CUPS `*A4` 성공 뒤 드러난 미지원 `--version` 환경 증거 호출을 pinned install input 출력으로 교체하고 automation 201/201을 통과.
 - [Stage 5.8](../working/task_m010_34_stage5.8.md): WebKitWebDriver의 미지원 `--version` 호출을 fail-closed binary 탐색과 Debian 패키지 버전 증거로 분리하고 automation 201/201을 통과.
+- [Stage 5.9](../working/task_m010_34_stage5.9.md): CUPS evidence, hidden upload, headless 글꼴 modal을 보정하고 120초 전체-test timeout과 반복 window focus probe를 정적 분석해 bounded scenario timeout·단일 window 계약으로 분리했다. hosted 재실행 전 checkpoint에서 중단했다.
 
 ## 잔여 위험과 후속 작업
 
 ### 잔여 위험
 
-- Stage 5.8 correction은 아직 default branch에 없어 actual environment evidence와 제품 GUI·WebKitGTK·GTK·AT-SPI·CUPS-PDF 성공을 주장할 수 없다. Stage 5.6의 `lpoptions -l` A4 판정과 Stage 5.7의 exact tauri-driver 설치는 hosted run에서 통과했다.
+- Stage 5.9의 timeout·window checkpoint는 아직 hosted GUI에서 실행하지 않아 실제 WebKitGTK·GTK·AT-SPI·CUPS-PDF 전체 성공을 주장할 수 없다. 성공한 제품 artifact는 native run `32347468978`에 고정돼 있다.
 - 다음 canary에서 production binary external driver 연결, localized accessibility selector, CUPS-PDF output name이나 hosted image drift가 추가로 발견될 수 있다. 실패 evidence를 보존하고 측정 근거가 있는 correction PR로만 보정한다.
 - 자동 text/raster 판정만으로 한글 tofu를 확정하지 않는다. screenshot과 PDF render의 glyph·중앙 정렬·빈 쪽·crop을 사람이 read-back해야 한다.
 - Linux arm64, RPM/AppImage desktop integration, 실제 GNOME/Xfce file manager와 physical printer는 자동화 범위 밖이다.
 
 ### 후속 작업 후보
 
-- Stage 5.8 correction PR merge 뒤 Issue #34 live close gate: same-SHA native build, Linux GUI dispatch, evidence hash 재검산과 시각 read-back.
+- Stage 5.9 pre-PR branch GUI 성공 뒤 correction PR을 만들고, merge exact SHA에서 native build, Linux GUI dispatch, evidence hash 재검산과 시각 read-back.
 - Issue #35: 공통 harness를 계승한 Windows exact-SHA GUI E2E acceptance.
 - Issue #24: #34·#35 merge 뒤 최신 `devel` exact SHA에서 rhwp v0.8.4 제품 수용 Stage 3 재개.
 

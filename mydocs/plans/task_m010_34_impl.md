@@ -620,6 +620,13 @@ exit 1을 반환했으며 제품 GUI 단계는 실행되지 않았다.
 - 첫 modal handler run `32351859807`은 두 fixture 모두 모달까지 도달했지만 WebDriver의
   `.dialog-title` text가 자식 닫기 버튼을 포함한 `로컬 글꼴 감지×`로 측정돼 fail-closed했다.
   닫기 버튼의 고정 `×` 접미사만 제거한 뒤 정확한 제목 비교를 유지한다.
+- 제목 정규화 run `32352662110`은 모달 버튼 click까지 진행했지만 두 document test가 각각
+  정확히 120초에 종료됐다. `ALHANGEUL_GUI_TIMEOUT_MS`를 개별 WebDriver operation과 Mocha
+  전체 test에 동시에 사용한 것이 직접 원인이며, timeout 뒤 남은 async action이 다음 fixture와
+  evidence를 오염시켰다. operation timeout은 유지하고 전체 scenario timeout은 5배, 최대
+  15분으로 분리한다. 또한 production binary에 WDIO plugin을 넣지 않고 session 시작 시 표준
+  `switchToWindow`로 단일 WebDriver window를 고정해 Tauri service의 반복 plugin focus probe를
+  억제한다. window cardinality가 1이 아니면 실행 전에 fail-closed한다.
 - pre-PR 보정 중 acceptance harness만 바뀌어도 전체 native matrix를 재빌드하는 낭비를
   피한다. workflow source는 공식 immutable context `github.workflow_sha`로 checkout·검증하고,
   제품 artifact는 `build_ref`와 native run으로 독립 검증한다. evidence에는
@@ -629,6 +636,10 @@ exit 1을 반환했으며 제품 GUI 단계는 실행되지 않았다.
   exact SHA로 수렴해야 한다.
 - PR merge 뒤에는 새 merge exact SHA의 native build와 Linux GUI canary를 한 번
   실행하고 evidence read-back까지 성공해야 Issue #34를 닫는다.
+- 작업 중단 시점에는 timeout·window 보정의 로컬 typecheck, GUI contract `17/17`, product
+  boundary `225 files`, automation `204/204`, actionlint와 diff check까지 통과했다. 재개 시 이
+  checkpoint를 push한 acceptance SHA로 제품 artifact `ceb8b3ba7283152ae37d6c5de5e9317b54ee5499`
+  / native run `32347468978`을 재사용한 GUI workflow만 실행한다.
 
 ### 검증
 
