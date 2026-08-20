@@ -38,10 +38,12 @@ jobs:
         id: validate-inputs
         shell: bash
         env:
+          ACCEPTANCE_REF: ${{ github.workflow_sha }}
           BUILD_REF: ${{ inputs.build_ref }}
           NATIVE_RUN_ID: ${{ inputs.native_run_id }}
         run: |
           set -euo pipefail
+          [[ "$ACCEPTANCE_REF" =~ ^[0-9a-f]{40}$ ]]
           [[ "$BUILD_REF" =~ ^[0-9a-f]{40}$ ]]
           [[ "$NATIVE_RUN_ID" =~ ^[1-9][0-9]*$ ]]
 
@@ -49,7 +51,7 @@ jobs:
         id: checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ inputs.build_ref }}
+          ref: ${{ github.workflow_sha }}
           submodules: true
 
       - name: Prepare evidence context
@@ -57,24 +59,27 @@ jobs:
         if: ${{ always() }}
         shell: bash
         env:
+          ACCEPTANCE_REF: ${{ github.workflow_sha }}
           BUILD_REF: ${{ inputs.build_ref }}
           NATIVE_RUN_ID: ${{ inputs.native_run_id }}
+          WORKFLOW_REF: ${{ github.workflow_ref }}
         run: |
           set -euo pipefail
           mkdir -p "$EVIDENCE_ROOT/generated"
-          printf '{"buildRef":"%s","nativeRunId":"%s","acceptanceRunId":"%s","runAttempt":"%s"}\n' \
-            "$BUILD_REF" "$NATIVE_RUN_ID" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" \
+          printf '{"acceptanceRef":"%s","workflowRef":"%s","buildRef":"%s","nativeRunId":"%s","acceptanceRunId":"%s","runAttempt":"%s"}\n' \
+            "$ACCEPTANCE_REF" "$WORKFLOW_REF" "$BUILD_REF" "$NATIVE_RUN_ID" \
+            "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" \
             > "$EVIDENCE_ROOT/workflow-context.json"
 
       - name: Verify checked out exact SHA
         id: verify-source
         shell: bash
         env:
-          BUILD_REF: ${{ inputs.build_ref }}
+          ACCEPTANCE_REF: ${{ github.workflow_sha }}
         run: |
           set -euo pipefail
           actual_sha="$(git rev-parse HEAD)"
-          [[ "$actual_sha" == "$BUILD_REF" ]]
+          [[ "$actual_sha" == "$ACCEPTANCE_REF" ]]
           printf '%s\n' "$actual_sha" > "$EVIDENCE_ROOT/checked-out-sha.txt"
 
       - name: Setup Node.js

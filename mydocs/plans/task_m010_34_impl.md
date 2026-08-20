@@ -577,7 +577,7 @@ git diff --check
 Task #34 [Stage 5.8]: WebKitWebDriver 환경 증거 보정
 ```
 
-## Stage 5.9 — CUPS 환경 증거·hidden input harness 보정과 pre-PR branch CI
+## Stage 5.9 — CUPS 환경 증거·file upload protocol 보정과 pre-PR branch CI
 
 PR #42 merge SHA `fee06fb41de05586a8088b88821a95ca6e97cc16`의 exact-SHA native
 build run `32342945305`는 Windows x64, Linux x64·arm64와 Windows installer
@@ -601,14 +601,23 @@ exit 1을 반환했으며 제품 GUI 단계는 실행되지 않았다.
   `32342945305`를 재사용한다. branch GUI가 실패하면 같은 branch에서 보정·재실행하고,
   완전히 성공한 뒤에만 correction PR을 생성한다.
 - 첫 pre-PR branch GUI run `32345377664`은 CUPS 환경 증거까지 통과했지만, 의도적으로
-  숨겨진 `#file-input`에 WebKitWebDriver가 `setValue` 전 interactable 조건을 요구해 두
-  fixture가 문서를 열기 전에 실패했다. 제품 selector와 숨김 상태는 유지하고, 공통 GUI
-  harness가 원래 inline style을 보존한 채 업로드 순간에만 입력을 표시한 뒤 `finally`에서
-  정확히 복원하도록 보정한다. 성공·실패 복원 순서는 플랫폼 중립 계약 test로 고정한다.
-- harness code가 바뀐 뒤에는 과거 제품 artifact를 재사용하지 않는다. 새 branch exact SHA를
-  `alhangeul-desktop.yml`로 빌드·검증하고, 해당 native run의 Linux x64 artifact를 같은
-  exact SHA의 GUI workflow에 전달한다. 이 두 branch gate가 모두 성공하고 evidence를
-  read-back한 뒤에만 correction PR을 생성한다.
+  숨겨진 `#file-input`의 WebDriver 업로드에서 실패했다. 입력을 일시 표시한 첫 보정 SHA
+  `ceb8b3ba7283152ae37d6c5de5e9317b54ee5499`의 native run `32347468978`은 Windows
+  x64, Linux x64·arm64와 installer smoke를 모두 통과했지만 GUI run `32348548068`도
+  같은 지점에서 실패했다. WDIO log read-back 결과 `setValue()`가 파일 경로 전송 전에
+  `Element Clear`를 호출하고 WebKit이 이를 `element not interactable`로 거부한 것이
+  원인이다.
+- 제품 selector와 숨김 상태를 그대로 유지한다. `setValue()`와 DOM style 변경을 제거하고
+  WebDriver `Element Send Keys`로 직행하는 `addValue()`를 사용하며, WebKit capability
+  `strictFileInteractability: false`를 명시한다. source contract는 `addValue` 사용과
+  clear/style 변경 부재를 고정한다.
+- pre-PR 보정 중 acceptance harness만 바뀌어도 전체 native matrix를 재빌드하는 낭비를
+  피한다. workflow source는 공식 immutable context `github.workflow_sha`로 checkout·검증하고,
+  제품 artifact는 `build_ref`와 native run으로 독립 검증한다. evidence에는
+  `acceptanceRef`, `workflowRef`, `buildRef`를 모두 기록한다. branch gate에서는 성공한 제품
+  artifact SHA `ceb8b3ba7283152ae37d6c5de5e9317b54ee5499`와 run `32347468978`을
+  재사용할 수 있으며, 최종 merge close gate에서는 acceptance SHA와 build SHA가 같은 merge
+  exact SHA로 수렴해야 한다.
 - PR merge 뒤에는 새 merge exact SHA의 native build와 Linux GUI canary를 한 번
   실행하고 evidence read-back까지 성공해야 Issue #34를 닫는다.
 
@@ -629,13 +638,14 @@ git push origin local/task34:publish/task34
 gh workflow run alhangeul-desktop.yml --ref publish/task34 \
   -f build_ref=<branch-exact-sha> -f run_tests=true
 gh workflow run alhangeul-linux-gui.yml --ref publish/task34 \
-  -f build_ref=<branch-exact-sha> -f native_run_id=<branch-native-run-id>
+  -f build_ref=ceb8b3ba7283152ae37d6c5de5e9317b54ee5499 \
+  -f native_run_id=32347468978
 ```
 
 ### 커밋
 
 ```text
-Task #34 [Stage 5.9]: CUPS 환경 증거와 hidden input harness 보정
+Task #34 [Stage 5.9]: file upload protocol과 acceptance SHA 보정
 ```
 
 ## 검증
@@ -666,7 +676,7 @@ Task #34 [Stage 5.9]: CUPS 환경 증거와 hidden input harness 보정
 - Stage 5.6은 PR #39 merge exact-SHA canary에서 확인한 CUPS queue option 직렬화 가정을 제거한다. 단일 A4 기본값과 `lpoptions -l` 선택값 계약을 보정한 뒤 새 merge exact SHA에서 close gate를 반복한다.
 - Stage 5.7은 PR #40 merge exact-SHA canary에서 Stage 5.6 성공 뒤 드러난 미지원 `tauri-driver --version` 환경 증거 호출을 제거한다. exact install input을 기록한 뒤 새 merge exact SHA에서 close gate를 반복한다.
 - Stage 5.8은 PR #41 merge exact-SHA canary에서 Stage 5.7 성공 뒤 드러난 미지원 `WebKitWebDriver --version` 환경 증거 호출을 제거한다. binary 경로와 패키지 버전을 분리 기록한 뒤 새 merge exact SHA에서 close gate를 반복한다.
-- Stage 5.9는 PR #42 merge exact-SHA canary에서 Stage 5.8 성공 뒤 드러난 미지원 `cupsd -v` 환경 증거 호출을 제거한다. 첫 branch run에서 드러난 hidden file input WebDriver 상호작용은 제품 숨김 상태를 바꾸지 않는 harness 복원 계약으로 보정한다. 새 branch exact SHA의 native build와 GUI workflow가 모두 성공한 변경만 PR로 게시한 뒤 merge exact-SHA close gate를 한 번 반복한다.
+- Stage 5.9는 PR #42 merge exact-SHA canary에서 Stage 5.8 성공 뒤 드러난 미지원 `cupsd -v` 환경 증거 호출을 제거한다. branch GUI에서 드러난 hidden file input 업로드는 `setValue`의 선행 clear를 피하고 직접 send keys를 사용하는 protocol로 보정한다. pre-PR 반복은 immutable acceptance workflow SHA와 제품 artifact SHA를 분리 기록해 성공한 제품 build를 재사용하되, PR merge 뒤에는 둘이 같은 merge exact SHA인 close gate를 한 번 반복한다.
 - #35는 Issue #34 live close gate 통과 뒤 시작한다. #24는 #35까지 merge된 다음 최신 `devel` exact SHA에서 재개한다.
 
 ## 위험과 대응

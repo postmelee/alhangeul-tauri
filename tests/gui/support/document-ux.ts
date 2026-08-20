@@ -47,26 +47,6 @@ export interface NativeDocumentCommandHooks {
   trigger(command: NativeDocumentCommand): Promise<void>;
 }
 
-export interface HiddenFileInputAdapter {
-  captureStyle(): Promise<string | null>;
-  reveal(): Promise<void>;
-  setValue(path: string): Promise<void>;
-  restoreStyle(style: string | null): Promise<void>;
-}
-
-export async function setHiddenFileInputValue(
-  path: string,
-  adapter: HiddenFileInputAdapter,
-): Promise<void> {
-  const style = await adapter.captureStyle();
-  try {
-    await adapter.reveal();
-    await adapter.setValue(path);
-  } finally {
-    await adapter.restoreStyle(style);
-  }
-}
-
 export function parsePageIndicator(text: string): PageIndicator {
   const match = text.trim().match(/^(\d+)\s*\/\s*(\d+)\s*쪽$/);
   if (!match) throw new Error(`쪽 수 표시를 해석할 수 없습니다: ${text}`);

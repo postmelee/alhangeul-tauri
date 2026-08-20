@@ -18,6 +18,7 @@ test('Linux GUI workflow는 exact dispatch input과 최소 read 권한만 받는
     assert.match(block, /^        required: true$/m);
     assert.match(block, /^        type: string$/m);
   }
+  assert.match(workflow, /\[\[ "\$ACCEPTANCE_REF" =~ \^\[0-9a-f\]\{40\}\$ \]\]/);
   assert.match(workflow, /\[\[ "\$BUILD_REF" =~ \^\[0-9a-f\]\{40\}\$ \]\]/);
   assert.match(workflow, /\[\[ "\$NATIVE_RUN_ID" =~ \^\[1-9\]\[0-9\]\*\$ \]\]/);
   assert.deepEqual(assignments(workflow, 'permissions'), new Map([
@@ -50,9 +51,16 @@ test('checkout, run metadata, artifact ID와 inventory를 앱 설치 전에 검�
     '- name: Install verified DEB',
     '- name: Run Linux GUI acceptance',
   ]);
-  assert.match(workflow, /^          ref: \$\{\{ inputs\.build_ref \}\}$/m);
+  assert.match(workflow, /^          ref: \$\{\{ github\.workflow_sha \}\}$/m);
   assert.match(workflow, /actual_sha="\$\(git rev-parse HEAD\)"/);
-  assert.match(workflow, /\[\[ "\$actual_sha" == "\$BUILD_REF" \]\]/);
+  assert.match(workflow, /\[\[ "\$actual_sha" == "\$ACCEPTANCE_REF" \]\]/);
+  assert.doesNotMatch(stepContaining(workflow, 'Verify checked out exact SHA'), /BUILD_REF/);
+  const context = stepContaining(workflow, 'workflow-context.json');
+  assert.match(context, /"acceptanceRef":"%s"/);
+  assert.match(context, /"workflowRef":"%s"/);
+  assert.match(context, /"buildRef":"%s"/);
+  assert.match(context, /ACCEPTANCE_REF: \$\{\{ github\.workflow_sha \}\}/);
+  assert.match(context, /WORKFLOW_REF: \$\{\{ github\.workflow_ref \}\}/);
   const handoff = stepContaining(workflow, 'verify-workflow-artifact.mjs');
   assert.match(handoff, /--workflow-path \.github\/workflows\/alhangeul-desktop\.yml/);
   assert.match(handoff, /--artifact-name alhangeul-desktop-linux-x64/);

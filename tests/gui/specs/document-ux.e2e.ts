@@ -11,7 +11,6 @@ import {
   centeredDelta,
   GUI_SELECTORS,
   parsePageIndicator,
-  setHiddenFileInputValue,
 } from '../support/document-ux.ts';
 import { readGuiHarnessInputs } from '../wdio.shared.conf.ts';
 
@@ -40,28 +39,7 @@ describe('Alhangeul document UX', () => {
 async function openFixture(fixture: DocumentFixture): Promise<void> {
   const input = await $(GUI_SELECTORS.fileInput);
   await input.waitForExist({ timeout: inputs.timeoutMs });
-  await setHiddenFileInputValue(fixture.absolutePath, {
-    captureStyle: () => input.getAttribute('style'),
-    reveal: () => browser.execute((selector) => {
-      const element = document.querySelector<HTMLElement>(selector);
-      if (!element) throw new Error(`${selector} 파일 입력을 찾을 수 없습니다`);
-      Object.assign(element.style, {
-        display: 'block',
-        position: 'fixed',
-        inset: '0 auto auto 0',
-        width: '240px',
-        height: '32px',
-        zIndex: '2147483647',
-      });
-    }, GUI_SELECTORS.fileInput),
-    setValue: (path) => input.setValue(path),
-    restoreStyle: (style) => browser.execute((selector, originalStyle) => {
-      const element = document.querySelector<HTMLElement>(selector);
-      if (!element) throw new Error(`${selector} 파일 입력을 찾을 수 없습니다`);
-      if (originalStyle === null) element.removeAttribute('style');
-      else element.setAttribute('style', originalStyle);
-    }, GUI_SELECTORS.fileInput, style),
-  });
+  await input.addValue(fixture.absolutePath);
   await browser.waitUntil(async () => {
     const canvas = await $(GUI_SELECTORS.documentCanvas);
     const status = await $(GUI_SELECTORS.statusMessage).getText();
