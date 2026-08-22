@@ -653,6 +653,16 @@ exit 1을 반환했으며 제품 GUI 단계는 실행되지 않았다.
   읽는다. upstream initialize는 status 설정부터 `setupFileInput()`까지 `await` 없이 같은
   실행 구간이므로 외부 WebDriver command가 해당 text를 관측한 시점에는 listener 설치도
   완료돼 있다.
+- readiness 보정 SHA `ca88fbb`의 run `32563490588`은 exact handoff, dependency·driver·DEB,
+  CUPS와 environment evidence를 모두 통과해 GUI acceptance에 진입했으나 작업지시자의 안전
+  중단 요청으로 취소했다. 이 run은 성공·실패 판정에 사용하지 않는다.
+- 2026-08-23 재개 시 남은 경로를 실행 전에 통합 감사했다. WebKitGTK 요소 visibility와
+  결합된 status `getText()`를 document·native 전체에서 제거하고 page context `textContent`로
+  단일화한다. 각 spec의 최초 readiness는 scenario evidence 경계 안에서 한 번만 수행한다.
+  native open도 headless 로컬 글꼴 선택을 공유하고, drag-in은 upstream 보안 기본값인
+  `로컬 파일 열기 확인`에서 정확한 대상 basename과 `열기` 버튼을 검증한 뒤 진행한다.
+  Save As·현재 저장·직접 PDF·GTK/CUPS system print의 semantic dialog, 디스크 갱신, 6쪽 A4
+  text/render와 editor state 복원 계약은 그대로 유지한다.
 
 ### 검증
 

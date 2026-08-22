@@ -88,6 +88,11 @@ GitHub Issue: [#34](https://github.com/postmelee/alhangeul-tauri/issues/34)
   판정해 listener 설치 이후에만 첫 upload를 수행하도록 후속 보정했다. 보정 뒤 focused
   `26/26`, GUI TypeScript, product boundary `225 files`, automation `204/204`, actionlint를
   다시 통과했다.
+- 다음 run `32563490588`은 GUI acceptance 실행 중 작업지시자 요청으로 취소되어 판정에서
+  제외했다. 재개 시 남은 모든 open·save·drag·PDF·print 경로를 통합 감사하고 status DOM
+  판독, spec별 readiness, native local-font 선택과 drag-in 열기 확인을 공통화했다. focused
+  `35/35`, automation `204/204`, upstream `35/35`, Studio `97/97`, product boundary 225개와
+  production Studio build를 통과했다.
 
 ## 잔여 위험과 후속 작업
 

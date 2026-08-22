@@ -12,10 +12,14 @@ import {
 import { describeEvidenceFile, type EvidenceFile } from '../support/evidence.ts';
 import { runScenarioWithEvidence } from '../support/scenario-runner.ts';
 import {
-  GUI_SELECTORS,
-  parsePageIndicator,
+  captureDocumentState,
+  captureStableDocumentState,
+  confirmDroppedDocument,
   runNativeDocumentCommand,
-  type DocumentStateSnapshot,
+  waitForLoadedDocument,
+  waitForRestoredDocumentState,
+  waitForStudioStatus,
+  waitForInitialDesktopReady,
   type NativeDocumentCommand,
 } from '../support/document-ux.ts';
 import { readGuiHarnessInputs } from '../wdio.shared.conf.ts';
@@ -26,6 +30,7 @@ const generatedDir = join(inputs.outputDir, 'generated');
 const DIRECT_PDF_MIN_TEXT_COUNTS = [20, 300, 200, 300, 200, 100];
 const SYSTEM_PDF_MIN_TEXT_COUNTS = [20, 25, 200, 300, 200, 100];
 let fixtures: DocumentFixture[] = [];
+let desktopReady = false;
 
 describe('Alhangeul native Linux acceptance', () => {
   before(async () => {
@@ -65,6 +70,7 @@ describe('Alhangeul native Linux acceptance', () => {
           timeoutMs: Math.min(inputs.timeoutMs, 30000),
           env: process.env,
         });
+        await confirmDroppedDocument(browser, basename(fixture.absolutePath), inputs.timeoutMs);
         await waitForDocument(fixture.absolutePath, fixture.expectedPageCount);
       });
       return [];
@@ -83,7 +89,7 @@ describe('Alhangeul native Linux acceptance', () => {
         'file:print-to-pdf', pdfPath,
         () => triggerFileCommand('file:print-to-pdf'),
       );
-      await waitForStatus(/PDF 저장 완료/);
+      await waitForStudioStatus(browser, /PDF 저장 완료/, inputs.timeoutMs);
       const analysis = await analyzeBizPlanPdf(
         pdfPath, 'direct-pdf', DIRECT_PDF_MIN_TEXT_COUNTS,
       );
@@ -103,15 +109,15 @@ describe('Alhangeul native Linux acceptance', () => {
       const adapter = nativeAdapter({});
       await adapter.openDocument(fixture.absolutePath, () => triggerFileCommand('file:open'));
       await waitForDocument(fixture.absolutePath, 6);
-      const original = await captureDocumentState();
+      const original = await captureDocumentState(browser);
 
       await adapter.printToFile(gtkPdf, () => triggerFileCommand('file:print'));
-      await waitForRestoredState(original);
+      await waitForRestoredDocumentState(browser, original, inputs.timeoutMs);
       await adapter.cancelPrint(() => triggerFileCommand('file:print'));
-      await waitForRestoredState(original);
+      await waitForRestoredDocumentState(browser, original, inputs.timeoutMs);
       await adapter.printWithVirtualPrinter(cups.printerName, () => triggerFileCommand('file:print'));
       await waitForFile(cups.outputPath);
-      await waitForRestoredState(original);
+      await waitForRestoredDocumentState(browser, original, inputs.timeoutMs);
 
       const gtk = await analyzeBizPlanPdf(
         gtkPdf, 'gtk-print-to-file', SYSTEM_PDF_MIN_TEXT_COUNTS,
@@ -143,7 +149,7 @@ async function runDocumentCommand(
   adapter: LinuxNativeUiAdapter,
 ): Promise<void> {
   const result = await runNativeDocumentCommand(command, adapter, {
-    capture: captureStableDocumentState,
+    capture: () => captureStableDocumentState(browser, inputs.timeoutMs),
     trigger: triggerFileCommand,
   });
   expect(result.after.page).toEqual(result.before.page);
@@ -154,10 +160,10 @@ async function runCurrentSave(
   adapter: LinuxNativeUiAdapter,
   path: string,
 ): Promise<void> {
-  const beforeState = await captureStableDocumentState();
+  const beforeState = await captureStableDocumentState(browser, inputs.timeoutMs);
   const beforeFile = await fileWriteState(path);
   await adapter.complete('file:save', () => triggerFileCommand('file:save'));
-  await waitForStatus(/^저장 완료$/);
+  await waitForStudioStatus(browser, /^저장 완료$/, inputs.timeoutMs);
   await browser.waitUntil(async () => {
     const current = await fileWriteState(path);
     return current.mtimeNs > beforeFile.mtimeNs;
@@ -165,7 +171,7 @@ async function runCurrentSave(
     timeout: inputs.timeoutMs,
     timeoutMsg: `${basename(path)} 현재 저장이 파일 갱신으로 이어지지 않았습니다`,
   });
-  const afterState = await captureDocumentState();
+  const afterState = await captureDocumentState(browser);
   expect(afterState.page).toEqual(beforeState.page);
   expect(afterState.status).toBe('저장 완료');
 }
@@ -178,45 +184,7 @@ async function triggerFileCommand(command: string): Promise<void> {
 }
 
 async function waitForDocument(path: string, pageCount: number | null): Promise<void> {
-  await browser.waitUntil(async () => {
-    const title = await browser.getTitle();
-    const status = await $(GUI_SELECTORS.statusMessage).getText();
-    if (!title.includes(basename(path)) || !status.includes(basename(path))) return false;
-    const page = parsePageIndicator(await $(GUI_SELECTORS.pageIndicator).getText());
-    return pageCount === null || page.total === pageCount;
-  }, { timeout: inputs.timeoutMs, timeoutMsg: `${basename(path)} native open이 완료되지 않았습니다` });
-}
-
-async function captureStableDocumentState(): Promise<DocumentStateSnapshot> {
-  await browser.waitUntil(async () => {
-    const status = await $(GUI_SELECTORS.statusMessage).getText();
-    return status !== '' && !status.includes('중...');
-  }, { timeout: inputs.timeoutMs, timeoutMsg: 'native command가 안정 상태로 돌아오지 않았습니다' });
-  return captureDocumentState();
-}
-
-async function captureDocumentState(): Promise<DocumentStateSnapshot> {
-  return {
-    title: await browser.getTitle(),
-    page: parsePageIndicator(await $(GUI_SELECTORS.pageIndicator).getText()),
-    status: await $(GUI_SELECTORS.statusMessage).getText(),
-  };
-}
-
-async function waitForRestoredState(expected: DocumentStateSnapshot): Promise<void> {
-  await browser.waitUntil(async () => {
-    const current = await captureDocumentState();
-    return current.title === expected.title
-      && current.status === expected.status
-      && current.page.current === expected.page.current
-      && current.page.total === expected.page.total;
-  }, { timeout: inputs.timeoutMs, timeoutMsg: 'system print 뒤 editor state가 복원되지 않았습니다' });
-}
-
-async function waitForStatus(expected: RegExp): Promise<void> {
-  await browser.waitUntil(async () => expected.test(await $(GUI_SELECTORS.statusMessage).getText()), {
-    timeout: inputs.timeoutMs, timeoutMsg: `${expected} status를 확인하지 못했습니다`,
-  });
+  await waitForLoadedDocument(browser, basename(path), pageCount, inputs.timeoutMs);
 }
 
 async function appWindowBounds() {
@@ -296,5 +264,14 @@ async function runScenario(
     fixtures: scenarioFixtures,
     screenshotName: 'final.png',
     captureScreenshot: (path) => browser.saveScreenshot(path),
-  }, action);
+  }, async () => {
+    await ensureDesktopReady();
+    return action();
+  });
+}
+
+async function ensureDesktopReady(): Promise<void> {
+  if (desktopReady) return;
+  await waitForInitialDesktopReady(browser, inputs.timeoutMs);
+  desktopReady = true;
 }

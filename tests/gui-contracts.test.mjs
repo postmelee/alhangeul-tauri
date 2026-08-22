@@ -172,20 +172,34 @@ test('native dialog hook은 trigger 전후 document state를 공통 경계에서
 });
 
 test('숨은 file input upload와 글꼴 선택은 OS 권한·style 변경 없이 결정적이다', async () => {
-  const source = await readFile(
+  const documentSource = await readFile(
     join(repoRoot, 'tests/gui/specs/document-ux.e2e.ts'),
     'utf8',
   );
-  assert.match(source, /input\.addValue\(fixture\.absolutePath\)/);
-  assert.match(source, /await waitForInitialDesktopReady\(\)/);
-  assert.match(source, /document\.querySelector\(statusSelector\)\?\.textContent/);
-  assert.match(source, /status === INITIAL_DESKTOP_STATUS/);
-  assert.match(source, /alhangeul-toolbar-ready/);
-  assert.doesNotMatch(source, /input\.setValue|display:\s*'block'|setAttribute\(['"]style/);
-  assert.match(source, /\.replace\(\/\\s\*×\\s\*\$\/, ''\)/);
-  assert.match(source, /title !== '로컬 글꼴 감지'/);
-  assert.match(source, /await button\.getText\(\) === '대체 글꼴로 보기'/);
-  assert.doesNotMatch(source, /로컬 글꼴 감지 \(권장\)/);
+  const nativeSource = await readFile(
+    join(repoRoot, 'tests/gui/specs/linux-native.e2e.ts'),
+    'utf8',
+  );
+  const helperSource = await readFile(
+    join(repoRoot, 'tests/gui/support/document-ux.ts'),
+    'utf8',
+  );
+  assert.match(documentSource, /input\.addValue\(fixture\.absolutePath\)/);
+  assert.match(documentSource, /waitForInitialDesktopReady\(browser, inputs\.timeoutMs\)/);
+  assert.match(nativeSource, /waitForInitialDesktopReady\(browser, inputs\.timeoutMs\)/);
+  assert.match(helperSource, /document\.querySelector\(statusSelector\)\?\.textContent/);
+  assert.match(helperSource, /status === INITIAL_DESKTOP_STATUS/);
+  assert.match(helperSource, /alhangeul-toolbar-ready/);
+  assert.doesNotMatch(documentSource, /input\.setValue|display:\s*'block'|setAttribute\(['"]style/);
+  assert.match(helperSource, /\.replace\(\/\\s\*×\\s\*\$\/, ''\)/);
+  assert.match(helperSource, /title !== '로컬 글꼴 감지'/);
+  assert.match(helperSource, /clickExactDialogButton\(session, '대체 글꼴로 보기'/);
+  assert.doesNotMatch(helperSource, /로컬 글꼴 감지 \(권장\)/);
+  assert.match(nativeSource, /confirmDroppedDocument\(browser, basename\(fixture\.absolutePath\)/);
+  assert.match(helperSource, /title !== '로컬 파일 열기 확인'/);
+  assert.match(helperSource, /clickExactDialogButton\(session, '열기'/);
+  assert.match(helperSource, /await waitForDialogGone\(session, timeoutMs, displayName\)/);
+  assert.doesNotMatch(documentSource + nativeSource, /statusMessage\)\.getText\(\)/);
 });
 
 test('공통 helper는 platform adapter를 import하지 않고 외부 driver만 구성한다', async () => {
@@ -240,7 +254,7 @@ test('Linux runtime helper는 POSIX path API를 명시하고 분리된 path 조�
 test('Linux native 저장·PDF acceptance는 디스크 갱신과 경로별 실측 floor를 사용한다', async () => {
   const source = await readFile(join(repoRoot, 'tests/gui/specs/linux-native.e2e.ts'), 'utf8');
   assert.match(source, /current\.mtimeNs > beforeFile\.mtimeNs/);
-  assert.match(source, /waitForStatus\(\/\^저장 완료\$\//);
+  assert.match(source, /waitForStudioStatus\(browser, \/\^저장 완료\$\//);
   assert.doesNotMatch(source, /digest\('hex'\)\)\.toMatch/);
   assert.match(source, /DIRECT_PDF_MIN_TEXT_COUNTS = \[20, 300, 200, 300, 200, 100\]/);
   assert.match(source, /SYSTEM_PDF_MIN_TEXT_COUNTS = \[20, 25, 200, 300, 200, 100\]/);

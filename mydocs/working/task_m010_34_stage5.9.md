@@ -60,6 +60,9 @@ git diff --check
 - OK — `git diff --check` 오류 없음
 - OK — readiness DOM 측정 보정 뒤 GUI·workflow focused `26/26`, GUI TypeScript,
   product boundary `225 files`, automation `204/204`, actionlint 재통과
+- OK — 통합 감사 보정 뒤 focused `35/35`, GUI TypeScript, automation `204/204`, product
+  boundary `225 files`, upstream `35/35`, Studio `97/97`, production Studio build,
+  actionlint와 diff check 통과
 
 ## 잔여 위험
 
@@ -94,10 +97,18 @@ git diff --check
   DOM이나 초기화 순서는 변경하지 않고 page context의 `textContent`를 읽도록 측정만 보정한다.
   초기 status 설정 뒤 `setupFileInput()`까지 동기 실행되므로 이 관측은 listener 준비를
   보장한다.
+- run `32563490588`은 environment evidence까지 전부 통과하고 GUI acceptance 실행 중
+  작업지시자 요청으로 취소했다. 취소 run은 판정에서 제외한다.
+- 재개 뒤 남은 전체 경로를 통합 감사해 status DOM 판독, spec별 readiness, native open의
+  로컬 글꼴 선택, drag-in의 명시적 로컬 파일 열기 확인을 공통 helper로 고정했다. 최초
+  readiness도 scenario evidence 안에서 실행해 실패 screenshot·manifest를 보존한다.
+- Save As·현재 저장은 semantic dialog 종료와 실제 mtime 갱신, 직접 PDF는 6쪽 A4·한글
+  text·nonblank render, system print는 GTK Print to File·cancel·CUPS-PDF와 editor state
+  복원까지 이미 결속돼 있어 추가 제품 보정 없이 유지했다.
 
 ## 다음 단계 영향
 
-- DOM text 측정 보정을 로컬 검증·commit·push한 뒤, 성공한 제품 native run `32347468978`을
+- 통합 감사 보정을 로컬 검증·commit·push한 뒤, 성공한 제품 native run `32347468978`을
   재사용해 immutable acceptance workflow SHA의 branch GUI만 실행한다.
 - 실패하면 같은 branch에서 evidence를 읽고 보정하며, 완전히 성공해야 correction PR을
   생성한다.
