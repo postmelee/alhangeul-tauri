@@ -15,7 +15,9 @@ import {
 import { readGuiHarnessInputs } from '../wdio.shared.conf.ts';
 
 const inputs = readGuiHarnessInputs();
+const INITIAL_DESKTOP_STATUS = 'HWP 파일을 선택해주세요.';
 let fixtures: DocumentFixture[] = [];
+let desktopReady = false;
 
 describe('Alhangeul document UX', () => {
   before(async () => {
@@ -37,6 +39,7 @@ describe('Alhangeul document UX', () => {
 });
 
 async function openFixture(fixture: DocumentFixture): Promise<void> {
+  await waitForInitialDesktopReady();
   const input = await $(GUI_SELECTORS.fileInput);
   await input.waitForExist({ timeout: inputs.timeoutMs });
   await input.addValue(fixture.absolutePath);
@@ -49,6 +52,20 @@ async function openFixture(fixture: DocumentFixture): Promise<void> {
     timeout: inputs.timeoutMs,
     timeoutMsg: `${fixture.id} 문서 렌더가 완료되지 않았습니다`,
   });
+}
+
+async function waitForInitialDesktopReady(): Promise<void> {
+  if (desktopReady) return;
+  await browser.waitUntil(async () => {
+    const status = await $(GUI_SELECTORS.statusMessage).getText();
+    const rootClass = await $('html').getAttribute('class') ?? '';
+    return status === INITIAL_DESKTOP_STATUS
+      && rootClass.split(/\s+/).includes('alhangeul-toolbar-ready');
+  }, {
+    timeout: inputs.timeoutMs,
+    timeoutMsg: 'Studio 초기 file input listener가 준비되지 않았습니다',
+  });
+  desktopReady = true;
 }
 
 async function resolveDocumentLoadDialog(fixture: DocumentFixture): Promise<void> {

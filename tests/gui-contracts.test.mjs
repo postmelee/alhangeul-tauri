@@ -177,6 +177,9 @@ test('숨은 file input upload와 글꼴 선택은 OS 권한·style 변경 없�
     'utf8',
   );
   assert.match(source, /input\.addValue\(fixture\.absolutePath\)/);
+  assert.match(source, /await waitForInitialDesktopReady\(\)/);
+  assert.match(source, /status === INITIAL_DESKTOP_STATUS/);
+  assert.match(source, /alhangeul-toolbar-ready/);
   assert.doesNotMatch(source, /input\.setValue|display:\s*'block'|setAttribute\(['"]style/);
   assert.match(source, /\.replace\(\/\\s\*×\\s\*\$\/, ''\)/);
   assert.match(source, /title !== '로컬 글꼴 감지'/);

@@ -82,6 +82,11 @@ git diff --check
   fixture와 screenshot을 오염시킨 증거도 확인했다. operation 상한과 scenario 상한을 분리하고,
   시작 시 단일 WebDriver window를 표준 `switchToWindow`로 고정해 production에 없는 WDIO
   plugin focus probe 반복을 제거했다. 이 보정은 아직 hosted GUI에서 실행하지 않았다.
+- 재개 run `32562596576`은 기존 120초 전체-test timeout을 넘겨 정상 종료·evidence upload까지
+  진행했으므로 timeout·window 보정은 실제 runner에서 확인됐다. 다만 첫 HWP send가 앱 시작
+  약 2초에 실행돼 upstream의 file input listener 설치 전 경로를 놓쳤다. 두 번째 HWPX는
+  2분 뒤 정상 렌더되어 driver와 upload protocol 자체는 유효했다. 최초 upload 전에 초기
+  status와 toolbar-ready를 함께 기다리는 readiness gate를 추가한다.
 
 ## 다음 단계 영향
 

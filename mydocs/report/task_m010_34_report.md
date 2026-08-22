@@ -80,6 +80,9 @@ GitHub Issue: [#34](https://github.com/postmelee/alhangeul-tauri/issues/34)
 - [Stage 5.7](../working/task_m010_34_stage5.7.md): exact tauri-driver 설치와 CUPS `*A4` 성공 뒤 드러난 미지원 `--version` 환경 증거 호출을 pinned install input 출력으로 교체하고 automation 201/201을 통과.
 - [Stage 5.8](../working/task_m010_34_stage5.8.md): WebKitWebDriver의 미지원 `--version` 호출을 fail-closed binary 탐색과 Debian 패키지 버전 증거로 분리하고 automation 201/201을 통과.
 - [Stage 5.9](../working/task_m010_34_stage5.9.md): CUPS evidence, hidden upload, headless 글꼴 modal을 보정하고 120초 전체-test timeout과 반복 window focus probe를 정적 분석해 bounded scenario timeout·단일 window 계약으로 분리했다. hosted 재실행 전 checkpoint에서 중단했다.
+- Stage 5.9 재개 run `32562596576`에서 timeout·window 보정은 실제 runner에서 확인됐고,
+  제거된 focus 지연 때문에 노출된 최초 file listener readiness race를 초기 status와
+  toolbar-ready 결합 gate로 후속 보정했다.
 
 ## 잔여 위험과 후속 작업
 

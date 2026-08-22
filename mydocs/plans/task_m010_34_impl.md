@@ -640,6 +640,13 @@ exit 1을 반환했으며 제품 GUI 단계는 실행되지 않았다.
   boundary `225 files`, automation `204/204`, actionlint와 diff check까지 통과했다. 재개 시 이
   checkpoint를 push한 acceptance SHA로 제품 artifact `ceb8b3ba7283152ae37d6c5de5e9317b54ee5499`
   / native run `32347468978`을 재사용한 GUI workflow만 실행한다.
+- 재개 run `32562596576`은 exact handoff부터 evidence upload까지 수행하고 기존 120초
+  Mocha 조기 종료를 제거했지만 document suite에서 실패했다. 단일 window 고정으로 Tauri
+  plugin focus probe의 약 22초 지연이 사라져 첫 file send가 앱 시작 약 2초에 실행됐고,
+  정적 `#file-input`은 존재하지만 upstream `setupFileInput()`의 change listener가 아직
+  설치되지 않아 HWP 입력을 놓쳤다. 첫 upload 전에 초기 status
+  `HWP 파일을 선택해주세요.`와 `alhangeul-toolbar-ready`가 함께 관측될 때까지 기다려
+  앱 event loop가 전체 초기화 뒤 제어를 반환했음을 확인한다.
 
 ### 검증
 
