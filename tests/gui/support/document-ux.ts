@@ -86,6 +86,15 @@ export async function readStudioStatus(
   ), GUI_SELECTORS.statusMessage);
 }
 
+export async function readPageIndicator(
+  session: WebdriverIO.Browser,
+): Promise<PageIndicator> {
+  const text = await session.execute((pageSelector) => (
+    document.querySelector(pageSelector)?.textContent?.trim() ?? ''
+  ), GUI_SELECTORS.pageIndicator);
+  return parsePageIndicator(text);
+}
+
 export async function waitForInitialDesktopReady(
   session: WebdriverIO.Browser,
   timeoutMs: number,
@@ -152,10 +161,9 @@ export async function waitForLoadedDocument(
 ): Promise<void> {
   await resolveLocalFontDialog(session, displayName, timeoutMs);
   await session.waitUntil(async () => {
-    const title = await session.getTitle();
     const status = await readStudioStatus(session);
-    if (!title.includes(displayName) || !status.includes(displayName)) return false;
-    const page = parsePageIndicator(await session.$(GUI_SELECTORS.pageIndicator).getText());
+    if (!status.includes(displayName)) return false;
+    const page = await readPageIndicator(session);
     return pageCount === null || page.total === pageCount;
   }, { timeout: timeoutMs, timeoutMsg: `${displayName} 문서 open이 완료되지 않았습니다` });
 }
@@ -163,10 +171,15 @@ export async function waitForLoadedDocument(
 export async function captureDocumentState(
   session: WebdriverIO.Browser,
 ): Promise<DocumentStateSnapshot> {
+  const state = await session.execute((statusSelector, pageSelector) => ({
+    title: document.title,
+    page: document.querySelector(pageSelector)?.textContent?.trim() ?? '',
+    status: document.querySelector(statusSelector)?.textContent?.trim() ?? '',
+  }), GUI_SELECTORS.statusMessage, GUI_SELECTORS.pageIndicator);
   return {
-    title: await session.getTitle(),
-    page: parsePageIndicator(await session.$(GUI_SELECTORS.pageIndicator).getText()),
-    status: await readStudioStatus(session),
+    title: state.title,
+    page: parsePageIndicator(state.page),
+    status: state.status,
   };
 }
 

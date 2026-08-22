@@ -10,7 +10,7 @@ import { runScenarioWithEvidence } from '../support/scenario-runner.ts';
 import {
   centeredDelta,
   GUI_SELECTORS,
-  parsePageIndicator,
+  readPageIndicator,
   waitForLoadedDocument,
   waitForInitialDesktopReady,
 } from '../support/document-ux.ts';
@@ -76,7 +76,7 @@ async function assertInitialToolbarState(): Promise<void> {
 }
 
 async function assertPageCount(fixture: DocumentFixture): Promise<void> {
-  const page = parsePageIndicator(await $(GUI_SELECTORS.pageIndicator).getText());
+  const page = await readPageIndicator(browser);
   expect(page.current).toBe(1);
   expect(page.total).toBeGreaterThanOrEqual(1);
   if (fixture.expectedPageCount !== null) expect(page.total).toBe(fixture.expectedPageCount);

@@ -18,7 +18,7 @@ version 증거를 지원되는 Debian package database 계약으로 교체한다
 |---|---|
 | `.github/workflows/alhangeul-linux-gui.yml` | 미지원 `cupsd -v`를 제거하고 기존 `dpkg-query -W`에 `cups` package version 증거 추가 |
 | `tests/linux-gui-workflow.test.mjs` | CUPS package 증거와 `cupsd -v` 부재를 workflow source contract로 고정 |
-| `tests/gui/support/document-ux.ts` | 실패한 temporary style upload adapter 제거 |
+| `tests/gui/support/document-ux.ts` | 실패한 temporary style upload adapter 제거, upstream input/native title 계약 분리와 status·쪽 수 DOM 판독 공통화 |
 | `tests/gui/specs/document-ux.e2e.ts` | 숨은 file input에 clear 없이 `addValue`로 경로를 전송하고 headless 환경의 로컬 글꼴 선택 모달을 fail-closed 처리 |
 | `tests/gui/wdio.linux.conf.ts` | WebKit file upload용 표준 `strictFileInteractability: false` 명시 |
 | `tests/gui/wdio.shared.conf.ts` | operation·scenario timeout을 분리하고 단일 WebDriver window를 표준 명령으로 고정 |
@@ -63,6 +63,11 @@ git diff --check
 - OK — 통합 감사 보정 뒤 focused `35/35`, GUI TypeScript, automation `204/204`, product
   boundary `225 files`, upstream `35/35`, Studio `97/97`, production Studio build,
   actionlint와 diff check 통과
+- OK — run `32601165367`의 exact artifact handoff, DEB·driver·CUPS와 environment evidence
+  통과. 두 fixture의 screenshot·status read-back에서 실제 렌더, 기대 6/10쪽과 중앙 정렬 확인
+- OK — upstream input/native title 계약 분리 뒤 focused `38/38`, GUI TypeScript,
+  automation `204/204`, product boundary `225 files`, upstream `35/35`, Studio `97/97`,
+  production Studio build, actionlint와 diff check 통과
 
 ## 잔여 위험
 
@@ -105,11 +110,17 @@ git diff --check
 - Save As·현재 저장은 semantic dialog 종료와 실제 mtime 갱신, 직접 PDF는 6쪽 A4·한글
   text·nonblank render, system print는 GTK Print to File·cancel·CUPS-PDF와 editor state
   복원까지 이미 결속돼 있어 추가 제품 보정 없이 유지했다.
+- 통합 canary run `32601165367`은 두 document scenario가 각각 약 120초 뒤 실패해 `bail=1`로
+  native scenario를 시작하지 않았다. 전체 log에는 `document.title=Alhangeul`과 동시에
+  `biz_plan.hwp — 6페이지`, `form-002.hwpx — 10페이지` status가 반복 기록됐고 screenshot도
+  정상 렌더·중앙 정렬을 보였다. hidden upstream file input은 native session을 만들지 않으므로
+  native title 갱신을 요구할 수 없다. open readiness에서는 이 잘못된 title 조건만 제거하고,
+  native open의 title·page·status 복원은 command snapshot으로 그대로 보존한다.
 
 ## 다음 단계 영향
 
-- 통합 감사 보정을 로컬 검증·commit·push한 뒤, 성공한 제품 native run `32347468978`을
-  재사용해 immutable acceptance workflow SHA의 branch GUI만 실행한다.
+- title 계약 분리와 DOM page 판독을 로컬 검증·commit·push한 뒤, 성공한 제품 native run
+  `32347468978`을 재사용해 immutable acceptance workflow SHA의 branch GUI를 한 번 실행한다.
 - 실패하면 같은 branch에서 evidence를 읽고 보정하며, 완전히 성공해야 correction PR을
   생성한다.
 - PR merge 뒤 새 merge exact SHA의 native build·Linux GUI·evidence read-back을 한 번

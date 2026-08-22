@@ -663,6 +663,15 @@ exit 1을 반환했으며 제품 GUI 단계는 실행되지 않았다.
   `로컬 파일 열기 확인`에서 정확한 대상 basename과 `열기` 버튼을 검증한 뒤 진행한다.
   Save As·현재 저장·직접 PDF·GTK/CUPS system print의 semantic dialog, 디스크 갱신, 6쪽 A4
   text/render와 editor state 복원 계약은 그대로 유지한다.
+- 통합 감사 SHA `c8ff26c`의 branch GUI run `32601165367`은 setup·exact handoff·DEB·driver·
+  CUPS 환경 gate를 모두 통과했고, 두 upstream file input fixture도 실제 렌더·상태바·쪽 수·
+  중앙 정렬 screenshot을 남겼다. 실패 원인은 `waitForLoadedDocument()`가 upstream input
+  경로에도 native session 전용 `document.title` basename 갱신을 요구한 잘못된 교차 계약이다.
+  이 경로는 의도적으로 native `DesktopHost.openDocumentByPath()`를 우회하므로 title은
+  `Alhangeul`을 유지한다. open 완료는 basename을 포함한 Studio status와 기대 쪽 수로
+  판정하고, native open 뒤 title 보존은 기존 command 전후 snapshot 계약에서 계속 검증한다.
+  WebKitGTK 요소 text 차이를 같은 계열에서 닫기 위해 쪽 수와 document snapshot도 page
+  context의 `textContent`로 단일화한다.
 
 ### 검증
 

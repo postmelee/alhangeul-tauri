@@ -188,6 +188,7 @@ test('숨은 file input upload와 글꼴 선택은 OS 권한·style 변경 없�
   assert.match(documentSource, /waitForInitialDesktopReady\(browser, inputs\.timeoutMs\)/);
   assert.match(nativeSource, /waitForInitialDesktopReady\(browser, inputs\.timeoutMs\)/);
   assert.match(helperSource, /document\.querySelector\(statusSelector\)\?\.textContent/);
+  assert.match(helperSource, /document\.querySelector\(pageSelector\)\?\.textContent/);
   assert.match(helperSource, /status === INITIAL_DESKTOP_STATUS/);
   assert.match(helperSource, /alhangeul-toolbar-ready/);
   assert.doesNotMatch(documentSource, /input\.setValue|display:\s*'block'|setAttribute\(['"]style/);
@@ -200,6 +201,8 @@ test('숨은 file input upload와 글꼴 선택은 OS 권한·style 변경 없�
   assert.match(helperSource, /clickExactDialogButton\(session, '열기'/);
   assert.match(helperSource, /await waitForDialogGone\(session, timeoutMs, displayName\)/);
   assert.doesNotMatch(documentSource + nativeSource, /statusMessage\)\.getText\(\)/);
+  assert.doesNotMatch(documentSource + nativeSource + helperSource, /pageIndicator\)\.getText\(\)/);
+  assert.doesNotMatch(helperSource, /title\.includes\(displayName\)/);
 });
 
 test('공통 helper는 platform adapter를 import하지 않고 외부 driver만 구성한다', async () => {

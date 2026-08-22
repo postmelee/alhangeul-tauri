@@ -62,7 +62,7 @@ GitHub Issue: [#34](https://github.com/postmelee/alhangeul-tauri/issues/34)
 | workflow 최소 권한·비용·Action pin | OK — `actions: read`, `contents: read`, `ubuntu-22.04`, manual dispatch, 45분 job/25분 GUI timeout, exact candidate concurrency와 4개 SHA pin을 고정했다. |
 | 실패 증거·최종 판정 | OK — GUI failure와 evidence upload failure를 `always()` 뒤 final gate가 각각 실패로 전달하고 자동 retry를 금지한다. |
 | 전체 platform-neutral regression | OK — product boundary 225 files, GUI TypeScript, 최신 automation 204/204, actionlint와 diff check 통과. upstream 35/35, Studio 97/97와 production build는 앞선 full gate에서 통과했다. |
-| 실제 hosted Linux x64 GUI | MISS — PR #41 merge SHA `3800b075` native run `32100884762`는 전 matrix·installer smoke를 통과했다. GUI run `32101528891`도 exact handoff·DEB 설치·CUPS `*A4`·exact tauri-driver 설치까지 성공했으나 environment evidence의 미지원 `WebKitWebDriver --version` 호출에서 중단됐다. Stage 5.8 correction merge 후 다시 확정한다. |
+| 실제 hosted Linux x64 GUI | MISS — 최신 branch run `32601165367`은 exact handoff·DEB·driver·CUPS 환경 gate와 두 fixture 실제 렌더까지 통과했다. 다만 upstream file input에도 native session title 갱신을 요구한 harness 교차 계약으로 document suite가 timeout됐고 `bail=1` 때문에 native suite는 실행하지 않았다. title 계약 분리 뒤 한 번의 branch canary로 전체 경로를 다시 확정한다. |
 
 ### 단계별 검증 결과
 
@@ -93,14 +93,21 @@ GitHub Issue: [#34](https://github.com/postmelee/alhangeul-tauri/issues/34)
   판독, spec별 readiness, native local-font 선택과 drag-in 열기 확인을 공통화했다. focused
   `35/35`, automation `204/204`, upstream `35/35`, Studio `97/97`, product boundary 225개와
   production Studio build를 통과했다.
+- 통합 감사 SHA `c8ff26c`의 run `32601165367`은 모든 환경 gate 뒤 HWP/HWPX를 각각 6/10쪽으로
+  렌더하고 중앙 정렬 screenshot을 보존했다. log의 고정 `Alhangeul` title과 basename status를
+  대조해, upstream hidden input과 native session title 계약을 혼합한 harness 오류로 확정했다.
+  open readiness는 status·쪽 수로 판정하고 native title은 native command snapshot에서 유지한다.
+  쪽 수와 snapshot도 WebKitGTK 요소 text API 대신 DOM `textContent`로 공통화했다. 보정 뒤
+  focused `38/38`, automation `204/204`, product boundary 225개, upstream `35/35`, Studio
+  `97/97`, production Studio build, GUI TypeScript와 actionlint를 통과했다.
 
 ## 잔여 위험과 후속 작업
 
 ### 잔여 위험
 
-- Stage 5.9의 timeout·window와 readiness 보정은 hosted runner에서 원인별로 측정됐지만 실제
-  WebKitGTK·GTK·AT-SPI·CUPS-PDF 전체 성공은 아직 주장할 수 없다. 성공한 제품 artifact는
-  native run `32347468978`에 고정돼 있다.
+- Stage 5.9의 timeout·window·초기 readiness와 document load는 hosted runner에서 원인별로
+  측정됐지만 GTK·AT-SPI·CUPS-PDF native suite는 최신 run에서 `bail=1` 뒤 실행되지 않아 전체
+  성공을 아직 주장할 수 없다. 성공한 제품 artifact는 native run `32347468978`에 고정돼 있다.
 - 다음 canary에서 production binary external driver 연결, localized accessibility selector, CUPS-PDF output name이나 hosted image drift가 추가로 발견될 수 있다. 실패 evidence를 보존하고 측정 근거가 있는 correction PR로만 보정한다.
 - 자동 text/raster 판정만으로 한글 tofu를 확정하지 않는다. screenshot과 PDF render의 glyph·중앙 정렬·빈 쪽·crop을 사람이 read-back해야 한다.
 - Linux arm64, RPM/AppImage desktop integration, 실제 GNOME/Xfce file manager와 physical printer는 자동화 범위 밖이다.
