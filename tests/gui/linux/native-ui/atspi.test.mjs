@@ -27,7 +27,9 @@ test('Save As는 dialog readiness 뒤 directory와 basename을 semantic field에
     'wait', 'setText', 'wait', 'setText', 'action', 'waitAbsent',
   ]);
   assert.equal(calls[1].value, '/tmp/output');
+  assert.deepEqual(calls[1].selector.within.roles, ['file chooser']);
   assert.equal(calls[3].value, 'saved.hwp');
+  assert.deepEqual(calls[3].selector.within.roles, ['file chooser']);
   assert.deepEqual(calls[4].selector.names, ['save', '저장']);
 });
 
@@ -42,6 +44,7 @@ test('native open은 GTK location shortcut을 한 번 쓰고 modal close를 기�
   assert.deepEqual(shortcuts, ['ctrl+l', 'Return']);
   assert.deepEqual(calls.map(({ command }) => command), ['wait', 'setText', 'waitAbsent']);
   assert.equal(calls[1].value, '/fixtures/biz_plan.hwp');
+  assert.deepEqual(calls[1].selector.within.roles, ['file chooser']);
 });
 
 test('print adapter는 Print to File만 고르고 save/cancel modal 종료를 확인한다', async () => {
@@ -57,10 +60,18 @@ test('print adapter는 Print to File만 고르고 save/cancel modal 종료를 �
   ]);
   assert.deepEqual(calls[1].selector.names, ['print to file', '파일로 인쇄']);
   assert.equal(calls[2].value, '/tmp/output/gtk.pdf');
+  assert.deepEqual(calls[2].selector.within, { roles: ['dialog'], names: ['print', '인쇄'] });
   await assert.rejects(
     adapter.printWithVirtualPrinter('Office LaserJet', async () => {}),
     /physical printer/,
   );
+});
+
+test('Python bridge는 anonymous editable node를 semantic ancestor 안에서만 선택한다', async () => {
+  const source = await readFile(new URL('./atspi_driver.py', import.meta.url), 'utf8');
+  assert.match(source, /within = selector\.get\("within"\)/);
+  assert.match(source, /matches_info\(node_info\(item\), within\)/);
+  assert.match(source, /info\["role"\] in \{"text", "entry"\}/);
 });
 
 test('adapter 실패는 tree와 screenshot을 남기고 Escape cleanup 후 원인을 보존한다', async () => {

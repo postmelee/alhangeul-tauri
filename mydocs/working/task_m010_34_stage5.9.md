@@ -20,6 +20,7 @@ version 증거를 지원되는 Debian package database 계약으로 교체한다
 | `tests/linux-gui-workflow.test.mjs` | CUPS package 증거와 `cupsd -v` 부재를 workflow source contract로 고정 |
 | `tests/gui/support/document-ux.ts` | 실패한 temporary style upload adapter 제거, upstream input/native title 계약 분리와 status·쪽 수 DOM 판독 공통화 |
 | `tests/gui/specs/document-ux.e2e.ts` | 숨은 file input에 clear 없이 `addValue`로 경로를 전송하고 headless 환경의 로컬 글꼴 선택 모달을 fail-closed 처리 |
+| `tests/gui/linux/native-ui/atspi.mjs`, `atspi_driver.py` | 이름 없는 GTK editable field를 file chooser/print dialog ancestor 안에서만 선택하고 실패 tree에 anonymous field 기록 |
 | `tests/gui/wdio.linux.conf.ts` | WebKit file upload용 표준 `strictFileInteractability: false` 명시 |
 | `tests/gui/wdio.shared.conf.ts` | operation·scenario timeout을 분리하고 단일 WebDriver window를 표준 명령으로 고정 |
 | `tests/gui-contracts.test.mjs` | upload protocol, bounded scenario timeout과 단일 window fail-closed 계약 고정 |
@@ -68,6 +69,10 @@ git diff --check
 - OK — upstream input/native title 계약 분리 뒤 focused `38/38`, GUI TypeScript,
   automation `204/204`, product boundary `225 files`, upstream `35/35`, Studio `97/97`,
   production Studio build, actionlint와 diff check 통과
+- OK — run `32601678616`에서 document UX 2건 성공, 전체 environment/evidence gate 통과
+- OK — GTK anonymous entry ancestor scope 뒤 focused `44/44`, automation `205/205`, GUI
+  TypeScript, product boundary `225 files`, upstream `35/35`, Studio `97/97`, production Studio
+  build, Python syntax, actionlint와 diff check 통과
 
 ## 잔여 위험
 
@@ -116,10 +121,16 @@ git diff --check
   정상 렌더·중앙 정렬을 보였다. hidden upstream file input은 native session을 만들지 않으므로
   native title 갱신을 요구할 수 없다. open readiness에서는 이 잘못된 title 조건만 제거하고,
   native open의 title·page·status 복원은 command snapshot으로 그대로 보존한다.
+- 다음 run `32601678616`은 두 document scenario를 수 초 안에 성공시켜 title/readiness 보정을
+  확인했다. native save는 `Open File` chooser와 `Location Layer`가 실제 AT-SPI tree에
+  나타났지만 위치 entry의 accessible name이 비어 timeout됐다. drag-in은 실패 cleanup 뒤
+  남은 open 상태에서 확인 modal을 보지 못했고, direct PDF와 system print도 각자 선행 native
+  open의 같은 location selector에서 실패했다. 따라서 네 개를 별도 결함으로 취급하지 않고
+  GTK anonymous editable field 하나의 ancestor scope 계약으로 보정한다.
 
 ## 다음 단계 영향
 
-- title 계약 분리와 DOM page 판독을 로컬 검증·commit·push한 뒤, 성공한 제품 native run
+- GTK ancestor scope를 전체 로컬 gate로 검증·commit·push한 뒤, 성공한 제품 native run
   `32347468978`을 재사용해 immutable acceptance workflow SHA의 branch GUI를 한 번 실행한다.
 - 실패하면 같은 branch에서 evidence를 읽고 보정하며, 완전히 성공해야 correction PR을
   생성한다.

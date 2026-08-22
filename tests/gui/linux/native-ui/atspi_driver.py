@@ -49,18 +49,20 @@ def children(node):
 
 
 def walk(root, max_depth=16, max_nodes=3000):
-    stack = [(root, 0)]
+    stack = [(root, 0, ())]
     seen = 0
     while stack and seen < max_nodes:
-        node, depth = stack.pop()
+        node, depth, ancestors = stack.pop()
         seen += 1
-        yield node, depth
+        yield node, depth, ancestors
         if depth < max_depth:
-            stack.extend((child, depth + 1) for child in reversed(children(node)))
+            stack.extend(
+                (child, depth + 1, (*ancestors, node))
+                for child in reversed(children(node))
+            )
 
 
-def matches(node, selector):
-    info = node_info(node)
+def matches_info(info, selector):
     role = normalized(info["role"])
     names = selector.get("names", [])
     roles = selector.get("roles", [])
@@ -70,6 +72,13 @@ def matches(node, selector):
     if names and not any(normalized(value) in searchable for value in names):
         return False
     return not selector.get("showing", True) or info["showing"]
+
+
+def matches(node, selector, ancestors=()):
+    if not matches_info(node_info(node), selector):
+        return False
+    within = selector.get("within")
+    return not within or any(matches_info(node_info(item), within) for item in ancestors)
 
 
 def applications(request):
@@ -87,8 +96,8 @@ def find_matches(request):
     selector = request.get("selector", {})
     found = []
     for app in applications(request):
-        for node, _depth in walk(app):
-            if matches(node, selector):
+        for node, _depth, ancestors in walk(app):
+            if matches(node, selector, ancestors):
                 found.append(node)
     return found
 
@@ -140,9 +149,9 @@ def perform_action(node, requested_names):
 def snapshot(request):
     items = []
     for app in applications(request):
-        for node, depth in walk(app, max_depth=12, max_nodes=1500):
+        for node, depth, _ancestors in walk(app, max_depth=16, max_nodes=3000):
             info = node_info(node)
-            if info["name"] or depth < 2:
+            if info["name"] or depth < 2 or info["role"] in {"text", "entry"}:
                 items.append({"depth": depth, **info})
     return {"applications": len(applications(request)), "nodes": items}
 

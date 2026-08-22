@@ -61,8 +61,8 @@ GitHub Issue: [#34](https://github.com/postmelee/alhangeul-tauri/issues/34)
 | PDF 자동 판정 | OK — 6쪽 A4 metadata, 한글 text, 쪽별 content, blank/crop heuristic과 PNG evidence를 결합하며 시각 read-back 필요를 표시한다. |
 | workflow 최소 권한·비용·Action pin | OK — `actions: read`, `contents: read`, `ubuntu-22.04`, manual dispatch, 45분 job/25분 GUI timeout, exact candidate concurrency와 4개 SHA pin을 고정했다. |
 | 실패 증거·최종 판정 | OK — GUI failure와 evidence upload failure를 `always()` 뒤 final gate가 각각 실패로 전달하고 자동 retry를 금지한다. |
-| 전체 platform-neutral regression | OK — product boundary 225 files, GUI TypeScript, 최신 automation 204/204, actionlint와 diff check 통과. upstream 35/35, Studio 97/97와 production build는 앞선 full gate에서 통과했다. |
-| 실제 hosted Linux x64 GUI | MISS — 최신 branch run `32601165367`은 exact handoff·DEB·driver·CUPS 환경 gate와 두 fixture 실제 렌더까지 통과했다. 다만 upstream file input에도 native session title 갱신을 요구한 harness 교차 계약으로 document suite가 timeout됐고 `bail=1` 때문에 native suite는 실행하지 않았다. title 계약 분리 뒤 한 번의 branch canary로 전체 경로를 다시 확정한다. |
+| 전체 platform-neutral regression | OK — product boundary 225 files, GUI TypeScript, 최신 automation 205/205, actionlint와 diff check 통과. upstream 35/35, Studio 97/97와 production build도 통과했다. |
+| 실제 hosted Linux x64 GUI | MISS — 최신 branch run `32601678616`은 exact 환경 gate와 HWP/HWPX document scenario를 성공했다. native 4건은 GTK file chooser의 이름 없는 location entry를 전역 name 조건으로 찾던 같은 selector 때문에 실패했다. file chooser ancestor로 한정한 뒤 전체 경로를 다시 확정한다. |
 
 ### 단계별 검증 결과
 
@@ -100,14 +100,22 @@ GitHub Issue: [#34](https://github.com/postmelee/alhangeul-tauri/issues/34)
   쪽 수와 snapshot도 WebKitGTK 요소 text API 대신 DOM `textContent`로 공통화했다. 보정 뒤
   focused `38/38`, automation `204/204`, product boundary 225개, upstream `35/35`, Studio
   `97/97`, production Studio build, GUI TypeScript와 actionlint를 통과했다.
+- title 계약 분리 SHA `c365cd0`의 run `32601678616`은 document UX 2건을 성공시켰고 native
+  suite까지 진입했다. 첫 open failure tree에서 GTK chooser와 `Location Layer`를 확인했으나
+  editable node는 이름이 없어 기존 selector가 거부했다. 나머지 drag/PDF/print failure도
+  문서를 열지 못한 같은 선행 원인이다. editable role은 file chooser/print dialog ancestor
+  안에서만 허용하고 anonymous field도 실패 tree에 보존하도록 보정했다. 보정 뒤 focused
+  `44/44`, automation `205/205`, product boundary 225개, upstream `35/35`, Studio `97/97`,
+  production Studio build, GUI TypeScript, Python syntax와 actionlint를 통과했다.
 
 ## 잔여 위험과 후속 작업
 
 ### 잔여 위험
 
-- Stage 5.9의 timeout·window·초기 readiness와 document load는 hosted runner에서 원인별로
-  측정됐지만 GTK·AT-SPI·CUPS-PDF native suite는 최신 run에서 `bail=1` 뒤 실행되지 않아 전체
-  성공을 아직 주장할 수 없다. 성공한 제품 artifact는 native run `32347468978`에 고정돼 있다.
+- Stage 5.9의 timeout·window·초기 readiness와 document load는 hosted runner에서 성공했다.
+  GTK·AT-SPI native open 이후의 save/drag/PDF/CUPS 출력은 anonymous field scope 보정 뒤 다시
+  확인해야 하므로 전체 성공은 아직 주장할 수 없다. 성공한 제품 artifact는 native run
+  `32347468978`에 고정돼 있다.
 - 다음 canary에서 production binary external driver 연결, localized accessibility selector, CUPS-PDF output name이나 hosted image drift가 추가로 발견될 수 있다. 실패 evidence를 보존하고 측정 근거가 있는 correction PR로만 보정한다.
 - 자동 text/raster 판정만으로 한글 tofu를 확정하지 않는다. screenshot과 PDF render의 glyph·중앙 정렬·빈 쪽·crop을 사람이 read-back해야 한다.
 - Linux arm64, RPM/AppImage desktop integration, 실제 GNOME/Xfce file manager와 physical printer는 자동화 범위 밖이다.

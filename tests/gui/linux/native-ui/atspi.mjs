@@ -12,13 +12,17 @@ const PRINT_DIALOG = Object.freeze({
   roles: ['dialog'],
   names: ['print', '인쇄'],
 });
+const FILE_CHOOSER_SCOPE = Object.freeze({
+  roles: ['file chooser'],
+  names: ['file', '파일', 'open', '열기', 'save', '저장'],
+});
 const LOCATION_ENTRY = Object.freeze({
   roles: ['text', 'entry'],
-  names: ['location', '위치', 'name', '이름'],
+  within: FILE_CHOOSER_SCOPE,
 });
 const NAME_ENTRY = Object.freeze({
   roles: ['text', 'entry'],
-  names: ['name', '이름'],
+  within: FILE_CHOOSER_SCOPE,
 });
 const BUTTON_ROLES = ['push button', 'button'];
 
@@ -105,6 +109,7 @@ export class LinuxNativeUiAdapter {
       await this.setText({
         roles: ['text', 'entry'],
         names: ['file', '파일', 'name', '이름'],
+        within: PRINT_DIALOG,
       }, path);
       await this.action({ roles: BUTTON_ROLES, names: ['print', '인쇄'] });
       await this.waitAbsent(PRINT_DIALOG);

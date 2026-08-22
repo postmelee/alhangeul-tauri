@@ -672,6 +672,14 @@ exit 1을 반환했으며 제품 GUI 단계는 실행되지 않았다.
   판정하고, native open 뒤 title 보존은 기존 command 전후 snapshot 계약에서 계속 검증한다.
   WebKitGTK 요소 text 차이를 같은 계열에서 닫기 위해 쪽 수와 document snapshot도 page
   context의 `textContent`로 단일화한다.
+- title 계약 분리 SHA `c365cd0`의 branch GUI run `32601678616`에서 HWP/HWPX document
+  scenario는 각각 2.7초와 2.6초에 성공했다. native 4개 scenario는 첫 open dialog의 같은
+  AT-SPI selector 실패가 연쇄됐다. 실패 tree에는 GTK `Open File` chooser와 `Ctrl+L` 뒤
+  `Location Layer` 전환이 모두 보이지만, editable text node의 accessible name이 비어 있어
+  전역 `location/위치/name/이름` 조건이 거부됐다. names 조건을 단순 제거하지 않고 보이는
+  file chooser ancestor 아래의 `text/entry`로 scope하며, snapshot은 anonymous editable
+  node도 기록한다. save name field와 print file field도 각각 file chooser/print dialog
+  ancestor로 한정해 같은 GTK label association 차이를 한 번에 닫는다.
 
 ### 검증
 
