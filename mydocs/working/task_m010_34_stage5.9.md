@@ -58,6 +58,8 @@ git diff --check
 - OK — automation test `204/204` 통과
 - OK — `actionlint` 오류 없음
 - OK — `git diff --check` 오류 없음
+- OK — readiness DOM 측정 보정 뒤 GUI·workflow focused `26/26`, GUI TypeScript,
+  product boundary `225 files`, automation `204/204`, actionlint 재통과
 
 ## 잔여 위험
 
@@ -87,17 +89,21 @@ git diff --check
   약 2초에 실행돼 upstream의 file input listener 설치 전 경로를 놓쳤다. 두 번째 HWPX는
   2분 뒤 정상 렌더되어 driver와 upload protocol 자체는 유효했다. 최초 upload 전에 초기
   status와 toolbar-ready를 함께 기다리는 readiness gate를 추가한다.
+- readiness run `32563034022`은 화면상 초기 status와 toolbar-ready class가 모두 존재했지만
+  WebDriver 요소 text API가 status를 빈 문자열로 반환해 upload 전 gate에서 실패했다. 제품
+  DOM이나 초기화 순서는 변경하지 않고 page context의 `textContent`를 읽도록 측정만 보정한다.
+  초기 status 설정 뒤 `setupFileInput()`까지 동기 실행되므로 이 관측은 listener 준비를
+  보장한다.
 
 ## 다음 단계 영향
 
-- 현재 checkpoint를 `publish/task34`에 push한 뒤, 성공한 제품 native run `32347468978`을
+- DOM text 측정 보정을 로컬 검증·commit·push한 뒤, 성공한 제품 native run `32347468978`을
   재사용해 immutable acceptance workflow SHA의 branch GUI만 실행한다.
 - 실패하면 같은 branch에서 evidence를 읽고 보정하며, 완전히 성공해야 correction PR을
   생성한다.
 - PR merge 뒤 새 merge exact SHA의 native build·Linux GUI·evidence read-back을 한 번
   수행한 후 Issue #34를 닫는다.
 
-## 승인 요청
+## 승인 상태
 
-- 작업지시자 요청으로 hosted run 전에 안전 중단했다. 재개 지시가 있으면 checkpoint 상태와
-  ancestry를 확인한 뒤 pre-PR branch GUI CI부터 진행한다.
+- 작업지시자의 재개 지시에 따라 pre-PR branch GUI correction loop를 진행 중이다.

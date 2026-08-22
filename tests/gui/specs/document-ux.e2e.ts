@@ -57,10 +57,11 @@ async function openFixture(fixture: DocumentFixture): Promise<void> {
 async function waitForInitialDesktopReady(): Promise<void> {
   if (desktopReady) return;
   await browser.waitUntil(async () => {
-    const status = await $(GUI_SELECTORS.statusMessage).getText();
-    const rootClass = await $('html').getAttribute('class') ?? '';
-    return status === INITIAL_DESKTOP_STATUS
-      && rootClass.split(/\s+/).includes('alhangeul-toolbar-ready');
+    const state = await browser.execute((statusSelector) => ({
+      status: document.querySelector(statusSelector)?.textContent?.trim() ?? '',
+      toolbarReady: document.documentElement.classList.contains('alhangeul-toolbar-ready'),
+    }), GUI_SELECTORS.statusMessage);
+    return state.status === INITIAL_DESKTOP_STATUS && state.toolbarReady;
   }, {
     timeout: inputs.timeoutMs,
     timeoutMsg: 'Studio 초기 file input listener가 준비되지 않았습니다',

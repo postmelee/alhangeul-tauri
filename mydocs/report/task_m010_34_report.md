@@ -83,12 +83,19 @@ GitHub Issue: [#34](https://github.com/postmelee/alhangeul-tauri/issues/34)
 - Stage 5.9 재개 run `32562596576`에서 timeout·window 보정은 실제 runner에서 확인됐고,
   제거된 focus 지연 때문에 노출된 최초 file listener readiness race를 초기 status와
   toolbar-ready 결합 gate로 후속 보정했다.
+- readiness run `32563034022`은 screenshot상 초기 status가 표시돼도 WebDriver 요소 text가
+  빈 문자열인 WebKitGTK 측정 차이를 확인했다. page context `textContent`로 준비 상태를
+  판정해 listener 설치 이후에만 첫 upload를 수행하도록 후속 보정했다. 보정 뒤 focused
+  `26/26`, GUI TypeScript, product boundary `225 files`, automation `204/204`, actionlint를
+  다시 통과했다.
 
 ## 잔여 위험과 후속 작업
 
 ### 잔여 위험
 
-- Stage 5.9의 timeout·window checkpoint는 아직 hosted GUI에서 실행하지 않아 실제 WebKitGTK·GTK·AT-SPI·CUPS-PDF 전체 성공을 주장할 수 없다. 성공한 제품 artifact는 native run `32347468978`에 고정돼 있다.
+- Stage 5.9의 timeout·window와 readiness 보정은 hosted runner에서 원인별로 측정됐지만 실제
+  WebKitGTK·GTK·AT-SPI·CUPS-PDF 전체 성공은 아직 주장할 수 없다. 성공한 제품 artifact는
+  native run `32347468978`에 고정돼 있다.
 - 다음 canary에서 production binary external driver 연결, localized accessibility selector, CUPS-PDF output name이나 hosted image drift가 추가로 발견될 수 있다. 실패 evidence를 보존하고 측정 근거가 있는 correction PR로만 보정한다.
 - 자동 text/raster 판정만으로 한글 tofu를 확정하지 않는다. screenshot과 PDF render의 glyph·중앙 정렬·빈 쪽·crop을 사람이 read-back해야 한다.
 - Linux arm64, RPM/AppImage desktop integration, 실제 GNOME/Xfce file manager와 physical printer는 자동화 범위 밖이다.

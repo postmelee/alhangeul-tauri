@@ -647,6 +647,12 @@ exit 1을 반환했으며 제품 GUI 단계는 실행되지 않았다.
   설치되지 않아 HWP 입력을 놓쳤다. 첫 upload 전에 초기 status
   `HWP 파일을 선택해주세요.`와 `alhangeul-toolbar-ready`가 함께 관측될 때까지 기다려
   앱 event loop가 전체 초기화 뒤 제어를 반환했음을 확인한다.
+- 첫 readiness run `32563034022`은 두 화면 모두 초기 status가 보이는 screenshot을
+  남겼지만 WebDriver `getElementText`는 120초 동안 빈 문자열을 반환했다. responsive·visibility
+  판정이 섞이는 요소 API 대신 page context에서 `#sb-message.textContent`와 root class를 함께
+  읽는다. upstream initialize는 status 설정부터 `setupFileInput()`까지 `await` 없이 같은
+  실행 구간이므로 외부 WebDriver command가 해당 text를 관측한 시점에는 listener 설치도
+  완료돼 있다.
 
 ### 검증
 
