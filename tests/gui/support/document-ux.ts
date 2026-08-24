@@ -159,25 +159,6 @@ export async function resolveLocalFontDialog(
   await waitForDialogGone(session, timeoutMs, displayName);
 }
 
-export async function confirmDroppedDocument(
-  session: WebdriverIO.Browser,
-  displayName: string,
-  timeoutMs: number,
-): Promise<void> {
-  const overlay = await session.$(GUI_SELECTORS.modalOverlay);
-  await overlay.waitForExist({ timeout: timeoutMs });
-  const title = normalizeDialogTitle(await overlay.$(GUI_SELECTORS.modalTitle).getText());
-  if (title !== '로컬 파일 열기 확인') {
-    throw new Error(`${displayName} 예상하지 않은 drag-in 모달: ${title}`);
-  }
-  const body = await overlay.$('.dialog-body').getText();
-  if (!body.includes(displayName)) {
-    throw new Error(`drag-in 확인 모달이 대상 파일명을 포함하지 않습니다: ${displayName}`);
-  }
-  await clickExactDialogButton(session, '열기', displayName);
-  await waitForDialogGone(session, timeoutMs, displayName);
-}
-
 export async function waitForLoadedDocument(
   session: WebdriverIO.Browser,
   displayName: string,

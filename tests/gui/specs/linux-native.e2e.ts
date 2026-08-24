@@ -14,7 +14,6 @@ import { runScenarioWithEvidence } from '../support/scenario-runner.ts';
 import {
   captureDocumentState,
   captureStableDocumentState,
-  confirmDroppedDocument,
   runNativeDocumentCommand,
   waitForLoadedDocument,
   waitForStudioStatus,
@@ -68,7 +67,6 @@ describe('Alhangeul native Linux acceptance', () => {
           timeoutMs: Math.min(inputs.timeoutMs, 30000),
           env: process.env,
         });
-        await confirmDroppedDocument(browser, basename(fixture.absolutePath), inputs.timeoutMs);
         await waitForDocument(fixture.absolutePath, fixture.expectedPageCount);
       });
       return [];

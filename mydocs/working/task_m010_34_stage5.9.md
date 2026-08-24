@@ -133,6 +133,18 @@ git diff --check
   `STARTED`/`DATA`/`FINISHED` marker를 분리해 다음 evidence가 start와 transfer를 구분하게 한다.
 - OK — modal-first readiness와 `Gtk.EventBox` 보정 뒤 focused `45/45`, 전체 automation
   `214/214`, GUI TypeScript, product boundary `227 files`, actionlint와 diff check 통과.
+- OK — 두 번째 production phase run `32691986182`도 exact handoff·환경·evidence upload와
+  WebDriver document 2건, native save 전체, 직접 PDF를 재통과했다. `Gtk.EventBox` source는
+  실제 HWPX open과 10쪽 render까지 완료해 drag start·URI transfer·drop 경계가 해소됐다.
+- PARTIAL — native drag 뒤 Tauri는 제품의 `alhangeul-open-paths` 경계로 문서를 직접 열므로
+  브라우저용 `로컬 파일 열기 확인` 없이 `로컬 글꼴 감지` modal로 진행했다. native harness에서
+  존재하지 않는 확인 modal 계약을 제거하고 공통 local-font 선택 뒤 basename·쪽 수로 판정한다.
+- PARTIAL — production print는 local-font modal을 정상 통과해 6쪽 문서를 완성했지만
+  `문서 편집 입력` 접근성 node가 `focused=true`여도 `showing=false`라 기본 semantic selector에서
+  제외됐다. 실제 `showing=true`, `focused=true`인 `document text` node에 focus·shortcut·복원을
+  결속한다.
+- OK — native drop·document focus 계약 보정 뒤 focused GUI 계약 `41/41`, 전체 automation
+  `214/214`, GUI TypeScript, product boundary `227 files`, actionlint와 diff check 통과.
 
 ## 잔여 위험
 

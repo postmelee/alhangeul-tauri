@@ -37,10 +37,9 @@ test('production native print는 준비·Print to File·cancel·CUPS를 같은 �
   ]);
   assert.equal(calls[0][2], 10000);
   assert.deepEqual(calls[2][1], { roles: ['document text'], names: ['biz_plan.hwp'] });
-  assert.deepEqual(calls[4][1], {
-    roles: ['embedded', 'text', 'entry'],
-    names: ['문서 편집 입력'],
-  });
+  for (const [, selector] of calls.filter(([name]) => name === 'focus')) {
+    assert.deepEqual(selector, { roles: ['document text'], names: ['biz_plan.hwp'] });
+  }
 });
 
 test('native print executable는 direct production process와 finally cleanup을 고정한다', async () => {

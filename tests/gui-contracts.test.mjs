@@ -216,9 +216,9 @@ test('숨은 file input upload와 글꼴 선택은 OS 권한·style 변경 없�
   assert.match(helperSource, /title !== '로컬 글꼴 감지'/);
   assert.match(helperSource, /clickExactDialogButton\(session, '대체 글꼴로 보기'/);
   assert.doesNotMatch(helperSource, /로컬 글꼴 감지 \(권장\)/);
-  assert.match(nativeSource, /confirmDroppedDocument\(browser, basename\(fixture\.absolutePath\)/);
-  assert.match(helperSource, /title !== '로컬 파일 열기 확인'/);
-  assert.match(helperSource, /clickExactDialogButton\(session, '열기'/);
+  assert.doesNotMatch(nativeSource, /confirmDroppedDocument/);
+  assert.doesNotMatch(helperSource, /로컬 파일 열기 확인/);
+  assert.match(nativeSource, /await dragFileIntoWindow\([\s\S]*await waitForDocument\(fixture\.absolutePath/);
   assert.match(helperSource, /await waitForDialogGone\(session, timeoutMs, displayName\)/);
   assert.doesNotMatch(documentSource + nativeSource, /statusMessage\)\.getText\(\)/);
   assert.doesNotMatch(documentSource + nativeSource + helperSource, /pageIndicator\)\.getText\(\)/);

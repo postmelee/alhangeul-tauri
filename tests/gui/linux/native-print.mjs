@@ -24,10 +24,6 @@ const LOCAL_FONT_BUTTON = Object.freeze({
   roles: BUTTON_ROLES,
   names: ['대체 글꼴로 보기'],
 });
-const EDITOR_INPUT = Object.freeze({
-  roles: ['embedded', 'text', 'entry'],
-  names: ['문서 편집 입력'],
-});
 
 export async function runProductionPrintSequence(options) {
   const document = documentSelector(options.displayName);
@@ -36,7 +32,7 @@ export async function runProductionPrintSequence(options) {
   await options.adapter.wait(document);
 
   const trigger = async () => {
-    await options.adapter.focus(EDITOR_INPUT);
+    await options.adapter.focus(document);
     await options.adapter.triggerSystemPrint();
   };
   await options.adapter.printToFile(options.gtkPdf, trigger);
@@ -154,7 +150,7 @@ async function describeRenders(outputDir, paths) {
 
 async function waitForEditorRestore(adapter, document) {
   await adapter.wait(document);
-  await adapter.focus(EDITOR_INPUT);
+  await adapter.focus(document);
 }
 
 async function waitForFile(path, timeoutMs) {
