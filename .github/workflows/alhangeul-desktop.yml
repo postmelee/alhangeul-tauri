@@ -9,7 +9,7 @@ on:
         default: ""
         type: string
       run_tests:
-        description: Run platform-neutral tests before the native build.
+        description: Run platform and product tests before the native build.
         required: true
         default: true
         type: boolean
@@ -40,14 +40,17 @@ jobs:
             os: windows-2025
             target: x86_64-pc-windows-msvc
             bundle_args: ""
+            native_checks: true
           - name: linux-x64
             os: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
             bundle_args: ""
+            native_checks: true
           - name: linux-arm64
             os: ubuntu-22.04-arm
             target: aarch64-unknown-linux-gnu
             bundle_args: "--bundles deb"
+            native_checks: false
     runs-on: ${{ matrix.os }}
     timeout-minutes: 90
     steps:
@@ -161,6 +164,14 @@ jobs:
       - name: Test studio host
         if: inputs.run_tests
         run: pnpm run test:studio
+
+      - name: Test desktop Rust
+        if: inputs.run_tests && matrix.native_checks
+        run: pnpm run test:desktop
+
+      - name: Lint desktop Rust
+        if: inputs.run_tests && matrix.native_checks
+        run: pnpm run clippy:desktop
 
       - name: Build Tauri bundles
         shell: bash

@@ -87,18 +87,21 @@ test('desktop workflow의 Windows/Linux matrix가 exact target을 유지한다',
       '            os: windows-2025',
       '            target: x86_64-pc-windows-msvc',
       '            bundle_args: ""',
+      '            native_checks: true',
     ].join('\n'),
     [
       '          - name: linux-x64',
       '            os: ubuntu-22.04',
       '            target: x86_64-unknown-linux-gnu',
       '            bundle_args: ""',
+      '            native_checks: true',
     ].join('\n'),
     [
       '          - name: linux-arm64',
       '            os: ubuntu-22.04-arm',
       '            target: aarch64-unknown-linux-gnu',
       '            bundle_args: "--bundles deb"',
+      '            native_checks: false',
     ].join('\n'),
   ];
 
@@ -129,7 +132,7 @@ test('desktop workflow는 checkout 전에 Git LF byte를 command scope로 고정
   );
 });
 
-test('desktop workflow는 checkout commit을 검증하고 pretest를 순서대로 실행한다', () => {
+test('desktop workflow는 checkout commit과 platform/native gate 순서를 고정한다', () => {
   assert.match(
     desktopWorkflow,
     /ref: \$\{\{ inputs\.build_ref \|\| github\.sha \}\}/,
@@ -152,6 +155,8 @@ test('desktop workflow는 checkout commit을 검증하고 pretest를 순서대�
     'pnpm run test:automation',
     'pnpm run test:upstream',
     'pnpm run test:studio',
+    'pnpm run test:desktop',
+    'pnpm run clippy:desktop',
     'pnpm tauri build',
   ]);
 
@@ -166,6 +171,17 @@ test('desktop workflow는 checkout commit을 검증하고 pretest를 순서대�
   ]) {
     const step = getStepContaining(desktopWorkflow, command);
     assert.match(step, /^\s{8}if: inputs\.run_tests$/m);
+  }
+
+  for (const command of [
+    'pnpm run test:desktop',
+    'pnpm run clippy:desktop',
+  ]) {
+    const step = getStepContaining(desktopWorkflow, command);
+    assert.match(
+      step,
+      /^\s{8}if: inputs\.run_tests && matrix\.native_checks$/m,
+    );
   }
 });
 

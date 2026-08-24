@@ -138,7 +138,7 @@ fn reaper_releases_expired_jobs_and_stops_after_state_drop() {
     let weak = Arc::downgrade(&jobs);
 
     assert!(reap_once(&weak));
-    assert!(jobs.lock().unwrap().jobs.is_empty());
+    assert_eq!(jobs.lock().unwrap().discard_for_window("main"), 0);
     drop(jobs);
     assert!(!reap_once(&weak));
 }

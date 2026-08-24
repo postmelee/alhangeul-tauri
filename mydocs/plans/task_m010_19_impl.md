@@ -6,6 +6,8 @@ GitHub Issue: [#19](https://github.com/postmelee/alhangeul-tauri/issues/19)
 
 2026-08-24 작업지시자가 수행계획 진행을 승인했다. 승인된 immutable snapshot, native stale job 회수, Studio/native 통합, Windows/Linux exact-SHA 수용의 네 경계를 유지한다. Task #20이 소유한 dispatcher·embed handler·platform lifecycle은 수정하지 않고, Task #34의 Linux GUI correction이 `devel`에 반영된 뒤 마지막 수용을 진행한다.
 
+2026-08-24 Stage 4 첫 candidate `41bbf015ad140a4c7ff5db58110ea4d292798261`의 CI run `32693530357`은 플랫폼 중립 gate를 통과했지만 `pdf_temp_cleanup_tests.rs`가 sibling module의 private `PdfExportJobs.jobs` field를 직접 읽어 Rust test compile에서 `E0616`으로 실패했다. 작업지시자는 production API·reaper 동작을 바꾸지 않는 assertion 보정, Windows/Linux x64 artifact workflow의 Rust test·Clippy gate 연결과 새 exact-SHA 재실행을 Stage 4.1로 승인했다. 실패 candidate의 artifact build run `32693539285`는 correction 뒤 SHA가 바뀌므로 중단했고 어떤 artifact도 수용 증거로 재사용하지 않는다.
+
 ## 단계 개요
 
 | Stage | 제목 | 주요 산출 | 검증 |
@@ -263,6 +265,64 @@ Task #19 Stage 4: Windows Linux PDF snapshot 수용
 ```
 
 Stage 4 검증이 모두 통과한 뒤 `mydocs/working/task_m010_19_stage4.md`만 커밋한다.
+
+## Stage 4.1 — Rust reaper test privacy와 양 플랫폼 native gate 보정
+
+### 산출물
+
+수정:
+
+- `apps/desktop/src-tauri/src/pdf_temp_cleanup_tests.rs`
+- `.github/workflows/alhangeul-desktop.yml`
+- `tests/actions-workflows.test.mjs`
+- `mydocs/plans/task_m010_19_impl.md`
+- `mydocs/orders/20260824.md`
+
+신규:
+
+- `mydocs/working/task_m010_19_stage4.1.md`
+
+### 변경 내용
+
+- reaper test는 `PdfExportJobs.jobs` private field를 직접 읽지 않는다. `reap_once()` 뒤 public `discard_for_window("main")`이 제거할 job을 찾지 못해 `0`을 반환하는지 검사해 같은 회수 결과를 외부 동작으로 검증한다. production field visibility와 API는 넓히지 않는다.
+- desktop artifact matrix에는 `native_checks`를 명시한다. Stage 4 대상인 `windows-x64`와 `linux-x64`만 `true`, 기존 `linux-arm64` package build는 `false`로 두어 다른 architecture gate 의미를 만들지 않는다.
+- `run_tests`와 `native_checks`가 모두 참인 matrix job은 Studio test 뒤 `pnpm run test:desktop`, `pnpm run clippy:desktop`을 순서대로 통과해야 Tauri production build에 진입한다. 기존 exact checkout, platform-neutral gate, bundle inventory와 installer smoke는 유지한다.
+- workflow contract test는 native gate가 Windows/Linux x64에만 결속되고 Rust test·Clippy가 Tauri build보다 앞서는 순서를 고정한다.
+- Stage 4.1은 test·workflow 검증 경계만 보정한다. PDF snapshot, native job/reaper, startup cleanup, Studio pipeline, 사용자 문서와 공식 문서는 수정하지 않는다.
+- Stage 4.1 commit을 새 exact-SHA candidate로 push한 뒤 CI와 desktop artifact workflow를 처음부터 다시 실행한다. 첫 실패 candidate의 성공 step이나 중단 artifact는 새 candidate 수용 증거로 승계하지 않는다.
+- Windows GUI HWP/HWPX direct PDF는 repository에 자동화 harness가 없으므로 artifact build 성공과 구분한 별도 native 수동 gate로 유지한다. 실제 Windows 증거 없이 Stage 4를 완료 처리하지 않는다.
+
+### 검증
+
+Stage 4.1 commit 전 현재 macOS 호스트에서:
+
+```bash
+node --test tests/actions-workflows.test.mjs
+actionlint .github/workflows/alhangeul-desktop.yml
+pnpm run check:product-boundary
+pnpm run test:automation
+pnpm run test:upstream
+pnpm run test:studio
+pnpm run build:studio
+cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml -- --check
+git diff --check
+```
+
+Stage 4.1 commit 뒤 새 exact SHA에서:
+
+```bash
+gh workflow run ci.yml --ref publish/task19
+gh workflow run alhangeul-desktop.yml --ref publish/task19 \
+  -f build_ref={exact_sha} -f run_tests=true
+```
+
+CI의 Linux Rust test·Clippy와 desktop workflow의 Windows/Linux x64 Rust test·Clippy·Tauri build가 모두 통과해야 Stage 4 PDF/recovery acceptance를 재개한다. macOS에서는 Rust desktop test, Clippy와 Tauri build 결과를 수용 증거로 사용하지 않는다.
+
+### 커밋
+
+```text
+Task #19 [Stage 4.1]: PDF reaper test와 native gate 보정
+```
 
 ## 통합 검증
 
