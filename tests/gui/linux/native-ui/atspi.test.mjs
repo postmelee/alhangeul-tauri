@@ -7,6 +7,7 @@ import {
   createAtspiRunner,
   LinuxNativeUiAdapter,
 } from './atspi.mjs';
+import { createWindowShortcutRunner } from './xdotool.mjs';
 
 test('Save As는 focused location entry에 full target을 넣고 명시적으로 accept한다', async () => {
   const calls = [];
@@ -37,9 +38,11 @@ test('Save As는 focused location entry에 full target을 넣고 명시적으로
 test('native open은 GTK location shortcut을 한 번 쓰고 modal close를 기다린다', async () => {
   const calls = [];
   const shortcuts = [];
+  const windowShortcuts = [];
   const adapter = createAdapter({
     runAtspi: async (request) => { calls.push(request); return {}; },
     runShortcut: async (key) => { shortcuts.push(key); },
+    runWindowShortcut: async (request) => { windowShortcuts.push(request); },
   });
   await adapter.openDocument('/fixtures/biz_plan.hwp', async () => {});
   assert.deepEqual(shortcuts, ['ctrl+l']);
@@ -55,9 +58,11 @@ test('native open은 GTK location shortcut을 한 번 쓰고 modal close를 기�
 test('print adapter는 Print to File만 고르고 save/cancel modal 종료를 확인한다', async () => {
   const calls = [];
   const shortcuts = [];
+  const windowShortcuts = [];
   const adapter = createAdapter({
     runAtspi: async (request) => { calls.push(request); return {}; },
     runShortcut: async (key) => { shortcuts.push(key); },
+    runWindowShortcut: async (request) => { windowShortcuts.push(request); },
   });
   await adapter.printToFile('/tmp/output/gtk.pdf', async () => {});
   await adapter.cancelPrint(async () => {});
@@ -82,7 +87,8 @@ test('print adapter는 Print to File만 고르고 save/cancel modal 종료를 �
   assert.deepEqual(calls[9].selector.within, { roles: ['dialog'], names: ['print', '인쇄'] });
   assert.deepEqual(calls[9].selector.exactNames, ['print', '인쇄']);
   assert.equal(calls[9].selector.names, undefined);
-  assert.deepEqual(shortcuts, ['ctrl+l', 'alt+p']);
+  assert.deepEqual(shortcuts, ['ctrl+l']);
+  assert.deepEqual(windowShortcuts, [{ titles: ['Print', '인쇄'], key: 'alt+p' }]);
   assert.deepEqual(calls[12].selector.within, { roles: ['dialog'], names: ['print', '인쇄'] });
   assert.deepEqual(calls[12].selector.exactNames, ['cancel', '취소']);
   await assert.rejects(
@@ -123,6 +129,27 @@ test('system print shortcut은 실제 ctrl+p만 허용하고 AT-SPI 탐색과 �
   await adapter.triggerSystemPrint();
   assert.deepEqual(calls[0][1], ['key', '--clearmodifiers', 'ctrl+p']);
   await assert.rejects(adapter.shortcut('ctrl+x'), /허용되지 않은 key/);
+});
+
+test('Print mnemonic은 exact visible window 하나를 활성화한 뒤 전송한다', async () => {
+  const calls = [];
+  const runner = createWindowShortcutRunner({
+    xdotoolPath: '/usr/bin/xdotool',
+    spawnSync: (command, args) => {
+      calls.push([command, args]);
+      if (args[0] === 'search' && args.at(-1) === '^Print$') {
+        return { status: 0, stdout: '410\n', stderr: '' };
+      }
+      return { status: args[0] === 'search' ? 1 : 0, stdout: '', stderr: '' };
+    },
+  });
+  assert.deepEqual(
+    await runner({ titles: ['Print', '인쇄'], key: 'alt+p' }),
+    { windowId: '410' },
+  );
+  assert.deepEqual(calls.at(-1), [
+    '/usr/bin/xdotool', ['windowactivate', '--sync', '410', 'key', '--clearmodifiers', 'alt+p'],
+  ]);
 });
 
 test('production native phase는 선택형 글꼴 버튼과 focused document wait만 허용한다', async () => {
@@ -220,6 +247,13 @@ test('AT-SPI process bridge는 JSON 1건만 허용하고 driver 오류를 fail-c
     spawnSync: () => ({ status: 1, stdout: '{"ok":false,"error":""}\n', stderr: 'driver stderr' }),
   });
   await assert.rejects(emptyError({ command: 'wait' }), /driver stderr/);
+
+  const timeout = createAtspiRunner({
+    spawnSync: () => ({
+      status: null, stdout: '', stderr: '', error: { message: 'spawnSync python3 ETIMEDOUT' },
+    }),
+  });
+  await assert.rejects(timeout({ command: 'waitAbsent' }), /waitAbsent.*ETIMEDOUT/);
 });
 
 function createAdapter(override = {}) {
@@ -228,6 +262,7 @@ function createAdapter(override = {}) {
     timeoutMs: 30000,
     applicationNames: ['Alhangeul'],
     runShortcut: async () => {},
+    runWindowShortcut: async () => {},
     captureScreenshot: async () => {},
     ...override,
   });

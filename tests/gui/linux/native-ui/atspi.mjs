@@ -2,7 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createShortcutRunner } from './xdotool.mjs';
+import { createShortcutRunner, createWindowShortcutRunner } from './xdotool.mjs';
 
 const DRIVER_PATH = fileURLToPath(new URL('./atspi_driver.py', import.meta.url));
 const FILE_DIALOG = Object.freeze({
@@ -39,7 +39,9 @@ export function createAtspiRunner(options = {}) {
     const response = parseDriverResponse(result.stdout);
     if (result.status !== 0 || !response.ok) {
       const responseError = typeof response.error === 'string' ? response.error.trim() : '';
-      throw new Error(`AT-SPI command failed: ${responseError || compactError(result)}`);
+      const processError = compactError(result);
+      const detail = [responseError, processError].filter(Boolean).join('; ');
+      throw new Error(`AT-SPI ${request.command} failed: ${detail}`);
     }
     return response.result;
   };
@@ -55,6 +57,7 @@ export class LinuxNativeUiAdapter {
     this.saveTargets = options.saveTargets ?? {};
     this.runAtspi = options.runAtspi ?? createAtspiRunner(options);
     this.runShortcut = options.runShortcut ?? createShortcutRunner(options);
+    this.runWindowShortcut = options.runWindowShortcut ?? createWindowShortcutRunner(options);
     this.captureScreenshot = options.captureScreenshot ?? (async () => {});
   }
 
@@ -113,7 +116,7 @@ export class LinuxNativeUiAdapter {
   async clickPrintButton() {
     const selector = { roles: BUTTON_ROLES, exactNames: ['print', '인쇄'], within: PRINT_DIALOG };
     await this.printCommand({ command: 'wait', selector });
-    await this.shortcut('alt+p');
+    await this.runWindowShortcut({ titles: ['Print', '인쇄'], key: 'alt+p' });
   }
 
   async choosePrintFile(path) {

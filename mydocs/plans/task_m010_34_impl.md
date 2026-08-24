@@ -805,6 +805,12 @@ exit 1을 반환했으며 제품 GUI 단계는 실행되지 않았다.
   `gtkprintunixdialog.c`는 `_Print`를 `GTK_RESPONSE_OK` button이자 default response로 추가하므로,
   exact button이 showing·enabled·sensitive 상태임을 semantic wait한 뒤 GTK mnemonic `Alt+P`를
   한 번 보내고 dialog close·생성 파일·PDF 분석으로 결과를 판정한다.
+- mnemonic 보정 SHA `07935edd6d9c9bcb725a292bb533be76f837b939`의 branch GUI run
+  `32698528620`도 GTK/CUPS PDF 없이 동일 dialog를 남겼다. active X11 window를 암묵적으로
+  신뢰하지 않고 exact `Print`/`인쇄` title의 visible window ID cardinality가 1임을 확인한 뒤
+  `windowactivate --sync`와 `Alt+P`를 같은 bounded xdotool invocation에서 실행한다. 동시에
+  AT-SPI process timeout 오류에 command와 child-process error를 함께 보존해, 이후 실패가
+  readiness·waitAbsent·snapshot 중 어디에서 발생했는지 evidence만으로 확정한다.
 
 ### 검증
 

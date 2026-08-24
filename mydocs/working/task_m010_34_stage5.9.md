@@ -235,6 +235,12 @@ git diff --check
   source가 `_Print`를 `GTK_RESPONSE_OK`와 default response로 정의하므로 button의 synchronous
   component/action API를 제거한다. exact button readiness만 확인하고 GTK mnemonic `Alt+P` 한
   번으로 response를 활성화한 뒤 dialog close와 파일/PDF 판정을 유지한다.
+- OK — mnemonic 보정 SHA `07935edd6d9c9bcb725a292bb533be76f837b939`의 run
+  `32698528620`도 WebDriver phase 전체 성공(`webdriver=0`), exact handoff·환경·evidence
+  upload와 chooser·target basename readback을 통과했다.
+- PARTIAL — active X11 window를 지정하지 않은 `Alt+P` 뒤에도 GTK/CUPS PDF 없이 동일 dialog가
+  남았다. exact visible `Print`/`인쇄` window cardinality 1을 확인하고 활성화한 뒤 mnemonic을
+  보내며, AT-SPI timeout은 command와 child-process error를 보존하도록 진단 계약도 함께 닫는다.
 
 ## 잔여 위험
 
