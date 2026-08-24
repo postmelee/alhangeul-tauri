@@ -104,6 +104,7 @@ test('registry probe는 disposable HKCU Registry64만 만들고 항상 제거한
     'DeleteSubKeyTree($path, $false)',
     'SHChangeNotify',
     'AssocQueryStringW',
+    'ASSOCSTR_SHELLEXTENSION = 16',
     'IShellItemImageFactory',
     'SIIGBF_THUMBNAILONLY',
     'DeleteObject',

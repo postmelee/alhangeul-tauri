@@ -15,6 +15,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 public static class ThumbnailContractProbe {
   const uint SIIGBF_THUMBNAILONLY = 0x8;
+  const uint ASSOCSTR_SHELLEXTENSION = 16;
   [StructLayout(LayoutKind.Sequential)] struct SIZE { public int cx; public int cy; }
   [StructLayout(LayoutKind.Sequential)] struct PROCESS_MEMORY_COUNTERS {
     public uint cb, PageFaultCount; public UIntPtr PeakWorkingSetSize, WorkingSetSize, QuotaPeakPagedPoolUsage, QuotaPagedPoolUsage, QuotaPeakNonPagedPoolUsage, QuotaNonPagedPoolUsage, PagefileUsage, PeakPagefileUsage;
@@ -27,9 +28,9 @@ public static class ThumbnailContractProbe {
   [DllImport("gdi32.dll")] static extern bool DeleteObject(IntPtr handle);
   [DllImport("psapi.dll", SetLastError=true)] static extern bool GetProcessMemoryInfo(IntPtr process, out PROCESS_MEMORY_COUNTERS counters, uint size);
   public static string Query(string association, string category) {
-    uint length = 0; AssocQueryStringW(0, 15, association, category, null, ref length);
+    uint length = 0; AssocQueryStringW(0, ASSOCSTR_SHELLEXTENSION, association, category, null, ref length);
     var output = new StringBuilder(length > 0 ? (int)length : 1);
-    int result = AssocQueryStringW(0, 15, association, category, output, ref length);
+    int result = AssocQueryStringW(0, ASSOCSTR_SHELLEXTENSION, association, category, output, ref length);
     return result == 0 ? output.ToString() : String.Format("HRESULT:0x{0:X8}", result);
   }
   public static string GetImage(string path) {
