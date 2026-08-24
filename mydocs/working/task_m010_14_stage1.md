@@ -102,6 +102,7 @@ GitHub Actions 증적:
 - artifact: `alhangeul-windows-x64-thumbnail-core`, ID `9508625891`, 3,269 B, 만료 `2026-09-07T05:57:01Z`
 - artifact digest: `sha256:92e84b3f4dd8ad4bcf74c82e6d90fcfc8d8e85855b8e340e9c2fdae0665617b4`
 - outcome: build/probe/upload/final gate 모두 success, summary status `passed`
+- workflow 전체: Windows x64·Linux x64·Linux arm64 build와 Windows x64 installer smoke 모두 success
 - fixture: 정상 7개 + 파생 4개, 33개 process memory sample 모두 0보다 큼
 - 동작: preview 없음에서도 direct 성공, stale preview와 무관하게 direct 성공, 손상·64 MiB+1은 실패, 원본 hash·size·mtime 불변
 
@@ -121,7 +122,7 @@ GitHub Actions 증적:
 - Stage 2 direct API는 preview 없음·stale preview에서도 first-page direct 결과가 우선되는 fixture 계약을 고정한다.
 - Stage 3 worker는 입력 64 MiB 초과를 spawn 전에 거부하고 256 MiB Job process limit, 1,500/2,000 ms deadline과 4,194,368 B frame cap을 적용한다.
 - Stage 4 installer는 extension ShellEx만 등록하고 active ProgID·`SystemFileAssociations`를 쓰지 않으며 snapshot/conditional restore transaction을 구현한다.
-- 임시 remote ref `codex/task14-stage1-probe`는 성공 artifact 회수와 본 보고 반영 뒤 제거한다. Stage 2는 `local/task14`에서만 진행한다.
+- 임시 remote ref `codex/task14-stage1-probe`는 final workflow 성공과 artifact 회수 뒤 제거했다. Stage 2는 `local/task14`에서만 진행한다.
 
 ## 승인 요청
 
