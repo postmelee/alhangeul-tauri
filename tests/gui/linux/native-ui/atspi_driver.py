@@ -77,11 +77,15 @@ def walk(root, max_depth=16, max_nodes=3000):
 def matches_info(info, selector):
     role = normalized(info["role"])
     names = selector.get("names", [])
+    exact_names = selector.get("exactNames", [])
+    node_name = normalized(info["name"])
     roles = selector.get("roles", [])
     searchable = normalized(f'{info["name"]} {info["description"]}')
     if roles and not any(normalized(value) == role for value in roles):
         return False
     if names and not any(normalized(value) in searchable for value in names):
+        return False
+    if exact_names and not any(normalized(value) == node_name for value in exact_names):
         return False
     if selector.get("showing", True) and not info["showing"]:
         return False

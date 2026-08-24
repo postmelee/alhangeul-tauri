@@ -775,6 +775,14 @@ exit 1을 반환했으며 제품 GUI 단계는 실행되지 않았다.
   열린 file chooser의 focused location entry에 full target을 submit·readback한 뒤 `Select`를
   명시적으로 accept한다. chooser close와 button basename 갱신을 모두 확인한 뒤에만 `Print`를
   실행한다. 좌표 입력, anonymous print entry 추측과 dialog 외부 button action은 허용하지 않는다.
+- chooser 보정 SHA `06e1be8c3d1ced74cf8f565c2aa6214dc261c087`의 branch GUI run
+  `32695710117`은 target chooser를 닫고 path button을 실제
+  `...ated/biz-plan-gtk-print.pdf`로 갱신했다. 이어지는 `Print` action selector가 substring
+  match여서 같은 path button의 `gtk-print.pdf`를 먼저 고르고 chooser를 다시 연 뒤 print dialog
+  close에서 timeout된 것이 남은 원인이다. dialog action button은 접근성 name이 정확히
+  `Print`/`Cancel`/`Open`/`Save`/`Select`이므로 이 버튼들만 normalized exact-name으로 찾는다.
+  printer row와 경로 button은 기존 role·ancestor·substring scope를 유지해 서로 다른 semantics를
+  하나의 matching 규칙으로 섞지 않는다.
 
 ### 검증
 

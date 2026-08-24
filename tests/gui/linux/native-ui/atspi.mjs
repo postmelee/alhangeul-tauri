@@ -106,7 +106,7 @@ export class LinuxNativeUiAdapter {
       await this.choosePrintFile(path);
       await this.printCommand({
         command: 'action',
-        selector: { roles: BUTTON_ROLES, names: ['print', '인쇄'], within: PRINT_DIALOG },
+        selector: { roles: BUTTON_ROLES, exactNames: ['print', '인쇄'], within: PRINT_DIALOG },
         actionNames: ['click', 'press'],
       });
       await this.printCommand({ command: 'waitAbsent', selector: PRINT_DIALOG });
@@ -152,7 +152,8 @@ export class LinuxNativeUiAdapter {
       await this.printCommand({ command: 'wait', selector: { ...printer, selected: true } });
       await this.printCommand({
         command: 'action',
-        selector: { roles: BUTTON_ROLES, names: ['print', '인쇄'], within: PRINT_DIALOG },
+        selector: { roles: BUTTON_ROLES, exactNames: ['print', '인쇄'], within: PRINT_DIALOG },
+        actionNames: ['click', 'press'],
       });
       await this.printCommand({ command: 'waitAbsent', selector: PRINT_DIALOG });
     }, { desktopScope: true });
@@ -164,7 +165,8 @@ export class LinuxNativeUiAdapter {
       await this.printCommand({ command: 'wait', selector: PRINT_DIALOG });
       await this.printCommand({
         command: 'action',
-        selector: { roles: BUTTON_ROLES, names: ['cancel', '취소'], within: PRINT_DIALOG },
+        selector: { roles: BUTTON_ROLES, exactNames: ['cancel', '취소'], within: PRINT_DIALOG },
+        actionNames: ['click', 'press'],
       });
       await this.printCommand({ command: 'waitAbsent', selector: PRINT_DIALOG });
     }, { desktopScope: true });
@@ -215,7 +217,7 @@ export class LinuxNativeUiAdapter {
   acceptFileChooser(names, desktopScope = false) {
     return this.command({
       command: 'actionIfPresent',
-      selector: { roles: BUTTON_ROLES, names, within: FILE_CHOOSER_SCOPE },
+      selector: { roles: BUTTON_ROLES, exactNames: names, within: FILE_CHOOSER_SCOPE },
       guardSelector: FILE_DIALOG,
       actionNames: ['click', 'press'],
       timeoutMs: Math.min(this.timeoutMs, 5000),

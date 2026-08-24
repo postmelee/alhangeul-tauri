@@ -29,7 +29,7 @@ test('Save As는 focused location entry에 full target을 넣고 명시적으로
   assert.equal(calls[1].value, '/tmp/output/saved.hwp');
   assert.equal(calls[1].selector.focused, true);
   assert.deepEqual(calls[1].selector.within.roles, ['file chooser']);
-  assert.deepEqual(calls[2].selector.names, ['save', '저장']);
+  assert.deepEqual(calls[2].selector.exactNames, ['save', '저장']);
   assert.deepEqual(calls[2].guardSelector.roles, ['file chooser', 'dialog']);
   assert.deepEqual(calls[2].actionNames, ['click', 'press']);
 });
@@ -49,7 +49,7 @@ test('native open은 GTK location shortcut을 한 번 쓰고 modal close를 기�
   assert.equal(calls[1].value, '/fixtures/biz_plan.hwp');
   assert.equal(calls[1].selector.focused, true);
   assert.deepEqual(calls[1].selector.within.roles, ['file chooser']);
-  assert.deepEqual(calls[2].selector.names, ['open', '열기']);
+  assert.deepEqual(calls[2].selector.exactNames, ['open', '열기']);
 });
 
 test('print adapter는 Print to File만 고르고 save/cancel modal 종료를 확인한다', async () => {
@@ -73,12 +73,15 @@ test('print adapter는 Print to File만 고르고 save/cancel modal 종료를 �
   assert.equal(calls[5].value, '/tmp/output/gtk.pdf');
   assert.equal(calls[5].command, 'submitText');
   assert.equal(calls[6].desktopScope, true);
-  assert.deepEqual(calls[6].selector.names, ['select', '선택']);
+  assert.deepEqual(calls[6].selector.exactNames, ['select', '선택']);
   assert.deepEqual(calls[6].actionNames, ['click', 'press']);
   assert.deepEqual(calls[8].selector.names, ['gtk.pdf']);
   assert.ok(calls.every(({ desktopScope }) => desktopScope === true));
   assert.deepEqual(calls[9].selector.within, { roles: ['dialog'], names: ['print', '인쇄'] });
+  assert.deepEqual(calls[9].selector.exactNames, ['print', '인쇄']);
+  assert.equal(calls[9].selector.names, undefined);
   assert.deepEqual(calls[12].selector.within, { roles: ['dialog'], names: ['print', '인쇄'] });
+  assert.deepEqual(calls[12].selector.exactNames, ['cancel', '취소']);
   await assert.rejects(
     adapter.printWithVirtualPrinter('Office LaserJet', async () => {}),
     /physical printer/,
@@ -98,6 +101,8 @@ test('virtual printer는 semantic selection 후에만 Print를 실행한다', as
   assert.equal(calls[1].actionNames, undefined);
   assert.equal(calls[2].selector.selected, true);
   assert.equal(calls[1].desktopScope, true);
+  assert.deepEqual(calls[3].selector.exactNames, ['print', '인쇄']);
+  assert.deepEqual(calls[3].actionNames, ['click', 'press']);
 });
 
 test('system print shortcut은 실제 ctrl+p만 허용하고 AT-SPI 탐색과 분리한다', async () => {
@@ -137,6 +142,8 @@ test('Python bridge는 editable text를 focus·readback한 같은 node에서 sem
   assert.match(source, /desktopScope must be a boolean/);
   assert.match(source, /matches_info\(node_info\(item\), within\)/);
   assert.match(source, /selected = selector\.get\("selected"\)/);
+  assert.match(source, /exact_names = selector\.get\("exactNames", \[\]\)/);
+  assert.match(source, /normalized\(value\) == node_name/);
   assert.match(source, /info\["role"\] in \{"text", "entry"\}/);
   const editable = source.slice(source.indexOf('def set_editable_text'), source.indexOf('def snapshot'));
   assert.match(editable, /queryComponent\(\)\.grabFocus\(\)/);

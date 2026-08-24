@@ -201,6 +201,18 @@ git diff --check
   chooser close → button basename readback → `Print` 순서로 보정한 뒤 공통 GUI 계약 `19/19`,
   Linux GUI 계약 `23/23`, 전체 automation `215/215`, GUI TypeScript와 product boundary
   `227 files`를 통과했다. adapter·driver·focused test 파일은 모두 300 LOC 이하를 유지했다.
+- OK — chooser 보정 SHA `06e1be8c3d1ced74cf8f565c2aa6214dc261c087`의 run
+  `32695710117`도 WebDriver phase 전체 성공(`webdriver=0`)과 exact handoff·환경·evidence
+  upload를 통과했다. native tree의 path button이 실제 target basename
+  `biz-plan-gtk-print.pdf`로 바뀌어 chooser open·path submit·`Select`·close·basename readback을
+  모두 확인했다.
+- PARTIAL — 다음 `Print` selector가 substring `print`를 사용해 target 경로 button의
+  `gtk-print.pdf`도 일치시켰고, chooser를 다시 연 뒤 print dialog close가 process timeout으로
+  종료됐다. dialog action button에는 normalized exact-name 조건을 추가하고 `Print`, `Cancel`,
+  file chooser의 `Open`, `Save`, `Select`에만 적용한다. printer row와 path button의 기존
+  semantic role·ancestor 조건은 유지한다.
+- OK — exact dialog action selector 보정 뒤 공통 GUI 계약 `19/19`, Linux GUI 계약 `23/23`,
+  GUI TypeScript를 통과했고 adapter `296`, driver `300`, focused test `231` LOC로 상한을 지켰다.
 
 ## 잔여 위험
 
