@@ -29,7 +29,7 @@ describe('platform', () => {
       platform: 'MacIntel',
       userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X)',
     })).toBe('unknown');
-    expect(detectDesktopPlatform(undefined)).toBe('unknown');
+    expect(detectDesktopPlatform({ platform: '', userAgent: '' })).toBe('unknown');
   });
 
   it('detects both injected and protocol Tauri runtimes', () => {

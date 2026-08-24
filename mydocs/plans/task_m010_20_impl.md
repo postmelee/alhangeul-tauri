@@ -13,7 +13,8 @@ GitHub Issue: [#20](https://github.com/postmelee/alhangeul-tauri/issues/20)
 | 1 | dispatcher와 DOM/native event lifecycle 명시 | `dispatcher.ts`, `desktop-events.ts`, `desktop-toolbar-mode-sync.ts` | 반복·경쟁·부분 실패·dispose focused test |
 | 2 | embed handler registration과 waiter lifecycle 정리 | `desktop-runtime.ts`와 test | 교체·stale cleanup·timer 회수 focused test |
 | 3 | dead platform bridge 제거와 공식 경계 정렬 | platform/direct-print, Rust registry, boundary test와 `UPSTREAM.md` | 플랫폼 중립 전체 Studio/upstream gate |
-| 4 | exact-SHA Windows/Linux lifecycle 수용 | Stage 3 exact commit의 native 결과와 `_stage4.md` | 양 플랫폼 Rust/Clippy/Tauri build와 reload smoke |
+| 3.1 | platform unknown fixture의 runner 격리 | `platform.test.ts`, 실패 run·재검증 기록 | Windows/Linux 전역 navigator와 무관한 명시 fixture |
+| 4 | exact-SHA Windows/Linux lifecycle 수용 | Stage 3.1 exact commit의 native 결과와 `_stage4.md` | 양 플랫폼 Rust/Clippy/Tauri build와 reload smoke |
 
 ## 문서 위치 확인
 
@@ -181,6 +182,48 @@ Task #20 Stage 3: dead platform bridge 제거와 경계 정렬
 ```
 
 Stage 3 source·공식 문서와 `mydocs/working/task_m010_20_stage3.md`를 같은 커밋에 묶는다. 이 commit SHA를 Stage 4 native 수용 입력으로 고정한다.
+
+### Stage 3.1 — platform unknown fixture의 runner 격리
+
+2026-08-24 Stage 3 exact SHA `85ab350ccb55f5d4ef1e616de95c96e267ee0e8e`로
+[CI run 32692284752](https://github.com/postmelee/alhangeul-tauri/actions/runs/32692284752)와
+[native run 32692278112](https://github.com/postmelee/alhangeul-tauri/actions/runs/32692278112)을
+실행했다. checkout·frozen install·upstream test까지 통과했지만 세 native matrix와 CI가
+모두 `platform.test.ts`의 unknown assertion에서 중단됐다. explicit argument로 전달한
+`undefined`는 JavaScript default parameter를 발동하므로 runner의 실제 navigator를
+읽었고, Windows에서는 `windows`, Linux에서는 `linux`가 반환됐다. 제품 detector가
+실제 지원 플랫폼을 잘못 판정한 것이 아니라 unknown fixture가 host 전역과 격리되지 않은
+test 결함이다.
+
+작업지시자가 같은 날 최소 보정과 새 exact-SHA 전체 재검증을 승인했다.
+
+- `apps/studio-host/src/core/platform.test.ts`의 unknown 입력만 빈 `platform`·`userAgent`를
+  가진 명시 fixture로 바꾼다. 제품 source, Windows/Linux 판정과 direct print 동작은
+  수정하지 않는다.
+- 실패한 두 run과 artifact 부재는 Stage 4 수용 근거로 재사용하지 않는다.
+- 플랫폼 중립 gate 뒤 보정 commit을 `publish/task20`에 fast-forward하고 새 SHA에서
+  CI와 native workflow를 모두 새로 dispatch한다.
+- Stage 4는 새 exact SHA의 Windows/Linux native build가 성공한 뒤에만 GUI lifecycle
+  수용을 이어간다.
+
+검증:
+
+```bash
+pnpm --filter @postmelee/alhangeul-studio-host test -- src/core/platform.test.ts
+pnpm run test:studio
+pnpm run build:studio
+pnpm run check:product-boundary
+git diff --check
+```
+
+커밋:
+
+```text
+Task #20 [Stage 3.1]: platform unknown fixture 명시
+```
+
+Stage 3.1 test·계획과 `mydocs/working/task_m010_20_stage3_1.md`를 같은 커밋에 묶고,
+이 새 commit SHA를 Stage 4 native 수용 입력으로 고정한다.
 
 ## Stage 4 — exact-SHA Windows/Linux lifecycle 수용
 
