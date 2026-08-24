@@ -8,7 +8,7 @@ import {
   LinuxNativeUiAdapter,
 } from './atspi.mjs';
 
-test('Save As는 dialog readiness 뒤 directory와 basename을 semantic field에 입력한다', async () => {
+test('Save As는 focused location entry에 full target을 넣고 명시적으로 accept한다', async () => {
   const calls = [];
   const shortcuts = [];
   let triggered = false;
@@ -24,13 +24,14 @@ test('Save As는 dialog readiness 뒤 directory와 basename을 semantic field에
   assert.equal(triggered, true);
   assert.deepEqual(shortcuts, ['ctrl+l']);
   assert.deepEqual(calls.map(({ command }) => command), [
-    'wait', 'submitText', 'wait', 'setText', 'action', 'waitAbsent',
+    'wait', 'submitText', 'actionIfPresent', 'waitAbsent',
   ]);
-  assert.equal(calls[1].value, '/tmp/output');
+  assert.equal(calls[1].value, '/tmp/output/saved.hwp');
+  assert.equal(calls[1].selector.focused, true);
   assert.deepEqual(calls[1].selector.within.roles, ['file chooser']);
-  assert.equal(calls[3].value, 'saved.hwp');
-  assert.deepEqual(calls[3].selector.within.roles, ['file chooser']);
-  assert.deepEqual(calls[4].selector.names, ['save', '저장']);
+  assert.deepEqual(calls[2].selector.names, ['save', '저장']);
+  assert.deepEqual(calls[2].guardSelector.roles, ['file chooser', 'dialog']);
+  assert.deepEqual(calls[2].actionNames, ['click', 'press']);
 });
 
 test('native open은 GTK location shortcut을 한 번 쓰고 modal close를 기다린다', async () => {
@@ -42,9 +43,13 @@ test('native open은 GTK location shortcut을 한 번 쓰고 modal close를 기�
   });
   await adapter.openDocument('/fixtures/biz_plan.hwp', async () => {});
   assert.deepEqual(shortcuts, ['ctrl+l']);
-  assert.deepEqual(calls.map(({ command }) => command), ['wait', 'submitText', 'waitAbsent']);
+  assert.deepEqual(calls.map(({ command }) => command), [
+    'wait', 'submitText', 'actionIfPresent', 'waitAbsent',
+  ]);
   assert.equal(calls[1].value, '/fixtures/biz_plan.hwp');
+  assert.equal(calls[1].selector.focused, true);
   assert.deepEqual(calls[1].selector.within.roles, ['file chooser']);
+  assert.deepEqual(calls[2].selector.names, ['open', '열기']);
 });
 
 test('print adapter는 Print to File만 고르고 save/cancel modal 종료를 확인한다', async () => {
@@ -80,6 +85,10 @@ test('Python bridge는 editable text를 focus·readback한 같은 node에서 sem
   const submitText = source.slice(source.indexOf('if command == "submitText":'), source.indexOf('if command == "focus":'));
   assert.match(submitText, /set_editable_text\(node, request\.get\("value"\)\)/);
   assert.match(submitText, /perform_action\(node, \["activate"\]\)/);
+  const optionalAction = source.slice(source.indexOf('def perform_if_present'), source.indexOf('def perform_action'));
+  assert.match(optionalAction, /optional action requires a non-empty guardSelector/);
+  assert.match(optionalAction, /if not find_matches\(guard_request\)/);
+  assert.match(optionalAction, /optional action is unavailable while its dialog remains/);
   const snapshot = source.slice(source.indexOf('def snapshot'), source.indexOf('def dispatch'));
   assert.match(snapshot, /item\["actions"\] = action_names\(node\)/);
   assert.match(snapshot, /item\["textLength"\] = text_length\(node\)/);

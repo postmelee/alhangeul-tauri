@@ -20,7 +20,7 @@ version 증거를 지원되는 Debian package database 계약으로 교체한다
 | `tests/linux-gui-workflow.test.mjs` | CUPS package 증거와 `cupsd -v` 부재를 workflow source contract로 고정 |
 | `tests/gui/support/document-ux.ts` | 실패한 temporary style upload adapter 제거, upstream input/native title 계약 분리와 status·쪽 수 DOM 판독 공통화 |
 | `tests/gui/specs/document-ux.e2e.ts` | 숨은 file input에 clear 없이 `addValue`로 경로를 전송하고 headless 환경의 로컬 글꼴 선택 모달을 fail-closed 처리 |
-| `tests/gui/linux/native-ui/atspi.mjs`, `atspi_driver.py` | 이름 없는 GTK editable field를 ancestor 안에서 선택하고 location 입력을 focus·readback·semantic activate 단일 호출로 제출하며 비민감 실패 metadata 기록 |
+| `tests/gui/linux/native-ui/atspi.mjs`, `atspi_driver.py` | focused GTK location entry에 full path를 입력·readback하고 남은 chooser는 명시적 Open/Save accept로 완료하며 비민감 실패 metadata 기록 |
 | `tests/gui/wdio.linux.conf.ts` | WebKit file upload용 표준 `strictFileInteractability: false` 명시 |
 | `tests/gui/wdio.shared.conf.ts` | operation·scenario timeout을 분리하고 단일 WebDriver window를 표준 명령으로 고정 |
 | `tests/gui-contracts.test.mjs` | upload protocol, bounded scenario timeout과 단일 window fail-closed 계약 고정 |
@@ -85,6 +85,12 @@ git diff --check
 - OK — GTK semantic submit 계약 뒤 focused `44/44`, automation `205/205`, GUI TypeScript,
   product boundary `225 files`, upstream `35/35`, Studio `97/97`, production Studio build,
   Python syntax, actionlint와 diff check 통과
+- OK — semantic submit run `32687090731`에서 exact handoff·환경 gate·HWP/HWPX document
+  scenario·evidence upload 통과. location entry의 focus·activate와 실제 path 길이 readback 뒤에도
+  chooser accept response가 발생하지 않은 것을 측정하고 tree의 `Open/click` action 확인
+- OK — GTK explicit accept와 full-target Save As 계약 뒤 focused `44/44`, automation
+  `205/205`, GUI TypeScript, product boundary `225 files`, upstream `35/35`, Studio `97/97`,
+  production Studio build, Python syntax, actionlint와 diff check 통과
 
 ## 잔여 위험
 
@@ -154,10 +160,18 @@ git diff --check
   별도 X11 `Return` 사이의 cross-channel submit을 제거한다. GTK entry의 accessible
   `activate` 계약으로 같은 node에서 focus·값 설정·exact readback·제출을 수행하며 실패
   snapshot은 값 본문 없이 focus·action·text 길이만 기록한다.
+- semantic submit SHA `bb235d34cafedef616a0ff56a19424bfd734b1c9`의 run
+  `32687090731`도 open chooser close에서 실패했지만 새 evidence는 원인을 다시 좁혔다. 보이는
+  location entry는 `focused=true`, `actions=["activate"]`, `textLength=87`이었고 fixture의 CI
+  절대 경로도 정확히 87자였다. focus·값 설정·exact readback·entry activate가 모두 성공한 뒤
+  dialog만 남았으며, 같은 tree의 보이는 `Open` button은 `click` action을 제공했다. GTK
+  file chooser의 entry activate와 dialog accept response를 분리해, dialog가 남아 있으면
+  explicit `Open`/`Save`를 수행한다. Save As도 full target path를 같은 location entry에 넣어
+  directory/basename field 추측을 제거한다.
 
 ## 다음 단계 영향
 
-- GTK semantic submit 계약을 전체 로컬 gate로 검증·commit·push한 뒤, 성공한 제품 native run
+- GTK explicit accept 계약을 전체 로컬 gate로 검증·commit·push한 뒤, 성공한 제품 native run
   `32347468978`을 재사용해 immutable acceptance workflow SHA의 branch GUI를 한 번 실행한다.
 - 실패하면 같은 branch에서 evidence를 읽고 보정하며, 완전히 성공해야 correction PR을
   생성한다.

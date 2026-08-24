@@ -699,6 +699,20 @@ exit 1을 반환했으며 제품 GUI 단계는 실행되지 않았다.
   경로 문자열은 evidence에 기록하지 않는다. 실패 snapshot에는 editable node의 focus,
   action 이름과 text 길이만 추가해 다음 drift를 한 run에서 판정한다. 첫 chooser가 남아
   발생한 drag/PDF/print 연쇄 실패는 별도 제품 결함으로 분리하지 않는다.
+- semantic submit SHA `bb235d34cafedef616a0ff56a19424bfd734b1c9`의 branch GUI run
+  `32687090731`은 exact handoff·환경·HWP/HWPX document scenario를 통과했지만 native open의
+  chooser close가 다시 timeout됐다. 새 evidence는 보이는 location entry가
+  `focused=true`, `actions=["activate"]`, `textLength=87`이며 87자가 실제 fixture 절대 경로
+  길이와 일치함을 증명했다. 같은 tree의 보이는 `Open` button은 `actions=["click"]`을
+  제공한다. 따라서 값 입력이나 entry activate 실패가 아니라 file chooser의 accept response가
+  발생하지 않은 것이 남은 경계다.
+- GTK `FileChooserDialog`의 완료 계약은 `Open`/`Save` accept-type response button이다. location
+  entry의 full absolute path를 focus·readback·activate한 뒤 chooser가 남아 있으면 같은
+  ancestor 안의 명시적 `Open`/`Save` action을 수행한다. entry activate가 이미 dialog를 닫은
+  경우에는 accept action을 생략하고, dialog는 남았는데 accept action을 찾지 못하면 5초 안에
+  fail-closed한다. Save As도 directory activation 뒤 anonymous basename field를 다시 추측하지
+  않고 full target path와 `Save` accept의 같은 단일 계약을 사용한다. selector는 `Ctrl+L` 뒤
+  focused editable로 한정하고 실패 tree에는 enabled/sensitive state도 추가한다.
 
 ### 검증
 

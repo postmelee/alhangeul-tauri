@@ -62,7 +62,7 @@ GitHub Issue: [#34](https://github.com/postmelee/alhangeul-tauri/issues/34)
 | workflow 최소 권한·비용·Action pin | OK — `actions: read`, `contents: read`, `ubuntu-22.04`, manual dispatch, 45분 job/25분 GUI timeout, exact candidate concurrency와 4개 SHA pin을 고정했다. |
 | 실패 증거·최종 판정 | OK — GUI failure와 evidence upload failure를 `always()` 뒤 final gate가 각각 실패로 전달하고 자동 retry를 금지한다. |
 | 전체 platform-neutral regression | OK — product boundary 225 files, GUI TypeScript, 최신 automation 205/205, actionlint와 diff check 통과. upstream 35/35, Studio 97/97와 production build도 통과했다. |
-| 실제 hosted Linux x64 GUI | MISS — 최신 branch run `32685969832`는 exact 환경 gate와 HWP/HWPX document scenario, anonymous GTK location entry focus·입력까지 성공했다. focus 성공 뒤에도 별도 X11 `Return`이 경로를 확정하지 못해 첫 chooser가 남았고 native 4건이 연쇄 실패했다. 같은 AT-SPI node의 focus·값 설정·readback·semantic activate로 원자화한 뒤 전체 경로를 다시 확정한다. |
+| 실제 hosted Linux x64 GUI | MISS — 최신 branch run `32687090731`은 exact 환경 gate와 HWP/HWPX document scenario, GTK location entry의 focus·full path readback·activate까지 성공했다. entry의 87자 값이 fixture 절대 경로 길이와 일치했지만 chooser accept response가 발생하지 않았다. tree에서 확인한 `Open/click` action과 Save의 명시적 accept를 결합한 뒤 전체 경로를 다시 확정한다. |
 
 ### 단계별 검증 결과
 
@@ -124,6 +124,15 @@ GitHub Issue: [#34](https://github.com/postmelee/alhangeul-tauri/issues/34)
   exact text readback과 비민감 focus·action·길이 진단을 추가했다. 보정 뒤 focused `44/44`,
   automation `205/205`, GUI TypeScript, product boundary 225개, upstream `35/35`, Studio
   `97/97`, production Studio build, Python syntax, actionlint와 diff check를 통과했다.
+- semantic submit SHA `bb235d34cafedef616a0ff56a19424bfd734b1c9`의 run
+  `32687090731`은 exact handoff·환경·document UX 2건과 evidence upload를 통과했지만 native
+  open chooser close가 timeout됐다. 실패 tree에서 location entry는 focus·`activate` action과
+  fixture 절대 경로와 같은 87자 readback을 보존했고, 보이는 `Open` button은 `click` action을
+  제공했다. 따라서 입력 실패가 아니라 chooser accept response 부재로 확정했다. focused
+  location entry에 full path를 제출한 뒤 dialog가 남으면 명시적 `Open`/`Save`를 수행하고,
+  Save As의 directory/basename 2단계 selector 추측도 제거했다. 보정 뒤 focused `44/44`,
+  automation `205/205`, GUI TypeScript, product boundary 225개, upstream `35/35`, Studio
+  `97/97`, production Studio build, Python syntax, actionlint와 diff check를 통과했다.
 
 ## 잔여 위험과 후속 작업
 
@@ -131,7 +140,8 @@ GitHub Issue: [#34](https://github.com/postmelee/alhangeul-tauri/issues/34)
 
 - Stage 5.9의 timeout·window·초기 readiness와 document load, GTK anonymous location entry
   탐색·focus·입력은 hosted runner에서 성공했다. native open의 semantic activate 이후
-  save/drag/PDF/CUPS 출력은 새 보정 뒤 다시 확인해야 하므로 전체 성공은 아직 주장할 수 없다.
+  explicit accept와 save/drag/PDF/CUPS 출력은 새 보정 뒤 다시 확인해야 하므로 전체 성공은
+  아직 주장할 수 없다.
   성공한 제품 artifact는 native run
   `32347468978`에 고정돼 있다.
 - 다음 canary에서 production binary external driver 연결, localized accessibility selector, CUPS-PDF output name이나 hosted image drift가 추가로 발견될 수 있다. 실패 evidence를 보존하고 측정 근거가 있는 correction PR로만 보정한다.

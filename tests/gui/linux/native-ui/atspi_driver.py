@@ -22,8 +22,10 @@ def node_info(node):
         "name": safe_call(node, "name", ""),
         "description": safe_call(node, "description", ""),
         "role": safe_method(node, "getRoleName", "unknown"),
-        "showing": node.getState().contains(pyatspi.STATE_SHOWING),
-        "focused": node.getState().contains(pyatspi.STATE_FOCUSED),
+        "showing": has_state(node, pyatspi.STATE_SHOWING),
+        "focused": has_state(node, pyatspi.STATE_FOCUSED),
+        "enabled": has_state(node, pyatspi.STATE_ENABLED),
+        "sensitive": has_state(node, pyatspi.STATE_SENSITIVE),
     }
 
 
@@ -39,6 +41,13 @@ def safe_method(node, method, fallback):
         return getattr(node, method)() or fallback
     except Exception:
         return fallback
+
+
+def has_state(node, state):
+    try:
+        return node.getState().contains(state)
+    except Exception:
+        return False
 
 
 def children(node):
@@ -72,7 +81,10 @@ def matches_info(info, selector):
         return False
     if names and not any(normalized(value) in searchable for value in names):
         return False
-    return not selector.get("showing", True) or info["showing"]
+    if selector.get("showing", True) and not info["showing"]:
+        return False
+    focused = selector.get("focused")
+    return not isinstance(focused, bool) or info["focused"] == focused
 
 
 def matches(node, selector, ancestors=()):
@@ -124,6 +136,27 @@ def selected_node(request):
     if index < 0 or index >= len(found):
         raise LookupError(f"selector index {index} is unavailable ({len(found)} matches)")
     return found[index]
+
+
+def perform_if_present(request):
+    timeout_ms = int(request.get("timeoutMs", 5000))
+    guard_selector = request.get("guardSelector")
+    if timeout_ms < 100 or timeout_ms > 5000:
+        raise ValueError("optional action timeoutMs must be between 100 and 5000")
+    if not isinstance(guard_selector, dict) or not guard_selector:
+        raise ValueError("optional action requires a non-empty guardSelector")
+    deadline = time.monotonic() + timeout_ms / 1000
+    guard_request = {**request, "selector": guard_selector}
+    while True:
+        found = find_matches(request)
+        if found:
+            perform_action(found[0], request.get("actionNames", []))
+            return {"performed": True, "node": node_info(found[0])}
+        if not find_matches(guard_request):
+            return {"performed": False}
+        if time.monotonic() >= deadline:
+            raise LookupError("optional action is unavailable while its dialog remains")
+        time.sleep(0.1)
 
 
 def perform_action(node, requested_names):
@@ -199,6 +232,8 @@ def dispatch(request):
     if command == "waitAbsent":
         wait_for_matches(request, absent=True)
         return {"absent": True}
+    if command == "actionIfPresent":
+        return perform_if_present(request)
     node = selected_node(request)
     if command == "action":
         perform_action(node, request.get("actionNames", []))

@@ -18,10 +18,7 @@ const FILE_CHOOSER_SCOPE = Object.freeze({
 });
 const LOCATION_ENTRY = Object.freeze({
   roles: ['text', 'entry'],
-  within: FILE_CHOOSER_SCOPE,
-});
-const NAME_ENTRY = Object.freeze({
-  roles: ['text', 'entry'],
+  focused: true,
   within: FILE_CHOOSER_SCOPE,
 });
 const BUTTON_ROLES = ['push button', 'button'];
@@ -77,6 +74,7 @@ export class LinuxNativeUiAdapter {
       await this.wait(FILE_DIALOG);
       await this.shortcut('ctrl+l');
       await this.submitText(LOCATION_ENTRY, path);
+      await this.acceptFileChooser(['open', '열기']);
       await this.waitAbsent(FILE_DIALOG);
     });
   }
@@ -87,10 +85,8 @@ export class LinuxNativeUiAdapter {
       await trigger();
       await this.wait(FILE_DIALOG);
       await this.shortcut('ctrl+l');
-      await this.submitText(LOCATION_ENTRY, this.pathApi.dirname(path));
-      await this.wait(FILE_DIALOG);
-      await this.setText(NAME_ENTRY, this.pathApi.basename(path));
-      await this.action({ roles: BUTTON_ROLES, names: ['save', '저장'] });
+      await this.submitText(LOCATION_ENTRY, path);
+      await this.acceptFileChooser(['save', '저장']);
       await this.waitAbsent(FILE_DIALOG);
     });
   }
@@ -176,6 +172,16 @@ export class LinuxNativeUiAdapter {
 
   submitText(selector, value) {
     return this.command({ command: 'submitText', selector, value });
+  }
+
+  acceptFileChooser(names) {
+    return this.command({
+      command: 'actionIfPresent',
+      selector: { roles: BUTTON_ROLES, names, within: FILE_CHOOSER_SCOPE },
+      guardSelector: FILE_DIALOG,
+      actionNames: ['click', 'press'],
+      timeoutMs: Math.min(this.timeoutMs, 5000),
+    });
   }
 
   action(selector) {
