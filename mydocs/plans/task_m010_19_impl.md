@@ -324,6 +324,61 @@ CI의 Linux Rust test·Clippy와 desktop workflow의 Windows/Linux x64 Rust test
 Task #19 [Stage 4.1]: PDF reaper test와 native gate 보정
 ```
 
+## Stage 4.2 — Linux GUI CUPS 환경 증거 보정
+
+### 산출물
+
+수정:
+
+- `.github/workflows/alhangeul-linux-gui.yml`
+- `tests/linux-gui-workflow.test.mjs`
+- `mydocs/plans/task_m010_19_impl.md`
+- `mydocs/orders/20260824.md`
+
+신규:
+
+- `mydocs/working/task_m010_19_stage4.2.md`
+
+### 변경 내용
+
+- Stage 4.1 exact candidate `243387060a4c1cf640a15c20c59552ab36524ae8`의 CI run `32694496874`와 desktop artifact run `32694505687`은 성공했다. artifact run은 Windows/Linux x64 Rust test·Clippy·Tauri build, Linux arm64 package build와 Windows installer smoke를 모두 통과했다.
+- 같은 SHA와 Linux x64 artifact를 전달한 GUI acceptance run `32696052385`는 exact checkout·artifact handoff, DEB 설치와 CUPS-PDF A4 구성까지 성공했다. 다음 `Record native environment` 단계에서 Ubuntu 22.04의 `cupsd`가 지원하지 않는 `-v` 옵션을 호출해 exit 1을 반환했고 제품 GUI 단계는 실행되지 않았다.
+- CUPS 환경 증거는 daemon binary의 미지원 version flag를 호출하지 않는다. 이미 필수 설치하는 `cups`가 제공하는 `cups-daemon` Debian package version을 `dpkg-query -W cups-daemon`으로 기록해 fail-closed 설치/version 증거를 유지한다.
+- workflow contract test는 `cups-daemon` package version 기록을 요구하고 `cupsd -v`와 `cupsd --version` 호출 부재를 고정한다. Node/pnpm/Rust, exact tauri-driver input, WebKitWebDriver path/package, GTK와 Poppler 증거 계약은 유지한다.
+- Stage 4.2는 Linux GUI acceptance workflow와 focused contract만 보정한다. 제품 Rust/Studio, PDF snapshot·job/reaper·startup cleanup, package 산출물, 사용자 문서와 공식 문서는 수정하지 않는다.
+- 새 Stage 4.2 commit으로 candidate SHA가 바뀌므로 CI와 desktop artifact workflow를 처음부터 다시 실행한다. 새 artifact run의 exact Linux x64 산출물만 Linux GUI acceptance에 전달하며 이전 성공 artifact를 새 SHA의 수용 증거로 재사용하지 않는다.
+- Windows GUI HWP/HWPX direct PDF는 자동화되지 않은 별도 native 수동 gate로 남는다. Linux GUI 성공만으로 Stage 4를 완료 처리하지 않는다.
+
+### 검증
+
+Stage 4.2 commit 전 현재 macOS 호스트에서:
+
+```bash
+node --test tests/linux-gui-workflow.test.mjs
+actionlint .github/workflows/alhangeul-linux-gui.yml
+pnpm run check:product-boundary
+pnpm run test:automation
+git diff --check
+```
+
+Stage 4.2 commit 뒤 새 exact SHA에서:
+
+```bash
+gh workflow run ci.yml --ref publish/task19
+gh workflow run alhangeul-desktop.yml --ref publish/task19 \
+  -f build_ref={exact_sha} -f run_tests=true
+gh workflow run alhangeul-linux-gui.yml --ref publish/task19 \
+  -f build_ref={exact_sha} -f native_run_id={artifact_run_id}
+```
+
+CI와 desktop artifact workflow가 성공한 뒤 Linux GUI acceptance에서 환경 증거 기록, 실제 GUI HWP/HWPX 시나리오, direct/GTK/CUPS PDF 분석과 evidence upload가 모두 통과해야 한다. evidence artifact의 workflow context, handoff digest, installed DEB hash, native environment, step outcomes와 PDF summary를 read-back한다.
+
+### 커밋
+
+```text
+Task #19 [Stage 4.2]: Linux GUI CUPS 환경 증거 보정
+```
+
 ## 통합 검증
 
 - 각 Stage focused test와 `git diff --check`를 해당 단계 보고서 작성 전에 실행한다.
