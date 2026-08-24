@@ -265,6 +265,13 @@ git diff --check
   exact window 활성화 뒤 `getactivewindow` 동일성 확인, 현재 포커스에 basename 입력, portal의
   default response `Return`, exact window absent 순으로 단일화한다. 최종 판정은 target 절대경로
   파일 생성과 PDF 분석을 계속 요구한다.
+- PARTIAL — active-window·basename 보정 SHA `9e90e03`의 run `32702787708`은 WebDriver phase
+  전체 성공(`webdriver=0`)과 exact handoff·environment·evidence upload를 유지했다. chooser
+  current folder는 `~/PDF/generated`, `Name`은 목표 basename으로 정확히 바뀌어 cwd·focus·입력
+  가정을 확인했다. 다만 같은 xdotool argv에서 `type` 뒤의 `key --clearmodifiers Return`까지
+  문자열로 소비돼 필드가 `biz-plan-gtk-print.pdfkey--clearmodifiersReturn`이 됐다. `type`을
+  terminal command로 분리하고 active window 동일성을 다시 확인한 뒤 별도 `Return`을 보내는
+  command parsing 보정만 적용한다.
 
 ## 잔여 위험
 

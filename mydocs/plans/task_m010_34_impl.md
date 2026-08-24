@@ -837,6 +837,13 @@ exit 1을 반환했으며 제품 GUI 단계는 실행되지 않았다.
   parent directory로 고정하고 chooser에는 slash 없는 basename만 입력한다. portal이 설정한
   default `GTK_RESPONSE_OK`를 exact active window의 `Return`으로 실행한 뒤 window absent와
   기대 절대경로의 실제 PDF 생성을 모두 확인한다.
+- active-window·basename SHA `9e90e03`의 run `32702787708`은 WebDriver phase 전체 성공과
+  exact handoff·evidence upload를 유지했고 chooser current folder를 `~/PDF/generated`로,
+  basename 입력을 `biz-plan-gtk-print.pdf`로 정확히 변경했다. 단일 xdotool command의 `type`이
+  뒤따른 `key --clearmodifiers Return` 토큰을 후속 command가 아니라 입력 문자열로 소비해 실제
+  필드가 `biz-plan-gtk-print.pdfkey--clearmodifiersReturn`이 됐다. `type`을 terminal command로
+  분리하고 같은 exact active window ID를 재확인한 뒤 별도 `Return`을 보내는 파싱 경계만
+  보정한다.
 
 ### 검증
 

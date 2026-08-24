@@ -15,7 +15,7 @@ test('Print file chooser는 exact active window 하나에서 basename과 default
         return { status: english && !closed ? 0 : 1, stdout: english && !closed ? '410\n' : '', stderr: '' };
       }
       if (args[0] === 'getactivewindow') return { status: 0, stdout: '410\n', stderr: '' };
-      if (args.includes('Return')) closed = true;
+      if (args.join(' ') === 'key --clearmodifiers Return') closed = true;
       return { status: 0, stdout: '', stderr: '' };
     },
   });
@@ -28,13 +28,14 @@ test('Print file chooser는 exact active window 하나에서 basename과 default
     path: '/tmp/output/print.pdf', timeoutMs: 5000,
   }), { windowId: '410' });
   assert.ok(calls.some(([, args]) => args.join(' ') === 'getactivewindow'));
-  const submit = calls.find(([, args]) => args.includes('Return'))?.[1] ?? [];
-  assert.deepEqual(submit, [
+  const type = calls.find(([, args]) => args.includes('type'))?.[1] ?? [];
+  assert.deepEqual(type, [
     'windowactivate', '--sync', '410',
     'key', '--clearmodifiers', 'ctrl+a',
     'type', '--clearmodifiers', '--delay', '0', 'print.pdf',
-    'key', '--clearmodifiers', 'Return',
   ]);
+  assert.ok(calls.some(([, args]) => args.join(' ') === 'key --clearmodifiers Return'));
+  assert.equal(calls.filter(([, args]) => args.join(' ') === 'getactivewindow').length, 2);
   assert.ok(calls.every(([, args]) => !args.includes('--window')));
 });
 

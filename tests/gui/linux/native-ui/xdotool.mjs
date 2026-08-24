@@ -46,8 +46,9 @@ export function createPrintFileChooserRunner(options = {}) {
       'windowactivate', '--sync', windowId,
       'key', '--clearmodifiers', 'ctrl+a',
       'type', '--clearmodifiers', '--delay', '0', posix.basename(request.path),
-      'key', '--clearmodifiers', 'Return',
-    ], 'chooser basename submit');
+    ], 'chooser basename');
+    assertActiveWindow(config, windowId);
+    run(config, ['key', '--clearmodifiers', 'Return'], 'chooser default response');
     await waitForExactWindow(config, request.titles, false, request.timeoutMs, delay);
     return { windowId };
   };
