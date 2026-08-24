@@ -6,7 +6,7 @@ use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use std::time::UNIX_EPOCH;
 use tempfile::NamedTempFile;
 use uuid::Uuid;
@@ -108,7 +108,7 @@ pub struct DocumentSessionManager {
 #[derive(Default)]
 pub struct AppState {
     pub sessions: Mutex<DocumentSessionManager>,
-    pub pdf_jobs: Mutex<PdfExportJobs>,
+    pub pdf_jobs: Arc<Mutex<PdfExportJobs>>,
     pub(crate) pending_open_paths: PendingOpenPaths,
 }
 

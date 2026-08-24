@@ -22,6 +22,30 @@ pub struct CommitStagedDocumentSaveRequest {
     allow_external_overwrite: Option<bool>,
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BeginPdfExportRequest {
+    snapshot_id: String,
+    target_path: String,
+    page_count: u32,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppendPdfPageRequest {
+    job_id: String,
+    snapshot_id: String,
+    page_index: u32,
+    svg: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PdfExportJobRequest {
+    job_id: String,
+    snapshot_id: String,
+}
+
 #[tauri::command]
 pub fn create_document(state: State<'_, AppState>) -> Result<DocumentOpenResult, String> {
     state
@@ -217,57 +241,78 @@ pub fn mutate_document(
 
 #[tauri::command]
 pub fn begin_pdf_export(
-    target_path: String,
-    page_count: u32,
+    request: BeginPdfExportRequest,
     window: WebviewWindow,
     state: State<'_, AppState>,
 ) -> Result<String, String> {
+    let BeginPdfExportRequest {
+        snapshot_id,
+        target_path,
+        page_count,
+    } = request;
     state
         .pdf_jobs
         .lock()
         .map_err(|_| "PDF 작업 잠금 실패".to_string())?
-        .begin(window.label(), PathBuf::from(target_path), page_count)
+        .begin(
+            window.label(),
+            &snapshot_id,
+            PathBuf::from(target_path),
+            page_count,
+        )
 }
 
 #[tauri::command]
 pub fn append_pdf_page(
-    job_id: String,
-    page_index: u32,
-    svg: String,
+    request: AppendPdfPageRequest,
     window: WebviewWindow,
     state: State<'_, AppState>,
 ) -> Result<(), String> {
+    let AppendPdfPageRequest {
+        job_id,
+        snapshot_id,
+        page_index,
+        svg,
+    } = request;
     state
         .pdf_jobs
         .lock()
         .map_err(|_| "PDF 작업 잠금 실패".to_string())?
-        .append_page(window.label(), &job_id, page_index, &svg)
+        .append_page(window.label(), &job_id, &snapshot_id, page_index, &svg)
 }
 
 #[tauri::command]
 pub fn commit_pdf_export(
-    job_id: String,
+    request: PdfExportJobRequest,
     window: WebviewWindow,
     state: State<'_, AppState>,
 ) -> Result<crate::pdf_export::PdfExportResult, String> {
+    let PdfExportJobRequest {
+        job_id,
+        snapshot_id,
+    } = request;
     state
         .pdf_jobs
         .lock()
         .map_err(|_| "PDF 작업 잠금 실패".to_string())?
-        .commit(window.label(), &job_id)
+        .commit(window.label(), &job_id, &snapshot_id)
 }
 
 #[tauri::command]
 pub fn abort_pdf_export(
-    job_id: String,
+    request: PdfExportJobRequest,
     window: WebviewWindow,
     state: State<'_, AppState>,
 ) -> Result<(), String> {
+    let PdfExportJobRequest {
+        job_id,
+        snapshot_id,
+    } = request;
     state
         .pdf_jobs
         .lock()
         .map_err(|_| "PDF 작업 잠금 실패".to_string())?
-        .abort(window.label(), &job_id)
+        .abort(window.label(), &job_id, &snapshot_id)
 }
 
 #[tauri::command]

@@ -6,6 +6,7 @@ mod linux_runtime;
 mod pdf_export;
 mod pdf_font_fallbacks;
 mod pdf_jobs;
+mod pdf_temp_cleanup;
 mod pdf_text_audit;
 mod pending_open;
 mod recent_documents;
@@ -23,8 +24,8 @@ use commands::{
     create_document, create_editor_window, desktop_platform, destroy_current_window,
     list_local_fonts, list_recent_documents, mark_document_dirty, mutate_document,
     open_document_tracking, prepare_document_open, prepare_staged_document_save, query_document,
-    read_local_font, record_recent_document, remove_recent_document,
-    render_document_preview, render_page_svg, reveal_in_folder, take_pending_open_paths,
+    read_local_font, record_recent_document, remove_recent_document, render_document_preview,
+    render_page_svg, reveal_in_folder, take_pending_open_paths,
 };
 use state::AppState;
 
@@ -50,6 +51,11 @@ pub fn run() {
             });
         }))
         .setup(|app| {
+            if let Err(error) = pdf_temp_cleanup::cleanup_orphan_pdf_temp_dirs() {
+                eprintln!("[pdf] 오래된 임시 디렉터리 정리를 건너뜁니다: {error}");
+            }
+            let pdf_jobs = app.state::<AppState>().pdf_jobs.clone();
+            pdf_temp_cleanup::spawn_pdf_job_reaper(std::sync::Arc::downgrade(&pdf_jobs))?;
             app.set_menu(tauri::menu::Menu::new(app)?)?;
             queue_open_paths(app.handle(), startup_document_paths());
             if let Some(window) = app.get_webview_window("main") {
