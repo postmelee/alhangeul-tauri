@@ -64,7 +64,7 @@ test('print adapter는 Print to File만 고르고 save/cancel modal 종료를 �
   assert.deepEqual(calls.map(({ command }) => command), [
     'wait', 'selectByFocus', 'wait',
     'action', 'wait', 'submitText', 'actionIfPresent', 'waitAbsent', 'wait',
-    'selectByFocus', 'wait', 'waitAbsent',
+    'wait', 'waitAbsent',
     'wait', 'action', 'waitAbsent',
   ]);
   assert.deepEqual(calls[1].selector.names, ['print to file', '파일로 인쇄']);
@@ -82,10 +82,9 @@ test('print adapter는 Print to File만 고르고 save/cancel modal 종료를 �
   assert.deepEqual(calls[9].selector.within, { roles: ['dialog'], names: ['print', '인쇄'] });
   assert.deepEqual(calls[9].selector.exactNames, ['print', '인쇄']);
   assert.equal(calls[9].selector.names, undefined);
-  assert.equal(calls[10].selector.focused, true);
-  assert.deepEqual(shortcuts, ['ctrl+l', 'space']);
-  assert.deepEqual(calls[13].selector.within, { roles: ['dialog'], names: ['print', '인쇄'] });
-  assert.deepEqual(calls[13].selector.exactNames, ['cancel', '취소']);
+  assert.deepEqual(shortcuts, ['ctrl+l', 'alt+p']);
+  assert.deepEqual(calls[12].selector.within, { roles: ['dialog'], names: ['print', '인쇄'] });
+  assert.deepEqual(calls[12].selector.exactNames, ['cancel', '취소']);
   await assert.rejects(
     adapter.printWithVirtualPrinter('Office LaserJet', async () => {}),
     /physical printer/,
@@ -99,7 +98,7 @@ test('virtual printer는 semantic selection 후에만 Print를 실행한다', as
   });
   await adapter.printWithVirtualPrinter('PDF', async () => {});
   assert.deepEqual(calls.map(({ command }) => command), [
-    'wait', 'selectByFocus', 'wait', 'selectByFocus', 'wait', 'waitAbsent',
+    'wait', 'selectByFocus', 'wait', 'wait', 'waitAbsent',
   ]);
   assert.deepEqual(calls[1].selector.names, ['PDF']);
   assert.equal(calls[1].actionNames, undefined);
@@ -107,7 +106,6 @@ test('virtual printer는 semantic selection 후에만 Print를 실행한다', as
   assert.equal(calls[1].desktopScope, true);
   assert.deepEqual(calls[3].selector.exactNames, ['print', '인쇄']);
   assert.equal(calls[3].actionNames, undefined);
-  assert.equal(calls[4].selector.focused, true);
 });
 
 test('system print shortcut은 실제 ctrl+p만 허용하고 AT-SPI 탐색과 분리한다', async () => {

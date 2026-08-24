@@ -228,6 +228,13 @@ git diff --check
   timeout으로 종료됐다. synchronous `Component.getExtents()` 경계를 제거하고, 이미 hosted GTK
   printer cell에서 검증한 `grabFocus()`를 exact `Print` button에 적용해 `focused=true`를
   readback한 뒤 X11 `space` 한 번으로 활성화한다.
+- OK — exact-focus 보정 SHA `629fb6483a9ffc16ba7ca261f294f0e263014a38`의 run
+  `32697878886`도 WebDriver phase 전체 성공(`webdriver=0`), exact handoff·환경·evidence
+  upload와 chooser·target basename readback을 통과했다.
+- PARTIAL — exact `Print` button은 끝까지 `focused=false`였고 GTK/CUPS PDF가 없었다. GTK 3 공식
+  source가 `_Print`를 `GTK_RESPONSE_OK`와 default response로 정의하므로 button의 synchronous
+  component/action API를 제거한다. exact button readiness만 확인하고 GTK mnemonic `Alt+P` 한
+  번으로 response를 활성화한 뒤 dialog close와 파일/PDF 판정을 유지한다.
 
 ## 잔여 위험
 

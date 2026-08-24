@@ -798,6 +798,13 @@ exit 1을 반환했으며 제품 GUI 단계는 실행되지 않았다.
   printer cell에서 hosted 검증된 `Component.grabFocus()`를 exact `Print` button에 적용하고
   `focused=true` readback 뒤 X11 `space`를 한 번 보내 GTK button을 활성화한다. exact selector,
   focus readback, dialog close와 file/PDF 판정 중 하나라도 실패하면 계속 fail-closed한다.
+- exact-focus 보정 SHA `629fb6483a9ffc16ba7ca261f294f0e263014a38`의 branch GUI run
+  `32697878886`도 WebDriver phase와 chooser·basename readback을 통과했지만 PDF 없이 종료됐고,
+  failure tree에서 exact `Print` button은 끝까지 `focused=false`였다. button의 component/action
+  interface를 hosted automation 경계에서 사용하지 않는다. GTK 3 공식
+  `gtkprintunixdialog.c`는 `_Print`를 `GTK_RESPONSE_OK` button이자 default response로 추가하므로,
+  exact button이 showing·enabled·sensitive 상태임을 semantic wait한 뒤 GTK mnemonic `Alt+P`를
+  한 번 보내고 dialog close·생성 파일·PDF 분석으로 결과를 판정한다.
 
 ### 검증
 

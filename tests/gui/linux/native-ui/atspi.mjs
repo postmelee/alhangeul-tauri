@@ -112,9 +112,8 @@ export class LinuxNativeUiAdapter {
 
   async clickPrintButton() {
     const selector = { roles: BUTTON_ROLES, exactNames: ['print', '인쇄'], within: PRINT_DIALOG };
-    await this.printCommand({ command: 'selectByFocus', selector });
-    await this.printCommand({ command: 'wait', selector: { ...selector, focused: true } });
-    await this.shortcut('space');
+    await this.printCommand({ command: 'wait', selector });
+    await this.shortcut('alt+p');
   }
 
   async choosePrintFile(path) {
