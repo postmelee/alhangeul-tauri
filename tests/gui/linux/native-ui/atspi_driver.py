@@ -269,10 +269,6 @@ def dispatch(request):
         set_editable_text(node, request.get("value"))
         perform_action(node, ["activate"])
         return node_info(node)
-    if command == "focus":
-        if not node.queryComponent().grabFocus():
-            raise RuntimeError("AT-SPI focus failed")
-        return node_info(node)
     if command == "extents":
         extents = node.queryComponent().getExtents(pyatspi.DESKTOP_COORDS)
         return {"x": extents.x, "y": extents.y,

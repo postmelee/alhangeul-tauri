@@ -210,10 +210,6 @@ export class LinuxNativeUiAdapter {
     });
   }
 
-  focus(selector) {
-    return this.command({ command: 'focus', selector });
-  }
-
   shortcut(key) {
     return this.runShortcut(key);
   }

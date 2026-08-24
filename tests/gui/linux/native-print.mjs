@@ -27,21 +27,22 @@ const LOCAL_FONT_BUTTON = Object.freeze({
 
 export async function runProductionPrintSequence(options) {
   const document = documentSelector(options.displayName);
+  const focusedDocument = { ...document, focused: true };
   await options.adapter.actionOptional(LOCAL_FONT_BUTTON, 10000);
   await options.adapter.waitAbsent(LOCAL_FONT_BUTTON);
   await options.adapter.wait(document);
 
   const trigger = async () => {
-    await options.adapter.focus(document);
+    await options.adapter.wait(focusedDocument);
     await options.adapter.triggerSystemPrint();
   };
   await options.adapter.printToFile(options.gtkPdf, trigger);
-  await waitForEditorRestore(options.adapter, document);
+  await waitForEditorRestore(options.adapter, focusedDocument);
   await options.waitForFile(options.gtkPdf);
   await options.adapter.cancelPrint(trigger);
-  await waitForEditorRestore(options.adapter, document);
+  await waitForEditorRestore(options.adapter, focusedDocument);
   await options.adapter.printWithVirtualPrinter(options.printerName, trigger);
-  await waitForEditorRestore(options.adapter, document);
+  await waitForEditorRestore(options.adapter, focusedDocument);
   await options.waitForFile(options.cupsPdf);
 }
 
@@ -148,9 +149,8 @@ async function describeRenders(outputDir, paths) {
   return Promise.all(paths.map((path) => describeEvidenceFile(outputDir, path, 'screenshot')));
 }
 
-async function waitForEditorRestore(adapter, document) {
-  await adapter.wait(document);
-  await adapter.focus(document);
+async function waitForEditorRestore(adapter, focusedDocument) {
+  await adapter.wait(focusedDocument);
 }
 
 async function waitForFile(path, timeoutMs) {

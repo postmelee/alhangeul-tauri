@@ -31,14 +31,16 @@ test('production native print는 준비·Print to File·cancel·CUPS를 같은 �
   });
   assert.deepEqual(calls.map(([name]) => name), [
     'actionOptional', 'waitAbsent', 'wait',
-    'printToFile', 'focus', 'trigger', 'wait', 'focus', 'file',
-    'cancelPrint', 'focus', 'trigger', 'wait', 'focus',
-    'virtualPrinter', 'focus', 'trigger', 'wait', 'focus', 'file',
+    'printToFile', 'wait', 'trigger', 'wait', 'file',
+    'cancelPrint', 'wait', 'trigger', 'wait',
+    'virtualPrinter', 'wait', 'trigger', 'wait', 'file',
   ]);
   assert.equal(calls[0][2], 10000);
   assert.deepEqual(calls[2][1], { roles: ['document text'], names: ['biz_plan.hwp'] });
-  for (const [, selector] of calls.filter(([name]) => name === 'focus')) {
-    assert.deepEqual(selector, { roles: ['document text'], names: ['biz_plan.hwp'] });
+  for (const [, selector] of calls.filter(([name], index) => name === 'wait' && index !== 2)) {
+    assert.deepEqual(selector, {
+      roles: ['document text'], names: ['biz_plan.hwp'], focused: true,
+    });
   }
 });
 

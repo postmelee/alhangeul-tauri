@@ -260,6 +260,8 @@ test('system print는 WebDriver spec 밖의 production native phase에서만 실
   assert.match(nativePrint, /scenario: 'linux-system-print'/);
   assert.match(nativePrint, /spawnLoggedProcess\(inputs\.appPath, \[fixture\.absolutePath\]/);
   assert.match(nativePrint, /webdriverControlled: false/);
+  assert.match(nativePrint, /focusedDocument = \{ \.\.\.document, focused: true \}/);
+  assert.doesNotMatch(nativePrint, /adapter\.focus/);
 });
 
 test('Linux runtime helper는 POSIX path API를 명시하고 분리된 path 조각 주입을 금지한다', async () => {

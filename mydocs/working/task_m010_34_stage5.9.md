@@ -145,6 +145,17 @@ git diff --check
   결속한다.
 - OK — native drop·document focus 계약 보정 뒤 focused GUI 계약 `41/41`, 전체 automation
   `214/214`, GUI TypeScript, product boundary `227 files`, actionlint와 diff check 통과.
+- OK — 세 번째 production phase run `32692570422`에서 WebDriver phase가 처음으로 전체
+  성공(`webdriver=0`)했다. HWP/HWPX document 2건, native save, `Gtk.EventBox` drag-in,
+  직접 PDF 6쪽과 evidence upload가 모두 통과했다.
+- PARTIAL — native print는 `document text`를 즉시 찾았지만 해당 접근성 role은
+  `grabFocus()`를 지원하지 않아 `AT-SPI focus failed`로 종료됐다. 이전 run tree에서 shortcut
+  직전 같은 node가 이미 `focused=true`였고 focus 실패 뒤에는 false로 바뀐 것을 비교 확인했다.
+  unsupported focus action 대신 `focused=true` semantic wait 뒤에만 Ctrl+P를 전송하고,
+  더 이상 쓰이지 않는 AT-SPI focus command를 제거한다.
+- OK — focused-document wait와 불필요한 focus command 제거 뒤 focused GUI 계약 `41/41`,
+  전체 automation `214/214`, GUI TypeScript, Python syntax, product boundary `227 files`,
+  actionlint와 diff check 통과.
 
 ## 잔여 위험
 
