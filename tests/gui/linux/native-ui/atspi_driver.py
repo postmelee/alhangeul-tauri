@@ -5,6 +5,8 @@ import json
 import sys
 import time
 
+from atspi_selection import select_accessible
+
 
 def normalized(value):
     return " ".join(str(value or "").casefold().split())
@@ -26,6 +28,8 @@ def node_info(node):
         "focused": has_state(node, pyatspi.STATE_FOCUSED),
         "enabled": has_state(node, pyatspi.STATE_ENABLED),
         "sensitive": has_state(node, pyatspi.STATE_SENSITIVE),
+        "selected": has_state(node, pyatspi.STATE_SELECTED),
+        "selectable": has_state(node, pyatspi.STATE_SELECTABLE),
     }
 
 
@@ -84,7 +88,10 @@ def matches_info(info, selector):
     if selector.get("showing", True) and not info["showing"]:
         return False
     focused = selector.get("focused")
-    return not isinstance(focused, bool) or info["focused"] == focused
+    if isinstance(focused, bool) and info["focused"] != focused:
+        return False
+    selected = selector.get("selected")
+    return not isinstance(selected, bool) or info["selected"] == selected
 
 
 def matches(node, selector, ancestors=()):
@@ -237,7 +244,10 @@ def snapshot(request):
             info = node_info(node)
             if info["name"] or depth < 2 or info["role"] in {"text", "entry"}:
                 item = {"depth": depth, **info}
-                if info["role"] in {"text", "entry", "push button", "button"}:
+                if info["role"] in {
+                    "text", "entry", "push button", "button", "radio button",
+                    "table cell", "list item", "toggle button",
+                }:
                     item["actions"] = action_names(node)
                 if info["role"] in {"text", "entry"}:
                     item["textLength"] = text_length(node)
@@ -262,6 +272,8 @@ def dispatch(request):
     if command == "action":
         perform_action(node, request.get("actionNames", []))
         return node_info(node)
+    if command == "select":
+        return select_accessible(node, node_info)
     if command == "setText":
         set_editable_text(node, request.get("value"))
         return node_info(node)

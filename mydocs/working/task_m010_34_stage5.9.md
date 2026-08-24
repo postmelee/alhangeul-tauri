@@ -20,7 +20,7 @@ version 증거를 지원되는 Debian package database 계약으로 교체한다
 | `tests/linux-gui-workflow.test.mjs` | CUPS package 증거와 `cupsd -v` 부재를 workflow source contract로 고정 |
 | `tests/gui/support/document-ux.ts` | 실패한 temporary style upload adapter 제거, upstream input/native title 계약 분리와 status·쪽 수 DOM 판독 공통화 |
 | `tests/gui/specs/document-ux.e2e.ts` | 숨은 file input에 clear 없이 `addValue`로 경로를 전송하고 headless 환경의 로컬 글꼴 선택 모달을 fail-closed 처리 |
-| `tests/gui/linux/native-ui/atspi.mjs`, `atspi_driver.py` | focused GTK location entry에 full path를 입력·readback하고 남은 chooser는 명시적 Open/Save accept로 완료하며, system print만 격리 desktop scope와 실제 Ctrl+P로 탐색 |
+| `tests/gui/linux/native-ui/atspi.mjs`, `atspi_driver.py`, `atspi_selection.py` | focused GTK location entry에 full path를 입력·readback하고 남은 chooser는 명시적 Open/Save accept로 완료하며, system print는 격리 desktop scope·실제 Ctrl+P·검증된 semantic row selection으로 탐색 |
 | `tests/gui/linux/native-ui/drag-drop.mjs`, `drag_source.py` | Xdnd URI `DATA`와 GTK `drag-end` 완료를 모두 확인한 뒤 source를 정리하는 bounded lifecycle 계약 |
 | `tests/gui/linux/native-print.mjs` | WebDriver 밖 production app을 fixture와 직접 실행해 GTK Print to File·취소·CUPS-PDF와 PDF evidence를 검증하고 `finally`에서 종료 |
 | `tests/gui/wdio.linux.conf.ts` | WebKit file upload용 표준 `strictFileInteractability: false` 명시 |
@@ -156,6 +156,17 @@ git diff --check
 - OK — focused-document wait와 불필요한 focus command 제거 뒤 focused GUI 계약 `41/41`,
   전체 automation `214/214`, GUI TypeScript, Python syntax, product boundary `227 files`,
   actionlint와 diff check 통과.
+- OK — focused-document wait SHA `61d96b2bc834fd0f502e2cab7258374fe083cbd3`의 run
+  `32692937948`에서 WebDriver phase가 다시 전체 성공(`webdriver=0`)했다. production print도
+  focused document의 Ctrl+P를 받아 GTK Print dialog까지 열고 `Print to File` row action을
+  실행했다.
+- PARTIAL — 같은 run의 native print는 file entry가 나타나지 않아 종료됐다. screenshot은
+  `Print to File`이 아니라 CUPS `PDF` row가 계속 선택된 상태였고 tree에도 file entry가
+  없었다. AT-SPI action 성공을 GTK selection 성공으로 오인한 harness 결함이며 selector를
+  넓히지 않고 Selection interface의 `selectChild`와 `isChildSelected` readback으로 보정한다.
+- OK — semantic row selection 보정 뒤 공통 GUI 계약 `19/19`, Linux GUI 계약 `23/23`,
+  전체 automation `215/215`, GUI TypeScript, Python syntax, product boundary `228 files`,
+  actionlint와 diff check 통과. selection helper를 분리해 구현 파일 300 LOC 상한도 유지했다.
 
 ## 잔여 위험
 
@@ -250,11 +261,8 @@ git diff --check
 
 ## 다음 단계 영향
 
-- GTK drag threshold를 넘는 bounded staged gesture와, 같은 Xvfb/DBus 안에서 WebDriver 없이
-  production app을 직접 실행하는 system-print phase를 구현한다. 두 native/WebDriver phase는
-  각자 종료·증거를 남기고 합산 gate로 판정한다.
-- 보정을 commit·push한 뒤 성공한 제품 native run `32347468978`을 재사용해 immutable
-  acceptance workflow SHA의 branch GUI를 한 번 실행한다.
+- semantic selection 보정을 commit·push한 뒤 성공한 제품 native run `32347468978`을
+  재사용해 immutable acceptance workflow SHA의 branch GUI를 한 번 실행한다.
 - 실패하면 같은 branch에서 evidence를 읽고 보정하며, 완전히 성공해야 correction PR을
   생성한다.
 - PR merge 뒤 새 merge exact SHA의 native build·Linux GUI·evidence read-back을 한 번

@@ -743,6 +743,17 @@ exit 1을 반환했으며 제품 GUI 단계는 실행되지 않았다.
   실패 snapshot만 격리된 Xvfb desktop의 top-level applications를 탐색한다. 모든 printer,
   file entry, Print/Cancel action은 정확한 print dialog ancestor 안으로 다시 제한하고 실제
   printer는 기존 virtual-PDF allowlist 밖에서 계속 거부한다.
+- focused document wait 보정 SHA `61d96b2bc834fd0f502e2cab7258374fe083cbd3`의 branch GUI
+  run `32692937948`은 WebDriver phase 전체를 다시 통과하고 production app에서 `Ctrl+P`로
+  GTK Print dialog까지 열었다. 그러나 AT-SPI `doAction()` 성공 뒤에도 screenshot에서는
+  CUPS `PDF` 행이 계속 선택되어 있었고 `Print to File` file entry도 생성되지 않았다. 따라서
+  액션 결과를 selection 결과로 간주하지 않는다.
+- GTK `TreeViewAccessible`의 Selection interface를 사용해 이름으로 찾은 printer row의
+  selection container와 직접 자식 index를 구하고 `selectChild()` 뒤
+  `isChildSelected()`를 검증한다. 선택 interface·index·선택·readback 중 하나라도 실패하면
+  file entry를 찾기 전에 fail-closed한다. selection 로직은 전용 helper로 분리해 구현 파일
+  300 LOC 상한을 유지하며, 실패 snapshot에는 selected/selectable state와 row action을
+  함께 기록한다.
 
 ### 검증
 
