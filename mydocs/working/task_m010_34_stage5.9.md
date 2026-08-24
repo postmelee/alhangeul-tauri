@@ -272,6 +272,13 @@ git diff --check
   문자열로 소비돼 필드가 `biz-plan-gtk-print.pdfkey--clearmodifiersReturn`이 됐다. `type`을
   terminal command로 분리하고 active window 동일성을 다시 확인한 뒤 별도 `Return`을 보내는
   command parsing 보정만 적용한다.
+- PARTIAL — command parsing 보정 SHA `ba1287b`의 run `32703374614`은 GTK Print to File
+  `generated/biz-plan-gtk-print.pdf`를 실제 생성했고, print cancel·CUPS virtual printer·editor
+  restore도 완료했다. CUPS-PDF artifact 역시 `cups-output/Alhangeul_job__2-job_1.pdf`로
+  생성됐지만 harness가 고정 `biz_plan.pdf`를 기다려 120초 뒤 실패했다. CUPS job title 기반
+  filename을 고정하지 않고 전용 directory의 실행 전 regular PDF 집합과 비교해 새 파일 정확히
+  하나, nonzero stable size를 확인한 뒤 canonical evidence path로 rename한다. 복수·symlink·
+  timeout은 fail-closed하고 6쪽 A4·text·render 분석은 그대로 유지한다.
 
 ## 잔여 위험
 

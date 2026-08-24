@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { spawnSync } from 'node:child_process';
-import { mkdir, stat, unlink, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, rename, stat, unlink, writeFile } from 'node:fs/promises';
 import { posix } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { analyzePdf } from './pdf-analysis.mjs';
@@ -43,7 +43,7 @@ export async function runProductionPrintSequence(options) {
   await waitForEditorRestore(options.adapter, focusedDocument);
   await options.adapter.printWithVirtualPrinter(options.printerName, trigger);
   await waitForEditorRestore(options.adapter, focusedDocument);
-  await options.waitForFile(options.cupsPdf);
+  await options.waitForCupsPdf();
 }
 
 export async function runNativePrintAcceptance(env = process.env) {
@@ -106,6 +106,8 @@ async function runPrintScenario(options) {
   let error;
   let files = [];
   try {
+    const cupsDirectory = posix.dirname(options.cups.outputPath);
+    const cupsBaseline = await readRegularPdfSnapshot(cupsDirectory);
     await runProductionPrintSequence({
       adapter: options.adapter,
       displayName: posix.basename(options.fixture.absolutePath),
@@ -113,6 +115,12 @@ async function runPrintScenario(options) {
       cupsPdf: options.cups.outputPath,
       printerName: options.cups.printerName,
       waitForFile: (path) => waitForFile(path, options.inputs.timeoutMs),
+      waitForCupsPdf: () => waitForVirtualPrinterPdf({
+        baseline: cupsBaseline,
+        directory: cupsDirectory,
+        targetPath: options.cups.outputPath,
+        timeoutMs: options.inputs.timeoutMs,
+      }),
     });
     const gtk = await analyzeBizPlanPdf(options.inputs.outputDir, options.gtkPdf, 'gtk-print-to-file');
     const cups = await analyzeBizPlanPdf(options.inputs.outputDir, options.cups.outputPath, 'cups-pdf');
@@ -167,6 +175,64 @@ async function waitForFile(path, timeoutMs) {
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
   throw new Error(`${posix.basename(path)} 출력이 생성되지 않았습니다`);
+}
+
+export async function waitForVirtualPrinterPdf(options) {
+  validateVirtualPrinterOptions(options);
+  const delay = options.delay ?? ((ms) => new Promise((resolve) => setTimeout(resolve, ms)));
+  const deadline = Date.now() + options.timeoutMs;
+  let stableSignature = '';
+  let stableObservations = 0;
+  while (Date.now() < deadline) {
+    const current = await readRegularPdfSnapshot(options.directory);
+    const changed = changedPdfEntries(options.baseline, current);
+    if (changed.length > 1) throw new Error(`CUPS-PDF 신규 artifact가 ${changed.length}개입니다`);
+    if (changed.length === 1 && changed[0][1].size > 0) {
+      const [name, info] = changed[0];
+      const signature = `${name}:${info.size}:${info.mtimeMs}`;
+      stableObservations = signature === stableSignature ? stableObservations + 1 : 1;
+      stableSignature = signature;
+      if (stableObservations >= 2) {
+        const sourcePath = posix.join(options.directory, name);
+        if (sourcePath !== options.targetPath) await rename(sourcePath, options.targetPath);
+        return options.targetPath;
+      }
+    } else {
+      stableSignature = '';
+      stableObservations = 0;
+    }
+    await delay(100);
+  }
+  throw new Error(`${posix.basename(options.targetPath)} 출력이 생성되지 않았습니다`);
+}
+
+async function readRegularPdfSnapshot(directory) {
+  const entries = await readdir(directory, { withFileTypes: true });
+  const snapshot = new Map();
+  for (const entry of entries) {
+    if (!entry.isFile() || posix.extname(entry.name).toLowerCase() !== '.pdf') continue;
+    const info = await stat(posix.join(directory, entry.name));
+    snapshot.set(entry.name, { mtimeMs: info.mtimeMs, size: info.size });
+  }
+  return snapshot;
+}
+
+function changedPdfEntries(baseline, current) {
+  return [...current.entries()].filter(([name, info]) => {
+    const previous = baseline.get(name);
+    return previous === undefined || previous.size !== info.size || previous.mtimeMs !== info.mtimeMs;
+  });
+}
+
+function validateVirtualPrinterOptions(options) {
+  if (!(options.baseline instanceof Map)) throw new Error('CUPS-PDF baseline이 유효하지 않습니다');
+  if (!posix.isAbsolute(options.directory)
+    || posix.dirname(options.targetPath) !== options.directory) {
+    throw new Error('CUPS-PDF target은 전용 output directory 안의 절대 경로여야 합니다');
+  }
+  if (!Number.isSafeInteger(options.timeoutMs) || options.timeoutMs < 100) {
+    throw new Error('CUPS-PDF timeout이 유효하지 않습니다');
+  }
 }
 
 async function captureScreenshot(scrot, path, env) {

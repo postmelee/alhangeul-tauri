@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { posix } from 'node:path';
 import test from 'node:test';
-import { runProductionPrintSequence } from './native-print.mjs';
+import { runProductionPrintSequence, waitForVirtualPrinterPdf } from './native-print.mjs';
 
 test('production native print는 준비·Print to File·cancel·CUPS를 같은 문서에서 순서대로 수행한다', async () => {
   const calls = [];
@@ -28,12 +30,13 @@ test('production native print는 준비·Print to File·cancel·CUPS를 같은 �
     cupsPdf: '/evidence/cups.pdf',
     printerName: 'PDF',
     waitForFile: async (path) => { calls.push(['file', path]); },
+    waitForCupsPdf: async () => { calls.push(['cupsPdf']); },
   });
   assert.deepEqual(calls.map(([name]) => name), [
     'actionOptional', 'waitAbsent', 'wait',
     'printToFile', 'wait', 'trigger', 'wait', 'file',
     'cancelPrint', 'wait', 'trigger', 'wait',
-    'virtualPrinter', 'wait', 'trigger', 'wait', 'file',
+    'virtualPrinter', 'wait', 'trigger', 'wait', 'cupsPdf',
   ]);
   assert.equal(calls[0][2], 10000);
   assert.deepEqual(calls[2][1], { roles: ['document text'], names: ['biz_plan.hwp'] });
@@ -41,6 +44,38 @@ test('production native print는 준비·Print to File·cancel·CUPS를 같은 �
     assert.deepEqual(selector, {
       roles: ['document text'], names: ['biz_plan.hwp'], focused: true,
     });
+  }
+});
+
+test('CUPS-PDF는 신규 regular PDF 하나가 안정되면 canonical evidence path로 이동한다', async () => {
+  const directory = await mkdtemp(posix.join(tmpdir(), 'alhangeul-cups-'));
+  const sourcePath = posix.join(directory, 'Alhangeul_job__2-job_1.pdf');
+  const targetPath = posix.join(directory, 'biz_plan.pdf');
+  try {
+    await writeFile(sourcePath, '%PDF-1.4\nfixture\n');
+    assert.equal(await waitForVirtualPrinterPdf({
+      baseline: new Map(), directory, targetPath, timeoutMs: 1000, delay: async () => {},
+    }), targetPath);
+    assert.equal(await readFile(targetPath, 'utf8'), '%PDF-1.4\nfixture\n');
+    await assert.rejects(readFile(sourcePath), { code: 'ENOENT' });
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test('CUPS-PDF는 신규 regular PDF가 복수이면 fail-closed 한다', async () => {
+  const directory = await mkdtemp(posix.join(tmpdir(), 'alhangeul-cups-'));
+  try {
+    await Promise.all([
+      writeFile(posix.join(directory, 'first.pdf'), '%PDF-1.4\nfirst\n'),
+      writeFile(posix.join(directory, 'second.pdf'), '%PDF-1.4\nsecond\n'),
+    ]);
+    await assert.rejects(waitForVirtualPrinterPdf({
+      baseline: new Map(), directory,
+      targetPath: posix.join(directory, 'canonical.pdf'), timeoutMs: 1000,
+    }), /artifact가 2개/);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
   }
 });
 

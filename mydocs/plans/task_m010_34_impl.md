@@ -844,6 +844,13 @@ exit 1을 반환했으며 제품 GUI 단계는 실행되지 않았다.
   필드가 `biz-plan-gtk-print.pdfkey--clearmodifiersReturn`이 됐다. `type`을 terminal command로
   분리하고 같은 exact active window ID를 재확인한 뒤 별도 `Return`을 보내는 파싱 경계만
   보정한다.
+- command parsing SHA `ba1287b`의 run `32703374614`은 GTK Print to File PDF 생성, print
+  cancel, CUPS virtual printer 선택과 editor 복원을 모두 통과했다. 실제 artifact는 전용
+  `cups-output` 안의 `Alhangeul_job__2-job_1.pdf`였지만 harness가 고정 `biz_plan.pdf`만
+  기다려 실패했다. CUPS-PDF filename을 앱이 제어한다는 가정을 제거하고, virtual print 전
+  directory의 regular PDF basename 집합을 기준선으로 캡처한다. print 뒤 새 regular PDF가
+  정확히 하나이고 nonzero size가 연속 관측된 경우에만 canonical evidence path로 rename한다.
+  복수 신규 PDF, symlink, timeout은 fail-closed하고 기존 PDF page/text/render 분석은 유지한다.
 
 ### 검증
 
