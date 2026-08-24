@@ -13,7 +13,7 @@ import {
 } from '@upstream/command/print-surface';
 import type { CommandServices } from '@upstream/command/types';
 import {
-  hydrateDesktopPlatform,
+  detectDesktopPlatform,
   type DesktopPlatform,
 } from '../core/platform';
 import {
@@ -39,10 +39,10 @@ export async function printDirectlyFromPageSurface(
   let printUiReturnWaiter: PrintUiReturnWaiter | null = null;
 
   try {
+    const platform = detectDesktopPlatform();
     flushDeferredPagination(services);
     const pageCount = wasm.pageCount;
     if (pageCount === 0) return;
-    const platform = await hydrateDesktopPlatform();
 
     setStatus(printProgressText('print', 0, pageCount));
     surface = await createPrintSurface();

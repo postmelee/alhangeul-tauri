@@ -9,7 +9,7 @@ const appendSvgPage = vi.hoisted(() => vi.fn());
 const buildPrintStyleText = vi.hoisted(() => vi.fn(() => 'print css'));
 const createPrintSurface = vi.hoisted(() => vi.fn());
 const waitForPrintSurfaceReady = vi.hoisted(() => vi.fn());
-const hydrateDesktopPlatform = vi.hoisted(() => vi.fn(() => Promise.resolve('windows')));
+const detectDesktopPlatform = vi.hoisted(() => vi.fn(() => 'windows'));
 const nativeWindow = vi.hoisted(() => ({
   isFocused: vi.fn<() => Promise<boolean>>(() => Promise.resolve(true)),
   onFocusChanged: vi.fn<(
@@ -30,13 +30,13 @@ vi.mock('@upstream/command/print-surface', () => ({
   waitForPrintSurfaceReady,
 }));
 
-vi.mock('../core/platform', () => ({ hydrateDesktopPlatform }));
+vi.mock('../core/platform', () => ({ detectDesktopPlatform }));
 vi.mock('@tauri-apps/api/window', () => ({ getCurrentWindow: () => nativeWindow }));
 
 describe('Tauri direct print surface', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    hydrateDesktopPlatform.mockResolvedValue('windows');
+    detectDesktopPlatform.mockReturnValue('windows');
     nativeWindow.isFocused.mockResolvedValue(true);
     nativeWindow.onFocusChanged.mockResolvedValue(vi.fn());
     installHostDocument();
@@ -48,7 +48,7 @@ describe('Tauri direct print surface', () => {
   });
 
   it('prints upstream print-profile pages from a hidden surface', async () => {
-    hydrateDesktopPlatform.mockResolvedValue('unknown');
+    detectDesktopPlatform.mockReturnValue('unknown');
     const surface = createSurface();
     createPrintSurface.mockResolvedValue(surface);
     useUniformPrintPages();
@@ -79,6 +79,7 @@ describe('Tauri direct print surface', () => {
     expect(waitForPrintSurfaceReady).toHaveBeenCalledWith(surface);
     expect(surface.window.print).toHaveBeenCalledOnce();
     expect(surface.dispose).toHaveBeenCalledOnce();
+    expect(detectDesktopPlatform).toHaveBeenCalledOnce();
     expect((globalThis.document as unknown as { title: string }).title).toBe('Alhangeul');
     expect(waitForPrintSurfaceReady.mock.invocationCallOrder[0]).toBeLessThan(
       surface.window.print.mock.invocationCallOrder[0],
@@ -168,7 +169,7 @@ describe('Tauri direct print surface', () => {
   });
 
   it('uses the default page context and one-pixel tolerance for uniform Linux pages', async () => {
-    hydrateDesktopPlatform.mockResolvedValue('linux');
+    detectDesktopPlatform.mockReturnValue('linux');
     const surface = createSurface();
     createPrintSurface.mockResolvedValue(surface);
     useUniformPrintPages();
@@ -189,7 +190,7 @@ describe('Tauri direct print surface', () => {
   });
 
   it('preserves the entire upstream stylesheet for mixed-size Linux pages', async () => {
-    hydrateDesktopPlatform.mockResolvedValue('linux');
+    detectDesktopPlatform.mockReturnValue('linux');
     const surface = createSurface();
     createPrintSurface.mockResolvedValue(surface);
     createPrintPage.mockImplementation((_svg, _info, index) => ({

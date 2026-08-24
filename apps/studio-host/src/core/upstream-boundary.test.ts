@@ -146,6 +146,32 @@ describe('upstream Studio override boundary', () => {
     }
   });
 
+  it('keeps retired handler and platform bridges out of production boundaries', () => {
+    const embedRuntime = readFileSync(resolve(
+      repositoryRoot,
+      'apps/studio-host/src/embed/desktop-runtime.ts',
+    ), 'utf8');
+    const platformAdapter = readFileSync(resolve(
+      repositoryRoot,
+      'apps/studio-host/src/core/platform.ts',
+    ), 'utf8');
+    const nativeCommands = readFileSync(resolve(
+      repositoryRoot,
+      'apps/desktop/src-tauri/src/commands.rs',
+    ), 'utf8');
+    const nativeEntry = readFileSync(resolve(
+      repositoryRoot,
+      'apps/desktop/src-tauri/src/lib.rs',
+    ), 'utf8');
+
+    expect(embedRuntime).toContain('waitForDesktopStudioHandlers');
+    expect(embedRuntime).not.toContain('getDesktopStudioHandlers');
+    expect(platformAdapter).toContain('detectDesktopPlatform');
+    expect(platformAdapter).not.toContain('hydrateDesktopPlatform');
+    expect(nativeCommands).not.toContain('desktop_platform');
+    expect(nativeEntry).not.toContain('desktop_platform');
+  });
+
   it('keeps the Stage 2 Studio entry and renderer shadows physically absent', () => {
     const studioHostRoot = resolve(repositoryRoot, 'apps/studio-host');
     for (const path of removedStageTwoPaths) {

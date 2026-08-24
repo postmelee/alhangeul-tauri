@@ -296,17 +296,6 @@ pub fn destroy_current_window(window: WebviewWindow) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn desktop_platform() -> &'static str {
-    if cfg!(windows) {
-        "windows"
-    } else if cfg!(target_os = "linux") {
-        "linux"
-    } else {
-        "unknown"
-    }
-}
-
-#[tauri::command]
 pub fn list_local_fonts() -> Result<Vec<LocalFontEntry>, String> {
     Ok(crate::font_catalog::collect_desktop_local_font_entries())
 }

@@ -41,7 +41,7 @@ studio host의 실제 Vite root와 entry는 각각 `third_party/rhwp/rhwp-studio
 
 ## 문서 저장, PDF와 실제 인쇄 경계
 
-upstream embed runtime을 상속하는 local leaf wrapper는 `getDesktopStudioHandlers()`로 `loadFile`, `pageCount`, `getPageSvg`, `exportHwp`, `exportHwpx`, `notifySaved`만 native host에 노출한다. HWP/HWPX source save는 현재 형식에 맞는 exporter bytes를 chunk staging하고 Rust에서 요청 형식·확장자·parser 결과가 일치한 뒤 원자적으로 교체한다. native commit 성공 뒤에만 `notifySaved`로 upstream dirty/recovery 상태를 정리한다.
+upstream embed runtime을 상속하는 local leaf wrapper는 active registration과 `waitForDesktopStudioHandlers()` 비동기 acquisition을 통해 `loadFile`, `pageCount`, `getPageSvg`, `exportHwp`, `exportHwpx`, `notifySaved`만 native host에 노출한다. registration 교체·종료는 자신이 소유한 미완료 waiter와 timer를 함께 회수하고 stale cleanup이 최신 handler를 제거하지 못하게 한다. Studio WebView의 Windows/Linux 판정은 navigator를 읽는 `detectDesktopPlatform()` leaf adapter가 소유하며 native IPC나 override cache를 두지 않는다. HWP/HWPX source save는 현재 형식에 맞는 exporter bytes를 chunk staging하고 Rust에서 요청 형식·확장자·parser 결과가 일치한 뒤 원자적으로 교체한다. native commit 성공 뒤에만 `notifySaved`로 upstream dirty/recovery 상태를 정리한다.
 
 PDF command는 upstream `file:print-to-pdf` 메뉴 위치와 활성 규칙을 유지하되 실행만 Alhangeul이 소유한다. active handler의 `getPageSvg(page)` 결과를 페이지 순서대로 native PDF job에 전달하며 staged HWP를 재파싱하지 않는다. PDF 성공·실패·취소는 source path·format·revision·dirty·recent와 upstream recovery draft를 바꾸지 않고 `notifySaved`를 호출하지 않는다.
 
