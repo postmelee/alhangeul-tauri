@@ -164,6 +164,23 @@ def perform_if_present(request):
         time.sleep(0.1)
 
 
+def perform_optional(request):
+    timeout_ms = int(request.get("timeoutMs", 5000))
+    if timeout_ms < 100 or timeout_ms > 10000:
+        raise ValueError("optional action timeoutMs must be between 100 and 10000")
+    if not isinstance(request.get("selector"), dict) or not request["selector"]:
+        raise ValueError("optional action requires a non-empty selector")
+    deadline = time.monotonic() + timeout_ms / 1000
+    while True:
+        found = find_matches(request)
+        if found:
+            perform_action(found[0], request.get("actionNames", []))
+            return {"performed": True, "node": node_info(found[0])}
+        if time.monotonic() >= deadline:
+            return {"performed": False}
+        time.sleep(0.1)
+
+
 def perform_action(node, requested_names):
     action = node.queryAction()
     count = action.nActions
@@ -239,6 +256,8 @@ def dispatch(request):
         return {"absent": True}
     if command == "actionIfPresent":
         return perform_if_present(request)
+    if command == "actionOptional":
+        return perform_optional(request)
     node = selected_node(request)
     if command == "action":
         perform_action(node, request.get("actionNames", []))

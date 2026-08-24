@@ -203,6 +203,17 @@ export class LinuxNativeUiAdapter {
     return this.command({ command: 'action', selector });
   }
 
+  actionOptional(selector, timeoutMs = 5000) {
+    return this.command({
+      command: 'actionOptional', selector, timeoutMs,
+      actionNames: ['click', 'press'],
+    });
+  }
+
+  focus(selector) {
+    return this.command({ command: 'focus', selector });
+  }
+
   shortcut(key) {
     return this.runShortcut(key);
   }

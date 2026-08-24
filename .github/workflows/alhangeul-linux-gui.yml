@@ -162,6 +162,7 @@ jobs:
             printer-driver-cups-pdf \
             python3-gi \
             python3-pyatspi \
+            scrot \
             webkit2gtk-driver \
             xdotool \
             xvfb
@@ -259,7 +260,14 @@ jobs:
               openbox >"$ALHANGEUL_GUI_OUTPUT_DIR/openbox.log" 2>&1 &
               window_manager_pid=$!
               trap '\''kill "$window_manager_pid" 2>/dev/null || true'\'' EXIT
-              pnpm run test:gui:linux
+              native_print_status=0
+              pnpm run test:gui:linux:native-print || native_print_status=$?
+              webdriver_status=0
+              pnpm run test:gui:linux || webdriver_status=$?
+              printf '\''{"nativePrint":%s,"webdriver":%s}\n'\'' \
+                "$native_print_status" "$webdriver_status" \
+                > "$ALHANGEUL_GUI_OUTPUT_DIR/gui-phase-outcomes.json"
+              [[ "$native_print_status" -eq 0 && "$webdriver_status" -eq 0 ]]
             '
 
       - name: Record acceptance outcomes

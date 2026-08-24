@@ -22,6 +22,7 @@ version 증거를 지원되는 Debian package database 계약으로 교체한다
 | `tests/gui/specs/document-ux.e2e.ts` | 숨은 file input에 clear 없이 `addValue`로 경로를 전송하고 headless 환경의 로컬 글꼴 선택 모달을 fail-closed 처리 |
 | `tests/gui/linux/native-ui/atspi.mjs`, `atspi_driver.py` | focused GTK location entry에 full path를 입력·readback하고 남은 chooser는 명시적 Open/Save accept로 완료하며, system print만 격리 desktop scope와 실제 Ctrl+P로 탐색 |
 | `tests/gui/linux/native-ui/drag-drop.mjs`, `drag_source.py` | Xdnd URI `DATA`와 GTK `drag-end` 완료를 모두 확인한 뒤 source를 정리하는 bounded lifecycle 계약 |
+| `tests/gui/linux/native-print.mjs` | WebDriver 밖 production app을 fixture와 직접 실행해 GTK Print to File·취소·CUPS-PDF와 PDF evidence를 검증하고 `finally`에서 종료 |
 | `tests/gui/wdio.linux.conf.ts` | WebKit file upload용 표준 `strictFileInteractability: false` 명시 |
 | `tests/gui/wdio.shared.conf.ts` | operation·scenario timeout을 분리하고 단일 WebDriver window를 표준 명령으로 고정 |
 | `tests/gui-contracts.test.mjs` | upload protocol, bounded scenario timeout과 단일 window fail-closed 계약 고정 |
@@ -105,6 +106,22 @@ git diff --check
 - OK — drag lifecycle·print desktop scope focused 계약 `13/13`, automation `209/209`, GUI
   TypeScript, product boundary `227 files`, upstream `35/35`, Studio `97/97`, production Studio
   build, Python syntax, actionlint와 diff check 통과
+- OK — drag lifecycle·desktop print scope 보정 SHA
+  `0181c8ca54914dd80932f7dcbfe195d4151c1c30`의 run `32690177647`에서 document UX 2건,
+  HWP/HWPX native save 전체와 직접 PDF 6쪽 A4·한글 text·render가 재통과하고 evidence upload도
+  성공했다.
+- PARTIAL — 같은 run의 drag source는 `READY` 뒤 `DATA`/`FINISHED`를 내지 않아 lifecycle
+  종료가 아니라 GTK drag-start threshold 미도달로 원인을 정정했다. system print의 desktop
+  scope는 `xdg-desktop-portal-gtk`와 `Alhangeul` 두 application을 실제로 수집했지만 native
+  dialog가 생성되지 않았다. 이전 run의 결정적 menu click과 이번 `Ctrl+P`가 모두 같은 결과라,
+  selector·shortcut이 아니라 WebDriver-controlled WebView에서 `window.print()`가 native
+  print signal로 이어지지 않는 실행 경계로 확정했다.
+- OK — staged drag와 production native print phase 보정 뒤 focused GUI·workflow 계약
+  `44/44`, 전체 automation `213/213`, GUI TypeScript, product boundary `227 files`, upstream
+  `35/35`, Studio `97/97`, production Studio build, Python syntax, actionlint와 diff check 통과.
+  production print는 문서 접근성 title과 선택형 local-font modal을 판정하고 upstream shortcut
+  listener가 붙은 `문서 편집 입력` node에 focus한 뒤 `Ctrl+P`를 전송한다. 각 print 종료 뒤 같은
+  document와 editor input 복원을 확인한다.
 
 ## 잔여 위험
 
@@ -199,8 +216,11 @@ git diff --check
 
 ## 다음 단계 영향
 
-- drag lifecycle과 print desktop scope 보정을 commit·push한 뒤, 성공한 제품 native run
-  `32347468978`을 재사용해 immutable acceptance workflow SHA의 branch GUI를 한 번 실행한다.
+- GTK drag threshold를 넘는 bounded staged gesture와, 같은 Xvfb/DBus 안에서 WebDriver 없이
+  production app을 직접 실행하는 system-print phase를 구현한다. 두 native/WebDriver phase는
+  각자 종료·증거를 남기고 합산 gate로 판정한다.
+- 보정을 commit·push한 뒤 성공한 제품 native run `32347468978`을 재사용해 immutable
+  acceptance workflow SHA의 branch GUI를 한 번 실행한다.
 - 실패하면 같은 branch에서 evidence를 읽고 보정하며, 완전히 성공해야 correction PR을
   생성한다.
 - PR merge 뒤 새 merge exact SHA의 native build·Linux GUI·evidence read-back을 한 번

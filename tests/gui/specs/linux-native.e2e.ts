@@ -1,5 +1,5 @@
 import { mkdir, stat, unlink } from 'node:fs/promises';
-import { basename, isAbsolute, join } from 'node:path';
+import { basename, join } from 'node:path';
 import { browser, $, expect } from '@wdio/globals';
 import { analyzePdf } from '../linux/pdf-analysis.mjs';
 import { LinuxNativeUiAdapter } from '../linux/native-ui/atspi.mjs';
@@ -17,7 +17,6 @@ import {
   confirmDroppedDocument,
   runNativeDocumentCommand,
   waitForLoadedDocument,
-  waitForRestoredDocumentState,
   waitForStudioStatus,
   waitForInitialDesktopReady,
   type NativeDocumentCommand,
@@ -28,7 +27,6 @@ const inputs = readGuiHarnessInputs();
 const generatedDir = join(inputs.outputDir, 'generated');
 // Task #15 Stage 4.8 Linux read-back 실측치의 50% 이하를 경로별 floor로 둔다.
 const DIRECT_PDF_MIN_TEXT_COUNTS = [20, 300, 200, 300, 200, 100];
-const SYSTEM_PDF_MIN_TEXT_COUNTS = [20, 25, 200, 300, 200, 100];
 let fixtures: DocumentFixture[] = [];
 let desktopReady = false;
 
@@ -100,38 +98,6 @@ describe('Alhangeul native Linux acceptance', () => {
     });
   });
 
-  it('GTK Print to File, cancel과 CUPS-PDF 반복 뒤 editor 상태를 복원한다', async () => {
-    const fixture = fixtureById(fixtures, 'biz-plan-hwp');
-    await runScenario('linux-system-print', [fixture], async () => {
-      const gtkPdf = join(generatedDir, 'biz-plan-gtk-print.pdf');
-      const cups = readCupsInputs();
-      await Promise.all([removeStale(gtkPdf), removeStale(cups.outputPath)]);
-      const adapter = nativeAdapter({});
-      await adapter.openDocument(fixture.absolutePath, () => triggerFileCommand('file:open'));
-      await waitForDocument(fixture.absolutePath, 6);
-      const original = await captureDocumentState(browser);
-
-      await adapter.printToFile(gtkPdf, () => adapter.triggerSystemPrint());
-      await waitForRestoredDocumentState(browser, original, inputs.timeoutMs);
-      await adapter.cancelPrint(() => adapter.triggerSystemPrint());
-      await waitForRestoredDocumentState(browser, original, inputs.timeoutMs);
-      await adapter.printWithVirtualPrinter(cups.printerName, () => adapter.triggerSystemPrint());
-      await waitForFile(cups.outputPath);
-      await waitForRestoredDocumentState(browser, original, inputs.timeoutMs);
-
-      const gtk = await analyzeBizPlanPdf(
-        gtkPdf, 'gtk-print-to-file', SYSTEM_PDF_MIN_TEXT_COUNTS,
-      );
-      const cupsPdf = await analyzeBizPlanPdf(
-        cups.outputPath, 'cups-pdf', SYSTEM_PDF_MIN_TEXT_COUNTS,
-      );
-      return [
-        await describeEvidenceFile(inputs.outputDir, gtkPdf, 'generated-document'),
-        await describeEvidenceFile(inputs.outputDir, cups.outputPath, 'generated-document'),
-        ...await describeRenderEvidence([...gtk.renderPaths, ...cupsPdf.renderPaths]),
-      ];
-    });
-  });
 });
 
 function nativeAdapter(saveTargets: Partial<Record<NativeDocumentCommand, string>>) {
@@ -242,15 +208,6 @@ async function removeStale(path: string): Promise<void> {
   await unlink(path).catch((error: NodeJS.ErrnoException) => {
     if (error.code !== 'ENOENT') throw error;
   });
-}
-
-function readCupsInputs() {
-  const outputPath = process.env.ALHANGEUL_GUI_CUPS_PDF_OUTPUT ?? '';
-  const printerName = process.env.ALHANGEUL_GUI_CUPS_PDF_PRINTER ?? 'PDF';
-  if (!isAbsolute(outputPath) || !outputPath.startsWith(`${inputs.outputDir}/`)) {
-    throw new Error('ALHANGEUL_GUI_CUPS_PDF_OUTPUT은 output root 안의 절대 경로여야 합니다');
-  }
-  return { outputPath, printerName };
 }
 
 async function runScenario(

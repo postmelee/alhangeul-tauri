@@ -39,12 +39,18 @@ export async function dragFileIntoWindow(options, services = {}) {
 }
 
 export function performBoundedDrag(xdotool, sourceRect, targetRect, env, execute = spawnSync) {
-  const source = center(validateRect(sourceRect, 'source'));
+  const sourceBounds = validateRect(sourceRect, 'source');
+  const source = center(sourceBounds);
+  const threshold = dragThresholdPoint(sourceBounds, source);
   const target = center(validateRect(targetRect, 'target'));
   const result = execute(xdotool, [
     'mousemove', '--sync', String(source.x), String(source.y),
     'mousedown', '1',
+    'sleep', '0.2',
+    'mousemove', '--sync', String(threshold.x), String(threshold.y),
+    'sleep', '0.1',
     'mousemove', '--sync', String(target.x), String(target.y),
+    'sleep', '0.2',
     'mouseup', '1',
   ], { encoding: 'utf8', env, timeout: 10000 });
   if (result.status !== 0) {
@@ -133,6 +139,12 @@ function assertInside(screen, rect, label) {
 
 function center(rect) {
   return { x: Math.floor(rect.x + rect.width / 2), y: Math.floor(rect.y + rect.height / 2) };
+}
+
+function dragThresholdPoint(rect, source) {
+  const right = rect.x + rect.width - 1 - source.x;
+  const distance = Math.min(16, right);
+  return { x: source.x + distance, y: source.y };
 }
 
 function validateFile(path) {

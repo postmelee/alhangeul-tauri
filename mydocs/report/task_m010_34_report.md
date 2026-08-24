@@ -19,7 +19,7 @@ GitHub Issue: [#34](https://github.com/postmelee/alhangeul-tauri/issues/34)
 | `.github/workflows/alhangeul-linux-gui.yml` | exact input, read-only metadata handoff, DEB 설치, Linux GUI 실행, evidence와 final gate | 수동 Linux x64 acceptance Actions |
 | `scripts/verify-workflow-artifact.mjs` | run/repository/SHA/workflow/event/conclusion과 exact artifact ID·digest 검증 | cross-run artifact 보안 경계 |
 | `tests/gui/wdio*.ts`, `tests/gui/specs/`, `tests/gui/support/` | 공통 WDIO 설정, 공개 fixture, DOM 문서 UX와 evidence schema | 플랫폼 중립 GUI harness |
-| `tests/gui/linux/`, `tests/gui/specs/linux-native.e2e.ts` | external driver probe, AT-SPI file/print adapter, bounded drag, Poppler PDF 분석 | Linux native dialog·출력 수용 |
+| `tests/gui/linux/`, `tests/gui/specs/linux-native.e2e.ts` | external driver probe, AT-SPI file/print adapter, bounded drag, production native print phase, Poppler PDF 분석 | Linux native dialog·출력 수용 |
 | `tests/*workflow*.test.mjs`, `tests/gui-contracts.test.mjs`, `tests/linux-gui-probe.test.mjs` | handoff·workflow·공통/전용 경계의 fail-closed 계약 | platform-neutral automation gate |
 | `package.json`, `pnpm-lock.yaml` | WebdriverIO/Tauri service와 TypeScript test toolchain 고정, 전체 test entrypoint | pnpm workspace 개발·CI 의존성 |
 | `docs/operations/DESKTOP_RELEASE.md` | native build → Linux GUI dispatch → evidence read-back과 잔여 수동 gate | 공식 release 운영 절차 |
@@ -43,10 +43,10 @@ GitHub Issue: [#34](https://github.com/postmelee/alhangeul-tauri/issues/34)
 |---|---:|---:|
 | GitHub Actions workflow inventory | 4개 | 5개 — 수동 Linux x64 GUI workflow 1개 추가 |
 | exact cross-run artifact provenance helper | 없음 | 259행 helper와 정상·변조·누락·중복·pagination 계약 30개 |
-| 공통/Linux GUI E2E scenario | 없음 | 공통 문서 UX 1개 + Linux native 4개 |
-| Linux native UI/PDF focused 계약 | 없음 | AT-SPI 7개 + drag 6개 + PDF 5개 |
+| 공통/Linux GUI E2E scenario | 없음 | 공통 문서 UX 1개 + Linux WebDriver native 3개 + production native print 1개 |
+| Linux native UI/PDF focused 계약 | 없음 | AT-SPI 8개 + drag 6개 + production print 2개 + PDF 5개 |
 | Linux GUI workflow 전용 source contract | 없음 | 9개, 공통 workflow와 합쳐 focused 21/21 |
-| 전체 automation 통과 수 | Stage 1 완료 시 162개 | Stage 5.9 최신 branch에서 209개 |
+| 전체 automation 통과 수 | Stage 1 완료 시 162개 | Stage 5.9 최신 branch에서 213개 |
 | 신규 workflow 외부 Action immutable pin | 해당 없음 | 4/4 full commit SHA + version 주석 |
 | evidence 보존 | 수동·분산 | 성공·실패 모두 7일, context/handoff/hash/log/screenshot/PDF/summary 결속 |
 
@@ -62,7 +62,7 @@ GitHub Issue: [#34](https://github.com/postmelee/alhangeul-tauri/issues/34)
 | workflow 최소 권한·비용·Action pin | OK — `actions: read`, `contents: read`, `ubuntu-22.04`, manual dispatch, 45분 job/25분 GUI timeout, exact candidate concurrency와 4개 SHA pin을 고정했다. |
 | 실패 증거·최종 판정 | OK — GUI failure와 evidence upload failure를 `always()` 뒤 final gate가 각각 실패로 전달하고 자동 retry를 금지한다. |
 | 전체 platform-neutral regression | OK — product boundary 225 files, GUI TypeScript, 최신 automation 206/206, actionlint와 diff check 통과. upstream 35/35, Studio 97/97와 production build도 통과했다. |
-| 실제 hosted Linux x64 GUI | PARTIAL — 최신 branch run `32689152972`은 exact 환경, document UX 2건, HWP/HWPX native Save As·현재 저장·재열기와 직접 PDF 6쪽 A4·한글 text·nonblank render를 통과했다. drag source lifecycle과 별도 print application AT-SPI scope 두 하네스 결함을 보정한 뒤 drag/GTK/CUPS print까지 한 canary에서 확정한다. |
+| 실제 hosted Linux x64 GUI | PARTIAL — 최신 branch run `32690177647`은 exact 환경, document UX 2건, HWP/HWPX native Save As·현재 저장·재열기와 직접 PDF 6쪽 A4·한글 text·nonblank render를 통과했다. drag는 GTK threshold 미도달, system print는 WebDriver-controlled WebView의 native print 미발생으로 각각 재측정했다. staged drag와 production native print phase를 한 canary에서 확정한다. |
 
 ### 단계별 검증 결과
 
@@ -148,6 +148,17 @@ GitHub Issue: [#34](https://github.com/postmelee/alhangeul-tauri/issues/34)
   기다리는 source lifecycle과 실제 `Ctrl+P`, print 전용 isolated desktop scope를 추가했고
   focused `13/13`, automation `209/209`, product boundary 227개, upstream `35/35`, Studio
   `97/97`, production build, GUI TypeScript, Python syntax, actionlint와 diff check를 통과했다.
+- drag lifecycle·desktop scope SHA `0181c8ca54914dd80932f7dcbfe195d4151c1c30`의 run
+  `32690177647`은 저장·직접 PDF의 성공을 재확인하고 print tree에서 portal과 앱을 모두
+  관측했다. drag source가 `READY` 외 marker를 내지 않은 것은 source 조기 종료가 아니라
+  drag-start threshold 미도달을 뜻한다. 또한 결정적 menu click과 `Ctrl+P` 양쪽 모두
+  WebDriver-controlled WebView에서 print dialog를 만들지 못했으므로, 제품 print를 바꾸지 않고
+  system print만 production app 직접 실행 phase로 분리한다.
+- staged drag·production print phase 구현 뒤 focused `44/44`, automation `213/213`, GUI
+  TypeScript, product boundary 227개, upstream `35/35`, Studio `97/97`, production build,
+  Python syntax, actionlint와 diff check를 통과했다. workflow는 production native print와
+  WebDriver phase를 순서대로 실행하되 한 phase가 실패해도 다른 evidence를 수집한 뒤 두 exit
+  status를 합산한다.
 
 ## 잔여 위험과 후속 작업
 
@@ -155,8 +166,8 @@ GitHub Issue: [#34](https://github.com/postmelee/alhangeul-tauri/issues/34)
 
 - Stage 5.9의 timeout·window·초기 readiness, browser/native document load, GTK anonymous
   location entry 탐색·focus·입력·explicit Open/Save accept, 현재 저장과 직접 PDF는 hosted
-  runner에서 성공했다. drag lifecycle과 print 전용 desktop scope 보정 뒤 GTK Print to File,
-  cancel, CUPS-PDF까지 다시 확인해야 하므로 전체 성공은 아직 주장할 수 없다.
+  runner에서 성공했다. staged drag threshold와 WebDriver 밖 production native print phase에서
+  GTK Print to File, cancel, CUPS-PDF까지 다시 확인해야 하므로 전체 성공은 아직 주장할 수 없다.
   성공한 제품 artifact는 native run
   `32347468978`에 고정돼 있다.
 - 다음 canary에서 production binary external driver 연결, localized accessibility selector, CUPS-PDF output name이나 hosted image drift가 추가로 발견될 수 있다. 실패 evidence를 보존하고 측정 근거가 있는 correction PR로만 보정한다.

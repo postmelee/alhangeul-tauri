@@ -92,6 +92,19 @@ test('system print shortcut은 실제 ctrl+p만 허용하고 AT-SPI 탐색과 �
   await assert.rejects(adapter.shortcut('ctrl+x'), /허용되지 않은 key/);
 });
 
+test('production native phase는 선택형 글꼴 버튼과 document focus를 semantic action으로 제한한다', async () => {
+  const calls = [];
+  const adapter = createAdapter({
+    runAtspi: async (request) => { calls.push(request); return { performed: false }; },
+  });
+  const selector = { roles: ['push button'], names: ['대체 글꼴로 보기'] };
+  assert.deepEqual(await adapter.actionOptional(selector, 5000), { performed: false });
+  await adapter.focus({ roles: ['document text'], names: ['biz_plan.hwp'] });
+  assert.deepEqual(calls.map(({ command }) => command), ['actionOptional', 'focus']);
+  assert.deepEqual(calls[0].actionNames, ['click', 'press']);
+  assert.equal(calls[0].timeoutMs, 5000);
+});
+
 test('Python bridge는 editable text를 focus·readback한 같은 node에서 semantic activate한다', async () => {
   const source = await readFile(new URL('./atspi_driver.py', import.meta.url), 'utf8');
   assert.match(source, /within = selector\.get\("within"\)/);
@@ -111,6 +124,8 @@ test('Python bridge는 editable text를 focus·readback한 같은 node에서 sem
   assert.match(optionalAction, /optional action requires a non-empty guardSelector/);
   assert.match(optionalAction, /if not find_matches\(guard_request\)/);
   assert.match(optionalAction, /optional action is unavailable while its dialog remains/);
+  assert.match(optionalAction, /def perform_optional/);
+  assert.match(optionalAction, /return \{"performed": False\}/);
   const snapshot = source.slice(source.indexOf('def snapshot'), source.indexOf('def dispatch'));
   assert.match(snapshot, /item\["actions"\] = action_names\(node\)/);
   assert.match(snapshot, /item\["textLength"\] = text_length\(node\)/);

@@ -159,6 +159,12 @@ test('Xvfb, DBus, AT-SPI와 CUPS-PDF는 repository fixture만 사용한다', () 
   assert.match(gui, /ALHANGEUL_GUI_CUPS_PDF_OUTPUT: \$\{\{ env\.CUPS_PDF_OUTPUT \}\}/);
   assert.match(gui, /NO_AT_BRIDGE: "0"/);
   assert.match(gui, /GTK_MODULES: gail:atk-bridge/);
+  assert.match(gui, /pnpm run test:gui:linux:native-print \|\| native_print_status=\$\?/);
+  assert.match(gui, /pnpm run test:gui:linux \|\| webdriver_status=\$\?/);
+  assert.ok(gui.indexOf('test:gui:linux:native-print') < gui.indexOf('pnpm run test:gui:linux ||'));
+  assert.match(gui, /gui-phase-outcomes\.json/);
+  assert.match(gui, /\[\[ "\$native_print_status" -eq 0 && "\$webdriver_status" -eq 0 \]\]/);
+  assert.match(workflow, /^            scrot \\$/m);
   assert.doesNotMatch(workflow, /\/Users\/|[A-Z]:\\Users\\/);
 });
 

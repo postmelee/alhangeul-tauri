@@ -157,9 +157,16 @@ Task #34 Stage 2: 공통 WebDriver 문서 UX harness 추가
 - 접근성 tree로 식별되지 않는 OS drag-in은 Xvfb의 bounded input fallback을 별도 함수로 격리한다. 화면 크기·창 bounds를 먼저 검증하고 실패 시 좌표 클릭을 반복하지 않고 screenshot/tree dump와 함께 실패한다.
 - HWP/HWPX 현재 형식 저장, Save As, 재열기를 실행하고 생성 파일 존재·size·hash와 status restoration을 확인한다.
 - 직접 PDF와 GTK Print to File/CUPS 결과는 별도 임시 경로에 저장한다. 6쪽 `biz_plan.hwp`에 대해 `pdfinfo` A4/page count, `pdftotext` 한글 표제, page render의 blank/crop heuristic을 판정한다.
-- system print 저장·취소·반복 뒤 editor document title/page count와 print status가 복원되는지 확인한다. physical printer는 선택하지 않는다.
+- system print는 WebDriver가 제어하는 WebView의 `window.print()` 제한과 native GTK dialog를
+  혼합하지 않는다. 같은 격리 Xvfb/DBus session에서 production app을 직접 실행한 AT-SPI
+  phase가 GTK Print to File·취소·CUPS-PDF를 검증하고, WebDriver phase는 DOM·native
+  open/save·drag-in·직접 PDF를 검증한다. 두 phase는 하나가 실패해도 다른 phase의 evidence를
+  수집한 뒤 합산해 fail-closed한다. physical printer는 선택하지 않는다.
 - tofu는 text extraction만으로 성공 처리하지 않는다. 대표 screenshot/PDF render를 evidence로 남기고 자동 summary에는 시각 read-back 필요 여부를 명시한다.
 - native adapter는 프로세스·창·임시 출력 cleanup을 `finally`에서 수행하고, 실패 후 다음 scenario에 상태를 누출하지 않는다.
+- X11 drag gesture는 source에서 button press 뒤 GTK drag threshold를 넘는 중간 이동과 짧은
+  bounded settling을 거쳐 target으로 이동하며, URI data 제공과 `drag-end`를 모두 확인한 뒤
+  source를 정리한다.
 
 ### 검증
 

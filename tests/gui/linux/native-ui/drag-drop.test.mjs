@@ -5,7 +5,7 @@ import {
   performBoundedDrag,
 } from './drag-drop.mjs';
 
-test('bounded drag는 검증된 두 중심점 사이에서 단 한 번의 X11 gesture만 보낸다', () => {
+test('bounded drag는 GTK threshold 이동과 settling을 포함한 한 번의 X11 gesture를 보낸다', () => {
   const calls = [];
   performBoundedDrag(
     '/usr/bin/xdotool',
@@ -18,7 +18,11 @@ test('bounded drag는 검증된 두 중심점 사이에서 단 한 번의 X11 ge
   assert.deepEqual(calls[0][1], [
     'mousemove', '--sync', '70', '60',
     'mousedown', '1',
+    'sleep', '0.2',
+    'mousemove', '--sync', '86', '60',
+    'sleep', '0.1',
     'mousemove', '--sync', '800', '500',
+    'sleep', '0.2',
     'mouseup', '1',
   ]);
 });

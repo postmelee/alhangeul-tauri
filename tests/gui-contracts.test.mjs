@@ -249,6 +249,19 @@ test('공통 helper는 platform adapter를 import하지 않고 외부 driver만 
   assert.doesNotMatch(cargo, /wdio|webdriver/i);
 });
 
+test('system print는 WebDriver spec 밖의 production native phase에서만 실행한다', async () => {
+  const webdriver = await readFile(
+    join(repoRoot, 'tests/gui/specs/linux-native.e2e.ts'), 'utf8',
+  );
+  const nativePrint = await readFile(
+    join(repoRoot, 'tests/gui/linux/native-print.mjs'), 'utf8',
+  );
+  assert.doesNotMatch(webdriver, /linux-system-print|printToFile|cancelPrint|printWithVirtualPrinter/);
+  assert.match(nativePrint, /scenario: 'linux-system-print'/);
+  assert.match(nativePrint, /spawnLoggedProcess\(inputs\.appPath, \[fixture\.absolutePath\]/);
+  assert.match(nativePrint, /webdriverControlled: false/);
+});
+
 test('Linux runtime helper는 POSIX path API를 명시하고 분리된 path 조각 주입을 금지한다', async () => {
   const linuxHelpers = [
     'tests/gui/linux/probe.mjs',
@@ -276,11 +289,12 @@ test('Linux runtime helper는 POSIX path API를 명시하고 분리된 path 조�
 
 test('Linux native 저장·PDF acceptance는 디스크 갱신과 경로별 실측 floor를 사용한다', async () => {
   const source = await readFile(join(repoRoot, 'tests/gui/specs/linux-native.e2e.ts'), 'utf8');
+  const nativePrint = await readFile(join(repoRoot, 'tests/gui/linux/native-print.mjs'), 'utf8');
   assert.match(source, /current\.mtimeNs > beforeFile\.mtimeNs/);
   assert.match(source, /waitForStudioStatus\(browser, \/\^저장 완료\$\//);
   assert.doesNotMatch(source, /digest\('hex'\)\)\.toMatch/);
   assert.match(source, /DIRECT_PDF_MIN_TEXT_COUNTS = \[20, 300, 200, 300, 200, 100\]/);
-  assert.match(source, /SYSTEM_PDF_MIN_TEXT_COUNTS = \[20, 25, 200, 300, 200, 100\]/);
+  assert.match(nativePrint, /SYSTEM_PDF_MIN_TEXT_COUNTS = \[20, 25, 200, 300, 200, 100\]/);
 });
 
 function validEnv(override = {}) {
