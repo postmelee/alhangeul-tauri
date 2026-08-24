@@ -20,7 +20,7 @@ version 증거를 지원되는 Debian package database 계약으로 교체한다
 | `tests/linux-gui-workflow.test.mjs` | CUPS package 증거와 `cupsd -v` 부재를 workflow source contract로 고정 |
 | `tests/gui/support/document-ux.ts` | 실패한 temporary style upload adapter 제거, upstream input/native title 계약 분리와 status·쪽 수 DOM 판독 공통화 |
 | `tests/gui/specs/document-ux.e2e.ts` | 숨은 file input에 clear 없이 `addValue`로 경로를 전송하고 headless 환경의 로컬 글꼴 선택 모달을 fail-closed 처리 |
-| `tests/gui/linux/native-ui/atspi.mjs`, `atspi_driver.py`, `atspi_selection.py` | focused GTK location entry에 full path를 입력·readback하고 남은 chooser는 명시적 Open/Save accept로 완료하며, system print는 격리 desktop scope·실제 Ctrl+P·검증된 semantic row selection으로 탐색 |
+| `tests/gui/linux/native-ui/atspi.mjs`, `atspi_driver.py` | focused GTK location entry에 full path를 입력·readback하고 남은 chooser는 명시적 Open/Save accept로 완료하며, system print는 격리 desktop scope·실제 Ctrl+P·exact activate 뒤 selected state readback으로 탐색 |
 | `tests/gui/linux/native-ui/drag-drop.mjs`, `drag_source.py` | Xdnd URI `DATA`와 GTK `drag-end` 완료를 모두 확인한 뒤 source를 정리하는 bounded lifecycle 계약 |
 | `tests/gui/linux/native-print.mjs` | WebDriver 밖 production app을 fixture와 직접 실행해 GTK Print to File·취소·CUPS-PDF와 PDF evidence를 검증하고 `finally`에서 종료 |
 | `tests/gui/wdio.linux.conf.ts` | WebKit file upload용 표준 `strictFileInteractability: false` 명시 |
@@ -167,6 +167,17 @@ git diff --check
 - OK — semantic row selection 보정 뒤 공통 GUI 계약 `19/19`, Linux GUI 계약 `23/23`,
   전체 automation `215/215`, GUI TypeScript, Python syntax, product boundary `228 files`,
   actionlint와 diff check 통과. selection helper를 분리해 구현 파일 300 LOC 상한도 유지했다.
+- OK — 첫 semantic Selection 보정 SHA `fcea04bbd0f502ee0a26c04588d02678bac4853e`의 run
+  `32693731543`에서도 WebDriver phase가 전체 성공(`webdriver=0`)했고 exact handoff·환경·
+  evidence upload가 통과했다.
+- PARTIAL — native print의 `selectChild()`는 `false`를 반환해 file entry 전에
+  fail-closed했다. 새 tree는 `Print to File`이 selectable이지만 선택되지 않았고 CUPS `PDF`가
+  선택되어 있으며, 행 action이 순서대로 `expand or contract`, `edit`, `activate`임을
+  보존했다. 이전 무명 action은 첫 action을 실행했으므로 exact `activate` 뒤 동일 행의
+  `selected=true`를 기다리는 계약으로 교체한다.
+- OK — exact activate·selected readback 보정 뒤 공통 GUI 계약 `19/19`, Linux GUI 계약
+  `23/23`, 전체 automation `215/215`, GUI TypeScript, Python syntax, product boundary
+  `227 files`, actionlint와 diff check 통과. 구현 파일은 모두 300 LOC 이하를 유지했다.
 
 ## 잔여 위험
 
@@ -261,7 +272,7 @@ git diff --check
 
 ## 다음 단계 영향
 
-- semantic selection 보정을 commit·push한 뒤 성공한 제품 native run `32347468978`을
+- exact activate·selected readback 보정을 commit·push한 뒤 성공한 제품 native run `32347468978`을
   재사용해 immutable acceptance workflow SHA의 branch GUI를 한 번 실행한다.
 - 실패하면 같은 branch에서 evidence를 읽고 보정하며, 완전히 성공해야 correction PR을
   생성한다.

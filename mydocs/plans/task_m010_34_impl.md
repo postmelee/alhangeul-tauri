@@ -748,12 +748,17 @@ exit 1을 반환했으며 제품 GUI 단계는 실행되지 않았다.
   GTK Print dialog까지 열었다. 그러나 AT-SPI `doAction()` 성공 뒤에도 screenshot에서는
   CUPS `PDF` 행이 계속 선택되어 있었고 `Print to File` file entry도 생성되지 않았다. 따라서
   액션 결과를 selection 결과로 간주하지 않는다.
-- GTK `TreeViewAccessible`의 Selection interface를 사용해 이름으로 찾은 printer row의
-  selection container와 직접 자식 index를 구하고 `selectChild()` 뒤
-  `isChildSelected()`를 검증한다. 선택 interface·index·선택·readback 중 하나라도 실패하면
-  file entry를 찾기 전에 fail-closed한다. selection 로직은 전용 helper로 분리해 구현 파일
-  300 LOC 상한을 유지하며, 실패 snapshot에는 selected/selectable state와 row action을
-  함께 기록한다.
+- 첫 semantic Selection 보정 SHA `fcea04bbd0f502ee0a26c04588d02678bac4853e`의 branch GUI
+  run `32693731543`은 WebDriver phase 전체를 재통과했지만 native print의
+  `selectChild()`가 `false`를 반환해 file entry 전에 fail-closed했다. 실패 tree는
+  `Print to File`이 `selectable=true`, `selected=false`, CUPS `PDF`가 `selected=true`이고
+  해당 행의 action 순서가 `expand or contract`, `edit`, `activate`임을 새로 보존했다.
+- pyatspi Selection은 read-only 구현도 허용하므로 `selectChild()` 성공을 가정하지 않는다.
+  이전 action 호출은 action 이름을 지정하지 않아 첫 `expand or contract`를 실행한 것이
+  직접 원인이다. 이름으로 찾은 printer row에서 exact `activate` action만 수행하고 같은
+  row가 `selected=true`가 될 때까지 semantic readback한 뒤에만 file entry로 진행한다.
+  action 부재·실패·selection state 불일치는 모두 fail-closed하며 snapshot의
+  selected/selectable state와 전체 row action은 유지한다.
 
 ### 검증
 

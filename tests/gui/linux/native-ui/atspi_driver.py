@@ -5,8 +5,6 @@ import json
 import sys
 import time
 
-from atspi_selection import select_accessible
-
 
 def normalized(value):
     return " ".join(str(value or "").casefold().split())
@@ -272,8 +270,6 @@ def dispatch(request):
     if command == "action":
         perform_action(node, request.get("actionNames", []))
         return node_info(node)
-    if command == "select":
-        return select_accessible(node, node_info)
     if command == "setText":
         set_editable_text(node, request.get("value"))
         return node_info(node)

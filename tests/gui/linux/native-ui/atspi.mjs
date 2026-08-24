@@ -96,11 +96,13 @@ export class LinuxNativeUiAdapter {
     return this.withFailureEvidence('print-to-file', async () => {
       await trigger();
       await this.printCommand({ command: 'wait', selector: PRINT_DIALOG });
-      await this.printCommand({ command: 'select', selector: {
+      const printer = {
         roles: ['radio button', 'table cell', 'list item', 'toggle button'],
         names: ['print to file', '파일로 인쇄'],
         within: PRINT_DIALOG,
-      } });
+      };
+      await this.printCommand({ command: 'action', selector: printer, actionNames: ['activate'] });
+      await this.printCommand({ command: 'wait', selector: { ...printer, selected: true } });
       await this.printCommand({ command: 'setText', selector: {
         roles: ['text', 'entry'],
         names: ['file', '파일', 'name', '이름'],
@@ -122,11 +124,13 @@ export class LinuxNativeUiAdapter {
     return this.withFailureEvidence('virtual-printer', async () => {
       await trigger();
       await this.printCommand({ command: 'wait', selector: PRINT_DIALOG });
-      await this.printCommand({ command: 'select', selector: {
+      const printer = {
         roles: ['radio button', 'table cell', 'list item', 'toggle button'],
         names: [name],
         within: PRINT_DIALOG,
-      } });
+      };
+      await this.printCommand({ command: 'action', selector: printer, actionNames: ['activate'] });
+      await this.printCommand({ command: 'wait', selector: { ...printer, selected: true } });
       await this.printCommand({
         command: 'action',
         selector: { roles: BUTTON_ROLES, names: ['print', '인쇄'], within: PRINT_DIALOG },
@@ -201,10 +205,6 @@ export class LinuxNativeUiAdapter {
 
   action(selector) {
     return this.command({ command: 'action', selector });
-  }
-
-  select(selector) {
-    return this.command({ command: 'select', selector });
   }
 
   actionOptional(selector, timeoutMs = 5000) {

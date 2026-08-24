@@ -23,7 +23,6 @@ export class LinuxNativeUiAdapter implements NativeDialogAdapter {
   triggerSystemPrint(): Promise<void>;
   wait(selector: Record<string, unknown>): Promise<unknown>;
   waitAbsent(selector: Record<string, unknown>): Promise<unknown>;
-  select(selector: Record<string, unknown>): Promise<unknown>;
   actionOptional(
     selector: Record<string, unknown>, timeoutMs?: number,
   ): Promise<{ performed: boolean }>;

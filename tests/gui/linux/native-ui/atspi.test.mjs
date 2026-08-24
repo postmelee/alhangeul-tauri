@@ -60,15 +60,17 @@ test('print adapter는 Print to File만 고르고 save/cancel modal 종료를 �
   await adapter.printToFile('/tmp/output/gtk.pdf', async () => {});
   await adapter.cancelPrint(async () => {});
   assert.deepEqual(calls.map(({ command }) => command), [
-    'wait', 'select', 'setText', 'action', 'waitAbsent',
+    'wait', 'action', 'wait', 'setText', 'action', 'waitAbsent',
     'wait', 'action', 'waitAbsent',
   ]);
   assert.deepEqual(calls[1].selector.names, ['print to file', '파일로 인쇄']);
-  assert.equal(calls[2].value, '/tmp/output/gtk.pdf');
-  assert.deepEqual(calls[2].selector.within, { roles: ['dialog'], names: ['print', '인쇄'] });
-  assert.ok(calls.every(({ desktopScope }) => desktopScope === true));
+  assert.deepEqual(calls[1].actionNames, ['activate']);
+  assert.equal(calls[2].selector.selected, true);
+  assert.equal(calls[3].value, '/tmp/output/gtk.pdf');
   assert.deepEqual(calls[3].selector.within, { roles: ['dialog'], names: ['print', '인쇄'] });
-  assert.deepEqual(calls[6].selector.within, { roles: ['dialog'], names: ['print', '인쇄'] });
+  assert.ok(calls.every(({ desktopScope }) => desktopScope === true));
+  assert.deepEqual(calls[4].selector.within, { roles: ['dialog'], names: ['print', '인쇄'] });
+  assert.deepEqual(calls[7].selector.within, { roles: ['dialog'], names: ['print', '인쇄'] });
   await assert.rejects(
     adapter.printWithVirtualPrinter('Office LaserJet', async () => {}),
     /physical printer/,
@@ -82,9 +84,11 @@ test('virtual printer는 semantic selection 후에만 Print를 실행한다', as
   });
   await adapter.printWithVirtualPrinter('PDF', async () => {});
   assert.deepEqual(calls.map(({ command }) => command), [
-    'wait', 'select', 'action', 'waitAbsent',
+    'wait', 'action', 'wait', 'action', 'waitAbsent',
   ]);
   assert.deepEqual(calls[1].selector.names, ['PDF']);
+  assert.deepEqual(calls[1].actionNames, ['activate']);
+  assert.equal(calls[2].selector.selected, true);
   assert.equal(calls[1].desktopScope, true);
 });
 
@@ -120,7 +124,6 @@ test('production native phase는 선택형 글꼴 버튼과 focused document wai
 
 test('Python bridge는 editable text를 focus·readback한 같은 node에서 semantic activate한다', async () => {
   const source = await readFile(new URL('./atspi_driver.py', import.meta.url), 'utf8');
-  const selectionSource = await readFile(new URL('./atspi_selection.py', import.meta.url), 'utf8');
   assert.match(source, /within = selector\.get\("within"\)/);
   assert.match(source, /desktop_scope = request\.get\("desktopScope", False\)/);
   assert.match(source, /desktopScope must be a boolean/);
@@ -141,12 +144,6 @@ test('Python bridge는 editable text를 focus·readback한 같은 node에서 sem
   assert.match(optionalAction, /optional action is unavailable while its dialog remains/);
   assert.match(optionalAction, /def perform_optional/);
   assert.match(optionalAction, /return \{"performed": False\}/);
-  assert.match(selectionSource, /parent = child\.parent/);
-  assert.match(selectionSource, /parent\.querySelection\(\)/);
-  assert.match(selectionSource, /index = child\.getIndexInParent\(\)/);
-  assert.match(selectionSource, /selection\.selectChild\(index\)/);
-  assert.match(selectionSource, /selection\.isChildSelected\(index\)/);
-  assert.ok(selectionSource.indexOf('selectChild') < selectionSource.indexOf('isChildSelected'));
   const snapshot = source.slice(source.indexOf('def snapshot'), source.indexOf('def dispatch'));
   assert.match(snapshot, /item\["actions"\] = action_names\(node\)/);
   assert.match(snapshot, /item\["textLength"\] = text_length\(node\)/);
@@ -156,8 +153,7 @@ test('Python bridge는 editable text를 focus·readback한 같은 node에서 sem
   assert.doesNotMatch(adapter, /'Return'/);
   assert.doesNotMatch(adapter, /focus\(selector\)/);
   assert.doesNotMatch(source, /if command == "focus"/);
-  assert.match(source, /if command == "select":/);
-  assert.match(source, /select_accessible\(node, node_info\)/);
+  assert.doesNotMatch(source, /if command == "select"/);
 });
 
 test('adapter 실패는 tree와 screenshot을 남기고 Escape cleanup 후 원인을 보존한다', async () => {
