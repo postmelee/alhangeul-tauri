@@ -17,6 +17,7 @@ path = "src/main.rs"
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
+alhangeul-document-preview = { path = "../../../crates/document-preview", default-features = false, features = ["render"] }
 rhwp = { path = "../../../third_party/rhwp" }
 tauri = { version = "2", features = [] }
 tauri-plugin-dialog = "2"

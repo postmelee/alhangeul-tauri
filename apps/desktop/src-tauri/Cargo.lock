@@ -32,10 +32,11 @@ dependencies = [
 name = "alhangeul-desktop"
 version = "0.1.0"
 dependencies = [
+ "alhangeul-document-preview",
  "open",
  "pdf-writer",
  "rhwp",
- "roxmltree 0.20.0",
+ "roxmltree",
  "serde",
  "serde_json",
  "svg2pdf",
@@ -50,6 +51,16 @@ dependencies = [
  "tempfile",
  "usvg",
  "uuid",
+]
+
+[[package]]
+name = "alhangeul-document-preview"
+version = "0.1.0"
+dependencies = [
+ "blake3",
+ "image",
+ "resvg",
+ "rhwp",
 ]
 
 [[package]]

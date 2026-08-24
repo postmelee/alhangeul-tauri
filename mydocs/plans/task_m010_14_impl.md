@@ -40,8 +40,8 @@ GitHub Issue: [#14](https://github.com/postmelee/alhangeul-tauri/issues/14)
 
 ### Cargo와 공유 core
 
-- `apps/desktop/src-tauri/Cargo.toml`을 root package 겸 workspace root로 사용해 기존 `Cargo.lock`과 `target/` 위치를 보존한다.
-- member는 desktop, `../../../crates/document-preview`, `../../thumbnail-worker`, `../../thumbnail-handler`이고 `default-members = ["."]`로 기존 desktop `cargo test` 의미를 보존한다.
+- Cargo는 workspace root 밖의 package를 member로 허용하지 않으므로 `apps/desktop/src-tauri`는 기존 standalone package로 유지한다. 공유 crate는 path dependency로 연결해 기존 desktop `Cargo.lock`, `target/` 위치와 `cargo test` 의미를 보존한다.
+- 공유 crate 자체 검증은 standalone manifest와 desktop target directory를 명시한다. Stage 3의 worker/handler도 독립 manifest로 추가하고 desktop workspace member로 편입하지 않는다.
 - `crates/document-preview`는 protocol/limits를 기본 제공하고 `render` feature에서만 `rhwp`, `resvg`, `image`를 활성화한다. Desktop과 worker는 `render`를 사용하고 COM DLL은 protocol/limits만 사용한다.
 - desktop `render_document_preview`는 공유 direct SVG API를 호출하되 worker protocol이나 Windows type을 알지 못한다.
 - `third_party/rhwp`는 workspace member로 편입하거나 수정하지 않고 현재 pin을 유지한다.
@@ -156,37 +156,45 @@ Task #14 Stage 1: Windows thumbnail 계약과 resource budget 확정
 - `crates/document-preview/Cargo.toml`
 - `crates/document-preview/src/{lib,limits,protocol,render}.rs`
 - `crates/document-preview/tests/preview_contract.rs`
+- `tests/product-boundary.test.mjs`
 - `mydocs/working/task_m010_14_stage2.md`
 
 수정:
 
+- `.github/workflows/{ci,alhangeul-desktop}.yml`
 - `apps/desktop/src-tauri/Cargo.toml`
 - `apps/desktop/src-tauri/Cargo.lock`
 - `apps/desktop/src-tauri/src/commands.rs`
 - `apps/desktop/src-tauri/src/state.rs`
-- 관련 desktop/product-boundary test
+- `tests/actions-workflows.test.mjs`와 관련 desktop/product-boundary test
 - `scripts/check-product-boundary.mjs`
+- `package.json`
 - `mydocs/orders/20260824.md`
 
 ### 변경 내용
 
-- desktop manifest를 workspace root로 확장하되 lockfile, target dir와 default desktop command를 보존한다.
+- desktop manifest를 standalone package로 유지하고 공유 crate를 path dependency로 연결해 lockfile, target dir와 default desktop command를 보존한다. 중첩 workspace가 외부 sibling crate를 member로 받을 수 없는 Cargo 제약은 작업지시자 승인으로 계획을 정정했다.
 - 공유 crate는 bytes와 approved limits만 받아 first-page SVG, embedded preview와 protocol frame을 반환하고 path/filesystem write/Tauri/COM/registry를 알지 못한다.
 - direct API는 `DocumentCore::from_bytes`와 `render_page_svg_native(0)`을 사용한다. 기존 preview 결과와 차이가 있으면 원인을 검증하고 editable conversion을 조용히 복제하지 않는다.
 - protocol decoder는 allocation 전에 frame/header/length/pixel overflow와 unknown version/kind를 거부한다.
 - 정상·preview 없음·stale preview·corrupt/unsupported·limit fixture로 direct 우선순위, 결정성과 원본 불변을 고정한다.
+- CI와 Windows/Linux desktop matrix에 shared/desktop test·clippy gate를 명시해 exact-SHA 플랫폼 검증 경로를 유지한다.
+- shared clippy는 default `render`와 `--no-default-features --lib` protocol-only 조합을 모두 검사한다.
 
 ### 검증
 
 Windows/Linux:
 
 ```bash
+cargo test --manifest-path crates/document-preview/Cargo.toml --target-dir apps/desktop/src-tauri/target
+cargo clippy --manifest-path crates/document-preview/Cargo.toml --target-dir apps/desktop/src-tauri/target --all-targets -- -D warnings
+cargo clippy --manifest-path crates/document-preview/Cargo.toml --target-dir apps/desktop/src-tauri/target --no-default-features --lib -- -D warnings
 cd apps/desktop/src-tauri
-cargo test -p alhangeul-document-preview
-cargo clippy -p alhangeul-document-preview --all-targets -- -D warnings
-cargo test -p alhangeul-desktop
-cargo clippy -p alhangeul-desktop -- -D warnings
+cargo test
+cargo clippy -- -D warnings
 cd ../../..
+node --test tests/product-boundary.test.mjs
+node --test tests/actions-workflows.test.mjs
 pnpm run check:product-boundary
 pnpm run check:rhwp-pin
 git diff --check

@@ -743,6 +743,11 @@ pub(crate) fn editable_core_from_bytes(
     Ok(core)
 }
 
+pub(crate) fn direct_preview_svg_from_bytes(bytes: &[u8]) -> Result<String, String> {
+    alhangeul_document_preview::render_first_page_svg(bytes)
+        .map_err(|error| format!("문서 미리보기를 렌더링할 수 없습니다: {error}"))
+}
+
 pub fn parse_json_string(raw: String) -> Result<Value, String> {
     serde_json::from_str(&raw).map_err(|e| format!("JSON 파싱 실패: {}", e))
 }
@@ -781,6 +786,14 @@ mod tests {
             DocumentFormat::Hwpx
         );
         assert!(DocumentFormat::from_path(Path::new("a.txt")).is_err());
+    }
+
+    #[test]
+    fn direct_preview_adapter_renders_without_editable_conversion() {
+        let bytes = include_bytes!("../../../../third_party/rhwp/saved/blank_hwpx.hwpx");
+        let svg = direct_preview_svg_from_bytes(bytes).unwrap();
+
+        assert!(svg.contains("<svg"));
     }
 
     #[test]

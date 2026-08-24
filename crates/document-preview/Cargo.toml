@@ -1,0 +1,23 @@
+[package]
+name = "alhangeul-document-preview"
+version = "0.1.0"
+edition = "2021"
+description = "Bounded document preview contracts shared by Alhangeul desktop components"
+license = "MIT"
+publish = false
+
+[features]
+default = ["render"]
+render = ["dep:image", "dep:resvg", "dep:rhwp"]
+
+[dependencies]
+blake3 = "1"
+image = { version = "0.25", optional = true, default-features = false, features = ["bmp", "gif", "jpeg", "png"] }
+resvg = { version = "0.45", optional = true, default-features = false }
+rhwp = { path = "../../third_party/rhwp", optional = true }
+
+[dev-dependencies]
+zip = { version = "8.5", default-features = false, features = ["deflate"] }
+
+[lints.rust]
+unsafe_code = "forbid"

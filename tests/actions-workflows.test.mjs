@@ -75,6 +75,9 @@ test('CI workflow는 제품 version·pin과 automation 계약을 native 검사 �
     'pnpm run test:upstream',
     'pnpm run test:studio',
     'pnpm run build:studio',
+    'pnpm run test:document-preview',
+    'pnpm run clippy:document-preview',
+    'pnpm run clippy:document-preview:protocol',
     'pnpm run test:desktop',
     'pnpm run clippy:desktop',
   ]);
@@ -215,6 +218,11 @@ test('desktop workflow는 checkout commit을 검증하고 pretest를 순서대�
     'pnpm run test:automation',
     'pnpm run test:upstream',
     'pnpm run test:studio',
+    'pnpm run test:document-preview',
+    'pnpm run clippy:document-preview',
+    'pnpm run clippy:document-preview:protocol',
+    'pnpm run test:desktop',
+    'pnpm run clippy:desktop',
     'pnpm tauri build',
   ]);
 
@@ -226,6 +234,11 @@ test('desktop workflow는 checkout commit을 검증하고 pretest를 순서대�
     'pnpm run test:automation',
     'pnpm run test:upstream',
     'pnpm run test:studio',
+    'pnpm run test:document-preview',
+    'pnpm run clippy:document-preview',
+    'pnpm run clippy:document-preview:protocol',
+    'pnpm run test:desktop',
+    'pnpm run clippy:desktop',
   ]) {
     const step = getStepContaining(desktopWorkflow, command);
     assert.match(step, /^\s{8}if: inputs\.run_tests$/m);

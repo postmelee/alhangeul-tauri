@@ -236,6 +236,26 @@ jobs:
         if: inputs.run_tests
         run: pnpm run test:studio
 
+      - name: Test document preview Rust
+        if: inputs.run_tests
+        run: pnpm run test:document-preview
+
+      - name: Lint document preview Rust
+        if: inputs.run_tests
+        run: pnpm run clippy:document-preview
+
+      - name: Lint document preview protocol-only Rust
+        if: inputs.run_tests
+        run: pnpm run clippy:document-preview:protocol
+
+      - name: Test desktop Rust
+        if: inputs.run_tests
+        run: pnpm run test:desktop
+
+      - name: Lint desktop Rust
+        if: inputs.run_tests
+        run: pnpm run clippy:desktop
+
       - name: Build Tauri bundles
         shell: bash
         run: pnpm tauri build --verbose --target "${{ matrix.target }}" ${{ matrix.bundle_args }}
