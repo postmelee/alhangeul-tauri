@@ -16,7 +16,7 @@ version 증거를 지원되는 Debian package database 계약으로 교체한다
 
 | 파일 | 변경 요약 |
 |---|---|
-| `.github/workflows/alhangeul-linux-gui.yml` | 미지원 `cupsd -v`를 제거하고 기존 `dpkg-query -W`에 `cups` package version 증거 추가 |
+| `.github/workflows/alhangeul-linux-gui.yml` | CUPS package 증거를 지원 API로 수집하고 production print와 WebDriver를 독립 Xvfb·DBus·Openbox session에서 실행 |
 | `tests/linux-gui-workflow.test.mjs` | CUPS package 증거와 `cupsd -v` 부재를 workflow source contract로 고정 |
 | `tests/gui/support/document-ux.ts` | 실패한 temporary style upload adapter 제거, upstream input/native title 계약 분리와 status·쪽 수 DOM 판독 공통화 |
 | `tests/gui/specs/document-ux.e2e.ts` | 숨은 file input에 clear 없이 `addValue`로 경로를 전송하고 headless 환경의 로컬 글꼴 선택 모달을 fail-closed 처리 |
@@ -287,9 +287,21 @@ git diff --check
   `nativePrint=0`, `webdriver=0`으로 전체 성공했다. 같은 입력의 상반된 결과이므로 재실행 성공만
   최종 gate로 채택하지 않고, production native print와 WebDriver가 공유하던 Xvfb·DBus·portal
   session을 phase별로 격리한다. 기존 phase outcome·evidence·최종 fail-closed 판정은 유지한다.
+- OK — GUI phase session 격리 SHA `ca0902e1c24eab1ea4a80783a89684e842dc7e3b`의 run
+  `32707120322`은 exact product SHA `ceb8b3ba7283152ae37d6c5de5e9317b54ee5499`와 native run
+  `32347468978` handoff를 검증한 뒤 `nativePrint=0`, `webdriver=0`으로 전체 성공했다. 분리된
+  Openbox log 2건, 성공 scenario 6건과 phase outcome을 확인했다.
+- OK — GTK Print to File, CUPS-PDF, direct PDF가 모두 6쪽 A4와 제목·한글 text·nonblank render를
+  보존했다. 모든 scenario manifest의 file size·SHA-256을 로컬 재검산했고 GTK 첫 쪽, CUPS 마지막
+  쪽, direct PDF 본문, system print editor restore, drag-in 최종 화면을 시각 확인했다.
+- OK — 최종 격리 보정 뒤 workflow focused `21/21`, 전체 automation `224/224`, GUI TypeScript,
+  product boundary `231 files`, actionlint와 diff check를 통과했다.
 
 ## 잔여 위험
 
+- branch GUI 필수 gate는 완료됐다. PR merge 뒤 acceptance workflow와 제품 artifact가 같은 새 merge
+  exact SHA인 native build·Linux GUI close gate를 한 번 수행해야 하며, 그 전에는 Issue #34를
+  닫지 않는다.
 - 첫 hosted branch run `32345377664`은 CUPS environment evidence까지 성공했지만 숨은
   `#file-input`의 WebDriver upload에서 실패했다.
 - 첫 upload 보정 SHA `ceb8b3ba7283152ae37d6c5de5e9317b54ee5499`의 native run
@@ -381,13 +393,10 @@ git diff --check
 
 ## 다음 단계 영향
 
-- GTK Print to File chooser 보정을 commit·push한 뒤 성공한 제품 native run `32347468978`을
-  재사용해 immutable acceptance workflow SHA의 branch GUI를 실행한다.
-- 실패하면 같은 branch에서 evidence를 읽고 보정하며, 완전히 성공해야 correction PR을
-  생성한다.
+- Stage 5.9 branch GUI gate가 완료됐으므로 correction PR을 생성해 `devel` 대상으로 검토한다.
 - PR merge 뒤 새 merge exact SHA의 native build·Linux GUI·evidence read-back을 한 번
   수행한 후 Issue #34를 닫는다.
 
 ## 승인 상태
 
-- 작업지시자의 재개 지시에 따라 pre-PR branch GUI correction loop를 진행 중이다.
+- Stage 5.9 산출물과 branch exact-SHA GUI 검증을 완료했다. correction PR 진입 승인을 요청한다.

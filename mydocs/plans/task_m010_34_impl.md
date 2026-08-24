@@ -860,6 +860,13 @@ exit 1을 반환했으며 제품 GUI 단계는 실행되지 않았다.
   Xvfb·DBus session에서 production print의 portal/GTK 상태를 WebDriver phase가 이어받는
   비결정성으로 판정한다. 두 phase를 각각 독립 Xvfb·DBus·Openbox session에서 실행하되 phase
   exit code 수집, exact artifact handoff, evidence upload와 최종 fail-closed gate는 유지한다.
+- GUI phase session 격리 SHA `ca0902e1c24eab1ea4a80783a89684e842dc7e3b`의 run
+  `32707120322`은 `nativePrint=0`, `webdriver=0`으로 전체 성공했다. 두 Openbox log가
+  `openbox-native-print.log`, `openbox-webdriver.log`로 분리됐고, HWP/HWPX open·Save As·현재
+  저장·재열기, bounded drag-in, 직접 PDF, GTK Print to File·취소·CUPS-PDF와 editor restore가
+  모두 통과했다. 모든 scenario manifest의 size·SHA-256을 재검산했고 GTK·CUPS·직접 PDF는 각각
+  6쪽 A4, 제목·한글 text와 nonblank render를 보존했다. branch GUI close gate를 완료하고
+  correction PR 승인 단계로 전환한다.
 
 ### 검증
 
