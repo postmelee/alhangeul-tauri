@@ -829,6 +829,14 @@ exit 1을 반환했으며 제품 GUI 단계는 실행되지 않았다.
   visible X11 window cardinality 1을 확인하고 같은 window ID에서 `Ctrl+L`·전체 선택·절대경로
   입력·GTK `_Select` mnemonic을 실행한 뒤 window absent를 확인한다. 일반 Open/Save chooser의
   검증된 semantic 경로와 Print dialog 내부 selector는 유지한다.
+- exact-window SHA `ae07d71`의 run `32701929047`은 WebDriver phase 전체 성공(`webdriver=0`)과
+  exact handoff·evidence upload를 유지했지만 chooser의 `Name` 필드가 초기 `output.pdf`인 채
+  남아 있었다. `xdotool key/type --window`가 GTK portal에 보낸 synthetic event가 입력으로
+  처리되지 않은 것이므로, target window를 활성화하고 `getactivewindow`가 같은 ID인지 확인한
+  뒤 현재 포커스에 일반 key event를 보낸다. native print process의 cwd를 GTK 출력 파일의
+  parent directory로 고정하고 chooser에는 slash 없는 basename만 입력한다. portal이 설정한
+  default `GTK_RESPONSE_OK`를 exact active window의 `Return`으로 실행한 뒤 window absent와
+  기대 절대경로의 실제 PDF 생성을 모두 확인한다.
 
 ### 검증
 

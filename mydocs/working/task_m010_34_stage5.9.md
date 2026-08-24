@@ -257,6 +257,14 @@ git diff --check
   AT-SPI tree 탐색이 JSON 없이 process timeout됐다. Print-to-File portal chooser만 exact visible
   X11 window 1개에서 경로 입력과 `_Select` response를 완료하고 window absent를 확인하도록
   경계를 단일화한다. 일반 Open/Save semantic chooser 경로는 변경하지 않는다.
+- PARTIAL — exact-window 보정 SHA `ae07d71`의 run `32701929047`은 WebDriver phase 전체 성공
+  (`webdriver=0`)과 exact handoff·environment·evidence upload를 유지했다. native print만
+  실패했고 screenshot에서 chooser의 `Name` 필드는 초기 `output.pdf`가 선택된 채 남아 있었다.
+  즉 chooser 탐지와 창 활성화는 성공했지만 `xdotool key/type --window` synthetic event가 GTK
+  portal 입력으로 처리되지 않았다. native print process cwd를 target parent directory로 고정하고,
+  exact window 활성화 뒤 `getactivewindow` 동일성 확인, 현재 포커스에 basename 입력, portal의
+  default response `Return`, exact window absent 순으로 단일화한다. 최종 판정은 target 절대경로
+  파일 생성과 PDF 분석을 계속 요구한다.
 
 ## 잔여 위험
 

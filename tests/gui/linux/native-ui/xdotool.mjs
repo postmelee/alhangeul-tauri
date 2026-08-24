@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process';
+import { posix } from 'node:path';
 
 const PRINT_TITLES = ['Print', '인쇄'];
 export const PRINT_FILE_CHOOSER_TITLES = Object.freeze(['Select a filename', '파일 이름 선택']);
@@ -40,15 +41,24 @@ export function createPrintFileChooserRunner(options = {}) {
     const windowId = await waitForExactWindow(config, request.titles, true, request.timeoutMs, delay);
     if (request.operation === 'wait') return { windowId };
     run(config, ['windowactivate', '--sync', windowId], 'chooser activation');
-    run(config, ['key', '--window', windowId, '--clearmodifiers', 'ctrl+l'], 'chooser location');
-    run(config, ['key', '--window', windowId, '--clearmodifiers', 'ctrl+a'], 'chooser select all');
+    assertActiveWindow(config, windowId);
     run(config, [
-      'type', '--window', windowId, '--clearmodifiers', '--delay', '0', request.path,
-    ], 'chooser path');
-    run(config, ['key', '--window', windowId, '--clearmodifiers', 'alt+s'], 'chooser Select');
+      'windowactivate', '--sync', windowId,
+      'key', '--clearmodifiers', 'ctrl+a',
+      'type', '--clearmodifiers', '--delay', '0', posix.basename(request.path),
+      'key', '--clearmodifiers', 'Return',
+    ], 'chooser basename submit');
     await waitForExactWindow(config, request.titles, false, request.timeoutMs, delay);
     return { windowId };
   };
+}
+
+function assertActiveWindow(config, expectedId) {
+  const result = config.execute(config.xdotoolPath, ['getactivewindow'], config.execOptions);
+  if (result.status !== 0) throw new Error(`xdotool active window failed: ${compactError(result)}`);
+  if (String(result.stdout).trim() !== expectedId) {
+    throw new Error('exact file chooser window가 active window가 아닙니다');
+  }
 }
 
 async function waitForExactWindow(config, titles, present, timeoutMs, delay) {

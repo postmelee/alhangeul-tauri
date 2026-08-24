@@ -60,7 +60,10 @@ export async function runNativePrintAcceptance(env = process.env) {
   await mkdir(generatedDir, { recursive: true });
   await Promise.all([removeStale(gtkPdf), removeStale(cups.outputPath)]);
 
-  const app = spawnLoggedProcess(inputs.appPath, [fixture.absolutePath], { env });
+  const app = spawnLoggedProcess(inputs.appPath, [fixture.absolutePath], {
+    cwd: generatedDir,
+    env,
+  });
   const screenshot = (path) => captureScreenshot(scrot, path, env);
   const adapter = new LinuxNativeUiAdapter({
     outputDir: inputs.outputDir,

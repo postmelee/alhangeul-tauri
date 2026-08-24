@@ -47,6 +47,7 @@ test('production native print는 준비·Print to File·cancel·CUPS를 같은 �
 test('native print executable는 direct production process와 finally cleanup을 고정한다', async () => {
   const source = await readFile(new URL('./native-print.mjs', import.meta.url), 'utf8');
   assert.match(source, /spawnLoggedProcess\(inputs\.appPath, \[fixture\.absolutePath\]/);
+  assert.match(source, /cwd: generatedDir/);
   assert.match(source, /mode: 'production-native-print'/);
   assert.match(source, /webdriverControlled: false/);
   assert.match(source, /finally \{\n    await stopProcess\(app\.child\);\n  \}/);

@@ -259,6 +259,7 @@ test('system print는 WebDriver spec 밖의 production native phase에서만 실
   assert.doesNotMatch(webdriver, /linux-system-print|printToFile|cancelPrint|printWithVirtualPrinter/);
   assert.match(nativePrint, /scenario: 'linux-system-print'/);
   assert.match(nativePrint, /spawnLoggedProcess\(inputs\.appPath, \[fixture\.absolutePath\]/);
+  assert.match(nativePrint, /cwd: generatedDir/);
   assert.match(nativePrint, /webdriverControlled: false/);
   assert.match(nativePrint, /focusedDocument = \{ \.\.\.document, focused: true \}/);
   assert.doesNotMatch(nativePrint, /adapter\.focus/);
