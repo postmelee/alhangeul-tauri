@@ -1,8 +1,19 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { DesktopStudioHandlers } from '../embed/desktop-runtime';
 import type { DesktopHostDependencies } from './desktop-host-dependencies';
-import { DesktopPersistence } from './desktop-persistence';
+import {
+  DesktopPersistence,
+  PDF_EXPORT_PIPELINE_TIMEOUT_MS,
+} from './desktop-persistence';
+import { createPdfExportSnapshot } from './pdf-export-snapshot';
 import type { ActiveDesktopSession } from './desktop-session';
+
+vi.mock('./pdf-export-snapshot', () => ({
+  createPdfExportSnapshot: vi.fn(),
+}));
+
+const SNAPSHOT_ID = '123e4567-e89b-42d3-a456-426614174000';
+const createSnapshot = vi.mocked(createPdfExportSnapshot);
 
 describe('desktop persistence', () => {
   it('preserves HWPX on save and supports explicit cross-format save-as', async () => {
@@ -88,11 +99,16 @@ describe('desktop persistence', () => {
     expect(fixture.dependencies.removeFile).toHaveBeenCalledWith('/tmp/staged.hwpx');
   });
 
-  it('streams current SVG pages in order without source export or save notification', async () => {
+  it('streams one HWPX snapshot while live page handlers keep changing', async () => {
     const fixture = createFixture();
     fixture.dependencies.choosePdfSavePath = vi.fn().mockResolvedValue('/exports/current.pdf');
-    fixture.handlers.pageCount.mockResolvedValue(3);
-    fixture.handlers.getPageSvg.mockImplementation(async (page) => `<svg data-page="${page}"/>`);
+    fixture.snapshot.pageCount = 3;
+    fixture.snapshot.renderPageSvg.mockImplementation((page) => `<svg data-snapshot="${page}"/>`);
+    createSnapshot.mockImplementationOnce(async () => {
+      fixture.handlers.pageCount.mockResolvedValue(99);
+      fixture.handlers.getPageSvg.mockImplementation(async (page) => `<svg data-live="${page}"/>`);
+      return fixture.snapshot;
+    });
     fixture.invoke.mockImplementation(async (command) => {
       if (command === 'begin_pdf_export') return 'pdf-job';
       if (command === 'append_pdf_page') return undefined;
@@ -103,42 +119,58 @@ describe('desktop persistence', () => {
     });
     const persistence = new DesktopPersistence(fixture.dependencies);
 
-    await expect(persistence.exportPdf('source.hwpx', '/documents/source.hwpx')).resolves.toEqual({
-      path: '/exports/current.pdf', pageCount: 3, textMode: 'searchable',
-    });
+    await expect(
+      persistence.exportPdf('source.hwpx', '/documents/source.hwpx', 'hwpx'),
+    ).resolves.toEqual({ path: '/exports/current.pdf', pageCount: 3, textMode: 'searchable' });
 
     expect(fixture.dependencies.resolveSaveDefaultPath)
       .toHaveBeenCalledWith('source.pdf', '/documents/source.hwpx');
     expect(fixture.dependencies.choosePdfSavePath)
       .toHaveBeenCalledWith('/documents/source.pdf');
-    expect(fixture.handlers.getPageSvg.mock.calls.map(([page]) => page)).toEqual([0, 1, 2]);
+    expect(createSnapshot).toHaveBeenCalledOnce();
+    expect(createSnapshot).toHaveBeenCalledWith({ source: fixture.handlers, format: 'hwpx' });
+    expect(fixture.handlers.pageCount).not.toHaveBeenCalled();
+    expect(fixture.handlers.getPageSvg).not.toHaveBeenCalled();
+    expect(fixture.snapshot.renderPageSvg.mock.calls.map(([page]) => page)).toEqual([0, 1, 2]);
+    expect(fixture.invoke).toHaveBeenCalledWith('begin_pdf_export', {
+      request: {
+        snapshotId: SNAPSHOT_ID,
+        targetPath: '/exports/current.pdf',
+        pageCount: 3,
+      },
+    });
     expect(fixture.invoke.mock.calls.filter(([command]) => command === 'append_pdf_page'))
       .toEqual([
-        ['append_pdf_page', { jobId: 'pdf-job', pageIndex: 0, svg: '<svg data-page="0"/>' }],
-        ['append_pdf_page', { jobId: 'pdf-job', pageIndex: 1, svg: '<svg data-page="1"/>' }],
-        ['append_pdf_page', { jobId: 'pdf-job', pageIndex: 2, svg: '<svg data-page="2"/>' }],
+        ['append_pdf_page', {
+          request: {
+            jobId: 'pdf-job', snapshotId: SNAPSHOT_ID,
+            pageIndex: 0, svg: '<svg data-snapshot="0"/>',
+          },
+        }],
+        ['append_pdf_page', {
+          request: {
+            jobId: 'pdf-job', snapshotId: SNAPSHOT_ID,
+            pageIndex: 1, svg: '<svg data-snapshot="1"/>',
+          },
+        }],
+        ['append_pdf_page', {
+          request: {
+            jobId: 'pdf-job', snapshotId: SNAPSHOT_ID,
+            pageIndex: 2, svg: '<svg data-snapshot="2"/>',
+          },
+        }],
       ]);
-    expect(fixture.handlers.exportHwp).not.toHaveBeenCalled();
-    expect(fixture.handlers.exportHwpx).not.toHaveBeenCalled();
+    expect(fixture.invoke).toHaveBeenCalledWith('commit_pdf_export', {
+      request: { jobId: 'pdf-job', snapshotId: SNAPSHOT_ID },
+    });
+    expect(fixture.snapshot.dispose).toHaveBeenCalledOnce();
     expect(fixture.handlers.notifySaved).not.toHaveBeenCalled();
   });
 
-  it('aborts partial jobs and warns when searchable conversion falls back to outlines', async () => {
+  it('selects an HWP snapshot and preserves the outlined fallback warning', async () => {
     const fixture = createFixture();
     fixture.dependencies.choosePdfSavePath = vi.fn().mockResolvedValue('/exports/current.pdf');
-    fixture.handlers.pageCount.mockResolvedValue(2);
-    fixture.handlers.getPageSvg.mockRejectedValueOnce(new Error('page render failed'));
-    fixture.invoke.mockImplementation(async (command) => {
-      if (command === 'begin_pdf_export') return 'failed-job';
-      if (command === 'abort_pdf_export') return undefined;
-      throw new Error(`unexpected command: ${command}`);
-    });
-    const persistence = new DesktopPersistence(fixture.dependencies);
-
-    await expect(persistence.exportPdf('source.hwp')).rejects.toThrow('page render failed');
-    expect(fixture.invoke).toHaveBeenCalledWith('abort_pdf_export', { jobId: 'failed-job' });
-
-    fixture.handlers.getPageSvg.mockReset().mockResolvedValue('<svg/>');
+    fixture.snapshot.pageCount = 1;
     fixture.invoke.mockImplementation(async (command) => {
       if (command === 'begin_pdf_export') return 'fallback-job';
       if (command === 'append_pdf_page') return undefined;
@@ -152,12 +184,15 @@ describe('desktop persistence', () => {
       }
       throw new Error(`unexpected command: ${command}`);
     });
+    const persistence = new DesktopPersistence(fixture.dependencies);
 
-    await persistence.exportPdf('source.hwp');
+    await persistence.exportPdf('source.hwp', null, 'hwp');
+    expect(createSnapshot).toHaveBeenCalledWith({ source: fixture.handlers, format: 'hwp' });
     expect(fixture.dependencies.showMessage).toHaveBeenCalledWith(
       '검색 가능한 텍스트 변환 실패',
       { title: 'PDF 저장 경고', kind: 'warning' },
     );
+    expect(fixture.snapshot.dispose).toHaveBeenCalledOnce();
     expect(fixture.handlers.notifySaved).not.toHaveBeenCalled();
   });
 
@@ -165,14 +200,117 @@ describe('desktop persistence', () => {
     const fixture = createFixture();
     const persistence = new DesktopPersistence(fixture.dependencies);
 
-    await expect(persistence.exportPdf('source.hwp')).resolves.toBeNull();
+    await expect(persistence.exportPdf('source.hwp', null, 'hwp')).resolves.toBeNull();
 
+    expect(fixture.dependencies.handlers).not.toHaveBeenCalled();
+    expect(createSnapshot).not.toHaveBeenCalled();
     expect(fixture.invoke).not.toHaveBeenCalled();
     expect(fixture.handlers.notifySaved).not.toHaveBeenCalled();
+  });
+
+  it('does not start a native job when snapshot capture fails', async () => {
+    const fixture = createFixture();
+    fixture.dependencies.choosePdfSavePath = vi.fn().mockResolvedValue('/exports/current.pdf');
+    createSnapshot.mockRejectedValueOnce(new Error('snapshot failed'));
+    const persistence = new DesktopPersistence(fixture.dependencies);
+
+    await expect(persistence.exportPdf('source.hwp', null, 'hwp'))
+      .rejects.toThrow('snapshot failed');
+
+    expect(fixture.invoke).not.toHaveBeenCalled();
+    expect(fixture.handlers.pageCount).not.toHaveBeenCalled();
+    expect(fixture.handlers.getPageSvg).not.toHaveBeenCalled();
+    expect(fixture.handlers.notifySaved).not.toHaveBeenCalled();
+  });
+
+  it.each(['render', 'append', 'commit'] as const)(
+    'aborts and disposes once when the %s step fails',
+    async (failedStep) => {
+      const fixture = createFixture();
+      fixture.dependencies.choosePdfSavePath = vi.fn().mockResolvedValue('/exports/current.pdf');
+      fixture.snapshot.pageCount = 1;
+      if (failedStep === 'render') {
+        fixture.snapshot.renderPageSvg.mockImplementation(() => {
+          throw new Error('render failed');
+        });
+      }
+      fixture.invoke.mockImplementation(async (command) => {
+        if (command === 'begin_pdf_export') return 'failed-job';
+        if (command === 'append_pdf_page') {
+          if (failedStep === 'append') throw new Error('append failed');
+          return undefined;
+        }
+        if (command === 'commit_pdf_export') throw new Error('commit failed');
+        if (command === 'abort_pdf_export') return undefined;
+        throw new Error(`unexpected command: ${command}`);
+      });
+      const persistence = new DesktopPersistence(fixture.dependencies);
+
+      await expect(persistence.exportPdf('source.hwp', null, 'hwp'))
+        .rejects.toThrow(`${failedStep} failed`);
+
+      expect(fixture.invoke).toHaveBeenCalledWith('abort_pdf_export', {
+        request: { jobId: 'failed-job', snapshotId: SNAPSHOT_ID },
+      });
+      expect(fixture.invoke.mock.calls.filter(([command]) => command === 'abort_pdf_export'))
+        .toHaveLength(1);
+      expect(fixture.snapshot.dispose).toHaveBeenCalledOnce();
+      expect(fixture.handlers.notifySaved).not.toHaveBeenCalled();
+    },
+  );
+
+  it('times out a stalled append, then starts a fresh snapshot job', async () => {
+    vi.useFakeTimers();
+    try {
+      const fixture = createFixture();
+      fixture.dependencies.choosePdfSavePath = vi.fn().mockResolvedValue('/exports/current.pdf');
+      const firstSnapshot = pdfSnapshot(1);
+      const secondSnapshot = pdfSnapshot(1);
+      createSnapshot
+        .mockReset()
+        .mockResolvedValueOnce(firstSnapshot)
+        .mockResolvedValueOnce(secondSnapshot);
+      let beginCount = 0;
+      fixture.invoke.mockImplementation(async (command) => {
+        if (command === 'begin_pdf_export') return `job-${++beginCount}`;
+        if (command === 'append_pdf_page' && beginCount === 1) {
+          return new Promise(() => undefined);
+        }
+        if (command === 'append_pdf_page' || command === 'abort_pdf_export') return undefined;
+        if (command === 'commit_pdf_export') {
+          return { path: '/exports/current.pdf', pageCount: 1, textMode: 'searchable' };
+        }
+        throw new Error(`unexpected command: ${command}`);
+      });
+      const persistence = new DesktopPersistence(fixture.dependencies);
+
+      const first = persistence.exportPdf('source.hwp', null, 'hwp');
+      const firstExpectation = expect(first).rejects.toThrow('10분 제한');
+      await vi.advanceTimersByTimeAsync(0);
+      expect(fixture.invoke.mock.calls.filter(([command]) => command === 'append_pdf_page'))
+        .toHaveLength(1);
+      await vi.advanceTimersByTimeAsync(PDF_EXPORT_PIPELINE_TIMEOUT_MS);
+      await firstExpectation;
+
+      expect(fixture.invoke).toHaveBeenCalledWith('abort_pdf_export', {
+        request: { jobId: 'job-1', snapshotId: SNAPSHOT_ID },
+      });
+      expect(firstSnapshot.dispose).toHaveBeenCalledOnce();
+
+      await expect(persistence.exportPdf('source.hwp', null, 'hwp')).resolves.toMatchObject({
+        path: '/exports/current.pdf', pageCount: 1, textMode: 'searchable',
+      });
+      expect(beginCount).toBe(2);
+      expect(secondSnapshot.dispose).toHaveBeenCalledOnce();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 
 function createFixture() {
+  const snapshot = pdfSnapshot(2);
+  createSnapshot.mockReset().mockResolvedValue(snapshot);
   const invoke = vi.fn();
   const handlers: DesktopStudioHandlers = {
     loadFile: vi.fn(),
@@ -194,7 +332,7 @@ function createFixture() {
     removeFile: vi.fn().mockResolvedValue(undefined),
     handlers: vi.fn().mockResolvedValue(handlers),
   };
-  return { dependencies, handlers: handlers as MockedHandlers, invoke };
+  return { dependencies, handlers: handlers as MockedHandlers, invoke, snapshot };
 }
 
 type MockedHandlers = {
@@ -223,5 +361,14 @@ function nativeSave(overrides: Record<string, unknown> = {}) {
     dirty: false,
     warnings: [],
     ...overrides,
+  };
+}
+
+function pdfSnapshot(pageCount: number) {
+  return {
+    id: SNAPSHOT_ID,
+    pageCount,
+    renderPageSvg: vi.fn((page: number) => `<svg data-snapshot="${page}"/>`),
+    dispose: vi.fn(),
   };
 }

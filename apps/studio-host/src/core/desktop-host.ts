@@ -127,6 +127,7 @@ export class DesktopHost {
     const pending = this.persistence.exportPdf(
       active?.fileName ?? 'document.hwp',
       active?.sourcePath ?? null,
+      active?.format ?? 'hwp',
     ).finally(() => {
       if (this.pdfExportRequest === pending) this.pdfExportRequest = null;
     });

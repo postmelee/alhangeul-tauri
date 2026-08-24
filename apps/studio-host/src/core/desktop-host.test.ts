@@ -1,10 +1,15 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DesktopHost, type DesktopHostDependencies } from './desktop-host';
 import type { DesktopStudioHandlers } from '../embed/desktop-runtime';
+import { DesktopPersistence, type PdfExportResult } from './desktop-persistence';
 
 describe('desktop host', () => {
   beforeEach(() => {
     (globalThis as { document?: unknown }).document = { title: '' };
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it('loads native bytes through the upstream handler before committing the session', async () => {
@@ -135,35 +140,50 @@ describe('desktop host', () => {
 
   it('coalesces concurrent PDF export requests in one WebView', async () => {
     const fixture = createFixture();
-    fixture.dependencies.choosePdfSavePath = vi.fn().mockResolvedValue('/documents/document.pdf');
-    let finishCommit!: () => void;
     fixture.invoke.mockImplementation(async (command) => {
-      if (command === 'begin_pdf_export') return 'job';
-      if (command === 'append_pdf_page') return undefined;
-      if (command === 'commit_pdf_export') {
-        return new Promise((resolve) => {
-          finishCommit = () => resolve({
-            path: '/documents/document.pdf',
-            pageCount: 2,
-            textMode: 'searchable',
-          });
+      if (command === 'prepare_document_open') return undefined;
+      if (command === 'open_document_tracking') {
+        return nativeOpen({
+          docId: 'pdf-doc',
+          fileName: 'source.hwpx',
+          sourcePath: '/documents/source.hwpx',
+          format: 'hwpx',
+          dirty: true,
         });
       }
+      if (command === 'record_recent_document') return undefined;
       throw new Error(`unexpected command: ${command}`);
     });
     const host = new DesktopHost(fixture.dependencies);
+    await host.openDocumentByPath('/documents/source.hwpx');
+    const active = host.activeSession;
+    if (!active) throw new Error('active session fixture missing');
+    const activeBefore = { ...active, warnings: [...active.warnings] };
+    let finishExport!: (result: PdfExportResult) => void;
+    const exportResult = new Promise<PdfExportResult>((resolve) => {
+      finishExport = resolve;
+    });
+    const exportPdf = vi.spyOn(DesktopPersistence.prototype, 'exportPdf')
+      .mockReturnValue(exportResult);
 
     const first = host.exportCurrentPdf();
     const second = host.exportCurrentPdf();
-    await vi.waitFor(() => expect(fixture.invoke).toHaveBeenCalledWith(
-      'commit_pdf_export',
-      { jobId: 'job' },
-    ));
-    finishCommit();
+    expect(exportPdf).toHaveBeenCalledOnce();
+    expect(exportPdf).toHaveBeenCalledWith(
+      'source.hwpx',
+      '/documents/source.hwpx',
+      'hwpx',
+    );
+    finishExport({
+      path: '/documents/source.pdf',
+      pageCount: 2,
+      textMode: 'searchable',
+    });
     await Promise.all([first, second]);
 
     expect(first).toBe(second);
-    expect(fixture.invoke.mock.calls.filter(([command]) => command === 'begin_pdf_export')).toHaveLength(1);
+    expect(host.activeSession).toEqual(activeBefore);
+    expect(fixture.handlers.notifySaved).not.toHaveBeenCalled();
   });
 });
 

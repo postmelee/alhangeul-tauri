@@ -149,7 +149,7 @@ test('Alhangeul keeps upstream PDF and HWPX menu metadata with native execute le
   assert.match(indexHtml, /data-cmd="file:save-as-hwpx"/);
 });
 
-test('Alhangeul source save and PDF export keep format and current SVG boundaries explicit', async () => {
+test('Alhangeul source save and PDF export keep format and snapshot boundaries explicit', async () => {
   const persistence = await readFile(
     join(repoRoot, 'apps/studio-host/src/core/desktop-persistence.ts'),
     'utf8',
@@ -159,7 +159,10 @@ test('Alhangeul source save and PDF export keep format and current SVG boundarie
   const pdfExport = await readFile(join(repoRoot, 'apps/desktop/src-tauri/src/pdf_export.rs'), 'utf8');
 
   assert.match(persistence, /requestedFormat === 'hwpx'[\s\S]*handlers\.exportHwpx\(\)/);
-  assert.match(persistence, /handlers\.getPageSvg\(pageIndex\)/);
+  assert.match(persistence, /createPdfExportSnapshot\(\{ source: handlers, format \}\)/);
+  assert.match(persistence, /snapshot\.renderPageSvg\(pageIndex\)/);
+  assert.match(persistence, /snapshotId: snapshot\.id/);
+  assert.doesNotMatch(persistence, /handlers\.getPageSvg\(pageIndex\)/);
   assert.match(persistence, /append_pdf_page/);
   assert.doesNotMatch(persistence, /notifySaved/);
   assert.match(commands, /prepare_staged_document_save/);

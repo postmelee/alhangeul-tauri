@@ -1,5 +1,9 @@
 import type { DesktopStudioHandlers } from '../embed/desktop-runtime';
 import type { DesktopHostDependencies } from './desktop-host-dependencies';
+import {
+  createPdfExportSnapshot,
+  type PdfExportSnapshot,
+} from './pdf-export-snapshot';
 import type {
   ActiveDesktopSession,
   DesktopDocumentFormat,
@@ -7,6 +11,8 @@ import type {
 } from './desktop-session';
 
 interface NativeSaveResult extends Omit<NativeDocumentState, 'fileName'> {}
+
+export const PDF_EXPORT_PIPELINE_TIMEOUT_MS = 10 * 60 * 1_000;
 
 export interface PdfExportResult {
   path: string;
@@ -75,42 +81,83 @@ export class DesktopPersistence {
 
   async exportPdf(
     fileName: string,
-    sourcePath: string | null = null,
+    sourcePath: string | null,
+    format: DesktopDocumentFormat,
   ): Promise<PdfExportResult | null> {
-    const handlers = await this.dependencies.handlers();
-    const pageCount = await handlers.pageCount();
-    if (!Number.isSafeInteger(pageCount) || pageCount <= 0) {
-      throw new Error('PDF로 저장할 페이지가 없습니다');
-    }
     const defaultPath = await this.dependencies.resolveSaveDefaultPath(
       suggestedPdfName(fileName),
       sourcePath,
     );
     const selected = await this.dependencies.choosePdfSavePath(defaultPath);
     if (!selected) return null;
-    const targetPath = withExtension(selected, 'pdf');
-    let jobId: string | null = await this.invoke<string>('begin_pdf_export', {
-      targetPath,
-      pageCount,
-    });
+    const result = await this.exportPdfToTarget(format, withExtension(selected, 'pdf'));
+    if (result.textMode === 'outlined-fallback') {
+      await this.dependencies.showMessage(
+        result.warning ?? '검색 가능한 텍스트 변환에 실패해 글자 윤곽선으로 저장했습니다.',
+        { title: 'PDF 저장 경고', kind: 'warning' },
+      );
+    }
+    return result;
+  }
+
+  private async exportPdfToTarget(
+    format: DesktopDocumentFormat,
+    targetPath: string,
+  ): Promise<PdfExportResult> {
+    const deadline = pdfNow() + PDF_EXPORT_PIPELINE_TIMEOUT_MS;
+    const handlers = await runPdfStep(() => this.dependencies.handlers(), deadline);
+    const snapshot = await runPdfStep(
+      () => createPdfExportSnapshot({ source: handlers, format }),
+      deadline,
+    );
+    let jobId: string | null = null;
     try {
-      for (let pageIndex = 0; pageIndex < pageCount; pageIndex += 1) {
-        const svg = await handlers.getPageSvg(pageIndex);
-        await this.invoke<void>('append_pdf_page', { jobId, pageIndex, svg });
-      }
-      const result = await this.invoke<PdfExportResult>('commit_pdf_export', { jobId });
+      jobId = await runPdfStep(() => this.invoke<string>('begin_pdf_export', {
+        request: {
+          snapshotId: snapshot.id,
+          targetPath,
+          pageCount: snapshot.pageCount,
+        },
+      }), deadline);
+      await this.appendPdfSnapshot(jobId, snapshot, deadline);
+      const result = await runPdfStep(() => this.invoke<PdfExportResult>('commit_pdf_export', {
+        request: { jobId, snapshotId: snapshot.id },
+      }), deadline);
       jobId = null;
-      if (result.textMode === 'outlined-fallback') {
-        await this.dependencies.showMessage(
-          result.warning ?? '검색 가능한 텍스트 변환에 실패해 글자 윤곽선으로 저장했습니다.',
-          { title: 'PDF 저장 경고', kind: 'warning' },
-        );
-      }
       return result;
     } finally {
-      if (jobId) {
-        await this.invoke<void>('abort_pdf_export', { jobId }).catch(() => undefined);
-      }
+      if (jobId) await this.abortPdfJob(jobId, snapshot.id, deadline);
+      disposePdfSnapshot(snapshot);
+    }
+  }
+
+  private async appendPdfSnapshot(
+    jobId: string,
+    snapshot: PdfExportSnapshot,
+    deadline: number,
+  ): Promise<void> {
+    for (let pageIndex = 0; pageIndex < snapshot.pageCount; pageIndex += 1) {
+      assertPdfDeadline(deadline);
+      const svg = snapshot.renderPageSvg(pageIndex);
+      assertPdfDeadline(deadline);
+      await runPdfStep(() => this.invoke<void>('append_pdf_page', {
+        request: { jobId, snapshotId: snapshot.id, pageIndex, svg },
+      }), deadline);
+    }
+  }
+
+  private async abortPdfJob(
+    jobId: string,
+    snapshotId: string,
+    deadline: number,
+  ): Promise<void> {
+    try {
+      const abort = this.invoke<void>('abort_pdf_export', {
+        request: { jobId, snapshotId },
+      }).catch(() => undefined);
+      await runPdfStep(() => abort, deadline).catch(() => undefined);
+    } catch {
+      // Native reaper가 응답이 끊긴 job의 최종 회수 경계다.
     }
   }
 
@@ -164,4 +211,40 @@ function withExtension(path: string, extension: DesktopDocumentFormat | 'pdf'): 
 
 function fileNameFromPath(path: string): string {
   return path.split(/[\\/]/).pop() || 'document.hwp';
+}
+
+async function runPdfStep<T>(operation: () => Promise<T>, deadline: number): Promise<T> {
+  const remaining = deadline - pdfNow();
+  if (remaining <= 0) throw pdfPipelineTimeoutError();
+  let timer: ReturnType<typeof globalThis.setTimeout> | undefined;
+  const timeout = new Promise<never>((_resolve, reject) => {
+    timer = globalThis.setTimeout(() => reject(pdfPipelineTimeoutError()), remaining);
+  });
+  try {
+    const result = await Promise.race([operation(), timeout]);
+    assertPdfDeadline(deadline);
+    return result;
+  } finally {
+    if (timer !== undefined) globalThis.clearTimeout(timer);
+  }
+}
+
+function assertPdfDeadline(deadline: number): void {
+  if (pdfNow() > deadline) throw pdfPipelineTimeoutError();
+}
+
+function pdfPipelineTimeoutError(): Error {
+  return new Error('PDF 저장 시간이 10분 제한을 초과했습니다');
+}
+
+function pdfNow(): number {
+  return globalThis.performance.now();
+}
+
+function disposePdfSnapshot(snapshot: PdfExportSnapshot): void {
+  try {
+    snapshot.dispose();
+  } catch (error) {
+    console.warn('[desktop-persistence] PDF snapshot cleanup failed:', error);
+  }
 }

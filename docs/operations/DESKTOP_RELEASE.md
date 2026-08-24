@@ -166,6 +166,21 @@ Windows x64·Linux x64·Linux arm64 build, inventory와 Windows MSI·NSIS instal
 있지만, Task #9 prerelease 후보 재개는 Task #15 merge와 두 task를 포함한 새 exact SHA의
 Windows/Linux 수용 전까지 No-Go다.
 
+### PDF snapshot과 stale job 수용 gate
+
+현재 직접 PDF는 live page handler를 순회하지 않는다. save target 확정 뒤 현재 형식의 HWP/HWPX serializer를 한 번만 capture하고 격리 `WasmBridge`에 다시 로드한 immutable snapshot에서 모든 page SVG를 만든다. snapshot page count와 begin·append·commit·abort는 하나의 snapshot UUID에 결속하며 native session revision은 이 token을 대신하지 않는다.
+
+Windows/Linux exact 후보에서는 다음 항목을 직접 PDF gate로 함께 확인한다.
+
+1. snapshot capture 뒤 live 편집을 계속해도 PDF의 page count와 모든 page가 시작 snapshot 한 세대로 완성되고 mixed revision이 없다.
+2. 성공·dialog 취소·snapshot/render/append/commit 실패와 timeout 뒤 source path·format·revision·dirty·recent·recovery가 기존 값이며 `notifySaved`가 호출되지 않는다.
+3. capture 2분, 전체 pipeline 10분, 4,096쪽, SVG 16 MiB/page, 누적 512 MiB와 process 4-job 제한을 넘긴 요청이 기존 target PDF를 바꾸지 않는다.
+4. WebView reload의 idle job은 최대 5분 30초, absolute job은 최대 15분 30초 안에 회수되어 같은 target으로 새 begin이 가능하고, window destroy는 자기 job만 정리하며 다른 window의 유효 lock은 유지한다.
+5. app 재시작 cleanup은 OS temp 바로 아래의 24시간보다 오래된 safe product directory만 최대 64개 삭제한다. recent·prefix 불일치·symlink/reparse point·nested directory·unknown content와 사용자 문서·target PDF는 보존한다.
+6. 같은 exact SHA에서 HWP/HWPX page count, searchable 한글 text, nonblank render와 atomic target replace를 Windows와 Linux 각각 확인한다.
+
+platform-neutral test와 기존 Task #13 artifact는 snapshot generation, native reaper와 startup orphan cleanup의 OS별 수용을 대신하지 않는다. 제한·timeout·변환 실패 증적은 source state와 기존 target의 전후 hash, product temp sentinel 및 cleanup 시각을 함께 기록한다.
+
 ### 실제 인쇄와 PDF 직접 저장의 분리 gate
 
 PDF 직접 저장 성공은 실제 인쇄 성공을 대신하지 않는다. `file:print-to-pdf`는 Alhangeul의 Rust searchable PDF job이다. `file:print`는 모든 문서 페이지를 upstream `profile=print` SVG와 print-page primitive로 조립한 전용 surface만 system print로 보내며, browser는 upstream visible preview를, Tauri는 hidden same-origin surface의 직접 `window.print()`를 사용한다.
