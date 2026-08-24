@@ -21,6 +21,7 @@ import {
 } from './gui/support/evidence.ts';
 import {
   centeredDelta,
+  isLoadedDocumentState,
   parsePageIndicator,
   runNativeDocumentCommand,
 } from './gui/support/document-ux.ts';
@@ -147,6 +148,25 @@ test('쪽 수와 중앙 정렬 판정을 순수 helper로 고정한다', () => {
     { x: 20, y: 0, width: 1000, height: 700 },
     { x: 270, y: 10, width: 500, height: 680 },
   ), 0);
+});
+
+test('문서 로드 판정은 브라우저와 native 완료 상태 모두에서 render surface를 요구한다', () => {
+  const rendered = { page: { current: 1, total: 6 }, canvasReady: true };
+  assert.equal(isLoadedDocumentState(
+    { ...rendered, status: 'biz_plan.hwp — 6페이지' }, 'biz_plan.hwp', 6,
+  ), true);
+  assert.equal(isLoadedDocumentState(
+    { ...rendered, status: '파일 열기 완료' }, 'biz_plan.hwp', 6,
+  ), true);
+  assert.equal(isLoadedDocumentState(
+    { ...rendered, status: '파일 열기 중...' }, 'biz_plan.hwp', 6,
+  ), false);
+  assert.equal(isLoadedDocumentState(
+    { ...rendered, status: '파일 열기 완료', canvasReady: false }, 'biz_plan.hwp', 6,
+  ), false);
+  assert.equal(isLoadedDocumentState(
+    { ...rendered, status: '파일 열기 완료' }, 'biz_plan.hwp', 4,
+  ), false);
 });
 
 test('native dialog hook은 trigger 전후 document state를 공통 경계에서 수집한다', async () => {

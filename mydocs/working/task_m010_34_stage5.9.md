@@ -91,6 +91,14 @@ git diff --check
 - OK — GTK explicit accept와 full-target Save As 계약 뒤 focused `44/44`, automation
   `205/205`, GUI TypeScript, product boundary `225 files`, upstream `35/35`, Studio `97/97`,
   production Studio build, Python syntax, actionlint와 diff check 통과
+- OK — explicit accept run `32688123494`에서 chooser close와 실제 HWP 6쪽 렌더,
+  `파일 열기 완료` status 확인. native open failure tree가 생성되지 않아 GTK accept 경계는
+  해소됐고, browser basename status만 성공으로 인정한 공통 document-load predicate가 새
+  timeout의 원인임을 screenshot과 manifest로 확정
+- OK — document-load predicate focused 계약 `33/33`, automation `206/206`, GUI TypeScript,
+  product boundary `225 files`, upstream `35/35`, Studio `97/97`, production Studio build,
+  Python syntax, actionlint와 diff check 통과. browser basename 또는 native 완료 status에 실제
+  canvas와 기대 쪽 수를 결속하고 opening·canvas 부재·쪽 수 불일치 회귀를 고정
 
 ## 잔여 위험
 
@@ -168,11 +176,18 @@ git diff --check
   file chooser의 entry activate와 dialog accept response를 분리해, dialog가 남아 있으면
   explicit `Open`/`Save`를 수행한다. Save As도 full target path를 같은 location entry에 넣어
   directory/basename field 추측을 제거한다.
+- explicit accept SHA `ef5831bd8c6255b90fa67ba9764b54eeab3ca179`의 run
+  `32688123494`에서는 open chooser가 닫혀 `open-document` failure tree가 더 이상 생성되지
+  않았다. native save final screenshot은 `biz_plan.hwp` 1/6쪽과 `파일 열기 완료`를 보였지만
+  scenario manifest는 basename을 status에 요구하던 `waitForLoadedDocument()` timeout을
+  기록했다. native wrapper가 완료 시 basename status를 `파일 열기 완료`로 덮는 제품 계약과
+  공용 predicate가 충돌한 harness 오판이다. browser basename 또는 정확한 native 완료 status,
+  실제 render canvas와 기대 쪽 수를 함께 판정하고 완료 문구 단독 통과는 금지한다.
 
 ## 다음 단계 영향
 
-- GTK explicit accept 계약을 전체 로컬 gate로 검증·commit·push한 뒤, 성공한 제품 native run
-  `32347468978`을 재사용해 immutable acceptance workflow SHA의 branch GUI를 한 번 실행한다.
+- native document-load predicate를 전체 로컬 gate로 검증·commit·push한 뒤, 성공한 제품 native
+  run `32347468978`을 재사용해 immutable acceptance workflow SHA의 branch GUI를 한 번 실행한다.
 - 실패하면 같은 branch에서 evidence를 읽고 보정하며, 완전히 성공해야 correction PR을
   생성한다.
 - PR merge 뒤 새 merge exact SHA의 native build·Linux GUI·evidence read-back을 한 번

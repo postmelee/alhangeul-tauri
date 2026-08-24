@@ -713,6 +713,14 @@ exit 1을 반환했으며 제품 GUI 단계는 실행되지 않았다.
   fail-closed한다. Save As도 directory activation 뒤 anonymous basename field를 다시 추측하지
   않고 full target path와 `Save` accept의 같은 단일 계약을 사용한다. selector는 `Ctrl+L` 뒤
   focused editable로 한정하고 실패 tree에는 enabled/sensitive state도 추가한다.
+- explicit accept SHA `ef5831bd8c6255b90fa67ba9764b54eeab3ca179`의 branch GUI run
+  `32688123494`은 첫 native open chooser를 닫는 데 성공했다. `open-document` 실패 tree가
+  생성되지 않았고 final screenshot은 `biz_plan.hwp`의 6쪽 첫 화면과 `파일 열기 완료` status를
+  보존했다. 실패는 제품 open이나 path 전달이 아니라 공통 `waitForLoadedDocument()`가 browser
+  file-input의 basename status만 인정해 native wrapper의 완료 status를 거부한 acceptance
+  predicate 오류다. browser status 또는 정확한 native `파일 열기 완료`와 실제 render canvas,
+  기대 쪽 수를 함께 요구하는 순수 판정 helper로 통합한다. native 완료 문구만으로는 통과시키지
+  않으며 `파일 열기 중...`, canvas 부재와 쪽 수 불일치는 계속 fail-closed한다.
 
 ### 검증
 

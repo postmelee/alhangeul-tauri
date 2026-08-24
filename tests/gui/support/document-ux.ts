@@ -15,6 +15,7 @@ export const GUI_SELECTORS = {
 } as const;
 
 export const INITIAL_DESKTOP_STATUS = 'HWP 파일을 선택해주세요.';
+export const NATIVE_OPEN_COMPLETE_STATUS = '파일 열기 완료';
 
 export type NativeDocumentCommand =
   | 'file:save'
@@ -38,6 +39,12 @@ export interface DocumentStateSnapshot {
   title: string;
   page: PageIndicator;
   status: string;
+}
+
+export interface DocumentLoadState {
+  status: string;
+  page: PageIndicator;
+  canvasReady: boolean;
 }
 
 export interface NativeDialogAdapter {
@@ -65,6 +72,18 @@ export function centeredDelta(container: ViewRect, document: ViewRect): number {
   const containerCenter = container.x + container.width / 2;
   const documentCenter = document.x + document.width / 2;
   return Math.abs(containerCenter - documentCenter);
+}
+
+export function isLoadedDocumentState(
+  state: DocumentLoadState,
+  displayName: string,
+  pageCount: number | null,
+): boolean {
+  const statusReady = state.status.includes(displayName)
+    || state.status === NATIVE_OPEN_COMPLETE_STATUS;
+  return statusReady
+    && state.canvasReady
+    && (pageCount === null || state.page.total === pageCount);
 }
 
 export async function runNativeDocumentCommand(
@@ -118,7 +137,13 @@ export async function resolveLocalFontDialog(
 ): Promise<void> {
   await session.waitUntil(async () => {
     const overlay = await session.$(GUI_SELECTORS.modalOverlay);
-    return (await readStudioStatus(session)).includes(displayName) || await overlay.isExisting();
+    const state = await session.execute((statusSelector, canvasSelector) => ({
+      status: document.querySelector(statusSelector)?.textContent?.trim() ?? '',
+      canvasReady: document.querySelector(canvasSelector) !== null,
+    }), GUI_SELECTORS.statusMessage, GUI_SELECTORS.documentCanvas);
+    return state.status.includes(displayName)
+      || await overlay.isExisting()
+      || (state.status === NATIVE_OPEN_COMPLETE_STATUS && state.canvasReady);
   }, {
     timeout: timeoutMs,
     timeoutMsg: `${displayName} 문서 로드 선택 화면이 준비되지 않았습니다`,
@@ -161,10 +186,19 @@ export async function waitForLoadedDocument(
 ): Promise<void> {
   await resolveLocalFontDialog(session, displayName, timeoutMs);
   await session.waitUntil(async () => {
-    const status = await readStudioStatus(session);
-    if (!status.includes(displayName)) return false;
-    const page = await readPageIndicator(session);
-    return pageCount === null || page.total === pageCount;
+    const state = await session.execute((statusSelector, pageSelector, canvasSelector) => ({
+      status: document.querySelector(statusSelector)?.textContent?.trim() ?? '',
+      page: document.querySelector(pageSelector)?.textContent?.trim() ?? '',
+      canvasReady: document.querySelector(canvasSelector) !== null,
+    }), GUI_SELECTORS.statusMessage, GUI_SELECTORS.pageIndicator, GUI_SELECTORS.documentCanvas);
+    let page: PageIndicator;
+    try {
+      page = parsePageIndicator(state.page);
+    } catch {
+      return false;
+    }
+    return isLoadedDocumentState({ status: state.status, page, canvasReady: state.canvasReady },
+      displayName, pageCount);
   }, { timeout: timeoutMs, timeoutMsg: `${displayName} 문서 open이 완료되지 않았습니다` });
 }
 

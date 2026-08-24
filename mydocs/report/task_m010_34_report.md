@@ -61,8 +61,8 @@ GitHub Issue: [#34](https://github.com/postmelee/alhangeul-tauri/issues/34)
 | PDF 자동 판정 | OK — 6쪽 A4 metadata, 한글 text, 쪽별 content, blank/crop heuristic과 PNG evidence를 결합하며 시각 read-back 필요를 표시한다. |
 | workflow 최소 권한·비용·Action pin | OK — `actions: read`, `contents: read`, `ubuntu-22.04`, manual dispatch, 45분 job/25분 GUI timeout, exact candidate concurrency와 4개 SHA pin을 고정했다. |
 | 실패 증거·최종 판정 | OK — GUI failure와 evidence upload failure를 `always()` 뒤 final gate가 각각 실패로 전달하고 자동 retry를 금지한다. |
-| 전체 platform-neutral regression | OK — product boundary 225 files, GUI TypeScript, 최신 automation 205/205, actionlint와 diff check 통과. upstream 35/35, Studio 97/97와 production build도 통과했다. |
-| 실제 hosted Linux x64 GUI | MISS — 최신 branch run `32687090731`은 exact 환경 gate와 HWP/HWPX document scenario, GTK location entry의 focus·full path readback·activate까지 성공했다. entry의 87자 값이 fixture 절대 경로 길이와 일치했지만 chooser accept response가 발생하지 않았다. tree에서 확인한 `Open/click` action과 Save의 명시적 accept를 결합한 뒤 전체 경로를 다시 확정한다. |
+| 전체 platform-neutral regression | OK — product boundary 225 files, GUI TypeScript, 최신 automation 206/206, actionlint와 diff check 통과. upstream 35/35, Studio 97/97와 production build도 통과했다. |
+| 실제 hosted Linux x64 GUI | MISS — 최신 branch run `32688123494`은 exact 환경·HWP/HWPX document scenario와 GTK explicit Open accept를 통과해 실제 HWP 6쪽을 렌더했다. screenshot의 `파일 열기 완료`와 달리 basename status만 인정한 acceptance predicate가 timeout 처리했으므로, browser/native 완료 상태에 canvas·쪽 수를 결속한 보정 뒤 잔여 native save/drag/PDF/print를 다시 확정한다. |
 
 ### 단계별 검증 결과
 
@@ -133,15 +133,23 @@ GitHub Issue: [#34](https://github.com/postmelee/alhangeul-tauri/issues/34)
   Save As의 directory/basename 2단계 selector 추측도 제거했다. 보정 뒤 focused `44/44`,
   automation `205/205`, GUI TypeScript, product boundary 225개, upstream `35/35`, Studio
   `97/97`, production Studio build, Python syntax, actionlint와 diff check를 통과했다.
+- explicit accept SHA `ef5831bd8c6255b90fa67ba9764b54eeab3ca179`의 run
+  `32688123494`은 첫 GTK chooser를 정상 종료하고 HWP 1/6쪽과 `파일 열기 완료`를 final
+  screenshot에 보존했다. `open-document` failure tree도 없어 explicit accept는 성공으로
+  확인됐다. 공통 load helper가 browser file-input의 basename status만 인정해 정상 native
+  완료를 timeout 처리한 것이 다음 단일 원인이다. browser basename 또는 정확한 native 완료
+  status에 실제 render canvas와 기대 쪽 수를 함께 요구하는 판정으로 보정했으며 focused
+  계약 `33/33`, automation `206/206`, GUI TypeScript, product boundary 225개, upstream
+  `35/35`, Studio `97/97`, production build, Python syntax, actionlint와 diff check를 통과했다.
 
 ## 잔여 위험과 후속 작업
 
 ### 잔여 위험
 
-- Stage 5.9의 timeout·window·초기 readiness와 document load, GTK anonymous location entry
-  탐색·focus·입력은 hosted runner에서 성공했다. native open의 semantic activate 이후
-  explicit accept와 save/drag/PDF/CUPS 출력은 새 보정 뒤 다시 확인해야 하므로 전체 성공은
-  아직 주장할 수 없다.
+- Stage 5.9의 timeout·window·초기 readiness와 browser document load, GTK anonymous location
+  entry 탐색·focus·입력·explicit Open accept, native HWP 렌더는 hosted runner에서 성공했다.
+  native 완료 predicate와 뒤따르는 save/drag/PDF/CUPS 출력은 새 보정 뒤 다시 확인해야 하므로
+  전체 성공은 아직 주장할 수 없다.
   성공한 제품 artifact는 native run
   `32347468978`에 고정돼 있다.
 - 다음 canary에서 production binary external driver 연결, localized accessibility selector, CUPS-PDF output name이나 hosted image drift가 추가로 발견될 수 있다. 실패 evidence를 보존하고 측정 근거가 있는 correction PR로만 보정한다.
