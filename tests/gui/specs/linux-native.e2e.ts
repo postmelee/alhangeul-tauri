@@ -111,11 +111,11 @@ describe('Alhangeul native Linux acceptance', () => {
       await waitForDocument(fixture.absolutePath, 6);
       const original = await captureDocumentState(browser);
 
-      await adapter.printToFile(gtkPdf, () => triggerFileCommand('file:print'));
+      await adapter.printToFile(gtkPdf, () => adapter.triggerSystemPrint());
       await waitForRestoredDocumentState(browser, original, inputs.timeoutMs);
-      await adapter.cancelPrint(() => triggerFileCommand('file:print'));
+      await adapter.cancelPrint(() => adapter.triggerSystemPrint());
       await waitForRestoredDocumentState(browser, original, inputs.timeoutMs);
-      await adapter.printWithVirtualPrinter(cups.printerName, () => triggerFileCommand('file:print'));
+      await adapter.printWithVirtualPrinter(cups.printerName, () => adapter.triggerSystemPrint());
       await waitForFile(cups.outputPath);
       await waitForRestoredDocumentState(browser, original, inputs.timeoutMs);
 

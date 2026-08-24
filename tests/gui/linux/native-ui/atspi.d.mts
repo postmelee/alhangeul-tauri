@@ -19,5 +19,10 @@ export class LinuxNativeUiAdapter implements NativeDialogAdapter {
   printToFile(path: string, trigger: () => Promise<void>): Promise<void>;
   printWithVirtualPrinter(name: string, trigger: () => Promise<void>): Promise<void>;
   cancelPrint(trigger: () => Promise<void>): Promise<void>;
-  withFailureEvidence<T>(label: string, action: () => Promise<T>): Promise<T>;
+  triggerSystemPrint(): Promise<void>;
+  withFailureEvidence<T>(
+    label: string,
+    action: () => Promise<T>,
+    request?: { desktopScope?: boolean },
+  ): Promise<T>;
 }

@@ -20,7 +20,8 @@ version 증거를 지원되는 Debian package database 계약으로 교체한다
 | `tests/linux-gui-workflow.test.mjs` | CUPS package 증거와 `cupsd -v` 부재를 workflow source contract로 고정 |
 | `tests/gui/support/document-ux.ts` | 실패한 temporary style upload adapter 제거, upstream input/native title 계약 분리와 status·쪽 수 DOM 판독 공통화 |
 | `tests/gui/specs/document-ux.e2e.ts` | 숨은 file input에 clear 없이 `addValue`로 경로를 전송하고 headless 환경의 로컬 글꼴 선택 모달을 fail-closed 처리 |
-| `tests/gui/linux/native-ui/atspi.mjs`, `atspi_driver.py` | focused GTK location entry에 full path를 입력·readback하고 남은 chooser는 명시적 Open/Save accept로 완료하며 비민감 실패 metadata 기록 |
+| `tests/gui/linux/native-ui/atspi.mjs`, `atspi_driver.py` | focused GTK location entry에 full path를 입력·readback하고 남은 chooser는 명시적 Open/Save accept로 완료하며, system print만 격리 desktop scope와 실제 Ctrl+P로 탐색 |
+| `tests/gui/linux/native-ui/drag-drop.mjs`, `drag_source.py` | Xdnd URI `DATA`와 GTK `drag-end` 완료를 모두 확인한 뒤 source를 정리하는 bounded lifecycle 계약 |
 | `tests/gui/wdio.linux.conf.ts` | WebKit file upload용 표준 `strictFileInteractability: false` 명시 |
 | `tests/gui/wdio.shared.conf.ts` | operation·scenario timeout을 분리하고 단일 WebDriver window를 표준 명령으로 고정 |
 | `tests/gui-contracts.test.mjs` | upload protocol, bounded scenario timeout과 단일 window fail-closed 계약 고정 |
@@ -99,6 +100,11 @@ git diff --check
   product boundary `225 files`, upstream `35/35`, Studio `97/97`, production Studio build,
   Python syntax, actionlint와 diff check 통과. browser basename 또는 native 완료 status에 실제
   canvas와 기대 쪽 수를 결속하고 opening·canvas 부재·쪽 수 불일치 회귀를 고정
+- OK — native load predicate run `32689152972`에서 document UX 2건, HWP/HWPX native
+  Save As·현재 저장·재열기, 직접 PDF 6쪽 A4·한글 text·nonblank render와 evidence upload 통과
+- OK — drag lifecycle·print desktop scope focused 계약 `13/13`, automation `209/209`, GUI
+  TypeScript, product boundary `227 files`, upstream `35/35`, Studio `97/97`, production Studio
+  build, Python syntax, actionlint와 diff check 통과
 
 ## 잔여 위험
 
@@ -183,11 +189,18 @@ git diff --check
   기록했다. native wrapper가 완료 시 basename status를 `파일 열기 완료`로 덮는 제품 계약과
   공용 predicate가 충돌한 harness 오판이다. browser basename 또는 정확한 native 완료 status,
   실제 render canvas와 기대 쪽 수를 함께 판정하고 완료 문구 단독 통과는 금지한다.
+- native load predicate SHA `a12a99aceee8d332f74e40a1b64d14031a64b167`의 run
+  `32689152972`은 앞선 native open 오판을 제거하고 native save와 direct PDF를 모두
+  성공시켰다. drag-in은 gesture 직후 helper source가 종료돼 비동기 URI 요청 완료를 기다리지
+  않은 harness lifecycle 결함으로 좁혀졌다. system print 실패 tree는 `Alhangeul` application
+  1개와 main frame만 포함해, 별도 GTK/WebKit print application을 구조상 탐색할 수 없었다.
+  제품 인쇄 구현은 바꾸지 않고 drag data/end marker와 실제 `Ctrl+P`, print 전용 desktop
+  scope·dialog ancestor 계약을 함께 적용한다.
 
 ## 다음 단계 영향
 
-- native document-load predicate를 전체 로컬 gate로 검증·commit·push한 뒤, 성공한 제품 native
-  run `32347468978`을 재사용해 immutable acceptance workflow SHA의 branch GUI를 한 번 실행한다.
+- drag lifecycle과 print desktop scope 보정을 commit·push한 뒤, 성공한 제품 native run
+  `32347468978`을 재사용해 immutable acceptance workflow SHA의 branch GUI를 한 번 실행한다.
 - 실패하면 같은 branch에서 evidence를 읽고 보정하며, 완전히 성공해야 correction PR을
   생성한다.
 - PR merge 뒤 새 merge exact SHA의 native build·Linux GUI·evidence read-back을 한 번

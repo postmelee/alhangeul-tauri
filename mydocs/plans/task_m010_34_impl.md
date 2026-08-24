@@ -721,6 +721,21 @@ exit 1을 반환했으며 제품 GUI 단계는 실행되지 않았다.
   predicate 오류다. browser status 또는 정확한 native `파일 열기 완료`와 실제 render canvas,
   기대 쪽 수를 함께 요구하는 순수 판정 helper로 통합한다. native 완료 문구만으로는 통과시키지
   않으며 `파일 열기 중...`, canvas 부재와 쪽 수 불일치는 계속 fail-closed한다.
+- native load predicate SHA `a12a99aceee8d332f74e40a1b64d14031a64b167`의 branch GUI run
+  `32689152972`은 document UX 2건, HWP/HWPX native Save As·현재 저장·재열기와 직접 PDF를
+  성공시켰다. 직접 PDF는 6쪽 A4, 한글 title/text, 쪽별 nonblank render floor를 모두
+  통과했다. 남은 drag-in은 source가 X11 mouseup 직후 종료되어 GTK target의 비동기 URI
+  요청 전에 owner를 잃을 수 있는 lifecycle 결함이고, system print는 실제 인쇄 UI가 별도
+  AT-SPI application/process에 나타날 수 있는데도 `Alhangeul` application만 탐색한 scope
+  결함이다.
+- drag source는 고정 비민감 marker `READY`, `DATA`, `FINISHED`를 출력하고 harness는 URI
+  `DATA`와 GTK `drag-end`의 `FINISHED`를 모두 확인한 뒤에만 source process를 정리한다.
+  `FINISHED`에 데이터가 없거나 bounded timeout 안에 완료되지 않으면 fail-closed한다.
+- system print는 WebDriver menu click 대신 사용자와 같은 X11 `Ctrl+P`를 한 번 입력한다.
+  file chooser와 일반 app UI는 계속 `Alhangeul` application에 한정하되, print command와
+  실패 snapshot만 격리된 Xvfb desktop의 top-level applications를 탐색한다. 모든 printer,
+  file entry, Print/Cancel action은 정확한 print dialog ancestor 안으로 다시 제한하고 실제
+  printer는 기존 virtual-PDF allowlist 밖에서 계속 거부한다.
 
 ### 검증
 

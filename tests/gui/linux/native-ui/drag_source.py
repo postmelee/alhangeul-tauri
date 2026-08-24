@@ -23,9 +23,15 @@ label.drag_source_set_target_list(targets)
 
 def supply_uri(_widget, _context, selection, _info, _time):
     selection.set_uris([Gio.File.new_for_path(str(path)).get_uri()])
+    print("DATA", flush=True)
+
+
+def finish_drag(_widget, _context):
+    print("FINISHED", flush=True)
 
 
 label.connect("drag-data-get", supply_uri)
+label.connect("drag-end", finish_drag)
 window.connect("destroy", Gtk.main_quit)
 window.add(label)
 window.show_all()

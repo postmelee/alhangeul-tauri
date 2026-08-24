@@ -96,6 +96,11 @@ def matches(node, selector, ancestors=()):
 
 def applications(request):
     desktop = pyatspi.Registry.getDesktop(0)
+    desktop_scope = request.get("desktopScope", False)
+    if not isinstance(desktop_scope, bool):
+        raise ValueError("desktopScope must be a boolean")
+    if desktop_scope:
+        return children(desktop)
     names = request.get("applicationNames", ["Alhangeul"])
     result = []
     for app in children(desktop):

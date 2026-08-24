@@ -95,19 +95,23 @@ export class LinuxNativeUiAdapter {
     validateAbsoluteFile(path, 'print path', this.pathApi);
     return this.withFailureEvidence('print-to-file', async () => {
       await trigger();
-      await this.wait(PRINT_DIALOG);
-      await this.action({
+      await this.printCommand({ command: 'wait', selector: PRINT_DIALOG });
+      await this.printCommand({ command: 'action', selector: {
         roles: ['radio button', 'table cell', 'list item', 'toggle button'],
         names: ['print to file', '파일로 인쇄'],
-      });
-      await this.setText({
+        within: PRINT_DIALOG,
+      } });
+      await this.printCommand({ command: 'setText', selector: {
         roles: ['text', 'entry'],
         names: ['file', '파일', 'name', '이름'],
         within: PRINT_DIALOG,
-      }, path);
-      await this.action({ roles: BUTTON_ROLES, names: ['print', '인쇄'] });
-      await this.waitAbsent(PRINT_DIALOG);
-    });
+      }, value: path });
+      await this.printCommand({
+        command: 'action',
+        selector: { roles: BUTTON_ROLES, names: ['print', '인쇄'], within: PRINT_DIALOG },
+      });
+      await this.printCommand({ command: 'waitAbsent', selector: PRINT_DIALOG });
+    }, { desktopScope: true });
   }
 
   async printWithVirtualPrinter(printerName, trigger) {
@@ -117,40 +121,51 @@ export class LinuxNativeUiAdapter {
     }
     return this.withFailureEvidence('virtual-printer', async () => {
       await trigger();
-      await this.wait(PRINT_DIALOG);
-      await this.action({
+      await this.printCommand({ command: 'wait', selector: PRINT_DIALOG });
+      await this.printCommand({ command: 'action', selector: {
         roles: ['radio button', 'table cell', 'list item', 'toggle button'],
         names: [name],
+        within: PRINT_DIALOG,
+      } });
+      await this.printCommand({
+        command: 'action',
+        selector: { roles: BUTTON_ROLES, names: ['print', '인쇄'], within: PRINT_DIALOG },
       });
-      await this.action({ roles: BUTTON_ROLES, names: ['print', '인쇄'] });
-      await this.waitAbsent(PRINT_DIALOG);
-    });
+      await this.printCommand({ command: 'waitAbsent', selector: PRINT_DIALOG });
+    }, { desktopScope: true });
   }
 
   async cancelPrint(trigger) {
     return this.withFailureEvidence('cancel-print', async () => {
       await trigger();
-      await this.wait(PRINT_DIALOG);
-      await this.action({ roles: BUTTON_ROLES, names: ['cancel', '취소'] });
-      await this.waitAbsent(PRINT_DIALOG);
-    });
+      await this.printCommand({ command: 'wait', selector: PRINT_DIALOG });
+      await this.printCommand({
+        command: 'action',
+        selector: { roles: BUTTON_ROLES, names: ['cancel', '취소'], within: PRINT_DIALOG },
+      });
+      await this.printCommand({ command: 'waitAbsent', selector: PRINT_DIALOG });
+    }, { desktopScope: true });
   }
 
-  async dumpTree(label) {
-    const result = await this.command({ command: 'snapshot' });
+  async triggerSystemPrint() {
+    await this.shortcut('ctrl+p');
+  }
+
+  async dumpTree(label, request = {}) {
+    const result = await this.command({ command: 'snapshot', ...request });
     const path = this.pathApi.join(this.outputDir, 'native-ui', `${safeLabel(label)}-tree.json`);
     await mkdir(this.pathApi.dirname(path), { recursive: true });
     await writeFile(path, `${JSON.stringify(result, null, 2)}\n`, { mode: 0o600 });
     return path;
   }
 
-  async withFailureEvidence(label, action) {
+  async withFailureEvidence(label, action, request = {}) {
     try {
       return await action();
     } catch (error) {
       await mkdir(this.pathApi.join(this.outputDir, 'native-ui'), { recursive: true });
       await Promise.allSettled([
-        this.dumpTree(label),
+        this.dumpTree(label, request),
         this.captureScreenshot(this.pathApi.join(this.outputDir, 'native-ui', `${safeLabel(label)}.png`)),
       ]);
       await this.runShortcut('Escape').catch(() => undefined);
@@ -199,12 +214,16 @@ export class LinuxNativeUiAdapter {
       ...request,
     });
   }
+
+  printCommand(request) {
+    return this.command({ desktopScope: true, ...request });
+  }
 }
 
 function createShortcutRunner(options) {
   const execute = options.spawnSync ?? spawnSync;
   return async (key) => {
-    if (!['ctrl+l', 'Escape'].includes(key)) throw new Error(`허용되지 않은 key: ${key}`);
+    if (!['ctrl+l', 'ctrl+p', 'Escape'].includes(key)) throw new Error(`허용되지 않은 key: ${key}`);
     const result = execute(options.xdotoolPath ?? 'xdotool', ['key', '--clearmodifiers', key], {
       encoding: 'utf8', env: options.env ?? process.env, timeout: 5000,
     });

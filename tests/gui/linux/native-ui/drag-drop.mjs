@@ -32,6 +32,7 @@ export async function dragFileIntoWindow(options, services = {}) {
     assertInside(screen, source, 'source');
     assertInside(screen, target, 'target');
     performBoundedDrag(xdotool, source, target, env, services.spawnSync);
+    await waitForTransfer(sourceProcess, options.timeoutMs ?? 10000, services.delay);
   } finally {
     await (services.stopProcess ?? stopProcess)(sourceProcess.child);
   }
@@ -85,11 +86,29 @@ async function waitForReady(process, timeoutMs, delay = defaultDelay) {
   }
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
-    if (process.stdout.value().includes('READY')) return;
+    if (hasMarker(process.stdout.value(), 'READY')) return;
     if (process.child.exitCode !== null) break;
     await delay(50);
   }
   throw new Error(`GTK drag source가 준비되지 않았습니다: ${process.stderr.value().slice(0, 300)}`);
+}
+
+async function waitForTransfer(process, timeoutMs, delay = defaultDelay) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const output = process.stdout.value();
+    if (hasMarker(output, 'FINISHED')) {
+      if (hasMarker(output, 'DATA')) return;
+      throw new Error('GTK drag는 끝났지만 fixture URI가 전달되지 않았습니다');
+    }
+    if (process.child.exitCode !== null) break;
+    await delay(50);
+  }
+  throw new Error(`GTK drag 전송이 완료되지 않았습니다: ${process.stderr.value().slice(0, 300)}`);
+}
+
+function hasMarker(output, marker) {
+  return String(output).split(/\r?\n/).includes(marker);
 }
 
 function validateRect(rect, label) {

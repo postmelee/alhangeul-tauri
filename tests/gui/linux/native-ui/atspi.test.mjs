@@ -66,15 +66,37 @@ test('print adapter는 Print to File만 고르고 save/cancel modal 종료를 �
   assert.deepEqual(calls[1].selector.names, ['print to file', '파일로 인쇄']);
   assert.equal(calls[2].value, '/tmp/output/gtk.pdf');
   assert.deepEqual(calls[2].selector.within, { roles: ['dialog'], names: ['print', '인쇄'] });
+  assert.ok(calls.every(({ desktopScope }) => desktopScope === true));
+  assert.deepEqual(calls[3].selector.within, { roles: ['dialog'], names: ['print', '인쇄'] });
+  assert.deepEqual(calls[6].selector.within, { roles: ['dialog'], names: ['print', '인쇄'] });
   await assert.rejects(
     adapter.printWithVirtualPrinter('Office LaserJet', async () => {}),
     /physical printer/,
   );
 });
 
+test('system print shortcut은 실제 ctrl+p만 허용하고 AT-SPI 탐색과 분리한다', async () => {
+  const calls = [];
+  const adapter = new LinuxNativeUiAdapter({
+    outputDir: '/tmp/evidence',
+    timeoutMs: 30000,
+    applicationNames: ['Alhangeul'],
+    spawnSync: (command, args) => {
+      calls.push([command, args]);
+      return { status: 0, stdout: '', stderr: '' };
+    },
+    captureScreenshot: async () => {},
+  });
+  await adapter.triggerSystemPrint();
+  assert.deepEqual(calls[0][1], ['key', '--clearmodifiers', 'ctrl+p']);
+  await assert.rejects(adapter.shortcut('ctrl+x'), /허용되지 않은 key/);
+});
+
 test('Python bridge는 editable text를 focus·readback한 같은 node에서 semantic activate한다', async () => {
   const source = await readFile(new URL('./atspi_driver.py', import.meta.url), 'utf8');
   assert.match(source, /within = selector\.get\("within"\)/);
+  assert.match(source, /desktop_scope = request\.get\("desktopScope", False\)/);
+  assert.match(source, /desktopScope must be a boolean/);
   assert.match(source, /matches_info\(node_info\(item\), within\)/);
   assert.match(source, /info\["role"\] in \{"text", "entry"\}/);
   const editable = source.slice(source.indexOf('def set_editable_text'), source.indexOf('def snapshot'));

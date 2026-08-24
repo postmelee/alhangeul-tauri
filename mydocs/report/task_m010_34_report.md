@@ -44,9 +44,9 @@ GitHub Issue: [#34](https://github.com/postmelee/alhangeul-tauri/issues/34)
 | GitHub Actions workflow inventory | 4개 | 5개 — 수동 Linux x64 GUI workflow 1개 추가 |
 | exact cross-run artifact provenance helper | 없음 | 259행 helper와 정상·변조·누락·중복·pagination 계약 30개 |
 | 공통/Linux GUI E2E scenario | 없음 | 공통 문서 UX 1개 + Linux native 4개 |
-| Linux native UI/PDF focused 계약 | 없음 | AT-SPI 5개 + drag 4개 + PDF 5개 |
+| Linux native UI/PDF focused 계약 | 없음 | AT-SPI 7개 + drag 6개 + PDF 5개 |
 | Linux GUI workflow 전용 source contract | 없음 | 9개, 공통 workflow와 합쳐 focused 21/21 |
-| 전체 automation 통과 수 | Stage 1 완료 시 162개 | Stage 5.9 중단 checkpoint에서 204개 |
+| 전체 automation 통과 수 | Stage 1 완료 시 162개 | Stage 5.9 최신 branch에서 209개 |
 | 신규 workflow 외부 Action immutable pin | 해당 없음 | 4/4 full commit SHA + version 주석 |
 | evidence 보존 | 수동·분산 | 성공·실패 모두 7일, context/handoff/hash/log/screenshot/PDF/summary 결속 |
 
@@ -62,7 +62,7 @@ GitHub Issue: [#34](https://github.com/postmelee/alhangeul-tauri/issues/34)
 | workflow 최소 권한·비용·Action pin | OK — `actions: read`, `contents: read`, `ubuntu-22.04`, manual dispatch, 45분 job/25분 GUI timeout, exact candidate concurrency와 4개 SHA pin을 고정했다. |
 | 실패 증거·최종 판정 | OK — GUI failure와 evidence upload failure를 `always()` 뒤 final gate가 각각 실패로 전달하고 자동 retry를 금지한다. |
 | 전체 platform-neutral regression | OK — product boundary 225 files, GUI TypeScript, 최신 automation 206/206, actionlint와 diff check 통과. upstream 35/35, Studio 97/97와 production build도 통과했다. |
-| 실제 hosted Linux x64 GUI | MISS — 최신 branch run `32688123494`은 exact 환경·HWP/HWPX document scenario와 GTK explicit Open accept를 통과해 실제 HWP 6쪽을 렌더했다. screenshot의 `파일 열기 완료`와 달리 basename status만 인정한 acceptance predicate가 timeout 처리했으므로, browser/native 완료 상태에 canvas·쪽 수를 결속한 보정 뒤 잔여 native save/drag/PDF/print를 다시 확정한다. |
+| 실제 hosted Linux x64 GUI | PARTIAL — 최신 branch run `32689152972`은 exact 환경, document UX 2건, HWP/HWPX native Save As·현재 저장·재열기와 직접 PDF 6쪽 A4·한글 text·nonblank render를 통과했다. drag source lifecycle과 별도 print application AT-SPI scope 두 하네스 결함을 보정한 뒤 drag/GTK/CUPS print까지 한 canary에서 확정한다. |
 
 ### 단계별 검증 결과
 
@@ -141,15 +141,22 @@ GitHub Issue: [#34](https://github.com/postmelee/alhangeul-tauri/issues/34)
   status에 실제 render canvas와 기대 쪽 수를 함께 요구하는 판정으로 보정했으며 focused
   계약 `33/33`, automation `206/206`, GUI TypeScript, product boundary 225개, upstream
   `35/35`, Studio `97/97`, production build, Python syntax, actionlint와 diff check를 통과했다.
+- native load predicate SHA `a12a99aceee8d332f74e40a1b64d14031a64b167`의 run
+  `32689152972`은 document UX 2건과 native save 전체, 직접 PDF 분석·evidence를 성공시켰다.
+  drag failure는 mouseup 직후 source를 종료한 Xdnd lifecycle, system print failure는
+  `Alhangeul` application 하나만 조회한 AT-SPI scope로 각각 독립 측정됐다. URI data/end를
+  기다리는 source lifecycle과 실제 `Ctrl+P`, print 전용 isolated desktop scope를 추가했고
+  focused `13/13`, automation `209/209`, product boundary 227개, upstream `35/35`, Studio
+  `97/97`, production build, GUI TypeScript, Python syntax, actionlint와 diff check를 통과했다.
 
 ## 잔여 위험과 후속 작업
 
 ### 잔여 위험
 
-- Stage 5.9의 timeout·window·초기 readiness와 browser document load, GTK anonymous location
-  entry 탐색·focus·입력·explicit Open accept, native HWP 렌더는 hosted runner에서 성공했다.
-  native 완료 predicate와 뒤따르는 save/drag/PDF/CUPS 출력은 새 보정 뒤 다시 확인해야 하므로
-  전체 성공은 아직 주장할 수 없다.
+- Stage 5.9의 timeout·window·초기 readiness, browser/native document load, GTK anonymous
+  location entry 탐색·focus·입력·explicit Open/Save accept, 현재 저장과 직접 PDF는 hosted
+  runner에서 성공했다. drag lifecycle과 print 전용 desktop scope 보정 뒤 GTK Print to File,
+  cancel, CUPS-PDF까지 다시 확인해야 하므로 전체 성공은 아직 주장할 수 없다.
   성공한 제품 artifact는 native run
   `32347468978`에 고정돼 있다.
 - 다음 canary에서 production binary external driver 연결, localized accessibility selector, CUPS-PDF output name이나 hosted image drift가 추가로 발견될 수 있다. 실패 evidence를 보존하고 측정 근거가 있는 correction PR로만 보정한다.
