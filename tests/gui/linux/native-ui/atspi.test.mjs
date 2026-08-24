@@ -60,17 +60,25 @@ test('print adapter는 Print to File만 고르고 save/cancel modal 종료를 �
   await adapter.printToFile('/tmp/output/gtk.pdf', async () => {});
   await adapter.cancelPrint(async () => {});
   assert.deepEqual(calls.map(({ command }) => command), [
-    'wait', 'selectByFocus', 'wait', 'setText', 'action', 'waitAbsent',
+    'wait', 'selectByFocus', 'wait',
+    'action', 'wait', 'submitText', 'actionIfPresent', 'waitAbsent', 'wait',
+    'action', 'waitAbsent',
     'wait', 'action', 'waitAbsent',
   ]);
   assert.deepEqual(calls[1].selector.names, ['print to file', '파일로 인쇄']);
   assert.equal(calls[1].actionNames, undefined);
   assert.equal(calls[2].selector.selected, true);
-  assert.equal(calls[3].value, '/tmp/output/gtk.pdf');
-  assert.deepEqual(calls[3].selector.within, { roles: ['dialog'], names: ['print', '인쇄'] });
+  assert.deepEqual(calls[3].selector.names, ['.pdf', '.ps', '.svg']);
+  assert.deepEqual(calls[3].actionNames, ['click', 'press']);
+  assert.equal(calls[5].value, '/tmp/output/gtk.pdf');
+  assert.equal(calls[5].command, 'submitText');
+  assert.equal(calls[6].desktopScope, true);
+  assert.deepEqual(calls[6].selector.names, ['select', '선택']);
+  assert.deepEqual(calls[6].actionNames, ['click', 'press']);
+  assert.deepEqual(calls[8].selector.names, ['gtk.pdf']);
   assert.ok(calls.every(({ desktopScope }) => desktopScope === true));
-  assert.deepEqual(calls[4].selector.within, { roles: ['dialog'], names: ['print', '인쇄'] });
-  assert.deepEqual(calls[7].selector.within, { roles: ['dialog'], names: ['print', '인쇄'] });
+  assert.deepEqual(calls[9].selector.within, { roles: ['dialog'], names: ['print', '인쇄'] });
+  assert.deepEqual(calls[12].selector.within, { roles: ['dialog'], names: ['print', '인쇄'] });
   await assert.rejects(
     adapter.printWithVirtualPrinter('Office LaserJet', async () => {}),
     /physical printer/,

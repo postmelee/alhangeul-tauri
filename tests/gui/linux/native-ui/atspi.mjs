@@ -103,17 +103,36 @@ export class LinuxNativeUiAdapter {
       };
       await this.printCommand({ command: 'selectByFocus', selector: printer });
       await this.printCommand({ command: 'wait', selector: { ...printer, selected: true } });
-      await this.printCommand({ command: 'setText', selector: {
-        roles: ['text', 'entry'],
-        names: ['file', '파일', 'name', '이름'],
-        within: PRINT_DIALOG,
-      }, value: path });
+      await this.choosePrintFile(path);
       await this.printCommand({
         command: 'action',
         selector: { roles: BUTTON_ROLES, names: ['print', '인쇄'], within: PRINT_DIALOG },
+        actionNames: ['click', 'press'],
       });
       await this.printCommand({ command: 'waitAbsent', selector: PRINT_DIALOG });
     }, { desktopScope: true });
+  }
+
+  async choosePrintFile(path) {
+    const fileName = this.pathApi.basename(path);
+    await this.printCommand({
+      command: 'action',
+      selector: {
+        roles: BUTTON_ROLES,
+        names: ['.pdf', '.ps', '.svg'],
+        within: PRINT_DIALOG,
+      },
+      actionNames: ['click', 'press'],
+    });
+    await this.printCommand({ command: 'wait', selector: FILE_DIALOG });
+    await this.shortcut('ctrl+l');
+    await this.printCommand({ command: 'submitText', selector: LOCATION_ENTRY, value: path });
+    await this.acceptFileChooser(['select', '선택'], true);
+    await this.printCommand({ command: 'waitAbsent', selector: FILE_DIALOG });
+    await this.printCommand({
+      command: 'wait',
+      selector: { roles: BUTTON_ROLES, names: [fileName], within: PRINT_DIALOG },
+    });
   }
 
   async printWithVirtualPrinter(printerName, trigger) {
@@ -193,13 +212,14 @@ export class LinuxNativeUiAdapter {
     return this.command({ command: 'submitText', selector, value });
   }
 
-  acceptFileChooser(names) {
+  acceptFileChooser(names, desktopScope = false) {
     return this.command({
       command: 'actionIfPresent',
       selector: { roles: BUTTON_ROLES, names, within: FILE_CHOOSER_SCOPE },
       guardSelector: FILE_DIALOG,
       actionNames: ['click', 'press'],
       timeoutMs: Math.min(this.timeoutMs, 5000),
+      desktopScope,
     });
   }
 

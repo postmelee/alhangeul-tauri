@@ -189,6 +189,18 @@ git diff --check
 - OK — printer cell focus·selected readback 보정 뒤 공통 GUI 계약 `19/19`, Linux GUI 계약
   `23/23`, 전체 automation `215/215`, GUI TypeScript, Python syntax, product boundary
   `227 files`, actionlint와 diff check 통과. 구현 파일은 모두 300 LOC 이하를 유지했다.
+- OK — printer cell focus SHA `b1dd9d7701b9132def3f1ad65a0ace7171ae2b2a`의 run
+  `32694887391`에서도 WebDriver phase 전체 성공(`webdriver=0`), exact handoff·환경·evidence
+  upload가 통과했다. native tree의 `Print to File` cell은 실제로 `focused=true`,
+  `selected=true`였고 CUPS `PDF`는 `selected=false`여서 selection 경계가 해소됐다.
+- PARTIAL — 같은 run의 native print는 선택 뒤 `text/entry` file field를 기다려 timeout됐다.
+  failure tree와 screenshot의 `File:` control은 `.../alhangeul-tauri/output.pdf` name과 `click`
+  action을 가진 `push button`이었다. GTK 3 공식 source도 FILESAVE printer option을 button으로
+  만들고 click 시 `Select a filename` save chooser, `_Select` accept response를 사용한다.
+- OK — Print to File path button → focused chooser location full target → explicit `Select` →
+  chooser close → button basename readback → `Print` 순서로 보정한 뒤 공통 GUI 계약 `19/19`,
+  Linux GUI 계약 `23/23`, 전체 automation `215/215`, GUI TypeScript와 product boundary
+  `227 files`를 통과했다. adapter·driver·focused test 파일은 모두 300 LOC 이하를 유지했다.
 
 ## 잔여 위험
 
@@ -283,8 +295,8 @@ git diff --check
 
 ## 다음 단계 영향
 
-- printer cell focus·selected readback 보정을 commit·push한 뒤 성공한 제품 native run `32347468978`을
-  재사용해 immutable acceptance workflow SHA의 branch GUI를 한 번 실행한다.
+- GTK Print to File chooser 보정을 commit·push한 뒤 성공한 제품 native run `32347468978`을
+  재사용해 immutable acceptance workflow SHA의 branch GUI를 실행한다.
 - 실패하면 같은 branch에서 evidence를 읽고 보정하며, 완전히 성공해야 correction PR을
   생성한다.
 - PR merge 뒤 새 merge exact SHA의 native build·Linux GUI·evidence read-back을 한 번

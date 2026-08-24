@@ -763,6 +763,18 @@ exit 1을 반환했으며 제품 GUI 단계는 실행되지 않았다.
   옮기고 선택하므로 `Print to File` cell에 `AtkComponent.grabFocus()`를 수행하고 동일 row의
   `selected=true`를 semantic readback한 뒤에만 file entry로 진행한다. focus 실패·selection
   state 불일치는 fail-closed하며 좌표 click과 row activation은 사용하지 않는다.
+- printer cell focus 보정 SHA `b1dd9d7701b9132def3f1ad65a0ace7171ae2b2a`의 branch GUI run
+  `32694887391`은 exact handoff·환경·evidence upload와 WebDriver phase 전체를 통과했다.
+  native failure tree는 `Print to File` cell이 `focused=true`, `selected=true`이고 CUPS `PDF`는
+  `selected=false`임을 보존해 semantic selection 보정을 실제 GTK에서 확정했다. 다음 실패는
+  선택 뒤 `text/entry` file field를 기다린 기존 가정이었다. 실제 tree의 `File:` 다음 경로
+  control은 현재 `output.pdf` 경로를 name으로 가진 `push button`이다.
+- GTK 3 공식 file print backend는 이 control을 `GTK_PRINTER_OPTION_TYPE_FILESAVE`로 만들고,
+  printer option widget은 plain button click으로 `GTK_FILE_CHOOSER_ACTION_SAVE` dialog를 연 뒤
+  `_Select` accept response에서 URI를 갱신한다. 따라서 `.pdf` 경로 button을 명시적 click하고,
+  열린 file chooser의 focused location entry에 full target을 submit·readback한 뒤 `Select`를
+  명시적으로 accept한다. chooser close와 button basename 갱신을 모두 확인한 뒤에만 `Print`를
+  실행한다. 좌표 입력, anonymous print entry 추측과 dialog 외부 button action은 허용하지 않는다.
 
 ### 검증
 
@@ -788,7 +800,7 @@ gh workflow run alhangeul-linux-gui.yml --ref publish/task34 \
 ### 커밋
 
 ```text
-Task #34 [Stage 5.9]: file upload protocol과 acceptance SHA 보정
+Task #34 [Stage 5.9]: GTK Print to File chooser 보정
 ```
 
 ## 검증
