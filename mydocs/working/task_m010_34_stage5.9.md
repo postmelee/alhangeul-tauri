@@ -279,6 +279,14 @@ git diff --check
   filename을 고정하지 않고 전용 directory의 실행 전 regular PDF 집합과 비교해 새 파일 정확히
   하나, nonzero stable size를 확인한 뒤 canonical evidence path로 rename한다. 복수·symlink·
   timeout은 fail-closed하고 6쪽 A4·text·render 분석은 그대로 유지한다.
+- PARTIAL — CUPS artifact identity SHA `2d08f48`의 run `32704736236`은 native print가 성공해
+  GTK·CUPS PDF 모두 6쪽 A4, 한글 text, nonblank render와 정상 editor restore를 남겼다. evidence
+  manifest 17건의 size·SHA-256도 로컬 재검산했고 첫·마지막 쪽을 시각 확인했다. 전체 run은 이후
+  WebDriver의 두 번째 HWPX reopen chooser 미관측 때문에 실패했다.
+- PARTIAL — 코드·SHA·제품 artifact를 바꾸지 않은 재실행 `32706017262`은
+  `nativePrint=0`, `webdriver=0`으로 전체 성공했다. 같은 입력의 상반된 결과이므로 재실행 성공만
+  최종 gate로 채택하지 않고, production native print와 WebDriver가 공유하던 Xvfb·DBus·portal
+  session을 phase별로 격리한다. 기존 phase outcome·evidence·최종 fail-closed 판정은 유지한다.
 
 ## 잔여 위험
 

@@ -159,9 +159,21 @@ test('Xvfb, DBus, AT-SPI와 CUPS-PDF는 repository fixture만 사용한다', () 
   assert.match(gui, /ALHANGEUL_GUI_CUPS_PDF_OUTPUT: \$\{\{ env\.CUPS_PDF_OUTPUT \}\}/);
   assert.match(gui, /NO_AT_BRIDGE: "0"/);
   assert.match(gui, /GTK_MODULES: gail:atk-bridge/);
-  assert.match(gui, /pnpm run test:gui:linux:native-print \|\| native_print_status=\$\?/);
-  assert.match(gui, /pnpm run test:gui:linux \|\| webdriver_status=\$\?/);
-  assert.ok(gui.indexOf('test:gui:linux:native-print') < gui.indexOf('pnpm run test:gui:linux ||'));
+  assert.match(gui, /run_isolated_phase\(\)/);
+  assert.equal((gui.match(/xvfb-run --auto-servernum/g) ?? []).length, 1);
+  assert.match(gui, /openbox >"\$ALHANGEUL_GUI_OUTPUT_DIR\/openbox-\$phase\.log"/);
+  assert.match(
+    gui,
+    /run_isolated_phase native-print pnpm run test:gui:linux:native-print[\s\\]+\|\| native_print_status=\$\?/,
+  );
+  assert.match(
+    gui,
+    /run_isolated_phase webdriver pnpm run test:gui:linux[\s\\]+\|\| webdriver_status=\$\?/,
+  );
+  assert.ok(
+    gui.indexOf('run_isolated_phase native-print')
+      < gui.indexOf('run_isolated_phase webdriver'),
+  );
   assert.match(gui, /gui-phase-outcomes\.json/);
   assert.match(gui, /\[\[ "\$native_print_status" -eq 0 && "\$webdriver_status" -eq 0 \]\]/);
   assert.match(workflow, /^            scrot \\$/m);

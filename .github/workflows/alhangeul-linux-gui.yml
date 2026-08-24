@@ -254,21 +254,30 @@ jobs:
           GTK_MODULES: gail:atk-bridge
         run: |
           set -euo pipefail
-          # shellcheck disable=SC2016
-          xvfb-run --auto-servernum --server-args='-screen 0 1920x1080x24 -nolisten tcp' \
-            dbus-run-session -- bash -euo pipefail -c '
-              openbox >"$ALHANGEUL_GUI_OUTPUT_DIR/openbox.log" 2>&1 &
-              window_manager_pid=$!
-              trap '\''kill "$window_manager_pid" 2>/dev/null || true'\'' EXIT
-              native_print_status=0
-              pnpm run test:gui:linux:native-print || native_print_status=$?
-              webdriver_status=0
-              pnpm run test:gui:linux || webdriver_status=$?
-              printf '\''{"nativePrint":%s,"webdriver":%s}\n'\'' \
-                "$native_print_status" "$webdriver_status" \
-                > "$ALHANGEUL_GUI_OUTPUT_DIR/gui-phase-outcomes.json"
-              [[ "$native_print_status" -eq 0 && "$webdriver_status" -eq 0 ]]
-            '
+          run_isolated_phase() {
+            local phase="$1"
+            shift
+            # shellcheck disable=SC2016
+            xvfb-run --auto-servernum --server-args='-screen 0 1920x1080x24 -nolisten tcp' \
+              dbus-run-session -- bash -euo pipefail -c '
+                phase="$1"
+                shift
+                openbox >"$ALHANGEUL_GUI_OUTPUT_DIR/openbox-$phase.log" 2>&1 &
+                window_manager_pid=$!
+                trap '\''kill "$window_manager_pid" 2>/dev/null || true'\'' EXIT
+                "$@"
+              ' bash "$phase" "$@"
+          }
+          native_print_status=0
+          run_isolated_phase native-print pnpm run test:gui:linux:native-print \
+            || native_print_status=$?
+          webdriver_status=0
+          run_isolated_phase webdriver pnpm run test:gui:linux \
+            || webdriver_status=$?
+          printf '{"nativePrint":%s,"webdriver":%s}\n' \
+            "$native_print_status" "$webdriver_status" \
+            > "$ALHANGEUL_GUI_OUTPUT_DIR/gui-phase-outcomes.json"
+          [[ "$native_print_status" -eq 0 && "$webdriver_status" -eq 0 ]]
 
       - name: Record acceptance outcomes
         if: ${{ always() }}

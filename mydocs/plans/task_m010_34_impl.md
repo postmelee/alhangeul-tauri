@@ -851,6 +851,15 @@ exit 1을 반환했으며 제품 GUI 단계는 실행되지 않았다.
   directory의 regular PDF basename 집합을 기준선으로 캡처한다. print 뒤 새 regular PDF가
   정확히 하나이고 nonzero size가 연속 관측된 경우에만 canonical evidence path로 rename한다.
   복수 신규 PDF, symlink, timeout은 fail-closed하고 기존 PDF page/text/render 분석은 유지한다.
+- CUPS artifact identity SHA `2d08f48e71ae0ba144320c08a92c53a28868f5a0`의 첫 run
+  `32704736236`은 production native print 전체와 GTK·CUPS 양쪽 6쪽 A4·text·render를 통과했고
+  canonical `cups-output/biz_plan.pdf` evidence까지 생성했다. 다만 뒤따른 WebDriver phase는
+  두 번째 HWPX reopen chooser를 AT-SPI에서 보지 못해 실패했다. 같은 SHA·제품 artifact·native
+  run을 변경 없이 재실행한 `32706017262`에서는 native print와 WebDriver가 모두 성공했다.
+  동일 입력의 상반된 결과와 첫 run의 정상 제품·인쇄 evidence를 근거로 제품 회귀가 아니라 한
+  Xvfb·DBus session에서 production print의 portal/GTK 상태를 WebDriver phase가 이어받는
+  비결정성으로 판정한다. 두 phase를 각각 독립 Xvfb·DBus·Openbox session에서 실행하되 phase
+  exit code 수집, exact artifact handoff, evidence upload와 최종 fail-closed gate는 유지한다.
 
 ### 검증
 
