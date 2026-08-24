@@ -241,6 +241,12 @@ git diff --check
 - PARTIAL — active X11 window를 지정하지 않은 `Alt+P` 뒤에도 GTK/CUPS PDF 없이 동일 dialog가
   남았다. exact visible `Print`/`인쇄` window cardinality 1을 확인하고 활성화한 뒤 mnemonic을
   보내며, AT-SPI timeout은 command와 child-process error를 보존하도록 진단 계약도 함께 닫는다.
+- OK — exact-window·timeout 진단 SHA `25e6321fcbf87497f8fba4db14116f0c74f5a02b`의 run
+  `32699339501`은 WebDriver phase 전체 성공(`webdriver=0`)과 exact handoff·evidence upload를
+  유지하면서 실패 명령을 `actionIfPresent`로 노출했다.
+- PARTIAL — failure tree에는 chooser가 이미 닫히고 `biz-plan-gtk-print.pdf` basename이 Print
+  dialog에 반영돼 있다. action 성공 뒤 defunct GTK node에서 `node_info`를 다시 읽는 교착으로
+  확정하고, 모든 UI-mutating action이 stable info를 action 전에 캡처하도록 공통화한다.
 
 ## 잔여 위험
 

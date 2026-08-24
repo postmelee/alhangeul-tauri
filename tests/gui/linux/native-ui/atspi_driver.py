@@ -164,8 +164,8 @@ def perform_if_present(request):
     while True:
         found = find_matches(request)
         if found:
-            perform_action(found[0], request.get("actionNames", []))
-            return {"performed": True, "node": node_info(found[0])}
+            return {"performed": True, "node": perform_action(
+                found[0], request.get("actionNames", []))}
         if not find_matches(guard_request):
             return {"performed": False}
         if time.monotonic() >= deadline:
@@ -183,14 +183,15 @@ def perform_optional(request):
     while True:
         found = find_matches(request)
         if found:
-            perform_action(found[0], request.get("actionNames", []))
-            return {"performed": True, "node": node_info(found[0])}
+            return {"performed": True, "node": perform_action(
+                found[0], request.get("actionNames", []))}
         if time.monotonic() >= deadline:
             return {"performed": False}
         time.sleep(0.1)
 
 
 def perform_action(node, requested_names):
+    info = node_info(node)
     action = node.queryAction()
     count = action.nActions
     index = 0
@@ -209,6 +210,7 @@ def perform_action(node, requested_names):
             raise LookupError(f"requested action is unavailable: {candidates}")
     if count < 1 or not action.doAction(index):
         raise RuntimeError("AT-SPI action failed")
+    return info
 
 
 def action_names(node):
@@ -272,8 +274,7 @@ def dispatch(request):
         return perform_optional(request)
     node = selected_node(request)
     if command == "action":
-        perform_action(node, request.get("actionNames", []))
-        return node_info(node)
+        return perform_action(node, request.get("actionNames", []))
     if command == "selectByFocus":
         if not node.queryComponent().grabFocus():
             raise RuntimeError("AT-SPI selectable cell focus failed")
@@ -283,8 +284,7 @@ def dispatch(request):
         return node_info(node)
     if command == "submitText":
         set_editable_text(node, request.get("value"))
-        perform_action(node, ["activate"])
-        return node_info(node)
+        return perform_action(node, ["activate"])
     if command == "extents":
         extents = node.queryComponent().getExtents(pyatspi.DESKTOP_COORDS)
         return {"x": extents.x, "y": extents.y,

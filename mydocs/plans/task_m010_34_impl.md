@@ -811,6 +811,12 @@ exit 1을 반환했으며 제품 GUI 단계는 실행되지 않았다.
   `windowactivate --sync`와 `Alt+P`를 같은 bounded xdotool invocation에서 실행한다. 동시에
   AT-SPI process timeout 오류에 command와 child-process error를 함께 보존해, 이후 실패가
   readiness·waitAbsent·snapshot 중 어디에서 발생했는지 evidence만으로 확정한다.
+- exact-window·timeout 진단 SHA `25e6321fcbf87497f8fba4db14116f0c74f5a02b`의 run
+  `32699339501`은 실패 명령을 `actionIfPresent`로 확정했다. 실패 tree에서 file chooser는 이미
+  닫혔고 target basename button이 Print dialog에 반영됐으므로 action 자체는 성공했다. GTK
+  dialog close 뒤 defunct node의 `node_info`를 다시 읽는 과정이 child-process timeout을 만든
+  것으로 판정한다. dialog를 바꿀 수 있는 action은 node info를 action 전에 캡처하고 action 뒤
+  stale proxy를 다시 조회하지 않는 공통 계약으로 보정한다.
 
 ### 검증
 

@@ -188,6 +188,8 @@ test('Python bridge는 editable text를 focus·readback한 같은 node에서 sem
   assert.match(optionalAction, /if not find_matches\(guard_request\)/);
   assert.match(optionalAction, /optional action is unavailable while its dialog remains/);
   assert.match(optionalAction, /def perform_optional/);
+  assert.match(optionalAction, /"node": perform_action/);
+  assert.doesNotMatch(optionalAction, /node_info\(found\[0\]\)/);
   assert.match(optionalAction, /return \{"performed": False\}/);
   const snapshot = source.slice(source.indexOf('def snapshot'), source.indexOf('def dispatch'));
   assert.match(snapshot, /item\["actions"\] = action_names\(node\)/);
@@ -201,6 +203,10 @@ test('Python bridge는 editable text를 focus·readback한 같은 node에서 sem
   const printerFocus = source.slice(source.indexOf('if command == "selectByFocus":'));
   assert.match(printerFocus, /node\.queryComponent\(\)\.grabFocus\(\)/);
   assert.match(printerFocus, /AT-SPI selectable cell focus failed/);
+  const stableAction = source.slice(source.indexOf('def perform_action'), source.indexOf('def action_names'));
+  assert.ok(stableAction.indexOf('node_info(node)') < stableAction.indexOf('action.doAction'));
+  const dispatchAction = source.slice(source.indexOf('if command == "action":'));
+  assert.match(dispatchAction, /return perform_action\(node, request\.get\("actionNames"/);
 });
 
 test('adapter 실패는 tree와 screenshot을 남기고 Escape cleanup 후 원인을 보존한다', async () => {
