@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { runActionWithPostcondition } from './action-postcondition.mjs';
 import { createShortcutRunner, createWindowShortcutRunner } from './xdotool.mjs';
 
 const DRIVER_PATH = fileURLToPath(new URL('./atspi_driver.py', import.meta.url));
@@ -79,7 +80,6 @@ export class LinuxNativeUiAdapter {
       await this.shortcut('ctrl+l');
       await this.submitText(LOCATION_ENTRY, path);
       await this.acceptFileChooser(['open', '열기']);
-      await this.waitAbsent(FILE_DIALOG);
     });
   }
 
@@ -91,7 +91,6 @@ export class LinuxNativeUiAdapter {
       await this.shortcut('ctrl+l');
       await this.submitText(LOCATION_ENTRY, path);
       await this.acceptFileChooser(['save', '저장']);
-      await this.waitAbsent(FILE_DIALOG);
     });
   }
 
@@ -121,20 +120,22 @@ export class LinuxNativeUiAdapter {
 
   async choosePrintFile(path) {
     const fileName = this.pathApi.basename(path);
-    await this.printCommand({
-      command: 'action',
-      selector: {
-        roles: BUTTON_ROLES,
-        names: ['.pdf', '.ps', '.svg'],
-        within: PRINT_DIALOG,
+    await runActionWithPostcondition(
+      (request) => this.printCommand(request),
+      {
+        command: 'action',
+        selector: {
+          roles: BUTTON_ROLES,
+          names: ['.pdf', '.ps', '.svg'],
+          within: PRINT_DIALOG,
+        },
+        actionNames: ['click', 'press'],
       },
-      actionNames: ['click', 'press'],
-    });
-    await this.printCommand({ command: 'wait', selector: FILE_DIALOG });
+      { command: 'wait', selector: FILE_DIALOG, timeoutMs: Math.min(this.timeoutMs, 5000) },
+    );
     await this.shortcut('ctrl+l');
     await this.printCommand({ command: 'submitText', selector: LOCATION_ENTRY, value: path });
     await this.acceptFileChooser(['select', '선택'], true);
-    await this.printCommand({ command: 'waitAbsent', selector: FILE_DIALOG });
     await this.printCommand({
       command: 'wait',
       selector: { roles: BUTTON_ROLES, names: [fileName], within: PRINT_DIALOG },
@@ -165,12 +166,15 @@ export class LinuxNativeUiAdapter {
     return this.withFailureEvidence('cancel-print', async () => {
       await trigger();
       await this.printCommand({ command: 'wait', selector: PRINT_DIALOG });
-      await this.printCommand({
-        command: 'action',
-        selector: { roles: BUTTON_ROLES, exactNames: ['cancel', '취소'], within: PRINT_DIALOG },
-        actionNames: ['click', 'press'],
-      });
-      await this.printCommand({ command: 'waitAbsent', selector: PRINT_DIALOG });
+      await runActionWithPostcondition(
+        (request) => this.printCommand(request),
+        {
+          command: 'action',
+          selector: { roles: BUTTON_ROLES, exactNames: ['cancel', '취소'], within: PRINT_DIALOG },
+          actionNames: ['click', 'press'],
+        },
+        { command: 'waitAbsent', selector: PRINT_DIALOG, timeoutMs: Math.min(this.timeoutMs, 5000) },
+      );
     }, { desktopScope: true });
   }
 
@@ -217,14 +221,17 @@ export class LinuxNativeUiAdapter {
   }
 
   acceptFileChooser(names, desktopScope = false) {
-    return this.command({
-      command: 'actionIfPresent',
-      selector: { roles: BUTTON_ROLES, exactNames: names, within: FILE_CHOOSER_SCOPE },
-      guardSelector: FILE_DIALOG,
-      actionNames: ['click', 'press'],
-      timeoutMs: Math.min(this.timeoutMs, 5000),
-      desktopScope,
-    });
+    const timeoutMs = Math.min(this.timeoutMs, 5000);
+    return runActionWithPostcondition(
+      (request) => this.command(request),
+      {
+        command: 'actionIfPresent',
+        selector: { roles: BUTTON_ROLES, exactNames: names, within: FILE_CHOOSER_SCOPE },
+        guardSelector: FILE_DIALOG,
+        actionNames: ['click', 'press'], timeoutMs, desktopScope,
+      },
+      { command: 'waitAbsent', selector: FILE_DIALOG, timeoutMs, desktopScope },
+    );
   }
 
   action(selector) {

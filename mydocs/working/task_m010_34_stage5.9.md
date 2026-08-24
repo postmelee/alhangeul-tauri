@@ -247,6 +247,10 @@ git diff --check
 - PARTIAL — failure tree에는 chooser가 이미 닫히고 `biz-plan-gtk-print.pdf` basename이 Print
   dialog에 반영돼 있다. action 성공 뒤 defunct GTK node에서 `node_info`를 다시 읽는 교착으로
   확정하고, 모든 UI-mutating action이 stable info를 action 전에 캡처하도록 공통화한다.
+- PARTIAL — stable pre-read SHA `18a1ed6`의 run `32700124797`도 동일하게 chooser close 뒤
+  `actionIfPresent` process timeout을 반환했다. `doAction()` 자체가 UI mutation 뒤 반환하지 않는
+  경우로 진단을 보정한다. action timeout과 독립적인 dialog appear/absent postcondition이 모두
+  확인된 경우에만 성공시키는 bounded wrapper를 chooser open·accept·Print cancel에 공통 적용한다.
 
 ## 잔여 위험
 

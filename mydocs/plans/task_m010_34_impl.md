@@ -817,6 +817,11 @@ exit 1을 반환했으며 제품 GUI 단계는 실행되지 않았다.
   dialog close 뒤 defunct node의 `node_info`를 다시 읽는 과정이 child-process timeout을 만든
   것으로 판정한다. dialog를 바꿀 수 있는 action은 node info를 action 전에 캡처하고 action 뒤
   stale proxy를 다시 조회하지 않는 공통 계약으로 보정한다.
+- stable pre-read SHA `18a1ed6`의 run `32700124797`도 chooser가 닫힌 뒤
+  `actionIfPresent` process timeout을 반환했다. stale node 재조회가 아니라 GTK AT-SPI
+  `doAction()` 호출 자체가 UI를 변경한 뒤 반환하지 않는 동작으로 확정한다. action timeout만으로
+  성공 처리하지 않고, 각 action에 명시된 독립 postcondition(dialog appear/absent)이 짧은 bounded
+  wait로 통과한 경우에만 완료를 승인하는 공통 wrapper를 적용한다.
 
 ### 검증
 
