@@ -56,11 +56,14 @@ function Invoke-MeasuredProcess($Name, $Arguments, $WorkDirectory, $ScratchDirec
   $process = New-Object Diagnostics.Process; $process.StartInfo = $startInfo
   $timer = [Diagnostics.Stopwatch]::StartNew(); [void]$process.Start()
   $outTask = $process.StandardOutput.ReadToEndAsync(); $errTask = $process.StandardError.ReadToEndAsync()
-  $finished = $process.WaitForExit($commandTimeoutMs)
+  $finished = $false; [int64]$peak = 0
+  while (-not $finished -and $timer.ElapsedMilliseconds -lt $commandTimeoutMs) {
+    $finished = $process.WaitForExit(25)
+    try { $process.Refresh(); $working = [int64]$process.WorkingSet64; if ($working -gt $peak) { $peak = $working }; $nativePeak = [int64]$process.PeakWorkingSet64; if ($nativePeak -gt $peak) { $peak = $nativePeak } } catch {}
+  }
   if (-not $finished) { $process.Kill(); $process.WaitForExit() }
   $outText = $outTask.Result; $errText = $errTask.Result; $timer.Stop(); $process.Refresh()
   $exitCode = if ($finished) { $process.ExitCode } else { -1 }
-  $peak = try { $process.PeakWorkingSet64 } catch { 0 }
   [IO.File]::WriteAllText($stdout, $outText); [IO.File]::WriteAllText($stderr, $errText)
   $metric = [ordered]@{ Name = $Name; ExitCode = $exitCode; TimedOut = -not $finished; WallMs = $timer.ElapsedMilliseconds; PeakWorkingSetBytes = $peak; StdoutBytes = (Get-Item -LiteralPath $stdout).Length; StderrBytes = (Get-Item -LiteralPath $stderr).Length }
   return [ordered]@{ Metric = $metric; Stdout = $outText; Stderr = $errText }
@@ -130,28 +133,31 @@ function Set-RegistryValue($Root, $Path, $Value) {
 }
 function Remove-RegistryValue($Root, $Path) {
   $key = $Root.OpenSubKey($Path, $true); if ($null -ne $key) { try { $key.DeleteValue('', $false) } finally { $key.Close() } }
-  [ThumbnailContractProbe]::NotifyAssociationChanged()
+  [ThumbnailContractProbe]::NotifyAssociationChanged(); Start-Sleep -Milliseconds 100
 }
 function Get-RegistryObservation($Name, $Extension, $FilePath) {
   return [ordered]@{ Name = $Name; ResolvedClsid = [ThumbnailContractProbe]::Query($Extension, $thumbnailCategory); ImageFactoryResult = [ThumbnailContractProbe]::GetImage($FilePath) }
 }
 function Invoke-RegistryPrecedenceProbe($ScratchRoot) {
   $token = [Guid]::NewGuid().ToString('N'); $extension = ".alhangeulthumb$token"; $progId = "Alhangeul.ThumbnailProbe.$token"
-  $clsids = @('{A1111111-1111-4111-8111-111111111111}','{B2222222-2222-4222-8222-222222222222}','{C3333333-3333-4333-8333-333333333333}')
+  $clsids = @(1..3 | ForEach-Object { '{' + [Guid]::NewGuid().ToString().ToUpperInvariant() + '}' })
   $base = [Microsoft.Win32.RegistryKey]::OpenBaseKey([Microsoft.Win32.RegistryHive]::CurrentUser, [Microsoft.Win32.RegistryView]::Registry64)
   $classes = $base.CreateSubKey('Software\Classes'); $filePath = Join-Path $ScratchRoot "item$extension"; [IO.File]::WriteAllBytes($filePath, [byte[]](0x00))
-  $paths = @($extension, $progId, "SystemFileAssociations\$extension")
+  $paths = @($extension, $progId, "SystemFileAssociations\$extension") + @($clsids | ForEach-Object { "CLSID\$_" })
   try {
+    foreach ($clsid in $clsids) { Set-RegistryValue $classes "CLSID\$clsid\InprocServer32" $filePath }
     Set-RegistryValue $classes $extension $progId
     Set-RegistryValue $classes "$extension\ShellEx\$thumbnailCategory" $clsids[2]
     Set-RegistryValue $classes "$progId\ShellEx\$thumbnailCategory" $clsids[0]
     Set-RegistryValue $classes "SystemFileAssociations\$extension\ShellEx\$thumbnailCategory" $clsids[1]
-    [ThumbnailContractProbe]::NotifyAssociationChanged()
+    [ThumbnailContractProbe]::NotifyAssociationChanged(); Start-Sleep -Milliseconds 100
     $observations = @(Get-RegistryObservation 'all-candidates' $extension $filePath)
     Remove-RegistryValue $classes "$progId\ShellEx\$thumbnailCategory"
     $observations += Get-RegistryObservation 'without-progid' $extension $filePath
     Remove-RegistryValue $classes "$extension\ShellEx\$thumbnailCategory"
     $observations += Get-RegistryObservation 'system-file-association-only' $extension $filePath
+    Assert-Condition ([String]::Equals($observations[0].ResolvedClsid, $clsids[0], [StringComparison]::OrdinalIgnoreCase)) 'active ProgID thumbnail handler가 우선되지 않았습니다.'
+    Assert-Condition ([String]::Equals($observations[2].ResolvedClsid, $clsids[1], [StringComparison]::OrdinalIgnoreCase)) 'SystemFileAssociations fallback을 찾지 못했습니다.'
     return [ordered]@{ Scope = 'HKCU-Registry64-disposable'; Candidates = [ordered]@{ ProgId = $clsids[0]; SystemFileAssociation = $clsids[1]; Extension = $clsids[2] }; Observations = $observations }
   } finally {
     foreach ($path in $paths) { $classes.DeleteSubKeyTree($path, $false) }
