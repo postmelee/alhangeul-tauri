@@ -251,6 +251,12 @@ git diff --check
   `actionIfPresent` process timeout을 반환했다. `doAction()` 자체가 UI mutation 뒤 반환하지 않는
   경우로 진단을 보정한다. action timeout과 독립적인 dialog appear/absent postcondition이 모두
   확인된 경우에만 성공시키는 bounded wrapper를 chooser open·accept·Print cancel에 공통 적용한다.
+- PARTIAL — postcondition SHA `cd02b81fb4452a2fb32b173e7fc7d3c3b4f4a428`의 run
+  `32700942155`는 WebDriver phase 전체 성공(`webdriver=0`)과 exact handoff·evidence upload를
+  유지했다. native screenshot에는 exact title `Select a filename` chooser가 열려 있지만 portal
+  AT-SPI tree 탐색이 JSON 없이 process timeout됐다. Print-to-File portal chooser만 exact visible
+  X11 window 1개에서 경로 입력과 `_Select` response를 완료하고 window absent를 확인하도록
+  경계를 단일화한다. 일반 Open/Save semantic chooser 경로는 변경하지 않는다.
 
 ## 잔여 위험
 

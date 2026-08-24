@@ -1,15 +1,20 @@
-export async function runActionWithPostcondition(run, actionRequest, postconditionRequest) {
+export async function runActionWithPostcondition(
+  runAction,
+  actionRequest,
+  postconditionRequest,
+  runPostcondition = runAction,
+) {
   let result;
   let actionError;
   try {
-    result = await run(actionRequest);
+    result = await runAction(actionRequest);
   } catch (error) {
     if (!isBoundedActionTimeout(error, actionRequest.command)) throw error;
     actionError = error;
   }
 
   try {
-    await run(postconditionRequest);
+    await runPostcondition(postconditionRequest);
   } catch (postconditionError) {
     if (actionError === undefined) throw postconditionError;
     throw new Error(`${actionError.message}; postcondition failed: ${errorText(postconditionError)}`);

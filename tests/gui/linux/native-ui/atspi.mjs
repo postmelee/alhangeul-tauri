@@ -3,7 +3,10 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { runActionWithPostcondition } from './action-postcondition.mjs';
-import { createShortcutRunner, createWindowShortcutRunner } from './xdotool.mjs';
+import {
+  createPrintFileChooserRunner, createShortcutRunner,
+  createWindowShortcutRunner, PRINT_FILE_CHOOSER_TITLES,
+} from './xdotool.mjs';
 
 const DRIVER_PATH = fileURLToPath(new URL('./atspi_driver.py', import.meta.url));
 const FILE_DIALOG = Object.freeze({
@@ -59,6 +62,7 @@ export class LinuxNativeUiAdapter {
     this.runAtspi = options.runAtspi ?? createAtspiRunner(options);
     this.runShortcut = options.runShortcut ?? createShortcutRunner(options);
     this.runWindowShortcut = options.runWindowShortcut ?? createWindowShortcutRunner(options);
+    this.runPrintFileChooser = options.runPrintFileChooser ?? createPrintFileChooserRunner(options);
     this.captureScreenshot = options.captureScreenshot ?? (async () => {});
   }
 
@@ -120,6 +124,7 @@ export class LinuxNativeUiAdapter {
 
   async choosePrintFile(path) {
     const fileName = this.pathApi.basename(path);
+    const timeoutMs = Math.min(this.timeoutMs, 5000);
     await runActionWithPostcondition(
       (request) => this.printCommand(request),
       {
@@ -131,11 +136,12 @@ export class LinuxNativeUiAdapter {
         },
         actionNames: ['click', 'press'],
       },
-      { command: 'wait', selector: FILE_DIALOG, timeoutMs: Math.min(this.timeoutMs, 5000) },
+      { operation: 'wait', titles: PRINT_FILE_CHOOSER_TITLES, timeoutMs },
+      (request) => this.runPrintFileChooser(request),
     );
-    await this.shortcut('ctrl+l');
-    await this.printCommand({ command: 'submitText', selector: LOCATION_ENTRY, value: path });
-    await this.acceptFileChooser(['select', '선택'], true);
+    await this.runPrintFileChooser({
+      operation: 'submitPath', titles: PRINT_FILE_CHOOSER_TITLES, path, timeoutMs,
+    });
     await this.printCommand({
       command: 'wait',
       selector: { roles: BUTTON_ROLES, names: [fileName], within: PRINT_DIALOG },

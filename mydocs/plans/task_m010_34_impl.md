@@ -822,6 +822,13 @@ exit 1을 반환했으며 제품 GUI 단계는 실행되지 않았다.
   `doAction()` 호출 자체가 UI를 변경한 뒤 반환하지 않는 동작으로 확정한다. action timeout만으로
   성공 처리하지 않고, 각 action에 명시된 독립 postcondition(dialog appear/absent)이 짧은 bounded
   wait로 통과한 경우에만 완료를 승인하는 공통 wrapper를 적용한다.
+- postcondition SHA `cd02b81fb4452a2fb32b173e7fc7d3c3b4f4a428`의 run `32700942155`는
+  exact handoff와 WebDriver phase를 통과했지만 Print-to-File chooser가 화면에 열린 상태에서
+  AT-SPI `wait` process timeout을 반환했다. screenshot의 exact title은 `Select a filename`이고
+  chooser는 portal application의 접근성 tree에 나타나지 않았다. 이 portal chooser에 한해 exact
+  visible X11 window cardinality 1을 확인하고 같은 window ID에서 `Ctrl+L`·전체 선택·절대경로
+  입력·GTK `_Select` mnemonic을 실행한 뒤 window absent를 확인한다. 일반 Open/Save chooser의
+  검증된 semantic 경로와 Print dialog 내부 selector는 유지한다.
 
 ### 검증
 

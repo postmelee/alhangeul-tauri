@@ -59,17 +59,18 @@ test('print adapter는 Print to File만 고르고 save/cancel modal 종료를 �
   const calls = [];
   const shortcuts = [];
   const windowShortcuts = [];
+  const fileChooserCalls = [];
   const adapter = createAdapter({
     runAtspi: async (request) => { calls.push(request); return {}; },
     runShortcut: async (key) => { shortcuts.push(key); },
     runWindowShortcut: async (request) => { windowShortcuts.push(request); },
+    runPrintFileChooser: async (request) => { fileChooserCalls.push(request); return {}; },
   });
   await adapter.printToFile('/tmp/output/gtk.pdf', async () => {});
   await adapter.cancelPrint(async () => {});
   assert.deepEqual(calls.map(({ command }) => command), [
     'wait', 'selectByFocus', 'wait',
-    'action', 'wait', 'submitText', 'actionIfPresent', 'waitAbsent', 'wait',
-    'wait', 'waitAbsent',
+    'action', 'wait', 'wait', 'waitAbsent',
     'wait', 'action', 'waitAbsent',
   ]);
   assert.deepEqual(calls[1].selector.names, ['print to file', '파일로 인쇄']);
@@ -77,20 +78,22 @@ test('print adapter는 Print to File만 고르고 save/cancel modal 종료를 �
   assert.equal(calls[2].selector.selected, true);
   assert.deepEqual(calls[3].selector.names, ['.pdf', '.ps', '.svg']);
   assert.deepEqual(calls[3].actionNames, ['click', 'press']);
-  assert.equal(calls[5].value, '/tmp/output/gtk.pdf');
-  assert.equal(calls[5].command, 'submitText');
-  assert.equal(calls[6].desktopScope, true);
-  assert.deepEqual(calls[6].selector.exactNames, ['select', '선택']);
-  assert.deepEqual(calls[6].actionNames, ['click', 'press']);
-  assert.deepEqual(calls[8].selector.names, ['gtk.pdf']);
+  assert.deepEqual(fileChooserCalls, [
+    { operation: 'wait', titles: ['Select a filename', '파일 이름 선택'], timeoutMs: 5000 },
+    {
+      operation: 'submitPath', titles: ['Select a filename', '파일 이름 선택'],
+      path: '/tmp/output/gtk.pdf', timeoutMs: 5000,
+    },
+  ]);
+  assert.deepEqual(calls[4].selector.names, ['gtk.pdf']);
   assert.ok(calls.every(({ desktopScope }) => desktopScope === true));
-  assert.deepEqual(calls[9].selector.within, { roles: ['dialog'], names: ['print', '인쇄'] });
-  assert.deepEqual(calls[9].selector.exactNames, ['print', '인쇄']);
-  assert.equal(calls[9].selector.names, undefined);
-  assert.deepEqual(shortcuts, ['ctrl+l']);
+  assert.deepEqual(calls[5].selector.within, { roles: ['dialog'], names: ['print', '인쇄'] });
+  assert.deepEqual(calls[5].selector.exactNames, ['print', '인쇄']);
+  assert.equal(calls[5].selector.names, undefined);
+  assert.deepEqual(shortcuts, []);
   assert.deepEqual(windowShortcuts, [{ titles: ['Print', '인쇄'], key: 'alt+p' }]);
-  assert.deepEqual(calls[12].selector.within, { roles: ['dialog'], names: ['print', '인쇄'] });
-  assert.deepEqual(calls[12].selector.exactNames, ['cancel', '취소']);
+  assert.deepEqual(calls[8].selector.within, { roles: ['dialog'], names: ['print', '인쇄'] });
+  assert.deepEqual(calls[8].selector.exactNames, ['cancel', '취소']);
   await assert.rejects(
     adapter.printWithVirtualPrinter('Office LaserJet', async () => {}),
     /physical printer/,
@@ -269,6 +272,7 @@ function createAdapter(override = {}) {
     applicationNames: ['Alhangeul'],
     runShortcut: async () => {},
     runWindowShortcut: async () => {},
+    runPrintFileChooser: async () => ({}),
     captureScreenshot: async () => {},
     ...override,
   });
