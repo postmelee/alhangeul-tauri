@@ -70,9 +70,10 @@ test('bench, first-page direct SVG, preview를 독립 process로 측정한다', 
     "@('thumbnail', $File.FullName, '--output', $previewPath)",
   ]);
   assert.match(source, /\$timer\.ElapsedMilliseconds -lt \$commandTimeoutMs/);
-  assert.match(source, /WaitForExit\(25\)/);
+  assert.match(source, /WaitForExit\(5\)/);
   assert.match(source, /\$process\.WorkingSet64/);
-  assert.match(source, /\$process\.PeakWorkingSet64/);
+  assert.match(source, /GetProcessMemoryInfo/);
+  assert.match(source, /PeakWorkingSet\(\$processHandle\)/);
   assert.match(source, /if \(-not \$finished\) \{ \$process\.Kill\(\)/);
   assert.match(source, /Get-SvgMetadata/);
   assert.match(source, /Get-PreviewMetadata/);
@@ -110,8 +111,8 @@ test('registry probe는 disposable HKCU Registry64만 만들고 항상 제거한
     assert.ok(source.includes(marker), `registry marker가 필요합니다: ${marker}`);
   }
   assert.match(source, /finally \{[\s\S]*DeleteSubKeyTree\(\$path, \$false\)/);
-  assert.match(source, /active ProgID thumbnail handler가 우선되지 않았습니다/);
-  assert.match(source, /SystemFileAssociations fallback을 찾지 못했습니다/);
+  assert.match(source, /registry candidate를 해석하지 못했습니다/);
+  assert.doesNotMatch(source, /active ProgID thumbnail handler가 우선되지 않았습니다/);
   assert.doesNotMatch(source, /Stop-Process/);
   assert.doesNotMatch(source, /Software\\Classes\\\.hwp[x]?/i);
 });

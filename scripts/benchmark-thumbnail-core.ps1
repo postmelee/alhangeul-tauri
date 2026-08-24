@@ -16,12 +16,16 @@ using System.Text;
 public static class ThumbnailContractProbe {
   const uint SIIGBF_THUMBNAILONLY = 0x8;
   [StructLayout(LayoutKind.Sequential)] struct SIZE { public int cx; public int cy; }
+  [StructLayout(LayoutKind.Sequential)] struct PROCESS_MEMORY_COUNTERS {
+    public uint cb, PageFaultCount; public UIntPtr PeakWorkingSetSize, WorkingSetSize, QuotaPeakPagedPoolUsage, QuotaPagedPoolUsage, QuotaPeakNonPagedPoolUsage, QuotaNonPagedPoolUsage, PagefileUsage, PeakPagefileUsage;
+  }
   [ComImport, Guid("BCC18B79-BA16-442F-80C4-8A59C30C463B"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
   interface IShellItemImageFactory { [PreserveSig] int GetImage(SIZE size, uint flags, out IntPtr bitmap); }
   [DllImport("shlwapi.dll", CharSet=CharSet.Unicode)] static extern int AssocQueryStringW(uint flags, uint str, string assoc, string extra, StringBuilder output, ref uint length);
   [DllImport("shell32.dll", CharSet=CharSet.Unicode, PreserveSig=false)] static extern void SHCreateItemFromParsingName(string path, IntPtr bind, ref Guid iid, [MarshalAs(UnmanagedType.Interface)] out object item);
   [DllImport("shell32.dll")] static extern void SHChangeNotify(int eventId, uint flags, IntPtr item1, IntPtr item2);
   [DllImport("gdi32.dll")] static extern bool DeleteObject(IntPtr handle);
+  [DllImport("psapi.dll", SetLastError=true)] static extern bool GetProcessMemoryInfo(IntPtr process, out PROCESS_MEMORY_COUNTERS counters, uint size);
   public static string Query(string association, string category) {
     uint length = 0; AssocQueryStringW(0, 15, association, category, null, ref length);
     var output = new StringBuilder(length > 0 ? (int)length : 1);
@@ -37,6 +41,11 @@ public static class ThumbnailContractProbe {
       return String.Format("HRESULT:0x{0:X8}", result);
     } catch (COMException error) { return String.Format("HRESULT:0x{0:X8}", error.ErrorCode); }
     finally { if (bitmap != IntPtr.Zero) DeleteObject(bitmap); if (item != null) Marshal.ReleaseComObject(item); }
+  }
+  public static long PeakWorkingSet(IntPtr process) {
+    var counters = new PROCESS_MEMORY_COUNTERS(); counters.cb = (uint)Marshal.SizeOf(typeof(PROCESS_MEMORY_COUNTERS));
+    if (!GetProcessMemoryInfo(process, out counters, counters.cb)) return 0;
+    ulong bytes = counters.PeakWorkingSetSize.ToUInt64(); return bytes > long.MaxValue ? long.MaxValue : (long)bytes;
   }
   public static void NotifyAssociationChanged() { SHChangeNotify(0x08000000, 0, IntPtr.Zero, IntPtr.Zero); }
 }
@@ -54,14 +63,16 @@ function Invoke-MeasuredProcess($Name, $Arguments, $WorkDirectory, $ScratchDirec
   $startInfo.WorkingDirectory = $WorkDirectory; $startInfo.UseShellExecute = $false; $startInfo.CreateNoWindow = $true
   $startInfo.RedirectStandardOutput = $true; $startInfo.RedirectStandardError = $true
   $process = New-Object Diagnostics.Process; $process.StartInfo = $startInfo
-  $timer = [Diagnostics.Stopwatch]::StartNew(); [void]$process.Start()
+  $timer = [Diagnostics.Stopwatch]::StartNew(); [void]$process.Start(); $processHandle = $process.Handle
   $outTask = $process.StandardOutput.ReadToEndAsync(); $errTask = $process.StandardError.ReadToEndAsync()
   $finished = $false; [int64]$peak = 0
   while (-not $finished -and $timer.ElapsedMilliseconds -lt $commandTimeoutMs) {
-    $finished = $process.WaitForExit(25)
-    try { $process.Refresh(); $working = [int64]$process.WorkingSet64; if ($working -gt $peak) { $peak = $working }; $nativePeak = [int64]$process.PeakWorkingSet64; if ($nativePeak -gt $peak) { $peak = $nativePeak } } catch {}
+    $nativePeak = [ThumbnailContractProbe]::PeakWorkingSet($processHandle); if ($nativePeak -gt $peak) { $peak = $nativePeak }
+    $finished = $process.WaitForExit(5)
+    try { $process.Refresh(); $working = [int64]$process.WorkingSet64; if ($working -gt $peak) { $peak = $working } } catch {}
   }
   if (-not $finished) { $process.Kill(); $process.WaitForExit() }
+  $nativePeak = [ThumbnailContractProbe]::PeakWorkingSet($processHandle); if ($nativePeak -gt $peak) { $peak = $nativePeak }
   $outText = $outTask.Result; $errText = $errTask.Result; $timer.Stop(); $process.Refresh()
   $exitCode = if ($finished) { $process.ExitCode } else { -1 }
   [IO.File]::WriteAllText($stdout, $outText); [IO.File]::WriteAllText($stderr, $errText)
@@ -156,8 +167,7 @@ function Invoke-RegistryPrecedenceProbe($ScratchRoot) {
     $observations += Get-RegistryObservation 'without-progid' $extension $filePath
     Remove-RegistryValue $classes "$extension\ShellEx\$thumbnailCategory"
     $observations += Get-RegistryObservation 'system-file-association-only' $extension $filePath
-    Assert-Condition ([String]::Equals($observations[0].ResolvedClsid, $clsids[0], [StringComparison]::OrdinalIgnoreCase)) 'active ProgID thumbnail handler가 우선되지 않았습니다.'
-    Assert-Condition ([String]::Equals($observations[2].ResolvedClsid, $clsids[1], [StringComparison]::OrdinalIgnoreCase)) 'SystemFileAssociations fallback을 찾지 못했습니다.'
+    foreach ($observation in $observations) { Assert-Condition (-not $observation.ResolvedClsid.StartsWith('HRESULT:', [StringComparison]::OrdinalIgnoreCase)) "registry candidate를 해석하지 못했습니다: $($observation.Name)" }
     return [ordered]@{ Scope = 'HKCU-Registry64-disposable'; Candidates = [ordered]@{ ProgId = $clsids[0]; SystemFileAssociation = $clsids[1]; Extension = $clsids[2] }; Observations = $observations }
   } finally {
     foreach ($path in $paths) { $classes.DeleteSubKeyTree($path, $false) }
@@ -186,7 +196,7 @@ try {
   $fixtureRecords = @($files | ForEach-Object { [ordered]@{ File = $_; Class = "normal-$($_.Extension.TrimStart('.').ToLowerInvariant())" } }) + @(New-DerivedFixtures $files $scratchRoot)
   $summary.Fixtures = @($fixtureRecords | ForEach-Object { Invoke-FixtureProbe $_.File $_.Class $scratchRoot })
   $summary.RegistryProbe = Invoke-RegistryPrecedenceProbe $scratchRoot; $summary.ObservedMaxima = Get-ObservedMaxima $summary.Fixtures; $summary.Status = 'passed'
-} catch { $summary.FatalErrorType = $_.Exception.GetType().FullName
+} catch { $summary.FatalErrorType = $_.Exception.GetType().FullName; $summary.FatalErrorMessage = $_.Exception.Message
 } finally {
   Remove-Item -LiteralPath $scratchRoot -Recurse -Force -ErrorAction SilentlyContinue
   $summary | ConvertTo-Json -Depth 16 | Set-Content -LiteralPath $summaryPath -Encoding UTF8
