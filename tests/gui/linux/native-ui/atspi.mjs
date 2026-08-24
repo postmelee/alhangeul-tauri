@@ -2,7 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createPointerRunner, createShortcutRunner } from './xdotool.mjs';
+import { createShortcutRunner } from './xdotool.mjs';
 
 const DRIVER_PATH = fileURLToPath(new URL('./atspi_driver.py', import.meta.url));
 const FILE_DIALOG = Object.freeze({
@@ -55,7 +55,6 @@ export class LinuxNativeUiAdapter {
     this.saveTargets = options.saveTargets ?? {};
     this.runAtspi = options.runAtspi ?? createAtspiRunner(options);
     this.runShortcut = options.runShortcut ?? createShortcutRunner(options);
-    this.runPointer = options.runPointer ?? createPointerRunner(options);
     this.captureScreenshot = options.captureScreenshot ?? (async () => {});
   }
 
@@ -112,11 +111,10 @@ export class LinuxNativeUiAdapter {
   }
 
   async clickPrintButton() {
-    const extents = await this.printCommand({
-      command: 'extents',
-      selector: { roles: BUTTON_ROLES, exactNames: ['print', '인쇄'], within: PRINT_DIALOG },
-    });
-    await this.runPointer(extents);
+    const selector = { roles: BUTTON_ROLES, exactNames: ['print', '인쇄'], within: PRINT_DIALOG };
+    await this.printCommand({ command: 'selectByFocus', selector });
+    await this.printCommand({ command: 'wait', selector: { ...selector, focused: true } });
+    await this.shortcut('space');
   }
 
   async choosePrintFile(path) {

@@ -221,6 +221,13 @@ git diff --check
   action을 제공했지만 `AtkAction.doAction()`이 JSON 응답 없이 process timeout됐고 dialog가
   그대로 남았다. print response만 exact semantic selector의 button extents를 읽어 격리 X11
   session에서 중심점을 한 번 click하고, dialog close와 생성 파일을 별도로 판정하도록 보정한다.
+- OK — semantic bounds 보정 SHA `6905cffab75c5536a0f7458e0126f337f8353746`의 run
+  `32697224452`도 WebDriver phase 전체 성공(`webdriver=0`), exact handoff·환경·evidence
+  upload와 chooser·target basename readback을 통과했다.
+- PARTIAL — 같은 run은 GTK/CUPS PDF를 만들지 못하고 동일 print dialog를 남긴 채 JSON response
+  timeout으로 종료됐다. synchronous `Component.getExtents()` 경계를 제거하고, 이미 hosted GTK
+  printer cell에서 검증한 `grabFocus()`를 exact `Print` button에 적용해 `focused=true`를
+  readback한 뒤 X11 `space` 한 번으로 활성화한다.
 
 ## 잔여 위험
 

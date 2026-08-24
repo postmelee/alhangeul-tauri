@@ -791,6 +791,13 @@ exit 1을 반환했으며 제품 GUI 단계는 실행되지 않았다.
   따라서 print response action만 AT-SPI exact-name/ancestor로 찾은 button extents를 읽은 뒤
   격리 X11 session에서 그 중심점을 한 번 click한다. 좌표로 대상을 탐색하거나 고정 좌표를
   사용하지 않으며, click 뒤 dialog close와 생성 파일/PDF 판정을 기존 계약대로 기다린다.
+- semantic bounds 보정 SHA `6905cffab75c5536a0f7458e0126f337f8353746`의 branch GUI run
+  `32697224452`도 WebDriver phase 전체와 chooser·basename readback을 통과했지만 PDF 없이
+  동일 dialog를 남기고 JSON response timeout으로 종료됐다. `Component.getExtents()`가 action과
+  같은 synchronous AT-SPI request 경계를 추가했으므로 좌표 경로를 제거한다. 같은 dialog의
+  printer cell에서 hosted 검증된 `Component.grabFocus()`를 exact `Print` button에 적용하고
+  `focused=true` readback 뒤 X11 `space`를 한 번 보내 GTK button을 활성화한다. exact selector,
+  focus readback, dialog close와 file/PDF 판정 중 하나라도 실패하면 계속 fail-closed한다.
 
 ### 검증
 
