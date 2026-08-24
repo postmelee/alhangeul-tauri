@@ -35,7 +35,7 @@ GitHub Issue: [#14](https://github.com/postmelee/alhangeul-tauri/issues/14)
 - worker는 내장 preview를 bounded decode/raster해 `PreviewCandidate`를 먼저 보낼 수 있지만 아직 최종 결과로 선택하지 않는다.
 - worker는 이어서 같은 byte에서 `DocumentCore::from_bytes`와 `render_page_svg_native(0)`을 실행해 `DirectBitmap`을 보낸다.
 - deadline 안에 유효한 direct bitmap이 오면 preview 후보를 폐기한다. direct 실패·timeout·worker crash 때만 검증된 preview 후보를 사용하고, 후보도 없으면 실패한다.
-- IPC frame은 magic, protocol version, kind, little-endian length와 payload hash를 갖는다. 양쪽 모두 allocation 전에 length·pixel·stride 산술 overflow와 실제 payload를 검증한다.
+- IPC frame은 고정 64 byte header에 magic, protocol version, kind, little-endian length와 payload hash를 갖는다. 양쪽 모두 allocation 전에 length·pixel·stride 산술 overflow와 실제 payload를 검증한다.
 - worker는 top-down premultiplied BGRA만 반환하고 GDI handle을 넘기지 않는다. DLL이 checked size로 `CreateDIBSection`을 호출해 반환 `HBITMAP`을 만든다.
 
 ### Cargo와 공유 core
@@ -46,11 +46,11 @@ GitHub Issue: [#14](https://github.com/postmelee/alhangeul-tauri/issues/14)
 - desktop `render_document_preview`는 공유 direct SVG API를 호출하되 worker protocol이나 Windows type을 알지 못한다.
 - `third_party/rhwp`는 workspace member로 편입하거나 수정하지 않고 현재 pin을 유지한다.
 
-### provisional resource budget
+### Stage 1 확정 resource budget
 
-Stage 1에서 Windows fixture 실측으로 다음 후보를 확정하고 구현계획서를 보정한 뒤 다시 승인받는다.
+Windows x64 exact SHA `a12e7b77e425d49b9773cd7f493499ac7bc0fd51`에서 정상 7개와 파생 4개 fixture를 실측해 다음 상한으로 확정한다.
 
-| 항목 | 후보 상한 | 초과 시 동작 |
+| 항목 | 확정 상한 | 초과 시 동작 |
 |---|---:|---|
 | 입력 stream | 64 MiB | worker 미기동, icon fallback |
 | 요청 `cx` | 1–1024 px | 0은 실패, 초과는 1024로 제한 |
@@ -58,19 +58,26 @@ Stage 1에서 Windows fixture 실측으로 다음 후보를 확정하고 구현�
 | preview compressed bytes | 16 MiB | icon fallback |
 | preview decoded pixels | 16,777,216 px | icon fallback |
 | 최종 BGRA pixels | 1,048,576 px | 축소 또는 실패 |
-| IPC frame | 4 MiB + header | frame 폐기·worker 종료 |
+| IPC bitmap payload / 전체 frame | 4,194,304 B / 4,194,368 B | frame 폐기·worker 종료 |
 | worker committed memory | 256 MiB | Job 종료, preview 또는 icon fallback |
 | direct deadline | 1,500 ms | worker 종료, preview 후보 사용 |
 | 전체 deadline | 2,000 ms | worker 종료, preview 또는 icon fallback |
 
+- 정상 direct 최대는 81 ms와 peak working set 13,377,536 B, 정상 bench 최대는 385 ms였다. worker spawn·raster·cold font 비용을 포함하지 않는 baseline이므로 1,500/2,000 ms hard deadline을 유지한다.
+- SVG 최대 1,292,217 B, preview 최대 72,948 B와 741,376 px였다. 16 MiB byte cap과 16,777,216 pixel cap은 fixture 밖 복잡 문서를 위한 보수적 headroom으로 유지한다.
+- 64 MiB+1 fixture는 모든 경로에서 실패했고 preview process peak working set이 138,240,000 B까지 증가했다. DLL이 64 MiB 초과를 worker spawn 전에 거부해야 한다.
+- 최대 요청 1024 px의 BGRA payload는 정확히 4,194,304 B이므로 4 MiB payload와 64 byte header를 분리해 전체 frame 상한을 4,194,368 B로 고정한다.
+- 256 MiB Job process memory cap은 측정된 working set보다 여유가 있으나 commit과 working set은 같은 지표가 아니다. Stage 3 native test에서 Job accounting과 limit 종료를 별도로 검증한다.
+
 ### 등록·복원
 
 - CLSID `InprocServer32`는 설치된 DLL 절대경로와 `ThreadingModel=Apartment`를 가진다.
-- active ProgID, extension ShellEx와 `SystemFileAssociations` precedence를 Stage 1 disposable HKCU probe로 확인하고 관찰 없이 세 경로를 모두 덮어쓰지 않는다.
+- Stage 1 disposable HKCU probe에서 lookup precedence는 `active ProgID > extension ShellEx > SystemFileAssociations`로 확인됐다.
+- Alhangeul은 `.hwp`와 `.hwpx`의 extension `ShellEx\{E357FCCD-A995-4576-B01F-234630154E96}` default value만 association owner path로 사용한다. active ProgID와 `SystemFileAssociations`는 쓰지 않아 기존 active ProgID handler가 우선하도록 보존한다.
 - MSI는 HKLM/Registry64, NSIS per-user는 HKCU/Registry64를 소유 범위로 사용하고 32-bit view에 중복 등록하지 않는다.
-- 공유 handler value를 바꾸기 전 값 부재, value kind와 원래 CLSID를 제품 전용 transaction record에 저장한다.
-- uninstall/rollback은 현재 값이 Alhangeul CLSID일 때만 원래 값 또는 부재 상태를 복원한다. 설치 뒤 제3자가 바꾼 값은 보존한다.
-- CLSID key만 제품 소유로 제거하고 extension/ProgID/SystemFileAssociations 공유 parent key는 재귀 삭제하지 않는다.
+- 공유 extension handler value를 처음 인수하기 전에 값 부재, value kind와 원래 데이터를 제품 전용 transaction record에 저장한다. upgrade에서 현재 값이 Alhangeul CLSID이고 기존 snapshot이 있으면 다시 snapshot하지 않는다.
+- install은 `snapshot -> CLSID 등록 -> extension handler 등록 -> association notify` 순서로 적용한다. rollback/uninstall은 현재 extension handler가 Alhangeul CLSID일 때만 snapshot의 원래 값 또는 부재 상태를 복원한다.
+- 설치 뒤 제3자가 handler를 바꿨으면 해당 값을 보존하고 snapshot만 정리한다. CLSID key만 제품 소유로 제거하며 extension 공유 parent key는 재귀 삭제하지 않는다.
 - install/update/uninstall 후 `SHChangeNotify(SHCNE_ASSOCCHANGED)`를 호출하며 Explorer/DllHost를 이름 기준으로 종료하지 않는다.
 
 ## 문서 위치 확인
@@ -420,7 +427,7 @@ Task #14 Stage 6: Windows Explorer exact-SHA thumbnail 수용 확정
 
 ## 위험과 대응
 
-- **worker spawn 비용**: Stage 1/3에서 측정하며 persistent daemon/pool은 문서 수명·공격면을 넓혀 제외한다.
+- **worker spawn 비용**: Stage 1은 CLI process baseline을 기록했고 Stage 3/6에서 실제 worker spawn·cold start를 측정한다. persistent daemon/pool은 문서 수명·공격면을 넓혀 제외한다.
 - **preview-first 계산 오해**: preview는 candidate일 뿐이며 direct 성공 시 폐기하는 final-source test를 둔다.
 - **hard timeout 전 preview 손실**: 후보 도착 전 timeout이면 icon으로 저하하고 DLL 안에서 재파싱하지 않는다.
 - **Job/child 차단**: 정책 거부는 handler 실패로 처리하고 앱 실패로 승격하지 않는다.
@@ -437,8 +444,8 @@ Task #14 Stage 6: Windows Explorer exact-SHA thumbnail 수용 확정
 - preview 후보를 먼저 준비하되 direct 성공 시 반드시 direct를 선택하는 IPC 순서
 - 고정 CLSID, `ThreadingModel=Apartment`와 기본 Shell process isolation 계약
 - desktop manifest를 workspace root로 확장하면서 기존 lockfile/target 위치를 유지하는 Cargo 구성
-- Stage 1에서 provisional budget, registry owner path와 installer transaction을 확정해 다시 승인받는 gate
+- Stage 1에서 확정한 budget, extension ShellEx owner path와 conditional restore transaction
 - 6개 Stage의 파일 범위, 검증과 커밋 메시지
 - `publish/task14` canary는 Stage 1 probe와 Stage 6 수용에만 사용하고 release/tag/게시를 하지 않는 범위
 
-승인되면 Stage 1의 Windows contract probe와 resource budget 확정만 진행한다.
+Stage 1 산출물과 완료보고를 승인하면 Stage 2의 공유 document preview core와 desktop adapter 분리만 진행한다.
