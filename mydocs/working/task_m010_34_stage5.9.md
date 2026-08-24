@@ -213,6 +213,14 @@ git diff --check
   semantic role·ancestor 조건은 유지한다.
 - OK — exact dialog action selector 보정 뒤 공통 GUI 계약 `19/19`, Linux GUI 계약 `23/23`,
   GUI TypeScript를 통과했고 adapter `296`, driver `300`, focused test `231` LOC로 상한을 지켰다.
+- OK — exact-name 보정 SHA `fd3a2d90a408c3eff403b215827ed7352f3a0265`의 run
+  `32696413151`도 WebDriver phase 전체 성공(`webdriver=0`), exact handoff·환경·evidence
+  upload를 통과했다. native print는 `Print to File` 선택, chooser full path, explicit `Select`,
+  chooser close와 target basename readback까지 다시 성공했다.
+- PARTIAL — exact `Print` button은 failure tree에서 `enabled=true`, `sensitive=true`, `click`
+  action을 제공했지만 `AtkAction.doAction()`이 JSON 응답 없이 process timeout됐고 dialog가
+  그대로 남았다. print response만 exact semantic selector의 button extents를 읽어 격리 X11
+  session에서 중심점을 한 번 click하고, dialog close와 생성 파일을 별도로 판정하도록 보정한다.
 
 ## 잔여 위험
 

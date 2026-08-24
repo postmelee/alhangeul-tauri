@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createPointerRunner, createShortcutRunner } from './xdotool.mjs';
 
 const DRIVER_PATH = fileURLToPath(new URL('./atspi_driver.py', import.meta.url));
 const FILE_DIALOG = Object.freeze({
@@ -54,6 +55,7 @@ export class LinuxNativeUiAdapter {
     this.saveTargets = options.saveTargets ?? {};
     this.runAtspi = options.runAtspi ?? createAtspiRunner(options);
     this.runShortcut = options.runShortcut ?? createShortcutRunner(options);
+    this.runPointer = options.runPointer ?? createPointerRunner(options);
     this.captureScreenshot = options.captureScreenshot ?? (async () => {});
   }
 
@@ -104,13 +106,17 @@ export class LinuxNativeUiAdapter {
       await this.printCommand({ command: 'selectByFocus', selector: printer });
       await this.printCommand({ command: 'wait', selector: { ...printer, selected: true } });
       await this.choosePrintFile(path);
-      await this.printCommand({
-        command: 'action',
-        selector: { roles: BUTTON_ROLES, exactNames: ['print', '인쇄'], within: PRINT_DIALOG },
-        actionNames: ['click', 'press'],
-      });
+      await this.clickPrintButton();
       await this.printCommand({ command: 'waitAbsent', selector: PRINT_DIALOG });
     }, { desktopScope: true });
+  }
+
+  async clickPrintButton() {
+    const extents = await this.printCommand({
+      command: 'extents',
+      selector: { roles: BUTTON_ROLES, exactNames: ['print', '인쇄'], within: PRINT_DIALOG },
+    });
+    await this.runPointer(extents);
   }
 
   async choosePrintFile(path) {
@@ -150,11 +156,7 @@ export class LinuxNativeUiAdapter {
       };
       await this.printCommand({ command: 'selectByFocus', selector: printer });
       await this.printCommand({ command: 'wait', selector: { ...printer, selected: true } });
-      await this.printCommand({
-        command: 'action',
-        selector: { roles: BUTTON_ROLES, exactNames: ['print', '인쇄'], within: PRINT_DIALOG },
-        actionNames: ['click', 'press'],
-      });
+      await this.clickPrintButton();
       await this.printCommand({ command: 'waitAbsent', selector: PRINT_DIALOG });
     }, { desktopScope: true });
   }
@@ -251,17 +253,6 @@ export class LinuxNativeUiAdapter {
   printCommand(request) {
     return this.command({ desktopScope: true, ...request });
   }
-}
-
-function createShortcutRunner(options) {
-  const execute = options.spawnSync ?? spawnSync;
-  return async (key) => {
-    if (!['ctrl+l', 'ctrl+p', 'Escape'].includes(key)) throw new Error(`허용되지 않은 key: ${key}`);
-    const result = execute(options.xdotoolPath ?? 'xdotool', ['key', '--clearmodifiers', key], {
-      encoding: 'utf8', env: options.env ?? process.env, timeout: 5000,
-    });
-    if (result.status !== 0) throw new Error(`xdotool key failed: ${compactError(result)}`);
-  };
 }
 
 function parseDriverResponse(stdout) {

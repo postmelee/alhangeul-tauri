@@ -783,6 +783,14 @@ exit 1을 반환했으며 제품 GUI 단계는 실행되지 않았다.
   `Print`/`Cancel`/`Open`/`Save`/`Select`이므로 이 버튼들만 normalized exact-name으로 찾는다.
   printer row와 경로 button은 기존 role·ancestor·substring scope를 유지해 서로 다른 semantics를
   하나의 matching 규칙으로 섞지 않는다.
+- exact-name 보정 SHA `fd3a2d90a408c3eff403b215827ed7352f3a0265`의 branch GUI run
+  `32696413151`은 WebDriver phase 전체와 `Print to File` row selection, chooser full path,
+  `Select`, basename readback을 다시 통과했다. 그러나 exact `Print` button의
+  `AtkAction.doAction()` 호출이 JSON 응답 없이 process timeout됐고 failure tree와 screenshot은
+  같은 button이 `enabled=true`, `sensitive=true`인 채 dialog가 그대로 남았음을 보존했다.
+  따라서 print response action만 AT-SPI exact-name/ancestor로 찾은 button extents를 읽은 뒤
+  격리 X11 session에서 그 중심점을 한 번 click한다. 좌표로 대상을 탐색하거나 고정 좌표를
+  사용하지 않으며, click 뒤 dialog close와 생성 파일/PDF 판정을 기존 계약대로 기다린다.
 
 ### 검증
 

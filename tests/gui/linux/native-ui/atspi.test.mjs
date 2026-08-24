@@ -7,6 +7,7 @@ import {
   createAtspiRunner,
   LinuxNativeUiAdapter,
 } from './atspi.mjs';
+import { createPointerRunner } from './xdotool.mjs';
 
 test('Save As는 focused location entry에 full target을 넣고 명시적으로 accept한다', async () => {
   const calls = [];
@@ -54,15 +55,22 @@ test('native open은 GTK location shortcut을 한 번 쓰고 modal close를 기�
 
 test('print adapter는 Print to File만 고르고 save/cancel modal 종료를 확인한다', async () => {
   const calls = [];
+  const pointerCalls = [];
   const adapter = createAdapter({
-    runAtspi: async (request) => { calls.push(request); return {}; },
+    runAtspi: async (request) => {
+      calls.push(request);
+      return request.command === 'extents'
+        ? { x: 100, y: 200, width: 41, height: 21 }
+        : {};
+    },
+    runPointer: async (extents) => { pointerCalls.push(extents); },
   });
   await adapter.printToFile('/tmp/output/gtk.pdf', async () => {});
   await adapter.cancelPrint(async () => {});
   assert.deepEqual(calls.map(({ command }) => command), [
     'wait', 'selectByFocus', 'wait',
     'action', 'wait', 'submitText', 'actionIfPresent', 'waitAbsent', 'wait',
-    'action', 'waitAbsent',
+    'extents', 'waitAbsent',
     'wait', 'action', 'waitAbsent',
   ]);
   assert.deepEqual(calls[1].selector.names, ['print to file', '파일로 인쇄']);
@@ -80,6 +88,7 @@ test('print adapter는 Print to File만 고르고 save/cancel modal 종료를 �
   assert.deepEqual(calls[9].selector.within, { roles: ['dialog'], names: ['print', '인쇄'] });
   assert.deepEqual(calls[9].selector.exactNames, ['print', '인쇄']);
   assert.equal(calls[9].selector.names, undefined);
+  assert.deepEqual(pointerCalls, [{ x: 100, y: 200, width: 41, height: 21 }]);
   assert.deepEqual(calls[12].selector.within, { roles: ['dialog'], names: ['print', '인쇄'] });
   assert.deepEqual(calls[12].selector.exactNames, ['cancel', '취소']);
   await assert.rejects(
@@ -95,14 +104,30 @@ test('virtual printer는 semantic selection 후에만 Print를 실행한다', as
   });
   await adapter.printWithVirtualPrinter('PDF', async () => {});
   assert.deepEqual(calls.map(({ command }) => command), [
-    'wait', 'selectByFocus', 'wait', 'action', 'waitAbsent',
+    'wait', 'selectByFocus', 'wait', 'extents', 'waitAbsent',
   ]);
   assert.deepEqual(calls[1].selector.names, ['PDF']);
   assert.equal(calls[1].actionNames, undefined);
   assert.equal(calls[2].selector.selected, true);
   assert.equal(calls[1].desktopScope, true);
   assert.deepEqual(calls[3].selector.exactNames, ['print', '인쇄']);
-  assert.deepEqual(calls[3].actionNames, ['click', 'press']);
+  assert.equal(calls[3].actionNames, undefined);
+});
+
+test('semantic pointer는 AT-SPI bounds 중심을 한 번만 click한다', async () => {
+  const calls = [];
+  const pointer = createPointerRunner({
+    xdotoolPath: '/usr/bin/xdotool',
+    spawnSync: (command, args) => {
+      calls.push([command, args]);
+      return { status: 0, stdout: '', stderr: '' };
+    },
+  });
+  await pointer({ x: 100, y: 200, width: 41, height: 21 });
+  assert.deepEqual(calls, [[
+    '/usr/bin/xdotool', ['mousemove', '--sync', '120', '210', 'click', '1'],
+  ]]);
+  await assert.rejects(pointer({ x: 0, y: 0, width: 0, height: 10 }), /화면 범위/);
 });
 
 test('system print shortcut은 실제 ctrl+p만 허용하고 AT-SPI 탐색과 분리한다', async () => {
@@ -225,6 +250,7 @@ function createAdapter(override = {}) {
     timeoutMs: 30000,
     applicationNames: ['Alhangeul'],
     runShortcut: async () => {},
+    runPointer: async () => {},
     captureScreenshot: async () => {},
     ...override,
   });
