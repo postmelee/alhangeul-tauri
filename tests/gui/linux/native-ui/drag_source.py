@@ -16,10 +16,17 @@ window = Gtk.Window(title="Alhangeul GUI drag source")
 window.set_default_size(260, 96)
 window.move(32, 32)
 label = Gtk.Label(label=path.name)
+source = Gtk.EventBox()
+source.set_visible_window(True)
+source.add(label)
 targets = Gtk.TargetList.new([])
 targets.add_uri_targets(0)
-label.drag_source_set(Gdk.ModifierType.BUTTON1_MASK, [], Gdk.DragAction.COPY)
-label.drag_source_set_target_list(targets)
+source.drag_source_set(Gdk.ModifierType.BUTTON1_MASK, [], Gdk.DragAction.COPY)
+source.drag_source_set_target_list(targets)
+
+
+def start_drag(_widget, _context):
+    print("STARTED", flush=True)
 
 
 def supply_uri(_widget, _context, selection, _info, _time):
@@ -31,10 +38,11 @@ def finish_drag(_widget, _context):
     print("FINISHED", flush=True)
 
 
-label.connect("drag-data-get", supply_uri)
-label.connect("drag-end", finish_drag)
+source.connect("drag-begin", start_drag)
+source.connect("drag-data-get", supply_uri)
+source.connect("drag-end", finish_drag)
 window.connect("destroy", Gtk.main_quit)
-window.add(label)
+window.add(source)
 window.show_all()
 print("READY", flush=True)
 Gtk.main()

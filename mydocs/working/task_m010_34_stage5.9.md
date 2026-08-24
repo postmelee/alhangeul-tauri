@@ -122,6 +122,17 @@ git diff --check
   production print는 문서 접근성 title과 선택형 local-font modal을 판정하고 upstream shortcut
   listener가 붙은 `문서 편집 입력` node에 focus한 뒤 `Ctrl+P`를 전송한다. 각 print 종료 뒤 같은
   document와 editor input 복원을 확인한다.
+- OK — production phase 최초 run `32691466890`은 exact handoff·환경·evidence upload와
+  WebDriver document 2건, native save 전체, 직접 PDF를 재통과했다. phase outcome은
+  `nativePrint=1`, `webdriver=1`로 두 실패를 독립 보존했다.
+- PARTIAL — production print screenshot은 6쪽 문서와 `로컬 글꼴 감지` modal을 정상
+  보존했지만 harness가 optional modal보다 document title을 먼저 기다려 120초 교착됐다.
+  optional modal 처리 뒤 완성 document·editor input을 기다리는 순서로 정정한다.
+- PARTIAL — staged drag도 source에서 `DATA`/`FINISHED`가 발생하지 않았다. event window가 없는
+  `Gtk.Label` 자체에 drag source를 연결한 경계를 GTK의 `Gtk.EventBox`로 옮기고
+  `STARTED`/`DATA`/`FINISHED` marker를 분리해 다음 evidence가 start와 transfer를 구분하게 한다.
+- OK — modal-first readiness와 `Gtk.EventBox` 보정 뒤 focused `45/45`, 전체 automation
+  `214/214`, GUI TypeScript, product boundary `227 files`, actionlint와 diff check 통과.
 
 ## 잔여 위험
 

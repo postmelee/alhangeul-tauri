@@ -30,14 +30,14 @@ test('production native print는 준비·Print to File·cancel·CUPS를 같은 �
     waitForFile: async (path) => { calls.push(['file', path]); },
   });
   assert.deepEqual(calls.map(([name]) => name), [
-    'wait', 'actionOptional', 'waitAbsent', 'wait',
+    'actionOptional', 'waitAbsent', 'wait',
     'printToFile', 'focus', 'trigger', 'wait', 'focus', 'file',
     'cancelPrint', 'focus', 'trigger', 'wait', 'focus',
     'virtualPrinter', 'focus', 'trigger', 'wait', 'focus', 'file',
   ]);
-  assert.deepEqual(calls[0][1], { roles: ['document text'], names: ['biz_plan.hwp'] });
-  assert.equal(calls[1][2], 10000);
-  assert.deepEqual(calls[5][1], {
+  assert.equal(calls[0][2], 10000);
+  assert.deepEqual(calls[2][1], { roles: ['document text'], names: ['biz_plan.hwp'] });
+  assert.deepEqual(calls[4][1], {
     roles: ['embedded', 'text', 'entry'],
     names: ['문서 편집 입력'],
   });

@@ -46,7 +46,7 @@ GitHub Issue: [#34](https://github.com/postmelee/alhangeul-tauri/issues/34)
 | 공통/Linux GUI E2E scenario | 없음 | 공통 문서 UX 1개 + Linux WebDriver native 3개 + production native print 1개 |
 | Linux native UI/PDF focused 계약 | 없음 | AT-SPI 8개 + drag 6개 + production print 2개 + PDF 5개 |
 | Linux GUI workflow 전용 source contract | 없음 | 9개, 공통 workflow와 합쳐 focused 21/21 |
-| 전체 automation 통과 수 | Stage 1 완료 시 162개 | Stage 5.9 최신 branch에서 213개 |
+| 전체 automation 통과 수 | Stage 1 완료 시 162개 | Stage 5.9 최신 branch에서 214개 |
 | 신규 workflow 외부 Action immutable pin | 해당 없음 | 4/4 full commit SHA + version 주석 |
 | evidence 보존 | 수동·분산 | 성공·실패 모두 7일, context/handoff/hash/log/screenshot/PDF/summary 결속 |
 
@@ -159,6 +159,13 @@ GitHub Issue: [#34](https://github.com/postmelee/alhangeul-tauri/issues/34)
   Python syntax, actionlint와 diff check를 통과했다. workflow는 production native print와
   WebDriver phase를 순서대로 실행하되 한 phase가 실패해도 다른 evidence를 수집한 뒤 두 exit
   status를 합산한다.
+- 최초 분리 run `32691466890`은 모든 environment/evidence gate와 기존 document/save/direct
+  PDF를 다시 통과했지만 두 phase가 각각 실패했다. production print screenshot에서 optional
+  local-font modal이 열린 상태를 확인해 document-first 순서 교착으로 확정했고, drag source는
+  staged gesture에도 start/data/end marker가 없어 event window가 없는 `Gtk.Label` 경계로
+  좁혔다. modal-first readiness와 `Gtk.EventBox` source로 두 계약을 함께 보정한다.
+- 위 두 계약 보정 뒤 focused `45/45`, automation `214/214`, GUI TypeScript, product
+  boundary 227개, actionlint와 diff check를 통과했다.
 
 ## 잔여 위험과 후속 작업
 

@@ -31,7 +31,6 @@ const EDITOR_INPUT = Object.freeze({
 
 export async function runProductionPrintSequence(options) {
   const document = documentSelector(options.displayName);
-  await options.adapter.wait(document);
   await options.adapter.actionOptional(LOCAL_FONT_BUTTON, 10000);
   await options.adapter.waitAbsent(LOCAL_FONT_BUTTON);
   await options.adapter.wait(document);

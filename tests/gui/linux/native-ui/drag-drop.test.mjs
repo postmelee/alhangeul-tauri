@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import {
   dragFileIntoWindow,
@@ -95,6 +96,17 @@ test('drag FINISHED 전에 URI DATA가 없으면 전송 실패로 닫고 source�
     state = await runDragWithOutput('READY\nFINISHED\n');
   }, /fixture URI가 전달되지/);
   assert.equal(state, undefined);
+});
+
+test('GTK source는 event window에서 drag start·data·end marker를 모두 노출한다', async () => {
+  const source = await readFile(new URL('./drag_source.py', import.meta.url), 'utf8');
+  assert.match(source, /source = Gtk\.EventBox\(\)/);
+  assert.match(source, /source\.drag_source_set\(/);
+  assert.doesNotMatch(source, /label\.drag_source_set\(/);
+  assert.match(source, /source\.connect\("drag-begin", start_drag\)/);
+  for (const marker of ['STARTED', 'DATA', 'FINISHED']) {
+    assert.match(source, new RegExp(`print\\("${marker}"`));
+  }
 });
 
 async function runDragWithOutput(output) {
