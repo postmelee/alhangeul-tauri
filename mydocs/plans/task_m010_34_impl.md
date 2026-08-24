@@ -753,12 +753,16 @@ exit 1을 반환했으며 제품 GUI 단계는 실행되지 않았다.
   `selectChild()`가 `false`를 반환해 file entry 전에 fail-closed했다. 실패 tree는
   `Print to File`이 `selectable=true`, `selected=false`, CUPS `PDF`가 `selected=true`이고
   해당 행의 action 순서가 `expand or contract`, `edit`, `activate`임을 새로 보존했다.
-- pyatspi Selection은 read-only 구현도 허용하므로 `selectChild()` 성공을 가정하지 않는다.
-  이전 action 호출은 action 이름을 지정하지 않아 첫 `expand or contract`를 실행한 것이
-  직접 원인이다. 이름으로 찾은 printer row에서 exact `activate` action만 수행하고 같은
-  row가 `selected=true`가 될 때까지 semantic readback한 뒤에만 file entry로 진행한다.
-  action 부재·실패·selection state 불일치는 모두 fail-closed하며 snapshot의
-  selected/selectable state와 전체 row action은 유지한다.
+- exact activate 보정 SHA `5a9e536e9913a72bdf97e08cdbe066eeebba9149`의 branch GUI run
+  `32694223866`은 `activate` 직후 print dialog를 닫고 현재 선택된 CUPS `PDF` printer로
+  실제 PDF를 생성했다. 따라서 cell `activate`는 선택이 아니라 row activation이며 printer
+  선택에 사용할 수 없다. `selected=true` wait가 이를 성공으로 오인하지 않고 timeout해
+  WebDriver phase와 evidence를 보존했다.
+- GTK 3 공식 `gtk_tree_view_accessible_grab_cell_focus()` 구현은 대상 cell path에
+  `gtk_tree_view_set_cursor()` 또는 `set_cursor_on_cell()`을 호출한다. 이 API는 row cursor를
+  옮기고 선택하므로 `Print to File` cell에 `AtkComponent.grabFocus()`를 수행하고 동일 row의
+  `selected=true`를 semantic readback한 뒤에만 file entry로 진행한다. focus 실패·selection
+  state 불일치는 fail-closed하며 좌표 click과 row activation은 사용하지 않는다.
 
 ### 검증
 

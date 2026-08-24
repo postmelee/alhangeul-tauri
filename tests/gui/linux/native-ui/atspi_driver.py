@@ -270,6 +270,10 @@ def dispatch(request):
     if command == "action":
         perform_action(node, request.get("actionNames", []))
         return node_info(node)
+    if command == "selectByFocus":
+        if not node.queryComponent().grabFocus():
+            raise RuntimeError("AT-SPI selectable cell focus failed")
+        return node_info(node)
     if command == "setText":
         set_editable_text(node, request.get("value"))
         return node_info(node)

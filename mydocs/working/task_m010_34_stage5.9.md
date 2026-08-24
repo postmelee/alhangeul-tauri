@@ -20,7 +20,7 @@ version 증거를 지원되는 Debian package database 계약으로 교체한다
 | `tests/linux-gui-workflow.test.mjs` | CUPS package 증거와 `cupsd -v` 부재를 workflow source contract로 고정 |
 | `tests/gui/support/document-ux.ts` | 실패한 temporary style upload adapter 제거, upstream input/native title 계약 분리와 status·쪽 수 DOM 판독 공통화 |
 | `tests/gui/specs/document-ux.e2e.ts` | 숨은 file input에 clear 없이 `addValue`로 경로를 전송하고 headless 환경의 로컬 글꼴 선택 모달을 fail-closed 처리 |
-| `tests/gui/linux/native-ui/atspi.mjs`, `atspi_driver.py` | focused GTK location entry에 full path를 입력·readback하고 남은 chooser는 명시적 Open/Save accept로 완료하며, system print는 격리 desktop scope·실제 Ctrl+P·exact activate 뒤 selected state readback으로 탐색 |
+| `tests/gui/linux/native-ui/atspi.mjs`, `atspi_driver.py` | focused GTK location entry에 full path를 입력·readback하고 남은 chooser는 명시적 Open/Save accept로 완료하며, system print는 격리 desktop scope·실제 Ctrl+P·cell focus 뒤 selected state readback으로 탐색 |
 | `tests/gui/linux/native-ui/drag-drop.mjs`, `drag_source.py` | Xdnd URI `DATA`와 GTK `drag-end` 완료를 모두 확인한 뒤 source를 정리하는 bounded lifecycle 계약 |
 | `tests/gui/linux/native-print.mjs` | WebDriver 밖 production app을 fixture와 직접 실행해 GTK Print to File·취소·CUPS-PDF와 PDF evidence를 검증하고 `finally`에서 종료 |
 | `tests/gui/wdio.linux.conf.ts` | WebKit file upload용 표준 `strictFileInteractability: false` 명시 |
@@ -178,6 +178,17 @@ git diff --check
 - OK — exact activate·selected readback 보정 뒤 공통 GUI 계약 `19/19`, Linux GUI 계약
   `23/23`, 전체 automation `215/215`, GUI TypeScript, Python syntax, product boundary
   `227 files`, actionlint와 diff check 통과. 구현 파일은 모두 300 LOC 이하를 유지했다.
+- OK — exact activate 보정 SHA `5a9e536e9913a72bdf97e08cdbe066eeebba9149`의 run
+  `32694223866`에서도 WebDriver phase 전체 성공(`webdriver=0`), exact handoff·환경·evidence
+  upload가 통과했다.
+- PARTIAL — `activate`는 printer row 선택이 아니라 row activation이었다. 실행 직후 print
+  dialog가 닫혔고 현재 선택된 CUPS `PDF`로 실제 PDF가 생성됐으며, `Print to File`의
+  `selected=true` wait가 timeout해 오판을 막았다. GTK 3 공식 접근성 구현이 cell focus에서
+  `gtk_tree_view_set_cursor()`를 호출해 row를 선택하므로, cell `grabFocus()` 뒤 selected state
+  readback으로 교체한다.
+- OK — printer cell focus·selected readback 보정 뒤 공통 GUI 계약 `19/19`, Linux GUI 계약
+  `23/23`, 전체 automation `215/215`, GUI TypeScript, Python syntax, product boundary
+  `227 files`, actionlint와 diff check 통과. 구현 파일은 모두 300 LOC 이하를 유지했다.
 
 ## 잔여 위험
 
@@ -272,7 +283,7 @@ git diff --check
 
 ## 다음 단계 영향
 
-- exact activate·selected readback 보정을 commit·push한 뒤 성공한 제품 native run `32347468978`을
+- printer cell focus·selected readback 보정을 commit·push한 뒤 성공한 제품 native run `32347468978`을
   재사용해 immutable acceptance workflow SHA의 branch GUI를 한 번 실행한다.
 - 실패하면 같은 branch에서 evidence를 읽고 보정하며, 완전히 성공해야 correction PR을
   생성한다.

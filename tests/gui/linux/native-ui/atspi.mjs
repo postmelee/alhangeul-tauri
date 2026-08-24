@@ -101,7 +101,7 @@ export class LinuxNativeUiAdapter {
         names: ['print to file', '파일로 인쇄'],
         within: PRINT_DIALOG,
       };
-      await this.printCommand({ command: 'action', selector: printer, actionNames: ['activate'] });
+      await this.printCommand({ command: 'selectByFocus', selector: printer });
       await this.printCommand({ command: 'wait', selector: { ...printer, selected: true } });
       await this.printCommand({ command: 'setText', selector: {
         roles: ['text', 'entry'],
@@ -129,7 +129,7 @@ export class LinuxNativeUiAdapter {
         names: [name],
         within: PRINT_DIALOG,
       };
-      await this.printCommand({ command: 'action', selector: printer, actionNames: ['activate'] });
+      await this.printCommand({ command: 'selectByFocus', selector: printer });
       await this.printCommand({ command: 'wait', selector: { ...printer, selected: true } });
       await this.printCommand({
         command: 'action',
