@@ -76,8 +76,7 @@ export class LinuxNativeUiAdapter {
       await trigger();
       await this.wait(FILE_DIALOG);
       await this.shortcut('ctrl+l');
-      await this.setText(LOCATION_ENTRY, path);
-      await this.shortcut('Return');
+      await this.submitText(LOCATION_ENTRY, path);
       await this.waitAbsent(FILE_DIALOG);
     });
   }
@@ -88,8 +87,7 @@ export class LinuxNativeUiAdapter {
       await trigger();
       await this.wait(FILE_DIALOG);
       await this.shortcut('ctrl+l');
-      await this.setText(LOCATION_ENTRY, this.pathApi.dirname(path));
-      await this.shortcut('Return');
+      await this.submitText(LOCATION_ENTRY, this.pathApi.dirname(path));
       await this.wait(FILE_DIALOG);
       await this.setText(NAME_ENTRY, this.pathApi.basename(path));
       await this.action({ roles: BUTTON_ROLES, names: ['save', '저장'] });
@@ -176,6 +174,10 @@ export class LinuxNativeUiAdapter {
     return this.command({ command: 'setText', selector, value });
   }
 
+  submitText(selector, value) {
+    return this.command({ command: 'submitText', selector, value });
+  }
+
   action(selector) {
     return this.command({ command: 'action', selector });
   }
@@ -196,7 +198,7 @@ export class LinuxNativeUiAdapter {
 function createShortcutRunner(options) {
   const execute = options.spawnSync ?? spawnSync;
   return async (key) => {
-    if (!['ctrl+l', 'Return', 'Escape'].includes(key)) throw new Error(`허용되지 않은 key: ${key}`);
+    if (!['ctrl+l', 'Escape'].includes(key)) throw new Error(`허용되지 않은 key: ${key}`);
     const result = execute(options.xdotoolPath ?? 'xdotool', ['key', '--clearmodifiers', key], {
       encoding: 'utf8', env: options.env ?? process.env, timeout: 5000,
     });

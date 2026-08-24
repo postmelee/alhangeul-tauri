@@ -20,7 +20,7 @@ version 증거를 지원되는 Debian package database 계약으로 교체한다
 | `tests/linux-gui-workflow.test.mjs` | CUPS package 증거와 `cupsd -v` 부재를 workflow source contract로 고정 |
 | `tests/gui/support/document-ux.ts` | 실패한 temporary style upload adapter 제거, upstream input/native title 계약 분리와 status·쪽 수 DOM 판독 공통화 |
 | `tests/gui/specs/document-ux.e2e.ts` | 숨은 file input에 clear 없이 `addValue`로 경로를 전송하고 headless 환경의 로컬 글꼴 선택 모달을 fail-closed 처리 |
-| `tests/gui/linux/native-ui/atspi.mjs`, `atspi_driver.py` | 이름 없는 GTK editable field를 file chooser/print dialog ancestor 안에서만 선택하고 실패 tree에 anonymous field 기록 |
+| `tests/gui/linux/native-ui/atspi.mjs`, `atspi_driver.py` | 이름 없는 GTK editable field를 ancestor 안에서 선택하고 location 입력을 focus·readback·semantic activate 단일 호출로 제출하며 비민감 실패 metadata 기록 |
 | `tests/gui/wdio.linux.conf.ts` | WebKit file upload용 표준 `strictFileInteractability: false` 명시 |
 | `tests/gui/wdio.shared.conf.ts` | operation·scenario timeout을 분리하고 단일 WebDriver window를 표준 명령으로 고정 |
 | `tests/gui-contracts.test.mjs` | upload protocol, bounded scenario timeout과 단일 window fail-closed 계약 고정 |
@@ -79,6 +79,12 @@ git diff --check
 - OK — GTK editable focus 원자 계약 뒤 focused `44/44`, automation `205/205`, GUI
   TypeScript, product boundary `225 files`, upstream `35/35`, Studio `97/97`, production Studio
   build, Python syntax, actionlint와 diff check 통과
+- OK — focus 보정 run `32685969832`에서 exact handoff·환경 gate·HWP/HWPX document
+  scenario와 evidence upload 통과. focus 성공 뒤에도 첫 chooser close가 동일하게 timeout되어
+  원인을 별도 X11 `Return` submit 경계로 좁힘
+- OK — GTK semantic submit 계약 뒤 focused `44/44`, automation `205/205`, GUI TypeScript,
+  product boundary `225 files`, upstream `35/35`, Studio `97/97`, production Studio build,
+  Python syntax, actionlint와 diff check 통과
 
 ## 잔여 위험
 
@@ -135,15 +141,23 @@ git diff --check
   GTK anonymous editable field 하나의 ancestor scope 계약으로 보정한다.
 - ancestor scope 보정 SHA `968c95959aa87ef9d72133a11be15ba8bf2d5a82`의 run
   `32602426011`은 HWP/HWPX document scenario를 다시 성공시키고 native open에서 이름 없는
-  location entry를 찾아 절대 경로 입력까지 통과했다. 그러나 `setTextContents()`가 GTK entry에
-  키보드 focus를 주지 않아 뒤따른 `Return`이 경로 확정으로 전달되지 않았고, status는
+  location entry를 찾아 절대 경로 입력까지 통과했다. 당시 `setTextContents()`와 뒤따른
+  `Return` 사이에 focus가 보장되지 않은 점을 우선 원인으로 진단했고, status는
   `파일 열기 중...`에 머문 채 chooser close가 timeout됐다. 나머지 drag/PDF/print failure는
   이 첫 chooser가 남은 연쇄 결과다. editable text 입력을 driver 안의 원자적
   `grabFocus() -> setTextContents()` 계약으로 바꿔 open/save/print 입력 경로를 함께 보정한다.
+- focus 보정 SHA `965fbb6ecf6da5d47c22e3980e124b304a4a88a4`의 run
+  `32685969832`도 document UX 2건은 각각 약 2초에 성공했고 location entry의 focus·값 설정에서
+  오류를 내지 않았지만 chooser close가 약 121초 뒤 실패했다. screenshot은 빈 editor와
+  `파일 열기 중...`를, tree는 열린 chooser를 보존했으며 뒤의 drag/PDF/print도 같은 선행
+  chooser 때문에 연쇄 실패했다. 따라서 앞선 focus 단독 진단을 정정하고, AT-SPI 값 설정과
+  별도 X11 `Return` 사이의 cross-channel submit을 제거한다. GTK entry의 accessible
+  `activate` 계약으로 같은 node에서 focus·값 설정·exact readback·제출을 수행하며 실패
+  snapshot은 값 본문 없이 focus·action·text 길이만 기록한다.
 
 ## 다음 단계 영향
 
-- GTK 입력 focus 계약을 전체 로컬 gate로 검증·commit·push한 뒤, 성공한 제품 native run
+- GTK semantic submit 계약을 전체 로컬 gate로 검증·commit·push한 뒤, 성공한 제품 native run
   `32347468978`을 재사용해 immutable acceptance workflow SHA의 branch GUI를 한 번 실행한다.
 - 실패하면 같은 branch에서 evidence를 읽고 보정하며, 완전히 성공해야 correction PR을
   생성한다.

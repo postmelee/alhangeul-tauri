@@ -62,7 +62,7 @@ GitHub Issue: [#34](https://github.com/postmelee/alhangeul-tauri/issues/34)
 | workflow 최소 권한·비용·Action pin | OK — `actions: read`, `contents: read`, `ubuntu-22.04`, manual dispatch, 45분 job/25분 GUI timeout, exact candidate concurrency와 4개 SHA pin을 고정했다. |
 | 실패 증거·최종 판정 | OK — GUI failure와 evidence upload failure를 `always()` 뒤 final gate가 각각 실패로 전달하고 자동 retry를 금지한다. |
 | 전체 platform-neutral regression | OK — product boundary 225 files, GUI TypeScript, 최신 automation 205/205, actionlint와 diff check 통과. upstream 35/35, Studio 97/97와 production build도 통과했다. |
-| 실제 hosted Linux x64 GUI | MISS — 최신 branch run `32602426011`은 exact 환경 gate와 HWP/HWPX document scenario, anonymous GTK location entry 탐색·입력까지 성공했다. entry focus 없이 뒤따른 Enter가 경로를 확정하지 못해 첫 chooser가 남았고 native 4건이 연쇄 실패했다. driver의 입력을 원자적 focus·setText로 보정한 뒤 전체 경로를 다시 확정한다. |
+| 실제 hosted Linux x64 GUI | MISS — 최신 branch run `32685969832`는 exact 환경 gate와 HWP/HWPX document scenario, anonymous GTK location entry focus·입력까지 성공했다. focus 성공 뒤에도 별도 X11 `Return`이 경로를 확정하지 못해 첫 chooser가 남았고 native 4건이 연쇄 실패했다. 같은 AT-SPI node의 focus·값 설정·readback·semantic activate로 원자화한 뒤 전체 경로를 다시 확정한다. |
 
 ### 단계별 검증 결과
 
@@ -109,20 +109,30 @@ GitHub Issue: [#34](https://github.com/postmelee/alhangeul-tauri/issues/34)
   production Studio build, GUI TypeScript, Python syntax와 actionlint를 통과했다.
 - ancestor scope SHA `968c95959aa87ef9d72133a11be15ba8bf2d5a82`의 run
   `32602426011`은 이름 없는 GTK location entry를 chooser ancestor 안에서 찾아 경로 값을
-  설정했지만 entry에 키보드 focus를 주지 않은 채 `Return`을 보내 chooser close가 timeout됐다.
+  설정했지만 AT-SPI 값 설정과 별도 `Return` 사이에 focus가 보장되지 않은 채 chooser close가
+  timeout됐다.
   screenshot은 빈 editor와 `파일 열기 중...` status를, tree는 보이는 `Location Layer`와 anonymous
   text node를 보존했다. 첫 chooser 잔류 뒤의 drag/PDF/print 실패는 별도 결함이 아니므로
   `setText`를 같은 node의 focus·값 갱신 원자 계약으로 보정했다. 보정 뒤 focused `44/44`,
   automation `205/205`, GUI TypeScript, product boundary 225개, upstream `35/35`, Studio
   `97/97`, production Studio build, Python syntax와 actionlint를 통과했다.
+- focus 보정 SHA `965fbb6ecf6da5d47c22e3980e124b304a4a88a4`의 run
+  `32685969832`은 HWP/HWPX document scenario를 각각 약 2초에 성공시키고 location entry
+  focus·값 설정도 통과했지만 chooser close에서 같은 120초 timeout이 발생했다. 따라서
+  focus 부재를 직접 원인으로 본 앞선 진단을 정정하고 AT-SPI 값 설정과 별도 X11 `Return`
+  사이의 submit 경계를 제거했다. GTK entry의 accessible `activate`를 같은 node에서 수행하며,
+  exact text readback과 비민감 focus·action·길이 진단을 추가했다. 보정 뒤 focused `44/44`,
+  automation `205/205`, GUI TypeScript, product boundary 225개, upstream `35/35`, Studio
+  `97/97`, production Studio build, Python syntax, actionlint와 diff check를 통과했다.
 
 ## 잔여 위험과 후속 작업
 
 ### 잔여 위험
 
 - Stage 5.9의 timeout·window·초기 readiness와 document load, GTK anonymous location entry
-  탐색·입력은 hosted runner에서 성공했다. native open의 focus·Enter 이후 save/drag/PDF/CUPS
-  출력은 focus 보정 뒤 다시 확인해야 하므로 전체 성공은 아직 주장할 수 없다. 성공한 제품 artifact는 native run
+  탐색·focus·입력은 hosted runner에서 성공했다. native open의 semantic activate 이후
+  save/drag/PDF/CUPS 출력은 새 보정 뒤 다시 확인해야 하므로 전체 성공은 아직 주장할 수 없다.
+  성공한 제품 artifact는 native run
   `32347468978`에 고정돼 있다.
 - 다음 canary에서 production binary external driver 연결, localized accessibility selector, CUPS-PDF output name이나 hosted image drift가 추가로 발견될 수 있다. 실패 evidence를 보존하고 측정 근거가 있는 correction PR로만 보정한다.
 - 자동 text/raster 판정만으로 한글 tofu를 확정하지 않는다. screenshot과 PDF render의 glyph·중앙 정렬·빈 쪽·crop을 사람이 read-back해야 한다.

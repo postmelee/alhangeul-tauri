@@ -23,6 +23,7 @@ def node_info(node):
         "description": safe_call(node, "description", ""),
         "role": safe_method(node, "getRoleName", "unknown"),
         "showing": node.getState().contains(pyatspi.STATE_SHOWING),
+        "focused": node.getState().contains(pyatspi.STATE_FOCUSED),
     }
 
 
@@ -146,13 +147,46 @@ def perform_action(node, requested_names):
         raise RuntimeError("AT-SPI action failed")
 
 
+def action_names(node):
+    try:
+        action = node.queryAction()
+        return [action.getName(index) for index in range(action.nActions)]
+    except Exception:
+        return []
+
+
+def text_length(node):
+    try:
+        return node.queryText().characterCount
+    except Exception:
+        return None
+
+
+def set_editable_text(node, value):
+    if not isinstance(value, str) or "\0" in value:
+        raise ValueError("text value must be a NUL-free string")
+    if not node.queryComponent().grabFocus():
+        raise RuntimeError("AT-SPI editable text focus failed")
+    if not node.queryEditableText().setTextContents(value):
+        raise RuntimeError("AT-SPI editable text update failed")
+    text = node.queryText()
+    count = text.characterCount
+    if count != len(value) or text.getText(0, count) != value:
+        raise RuntimeError("AT-SPI editable text readback mismatch")
+
+
 def snapshot(request):
     items = []
     for app in applications(request):
         for node, depth, _ancestors in walk(app, max_depth=16, max_nodes=3000):
             info = node_info(node)
             if info["name"] or depth < 2 or info["role"] in {"text", "entry"}:
-                items.append({"depth": depth, **info})
+                item = {"depth": depth, **info}
+                if info["role"] in {"text", "entry", "push button", "button"}:
+                    item["actions"] = action_names(node)
+                if info["role"] in {"text", "entry"}:
+                    item["textLength"] = text_length(node)
+                items.append(item)
     return {"applications": len(applications(request)), "nodes": items}
 
 
@@ -170,13 +204,11 @@ def dispatch(request):
         perform_action(node, request.get("actionNames", []))
         return node_info(node)
     if command == "setText":
-        value = request.get("value")
-        if not isinstance(value, str) or "\0" in value:
-            raise ValueError("text value must be a NUL-free string")
-        if not node.queryComponent().grabFocus():
-            raise RuntimeError("AT-SPI editable text focus failed")
-        if not node.queryEditableText().setTextContents(value):
-            raise RuntimeError("AT-SPI editable text update failed")
+        set_editable_text(node, request.get("value"))
+        return node_info(node)
+    if command == "submitText":
+        set_editable_text(node, request.get("value"))
+        perform_action(node, ["activate"])
         return node_info(node)
     if command == "focus":
         if not node.queryComponent().grabFocus():

@@ -22,9 +22,9 @@ test('Save As는 dialog readiness 뒤 directory와 basename을 semantic field에
   });
 
   assert.equal(triggered, true);
-  assert.deepEqual(shortcuts, ['ctrl+l', 'Return']);
+  assert.deepEqual(shortcuts, ['ctrl+l']);
   assert.deepEqual(calls.map(({ command }) => command), [
-    'wait', 'setText', 'wait', 'setText', 'action', 'waitAbsent',
+    'wait', 'submitText', 'wait', 'setText', 'action', 'waitAbsent',
   ]);
   assert.equal(calls[1].value, '/tmp/output');
   assert.deepEqual(calls[1].selector.within.roles, ['file chooser']);
@@ -41,8 +41,8 @@ test('native open은 GTK location shortcut을 한 번 쓰고 modal close를 기�
     runShortcut: async (key) => { shortcuts.push(key); },
   });
   await adapter.openDocument('/fixtures/biz_plan.hwp', async () => {});
-  assert.deepEqual(shortcuts, ['ctrl+l', 'Return']);
-  assert.deepEqual(calls.map(({ command }) => command), ['wait', 'setText', 'waitAbsent']);
+  assert.deepEqual(shortcuts, ['ctrl+l']);
+  assert.deepEqual(calls.map(({ command }) => command), ['wait', 'submitText', 'waitAbsent']);
   assert.equal(calls[1].value, '/fixtures/biz_plan.hwp');
   assert.deepEqual(calls[1].selector.within.roles, ['file chooser']);
 });
@@ -67,14 +67,26 @@ test('print adapter는 Print to File만 고르고 save/cancel modal 종료를 �
   );
 });
 
-test('Python bridge는 anonymous editable node를 ancestor 안에서 선택하고 입력 전에 focus한다', async () => {
+test('Python bridge는 editable text를 focus·readback한 같은 node에서 semantic activate한다', async () => {
   const source = await readFile(new URL('./atspi_driver.py', import.meta.url), 'utf8');
   assert.match(source, /within = selector\.get\("within"\)/);
   assert.match(source, /matches_info\(node_info\(item\), within\)/);
   assert.match(source, /info\["role"\] in \{"text", "entry"\}/);
-  const setText = source.slice(source.indexOf('if command == "setText":'), source.indexOf('if command == "focus":'));
-  assert.match(setText, /queryComponent\(\)\.grabFocus\(\)/);
-  assert.ok(setText.indexOf('grabFocus') < setText.indexOf('setTextContents'));
+  const editable = source.slice(source.indexOf('def set_editable_text'), source.indexOf('def snapshot'));
+  assert.match(editable, /queryComponent\(\)\.grabFocus\(\)/);
+  assert.match(editable, /text\.getText\(0, count\) != value/);
+  assert.ok(editable.indexOf('grabFocus') < editable.indexOf('setTextContents'));
+  assert.ok(editable.indexOf('setTextContents') < editable.indexOf('getText'));
+  const submitText = source.slice(source.indexOf('if command == "submitText":'), source.indexOf('if command == "focus":'));
+  assert.match(submitText, /set_editable_text\(node, request\.get\("value"\)\)/);
+  assert.match(submitText, /perform_action\(node, \["activate"\]\)/);
+  const snapshot = source.slice(source.indexOf('def snapshot'), source.indexOf('def dispatch'));
+  assert.match(snapshot, /item\["actions"\] = action_names\(node\)/);
+  assert.match(snapshot, /item\["textLength"\] = text_length\(node\)/);
+  assert.doesNotMatch(snapshot, /getText/);
+  const adapter = await readFile(new URL('./atspi.mjs', import.meta.url), 'utf8');
+  assert.doesNotMatch(adapter, /shortcut\('Return'\)/);
+  assert.doesNotMatch(adapter, /'Return'/);
 });
 
 test('adapter 실패는 tree와 screenshot을 남기고 Escape cleanup 후 원인을 보존한다', async () => {

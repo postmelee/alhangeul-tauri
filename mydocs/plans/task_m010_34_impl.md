@@ -684,9 +684,21 @@ exit 1을 반환했으며 제품 GUI 단계는 실행되지 않았다.
   `32602426011`은 anonymous location entry 선택과 경로 값 입력을 통과했지만 open chooser가
   닫히지 않았다. 실패 screenshot의 `파일 열기 중...`, tree의 보이는 `Location Layer`와
   native scenario의 공통 120초 close timeout을 대조하면 값 입력 뒤 `Return`의 대상 focus가
-  entry로 이동하지 않은 것이 직접 원인이다. AT-SPI `setText` command가 같은 node를
-  `grabFocus()`한 뒤 값을 갱신하도록 원자화하고, focus 실패도 fail-closed한다. 첫 chooser가
-  남아 발생한 drag/PDF/print 연쇄 실패는 별도 제품 결함으로 분리하지 않는다.
+  entry로 이동하지 않았을 가능성이 우선 확인됐다. AT-SPI `setText` command가 같은 node를
+  `grabFocus()`한 뒤 값을 갱신하도록 원자화하고, focus 실패도 fail-closed했다.
+- focus 보정 SHA `965fbb6ecf6da5d47c22e3980e124b304a4a88a4`의 branch GUI run
+  `32685969832`에서도 HWP/HWPX document scenario와 location entry focus·값 설정까지
+  성공했지만 첫 chooser close가 같은 120초 timeout으로 실패했다. driver가 focus 실패를
+  반환하지 않았으므로 focus 부재만을 직접 원인으로 본 앞선 진단은 충분하지 않았다. 같은
+  node를 AT-SPI로 focus·값 설정한 뒤 별도 X11 process의 `Return`을 보내는 cross-channel
+  submit이 남은 불확정 경계다.
+- GTK 3의 `GtkEntryAccessible`은 `AtkAction`과 `AtkEditableText`를 함께 구현하고
+  `GtkEntry::activate`는 모든 Enter key binding의 의미 계약이다. location entry 입력을 한
+  driver 호출의 `grabFocus() -> setTextContents() -> exact readback -> activate`로 바꾸고
+  X11 `Return`을 제거한다. readback 오류와 `activate` action 부재는 fail-closed하며 실제
+  경로 문자열은 evidence에 기록하지 않는다. 실패 snapshot에는 editable node의 focus,
+  action 이름과 text 길이만 추가해 다음 drift를 한 run에서 판정한다. 첫 chooser가 남아
+  발생한 drag/PDF/print 연쇄 실패는 별도 제품 결함으로 분리하지 않는다.
 
 ### 검증
 
