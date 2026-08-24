@@ -67,11 +67,14 @@ test('print adapter는 Print to File만 고르고 save/cancel modal 종료를 �
   );
 });
 
-test('Python bridge는 anonymous editable node를 semantic ancestor 안에서만 선택한다', async () => {
+test('Python bridge는 anonymous editable node를 ancestor 안에서 선택하고 입력 전에 focus한다', async () => {
   const source = await readFile(new URL('./atspi_driver.py', import.meta.url), 'utf8');
   assert.match(source, /within = selector\.get\("within"\)/);
   assert.match(source, /matches_info\(node_info\(item\), within\)/);
   assert.match(source, /info\["role"\] in \{"text", "entry"\}/);
+  const setText = source.slice(source.indexOf('if command == "setText":'), source.indexOf('if command == "focus":'));
+  assert.match(setText, /queryComponent\(\)\.grabFocus\(\)/);
+  assert.ok(setText.indexOf('grabFocus') < setText.indexOf('setTextContents'));
 });
 
 test('adapter 실패는 tree와 screenshot을 남기고 Escape cleanup 후 원인을 보존한다', async () => {

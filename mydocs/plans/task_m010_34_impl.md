@@ -680,6 +680,13 @@ exit 1을 반환했으며 제품 GUI 단계는 실행되지 않았다.
   file chooser ancestor 아래의 `text/entry`로 scope하며, snapshot은 anonymous editable
   node도 기록한다. save name field와 print file field도 각각 file chooser/print dialog
   ancestor로 한정해 같은 GTK label association 차이를 한 번에 닫는다.
+- ancestor scope SHA `968c95959aa87ef9d72133a11be15ba8bf2d5a82`의 branch GUI run
+  `32602426011`은 anonymous location entry 선택과 경로 값 입력을 통과했지만 open chooser가
+  닫히지 않았다. 실패 screenshot의 `파일 열기 중...`, tree의 보이는 `Location Layer`와
+  native scenario의 공통 120초 close timeout을 대조하면 값 입력 뒤 `Return`의 대상 focus가
+  entry로 이동하지 않은 것이 직접 원인이다. AT-SPI `setText` command가 같은 node를
+  `grabFocus()`한 뒤 값을 갱신하도록 원자화하고, focus 실패도 fail-closed한다. 첫 chooser가
+  남아 발생한 drag/PDF/print 연쇄 실패는 별도 제품 결함으로 분리하지 않는다.
 
 ### 검증
 

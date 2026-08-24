@@ -173,6 +173,8 @@ def dispatch(request):
         value = request.get("value")
         if not isinstance(value, str) or "\0" in value:
             raise ValueError("text value must be a NUL-free string")
+        if not node.queryComponent().grabFocus():
+            raise RuntimeError("AT-SPI editable text focus failed")
         if not node.queryEditableText().setTextContents(value):
             raise RuntimeError("AT-SPI editable text update failed")
         return node_info(node)

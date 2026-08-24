@@ -73,6 +73,12 @@ git diff --check
 - OK — GTK anonymous entry ancestor scope 뒤 focused `44/44`, automation `205/205`, GUI
   TypeScript, product boundary `225 files`, upstream `35/35`, Studio `97/97`, production Studio
   build, Python syntax, actionlint와 diff check 통과
+- OK — run `32602426011`에서 document UX 2건과 exact handoff·환경·evidence upload 통과.
+  GTK open chooser의 anonymous location entry 탐색과 값 입력까지 진행해 이전 selector 실패가
+  해소됐음을 확인
+- OK — GTK editable focus 원자 계약 뒤 focused `44/44`, automation `205/205`, GUI
+  TypeScript, product boundary `225 files`, upstream `35/35`, Studio `97/97`, production Studio
+  build, Python syntax, actionlint와 diff check 통과
 
 ## 잔여 위험
 
@@ -127,10 +133,17 @@ git diff --check
   남은 open 상태에서 확인 modal을 보지 못했고, direct PDF와 system print도 각자 선행 native
   open의 같은 location selector에서 실패했다. 따라서 네 개를 별도 결함으로 취급하지 않고
   GTK anonymous editable field 하나의 ancestor scope 계약으로 보정한다.
+- ancestor scope 보정 SHA `968c95959aa87ef9d72133a11be15ba8bf2d5a82`의 run
+  `32602426011`은 HWP/HWPX document scenario를 다시 성공시키고 native open에서 이름 없는
+  location entry를 찾아 절대 경로 입력까지 통과했다. 그러나 `setTextContents()`가 GTK entry에
+  키보드 focus를 주지 않아 뒤따른 `Return`이 경로 확정으로 전달되지 않았고, status는
+  `파일 열기 중...`에 머문 채 chooser close가 timeout됐다. 나머지 drag/PDF/print failure는
+  이 첫 chooser가 남은 연쇄 결과다. editable text 입력을 driver 안의 원자적
+  `grabFocus() -> setTextContents()` 계약으로 바꿔 open/save/print 입력 경로를 함께 보정한다.
 
 ## 다음 단계 영향
 
-- GTK ancestor scope를 전체 로컬 gate로 검증·commit·push한 뒤, 성공한 제품 native run
+- GTK 입력 focus 계약을 전체 로컬 gate로 검증·commit·push한 뒤, 성공한 제품 native run
   `32347468978`을 재사용해 immutable acceptance workflow SHA의 branch GUI를 한 번 실행한다.
 - 실패하면 같은 branch에서 evidence를 읽고 보정하며, 완전히 성공해야 correction PR을
   생성한다.
