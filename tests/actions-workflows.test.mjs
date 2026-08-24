@@ -129,6 +129,69 @@ test('desktop workflow는 checkout 전에 Git LF byte를 command scope로 고정
   );
 });
 
+test('Windows thumbnail core probe는 exact checkout에서 진단을 항상 보존한다', () => {
+  assertOrdered(desktopWorkflow, [
+    '- name: Prepare Windows thumbnail core diagnostics',
+    '- name: Build Windows thumbnail core probe',
+    '- name: Run Windows thumbnail core probe',
+    '- name: Record Windows thumbnail core probe outcome',
+    '- name: Upload Windows thumbnail core diagnostics',
+    '- name: Require Windows thumbnail core probe success',
+    '- name: Install dependencies',
+  ]);
+
+  const buildStep = getStepContaining(
+    desktopWorkflow,
+    'cargo build --manifest-path third_party/rhwp/Cargo.toml',
+  );
+  const probeStep = getStepContaining(
+    desktopWorkflow,
+    'benchmark-thumbnail-core.ps1',
+  );
+  const contextStep = getStepContaining(desktopWorkflow, 'workflow-context.json');
+  const outcomeStep = getStepContaining(desktopWorkflow, 'step-outcomes.json');
+  const uploadStep = getStepContaining(
+    desktopWorkflow,
+    'alhangeul-windows-x64-thumbnail-core',
+  );
+  const gateStep = getStepContaining(
+    desktopWorkflow,
+    'Windows thumbnail core probe gate failed',
+  );
+
+  assert.match(buildStep, /^\s{8}id: build-thumbnail-core-probe$/m);
+  assert.match(buildStep, /^\s{8}if: matrix\.name == 'windows-x64'$/m);
+  assert.match(buildStep, /^\s{8}continue-on-error: true$/m);
+  assert.match(buildStep, /--bin rhwp --release/);
+  assert.match(
+    probeStep,
+    /^\s{8}if: matrix\.name == 'windows-x64' && steps\.build-thumbnail-core-probe\.outcome == 'success'$/m,
+  );
+  assert.match(probeStep, /^\s{8}continue-on-error: true$/m);
+  assert.match(probeStep, /-FixtureRoot 'third_party\\rhwp\\saved'/);
+  assert.match(probeStep, /-OutputDirectory 'diagnostics\\thumbnail-core'/);
+  for (const step of [contextStep, outcomeStep]) {
+    assert.match(step, /repositorySha = \(git rev-parse HEAD\)\.Trim\(\)/);
+  }
+  for (const step of [outcomeStep, uploadStep, gateStep]) {
+    assert.match(
+      step,
+      /^\s{8}if: \$\{\{ always\(\) && matrix\.name == 'windows-x64' \}\}$/m,
+    );
+  }
+  assert.match(uploadStep, /uses: actions\/upload-artifact@v7/);
+  assert.match(uploadStep, /path: diagnostics\/thumbnail-core\/\*\*/);
+  assert.match(uploadStep, /^\s{10}if-no-files-found: error$/m);
+  assert.match(uploadStep, /^\s{10}retention-days: 14$/m);
+  for (const outcome of [
+    'steps.build-thumbnail-core-probe.outcome',
+    'steps.run-thumbnail-core-probe.outcome',
+    'steps.upload-thumbnail-core-diagnostics.outcome',
+  ]) {
+    assert.ok(gateStep.includes(outcome), `probe gate outcome이 필요합니다: ${outcome}`);
+  }
+});
+
 test('desktop workflow는 checkout commit을 검증하고 pretest를 순서대로 실행한다', () => {
   assert.match(
     desktopWorkflow,

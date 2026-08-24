@@ -98,17 +98,19 @@ Stage 1에서 Windows fixture 실측으로 다음 후보를 확정하고 구현�
 수정:
 
 - `.github/workflows/alhangeul-desktop.yml`
+- `package.json`
 - `tests/actions-workflows.test.mjs`
 - `mydocs/plans/task_m010_14_impl.md`
 - `mydocs/orders/20260824.md`
 
 ### 변경 내용
 
-- PowerShell 5.1 probe가 pinned `rhwp` binary의 `bench`, `export-svg --page 0 --json`, `thumbnail`을 정상 HWP/HWPX와 preview 유무·손상·크기 경계 fixture에 실행한다.
+- PowerShell 5.1 probe가 pinned `rhwp` binary의 `bench`, `export-svg --page 0 --json`, `thumbnail`을 정상 HWP/HWPX와 preview 없음·stale·손상·64 MiB 경계 파생 fixture에 실행한다.
 - fixture id별 원본 SHA-256·size·mtime, wall time, exit code, peak working set, SVG/preview byte와 page dimension을 JSON에 남긴다. 민감 path·문서 내용은 기록하지 않는다.
 - Windows x64 native workflow에 exact SHA와 결속된 diagnostic artifact를 추가한다. feature 성공이 아니라 budget 판단 근거로만 사용한다.
 - disposable HKCU test namespace에서 active ProgID, extension ShellEx와 `SystemFileAssociations` lookup precedence를 `IShellItemImageFactory`로 관찰한다. 실제 HWP/HWPX 사용자 key는 수정하지 않는다.
 - 실측값으로 resource 상한, worker 사용, registry owner path와 MSI custom action/NSIS transaction 순서를 구현계획서와 Stage 1 보고서에 확정한다.
+- 현재 변경을 exact SHA로 Windows runner에 전달하기 위한 임시 `codex/task14-stage1-probe` ref만 Stage 1에서 사용하고, 증적 회수 뒤 원격 ref를 제거한다. 최종 PR용 `publish/task14`는 사용하지 않는다.
 
 ### 검증
 
