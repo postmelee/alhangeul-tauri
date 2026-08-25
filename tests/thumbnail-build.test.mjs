@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import {
@@ -41,7 +41,7 @@ test('build plan은 독립 manifest와 desktop target/staging 경로만 사용�
   assert.ok(plan.commands.every((args) => args.includes(WINDOWS_X64_TARGET)));
   assert.ok(plan.commands.every((args) => args.includes(plan.targetDirectory)));
   assert.deepEqual(
-    plan.outputs.map((output) => output.destination.split('/').at(-1)),
+    plan.outputs.map((output) => basename(output.destination)),
     [STAGING_FILES.worker, STAGING_FILES.handler],
   );
 });

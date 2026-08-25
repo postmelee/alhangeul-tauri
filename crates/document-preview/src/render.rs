@@ -138,13 +138,17 @@ fn fitted_dimensions(
 }
 
 fn premultiplied_rgba_to_bgra(rgba: &[u8]) -> Vec<u8> {
-    rgba.chunks_exact(4)
+    rgba.as_chunks::<4>()
+        .0
+        .iter()
         .flat_map(|pixel| [pixel[2], pixel[1], pixel[0], pixel[3]])
         .collect()
 }
 
 fn straight_rgba_to_premultiplied_bgra(rgba: &[u8]) -> Vec<u8> {
-    rgba.chunks_exact(4)
+    rgba.as_chunks::<4>()
+        .0
+        .iter()
         .flat_map(|pixel| {
             let alpha = u16::from(pixel[3]);
             let premultiply = |channel: u8| ((u16::from(channel) * alpha + 127) / 255) as u8;

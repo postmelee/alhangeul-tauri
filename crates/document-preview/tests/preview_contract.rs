@@ -206,7 +206,9 @@ fn direct_and_embedded_rasters_are_bounded_premultiplied_bgra() {
     );
     assert!(direct
         .bgra
-        .chunks_exact(4)
+        .as_chunks::<4>()
+        .0
+        .iter()
         .all(|pixel| { pixel[0] <= pixel[3] && pixel[1] <= pixel[3] && pixel[2] <= pixel[3] }));
 
     let mut encoded_png = Cursor::new(Vec::new());
