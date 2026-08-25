@@ -217,7 +217,8 @@ Task #14 Stage 2: 공유 document preview core와 desktop adapter 분리
 - `apps/thumbnail-worker/Cargo.toml`
 - `apps/thumbnail-worker/src/{main,worker}.rs`
 - `apps/thumbnail-handler/Cargo.toml`
-- `apps/thumbnail-handler/src/{lib,class_factory,provider,process,bitmap,registration}.rs`
+- `apps/thumbnail-handler/src/{lib,abi,class_factory,provider,bitmap,registration}.rs`
+- `apps/thumbnail-handler/src/process/{mod,child,pipe_io}.rs`
 - `apps/thumbnail-handler/tests/com_contract.rs`
 - `scripts/build-thumbnail-binaries.mjs`
 - `tests/thumbnail-build.test.mjs`
@@ -225,11 +226,11 @@ Task #14 Stage 2: 공유 document preview core와 desktop adapter 분리
 
 수정:
 
-- workspace manifest/lock
+- `crates/document-preview/src/{lib,protocol,request,render}.rs`
 - `apps/desktop/src-tauri/tauri.windows.conf.json`
 - `package.json`, `.gitignore`
 - native workflow와 관련 test
-- `mydocs/orders/20260824.md`
+- `mydocs/orders/20260825.md`, `mydocs/orders/20260826.md`
 
 ### 변경 내용
 
@@ -252,10 +253,10 @@ Windows x64:
 
 ```powershell
 pnpm run build:thumbnail-binaries -- --target x86_64-pc-windows-msvc
-Set-Location apps/desktop/src-tauri
-cargo test -p alhangeul-thumbnail-worker -p alhangeul-thumbnail-handler --target x86_64-pc-windows-msvc
-cargo clippy -p alhangeul-thumbnail-worker -p alhangeul-thumbnail-handler --all-targets --target x86_64-pc-windows-msvc -- -D warnings
-Set-Location ../../..
+pnpm run test:thumbnail-worker:windows
+pnpm run test:thumbnail-handler:windows
+pnpm run clippy:thumbnail-worker:windows
+pnpm run clippy:thumbnail-handler:windows
 ```
 
 Native test는 COM activation/unload, 32/96/256/1024 bitmap, direct/fallback/timeout/crash, 반복·동시 activation, orphan worker·app/WebView/UI/file/network write 부재를 포함한다.

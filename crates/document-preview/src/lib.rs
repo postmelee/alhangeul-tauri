@@ -4,10 +4,12 @@ pub mod limits;
 pub mod protocol;
 #[cfg(feature = "render")]
 mod render;
+mod request;
 
 #[cfg(feature = "render")]
 pub use render::{
-    extract_embedded_preview, render_first_page_svg, resolve_document_preview, EmbeddedPreview,
+    extract_embedded_preview, rasterize_embedded_preview, rasterize_first_page,
+    render_first_page_svg, resolve_document_preview, Bitmap, EmbeddedPreview,
     EmbeddedPreviewFormat, PreviewSelection,
 };
 
@@ -27,9 +29,11 @@ pub enum PreviewError {
     UnsupportedFrameVersion(u16),
     UnsupportedFrameKind(u16),
     PayloadHashMismatch,
+    RequestHashMismatch,
     DocumentParse(String),
     DocumentRender(String),
     EmbeddedPreview(String),
+    Raster(String),
 }
 
 impl fmt::Display for PreviewError {
@@ -67,9 +71,11 @@ impl fmt::Display for PreviewError {
             }
             Self::UnsupportedFrameKind(kind) => write!(formatter, "unsupported frame kind: {kind}"),
             Self::PayloadHashMismatch => write!(formatter, "frame payload hash mismatch"),
+            Self::RequestHashMismatch => write!(formatter, "request payload hash mismatch"),
             Self::DocumentParse(error) => write!(formatter, "document parse failed: {error}"),
             Self::DocumentRender(error) => write!(formatter, "first page render failed: {error}"),
             Self::EmbeddedPreview(error) => write!(formatter, "embedded preview failed: {error}"),
+            Self::Raster(error) => write!(formatter, "preview raster failed: {error}"),
         }
     }
 }

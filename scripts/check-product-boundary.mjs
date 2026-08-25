@@ -17,6 +17,8 @@ const excludedPrefixes = [
   'third_party/rhwp/',
 ];
 
+const excludedDirectoryNames = new Set(['node_modules', 'target', 'target-local']);
+
 const historicalAllowlist = new Set([
   'AGENTS.md',
   'LICENSE',
@@ -55,6 +57,17 @@ const documentPreviewBoundaryRules = [
   ['Windows integration boundary', /\b(?:winreg|windows|registry)::|\b(?:IThumbnailProvider|IInitializeWithStream|HBITMAP|InprocServer32)\b/i],
 ];
 
+const thumbnailWorkerBoundaryRules = [
+  ['worker filesystem or network API', /\bstd::(?:fs|net)\b/],
+  ['worker process launch API', /\bstd::process\b|\b(?:Command|Child|Stdio)::/],
+  ['worker Windows or Tauri dependency', /\b(?:windows_sys|tauri)(?:::|\s*=)/],
+];
+
+const thumbnailHandlerBoundaryRules = [
+  ['handler render or app dependency', /\b(?:rhwp|resvg|image|tauri)(?:::|\s*=)/],
+  ['handler filesystem or network API', /\bstd::(?:fs|net)\b/],
+];
+
 const forbiddenPathPart = /(^|[/_.-])(hop|quicklook|macos)(?=$|[/_.-])/i;
 const maxTextFileBytes = 1024 * 1024;
 
@@ -64,6 +77,7 @@ function toRepositoryPath(repositoryRoot, path) {
 
 function isExcluded(path) {
   const normalized = path.endsWith('/') ? path : `${path}/`;
+  if (path.split('/').some((part) => excludedDirectoryNames.has(part))) return true;
   return excludedPrefixes.some(
     (prefix) => path === prefix.slice(0, -1) || normalized.startsWith(prefix),
   );
@@ -140,6 +154,30 @@ export async function verifyProductBoundary(options = {}) {
       || repositoryPath.startsWith('crates/document-preview/src/');
     if (isDocumentPreviewBoundary) {
       const boundaryViolation = findRuleViolation(content, documentPreviewBoundaryRules);
+      if (boundaryViolation) {
+        violations.push(
+          `${repositoryPath}:${boundaryViolation.line}: ${boundaryViolation.label}`,
+        );
+      }
+    }
+
+    const isThumbnailWorkerBoundary =
+      repositoryPath === 'apps/thumbnail-worker/Cargo.toml'
+      || repositoryPath.startsWith('apps/thumbnail-worker/src/');
+    if (isThumbnailWorkerBoundary) {
+      const boundaryViolation = findRuleViolation(content, thumbnailWorkerBoundaryRules);
+      if (boundaryViolation) {
+        violations.push(
+          `${repositoryPath}:${boundaryViolation.line}: ${boundaryViolation.label}`,
+        );
+      }
+    }
+
+    const isThumbnailHandlerBoundary =
+      repositoryPath === 'apps/thumbnail-handler/Cargo.toml'
+      || repositoryPath.startsWith('apps/thumbnail-handler/src/');
+    if (isThumbnailHandlerBoundary) {
+      const boundaryViolation = findRuleViolation(content, thumbnailHandlerBoundaryRules);
       if (boundaryViolation) {
         violations.push(
           `${repositoryPath}:${boundaryViolation.line}: ${boundaryViolation.label}`,

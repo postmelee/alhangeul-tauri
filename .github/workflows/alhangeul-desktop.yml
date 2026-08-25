@@ -256,6 +256,26 @@ jobs:
         if: inputs.run_tests
         run: pnpm run clippy:desktop
 
+      - name: Build Windows thumbnail binaries
+        if: matrix.name == 'windows-x64'
+        run: pnpm run build:thumbnail-binaries -- --target x86_64-pc-windows-msvc
+
+      - name: Test Windows thumbnail worker
+        if: inputs.run_tests && matrix.name == 'windows-x64'
+        run: pnpm run test:thumbnail-worker:windows
+
+      - name: Test Windows thumbnail handler
+        if: inputs.run_tests && matrix.name == 'windows-x64'
+        run: pnpm run test:thumbnail-handler:windows
+
+      - name: Lint Windows thumbnail worker
+        if: inputs.run_tests && matrix.name == 'windows-x64'
+        run: pnpm run clippy:thumbnail-worker:windows
+
+      - name: Lint Windows thumbnail handler
+        if: inputs.run_tests && matrix.name == 'windows-x64'
+        run: pnpm run clippy:thumbnail-handler:windows
+
       - name: Build Tauri bundles
         shell: bash
         run: pnpm tauri build --verbose --target "${{ matrix.target }}" ${{ matrix.bundle_args }}

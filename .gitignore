@@ -5,6 +5,10 @@ Cargo.lock
 !/apps/desktop/src-tauri/Cargo.lock
 apps/desktop/src-tauri/target/
 apps/desktop/src-tauri/gen/
+apps/desktop/src-tauri/windows/thumbnail-resources/
+apps/thumbnail-handler/target/
+apps/thumbnail-worker/target/
+crates/document-preview/target/
 
 # JavaScript
 node_modules/

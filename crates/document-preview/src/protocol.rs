@@ -1,6 +1,9 @@
 use crate::limits::{
     checked_bgra_len, validate_frame_len, FRAME_HEADER_BYTES, MAX_BITMAP_PAYLOAD_BYTES,
 };
+pub use crate::request::{
+    decode_request_header, encode_request_header, RequestHeader, REQUEST_MAGIC,
+};
 use crate::PreviewError;
 
 pub const FRAME_MAGIC: [u8; 8] = *b"ALHGTHM\0";
@@ -8,6 +11,15 @@ pub const PROTOCOL_VERSION: u16 = 1;
 
 const HASH_OFFSET: usize = 32;
 const HASH_BYTES: usize = 32;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct FrameHeader {
+    pub kind: FrameKind,
+    pub width: u32,
+    pub height: u32,
+    pub stride: u32,
+    pub payload_len: usize,
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u16)]
@@ -109,20 +121,50 @@ pub fn encode_frame(frame: &Frame) -> Result<Vec<u8>, PreviewError> {
     Ok(encoded)
 }
 
+pub fn decode_frame_header(header: &[u8]) -> Result<FrameHeader, PreviewError> {
+    if header.len() != FRAME_HEADER_BYTES {
+        return Err(PreviewError::InvalidFrame("frame header length"));
+    }
+    parse_frame_header(header)
+}
+
 pub fn decode_frame(encoded: &[u8]) -> Result<Frame, PreviewError> {
     validate_frame_len(encoded.len())?;
     if encoded.len() < FRAME_HEADER_BYTES {
         return Err(PreviewError::InvalidFrame("truncated header"));
     }
-    if encoded[0..8] != FRAME_MAGIC {
+    let header = parse_frame_header(&encoded[..FRAME_HEADER_BYTES])?;
+    let payload_len = header.payload_len;
+    let expected = FRAME_HEADER_BYTES
+        .checked_add(payload_len)
+        .ok_or(PreviewError::ArithmeticOverflow("frame length"))?;
+    if expected != encoded.len() {
+        return Err(PreviewError::InvalidFrame("frame length"));
+    }
+    let payload = &encoded[FRAME_HEADER_BYTES..];
+    if encoded[HASH_OFFSET..HASH_OFFSET + HASH_BYTES] != *blake3::hash(payload).as_bytes() {
+        return Err(PreviewError::PayloadHashMismatch);
+    }
+    let frame = Frame {
+        kind: header.kind,
+        width: header.width,
+        height: header.height,
+        stride: header.stride,
+        payload: payload.to_vec(),
+    };
+    Ok(frame)
+}
+
+fn parse_frame_header(header: &[u8]) -> Result<FrameHeader, PreviewError> {
+    if header[0..8] != FRAME_MAGIC {
         return Err(PreviewError::InvalidFrame("magic"));
     }
-    let version = read_u16(encoded, 8);
+    let version = read_u16(header, 8);
     if version != PROTOCOL_VERSION {
         return Err(PreviewError::UnsupportedFrameVersion(version));
     }
-    let kind = FrameKind::try_from(read_u16(encoded, 10))?;
-    let payload_len = usize::try_from(read_u32(encoded, 12))
+    let kind = FrameKind::try_from(read_u16(header, 10))?;
+    let payload_len = usize::try_from(read_u32(header, 12))
         .map_err(|_| PreviewError::ArithmeticOverflow("payload usize"))?;
     if payload_len > MAX_BITMAP_PAYLOAD_BYTES {
         return Err(PreviewError::FrameTooLarge {
@@ -130,28 +172,39 @@ pub fn decode_frame(encoded: &[u8]) -> Result<Frame, PreviewError> {
             max: crate::limits::MAX_FRAME_BYTES,
         });
     }
-    let expected = FRAME_HEADER_BYTES
-        .checked_add(payload_len)
-        .ok_or(PreviewError::ArithmeticOverflow("frame length"))?;
-    if expected != encoded.len() || encoded[28..32] != [0_u8; 4] {
-        return Err(PreviewError::InvalidFrame("length or reserved bytes"));
+    if header[28..32] != [0_u8; 4] {
+        return Err(PreviewError::InvalidFrame("frame reserved bytes"));
     }
-    let payload = &encoded[FRAME_HEADER_BYTES..];
-    let width = read_u32(encoded, 16);
-    let height = read_u32(encoded, 20);
-    let stride = read_u32(encoded, 24);
-    validate_frame_fields(kind, width, height, stride, payload)?;
-    if encoded[HASH_OFFSET..HASH_OFFSET + HASH_BYTES] != *blake3::hash(payload).as_bytes() {
-        return Err(PreviewError::PayloadHashMismatch);
-    }
-    let frame = Frame {
+    let parsed = FrameHeader {
         kind,
-        width,
-        height,
-        stride,
-        payload: payload.to_vec(),
+        width: read_u32(header, 16),
+        height: read_u32(header, 20),
+        stride: read_u32(header, 24),
+        payload_len,
     };
-    Ok(frame)
+    validate_frame_metadata(parsed)?;
+    Ok(parsed)
+}
+
+fn validate_frame_metadata(header: FrameHeader) -> Result<(), PreviewError> {
+    if !header.kind.is_bitmap() {
+        if header.width != 0 || header.height != 0 || header.stride != 0 || header.payload_len != 0
+        {
+            return Err(PreviewError::InvalidFrame("control frame fields"));
+        }
+        return Ok(());
+    }
+    let expected_stride = header
+        .width
+        .checked_mul(4)
+        .ok_or(PreviewError::ArithmeticOverflow("bitmap stride"))?;
+    if header.stride != expected_stride {
+        return Err(PreviewError::InvalidFrame("bitmap stride"));
+    }
+    if crate::limits::checked_bgra_len(header.width, header.height)? != header.payload_len {
+        return Err(PreviewError::InvalidFrame("bitmap payload length"));
+    }
+    Ok(())
 }
 
 fn validate_frame(frame: &Frame) -> Result<(), PreviewError> {

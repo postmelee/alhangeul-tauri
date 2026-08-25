@@ -223,6 +223,11 @@ test('desktop workflow는 checkout commit을 검증하고 pretest를 순서대�
     'pnpm run clippy:document-preview:protocol',
     'pnpm run test:desktop',
     'pnpm run clippy:desktop',
+    'pnpm run build:thumbnail-binaries',
+    'pnpm run test:thumbnail-worker:windows',
+    'pnpm run test:thumbnail-handler:windows',
+    'pnpm run clippy:thumbnail-worker:windows',
+    'pnpm run clippy:thumbnail-handler:windows',
     'pnpm tauri build',
   ]);
 
@@ -242,6 +247,25 @@ test('desktop workflow는 checkout commit을 검증하고 pretest를 순서대�
   ]) {
     const step = getStepContaining(desktopWorkflow, command);
     assert.match(step, /^\s{8}if: inputs\.run_tests$/m);
+  }
+
+  const thumbnailBuild = getStepContaining(
+    desktopWorkflow,
+    'pnpm run build:thumbnail-binaries',
+  );
+  assert.match(thumbnailBuild, /^\s{8}if: matrix\.name == 'windows-x64'$/m);
+  assert.match(thumbnailBuild, /--target x86_64-pc-windows-msvc/);
+  for (const command of [
+    'pnpm run test:thumbnail-worker:windows',
+    'pnpm run test:thumbnail-handler:windows',
+    'pnpm run clippy:thumbnail-worker:windows',
+    'pnpm run clippy:thumbnail-handler:windows',
+  ]) {
+    const step = getStepContaining(desktopWorkflow, command);
+    assert.match(
+      step,
+      /^\s{8}if: inputs\.run_tests && matrix\.name == 'windows-x64'$/m,
+    );
   }
 });
 
