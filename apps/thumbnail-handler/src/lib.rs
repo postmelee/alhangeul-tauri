@@ -75,6 +75,12 @@ pub extern "system" fn DllMain(module: HINSTANCE, reason: u32, _reserved: *mut c
 }
 
 #[cfg(windows)]
+/// Returns the COM class factory for the Alhangeul thumbnail provider.
+///
+/// # Safety
+///
+/// `class_id` and `iid` must point to readable `GUID` values, and `object` must
+/// point to a writable COM interface pointer slot for the duration of the call.
 #[no_mangle]
 pub unsafe extern "system" fn DllGetClassObject(
     class_id: *const GUID,
