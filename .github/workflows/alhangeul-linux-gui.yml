@@ -38,10 +38,12 @@ jobs:
         id: validate-inputs
         shell: bash
         env:
+          ACCEPTANCE_REF: ${{ github.workflow_sha }}
           BUILD_REF: ${{ inputs.build_ref }}
           NATIVE_RUN_ID: ${{ inputs.native_run_id }}
         run: |
           set -euo pipefail
+          [[ "$ACCEPTANCE_REF" =~ ^[0-9a-f]{40}$ ]]
           [[ "$BUILD_REF" =~ ^[0-9a-f]{40}$ ]]
           [[ "$NATIVE_RUN_ID" =~ ^[1-9][0-9]*$ ]]
 
@@ -49,7 +51,7 @@ jobs:
         id: checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ inputs.build_ref }}
+          ref: ${{ github.workflow_sha }}
           submodules: true
 
       - name: Prepare evidence context
@@ -57,24 +59,27 @@ jobs:
         if: ${{ always() }}
         shell: bash
         env:
+          ACCEPTANCE_REF: ${{ github.workflow_sha }}
           BUILD_REF: ${{ inputs.build_ref }}
           NATIVE_RUN_ID: ${{ inputs.native_run_id }}
+          WORKFLOW_REF: ${{ github.workflow_ref }}
         run: |
           set -euo pipefail
           mkdir -p "$EVIDENCE_ROOT/generated"
-          printf '{"buildRef":"%s","nativeRunId":"%s","acceptanceRunId":"%s","runAttempt":"%s"}\n' \
-            "$BUILD_REF" "$NATIVE_RUN_ID" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" \
+          printf '{"acceptanceRef":"%s","workflowRef":"%s","buildRef":"%s","nativeRunId":"%s","acceptanceRunId":"%s","runAttempt":"%s"}\n' \
+            "$ACCEPTANCE_REF" "$WORKFLOW_REF" "$BUILD_REF" "$NATIVE_RUN_ID" \
+            "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" \
             > "$EVIDENCE_ROOT/workflow-context.json"
 
       - name: Verify checked out exact SHA
         id: verify-source
         shell: bash
         env:
-          BUILD_REF: ${{ inputs.build_ref }}
+          ACCEPTANCE_REF: ${{ github.workflow_sha }}
         run: |
           set -euo pipefail
           actual_sha="$(git rev-parse HEAD)"
-          [[ "$actual_sha" == "$BUILD_REF" ]]
+          [[ "$actual_sha" == "$ACCEPTANCE_REF" ]]
           printf '%s\n' "$actual_sha" > "$EVIDENCE_ROOT/checked-out-sha.txt"
 
       - name: Setup Node.js
@@ -157,6 +162,7 @@ jobs:
             printer-driver-cups-pdf \
             python3-gi \
             python3-pyatspi \
+            scrot \
             webkit2gtk-driver \
             xdotool \
             xvfb
@@ -223,9 +229,8 @@ jobs:
             cargo --version
             printf 'tauri-driver %s\n' "$TAURI_DRIVER_VERSION"
             printf 'WebKitWebDriver %s\n' "$webkit_webdriver_path"
-            dpkg-query -W libgtk-3-0 libwebkit2gtk-4.1-0 webkit2gtk-driver
+            dpkg-query -W cups libgtk-3-0 libwebkit2gtk-4.1-0 webkit2gtk-driver
             pdfinfo -v 2>&1 | head -n 1
-            cupsd -v
           } > "$EVIDENCE_ROOT/native-environment.txt"
 
       - name: Run Linux GUI acceptance
@@ -249,14 +254,30 @@ jobs:
           GTK_MODULES: gail:atk-bridge
         run: |
           set -euo pipefail
-          # shellcheck disable=SC2016
-          xvfb-run --auto-servernum --server-args='-screen 0 1920x1080x24 -nolisten tcp' \
-            dbus-run-session -- bash -euo pipefail -c '
-              openbox >"$ALHANGEUL_GUI_OUTPUT_DIR/openbox.log" 2>&1 &
-              window_manager_pid=$!
-              trap '\''kill "$window_manager_pid" 2>/dev/null || true'\'' EXIT
-              pnpm run test:gui:linux
-            '
+          run_isolated_phase() {
+            local phase="$1"
+            shift
+            # shellcheck disable=SC2016
+            xvfb-run --auto-servernum --server-args='-screen 0 1920x1080x24 -nolisten tcp' \
+              dbus-run-session -- bash -euo pipefail -c '
+                phase="$1"
+                shift
+                openbox >"$ALHANGEUL_GUI_OUTPUT_DIR/openbox-$phase.log" 2>&1 &
+                window_manager_pid=$!
+                trap '\''kill "$window_manager_pid" 2>/dev/null || true'\'' EXIT
+                "$@"
+              ' bash "$phase" "$@"
+          }
+          native_print_status=0
+          run_isolated_phase native-print pnpm run test:gui:linux:native-print \
+            || native_print_status=$?
+          webdriver_status=0
+          run_isolated_phase webdriver pnpm run test:gui:linux \
+            || webdriver_status=$?
+          printf '{"nativePrint":%s,"webdriver":%s}\n' \
+            "$native_print_status" "$webdriver_status" \
+            > "$ALHANGEUL_GUI_OUTPUT_DIR/gui-phase-outcomes.json"
+          [[ "$native_print_status" -eq 0 && "$webdriver_status" -eq 0 ]]
 
       - name: Record acceptance outcomes
         if: ${{ always() }}

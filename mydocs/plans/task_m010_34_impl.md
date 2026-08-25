@@ -157,9 +157,16 @@ Task #34 Stage 2: 공통 WebDriver 문서 UX harness 추가
 - 접근성 tree로 식별되지 않는 OS drag-in은 Xvfb의 bounded input fallback을 별도 함수로 격리한다. 화면 크기·창 bounds를 먼저 검증하고 실패 시 좌표 클릭을 반복하지 않고 screenshot/tree dump와 함께 실패한다.
 - HWP/HWPX 현재 형식 저장, Save As, 재열기를 실행하고 생성 파일 존재·size·hash와 status restoration을 확인한다.
 - 직접 PDF와 GTK Print to File/CUPS 결과는 별도 임시 경로에 저장한다. 6쪽 `biz_plan.hwp`에 대해 `pdfinfo` A4/page count, `pdftotext` 한글 표제, page render의 blank/crop heuristic을 판정한다.
-- system print 저장·취소·반복 뒤 editor document title/page count와 print status가 복원되는지 확인한다. physical printer는 선택하지 않는다.
+- system print는 WebDriver가 제어하는 WebView의 `window.print()` 제한과 native GTK dialog를
+  혼합하지 않는다. 같은 격리 Xvfb/DBus session에서 production app을 직접 실행한 AT-SPI
+  phase가 GTK Print to File·취소·CUPS-PDF를 검증하고, WebDriver phase는 DOM·native
+  open/save·drag-in·직접 PDF를 검증한다. 두 phase는 하나가 실패해도 다른 phase의 evidence를
+  수집한 뒤 합산해 fail-closed한다. physical printer는 선택하지 않는다.
 - tofu는 text extraction만으로 성공 처리하지 않는다. 대표 screenshot/PDF render를 evidence로 남기고 자동 summary에는 시각 read-back 필요 여부를 명시한다.
 - native adapter는 프로세스·창·임시 출력 cleanup을 `finally`에서 수행하고, 실패 후 다음 scenario에 상태를 누출하지 않는다.
+- X11 drag gesture는 source에서 button press 뒤 GTK drag threshold를 넘는 중간 이동과 짧은
+  bounded settling을 거쳐 target으로 이동하며, URI data 제공과 `drag-end`를 모두 확인한 뒤
+  source를 정리한다.
 
 ### 검증
 
@@ -577,6 +584,317 @@ git diff --check
 Task #34 [Stage 5.8]: WebKitWebDriver 환경 증거 보정
 ```
 
+## Stage 5.9 — CUPS 환경 증거·file upload protocol 보정과 pre-PR branch CI
+
+PR #42 merge SHA `fee06fb41de05586a8088b88821a95ca6e97cc16`의 exact-SHA native
+build run `32342945305`는 Windows x64, Linux x64·arm64와 Windows installer
+smoke를 모두 통과했다. 같은 SHA와 Linux x64 artifact를 전달한 GUI canary run
+`32343886835`은 exact handoff, DEB 설치, CUPS-PDF A4 구성, exact tauri-driver 설치와
+Stage 5.8의 WebKitWebDriver binary·패키지 증거까지 성공했다. 환경 증거의 마지막
+`cupsd -v`는 Ubuntu 22.04 `cupsd`가 지원하지 않는 option이라 usage를 출력하고
+exit 1을 반환했으며 제품 GUI 단계는 실행되지 않았다.
+
+- `cupsd -v`를 제거하고 기존 `dpkg-query -W` 대상에 `cups`를 추가해 CUPS package
+  version을 지원되는 OS package database 계약으로 기록한다. CUPS 실제 동작은 앞선
+  service restart, PDF queue와 A4 선택 기본값 gate가 계속 검증한다.
+- workflow 계약 test는 `cups` package version 증거와 `cupsd -v` 부재를 고정한다.
+- exact artifact handoff, driver 설치, CUPS 설정, 제품 코드, GUI selector와 PDF
+  threshold는 변경하지 않는다.
+- 로컬 gate 뒤 `local/task34`를 원격 `publish/task34`로 먼저 push하되 PR은 만들지
+  않는다. 이미 default branch에 존재하는 manual workflow를 `--ref
+  publish/task34`로 실행해 correction branch의 workflow 정의를 검증한다.
+- 이번 변경은 workflow evidence 명령·source contract·문서만 바꾸므로 branch GUI
+  진단은 검증된 제품 SHA `fee06fb41de05586a8088b88821a95ca6e97cc16`과 native run
+  `32342945305`를 재사용한다. branch GUI가 실패하면 같은 branch에서 보정·재실행하고,
+  완전히 성공한 뒤에만 correction PR을 생성한다.
+- 첫 pre-PR branch GUI run `32345377664`은 CUPS 환경 증거까지 통과했지만, 의도적으로
+  숨겨진 `#file-input`의 WebDriver 업로드에서 실패했다. 입력을 일시 표시한 첫 보정 SHA
+  `ceb8b3ba7283152ae37d6c5de5e9317b54ee5499`의 native run `32347468978`은 Windows
+  x64, Linux x64·arm64와 installer smoke를 모두 통과했지만 GUI run `32348548068`도
+  같은 지점에서 실패했다. WDIO log read-back 결과 `setValue()`가 파일 경로 전송 전에
+  `Element Clear`를 호출하고 WebKit이 이를 `element not interactable`로 거부한 것이
+  원인이다.
+- 제품 selector와 숨김 상태를 그대로 유지한다. `setValue()`와 DOM style 변경을 제거하고
+  WebDriver `Element Send Keys`로 직행하는 `addValue()`를 사용하며, WebKit capability
+  `strictFileInteractability: false`를 명시한다. source contract는 `addValue` 사용과
+  clear/style 변경 부재를 고정한다.
+- 이 protocol을 적용한 branch GUI run `32350630637`에서 file upload와 문서 렌더는
+  성공했지만, HWP가 로드 94%에서 사용자 선택형 `로컬 글꼴 감지` 모달을 띄워 최종
+  basename 상태를 기다리던 harness가 timeout됐다. 증거 screenshot과 send keys 응답
+  `RESULT null`을 read-back해 upload 실패와 구분했다. headless acceptance는 OS 로컬 글꼴
+  접근 권한을 요청하지 않고 `대체 글꼴로 보기`를 선택한다. 해당 제목이 아닌 modal은
+  자동 진행하지 않고 fail-closed하며, 제품의 실제 기본·권장 UX는 변경하지 않는다.
+- 첫 modal handler run `32351859807`은 두 fixture 모두 모달까지 도달했지만 WebDriver의
+  `.dialog-title` text가 자식 닫기 버튼을 포함한 `로컬 글꼴 감지×`로 측정돼 fail-closed했다.
+  닫기 버튼의 고정 `×` 접미사만 제거한 뒤 정확한 제목 비교를 유지한다.
+- 제목 정규화 run `32352662110`은 모달 버튼 click까지 진행했지만 두 document test가 각각
+  정확히 120초에 종료됐다. `ALHANGEUL_GUI_TIMEOUT_MS`를 개별 WebDriver operation과 Mocha
+  전체 test에 동시에 사용한 것이 직접 원인이며, timeout 뒤 남은 async action이 다음 fixture와
+  evidence를 오염시켰다. operation timeout은 유지하고 전체 scenario timeout은 5배, 최대
+  15분으로 분리한다. 또한 production binary에 WDIO plugin을 넣지 않고 session 시작 시 표준
+  `switchToWindow`로 단일 WebDriver window를 고정해 Tauri service의 반복 plugin focus probe를
+  억제한다. window cardinality가 1이 아니면 실행 전에 fail-closed한다.
+- pre-PR 보정 중 acceptance harness만 바뀌어도 전체 native matrix를 재빌드하는 낭비를
+  피한다. workflow source는 공식 immutable context `github.workflow_sha`로 checkout·검증하고,
+  제품 artifact는 `build_ref`와 native run으로 독립 검증한다. evidence에는
+  `acceptanceRef`, `workflowRef`, `buildRef`를 모두 기록한다. branch gate에서는 성공한 제품
+  artifact SHA `ceb8b3ba7283152ae37d6c5de5e9317b54ee5499`와 run `32347468978`을
+  재사용할 수 있으며, 최종 merge close gate에서는 acceptance SHA와 build SHA가 같은 merge
+  exact SHA로 수렴해야 한다.
+- PR merge 뒤에는 새 merge exact SHA의 native build와 Linux GUI canary를 한 번
+  실행하고 evidence read-back까지 성공해야 Issue #34를 닫는다.
+- 작업 중단 시점에는 timeout·window 보정의 로컬 typecheck, GUI contract `17/17`, product
+  boundary `225 files`, automation `204/204`, actionlint와 diff check까지 통과했다. 재개 시 이
+  checkpoint를 push한 acceptance SHA로 제품 artifact `ceb8b3ba7283152ae37d6c5de5e9317b54ee5499`
+  / native run `32347468978`을 재사용한 GUI workflow만 실행한다.
+- 재개 run `32562596576`은 exact handoff부터 evidence upload까지 수행하고 기존 120초
+  Mocha 조기 종료를 제거했지만 document suite에서 실패했다. 단일 window 고정으로 Tauri
+  plugin focus probe의 약 22초 지연이 사라져 첫 file send가 앱 시작 약 2초에 실행됐고,
+  정적 `#file-input`은 존재하지만 upstream `setupFileInput()`의 change listener가 아직
+  설치되지 않아 HWP 입력을 놓쳤다. 첫 upload 전에 초기 status
+  `HWP 파일을 선택해주세요.`와 `alhangeul-toolbar-ready`가 함께 관측될 때까지 기다려
+  앱 event loop가 전체 초기화 뒤 제어를 반환했음을 확인한다.
+- 첫 readiness run `32563034022`은 두 화면 모두 초기 status가 보이는 screenshot을
+  남겼지만 WebDriver `getElementText`는 120초 동안 빈 문자열을 반환했다. responsive·visibility
+  판정이 섞이는 요소 API 대신 page context에서 `#sb-message.textContent`와 root class를 함께
+  읽는다. upstream initialize는 status 설정부터 `setupFileInput()`까지 `await` 없이 같은
+  실행 구간이므로 외부 WebDriver command가 해당 text를 관측한 시점에는 listener 설치도
+  완료돼 있다.
+- readiness 보정 SHA `ca88fbb`의 run `32563490588`은 exact handoff, dependency·driver·DEB,
+  CUPS와 environment evidence를 모두 통과해 GUI acceptance에 진입했으나 작업지시자의 안전
+  중단 요청으로 취소했다. 이 run은 성공·실패 판정에 사용하지 않는다.
+- 2026-08-23 재개 시 남은 경로를 실행 전에 통합 감사했다. WebKitGTK 요소 visibility와
+  결합된 status `getText()`를 document·native 전체에서 제거하고 page context `textContent`로
+  단일화한다. 각 spec의 최초 readiness는 scenario evidence 경계 안에서 한 번만 수행한다.
+  native open도 headless 로컬 글꼴 선택을 공유하고, drag-in은 upstream 보안 기본값인
+  `로컬 파일 열기 확인`에서 정확한 대상 basename과 `열기` 버튼을 검증한 뒤 진행한다.
+  Save As·현재 저장·직접 PDF·GTK/CUPS system print의 semantic dialog, 디스크 갱신, 6쪽 A4
+  text/render와 editor state 복원 계약은 그대로 유지한다.
+- 통합 감사 SHA `c8ff26c`의 branch GUI run `32601165367`은 setup·exact handoff·DEB·driver·
+  CUPS 환경 gate를 모두 통과했고, 두 upstream file input fixture도 실제 렌더·상태바·쪽 수·
+  중앙 정렬 screenshot을 남겼다. 실패 원인은 `waitForLoadedDocument()`가 upstream input
+  경로에도 native session 전용 `document.title` basename 갱신을 요구한 잘못된 교차 계약이다.
+  이 경로는 의도적으로 native `DesktopHost.openDocumentByPath()`를 우회하므로 title은
+  `Alhangeul`을 유지한다. open 완료는 basename을 포함한 Studio status와 기대 쪽 수로
+  판정하고, native open 뒤 title 보존은 기존 command 전후 snapshot 계약에서 계속 검증한다.
+  WebKitGTK 요소 text 차이를 같은 계열에서 닫기 위해 쪽 수와 document snapshot도 page
+  context의 `textContent`로 단일화한다.
+- title 계약 분리 SHA `c365cd0`의 branch GUI run `32601678616`에서 HWP/HWPX document
+  scenario는 각각 2.7초와 2.6초에 성공했다. native 4개 scenario는 첫 open dialog의 같은
+  AT-SPI selector 실패가 연쇄됐다. 실패 tree에는 GTK `Open File` chooser와 `Ctrl+L` 뒤
+  `Location Layer` 전환이 모두 보이지만, editable text node의 accessible name이 비어 있어
+  전역 `location/위치/name/이름` 조건이 거부됐다. names 조건을 단순 제거하지 않고 보이는
+  file chooser ancestor 아래의 `text/entry`로 scope하며, snapshot은 anonymous editable
+  node도 기록한다. save name field와 print file field도 각각 file chooser/print dialog
+  ancestor로 한정해 같은 GTK label association 차이를 한 번에 닫는다.
+- ancestor scope SHA `968c95959aa87ef9d72133a11be15ba8bf2d5a82`의 branch GUI run
+  `32602426011`은 anonymous location entry 선택과 경로 값 입력을 통과했지만 open chooser가
+  닫히지 않았다. 실패 screenshot의 `파일 열기 중...`, tree의 보이는 `Location Layer`와
+  native scenario의 공통 120초 close timeout을 대조하면 값 입력 뒤 `Return`의 대상 focus가
+  entry로 이동하지 않았을 가능성이 우선 확인됐다. AT-SPI `setText` command가 같은 node를
+  `grabFocus()`한 뒤 값을 갱신하도록 원자화하고, focus 실패도 fail-closed했다.
+- focus 보정 SHA `965fbb6ecf6da5d47c22e3980e124b304a4a88a4`의 branch GUI run
+  `32685969832`에서도 HWP/HWPX document scenario와 location entry focus·값 설정까지
+  성공했지만 첫 chooser close가 같은 120초 timeout으로 실패했다. driver가 focus 실패를
+  반환하지 않았으므로 focus 부재만을 직접 원인으로 본 앞선 진단은 충분하지 않았다. 같은
+  node를 AT-SPI로 focus·값 설정한 뒤 별도 X11 process의 `Return`을 보내는 cross-channel
+  submit이 남은 불확정 경계다.
+- GTK 3의 `GtkEntryAccessible`은 `AtkAction`과 `AtkEditableText`를 함께 구현하고
+  `GtkEntry::activate`는 모든 Enter key binding의 의미 계약이다. location entry 입력을 한
+  driver 호출의 `grabFocus() -> setTextContents() -> exact readback -> activate`로 바꾸고
+  X11 `Return`을 제거한다. readback 오류와 `activate` action 부재는 fail-closed하며 실제
+  경로 문자열은 evidence에 기록하지 않는다. 실패 snapshot에는 editable node의 focus,
+  action 이름과 text 길이만 추가해 다음 drift를 한 run에서 판정한다. 첫 chooser가 남아
+  발생한 drag/PDF/print 연쇄 실패는 별도 제품 결함으로 분리하지 않는다.
+- semantic submit SHA `bb235d34cafedef616a0ff56a19424bfd734b1c9`의 branch GUI run
+  `32687090731`은 exact handoff·환경·HWP/HWPX document scenario를 통과했지만 native open의
+  chooser close가 다시 timeout됐다. 새 evidence는 보이는 location entry가
+  `focused=true`, `actions=["activate"]`, `textLength=87`이며 87자가 실제 fixture 절대 경로
+  길이와 일치함을 증명했다. 같은 tree의 보이는 `Open` button은 `actions=["click"]`을
+  제공한다. 따라서 값 입력이나 entry activate 실패가 아니라 file chooser의 accept response가
+  발생하지 않은 것이 남은 경계다.
+- GTK `FileChooserDialog`의 완료 계약은 `Open`/`Save` accept-type response button이다. location
+  entry의 full absolute path를 focus·readback·activate한 뒤 chooser가 남아 있으면 같은
+  ancestor 안의 명시적 `Open`/`Save` action을 수행한다. entry activate가 이미 dialog를 닫은
+  경우에는 accept action을 생략하고, dialog는 남았는데 accept action을 찾지 못하면 5초 안에
+  fail-closed한다. Save As도 directory activation 뒤 anonymous basename field를 다시 추측하지
+  않고 full target path와 `Save` accept의 같은 단일 계약을 사용한다. selector는 `Ctrl+L` 뒤
+  focused editable로 한정하고 실패 tree에는 enabled/sensitive state도 추가한다.
+- explicit accept SHA `ef5831bd8c6255b90fa67ba9764b54eeab3ca179`의 branch GUI run
+  `32688123494`은 첫 native open chooser를 닫는 데 성공했다. `open-document` 실패 tree가
+  생성되지 않았고 final screenshot은 `biz_plan.hwp`의 6쪽 첫 화면과 `파일 열기 완료` status를
+  보존했다. 실패는 제품 open이나 path 전달이 아니라 공통 `waitForLoadedDocument()`가 browser
+  file-input의 basename status만 인정해 native wrapper의 완료 status를 거부한 acceptance
+  predicate 오류다. browser status 또는 정확한 native `파일 열기 완료`와 실제 render canvas,
+  기대 쪽 수를 함께 요구하는 순수 판정 helper로 통합한다. native 완료 문구만으로는 통과시키지
+  않으며 `파일 열기 중...`, canvas 부재와 쪽 수 불일치는 계속 fail-closed한다.
+- native load predicate SHA `a12a99aceee8d332f74e40a1b64d14031a64b167`의 branch GUI run
+  `32689152972`은 document UX 2건, HWP/HWPX native Save As·현재 저장·재열기와 직접 PDF를
+  성공시켰다. 직접 PDF는 6쪽 A4, 한글 title/text, 쪽별 nonblank render floor를 모두
+  통과했다. 남은 drag-in은 source가 X11 mouseup 직후 종료되어 GTK target의 비동기 URI
+  요청 전에 owner를 잃을 수 있는 lifecycle 결함이고, system print는 실제 인쇄 UI가 별도
+  AT-SPI application/process에 나타날 수 있는데도 `Alhangeul` application만 탐색한 scope
+  결함이다.
+- drag source는 고정 비민감 marker `READY`, `DATA`, `FINISHED`를 출력하고 harness는 URI
+  `DATA`와 GTK `drag-end`의 `FINISHED`를 모두 확인한 뒤에만 source process를 정리한다.
+  `FINISHED`에 데이터가 없거나 bounded timeout 안에 완료되지 않으면 fail-closed한다.
+- system print는 WebDriver menu click 대신 사용자와 같은 X11 `Ctrl+P`를 한 번 입력한다.
+  file chooser와 일반 app UI는 계속 `Alhangeul` application에 한정하되, print command와
+  실패 snapshot만 격리된 Xvfb desktop의 top-level applications를 탐색한다. 모든 printer,
+  file entry, Print/Cancel action은 정확한 print dialog ancestor 안으로 다시 제한하고 실제
+  printer는 기존 virtual-PDF allowlist 밖에서 계속 거부한다.
+- focused document wait 보정 SHA `61d96b2bc834fd0f502e2cab7258374fe083cbd3`의 branch GUI
+  run `32692937948`은 WebDriver phase 전체를 다시 통과하고 production app에서 `Ctrl+P`로
+  GTK Print dialog까지 열었다. 그러나 AT-SPI `doAction()` 성공 뒤에도 screenshot에서는
+  CUPS `PDF` 행이 계속 선택되어 있었고 `Print to File` file entry도 생성되지 않았다. 따라서
+  액션 결과를 selection 결과로 간주하지 않는다.
+- 첫 semantic Selection 보정 SHA `fcea04bbd0f502ee0a26c04588d02678bac4853e`의 branch GUI
+  run `32693731543`은 WebDriver phase 전체를 재통과했지만 native print의
+  `selectChild()`가 `false`를 반환해 file entry 전에 fail-closed했다. 실패 tree는
+  `Print to File`이 `selectable=true`, `selected=false`, CUPS `PDF`가 `selected=true`이고
+  해당 행의 action 순서가 `expand or contract`, `edit`, `activate`임을 새로 보존했다.
+- exact activate 보정 SHA `5a9e536e9913a72bdf97e08cdbe066eeebba9149`의 branch GUI run
+  `32694223866`은 `activate` 직후 print dialog를 닫고 현재 선택된 CUPS `PDF` printer로
+  실제 PDF를 생성했다. 따라서 cell `activate`는 선택이 아니라 row activation이며 printer
+  선택에 사용할 수 없다. `selected=true` wait가 이를 성공으로 오인하지 않고 timeout해
+  WebDriver phase와 evidence를 보존했다.
+- GTK 3 공식 `gtk_tree_view_accessible_grab_cell_focus()` 구현은 대상 cell path에
+  `gtk_tree_view_set_cursor()` 또는 `set_cursor_on_cell()`을 호출한다. 이 API는 row cursor를
+  옮기고 선택하므로 `Print to File` cell에 `AtkComponent.grabFocus()`를 수행하고 동일 row의
+  `selected=true`를 semantic readback한 뒤에만 file entry로 진행한다. focus 실패·selection
+  state 불일치는 fail-closed하며 좌표 click과 row activation은 사용하지 않는다.
+- printer cell focus 보정 SHA `b1dd9d7701b9132def3f1ad65a0ace7171ae2b2a`의 branch GUI run
+  `32694887391`은 exact handoff·환경·evidence upload와 WebDriver phase 전체를 통과했다.
+  native failure tree는 `Print to File` cell이 `focused=true`, `selected=true`이고 CUPS `PDF`는
+  `selected=false`임을 보존해 semantic selection 보정을 실제 GTK에서 확정했다. 다음 실패는
+  선택 뒤 `text/entry` file field를 기다린 기존 가정이었다. 실제 tree의 `File:` 다음 경로
+  control은 현재 `output.pdf` 경로를 name으로 가진 `push button`이다.
+- GTK 3 공식 file print backend는 이 control을 `GTK_PRINTER_OPTION_TYPE_FILESAVE`로 만들고,
+  printer option widget은 plain button click으로 `GTK_FILE_CHOOSER_ACTION_SAVE` dialog를 연 뒤
+  `_Select` accept response에서 URI를 갱신한다. 따라서 `.pdf` 경로 button을 명시적 click하고,
+  열린 file chooser의 focused location entry에 full target을 submit·readback한 뒤 `Select`를
+  명시적으로 accept한다. chooser close와 button basename 갱신을 모두 확인한 뒤에만 `Print`를
+  실행한다. 좌표 입력, anonymous print entry 추측과 dialog 외부 button action은 허용하지 않는다.
+- chooser 보정 SHA `06e1be8c3d1ced74cf8f565c2aa6214dc261c087`의 branch GUI run
+  `32695710117`은 target chooser를 닫고 path button을 실제
+  `...ated/biz-plan-gtk-print.pdf`로 갱신했다. 이어지는 `Print` action selector가 substring
+  match여서 같은 path button의 `gtk-print.pdf`를 먼저 고르고 chooser를 다시 연 뒤 print dialog
+  close에서 timeout된 것이 남은 원인이다. dialog action button은 접근성 name이 정확히
+  `Print`/`Cancel`/`Open`/`Save`/`Select`이므로 이 버튼들만 normalized exact-name으로 찾는다.
+  printer row와 경로 button은 기존 role·ancestor·substring scope를 유지해 서로 다른 semantics를
+  하나의 matching 규칙으로 섞지 않는다.
+- exact-name 보정 SHA `fd3a2d90a408c3eff403b215827ed7352f3a0265`의 branch GUI run
+  `32696413151`은 WebDriver phase 전체와 `Print to File` row selection, chooser full path,
+  `Select`, basename readback을 다시 통과했다. 그러나 exact `Print` button의
+  `AtkAction.doAction()` 호출이 JSON 응답 없이 process timeout됐고 failure tree와 screenshot은
+  같은 button이 `enabled=true`, `sensitive=true`인 채 dialog가 그대로 남았음을 보존했다.
+  따라서 print response action만 AT-SPI exact-name/ancestor로 찾은 button extents를 읽은 뒤
+  격리 X11 session에서 그 중심점을 한 번 click한다. 좌표로 대상을 탐색하거나 고정 좌표를
+  사용하지 않으며, click 뒤 dialog close와 생성 파일/PDF 판정을 기존 계약대로 기다린다.
+- semantic bounds 보정 SHA `6905cffab75c5536a0f7458e0126f337f8353746`의 branch GUI run
+  `32697224452`도 WebDriver phase 전체와 chooser·basename readback을 통과했지만 PDF 없이
+  동일 dialog를 남기고 JSON response timeout으로 종료됐다. `Component.getExtents()`가 action과
+  같은 synchronous AT-SPI request 경계를 추가했으므로 좌표 경로를 제거한다. 같은 dialog의
+  printer cell에서 hosted 검증된 `Component.grabFocus()`를 exact `Print` button에 적용하고
+  `focused=true` readback 뒤 X11 `space`를 한 번 보내 GTK button을 활성화한다. exact selector,
+  focus readback, dialog close와 file/PDF 판정 중 하나라도 실패하면 계속 fail-closed한다.
+- exact-focus 보정 SHA `629fb6483a9ffc16ba7ca261f294f0e263014a38`의 branch GUI run
+  `32697878886`도 WebDriver phase와 chooser·basename readback을 통과했지만 PDF 없이 종료됐고,
+  failure tree에서 exact `Print` button은 끝까지 `focused=false`였다. button의 component/action
+  interface를 hosted automation 경계에서 사용하지 않는다. GTK 3 공식
+  `gtkprintunixdialog.c`는 `_Print`를 `GTK_RESPONSE_OK` button이자 default response로 추가하므로,
+  exact button이 showing·enabled·sensitive 상태임을 semantic wait한 뒤 GTK mnemonic `Alt+P`를
+  한 번 보내고 dialog close·생성 파일·PDF 분석으로 결과를 판정한다.
+- mnemonic 보정 SHA `07935edd6d9c9bcb725a292bb533be76f837b939`의 branch GUI run
+  `32698528620`도 GTK/CUPS PDF 없이 동일 dialog를 남겼다. active X11 window를 암묵적으로
+  신뢰하지 않고 exact `Print`/`인쇄` title의 visible window ID cardinality가 1임을 확인한 뒤
+  `windowactivate --sync`와 `Alt+P`를 같은 bounded xdotool invocation에서 실행한다. 동시에
+  AT-SPI process timeout 오류에 command와 child-process error를 함께 보존해, 이후 실패가
+  readiness·waitAbsent·snapshot 중 어디에서 발생했는지 evidence만으로 확정한다.
+- exact-window·timeout 진단 SHA `25e6321fcbf87497f8fba4db14116f0c74f5a02b`의 run
+  `32699339501`은 실패 명령을 `actionIfPresent`로 확정했다. 실패 tree에서 file chooser는 이미
+  닫혔고 target basename button이 Print dialog에 반영됐으므로 action 자체는 성공했다. GTK
+  dialog close 뒤 defunct node의 `node_info`를 다시 읽는 과정이 child-process timeout을 만든
+  것으로 판정한다. dialog를 바꿀 수 있는 action은 node info를 action 전에 캡처하고 action 뒤
+  stale proxy를 다시 조회하지 않는 공통 계약으로 보정한다.
+- stable pre-read SHA `18a1ed6`의 run `32700124797`도 chooser가 닫힌 뒤
+  `actionIfPresent` process timeout을 반환했다. stale node 재조회가 아니라 GTK AT-SPI
+  `doAction()` 호출 자체가 UI를 변경한 뒤 반환하지 않는 동작으로 확정한다. action timeout만으로
+  성공 처리하지 않고, 각 action에 명시된 독립 postcondition(dialog appear/absent)이 짧은 bounded
+  wait로 통과한 경우에만 완료를 승인하는 공통 wrapper를 적용한다.
+- postcondition SHA `cd02b81fb4452a2fb32b173e7fc7d3c3b4f4a428`의 run `32700942155`는
+  exact handoff와 WebDriver phase를 통과했지만 Print-to-File chooser가 화면에 열린 상태에서
+  AT-SPI `wait` process timeout을 반환했다. screenshot의 exact title은 `Select a filename`이고
+  chooser는 portal application의 접근성 tree에 나타나지 않았다. 이 portal chooser에 한해 exact
+  visible X11 window cardinality 1을 확인하고 같은 window ID에서 `Ctrl+L`·전체 선택·절대경로
+  입력·GTK `_Select` mnemonic을 실행한 뒤 window absent를 확인한다. 일반 Open/Save chooser의
+  검증된 semantic 경로와 Print dialog 내부 selector는 유지한다.
+- exact-window SHA `ae07d71`의 run `32701929047`은 WebDriver phase 전체 성공(`webdriver=0`)과
+  exact handoff·evidence upload를 유지했지만 chooser의 `Name` 필드가 초기 `output.pdf`인 채
+  남아 있었다. `xdotool key/type --window`가 GTK portal에 보낸 synthetic event가 입력으로
+  처리되지 않은 것이므로, target window를 활성화하고 `getactivewindow`가 같은 ID인지 확인한
+  뒤 현재 포커스에 일반 key event를 보낸다. native print process의 cwd를 GTK 출력 파일의
+  parent directory로 고정하고 chooser에는 slash 없는 basename만 입력한다. portal이 설정한
+  default `GTK_RESPONSE_OK`를 exact active window의 `Return`으로 실행한 뒤 window absent와
+  기대 절대경로의 실제 PDF 생성을 모두 확인한다.
+- active-window·basename SHA `9e90e03`의 run `32702787708`은 WebDriver phase 전체 성공과
+  exact handoff·evidence upload를 유지했고 chooser current folder를 `~/PDF/generated`로,
+  basename 입력을 `biz-plan-gtk-print.pdf`로 정확히 변경했다. 단일 xdotool command의 `type`이
+  뒤따른 `key --clearmodifiers Return` 토큰을 후속 command가 아니라 입력 문자열로 소비해 실제
+  필드가 `biz-plan-gtk-print.pdfkey--clearmodifiersReturn`이 됐다. `type`을 terminal command로
+  분리하고 같은 exact active window ID를 재확인한 뒤 별도 `Return`을 보내는 파싱 경계만
+  보정한다.
+- command parsing SHA `ba1287b`의 run `32703374614`은 GTK Print to File PDF 생성, print
+  cancel, CUPS virtual printer 선택과 editor 복원을 모두 통과했다. 실제 artifact는 전용
+  `cups-output` 안의 `Alhangeul_job__2-job_1.pdf`였지만 harness가 고정 `biz_plan.pdf`만
+  기다려 실패했다. CUPS-PDF filename을 앱이 제어한다는 가정을 제거하고, virtual print 전
+  directory의 regular PDF basename 집합을 기준선으로 캡처한다. print 뒤 새 regular PDF가
+  정확히 하나이고 nonzero size가 연속 관측된 경우에만 canonical evidence path로 rename한다.
+  복수 신규 PDF, symlink, timeout은 fail-closed하고 기존 PDF page/text/render 분석은 유지한다.
+- CUPS artifact identity SHA `2d08f48e71ae0ba144320c08a92c53a28868f5a0`의 첫 run
+  `32704736236`은 production native print 전체와 GTK·CUPS 양쪽 6쪽 A4·text·render를 통과했고
+  canonical `cups-output/biz_plan.pdf` evidence까지 생성했다. 다만 뒤따른 WebDriver phase는
+  두 번째 HWPX reopen chooser를 AT-SPI에서 보지 못해 실패했다. 같은 SHA·제품 artifact·native
+  run을 변경 없이 재실행한 `32706017262`에서는 native print와 WebDriver가 모두 성공했다.
+  동일 입력의 상반된 결과와 첫 run의 정상 제품·인쇄 evidence를 근거로 제품 회귀가 아니라 한
+  Xvfb·DBus session에서 production print의 portal/GTK 상태를 WebDriver phase가 이어받는
+  비결정성으로 판정한다. 두 phase를 각각 독립 Xvfb·DBus·Openbox session에서 실행하되 phase
+  exit code 수집, exact artifact handoff, evidence upload와 최종 fail-closed gate는 유지한다.
+- GUI phase session 격리 SHA `ca0902e1c24eab1ea4a80783a89684e842dc7e3b`의 run
+  `32707120322`은 `nativePrint=0`, `webdriver=0`으로 전체 성공했다. 두 Openbox log가
+  `openbox-native-print.log`, `openbox-webdriver.log`로 분리됐고, HWP/HWPX open·Save As·현재
+  저장·재열기, bounded drag-in, 직접 PDF, GTK Print to File·취소·CUPS-PDF와 editor restore가
+  모두 통과했다. 모든 scenario manifest의 size·SHA-256을 재검산했고 GTK·CUPS·직접 PDF는 각각
+  6쪽 A4, 제목·한글 text와 nonblank render를 보존했다. branch GUI close gate를 완료하고
+  correction PR 승인 단계로 전환한다.
+
+### 검증
+
+```bash
+node --test tests/linux-gui-workflow.test.mjs tests/actions-workflows.test.mjs
+pnpm run check:product-boundary
+pnpm run test:automation
+actionlint .github/workflows/alhangeul-linux-gui.yml
+git diff --check
+```
+
+pre-PR branch GUI:
+
+```bash
+git push origin local/task34:publish/task34
+gh workflow run alhangeul-desktop.yml --ref publish/task34 \
+  -f build_ref=<branch-exact-sha> -f run_tests=true
+gh workflow run alhangeul-linux-gui.yml --ref publish/task34 \
+  -f build_ref=ceb8b3ba7283152ae37d6c5de5e9317b54ee5499 \
+  -f native_run_id=32347468978
+```
+
+### 커밋
+
+```text
+Task #34 [Stage 5.9]: GTK Print to File chooser 보정
+```
+
 ## 검증
 
 - 각 Stage 검증 명령은 단계 보고서 작성 전에 실행한다.
@@ -605,6 +923,7 @@ Task #34 [Stage 5.8]: WebKitWebDriver 환경 증거 보정
 - Stage 5.6은 PR #39 merge exact-SHA canary에서 확인한 CUPS queue option 직렬화 가정을 제거한다. 단일 A4 기본값과 `lpoptions -l` 선택값 계약을 보정한 뒤 새 merge exact SHA에서 close gate를 반복한다.
 - Stage 5.7은 PR #40 merge exact-SHA canary에서 Stage 5.6 성공 뒤 드러난 미지원 `tauri-driver --version` 환경 증거 호출을 제거한다. exact install input을 기록한 뒤 새 merge exact SHA에서 close gate를 반복한다.
 - Stage 5.8은 PR #41 merge exact-SHA canary에서 Stage 5.7 성공 뒤 드러난 미지원 `WebKitWebDriver --version` 환경 증거 호출을 제거한다. binary 경로와 패키지 버전을 분리 기록한 뒤 새 merge exact SHA에서 close gate를 반복한다.
+- Stage 5.9는 PR #42 merge exact-SHA canary에서 Stage 5.8 성공 뒤 드러난 미지원 `cupsd -v` 환경 증거 호출을 제거한다. branch GUI에서 드러난 hidden file input 업로드는 `setValue`의 선행 clear를 피하고 직접 send keys를 사용하는 protocol로 보정한다. pre-PR 반복은 immutable acceptance workflow SHA와 제품 artifact SHA를 분리 기록해 성공한 제품 build를 재사용하되, PR merge 뒤에는 둘이 같은 merge exact SHA인 close gate를 한 번 반복한다.
 - #35는 Issue #34 live close gate 통과 뒤 시작한다. #24는 #35까지 merge된 다음 최신 `devel` exact SHA에서 재개한다.
 
 ## 위험과 대응

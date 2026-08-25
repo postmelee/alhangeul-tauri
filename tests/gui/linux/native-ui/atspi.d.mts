@@ -8,6 +8,7 @@ export interface LinuxNativeUiOptions {
   timeoutMs?: number;
   applicationNames?: string[];
   saveTargets?: Partial<Record<NativeDocumentCommand, string>>;
+  env?: NodeJS.ProcessEnv;
   captureScreenshot?(path: string): Promise<unknown>;
 }
 
@@ -19,5 +20,15 @@ export class LinuxNativeUiAdapter implements NativeDialogAdapter {
   printToFile(path: string, trigger: () => Promise<void>): Promise<void>;
   printWithVirtualPrinter(name: string, trigger: () => Promise<void>): Promise<void>;
   cancelPrint(trigger: () => Promise<void>): Promise<void>;
-  withFailureEvidence<T>(label: string, action: () => Promise<T>): Promise<T>;
+  triggerSystemPrint(): Promise<void>;
+  wait(selector: Record<string, unknown>): Promise<unknown>;
+  waitAbsent(selector: Record<string, unknown>): Promise<unknown>;
+  actionOptional(
+    selector: Record<string, unknown>, timeoutMs?: number,
+  ): Promise<{ performed: boolean }>;
+  withFailureEvidence<T>(
+    label: string,
+    action: () => Promise<T>,
+    request?: { desktopScope?: boolean },
+  ): Promise<T>;
 }

@@ -18,6 +18,7 @@ test('Linux GUI workflow는 exact dispatch input과 최소 read 권한만 받는
     assert.match(block, /^        required: true$/m);
     assert.match(block, /^        type: string$/m);
   }
+  assert.match(workflow, /\[\[ "\$ACCEPTANCE_REF" =~ \^\[0-9a-f\]\{40\}\$ \]\]/);
   assert.match(workflow, /\[\[ "\$BUILD_REF" =~ \^\[0-9a-f\]\{40\}\$ \]\]/);
   assert.match(workflow, /\[\[ "\$NATIVE_RUN_ID" =~ \^\[1-9\]\[0-9\]\*\$ \]\]/);
   assert.deepEqual(assignments(workflow, 'permissions'), new Map([
@@ -50,9 +51,16 @@ test('checkout, run metadata, artifact ID와 inventory를 앱 설치 전에 검�
     '- name: Install verified DEB',
     '- name: Run Linux GUI acceptance',
   ]);
-  assert.match(workflow, /^          ref: \$\{\{ inputs\.build_ref \}\}$/m);
+  assert.match(workflow, /^          ref: \$\{\{ github\.workflow_sha \}\}$/m);
   assert.match(workflow, /actual_sha="\$\(git rev-parse HEAD\)"/);
-  assert.match(workflow, /\[\[ "\$actual_sha" == "\$BUILD_REF" \]\]/);
+  assert.match(workflow, /\[\[ "\$actual_sha" == "\$ACCEPTANCE_REF" \]\]/);
+  assert.doesNotMatch(stepContaining(workflow, 'Verify checked out exact SHA'), /BUILD_REF/);
+  const context = stepContaining(workflow, 'workflow-context.json');
+  assert.match(context, /"acceptanceRef":"%s"/);
+  assert.match(context, /"workflowRef":"%s"/);
+  assert.match(context, /"buildRef":"%s"/);
+  assert.match(context, /ACCEPTANCE_REF: \$\{\{ github\.workflow_sha \}\}/);
+  assert.match(context, /WORKFLOW_REF: \$\{\{ github\.workflow_ref \}\}/);
   const handoff = stepContaining(workflow, 'verify-workflow-artifact.mjs');
   assert.match(handoff, /--workflow-path \.github\/workflows\/alhangeul-desktop\.yml/);
   assert.match(handoff, /--artifact-name alhangeul-desktop-linux-x64/);
@@ -109,14 +117,14 @@ test('native Linux dependency와 driver version이 명시되고 환경 증거를
     'pnpm --version',
     'rustc --version',
     'command -v WebKitWebDriver',
-    'dpkg-query -W',
+    'dpkg-query -W cups',
     'pdfinfo -v',
-    'cupsd -v',
   ]) assert.ok(evidence.includes(command), `환경 증거 명령이 필요합니다: ${command}`);
   assert.ok(evidence.includes("printf 'tauri-driver %s\\n' \"$TAURI_DRIVER_VERSION\""));
   assert.ok(evidence.includes("printf 'WebKitWebDriver %s\\n' \"$webkit_webdriver_path\""));
   assert.doesNotMatch(evidence, /tauri-driver --version/);
   assert.doesNotMatch(evidence, /WebKitWebDriver --version/);
+  assert.doesNotMatch(evidence, /cupsd -v/);
 });
 
 test('Xvfb, DBus, AT-SPI와 CUPS-PDF는 repository fixture만 사용한다', () => {
@@ -151,6 +159,24 @@ test('Xvfb, DBus, AT-SPI와 CUPS-PDF는 repository fixture만 사용한다', () 
   assert.match(gui, /ALHANGEUL_GUI_CUPS_PDF_OUTPUT: \$\{\{ env\.CUPS_PDF_OUTPUT \}\}/);
   assert.match(gui, /NO_AT_BRIDGE: "0"/);
   assert.match(gui, /GTK_MODULES: gail:atk-bridge/);
+  assert.match(gui, /run_isolated_phase\(\)/);
+  assert.equal((gui.match(/xvfb-run --auto-servernum/g) ?? []).length, 1);
+  assert.match(gui, /openbox >"\$ALHANGEUL_GUI_OUTPUT_DIR\/openbox-\$phase\.log"/);
+  assert.match(
+    gui,
+    /run_isolated_phase native-print pnpm run test:gui:linux:native-print[\s\\]+\|\| native_print_status=\$\?/,
+  );
+  assert.match(
+    gui,
+    /run_isolated_phase webdriver pnpm run test:gui:linux[\s\\]+\|\| webdriver_status=\$\?/,
+  );
+  assert.ok(
+    gui.indexOf('run_isolated_phase native-print')
+      < gui.indexOf('run_isolated_phase webdriver'),
+  );
+  assert.match(gui, /gui-phase-outcomes\.json/);
+  assert.match(gui, /\[\[ "\$native_print_status" -eq 0 && "\$webdriver_status" -eq 0 \]\]/);
+  assert.match(workflow, /^            scrot \\$/m);
   assert.doesNotMatch(workflow, /\/Users\/|[A-Z]:\\Users\\/);
 });
 
