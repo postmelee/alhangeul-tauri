@@ -7,7 +7,7 @@ GitHub Issue: [#34](https://github.com/postmelee/alhangeul-tauri/issues/34)
 
 - 대상 이슈: #34
 - 마일스톤: M010
-- 단계 수: 5개 본 Stage + 8개 post-merge/review 하위 Stage
+- 단계 수: 5개 본 Stage + 9개 post-merge/review 하위 Stage
 - 작업 목적: 표준 GitHub-hosted Linux x64 runner에서 exact-SHA production DEB의 문서 UX·native dialog·PDF·system print를 반복 검증하고 증거를 보존하는 fail-closed acceptance gate를 구축한다.
 
 기존 Colima x86_64 수동 검증을 공식 반복 gate로 승격하지 않고, `build_ref`와 native run ID가 일치하는 성공 artifact만 별도 수동 workflow가 소비하도록 구성했다. 제품 binary에는 WebDriver 전용 plugin을 추가하지 않았고 외부 `tauri-driver`·WebKitWebDriver, 공통 WebView harness와 Linux AT-SPI adapter 경계를 분리해 후속 Issue #35가 공통 계층만 재사용할 수 있게 했다.
@@ -23,7 +23,7 @@ GitHub Issue: [#34](https://github.com/postmelee/alhangeul-tauri/issues/34)
 | `tests/*workflow*.test.mjs`, `tests/gui-contracts.test.mjs`, `tests/linux-gui-probe.test.mjs` | handoff·workflow·공통/전용 경계의 fail-closed 계약 | platform-neutral automation gate |
 | `package.json`, `pnpm-lock.yaml` | WebdriverIO/Tauri service와 TypeScript test toolchain 고정, 전체 test entrypoint | pnpm workspace 개발·CI 의존성 |
 | `docs/operations/DESKTOP_RELEASE.md` | native build → Linux GUI dispatch → evidence read-back과 잔여 수동 gate | 공식 release 운영 절차 |
-| `mydocs/plans/task_m010_34*.md`, `mydocs/working/task_m010_34_stage*.md`, `mydocs/orders/202608*.md` | 승인 계획, 5개 본 Stage·8개 하위 Stage 증적과 작업 보드 | Hyper-Waterfall 작업 기록 |
+| `mydocs/plans/task_m010_34*.md`, `mydocs/working/task_m010_34_stage*.md`, `mydocs/orders/202608*.md` | 승인 계획, 5개 본 Stage·9개 하위 Stage 증적과 작업 보드 | Hyper-Waterfall 작업 기록 |
 
 제품 Rust/TypeScript runtime과 `third_party/rhwp`, 기존 desktop build workflow는 변경하지 않았다.
 
@@ -43,10 +43,10 @@ GitHub Issue: [#34](https://github.com/postmelee/alhangeul-tauri/issues/34)
 |---|---:|---:|
 | GitHub Actions workflow inventory | 4개 | 5개 — 수동 Linux x64 GUI workflow 1개 추가 |
 | exact cross-run artifact provenance helper | 없음 | 259행 helper와 정상·변조·누락·중복·pagination 계약 30개 |
-| 공통/Linux GUI E2E scenario | 없음 | 공통 문서 UX 1개 + Linux WebDriver native 3개 + production native print 1개 |
+| 공통/Linux GUI E2E scenario | 없음 | 공통 문서 UX 2개 + Linux WebDriver native 3개 + production native print 1개 |
 | Linux native UI/PDF focused 계약 | 없음 | AT-SPI 8개 + drag 6개 + production print 2개 + PDF 5개 |
 | Linux GUI workflow 전용 source contract | 없음 | 9개, 공통 workflow와 합쳐 focused 21/21 |
-| 전체 automation 통과 수 | Stage 1 완료 시 162개 | Stage 5.9 최신 branch에서 214개 |
+| 전체 automation 통과 수 | Stage 1 완료 시 162개 | Stage 5.9 최종 branch에서 224개 |
 | 신규 workflow 외부 Action immutable pin | 해당 없음 | 4/4 full commit SHA + version 주석 |
 | evidence 보존 | 수동·분산 | 성공·실패 모두 7일, context/handoff/hash/log/screenshot/PDF/summary 결속 |
 
@@ -57,12 +57,12 @@ GitHub Issue: [#34](https://github.com/postmelee/alhangeul-tauri/issues/34)
 | exact SHA/run/artifact 결속 | OK — repository·head repository·40자리 SHA·workflow path·manual event·completed/success와 단일 nonexpired artifact ID·digest를 설치 전에 검증한다. |
 | 변조·오결속 fail-closed | OK — 입력, run, artifact pagination/identity와 inventory 변조 fixture가 download/app 실행 전 실패한다. |
 | 플랫폼 중립 harness와 Linux adapter 분리 | OK — 공통 설정·fixture·selector·evidence가 Linux adapter를 import하지 않고 external provider만 구성한다. |
-| 문서 UX·저장·drag-in·출력 시나리오 | OK — 공개 HWP/HWPX fixture와 bounded timeout/no retry 계약으로 WDIO 5개 scenario를 구성했다. native 실행 결과는 merge 후 close gate로 남는다. |
+| 문서 UX·저장·drag-in·출력 시나리오 | OK — 공개 HWP/HWPX fixture와 bounded timeout/no retry 계약으로 공통 문서 2개, Linux WebDriver 3개, production native print 1개의 scenario를 구성하고 hosted branch run에서 모두 통과했다. |
 | PDF 자동 판정 | OK — 6쪽 A4 metadata, 한글 text, 쪽별 content, blank/crop heuristic과 PNG evidence를 결합하며 시각 read-back 필요를 표시한다. |
 | workflow 최소 권한·비용·Action pin | OK — `actions: read`, `contents: read`, `ubuntu-22.04`, manual dispatch, 45분 job/25분 GUI timeout, exact candidate concurrency와 4개 SHA pin을 고정했다. |
 | 실패 증거·최종 판정 | OK — GUI failure와 evidence upload failure를 `always()` 뒤 final gate가 각각 실패로 전달하고 자동 retry를 금지한다. |
-| 전체 platform-neutral regression | OK — product boundary 225 files, GUI TypeScript, 최신 automation 206/206, actionlint와 diff check 통과. upstream 35/35, Studio 97/97와 production build도 통과했다. |
-| 실제 hosted Linux x64 GUI | PARTIAL — 최신 branch run `32690177647`은 exact 환경, document UX 2건, HWP/HWPX native Save As·현재 저장·재열기와 직접 PDF 6쪽 A4·한글 text·nonblank render를 통과했다. drag는 GTK threshold 미도달, system print는 WebDriver-controlled WebView의 native print 미발생으로 각각 재측정했다. staged drag와 production native print phase를 한 canary에서 확정한다. |
+| 전체 platform-neutral regression | OK — 최종 문서 포함 product boundary 236 files, GUI TypeScript, automation 224/224, actionlint와 diff check를 통과했다. upstream 35/35, Studio 97/97와 production build도 통과했다. |
+| 실제 hosted Linux x64 GUI | OK — acceptance SHA `ca0902e1c24eab1ea4a80783a89684e842dc7e3b`의 [run 32707120322](https://github.com/postmelee/alhangeul-tauri/actions/runs/32707120322)이 검증된 product SHA `ceb8b3ba7283152ae37d6c5de5e9317b54ee5499`와 native run `32347468978`을 handoff해 `nativePrint=0`, `webdriver=0`으로 성공했다. HWP/HWPX open·Save As·현재 저장·재열기, drag-in, 직접 PDF, GTK Print to File·취소·CUPS-PDF와 editor restore를 모두 확인했다. |
 
 ### 단계별 검증 결과
 
@@ -79,7 +79,7 @@ GitHub Issue: [#34](https://github.com/postmelee/alhangeul-tauri/issues/34)
 - [Stage 5.6](../working/task_m010_34_stage5.6.md): latest GUI canary가 발견한 exact `PageSize=A4` 직렬화 가정을 단일 A4 설정과 `lpoptions -l` 선택 기본값 판정으로 교체하고 automation 201/201을 통과.
 - [Stage 5.7](../working/task_m010_34_stage5.7.md): exact tauri-driver 설치와 CUPS `*A4` 성공 뒤 드러난 미지원 `--version` 환경 증거 호출을 pinned install input 출력으로 교체하고 automation 201/201을 통과.
 - [Stage 5.8](../working/task_m010_34_stage5.8.md): WebKitWebDriver의 미지원 `--version` 호출을 fail-closed binary 탐색과 Debian 패키지 버전 증거로 분리하고 automation 201/201을 통과.
-- [Stage 5.9](../working/task_m010_34_stage5.9.md): CUPS evidence, hidden upload, headless 글꼴 modal을 보정하고 120초 전체-test timeout과 반복 window focus probe를 정적 분석해 bounded scenario timeout·단일 window 계약으로 분리했다. hosted 재실행 전 checkpoint에서 중단했다.
+- [Stage 5.9](../working/task_m010_34_stage5.9.md): CUPS evidence, hidden upload, native chooser·drag·print 경계와 phase session 격리를 측정 기반으로 보정하고 branch exact-SHA GUI gate를 완료했다.
 - Stage 5.9 재개 run `32562596576`에서 timeout·window 보정은 실제 runner에서 확인됐고,
   제거된 focus 지연 때문에 노출된 최초 file listener readiness race를 초기 status와
   toolbar-ready 결합 gate로 후속 보정했다.
@@ -166,27 +166,34 @@ GitHub Issue: [#34](https://github.com/postmelee/alhangeul-tauri/issues/34)
   좁혔다. modal-first readiness와 `Gtk.EventBox` source로 두 계약을 함께 보정한다.
 - 위 두 계약 보정 뒤 focused `45/45`, automation `214/214`, GUI TypeScript, product
   boundary 227개, actionlint와 diff check를 통과했다.
+- 최종 acceptance workflow SHA `ca0902e1c24eab1ea4a80783a89684e842dc7e3b`의 run
+  `32707120322`은 production native print와 WebDriver를 독립 Xvfb·DBus·Openbox session에서
+  실행해 `nativePrint=0`, `webdriver=0`으로 성공했다. 6개 scenario manifest의 size·SHA-256을
+  재검산했고 GTK·CUPS·직접 PDF가 각각 6쪽 A4, 제목·한글 text와 nonblank render를 보존했다.
+  GTK 첫 쪽, CUPS 마지막 쪽, 직접 PDF 본문, system print editor restore와 drag-in 최종 화면도
+  시각 확인했다. PR 직전에는 frozen install, 최종 문서 포함 product boundary 236개, 제품 version·release
+  metadata·rhwp pin, automation `224/224`, upstream `35/35`, Studio `97/97`, production build,
+  GUI TypeScript, actionlint와 diff check를 다시 통과했다.
 
 ## 잔여 위험과 후속 작업
 
 ### 잔여 위험
 
-- Stage 5.9의 timeout·window·초기 readiness, browser/native document load, GTK anonymous
-  location entry 탐색·focus·입력·explicit Open/Save accept, 현재 저장과 직접 PDF는 hosted
-  runner에서 성공했다. staged drag threshold와 WebDriver 밖 production native print phase에서
-  GTK Print to File, cancel, CUPS-PDF까지 다시 확인해야 하므로 전체 성공은 아직 주장할 수 없다.
-  성공한 제품 artifact는 native run
-  `32347468978`에 고정돼 있다.
-- 다음 canary에서 production binary external driver 연결, localized accessibility selector, CUPS-PDF output name이나 hosted image drift가 추가로 발견될 수 있다. 실패 evidence를 보존하고 측정 근거가 있는 correction PR로만 보정한다.
-- 자동 text/raster 판정만으로 한글 tofu를 확정하지 않는다. screenshot과 PDF render의 glyph·중앙 정렬·빈 쪽·crop을 사람이 read-back해야 한다.
-- Linux arm64, RPM/AppImage desktop integration, 실제 GNOME/Xfce file manager와 physical printer는 자동화 범위 밖이다.
+- branch gate는 acceptance workflow SHA와 재사용한 product artifact SHA를 분리 검증했다. PR merge
+  뒤에는 workflow와 product가 같은 새 merge exact SHA인 native build·Linux GUI close gate를
+  다시 성공시키고 evidence hash·화면을 read-back해야 Issue #34를 닫을 수 있다.
+- hosted Ubuntu 22.04 image, AT-SPI selector와 CUPS-PDF 출력 계약의 향후 drift는 자동 gate가
+  fail-closed로 탐지하지만 환경 drift 자체를 예방하지는 않는다.
+- Linux arm64, RPM/AppImage desktop integration, 실제 GNOME/Xfce file manager와 physical
+  printer는 이번 자동화 범위 밖이다.
 
 ### 후속 작업 후보
 
-- Stage 5.9 pre-PR branch GUI 성공 뒤 correction PR을 만들고, merge exact SHA에서 native build, Linux GUI dispatch, evidence hash 재검산과 시각 read-back.
+- correction PR merge exact SHA에서 native build, Linux GUI dispatch, evidence hash 재검산과 시각 read-back 후 Issue #34 close.
 - Issue #35: 공통 harness를 계승한 Windows exact-SHA GUI E2E acceptance.
 - Issue #24: #34·#35 merge 뒤 최신 `devel` exact SHA에서 rhwp v0.8.4 제품 수용 Stage 3 재개.
 
 ## 작업지시자 승인 요청
 
-- 갱신된 최종 보고서와 Stage 5.8 수용 기준을 승인하면 `devel` 대상 correction PR을 리뷰·merge하고, merge 후 live Linux x64 close gate를 진행한다.
+- 작업지시자가 Stage 5.9 완료 보고를 승인했다. 이 보고서와 branch 수용 결과를 근거로 `devel`
+  대상 correction PR을 게시하며, merge 승인은 작업지시자가 별도로 결정한다.
