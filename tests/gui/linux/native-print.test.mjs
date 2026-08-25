@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { posix } from 'node:path';
+import * as hostPath from 'node:path';
 import test from 'node:test';
 import { runProductionPrintSequence, waitForVirtualPrinterPdf } from './native-print.mjs';
 
@@ -48,13 +48,14 @@ test('production native print는 준비·Print to File·cancel·CUPS를 같은 �
 });
 
 test('CUPS-PDF는 신규 regular PDF 하나가 안정되면 canonical evidence path로 이동한다', async () => {
-  const directory = await mkdtemp(posix.join(tmpdir(), 'alhangeul-cups-'));
-  const sourcePath = posix.join(directory, 'Alhangeul_job__2-job_1.pdf');
-  const targetPath = posix.join(directory, 'biz_plan.pdf');
+  const directory = await mkdtemp(hostPath.join(tmpdir(), 'alhangeul-cups-'));
+  const sourcePath = hostPath.join(directory, 'Alhangeul_job__2-job_1.pdf');
+  const targetPath = hostPath.join(directory, 'biz_plan.pdf');
   try {
     await writeFile(sourcePath, '%PDF-1.4\nfixture\n');
     assert.equal(await waitForVirtualPrinterPdf({
-      baseline: new Map(), directory, targetPath, timeoutMs: 1000, delay: async () => {},
+      baseline: new Map(), directory, targetPath, timeoutMs: 1000,
+      delay: async () => {}, pathApi: hostPath,
     }), targetPath);
     assert.equal(await readFile(targetPath, 'utf8'), '%PDF-1.4\nfixture\n');
     await assert.rejects(readFile(sourcePath), { code: 'ENOENT' });
@@ -64,15 +65,16 @@ test('CUPS-PDF는 신규 regular PDF 하나가 안정되면 canonical evidence p
 });
 
 test('CUPS-PDF는 신규 regular PDF가 복수이면 fail-closed 한다', async () => {
-  const directory = await mkdtemp(posix.join(tmpdir(), 'alhangeul-cups-'));
+  const directory = await mkdtemp(hostPath.join(tmpdir(), 'alhangeul-cups-'));
   try {
     await Promise.all([
-      writeFile(posix.join(directory, 'first.pdf'), '%PDF-1.4\nfirst\n'),
-      writeFile(posix.join(directory, 'second.pdf'), '%PDF-1.4\nsecond\n'),
+      writeFile(hostPath.join(directory, 'first.pdf'), '%PDF-1.4\nfirst\n'),
+      writeFile(hostPath.join(directory, 'second.pdf'), '%PDF-1.4\nsecond\n'),
     ]);
     await assert.rejects(waitForVirtualPrinterPdf({
       baseline: new Map(), directory,
-      targetPath: posix.join(directory, 'canonical.pdf'), timeoutMs: 1000,
+      targetPath: hostPath.join(directory, 'canonical.pdf'), timeoutMs: 1000,
+      pathApi: hostPath,
     }), /artifact가 2개/);
   } finally {
     await rm(directory, { recursive: true, force: true });

@@ -7,7 +7,7 @@ GitHub Issue: [#34](https://github.com/postmelee/alhangeul-tauri/issues/34)
 
 - 대상 이슈: #34
 - 마일스톤: M010
-- 단계 수: 5개 본 Stage + 9개 post-merge/review 하위 Stage
+- 단계 수: 5개 본 Stage + 10개 post-merge/review 하위 Stage
 - 작업 목적: 표준 GitHub-hosted Linux x64 runner에서 exact-SHA production DEB의 문서 UX·native dialog·PDF·system print를 반복 검증하고 증거를 보존하는 fail-closed acceptance gate를 구축한다.
 
 기존 Colima x86_64 수동 검증을 공식 반복 gate로 승격하지 않고, `build_ref`와 native run ID가 일치하는 성공 artifact만 별도 수동 workflow가 소비하도록 구성했다. 제품 binary에는 WebDriver 전용 plugin을 추가하지 않았고 외부 `tauri-driver`·WebKitWebDriver, 공통 WebView harness와 Linux AT-SPI adapter 경계를 분리해 후속 Issue #35가 공통 계층만 재사용할 수 있게 했다.
@@ -46,7 +46,7 @@ GitHub Issue: [#34](https://github.com/postmelee/alhangeul-tauri/issues/34)
 | 공통/Linux GUI E2E scenario | 없음 | 공통 문서 UX 2개 + Linux WebDriver native 3개 + production native print 1개 |
 | Linux native UI/PDF focused 계약 | 없음 | AT-SPI 8개 + drag 6개 + production print 2개 + PDF 5개 |
 | Linux GUI workflow 전용 source contract | 없음 | 9개, 공통 workflow와 합쳐 focused 21/21 |
-| 전체 automation 통과 수 | Stage 1 완료 시 162개 | Stage 5.9 최종 branch에서 224개 |
+| 전체 automation 통과 수 | Stage 1 완료 시 162개 | Stage 5.10 branch exact SHA의 Windows/Linux에서 224개 |
 | 신규 workflow 외부 Action immutable pin | 해당 없음 | 4/4 full commit SHA + version 주석 |
 | evidence 보존 | 수동·분산 | 성공·실패 모두 7일, context/handoff/hash/log/screenshot/PDF/summary 결속 |
 
@@ -63,6 +63,7 @@ GitHub Issue: [#34](https://github.com/postmelee/alhangeul-tauri/issues/34)
 | 실패 증거·최종 판정 | OK — GUI failure와 evidence upload failure를 `always()` 뒤 final gate가 각각 실패로 전달하고 자동 retry를 금지한다. |
 | 전체 platform-neutral regression | OK — 최종 문서 포함 product boundary 236 files, GUI TypeScript, automation 224/224, actionlint와 diff check를 통과했다. upstream 35/35, Studio 97/97와 production build도 통과했다. |
 | 실제 hosted Linux x64 GUI | OK — acceptance SHA `ca0902e1c24eab1ea4a80783a89684e842dc7e3b`의 [run 32707120322](https://github.com/postmelee/alhangeul-tauri/actions/runs/32707120322)이 검증된 product SHA `ceb8b3ba7283152ae37d6c5de5e9317b54ee5499`와 native run `32347468978`을 handoff해 `nativePrint=0`, `webdriver=0`으로 성공했다. HWP/HWPX open·Save As·현재 저장·재열기, drag-in, 직접 PDF, GTK Print to File·취소·CUPS-PDF와 editor restore를 모두 확인했다. |
+| Stage 5.10 cross-platform native gate | OK — branch exact SHA `0e053613dbad28c6ec3a824336acae959735ac06`의 [run 32866224614](https://github.com/postmelee/alhangeul-tauri/actions/runs/32866224614)에서 Windows automation 224/224와 bundle, Windows installer smoke, Linux x64·arm64 bundle이 모두 성공했다. |
 
 ### 단계별 검증 결과
 
@@ -80,6 +81,7 @@ GitHub Issue: [#34](https://github.com/postmelee/alhangeul-tauri/issues/34)
 - [Stage 5.7](../working/task_m010_34_stage5.7.md): exact tauri-driver 설치와 CUPS `*A4` 성공 뒤 드러난 미지원 `--version` 환경 증거 호출을 pinned install input 출력으로 교체하고 automation 201/201을 통과.
 - [Stage 5.8](../working/task_m010_34_stage5.8.md): WebKitWebDriver의 미지원 `--version` 호출을 fail-closed binary 탐색과 Debian 패키지 버전 증거로 분리하고 automation 201/201을 통과.
 - [Stage 5.9](../working/task_m010_34_stage5.9.md): CUPS evidence, hidden upload, native chooser·drag·print 경계와 phase session 격리를 측정 기반으로 보정하고 branch exact-SHA GUI gate를 완료했다.
+- [Stage 5.10](../working/task_m010_34_stage5.10.md): Windows drive-letter fixture와 production POSIX path 계약을 단일 주입 API로 분리하고 exact-SHA Windows/Linux native gate와 installer smoke를 복구했다.
 - Stage 5.9 재개 run `32562596576`에서 timeout·window 보정은 실제 runner에서 확인됐고,
   제거된 focus 지연 때문에 노출된 최초 file listener readiness race를 초기 status와
   toolbar-ready 결합 gate로 후속 보정했다.
@@ -179,7 +181,7 @@ GitHub Issue: [#34](https://github.com/postmelee/alhangeul-tauri/issues/34)
 
 ### 잔여 위험
 
-- branch gate는 acceptance workflow SHA와 재사용한 product artifact SHA를 분리 검증했다. PR merge
+- Stage 5.10 branch native gate는 보정 코드 exact SHA를 Windows/Linux에서 검증했다. PR merge
   뒤에는 workflow와 product가 같은 새 merge exact SHA인 native build·Linux GUI close gate를
   다시 성공시키고 evidence hash·화면을 read-back해야 Issue #34를 닫을 수 있다.
 - hosted Ubuntu 22.04 image, AT-SPI selector와 CUPS-PDF 출력 계약의 향후 drift는 자동 gate가
@@ -195,5 +197,5 @@ GitHub Issue: [#34](https://github.com/postmelee/alhangeul-tauri/issues/34)
 
 ## 작업지시자 승인 요청
 
-- 작업지시자가 Stage 5.9 완료 보고를 승인했다. 이 보고서와 branch 수용 결과를 근거로 `devel`
-  대상 correction PR을 게시하며, merge 승인은 작업지시자가 별도로 결정한다.
+- Stage 5.10 최종 보고서와 branch exact-SHA 수용 결과를 승인하면 `devel` 대상 correction PR을
+  게시한다. merge 승인은 작업지시자가 별도로 결정한다.

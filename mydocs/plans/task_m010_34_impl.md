@@ -895,6 +895,74 @@ gh workflow run alhangeul-linux-gui.yml --ref publish/task34 \
 Task #34 [Stage 5.9]: GTK Print to File chooser 보정
 ```
 
+## Stage 5.10 — merge exact-SHA Windows host path 계약 보정
+
+### 배경
+
+PR #43 merge SHA `4ba0b20daeea7c06d5d7fddce06566c762ca6f73`의 native run
+`32863830229`에서 Linux x64·arm64는 automation, upstream, Studio, bundle 검증과 artifact
+upload를 통과했다. Windows x64는 automation `224`건 중 CUPS-PDF canonical 이동·복수
+artifact fail-closed test 2건이 실패해 build 전에 중단됐고, Windows artifact 부재로 installer
+smoke가 연쇄 실패했다.
+
+실패 fixture는 `mkdtemp(posix.join(tmpdir(), ...))`로 host 임시 경로를 만들면서 production
+helper의 POSIX 절대경로 검증을 그대로 호출했다. Windows의 `tmpdir()`은 drive-letter 경로라
+`posix.isAbsolute()`가 거부한다. 이는 CUPS runtime 실패가 아니라 Linux helper unit test가
+fixture 파일 I/O의 host path API와 production POSIX path API를 명시적으로 분리하지 않은
+cross-platform 계약 결함이다.
+
+### 산출물
+
+수정:
+
+- `tests/gui/linux/native-print.mjs`
+- `tests/gui/linux/native-print.test.mjs`
+- `mydocs/orders/20260826.md`
+- `mydocs/plans/task_m010_34_impl.md`
+- `mydocs/working/task_m010_34_stage5.10.md`
+- `mydocs/report/task_m010_34_report.md`
+
+### 변경 내용
+
+- `waitForVirtualPrinterPdf`는 단일 `pathApi`를 options로 받아 validation, snapshot scan,
+  source/target join과 basename 진단에 일관되게 사용한다.
+- production 호출은 기본 `node:path.posix`를 유지해 Linux CUPS output 계약과 runtime 동작을
+  바꾸지 않는다.
+- unit fixture는 `node:path` host API로 임시 directory·source·target을 만들고 같은 API를
+  helper에 명시적으로 주입한다. Windows drive-letter와 POSIX 경로를 혼합하지 않는다.
+- 테스트를 Windows에서 skip하거나 validation을 완화하지 않는다. path API 오결속은 기존처럼
+  fail-closed하며, CUPS service·workflow·제품 runtime·PDF 판정 범위는 변경하지 않는다.
+
+### 검증
+
+```bash
+node --test tests/gui/linux/native-print.test.mjs
+pnpm run test:automation
+pnpm run typecheck:gui
+pnpm run check:product-boundary
+actionlint .github/workflows/alhangeul-linux-gui.yml
+git diff --check
+```
+
+pre-PR branch native gate:
+
+```bash
+git push origin local/task34:publish/task34
+gh workflow run alhangeul-desktop.yml --ref publish/task34 \
+  -f build_ref=<branch-exact-sha> -f run_tests=true
+```
+
+- Windows x64 automation `224/224`, Windows bundle와 installer smoke, Linux x64·arm64 bundle이
+  모두 성공해야 correction PR을 생성한다.
+- PR merge 뒤 workflow와 product가 같은 새 merge exact SHA에서 native build와 Linux GUI
+  close gate를 다시 실행하고 evidence hash·화면을 read-back한 뒤에만 Issue #34를 닫는다.
+
+### 커밋
+
+```text
+Task #34 [Stage 5.10]: CUPS-PDF host path 계약 보정
+```
+
 ## 검증
 
 - 각 Stage 검증 명령은 단계 보고서 작성 전에 실행한다.
@@ -924,6 +992,10 @@ Task #34 [Stage 5.9]: GTK Print to File chooser 보정
 - Stage 5.7은 PR #40 merge exact-SHA canary에서 Stage 5.6 성공 뒤 드러난 미지원 `tauri-driver --version` 환경 증거 호출을 제거한다. exact install input을 기록한 뒤 새 merge exact SHA에서 close gate를 반복한다.
 - Stage 5.8은 PR #41 merge exact-SHA canary에서 Stage 5.7 성공 뒤 드러난 미지원 `WebKitWebDriver --version` 환경 증거 호출을 제거한다. binary 경로와 패키지 버전을 분리 기록한 뒤 새 merge exact SHA에서 close gate를 반복한다.
 - Stage 5.9는 PR #42 merge exact-SHA canary에서 Stage 5.8 성공 뒤 드러난 미지원 `cupsd -v` 환경 증거 호출을 제거한다. branch GUI에서 드러난 hidden file input 업로드는 `setValue`의 선행 clear를 피하고 직접 send keys를 사용하는 protocol로 보정한다. pre-PR 반복은 immutable acceptance workflow SHA와 제품 artifact SHA를 분리 기록해 성공한 제품 build를 재사용하되, PR merge 뒤에는 둘이 같은 merge exact SHA인 close gate를 한 번 반복한다.
+- Stage 5.10은 PR #43 merge exact-SHA native run의 Windows automation에서 드러난 Linux
+  CUPS helper unit fixture의 host/POSIX path 혼합을 단일 주입 path API로 보정한다. production
+  기본값은 POSIX로 유지하고 branch exact-SHA Windows/Linux native gate와 installer smoke를
+  모두 통과한 뒤에만 correction PR을 만든다.
 - #35는 Issue #34 live close gate 통과 뒤 시작한다. #24는 #35까지 merge된 다음 최신 `devel` exact SHA에서 재개한다.
 
 ## 위험과 대응
