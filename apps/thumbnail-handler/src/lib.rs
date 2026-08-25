@@ -18,9 +18,9 @@ use std::panic::{catch_unwind, AssertUnwindSafe};
 #[cfg(windows)]
 use std::sync::atomic::{AtomicPtr, AtomicU32, Ordering};
 #[cfg(windows)]
-use windows_sys::core::{GUID, HRESULT};
+use windows_sys::core::{BOOL, GUID, HRESULT};
 #[cfg(windows)]
-use windows_sys::Win32::Foundation::{BOOL, HINSTANCE, HMODULE, S_FALSE, S_OK};
+use windows_sys::Win32::Foundation::{HINSTANCE, HMODULE, S_FALSE, S_OK};
 
 #[cfg(windows)]
 static MODULE_HANDLE: AtomicPtr<c_void> = AtomicPtr::new(core::ptr::null_mut());

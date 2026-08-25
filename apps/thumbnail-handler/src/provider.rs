@@ -44,9 +44,10 @@ pub unsafe fn create_instance(iid: *const GUID, object: *mut *mut c_void) -> HRE
     }
     unsafe { *object = core::ptr::null_mut() };
     let provider = create_provider();
-    let result =
-        unsafe { query_interface((&mut (*provider).initialize as *mut _).cast(), iid, object) };
-    unsafe { release((&mut (*provider).initialize as *mut _).cast()) };
+    let initialize: *mut InterfaceHeader<InitializeWithStreamVTable> =
+        unsafe { &mut (*provider).initialize };
+    let result = unsafe { query_interface(initialize.cast(), iid, object) };
+    unsafe { release(initialize.cast()) };
     result
 }
 
@@ -81,12 +82,17 @@ unsafe extern "system" fn query_interface(
         }
         unsafe { *object = core::ptr::null_mut() };
         let provider = unsafe { owner(this) };
-        let interface = if unsafe { guid_matches(iid, UNKNOWN_IID) }
+        let interface: *mut c_void = if unsafe { guid_matches(iid, UNKNOWN_IID) }
             || unsafe { guid_matches(iid, INITIALIZE_WITH_STREAM_IID) }
         {
-            unsafe { (&mut (*provider).initialize as *mut _).cast() }
+            unsafe {
+                (&mut (*provider).initialize as *mut InterfaceHeader<InitializeWithStreamVTable>)
+                    .cast()
+            }
         } else if unsafe { guid_matches(iid, THUMBNAIL_PROVIDER_IID) } {
-            unsafe { (&mut (*provider).thumbnail as *mut _).cast() }
+            unsafe {
+                (&mut (*provider).thumbnail as *mut InterfaceHeader<ThumbnailProviderVTable>).cast()
+            }
         } else {
             return E_NOINTERFACE;
         };
