@@ -248,6 +248,10 @@ jobs:
         if: inputs.run_tests
         run: pnpm run clippy:document-preview:protocol
 
+      - name: Build Windows thumbnail binaries
+        if: matrix.name == 'windows-x64'
+        run: pnpm run build:thumbnail-binaries -- --target x86_64-pc-windows-msvc
+
       - name: Test desktop Rust
         if: inputs.run_tests
         run: pnpm run test:desktop
@@ -255,10 +259,6 @@ jobs:
       - name: Lint desktop Rust
         if: inputs.run_tests
         run: pnpm run clippy:desktop
-
-      - name: Build Windows thumbnail binaries
-        if: matrix.name == 'windows-x64'
-        run: pnpm run build:thumbnail-binaries -- --target x86_64-pc-windows-msvc
 
       - name: Test Windows thumbnail worker
         if: inputs.run_tests && matrix.name == 'windows-x64'
