@@ -48,22 +48,25 @@ git diff --check
 - OK — `actionlint` 오류 없음
 - OK — `git diff --check` 오류 없음
 - OK — 구현 파일 `tests/gui/linux/native-print.mjs`는 `278 LOC`로 권장 상한 이내
+- OK — branch exact SHA `0e053613dbad28c6ec3a824336acae959735ac06`의
+  [native run 32866224614](https://github.com/postmelee/alhangeul-tauri/actions/runs/32866224614)에서
+  Windows automation `224/224`, upstream·Studio host, Tauri bundle과 artifact 검증·업로드를
+  통과했다. Linux x64·arm64도 같은 SHA의 bundle을 검증·업로드했다.
+- OK — 같은 run의 Windows installer smoke가 source SHA와 Windows artifact를 재검증하고
+  MSI·NSIS smoke 및 진단 upload를 포함해 `48s`에 성공했다.
 
 ## 잔여 위험
 
-- Windows x64 runner에서 같은 automation `224/224`와 bundle build가 통과하는지는 아직
-  branch exact-SHA native gate로 확인해야 한다.
-- Windows artifact가 생성된 뒤 installer smoke까지 통과해야 이전 run의 연쇄 실패가 해소된다.
 - PR merge 뒤에는 새 merge exact SHA에서 native build와 Linux GUI close gate를 다시 실행해야
   Issue #34를 닫을 수 있다.
 
 ## 다음 단계 영향
 
-- 이 단계 커밋을 `publish/task34`에 push하고 동일 exact SHA로 `alhangeul-desktop.yml`을
-  수동 실행한다.
-- Windows x64, Windows installer smoke, Linux x64·arm64가 모두 성공한 경우에만 correction
-  PR 게시 승인 단계로 진행한다.
+- correction PR merge 뒤 새 merge exact SHA로 `alhangeul-desktop.yml`을 실행하고, 그 native
+  artifact를 같은 SHA의 Linux GUI workflow에 handoff한다.
+- evidence hash와 대표 화면 read-back까지 성공한 경우에만 Issue #34를 닫는다.
 
 ## 승인 요청
 
-- Stage 5.10 산출물과 로컬 검증을 고정한 뒤 branch exact-SHA native gate를 실행한다.
+- Stage 5.10 산출물과 branch exact-SHA native gate 결과를 승인하면 correction PR 게시
+  절차로 진행한다.
