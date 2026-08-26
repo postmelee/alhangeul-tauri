@@ -12,6 +12,7 @@ docs/
     LOCAL_FONTS.md           로컬 폰트 해석과 라이선스 경계
     PROVENANCE.md            초기 코드와 제품 자산 출처
     UPSTREAM.md              upstream rhwp 경계와 고정 정책
+    WINDOWS_THUMBNAILS.md    Windows Explorer thumbnail 처리와 등록 경계
   operations/
     DESKTOP_RELEASE.md       artifact 검증과 후속 배포 준비 경계
 ```

@@ -1,6 +1,6 @@
 # 데스크톱 artifact와 배포 준비
 
-Alhangeul은 아직 공식 설치 파일이나 공개 릴리스를 제공하지 않는다. `.github/workflows/alhangeul-desktop.yml`은 Windows/Linux native build 결과와 Windows installer package smoke 진단을 수동 검증하고 14일 동안 Actions artifact로 보존하지만 GitHub Release를 생성하지 않는다.
+Alhangeul은 아직 공식 설치 파일이나 공개 릴리스를 제공하지 않는다. `.github/workflows/alhangeul-desktop.yml`은 Windows/Linux native build 결과와 Windows installer·thumbnail smoke 진단을 수동 검증하고 14일 동안 Actions artifact로 보존하지만 GitHub Release를 생성하지 않는다.
 
 ## 제품 version 기준
 
@@ -22,11 +22,11 @@ workflow는 다음 작업만 수행한다.
 
 1. submodule을 포함한 선택 commit checkout
 2. Node, pnpm, Rust와 Linux Tauri 의존성 준비
-3. 제품 경계·version, `rhwp` pin, automation, upstream과 studio 검증
-4. Tauri bundle 생성
-5. 필수 installer 종류·크기·SHA-256 inventory 검증
+3. 제품 경계·version, `rhwp` pin, automation, upstream·studio와 thumbnail core/source 검증
+4. Windows thumbnail handler·worker와 Tauri bundle 생성
+5. 필수 installer·thumbnail PE 종류·크기·SHA-256 inventory 검증
 6. inventory를 포함한 Actions artifact 업로드
-7. fresh `windows-2025` runner에서 Windows MSI·NSIS 설치·제한 실행·제거 package smoke
+7. fresh `windows-2025` runner에서 Windows MSI·NSIS 설치·rollback·제거와 실제 HWP/HWPX Shell bitmap smoke
 8. installer별 summary와 원본 log를 diagnostic artifact로 항상 업로드하고 build matrix와 smoke 결과를 함께 판정
 
 repository-level Actions는 활성 상태지만 대상 CI와 native workflow는 자동 trigger 없이 수동 `workflow_dispatch`로만 실행한다. Actions 활성 상태는 workflow 성공이나 artifact 가용성을 보장하지 않으므로 run의 exact commit과 job 결과를 함께 확인해야 한다.
@@ -141,6 +141,14 @@ MSI와 NSIS는 각각 clean state, silent install exit `0`, 제품 version `0.1.
 
 이 결과는 fresh hosted runner의 반복 가능한 비대화형 package smoke다. 실제 GUI에서 HWP/HWPX 열기·저장·인쇄, Explorer 기본 앱 선택 UI, 장시간 사용과 Windows 실제 사용자 환경의 최종 수동 검증을 대신하지 않는다. Artifact는 공개 배포물이 아니며 만료 뒤 재사용할 수 없다.
 
+2026-08-26 Task #14 Stage 4는 exact source `e407c20cfd23059b997590462a5e66fb47e1aa03`의 [native run 32948057314](https://github.com/postmelee/alhangeul-tauri/actions/runs/32948057314)에서 Linux arm64 job `98113033201`, Linux x64 `98113033413`, Windows x64 `98113033443`과 installer smoke `98120085085`가 모두 성공했다.
+
+- Windows bundle은 x64 handler DLL과 worker EXE의 고정 filename·PE 종류·inventory를 통과했다.
+- MSI injected rollback은 기대한 exit `1603` 뒤 원상복구됐고, MSI·NSIS 정상 install/uninstall은 exit `0`, NSIS reinstall과 기존·부재·제3자 handler 조건부 복원을 통과했다.
+- 실제 HWP와 HWPX fixture는 모두 요청 edge 256 px에서 Shell 성공 HRESULT와 bitmap을 반환했으며 fixture hash, worker 잔류와 제품 소유 registry cleanup도 통과했다.
+
+이 증적은 hosted Windows에서 실제 COM/Shell 경로까지 확인하지만 Explorer 보기 크기·DPI·cache 갱신과 한컴 설치 환경 UI를 대신하지 않는다. 같은 exact 후보의 수동 gate는 [Windows thumbnail 아키텍처](../architecture/WINDOWS_THUMBNAILS.md)에 따라 Stage 6에서 수행한다.
+
 ### Windows installer 자동 gate를 다시 돌려야 하는 변경
 
 이 workflow는 `workflow_dispatch` 전용이라 push나 PR로 자동 실행되지 않는다. 다음 변경은 자동으로 검증되지 않으므로 수동 dispatch가 필요하다.
@@ -150,7 +158,8 @@ MSI와 NSIS는 각각 clean state, silent install exit `0`, 제품 version `0.1.
 | Tauri 버전 상향 | NSIS hook은 Tauri 기본 file association 동작을 되돌리는 구조다. upstream이 association 처리나 내부 `UPDATEFILEASSOC` macro를 바꾸면 기존 기본 연결 보존이 조용히 깨진다 |
 | `windows/main.wxs`, `windows/nsis-hooks.nsh`, `tauri.conf.json`의 bundle 항목 | installer가 실제로 쓰는 registry·shortcut 계약이 바뀐다 |
 | `[[bin]] name`, `productName` | 실행 파일명, 설치 경로, ProgID, shortcut 이름이 함께 움직인다 |
-| `scripts/windows-installer-smoke.ps1`, smoke job | 판정 자체가 바뀌므로 source test만으로는 runtime 동작을 보증하지 못한다 |
+| `apps/thumbnail-*`, `crates/document-preview`, `scripts/build-thumbnail-binaries.mjs` | COM ABI, worker protocol·resource 제한과 bundle PE 계약이 바뀐다 |
+| `scripts/windows-installer-smoke.ps1`, `scripts/windows-thumbnail-smoke.ps1`, smoke job | 판정 자체가 바뀌므로 source test만으로는 runtime 동작을 보증하지 못한다 |
 
 플랫폼 중립 test(`pnpm run test:automation`)는 이들 source 계약을 고정하지만 실제 설치·제거 동작은 확인하지 않는다.
 
@@ -231,7 +240,7 @@ GitHub API가 반환한 Actions artifact archive metadata는 다음과 같다. �
 
 1. 배포 version·tag·bundle 이름과 checksum 게시 정책 확정
 2. Windows signing과 Linux package metadata 검토
-3. Linux installer/package 설치·실행·rollback과 Windows 실제 GUI HWP/HWPX·Explorer 기본 앱 수동 gate 검증
+3. Linux installer/package 설치·실행·rollback과 Windows 실제 GUI HWP/HWPX·Explorer 기본 앱·thumbnail UI 수동 gate 검증
 4. 사용자 다운로드 문서와 지원 범위 작성
 5. 필요할 경우 독립 updater 보안 모델과 key 보관 정책 설계
 
