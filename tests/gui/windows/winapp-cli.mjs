@@ -136,10 +136,12 @@ function parseLastJsonLine(source) {
 function validateWindowList(payload, pid, hwnd) {
   if (!Array.isArray(payload)) throw new Error('WinApp list-windows JSON은 배열이어야 합니다.');
   const windows = payload.map((window) => normalizeWindow(window));
-  if (windows.length !== 1 || windows[0].processId !== pid || windows[0].hwnd !== hwnd) {
+  const target = windows.filter((window) =>
+    window.processId === pid && window.hwnd === hwnd);
+  if (target.length !== 1) {
     throw new Error(`WinApp target window가 고정되지 않았습니다: PID ${pid}, HWND ${hwnd}`);
   }
-  return windows;
+  return target;
 }
 
 function normalizeWindow(value) {

@@ -84,6 +84,24 @@ test('target client는 모든 UIA 결과를 동일 PID/HWND에 고정한다', as
   ]);
 });
 
+test('target client는 같은 process의 내부 HWND를 제외하고 선택한 HWND만 보존한다', async () => {
+  const client = createWinAppCli({
+    executablePath: 'C:\\tools\\winapp.exe',
+    appPid: 77,
+    windowHandle: 99,
+    execFileImpl: fakeExec([], {
+      stdout: JSON.stringify([
+        { processId: 77, hwnd: 99, processName: 'Alhangeul', title: 'Alhangeul' },
+        { processId: 77, hwnd: 100, processName: 'Alhangeul', title: null },
+      ]),
+    }),
+  });
+  const windows = await client.listWindows();
+  assert.deepEqual(windows.map(({ processId, hwnd }) => ({ processId, hwnd })), [
+    { processId: 77, hwnd: 99 },
+  ]);
+});
+
 test('stderr JSON error code를 보존하고 성공 stderr·복합 stdout을 거부한다', async () => {
   await assert.rejects(runWinAppJson({
     executablePath: 'C:\\tools\\winapp.exe',
