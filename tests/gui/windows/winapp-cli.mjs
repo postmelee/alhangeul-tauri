@@ -149,7 +149,7 @@ function normalizeWindow(value) {
     processId: positiveInteger(value.processId, 'window processId'),
     hwnd: positiveInteger(value.hwnd, 'window hwnd'),
     processName: safeText(value.processName, 'window processName'),
-    title: safeText(value.title, 'window title'),
+    title: optionalText(value.title, 'window title'),
   });
 }
 
@@ -190,6 +190,13 @@ function windowsOutput(value) {
 function safeText(value, name) {
   if (typeof value !== 'string' || value.trim() === '' || /[\r\n\0]/.test(value)) {
     throw new Error(`${name}은 비어 있지 않은 단일행 문자열이어야 합니다.`);
+  }
+  return value.trim();
+}
+
+function optionalText(value, name) {
+  if (typeof value !== 'string' || /[\r\n\0]/.test(value)) {
+    throw new Error(`${name}은 단일행 문자열이어야 합니다.`);
   }
   return value.trim();
 }

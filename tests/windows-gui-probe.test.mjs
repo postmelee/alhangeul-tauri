@@ -27,7 +27,7 @@ test('production window discovery는 Alhangeul process/title 한 개만 허용�
   ]), /2개/);
 });
 
-test('WebDriver root/title과 동일 WinApp PID/HWND evidence를 기록한다', async () => {
+test('WebDriver readiness와 동일 WinApp PID/HWND evidence를 기록한다', async () => {
   const writes = new Map();
   const manifests = [];
   const result = await runWindowsGuiProbe(probeOptions({
@@ -39,6 +39,27 @@ test('WebDriver root/title과 동일 WinApp PID/HWND evidence를 기록한다', 
   assert.equal(manifests[0].scenario, 'windows-production-probe');
   assert.equal(manifests[0].files.length, 4);
   assert.ok(writes.has('C:\\evidence\\scenarios\\windows-production-probe\\inspect.json'));
+});
+
+test('WebView와 native title의 과도 상태를 각각 기다린다', async () => {
+  let webAttempts = 0;
+  let nativeAttempts = 0;
+  const options = probeOptions({
+    browser: fakeBrowser({
+      getTitle: async () => (++webAttempts === 1 ? '' : 'Alhangeul'),
+    }),
+    services: probeServices({
+      discoverWindows: async () => {
+        nativeAttempts += 1;
+        return [targetWindow({ title: nativeAttempts === 1 ? '' : 'Alhangeul' })];
+      },
+    }),
+  });
+  const result = await runWindowsGuiProbe(options);
+  assert.equal(result.title, 'Alhangeul');
+  assert.equal(result.target.title, 'Alhangeul');
+  assert.equal(webAttempts, 2);
+  assert.equal(nativeAttempts, 2);
 });
 
 test('target identity 불일치도 failure manifest를 남기고 실패한다', async () => {
@@ -55,10 +76,7 @@ test('target identity 불일치도 failure manifest를 남기고 실패한다', 
 
 function probeOptions(override = {}) {
   return {
-    browser: {
-      getTitle: async () => 'Alhangeul',
-      execute: async () => 'HTML',
-    },
+    browser: fakeBrowser(),
     inputs: {
       appPath: 'C:\\Program Files\\Alhangeul\\Alhangeul.exe',
       buildRef: 'a'.repeat(40),
@@ -89,13 +107,26 @@ function probeServices(options = {}) {
       sha256: 'b'.repeat(64),
     }),
     writeManifest: async (_root, manifest) => options.manifests?.push(manifest),
-    discoverWindows: async () => [target],
+    discoverWindows: options.discoverWindows ?? (async () => [target]),
     createClient: () => ({
       status: async () => options.status ?? { processId: 77, hwnd: 99 },
       listWindows: async () => [target],
       inspect: async () => ({ windows: [{ hwnd: 99, elements: [{ type: 'Window' }] }] }),
       screenshot: async () => ({ processId: 77, hwnd: 99 }),
     }),
+  };
+}
+
+function fakeBrowser(options = {}) {
+  return {
+    getTitle: options.getTitle ?? (async () => 'Alhangeul'),
+    execute: options.execute ?? (async () => 'HTML'),
+    waitUntil: async (condition, waitOptions) => {
+      for (let attempt = 0; attempt < 5; attempt += 1) {
+        if (await condition()) return true;
+      }
+      throw new Error(waitOptions.timeoutMsg);
+    },
   };
 }
 

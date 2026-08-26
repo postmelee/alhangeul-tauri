@@ -25,19 +25,14 @@ export async function runWindowsGuiProbe(options = {}) {
   let result;
   let failure;
   try {
-    const title = await options.browser.getTitle();
-    const rootTag = await options.browser.execute(
-      () => document.documentElement.tagName,
-    );
-    assertWebView(title, rootTag);
+    const webView = await waitForWebView(options.browser, runtime.timeoutMs);
     const discover = options.services?.discoverWindows ?? discoverWinAppWindows;
-    const windows = await discover({
-      executablePath: runtime.cliPath,
-      appName: 'Alhangeul',
-      timeoutMs: runtime.timeoutMs,
+    const target = await waitForSingleAppWindow({
+      browser: options.browser,
+      discover,
+      runtime,
       env: options.env,
     });
-    const target = selectSingleAppWindow(windows);
     const createClient = options.services?.createClient ?? createWinAppCli;
     const client = createClient({
       executablePath: runtime.cliPath,
@@ -51,7 +46,7 @@ export async function runWindowsGuiProbe(options = {}) {
     const inspect = await client.inspect(4);
     const screenshot = await client.screenshot(runtime.screenshotPath);
     assertTargetIdentity(status, target);
-    result = { title, rootTag, target, targetWindows, status, inspect, screenshot };
+    result = { ...webView, target, targetWindows, status, inspect, screenshot };
     return result;
   } catch (error) {
     failure = error;
@@ -99,11 +94,44 @@ export function selectSingleAppWindow(windows) {
   return matches[0];
 }
 
-function assertWebView(title, rootTag) {
-  if (typeof title !== 'string' || !title.toLowerCase().includes('alhangeul')) {
-    throw new Error(`Alhangeul WebView title이 올바르지 않습니다: ${title}`);
-  }
-  if (rootTag !== 'HTML') throw new Error(`Alhangeul root DOM이 HTML이 아닙니다: ${rootTag}`);
+async function waitForWebView(browser, timeoutMs) {
+  let snapshot = { title: '', rootTag: '' };
+  await browser.waitUntil(async () => {
+    snapshot = {
+      title: await browser.getTitle(),
+      rootTag: await browser.execute(() => document.documentElement.tagName),
+    };
+    return snapshot.title.toLowerCase().includes('alhangeul')
+      && snapshot.rootTag === 'HTML';
+  }, {
+    timeout: timeoutMs,
+    timeoutMsg: 'Alhangeul WebView title/root DOM이 준비되지 않았습니다.',
+  });
+  return snapshot;
+}
+
+async function waitForSingleAppWindow(options) {
+  let windows = [];
+  await options.browser.waitUntil(async () => {
+    windows = await options.discover({
+      executablePath: options.runtime.cliPath,
+      appName: 'Alhangeul',
+      timeoutMs: options.runtime.timeoutMs,
+      env: options.env,
+    });
+    return matchingAppWindows(windows).length === 1;
+  }, {
+    timeout: options.runtime.timeoutMs,
+    timeoutMsg: 'Alhangeul production window가 단일 PID/HWND/title로 준비되지 않았습니다.',
+  });
+  return selectSingleAppWindow(windows);
+}
+
+function matchingAppWindows(windows) {
+  if (!Array.isArray(windows)) return [];
+  return windows.filter((window) =>
+    window.processName.toLowerCase() === 'alhangeul'
+    && window.title.toLowerCase().includes('alhangeul'));
 }
 
 function assertTargetIdentity(status, target) {
