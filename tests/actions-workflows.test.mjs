@@ -346,6 +346,23 @@ test('Windows GUI branch probe는 MSI·NSIS fresh runner에서 same-run artifact
   ]);
 });
 
+test('Windows GUI installer script 결과는 PowerShell 성공 상태로 즉시 판정한다', () => {
+  const job = getJob(desktopWorkflow, 'windows-gui-probe');
+  const install = getStepContaining(job, "-Action Install");
+
+  assertOrdered(install, [
+    "& '.\\scripts\\windows-gui-installer.ps1'",
+    '$installerStepSucceeded = $?',
+    'if (-not $installerStepSucceeded)',
+    'Get-Content -LiteralPath $statePath -Raw',
+  ]);
+  assert.doesNotMatch(
+    install,
+    /\$LASTEXITCODE/,
+    'PowerShell script 성공은 native process 전용 LASTEXITCODE로 판정하지 않아야 합니다.',
+  );
+});
+
 test('Windows GUI branch probe는 WinApp Action·CLI·tauri-driver를 이중 고정한다', () => {
   const job = getJob(desktopWorkflow, 'windows-gui-probe');
   assert.match(

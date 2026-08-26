@@ -457,7 +457,8 @@ jobs:
             -ArtifactRoot 'artifacts\windows-x64' `
             -OutputDirectory $output `
             -StatePath $statePath
-          if ($LASTEXITCODE -ne 0) { throw 'Windows GUI candidate install failed' }
+          $installerStepSucceeded = $?
+          if (-not $installerStepSucceeded) { throw 'Windows GUI candidate install failed' }
           $state = Get-Content -LiteralPath $statePath -Raw | ConvertFrom-Json
           "app_path=$($state.Executable)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
