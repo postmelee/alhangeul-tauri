@@ -247,6 +247,8 @@ test('공통 helper는 platform adapter를 import하지 않고 외부 driver만 
   assert.match(windowsConfig, /autoInstallTauriDriver:\s*false/);
   assert.match(windowsConfig, /autoDownloadEdgeDriver:\s*true/);
   assert.match(windowsConfig, /strictFileInteractability:\s*false/);
+  assert.match(windowsConfig, /webviewOptions:\s*\{ userDataFolder: webviewDataDir \}/);
+  assert.match(windowsConfig, /join\(inputs\.outputDir, 'webview2-user-data'\)/);
   assert.match(windowsConfig, /windows['"], 'probe\.e2e\.ts'/);
   assert.doesNotMatch(windowsConfig, /driverProvider:\s*'(embedded|crabnebula)'/);
   assert.doesNotMatch(windowsConfig, /autoXvfb|DISPLAY|gui\/linux|native-ui/);

@@ -10,6 +10,7 @@ export function createWindowsWdioConfig(
 ): WebdriverIO.Config {
   const inputs = readGuiHarnessInputs(env);
   const shared = createSharedWdioConfig(inputs);
+  const webviewDataDir = join(inputs.outputDir, 'webview2-user-data');
   const serviceOptions: TauriServiceOptions = {
     appBinaryPath: inputs.appPath,
     tauriDriverPath: inputs.driverPath,
@@ -23,7 +24,10 @@ export function createWindowsWdioConfig(
   const capabilities: TauriCapabilities[] = [{
     browserName: 'tauri',
     strictFileInteractability: false,
-    'tauri:options': { application: inputs.appPath },
+    'tauri:options': {
+      application: inputs.appPath,
+      webviewOptions: { userDataFolder: webviewDataDir },
+    } as TauriCapabilities['tauri:options'],
   }];
 
   return {

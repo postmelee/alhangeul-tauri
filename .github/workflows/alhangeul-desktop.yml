@@ -462,6 +462,39 @@ jobs:
           $state = Get-Content -LiteralPath $statePath -Raw | ConvertFrom-Json
           "app_path=$($state.Executable)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
+      - name: Configure ephemeral Windows WebView2 automation policy
+        id: configure-webview2-policy
+        shell: powershell
+        run: |
+          $output = [IO.Path]::GetFullPath('diagnostics\windows-gui-${{ matrix.installer_kind }}')
+          $userDataFolder = Join-Path $output 'webview2-user-data'
+          $argumentsKey = 'HKLM:\Software\Policies\Microsoft\Edge\WebView2\AdditionalBrowserArguments'
+          $userDataKey = 'HKLM:\Software\Policies\Microsoft\Edge\WebView2\UserDataFolder'
+          New-Item -Path $argumentsKey -Force | Out-Null
+          New-Item -Path $userDataKey -Force | Out-Null
+          New-ItemProperty `
+            -Path $argumentsKey -Name '*' -PropertyType String `
+            -Value '--remote-debugging-port=0' -Force | Out-Null
+          New-ItemProperty `
+            -Path $userDataKey -Name '*' -PropertyType String `
+            -Value $userDataFolder -Force | Out-Null
+          $actualArguments = (Get-ItemProperty -Path $argumentsKey).PSObject.Properties['*'].Value
+          $actualUserData = (Get-ItemProperty -Path $userDataKey).PSObject.Properties['*'].Value
+          if ($actualArguments -ne '--remote-debugging-port=0') {
+            throw 'WebView2 AdditionalBrowserArguments HKLM policy verification failed'
+          }
+          if ([IO.Path]::GetFullPath($actualUserData) -ne $userDataFolder) {
+            throw 'WebView2 UserDataFolder HKLM policy verification failed'
+          }
+          [ordered]@{
+            scope = 'ephemeral-runner-hklm'
+            valueName = '*'
+            additionalBrowserArguments = $actualArguments
+            userDataFolder = $actualUserData
+            upstream = 'tauri-apps/wry#1782'
+          } | ConvertTo-Json | Set-Content `
+            -LiteralPath (Join-Path $output 'webview2-automation-policy.json') -Encoding UTF8
+
       - name: Run Windows production GUI probe
         id: run-windows-gui-probe
         continue-on-error: true
@@ -496,6 +529,31 @@ jobs:
             -OutputDirectory $output `
             -StatePath (Join-Path $output 'installer-state.json')
 
+      - name: Clear ephemeral Windows WebView2 automation policy
+        id: clear-webview2-policy
+        if: ${{ always() }}
+        continue-on-error: true
+        shell: powershell
+        run: |
+          $output = 'diagnostics\windows-gui-${{ matrix.installer_kind }}'
+          $keys = @(
+            'HKLM:\Software\Policies\Microsoft\Edge\WebView2\AdditionalBrowserArguments',
+            'HKLM:\Software\Policies\Microsoft\Edge\WebView2\UserDataFolder'
+          )
+          foreach ($key in $keys) {
+            if (Test-Path -LiteralPath $key) {
+              Remove-ItemProperty -LiteralPath $key -Name '*' -ErrorAction Stop
+              if ((Get-Item -LiteralPath $key).Property.Count -eq 0) {
+                Remove-Item -LiteralPath $key -Force
+              }
+            }
+          }
+          [ordered]@{
+            cleared = $true
+            valueName = '*'
+          } | ConvertTo-Json | Set-Content `
+            -LiteralPath (Join-Path $output 'webview2-automation-policy-cleanup.json') -Encoding UTF8
+
       - name: Record Windows GUI probe outcomes
         if: ${{ always() }}
         shell: powershell
@@ -507,16 +565,19 @@ jobs:
           WINAPP_OUTCOME: ${{ steps.setup-winapp-cli.outcome }}
           DRIVER_OUTCOME: ${{ steps.install-gui-driver.outcome }}
           INSTALL_OUTCOME: ${{ steps.install-gui-candidate.outcome }}
+          POLICY_OUTCOME: ${{ steps.configure-webview2-policy.outcome }}
           PROBE_OUTCOME: ${{ steps.run-windows-gui-probe.outcome }}
           UNINSTALL_OUTCOME: ${{ steps.uninstall-gui-candidate.outcome }}
+          POLICY_CLEANUP_OUTCOME: ${{ steps.clear-webview2-policy.outcome }}
         run: |
           $output = 'diagnostics\windows-gui-${{ matrix.installer_kind }}\step-outcomes.json'
           [ordered]@{
             checkout = $env:CHECKOUT_OUTCOME; verifyCommit = $env:VERIFY_OUTCOME
             download = $env:DOWNLOAD_OUTCOME; inventory = $env:INVENTORY_OUTCOME
             setupWinAppCli = $env:WINAPP_OUTCOME; installDriver = $env:DRIVER_OUTCOME
-            install = $env:INSTALL_OUTCOME; probe = $env:PROBE_OUTCOME
-            uninstall = $env:UNINSTALL_OUTCOME
+            install = $env:INSTALL_OUTCOME; configureWebView2Policy = $env:POLICY_OUTCOME
+            probe = $env:PROBE_OUTCOME; uninstall = $env:UNINSTALL_OUTCOME
+            clearWebView2Policy = $env:POLICY_CLEANUP_OUTCOME
           } | ConvertTo-Json | Set-Content -LiteralPath $output -Encoding UTF8
 
       - name: Upload Windows GUI probe diagnostics
@@ -543,8 +604,10 @@ jobs:
           RESOLVE_WINAPP_OUTCOME: ${{ steps.resolve-winapp-cli.outcome }}
           DRIVER_OUTCOME: ${{ steps.install-gui-driver.outcome }}
           INSTALL_OUTCOME: ${{ steps.install-gui-candidate.outcome }}
+          POLICY_OUTCOME: ${{ steps.configure-webview2-policy.outcome }}
           PROBE_OUTCOME: ${{ steps.run-windows-gui-probe.outcome }}
           UNINSTALL_OUTCOME: ${{ steps.uninstall-gui-candidate.outcome }}
+          POLICY_CLEANUP_OUTCOME: ${{ steps.clear-webview2-policy.outcome }}
           UPLOAD_OUTCOME: ${{ steps.upload-windows-gui-probe.outcome }}
         run: |
           $outcomes = [ordered]@{
@@ -553,7 +616,8 @@ jobs:
             download = $env:DOWNLOAD_OUTCOME; inventory = $env:INVENTORY_OUTCOME
             setupWinAppCli = $env:WINAPP_OUTCOME; resolveWinAppCli = $env:RESOLVE_WINAPP_OUTCOME
             installDriver = $env:DRIVER_OUTCOME; install = $env:INSTALL_OUTCOME
-            probe = $env:PROBE_OUTCOME; uninstall = $env:UNINSTALL_OUTCOME
+            configureWebView2Policy = $env:POLICY_OUTCOME; probe = $env:PROBE_OUTCOME
+            uninstall = $env:UNINSTALL_OUTCOME; clearWebView2Policy = $env:POLICY_CLEANUP_OUTCOME
             uploadDiagnostics = $env:UPLOAD_OUTCOME
           }
           $failed = @($outcomes.GetEnumerator() | Where-Object { $_.Value -ne 'success' })

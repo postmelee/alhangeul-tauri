@@ -341,8 +341,10 @@ test('Windows GUI branch probe는 MSI·NSIS fresh runner에서 same-run artifact
     '- name: Download Windows x64 GUI bundle',
     '- name: Verify Windows GUI artifact inventory',
     '- name: Install verified Windows GUI candidate',
+    '- name: Configure ephemeral Windows WebView2 automation policy',
     '- name: Run Windows production GUI probe',
     '- name: Uninstall Windows GUI candidate',
+    '- name: Clear ephemeral Windows WebView2 automation policy',
   ]);
 });
 
@@ -389,6 +391,23 @@ test('Windows GUI probe는 production path·exact SHA와 scoped UIA evidence를 
   assert.match(job, /retention-days: 14/);
 });
 
+test('Windows GUI probe는 WebView2 150+ elevated 회귀를 runner HKLM에만 격리한다', () => {
+  const job = getJob(desktopWorkflow, 'windows-gui-probe');
+  const configure = getStepContaining(job, 'Configure ephemeral Windows WebView2 automation policy');
+  const cleanup = getStepContaining(job, 'Clear ephemeral Windows WebView2 automation policy');
+
+  assert.match(configure, /HKLM:\\Software\\Policies\\Microsoft\\Edge\\WebView2\\AdditionalBrowserArguments/);
+  assert.match(configure, /HKLM:\\Software\\Policies\\Microsoft\\Edge\\WebView2\\UserDataFolder/);
+  assert.match(configure, /-Name '\*'/);
+  assert.match(configure, /--remote-debugging-port=0/);
+  assert.match(configure, /webview2-user-data/);
+  assert.match(configure, /tauri-apps\/wry#1782/);
+  assert.doesNotMatch(configure, /HKCU:/);
+  assert.match(cleanup, /^\s{8}if: \$\{\{ always\(\) \}\}$/m);
+  assert.match(cleanup, /^\s{8}continue-on-error: true$/m);
+  assert.match(cleanup, /Remove-ItemProperty -LiteralPath \$key -Name '\*'/);
+});
+
 test('Windows GUI probe cleanup·evidence는 항상 실행되고 마지막 gate가 outcome을 전달한다', () => {
   const job = getJob(desktopWorkflow, 'windows-gui-probe');
   const cleanup = getStepContaining(job, '-Action Uninstall');
@@ -406,8 +425,10 @@ test('Windows GUI probe cleanup·evidence는 항상 실행되고 마지막 gate�
     'steps.setup-winapp-cli.outcome',
     'steps.install-gui-driver.outcome',
     'steps.install-gui-candidate.outcome',
+    'steps.configure-webview2-policy.outcome',
     'steps.run-windows-gui-probe.outcome',
     'steps.uninstall-gui-candidate.outcome',
+    'steps.clear-webview2-policy.outcome',
     'steps.upload-windows-gui-probe.outcome',
   ]) {
     assert.ok(gate.includes(outcome), `GUI gate outcome이 필요합니다: ${outcome}`);
