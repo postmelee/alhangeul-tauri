@@ -60,6 +60,7 @@ test('MSI와 NSIS silent install 및 원본 진단 log 계약을 유지한다', 
   }
   assert.match(source, /Start-Process -FilePath \$filePath -ArgumentList \$arguments -Wait -PassThru/);
   assert.match(source, /Start-Process -FilePath \$path -ArgumentList @\('\/S'\) -Wait -PassThru/);
+  assert.match(source, /@\('\/S', '\/UPDATE'\)/, '동일 버전 NSIS 재설치는 update mode를 사용해야 합니다.');
   assert.match(source, /Return value 3/);
   assert.match(source, /InstallFailureContext/);
   assert.match(source, /UninstallFailureContext/);
@@ -148,6 +149,7 @@ test('version, shortcut, 제한 실행과 targeted cleanup을 검사한다', () 
   assert.match(source, /version 네 번째 성분은 0이어야 합니다/);
   assert.match(source, /CreateShortcut\(\$path\)\.TargetPath/);
   assert.match(source, /function ConvertTo-NormalizedPath\(\$Value\)/);
+  assert.match(source, /Get-Item -LiteralPath \$path -Force/, '8.3 path는 기존 file의 long path로 정규화해야 합니다.');
   assert.match(source, /function ConvertTo-NormalizedVersion\(\$Value\)/);
   assert.doesNotMatch(
     source,
@@ -247,6 +249,17 @@ test('thumbnail smoke는 rollback·공존·실제 Shell bitmap 계약을 검사�
     assert.ok(source.includes(marker), `thumbnail smoke marker가 필요합니다: ${marker}`);
   }
   assert.doesNotMatch(source, /Stop-Process\s+-Name/);
+  assert.match(
+    source,
+    /Get-ThumbnailAssociationPath \$extension\)[^\n]+Where-Object \{ \$_\.Hive -ne \$target\.HiveName \}/,
+    'Software\\Classes association은 WOW64 공유 view를 별도 변경으로 판정하면 안 됩니다.',
+  );
+  assert.match(
+    source,
+    /Get-ThumbnailClassPath\)[^\n]+Where-Object \{ \$_\.Hive -ne \$target\.HiveName -or \$_\.View -ne \$target\.ViewName \}/,
+    'InprocServer32 CLSID는 redirected 32/64 view를 계속 분리해야 합니다.',
+  );
+  assert.match(source, /ThumbnailRegistrationState = Get-ThumbnailRegistrationState/);
 });
 
 function assertOrdered(markers) {

@@ -84,7 +84,12 @@ function Get-ShortcutState($Kind, $Executable) {
   [void][Runtime.InteropServices.Marshal]::ReleaseComObject($shell); $valid = @($items | Where-Object { $_.Exists -and (Test-SamePath $_.Target $Executable) }).Count -eq 2
   return [ordered]@{ Items = $items; Valid = $valid }
 }
-function ConvertTo-NormalizedPath($Value) { if ([string]::IsNullOrWhiteSpace($Value)) { return $null }; return [IO.Path]::GetFullPath(([string]$Value).Trim().Trim('"')).TrimEnd('\') }
+function ConvertTo-NormalizedPath($Value) {
+  if ([string]::IsNullOrWhiteSpace($Value)) { return $null }
+  $path = [IO.Path]::GetFullPath(([string]$Value).Trim().Trim('"'))
+  if (Test-Path -LiteralPath $path) { $path = (Get-Item -LiteralPath $path -Force).FullName }
+  return $path.TrimEnd('\')
+}
 function Test-SamePath($Left, $Right) { $leftPath = ConvertTo-NormalizedPath $Left; $rightPath = ConvertTo-NormalizedPath $Right; return $null -ne $leftPath -and $null -ne $rightPath -and $leftPath -ieq $rightPath }
 function Get-VersionState($Executable) { $version = (Get-Item -LiteralPath $Executable).VersionInfo; return [ordered]@{ ProductVersion = $version.ProductVersion; FileVersion = $version.FileVersion } }
 function ConvertTo-NormalizedVersion($Value) {

@@ -43,7 +43,7 @@ function Get-ThumbnailClassPath { return "Software\Classes\CLSID\$thumbnailClsid
 function Get-ThumbnailUntouchedState($Kind) {
   $target = Get-ThumbnailTarget $Kind; $state = @()
   foreach ($extension in $extensions) {
-    $state += @(Get-RegistryValues (Get-ThumbnailAssociationPath $extension) '' | Where-Object { $_.Hive -ne $target.HiveName -or $_.View -ne $target.ViewName })
+    $state += @(Get-RegistryValues (Get-ThumbnailAssociationPath $extension) '' | Where-Object { $_.Hive -ne $target.HiveName })
   }
   $state += @(Get-RegistryValues (Get-ThumbnailClassPath) '' | Where-Object { $_.Hive -ne $target.HiveName -or $_.View -ne $target.ViewName })
   return $state
@@ -93,6 +93,16 @@ function Get-ThumbnailOwnedRegistryCount {
     $owned += @(Get-RegistryValues (Get-ThumbnailAssociationPath $extension) '' | Where-Object { $_.Value -eq $thumbnailClsid })
   }
   return @($owned | Where-Object { $_.Exists }).Count
+}
+function Get-ThumbnailRegistrationState($InstallDirectory, $Sentinels) {
+  $target = $Sentinels.Target
+  $handler = Join-Path $InstallDirectory 'AlhangeulThumbnailHandler.dll'
+  $worker = Join-Path $InstallDirectory 'AlhangeulThumbnailWorker.exe'
+  $associations = @()
+  foreach ($extension in $extensions) {
+    $associations += [ordered]@{ Extension = $extension; Owner = Read-RegistryValue $target (Get-ThumbnailAssociationPath $extension) ''; Backup = Read-RegistryValue $target "$thumbnailBackupRoot\$extension" 'State' }
+  }
+  return [ordered]@{ ExpectedHandler = $handler; HandlerExists = Test-Path -LiteralPath $handler -PathType Leaf; ExpectedWorker = $worker; WorkerExists = Test-Path -LiteralPath $worker -PathType Leaf; Inproc = Read-RegistryValue $target (Get-ThumbnailClassPath) ''; Threading = Read-RegistryValue $target (Get-ThumbnailClassPath) 'ThreadingModel'; Associations = $associations }
 }
 function Assert-InstalledThumbnail($Kind, $InstallDirectory, $Sentinels) {
   $target = $Sentinels.Target; $handler = Join-Path $InstallDirectory 'AlhangeulThumbnailHandler.dll'; $worker = Join-Path $InstallDirectory 'AlhangeulThumbnailWorker.exe'

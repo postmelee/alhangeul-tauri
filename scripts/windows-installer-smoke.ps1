@@ -89,8 +89,8 @@ function Assert-InstalledVersion($State) {
   Assert-Condition ($null -ne $State.Version) 'version resource를 읽을 수 없습니다.'; Assert-Condition ((ConvertTo-NormalizedVersion $State.Version.ProductVersion) -eq $ExpectedVersion) 'ProductVersion이 다릅니다.'; Assert-Condition ((ConvertTo-NormalizedVersion $State.Version.FileVersion) -eq $ExpectedVersion) 'FileVersion이 다릅니다.'; return $true
 }
 function Assert-InstalledHandlers($State) { Assert-Condition (@($State.Handlers | Where-Object { -not $_.Valid }).Count -eq 0) 'canonical ProgID 또는 OpenWithProgids가 없습니다.'; return $true }
-function Invoke-Installer($Kind, $Path, $LogPath) {
-  $arguments = if ($Kind -eq 'msi') { @('/i', "`"$Path`"", '/qn', '/norestart', '/L*v', "`"$LogPath`"") } else { @('/S') }
+function Invoke-Installer($Kind, $Path, $LogPath, $Update = $false) {
+  $arguments = if ($Kind -eq 'msi') { @('/i', "`"$Path`"", '/qn', '/norestart', '/L*v', "`"$LogPath`"") } elseif ($Update) { @('/S', '/UPDATE') } else { @('/S') }
   $filePath = if ($Kind -eq 'msi') { 'msiexec.exe' } else { $Path }
   return (Start-Process -FilePath $filePath -ArgumentList $arguments -Wait -PassThru).ExitCode
 }
@@ -121,9 +121,10 @@ function Invoke-InstalledChecks($Result, $Kind, $InstallDirectory, $BaselineDefa
   Invoke-Check $Result 'registry-handler' 'RegistryPathCheck' { Assert-InstalledRegistry $state $Kind }
   Invoke-Check $Result 'version' 'VersionCheck' { Assert-InstalledVersion $state }
   Invoke-Check $Result 'registry-handler' 'HandlerCheck' { Assert-InstalledHandlers $state }
+  $Result.ThumbnailRegistrationState = Get-ThumbnailRegistrationState $InstallDirectory $ThumbnailSentinels
   Invoke-Check $Result 'thumbnail-registration' 'ThumbnailRegistration' { Assert-InstalledThumbnail $Kind $InstallDirectory $ThumbnailSentinels }
   if ($Kind -eq 'nsis') {
-    Invoke-Check $Result 'installer-rollback' 'Reinstall' { $code = Invoke-Installer $Kind $Result.Path (Join-Path $OutputDirectory 'nsis-reinstall.log'); Assert-Condition ($code -eq 0) "NSIS reinstall exit code: $code"; Assert-InstalledThumbnail $Kind $InstallDirectory $ThumbnailSentinels }
+    Invoke-Check $Result 'installer-rollback' 'Reinstall' { $code = Invoke-Installer $Kind $Result.Path (Join-Path $OutputDirectory 'nsis-reinstall.log') $true; Assert-Condition ($code -eq 0) "NSIS reinstall exit code: $code"; Assert-InstalledThumbnail $Kind $InstallDirectory $ThumbnailSentinels }
   }
   Invoke-Check $Result 'thumbnail-render' 'ThumbnailFixtures' { Invoke-ThumbnailFixtureProbe }
   Invoke-Check $Result 'shortcut' 'ShortcutCheck' { Assert-Condition $state.Shortcuts.Valid 'shortcut target이 다릅니다.'; return $true }
