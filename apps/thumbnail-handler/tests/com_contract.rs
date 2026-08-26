@@ -30,12 +30,20 @@ type DllGetClassObject = unsafe extern "system" fn(
     object: *mut *mut c_void,
 ) -> HRESULT;
 type DllCanUnloadNow = unsafe extern "system" fn() -> HRESULT;
+type DllInstall = unsafe extern "system" fn(i32, *const u16) -> HRESULT;
 type QueryInterface = unsafe extern "system" fn(
     this: *mut c_void,
     iid: *const GUID,
     object: *mut *mut c_void,
 ) -> HRESULT;
 type Release = unsafe extern "system" fn(this: *mut c_void) -> u32;
+
+#[test]
+fn standard_registration_exports_are_available() {
+    let _lock = TEST_LOCK.lock().unwrap();
+    let library = Library::load(&staged_handler());
+    let _: DllInstall = unsafe { library.export(b"DllInstall\0") };
+}
 
 #[repr(C)]
 struct FactoryVTable {

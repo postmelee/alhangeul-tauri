@@ -32,6 +32,7 @@ test('MSI와 NSIS export는 같은 machine/user transaction을 호출한다', ()
   for (const exportName of [
     'DllRegisterServer',
     'DllUnregisterServer',
+    'DllInstall',
     'AlhangeulThumbnailInstallUser',
     'AlhangeulThumbnailUninstallUser',
   ]) {
@@ -39,6 +40,7 @@ test('MSI와 NSIS export는 같은 machine/user transaction을 호출한다', ()
   }
   assert.match(lib, /guard_status\(registration::install_user\)/);
   assert.match(lib, /guard_status\(registration::uninstall_user\)/);
+  assert.match(lib, /if install != 0 \{[\s\S]+?registration::install_user\(\)[\s\S]+?registration::uninstall_user\(\)/);
   assert.match(lib, /status_to_hresult\(registration::install_machine\(\)\)/);
   assert.match(lib, /status_to_hresult\(registration::uninstall_machine\(\)\)/);
 });

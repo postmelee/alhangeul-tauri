@@ -164,11 +164,14 @@ test('MSI thumbnail 등록은 64-bit regsvr32 deferred/rollback transaction이�
   assert.doesNotMatch(wixTemplate, /(?:taskkill|Stop-Process|explorer\.exe|dllhost\.exe)/i);
 });
 
-test('NSIS thumbnail 등록은 current-user Registry64와 DLL export를 사용한다', () => {
+test('NSIS thumbnail 등록은 64-bit regsvr32와 current-user DLL transaction을 사용한다', () => {
   for (const marker of [
     'SetRegView 64',
-    'AlhangeulThumbnailInstallUser',
-    'AlhangeulThumbnailUninstallUser',
+    'regsvr32.exe',
+    '/i:user',
+    '/s /u /n',
+    'DisableX64FSRedirection',
+    'EnableX64FSRedirection',
     '$INSTDIR\\AlhangeulThumbnailHandler.dll',
     '!insertmacro ALHANGEUL_INSTALL_THUMBNAIL',
     '!insertmacro ALHANGEUL_UNINSTALL_THUMBNAIL',
@@ -176,6 +179,7 @@ test('NSIS thumbnail 등록은 current-user Registry64와 DLL export를 사용�
     assert.ok(nsisHooks.includes(marker), `NSIS thumbnail 계약이 필요합니다: ${marker}`);
   }
   assert.doesNotMatch(nsisHooks, /SetRegView 32/);
+  assert.doesNotMatch(nsisHooks, /::AlhangeulThumbnail(?:Install|Uninstall)User/);
   assert.doesNotMatch(nsisHooks, /(?:taskkill|Stop-Process|explorer\.exe|dllhost\.exe)/i);
 });
 

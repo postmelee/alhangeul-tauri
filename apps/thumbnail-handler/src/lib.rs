@@ -131,6 +131,19 @@ pub extern "system" fn DllUnregisterServer() -> HRESULT {
 
 #[cfg(windows)]
 #[no_mangle]
+pub extern "system" fn DllInstall(install: BOOL, _command_line: *const u16) -> HRESULT {
+    guard_hresult(|| {
+        let status = if install != 0 {
+            registration::install_user()
+        } else {
+            registration::uninstall_user()
+        };
+        status_to_hresult(status)
+    })
+}
+
+#[cfg(windows)]
+#[no_mangle]
 pub extern "system" fn AlhangeulThumbnailInstallUser() -> u32 {
     guard_status(registration::install_user)
 }

@@ -16,19 +16,31 @@
 ; - UPDATEFILEASSOC는 Tauri installer.nsi가 제공하는 내부 macro이며 installerHooks 공개
 ;   계약의 일부가 아니다. Tauri를 올릴 때 존재 여부를 확인한다.
 
+!include "x64.nsh"
+
 !define ALHANGEUL_ASSOC_BACKUP_KEY "Software\Alhangeul\FileAssocBackup"
 !define ALHANGEUL_THUMBNAIL_HANDLER "$INSTDIR\AlhangeulThumbnailHandler.dll"
 
 !macro ALHANGEUL_INSTALL_THUMBNAIL
   Push $R0
   Push $R1
+  StrCpy $R0 1603
   ClearErrors
-  System::Call '"${ALHANGEUL_THUMBNAIL_HANDLER}"::AlhangeulThumbnailInstallUser()i.r0'
+  ${DisableX64FSRedirection}
+  ExecWait '"$SYSDIR\regsvr32.exe" /s /n /i:user "${ALHANGEUL_THUMBNAIL_HANDLER}"' $R0
   ${If} ${Errors}
     StrCpy $R0 1603
   ${EndIf}
+  ${EnableX64FSRedirection}
   ${If} $R0 != 0
-    System::Call '"${ALHANGEUL_THUMBNAIL_HANDLER}"::AlhangeulThumbnailUninstallUser()i.r1'
+    StrCpy $R1 1603
+    ClearErrors
+    ${DisableX64FSRedirection}
+    ExecWait '"$SYSDIR\regsvr32.exe" /s /u /n /i:user "${ALHANGEUL_THUMBNAIL_HANDLER}"' $R1
+    ${If} ${Errors}
+      StrCpy $R1 1603
+    ${EndIf}
+    ${EnableX64FSRedirection}
     DetailPrint "Alhangeul thumbnail registration failed: $R0 (rollback: $R1)"
     Pop $R1
     Pop $R0
@@ -41,11 +53,14 @@
 
 !macro ALHANGEUL_UNINSTALL_THUMBNAIL
   Push $R0
+  StrCpy $R0 1603
   ClearErrors
-  System::Call '"${ALHANGEUL_THUMBNAIL_HANDLER}"::AlhangeulThumbnailUninstallUser()i.r0'
+  ${DisableX64FSRedirection}
+  ExecWait '"$SYSDIR\regsvr32.exe" /s /u /n /i:user "${ALHANGEUL_THUMBNAIL_HANDLER}"' $R0
   ${If} ${Errors}
     StrCpy $R0 1603
   ${EndIf}
+  ${EnableX64FSRedirection}
   ${If} $R0 != 0
     DetailPrint "Alhangeul thumbnail unregistration failed: $R0"
     Pop $R0
