@@ -272,6 +272,7 @@ test('desktop workflow는 checkout commit을 검증하고 pretest를 순서대�
 test('desktop workflow는 build 뒤 bundle을 검증하고 inventory와 함께 올린다', () => {
   assertOrdered(desktopWorkflow, [
     '- name: Build Tauri bundles',
+    '- name: Stage Windows thumbnail verification copies',
     '- name: Verify bundle artifact',
     '- name: Upload bundle artifact',
   ]);
@@ -283,6 +284,13 @@ test('desktop workflow는 build 뒤 bundle을 검증하고 inventory와 함께 �
     desktopWorkflow,
     /BUNDLE_ROOT: apps\/desktop\/src-tauri\/target\/\$\{\{ matrix\.target \}\}\/release\/bundle/,
   );
+  const thumbnailCopies = getStepContaining(
+    desktopWorkflow,
+    'Stage Windows thumbnail verification copies',
+  );
+  assert.match(thumbnailCopies, /^\s{8}if: matrix\.name == 'windows-x64'$/m);
+  assert.match(thumbnailCopies, /verification\/AlhangeulThumbnailHandler\.dll/);
+  assert.match(thumbnailCopies, /verification\/AlhangeulThumbnailWorker\.exe/);
   assert.match(
     desktopWorkflow,
     /--platform "\$\{\{ matrix\.name \}\}"/,
@@ -331,6 +339,7 @@ test('installer smoke job은 exact ref와 Windows x64 artifact를 고정한다',
     job,
     /ref: \$\{\{ inputs\.build_ref \|\| github\.sha \}\}/,
   );
+  assert.match(job, /^\s{10}submodules: true$/m);
   assert.match(
     job,
     /EXPECTED_BUILD_REF: \$\{\{ inputs\.build_ref \|\| github\.sha \}\}/,

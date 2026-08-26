@@ -17,6 +17,43 @@
 ;   계약의 일부가 아니다. Tauri를 올릴 때 존재 여부를 확인한다.
 
 !define ALHANGEUL_ASSOC_BACKUP_KEY "Software\Alhangeul\FileAssocBackup"
+!define ALHANGEUL_THUMBNAIL_HANDLER "$INSTDIR\AlhangeulThumbnailHandler.dll"
+
+!macro ALHANGEUL_INSTALL_THUMBNAIL
+  Push $R0
+  Push $R1
+  ClearErrors
+  System::Call '"${ALHANGEUL_THUMBNAIL_HANDLER}"::AlhangeulThumbnailInstallUser()i.r0'
+  ${If} ${Errors}
+    StrCpy $R0 1603
+  ${EndIf}
+  ${If} $R0 != 0
+    System::Call '"${ALHANGEUL_THUMBNAIL_HANDLER}"::AlhangeulThumbnailUninstallUser()i.r1'
+    DetailPrint "Alhangeul thumbnail registration failed: $R0 (rollback: $R1)"
+    Pop $R1
+    Pop $R0
+    SetErrors
+    Abort "Alhangeul thumbnail registration failed."
+  ${EndIf}
+  Pop $R1
+  Pop $R0
+!macroend
+
+!macro ALHANGEUL_UNINSTALL_THUMBNAIL
+  Push $R0
+  ClearErrors
+  System::Call '"${ALHANGEUL_THUMBNAIL_HANDLER}"::AlhangeulThumbnailUninstallUser()i.r0'
+  ${If} ${Errors}
+    StrCpy $R0 1603
+  ${EndIf}
+  ${If} $R0 != 0
+    DetailPrint "Alhangeul thumbnail unregistration failed: $R0"
+    Pop $R0
+    SetErrors
+    Abort "Alhangeul thumbnail unregistration failed."
+  ${EndIf}
+  Pop $R0
+!macroend
 
 !macro ALHANGEUL_SNAPSHOT_EXTENSION_DEFAULT EXT
   Push $R0
@@ -87,13 +124,16 @@
 !macroend
 
 !macro NSIS_HOOK_PREINSTALL
+  SetRegView 64
   !insertmacro ALHANGEUL_SNAPSHOT_EXTENSION_DEFAULT "hwp"
   !insertmacro ALHANGEUL_SNAPSHOT_EXTENSION_DEFAULT "hwpx"
 !macroend
 
 !macro NSIS_HOOK_POSTINSTALL
+  SetRegView 64
   !insertmacro ALHANGEUL_RESTORE_EXTENSION_DEFAULT "hwp"
   !insertmacro ALHANGEUL_RESTORE_EXTENSION_DEFAULT "hwpx"
+  !insertmacro ALHANGEUL_INSTALL_THUMBNAIL
   !insertmacro ALHANGEUL_REGISTER_OPEN_WITH "hwp" "Alhangeul.hwp"
   !insertmacro ALHANGEUL_REGISTER_OPEN_WITH "hwpx" "Alhangeul.hwpx"
   !insertmacro ALHANGEUL_REMOVE_EMPTY_BACKUP_KEYS
@@ -101,6 +141,8 @@
 !macroend
 
 !macro NSIS_HOOK_PREUNINSTALL
+  SetRegView 64
+  !insertmacro ALHANGEUL_UNINSTALL_THUMBNAIL
   !insertmacro ALHANGEUL_SNAPSHOT_EXTENSION_DEFAULT "hwp"
   !insertmacro ALHANGEUL_SNAPSHOT_EXTENSION_DEFAULT "hwpx"
   !insertmacro ALHANGEUL_REMOVE_OPEN_WITH "hwp" "Alhangeul.hwp"
@@ -108,6 +150,7 @@
 !macroend
 
 !macro NSIS_HOOK_POSTUNINSTALL
+  SetRegView 64
   !insertmacro ALHANGEUL_RESTORE_EXTENSION_DEFAULT "hwp"
   !insertmacro ALHANGEUL_RESTORE_EXTENSION_DEFAULT "hwpx"
   !insertmacro ALHANGEUL_REMOVE_EMPTY_EXTENSION_KEYS "hwp"

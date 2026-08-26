@@ -117,6 +117,7 @@ test('NSIS는 canonical handler와 제품명 Start Menu 폴더를 사용한다',
     ],
   );
   assert.deepEqual(tauriConfig.bundle.windows.nsis, {
+    installMode: 'currentUser',
     startMenuFolder: tauriConfig.productName,
     installerHooks: 'windows/nsis-hooks.nsh',
   });
@@ -126,6 +127,48 @@ test('NSIS는 canonical handler와 제품명 Start Menu 폴더를 사용한다',
       `NSIS hook은 canonical ProgID를 등록해야 합니다: ${name}`,
     );
   }
+});
+
+test('MSI thumbnail 등록은 64-bit regsvr32 deferred/rollback transaction이다', () => {
+  for (const marker of [
+    'Id="RollbackThumbnailRegistration"',
+    'Id="InstallThumbnailRegistration"',
+    'Id="UninstallThumbnailRegistration"',
+    '[System64Folder]regsvr32.exe',
+    '[INSTALLDIR]AlhangeulThumbnailHandler.dll',
+    'Execute="rollback"',
+    'Execute="deferred"',
+    'Impersonate="no"',
+    'ALHANGEUL_FAIL_THUMBNAIL_INSTALL',
+  ]) {
+    assert.ok(wixTemplate.includes(marker), `MSI thumbnail 계약이 필요합니다: ${marker}`);
+  }
+  assert.equal((wixTemplate.match(/ExeCommand="\[CustomActionData\]"/g) ?? []).length, 3);
+  assert.equal(
+    (wixTemplate.match(/<SetProperty\s+Id="(?:Rollback|Install|Uninstall)ThumbnailRegistration"/g) ?? []).length,
+    3,
+  );
+  assertOrdered(wixTemplate, [
+    'Action="RollbackThumbnailRegistration" After="InstallFiles"',
+    'Action="InstallThumbnailRegistration" After="RollbackThumbnailRegistration"',
+    'Action="FailThumbnailRegistrationProbe" After="InstallThumbnailRegistration"',
+  ]);
+  assert.doesNotMatch(wixTemplate, /(?:taskkill|Stop-Process|explorer\.exe|dllhost\.exe)/i);
+});
+
+test('NSIS thumbnail 등록은 current-user Registry64와 DLL export를 사용한다', () => {
+  for (const marker of [
+    'SetRegView 64',
+    'AlhangeulThumbnailInstallUser',
+    'AlhangeulThumbnailUninstallUser',
+    '$INSTDIR\\AlhangeulThumbnailHandler.dll',
+    '!insertmacro ALHANGEUL_INSTALL_THUMBNAIL',
+    '!insertmacro ALHANGEUL_UNINSTALL_THUMBNAIL',
+  ]) {
+    assert.ok(nsisHooks.includes(marker), `NSIS thumbnail 계약이 필요합니다: ${marker}`);
+  }
+  assert.doesNotMatch(nsisHooks, /SetRegView 32/);
+  assert.doesNotMatch(nsisHooks, /(?:taskkill|Stop-Process|explorer\.exe|dllhost\.exe)/i);
 });
 
 test('NSIS hook은 설치·제거 중 extension 기본값을 보존한다', () => {
@@ -290,3 +333,13 @@ test('NSIS hook macro는 사용하는 register를 보존한다', () => {
     }
   }
 });
+
+function assertOrdered(source, markers) {
+  let previous = -1;
+  for (const marker of markers) {
+    const index = source.indexOf(marker);
+    assert.notEqual(index, -1, `marker가 필요합니다: ${marker}`);
+    assert.ok(index > previous, `순서가 올바르지 않습니다: ${marker}`);
+    previous = index;
+  }
+}

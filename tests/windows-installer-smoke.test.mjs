@@ -7,7 +7,14 @@ import test from 'node:test';
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const scriptPath = join(repoRoot, 'scripts/windows-installer-smoke.ps1');
 const scriptBytes = await readFile(scriptPath);
-const source = scriptBytes.toString('utf8');
+const helperPaths = [
+  join(repoRoot, 'scripts/windows-installer-smoke-support.ps1'),
+  join(repoRoot, 'scripts/windows-thumbnail-smoke.ps1'),
+];
+const helperBytes = await Promise.all(helperPaths.map((path) => readFile(path)));
+const entrySource = scriptBytes.toString('utf8');
+const sources = [entrySource, ...helperBytes.map((bytes) => bytes.toString('utf8'))];
+const source = sources.join('\n');
 
 test('Windows PowerShell 5.1이 UTF-8 source를 인식하도록 BOM을 유지한다', () => {
   assert.deepEqual(
@@ -15,15 +22,18 @@ test('Windows PowerShell 5.1이 UTF-8 source를 인식하도록 BOM을 유지한
     [0xef, 0xbb, 0xbf],
     'PowerShell script는 UTF-8 BOM으로 시작해야 합니다.',
   );
+  for (const bytes of helperBytes) {
+    assert.deepEqual([...bytes.subarray(0, 3)], [0xef, 0xbb, 0xbf]);
+  }
 });
 
 test('entry parameter는 artifact, output, expected version 세 개로 제한한다', () => {
-  const parameterBlock = source.match(/param\(([\s\S]*?)\)\nSet-StrictMode/);
+  const parameterBlock = entrySource.match(/param\(([\s\S]*?)\)\nSet-StrictMode/);
   assert.ok(parameterBlock, 'PowerShell parameter block이 필요합니다.');
   const names = [...parameterBlock[1].matchAll(/\[string\]\$(\w+)/g)]
     .map((match) => match[1]);
   assert.deepEqual(names, ['ArtifactRoot', 'OutputDirectory', 'ExpectedVersion']);
-  assert.match(source, /Set-StrictMode -Version Latest/);
+  assert.match(entrySource, /Set-StrictMode -Version Latest/);
   assert.doesNotMatch(source, /\bImport-Module\b/);
 });
 
@@ -31,7 +41,10 @@ test('installer cardinality와 inventory hash를 설치 전에 검증한다', ()
   assert.match(source, /Get-ChildItem -LiteralPath \$rootItem\.FullName -Recurse -File/);
   assert.match(source, /\$msiFiles\.Count -eq 1/);
   assert.match(source, /\$nsisFiles\.Count -eq 1/);
-  assert.match(source, /\$files\.Count -eq 3/);
+  assert.match(source, /\$files\.Count -eq 5/);
+  assert.match(source, /AlhangeulThumbnailHandler\.dll/);
+  assert.match(source, /AlhangeulThumbnailWorker\.exe/);
+  assert.match(source, /Assert-PortableExecutable/);
   assert.match(source, /alhangeul-artifact-inventory\.json/);
   assert.match(source, /Get-FileHash -LiteralPath \$File\.FullName -Algorithm SHA256/);
   assertOrdered([
@@ -62,7 +75,7 @@ test('32/64-bit HKLM·HKCU와 handler·기본 연결을 분리해 검사한다',
     'Alhangeul.hwpx',
     'OpenWithProgids',
     'UserChoice',
-    'AlhangeulSmoke.Existing',
+    'Hancom.Hwp.Document',
   ]) {
     assert.ok(source.includes(marker), `registry marker가 필요합니다: ${marker}`);
   }
@@ -189,27 +202,51 @@ test('fixture, summary, failure category와 finally 증적을 항상 남긴다',
     'cleanup',
     'fixture',
     'sentinel-restore',
+    'installer-rollback',
+    'thumbnail-registration',
+    'thumbnail-render',
+    'coexistence',
   ]) {
     assert.ok(source.includes(`'${category}'`), `failure category가 필요합니다: ${category}`);
   }
 });
 
 test('script와 함수가 구현계획의 크기 상한을 지킨다', () => {
-  const lines = source.split(/\r?\n/);
-  assert.ok(lines.length <= 300, `script가 300 LOC를 초과했습니다: ${lines.length}`);
-
-  const starts = lines
-    .map((line, index) => (/^function /.test(line) ? index : -1))
-    .filter((index) => index >= 0);
-  const mainStart = lines.findIndex((line) => line === '# Main');
-  for (let index = 0; index < starts.length; index += 1) {
-    const start = starts[index];
-    const end = index + 1 < starts.length ? starts[index + 1] : mainStart;
-    assert.ok(end - start <= 50, `${lines[start]} 함수가 50 LOC를 초과했습니다.`);
-    const signature = lines[start].split('{', 1)[0];
-    const parameters = signature.match(/\$(\w+)/g) ?? [];
-    assert.ok(parameters.length <= 5, `${lines[start]} 함수 parameter가 5개를 초과했습니다.`);
+  for (const fileSource of sources) {
+    const lines = fileSource.split(/\r?\n/);
+    assert.ok(lines.length <= 300, `script가 300 LOC를 초과했습니다: ${lines.length}`);
+    const starts = lines.map((line, index) => (/^function /.test(line) ? index : -1)).filter((index) => index >= 0);
+    const mainStart = lines.findIndex((line) => line === '# Main');
+    for (let index = 0; index < starts.length; index += 1) {
+      const start = starts[index];
+      const candidates = [index + 1 < starts.length ? starts[index + 1] : lines.length];
+      if (mainStart > start) candidates.push(mainStart);
+      const end = Math.min(...candidates);
+      assert.ok(end - start <= 50, `${lines[start]} 함수가 50 LOC를 초과했습니다.`);
+      const signature = lines[start].split('{', 1)[0];
+      const parameters = signature.match(/\$(\w+)/g) ?? [];
+      assert.ok(parameters.length <= 5, `${lines[start]} 함수 parameter가 5개를 초과했습니다.`);
+    }
   }
+});
+
+test('thumbnail smoke는 rollback·공존·실제 Shell bitmap 계약을 검사한다', () => {
+  for (const marker of [
+    'ALHANGEUL_FAIL_THUMBNAIL_INSTALL=1',
+    'Invoke-MsiThumbnailRollbackProbe',
+    'nsis-reinstall.log',
+    'IShellItemImageFactory',
+    'SHCreateItemFromParsingName',
+    'ThumbnailSmokeInterop]::Request',
+    'third_party\\rhwp\\saved',
+    '$thumbnailThirdParty',
+    'ThumbnailHandlerBackup',
+    'AlhangeulThumbnailHandler.dll',
+    'AlhangeulThumbnailWorker.exe',
+  ]) {
+    assert.ok(source.includes(marker), `thumbnail smoke marker가 필요합니다: ${marker}`);
+  }
+  assert.doesNotMatch(source, /Stop-Process\s+-Name/);
 });
 
 function assertOrdered(markers) {

@@ -40,6 +40,21 @@ pub(crate) fn guard_u32(action: impl FnOnce() -> u32) -> u32 {
 }
 
 #[cfg(windows)]
+fn guard_status(action: impl FnOnce() -> u32) -> u32 {
+    catch_unwind(AssertUnwindSafe(action))
+        .unwrap_or(windows_sys::Win32::Foundation::ERROR_INSTALL_FAILURE)
+}
+
+#[cfg(windows)]
+fn status_to_hresult(status: u32) -> HRESULT {
+    if status == 0 {
+        S_OK
+    } else {
+        ((status & 0xffff) | 0x8007_0000) as HRESULT
+    }
+}
+
+#[cfg(windows)]
 pub(crate) fn module_handle() -> HMODULE {
     MODULE_HANDLE.load(Ordering::Acquire)
 }
@@ -100,4 +115,28 @@ pub extern "system" fn DllCanUnloadNow() -> HRESULT {
             S_FALSE
         }
     })
+}
+
+#[cfg(windows)]
+#[no_mangle]
+pub extern "system" fn DllRegisterServer() -> HRESULT {
+    guard_hresult(|| status_to_hresult(registration::install_machine()))
+}
+
+#[cfg(windows)]
+#[no_mangle]
+pub extern "system" fn DllUnregisterServer() -> HRESULT {
+    guard_hresult(|| status_to_hresult(registration::uninstall_machine()))
+}
+
+#[cfg(windows)]
+#[no_mangle]
+pub extern "system" fn AlhangeulThumbnailInstallUser() -> u32 {
+    guard_status(registration::install_user)
+}
+
+#[cfg(windows)]
+#[no_mangle]
+pub extern "system" fn AlhangeulThumbnailUninstallUser() -> u32 {
+    guard_status(registration::uninstall_user)
 }

@@ -7,6 +7,16 @@ pub const UNKNOWN_IID: u128 = 0x00000000_0000_0000_c000_000000000046;
 pub const HANDLER_FILENAME: &str = "AlhangeulThumbnailHandler.dll";
 pub const WORKER_FILENAME: &str = "AlhangeulThumbnailWorker.exe";
 pub const THREADING_MODEL: &str = "Apartment";
+pub const HANDLER_CLSID_TEXT: &str = "{C1DCF316-0771-49DD-BFEA-C85F69B1674B}";
+pub const THUMBNAIL_PROVIDER_TEXT: &str = "{E357FCCD-A995-4576-B01F-234630154E96}";
+pub const BACKUP_ROOT: &str = "Software\\Alhangeul\\ThumbnailHandlerBackup";
+pub const EXTENSIONS: [&str; 2] = [".hwp", ".hwpx"];
+
+#[cfg(windows)]
+mod windows;
+
+#[cfg(windows)]
+pub(crate) use windows::{install_machine, install_user, uninstall_machine, uninstall_user};
 
 #[cfg(windows)]
 pub(crate) fn guid(value: u128) -> windows_sys::core::GUID {
@@ -36,5 +46,11 @@ mod tests {
         assert_eq!(HANDLER_FILENAME, "AlhangeulThumbnailHandler.dll");
         assert_eq!(WORKER_FILENAME, "AlhangeulThumbnailWorker.exe");
         assert_eq!(THREADING_MODEL, "Apartment");
+        assert_eq!(HANDLER_CLSID_TEXT, "{C1DCF316-0771-49DD-BFEA-C85F69B1674B}");
+        assert_eq!(
+            THUMBNAIL_PROVIDER_TEXT,
+            "{E357FCCD-A995-4576-B01F-234630154E96}"
+        );
+        assert_eq!(EXTENSIONS, [".hwp", ".hwpx"]);
     }
 }

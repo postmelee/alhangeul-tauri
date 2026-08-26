@@ -16,11 +16,17 @@ import {
   sep,
 } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { inspectPeImage } from './build-thumbnail-binaries.mjs';
 
 export const INVENTORY_SCHEMA_VERSION = 1;
 export const INVENTORY_FILENAME = 'alhangeul-artifact-inventory.json';
 export const PLATFORM_REQUIREMENTS = Object.freeze({
-  'windows-x64': Object.freeze(['msi', 'nsis']),
+  'windows-x64': Object.freeze([
+    'msi',
+    'nsis',
+    'thumbnail-handler',
+    'thumbnail-worker',
+  ]),
   'linux-x64': Object.freeze(['appimage', 'deb', 'rpm']),
   'linux-arm64': Object.freeze(['deb']),
 });
@@ -72,7 +78,7 @@ export async function verifyDesktopArtifacts({
     ? resolve(excludedInventoryPath)
     : null;
   const files = await inspectFiles(rootPath, excludedPath);
-  assertArtifactContract(platform, requiredKinds, files);
+  await assertArtifactContract(platform, requiredKinds, files, rootPath);
 
   const inventory = {
     schemaVersion: INVENTORY_SCHEMA_VERSION,
@@ -168,12 +174,12 @@ function isTauriAppDirIntermediate(rootPath, absolutePath) {
   );
 }
 
-function assertArtifactContract(platform, requiredKinds, files) {
+async function assertArtifactContract(platform, requiredKinds, files, rootPath) {
   for (const requiredKind of requiredKinds) {
     const matches = files.filter((file) => file.kind === requiredKind);
-    if (matches.length === 0) {
+    if (matches.length !== 1) {
       throw new Error(
-        `${platform} artifact에 필수 bundle 종류가 없습니다: ${requiredKind}`,
+        `${platform} artifact 필수 종류 cardinality가 1이 아닙니다: ${requiredKind}=${matches.length}`,
       );
     }
     const empty = matches.find((file) => file.size === 0);
@@ -183,12 +189,33 @@ function assertArtifactContract(platform, requiredKinds, files) {
       );
     }
   }
+  if (platform === 'windows-x64') {
+    await assertWindowsThumbnailPe(files, rootPath);
+  }
+}
+
+async function assertWindowsThumbnailPe(files, rootPath) {
+  const contracts = [
+    ['thumbnail-handler', true],
+    ['thumbnail-worker', false],
+  ];
+  for (const [kind, dll] of contracts) {
+    const file = files.find((candidate) => candidate.kind === kind);
+    const contents = await readFile(resolve(rootPath, file.path));
+    inspectPeImage(contents, { dll });
+  }
 }
 
 function classifyArtifact(path) {
   const normalized = path.toLowerCase();
   const segments = normalized.split('/');
 
+  if (normalized === 'verification/alhangeulthumbnailhandler.dll') {
+    return 'thumbnail-handler';
+  }
+  if (normalized === 'verification/alhangeulthumbnailworker.exe') {
+    return 'thumbnail-worker';
+  }
   if (normalized.endsWith('.msi')) return 'msi';
   if (normalized.endsWith('.exe') && segments.includes('nsis')) return 'nsis';
   if (normalized.endsWith('.deb')) return 'deb';

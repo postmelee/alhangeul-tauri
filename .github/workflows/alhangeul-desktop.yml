@@ -280,6 +280,21 @@ jobs:
         shell: bash
         run: pnpm tauri build --verbose --target "${{ matrix.target }}" ${{ matrix.bundle_args }}
 
+      - name: Stage Windows thumbnail verification copies
+        if: matrix.name == 'windows-x64'
+        shell: bash
+        env:
+          BUNDLE_ROOT: apps/desktop/src-tauri/target/${{ matrix.target }}/release/bundle
+        run: |
+          set -euo pipefail
+          mkdir -p "$BUNDLE_ROOT/verification"
+          cp \
+            apps/desktop/src-tauri/windows/thumbnail-resources/AlhangeulThumbnailHandler.dll \
+            "$BUNDLE_ROOT/verification/AlhangeulThumbnailHandler.dll"
+          cp \
+            apps/desktop/src-tauri/windows/thumbnail-resources/AlhangeulThumbnailWorker.exe \
+            "$BUNDLE_ROOT/verification/AlhangeulThumbnailWorker.exe"
+
       - name: Verify bundle artifact
         shell: bash
         env:
@@ -310,6 +325,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           ref: ${{ inputs.build_ref || github.sha }}
+          submodules: true
 
       - name: Prepare installer smoke diagnostics
         if: ${{ always() }}
