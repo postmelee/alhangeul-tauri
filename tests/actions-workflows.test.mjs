@@ -311,6 +311,92 @@ test('installer smoke 진단은 항상 보존되고 마지막 gate가 실패를 
   }
 });
 
+test('Windows GUI branch probe는 명시적 opt-in이고 기존 desktop 기본 실행을 바꾸지 않는다', () => {
+  assert.match(desktopWorkflow, /^      run_windows_gui_probe:$/m);
+  const input = desktopWorkflow.match(
+    /^      run_windows_gui_probe:\n([\s\S]*?)(?=^      [a-z_]+:|^permissions:)/m,
+  )?.[0];
+  assert.ok(input, 'run_windows_gui_probe input이 필요합니다.');
+  assert.match(input, /^        required: true$/m);
+  assert.match(input, /^        default: false$/m);
+  assert.match(input, /^        type: boolean$/m);
+
+  const build = getJob(desktopWorkflow, 'build');
+  const smoke = getJob(desktopWorkflow, 'windows-installer-smoke');
+  assert.doesNotMatch(build, /run_windows_gui_probe/);
+  assert.doesNotMatch(smoke, /run_windows_gui_probe/);
+});
+
+test('Windows GUI branch probe는 MSI·NSIS fresh runner에서 same-run artifact를 소비한다', () => {
+  const job = getJob(desktopWorkflow, 'windows-gui-probe');
+  assert.match(job, /^    needs: build$/m);
+  assert.match(job, /^    if: \$\{\{ !cancelled\(\) && inputs\.run_windows_gui_probe \}\}$/m);
+  assert.match(job, /^      fail-fast: false$/m);
+  assert.match(job, /^        installer_kind: \[msi, nsis\]$/m);
+  assert.match(job, /^    runs-on: windows-2025$/m);
+  assert.match(job, /name: alhangeul-desktop-windows-x64$/m);
+  assert.match(job, /path: artifacts\/windows-x64$/m);
+  assertOrdered(job, [
+    '- name: Verify Windows GUI probe commit',
+    '- name: Download Windows x64 GUI bundle',
+    '- name: Verify Windows GUI artifact inventory',
+    '- name: Install verified Windows GUI candidate',
+    '- name: Run Windows production GUI probe',
+    '- name: Uninstall Windows GUI candidate',
+  ]);
+});
+
+test('Windows GUI branch probe는 WinApp Action·CLI·tauri-driver를 이중 고정한다', () => {
+  const job = getJob(desktopWorkflow, 'windows-gui-probe');
+  assert.match(
+    job,
+    /uses: microsoft\/setup-WinAppCli@b93bbddc1f7abc061ca0d3a8119e3a0c7dd71495 # v0\.2/,
+  );
+  assert.match(job, /version: \$\{\{ env\.WINAPP_CLI_VERSION \}\}/);
+  assert.match(desktopWorkflow, /^  WINAPP_CLI_VERSION: "v0\.6\.0"$/m);
+  assert.match(desktopWorkflow, /^  TAURI_DRIVER_VERSION: "2\.0\.6"$/m);
+  assert.match(job, /cargo install tauri-driver --version "\$env:TAURI_DRIVER_VERSION" --locked/);
+  assert.match(job, /WINAPP_CLI_UPDATE_CHECK: "0"/);
+  assert.match(job, /WINAPP_CLI_TELEMETRY_OPTOUT: "1"/);
+  assert.doesNotMatch(job, /\blatest\b|nightly|winget|npm install -g/i);
+});
+
+test('Windows GUI probe는 production path·exact SHA와 scoped UIA evidence를 전달한다', () => {
+  const job = getJob(desktopWorkflow, 'windows-gui-probe');
+  assert.match(job, /ALHANGEUL_GUI_APP_PATH: \$\{\{ steps\.install-gui-candidate\.outputs\.app_path \}\}/);
+  assert.match(job, /ALHANGEUL_GUI_BUILD_REF: \$\{\{ steps\.verify-gui-commit\.outputs\.sha \}\}/);
+  assert.match(job, /ALHANGEUL_GUI_DRIVER_PATH: \$\{\{ steps\.install-gui-driver\.outputs\.driver_path \}\}/);
+  assert.match(job, /ALHANGEUL_WINAPP_CLI_PATH: \$\{\{ steps\.resolve-winapp-cli\.outputs\.cli_path \}\}/);
+  assert.match(job, /run: pnpm run probe:gui:windows/);
+  assert.match(job, /path: diagnostics\/windows-gui-\$\{\{ matrix\.installer_kind \}\}\/\*\*/);
+  assert.match(job, /retention-days: 14/);
+});
+
+test('Windows GUI probe cleanup·evidence는 항상 실행되고 마지막 gate가 outcome을 전달한다', () => {
+  const job = getJob(desktopWorkflow, 'windows-gui-probe');
+  const cleanup = getStepContaining(job, '-Action Uninstall');
+  const upload = getStepContaining(job, 'alhangeul-desktop-windows-x64-${{ matrix.installer_kind }}-gui-probe');
+  const gate = getStepContaining(job, 'Windows GUI probe gate failed');
+  assert.match(cleanup, /^\s{8}if: \$\{\{ always\(\) \}\}$/m);
+  assert.match(cleanup, /^\s{8}continue-on-error: true$/m);
+  assert.match(upload, /^\s{8}if: \$\{\{ always\(\) \}\}$/m);
+  assert.match(gate, /^\s{8}if: \$\{\{ always\(\) \}\}$/m);
+  for (const outcome of [
+    'steps.gui-checkout.outcome',
+    'steps.verify-gui-commit.outcome',
+    'steps.download-gui-bundle.outcome',
+    'steps.verify-gui-inventory.outcome',
+    'steps.setup-winapp-cli.outcome',
+    'steps.install-gui-driver.outcome',
+    'steps.install-gui-candidate.outcome',
+    'steps.run-windows-gui-probe.outcome',
+    'steps.uninstall-gui-candidate.outcome',
+    'steps.upload-windows-gui-probe.outcome',
+  ]) {
+    assert.ok(gate.includes(outcome), `GUI gate outcome이 필요합니다: ${outcome}`);
+  }
+});
+
 test('대상 workflow에는 release, Pages, deploy action이 없다', () => {
   const forbiddenPatterns = [
     /actions\/upload-pages-artifact/i,

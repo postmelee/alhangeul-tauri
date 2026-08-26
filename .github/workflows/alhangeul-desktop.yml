@@ -13,6 +13,11 @@ on:
         required: true
         default: true
         type: boolean
+      run_windows_gui_probe:
+        description: Run the task branch Windows MSI/NSIS production GUI probe.
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -25,6 +30,8 @@ env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
   NODE_VERSION: "24"
+  TAURI_DRIVER_VERSION: "2.0.6"
+  WINAPP_CLI_VERSION: "v0.6.0"
   GIT_CONFIG_COUNT: "1"
   GIT_CONFIG_KEY_0: core.autocrlf
   GIT_CONFIG_VALUE_0: "false"
@@ -304,4 +311,251 @@ jobs:
           $failed = @($outcomes.GetEnumerator() | Where-Object { $_.Value -ne 'success' })
           if ($failed.Count -gt 0) {
             throw "Windows installer smoke gate failed: $($failed | ConvertTo-Json -Compress)"
+          }
+
+  windows-gui-probe:
+    name: Probe Windows x64 ${{ matrix.installer_kind }} GUI
+    needs: build
+    if: ${{ !cancelled() && inputs.run_windows_gui_probe }}
+    strategy:
+      fail-fast: false
+      matrix:
+        installer_kind: [msi, nsis]
+    runs-on: windows-2025
+    timeout-minutes: 40
+    steps:
+      - name: Checkout Windows GUI probe source
+        id: gui-checkout
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.build_ref || github.sha }}
+
+      - name: Prepare Windows GUI diagnostics
+        if: ${{ always() }}
+        shell: powershell
+        env:
+          REQUESTED_BUILD_REF: ${{ inputs.build_ref || github.sha }}
+        run: |
+          $output = Join-Path $env:GITHUB_WORKSPACE 'diagnostics\windows-gui-${{ matrix.installer_kind }}'
+          New-Item -ItemType Directory -Path $output -Force | Out-Null
+          [ordered]@{
+            runId = '${{ github.run_id }}'
+            runAttempt = '${{ github.run_attempt }}'
+            installerKind = '${{ matrix.installer_kind }}'
+            requestedBuildRef = $env:REQUESTED_BUILD_REF
+            setupWinAppCliCommit = 'b93bbddc1f7abc061ca0d3a8119e3a0c7dd71495'
+            winAppCliVersion = '${{ env.WINAPP_CLI_VERSION }}'
+            tauriDriverVersion = '${{ env.TAURI_DRIVER_VERSION }}'
+          } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $output 'workflow-context.json') -Encoding UTF8
+
+      - name: Verify Windows GUI probe commit
+        id: verify-gui-commit
+        shell: powershell
+        env:
+          EXPECTED_BUILD_REF: ${{ inputs.build_ref || github.sha }}
+        run: |
+          $expectedSha = git rev-parse "$env:EXPECTED_BUILD_REF^{commit}"
+          if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($expectedSha)) {
+            throw "Cannot resolve expected build ref: $env:EXPECTED_BUILD_REF"
+          }
+          $actualSha = git rev-parse HEAD
+          if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($actualSha)) {
+            throw 'Cannot resolve checked out commit'
+          }
+          if ($actualSha.Trim() -ne $expectedSha.Trim()) {
+            throw "Checked out commit mismatch: $actualSha != $expectedSha"
+          }
+          "sha=$($actualSha.Trim())" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Setup Node.js for Windows GUI probe
+        id: setup-gui-node
+        uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Install Windows GUI probe dependencies
+        id: install-gui-dependencies
+        shell: powershell
+        run: |
+          corepack enable
+          if ($LASTEXITCODE -ne 0) { throw 'corepack enable failed' }
+          pnpm install --frozen-lockfile
+          if ($LASTEXITCODE -ne 0) { throw 'pnpm install failed' }
+          $package = Get-Content -LiteralPath 'package.json' -Raw | ConvertFrom-Json
+          "app_version=$($package.version)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Download Windows x64 GUI bundle
+        id: download-gui-bundle
+        uses: actions/download-artifact@v8
+        with:
+          name: alhangeul-desktop-windows-x64
+          path: artifacts/windows-x64
+
+      - name: Verify Windows GUI artifact inventory
+        id: verify-gui-inventory
+        shell: powershell
+        run: |
+          pnpm run check:desktop-artifacts -- `
+            --platform windows-x64 `
+            --root 'artifacts\windows-x64' `
+            --verify-inventory 'artifacts\windows-x64\alhangeul-artifact-inventory.json'
+          if ($LASTEXITCODE -ne 0) { throw 'Windows GUI artifact inventory verification failed' }
+          Copy-Item `
+            -LiteralPath 'artifacts\windows-x64\alhangeul-artifact-inventory.json' `
+            -Destination 'diagnostics\windows-gui-${{ matrix.installer_kind }}\'
+
+      - name: Setup exact WinApp CLI
+        id: setup-winapp-cli
+        uses: microsoft/setup-WinAppCli@b93bbddc1f7abc061ca0d3a8119e3a0c7dd71495 # v0.2
+        with:
+          version: ${{ env.WINAPP_CLI_VERSION }}
+
+      - name: Resolve WinApp CLI and record native environment
+        id: resolve-winapp-cli
+        shell: powershell
+        run: |
+          $command = Get-Command winapp -ErrorAction Stop
+          $cliPath = [IO.Path]::GetFullPath($command.Source)
+          if (-not $cliPath.EndsWith('.exe', [StringComparison]::OrdinalIgnoreCase)) {
+            throw "WinApp CLI is not an executable: $cliPath"
+          }
+          $version = & $cliPath --version 2>&1
+          if ($LASTEXITCODE -ne 0) { throw 'winapp --version failed' }
+          "cli_path=$cliPath" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          $output = 'diagnostics\windows-gui-${{ matrix.installer_kind }}\native-environment.txt'
+          @(
+            "winapp $version"
+            "expected-winapp $env:WINAPP_CLI_VERSION"
+            "tauri-driver $env:TAURI_DRIVER_VERSION"
+            "runner-image $env:ImageOS $env:ImageVersion"
+            "os $([Environment]::OSVersion.VersionString)"
+            "node $(node --version)"
+            "pnpm $(pnpm --version)"
+            "rustc $(rustc --version)"
+            "cargo $(cargo --version)"
+          ) | Set-Content -LiteralPath $output -Encoding UTF8
+
+      - name: Install exact tauri-driver for Windows GUI probe
+        id: install-gui-driver
+        shell: powershell
+        run: |
+          cargo install tauri-driver --version "$env:TAURI_DRIVER_VERSION" --locked
+          if ($LASTEXITCODE -ne 0) { throw 'tauri-driver install failed' }
+          $driverPath = [IO.Path]::GetFullPath((Get-Command tauri-driver -ErrorAction Stop).Source)
+          "driver_path=$driverPath" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Install verified Windows GUI candidate
+        id: install-gui-candidate
+        shell: powershell
+        run: |
+          $output = 'diagnostics\windows-gui-${{ matrix.installer_kind }}'
+          $statePath = Join-Path $output 'installer-state.json'
+          & '.\scripts\windows-gui-installer.ps1' `
+            -Action Install `
+            -InstallerKind '${{ matrix.installer_kind }}' `
+            -ArtifactRoot 'artifacts\windows-x64' `
+            -OutputDirectory $output `
+            -StatePath $statePath
+          if ($LASTEXITCODE -ne 0) { throw 'Windows GUI candidate install failed' }
+          $state = Get-Content -LiteralPath $statePath -Raw | ConvertFrom-Json
+          "app_path=$($state.Executable)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Run Windows production GUI probe
+        id: run-windows-gui-probe
+        continue-on-error: true
+        timeout-minutes: 12
+        shell: powershell
+        env:
+          ALHANGEUL_GUI_APP_PATH: ${{ steps.install-gui-candidate.outputs.app_path }}
+          ALHANGEUL_GUI_BUILD_REF: ${{ steps.verify-gui-commit.outputs.sha }}
+          ALHANGEUL_GUI_NATIVE_RUN_ID: ${{ github.run_id }}
+          ALHANGEUL_GUI_DRIVER_PATH: ${{ steps.install-gui-driver.outputs.driver_path }}
+          ALHANGEUL_GUI_FIXTURE_ROOT: ${{ github.workspace }}
+          ALHANGEUL_GUI_OUTPUT_DIR: ${{ github.workspace }}\diagnostics\windows-gui-${{ matrix.installer_kind }}
+          ALHANGEUL_GUI_TIMEOUT_MS: "90000"
+          ALHANGEUL_GUI_APP_VERSION: ${{ steps.install-gui-dependencies.outputs.app_version }}
+          ALHANGEUL_GUI_DRIVER_VERSION: tauri-driver ${{ env.TAURI_DRIVER_VERSION }}
+          ALHANGEUL_WINAPP_CLI_PATH: ${{ steps.resolve-winapp-cli.outputs.cli_path }}
+          WINAPP_CLI_TELEMETRY_OPTOUT: "1"
+          WINAPP_CLI_UPDATE_CHECK: "0"
+        run: pnpm run probe:gui:windows
+
+      - name: Uninstall Windows GUI candidate
+        id: uninstall-gui-candidate
+        if: ${{ always() }}
+        continue-on-error: true
+        shell: powershell
+        run: |
+          $output = 'diagnostics\windows-gui-${{ matrix.installer_kind }}'
+          & '.\scripts\windows-gui-installer.ps1' `
+            -Action Uninstall `
+            -InstallerKind '${{ matrix.installer_kind }}' `
+            -ArtifactRoot 'artifacts\windows-x64' `
+            -OutputDirectory $output `
+            -StatePath (Join-Path $output 'installer-state.json')
+
+      - name: Record Windows GUI probe outcomes
+        if: ${{ always() }}
+        shell: powershell
+        env:
+          CHECKOUT_OUTCOME: ${{ steps.gui-checkout.outcome }}
+          VERIFY_OUTCOME: ${{ steps.verify-gui-commit.outcome }}
+          DOWNLOAD_OUTCOME: ${{ steps.download-gui-bundle.outcome }}
+          INVENTORY_OUTCOME: ${{ steps.verify-gui-inventory.outcome }}
+          WINAPP_OUTCOME: ${{ steps.setup-winapp-cli.outcome }}
+          DRIVER_OUTCOME: ${{ steps.install-gui-driver.outcome }}
+          INSTALL_OUTCOME: ${{ steps.install-gui-candidate.outcome }}
+          PROBE_OUTCOME: ${{ steps.run-windows-gui-probe.outcome }}
+          UNINSTALL_OUTCOME: ${{ steps.uninstall-gui-candidate.outcome }}
+        run: |
+          $output = 'diagnostics\windows-gui-${{ matrix.installer_kind }}\step-outcomes.json'
+          [ordered]@{
+            checkout = $env:CHECKOUT_OUTCOME; verifyCommit = $env:VERIFY_OUTCOME
+            download = $env:DOWNLOAD_OUTCOME; inventory = $env:INVENTORY_OUTCOME
+            setupWinAppCli = $env:WINAPP_OUTCOME; installDriver = $env:DRIVER_OUTCOME
+            install = $env:INSTALL_OUTCOME; probe = $env:PROBE_OUTCOME
+            uninstall = $env:UNINSTALL_OUTCOME
+          } | ConvertTo-Json | Set-Content -LiteralPath $output -Encoding UTF8
+
+      - name: Upload Windows GUI probe diagnostics
+        id: upload-windows-gui-probe
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: alhangeul-desktop-windows-x64-${{ matrix.installer_kind }}-gui-probe
+          path: diagnostics/windows-gui-${{ matrix.installer_kind }}/**
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Require Windows GUI probe success
+        if: ${{ always() }}
+        shell: powershell
+        env:
+          CHECKOUT_OUTCOME: ${{ steps.gui-checkout.outcome }}
+          VERIFY_OUTCOME: ${{ steps.verify-gui-commit.outcome }}
+          NODE_OUTCOME: ${{ steps.setup-gui-node.outcome }}
+          DEPENDENCIES_OUTCOME: ${{ steps.install-gui-dependencies.outcome }}
+          DOWNLOAD_OUTCOME: ${{ steps.download-gui-bundle.outcome }}
+          INVENTORY_OUTCOME: ${{ steps.verify-gui-inventory.outcome }}
+          WINAPP_OUTCOME: ${{ steps.setup-winapp-cli.outcome }}
+          RESOLVE_WINAPP_OUTCOME: ${{ steps.resolve-winapp-cli.outcome }}
+          DRIVER_OUTCOME: ${{ steps.install-gui-driver.outcome }}
+          INSTALL_OUTCOME: ${{ steps.install-gui-candidate.outcome }}
+          PROBE_OUTCOME: ${{ steps.run-windows-gui-probe.outcome }}
+          UNINSTALL_OUTCOME: ${{ steps.uninstall-gui-candidate.outcome }}
+          UPLOAD_OUTCOME: ${{ steps.upload-windows-gui-probe.outcome }}
+        run: |
+          $outcomes = [ordered]@{
+            checkout = $env:CHECKOUT_OUTCOME; verifyCommit = $env:VERIFY_OUTCOME
+            setupNode = $env:NODE_OUTCOME; dependencies = $env:DEPENDENCIES_OUTCOME
+            download = $env:DOWNLOAD_OUTCOME; inventory = $env:INVENTORY_OUTCOME
+            setupWinAppCli = $env:WINAPP_OUTCOME; resolveWinAppCli = $env:RESOLVE_WINAPP_OUTCOME
+            installDriver = $env:DRIVER_OUTCOME; install = $env:INSTALL_OUTCOME
+            probe = $env:PROBE_OUTCOME; uninstall = $env:UNINSTALL_OUTCOME
+            uploadDiagnostics = $env:UPLOAD_OUTCOME
+          }
+          $failed = @($outcomes.GetEnumerator() | Where-Object { $_.Value -ne 'success' })
+          if ($failed.Count -gt 0) {
+            throw "Windows GUI probe gate failed: $($failed | ConvertTo-Json -Compress)"
           }

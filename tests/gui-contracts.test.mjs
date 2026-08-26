@@ -242,11 +242,40 @@ test('공통 helper는 platform adapter를 import하지 않고 외부 driver만 
   assert.match(platformConfig, /autoInstallTauriDriver:\s*false/);
   assert.match(platformConfig, /strictFileInteractability:\s*false/);
   assert.doesNotMatch(platformConfig, /driverProvider:\s*'(embedded|crabnebula)'/);
+  const windowsConfig = await readFile(join(repoRoot, 'tests/gui/wdio.windows.conf.ts'), 'utf8');
+  assert.match(windowsConfig, /driverProvider:\s*'external'/);
+  assert.match(windowsConfig, /autoInstallTauriDriver:\s*false/);
+  assert.match(windowsConfig, /autoDownloadEdgeDriver:\s*true/);
+  assert.match(windowsConfig, /strictFileInteractability:\s*false/);
+  assert.match(windowsConfig, /windows['"], 'probe\.e2e\.ts'/);
+  assert.doesNotMatch(windowsConfig, /driverProvider:\s*'(embedded|crabnebula)'/);
+  assert.doesNotMatch(windowsConfig, /autoXvfb|DISPLAY|gui\/linux|native-ui/);
   const sharedConfig = await readFile(join(repoRoot, 'tests/gui/wdio.shared.conf.ts'), 'utf8');
   assert.match(sharedConfig, /browser\.switchToWindow\(handles\[0\]\)/);
   assert.doesNotMatch(sharedConfig, /browser\.tauri|plugin:wdio/);
   const cargo = await readFile(join(repoRoot, 'apps/desktop/src-tauri/Cargo.toml'), 'utf8');
   assert.doesNotMatch(cargo, /wdio|webdriver/i);
+});
+
+test('Windows adapter는 WinApp CLI를 공통 helper나 제품 runtime에 역주입하지 않는다', async () => {
+  const adapter = await readFile(
+    join(repoRoot, 'tests/gui/windows/winapp-cli.mjs'),
+    'utf8',
+  );
+  assert.match(adapter, /execFile/);
+  assert.match(adapter, /WINAPP_CLI_UPDATE_CHECK:\s*'0'/);
+  assert.match(adapter, /WINAPP_CLI_TELEMETRY_OPTOUT:\s*'1'/);
+  assert.match(adapter, /args:\s*\[\.\.\.args, '--json'\]/);
+  assert.doesNotMatch(adapter, /shell:\s*true|execSync|spawnSync|Invoke-Expression/);
+
+  for (const path of [
+    'tests/gui/wdio.shared.conf.ts',
+    'tests/gui/support/document-ux.ts',
+    'apps/desktop/src-tauri/src/lib.rs',
+  ]) {
+    const source = await readFile(join(repoRoot, path), 'utf8');
+    assert.doesNotMatch(source, /winapp-cli|WinApp CLI|ALHANGEUL_WINAPP/i, path);
+  }
 });
 
 test('system print는 WebDriver spec 밖의 production native phase에서만 실행한다', async () => {
