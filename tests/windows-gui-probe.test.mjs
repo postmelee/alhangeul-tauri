@@ -18,16 +18,24 @@ test('Windows probe 환경은 absolute CLI/output과 bounded timeout을 요구�
   })), /절대 Windows/);
 });
 
-test('production window discovery는 Alhangeul process의 visible HWND 한 개만 허용한다', () => {
+test('production window discovery는 단일 visible HWND 또는 단일 foreground HWND만 허용한다', () => {
   assert.equal(selectSingleAppWindow([targetWindow({ title: '' })]).hwnd, 99);
-  assert.throws(() => selectSingleAppWindow([]), /정확히 1개/);
+  assert.throws(() => selectSingleAppWindow([]), /process 0개, foreground 0개/);
   assert.throws(() => selectSingleAppWindow([
     targetWindow({ processName: 'Other' }),
   ]), /0개/);
   assert.throws(() => selectSingleAppWindow([
     targetWindow(),
     targetWindow({ hwnd: 100 }),
-  ]), /2개/);
+  ]), /process 2개, foreground 0개/);
+  assert.equal(selectSingleAppWindow([
+    targetWindow(),
+    targetWindow({ hwnd: 100, isForeground: true }),
+  ]).hwnd, 100);
+  assert.throws(() => selectSingleAppWindow([
+    targetWindow({ isForeground: true }),
+    targetWindow({ hwnd: 100, isForeground: true }),
+  ]), /foreground 2개/);
 });
 
 test('WebDriver readiness와 동일 WinApp PID/HWND evidence를 기록한다', async () => {
@@ -40,7 +48,8 @@ test('WebDriver readiness와 동일 WinApp PID/HWND evidence를 기록한다', a
   assert.equal(result.status.processId, 77);
   assert.equal(manifests[0].status, 'success');
   assert.equal(manifests[0].scenario, 'windows-production-probe');
-  assert.equal(manifests[0].files.length, 4);
+  assert.equal(manifests[0].files.length, 5);
+  assert.ok(writes.has('C:\\evidence\\scenarios\\windows-production-probe\\discovery.json'));
   assert.ok(writes.has('C:\\evidence\\scenarios\\windows-production-probe\\inspect.json'));
 });
 
@@ -75,6 +84,29 @@ test('target identity 불일치도 failure manifest를 남기고 실패한다', 
   })), /target identity/);
   assert.equal(manifests[0].status, 'failure');
   assert.match(manifests[0].error, /target identity/);
+});
+
+test('window selection 실패도 title 원문 없는 discovery evidence를 남긴다', async () => {
+  const writes = new Map();
+  const manifests = [];
+  await assert.rejects(runWindowsGuiProbe(probeOptions({
+    services: probeServices({
+      writes,
+      manifests,
+      discoverWindows: async () => [
+        targetWindow({ title: 'sensitive-a.hwp' }),
+        targetWindow({ hwnd: 100, title: 'sensitive-b.hwp' }),
+      ],
+    }),
+  })), /process 2개, foreground 0개/);
+  const discovery = writes.get('C:\\evidence\\scenarios\\windows-production-probe\\discovery.json');
+  assert.doesNotMatch(discovery, /sensitive/);
+  assert.deepEqual(JSON.parse(discovery).map(({ hwnd, hasTitle }) => ({ hwnd, hasTitle })), [
+    { hwnd: 99, hasTitle: true },
+    { hwnd: 100, hasTitle: true },
+  ]);
+  assert.equal(manifests[0].status, 'failure');
+  assert.equal(manifests[0].files.length, 1);
 });
 
 function probeOptions(override = {}) {

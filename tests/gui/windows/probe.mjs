@@ -24,6 +24,7 @@ export async function runWindowsGuiProbe(options = {}) {
   await io.mkdir(runtime.scenarioDir, { recursive: true });
   let result;
   let failure;
+  let discovery = [];
   try {
     const webView = await waitForWebView(options.browser, runtime.timeoutMs);
     const discover = options.services?.discoverWindows ?? discoverWinAppWindows;
@@ -32,6 +33,7 @@ export async function runWindowsGuiProbe(options = {}) {
       discover,
       runtime,
       env: options.env,
+      onDiscovery: (windows) => { discovery = windows; },
     });
     const createClient = options.services?.createClient ?? createWinAppCli;
     const client = createClient({
@@ -52,7 +54,7 @@ export async function runWindowsGuiProbe(options = {}) {
     failure = error;
     throw error;
   } finally {
-    await writeProbeEvidence(runtime, options.inputs, result, failure, startedAt, io)
+    await writeProbeEvidence(runtime, options.inputs, result, failure, discovery, startedAt, io)
       .catch((evidenceError) => {
         if (!failure) throw evidenceError;
       });
@@ -85,12 +87,14 @@ export function inspectProbeEnvironment(options = {}) {
 
 export function selectSingleAppWindow(windows) {
   if (!Array.isArray(windows)) throw new Error('WinApp window discovery 결과가 배열이 아닙니다.');
-  const matches = windows.filter((window) =>
-    window.processName.toLowerCase() === 'alhangeul');
-  if (matches.length !== 1) {
-    throw new Error(`Alhangeul production window는 정확히 1개여야 합니다: ${matches.length}개`);
-  }
-  return matches[0];
+  const matches = matchingAppWindows(windows);
+  if (matches.length === 1) return matches[0];
+  const foreground = matches.filter((window) => window.isForeground === true);
+  if (foreground.length === 1) return foreground[0];
+  throw new Error(
+    `Alhangeul production window를 고정할 수 없습니다: `
+    + `process ${matches.length}개, foreground ${foreground.length}개`,
+  );
 }
 
 async function waitForWebView(browser, timeoutMs) {
@@ -111,19 +115,43 @@ async function waitForWebView(browser, timeoutMs) {
 
 async function waitForSingleAppWindow(options) {
   let windows = [];
-  await options.browser.waitUntil(async () => {
-    windows = await options.discover({
-      executablePath: options.runtime.cliPath,
-      appName: 'Alhangeul',
-      timeoutMs: options.runtime.timeoutMs,
-      env: options.env,
+  let discoveryError;
+  try {
+    await options.browser.waitUntil(async () => {
+      try {
+        windows = await options.discover({
+          executablePath: options.runtime.cliPath,
+          appName: 'Alhangeul',
+          timeoutMs: options.runtime.timeoutMs,
+          env: options.env,
+        });
+        discoveryError = undefined;
+        options.onDiscovery?.(windows);
+        return canSelectAppWindow(windows);
+      } catch (error) {
+        discoveryError = error;
+        return false;
+      }
+    }, {
+      timeout: options.runtime.timeoutMs,
+      timeoutMsg: 'Alhangeul production window가 단일 PID/HWND로 준비되지 않았습니다.',
     });
-    return matchingAppWindows(windows).length === 1;
-  }, {
-    timeout: options.runtime.timeoutMs,
-    timeoutMsg: 'Alhangeul production window가 단일 PID/HWND로 준비되지 않았습니다.',
-  });
+  } catch (error) {
+    if (discoveryError) {
+      throw new Error(`WinApp production window discovery 실패: ${discoveryError.message}`);
+    }
+    return selectSingleAppWindow(windows);
+  }
   return selectSingleAppWindow(windows);
+}
+
+function canSelectAppWindow(windows) {
+  try {
+    selectSingleAppWindow(windows);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function matchingAppWindows(windows) {
@@ -138,8 +166,24 @@ function assertTargetIdentity(status, target) {
   }
 }
 
-async function writeProbeEvidence(runtime, inputs, result, failure, startedAt, io) {
+async function writeProbeEvidence(runtime, inputs, result, failure, discovery, startedAt, io) {
   const files = [];
+  if (discovery.length > 0) {
+    const path = win32.join(runtime.scenarioDir, 'discovery.json');
+    const payload = discovery.map((window) => ({
+      processId: window.processId,
+      hwnd: window.hwnd,
+      processName: window.processName,
+      hasTitle: window.title !== '',
+      width: window.width,
+      height: window.height,
+      ownerHwnd: window.ownerHwnd,
+      className: window.className,
+      isForeground: window.isForeground,
+    }));
+    await io.writeFile(path, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
+    files.push(await io.describeFile(inputs.outputDir, path, 'log'));
+  }
   if (result) {
     const records = [
       ['windows.json', result.targetWindows],
