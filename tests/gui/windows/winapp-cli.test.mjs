@@ -41,21 +41,22 @@ test('WinApp CLI discovery는 PID/HWND와 process/window text를 정규화한다
   ]);
 });
 
-test('WinApp CLI discovery는 초기화 중 빈 window title을 과도 상태로 보존한다', async () => {
-  const windows = await discoverWinAppWindows({
-    executablePath: 'C:\\tools\\winapp.exe',
-    appName: 'Alhangeul',
-    execFileImpl: fakeExec([], {
-      stdout: JSON.stringify([{
-        processId: 77,
-        hwnd: 99,
-        processName: 'Alhangeul',
-        title: '',
-      }]),
-    }),
+for (const [name, title] of [['빈 문자열', ''], ['null', null], ['누락', undefined]]) {
+  test(`WinApp CLI discovery는 초기화 중 ${name} window title을 과도 상태로 보존한다`, async () => {
+    const window = {
+      processId: 77,
+      hwnd: 99,
+      processName: 'Alhangeul',
+      ...(title === undefined ? {} : { title }),
+    };
+    const windows = await discoverWinAppWindows({
+      executablePath: 'C:\\tools\\winapp.exe',
+      appName: 'Alhangeul',
+      execFileImpl: fakeExec([], { stdout: JSON.stringify([window]) }),
+    });
+    assert.equal(windows[0].title, '');
   });
-  assert.equal(windows[0].title, '');
-});
+}
 
 test('target client는 모든 UIA 결과를 동일 PID/HWND에 고정한다', async () => {
   const calls = [];

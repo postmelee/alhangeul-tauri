@@ -195,6 +195,7 @@ function safeText(value, name) {
 }
 
 function optionalText(value, name) {
+  if (value == null) return '';
   if (typeof value !== 'string' || /[\r\n\0]/.test(value)) {
     throw new Error(`${name}은 단일행 문자열이어야 합니다.`);
   }
