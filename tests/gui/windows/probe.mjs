@@ -86,8 +86,7 @@ export function inspectProbeEnvironment(options = {}) {
 export function selectSingleAppWindow(windows) {
   if (!Array.isArray(windows)) throw new Error('WinApp window discovery 결과가 배열이 아닙니다.');
   const matches = windows.filter((window) =>
-    window.processName.toLowerCase() === 'alhangeul' &&
-    window.title.toLowerCase().includes('alhangeul'));
+    window.processName.toLowerCase() === 'alhangeul');
   if (matches.length !== 1) {
     throw new Error(`Alhangeul production window는 정확히 1개여야 합니다: ${matches.length}개`);
   }
@@ -122,7 +121,7 @@ async function waitForSingleAppWindow(options) {
     return matchingAppWindows(windows).length === 1;
   }, {
     timeout: options.runtime.timeoutMs,
-    timeoutMsg: 'Alhangeul production window가 단일 PID/HWND/title로 준비되지 않았습니다.',
+    timeoutMsg: 'Alhangeul production window가 단일 PID/HWND로 준비되지 않았습니다.',
   });
   return selectSingleAppWindow(windows);
 }
@@ -130,8 +129,7 @@ async function waitForSingleAppWindow(options) {
 function matchingAppWindows(windows) {
   if (!Array.isArray(windows)) return [];
   return windows.filter((window) =>
-    window.processName.toLowerCase() === 'alhangeul'
-    && window.title.toLowerCase().includes('alhangeul'));
+    window.processName.toLowerCase() === 'alhangeul');
 }
 
 function assertTargetIdentity(status, target) {

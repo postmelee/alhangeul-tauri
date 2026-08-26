@@ -18,9 +18,12 @@ test('Windows probe 환경은 absolute CLI/output과 bounded timeout을 요구�
   })), /절대 Windows/);
 });
 
-test('production window discovery는 Alhangeul process/title 한 개만 허용한다', () => {
-  assert.equal(selectSingleAppWindow([targetWindow()]).hwnd, 99);
+test('production window discovery는 Alhangeul process의 visible HWND 한 개만 허용한다', () => {
+  assert.equal(selectSingleAppWindow([targetWindow({ title: '' })]).hwnd, 99);
   assert.throws(() => selectSingleAppWindow([]), /정확히 1개/);
+  assert.throws(() => selectSingleAppWindow([
+    targetWindow({ processName: 'Other' }),
+  ]), /0개/);
   assert.throws(() => selectSingleAppWindow([
     targetWindow(),
     targetWindow({ hwnd: 100 }),
@@ -41,7 +44,7 @@ test('WebDriver readiness와 동일 WinApp PID/HWND evidence를 기록한다', a
   assert.ok(writes.has('C:\\evidence\\scenarios\\windows-production-probe\\inspect.json'));
 });
 
-test('WebView와 native title의 과도 상태를 각각 기다린다', async () => {
+test('WebView title 과도 상태를 기다리고 무제목 native HWND를 고정한다', async () => {
   let webAttempts = 0;
   let nativeAttempts = 0;
   const options = probeOptions({
@@ -51,13 +54,13 @@ test('WebView와 native title의 과도 상태를 각각 기다린다', async ()
     services: probeServices({
       discoverWindows: async () => {
         nativeAttempts += 1;
-        return [targetWindow({ title: nativeAttempts === 1 ? '' : 'Alhangeul' })];
+        return nativeAttempts === 1 ? [] : [targetWindow({ title: '' })];
       },
     }),
   });
   const result = await runWindowsGuiProbe(options);
   assert.equal(result.title, 'Alhangeul');
-  assert.equal(result.target.title, 'Alhangeul');
+  assert.equal(result.target.title, '');
   assert.equal(webAttempts, 2);
   assert.equal(nativeAttempts, 2);
 });
