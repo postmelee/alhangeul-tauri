@@ -379,6 +379,68 @@ CI와 desktop artifact workflow가 성공한 뒤 Linux GUI acceptance에서 환�
 Task #19 [Stage 4.2]: Linux GUI CUPS 환경 증거 보정
 ```
 
+## Stage 4.3 — Issue #34 close gate 기준 통합
+
+### 산출물
+
+수정:
+
+- `.github/workflows/alhangeul-linux-gui.yml`
+- `tests/linux-gui-workflow.test.mjs`
+- `mydocs/orders/20260824.md`
+- `mydocs/orders/20260826.md`
+- `mydocs/plans/task_m010_19_impl.md`
+
+신규:
+
+- `mydocs/working/task_m010_19_stage4.3.md`
+
+### 변경 내용
+
+- Issue #34 correction PR #43·#44 merge commit `424bb9c43769d2d92fcfede6b7ddd13bba7561d0`을 `origin/devel`에서 비재작성 merge로 반영한다. 이미 게시된 #19 단계 이력과 `publish/task19`을 유지하며 rebase·force push를 사용하지 않는다.
+- Issue #34 close gate는 native artifact run `32869377875`와 Linux GUI acceptance run `32871216329`에서 같은 merge exact SHA를 사용해 성공했다. HWP/HWPX open·native save·재열기, drag-in, 직접 PDF, GTK Print to File·취소·CUPS-PDF와 editor restore가 모두 통과했다.
+- `.github/workflows/alhangeul-linux-gui.yml`과 `tests/linux-gui-workflow.test.mjs` 충돌은 close gate에서 검증된 `dpkg-query -W cups` 환경 증거 계약을 채택한다. Stage 4.2의 `cups-daemon` 보정은 미지원 `cupsd -v` 제거 원인을 확인한 과거 후보 기록으로 보존하되 새 candidate의 canonical workflow로 유지하지 않는다.
+- `mydocs/orders/20260824.md` add/add 충돌은 당시 병렬 진행한 #19와 #34 행을 모두 보존한다. 현재 작업 상태는 8월 26일 보드에 #19 Stage 4.3으로 기록한다.
+- Issue #35 Windows GUI E2E는 #19의 선행 조건으로 두지 않는다. #19는 계획된 Windows HWP/HWPX direct PDF, snapshot/source state, atomic replace와 stale-job 회수 수동 gate를 유지하며 #35 automation harness를 중복 구현하지 않는다.
+- 통합된 `.github/workflows/alhangeul-linux-gui.yml`은 337 LOC로 권장 300 LOC를 넘지만, Issue #34에서 exact-SHA close gate까지 승인·검증한 orchestration과 fail-closed evidence 경계를 그대로 가져온 결과다. #19에서 구조를 다시 나누면 검증된 workflow를 변경하므로 Stage 4.3에서는 분리하지 않고 후속 전용 구조 개선 판단으로 남긴다.
+- merge commit을 새 exact-SHA candidate로 `publish/task19`에 non-force push한 뒤 CI와 desktop artifact workflow를 처음부터 다시 실행한다. 성공한 같은 SHA의 Linux x64 artifact만 Linux GUI acceptance에 전달하고 evidence를 read-back한다.
+
+### 검증
+
+Stage 4.3 merge commit 전 현재 macOS 호스트에서:
+
+```bash
+node --test tests/linux-gui-workflow.test.mjs
+pnpm run test:gui:contracts
+pnpm run test:gui:linux:contracts
+pnpm run typecheck:gui
+actionlint .github/workflows/alhangeul-linux-gui.yml .github/workflows/alhangeul-desktop.yml
+pnpm run check:product-boundary
+pnpm run test:automation
+pnpm run test:upstream
+pnpm run test:studio
+pnpm run build:studio
+git diff --check
+```
+
+Stage 4.3 merge commit 뒤 새 exact SHA에서:
+
+```bash
+gh workflow run ci.yml --ref publish/task19
+gh workflow run alhangeul-desktop.yml --ref publish/task19 \
+  -f build_ref={exact_sha} -f run_tests=true
+gh workflow run alhangeul-linux-gui.yml --ref publish/task19 \
+  -f build_ref={exact_sha} -f native_run_id={artifact_run_id}
+```
+
+CI와 desktop artifact workflow가 성공한 뒤 Linux GUI acceptance의 두 phase와 6개 scenario manifest, PDF 분석과 evidence upload를 확인한다. Windows #19 고유 수동 gate 전에는 Stage 4를 완료 처리하지 않는다.
+
+### 커밋
+
+```text
+Task #19 [Stage 4.3]: Issue #34 acceptance 기준 통합
+```
+
 ## 통합 검증
 
 - 각 Stage focused test와 `git diff --check`를 해당 단계 보고서 작성 전에 실행한다.
