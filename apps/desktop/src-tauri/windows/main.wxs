@@ -87,39 +87,24 @@
         <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1"/>
         <CustomAction Id="LaunchApplication" Impersonate="yes" FileKey="Path" ExeCommand="[LAUNCHAPPARGS]" Return="asyncNoWait" />
         <Property Id="ALHANGEUL_FAIL_THUMBNAIL_INSTALL" Secure="yes" />
-        <SetProperty
-            Id="RollbackThumbnailRegistration"
-            Value="&quot;[System64Folder]regsvr32.exe&quot; /s /u &quot;[INSTALLDIR]AlhangeulThumbnailHandler.dll&quot;"
-            Before="RollbackThumbnailRegistration"
-            Sequence="execute" />
         <CustomAction
             Id="RollbackThumbnailRegistration"
             Directory="INSTALLDIR"
-            ExeCommand="[CustomActionData]"
+            ExeCommand="&quot;[System64Folder]regsvr32.exe&quot; /s /u &quot;[INSTALLDIR]AlhangeulThumbnailHandler.dll&quot;"
             Execute="rollback"
             Impersonate="no"
             Return="ignore" />
-        <SetProperty
-            Id="InstallThumbnailRegistration"
-            Value="&quot;[System64Folder]regsvr32.exe&quot; /s &quot;[INSTALLDIR]AlhangeulThumbnailHandler.dll&quot;"
-            Before="InstallThumbnailRegistration"
-            Sequence="execute" />
         <CustomAction
             Id="InstallThumbnailRegistration"
             Directory="INSTALLDIR"
-            ExeCommand="[CustomActionData]"
+            ExeCommand="&quot;[System64Folder]regsvr32.exe&quot; /s &quot;[INSTALLDIR]AlhangeulThumbnailHandler.dll&quot;"
             Execute="deferred"
             Impersonate="no"
             Return="check" />
-        <SetProperty
-            Id="UninstallThumbnailRegistration"
-            Value="&quot;[System64Folder]regsvr32.exe&quot; /s /u &quot;[INSTALLDIR]AlhangeulThumbnailHandler.dll&quot;"
-            Before="UninstallThumbnailRegistration"
-            Sequence="execute" />
         <CustomAction
             Id="UninstallThumbnailRegistration"
             Directory="INSTALLDIR"
-            ExeCommand="[CustomActionData]"
+            ExeCommand="&quot;[System64Folder]regsvr32.exe&quot; /s /u &quot;[INSTALLDIR]AlhangeulThumbnailHandler.dll&quot;"
             Execute="deferred"
             Impersonate="no"
             Return="check" />

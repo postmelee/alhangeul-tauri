@@ -143,10 +143,18 @@ test('MSI thumbnail 등록은 64-bit regsvr32 deferred/rollback transaction이�
   ]) {
     assert.ok(wixTemplate.includes(marker), `MSI thumbnail 계약이 필요합니다: ${marker}`);
   }
-  assert.equal((wixTemplate.match(/ExeCommand="\[CustomActionData\]"/g) ?? []).length, 3);
   assert.equal(
-    (wixTemplate.match(/<SetProperty\s+Id="(?:Rollback|Install|Uninstall)ThumbnailRegistration"/g) ?? []).length,
+    (
+      wixTemplate.match(
+        /ExeCommand="&quot;\[System64Folder\]regsvr32\.exe&quot; \/s(?: \/u)? &quot;\[INSTALLDIR\]AlhangeulThumbnailHandler\.dll&quot;"/g,
+      ) ?? []
+    ).length,
     3,
+  );
+  assert.doesNotMatch(wixTemplate, /ExeCommand="\[CustomActionData\]"/);
+  assert.doesNotMatch(
+    wixTemplate,
+    /<SetProperty\s+Id="(?:Rollback|Install|Uninstall)ThumbnailRegistration"/,
   );
   assertOrdered(wixTemplate, [
     'Action="RollbackThumbnailRegistration" After="InstallFiles"',
