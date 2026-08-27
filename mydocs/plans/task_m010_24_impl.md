@@ -14,6 +14,7 @@ GitHub Issue: [#24](https://github.com/postmelee/alhangeul-tauri/issues/24)
 | 4 | Windows x64 native·GUI 수용 | MSI·NSIS 및 대표 문서 GUI 증적 | 저장·PDF·인쇄·toolbar·drag-in |
 | 5 | Linux native·GUI 수용과 공식 증적 | Linux x64 GUI, arm64 한계, 공식 운영 문서 | bundle·PDF·인쇄·문서 정합성 |
 | 6 | 최종 gate와 candidate handoff 종료 | final CI, path audit, 최종 보고·Task PR | 실행 가능 SHA 계승·전체 경계 확인 |
+| 7 | 최신 `devel` 재통합과 릴리스 범위 재정렬 | non-force merge, 충돌 해결, PR head 갱신 | 플랫폼 중립 gate·exact-head CI 1회 |
 
 각 Stage가 끝나면 `task-stage-report` 절차로 `mydocs/working/task_m010_24_stage{N}.md`를 작성하고 해당 Stage 산출물과 함께 커밋한다. 검증 실패나 수행계획서 밖 변경이 필요하면 보고서·커밋을 만들지 않고 같은 Stage에서 원인을 분석한 뒤 계획 보정 승인을 요청한다.
 
@@ -25,8 +26,8 @@ GitHub Issue: [#24](https://github.com/postmelee/alhangeul-tauri/issues/24)
 | 개발·재현 절차 | `docs/` | `docs/DEVELOPMENT.md` | OK | candidate 갱신 후 실제 검증과 대조 |
 | upstream 소유 경계 | `docs/architecture/` | `docs/architecture/UPSTREAM.md` | OK | Stage 5에서 최종 pin·수용 경계 확정 |
 | desktop release 증적 | `docs/operations/` | `docs/operations/DESKTOP_RELEASE.md` | OK | Stage 5에서 새 exact-SHA 결과 추가 |
-| 단계 증적 | `mydocs/working/` | `mydocs/working/task_m010_24_stage{1..6}.md` | OK | 실행 결과와 승인 handoff |
-| 최종 보고 | `mydocs/report/` | `mydocs/report/task_m010_24_report.md` | OK | Stage 6 뒤 `task-final-report` 적용 |
+| 단계 증적 | `mydocs/working/` | `mydocs/working/task_m010_24_stage{1..7}.md` | OK | 실행 결과와 승인 handoff |
+| 최종 보고 | `mydocs/report/` | `mydocs/report/task_m010_24_report.md` | OK | Stage 7 재통합 결과까지 보정 |
 
 새 공식 문서나 `mydocs/manual` 문서는 만들지 않는다. candidate allowlist 밖 공식 문서가 필요하면 먼저 수행계획서를 보정한다.
 
@@ -40,6 +41,8 @@ GitHub Issue: [#24](https://github.com/postmelee/alhangeul-tauri/issues/24)
 - Codespaces는 Task #24의 일회성 수동 native 수용 환경일 뿐 Task #34·#35의 GUI acceptance 자동화나 공식 workflow gate를 대신하지 않는다. Task #24에는 Codespaces 설정·harness·workflow를 제품 소스로 추가하지 않고, 환경 또는 GTK·CUPS native dialog 제약으로 필수 시나리오를 관찰할 수 없으면 성공으로 완화하지 않는다.
 - 원격 workflow는 Stage 3 승인을 받은 뒤 `publish/task24` canary ref에서만 실행한다. release/tag, GitHub Release, 서명, package 게시와 updater는 실행하지 않는다.
 - Stage 3 native SHA 뒤 실행 코드·workflow·generated artifact가 바뀌면 CI와 native matrix를 새 exact SHA에서 다시 실행한다. Stage 보고·공식 증적 문서만 바뀌면 path audit으로 실행 가능 SHA 계승을 입증한다.
+- Stage 7 입력은 기존 PR head `d707322e9157c53ae75451b64c600b2fcbc34514`와 최신 `origin/devel` `424bb9c43769d2d92fcfede6b7ddd13bba7561d0`이다. 전진한 `devel`은 Task #34 GUI acceptance workflow·harness·root 개발 의존성과 운영 증적만 추가했고 제품 runtime·Tauri package·Cargo·bundled Studio·`rhwp` pin과 겹치지 않는다.
+- Stage 7은 플랫폼 중립 전체 gate와 merge commit exact-head CI 1회로 통합을 판정한다. native·GUI 재실행은 제품 runtime 변경이 새로 발견된 경우에만 이 Stage에서 다시 승인받고, 그렇지 않으면 #45·#16을 포함한 최종 릴리스 후보 gate에서 한 번 수행한다.
 - 임시 artifact는 `mktemp -d`의 명시 경로에만 내려받고 inventory 재검증 뒤 그 임시 경로만 정리한다. artifact를 release asset이나 영구 다운로드 경로로 옮기지 않는다.
 
 ## Stage 1 — candidate 채택과 provenance·source diff 감사
@@ -319,6 +322,51 @@ Task #24 Stage 6: v0.8.4 최종 수용 경계 확정
 
 최종 보고 커밋과 PR 게시 메시지는 `task-final-report` 절차를 따른다.
 
+## Stage 7 — 최신 `devel` 재통합과 릴리스 범위 재정렬
+
+### 산출물
+
+- `origin/devel`을 두 번째 parent로 보존하는 Task #24 merge commit
+- 과거 오늘할일과 automation test 충돌 해결
+- Task #24 수행계획서·구현계획서·최종 보고서 보정
+- `mydocs/orders/20260827.md`
+- `mydocs/working/task_m010_24_stage7.md`
+- 기존 PR #37의 non-force fast-forward head와 exact-SHA CI check
+
+### 변경 내용
+
+- rebase, cherry-pick, squash와 force push 없이 최신 `devel`을 `local/task24`에 일반 merge한다.
+- `mydocs/orders/20260815.md`는 최신 `devel`의 당시 보류 기록을 보존하고 과거 일일 상태를 완료로 다시 쓰지 않는다.
+- `tests/rhwp-sync-changes.test.mjs`와 `tests/rhwp-sync-pr-body.test.mjs`는 최신 `devel`의 동등한 절대 경로 기대를 유지한다.
+- `docs/operations/DESKTOP_RELEASE.md`의 Task #24 v0.8.4 native 수용 증적과 Task #34 Linux exact-SHA GUI acceptance 운영 절차를 모두 보존한다.
+- 리뷰에서 확인된 Save As 암호 dialog 파일명, 암호 추가·제거 UX, pagination helper 중복, PDF flush와 중복 인쇄 status는 이번 재통합에서 제품 코드로 확장하지 않고 최종 보고서의 잔여 위험·후속 범위로 승계한다.
+- #34는 최신 `devel`에 병합된 입력으로 유지한다. #14 Windows thumbnail, #17 Linux thumbnail과 #35 Windows GUI 자동화는 첫 릴리스에서 보류한다. 후속 순서는 #24 merge → #45 Pages → #16 MSI·NSIS·AppImage updater → 최종 릴리스 후보 gate로 고정한다.
+
+### 검증
+
+```bash
+pnpm install --frozen-lockfile
+pnpm run check:product-boundary
+pnpm run check:product-version
+pnpm run check:release-metadata
+pnpm run check:rhwp-pin
+pnpm run typecheck:gui
+pnpm run test:automation
+pnpm run test:upstream
+pnpm run test:studio
+pnpm run build:studio
+git diff --check
+git status --short
+```
+
+local gate 통과 뒤 merge commit을 `publish/task24`에 non-force push하고 그 40자리 exact SHA로 `ci.yml`을 한 번만 dispatch한다. 실패하면 같은 입력을 반복 실행하지 않고 원인을 먼저 분류한다. native와 GUI workflow는 Stage 7에서 dispatch하지 않는다.
+
+### 커밋
+
+```text
+Task #24 Stage 7: 최신 devel 재통합과 릴리스 범위 재정렬
+```
+
 ## 검증
 
 - 각 Stage 검증은 단계 보고서 작성 전에 통과해야 한다.
@@ -341,6 +389,7 @@ Task #24 Stage 6: v0.8.4 최종 수용 경계 확정
 - Stage 4는 Stage 3 Windows artifact·checksum을 고정 입력으로 사용한다.
 - Stage 5는 Stage 3 Linux artifact와 Stage 4의 공통 GUI 판정 기준을 사용한다.
 - Stage 6은 Windows/Linux 수용이 모두 Go이거나 명시적으로 승인된 한계가 정리된 뒤 진행한다.
+- Stage 7은 PR #37이 최신 `devel`과 충돌한 상태를 입력으로 하며, 제품 runtime 비중첩과 작업지시자의 2026-08-27 승인을 전제로 진행한다.
 
 ## 위험과 대응
 
@@ -350,6 +399,8 @@ Task #24 Stage 6: v0.8.4 최종 수용 경계 확정
 - **native 비용과 실패 반복**: 플랫폼 중립 CI 성공 뒤 한 exact SHA에서 native matrix를 한 번 실행하고 실패 job부터 분석한다.
 - **GUI 환경 제약**: 자동 package smoke와 실제 GUI를 분리해 기록하고 실행하지 않은 platform·driver를 명시한다.
 - **중복 candidate PR**: PR #32를 immutable draft로 유지하고 Task #24 PR이 안전하게 게시되기 전에는 close하지 않는다.
+- **Stage 7 통합 drift**: 예상 충돌 3개 밖에서 제품 runtime·pin 의미 충돌이 발견되면 merge commit을 만들지 않고 중단한다.
+- **반복 Actions 비용**: Stage 7 exact-head CI는 1회로 제한하고 native·GUI gate를 재실행하지 않는다. 최종 릴리스 후보가 모든 배포 형식을 포함한 뒤 한 번만 새 native 입력을 만든다.
 
 ## 승인 요청 사항
 
@@ -359,5 +410,6 @@ Task #24 Stage 6: v0.8.4 최종 수용 경계 확정
 - Stage 4·5의 Windows x64/Linux x64 수동 GUI gate와 Linux arm64 build-only 한계
 - Stage 3 native SHA 이후 docs/report-only 변경은 path audit으로 계승하되 실행 경계가 바뀌면 native를 재실행하는 정책
 - Stage 6 Task PR 전까지 PR #32를 immutable draft로 유지하는 candidate 처리 순서
+- Stage 7에서 최신 `devel`을 일반 merge하고 플랫폼 중립 gate·exact-head CI 1회로 PR #37을 재활성화하는 범위
 
-승인되면 Stage 1의 read-only 불변성 확인부터 시작하며, candidate merge와 Stage 1 보고서 커밋은 그 확인이 모두 통과한 경우에만 수행한다.
+Stage 7은 2026-08-27 작업지시자 승인으로 진행하며, 이 Stage 완료 뒤 PR merge와 Issue close는 별도 승인을 기다린다.

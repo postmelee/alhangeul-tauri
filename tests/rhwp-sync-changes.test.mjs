@@ -41,7 +41,7 @@ test('tracked·untracked changed path를 정렬한 exact allowlist로 쓴다', a
     writeFile: async (path, source) => writes.push([path, source]),
   });
   assert.deepEqual(result, ['README.md', 'rhwp-core.lock']);
-  assert.deepEqual(writes, [[output, 'README.md\nrhwp-core.lock\n']]);
+  assert.deepEqual(writes, [[resolve('/tmp/changed.txt'), 'README.md\nrhwp-core.lock\n']]);
   assert.ok(calls.includes('diff --check'));
 });
 

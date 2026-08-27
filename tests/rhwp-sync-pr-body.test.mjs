@@ -50,7 +50,7 @@ test('changed paths 파일을 읽어 output에 deterministic 본문을 쓴다', 
   });
 
   assert.equal(writes.length, 1);
-  assert.equal(writes[0][0], output);
+  assert.equal(writes[0][0], resolve('/tmp/pr-body.md'));
   assert.equal(writes[0][1], body);
   assert.ok(body.indexOf('- `README.md`') < body.indexOf('- `third_party/rhwp`'));
 });
