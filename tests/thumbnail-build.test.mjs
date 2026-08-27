@@ -73,7 +73,7 @@ test('handler는 protocol-only이고 worker만 render dependency를 사용한다
   assert.doesNotMatch(worker, /\bwindows-sys\s*=/);
 });
 
-test('document preview raster는 text, system font와 licensed 한글 fallback을 직접 소유한다', async () => {
+test('document preview raster는 text와 licensed 한글 fallback을 직접 소유한다', async () => {
   const [manifest, renderer, fontManifest, desktopConfig] = await Promise.all([
     readFile(join(repoRoot, 'crates/document-preview/Cargo.toml'), 'utf8'),
     readFile(join(repoRoot, 'crates/document-preview/src/render.rs'), 'utf8'),
@@ -82,9 +82,9 @@ test('document preview raster는 text, system font와 licensed 한글 fallback�
   ]);
   assert.match(
     manifest,
-    /features\s*=\s*\["raster-images",\s*"system-fonts",\s*"text"\]/,
+    /features\s*=\s*\["raster-images",\s*"text"\]/,
   );
-  assert.match(renderer, /fontdb\.load_system_fonts\(\)/);
+  assert.doesNotMatch(renderer, /fontdb\.load_system_fonts\(\)/);
   assert.match(renderer, /NotoSansKR-Regular\.ttf/);
   assert.match(renderer, /NotoSansKR-ExtraLight\.ttf/);
   assert.match(renderer, /fontdb,\s*\.\.Default::default\(\)/);

@@ -2,7 +2,7 @@
 
 Alhangeul은 Windows Explorer가 `.hwp`와 `.hwpx` 파일의 첫 페이지 thumbnail을 요청할 때 작은 COM handler DLL과 제한된 별도 worker를 사용한다. 문서 parse와 raster는 Shell process 안에서 실행하지 않는다.
 
-현재 source 계약과 hosted Windows x64 자동 gate는 COM activation, 실제 HWP/HWPX Shell bitmap 반환, MSI·NSIS 등록·복원까지 통과했다. 다만 Stage 6 VDI 수동 UI에서 일부 문서의 직접 bitmap에 text가 빠지는 결함을 확인해 Stage 6.1에서 font-aware raster와 representative visual gate를 보정하고 있다. 수정본의 Windows 자동 gate와 Explorer 재수용이 끝나기 전에는 공개 installer나 release 완료로 보지 않는다.
+Stage 6 VDI 수동 UI에서 일부 문서의 직접 bitmap에 text가 빠지는 결함을 확인해 Stage 6.1에서 font-aware raster와 representative visual gate를 보정하고 있다. 첫 수정본은 대표 3문서 visual gate와 Windows/Linux native build를 통과했지만, 일회성 Windows worker가 system font directory를 스캔하면서 fresh-install HWPX Shell 요청에 handler의 1,500 ms·256 MiB 제한 안에서 결과를 주지 못했다. worker를 번들 font database로 한정한 수정본의 Windows 자동 gate와 Explorer 재수용이 끝나기 전에는 공개 installer나 release 완료로 보지 않는다.
 
 ## 고정 계약
 
@@ -50,7 +50,7 @@ handler가 bitmap을 만들 수 없으면 실패 HRESULT를 반환한다. 이때
 - stdin으로 고정 header와 문서 bytes를 받고 stdout으로 고정 frame만 보낸다.
 - `crates/document-preview`의 bounds, protocol과 render 기능을 사용한다.
 - 현재 Stable pin의 native `rhwp`로 직접 첫 페이지 SVG를 만들고 BGRA로 raster한다.
-- SVG parse 시 Windows system font를 읽고 pinned `rhwp`의 NotoSansKR TTF를 process-local fallback으로 등록한다.
+- SVG parse 시 pinned `rhwp`의 NotoSansKR TTF만 process-local font database에 등록한다.
 - 문서의 유효한 embedded preview가 있으면 먼저 제한된 후보 frame을 보낸다.
 - 직접 render 결과나 명시적 실패를 보낸 뒤 종료한다.
 
@@ -60,10 +60,10 @@ worker executable은 handler DLL과 같은 설치 디렉터리에 있어야 한�
 
 `rhwp`가 만든 SVG는 원본 HWP family와 대체 family 목록을 포함한다. rasterizer는 이를 해석할 실제 font database를 명시적으로 제공해야 하며 빈 기본 database로 parse하지 않는다.
 
-- 설치된 Windows system font를 먼저 등록해 원본 family가 있으면 그대로 사용한다.
-- pinned `third_party/rhwp/ttfs/opensource`의 `NotoSansKR-Regular.ttf`와 `NotoSansKR-ExtraLight.ttf`를 worker에 compile-time 포함해 설치 경로나 current directory와 무관한 한글 fallback을 보장한다.
+- 일회성 worker는 설치된 system font directory를 스캔하지 않는다. 이는 문서마다 새 process를 시작하는 현재 격리 모델에서 1,500 ms cold-start 한도를 지키기 위한 경계이며 desktop editor·PDF의 system font 우선 규칙에는 영향을 주지 않는다.
+- pinned `third_party/rhwp/ttfs/opensource`의 `NotoSansKR-Regular.ttf`와 `NotoSansKR-ExtraLight.ttf`를 worker에 compile-time 포함해 설치 경로나 current directory와 무관한 한글 glyph를 보장한다.
 - 두 TTF의 고정 SHA-256, 저작권과 SIL OFL 1.1은 `assets/fonts/FONTS.md`에 기록하고 desktop bundle의 `licenses/fonts/`에 manifest와 license 원문을 함께 포함한다.
-- generic serif, sans-serif와 monospace는 font database에 실제 존재하는 family만 선택한다.
+- 원본 family가 worker database에 없으면 SVG text는 실제 등록된 Noto Sans KR family로 해석한다. generic serif, sans-serif와 monospace도 같은 실존 family를 사용한다.
 - 한컴·HY·Microsoft proprietary font file은 제품에 복사하거나 번들하지 않는다. 원본 font가 없을 때 metric과 줄바꿈은 fallback 차이의 영향을 받을 수 있다.
 - HWP/HWPX 대표 fixture는 SVG의 text/image node inventory와 text·background·table 영역의 non-white pixel을 함께 검사한다. 성공 HRESULT, bitmap 크기와 alpha만으로 visual 성공을 판정하지 않는다.
 

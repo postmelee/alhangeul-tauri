@@ -28,8 +28,9 @@ glyph를 보존하도록 pinned `third_party/rhwp`의 다음 TTF를 변환·개�
 | `ttfs/opensource/NotoSansKR-ExtraLight.ttf` | `rhwp` v0.8.2, commit `9b16aa9e23f476e2b335d7c029fc9f24a199d63c` | `67b4003e2be99ea44a7c957e4b35acde1b5e6e82a54fe195c5598c3c617bc2e3` | Copyright 2014–2021 Adobe, Reserved Font Name `Source`. `licenses/NotoSansKR-OFL-1.1.txt` |
 
 두 TTF는 SIL OFL 1.1이며 폰트 자체를 단독 판매하지 않는다. 배포 bundle에는 이 manifest와 기존
-Noto Sans KR OFL 원문이 함께 들어간다. worker는 system font를 우선하고 이 파일은 process-local
-fallback으로만 등록한다.
+Noto Sans KR OFL 원문이 함께 들어간다. 일회성 thumbnail worker는 1,500 ms cold-start 한도를
+지키기 위해 system font directory를 스캔하지 않고 두 파일만 process-local font database에
+등록한다. 이 경계는 desktop editor·PDF의 system font 해석 규칙과 별개다.
 
 ## Studio 웹폰트
 

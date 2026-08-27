@@ -106,10 +106,7 @@ pub fn rasterize_first_page(bytes: &[u8], requested_edge: u32) -> Result<Bitmap,
 fn svg_parse_options() -> resvg::usvg::Options<'static> {
     let fontdb = font_database();
     resvg::usvg::Options {
-        font_family: first_existing_family(
-            &fontdb,
-            &["Malgun Gothic", "맑은 고딕", "Noto Sans KR"],
-        ),
+        font_family: first_existing_family(&fontdb, &["Noto Sans KR", "NotoSansKR"]),
         languages: vec!["ko-KR".to_string(), "ko".to_string(), "en".to_string()],
         fontdb,
         ..Default::default()
@@ -121,34 +118,13 @@ fn font_database() -> Arc<resvg::usvg::fontdb::Database> {
 
     Arc::clone(FONT_DATABASE.get_or_init(|| {
         let mut fontdb = resvg::usvg::fontdb::Database::new();
-        fontdb.load_system_fonts();
         fontdb.load_font_data(NOTO_SANS_KR_REGULAR.to_vec());
         fontdb.load_font_data(NOTO_SANS_KR_EXTRA_LIGHT.to_vec());
 
-        let serif = first_existing_family(
-            &fontdb,
-            &["Batang", "바탕", "Noto Serif CJK KR", "Noto Sans KR"],
-        );
-        let sans = first_existing_family(
-            &fontdb,
-            &[
-                "Malgun Gothic",
-                "맑은 고딕",
-                "Noto Sans CJK KR",
-                "Noto Sans KR",
-            ],
-        );
-        let monospace = first_existing_family(
-            &fontdb,
-            &[
-                "D2Coding",
-                "GulimChe",
-                "굴림체",
-                "Consolas",
-                "DejaVu Sans Mono",
-                "Noto Sans KR",
-            ],
-        );
+        let bundled_families = ["Noto Sans KR", "NotoSansKR"];
+        let serif = first_existing_family(&fontdb, &bundled_families);
+        let sans = first_existing_family(&fontdb, &bundled_families);
+        let monospace = first_existing_family(&fontdb, &bundled_families);
         fontdb.set_serif_family(serif);
         fontdb.set_sans_serif_family(sans);
         fontdb.set_monospace_family(monospace);

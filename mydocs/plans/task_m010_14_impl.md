@@ -44,7 +44,7 @@ GitHub Issue: [#14](https://github.com/postmelee/alhangeul-tauri/issues/14)
 - Cargo는 workspace root 밖의 package를 member로 허용하지 않으므로 `apps/desktop/src-tauri`는 기존 standalone package로 유지한다. 공유 crate는 path dependency로 연결해 기존 desktop `Cargo.lock`, `target/` 위치와 `cargo test` 의미를 보존한다.
 - 공유 crate 자체 검증은 standalone manifest와 desktop target directory를 명시한다. Stage 3의 worker/handler도 독립 manifest로 추가하고 desktop workspace member로 편입하지 않는다.
 - `crates/document-preview`는 protocol/limits를 기본 제공하고 `render` feature에서만 `rhwp`, `resvg`, `image`를 활성화한다. Desktop과 worker는 `render`를 사용하고 COM DLL은 protocol/limits만 사용한다.
-- `resvg`의 text·system-fonts·raster-images feature는 `rhwp`의 transitive dependency에 기대지 않고 공유 crate가 명시적으로 소유한다. SVG raster options는 빈 기본 font database를 사용하지 않고 Windows system font와 pinned `rhwp`의 `ttfs/opensource` NotoSansKR TTF를 process-local로 등록한다.
+- `resvg`의 text·raster-images feature는 `rhwp`의 transitive dependency에 기대지 않고 공유 crate가 명시적으로 소유한다. SVG raster options는 빈 기본 font database를 사용하지 않고 pinned `rhwp`의 `ttfs/opensource` NotoSansKR TTF를 process-local로 등록한다. 일회성 Windows worker는 system font directory를 스캔하지 않는다.
 - SVG가 이미 포함하는 HWP family별 fallback chain을 유지하고, generic serif/sans/monospace는 실제 등록된 family로만 설정한다. proprietary 한컴·HY·Microsoft font file은 번들하지 않는다.
 - desktop `render_document_preview`는 공유 direct SVG API를 호출하되 worker protocol이나 Windows type을 알지 못한다.
 - `third_party/rhwp`는 workspace member로 편입하거나 수정하지 않고 현재 pin을 유지한다.
@@ -427,7 +427,7 @@ Task #14 Stage 6: Windows Explorer exact-SHA thumbnail 수용 확정
 - 참조 source는 `postmelee/alhangeul-macos` commit `7162a80fdadf4e121623be1da9c1a7d933ef0fac`으로 고정하고 읽기만 한다.
 - `Sources/ThumbnailExtension/HwpThumbnailProvider.swift`의 aspect-fit, `Sources/Shared/HwpPageImageRenderer.swift`의 first-page native render, `Sources/RhwpCoreBridge/FontResourceRegistry.swift`의 process-local bundled font 등록, `FontFallback.swift`의 실존 family fallback, `mydocs/tech/skia_preview_renderer_baseline.md`의 구조 누락 hard-fail 원칙을 Windows에 이식한다.
 - Swift CoreGraphics/CoreText compositor와 Finder 전용 cache는 Windows에 복사하지 않는다. Windows는 승인된 SVG→BGRA worker와 Explorer cache 소유권을 유지하고, 같은 원칙을 `resvg/fontdb`와 Rust fixture gate로 구현한다.
-- macOS WOFF2 35개를 중복 복사하지 않는다. Windows system font를 우선하고 pinned `rhwp`가 이미 보유한 SIL OFL NotoSansKR TTF 2개를 worker binary에 compile-time fallback으로 포함해 설치 위치·current directory와 무관하게 한글 glyph를 확보한다.
+- macOS WOFF2 35개를 중복 복사하지 않는다. pinned `rhwp`가 이미 보유한 SIL OFL NotoSansKR TTF 2개를 worker binary에 compile-time 포함해 설치 위치·current directory와 무관하게 한글 glyph를 확보한다. 문서마다 새 process를 시작하는 Windows worker는 cold-start deadline을 위해 system font directory를 스캔하지 않는다.
 
 ### 산출물
 
@@ -445,8 +445,8 @@ Task #14 Stage 6: Windows Explorer exact-SHA thumbnail 수용 확정
 
 ### 변경 내용
 
-- `resvg` text·system-fonts·raster-images feature를 직접 고정하고 SVG parse options에 system font와 pinned NotoSansKR fallback을 등록한다.
-- generic family는 font database에 실재하는 Windows family를 먼저 선택하고 pinned NotoSansKR을 최종 fallback으로 둔다. SVG의 explicit HWP family fallback chain과 원본 page aspect ratio는 변경하지 않는다.
+- `resvg` text·raster-images feature를 직접 고정하고 SVG parse options에 pinned NotoSansKR font database를 등록한다.
+- generic family와 worker database에 없는 원본 family는 실제 등록된 NotoSansKR로 해석한다. SVG의 원본 page aspect ratio는 변경하지 않는다. desktop editor·PDF의 system font 우선 규칙은 별도 경계로 유지한다.
 - 온새미로 HWP, `biz_plan.hwp`, `form-002.hwpx` 첫 페이지에서 text/image node inventory와 text-only 영역의 non-white pixel을 검증한다. 단순 `HRESULT=S_OK`, byte 길이, alpha·dimension만으로 visual 성공을 판정하지 않는다.
 - incomplete direct bitmap을 preview보다 우선하는 현 결함은 raster가 대표 구조를 보존하도록 고친다. stale preview보다 current direct를 우선하는 Issue #14 계약 자체는 유지한다.
 - worker cold font load의 deadline·256 MiB Job cap, binary/installer 크기와 exact artifact digest를 다시 측정한다.
@@ -479,6 +479,7 @@ pnpm run clippy:thumbnail-handler:windows
 - VDI 수동 gate는 새 NSIS 설치 뒤 온새미로, `biz_plan`, `form-002`의 text/background/table 보존과 HWP/HWPX aspect ratio만 우선 확인한다. registry/process/cache의 복잡한 확인은 automation 증적으로 대체하고 작업지시자에게 요구하지 않는다.
 - 첫 candidate `b80cc10a226876abb826dce4b71ba0c866562104`의 CI run `33041176530`과 desktop run `33041178548`에서 온새미로 title/background와 `biz_plan` title 검사는 통과했지만 `biz_plan` 날짜 영역을 실제 SVG baseline 53.4%와 다른 35–50%로 지정해 실패했다. 날짜 영역을 50–56%로 보정하고 세 대표 문서를 독립 test로 분리한 뒤 새 exact SHA gate를 실행한다.
 - 두 번째 candidate `65860cf89e97ba8530b5d363b650c0f47d80b29e`의 CI run `33041482402`에서 대표 3개 visual test는 모두 통과했고, 최신 Clippy가 `usvg::Options`의 default 생성 뒤 field 재할당을 거부했다. 동일 options를 구조체 초기화식으로 표현해 기능 변경 없이 lint를 보정한다.
+- 세 번째 candidate `9c3d4f5e6fa79666af468cee4e80c29574a6f0ee`의 CI run `33041764734`와 desktop run `33041768181`에서 대표 3문서 visual gate, Windows/Linux build, Windows core probe와 artifact inventory는 통과했다. 그러나 fresh-install smoke job `98424713452`에서 MSI·NSIS 설치·등록·제거는 정상인 반면 embedded preview가 없는 HWPX 실제 Shell 요청이 각각 `0x8004b200`, `0x80040154`로 실패했다. 정상 문서의 native SVG 생성은 최대 83 ms·13,348,864 bytes였고 새 raster 단계와 기존 worker의 차이는 전체 system font database 구성이다. handler가 worker 오류를 단일 `E_FAIL`로 축약해 deadline과 Job memory 중 어느 제한인지는 진단만으로 구분할 수 없으므로, macOS 참조의 process-local bundled font 원칙을 더 엄격히 적용해 worker database를 두 NotoSansKR TTF로 한정하고 같은 exact-SHA gate를 반복한다.
 
 ### 커밋
 

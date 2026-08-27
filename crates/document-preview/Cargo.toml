@@ -13,7 +13,7 @@ render = ["dep:image", "dep:resvg", "dep:rhwp"]
 [dependencies]
 blake3 = "1"
 image = { version = "0.25", optional = true, default-features = false, features = ["bmp", "gif", "jpeg", "png"] }
-resvg = { version = "0.45", optional = true, default-features = false, features = ["raster-images", "system-fonts", "text"] }
+resvg = { version = "0.45", optional = true, default-features = false, features = ["raster-images", "text"] }
 rhwp = { path = "../../third_party/rhwp", optional = true }
 
 [dev-dependencies]
