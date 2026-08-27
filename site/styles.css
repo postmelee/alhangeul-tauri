@@ -67,7 +67,7 @@ button { font: inherit; }
 .updates-hero { width: min(980px, calc(100% - 40px)); margin: auto; padding: 94px 0 42px; text-align: center; }
 .updates-hero h1 { margin: 0; font-size: 72px; font-weight: 650; line-height: 1.06; }
 .updates-hero > p { max-width: 720px; margin: 22px auto 0; color: var(--muted); font-size: 21px; line-height: 1.5; }
-.updates-actions { display: flex; justify-content: center; gap: 12px; margin-top: 30px; }
+.updates-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 30px; }
 .page-action-button, .page-secondary-link { display: flex; min-height: 42px; align-items: center; justify-content: center; padding: 0 20px; border-radius: 999px; font-size: 15px; font-weight: 600; line-height: 1; text-decoration: none; }
 .page-action-button { gap: 8px; border: 0; background: var(--blue); color: white; cursor: pointer; list-style: none; }
 .page-action-button::-webkit-details-marker { display: none; }
@@ -135,7 +135,7 @@ a.download-option:hover { background: var(--blue-soft); }
     .updates-hero { padding: 72px 0 42px; }
     .updates-hero h1 { font-size: 40px; }
     .updates-hero > p { font-size: 18px; line-height: 1.5; }
-    .updates-actions { justify-content: flex-start; }
+    .updates-actions { justify-content: center; }
     .page-action-button, .page-secondary-link { padding: 0 16px; font-size: 14px; }
     .download-options { width: min(310px, calc(100vw - 40px)); }
     .install-format-list p { grid-template-columns: 1fr; gap: 4px; }
@@ -147,4 +147,10 @@ a.download-option:hover { background: var(--blue-soft); }
 }
 @media (max-height: 699px) { .home-page { overflow: auto; } .home-main { height: auto; min-height: 648px; } }
 @media (max-width: 420px) { .install-grid { gap: 6px; } .install-link { padding: 8px 10px; } }
+@media (max-width: 340px) {
+    .updates-actions { flex-direction: column; align-items: center; }
+    .download-picker { width: 100%; }
+    .download-picker .page-action-button { width: max-content; margin-inline: auto; }
+    .download-options { position: static; width: 100%; margin-top: 8px; transform: none; }
+}
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; } }

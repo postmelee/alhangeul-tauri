@@ -27,6 +27,11 @@ Stage 3.2 피드백 보정에서는 홈 제목을 단어 중간 줄바꿈이 생
 꺾쇠는 16×16 SVG 아이콘으로 교체하고 flex 중앙 정렬과 열림 상태 회전을 유지했다. 지원 범위
 검사에서 발견한 platform 전용 font alias는 제거했으며 `system-ui` 렌더링은 그대로 유지한다.
 
+Stage 3.3 피드백 보정에서는 820px 이하에서 왼쪽 정렬되던 updates action group을 중앙 정렬하고
+줄바꿈 가능한 flex로 바꿨다. 340px 이하에서는 dropdown을 문서 흐름 안에서 펼쳐 GitHub Releases
+버튼을 덮지 않게 했다. 홈·updates·feedback을 340·390·666·820px에서 요소 단위로 검사해 header,
+본문, action, contact card와 footer가 viewport 밖으로 벗어나지 않음을 확인했다.
+
 ## 산출물
 
 | 파일 | 변경 요약 |
@@ -34,13 +39,13 @@ Stage 3.2 피드백 보정에서는 홈 제목을 단어 중간 줄바꿈이 생
 | `site/index.html` (79줄) | 단어 중간 줄바꿈 없는 3줄 제목, Windows/Linux 실제 화면, 5개 플랫폼별 설치 안내로 홈 재구성 |
 | `site/updates/index.html` (85줄) | 참고 페이지 구조의 hero, SVG 꺾쇠가 있는 플랫폼 다운로드 dropdown, 설치 형식·릴리즈 노트·manifest 안내 |
 | `site/feedback/index.html` (51줄) | 개인정보 주의, email 복사/작성, GitHub Issue와 rhwp upstream 분류 안내 |
-| `site/styles.css` (150줄) | 지원 범위 중립 system font, 축소한 홈 제목, SVG dropdown icon, 참고 updates type scale 구현 |
+| `site/styles.css` (156줄) | 중앙 정렬·wrap 가능한 responsive action group과 340px dropdown flow를 포함한 Pages 시각 체계 구현 |
 | `site/script.js` (92줄) | unpublished 내부 안내와 published 홈·dropdown exact artifact 전환, release note hydration 공유 |
 | `site/assets/og-main.png` (1,920×1,080, 302,354 bytes) | 세 줄로 축소한 홈 제목을 반영한 공유 이미지 재생성 |
 | `scripts/build-pages.mjs` (152줄) | 중첩 페이지의 root asset 경로를 depth에 맞춰 결정적으로 정규화 |
 | `scripts/check-pages.mjs` (235줄) | 홈·업데이트·문의 필수 파일과 내부 hash 대상 존재 검사를 추가 |
 | `tests/pages.test.mjs` (282줄) | 중첩 asset 출력, broken hash와 필수 페이지 누락 회귀 검사 추가 |
-| `tests/pages-design.test.mjs` (271줄) | 홈 3줄 제목·SVG icon·type scale, dropdown·release list와 direct-download 계약 추가 |
+| `tests/pages-design.test.mjs` (276줄) | 홈 3줄 제목·SVG icon·반응형 중앙 정렬·340px dropdown flow와 direct-download 계약 추가 |
 | `mydocs/orders/20260827.md` | Stage 3 완료와 Stage 4 승인 대기로 진행 상태 갱신 |
 
 공유 이미지 SHA-256은
@@ -92,9 +97,12 @@ git diff --check
 - OK — published fixture 실행 시 홈과 dropdown이 exact tag의 NSIS·MSI·AppImage URL로 직접 전환
 - OK — updates는 system font, 제목 72px/40px, 본문 21px/18px, content 880px/350px로 참고 페이지와 정렬
 - OK — 플랫폼 설치 카드는 0개이며 native `<details>` dropdown 세 항목과 릴리즈 노트 목록 확인
-- OK — 666×863 updates에서 SVG icon은 16×16px, 버튼 높이는 42px, 세로 중심 오차는 0px;
-  dropdown open 상태에서도 horizontal overflow 없음
-- OK — updates/feedback 1,280px와 390px에서 horizontal overflow 없음; 모바일 dropdown은 left 20px, right 330px
+- OK — 666×863 updates에서 action group 중심 오차 0px; SVG icon은 16×16px, 버튼 높이는 42px,
+  icon 세로 중심 오차는 0px이며 dropdown open 상태에서도 horizontal overflow 없음
+- OK — 홈·updates·feedback을 340·390·666·820px에서 요소 단위로 검사한 결과 viewport 밖 표시 요소 0개;
+  모든 header/nav와 contact 단일 열 전환이 viewport 안에 유지
+- OK — 340px updates에서 두 action은 중앙 2행으로 전환; dropdown은 left 20px/right 320px이고
+  문서 흐름 안에서 GitHub Releases보다 먼저 끝나 겹침과 horizontal overflow 없음
 - OK — 200% 확대에 해당하는 640×450 저높이 조건에서 horizontal overflow 없이 의도한 세로 scroll fallback
 - OK — semantic native link/button, skip link, 44px header target, focus-visible와 heading/landmark DOM 확인
 - OK — reduced-motion, no-JS 최종 콘텐츠 가시성과 12px/280ms one-shot motion은 source test로 확인

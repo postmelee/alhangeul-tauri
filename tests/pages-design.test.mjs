@@ -222,6 +222,11 @@ test('홈은 일반 화면에서 스크롤을 막고 작은 화면 fallback과 �
   assert.match(css, /\.headline-line \{ display: block; white-space: nowrap; \}/);
   assert.match(css, /\.download-chevron \{[^}]*width: 16px; height: 16px/);
   assert.match(css, /\.download-chevron path \{[^}]*stroke: currentcolor/);
+  assert.match(css, /\.updates-actions \{[^}]*flex-wrap: wrap; justify-content: center/);
+  assert.match(css, /@media \(max-width: 820px\)[\s\S]*\.updates-actions \{ justify-content: center; \}/);
+  assert.match(css, /@media \(max-width: 340px\)[\s\S]*\.updates-actions \{ flex-direction: column; align-items: center; \}/);
+  assert.match(css, /\.download-picker \.page-action-button \{ width: max-content; margin-inline: auto; \}/);
+  assert.match(css, /\.download-options \{ position: static; width: 100%; margin-top: 8px; transform: none; \}/);
   assert.match(css, /\.updates-hero h1 \{[^}]*font-size: 72px/);
   assert.match(css, /\.updates-hero > p \{[^}]*font-size: 21px/);
   assert.match(css, /\.updates-section h2 \{[^}]*font-size: 26px/);
