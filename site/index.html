@@ -4,229 +4,72 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>알한글 — Windows와 Linux를 위한 HWP/HWPX 편집기</title>
-        <meta
-            name="description"
-            content="알한글은 Windows와 Linux에서 HWP/HWPX 문서를 열고 편집하고 저장하는 오픈소스 데스크톱 앱입니다."
-        />
+        <meta name="description" content="Windows와 Linux에서 HWP/HWPX 문서를 열고 편집하고 저장하는 오픈소스 데스크톱 앱 알한글입니다." />
         <meta property="og:type" content="website" />
         <meta property="og:locale" content="ko_KR" />
-        <meta property="og:title" content="알한글 — 한글 문서를 어디서든 자연스럽게" />
-        <meta
-            property="og:description"
-            content="Windows와 Linux에서 HWP/HWPX 문서를 열고, 편집하고, 저장하세요."
-        />
-        <meta
-            property="og:image"
-            content="https://postmelee.github.io/alhangeul-tauri/assets/og-main.png"
-        />
+        <meta property="og:title" content="알한글 — Windows와 Linux에서 한글 문서를 자연스럽게" />
+        <meta property="og:description" content="플랫폼과 설치 방식에 맞는 알한글 설치 안내를 확인하세요." />
+        <meta property="og:image" content="https://postmelee.github.io/alhangeul-tauri/assets/og-main.png" />
         <meta property="og:image:width" content="1920" />
         <meta property="og:image:height" content="1080" />
-        <meta property="og:image:alt" content="Windows와 Linux 알한글 앱 화면과 제품 소개" />
+        <meta property="og:image:alt" content="Windows와 Linux 알한글 앱 화면과 설치 안내" />
         <meta name="twitter:card" content="summary_large_image" />
         <link rel="canonical" href="https://postmelee.github.io/alhangeul-tauri/" />
         <link rel="icon" href="../assets/logo/favicon.ico" />
         <link rel="stylesheet" href="styles.css" />
         <script src="script.js" defer></script>
     </head>
-    <body>
+    <body class="home-page" data-site-root="./">
         <a class="skip-link" href="#main">본문으로 이동</a>
-
         <header class="site-header" aria-label="주요 탐색">
             <div class="nav-shell">
                 <a class="brand" href="./" aria-label="알한글 홈">
-                    <img src="../assets/logo/logo-256.png" alt="" width="36" height="36" />
+                    <img src="../assets/logo/logo-256.png" alt="" width="30" height="30" />
                     <span>알한글</span>
                 </a>
                 <nav class="nav-links" aria-label="주요 링크">
-                    <a href="#features">기능</a>
-                    <a href="#download">업데이트</a>
-                    <a href="#feedback">문의/제보</a>
-                    <a href="https://github.com/postmelee/alhangeul-tauri">GitHub</a>
-                    <a class="nav-cta" href="#download">다운로드</a>
+                    <a href="updates/" aria-label="업데이트 안내로 이동">업데이트</a>
+                    <a href="feedback/" aria-label="문의와 제보 안내로 이동">문의/제보</a>
+                    <a href="https://github.com/postmelee/alhangeul-tauri" aria-label="GitHub 저장소로 이동">GitHub</a>
                 </nav>
             </div>
         </header>
 
-        <main id="main">
-            <section class="hero" aria-labelledby="hero-title">
-                <div class="ambient-orb" aria-hidden="true"></div>
-                <div class="hero-copy" data-reveal>
+        <main class="home-main" id="main">
+            <section class="home-shell" aria-labelledby="home-title">
+                <div class="home-copy page-enter">
                     <p class="eyebrow">Windows &amp; Linux · Open source</p>
-                    <h1 id="hero-title">한글 문서를,<br />어디서든 <em>자연스럽게.</em></h1>
-                    <p class="hero-summary">
-                        HWP와 HWPX를 열고, 편집하고, 저장하세요. 알한글은 익숙한 문서 작업을
-                        Windows와 Linux 데스크톱으로 이어주는 오픈소스 앱입니다.
-                    </p>
-                    <div class="hero-actions">
-                        <a class="button primary" href="#download">릴리스 준비 보기</a>
-                        <a class="button secondary" href="https://github.com/postmelee/alhangeul-tauri">
-                            GitHub에서 살펴보기
-                        </a>
-                    </div>
-                    <ul class="proof-list" aria-label="핵심 지원 범위">
-                        <li>HWP/HWPX</li>
-                        <li>로컬 문서 처리</li>
-                        <li>MIT License</li>
-                    </ul>
+                    <h1 id="home-title">한글 파일은<br />더 이상 <em>낯선 문서</em>가 아닙니다.</h1>
+                    <p class="home-summary">HWP/HWPX 문서를 열고, 편집하고, 저장하세요. 플랫폼과 용도에 맞는 설치 방식을 한곳에서 안내합니다.</p>
+
+                    <section class="install-panel" aria-labelledby="install-title">
+                        <div class="install-heading">
+                            <h2 id="install-title">플랫폼별 설치 안내</h2>
+                            <p data-release-message>첫 공개 릴리스를 준비하고 있습니다.</p>
+                        </div>
+                        <div class="install-grid">
+                            <a class="install-link" href="updates/#windows-nsis"><strong>Windows x64</strong><span>NSIS · 일반 설치</span></a>
+                            <a class="install-link" href="updates/#windows-msi"><strong>Windows x64</strong><span>MSI · 관리 배포</span></a>
+                            <a class="install-link accent" href="updates/#linux-appimage"><strong>Linux x64</strong><span>AppImage · 자동 업데이트</span></a>
+                            <a class="install-link" href="updates/#linux-packages"><strong>Linux x64</strong><span>DEB · RPM 설치</span></a>
+                            <a class="install-link wide" href="updates/#linux-arm64"><strong>Linux arm64</strong><span>DEB 설치 안내</span></a>
+                        </div>
+                        <p class="install-note">공개 전에는 설치 파일 대신 검증 범위와 준비 상태를 안내합니다.</p>
+                    </section>
                 </div>
 
-                <div class="product-stage" data-reveal aria-label="Windows와 Linux 실제 앱 화면">
-                    <figure class="platform-window linux-window">
+                <figure class="home-product page-enter" aria-label="Windows와 Linux 실제 알한글 화면">
+                    <div class="product-glow" aria-hidden="true"></div>
+                    <div class="app-window linux-window">
                         <figcaption><span class="platform-dot linux"></span>Linux · 문서 편집</figcaption>
-                        <img
-                            src="assets/linux-editor.png"
-                            alt="Linux에서 사업수행계획서 HWP 문서를 연 알한글 편집 화면"
-                            width="1280"
-                            height="900"
-                        />
-                    </figure>
-                    <figure class="platform-window windows-window">
-                        <figcaption><span class="platform-dot windows"></span>Windows · 새 문서 화면</figcaption>
-                        <img
-                            src="assets/windows-app.png"
-                            alt="Windows에서 실행한 알한글 편집기 새 문서 화면"
-                            width="1030"
-                            height="801"
-                            loading="lazy"
-                            decoding="async"
-                        />
-                    </figure>
-                </div>
-            </section>
-
-            <section class="intro section" aria-labelledby="intro-title">
-                <div class="section-heading" data-reveal>
-                    <p class="eyebrow">Alhangeul</p>
-                    <h2 id="intro-title">한글 문서 작업에 필요한 흐름을 한곳에.</h2>
-                    <p>파일을 여는 순간부터 저장과 출력까지, 데스크톱에서 자연스럽게 이어집니다.</p>
-                </div>
-                <ul class="capability-grid" data-reveal>
-                    <li><span>01</span><strong>열기와 편집</strong><p>HWP/HWPX 문서를 열어 내용을 확인하고 수정합니다.</p></li>
-                    <li><span>02</span><strong>저장</strong><p>현재 형식 저장과 다른 이름 저장으로 작업을 이어갑니다.</p></li>
-                    <li><span>03</span><strong>PDF와 인쇄</strong><p>검색 가능한 PDF로 내보내고 시스템 인쇄를 사용합니다.</p></li>
-                    <li><span>04</span><strong>Drag-in</strong><p>파일을 앱으로 끌어와 바로 문서 작업을 시작합니다.</p></li>
-                </ul>
-            </section>
-
-            <section class="feature-section section" id="features" aria-labelledby="feature-title">
-                <div class="section-heading compact" data-reveal>
-                    <p class="eyebrow">Everyday workflow</p>
-                    <h2 id="feature-title">열기부터 출력까지, 끊김 없이.</h2>
-                    <p>실제 Linux x64 수용 환경에서 확인한 공개 문서 화면입니다.</p>
-                </div>
-                <div class="feature-layout" data-reveal>
-                    <figure class="feature-visual" id="feature-visual">
-                        <img
-                            data-feature-image
-                            src="assets/linux-editor.png"
-                            alt="Linux 알한글에서 HWP 사업수행계획서를 연 화면"
-                            width="1280"
-                            height="900"
-                            loading="lazy"
-                            decoding="async"
-                        />
-                        <figcaption data-feature-caption aria-live="polite">HWP 문서 열기와 편집</figcaption>
-                    </figure>
-                    <div class="feature-tabs" role="group" aria-label="주요 기능">
-                        <button
-                            type="button"
-                            aria-pressed="true"
-                            aria-controls="feature-visual"
-                            data-feature-src="assets/linux-editor.png"
-                            data-feature-alt="Linux 알한글에서 HWP 사업수행계획서를 연 화면"
-                            data-feature-caption="HWP 문서 열기와 편집"
-                        >
-                            <span>열고, 편집하고, 저장하기</span>
-                            <small>HWP/HWPX 문서를 앱 안에서 확인하고 수정한 뒤 다시 저장합니다.</small>
-                        </button>
-                        <button
-                            type="button"
-                            aria-pressed="false"
-                            aria-controls="feature-visual"
-                            data-feature-src="assets/linux-drag-in.png"
-                            data-feature-alt="Linux 알한글로 HWPX 파일을 끌어와 연 화면"
-                            data-feature-caption="HWPX drag-in 결과"
-                        >
-                            <span>파일을 끌어와 바로 시작하기</span>
-                            <small>파일 관리자에서 문서를 끌어오면 별도 탐색 없이 작업을 시작합니다.</small>
-                        </button>
-                        <button
-                            type="button"
-                            aria-pressed="false"
-                            aria-controls="feature-visual"
-                            data-feature-src="assets/linux-pdf.png"
-                            data-feature-alt="Linux 알한글에서 검색 가능한 PDF 저장을 완료한 화면"
-                            data-feature-caption="검색 가능한 PDF 저장 완료"
-                        >
-                            <span>PDF로 내보내고 인쇄하기</span>
-                            <small>문서를 검색 가능한 PDF로 만들고 운영체제의 인쇄 흐름을 사용합니다.</small>
-                        </button>
+                        <img src="assets/linux-editor.png" alt="Linux에서 HWP 문서를 연 알한글 편집 화면" width="1280" height="900" />
                     </div>
-                </div>
-            </section>
-
-            <section class="download-section section" id="download" aria-labelledby="download-title">
-                <div class="section-heading" data-reveal>
-                    <p class="eyebrow">Release 준비 중</p>
-                    <h2 id="download-title">쓰임에 맞는 설치 방식을 준비하고 있습니다.</h2>
-                    <p data-release-message>첫 공개 릴리스 검증 중입니다. 아직 설치 파일을 배포하지 않습니다.</p>
-                </div>
-                <div class="download-grid" data-reveal>
-                    <article class="download-card recommended">
-                        <p class="card-label">Windows · 추천</p><h3>NSIS</h3>
-                        <p>일반 사용자를 위한 계정 단위 설치 방식입니다.</p>
-                        <span class="download-action" aria-disabled="true" data-download-target="windows-x86_64-nsis">준비 중</span>
-                    </article>
-                    <article class="download-card">
-                        <p class="card-label">Windows · 관리 배포</p><h3>MSI</h3>
-                        <p>조직과 관리 환경의 배포 흐름을 위한 설치 방식입니다.</p>
-                        <span class="download-action" aria-disabled="true" data-download-target="windows-x86_64-msi">준비 중</span>
-                    </article>
-                    <article class="download-card">
-                        <p class="card-label">Linux x64</p><h3>AppImage</h3>
-                        <p>Linux x64 자동 업데이트 지원 대상으로 준비하는 형식입니다.</p>
-                        <span class="download-action" aria-disabled="true" data-download-target="linux-x86_64-appimage">준비 중</span>
-                    </article>
-                </div>
-                <p class="download-note" data-reveal>
-                    DEB·RPM과 Linux arm64는 수동 설치 대상으로 구분합니다.
-                    <a href="https://github.com/postmelee/alhangeul-tauri/releases">GitHub Releases에서 준비 상태 보기</a>
-                </p>
-            </section>
-
-            <section class="faq-section section" aria-labelledby="faq-title">
-                <div class="section-heading compact" data-reveal><p class="eyebrow">FAQ</p><h2 id="faq-title">자주 묻는 질문</h2></div>
-                <div class="faq-list" data-reveal>
-                    <details><summary>알한글은 무료인가요?</summary><p>네. 알한글은 MIT 라이선스로 공개되는 오픈소스 프로젝트입니다.</p></details>
-                    <details><summary>어떤 문서 형식을 지원하나요?</summary><p>HWP와 HWPX 문서를 열고 편집하고 저장하며, PDF 내보내기와 시스템 인쇄를 지원합니다.</p></details>
-                    <details><summary>문서가 외부 서버로 전송되나요?</summary><p>문서 열기와 편집은 사용자의 데스크톱에서 처리합니다.</p></details>
-                    <details><summary>Windows에서는 어떤 설치 파일을 선택하나요?</summary><p>일반 사용자는 NSIS, 조직의 관리 배포에는 MSI를 권장합니다.</p></details>
-                    <details><summary>Linux 업데이트 지원 범위는 무엇인가요?</summary><p>Linux x64 AppImage를 자동 업데이트 대상으로 준비하며 DEB·RPM·arm64는 수동 설치로 구분합니다.</p></details>
-                    <details><summary>설치 파일은 지금 받을 수 있나요?</summary><p>아직 공개 전입니다. 검증이 끝난 exact release만 이 페이지에 연결합니다.</p></details>
-                </div>
-            </section>
-
-            <section class="manifesto section" aria-labelledby="manifesto-title" data-reveal>
-                <p class="eyebrow">Why Alhangeul</p>
-                <h2 id="manifesto-title"><strong>문서 접근</strong>은<br />특정 운영체제에 묶이면 안 됩니다.</h2>
-                <p>누구나 필요한 한글 문서를 확인하고 제출할 수 있도록, Windows와 Linux에서 열리는 도구를 만듭니다.</p>
-            </section>
-
-            <section class="feedback section" id="feedback" aria-labelledby="feedback-title" data-reveal>
-                <div><p class="eyebrow">Open project</p><h2 id="feedback-title">문제가 있거나 개선할 점이 있나요?</h2></div>
-                <a class="button secondary" href="https://github.com/postmelee/alhangeul-tauri/issues">GitHub Issues에서 제보하기</a>
+                    <div class="app-window windows-window">
+                        <figcaption><span class="platform-dot windows"></span>Windows · 새 문서</figcaption>
+                        <img src="assets/windows-app.png" alt="Windows에서 실행한 알한글 새 문서 화면" width="1030" height="801" />
+                    </div>
+                </figure>
             </section>
         </main>
-
-        <footer>
-            <div class="footer-shell">
-                <div><strong>알한글</strong><p>Windows와 Linux를 위한 HWP/HWPX 데스크톱 편집기</p></div>
-                <nav aria-label="푸터 링크">
-                    <a href="https://github.com/postmelee/alhangeul-tauri/blob/devel/LICENSE">MIT License</a>
-                    <a href="https://github.com/edwardkim/rhwp">rhwp</a>
-                    <a href="https://github.com/postmelee/alhangeul-tauri">GitHub</a>
-                </nav>
-            </div>
-        </footer>
     </body>
 </html>

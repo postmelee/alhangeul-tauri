@@ -110,8 +110,10 @@ async function verifyRootAssets(repositoryRoot) {
 }
 
 function normalizeRootAssetReferences(sitePath, content) {
-  if (dirname(sitePath) !== '.') return content;
-  return content.replaceAll('../assets/', 'assets/');
+  const depth = sitePath.split('/').length - 1;
+  const sourcePrefix = `${'../'.repeat(depth + 1)}assets/`;
+  const outputPrefix = `${'../'.repeat(depth)}assets/`;
+  return content.replaceAll(sourcePrefix, outputPrefix);
 }
 
 function isInside(root, target) {

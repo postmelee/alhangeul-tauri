@@ -1,59 +1,18 @@
-const root = document.documentElement;
-const featureButtons = [...document.querySelectorAll('[data-feature-src]')];
-const featureImage = document.querySelector('[data-feature-image]');
-const featureCaption = document.querySelector('[data-feature-caption]');
-const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+const siteRoot = document.body.dataset.siteRoot ?? './';
 
-root.classList.add('js');
-setupFeatureSwitch();
 setupReleaseData();
-setupReveal();
-
-function setupFeatureSwitch() {
-    if (!featureImage || !featureCaption) return;
-    featureButtons.forEach((button, index) => {
-        button.addEventListener('click', () => selectFeature(button));
-        button.addEventListener('keydown', (event) => {
-            if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
-            event.preventDefault();
-            const targetIndex = event.key === 'Home'
-                ? 0
-                : event.key === 'End'
-                    ? featureButtons.length - 1
-                    : (index + (event.key === 'ArrowDown' ? 1 : -1) + featureButtons.length)
-                        % featureButtons.length;
-            featureButtons[targetIndex].focus();
-            selectFeature(featureButtons[targetIndex]);
-        });
-    });
-}
-
-function selectFeature(selected) {
-    if (selected.getAttribute('aria-pressed') === 'true') return;
-    featureButtons.forEach((button) => {
-        button.setAttribute('aria-pressed', String(button === selected));
-    });
-    const update = () => {
-        featureImage.src = selected.dataset.featureSrc;
-        featureImage.alt = selected.dataset.featureAlt;
-        featureCaption.textContent = selected.dataset.featureCaption;
-        featureImage.classList.remove('is-switching');
-    };
-    if (reduceMotion.matches) update();
-    else {
-        featureImage.classList.add('is-switching');
-        window.setTimeout(update, 90);
-    }
-}
+setupCopyButtons();
 
 async function setupReleaseData() {
     try {
-        const response = await fetch('release.json', { cache: 'no-store' });
+        const response = await fetch(`${siteRoot}release.json`, { cache: 'no-store' });
         if (!response.ok) return;
         const release = await response.json();
         if (!isPublishedRelease(release)) return;
-        const message = document.querySelector('[data-release-message]');
-        if (message) message.textContent = `알한글 ${release.version} 안정 릴리스가 준비되었습니다.`;
+
+        for (const message of document.querySelectorAll('[data-release-message]')) {
+            message.textContent = `알한글 ${release.version} 안정 릴리스가 준비되었습니다.`;
+        }
         for (const action of document.querySelectorAll('[data-download-target]')) {
             const url = release.downloads[action.dataset.downloadTarget];
             if (!isExactDownload(url, release.tag)) continue;
@@ -65,7 +24,21 @@ async function setupReleaseData() {
             action.replaceWith(link);
         }
     } catch {
-        // 기본 unpublished 안내를 유지한다.
+        // 공개 전 기본 안내를 유지한다.
+    }
+}
+
+function setupCopyButtons() {
+    for (const button of document.querySelectorAll('[data-copy-value]')) {
+        button.addEventListener('click', async () => {
+            try {
+                await navigator.clipboard.writeText(button.dataset.copyValue);
+                button.textContent = '복사됨';
+                window.setTimeout(() => { button.textContent = '복사'; }, 1200);
+            } catch {
+                button.textContent = '직접 복사해 주세요';
+            }
+        });
     }
 }
 
@@ -86,30 +59,8 @@ function isExactDownload(value, tag) {
             && url.hostname === 'github.com'
             && !url.search
             && !url.hash
-            && url.pathname.startsWith(
-                `/postmelee/alhangeul-tauri/releases/download/${tag}/`,
-            );
+            && url.pathname.startsWith(`/postmelee/alhangeul-tauri/releases/download/${tag}/`);
     } catch {
         return false;
     }
-}
-
-function setupReveal() {
-    const items = [...document.querySelectorAll('[data-reveal]')];
-    if (reduceMotion.matches || !('IntersectionObserver' in window)) {
-        items.forEach((item) => item.classList.add('is-visible'));
-        return;
-    }
-    root.classList.add('motion-ready');
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach((entry) => {
-            if (!entry.isIntersecting) return;
-            entry.target.classList.add('is-visible');
-            observer.unobserve(entry.target);
-        });
-    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
-    items.forEach((item, index) => {
-        item.style.setProperty('--reveal-delay', `${Math.min(index % 3, 2) * 80}ms`);
-        observer.observe(item);
-    });
 }

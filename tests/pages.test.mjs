@@ -118,6 +118,10 @@ test('builder는 source를 보존하고 승인 파일만 결정적으로 출력�
       await readFile(join(second.outputRoot, 'index.html'), 'utf8'),
       /\.\.\/assets\//,
     );
+    assert.doesNotMatch(
+      await readFile(join(second.outputRoot, 'updates/index.html'), 'utf8'),
+      /\.\.\/\.\.\/assets\//,
+    );
     await checkPages({ repositoryRoot: fixture.root });
   } finally {
     await rm(fixture.tmp, { recursive: true, force: true });
@@ -145,10 +149,28 @@ test('checker는 깨진 URL과 tree 밖 path traversal을 거부한다', async (
       checkPages({ repositoryRoot: fixture.root, mode: 'output' }),
       /깨진 내부 URL/,
     );
+    await writeFile(indexPath, `${source}\n<a href="updates/#missing">missing hash</a>\n`);
+    await assert.rejects(
+      checkPages({ repositoryRoot: fixture.root, mode: 'output' }),
+      /깨진 내부 hash/,
+    );
     await writeFile(indexPath, `${source}\n<a href="../outside.html">outside</a>\n`);
     await assert.rejects(
       checkPages({ repositoryRoot: fixture.root, mode: 'output' }),
       /tree를 벗어난 URL/,
+    );
+  } finally {
+    await rm(fixture.tmp, { recursive: true, force: true });
+  }
+});
+
+test('checker는 홈·업데이트·문의 필수 페이지 누락을 거부한다', async () => {
+  const fixture = await createFixture();
+  try {
+    await rm(join(fixture.root, 'site/feedback/index.html'));
+    await assert.rejects(
+      checkPages({ repositoryRoot: fixture.root, mode: 'source' }),
+      /필수 Pages 파일.*feedback\/index\.html/,
     );
   } finally {
     await rm(fixture.tmp, { recursive: true, force: true });

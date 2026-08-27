@@ -9,6 +9,12 @@ import { ROOT_ASSETS, listSiteFiles } from './pages/site-files.mjs';
 const defaultRepositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const usage = 'Usage: node scripts/check-pages.mjs [--mode source|output|all] [--root <repository-root>]';
 const TEXT_EXTENSIONS = /\.(?:css|html|js|json)$/;
+const REQUIRED_SITE_FILES = Object.freeze([
+  'index.html',
+  'updates/index.html',
+  'feedback/index.html',
+  'release.json',
+]);
 const DIRECT_DOWNLOAD = /https:\/\/github\.com\/postmelee\/alhangeul-tauri\/releases\/download\//i;
 const ATTRIBUTE_REFERENCE = /\b(?:href|src)\s*=\s*(["'])(.*?)\1/gis;
 const CSS_REFERENCE = /url\(\s*(["']?)(.*?)\1\s*\)/gis;
@@ -41,8 +47,9 @@ export async function checkPages(options = {}) {
 async function checkTree(context) {
   const files = await listSiteFiles(context.treeRoot);
   const fileSet = new Set(files);
-  if (!fileSet.has('index.html') || !fileSet.has('release.json')) {
-    throw new Error(`${context.mode} tree에 index.html과 release.json이 필요합니다.`);
+  const missingFiles = REQUIRED_SITE_FILES.filter((path) => !fileSet.has(path));
+  if (missingFiles.length > 0) {
+    throw new Error(`${context.mode} tree에 필수 Pages 파일이 없습니다: ${missingFiles.join(', ')}`);
   }
   if (fileSet.has('updater/stable.json')) {
     throw new Error('updater manifest는 Issue #16 검증 전 게시할 수 없습니다.');
@@ -106,7 +113,11 @@ function extractReferences(content, sitePath) {
 
 async function assertReference(context, sitePath, rawReference) {
   const reference = rawReference.trim();
-  if (!reference || reference.startsWith('#')) return null;
+  if (!reference) return null;
+  if (reference.startsWith('#')) {
+    await assertFragment(join(context.treeRoot, sitePath), sitePath, reference);
+    return null;
+  }
   if (reference.startsWith('//') || /^[a-z][a-z\d+.-]*:/i.test(reference)) {
     if (!reference.startsWith('https://') && !reference.startsWith('mailto:')) {
       throw new Error(`허용되지 않은 URL protocol입니다: ${sitePath} -> ${reference}`);
@@ -127,6 +138,7 @@ async function assertReference(context, sitePath, rawReference) {
   const target = resolve(dirname(join(context.treeRoot, sitePath)), cleanReference);
   if (isInside(context.treeRoot, target)) {
     await assertTargetExists(target, sitePath, reference);
+    await assertFragment(target, sitePath, reference);
     return null;
   }
   if (context.mode !== 'source' || !isInside(context.repositoryRoot, target)) {
@@ -147,6 +159,32 @@ async function assertTargetExists(target, sitePath, reference) {
     else if (!targetStat.isFile()) throw new Error('not a regular file');
   } catch (error) {
     throw new Error(`깨진 내부 URL입니다: ${sitePath} -> ${reference} (${error.message})`);
+  }
+}
+
+async function assertFragment(target, sitePath, reference) {
+  const hashIndex = reference.indexOf('#');
+  if (hashIndex === -1 || hashIndex === reference.length - 1) return;
+
+  let fragment;
+  try {
+    fragment = decodeURIComponent(reference.slice(hashIndex + 1));
+  } catch {
+    throw new Error(`URL encoding이 올바르지 않습니다: ${sitePath} -> ${reference}`);
+  }
+
+  let htmlPath = target;
+  try {
+    if ((await stat(target)).isDirectory()) htmlPath = join(target, 'index.html');
+    if (!htmlPath.endsWith('.html')) {
+      throw new Error('HTML 파일이 아닌 대상에는 hash를 사용할 수 없습니다.');
+    }
+    const content = await readFile(htmlPath, 'utf8');
+    const ids = [...content.matchAll(/\bid\s*=\s*(["'])(.*?)\1/gis)]
+      .map((match) => match[2]);
+    if (!ids.includes(fragment)) throw new Error(`id="${fragment}"를 찾을 수 없습니다.`);
+  } catch (error) {
+    throw new Error(`깨진 내부 hash입니다: ${sitePath} -> ${reference} (${error.message})`);
   }
 }
 
