@@ -43,6 +43,8 @@ test('홈은 한 화면 설치 안내와 개별 페이지 탐색 계약을 지�
 
   assert.match(html, /Windows &amp; Linux/);
   assert.match(html, /HWP\/HWPX/);
+  assert.equal([...html.matchAll(/class="headline-line"/g)].length, 3);
+  assert.match(html, /<span class="headline-line">더 이상 <em>낯선 문서<\/em>가<\/span>/);
   assert.doesNotMatch(html, /<nav[^>]*>[\s\S]*?>다운로드<\/a>/);
   assert.equal([...html.matchAll(/<a[^>]+data-download-target=/g)].length, 3);
   assert.doesNotMatch(html, /releases\/download\//);
@@ -90,7 +92,9 @@ test('업데이트 페이지는 MSI·NSIS·AppImage와 수동 설치 범위를 f
     assert.match(html, new RegExp(`<span[^>]+data-download-target="${target}"`));
   }
   assert.match(html, /<details class="download-picker">/);
-  assert.match(html, /<summary class="page-action-button">최신 버전 다운로드/);
+  assert.match(html, /<summary class="page-action-button">[\s\S]*최신 버전 다운로드[\s\S]*<svg class="download-chevron"/);
+  assert.match(html, /<path d="m4 6 4 4 4-4"><\/path>/);
+  assert.doesNotMatch(html, /⌄/);
   assert.match(html, /class="release-note-list"/);
   assert.match(html, /data-release-note/);
   assert.match(html, /앱에서 업데이트 확인/);
@@ -190,7 +194,7 @@ test('소셜 공유 이미지는 홈을 담는 16:9 PNG로 고정한다', async 
   assert.equal(png.readUInt32BE(20), 1080);
   assert.equal(
     createHash('sha256').update(png).digest('hex'),
-    'ca952e28c70d10677d48c7129648fbc04e3fda098dc77465949a79c025638b02',
+    '69bc10b53db5eb41a2e241d4d65d8e4d2d308d5c693952a4e1c7e701c819f947',
   );
 });
 
@@ -213,7 +217,11 @@ test('홈은 일반 화면에서 스크롤을 막고 작은 화면 fallback과 �
   assert.match(css, /--quick: 90ms/);
   assert.match(css, /--standard: 280ms/);
   assert.match(css, /translateY\(12px\)/);
-  assert.match(css, /font-family: system-ui, -apple-system/);
+  assert.match(css, /font-family: system-ui, sans-serif/);
+  assert.match(css, /\.home-copy h1 \{[^}]*font-size: clamp\(3rem, 4\.45vw, 3\.75rem\)/);
+  assert.match(css, /\.headline-line \{ display: block; white-space: nowrap; \}/);
+  assert.match(css, /\.download-chevron \{[^}]*width: 16px; height: 16px/);
+  assert.match(css, /\.download-chevron path \{[^}]*stroke: currentcolor/);
   assert.match(css, /\.updates-hero h1 \{[^}]*font-size: 72px/);
   assert.match(css, /\.updates-hero > p \{[^}]*font-size: 21px/);
   assert.match(css, /\.updates-section h2 \{[^}]*font-size: 26px/);

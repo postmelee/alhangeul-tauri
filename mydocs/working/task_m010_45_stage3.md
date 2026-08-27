@@ -22,24 +22,29 @@ system font, 72px/40px 제목, 21px hero 본문, 880px 콘텐츠 폭과 section 
 최신 버전 다운로드는 플랫폼 dropdown으로 제공하고, 공개 전 릴리즈 노트 placeholder와 published
 상태의 exact GitHub Release note hydration을 추가했다.
 
+Stage 3.2 피드백 보정에서는 홈 제목을 단어 중간 줄바꿈이 생기지 않는 세 줄로 고정하고 desktop
+최대 글자 크기를 60px, 390px 화면 글자 크기를 39px로 낮췄다. 업데이트 다운로드 버튼의 문자
+꺾쇠는 16×16 SVG 아이콘으로 교체하고 flex 중앙 정렬과 열림 상태 회전을 유지했다. 지원 범위
+검사에서 발견한 platform 전용 font alias는 제거했으며 `system-ui` 렌더링은 그대로 유지한다.
+
 ## 산출물
 
 | 파일 | 변경 요약 |
 |---|---|
-| `site/index.html` (75줄) | 단일 viewport hero, Windows/Linux 실제 화면, 5개 플랫폼별 설치 안내로 홈 재구성 |
-| `site/updates/index.html` (80줄) | 참고 페이지 구조의 hero, 플랫폼 다운로드 dropdown, 설치 형식·릴리즈 노트·manifest 안내 |
+| `site/index.html` (79줄) | 단어 중간 줄바꿈 없는 3줄 제목, Windows/Linux 실제 화면, 5개 플랫폼별 설치 안내로 홈 재구성 |
+| `site/updates/index.html` (85줄) | 참고 페이지 구조의 hero, SVG 꺾쇠가 있는 플랫폼 다운로드 dropdown, 설치 형식·릴리즈 노트·manifest 안내 |
 | `site/feedback/index.html` (51줄) | 개인정보 주의, email 복사/작성, GitHub Issue와 rhwp upstream 분류 안내 |
-| `site/styles.css` (148줄) | system font와 참고 updates의 exact desktop/mobile type scale, dropdown, release list 구현 |
+| `site/styles.css` (150줄) | 지원 범위 중립 system font, 축소한 홈 제목, SVG dropdown icon, 참고 updates type scale 구현 |
 | `site/script.js` (92줄) | unpublished 내부 안내와 published 홈·dropdown exact artifact 전환, release note hydration 공유 |
-| `site/assets/og-main.png` (1,920×1,080, 341,585 bytes) | system font와 header 보정을 반영한 공유 이미지 재생성 |
+| `site/assets/og-main.png` (1,920×1,080, 302,354 bytes) | 세 줄로 축소한 홈 제목을 반영한 공유 이미지 재생성 |
 | `scripts/build-pages.mjs` (152줄) | 중첩 페이지의 root asset 경로를 depth에 맞춰 결정적으로 정규화 |
 | `scripts/check-pages.mjs` (235줄) | 홈·업데이트·문의 필수 파일과 내부 hash 대상 존재 검사를 추가 |
 | `tests/pages.test.mjs` (282줄) | 중첩 asset 출력, broken hash와 필수 페이지 누락 회귀 검사 추가 |
-| `tests/pages-design.test.mjs` (263줄) | 원본 type scale, dropdown·release list와 published direct-download 실행 계약 추가 |
+| `tests/pages-design.test.mjs` (271줄) | 홈 3줄 제목·SVG icon·type scale, dropdown·release list와 direct-download 계약 추가 |
 | `mydocs/orders/20260827.md` | Stage 3 완료와 Stage 4 승인 대기로 진행 상태 갱신 |
 
 공유 이미지 SHA-256은
-`ca952e28c70d10677d48c7129648fbc04e3fda098dc77465949a79c025638b02`이다. 외부 package와
+`69bc10b53db5eb41a2e241d4d65d8e4d2d308d5c693952a4e1c7e701c819f947`이다. 외부 package와
 lockfile은 변경하지 않았고 모든 text source는 권장 300줄 상한 이하다.
 
 ## 본문 변경 정도 / 본문 무손실 여부
@@ -59,7 +64,8 @@ Stage 3 신규 페이지는 구현계획서의 사용자 문서 위치인 `site/
 ```bash
 pnpm run build:pages
 pnpm run check:pages
-node --test tests/pages.test.mjs tests/actions-workflows.test.mjs
+node --test tests/pages-design.test.mjs tests/pages.test.mjs tests/release-metadata.test.mjs
+pnpm run check:product-boundary
 pnpm run test:automation
 git diff --check
 ```
@@ -68,7 +74,8 @@ git diff --check
 
 - OK — Pages build: source 11개와 승인 root asset 4개를 `_site`에 생성
 - OK — Pages check: source 11개, output 15개; 세 필수 페이지·내부 hash·asset·manifest 계약 통과
-- OK — Pages/Actions focused test 42개 통과, 실패·skip 없음
+- OK — Pages design/build/release metadata focused test 40개 통과, 실패·skip 없음
+- OK — 제품 경계 269파일 통과; Windows/Linux 지원 범위 밖 font identifier 없음
 - OK — 전체 automation test 254개 통과, 실패·skip 없음
 - OK — 변경 파일 whitespace 오류 없음
 - OK — output에 MSI·NSIS·AppImage direct URL과 `updater/stable.json` 없음
@@ -77,12 +84,16 @@ git diff --check
 
 - OK — `http://127.0.0.1:4173/`에서 홈 1,280×900과 390×844 모두
   `scrollWidth=innerWidth`, `scrollHeight=innerHeight`; 스크롤 없는 한 화면 확인
+- OK — 홈 제목은 두 viewport 모두 정확히 3줄이며 1,280px에서 56.96px, 390px에서 39px;
+  가장 긴 둘째 줄의 실제 폭은 각각 394.55/270.66px로 493.82/362px 컨테이너 안에 유지
 - OK — 모바일 홈은 실제 제품 화면을 숨기고 제목·설명·다섯 설치 안내를 390px 안에 유지
 - OK — header의 업데이트·문의/제보·GitHub와 하위 페이지의 홈 교차 이동 확인; header 다운로드 없음
 - OK — unreleased 홈의 세 직접 다운로드 대상은 내부 설치 안내로 이동하고 수동 package 두 항목과 분리
 - OK — published fixture 실행 시 홈과 dropdown이 exact tag의 NSIS·MSI·AppImage URL로 직접 전환
 - OK — updates는 system font, 제목 72px/40px, 본문 21px/18px, content 880px/350px로 참고 페이지와 정렬
 - OK — 플랫폼 설치 카드는 0개이며 native `<details>` dropdown 세 항목과 릴리즈 노트 목록 확인
+- OK — 666×863 updates에서 SVG icon은 16×16px, 버튼 높이는 42px, 세로 중심 오차는 0px;
+  dropdown open 상태에서도 horizontal overflow 없음
 - OK — updates/feedback 1,280px와 390px에서 horizontal overflow 없음; 모바일 dropdown은 left 20px, right 330px
 - OK — 200% 확대에 해당하는 640×450 저높이 조건에서 horizontal overflow 없이 의도한 세로 scroll fallback
 - OK — semantic native link/button, skip link, 44px header target, focus-visible와 heading/landmark DOM 확인
