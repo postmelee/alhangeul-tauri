@@ -6,6 +6,12 @@ use image::imageops::FilterType;
 use image::ImageReader;
 use rhwp::DocumentCore;
 use std::io::Cursor;
+use std::sync::{Arc, OnceLock};
+
+const NOTO_SANS_KR_REGULAR: &[u8] =
+    include_bytes!("../../../third_party/rhwp/ttfs/opensource/NotoSansKR-Regular.ttf");
+const NOTO_SANS_KR_EXTRA_LIGHT: &[u8] =
+    include_bytes!("../../../third_party/rhwp/ttfs/opensource/NotoSansKR-ExtraLight.ttf");
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EmbeddedPreviewFormat {
@@ -82,7 +88,7 @@ pub fn resolve_document_preview(bytes: &[u8]) -> Result<PreviewSelection, Previe
 
 pub fn rasterize_first_page(bytes: &[u8], requested_edge: u32) -> Result<Bitmap, PreviewError> {
     let svg = render_first_page_svg(bytes)?;
-    let tree = resvg::usvg::Tree::from_str(&svg, &resvg::usvg::Options::default())
+    let tree = resvg::usvg::Tree::from_str(&svg, &svg_parse_options())
         .map_err(|error| PreviewError::Raster(error.to_string()))?;
     let (width, height, scale) =
         fitted_dimensions(tree.size().width(), tree.size().height(), requested_edge)?;
@@ -95,6 +101,71 @@ pub fn rasterize_first_page(bytes: &[u8], requested_edge: u32) -> Result<Bitmap,
         height,
         bgra: premultiplied_rgba_to_bgra(pixmap.data()),
     })
+}
+
+fn svg_parse_options() -> resvg::usvg::Options<'static> {
+    let fontdb = font_database();
+    let mut options = resvg::usvg::Options::default();
+    options.font_family =
+        first_existing_family(&fontdb, &["Malgun Gothic", "맑은 고딕", "Noto Sans KR"]);
+    options.languages = vec!["ko-KR".to_string(), "ko".to_string(), "en".to_string()];
+    options.fontdb = fontdb;
+    options
+}
+
+fn font_database() -> Arc<resvg::usvg::fontdb::Database> {
+    static FONT_DATABASE: OnceLock<Arc<resvg::usvg::fontdb::Database>> = OnceLock::new();
+
+    Arc::clone(FONT_DATABASE.get_or_init(|| {
+        let mut fontdb = resvg::usvg::fontdb::Database::new();
+        fontdb.load_system_fonts();
+        fontdb.load_font_data(NOTO_SANS_KR_REGULAR.to_vec());
+        fontdb.load_font_data(NOTO_SANS_KR_EXTRA_LIGHT.to_vec());
+
+        let serif = first_existing_family(
+            &fontdb,
+            &["Batang", "바탕", "Noto Serif CJK KR", "Noto Sans KR"],
+        );
+        let sans = first_existing_family(
+            &fontdb,
+            &[
+                "Malgun Gothic",
+                "맑은 고딕",
+                "Noto Sans CJK KR",
+                "Noto Sans KR",
+            ],
+        );
+        let monospace = first_existing_family(
+            &fontdb,
+            &[
+                "D2Coding",
+                "GulimChe",
+                "굴림체",
+                "Consolas",
+                "DejaVu Sans Mono",
+                "Noto Sans KR",
+            ],
+        );
+        fontdb.set_serif_family(serif);
+        fontdb.set_sans_serif_family(sans);
+        fontdb.set_monospace_family(monospace);
+        Arc::new(fontdb)
+    }))
+}
+
+fn first_existing_family(fontdb: &resvg::usvg::fontdb::Database, candidates: &[&str]) -> String {
+    candidates
+        .iter()
+        .find(|candidate| {
+            fontdb.faces().any(|face| {
+                face.families
+                    .iter()
+                    .any(|(family, _)| family.eq_ignore_ascii_case(candidate))
+            })
+        })
+        .copied()
+        .unwrap_or("Noto Sans KR")
+        .to_string()
 }
 
 pub fn rasterize_embedded_preview(

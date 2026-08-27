@@ -2,7 +2,7 @@
 
 Alhangeul은 Windows Explorer가 `.hwp`와 `.hwpx` 파일의 첫 페이지 thumbnail을 요청할 때 작은 COM handler DLL과 제한된 별도 worker를 사용한다. 문서 parse와 raster는 Shell process 안에서 실행하지 않는다.
 
-현재 source 계약과 hosted Windows x64 자동 gate는 COM activation, 실제 HWP/HWPX Shell bitmap 반환, MSI·NSIS 등록·복원까지 통과했다. Explorer 보기 크기·DPI·cache 갱신과 한컴 설치 환경의 수동 UI 수용은 Stage 6에서 확인할 항목이며, 아직 공개 installer나 release 완료를 뜻하지 않는다.
+현재 source 계약과 hosted Windows x64 자동 gate는 COM activation, 실제 HWP/HWPX Shell bitmap 반환, MSI·NSIS 등록·복원까지 통과했다. 다만 Stage 6 VDI 수동 UI에서 일부 문서의 직접 bitmap에 text가 빠지는 결함을 확인해 Stage 6.1에서 font-aware raster와 representative visual gate를 보정하고 있다. 수정본의 Windows 자동 gate와 Explorer 재수용이 끝나기 전에는 공개 installer나 release 완료로 보지 않는다.
 
 ## 고정 계약
 
@@ -50,10 +50,22 @@ handler가 bitmap을 만들 수 없으면 실패 HRESULT를 반환한다. 이때
 - stdin으로 고정 header와 문서 bytes를 받고 stdout으로 고정 frame만 보낸다.
 - `crates/document-preview`의 bounds, protocol과 render 기능을 사용한다.
 - 현재 Stable pin의 native `rhwp`로 직접 첫 페이지 SVG를 만들고 BGRA로 raster한다.
+- SVG parse 시 Windows system font를 읽고 pinned `rhwp`의 NotoSansKR TTF를 process-local fallback으로 등록한다.
 - 문서의 유효한 embedded preview가 있으면 먼저 제한된 후보 frame을 보낸다.
 - 직접 render 결과나 명시적 실패를 보낸 뒤 종료한다.
 
 worker executable은 handler DLL과 같은 설치 디렉터리에 있어야 한다. handler는 상대 이름으로 worker를 확인하며 임의 PATH lookup을 하지 않는다.
+
+### Font와 visual fidelity
+
+`rhwp`가 만든 SVG는 원본 HWP family와 대체 family 목록을 포함한다. rasterizer는 이를 해석할 실제 font database를 명시적으로 제공해야 하며 빈 기본 database로 parse하지 않는다.
+
+- 설치된 Windows system font를 먼저 등록해 원본 family가 있으면 그대로 사용한다.
+- pinned `third_party/rhwp/ttfs/opensource`의 `NotoSansKR-Regular.ttf`와 `NotoSansKR-ExtraLight.ttf`를 worker에 compile-time 포함해 설치 경로나 current directory와 무관한 한글 fallback을 보장한다.
+- 두 TTF의 고정 SHA-256, 저작권과 SIL OFL 1.1은 `assets/fonts/FONTS.md`에 기록하고 desktop bundle의 `licenses/fonts/`에 manifest와 license 원문을 함께 포함한다.
+- generic serif, sans-serif와 monospace는 font database에 실제 존재하는 family만 선택한다.
+- 한컴·HY·Microsoft proprietary font file은 제품에 복사하거나 번들하지 않는다. 원본 font가 없을 때 metric과 줄바꿈은 fallback 차이의 영향을 받을 수 있다.
+- HWP/HWPX 대표 fixture는 SVG의 text/image node inventory와 text·background·table 영역의 non-white pixel을 함께 검사한다. 성공 HRESULT, bitmap 크기와 alpha만으로 visual 성공을 판정하지 않는다.
 
 ## Direct-first IPC와 fallback
 
@@ -134,6 +146,7 @@ build script는 DLL과 worker를 고정 filename으로 stage하고 PE x64 machin
 - MSI·NSIS install, upgrade/reinstall, uninstall과 injected rollback
 - clean, absent, 기존 handler와 제3자 takeover registry fixture의 조건부 복원
 - 실제 HWP/HWPX fixture의 요청 edge 256 px Shell bitmap과 성공 HRESULT
+- 온새미로 HWP, `biz_plan.hwp`, `form-002.hwpx`의 text/image/table 구조와 영역별 raster content
 - fixture hash 불변, worker 잔류 없음과 제품 소유 registry cleanup
 
 다른 host의 platform-neutral test는 protocol, bounds와 source 계약을 고정하지만 PE, COM host, installer transaction과 실제 Shell 호출을 대신하지 않는다.

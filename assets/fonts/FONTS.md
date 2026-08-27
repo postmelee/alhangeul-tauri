@@ -17,6 +17,20 @@ PDF font database에만 적재하며 편집기의 authoring font 목록에는 �
 fallback으로 포함되고, 배포 bundle의 `licenses/fonts/`에는 이 manifest와 대응 license 원문이 함께
 들어간다. 다른 형식으로 변환하거나 수정한 파생 폰트는 이 목록에 추가하지 않는다.
 
+## Windows thumbnail fallback TTF
+
+Windows thumbnail worker는 `rhwp`가 생성한 첫 페이지 SVG에 설치된 원본 글꼴이 없을 때 한글
+glyph를 보존하도록 pinned `third_party/rhwp`의 다음 TTF를 변환·개명 없이 executable에 포함한다.
+
+| 파일 | 버전·출처 | SHA-256 | 저작권·라이선스 |
+| --- | --- | --- | --- |
+| `ttfs/opensource/NotoSansKR-Regular.ttf` | `rhwp` v0.8.2, commit `9b16aa9e23f476e2b335d7c029fc9f24a199d63c` | `6e06a7fe5d696ca719894a23f36bb2b1be8c816a5937cd4ad0f23ca67780dd74` | Copyright 2014–2021 Adobe, Reserved Font Name `Source`. `licenses/NotoSansKR-OFL-1.1.txt` |
+| `ttfs/opensource/NotoSansKR-ExtraLight.ttf` | `rhwp` v0.8.2, commit `9b16aa9e23f476e2b335d7c029fc9f24a199d63c` | `67b4003e2be99ea44a7c957e4b35acde1b5e6e82a54fe195c5598c3c617bc2e3` | Copyright 2014–2021 Adobe, Reserved Font Name `Source`. `licenses/NotoSansKR-OFL-1.1.txt` |
+
+두 TTF는 SIL OFL 1.1이며 폰트 자체를 단독 판매하지 않는다. 배포 bundle에는 이 manifest와 기존
+Noto Sans KR OFL 원문이 함께 들어간다. worker는 system font를 우선하고 이 파일은 process-local
+fallback으로만 등록한다.
+
 ## Studio 웹폰트
 
 | 파일 | 라이선스 | 출처 |

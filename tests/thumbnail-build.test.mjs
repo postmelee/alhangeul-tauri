@@ -73,6 +73,36 @@ test('handler는 protocol-only이고 worker만 render dependency를 사용한다
   assert.doesNotMatch(worker, /\bwindows-sys\s*=/);
 });
 
+test('document preview raster는 text, system font와 licensed 한글 fallback을 직접 소유한다', async () => {
+  const [manifest, renderer, fontManifest, desktopConfig] = await Promise.all([
+    readFile(join(repoRoot, 'crates/document-preview/Cargo.toml'), 'utf8'),
+    readFile(join(repoRoot, 'crates/document-preview/src/render.rs'), 'utf8'),
+    readFile(join(repoRoot, 'assets/fonts/FONTS.md'), 'utf8'),
+    readFile(join(repoRoot, 'apps/desktop/src-tauri/tauri.conf.json'), 'utf8'),
+  ]);
+  assert.match(
+    manifest,
+    /features\s*=\s*\["raster-images",\s*"system-fonts",\s*"text"\]/,
+  );
+  assert.match(renderer, /fontdb\.load_system_fonts\(\)/);
+  assert.match(renderer, /NotoSansKR-Regular\.ttf/);
+  assert.match(renderer, /NotoSansKR-ExtraLight\.ttf/);
+  assert.match(renderer, /options\.fontdb\s*=\s*fontdb/);
+  assert.doesNotMatch(
+    renderer,
+    /Tree::from_str\([^;]*Options::default\(\)/s,
+  );
+  assert.match(
+    fontManifest,
+    /6e06a7fe5d696ca719894a23f36bb2b1be8c816a5937cd4ad0f23ca67780dd74/,
+  );
+  assert.match(
+    fontManifest,
+    /67b4003e2be99ea44a7c957e4b35acde1b5e6e82a54fe195c5598c3c617bc2e3/,
+  );
+  assert.match(desktopConfig, /NotoSansKR-OFL-1\.1\.txt/);
+});
+
 test('Windows 전용 Tauri config만 두 고정 resource 이름을 선언한다', async () => {
   const config = JSON.parse(
     await readFile(join(repoRoot, 'apps/desktop/src-tauri/tauri.windows.conf.json'), 'utf8'),

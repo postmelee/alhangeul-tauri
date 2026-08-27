@@ -15,6 +15,7 @@ GitHub Issue: [#14](https://github.com/postmelee/alhangeul-tauri/issues/14)
 | 4 | Windows bundle·등록·공존·rollback | WiX/NSIS, smoke, artifact verifier | MSI/NSIS install/update/uninstall/rollback, 한컴 sentinel |
 | 5 | 플랫폼 중립 회귀와 공식 문서 정렬 | architecture/development/release 문서 | product/upstream/automation/Studio/build gate |
 | 6 | Windows x64 exact-SHA Explorer 수용 | native artifact와 Explorer 증적 | 크기·DPI·cache·fallback·차단 정책·native matrix |
+| 6.1 | Explorer first-page 시각 누락 보정 | font-aware raster와 대표 fixture visual gate | text·raster 구조, 영역별 ink, Windows Explorer 재수용 |
 
 ## 구현 계약
 
@@ -43,6 +44,8 @@ GitHub Issue: [#14](https://github.com/postmelee/alhangeul-tauri/issues/14)
 - Cargo는 workspace root 밖의 package를 member로 허용하지 않으므로 `apps/desktop/src-tauri`는 기존 standalone package로 유지한다. 공유 crate는 path dependency로 연결해 기존 desktop `Cargo.lock`, `target/` 위치와 `cargo test` 의미를 보존한다.
 - 공유 crate 자체 검증은 standalone manifest와 desktop target directory를 명시한다. Stage 3의 worker/handler도 독립 manifest로 추가하고 desktop workspace member로 편입하지 않는다.
 - `crates/document-preview`는 protocol/limits를 기본 제공하고 `render` feature에서만 `rhwp`, `resvg`, `image`를 활성화한다. Desktop과 worker는 `render`를 사용하고 COM DLL은 protocol/limits만 사용한다.
+- `resvg`의 text·system-fonts·raster-images feature는 `rhwp`의 transitive dependency에 기대지 않고 공유 crate가 명시적으로 소유한다. SVG raster options는 빈 기본 font database를 사용하지 않고 Windows system font와 pinned `rhwp`의 `ttfs/opensource` NotoSansKR TTF를 process-local로 등록한다.
+- SVG가 이미 포함하는 HWP family별 fallback chain을 유지하고, generic serif/sans/monospace는 실제 등록된 family로만 설정한다. proprietary 한컴·HY·Microsoft font file은 번들하지 않는다.
 - desktop `render_document_preview`는 공유 direct SVG API를 호출하되 worker protocol이나 Windows type을 알지 못한다.
 - `third_party/rhwp`는 workspace member로 편입하거나 수정하지 않고 현재 pin을 유지한다.
 
@@ -409,6 +412,76 @@ pnpm run build:studio
 
 ```text
 Task #14 Stage 6: Windows Explorer exact-SHA thumbnail 수용 확정
+```
+
+## Stage 6.1 — Explorer first-page 시각 누락 보정
+
+### 진입 근거와 승인
+
+- Stage 5 exact SHA `d522ad635c220108c7260732c6ad23ff504f2f63`의 CI와 Windows/Linux native·installer smoke는 통과했지만, 2026-08-27 NSIS VDI 수동 수용에서 `[2027] 온새미로 1 본교재`, `biz_plan`, `form-002`의 텍스트가 빠지고 vector/background만 남는 결함을 확인했다.
+- `render_page_svg_native(0)` 산출물에는 온새미로 첫 페이지의 text 35개와 JPEG image가 존재하고 embedded preview도 정상이다. 공유 raster가 `usvg::Options::default()`의 빈 font database를 사용해 text를 drop한 뒤 incomplete bitmap을 성공으로 반환했고, direct-first selector가 정상 preview 후보보다 이를 우선했다.
+- GitHub Issue #14가 참고로 지정한 `postmelee/alhangeul-macos`의 Finder thumbnail 경로를 구현계획에서 충분히 대조하지 않은 누락을 인정한다. 작업지시자는 2026-08-27 Stage 6.1 진행과 해당 저장소 구조·코드의 최대 재사용을 승인했다.
+
+### 외부 참조와 이식 결정
+
+- 참조 source는 `postmelee/alhangeul-macos` commit `7162a80fdadf4e121623be1da9c1a7d933ef0fac`으로 고정하고 읽기만 한다.
+- `Sources/ThumbnailExtension/HwpThumbnailProvider.swift`의 aspect-fit, `Sources/Shared/HwpPageImageRenderer.swift`의 first-page native render, `Sources/RhwpCoreBridge/FontResourceRegistry.swift`의 process-local bundled font 등록, `FontFallback.swift`의 실존 family fallback, `mydocs/tech/skia_preview_renderer_baseline.md`의 구조 누락 hard-fail 원칙을 Windows에 이식한다.
+- Swift CoreGraphics/CoreText compositor와 Finder 전용 cache는 Windows에 복사하지 않는다. Windows는 승인된 SVG→BGRA worker와 Explorer cache 소유권을 유지하고, 같은 원칙을 `resvg/fontdb`와 Rust fixture gate로 구현한다.
+- macOS WOFF2 35개를 중복 복사하지 않는다. Windows system font를 우선하고 pinned `rhwp`가 이미 보유한 SIL OFL NotoSansKR TTF 2개를 worker binary에 compile-time fallback으로 포함해 설치 위치·current directory와 무관하게 한글 glyph를 확보한다.
+
+### 산출물
+
+수정:
+
+- `crates/document-preview/Cargo.toml`
+- `crates/document-preview/src/render.rs`
+- `crates/document-preview/tests/representative_content.rs`
+- 필요 시 `tests/product-boundary.test.mjs`, `tests/thumbnail-build.test.mjs`
+- `assets/fonts/FONTS.md`
+- `docs/architecture/WINDOWS_THUMBNAILS.md`, `docs/DEVELOPMENT.md`
+- `mydocs/plans/task_m010_14_impl.md`
+- `mydocs/working/task_m010_14_stage6_1.md`
+- `mydocs/orders/20260826.md`, `mydocs/orders/20260827.md`
+
+### 변경 내용
+
+- `resvg` text·system-fonts·raster-images feature를 직접 고정하고 SVG parse options에 system font와 pinned NotoSansKR fallback을 등록한다.
+- generic family는 font database에 실재하는 Windows family를 먼저 선택하고 pinned NotoSansKR을 최종 fallback으로 둔다. SVG의 explicit HWP family fallback chain과 원본 page aspect ratio는 변경하지 않는다.
+- 온새미로 HWP, `biz_plan.hwp`, `form-002.hwpx` 첫 페이지에서 text/image node inventory와 text-only 영역의 non-white pixel을 검증한다. 단순 `HRESULT=S_OK`, byte 길이, alpha·dimension만으로 visual 성공을 판정하지 않는다.
+- incomplete direct bitmap을 preview보다 우선하는 현 결함은 raster가 대표 구조를 보존하도록 고친다. stale preview보다 current direct를 우선하는 Issue #14 계약 자체는 유지한다.
+- worker cold font load의 deadline·256 MiB Job cap, binary/installer 크기와 exact artifact digest를 다시 측정한다.
+
+### 검증
+
+플랫폼 중립 source·format gate:
+
+```bash
+cargo fmt --manifest-path crates/document-preview/Cargo.toml -- --check
+node --test tests/product-boundary.test.mjs tests/thumbnail-build.test.mjs tests/actions-workflows.test.mjs
+pnpm run check:product-boundary
+pnpm run check:rhwp-pin
+git diff --check
+```
+
+Windows x64 exact-SHA:
+
+```powershell
+cargo test --manifest-path crates/document-preview/Cargo.toml --target-dir apps/desktop/src-tauri/target
+cargo clippy --manifest-path crates/document-preview/Cargo.toml --target-dir apps/desktop/src-tauri/target --all-targets -- -D warnings
+pnpm run build:thumbnail-binaries -- --target x86_64-pc-windows-msvc
+pnpm run test:thumbnail-worker:windows
+pnpm run test:thumbnail-handler:windows
+pnpm run clippy:thumbnail-worker:windows
+pnpm run clippy:thumbnail-handler:windows
+```
+
+- 기존 Windows x64 installer smoke와 Linux x64/arm64 native 회귀를 새 exact SHA에서 재실행한다.
+- VDI 수동 gate는 새 NSIS 설치 뒤 온새미로, `biz_plan`, `form-002`의 text/background/table 보존과 HWP/HWPX aspect ratio만 우선 확인한다. registry/process/cache의 복잡한 확인은 automation 증적으로 대체하고 작업지시자에게 요구하지 않는다.
+
+### 커밋
+
+```text
+Task #14 [Stage 6.1]: Explorer thumbnail text와 image raster 보정
 ```
 
 ## 검증

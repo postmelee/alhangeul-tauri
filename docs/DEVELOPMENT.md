@@ -147,6 +147,8 @@ pnpm run check:desktop-artifacts -- \
   <downloaded-artifact-root>/alhangeul-artifact-inventory.json
 ```
 
+`pnpm run test:automation`의 thumbnail source 계약은 raster feature와 process-local 한글 fallback이 transitive dependency 변화로 사라지지 않는지 확인한다. `crates/document-preview`의 Rust test는 온새미로 HWP, `biz_plan.hwp`, `form-002.hwpx` 첫 페이지에서 SVG text/image 구조와 영역별 raster content를 검증한다. 지원 Windows/Linux 환경에서 native Rust 변경을 검증할 때는 이 대표 fixture gate가 포함된 `cargo test --manifest-path crates/document-preview/Cargo.toml --target-dir apps/desktop/src-tauri/target`도 실행한다.
+
 실제 installer 등록·복원과 Shell bitmap 반환은 native workflow의 `scripts/windows-installer-smoke.ps1` gate가 소유한다. 다른 host의 플랫폼 중립 test는 protocol과 source 계약 회귀를 잡지만 Windows COM activation, PE 종류와 installer transaction을 대신하지 않는다. process, IPC, resource budget, registry와 Explorer 수동 수용 기준은 [Windows thumbnail 아키텍처](architecture/WINDOWS_THUMBNAILS.md)를 따른다.
 
 ## `rhwp` Stable pin 갱신
