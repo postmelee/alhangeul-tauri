@@ -65,7 +65,10 @@ async function checkTree(context) {
 
   if (context.mode === 'output') {
     const actualAssets = files.filter((path) => path.startsWith('assets/')).sort();
-    if (JSON.stringify(actualAssets) !== JSON.stringify([...ROOT_ASSETS].sort())) {
+    const sourceAssets = (await listSiteFiles(join(context.repositoryRoot, 'site')))
+      .filter((path) => path.startsWith('assets/'));
+    const expectedAssets = [...new Set([...ROOT_ASSETS, ...sourceAssets])].sort();
+    if (JSON.stringify(actualAssets) !== JSON.stringify(expectedAssets)) {
       throw new Error('Pages output asset inventory가 승인 목록과 다릅니다.');
     }
   } else {

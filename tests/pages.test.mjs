@@ -26,6 +26,7 @@ import {
   validateReleaseData,
 } from '../scripts/pages/release-data.mjs';
 import { ROOT_ASSETS, listSiteFiles } from '../scripts/pages/site-files.mjs';
+import './pages-design.test.mjs';
 
 const repositoryRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 
@@ -111,7 +112,7 @@ test('builder는 source를 보존하고 승인 파일만 결정적으로 출력�
 
     assert.deepEqual(secondOutput, firstOutput);
     assert.deepEqual(await inventory(join(fixture.root, 'site')), sourceBefore);
-    assert.equal(first.sourceFiles, 3);
+    assert.equal(first.sourceFiles, sourceBefore.length);
     assert.equal(first.rootAssets, ROOT_ASSETS.length);
     assert.doesNotMatch(
       await readFile(join(second.outputRoot, 'index.html'), 'utf8'),
@@ -196,6 +197,21 @@ test('builder는 source symlink와 output symlink를 거부한다', {
     await assert.rejects(
       buildPages({ repositoryRoot: fixture.root }),
       /output symlink/,
+    );
+  } finally {
+    await rm(fixture.tmp, { recursive: true, force: true });
+  }
+});
+
+test('builder는 site asset의 승인 root asset 경로 충돌을 거부한다', async () => {
+  const fixture = await createFixture();
+  try {
+    const collision = join(fixture.root, 'site', ROOT_ASSETS[0]);
+    await mkdir(dirname(collision), { recursive: true });
+    await writeFile(collision, 'collision');
+    await assert.rejects(
+      buildPages({ repositoryRoot: fixture.root }),
+      /root asset을 덮어쓸 수 없습니다/,
     );
   } finally {
     await rm(fixture.tmp, { recursive: true, force: true });

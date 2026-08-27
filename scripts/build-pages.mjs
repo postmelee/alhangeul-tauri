@@ -22,6 +22,7 @@ export async function buildPages(options = {}) {
   await assertOutputIsNotSymlink(layout.outputRoot);
   const sourceFiles = await listSiteFiles(layout.sourceRoot);
   await verifyRootAssets(layout.repositoryRoot);
+  assertNoRootAssetCollision(sourceFiles);
 
   await rm(layout.outputRoot, { recursive: true, force: true });
   await mkdir(layout.outputRoot, { recursive: true });
@@ -49,6 +50,13 @@ export async function buildPages(options = {}) {
     sourceFiles: sourceFiles.length,
     rootAssets: ROOT_ASSETS.length,
   };
+}
+
+function assertNoRootAssetCollision(sourceFiles) {
+  const collision = sourceFiles.find((sitePath) => ROOT_ASSETS.includes(sitePath));
+  if (collision) {
+    throw new Error(`Pages source가 승인된 root asset을 덮어쓸 수 없습니다: ${collision}`);
+  }
 }
 
 export function resolveLayout(options = {}) {
