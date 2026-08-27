@@ -249,7 +249,9 @@ test('공통 helper는 platform adapter를 import하지 않고 외부 driver만 
   assert.match(windowsConfig, /strictFileInteractability:\s*false/);
   assert.match(windowsConfig, /webviewOptions:\s*\{ userDataFolder: webviewDataDir \}/);
   assert.match(windowsConfig, /join\(inputs\.outputDir, 'webview2-user-data'\)/);
+  assert.match(windowsConfig, /\.\.\.\(shared\.specs \?\? \[\]\)/);
   assert.match(windowsConfig, /windows['"], 'probe\.e2e\.ts'/);
+  assert.match(windowsConfig, /specs['"], 'windows-native\.e2e\.ts'/);
   assert.doesNotMatch(windowsConfig, /driverProvider:\s*'(embedded|crabnebula)'/);
   assert.doesNotMatch(windowsConfig, /autoXvfb|DISPLAY|gui\/linux|native-ui/);
   const sharedConfig = await readFile(join(repoRoot, 'tests/gui/wdio.shared.conf.ts'), 'utf8');
@@ -277,6 +279,49 @@ test('Windows adapter는 WinApp CLI를 공통 helper나 제품 runtime에 역주
   ]) {
     const source = await readFile(join(repoRoot, path), 'utf8');
     assert.doesNotMatch(source, /winapp-cli|WinApp CLI|ALHANGEUL_WINAPP/i, path);
+  }
+});
+
+test('Windows native file·drag 수용은 semantic UIA와 단일 bounded gesture만 사용한다', async () => {
+  const fileDialog = await readFile(
+    join(repoRoot, 'tests/gui/windows/native-ui/file-dialog.mjs'), 'utf8',
+  );
+  const drag = await readFile(
+    join(repoRoot, 'tests/gui/windows/native-ui/drag-drop.mjs'), 'utf8',
+  );
+  const layout = await readFile(
+    join(repoRoot, 'tests/gui/windows/native-ui/arrange-windows.ps1'), 'utf8',
+  );
+  const spec = await readFile(
+    join(repoRoot, 'tests/gui/specs/windows-native.e2e.ts'), 'utf8',
+  );
+  assert.match(fileDialog, /automationId === '1148'/);
+  assert.match(fileDialog, /actionSelector\(elements, action, '1'\)/);
+  assert.match(fileDialog, /actionSelector\(elements, 'cancel', '2'\)/);
+  assert.match(fileDialog, /window\.ownerHwnd === appTarget\.hwnd/);
+  assert.match(fileDialog, /await dialog\.client\.setValue[\s\S]*await dialog\.client\.invoke/);
+  assert.match(drag, /await explorerClient\.drag\(/);
+  assert.equal((drag.match(/\.drag\(/g) ?? []).length, 1);
+  assert.match(drag, /resolveDragPoints\(sourceTree, appTree, layout/);
+  assert.match(layout, /GetWindowThreadProcessId/);
+  assert.match(layout, /SetWindowPos/);
+  assert.doesNotMatch(layout, /SendKeys|SendInput|Stop-Process/);
+  assert.match(spec, /HWP\/HWPX native Save As, current save와 reopen/);
+  assert.match(spec, /Open·Save As 취소 반복/);
+  assert.match(spec, /await dragFileIntoWindow\([\s\S]*await waitForDocument/);
+  assert.doesNotMatch(fileDialog + drag + spec, /gui\/linux|AT-SPI|xdotool|fixed coordinate/i);
+});
+
+test('Windows native GUI source는 구현계획의 파일 크기 상한을 지킨다', async () => {
+  for (const path of [
+    'tests/gui/specs/windows-native.e2e.ts',
+    'tests/gui/windows/native-ui/file-dialog.mjs',
+    'tests/gui/windows/native-ui/drag-drop.mjs',
+    'tests/gui/windows/native-ui/arrange-windows.ps1',
+    'tests/gui/windows/winapp-cli.mjs',
+  ]) {
+    const source = await readFile(join(repoRoot, path), 'utf8');
+    assert.ok(source.split('\n').length <= 300, `${path}는 300줄 이하여야 합니다`);
   }
 });
 

@@ -84,6 +84,32 @@ test('target client는 모든 UIA 결과를 동일 PID/HWND에 고정한다', as
   ]);
 });
 
+test('target client는 dialog UIA와 단일 bounded drag를 같은 HWND에 고정한다', async () => {
+  const calls = [];
+  const client = createWinAppCli({
+    executablePath: 'C:\\tools\\winapp.exe',
+    appPid: 77,
+    windowHandle: 99,
+    execFileImpl: fakeSequence(calls, [
+      { matchCount: 1, matches: [] },
+      { elementId: '1148', value: 'C:\\out\\copy.hwp' },
+      { elementId: '1', invoked: true },
+      { from: '100,200', to: '900,500' },
+    ]),
+  });
+  await client.search('copy.hwp', 5);
+  await client.setValue('1148', 'C:\\out\\copy.hwp');
+  await client.invoke('1');
+  await client.drag('100,200', '900,500', { holdMs: 200, dwellMs: 700 });
+  assert.deepEqual(calls.map((call) => call.args.slice(0, -1)), [
+    ['ui', 'search', 'copy.hwp', '-w', '99', '--max', '5'],
+    ['ui', 'set-value', '1148', 'C:\\out\\copy.hwp', '-w', '99'],
+    ['ui', 'invoke', '1', '-w', '99'],
+    ['ui', 'drag', '100,200', '900,500', '-w', '99',
+      '--hold-ms', '200', '--dwell-ms', '700'],
+  ]);
+});
+
 test('target client는 같은 process의 내부 HWND를 제외하고 선택한 HWND만 보존한다', async () => {
   const client = createWinAppCli({
     executablePath: 'C:\\tools\\winapp.exe',
@@ -132,6 +158,18 @@ for (const [name, options, error] of [
     await assert.rejects(runWinAppJson({ ...options, execFileImpl: fakeExec([], {}) }), error);
   });
 }
+
+test('target client는 위험한 dialog 값과 drag 좌표를 실행 전에 거부한다', async () => {
+  const client = createWinAppCli({
+    executablePath: 'C:\\tools\\winapp.exe',
+    appPid: 77,
+    windowHandle: 99,
+    execFileImpl: fakeExec([], {}),
+  });
+  await assert.rejects(client.setValue('1148', 'C:\\out\nbad.hwp'), /단일행/);
+  await assert.rejects(client.drag('-1,2', '3,4'), /screen x,y/);
+  await assert.rejects(client.drag('1,2', '3,4', { dwellMs: 10001 }), /0~10000/);
+});
 
 function fakeExec(calls, response) {
   return (file, args, options, callback) => {

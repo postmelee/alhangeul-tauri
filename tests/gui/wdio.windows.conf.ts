@@ -32,7 +32,11 @@ export function createWindowsWdioConfig(
 
   return {
     ...shared,
-    specs: [join(import.meta.dirname, 'windows', 'probe.e2e.ts')],
+    specs: [
+      ...(shared.specs ?? []),
+      join(import.meta.dirname, 'windows', 'probe.e2e.ts'),
+      join(import.meta.dirname, 'specs', 'windows-native.e2e.ts'),
+    ],
     services: [['@wdio/tauri-service', serviceOptions]],
     capabilities,
   };

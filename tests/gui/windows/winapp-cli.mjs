@@ -36,6 +36,22 @@ export function createWinAppCli(options = {}) {
       ]),
       windowHandle,
     ),
+    search: async (selector, max = 10) => invokeUi(runtime, [
+      'search', safeText(selector, 'selector'), '-w', String(windowHandle),
+      '--max', String(searchLimit(max)),
+    ]),
+    setValue: async (selector, value) => invokeUi(runtime, [
+      'set-value', safeText(selector, 'selector'), safeValue(value, 'value'),
+      '-w', String(windowHandle),
+    ]),
+    invoke: async (selector) => invokeUi(runtime, [
+      'invoke', safeText(selector, 'selector'), '-w', String(windowHandle),
+    ]),
+    drag: async (from, to, gesture = {}) => invokeUi(runtime, [
+      'drag', dragPoint(from), dragPoint(to), '-w', String(windowHandle),
+      '--hold-ms', String(gestureDuration(gesture.holdMs ?? 150, 'hold')),
+      '--dwell-ms', String(gestureDuration(gesture.dwellMs ?? 500, 'dwell')),
+    ]),
     waitFor: async (selector, timeoutMs = 5_000) => invokeUi(runtime, [
       'wait-for', safeText(selector, 'selector'), '-w', String(windowHandle),
       '--timeout', String(boundedWait(timeoutMs)),
@@ -194,6 +210,37 @@ function safeText(value, name) {
     throw new Error(`${name}은 비어 있지 않은 단일행 문자열이어야 합니다.`);
   }
   return value.trim();
+}
+
+function safeValue(value, name) {
+  if (typeof value !== 'string' || value === '' || /[\r\n\0]/.test(value)) {
+    throw new Error(`${name}은 비어 있지 않은 단일행 문자열이어야 합니다.`);
+  }
+  return value;
+}
+
+function dragPoint(value) {
+  const point = safeText(value, 'drag point');
+  if (!/^\d{1,5},\d{1,5}$/.test(point)) {
+    throw new Error('drag point는 음수가 아닌 screen x,y 좌표여야 합니다.');
+  }
+  return point;
+}
+
+function gestureDuration(value, name) {
+  const duration = Number(value);
+  if (!Number.isSafeInteger(duration) || duration < 0 || duration > 10_000) {
+    throw new Error(`drag ${name} 시간은 0~10000ms 범위여야 합니다.`);
+  }
+  return duration;
+}
+
+function searchLimit(value) {
+  const limit = Number(value);
+  if (!Number.isSafeInteger(limit) || limit < 1 || limit > 100) {
+    throw new Error('WinApp search limit은 1~100 범위여야 합니다.');
+  }
+  return limit;
 }
 
 function optionalText(value, name) {
