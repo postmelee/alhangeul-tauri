@@ -87,7 +87,7 @@ test('document preview raster는 text, system font와 licensed 한글 fallback�
   assert.match(renderer, /fontdb\.load_system_fonts\(\)/);
   assert.match(renderer, /NotoSansKR-Regular\.ttf/);
   assert.match(renderer, /NotoSansKR-ExtraLight\.ttf/);
-  assert.match(renderer, /options\.fontdb\s*=\s*fontdb/);
+  assert.match(renderer, /fontdb,\s*\.\.Default::default\(\)/);
   assert.doesNotMatch(
     renderer,
     /Tree::from_str\([^;]*Options::default\(\)/s,

@@ -105,12 +105,15 @@ pub fn rasterize_first_page(bytes: &[u8], requested_edge: u32) -> Result<Bitmap,
 
 fn svg_parse_options() -> resvg::usvg::Options<'static> {
     let fontdb = font_database();
-    let mut options = resvg::usvg::Options::default();
-    options.font_family =
-        first_existing_family(&fontdb, &["Malgun Gothic", "맑은 고딕", "Noto Sans KR"]);
-    options.languages = vec!["ko-KR".to_string(), "ko".to_string(), "en".to_string()];
-    options.fontdb = fontdb;
-    options
+    resvg::usvg::Options {
+        font_family: first_existing_family(
+            &fontdb,
+            &["Malgun Gothic", "맑은 고딕", "Noto Sans KR"],
+        ),
+        languages: vec!["ko-KR".to_string(), "ko".to_string(), "en".to_string()],
+        fontdb,
+        ..Default::default()
+    }
 }
 
 fn font_database() -> Arc<resvg::usvg::fontdb::Database> {
