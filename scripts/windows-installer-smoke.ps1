@@ -18,6 +18,7 @@ $legacyProgIds = @('HWP Document', 'HWPX Document')
 $msiInstallDirectory = Join-Path $env:ProgramFiles 'Alhangeul'
 $nsisInstallDirectory = Join-Path $env:LOCALAPPDATA 'Alhangeul'
 function Assert-Condition($Condition, $Message) { if (-not $Condition) { throw $Message } }
+. "$PSScriptRoot/windows-process-lifecycle.ps1"
 function Assert-InventoryRecord($Kind, $File, $Inventory, $Root) {
   $records = @($Inventory.files | Where-Object { $_.kind -eq $Kind })
   Assert-Condition ($records.Count -eq 1) "inventory에 $Kind record가 정확히 하나여야 합니다."
@@ -196,18 +197,6 @@ function Invoke-Uninstaller($Kind, $State, $LogPath) {
   $path = if ($null -ne $State.Entry -and $State.Entry.UninstallString) { $State.Entry.UninstallString.Trim().Trim('"') } else { Join-Path $State.InstallDirectory 'uninstall.exe' }
   Assert-Condition (Test-Path -LiteralPath $path -PathType Leaf) 'NSIS uninstaller를 찾을 수 없습니다.'
   return (Start-Process -FilePath $path -ArgumentList @('/S') -Wait -PassThru).ExitCode
-}
-function Invoke-Launch($Executable) {
-  $cycles = @(); foreach ($iteration in 1..2) {
-    $process = Start-Process -FilePath $Executable -PassThru; try {
-      Assert-Condition ($process.WaitForInputIdle(30000)) "Alhangeul cycle $iteration input-idle timeout"; $process.Refresh()
-      Assert-Condition (-not $process.HasExited) "Alhangeul cycle $iteration process가 조기 종료되었습니다."; Assert-Condition ($process.MainWindowHandle -ne [IntPtr]::Zero) "Alhangeul cycle $iteration main window가 없습니다."
-      Assert-Condition ($process.Responding) "Alhangeul cycle $iteration main window가 응답하지 않습니다."; Assert-Condition ($process.CloseMainWindow()) "Alhangeul cycle $iteration 정상 종료 요청에 실패했습니다."
-      Assert-Condition ($process.WaitForExit(10000)) "Alhangeul cycle $iteration 정상 종료 timeout"; $cycles += [ordered]@{ Iteration = $iteration; Pid = $process.Id; Ready = $true; GracefulExit = $true }
-    } finally {
-      $process.Refresh(); if (-not $process.HasExited) { Stop-Process -Id $process.Id -Force; Wait-Process -Id $process.Id -ErrorAction SilentlyContinue }
-    } }
-  return [ordered]@{ CycleCount = $cycles.Count; Cycles = $cycles }
 }
 function Write-MsiFailureContext($LogPath) {
   if (-not (Test-Path -LiteralPath $LogPath -PathType Leaf)) { return $null }

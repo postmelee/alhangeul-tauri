@@ -6,8 +6,10 @@ import test from 'node:test';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const scriptPath = join(repoRoot, 'scripts/windows-installer-smoke.ps1');
+const lifecyclePath = join(repoRoot, 'scripts/windows-process-lifecycle.ps1');
 const scriptBytes = await readFile(scriptPath);
 const source = scriptBytes.toString('utf8');
+const lifecycleSource = await readFile(lifecyclePath, 'utf8');
 
 test('Windows PowerShell 5.1이 UTF-8 source를 인식하도록 BOM을 유지한다', () => {
   assert.deepEqual(
@@ -24,6 +26,7 @@ test('entry parameter는 artifact, output, expected version 세 개로 제한한
     .map((match) => match[1]);
   assert.deepEqual(names, ['ArtifactRoot', 'OutputDirectory', 'ExpectedVersion']);
   assert.match(source, /Set-StrictMode -Version Latest/);
+  assert.match(source, /\. "\$PSScriptRoot\/windows-process-lifecycle\.ps1"/);
   assert.doesNotMatch(source, /\bImport-Module\b/);
 });
 
@@ -144,16 +147,22 @@ test('version, shortcut, 제한 실행과 targeted cleanup을 검사한다', () 
   assert.match(source, /ReleaseComObject\(\$shell\)/);
   assert.match(source, /\.Trim\(\)\.Trim\('\"'\)/);
   assert.match(source, /\$leftPath = ConvertTo-NormalizedPath \$Left/);
-  assert.match(source, /foreach \(\$iteration in 1\.\.2\)/);
-  assert.match(source, /WaitForInputIdle\(30000\)/);
-  assert.match(source, /MainWindowHandle -ne \[IntPtr\]::Zero/);
-  assert.match(source, /\$process\.Responding/);
-  assert.match(source, /\$process\.CloseMainWindow\(\)/);
-  assert.match(source, /WaitForExit\(10000\)/);
-  assert.match(source, /CycleCount = \$cycles\.Count/);
-  assert.doesNotMatch(source, /Start-Sleep -Seconds 5/);
-  assert.match(source, /Stop-Process -Id \$process\.Id -Force/);
-  assert.doesNotMatch(source, /Stop-Process\s+-Name/);
+  assert.match(lifecycleSource, /foreach \(\$iteration in 1\.\.2\)/);
+  assert.match(lifecycleSource, /WaitForInputIdle\(30000\)/);
+  assert.match(lifecycleSource, /function Wait-ForStableMainWindow\(\$Process, \$Iteration\)/);
+  assert.match(lifecycleSource, /\$stableSamples -ge 11/);
+  assert.match(lifecycleSource, /Start-Sleep -Milliseconds 500/);
+  assert.match(lifecycleSource, /\$currentHandle -ne \[IntPtr\]::Zero -and \$Process\.Responding/);
+  assert.match(lifecycleSource, /StableSamples = \$stableSamples/);
+  assert.match(lifecycleSource, /\$process\.CloseMainWindow\(\)/);
+  assert.match(lifecycleSource, /WaitForExit\(30000\)/);
+  assert.match(lifecycleSource, /handle=\$\(\$process\.MainWindowHandle\.ToInt64\(\)\)/);
+  assert.match(lifecycleSource, /title=\$\(\$process\.MainWindowTitle\)/);
+  assert.match(lifecycleSource, /responding=\$\(\$process\.Responding\)/);
+  assert.match(lifecycleSource, /CycleCount = \$cycles\.Count/);
+  assert.doesNotMatch(lifecycleSource, /Start-Sleep -Seconds 5/);
+  assert.match(lifecycleSource, /Stop-Process -Id \$process\.Id -Force/);
+  assert.doesNotMatch(lifecycleSource, /Stop-Process\s+-Name/);
   assert.match(source, /Get-CleanState/);
   assert.ok(
     source.includes(
@@ -202,22 +211,28 @@ test('fixture, summary, failure category와 finally 증적을 항상 남긴다',
 });
 
 test('script와 함수가 구현계획의 크기 상한을 지킨다', () => {
-  const lines = source.split(/\r?\n/);
-  assert.ok(lines.length <= 300, `script가 300 LOC를 초과했습니다: ${lines.length}`);
+  assertPowerShellSize('windows-installer-smoke.ps1', source, '# Main');
+  assertPowerShellSize('windows-process-lifecycle.ps1', lifecycleSource);
+});
 
+function assertPowerShellSize(name, scriptSource, mainMarker) {
+  const lines = scriptSource.split(/\r?\n/);
+  assert.ok(lines.length <= 300, `${name}이 300 LOC를 초과했습니다: ${lines.length}`);
   const starts = lines
     .map((line, index) => (/^function /.test(line) ? index : -1))
     .filter((index) => index >= 0);
-  const mainStart = lines.findIndex((line) => line === '# Main');
+  const mainStart = mainMarker
+    ? lines.findIndex((line) => line === mainMarker)
+    : lines.length;
   for (let index = 0; index < starts.length; index += 1) {
     const start = starts[index];
     const end = index + 1 < starts.length ? starts[index + 1] : mainStart;
-    assert.ok(end - start <= 50, `${lines[start]} 함수가 50 LOC를 초과했습니다.`);
+    assert.ok(end - start <= 50, `${name}: ${lines[start]} 함수가 50 LOC를 초과했습니다.`);
     const signature = lines[start].split('{', 1)[0];
     const parameters = signature.match(/\$(\w+)/g) ?? [];
-    assert.ok(parameters.length <= 5, `${lines[start]} 함수 parameter가 5개를 초과했습니다.`);
+    assert.ok(parameters.length <= 5, `${name}: ${lines[start]} 함수 parameter가 5개를 초과했습니다.`);
   }
-});
+}
 
 function assertOrdered(markers) {
   let previous = -1;

@@ -404,6 +404,20 @@ Linux `cargo check`, production DEB build, 최종 source의 desktop Rust test 10
 Rust test와 Clippy의 `CARGO_INCREMENTAL=0`, debug info 비활성화는 격리 VM 저장공간만 제한하며 검증 대상과
 compiler lint 수준은 바꾸지 않는다.
 
+correction candidate `9b67f8dfd49b26e385cb0bdba994d1d7c8c5e427`의
+[native run 33034207053](https://github.com/postmelee/alhangeul-tauri/actions/runs/33034207053)에서는 Windows x64,
+Linux x64, Linux arm64 build와 artifact 검증이 모두 통과했고 Windows desktop Rust test와 Clippy도 통과했다.
+그러나 후속 Windows installer smoke에서 MSI와 NSIS가 모두 설치·레지스트리·version·handler·shortcut·제거·정리를
+통과한 뒤 첫 `CloseMainWindow()`의 10초 종료 timeout으로 실패했다. 진단 artifact ID `9631886118`의 summary에는
+두 installer 모두 동일한 `Alhangeul cycle 1 정상 종료 timeout`만 기록됐으므로, installer별 결함은 배제되지만
+product 종료 결함과 `WaitForInputIdle()` 직후 닫기 요청의 frontend 초기화 경쟁은 아직 구분되지 않는다.
+먼저 harness가 동일한 non-zero main window handle과 responsive 상태를 500ms 간격 11회, 최소 5초간 유지한 뒤
+닫기를 보내도록 보정한다. 프로세스 readiness와 종료 확인은 300 LOC 상한을 유지하도록
+`scripts/windows-process-lifecycle.ps1`에 분리한다. 종료 대기는 30초로 제한하고 실패 시 handle, title, responding
+상태를 summary에 남긴다.
+이 보정의 새 exact SHA로 native workflow를 다시 실행하며, 동일 실패가 재현되기 전에는 product 종료 source를
+변경하지 않는다. 실패 run의 Linux artifact는 Linux GUI 완료 근거로 재사용하지 않는다.
+
 수정:
 
 - `apps/studio-host/src/command/direct-print.ts`
@@ -440,6 +454,7 @@ compiler lint 수준은 바꾸지 않는다.
 신규:
 
 - `apps/desktop/src-tauri/src/system_print.rs`
+- `scripts/windows-process-lifecycle.ps1`
 - `tests/gui/linux/native-output.ts`
 - `tests/gui/support/native-command.ts`
 - `tests/gui/support/webdriver-dom.ts`
