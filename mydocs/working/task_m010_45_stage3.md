@@ -32,24 +32,31 @@ Stage 3.3 피드백 보정에서는 820px 이하에서 왼쪽 정렬되던 updat
 버튼을 덮지 않게 했다. 홈·updates·feedback을 340·390·666·820px에서 요소 단위로 검사해 header,
 본문, action, contact card와 footer가 viewport 밖으로 벗어나지 않음을 확인했다.
 
+Stage 3.4 피드백 보정에서는 실제 알한글 macOS Pages의 feedback DOM과 배포 CSS computed style을
+대조해 영문 eyebrow를 제거하고 hero, 개인정보 안내, 2열 contact card와 button 구조를 같은 계층으로
+재구성했다. 세 페이지의 header와 footer는 원본의 980px header, 52px 높이, 3열/단일 열 breakpoint,
+배경·경계·간격을 공유하도록 통일했다. 홈에도 Footer를 추가하되 desktop과 mobile 모두 본문과
+Footer를 한 viewport 안에 배치하고 스크롤을 만들지 않도록 했다. 제품 설명과 지원 플랫폼 문구만
+Windows/Linux 범위에 맞게 유지했다.
+
 ## 산출물
 
 | 파일 | 변경 요약 |
 |---|---|
-| `site/index.html` (79줄) | 단어 중간 줄바꿈 없는 3줄 제목, Windows/Linux 실제 화면, 5개 플랫폼별 설치 안내로 홈 재구성 |
+| `site/index.html` (80줄) | 단어 중간 줄바꿈 없는 3줄 제목, Windows/Linux 실제 화면, 5개 설치 안내와 공통 Footer로 홈 재구성 |
 | `site/updates/index.html` (85줄) | 참고 페이지 구조의 hero, SVG 꺾쇠가 있는 플랫폼 다운로드 dropdown, 설치 형식·릴리즈 노트·manifest 안내 |
-| `site/feedback/index.html` (51줄) | 개인정보 주의, email 복사/작성, GitHub Issue와 rhwp upstream 분류 안내 |
-| `site/styles.css` (156줄) | 중앙 정렬·wrap 가능한 responsive action group과 340px dropdown flow를 포함한 Pages 시각 체계 구현 |
+| `site/feedback/index.html` (72줄) | 원본과 같은 hero·privacy note·contact card 계층으로 email 복사/작성과 GitHub Issue 안내 재구성 |
+| `site/styles.css` (184줄) | 원본 header·feedback·footer 수치와 responsive action/dropdown, 무스크롤 홈 체계를 통합 |
 | `site/script.js` (92줄) | unpublished 내부 안내와 published 홈·dropdown exact artifact 전환, release note hydration 공유 |
-| `site/assets/og-main.png` (1,920×1,080, 302,354 bytes) | 세 줄로 축소한 홈 제목을 반영한 공유 이미지 재생성 |
+| `site/assets/og-main.png` (1,920×1,080, 202,010 bytes) | 공통 Footer까지 포함한 최종 홈 화면으로 공유 이미지 재생성 |
 | `scripts/build-pages.mjs` (152줄) | 중첩 페이지의 root asset 경로를 depth에 맞춰 결정적으로 정규화 |
 | `scripts/check-pages.mjs` (235줄) | 홈·업데이트·문의 필수 파일과 내부 hash 대상 존재 검사를 추가 |
 | `tests/pages.test.mjs` (282줄) | 중첩 asset 출력, broken hash와 필수 페이지 누락 회귀 검사 추가 |
-| `tests/pages-design.test.mjs` (276줄) | 홈 3줄 제목·SVG icon·반응형 중앙 정렬·340px dropdown flow와 direct-download 계약 추가 |
+| `tests/pages-design.test.mjs` (289줄) | 공통 Footer, feedback 원본 구조, 홈 무스크롤·SVG icon·반응형 dropdown과 direct-download 계약 추가 |
 | `mydocs/orders/20260827.md` | Stage 3 완료와 Stage 4 승인 대기로 진행 상태 갱신 |
 
 공유 이미지 SHA-256은
-`69bc10b53db5eb41a2e241d4d65d8e4d2d308d5c693952a4e1c7e701c819f947`이다. 외부 package와
+`240d2b7fcd822b5b4c9a42557c5a924db4b884fb8543569f34b8432ea9cfdb74`이다. 외부 package와
 lockfile은 변경하지 않았고 모든 text source는 권장 300줄 상한 이하다.
 
 ## 본문 변경 정도 / 본문 무손실 여부
@@ -58,6 +65,10 @@ Stage 3 신규 페이지는 구현계획서의 사용자 문서 위치인 `site/
 작성했다. 홈은 작업지시자의 명시적 시각 피드백에 따라 Stage 2의 장문 feature·FAQ·philosophy·footer를
 제거하고 단일 화면으로 전면 보정했다. 따라서 홈 본문은 무손실 보존 대상이 아니며, 상세 설명은
 분리 페이지와 알한글 macOS Pages가 담당한다.
+
+Stage 3.4에서는 작업지시자의 명시적 비교 요청에 따라 feedback 본문과 모든 Footer의 markup을
+참고 페이지와 같은 정보 계층으로 다시 작성했다. 지원 플랫폼, 제보 경로와 제품 소개는 제품 경계상
+동일 문구로 복사할 수 없으므로 Windows/Linux 내용만 보존하고 시각 구조와 타이포그래피를 일치시켰다.
 
 제품 실행 코드, Pages workflow, `site/release.json` schema와 updater endpoint는 변경하지 않았다.
 `release.json`은 계속 `unreleased`, 세 download 값은 null, manifest는 비게시 상태다.
@@ -106,6 +117,14 @@ git diff --check
 - OK — 200% 확대에 해당하는 640×450 저높이 조건에서 horizontal overflow 없이 의도한 세로 scroll fallback
 - OK — semantic native link/button, skip link, 44px header target, focus-visible와 heading/landmark DOM 확인
 - OK — reduced-motion, no-JS 최종 콘텐츠 가시성과 12px/280ms one-shot motion은 source test로 확인
+- OK — 실제 Chrome 1,920×1,080 홈은 `scrollWidth=innerWidth`, `scrollHeight=innerHeight`이고
+  header 52px, main 935px, Footer 93px로 한 viewport에 정확히 배치
+- OK — 실제 Chrome 390×844 홈은 document 390×844, 가로·세로 scroll 없이 362px 본문과
+  원본 responsive Footer를 같은 viewport 안에 유지
+- OK — 실제 Chrome 390×844 updates/feedback은 document 폭이 각각 390px이고 action·privacy note·
+  contact card가 single column으로 전환돼 horizontal overflow 없음
+- OK — 1,280×720 feedback computed style은 원본과 같은 hero 980px, content 880px, h1 72/76.32px,
+  설명 21/31.5px, card 432px×2, gap 16px, Footer 93px 수치로 확인
 
 구현계획서의 FAQ용 native `<details>`는 최신 작업지시자가 홈 FAQ를 제거해 단일 화면으로
 보정하도록 한 범위와 충돌하므로 적용 대상에서 제외했다. 대신 updates의 다운로드 선택에는

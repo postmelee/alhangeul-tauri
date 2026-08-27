@@ -43,6 +43,7 @@ test('홈은 한 화면 설치 안내와 개별 페이지 탐색 계약을 지�
 
   assert.match(html, /Windows &amp; Linux/);
   assert.match(html, /HWP\/HWPX/);
+  assert.match(html, /<footer class="site-footer">/);
   assert.equal([...html.matchAll(/class="headline-line"/g)].length, 3);
   assert.match(html, /<span class="headline-line">더 이상 <em>낯선 문서<\/em>가<\/span>/);
   assert.doesNotMatch(html, /<nav[^>]*>[\s\S]*?>다운로드<\/a>/);
@@ -77,7 +78,11 @@ test('홈·업데이트·문의 페이지는 승인된 메뉴와 공유 메타�
       assert.match(html, new RegExp(`href="${escapeRegExp(link)}"`));
     }
     const header = html.match(/<header[\s\S]*?<\/header>/)?.[0] ?? '';
+    const footer = html.match(/<footer[\s\S]*?<\/footer>/)?.[0] ?? '';
     assert.doesNotMatch(header, />다운로드<\/a>/);
+    assert.match(footer, /class="site-footer"/);
+    assert.match(footer, />MIT License<\/a>/);
+    assert.doesNotMatch(footer, />rhwp<\/a>/);
   }
 });
 
@@ -168,7 +173,12 @@ test('published release hydration은 홈과 dropdown을 exact artifact로 직접
 
 test('문의 페이지는 개인정보 안내와 이메일·Issue 경로를 제공한다', async () => {
   const html = await readSite('feedback/index.html', 'utf8');
-  assert.match(html, /class="privacy-notice"/);
+  assert.match(html, /class="updates-page feedback-page"/);
+  assert.match(html, /class="updates-hero feedback-hero"/);
+  assert.match(html, /class="feedback-privacy-note"/);
+  assert.match(html, /class="feedback-card-grid"/);
+  assert.equal([...html.matchAll(/class="feedback-contact-card"/g)].length, 2);
+  assert.match(html, /class="feedback-github-mark"/);
   assert.match(html, /민감한 정보 안내/);
   assert.match(html, /alhangeul\.feedback@gmail\.com/);
   assert.match(html, /data-copy-value="alhangeul\.feedback@gmail\.com"/);
@@ -194,7 +204,7 @@ test('소셜 공유 이미지는 홈을 담는 16:9 PNG로 고정한다', async 
   assert.equal(png.readUInt32BE(20), 1080);
   assert.equal(
     createHash('sha256').update(png).digest('hex'),
-    '69bc10b53db5eb41a2e241d4d65d8e4d2d308d5c693952a4e1c7e701c819f947',
+    '240d2b7fcd822b5b4c9a42557c5a924db4b884fb8543569f34b8432ea9cfdb74',
   );
 });
 
@@ -208,10 +218,11 @@ test('홈은 일반 화면에서 스크롤을 막고 작은 화면 fallback과 �
   const script = await readSite('script.js', 'utf8');
 
   for (const html of pages) assert.doesNotMatch(html, /\shidden(?:\s|=|>)/);
-  assert.match(css, /\.home-page \{ overflow: hidden; \}/);
-  assert.match(css, /\.home-main \{ height: calc\(100dvh - 52px\)/);
+  assert.match(css, /body > main \{ flex: 1 0 auto; \}/);
+  assert.match(css, /\.home-page \{ height: 100dvh; overflow: hidden; \}/);
+  assert.match(css, /\.home-main \{ min-height: 0;[^}]*overflow: hidden; \}/);
   assert.match(css, /\.home-product \{ display: none; \}/);
-  assert.match(css, /@media \(max-height: 699px\).*\.home-page \{ overflow: auto; \}/s);
+  assert.match(css, /@media \(max-height: 699px\).*\.home-page \{[^}]*overflow: auto; \}/s);
   assert.match(css, /prefers-reduced-motion: reduce/);
   assert.match(css, /cubic-bezier\(0\.2, 0, 0, 1\)/);
   assert.match(css, /--quick: 90ms/);
@@ -227,10 +238,12 @@ test('홈은 일반 화면에서 스크롤을 막고 작은 화면 fallback과 �
   assert.match(css, /@media \(max-width: 340px\)[\s\S]*\.updates-actions \{ flex-direction: column; align-items: center; \}/);
   assert.match(css, /\.download-picker \.page-action-button \{ width: max-content; margin-inline: auto; \}/);
   assert.match(css, /\.download-options \{ position: static; width: 100%; margin-top: 8px; transform: none; \}/);
-  assert.match(css, /\.updates-hero h1 \{[^}]*font-size: 72px/);
+  assert.match(css, /\.updates-hero h1 \{[^}]*font-size: clamp\(40px, 7vw, 72px\)/);
   assert.match(css, /\.updates-hero > p \{[^}]*font-size: 21px/);
   assert.match(css, /\.updates-section h2 \{[^}]*font-size: 26px/);
-  assert.match(css, /\.updates-hero h1 \{ font-size: 40px; \}/);
+  assert.match(css, /\.feedback-contact-card h2 \{[^}]*font-size: 26px/);
+  assert.match(css, /\.site-footer \{[^}]*grid-template-columns: minmax\(160px, 1fr\)/);
+  assert.match(css, /\.updates-page \+ \.site-footer \{ margin-top: 56px; \}/);
   assert.match(script, /fetch\(`\$\{siteRoot\}release\.json`/);
   assert.match(script, /navigator\.clipboard\.writeText/);
   assert.match(script, /isExactDownload\(url, release\.tag\)/);
