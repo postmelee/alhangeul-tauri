@@ -93,7 +93,7 @@ export class LinuxNativeUiAdapter {
       await this.focusInFileDialog(DIALOG_PRIMARY_BUTTON);
       await this.shortcut('ctrl+l');
       await this.setFileDialogText(LOCATION_ENTRY, path);
-      await this.shortcut('Return');
+      await this.clickInFileDialog(DIALOG_PRIMARY_BUTTON);
       await this.waitAbsent(FILE_DIALOG);
     });
   }
@@ -198,6 +198,13 @@ export class LinuxNativeUiAdapter {
     });
   }
 
+  clickInFileDialog(selector) {
+    return this.command({
+      command: 'click', selector, within: FILE_DIALOG,
+      windowScope: 'file-dialog',
+    });
+  }
+
   async chooseSavePath(path) {
     await this.wait(FILE_DIALOG);
     await this.focusInFileDialog(DIALOG_PRIMARY_BUTTON);
@@ -206,8 +213,7 @@ export class LinuxNativeUiAdapter {
     await this.shortcut('Return');
     await this.wait(FILE_DIALOG);
     await this.setFileDialogText(NAME_ENTRY, this.pathApi.basename(path));
-    await this.focusInFileDialog(DIALOG_PRIMARY_BUTTON);
-    await this.shortcut('Return');
+    await this.clickInFileDialog(DIALOG_PRIMARY_BUTTON);
     await this.waitAbsent(FILE_DIALOG);
   }
 

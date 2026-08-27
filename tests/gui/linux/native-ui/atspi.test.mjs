@@ -31,9 +31,9 @@ test('Save As는 dialog readiness 뒤 directory와 basename을 semantic field에
   });
 
   assert.equal(triggered, true);
-  assert.deepEqual(shortcuts, ['ctrl+l', 'Return', 'Return']);
+  assert.deepEqual(shortcuts, ['ctrl+l', 'Return']);
   assert.deepEqual(calls.map(({ command }) => command), [
-    'wait', 'focus', 'setText', 'wait', 'setText', 'focus', 'waitAbsent',
+    'wait', 'focus', 'setText', 'wait', 'setText', 'click', 'waitAbsent',
   ]);
   assert.deepEqual(calls[1].selector.names, [
     'open', '열기', 'save', '저장', 'select', '선택',
@@ -50,9 +50,11 @@ test('Save As는 dialog readiness 뒤 directory와 basename을 semantic field에
   assert.deepEqual(calls[5].selector.names, [
     'open', '열기', 'save', '저장', 'select', '선택',
   ]);
+  assert.equal(calls[5].windowScope, 'file-dialog');
+  assert.deepEqual(calls[5].within.roles, ['file chooser', 'dialog']);
 });
 
-test('native open은 GTK location shortcut을 한 번 쓰고 modal close를 기다린다', async () => {
+test('native open은 GTK location 입력 뒤 primary button으로 submit한다', async () => {
   const calls = [];
   const shortcuts = [];
   const adapter = createAdapter({
@@ -60,8 +62,10 @@ test('native open은 GTK location shortcut을 한 번 쓰고 modal close를 기�
     runShortcut: async (key) => { shortcuts.push(key); },
   });
   await adapter.openDocument('/fixtures/biz_plan.hwp', async () => {});
-  assert.deepEqual(shortcuts, ['ctrl+l', 'Return']);
-  assert.deepEqual(calls.map(({ command }) => command), ['wait', 'focus', 'setText', 'waitAbsent']);
+  assert.deepEqual(shortcuts, ['ctrl+l']);
+  assert.deepEqual(calls.map(({ command }) => command), [
+    'wait', 'focus', 'setText', 'click', 'waitAbsent',
+  ]);
   assert.deepEqual(calls[1].selector.names, [
     'open', '열기', 'save', '저장', 'select', '선택',
   ]);
@@ -69,6 +73,10 @@ test('native open은 GTK location shortcut을 한 번 쓰고 modal close를 기�
   assert.deepEqual(calls[2].within.roles, ['file chooser', 'dialog']);
   assert.equal(calls[2].selector.names, undefined);
   assert.equal(calls[2].value, '/fixtures/biz_plan.hwp');
+  assert.equal(calls[3].windowScope, 'file-dialog');
+  assert.deepEqual(calls[3].selector.names, [
+    'open', '열기', 'save', '저장', 'select', '선택',
+  ]);
 });
 
 test('native shortcut은 허용된 portal window를 활성화·확인한 뒤 XTEST key를 보낸다', async () => {
@@ -86,7 +94,6 @@ test('native shortcut은 허용된 portal window를 활성화·확인한 뒤 XTE
   });
   await adapter.openDocument('/fixtures/biz_plan.hwp', async () => {});
   assert.deepEqual(processCalls.map(([, args]) => args[0]), [
-    'search', 'windowactivate', 'getactivewindow', 'key',
     'search', 'windowactivate', 'getactivewindow', 'key',
   ]);
   assert.deepEqual(processCalls[0][1], [
@@ -108,7 +115,7 @@ test('print adapter는 Print to File만 고르고 save/cancel modal 종료를 �
   await adapter.cancelPrint(async () => {});
   assert.deepEqual(calls.map(({ command }) => command), [
     'wait', 'click', 'wait', 'click',
-    'wait', 'focus', 'setText', 'wait', 'setText', 'focus', 'waitAbsent',
+    'wait', 'focus', 'setText', 'wait', 'setText', 'click', 'waitAbsent',
     'click', 'waitAbsent',
     'wait', 'click', 'waitAbsent',
   ]);
@@ -118,9 +125,10 @@ test('print adapter는 Print to File만 고르고 save/cancel modal 종료를 �
   assert.deepEqual(calls[3].within, { roles: ['dialog'], names: ['print', '인쇄'] });
   assert.equal(calls[6].value, '/tmp/output');
   assert.equal(calls[8].value, 'gtk.pdf');
+  assert.equal(calls[9].windowScope, 'file-dialog');
   assert.deepEqual(calls[11].selector.names, ['print', '인쇄']);
   assert.equal(calls[11].searchOrder, 'reverse');
-  assert.deepEqual(shortcuts, ['ctrl+l', 'Return', 'Return']);
+  assert.deepEqual(shortcuts, ['ctrl+l', 'Return']);
   await assert.rejects(
     adapter.printWithVirtualPrinter('Office LaserJet', async () => {}),
     /physical printer/,

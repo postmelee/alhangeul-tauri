@@ -418,6 +418,23 @@ product 종료 결함과 `WaitForInputIdle()` 직후 닫기 요청의 frontend �
 이 보정의 새 exact SHA로 native workflow를 다시 실행하며, 동일 실패가 재현되기 전에는 product 종료 source를
 변경하지 않는다. 실패 run의 Linux artifact는 Linux GUI 완료 근거로 재사용하지 않는다.
 
+새 candidate `ddc687df0f12ed21b2af4536688bc78c4970efba`의
+[native run 33036008601](https://github.com/postmelee/alhangeul-tauri/actions/runs/33036008601)은 Windows x64,
+Linux x64, Linux arm64 build와 artifact 검증을 모두 통과했다. Windows installer smoke artifact ID
+`9632227503`의 summary에서 MSI와 NSIS 각각 두 번의 실행이 같은 window handle과 responsive 상태를 11회
+연속 확인한 뒤 모두 `GracefulExit=true`로 종료됐고, 설치·제거 exit code 0과 잔여 process·path·registry 0을
+확인했다. 따라서 이전 Windows 실패는 `WaitForInputIdle()` 직후 닫기 경쟁으로 판정하며 product 종료 source는
+변경하지 않는다.
+
+같은 candidate의 [Linux GUI run 33036683959](https://github.com/postmelee/alhangeul-tauri/actions/runs/33036683959)은
+native run과 Linux x64 artifact ID `9632210137`의 exact handoff, DEB inventory, 설치, GUI 환경 준비를 통과했지만
+GUI acceptance에서 실패했다. evidence artifact ID `9632444337`은 기본 HWP/HWPX 로드를 성공으로 기록한 뒤,
+첫 native open의 GTK `Open File` dialog가 full path 입력과 단일 `Return` 뒤에도 열린 상태로 남았음을 보여준다.
+AT-SPI tree에는 enabled primary `Open` 버튼이 남아 있고, 뒤 drag-in·direct PDF·system print 실패는 같은 열린
+dialog에서 연쇄된 결과다. 파일 open과 최종 Save As submit은 keyboard `Return`에 의존하지 않고 검증된 file
+dialog 내부의 enabled primary 버튼을 semantic click하도록 보정한다. product source는 변경하지 않으며 새 exact
+SHA의 native artifact와 Linux GUI workflow로 다시 검증한다.
+
 수정:
 
 - `apps/studio-host/src/command/direct-print.ts`
