@@ -113,6 +113,19 @@ describe('native file command leaf adapters', () => {
     expect(status.textContent).not.toBe('인쇄 완료');
   });
 
+  it('restores the document status when a native save dialog is cancelled', async () => {
+    installTauriWindow();
+    const status = { textContent: 'document.hwp — 2페이지' };
+    (globalThis as { document?: unknown }).document = {
+      getElementById: vi.fn(() => status),
+    };
+    host.saveCurrent.mockResolvedValue(null);
+
+    await command('file:save').execute(services() as never);
+
+    expect(status.textContent).toBe('document.hwp — 2페이지');
+  });
+
   it('resolves opaque recent ids inside the adapter before native open', async () => {
     installTauriWindow();
     resolveRecentPath.mockReturnValue('/private/document.hwpx');

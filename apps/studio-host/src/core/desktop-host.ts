@@ -1,5 +1,9 @@
 import type { CommandServices } from '@upstream/command/types';
 import {
+  buildContentLossNotice,
+  type ContentLossReport,
+} from '@upstream/core/export-content-loss';
+import {
   DesktopSession,
   type DesktopDocumentFormat,
   type NativeDocumentState,
@@ -9,6 +13,10 @@ import {
   type DesktopHostDependencies,
 } from './desktop-host-dependencies';
 import { DesktopPersistence, type PdfExportResult } from './desktop-persistence';
+import {
+  exportDesktopSource,
+  syncDesktopPasswordRequirement,
+} from './desktop-source-export';
 
 export type { DesktopHostDependencies } from './desktop-host-dependencies';
 
@@ -113,11 +121,23 @@ export class DesktopHost {
   ): Promise<NativeDocumentState | null> {
     const active = this.session.active;
     if (!active) throw new Error('native 문서 세션이 없습니다');
-    const saved = await this.persistence.saveSource(active, format, forceSaveAs);
+    const services = this.requireCommandServices();
+    const saved = await this.persistence.saveSource(
+      active,
+      (targetFormat) => exportDesktopSource(
+        services,
+        targetFormat,
+        this.dependencies.chooseDocumentSavePassword,
+      ),
+      format,
+      forceSaveAs,
+    );
     if (!saved) return null;
     this.session.commitSave(saved.state);
     await saved.handlers.notifySaved(saved.state.fileName);
+    services.wasm.requiresPasswordForSave = saved.passwordProtected;
     this.updateDocumentTitle();
+    await this.showContentLossWarning(saved.contentLoss);
     return saved.state;
   }
 
@@ -166,6 +186,7 @@ export class DesktopHost {
     try {
       const handlers = await this.dependencies.handlers();
       const loaded = await handlers.loadFile(bytes, result.fileName, false, false);
+      if (this.commandServices) syncDesktopPasswordRequirement(this.commandServices);
       const previousDocId = this.session.commitOpen(result);
       await this.invoke<void>('record_recent_document', { path }).catch((error) => {
         console.warn('[desktop-host] recent document update failed:', error);
@@ -193,6 +214,23 @@ export class DesktopHost {
 
   private async invoke<T>(command: string, args: Record<string, unknown> = {}): Promise<T> {
     return this.dependencies.invoke(command, args) as Promise<T>;
+  }
+
+  private requireCommandServices(): CommandServices {
+    if (!this.commandServices) throw new Error('Studio command services가 준비되지 않았습니다');
+    return this.commandServices;
+  }
+
+  private async showContentLossWarning(report: ContentLossReport | null) {
+    if (!report) return;
+    const notice = buildContentLossNotice(report);
+    if (!notice) return;
+    await this.dependencies.showMessage(notice, {
+      title: '문서 저장 경고',
+      kind: 'warning',
+    }).catch((error) => {
+      console.warn('[desktop-host] 내용 손실 경고 표시 실패:', error);
+    });
   }
 
   private updateDocumentTitle(): void {

@@ -183,6 +183,74 @@ system dialog 미진입, same-origin hidden surface 접근 실패, 빈 페이지
 
 Stage 6 전에는 branch push·workflow dispatch·artifact 생성을 하지 않는다. Stage 6에서도 release tag, GitHub Release, 서명, package 게시, updater 활성화는 범위 밖이다.
 
+## 검증된 rhwp `v0.8.4` native 수용 기준선
+
+2026-08-14~15 Task #24는 rhwp `v0.8.4` / resolved commit
+`496333b27d21ddb9114ba9ae340bcb895870c9a7`의 core, native Cargo lock, bundled WASM과
+전체 Studio bundle을 다음 Alhangeul exact source에서 검증했다.
+
+- 실행 가능 commit: `88baa5666ec55bf043844bae01ec4d422278851c`
+- [CI run 31688454752](https://github.com/postmelee/alhangeul-tauri/actions/runs/31688454752): Unit tests job `94409981595` 포함 전체 성공
+- [Native run 31688732973](https://github.com/postmelee/alhangeul-tauri/actions/runs/31688732973): Windows x64, Linux x64, Linux arm64 build와 Windows MSI·NSIS installer smoke 전체 성공
+- Windows x64는 NSIS 전체 GUI 수용과 같은 SHA의 MSI 자동 package smoke를 결합했고, Linux x64는 native GitHub Codespaces에서 Stage 3 DEB를 설치해 전체 GUI 수용했다.
+
+### Task #24 artifact provenance
+
+Actions artifact는 14일 retention의 임시 검증물이며 확인 당시 `expired=false`였다. API
+archive SHA-256과 package inventory SHA-256은 서로 다른 검증 대상이다.
+
+| 용도 | Actions artifact | ID | 압축 크기 | Archive SHA-256 | 만료 시각(UTC) |
+|---|---|---:|---:|---|---|
+| Windows installer 진단 | `alhangeul-desktop-windows-x64-installer-smoke` | `9176977156` | 31,191 B | `1e91875ef4bd8b8e3dab99e04602a42bd5a90920c9616ae7919947092e6e077b` | 2026-08-27 10:12:00 |
+| Windows x64 bundle | `alhangeul-desktop-windows-x64` | `9176938095` | 102,217,253 B | `6bfc9e288d94084438ff135d1d6633bd9bb696baf19b17cfbd82995649f8f9ab` | 2026-08-27 10:10:34 |
+| Linux x64 bundle | `alhangeul-desktop-linux-x64` | `9176850348` | 505,449,721 B | `5f7a0df6aa6567d221523243eba8c0e2b1b022f4d23683577a30707d32223d7f` | 2026-08-27 10:07:09 |
+| Linux arm64 bundle | `alhangeul-desktop-linux-arm64` | `9176603779` | 166,240,083 B | `5f6a338b1c013a4ffee3c99d9d89fed6b9584dc06c54a9b731508db118dcfd98` | 2026-08-27 09:59:16 |
+
+동봉 inventory와 별도 SHA-256 계산이 일치한 필수 package는 다음과 같다.
+
+| Platform | 종류·파일 | 크기 | SHA-256 |
+|---|---|---:|---|
+| Windows x64 | MSI `Alhangeul_0.1.0_x64_en-US.msi` | 53,424,128 B | `4861eae6a0bb08b072888dcf652e6eea3121735f167016cf61e5b19dfa1ee652` |
+| Windows x64 | NSIS `Alhangeul_0.1.0_x64-setup.exe` | 49,023,164 B | `a24f3e1331a25226bc1d543709a13133743fab662a3dfd747c0a15d84959667e` |
+| Linux x64 | AppImage `Alhangeul_0.1.0_amd64.AppImage` | 131,820,024 B | `e6ab104b13af5b78b6c8290f5d1979d26f9b785ab72c2e2d6a81f4831c6dc876` |
+| Linux x64 | DEB `Alhangeul_0.1.0_amd64.deb` | 55,423,840 B | `7cb4036fd6886752fdc7fba09766cd8abd4f8677d29c23a6c204e90edbc1cc7b` |
+| Linux x64 | RPM `Alhangeul-0.1.0-1.x86_64.rpm` | 55,423,924 B | `5580af3a9d6f7427dd9078dabf91ab136f6824e141b438d08dcebf8bced286b8` |
+| Linux arm64 | DEB `Alhangeul_0.1.0_arm64.deb` | 55,444,426 B | `7bb17e3480319593f412e1751fc0e93a7db080e72d2c28a99249f95eba35f4d4` |
+
+### Windows x64 GUI 경계
+
+관리자 권한이 없는 Windows x64 VDI에서 NSIS clean install, 앱 실행, HWP/HWPX 파일
+선택·drag-in·저장·다른 이름 저장·재열기, 한글 UI, searchable PDF와 Microsoft Print to
+PDF 저장·취소·반복, uninstall을 확인했다. MSI는 VDI에서 수동 설치하지 않았고 같은 SHA의
+fresh `windows-2025` runner에서 clean install, 제한 실행, canonical association, shortcut,
+기존 기본 연결 보존과 uninstall cleanup을 자동 확인했다. 따라서 MSI의 package-level 수용은
+완료했지만 MSI 경유 수동 GUI는 미실행 한계로 남는다.
+
+### Linux x64 GUI 경계
+
+Stage 3 Linux x64 artifact의 inventory를 다시 검증한 뒤 DEB를 native `amd64` GitHub
+Codespaces에 설치했다. 환경은 Ubuntu 24.04, kernel `6.8.0-1052-azure`, WebKitGTK
+`2.52.3-0ubuntu0.24.04.1`, GTK `3.24.41-4ubuntu1.3`, CUPS
+`2.4.7-1.2ubuntu7.14`, CUPS-PDF `3.0.1-14ubuntu0.24.04.1`이었다.
+
+- 대표 HWP를 GTK file chooser로 열고 6쪽 중앙 정렬·한글 toolbar와 로컬 글꼴 감지 dialog를 확인했다. Codespace에 원본 글꼴 하나가 없어 앱의 `대체 글꼴로 보기` 경로를 사용했다.
+- 대표 HWPX를 PCManFM에서 앱으로 drag-in했고 1쪽 한글 본문과 표가 정상 표시됐다.
+- HWP와 HWPX를 각각 다른 이름으로 저장하고 `Ctrl+S` 뒤 재열었다. 원본 fixture SHA-256은 각각 `8b786d6824622afae2220b203beeef6e5592157e1896fea055ebc602817113c1`, `1f3d2a322383e229862cd6d97526766ce285eb58d062242e03bce09a8aa69406`으로 유지됐다.
+- 직접 저장 PDF는 A4 6쪽, 287,282 B, SHA-256 `488c3ee2c4423bed97a3403a799e79413f84784a0b093c0e53d71d9f893030eb`이며 모든 쪽이 비어 있지 않고 한글 텍스트 검색이 가능했다.
+- `인쇄`는 별도 Alhangeul preview 없이 GTK system print dialog로 직접 진입했다. 전체 페이지와 `CUPS-PDF`를 선택해 저장한 결과는 A4 6쪽, 457,293 B, SHA-256 `34ced0e91e33b5f1a7adacce89a6be58170e1231c65cd91146ae2d167429f619`이며 렌더링한 모든 쪽의 한글 본문·표·방향을 시각 확인했다. 저장 뒤 재인쇄 dialog 진입, 취소, 다시 진입과 editor 복원을 확인했다.
+
+Codespaces는 GPU 없는 일회성 headless X11 환경이라 WebKitGTK의 기본 compositing에서 file
+chooser 전환 뒤 화면이 검게 남았다. 같은 설치 binary를 software WebKit compositing과
+software GL로 재실행하자 필수 GUI 시나리오 전체를 관찰할 수 있었고 앱 log에는 panic,
+fatal, segmentation fault 또는 uncaught error가 없었다. 이 설정은 수용 환경 제약의
+회피이며 제품 source·workflow·GUI harness에는 추가하지 않았다. 수용 종료 뒤 Codespace를
+삭제했다.
+
+AppImage와 RPM은 Stage 3 inventory·checksum까지만 확인했고 이번 GUI는 DEB 설치 binary로
+수행했다. Linux arm64는 hosted runner의 DEB build·inventory만 수용했으며 실제 arm64 GUI를
+실행하지 않았다. 이 Task는 GitHub Release, tag, 서명, package 게시, 고정 다운로드 URL과
+updater를 만들거나 활성화하지 않는다.
+
 ## 검증된 native canary
 
 2026-07-28에 다음 exact commit을 `publish/task5`에서 검증했다.
