@@ -477,6 +477,7 @@ pnpm run clippy:thumbnail-handler:windows
 
 - 기존 Windows x64 installer smoke와 Linux x64/arm64 native 회귀를 새 exact SHA에서 재실행한다.
 - VDI 수동 gate는 새 NSIS 설치 뒤 온새미로, `biz_plan`, `form-002`의 text/background/table 보존과 HWP/HWPX aspect ratio만 우선 확인한다. registry/process/cache의 복잡한 확인은 automation 증적으로 대체하고 작업지시자에게 요구하지 않는다.
+- 첫 candidate `b80cc10a226876abb826dce4b71ba0c866562104`의 CI run `33041176530`과 desktop run `33041178548`에서 온새미로 title/background와 `biz_plan` title 검사는 통과했지만 `biz_plan` 날짜 영역을 실제 SVG baseline 53.4%와 다른 35–50%로 지정해 실패했다. 날짜 영역을 50–56%로 보정하고 세 대표 문서를 독립 test로 분리한 뒤 새 exact SHA gate를 실행한다.
 
 ### 커밋
 

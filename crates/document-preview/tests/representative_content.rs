@@ -6,7 +6,7 @@ const BIZ_PLAN: &[u8] = include_bytes!("../../../third_party/rhwp/samples/biz_pl
 const FORM_002: &[u8] = include_bytes!("../../../third_party/rhwp/samples/hwpx/form-002.hwpx");
 
 #[test]
-fn representative_first_pages_keep_text_image_and_table_content() {
+fn onsaemiro_keeps_title_text_and_background_image() {
     let onsaemiro_svg = render_first_page_svg(ONSAEMIRO).unwrap();
     assert!(onsaemiro_svg.matches("<text ").count() >= 30);
     assert!(onsaemiro_svg.contains("<image "));
@@ -18,7 +18,10 @@ fn representative_first_pages_keep_text_image_and_table_content() {
         (0.00, 0.50, 1.00, 0.92),
         1_000,
     );
+}
 
+#[test]
+fn biz_plan_keeps_title_and_date_text() {
     let biz_plan_svg = render_first_page_svg(BIZ_PLAN).unwrap();
     assert!(biz_plan_svg.matches("<text ").count() >= 40);
     let biz_plan = rasterize_first_page(BIZ_PLAN, 512).unwrap();
@@ -28,8 +31,11 @@ fn representative_first_pages_keep_text_image_and_table_content() {
         (0.10, 0.135, 0.90, 0.175),
         100,
     );
-    assert_region_ink("biz plan date", &biz_plan, (0.25, 0.35, 0.75, 0.50), 40);
+    assert_region_ink("biz plan date", &biz_plan, (0.25, 0.50, 0.75, 0.56), 40);
+}
 
+#[test]
+fn form_002_keeps_body_text_inside_table() {
     let form_svg = render_first_page_svg(FORM_002).unwrap();
     assert!(form_svg.matches("<text ").count() >= 400);
     let form = rasterize_first_page(FORM_002, 512).unwrap();
