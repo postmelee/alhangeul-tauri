@@ -44,9 +44,9 @@ test('홈은 한 화면 설치 안내와 개별 페이지 탐색 계약을 지�
   assert.doesNotMatch(html, /Windows &amp; Linux · Open source/);
   assert.match(html, /HWP\/HWPX/);
   assert.match(html, /<h2 id="install-title">다운로드<\/h2>/);
-  assert.match(html, /Windows x64 · NSIS/);
-  assert.match(html, /Linux x64 · AppImage/);
-  assert.match(html, /<footer class="site-footer">/);
+  assert.equal([...html.matchAll(/class="install-platform-group"/g)].length, 2);
+  assert.match(html, /<h3 id="windows-download-title">Windows<\/h3>[\s\S]*?<strong>x64<\/strong><span>NSIS/);
+  assert.match(html, /<h3 id="linux-download-title">Linux<\/h3>[\s\S]*?<strong>arm64<\/strong><span>DEB/);
   assert.equal([...html.matchAll(/class="headline-line"/g)].length, 3);
   assert.match(html, /<span class="headline-line">더 이상 <em>낯선 문서<\/em>가<\/span>/);
   assert.doesNotMatch(html, /<nav[^>]*>[\s\S]*?>다운로드<\/a>/);
@@ -75,7 +75,7 @@ test('홈·업데이트·문의 페이지는 승인된 메뉴와 공유 메타�
     assert.match(html, /<title>[^<]+<\/title>/);
     assert.match(html, /<meta name="description" content="[^"]+" \/>/);
     assert.match(html, /<meta property="og:image" content="https:\/\/postmelee\.github\.io\/alhangeul-tauri\/assets\/og-main\.png" \/>/);
-    assert.match(html, /styles\.css\?v=45-3-5-1/);
+    assert.match(html, /styles\.css\?v=45-3-6/);
     assert.match(html, new RegExp(`<link rel="canonical" href="${escapeRegExp(expected.canonical)}" \\/>`));
     assert.match(html, /href="https:\/\/github\.com\/postmelee\/alhangeul-tauri"/);
     for (const link of expected.links) {
@@ -84,7 +84,7 @@ test('홈·업데이트·문의 페이지는 승인된 메뉴와 공유 메타�
     const header = html.match(/<header[\s\S]*?<\/header>/)?.[0] ?? '';
     const footer = html.match(/<footer[\s\S]*?<\/footer>/)?.[0] ?? '';
     assert.doesNotMatch(header, />다운로드<\/a>/);
-    assert.match(footer, /class="site-footer"/);
+    assert.match(footer, /class="site-footer-inner"/);
     assert.match(footer, />MIT License<\/a>/);
     assert.doesNotMatch(footer, />rhwp<\/a>/);
   }
@@ -208,7 +208,7 @@ test('소셜 공유 이미지는 홈을 담는 16:9 PNG로 고정한다', async 
   assert.equal(png.readUInt32BE(20), 1080);
   assert.equal(
     createHash('sha256').update(png).digest('hex'),
-    '1feb86c3419bf146daacf9cda79b0be262c162cbf168d0ddac41e35978319ac0',
+    '556a85f463018f198e3cb3d76ceeb47cbfc40e2113d81c9bd47fd00295038e94',
   );
 });
 
@@ -251,7 +251,8 @@ test('홈은 일반 화면에서 스크롤을 막고 작은 화면 fallback과 �
   assert.match(css, /\.install-link span \{[^}]*font-size: 13px/);
   assert.match(css, /\.page-action-button \{[^}]*min-height: 46px;[^}]*font-size: 16px/);
   assert.match(css, /\.page-secondary-link \{[^}]*min-height: 42px;[^}]*font-size: 14px/);
-  assert.match(css, /\.site-footer \{[^}]*grid-template-columns: minmax\(140px, 1fr\)[^}]*padding: 18px[^}]*font-size: 13px/);
+  assert.match(css, /\.site-footer \{[^}]*padding: 18px 0[^}]*font-size: 13px/);
+  assert.match(css, /\.site-footer-inner \{[^}]*width: min\(980px, calc\(100% - 40px\)\)[^}]*grid-template-columns: minmax\(140px, 1fr\)/);
   assert.match(css, /\.footer-brand img \{[^}]*width: 24px; height: 24px/);
   assert.match(css, /\.updates-page \+ \.site-footer \{ margin-top: 48px; \}/);
   assert.match(script, /fetch\(`\$\{siteRoot\}release\.json`/);

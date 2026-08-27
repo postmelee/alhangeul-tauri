@@ -46,24 +46,30 @@ Stage 3.5 피드백 보정에서는 제품 본문과 같은 17px이던 Footer �
 표시했다. updates 주 action은 46px/16px, 보조 action은 42px/14px로 분리했으며 static CSS cache
 drift를 막기 위해 세 페이지가 같은 version query를 사용하도록 했다.
 
+Stage 3.6 피드백 보정에서는 HOP의 설치 선택 구조를 참고해 홈 다운로드를 `Windows`와 `Linux`
+목차로 먼저 나누고, 선택지 제목은 `x64`·`arm64`, 설명은 NSIS·MSI·AppImage·DEB/RPM의 설치
+형식과 용도로 재배치했다. Footer 전체 폭 배경 안에 980px inner wrapper를 추가해 desktop에서
+Header와 정확히 같은 좌우 기준선을 사용하고, 820px·520px breakpoint에서도 각 Header padding과
+같은 16px·12px를 사용하도록 정렬했다.
+
 ## 산출물
 
 | 파일 | 변경 요약 |
 |---|---|
-| `site/index.html` (79줄) | 영문 eyebrow 제거, 3줄 제품 제목, 위계가 분명한 5개 다운로드 선택지와 축소 Footer로 홈 재구성 |
+| `site/index.html` (89줄) | Windows/Linux 목차 아래 x64·arm64 환경을 배치한 5개 다운로드 선택지와 Header 기준선 Footer로 홈 재구성 |
 | `site/updates/index.html` (85줄) | 참고 페이지 구조의 hero, SVG 꺾쇠가 있는 플랫폼 다운로드 dropdown, 설치 형식·릴리즈 노트·manifest 안내 |
 | `site/feedback/index.html` (72줄) | 원본과 같은 hero·privacy note·contact card 계층으로 email 복사/작성과 GitHub Issue 안내 재구성 |
-| `site/styles.css` (184줄) | 주·보조 action, 설치 선택지와 13px/61px Footer의 responsive 텍스트 위계를 통합 |
+| `site/styles.css` (186줄) | 플랫폼 목차·환경별 선택지와 Header 폭을 공유하는 13px/61px Footer의 responsive 위계를 통합 |
 | `site/script.js` (92줄) | unpublished 내부 안내와 published 홈·dropdown exact artifact 전환, release note hydration 공유 |
-| `site/assets/og-main.png` (1,920×1,080, 324,631 bytes) | eyebrow 제거와 다운로드·Footer 위계를 반영한 홈 화면으로 공유 이미지 재생성 |
+| `site/assets/og-main.png` (1,920×1,080, 197,210 bytes) | 플랫폼별 다운로드 목차와 정렬된 Footer를 반영한 홈 화면으로 공유 이미지 재생성 |
 | `scripts/build-pages.mjs` (152줄) | 중첩 페이지의 root asset 경로를 depth에 맞춰 결정적으로 정규화 |
 | `scripts/check-pages.mjs` (235줄) | 홈·업데이트·문의 필수 파일과 내부 hash 대상 존재 검사를 추가 |
 | `tests/pages.test.mjs` (282줄) | 중첩 asset 출력, broken hash와 필수 페이지 누락 회귀 검사 추가 |
-| `tests/pages-design.test.mjs` (299줄) | CSS version, 다운로드·Footer 글자 크기, action 높이와 direct-download 계약 고정 |
+| `tests/pages-design.test.mjs` (300줄) | CSS version, 플랫폼 목차·Footer inner 폭, action 높이와 direct-download 계약 고정 |
 | `mydocs/orders/20260827.md` | Stage 3 완료와 Stage 4 승인 대기로 진행 상태 갱신 |
 
 공유 이미지 SHA-256은
-`1feb86c3419bf146daacf9cda79b0be262c162cbf168d0ddac41e35978319ac0`이다. 외부 package와
+`556a85f463018f198e3cb3d76ceeb47cbfc40e2113d81c9bd47fd00295038e94`이다. 외부 package와
 lockfile은 변경하지 않았고 모든 text source는 권장 300줄 상한 이하다.
 
 ## 본문 변경 정도 / 본문 무손실 여부
@@ -80,6 +86,10 @@ Stage 3.4에서는 작업지시자의 명시적 비교 요청에 따라 feedback
 Stage 3.5에서는 작업지시자의 위계 피드백에 따라 Footer의 장문 소개를 한 문장으로 축약하고 홈 설치
 선택지 문구를 플랫폼·형식과 용도로 재편했다. release target, href와 unpublished fail-closed 의미는
 변경하지 않았고 published hydration도 동일한 세 exact artifact만 직접 다운로드로 전환한다.
+
+Stage 3.6에서는 설치 선택지의 텍스트 계층과 Footer wrapper만 다시 구성했다. 기존 다섯 href,
+세 `data-download-target`, published hydration과 미게시 안내 의미는 그대로 보존했으며, Header와
+Footer의 페이지 이동·외부 링크 계약도 변경하지 않았다.
 
 제품 실행 코드, Pages workflow, `site/release.json` schema와 updater endpoint는 변경하지 않았다.
 `release.json`은 계속 `unreleased`, 세 download 값은 null, manifest는 비게시 상태다.
@@ -144,7 +154,14 @@ git diff --check
   중앙 정렬되며 action group 폭 350px 안에 유지
 - OK — 390×844 feedback은 title 40px, card title 24px, card copy/action 15px,
   Footer 13px 순서로 축소되고 document 폭이 viewport와 같은 390px
-- OK — 1,920×1,080 공유 화면에서 eyebrow 0개, Footer 61px, document 1,920×1,080 확인
+- OK — Stage 3.6 1,280×720 홈은 document 1,280×720로 스크롤이 없고 Header와 Footer inner가
+  모두 x=150~1,130, 980px로 일치하며 Footer 높이는 61px
+- OK — Stage 3.6 390×844 홈은 document 390×844로 스크롤이 없고 Header와 Footer inner가
+  모두 x=12~378, 366px로 일치하며 Windows/Linux 목차와 x64·arm64 선택지가 viewport 안에 유지
+- OK — Stage 3.6 1,280×720 feedback도 Header와 Footer inner가 x=150~1,130, 980px로 일치하고
+  updates의 action·Footer 역시 같은 980px 기준선을 사용
+- OK — 1,920×1,080 공유 화면에서 플랫폼별 다운로드 목차, Footer 61px와 document
+  1,920×1,080을 확인하고 새 PNG의 크기·SHA-256을 test로 고정
 
 구현계획서의 FAQ용 native `<details>`는 최신 작업지시자가 홈 FAQ를 제거해 단일 화면으로
 보정하도록 한 범위와 충돌하므로 적용 대상에서 제외했다. 대신 updates의 다운로드 선택에는

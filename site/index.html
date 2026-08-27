@@ -16,7 +16,7 @@
         <meta name="twitter:card" content="summary_large_image" />
         <link rel="canonical" href="https://postmelee.github.io/alhangeul-tauri/" />
         <link rel="icon" href="../assets/logo/favicon.ico" />
-        <link rel="stylesheet" href="styles.css?v=45-3-5-1" />
+        <link rel="stylesheet" href="styles.css?v=45-3-6" />
         <script src="script.js" defer></script>
     </head>
     <body class="home-page" data-site-root="./">
@@ -51,11 +51,21 @@
                             <p data-release-message>첫 공개 릴리스를 준비하고 있습니다.</p>
                         </div>
                         <div class="install-grid">
-                            <a class="install-link accent" href="updates/#windows-nsis" data-download-target="windows-x86_64-nsis"><strong>Windows x64 · NSIS</strong><span>일반 설치 · 권장</span></a>
-                            <a class="install-link" href="updates/#windows-msi" data-download-target="windows-x86_64-msi"><strong>Windows x64 · MSI</strong><span>조직·관리 배포</span></a>
-                            <a class="install-link accent" href="updates/#linux-appimage" data-download-target="linux-x86_64-appimage"><strong>Linux x64 · AppImage</strong><span>자동 업데이트 · 권장</span></a>
-                            <a class="install-link" href="updates/#linux-packages"><strong>Linux x64 · DEB/RPM</strong><span>배포판 패키지</span></a>
-                            <a class="install-link wide" href="updates/#linux-arm64"><strong>Linux arm64 · DEB</strong><span>수동 설치 안내</span></a>
+                            <section class="install-platform-group" aria-labelledby="windows-download-title">
+                                <h3 id="windows-download-title">Windows</h3>
+                                <div class="install-platform-options">
+                                    <a class="install-link accent" href="updates/#windows-nsis" data-download-target="windows-x86_64-nsis"><strong>x64</strong><span>NSIS · 일반 설치 · 권장</span></a>
+                                    <a class="install-link" href="updates/#windows-msi" data-download-target="windows-x86_64-msi"><strong>x64</strong><span>MSI · 조직·관리 배포</span></a>
+                                </div>
+                            </section>
+                            <section class="install-platform-group" aria-labelledby="linux-download-title">
+                                <h3 id="linux-download-title">Linux</h3>
+                                <div class="install-platform-options">
+                                    <a class="install-link accent" href="updates/#linux-appimage" data-download-target="linux-x86_64-appimage"><strong>x64</strong><span>AppImage · 자동 업데이트 · 권장</span></a>
+                                    <a class="install-link" href="updates/#linux-packages"><strong>x64</strong><span>DEB/RPM · 배포판 패키지</span></a>
+                                    <a class="install-link wide" href="updates/#linux-arm64"><strong>arm64</strong><span>DEB · 수동 설치 안내</span></a>
+                                </div>
+                            </section>
                         </div>
                         <p class="install-note">공개 전에는 설치 파일 대신 검증 범위와 준비 상태를 안내합니다.</p>
                     </section>
@@ -74,6 +84,6 @@
                 </figure>
             </section>
         </main>
-        <footer class="site-footer"><div class="footer-brand"><img src="../assets/logo/logo-256.png" alt="" width="24" height="24" /><span>알한글</span></div><p>Windows와 Linux용 HWP/HWPX 문서 편집기입니다.</p><nav aria-label="푸터 링크"><a href="https://github.com/postmelee/alhangeul-tauri/blob/devel/LICENSE" rel="noreferrer">MIT License</a></nav></footer>
+        <footer class="site-footer"><div class="site-footer-inner"><div class="footer-brand"><img src="../assets/logo/logo-256.png" alt="" width="24" height="24" /><span>알한글</span></div><p>Windows와 Linux용 HWP/HWPX 문서 편집기입니다.</p><nav aria-label="푸터 링크"><a href="https://github.com/postmelee/alhangeul-tauri/blob/devel/LICENSE" rel="noreferrer">MIT License</a></nav></div></footer>
     </body>
 </html>

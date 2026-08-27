@@ -45,7 +45,10 @@ button { font: inherit; }
 .install-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
 .install-heading h2 { margin: 0; font-size: 17px; font-weight: 650; line-height: 1.3; }
 .install-heading p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.4; }
-.install-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+.install-grid { display: grid; gap: 10px; margin-top: 12px; }
+.install-platform-group { display: grid; gap: 6px; }
+.install-platform-group h3 { margin: 0; font-size: 14px; font-weight: 650; line-height: 1.3; }
+.install-platform-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .install-link { display: flex; min-height: 58px; flex-direction: column; justify-content: center; gap: 3px; padding: 10px 13px; border: 1px solid var(--line); border-radius: 9px; background: var(--paper); text-decoration: none; transition: border-color var(--quick) var(--ease), background var(--quick) var(--ease), transform 120ms var(--ease); }
 .install-link:hover { border-color: rgba(0, 102, 204, 0.45); background: var(--blue-soft); transform: translateY(-2px); }
 .install-link.accent { border-color: rgba(0, 102, 204, 0.34); background: var(--blue-soft); }
@@ -116,18 +119,15 @@ a.download-option:hover { background: var(--blue-soft); }
 .feedback-copy-button { border: 1px solid var(--line); background: var(--paper); color: var(--blue); cursor: pointer; font-family: inherit; }
 .feedback-send-button, .feedback-issue-button { min-height: 42px; gap: 8px; padding: 0 20px; border: 1px solid var(--blue); background: var(--blue); color: white; font-size: 15px; }
 .feedback-github-mark { flex: 0 0 auto; fill: currentcolor; }
-.site-footer { display: grid; width: 100%; flex: 0 0 auto; grid-template-columns: minmax(140px, 1fr) minmax(0, max-content) minmax(140px, 1fr); align-items: center; column-gap: 28px; margin-top: 0; padding: 18px max(24px, calc((100% - 1260px) / 2)); border-top: 1px solid rgba(29, 29, 31, 0.08); background: #f7f7f9; font-size: 13px; line-height: 1.4; }
+.site-footer { width: 100%; flex: 0 0 auto; margin-top: 0; padding: 18px 0; border-top: 1px solid rgba(29, 29, 31, 0.08); background: #f7f7f9; font-size: 13px; line-height: 1.4; }
+.site-footer-inner { display: grid; width: min(980px, calc(100% - 40px)); grid-template-columns: minmax(140px, 1fr) minmax(0, max-content) minmax(140px, 1fr); align-items: center; column-gap: 28px; margin: auto; }
 .updates-page + .site-footer { margin-top: 48px; }
 .footer-brand { display: inline-flex; align-items: center; justify-self: start; gap: 8px; font-size: 14px; font-weight: 600; line-height: 1.2; white-space: nowrap; }
 .footer-brand img { width: 24px; height: 24px; border-radius: 6px; }
-.site-footer > p { width: max-content; max-width: none; justify-self: center; margin: 0; color: #86868b; font-size: 13px; line-height: 1.45; text-align: center; word-break: keep-all; }
-.site-footer nav { display: inline-flex; justify-self: end; gap: 16px; color: var(--muted); font-size: 13px; line-height: 1.4; white-space: nowrap; }
+.site-footer-inner > p { width: max-content; max-width: none; justify-self: center; margin: 0; color: #86868b; font-size: 13px; line-height: 1.45; text-align: center; word-break: keep-all; }
+.site-footer-inner nav { display: inline-flex; justify-self: end; gap: 16px; color: var(--muted); font-size: 13px; line-height: 1.4; white-space: nowrap; }
 
 @keyframes page-enter { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-@media (max-width: 1180px) {
-    .site-footer { grid-template-columns: max-content minmax(0, 1fr) max-content; column-gap: 20px; padding-inline: 24px; }
-    .site-footer > p { width: 100%; justify-self: start; text-align: left; }
-}
 @media (max-width: 960px) { .updates-hero { padding-top: 72px; } }
 @media (max-width: 820px) {
     .site-header-inner { width: min(calc(100% - 32px), 980px); }
@@ -148,11 +148,13 @@ a.download-option:hover { background: var(--blue-soft); }
     .install-format-list p { grid-template-columns: 1fr; gap: 4px; }
     .release-note-list > * { align-items: flex-start; flex-direction: column; gap: 6px; }
     .feedback-card-grid { grid-template-columns: 1fr; }
-    .site-footer { grid-template-columns: 1fr; justify-items: start; gap: 10px; padding: 16px 20px; }
-    .site-footer nav { grid-column: 1; justify-self: start; }
+    .site-footer { padding-block: 16px; }
+    .site-footer-inner { width: min(calc(100% - 32px), 980px); grid-template-columns: 1fr; justify-items: start; gap: 10px; }
+    .site-footer-inner nav { grid-column: 1; justify-self: start; }
 }
 @media (max-width: 520px) {
     .site-header-inner { width: min(calc(100% - 24px), 980px); gap: 12px; }
+    .site-footer-inner { width: min(calc(100% - 24px), 980px); }
     .brand-link span { font-size: 17px; }
     .header-actions { gap: 8px; }
     .header-link { font-size: 12px; }
@@ -160,7 +162,7 @@ a.download-option:hover { background: var(--blue-soft); }
     .feedback-contact-card h2 { font-size: 24px; }
     .feedback-card-copy p { font-size: 15px; line-height: 1.58; }
     .feedback-email-address { font-size: 14px; }
-    .site-footer nav { flex-wrap: wrap; }
+    .site-footer-inner nav { flex-wrap: wrap; }
 }
 @media (max-height: 799px) and (min-width: 821px) {
     .home-main { padding: 16px 20px; }
