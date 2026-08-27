@@ -39,24 +39,31 @@ Stage 3.4 피드백 보정에서는 실제 알한글 macOS Pages의 feedback DOM
 Footer를 한 viewport 안에 배치하고 스크롤을 만들지 않도록 했다. 제품 설명과 지원 플랫폼 문구만
 Windows/Linux 범위에 맞게 유지했다.
 
+Stage 3.5 피드백 보정에서는 제품 본문과 같은 17px이던 Footer 문구·링크를 13px 보조 위계로 낮추고
+로고를 24px, desktop 높이를 61px, mobile 높이를 114px로 축소했다. 홈의 영문 eyebrow를 제거하고
+설치 영역 제목을 `다운로드`로 명확히 했다. 설치 선택지는 17px section title, 15px 플랫폼·형식,
+13px 용도 설명으로 정렬하고 Windows NSIS와 Linux AppImage를 각 플랫폼 권장 형식으로 같은 수준에서
+표시했다. updates 주 action은 46px/16px, 보조 action은 42px/14px로 분리했으며 static CSS cache
+drift를 막기 위해 세 페이지가 같은 version query를 사용하도록 했다.
+
 ## 산출물
 
 | 파일 | 변경 요약 |
 |---|---|
-| `site/index.html` (80줄) | 단어 중간 줄바꿈 없는 3줄 제목, Windows/Linux 실제 화면, 5개 설치 안내와 공통 Footer로 홈 재구성 |
+| `site/index.html` (79줄) | 영문 eyebrow 제거, 3줄 제품 제목, 위계가 분명한 5개 다운로드 선택지와 축소 Footer로 홈 재구성 |
 | `site/updates/index.html` (85줄) | 참고 페이지 구조의 hero, SVG 꺾쇠가 있는 플랫폼 다운로드 dropdown, 설치 형식·릴리즈 노트·manifest 안내 |
 | `site/feedback/index.html` (72줄) | 원본과 같은 hero·privacy note·contact card 계층으로 email 복사/작성과 GitHub Issue 안내 재구성 |
-| `site/styles.css` (184줄) | 원본 header·feedback·footer 수치와 responsive action/dropdown, 무스크롤 홈 체계를 통합 |
+| `site/styles.css` (184줄) | 주·보조 action, 설치 선택지와 13px/61px Footer의 responsive 텍스트 위계를 통합 |
 | `site/script.js` (92줄) | unpublished 내부 안내와 published 홈·dropdown exact artifact 전환, release note hydration 공유 |
-| `site/assets/og-main.png` (1,920×1,080, 202,010 bytes) | 공통 Footer까지 포함한 최종 홈 화면으로 공유 이미지 재생성 |
+| `site/assets/og-main.png` (1,920×1,080, 324,631 bytes) | eyebrow 제거와 다운로드·Footer 위계를 반영한 홈 화면으로 공유 이미지 재생성 |
 | `scripts/build-pages.mjs` (152줄) | 중첩 페이지의 root asset 경로를 depth에 맞춰 결정적으로 정규화 |
 | `scripts/check-pages.mjs` (235줄) | 홈·업데이트·문의 필수 파일과 내부 hash 대상 존재 검사를 추가 |
 | `tests/pages.test.mjs` (282줄) | 중첩 asset 출력, broken hash와 필수 페이지 누락 회귀 검사 추가 |
-| `tests/pages-design.test.mjs` (289줄) | 공통 Footer, feedback 원본 구조, 홈 무스크롤·SVG icon·반응형 dropdown과 direct-download 계약 추가 |
+| `tests/pages-design.test.mjs` (299줄) | CSS version, 다운로드·Footer 글자 크기, action 높이와 direct-download 계약 고정 |
 | `mydocs/orders/20260827.md` | Stage 3 완료와 Stage 4 승인 대기로 진행 상태 갱신 |
 
 공유 이미지 SHA-256은
-`240d2b7fcd822b5b4c9a42557c5a924db4b884fb8543569f34b8432ea9cfdb74`이다. 외부 package와
+`1feb86c3419bf146daacf9cda79b0be262c162cbf168d0ddac41e35978319ac0`이다. 외부 package와
 lockfile은 변경하지 않았고 모든 text source는 권장 300줄 상한 이하다.
 
 ## 본문 변경 정도 / 본문 무손실 여부
@@ -69,6 +76,10 @@ Stage 3 신규 페이지는 구현계획서의 사용자 문서 위치인 `site/
 Stage 3.4에서는 작업지시자의 명시적 비교 요청에 따라 feedback 본문과 모든 Footer의 markup을
 참고 페이지와 같은 정보 계층으로 다시 작성했다. 지원 플랫폼, 제보 경로와 제품 소개는 제품 경계상
 동일 문구로 복사할 수 없으므로 Windows/Linux 내용만 보존하고 시각 구조와 타이포그래피를 일치시켰다.
+
+Stage 3.5에서는 작업지시자의 위계 피드백에 따라 Footer의 장문 소개를 한 문장으로 축약하고 홈 설치
+선택지 문구를 플랫폼·형식과 용도로 재편했다. release target, href와 unpublished fail-closed 의미는
+변경하지 않았고 published hydration도 동일한 세 exact artifact만 직접 다운로드로 전환한다.
 
 제품 실행 코드, Pages workflow, `site/release.json` schema와 updater endpoint는 변경하지 않았다.
 `release.json`은 계속 `unreleased`, 세 download 값은 null, manifest는 비게시 상태다.
@@ -125,6 +136,15 @@ git diff --check
   contact card가 single column으로 전환돼 horizontal overflow 없음
 - OK — 1,280×720 feedback computed style은 원본과 같은 hero 980px, content 880px, h1 72/76.32px,
   설명 21/31.5px, card 432px×2, gap 16px, Footer 93px 수치로 확인
+- OK — Stage 3.5 desktop Footer는 61px, logo 24px, 본문·링크 13px이며 이전 93px/17px보다
+  본문 대비 보조 위계가 명확함
+- OK — Stage 3.5 390×844 홈은 document 390×844, Footer 114px, download title 17px,
+  선택지 15px/13px이고 horizontal·vertical scroll 없음
+- OK — 390×844 updates의 primary action은 46px/15px, secondary action은 42px/14px로
+  중앙 정렬되며 action group 폭 350px 안에 유지
+- OK — 390×844 feedback은 title 40px, card title 24px, card copy/action 15px,
+  Footer 13px 순서로 축소되고 document 폭이 viewport와 같은 390px
+- OK — 1,920×1,080 공유 화면에서 eyebrow 0개, Footer 61px, document 1,920×1,080 확인
 
 구현계획서의 FAQ용 native `<details>`는 최신 작업지시자가 홈 FAQ를 제거해 단일 화면으로
 보정하도록 한 범위와 충돌하므로 적용 대상에서 제외했다. 대신 updates의 다운로드 선택에는
