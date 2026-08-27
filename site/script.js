@@ -11,21 +11,47 @@ async function setupReleaseData() {
         if (!isPublishedRelease(release)) return;
 
         for (const message of document.querySelectorAll('[data-release-message]')) {
-            message.textContent = `알한글 ${release.version} 안정 릴리스가 준비되었습니다.`;
+            message.textContent = `알한글 ${release.version} 안정 릴리스가 준비되었습니다. Windows는 NSIS·MSI, Linux x64는 AppImage를 직접 받을 수 있습니다.`;
         }
         for (const action of document.querySelectorAll('[data-download-target]')) {
             const url = release.downloads[action.dataset.downloadTarget];
             if (!isExactDownload(url, release.tag)) continue;
-            const link = document.createElement('a');
-            link.className = action.className;
-            link.dataset.downloadTarget = action.dataset.downloadTarget;
-            link.href = url;
-            link.textContent = `${release.version} 다운로드`;
-            action.replaceWith(link);
+            hydrateDownloadAction(action, url, release);
         }
+        hydrateReleaseNote(release);
     } catch {
-        // 공개 전 기본 안내를 유지한다.
+        // 공개 전 기본 안내와 내부 설치 안내 링크를 유지한다.
     }
+}
+
+function hydrateDownloadAction(action, url, release) {
+    let link = action;
+    if (action.tagName !== 'A') {
+        link = document.createElement('a');
+        link.className = action.className;
+        link.dataset.downloadTarget = action.dataset.downloadTarget;
+        link.innerHTML = action.innerHTML;
+        action.replaceWith(link);
+    }
+    link.href = url;
+    link.removeAttribute('aria-disabled');
+    link.dataset.downloadReady = 'true';
+    link.setAttribute('aria-label', `${link.textContent.trim()} · 알한글 ${release.version} 다운로드`);
+    const state = link.querySelector('[data-download-state]');
+    if (state) state.textContent = `${state.textContent.split(' · ')[0]} · ${release.version} 다운로드`;
+}
+
+function hydrateReleaseNote(release) {
+    const placeholder = document.querySelector('[data-release-note]');
+    if (!placeholder) return;
+    const link = document.createElement('a');
+    link.href = `https://github.com/postmelee/alhangeul-tauri/releases/tag/${release.tag}`;
+    const title = document.createElement('strong');
+    title.textContent = `알한글 v${release.version}`;
+    const summary = document.createElement('span');
+    summary.textContent = '최신 안정 릴리즈의 변경 내용을 GitHub Releases에서 확인하세요.';
+    link.append(title, summary);
+    placeholder.replaceWith(link);
 }
 
 function setupCopyButtons() {

@@ -3,10 +3,10 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>알한글 업데이트 — 설치 방식과 지원 범위</title>
-        <meta name="description" content="Windows MSI·NSIS와 Linux AppImage·DEB·RPM의 알한글 설치 및 업데이트 지원 범위를 안내합니다." />
+        <title>알한글 업데이트</title>
+        <meta name="description" content="알한글 최신 버전 다운로드, 앱 업데이트 지원 범위와 릴리즈 노트를 안내합니다." />
         <meta property="og:title" content="알한글 업데이트" />
-        <meta property="og:description" content="Windows와 Linux 설치 방식과 업데이트 지원 범위를 확인하세요." />
+        <meta property="og:description" content="Windows와 Linux용 알한글 최신 버전과 릴리즈 노트를 확인하세요." />
         <meta property="og:image" content="https://postmelee.github.io/alhangeul-tauri/assets/og-main.png" />
         <link rel="canonical" href="https://postmelee.github.io/alhangeul-tauri/updates/" />
         <link rel="icon" href="../../assets/logo/favicon.ico" />
@@ -16,57 +16,65 @@
     <body data-site-root="../">
         <a class="skip-link" href="#main">본문으로 이동</a>
         <header class="site-header" aria-label="주요 탐색">
-            <div class="nav-shell">
-                <a class="brand" href="../" aria-label="알한글 홈"><img src="../../assets/logo/logo-256.png" alt="" width="30" height="30" /><span>알한글</span></a>
-                <nav class="nav-links" aria-label="주요 링크">
-                    <a href="../" aria-label="알한글 홈으로 이동">홈</a>
-                    <a href="../feedback/" aria-label="문의와 제보 안내로 이동">문의/제보</a>
-                    <a href="https://github.com/postmelee/alhangeul-tauri" aria-label="GitHub 저장소로 이동">GitHub</a>
+            <div class="site-header-inner">
+                <a class="brand-link" href="../" aria-label="알한글 홈"><img src="../../assets/logo/logo-256.png" alt="" width="28" height="28" /><span>알한글</span></a>
+                <nav class="header-actions" aria-label="주요 링크">
+                    <a class="header-link" href="../" aria-label="알한글 홈으로 이동">홈</a>
+                    <a class="header-link" href="../feedback/" aria-label="문의와 제보 안내로 이동">문의/제보</a>
+                    <a class="header-link" href="https://github.com/postmelee/alhangeul-tauri" aria-label="GitHub 저장소로 이동">GitHub</a>
                 </nav>
             </div>
         </header>
-        <main class="content-main page-enter" id="main">
-            <section class="page-hero" aria-labelledby="updates-title">
-                <p class="eyebrow">Updates &amp; installation</p>
+
+        <main class="updates-page page-enter" id="main">
+            <section class="updates-hero" aria-labelledby="updates-title">
                 <h1 id="updates-title">알한글 업데이트</h1>
-                <p data-release-message>첫 공개 릴리스를 검증하고 있습니다. 현재는 설치 방식과 업데이트 지원 범위만 안내합니다.</p>
-                <div class="page-actions"><span class="button primary" aria-disabled="true">첫 릴리스 준비 중</span><a class="button" href="https://github.com/postmelee/alhangeul-tauri/releases">GitHub Releases</a></div>
-            </section>
-
-            <section class="content-section" aria-labelledby="windows-title">
-                <h2 id="windows-title">Windows x64</h2>
-                <p>일반 사용자는 NSIS, 조직과 관리 환경은 MSI 설치 방식을 권장합니다. 두 형식 모두 자동 업데이트 대상으로 준비합니다.</p>
-                <div class="platform-cards">
-                    <article class="platform-card" id="windows-nsis"><h3>NSIS · 일반 설치</h3><p>사용자 계정 중심의 일반적인 설치 흐름입니다.</p><span class="download-action" aria-disabled="true" data-download-target="windows-x86_64-nsis">준비 중</span></article>
-                    <article class="platform-card" id="windows-msi"><h3>MSI · 관리 배포</h3><p>조직의 관리 도구와 정책 기반 배포에 적합합니다.</p><span class="download-action" aria-disabled="true" data-download-target="windows-x86_64-msi">준비 중</span></article>
+                <p data-release-message>앱의 업데이트 지원을 준비하고 있으며, 첫 공개 릴리스가 게시되면 Windows와 Linux 설치 파일을 웹에서 직접 받을 수 있습니다.</p>
+                <div class="updates-actions" aria-label="업데이트 주요 링크">
+                    <details class="download-picker">
+                        <summary class="page-action-button">최신 버전 다운로드 <span class="download-chevron" aria-hidden="true">⌄</span></summary>
+                        <div class="download-options" aria-label="플랫폼별 다운로드">
+                            <span class="download-option" aria-disabled="true" data-download-target="windows-x86_64-nsis"><strong>Windows x64</strong><span data-download-state>NSIS · 준비 중</span></span>
+                            <span class="download-option" aria-disabled="true" data-download-target="windows-x86_64-msi"><strong>Windows x64</strong><span data-download-state>MSI · 준비 중</span></span>
+                            <span class="download-option" aria-disabled="true" data-download-target="linux-x86_64-appimage"><strong>Linux x64</strong><span data-download-state>AppImage · 준비 중</span></span>
+                        </div>
+                    </details>
+                    <a class="page-secondary-link" href="https://github.com/postmelee/alhangeul-tauri/releases">GitHub Releases</a>
                 </div>
             </section>
 
-            <section class="content-section" aria-labelledby="linux-title">
-                <h2 id="linux-title">Linux</h2>
-                <p>Linux x64 AppImage를 자동 업데이트 대상으로 두고, 배포판 패키지와 arm64는 수동 설치 대상으로 구분합니다.</p>
-                <div class="platform-cards">
-                    <article class="platform-card" id="linux-appimage"><h3>x64 AppImage</h3><p>독립 실행형이며 Linux 자동 업데이트 지원 대상으로 준비합니다.</p><span class="download-action" aria-disabled="true" data-download-target="linux-x86_64-appimage">준비 중</span></article>
-                    <article class="platform-card" id="linux-packages"><h3>x64 DEB · RPM</h3><p>Debian/Ubuntu와 Fedora/openSUSE 계열의 수동 설치 형식입니다.</p><span class="download-action" aria-disabled="true">수동 설치 준비 중</span></article>
-                    <article class="platform-card wide" id="linux-arm64"><h3>arm64 DEB</h3><p>Linux arm64 Debian/Ubuntu 계열의 수동 설치 형식입니다. 자동 업데이트 대상에는 포함하지 않습니다.</p><span class="download-action" aria-disabled="true">수동 설치 준비 중</span></article>
-                </div>
-            </section>
+            <div class="updates-content">
+                <section class="updates-section" aria-labelledby="check-in-app-title">
+                    <h2 id="check-in-app-title">앱에서 업데이트 확인</h2>
+                    <p>Issue #16 완료 후 Windows NSIS·MSI 설치본과 Linux x64 AppImage에서 stable 업데이트를 확인할 수 있습니다. 새 버전이 있으면 안내 화면에서 설치 여부를 직접 선택합니다.</p>
+                </section>
 
-            <section class="content-section" aria-labelledby="updater-title">
-                <h2 id="updater-title">자동 업데이트 지원 범위</h2>
-                <ul class="scope-list">
-                    <li><strong>Windows</strong><span>NSIS와 MSI 설치본 모두 stable updater를 지원하도록 준비합니다.</span></li>
-                    <li><strong>Linux x64</strong><span>AppImage만 stable updater 대상으로 준비합니다.</span></li>
-                    <li><strong>수동 설치</strong><span>DEB·RPM과 Linux arm64는 GitHub Releases에서 새 버전을 직접 확인합니다.</span></li>
-                </ul>
-            </section>
+                <section class="updates-section" aria-labelledby="install-formats-title">
+                    <h2 id="install-formats-title">설치 형식</h2>
+                    <div class="install-format-list">
+                        <p id="windows-nsis"><strong>Windows x64 NSIS</strong><span>일반 사용자에게 권장하는 설치 형식입니다.</span></p>
+                        <p id="windows-msi"><strong>Windows x64 MSI</strong><span>조직과 관리 환경의 정책 기반 배포에 적합합니다.</span></p>
+                        <p id="linux-appimage"><strong>Linux x64 AppImage</strong><span>독립 실행과 stable 자동 업데이트를 지원할 형식입니다.</span></p>
+                        <p id="linux-packages"><strong>Linux x64 DEB · RPM</strong><span>배포판별 수동 설치 형식이며 자동 업데이트 대상이 아닙니다.</span></p>
+                        <p id="linux-arm64"><strong>Linux arm64 DEB</strong><span>수동 설치 형식이며 새 버전은 GitHub Releases에서 확인합니다.</span></p>
+                    </div>
+                </section>
 
-            <section class="content-section" aria-labelledby="manifest-title">
-                <h2 id="manifest-title">업데이트 manifest 주소</h2>
-                <p>Issue #16의 artifact와 signature 검증이 끝난 뒤 게시할 고정 주소입니다. 지금은 manifest가 존재하지 않습니다.</p>
-                <code class="manifest-address">https://postmelee.github.io/alhangeul-tauri/updater/stable.json</code>
-            </section>
+                <section class="updates-section" aria-labelledby="release-notes-title">
+                    <h2 id="release-notes-title">릴리즈 노트</h2>
+                    <div class="release-note-list">
+                        <div class="release-note-empty" data-release-note><strong>첫 공식 릴리즈</strong><span>Windows와 Linux 설치본을 검증하고 있습니다.</span></div>
+                    </div>
+                </section>
+
+                <section class="updates-section" aria-labelledby="manifest-title">
+                    <h2 id="manifest-title">업데이트 manifest 주소</h2>
+                    <p>Issue #16의 artifact와 signature 검증이 끝난 뒤 게시할 고정 주소입니다. 지금은 manifest가 존재하지 않습니다.</p>
+                    <pre class="code-panel"><code>https://postmelee.github.io/alhangeul-tauri/updater/stable.json</code></pre>
+                </section>
+            </div>
         </main>
-        <footer><div class="footer-shell"><div><strong>알한글</strong><p>Windows와 Linux를 위한 HWP/HWPX 데스크톱 편집기</p></div><nav aria-label="푸터 링크"><a href="https://github.com/postmelee/alhangeul-tauri/blob/devel/LICENSE">MIT License</a><a href="https://github.com/edwardkim/rhwp">rhwp</a></nav></div></footer>
+
+        <footer class="site-footer"><div class="footer-brand"><img src="../../assets/logo/logo-256.png" alt="" width="32" height="32" /><span>알한글</span></div><p>Windows와 Linux를 위한 HWP/HWPX 데스크톱 편집기입니다.</p><nav aria-label="푸터 링크"><a href="https://github.com/postmelee/alhangeul-tauri/blob/devel/LICENSE">MIT License</a><a href="https://github.com/edwardkim/rhwp">rhwp</a></nav></footer>
     </body>
 </html>

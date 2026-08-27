@@ -22,15 +22,15 @@
     <body class="home-page" data-site-root="./">
         <a class="skip-link" href="#main">본문으로 이동</a>
         <header class="site-header" aria-label="주요 탐색">
-            <div class="nav-shell">
-                <a class="brand" href="./" aria-label="알한글 홈">
+            <div class="site-header-inner">
+                <a class="brand-link" href="./" aria-label="알한글 홈">
                     <img src="../assets/logo/logo-256.png" alt="" width="30" height="30" />
                     <span>알한글</span>
                 </a>
-                <nav class="nav-links" aria-label="주요 링크">
-                    <a href="updates/" aria-label="업데이트 안내로 이동">업데이트</a>
-                    <a href="feedback/" aria-label="문의와 제보 안내로 이동">문의/제보</a>
-                    <a href="https://github.com/postmelee/alhangeul-tauri" aria-label="GitHub 저장소로 이동">GitHub</a>
+                <nav class="header-actions" aria-label="주요 링크">
+                    <a class="header-link" href="updates/" aria-label="업데이트 안내로 이동">업데이트</a>
+                    <a class="header-link" href="feedback/" aria-label="문의와 제보 안내로 이동">문의/제보</a>
+                    <a class="header-link" href="https://github.com/postmelee/alhangeul-tauri" aria-label="GitHub 저장소로 이동">GitHub</a>
                 </nav>
             </div>
         </header>
@@ -48,9 +48,9 @@
                             <p data-release-message>첫 공개 릴리스를 준비하고 있습니다.</p>
                         </div>
                         <div class="install-grid">
-                            <a class="install-link" href="updates/#windows-nsis"><strong>Windows x64</strong><span>NSIS · 일반 설치</span></a>
-                            <a class="install-link" href="updates/#windows-msi"><strong>Windows x64</strong><span>MSI · 관리 배포</span></a>
-                            <a class="install-link accent" href="updates/#linux-appimage"><strong>Linux x64</strong><span>AppImage · 자동 업데이트</span></a>
+                            <a class="install-link" href="updates/#windows-nsis" data-download-target="windows-x86_64-nsis"><strong>Windows x64</strong><span>NSIS · 일반 설치</span></a>
+                            <a class="install-link" href="updates/#windows-msi" data-download-target="windows-x86_64-msi"><strong>Windows x64</strong><span>MSI · 관리 배포</span></a>
+                            <a class="install-link accent" href="updates/#linux-appimage" data-download-target="linux-x86_64-appimage"><strong>Linux x64</strong><span>AppImage · 자동 업데이트</span></a>
                             <a class="install-link" href="updates/#linux-packages"><strong>Linux x64</strong><span>DEB · RPM 설치</span></a>
                             <a class="install-link wide" href="updates/#linux-arm64"><strong>Linux arm64</strong><span>DEB 설치 안내</span></a>
                         </div>

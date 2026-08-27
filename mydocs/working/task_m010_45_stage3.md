@@ -11,28 +11,35 @@ Stage: 3
 한 화면으로 줄이고, HOP처럼 플랫폼과 설치 형식을 바로 고를 수 있는 다섯 설치 안내 버튼을
 배치했다. 여러 플랫폼을 다루는 제품 특성상 header 다운로드 항목은 제거했다.
 
-공개 전 계약은 유지한다. 홈의 설치 안내는 직접 artifact가 아니라 updates 페이지의 정확한
-NSIS·MSI·AppImage·수동 패키지 항목으로 이동하며, 검증된 release metadata가 생기기 전까지
-installer URL과 updater manifest를 만들지 않는다.
+공개 전 계약은 유지한다. 홈의 설치 안내는 updates 페이지의 정확한 NSIS·MSI·AppImage·수동
+패키지 항목으로 이동하고 installer URL과 updater manifest를 만들지 않는다. 검증된 published
+release metadata가 생기면 NSIS·MSI·AppImage 세 버튼만 exact artifact 직접 다운로드로 전환하며,
+DEB·RPM·arm64는 계속 수동 설치 안내로 이동한다.
+
+Stage 3.1 피드백 보정에서는 첨부 화면과 실제 알한글 macOS updates 페이지의 computed style을
+대조했다. 기존 Pretendard, 영문 eyebrow와 플랫폼별 설치 카드를 제거하고 참고 페이지와 같은
+system font, 72px/40px 제목, 21px hero 본문, 880px 콘텐츠 폭과 section rhythm을 적용했다.
+최신 버전 다운로드는 플랫폼 dropdown으로 제공하고, 공개 전 릴리즈 노트 placeholder와 published
+상태의 exact GitHub Release note hydration을 추가했다.
 
 ## 산출물
 
 | 파일 | 변경 요약 |
 |---|---|
 | `site/index.html` (75줄) | 단일 viewport hero, Windows/Linux 실제 화면, 5개 플랫폼별 설치 안내로 홈 재구성 |
-| `site/updates/index.html` (72줄) | NSIS·MSI·AppImage, DEB·RPM·arm64 fallback과 stable manifest 게시 경계 안내 |
+| `site/updates/index.html` (80줄) | 참고 페이지 구조의 hero, 플랫폼 다운로드 dropdown, 설치 형식·릴리즈 노트·manifest 안내 |
 | `site/feedback/index.html` (51줄) | 개인정보 주의, email 복사/작성, GitHub Issue와 rhwp upstream 분류 안내 |
-| `site/styles.css` (123줄) | macOS Pages 계열 header·subpage, HOP형 설치 선택, 1280/390 반응형과 저높이 fallback 구현 |
-| `site/script.js` (66줄) | 세 페이지 공통 release hydration과 문의 email 복사 동작으로 축소·공유 |
-| `site/assets/og-main.png` (1,920×1,080, 348,705 bytes) | 최종 단일 화면 홈을 반영한 공유 이미지 재생성 |
+| `site/styles.css` (148줄) | system font와 참고 updates의 exact desktop/mobile type scale, dropdown, release list 구현 |
+| `site/script.js` (92줄) | unpublished 내부 안내와 published 홈·dropdown exact artifact 전환, release note hydration 공유 |
+| `site/assets/og-main.png` (1,920×1,080, 341,585 bytes) | system font와 header 보정을 반영한 공유 이미지 재생성 |
 | `scripts/build-pages.mjs` (152줄) | 중첩 페이지의 root asset 경로를 depth에 맞춰 결정적으로 정규화 |
 | `scripts/check-pages.mjs` (235줄) | 홈·업데이트·문의 필수 파일과 내부 hash 대상 존재 검사를 추가 |
 | `tests/pages.test.mjs` (282줄) | 중첩 asset 출력, broken hash와 필수 페이지 누락 회귀 검사 추가 |
-| `tests/pages-design.test.mjs` (184줄) | 새 메뉴·메타데이터·지원 범위·연락 경로·단일 viewport·motion 계약으로 갱신 |
+| `tests/pages-design.test.mjs` (263줄) | 원본 type scale, dropdown·release list와 published direct-download 실행 계약 추가 |
 | `mydocs/orders/20260827.md` | Stage 3 완료와 Stage 4 승인 대기로 진행 상태 갱신 |
 
 공유 이미지 SHA-256은
-`f2f382f15c5ce58e7516b9eedee362741828ca220e43e8260791828f77d5c2b3`이다. 외부 package와
+`ca952e28c70d10677d48c7129648fbc04e3fda098dc77465949a79c025638b02`이다. 외부 package와
 lockfile은 변경하지 않았고 모든 text source는 권장 300줄 상한 이하다.
 
 ## 본문 변경 정도 / 본문 무손실 여부
@@ -61,8 +68,8 @@ git diff --check
 
 - OK — Pages build: source 11개와 승인 root asset 4개를 `_site`에 생성
 - OK — Pages check: source 11개, output 15개; 세 필수 페이지·내부 hash·asset·manifest 계약 통과
-- OK — Pages/Actions focused test 41개 통과, 실패·skip 없음
-- OK — 전체 automation test 253개 통과, 실패·skip 없음
+- OK — Pages/Actions focused test 42개 통과, 실패·skip 없음
+- OK — 전체 automation test 254개 통과, 실패·skip 없음
 - OK — 변경 파일 whitespace 오류 없음
 - OK — output에 MSI·NSIS·AppImage direct URL과 `updater/stable.json` 없음
 
@@ -72,15 +79,18 @@ git diff --check
   `scrollWidth=innerWidth`, `scrollHeight=innerHeight`; 스크롤 없는 한 화면 확인
 - OK — 모바일 홈은 실제 제품 화면을 숨기고 제목·설명·다섯 설치 안내를 390px 안에 유지
 - OK — header의 업데이트·문의/제보·GitHub와 하위 페이지의 홈 교차 이동 확인; header 다운로드 없음
-- OK — 홈 AppImage 안내가 `/updates/#linux-appimage`의 `x64 AppImage` 항목으로 이동
-- OK — updates/feedback 1,280px와 390px에서 horizontal overflow 없음; 지원 항목과 문의 action read-back
+- OK — unreleased 홈의 세 직접 다운로드 대상은 내부 설치 안내로 이동하고 수동 package 두 항목과 분리
+- OK — published fixture 실행 시 홈과 dropdown이 exact tag의 NSIS·MSI·AppImage URL로 직접 전환
+- OK — updates는 system font, 제목 72px/40px, 본문 21px/18px, content 880px/350px로 참고 페이지와 정렬
+- OK — 플랫폼 설치 카드는 0개이며 native `<details>` dropdown 세 항목과 릴리즈 노트 목록 확인
+- OK — updates/feedback 1,280px와 390px에서 horizontal overflow 없음; 모바일 dropdown은 left 20px, right 330px
 - OK — 200% 확대에 해당하는 640×450 저높이 조건에서 horizontal overflow 없이 의도한 세로 scroll fallback
 - OK — semantic native link/button, skip link, 44px header target, focus-visible와 heading/landmark DOM 확인
 - OK — reduced-motion, no-JS 최종 콘텐츠 가시성과 12px/280ms one-shot motion은 source test로 확인
 
-구현계획서의 native `<details>` 수동 항목은 최신 작업지시자가 홈 FAQ를 제거해 단일 화면으로
-보정하도록 한 범위와 충돌하므로 적용 대상에서 제외했다. 상세 정보는 독립 페이지의 항상 보이는
-본문으로 제공한다.
+구현계획서의 FAQ용 native `<details>`는 최신 작업지시자가 홈 FAQ를 제거해 단일 화면으로
+보정하도록 한 범위와 충돌하므로 적용 대상에서 제외했다. 대신 updates의 다운로드 선택에는
+JavaScript 없이도 작동하는 native `<details>`를 사용했다.
 
 ## 잔여 위험
 

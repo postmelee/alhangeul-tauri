@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
+import { runInNewContext } from 'node:vm';
 
 const repositoryRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const readSite = (path, encoding) => readFile(join(repositoryRoot, 'site', path), encoding);
@@ -43,7 +44,7 @@ test('홈은 한 화면 설치 안내와 개별 페이지 탐색 계약을 지�
   assert.match(html, /Windows &amp; Linux/);
   assert.match(html, /HWP\/HWPX/);
   assert.doesNotMatch(html, /<nav[^>]*>[\s\S]*?>다운로드<\/a>/);
-  assert.doesNotMatch(html, /<a[^>]+data-download-target=/);
+  assert.equal([...html.matchAll(/<a[^>]+data-download-target=/g)].length, 3);
   assert.doesNotMatch(html, /releases\/download\//);
 });
 
@@ -88,6 +89,15 @@ test('업데이트 페이지는 MSI·NSIS·AppImage와 수동 설치 범위를 f
   ]) {
     assert.match(html, new RegExp(`<span[^>]+data-download-target="${target}"`));
   }
+  assert.match(html, /<details class="download-picker">/);
+  assert.match(html, /<summary class="page-action-button">최신 버전 다운로드/);
+  assert.match(html, /class="release-note-list"/);
+  assert.match(html, /data-release-note/);
+  assert.match(html, /앱에서 업데이트 확인/);
+  assert.match(html, /설치 형식/);
+  assert.match(html, /릴리즈 노트/);
+  assert.doesNotMatch(html, /Updates &amp; installation/i);
+  assert.doesNotMatch(html, /platform-card|download-action/);
   for (const id of [
     'windows-nsis',
     'windows-msi',
@@ -96,12 +106,60 @@ test('업데이트 페이지는 MSI·NSIS·AppImage와 수동 설치 범위를 f
     'linux-arm64',
   ]) assert.match(html, new RegExp(`id="${id}"`));
 
-  assert.match(html, /x64 DEB · RPM/);
-  assert.match(html, /arm64 DEB/);
-  assert.match(html, /AppImage만 stable updater 대상/);
+  assert.match(html, /Linux x64 DEB · RPM/);
+  assert.match(html, /Linux arm64 DEB/);
+  assert.match(html, /Linux x64 AppImage/);
   assert.match(html, /지금은 manifest가 존재하지 않습니다/);
   assert.match(html, /https:\/\/postmelee\.github\.io\/alhangeul-tauri\/updater\/stable\.json/);
   assert.doesNotMatch(html, /releases\/download\//);
+});
+
+test('published release hydration은 홈과 dropdown을 exact artifact로 직접 전환한다', async () => {
+  const source = await readSite('script.js', 'utf8');
+  const homeAction = fakeElement('A', { textContent: 'Windows x64 NSIS · 일반 설치' });
+  homeAction.dataset.downloadTarget = 'windows-x86_64-nsis';
+  homeAction.href = 'updates/#windows-nsis';
+  const menuAction = fakeElement('SPAN', { textContent: 'Linux x64 AppImage · 준비 중' });
+  menuAction.dataset.downloadTarget = 'linux-x86_64-appimage';
+  const message = { textContent: '' };
+  const note = fakeElement('DIV');
+  const document = {
+    body: { dataset: { siteRoot: './' } },
+    createElement: (tag) => fakeElement(tag.toUpperCase()),
+    querySelector: (selector) => selector === '[data-release-note]' ? note : null,
+    querySelectorAll: (selector) => ({
+      '[data-release-message]': [message],
+      '[data-download-target]': [homeAction, menuAction],
+      '[data-copy-value]': [],
+    })[selector] ?? [],
+  };
+  const release = {
+    status: 'published',
+    version: '0.2.0',
+    tag: 'v0.2.0',
+    downloads: {
+      'windows-x86_64-nsis': 'https://github.com/postmelee/alhangeul-tauri/releases/download/v0.2.0/Alhangeul_0.2.0_x64-setup.exe',
+      'windows-x86_64-msi': 'https://github.com/postmelee/alhangeul-tauri/releases/download/v0.2.0/Alhangeul_0.2.0_x64.msi',
+      'linux-x86_64-appimage': 'https://github.com/postmelee/alhangeul-tauri/releases/download/v0.2.0/Alhangeul_0.2.0_amd64.AppImage',
+    },
+    updater: { manifestPublished: false },
+  };
+
+  runInNewContext(source, {
+    document,
+    fetch: async () => ({ ok: true, json: async () => release }),
+    URL,
+    window: { setTimeout },
+    navigator: {},
+  });
+  await new Promise((resolve) => setImmediate(resolve));
+
+  assert.equal(homeAction.href, release.downloads['windows-x86_64-nsis']);
+  assert.equal(homeAction.dataset.downloadReady, 'true');
+  assert.equal(menuAction.replacement.href, release.downloads['linux-x86_64-appimage']);
+  assert.equal(menuAction.replacement.dataset.downloadReady, 'true');
+  assert.equal(note.replacement.href, 'https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.2.0');
+  assert.match(message.textContent, /0\.2\.0 안정 릴리스/);
 });
 
 test('문의 페이지는 개인정보 안내와 이메일·Issue 경로를 제공한다', async () => {
@@ -132,7 +190,7 @@ test('소셜 공유 이미지는 홈을 담는 16:9 PNG로 고정한다', async 
   assert.equal(png.readUInt32BE(20), 1080);
   assert.equal(
     createHash('sha256').update(png).digest('hex'),
-    'f2f382f15c5ce58e7516b9eedee362741828ca220e43e8260791828f77d5c2b3',
+    'ca952e28c70d10677d48c7129648fbc04e3fda098dc77465949a79c025638b02',
   );
 });
 
@@ -147,7 +205,7 @@ test('홈은 일반 화면에서 스크롤을 막고 작은 화면 fallback과 �
 
   for (const html of pages) assert.doesNotMatch(html, /\shidden(?:\s|=|>)/);
   assert.match(css, /\.home-page \{ overflow: hidden; \}/);
-  assert.match(css, /\.home-main \{ height: calc\(100dvh - 53px\)/);
+  assert.match(css, /\.home-main \{ height: calc\(100dvh - 52px\)/);
   assert.match(css, /\.home-product \{ display: none; \}/);
   assert.match(css, /@media \(max-height: 699px\).*\.home-page \{ overflow: auto; \}/s);
   assert.match(css, /prefers-reduced-motion: reduce/);
@@ -155,6 +213,11 @@ test('홈은 일반 화면에서 스크롤을 막고 작은 화면 fallback과 �
   assert.match(css, /--quick: 90ms/);
   assert.match(css, /--standard: 280ms/);
   assert.match(css, /translateY\(12px\)/);
+  assert.match(css, /font-family: system-ui, -apple-system/);
+  assert.match(css, /\.updates-hero h1 \{[^}]*font-size: 72px/);
+  assert.match(css, /\.updates-hero > p \{[^}]*font-size: 21px/);
+  assert.match(css, /\.updates-section h2 \{[^}]*font-size: 26px/);
+  assert.match(css, /\.updates-hero h1 \{ font-size: 40px; \}/);
   assert.match(script, /fetch\(`\$\{siteRoot\}release\.json`/);
   assert.match(script, /navigator\.clipboard\.writeText/);
   assert.match(script, /isExactDownload\(url, release\.tag\)/);
@@ -181,4 +244,20 @@ test('Pages source에는 지원 범위 밖 제품 표현이 없다', async () =>
 
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function fakeElement(tagName, options = {}) {
+  return {
+    tagName,
+    className: '',
+    dataset: {},
+    innerHTML: '',
+    textContent: options.textContent ?? '',
+    children: [],
+    setAttribute(name, value) { this[name] = value; },
+    removeAttribute(name) { delete this[name]; },
+    querySelector() { return null; },
+    replaceWith(value) { this.replacement = value; },
+    append(...values) { this.children.push(...values); },
+  };
 }
