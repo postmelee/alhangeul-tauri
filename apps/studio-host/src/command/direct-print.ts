@@ -1,15 +1,13 @@
 import {
   appendSvgPage,
-  buildPrintStyleText,
   createPrintPage,
   pdfPrintTitle,
   printProgressText,
   type PrintPage,
 } from '@upstream/command/print-pages';
 import {
-  createPrintSurface,
   waitForPrintSurfaceReady,
-  type PrintSurface,
+  type PrintDocumentSurface,
 } from '@upstream/command/print-surface';
 import type { CommandServices } from '@upstream/command/types';
 import {
@@ -18,11 +16,18 @@ import {
 } from '../core/platform';
 import {
   preparePrintUiReturnWaiter,
-  type PrintUiReturnWaiter,
 } from './print-ui-lifecycle';
 
 let printJobActive = false;
 const LINUX_PRINT_FRAGMENT_TOLERANCE_PX = 1;
+const HOST_PRINT_SURFACE_ID = 'alhangeul-direct-print-surface';
+const PRINT_ACTIVE_CLASS = 'alhangeul-print-active';
+const PRODUCT_STYLE_SELECTOR = 'style[data-alhangeul-product-style="true"]';
+const NATIVE_PRINT_COMMAND = 'print_current_webview';
+
+interface HostPrintSurface extends PrintDocumentSurface {
+  dispose(): void;
+}
 
 export async function printDirectlyFromPageSurface(
   services: CommandServices,
@@ -34,9 +39,9 @@ export async function printDirectlyFromPageSurface(
   printJobActive = true;
 
   const { wasm } = services;
-  let surface: PrintSurface | null = null;
+  const originalStatus = readStatus();
+  let surface: HostPrintSurface | null = null;
   let originalDocumentTitle: string | null = null;
-  let printUiReturnWaiter: PrintUiReturnWaiter | null = null;
 
   try {
     const platform = detectDesktopPlatform();
@@ -45,32 +50,46 @@ export async function printDirectlyFromPageSurface(
     if (pageCount === 0) return;
 
     setStatus(printProgressText('print', 0, pageCount));
-    surface = await createPrintSurface();
     const printPages = await preparePrintPages(services, pageCount);
-    setupPrintDocument(surface.document, wasm.fileName, printPages, platform);
+    surface = createHostPrintSurface(printPages, platform);
     await waitForPrintSurfaceReady(surface);
 
     originalDocumentTitle = document.title;
     document.title = pdfPrintTitle(wasm.fileName);
     setStatus('시스템 인쇄 처리 중...');
-    printUiReturnWaiter = await preparePrintUiReturnWaiter(platform);
     console.info(
       `[file:print] 시스템 인쇄 호출 `
-      + `(surface=iframe, pages=${pageCount}, profile=print, platform=${platform})`,
+      + `(surface=top-level, pages=${pageCount}, profile=print, platform=${platform}, `
+      + `driver=${platform === 'linux' ? 'native-command' : 'window.print'})`,
     );
-    surface.window.print();
-    const returnReason = await printUiReturnWaiter.waitForReturn();
+    const returnReason = await runSystemPrint(platform);
     console.info(
       `[file:print] 시스템 인쇄 modal lifecycle 종료 `
       + `(reason=${returnReason}, title=${JSON.stringify(document.title)})`,
     );
   } finally {
-    printUiReturnWaiter?.dispose();
     if (originalDocumentTitle !== null) {
       document.title = originalDocumentTitle;
     }
+    if (originalStatus !== null) setStatus(originalStatus);
     surface?.dispose();
     printJobActive = false;
+  }
+}
+
+async function runSystemPrint(platform: DesktopPlatform): Promise<string> {
+  if (platform === 'linux') {
+    const { invoke } = await import('@tauri-apps/api/core');
+    await invoke(NATIVE_PRINT_COMMAND);
+    return 'native-command';
+  }
+
+  const waiter = await preparePrintUiReturnWaiter(platform);
+  try {
+    window.print();
+    return await waiter.waitForReturn();
+  } finally {
+    waiter.dispose();
   }
 }
 
@@ -102,35 +121,65 @@ async function preparePrintPages(
   return pages;
 }
 
-function setupPrintDocument(
-  target: Document,
-  fileName: string,
+function createHostPrintSurface(
   pages: PrintPage[],
   platform: DesktopPlatform,
-): void {
-  target.documentElement.lang = 'ko';
-  target.title = pdfPrintTitle(fileName);
-  applyPrintStyle(target, pages, platform);
-
-  target.body.replaceChildren();
-  target.body.className = '';
-  for (const page of pages) {
-    appendSvgPage(target, target.body, page);
+): HostPrintSurface {
+  const style = document.head.querySelector<HTMLStyleElement>(PRODUCT_STYLE_SELECTOR);
+  if (!style || !document.body || !document.defaultView) {
+    throw new Error('top-level 인쇄 surface를 만들 수 없습니다.');
+  }
+  document.getElementById(HOST_PRINT_SURFACE_ID)?.remove();
+  const originalStyle = style.textContent ?? '';
+  const hadPrintClass = document.documentElement.classList.contains(PRINT_ACTIVE_CLASS);
+  const container = document.createElement('div');
+  container.id = HOST_PRINT_SURFACE_ID;
+  container.setAttribute('aria-hidden', 'true');
+  const dispose = createHostPrintDisposer(
+    container, style, originalStyle, hadPrintClass,
+  );
+  try {
+    style.textContent = originalStyle + buildHostPrintStyle(pages, platform);
+    for (const page of pages) appendSvgPage(document, container, page);
+    document.body.appendChild(container);
+    document.documentElement.classList.add(PRINT_ACTIVE_CLASS);
+    return { window: document.defaultView, document, dispose };
+  } catch (error) {
+    dispose();
+    throw error;
   }
 }
 
-function applyPrintStyle(
-  target: Document,
+function createHostPrintDisposer(
+  container: HTMLElement,
+  style: HTMLStyleElement,
+  originalStyle: string,
+  hadPrintClass: boolean,
+): () => void {
+  let disposed = false;
+  return () => {
+    if (disposed) return;
+    disposed = true;
+    container.remove();
+    style.textContent = originalStyle;
+    if (!hadPrintClass) document.documentElement.classList.remove(PRINT_ACTIVE_CLASS);
+  };
+}
+
+function buildHostPrintStyle(
   pages: PrintPage[],
   platform: DesktopPlatform,
-): void {
+): string {
+  const pageRules = pages.map((page) => (
+    `@page ${page.pageName} { size: ${formatMm(page.widthMm)}mm `
+    + `${formatMm(page.heightMm)}mm; margin: 0; }`
+  )).join('\n');
+  const sizeRules = pages.map((page) => (
+    `#${HOST_PRINT_SURFACE_ID} .${page.className} { page: ${page.pageName}; `
+    + `width: ${formatMm(page.widthMm)}mm; height: ${formatMm(page.heightMm)}mm; }`
+  )).join('\n');
   const linuxFragmentOverride = buildLinuxPrintFragmentOverride(pages, platform);
-  const bundledStyle = target.head.querySelector('style');
-  if (!bundledStyle) {
-    throw new Error('인쇄 surface의 bundled style을 찾을 수 없습니다.');
-  }
-  // Tauri가 print.html의 정적 style에 부여한 CSP nonce를 유지한다.
-  bundledStyle.textContent = buildPrintStyleText(pages) + linuxFragmentOverride;
+  return `\n${pageRules}\n@media print {\n${sizeRules}\n}\n${linuxFragmentOverride}`;
 }
 
 function buildLinuxPrintFragmentOverride(
@@ -142,7 +191,7 @@ function buildLinuxPrintFragmentOverride(
   if (!uniformPage) return '';
   const fragmentRules = pages
     .map((page) => (
-      `.${page.className} { `
+      `#${HOST_PRINT_SURFACE_ID} .${page.className} { `
       + 'page: auto; '
       + `height: calc(${page.heightMm}mm - ${LINUX_PRINT_FRAGMENT_TOLERANCE_PX}px); `
       + '}'
@@ -164,6 +213,12 @@ ${defaultPageRule}
 `;
 }
 
+function formatMm(mm: number): string {
+  return Number.isInteger(mm)
+    ? String(mm)
+    : mm.toFixed(3).replace(/0+$/, '').replace(/\.$/, '');
+}
+
 function findUniformPageSize(pages: PrintPage[]): PrintPage | null {
   const firstPage = pages[0];
   if (!firstPage) return null;
@@ -177,4 +232,9 @@ function findUniformPageSize(pages: PrintPage[]): PrintPage | null {
 function setStatus(message: string): void {
   const status = typeof document === 'undefined' ? null : document.getElementById('sb-message');
   if (status) status.textContent = message;
+}
+
+function readStatus(): string | null {
+  const status = typeof document === 'undefined' ? null : document.getElementById('sb-message');
+  return status?.textContent ?? null;
 }

@@ -225,7 +225,7 @@ jobs:
             printf 'WebKitWebDriver %s\n' "$webkit_webdriver_path"
             dpkg-query -W libgtk-3-0 libwebkit2gtk-4.1-0 webkit2gtk-driver
             pdfinfo -v 2>&1 | head -n 1
-            cupsd -v
+            dpkg-query --show --showformat='cups ${Version}\n' cups
           } > "$EVIDENCE_ROOT/native-environment.txt"
 
       - name: Run Linux GUI acceptance

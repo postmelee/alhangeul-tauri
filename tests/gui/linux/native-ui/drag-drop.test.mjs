@@ -18,9 +18,15 @@ test('bounded drag는 검증된 두 중심점 사이에서 단 한 번의 X11 ge
   assert.deepEqual(calls[0][1], [
     'mousemove', '--sync', '70', '60',
     'mousedown', '1',
+    'sleep', '0.2',
+    'mousemove_relative', '--sync', '12', '0',
+    'sleep', '0.2',
     'mousemove', '--sync', '800', '500',
+    'sleep', '0.5',
     'mouseup', '1',
   ]);
+  assert.equal(calls[0][1].filter((value) => value === 'mousedown').length, 1);
+  assert.equal(calls[0][1].filter((value) => value === 'mouseup').length, 1);
 });
 
 test('invalid bounds는 입력을 보내기 전에 거부한다', () => {
@@ -76,5 +82,37 @@ test('동일한 drag source 창이 여러 개면 좌표 입력 전에 fail-close
     },
   }), /정확히 1개/);
   assert.equal(gestureSent, false);
+  assert.equal(stopped, true);
+});
+
+test('drag target이 fixture URI를 요청해야 gesture를 성공으로 인정한다', async () => {
+  let stopped = false;
+  let output = 'READY\n';
+  let gestures = 0;
+  const child = { exitCode: null, signalCode: null };
+  const stdout = { value: () => output };
+  const stderr = { value: () => '' };
+  await dragFileIntoWindow({
+    filePath: '/fixtures/biz_plan.hwp',
+    targetRect: { x: 400, y: 200, width: 800, height: 600 },
+    timeoutMs: 1000,
+    env: { DISPLAY: ':99', PATH: '/usr/bin' },
+  }, {
+    resolveExecutable: async (name) => `/usr/bin/${name}`,
+    spawnLoggedProcess: () => ({ child, stdout, stderr }),
+    stopProcess: async () => { stopped = true; },
+    delay: async () => {},
+    spawnSync: (_command, args) => {
+      if (args[0] === 'getdisplaygeometry') return { status: 0, stdout: '1920 1080\n' };
+      if (args[0] === 'search') return { status: 0, stdout: '101\n' };
+      if (args[0] === 'getwindowgeometry') {
+        return { status: 0, stdout: 'X=20\nY=30\nWIDTH=100\nHEIGHT=60\n' };
+      }
+      gestures += 1;
+      output += 'DRAG_BEGIN\nURI_SENT\nDRAG_END\n';
+      return { status: 0, stdout: '', stderr: '' };
+    },
+  });
+  assert.equal(gestures, 1);
   assert.equal(stopped, true);
 });

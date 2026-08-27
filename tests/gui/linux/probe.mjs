@@ -34,7 +34,6 @@ export async function runLinuxGuiProbe(options, services = {}) {
     const session = await request(runtime.baseUrl, 'POST', '/session', {
       capabilities: {
         alwaysMatch: {
-          browserName: 'tauri',
           'tauri:options': { application: runtime.appPath },
         },
       },
@@ -114,12 +113,17 @@ async function waitForDriver(baseUrl, request, delay = defaultDelay) {
 }
 
 async function webdriverRequest(baseUrl, method, path, body) {
-  const response = await fetch(`${baseUrl}${path}`, {
-    method,
-    headers: body ? { 'Content-Type': 'application/json' } : undefined,
-    body: body ? JSON.stringify(body) : undefined,
-    signal: AbortSignal.timeout(5000),
-  });
+  let response;
+  try {
+    response = await fetch(`${baseUrl}${path}`, {
+      method,
+      headers: body ? { 'Content-Type': 'application/json' } : undefined,
+      body: body ? JSON.stringify(body) : undefined,
+      signal: AbortSignal.timeout(path === '/status' ? 5000 : 30000),
+    });
+  } catch (error) {
+    throw new Error(`WebDriver 요청이 중단됐습니다: ${method} ${path}: ${error.message}`);
+  }
   if (!response.ok) throw new Error(`WebDriver 요청이 실패했습니다: ${method} ${path} HTTP ${response.status}`);
   if (method === 'DELETE' && response.status === 204) return null;
   const payload = await response.json();

@@ -12,6 +12,7 @@ import {
   GUI_SELECTORS,
   parsePageIndicator,
 } from '../support/document-ux.ts';
+import { dismissLocalFontPrompt, readDomText } from '../support/webdriver-dom.ts';
 import { readGuiHarnessInputs } from '../wdio.shared.conf.ts';
 
 const inputs = readGuiHarnessInputs();
@@ -37,17 +38,46 @@ describe('Alhangeul document UX', () => {
 });
 
 async function openFixture(fixture: DocumentFixture): Promise<void> {
-  const input = await $(GUI_SELECTORS.fileInput);
-  await input.waitForExist({ timeout: inputs.timeoutMs });
-  await input.setValue(fixture.absolutePath);
+  await setHiddenFileInput(fixture.absolutePath);
   await browser.waitUntil(async () => {
+    if (await dismissLocalFontPrompt()) return false;
     const canvas = await $(GUI_SELECTORS.documentCanvas);
-    const status = await $(GUI_SELECTORS.statusMessage).getText();
+    const status = await readDomText(GUI_SELECTORS.statusMessage);
     return await canvas.isExisting() && status.includes(basename(fixture.absolutePath));
   }, {
     timeout: inputs.timeoutMs,
     timeoutMsg: `${fixture.id} 문서 렌더가 완료되지 않았습니다`,
   });
+}
+
+async function setHiddenFileInput(path: string): Promise<void> {
+  const originalStyle = await browser.execute((selector) => {
+    const input = document.querySelector<HTMLElement>(selector);
+    if (!input) throw new Error(`file input이 없습니다: ${selector}`);
+    const style = input.getAttribute('style');
+    input.style.setProperty('display', 'block', 'important');
+    input.style.setProperty('position', 'fixed', 'important');
+    input.style.setProperty('inset', '0 auto auto 0', 'important');
+    input.style.setProperty('width', '1px', 'important');
+    input.style.setProperty('height', '1px', 'important');
+    input.style.setProperty('opacity', '1', 'important');
+    return style;
+  }, GUI_SELECTORS.fileInput);
+  try {
+    const input = await $(GUI_SELECTORS.fileInput);
+    await input.waitForDisplayed({ timeout: inputs.timeoutMs });
+    await input.setValue(path);
+  } finally {
+    await browser.execute((selector, style) => {
+      const input = document.querySelector<HTMLElement>(selector);
+      if (!input) return;
+      for (const property of ['display', 'position', 'inset', 'width', 'height', 'opacity']) {
+        input.style.removeProperty(property);
+      }
+      input.removeAttribute('style');
+      if (style !== null) input.setAttribute('style', style);
+    }, GUI_SELECTORS.fileInput, originalStyle);
+  }
 }
 
 async function assertKoreanDesktopUi(): Promise<void> {
@@ -71,7 +101,7 @@ async function assertInitialToolbarState(): Promise<void> {
 }
 
 async function assertPageCount(fixture: DocumentFixture): Promise<void> {
-  const page = parsePageIndicator(await $(GUI_SELECTORS.pageIndicator).getText());
+  const page = parsePageIndicator(await readDomText(GUI_SELECTORS.pageIndicator));
   expect(page.current).toBe(1);
   expect(page.total).toBeGreaterThanOrEqual(1);
   if (fixture.expectedPageCount !== null) expect(page.total).toBe(fixture.expectedPageCount);

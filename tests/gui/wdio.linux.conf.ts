@@ -38,6 +38,10 @@ export function createLinuxWdioConfig(
     xvfbMaxRetries: 1,
     services: [['@wdio/tauri-service', serviceOptions]],
     capabilities,
+    mochaOpts: {
+      ...shared.mochaOpts,
+      timeout: Math.min(inputs.timeoutMs * 4, 600000),
+    },
   };
 }
 

@@ -37,6 +37,16 @@ test('공통 config는 exact-SHA 입력과 bounded retry 없는 runner 계약을
   assert.match(config.specs[0], /document-ux\.e2e\.ts$/);
 });
 
+test('production session은 현재 handle을 명시 선택해 plugin 없는 focus 조회를 억제한다', async () => {
+  const config = createSharedWdioConfig(readGuiHarnessInputs(validEnv()));
+  const calls = [];
+  await config.before({}, [], {
+    getWindowHandle: async () => { calls.push('get'); return 'main-handle'; },
+    switchToWindow: async (handle) => { calls.push(`switch:${handle}`); },
+  });
+  assert.deepEqual(calls, ['get', 'switch:main-handle']);
+});
+
 for (const [name, override, error] of [
   ['상대 app path', { ALHANGEUL_GUI_APP_PATH: 'Alhangeul' }, /절대 경로/],
   ['짧은 SHA', { ALHANGEUL_GUI_BUILD_REF: 'a'.repeat(39) }, /40자리/],
@@ -195,6 +205,83 @@ test('Linux native 저장·PDF acceptance는 디스크 갱신과 경로별 실�
   assert.doesNotMatch(source, /digest\('hex'\)\)\.toMatch/);
   assert.match(source, /DIRECT_PDF_MIN_TEXT_COUNTS = \[20, 300, 200, 300, 200, 100\]/);
   assert.match(source, /SYSTEM_PDF_MIN_TEXT_COUNTS = \[20, 25, 200, 300, 200, 100\]/);
+});
+
+test('숨김 file input은 test 중에만 표시하고 원래 inline style을 복원한다', async () => {
+  const source = await readFile(join(repoRoot, 'tests/gui/specs/document-ux.e2e.ts'), 'utf8');
+  assert.match(source, /setProperty\('display', 'block', 'important'\)/);
+  assert.match(source, /finally \{/);
+  assert.match(source, /input\.style\.removeProperty\(property\)/);
+  assert.match(source, /input\.removeAttribute\('style'\)/);
+  assert.match(source, /if \(style !== null\) input\.setAttribute\('style', style\)/);
+});
+
+test('document와 native open은 로컬 font 조회 없이 대체 글꼴 consent를 완료한다', async () => {
+  const helper = await readFile(join(repoRoot, 'tests/gui/support/webdriver-dom.ts'), 'utf8');
+  assert.match(helper, /'대체 글꼴로 보기'/);
+  assert.doesNotMatch(helper, /'로컬 글꼴 감지 \(권장\)'/);
+  assert.match(helper, /textContent\?\.trim\(\)/);
+  for (const path of [
+    'tests/gui/specs/document-ux.e2e.ts',
+    'tests/gui/specs/linux-native.e2e.ts',
+  ]) {
+    const source = await readFile(join(repoRoot, path), 'utf8');
+    assert.match(source, /dismissLocalFontPrompt\(\)/, path);
+    assert.match(source, /from '\.\.\/support\/webdriver-dom\.ts'/, path);
+    assert.match(source, /readDomText\(GUI_SELECTORS\.(?:statusMessage|pageIndicator)\)/, path);
+  }
+});
+
+test('native menu command는 WebKit 표시 오판 없이 실제 DOM geometry를 확인해 클릭한다', async () => {
+  const helper = await readFile(join(repoRoot, 'tests/gui/support/webdriver-dom.ts'), 'utf8');
+  const native = await readFile(join(repoRoot, 'tests/gui/specs/linux-native.e2e.ts'), 'utf8');
+  const command = await readFile(join(repoRoot, 'tests/gui/support/native-command.ts'), 'utf8');
+  assert.match(helper, /window\.getComputedStyle\(element\)/);
+  assert.match(helper, /element\.getBoundingClientRect\(\)/);
+  assert.match(helper, /element\.click\(\)/);
+  assert.match(helper, /new MouseEvent\('mousedown'/);
+  assert.match(helper, /classList\.contains\('open'\)/);
+  assert.match(helper, /browser\.waitUntil/);
+  assert.match(command, /openDomMenu\('#menu-bar \.menu-title', boundedTimeout\)/);
+  assert.match(command, /clickVisibleDomElement\(selector\)/);
+  assert.match(native, /createNativeCommandDriver\(inputs\.timeoutMs\)/);
+  assert.doesNotMatch(native, /waitForDisplayed/);
+});
+
+test('system print는 Tauri direct-print shadow를 trusted Ctrl+P로 실행한다', async () => {
+  const native = await readFile(join(repoRoot, 'tests/gui/specs/linux-native.e2e.ts'), 'utf8');
+  const output = await readFile(join(repoRoot, 'tests/gui/linux/native-output.ts'), 'utf8');
+  const command = await readFile(join(repoRoot, 'tests/gui/support/native-command.ts'), 'utf8');
+  assert.match(command, /sendTrustedPrintShortcut/);
+  assert.match(command, /'search', '--onlyvisible', '--name', '\^Alhangeul\$'/);
+  assert.match(command, /'getactivewindow'/);
+  assert.match(command, /windowIds\.includes\(activeWindowId\)/);
+  assert.match(command, /'getwindowgeometry', '--shell', selectedWindowId/);
+  assert.match(command, /'mousemove', '--window', selectedWindowId/);
+  assert.match(command, /'click', '1'/);
+  assert.match(command, /getAttribute\('aria-label'\) === '문서 편집 입력'/);
+  assert.match(command, /'key', '--clearmodifiers', 'ctrl\+p'/);
+  assert.match(command, /return action\(sendTrustedPrintShortcut\)/);
+  assert.doesNotMatch(command, /print-preview|getWindowHandles|window\.open/);
+  assert.match(native, /runSystemPrint\(\(trigger\) => adapter\.printToFile/);
+  assert.match(native, /assertPreparedPrintSurface\(6\)/);
+  assert.match(native, /resetCupsOutput\(cups\.outputPath\)/);
+  assert.match(native, /normalizeCupsPdf\(cups\.outputPath, inputs\.timeoutMs\)/);
+  assert.match(output, /pdfs\.length !== 1/);
+  assert.match(output, /rename\(pdfs\[0\], expectedPath\)/);
+});
+
+test('Linux 복합 GUI scenario timeout은 operation timeout의 bounded 배수다', async () => {
+  const config = await readFile(join(repoRoot, 'tests/gui/wdio.linux.conf.ts'), 'utf8');
+  assert.match(config, /timeout: Math\.min\(inputs\.timeoutMs \* 4, 600000\)/);
+});
+
+test('native open readiness는 실제 artifact의 완료 status와 fixture page를 결속한다', async () => {
+  const native = await readFile(join(repoRoot, 'tests/gui/specs/linux-native.e2e.ts'), 'utf8');
+  assert.match(native, /status === '파일 열기 완료'/);
+  assert.match(native, /status\.startsWith\(`\$\{basename\(path\)\} — `\)/);
+  assert.match(native, /pageCount === null \|\| page\.total === pageCount/);
+  assert.doesNotMatch(native, /status\.includes\(basename\(path\)\)/);
 });
 
 function validEnv(override = {}) {

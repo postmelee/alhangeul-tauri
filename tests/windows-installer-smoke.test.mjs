@@ -144,7 +144,14 @@ test('version, shortcut, 제한 실행과 targeted cleanup을 검사한다', () 
   assert.match(source, /ReleaseComObject\(\$shell\)/);
   assert.match(source, /\.Trim\(\)\.Trim\('\"'\)/);
   assert.match(source, /\$leftPath = ConvertTo-NormalizedPath \$Left/);
-  assert.match(source, /Start-Sleep -Seconds 5/);
+  assert.match(source, /foreach \(\$iteration in 1\.\.2\)/);
+  assert.match(source, /WaitForInputIdle\(30000\)/);
+  assert.match(source, /MainWindowHandle -ne \[IntPtr\]::Zero/);
+  assert.match(source, /\$process\.Responding/);
+  assert.match(source, /\$process\.CloseMainWindow\(\)/);
+  assert.match(source, /WaitForExit\(10000\)/);
+  assert.match(source, /CycleCount = \$cycles\.Count/);
+  assert.doesNotMatch(source, /Start-Sleep -Seconds 5/);
   assert.match(source, /Stop-Process -Id \$process\.Id -Force/);
   assert.doesNotMatch(source, /Stop-Process\s+-Name/);
   assert.match(source, /Get-CleanState/);

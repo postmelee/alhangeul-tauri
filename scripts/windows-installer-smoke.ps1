@@ -198,16 +198,16 @@ function Invoke-Uninstaller($Kind, $State, $LogPath) {
   return (Start-Process -FilePath $path -ArgumentList @('/S') -Wait -PassThru).ExitCode
 }
 function Invoke-Launch($Executable) {
-  $process = Start-Process -FilePath $Executable -PassThru
-  try {
-    Start-Sleep -Seconds 5
-    $process.Refresh()
-    Assert-Condition (-not $process.HasExited) 'Alhangeul process가 5초 전에 종료되었습니다.'
-    return [ordered]@{ Pid = $process.Id; SurvivedSeconds = 5 }
-  } finally {
-    $process.Refresh()
-    if (-not $process.HasExited) { Stop-Process -Id $process.Id -Force; Wait-Process -Id $process.Id -ErrorAction SilentlyContinue }
-  }
+  $cycles = @(); foreach ($iteration in 1..2) {
+    $process = Start-Process -FilePath $Executable -PassThru; try {
+      Assert-Condition ($process.WaitForInputIdle(30000)) "Alhangeul cycle $iteration input-idle timeout"; $process.Refresh()
+      Assert-Condition (-not $process.HasExited) "Alhangeul cycle $iteration process가 조기 종료되었습니다."; Assert-Condition ($process.MainWindowHandle -ne [IntPtr]::Zero) "Alhangeul cycle $iteration main window가 없습니다."
+      Assert-Condition ($process.Responding) "Alhangeul cycle $iteration main window가 응답하지 않습니다."; Assert-Condition ($process.CloseMainWindow()) "Alhangeul cycle $iteration 정상 종료 요청에 실패했습니다."
+      Assert-Condition ($process.WaitForExit(10000)) "Alhangeul cycle $iteration 정상 종료 timeout"; $cycles += [ordered]@{ Iteration = $iteration; Pid = $process.Id; Ready = $true; GracefulExit = $true }
+    } finally {
+      $process.Refresh(); if (-not $process.HasExited) { Stop-Process -Id $process.Id -Force; Wait-Process -Id $process.Id -ErrorAction SilentlyContinue }
+    } }
+  return [ordered]@{ CycleCount = $cycles.Count; Cycles = $cycles }
 }
 function Write-MsiFailureContext($LogPath) {
   if (-not (Test-Path -LiteralPath $LogPath -PathType Leaf)) { return $null }

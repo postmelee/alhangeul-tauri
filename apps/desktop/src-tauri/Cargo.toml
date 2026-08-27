@@ -34,3 +34,8 @@ svg2pdf = "0.13"
 usvg = "0.45"
 pdf-writer = "0.12"
 roxmltree = "0.20"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+futures-channel = "0.3"
+gtk = "0.18"
+webkit2gtk = "2"

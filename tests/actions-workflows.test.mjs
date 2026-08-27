@@ -152,6 +152,8 @@ test('desktop workflow는 checkout commit을 검증하고 pretest를 순서대�
     'pnpm run test:automation',
     'pnpm run test:upstream',
     'pnpm run test:studio',
+    'pnpm run test:desktop',
+    'pnpm run clippy:desktop',
     'pnpm tauri build',
   ]);
 
@@ -166,6 +168,14 @@ test('desktop workflow는 checkout commit을 검증하고 pretest를 순서대�
   ]) {
     const step = getStepContaining(desktopWorkflow, command);
     assert.match(step, /^\s{8}if: inputs\.run_tests$/m);
+  }
+
+  for (const command of ['pnpm run test:desktop', 'pnpm run clippy:desktop']) {
+    const step = getStepContaining(desktopWorkflow, command);
+    assert.match(
+      step,
+      /^\s{8}if: \$\{\{ inputs\.run_tests && matrix\.name == 'windows-x64' \}\}$/m,
+    );
   }
 });
 

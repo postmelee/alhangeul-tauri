@@ -49,6 +49,10 @@ export function createSharedWdioConfig(
     reporters: ['spec'],
     outputDir: inputs.outputDir,
     injectGlobals: false,
+    before: async (_capabilities, _specs, session) => {
+      const handle = await session.getWindowHandle();
+      await session.switchToWindow(handle);
+    },
     mochaOpts: {
       ui: 'bdd',
       timeout: inputs.timeoutMs,

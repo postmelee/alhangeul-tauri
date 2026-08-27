@@ -54,6 +54,11 @@ pub fn take_pending_open_paths(
 }
 
 #[tauri::command]
+pub async fn print_current_webview(window: WebviewWindow) -> Result<(), String> {
+    crate::system_print::print_current_webview(window).await
+}
+
+#[tauri::command]
 pub fn prepare_document_open(app: AppHandle, path: String) -> Result<(), String> {
     let path = PathBuf::from(path);
     ensure_document_open_path(&path)?;

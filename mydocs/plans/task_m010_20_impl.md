@@ -4,7 +4,7 @@
 GitHub Issue: [#20](https://github.com/postmelee/alhangeul-tauri/issues/20)
 마일스톤: M010
 
-2026-08-24 작업지시자가 수행계획 진행을 승인했다. 승인된 dispatcher/event lifecycle, embed handler lifecycle, dead platform bridge 제거의 세 경계를 유지한다. 다만 dead bridge 코드 변경과 지원 플랫폼의 exact-SHA 수용을 분리하기 위해 마지막 경계를 Stage 3과 Stage 4로 나눈다. Stage 4는 Stage 3 commit을 Windows/Linux에서 검증하는 수용 단계이며 별도 기능 범위를 추가하지 않는다.
+2026-08-24 작업지시자가 수행계획 진행을 승인했다. 승인된 dispatcher/event lifecycle, embed handler lifecycle, dead platform bridge 제거의 세 경계를 유지한다. 다만 dead bridge 코드 변경과 지원 플랫폼의 exact-SHA 수용을 분리하기 위해 마지막 경계를 Stage 3과 Stage 4로 나눈다. Stage 4는 Stage 3 commit을 Windows/Linux에서 검증하는 수용 단계다. 2026-08-26 작업지시자는 첫 Stage 4 실환경 실행에서 확인된 acceptance infrastructure 결함을 Stage 4.1로 보정하고 Windows의 명시적 lifecycle gate까지 추가하는 계획 변경을 승인했다. 이어 같은 날 실제 Linux artifact에서 iframe `window.print()`가 native dialog 없이 반환하는 제품 결함을 확인한 뒤, top-level print surface로의 최소 product correction과 exact-SHA 재수용을 승인했다. top-level `window.print()`도 실제 GTK dialog를 만들지 못한 두 번째 실환경 결과 뒤에는 Linux에서만 Tauri/Wry native print API를 호출하는 얇은 command 추가를 승인했다.
 
 ## 단계 개요
 
@@ -15,6 +15,7 @@ GitHub Issue: [#20](https://github.com/postmelee/alhangeul-tauri/issues/20)
 | 3 | dead platform bridge 제거와 공식 경계 정렬 | platform/direct-print, Rust registry, boundary test와 `UPSTREAM.md` | 플랫폼 중립 전체 Studio/upstream gate |
 | 3.1 | platform unknown fixture의 runner 격리 | `platform.test.ts`, 실패 run·재검증 기록 | Windows/Linux 전역 navigator와 무관한 명시 fixture |
 | 4 | exact-SHA Windows/Linux lifecycle 수용 | Stage 3.1 exact commit의 native 결과와 `_stage4.md` | 양 플랫폼 Rust/Clippy/Tauri build와 reload smoke |
+| 4.1 | acceptance harness 보정과 exact-SHA 재수용 | Linux GUI harness, Windows lifecycle gate, 계획·보고 | 플랫폼별 명시 gate와 Linux document/native GUI 전체 통과 |
 
 ## 문서 위치 확인
 
@@ -22,7 +23,7 @@ GitHub Issue: [#20](https://github.com/postmelee/alhangeul-tauri/issues/20)
 |---|---|---|---|---|
 | upstream handler/platform 소유 계약 | `docs/architecture/` | `docs/architecture/UPSTREAM.md` | OK | Stage 3에서 기존 handler acquisition 문장과 native command 경계만 최소 수정 |
 | 구현계획·단계 판단 | `mydocs/plans/`, `mydocs/working/` | `task_m010_20_impl.md`, `task_m010_20_stage{1..4}.md` | OK | Hyper-Waterfall 승인·검증 기록 |
-| 오늘할일 | `mydocs/orders/` | `mydocs/orders/20260824.md` | OK | 현재 승인 대기 단계만 짧게 기록 |
+| 오늘할일 | `mydocs/orders/` | `mydocs/orders/20260824.md`, `mydocs/orders/20260826.md` | OK | 날짜별 현재 단계만 짧게 기록 |
 
 신규 공식 문서나 `mydocs/manual` 문서는 만들지 않는다. Stage 3에서 기존 `UPSTREAM.md` 범위를 넘어선 정책이 필요하거나 lifecycle helper 신규 파일이 필요해지면 해당 Stage 구현 전에 계획 변경 승인을 요청한다.
 
@@ -272,11 +273,216 @@ Task #20 Stage 4: Windows Linux native lifecycle 수용
 
 Stage 4 검증이 모두 통과한 뒤 `mydocs/working/task_m010_20_stage4.md`만 커밋한다.
 
+### Stage 4.1 — acceptance harness 보정과 exact-SHA 재수용
+
+Stage 3.1 exact SHA `04bab7516684492a59fd49fa54f58baadce65885`의
+[CI run 32692823898](https://github.com/postmelee/alhangeul-tauri/actions/runs/32692823898)과
+[native run 32692820969](https://github.com/postmelee/alhangeul-tauri/actions/runs/32692820969)은 성공했다.
+Linux x64 설치 artifact도 별도 격리 VM에서 설치·실행됐고 native command registry와 binary에
+`desktop_platform`이 없음을 확인했다. 그러나
+[Linux GUI run 32693861141](https://github.com/postmelee/alhangeul-tauri/actions/runs/32693861141)은
+GUI 실행 전 `cupsd -v`의 잘못된 option 때문에 중단됐으며, 동일 artifact의 격리 VM 재현에서
+다음 harness 결함을 추가로 확인했다.
+
+- direct probe가 `browserName: tauri`를 tauri-driver에 직접 보내 capability match에 실패한다.
+  외부 `@wdio/tauri-service`와 같은 방식으로 direct request에서는 `tauri:options`만 전달한다.
+  첫 portal·WASM 초기화를 포함하는 session lifecycle 요청은 30초로 제한하고 readiness status는 5초 fail-fast를 유지한다.
+- driver cleanup은 SIGTERM grace 뒤 SIGKILL이 동기적으로 `exit`를 발생시켜도 최초 exit promise를 재사용해
+  probe process와 app을 남기지 않는다.
+- production에서 의도적으로 숨긴 `#file-input`에 WebDriver `setValue()`를 바로 호출해
+  interactability 조건을 만족하지 못한다. test helper가 입력 순간에만 inline style을 복원 가능한
+  값으로 바꾸고 `finally`에서 원상 복구한다. WebKit은 원본 `style` 문자열만 다시 설정하면 임시
+  `!important` 계산값을 유지할 수 있으므로, 임시 속성을 하나씩 제거한 뒤 원본 문자열을 복원한다.
+- document/native open의 upstream local-font consent modal은 개인 시스템 글꼴 조회를 실행하지 않고
+  `대체 글꼴로 보기`를 명시 선택한 뒤 document readiness를 계속 판정한다.
+- WebKitWebDriver가 status/page element의 표시 text를 빈 값으로 반환하는 경우를 피하기 위해 해당 두
+  readiness surface만 DOM `textContent`로 읽는다. 설치 artifact는 native open 성공 시 파일명을 포함하지
+  않은 정확한 `파일 열기 완료` status를, drag-in 성공 시 `파일명 — N페이지` status를 내보낸다. 경로별
+  완료 status와 fixture별 page count를 결속하고, native chooser 선택 경로 자체는 chooser 내부 location
+  입력과 dialog 종료로 검증한다.
+- WebKitWebDriver가 펼쳐진 `file:*` menu item을 `display:flex`인데도 `isDisplayed=false`로 판정하는
+  경우가 있으므로 native command trigger는 제품과 같은 bubbling `mousedown`으로 menu의 `open` 상태를
+  최대 120초 안에 확인한다. 이는 MenuBar가 toolbar 표시 뒤 WASM/renderer 초기화 말미에 설치되는 순서를
+  반영하며, DOM의 display·visibility·opacity·geometry를 모두 확인한 표시 항목에만 `click()`을 전달한다.
+- production binary에는 의도적으로 WDIO Rust plugin이 없으므로 session 시작 시 현재 WebDriver handle을
+  명시 선택해 tauri-service의 plugin 기반 active-window 복구를 억제하고 DOM 명령을 순수 WebDriver로 유지한다.
+- 설치 artifact의 `file:print`는 upstream popup preview가 아니라 `apps/studio-host`의 Tauri direct-print shadow이며,
+  hidden same-origin iframe page surface를 준비한 뒤 `surface.window.print()`로 native dialog를 열도록 구현돼 있다.
+  native chooser 종료 뒤 Alhangeul visible X11 window의 exact-ID와 geometry를 확인하고 editor 중앙을 XTEST로 한 번 클릭해
+  InputHandler active 상태와 편집용 textarea focus를 복원한 뒤 production shortcut인 `Ctrl+P`를 XTEST로 보낸다.
+  별도 preview handle이나 popup을 가정하지 않고 AT-SPI adapter가 GTK print dialog를 직접 기다리며, dialog 종료 뒤
+  Tauri shadow의 print lifecycle이 원래 editor 상태를 복원했는지 확인한다.
+- 위 trusted 입력 보정 뒤 exact artifact는 command를 처리해 hidden surface를 생성·회수하고 원래 status/title로 복귀했지만,
+  `surface.window.print()`가 Linux WebKit에서 GTK/portal dialog를 만들지 않고 즉시 반환했다. 실패 AT-SPI tree에는
+  Alhangeul 본창만 있고 print 역할·이름의 dialog나 별도 visible X11 window가 없었다. 이는 selector 또는 harness 결함이 아니라
+  승인된 Stage 4.1의 "제품 lifecycle source 기능 범위는 추가하지 않는다" 경계를 넘는 실제 product direct-print 결함이므로,
+  product source 최소 보정 계획 변경 승인을 받기 전에는 Stage 4.1 완료·commit·exact-SHA 재수용으로 진행하지 않는다.
+- 작업지시자 승인에 따라 iframe document 조립 결과를 top-level host document의 전용 print container에 직접 구성하고,
+  nonce-bearing product style에 page별 print rule을 lifecycle 동안만 추가한 뒤 top-level `window.print()`를 호출한다.
+  screen에서는 전용 container를 강제로 숨기고 `html.alhangeul-print-active`의 `@media print` 안에서만 기존 editor를 숨겨
+  prepared SVG pages를 노출한다. dialog 종료·오류 때 container, print class, 동적 style과 title을 모두 원복한다.
+  upstream read-only source와 Rust command registry는 변경하지 않으며, 이 경계로도 실제 GTK dialog가 열리지 않으면
+  native bridge 추가 없이 다시 계획 승인을 요청한다.
+- top-level correction을 내장한 Linux x86_64 production DEB
+  `49609d003093b8782469ca33c7281853f6c27f91ad43cb3113f7f6636c26f456`도 trusted `Ctrl+P` 뒤
+  120초 동안 GTK/portal print dialog를 만들지 못했다. production bundle에는
+  `surface=top-level`, `alhangeul-direct-print-surface`와 top-level `window.print()`가 모두 존재했고,
+  실패 AT-SPI tree에는 Alhangeul 본창만 있어 미내장·selector 가능성을 배제했다.
+- 작업지시자 승인에 따라 `print_current_webview` native command를 Rust registry에 추가한다. Linux direct print만
+  top-level surface readiness 뒤 이 command를 await하고, command는 현재 Tauri `WebviewWindow::print()`를 호출해
+  Wry의 WebKitGTK `PrintOperation::run_dialog()` 경계로 전달한다. command 반환 또는 오류까지 top-level surface,
+  nonce-bearing dynamic style과 title을 유지한 뒤 기존 disposer로 원복한다. Windows와 `unknown`은 현재
+  `window.print()` 및 focus waiter를 유지하고, upstream read-only source와 native document session은 변경하지 않는다.
+- native command를 내장한 Linux x86_64 production DEB
+  `e2a11d0defb405ed37711ea0aa2762701ca0d52487c0a4cb4b4cf9900f52b3fb`에서는 GTK `Print` dialog와
+  `Print to File` semantic target이 실제로 나타났다. 이후 GTK file entry의 AT-SPI
+  `EditableText.setTextContents()`가 응답하지 않아 acceptance가 중단됐다. 재개용 로컬 보정은 정확한 semantic
+  file entry에 AT-SPI focus를 준 뒤 exact title의 visible `Print` 창이 하나인지 확인하고, 그 창에만 XTEST
+  `Ctrl+A`와 path 입력을 전달하도록 작성된 상태였다. 이 시점에는 단위 테스트와 실제 GUI 재검증을 실행하지 않았다.
+- file entry XTEST 보정 뒤에는 출력 경로의 `print` 문자열 때문에 footer의 최종 `Print`가 아닌 file entry가
+  먼저 검색되는 역방향 탐색 결함을 확인했다. 표시 중인 dialog 후손을 역순으로 조회해 exact footer action을 고르고,
+  GTK Print to File·Cancel·CUPS-PDF 각 modal 종료를 기다린다. CUPS-PDF가 document title을 파일명으로 정규화하므로
+  output directory의 단일 PDF를 승인된 expected path로 이동한 뒤 분석하며, 각 반복 뒤 원래 title·status·page를 확인한다.
+- 위 adapter 보정으로 생성된 GTK/CUPS 결과는 모두 6쪽 A4였으나 첫 production build에서는 본문이 전혀 없는 빈 PDF였다.
+  인쇄 직전 top-level surface는 6개 page·6개 SVG와 약 75만 byte markup을 보유해 surface 조립 실패를 배제했다.
+  설치된 WebKitGTK GIR 문서와 Wry 구현을 대조한 결과 `PrintOperation::run_dialog()`는 dialog가 닫힐 때 반환하지만
+  실제 paint/spool은 비동기로 계속되고 `finished` signal에서 종료된다. 기존 `WebviewWindow::print()` 반환 직후
+  frontend `finally`가 surface를 제거해 WebKit이 빈 문서를 인쇄한 것이 원인이었다.
+- Linux 구현은 별도 `system_print.rs`에서 현재 webview의 WebKitGTK `PrintOperation`을 직접 만들고 `failed`·`finished`
+  signal을 수신한다. `Print` 응답은 operation을 `finished`까지 유지해 frontend invoke와 임시 surface 수명을 결속하고,
+  `Cancel`과 알 수 없는 응답은 즉시 operation과 oneshot을 회수한다. Linux 전용 dependency는
+  `futures-channel`, `gtk`, `webkit2gtk`로 제한하며 Windows와 unknown은 기존 `window.print()` 경계를 유지한다.
+- screen 상태의 top-level print surface는 opacity 0으로 숨기지 않고 editor 뒤 `z-index: -1`에 유지한다. print media에서만
+  기존 editor를 숨기고 surface를 static·visible로 전환하며, 완료 뒤 원래 product style text, print class, title과 status를
+  모두 복원한다. 이는 WebKit paint tree에 surface를 유지하면서 사용자 화면과 pointer 입력에는 노출하지 않는 경계다.
+- 전체 GUI 실행에서 이전 spec의 Alhangeul 창이 종료 중 잠시 남아 exact X11 window가 둘이 될 수 있다. trusted shortcut은
+  후보가 하나면 그대로 쓰고, 여러 후보면 현재 active window ID가 exact 후보에 포함될 때만 선택한다. 선택한 window의
+  geometry와 editor focus를 확인한 뒤 `Ctrl+P`를 보내며, active 후보가 불명확하면 좌표·키 입력 전에 fail-closed 한다.
+- open/save/print처럼 한 scenario 안에서 여러 native operation을 직렬 실행하므로 각 operation의 120초 제한은 유지하되,
+  Mocha의 scenario 전체 제한은 그 4배와 10분 중 작은 값으로 분리해 정상 lifecycle을 중간에 절단하지 않는다.
+- X11 drag source의 press와 target 이동을 지연 없이 한 명령열로 보내면 GTK가 drag threshold를 처리하기
+  전에 release가 도착해 drop event가 생기지 않는다. source 안에서 12px만 이동하고 0.2초씩 처리한 뒤
+  target에서 0.5초를 기다리는 고정 choreography를 사용하되, button press/release는 각각 한 번만 보낸다.
+  이벤트 window가 없는 `Gtk.Label` 대신 표시되는 `Gtk.EventBox`를 drag source로 사용하고, WebKit target이
+  fixture URI를 실제 요청한 `URI_SENT` marker를 5초 안에 확인해야 gesture를 성공으로 인정한다.
+- Ubuntu portal file chooser는 별도 backend process를 사용하고 AT-SPI application 소유가 환경에 따라
+  달라진다. native UI adapter는 Alhangeul과 승인된 xdg-desktop-portal GTK/GNOME application 이름만
+  탐색하고, 기존 semantic
+  role/name selector와 physical printer 거부 경계는 유지한다. GTK location layer 전환 중 나타나는
+  null/stale accessible은 숨김으로 취급하고 traversal에서 제외해 semantic target으로 선택하지 않는다.
+  별도 portal 창이 X11 active window가 아닐 수 있으므로 file chooser를 확인하고 그 안의 표시된
+  Open/Save primary action에 AT-SPI focus를 준다. 허용된 Open/Save 영문·한국어 exact title과 일치하는
+  visible X11 window만 `xdotool search → windowactivate → getactivewindow exact-ID 확인 → XTEST key`
+  순서로 지정해 `Ctrl+L`과 `Return`이 Alhangeul 본창에 전달되지 않게 한다. 실제 AT-SPI 트리에서는
+  xdg portal backend가 별도 application으로 등록돼도 표시 중인 `Open File` chooser가 `Alhangeul`
+  application 아래에 붙을 수 있다. 따라서 application 이름만으로 chooser target을 제한하지 않는다.
+  GTK가 `Ctrl+L`로 만든 location entry와 디렉터리 이동 뒤 표시되는 Save File name entry는 모두
+  accessible name이 비어 있으므로, 표시 중인 file chooser를 먼저 semantic role/name으로 찾고
+  각 단계에서 그 후손의 표시 중인 `text`/`entry` role만 선택한다. 제품 본창의 이름 없는 입력과
+  혼동하지 않도록 file chooser의 나머지 target은 기존 role/name selector를 유지한다. 실패 snapshot은
+  이름 없는 표시 입력도 기록해 GTK 접근성 drift를 증거에 남긴다.
+- 기존 Windows installer smoke는 5초 process 생존만 확인하고 Rust test·Clippy 또는 정상 창 종료·재실행을
+  명시하지 않는다. Windows x64 matrix에서 desktop test·Clippy를 실행하고, MSI/NSIS 각각 두 번의
+  GUI process cycle에서 input-idle, main window handle, responsive 상태와 graceful close를 확인한다.
+
+2026-08-26 안전 중단 체크포인트: 격리 worktree
+`/Users/melee/Documents/projects/alhangeul-tauri-task20`, branch `local/task20`, 기준 commit
+`04bab7516684492a59fd49fa54f58baadce65885`에 Stage 4.1 변경이 미커밋으로 보존돼 있다. 재개 시 위 print path
+입력 보정의 focused test부터 실행하고, Linux 실제 system-print scenario, Linux GUI 전체, Linux Rust test/Clippy,
+로컬 전체 gate 순으로 검증한 뒤 correction commit과 exact-SHA Windows/Linux 재수용을 진행한다.
+
+2026-08-27 재개 경과: 보정 production DEB
+`4bf2d7f639ac63e463651493e19a2a8017646c783573d730e1a433dcbc541fd8`와 설치 binary
+`2c8158e8413b2269ea2e862b48c18333c7a24ac3ac7e4c9718a920d70756bcf0`로 focused system-print와 Linux GUI 전체를
+재실행했다. 전체 실행의 direct PDF `141bc5e5b3154ad0a6b573c458907702ba0928f0cb7fe4a55533d42cad0af4d8`,
+GTK PDF `a2e77accd739605866ab158070d9976925ee5cbbfa2ec83f71d148e4fd609c16`, CUPS PDF
+`98675c43a5e005bae52866960c9215600b14a8254526781c57c7f8ea7fb89548`는 모두 6쪽 A4이고 GTK/CUPS에서
+`사업수행계획서` text를 각각 3회·2회 추출했다. GUI worker log에는 assertion/runner 오류가 없고 저장·재열기,
+bounded drag, direct PDF, GTK Print to File·Cancel·CUPS-PDF 반복이 끝까지 실행됐다. 플랫폼 중립 automation 214개,
+GUI contract 21개, GUI typecheck, product boundary 230개, upstream 36개, Studio 111개와 production build도 통과했다.
+Linux `cargo check`, production DEB build, 최종 source의 desktop Rust test 107개와 Clippy가 모두 통과했다.
+Rust test와 Clippy의 `CARGO_INCREMENTAL=0`, debug info 비활성화는 격리 VM 저장공간만 제한하며 검증 대상과
+compiler lint 수준은 바꾸지 않는다.
+
+수정:
+
+- `apps/studio-host/src/command/direct-print.ts`
+- `apps/studio-host/src/command/direct-print.test.ts`
+- `apps/studio-host/src/core/upstream-boundary.test.ts`
+- `apps/studio-host/src/style.css`
+- `apps/desktop/src-tauri/src/commands.rs`
+- `apps/desktop/src-tauri/src/lib.rs`
+- `apps/desktop/src-tauri/Cargo.toml`
+- `apps/desktop/src-tauri/Cargo.lock`
+- `.github/workflows/alhangeul-linux-gui.yml`
+- `.github/workflows/alhangeul-desktop.yml`
+- `tests/linux-gui-workflow.test.mjs`
+- `tests/actions-workflows.test.mjs`
+- `tests/gui/linux/probe.mjs`
+- `tests/gui/support/process.mjs`
+- `tests/linux-gui-probe.test.mjs`
+- `tests/gui-contracts.test.mjs`
+- `tests/gui/specs/document-ux.e2e.ts`
+- `tests/gui/wdio.shared.conf.ts`
+- `tests/gui/linux/native-ui/atspi.mjs`
+- `tests/gui/linux/native-ui/atspi.d.mts`
+- `tests/gui/linux/native-ui/atspi.test.mjs`
+- `tests/gui/linux/native-ui/atspi_driver.py`
+- `tests/gui/linux/native-ui/drag-drop.mjs`
+- `tests/gui/linux/native-ui/drag-drop.test.mjs`
+- `tests/gui/linux/native-ui/drag_source.py`
+- `tests/gui/specs/linux-native.e2e.ts`
+- `tests/gui/wdio.linux.conf.ts`
+- `scripts/windows-installer-smoke.ps1`
+- `tests/windows-installer-smoke.test.mjs`
+- `mydocs/plans/task_m010_20_impl.md`
+
+신규:
+
+- `apps/desktop/src-tauri/src/system_print.rs`
+- `tests/gui/linux/native-output.ts`
+- `tests/gui/support/native-command.ts`
+- `tests/gui/support/webdriver-dom.ts`
+- `mydocs/orders/20260826.md`
+- `mydocs/orders/20260827.md`
+
+플랫폼 중립 검증:
+
+```bash
+pnpm exec node --test tests/linux-gui-probe.test.mjs tests/linux-gui-workflow.test.mjs tests/actions-workflows.test.mjs tests/windows-installer-smoke.test.mjs tests/gui/linux/native-ui/atspi.test.mjs
+pnpm run typecheck:gui
+pnpm run test:automation
+pnpm run check:product-boundary
+pnpm run test:studio
+pnpm run build:studio
+git diff --check
+```
+
+Linux native command는 지원 Linux VM에서 `pnpm run test:desktop`, `pnpm run clippy:desktop`, production DEB build와
+실제 GTK Print to File·cancel·CUPS-PDF 반복으로 검증한다. 현재 macOS 호스트의 Rust 결과는 수용 근거로 쓰지 않는다.
+
+새 correction commit을 `publish/task20`에 fast-forward한 뒤 그 exact SHA로 CI와 native workflow를
+새로 실행한다. native workflow의 Windows x64 build job은 desktop test·Clippy를 통과해야 하며
+installer smoke는 MSI/NSIS의 반복 ready/close cycle을 각각 증명해야 한다. 성공한 Linux x64 artifact를
+입력으로 Linux GUI workflow를 실행해 direct probe, document UX, native open/save/print/drag suite를
+모두 통과시킨다. 실패 run과 이전 SHA artifact는 완료 근거로 재사용하지 않는다.
+
+커밋:
+
+```text
+Task #20 [Stage 4.1]: cross-platform lifecycle acceptance gate 보정
+```
+
+먼저 Stage 4.1 source·계획·오늘할일을 correction candidate commit에 묶어 exact SHA를 만든다. 그 SHA의
+Windows/Linux native와 Linux GUI 수용이 모두 통과한 뒤 `task-stage-report` 절차로
+`mydocs/working/task_m010_20_stage4_1.md`를 작성·검증·커밋한다. 수용 전 단계 보고서를 미리 작성하거나
+실패 run을 완료 근거로 사용하지 않는다.
+
 ## 통합 검증
 
 - 각 Stage focused test와 `git diff --check`를 해당 단계 보고서 작성 전에 실행한다.
 - Stage 3에서 `pnpm run test:upstream`, `pnpm run test:studio`, `pnpm run build:studio`, `pnpm run check:product-boundary`를 모두 통과한다.
-- Stage 4에서 같은 Stage 3 exact SHA의 Windows/Linux native 결과를 각각 확보한다.
+- Stage 4.1 correction exact SHA의 Windows/Linux native 결과와 Linux GUI 전체 결과를 각각 확보한다.
 - 최종 source에서 adapter 반복 setup은 이전 generation을 회수하고 uninstall 뒤 Tauri listener, close listener, wheel listener, toolbar subscription, handler waiter timer가 남지 않는다.
 - exact upstream Studio entry, 12개 leaf alias, 파일 300 LOC와 함수 50 LOC 권장 상한을 유지한다.
 - 실패한 검증은 단계 완료로 처리하지 않으며 계획 범위를 바꾸는 correction은 먼저 승인을 받는다.
@@ -294,6 +500,7 @@ Stage 4 검증이 모두 통과한 뒤 `mydocs/working/task_m010_20_stage4.md`�
 - Stage 2는 Stage 1 검증·보고서 승인 후 시작한다.
 - Stage 3은 Stage 2 검증·보고서 승인 후 시작한다.
 - Stage 4는 Stage 3 검증·보고서 승인과 exact commit 확정 후 시작한다.
+- Stage 4.1은 첫 Stage 4 수용에서 확인된 harness correction 계획 변경 승인 후 시작하고, 새 exact SHA의 수용이 끝나야 Stage 4를 완료한다.
 - 모든 Stage는 `task-stage-report` 절차로 보고·커밋하고 작업지시자 승인 없이 다음 Stage로 넘어가지 않는다.
 
 ## 위험과 대응
@@ -303,6 +510,8 @@ Stage 4 검증이 모두 통과한 뒤 `mydocs/working/task_m010_20_stage4.md`�
 - **waiter timer 누수**: 모든 resolve/reject/timeout을 단일 settle helper로 통과시켜 Set과 timer를 함께 회수한다.
 - **navigator platform 오판정**: Windows/Linux platform과 user agent fixture를 분리하고 Stage 4 실제 WebView에서 기존 platform 보정 진입을 smoke 검증한다.
 - **native 수용의 circular evidence**: Stage 3 source commit을 먼저 고정하고 Stage 4를 검증 전용 단계로 분리해 exact SHA와 결과를 결속한다.
+- **GUI harness 오탐**: direct driver capability, 숨김 입력, portal application 탐색과 environment inventory를 계약 test로 고정하고 실제 Linux GUI run으로 확인한다.
+- **Windows process 생존 오인**: input-idle, main window, responsiveness, graceful close와 두 번째 clean launch를 모두 만족해야 lifecycle smoke로 인정한다.
 - **macOS 검증 오용**: 플랫폼 중립 TypeScript gate만 현재 호스트에서 실행하고 Rust/Tauri 성공은 Windows/Linux 결과만 인정한다.
 
 ## 승인 요청 사항

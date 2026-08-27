@@ -10,6 +10,7 @@ mod pdf_text_audit;
 mod pending_open;
 mod recent_documents;
 mod state;
+mod system_print;
 mod window_geometry;
 mod windows;
 
@@ -22,9 +23,9 @@ use commands::{
     clear_recent_documents, close_document, commit_pdf_export, commit_staged_document_save,
     create_document, create_editor_window, destroy_current_window, list_local_fonts,
     list_recent_documents, mark_document_dirty, mutate_document, open_document_tracking,
-    prepare_document_open, prepare_staged_document_save, query_document, read_local_font,
-    record_recent_document, remove_recent_document, render_document_preview, render_page_svg,
-    reveal_in_folder, take_pending_open_paths,
+    prepare_document_open, prepare_staged_document_save, print_current_webview, query_document,
+    read_local_font, record_recent_document, remove_recent_document, render_document_preview,
+    render_page_svg, reveal_in_folder, take_pending_open_paths,
 };
 use state::AppState;
 
@@ -62,6 +63,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             create_document,
             create_editor_window,
+            print_current_webview,
             close_document,
             mark_document_dirty,
             render_page_svg,

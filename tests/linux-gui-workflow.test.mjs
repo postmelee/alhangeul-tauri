@@ -111,7 +111,7 @@ test('native Linux dependency와 driver version이 명시되고 환경 증거를
     'command -v WebKitWebDriver',
     'dpkg-query -W',
     'pdfinfo -v',
-    'cupsd -v',
+    "dpkg-query --show --showformat='cups ${Version}\\n' cups",
   ]) assert.ok(evidence.includes(command), `환경 증거 명령이 필요합니다: ${command}`);
   assert.ok(evidence.includes("printf 'tauri-driver %s\\n' \"$TAURI_DRIVER_VERSION\""));
   assert.ok(evidence.includes("printf 'WebKitWebDriver %s\\n' \"$webkit_webdriver_path\""));

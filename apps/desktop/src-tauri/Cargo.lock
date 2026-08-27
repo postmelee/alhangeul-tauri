@@ -32,10 +32,12 @@ dependencies = [
 name = "alhangeul-desktop"
 version = "0.1.0"
 dependencies = [
+ "futures-channel",
+ "gtk",
  "open",
  "pdf-writer",
  "rhwp",
- "roxmltree 0.20.0",
+ "roxmltree",
  "serde",
  "serde_json",
  "svg2pdf",
@@ -50,6 +52,7 @@ dependencies = [
  "tempfile",
  "usvg",
  "uuid",
+ "webkit2gtk",
 ]
 
 [[package]]

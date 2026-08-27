@@ -162,6 +162,14 @@ jobs:
         if: inputs.run_tests
         run: pnpm run test:studio
 
+      - name: Test desktop Rust on Windows
+        if: ${{ inputs.run_tests && matrix.name == 'windows-x64' }}
+        run: pnpm run test:desktop
+
+      - name: Lint desktop Rust on Windows
+        if: ${{ inputs.run_tests && matrix.name == 'windows-x64' }}
+        run: pnpm run clippy:desktop
+
       - name: Build Tauri bundles
         shell: bash
         run: pnpm tauri build --verbose --target "${{ matrix.target }}" ${{ matrix.bundle_args }}
