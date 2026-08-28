@@ -388,6 +388,85 @@ Task #45 [Stage 4.2]: 수행계획의 post-merge 배포 경계 정렬
 Task #45 [Stage 4.3]: PR 리뷰 보정과 최신 devel 통합
 ```
 
+### Stage 4.4 — Configure Pages 입력 계약 보정과 배포 재개
+
+#### 실패 원인과 변경 경계
+
+- PR #47 merge commit `d814e1c6db12440aeef24a604338139ca0ef677f`을 exact input으로 실행한
+  Pages run `33160869974`은 checkout·build·check·focused test를 통과한 뒤 `Configure Pages`에서
+  실패했다.
+- 고정된 `actions/configure-pages` v6은 `static_site_generator: other`를 지원하지 않는다.
+  `enablement: true`도 이미 활성화된 Pages에는 필요하지 않고 별도 administration/pages write
+  token을 요구하므로 현재 최소 권한 workflow 계약과 맞지 않는다.
+- Action pin·권한·환경·배포 순서는 유지하고 `Configure Pages` step의 `with` 블록만 제거한다.
+  PAT, secret, 환경 보호 완화와 수동 artifact/API 우회는 도입하지 않는다.
+
+#### 구현 순서
+
+1. `tests/actions-workflows.test.mjs`의 Pages workflow 계약에 `enablement`와
+   `static_site_generator` 입력 부재 assertion을 추가해 회귀 test를 먼저 고정한다.
+2. `.github/workflows/pages.yml`의 `Configure Pages` step에서 두 입력을 포함한 전체 `with` 블록을
+   제거하고 immutable `actions/configure-pages` v6 pin은 유지한다.
+3. focused workflow/Pages test와 deterministic build/check를 실행한다.
+4. Task #45 전체 platform-neutral gate와 추적 파일 snapshot 기반 product-boundary를 재검증한다.
+5. 실패 run·공식 입력 계약·수정 diff·검증 결과를 Stage 4.4 보고서와 기존 최종 보고서에 추가한다.
+6. 보정 PR merge 뒤 새 `devel` merge commit의 40자리 SHA를 workflow ref와 `deploy_ref`에 동일하게
+   사용해 Pages workflow를 한 번만 실행한다.
+7. 성공한 deployment URL에서 root·updates·feedback, 정적 asset, `release.json`, direct installer와
+   `updater/stable.json` 비게시 상태를 read-back하고 1280px/390px 공개 화면을 확인한다.
+
+#### 산출물
+
+신규:
+
+- `mydocs/working/task_m010_45_stage4.4.md`
+
+수정:
+
+- `.github/workflows/pages.yml`
+- `tests/actions-workflows.test.mjs`
+- `mydocs/orders/20260828.md`
+- `mydocs/plans/task_m010_45_impl.md`
+- `mydocs/report/task_m010_45_report.md`
+
+#### 검증
+
+```bash
+node --test tests/pages.test.mjs tests/actions-workflows.test.mjs
+pnpm run build:pages
+pnpm run check:pages
+pnpm run test:automation
+pnpm run check:product-version
+pnpm run check:release-metadata
+pnpm run check:rhwp-pin
+pnpm run check:product-boundary
+git diff --check
+git status --short
+```
+
+`check:product-boundary`는 Task #45 추적 파일의 승인 전 snapshot과 현재 상태를 비교할 수 있게
+필요한 환경 입력을 사용한다. 제품 source·native package·release/updater 게시 파일의 변경이
+발견되면 Stage를 중단한다.
+
+post-merge 운영 검증은 다음 성공 조건을 모두 충족해야 한다.
+
+- exact 새 `devel` SHA 검증부터 configure·upload·deploy까지 모든 workflow step success
+- deployment URL과 canonical `https://postmelee.github.io/alhangeul-tauri/` 일치
+- public root·updates·feedback·필수 asset·내부/외부 링크 read-back success
+- `release.json`의 `unreleased` 상태 유지와 direct MSI·NSIS·AppImage URL 부재
+- `updater/stable.json` 404 유지
+- desktop 1280px/mobile 390px에서 horizontal overflow·clipping·핵심 상호작용 이상 없음
+
+#### 커밋
+
+```text
+Task #45 [Stage 4.4]: Configure Pages 입력 계약 보정
+```
+
+Stage 4.4 소스·테스트·단계 보고서는 같은 commit으로 묶는다. 최종 보고서와 오늘할일 갱신은
+검증 완료 뒤 별도 최종 보고 commit으로 만들며, 보정 PR merge와 exact-SHA 배포는 각각 승인
+게이트를 거친다.
+
 ## 검증
 
 - 각 Stage focused 검증과 수동 read-back이 모두 통과해야 단계 보고서와 commit을 만든다.
