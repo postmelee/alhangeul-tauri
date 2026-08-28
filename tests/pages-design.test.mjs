@@ -26,25 +26,28 @@ test('홈은 한 화면 설치 안내와 개별 페이지 탐색 계약을 지�
   for (const marker of [
     'class="home-main"',
     'class="home-shell"',
-    'class="install-grid"',
+    'class="download-platform-picker"',
     'href="updates/"',
     'href="feedback/"',
     'href="https://github.com/postmelee/alhangeul-tauri"',
   ]) assert.match(html, new RegExp(escapeRegExp(marker)));
 
-  assert.equal([...html.matchAll(/class="install-row"/g)].length, 5);
-  assert.equal([...html.matchAll(/class="install-action(?: secondary)?"/g)].length, 5);
-  assert.equal([...html.matchAll(/class="install-action secondary"/g)].length, 2);
+  assert.equal([...html.matchAll(/class="download-platform-radio"/g)].length, 2);
+  assert.equal([...html.matchAll(/class="download-platform-panel [^"]+-panel"/g)].length, 2);
+  assert.equal([...html.matchAll(/class="download-primary-action"/g)].length, 2);
+  assert.equal([...html.matchAll(/class="download-secondary-option"/g)].length, 3);
   assert.equal([...html.matchAll(/href="updates\/#latest-download"/g)].length, 5);
-  assert.equal([...html.matchAll(/>다운로드<\/a>/g)].length, 3);
-  assert.equal([...html.matchAll(/>설치 안내<\/a>/g)].length, 2);
+  assert.equal([...html.matchAll(/data-download-state="primary"/g)].length, 2);
+  assert.equal([...html.matchAll(/data-download-state="secondary"/g)].length, 1);
 
   assert.doesNotMatch(html, /Windows &amp; Linux · Open source/);
   assert.match(html, /HWP\/HWPX/);
   assert.match(html, /<h2 id="install-title">다운로드<\/h2>/);
-  assert.equal([...html.matchAll(/class="install-platform-group"/g)].length, 2);
-  assert.match(html, /<h3 id="windows-download-title">Windows<\/h3>[\s\S]*?<strong>x64<\/strong><span class="install-format">NSIS<\/span><span class="install-purpose">일반 설치<\/span><span class="install-badge">권장<\/span>/);
-  assert.match(html, /<h3 id="linux-download-title">Linux<\/h3>[\s\S]*?<strong>arm64<\/strong><span class="install-format">DEB<\/span><span class="install-purpose">수동 설치<\/span>/);
+  assert.match(html, /id="download-platform-windows"[^>]+checked/);
+  assert.match(html, /<label for="download-platform-windows">Windows<\/label>[\s\S]*?<label for="download-platform-linux">Linux<\/label>/);
+  assert.match(html, /class="download-platform-panel windows-panel"[\s\S]*?<h3 id="windows-package-title">NSIS<\/h3>/);
+  assert.match(html, /class="download-platform-panel linux-panel"[\s\S]*?<h3 id="linux-package-title">AppImage<\/h3>/);
+  assert.doesNotMatch(html, /class="install-row|class="install-action/);
   assert.equal([...html.matchAll(/class="headline-line"/g)].length, 3);
   assert.match(html, /<span class="headline-line">더 이상 <em>낯선 문서<\/em>가<\/span>/);
   assert.doesNotMatch(html, /<a class="header-link"[^>]*>다운로드<\/a>/);
@@ -76,7 +79,7 @@ test('홈·업데이트·문의 페이지는 승인된 메뉴와 공유 메타�
     assert.match(html, /<title>[^<]+<\/title>/);
     assert.match(html, /<meta name="description" content="[^"]+" \/>/);
     assert.match(html, /<meta property="og:image" content="https:\/\/postmelee\.github\.io\/alhangeul-tauri\/assets\/og-main\.png" \/>/);
-    assert.match(html, /styles\.css\?v=45-3-14/);
+    assert.match(html, /styles\.css\?v=45-3-15/);
     assert.match(html, new RegExp(`<link rel="canonical" href="${escapeRegExp(expected.canonical)}" \\/>`));
     assert.match(html, /href="https:\/\/github\.com\/postmelee\/alhangeul-tauri"/);
     for (const link of expected.links) {
@@ -119,8 +122,14 @@ test('업데이트 페이지는 MSI·NSIS·AppImage와 수동 설치 범위를 f
 test('published release hydration은 홈과 dropdown을 exact artifact로 직접 전환한다', async () => {
   const source = await readSite('script.js', 'utf8');
   const homeAction = fakeElement('A', { textContent: 'Windows x64 NSIS · 일반 설치' });
+  const homeState = { dataset: { downloadState: 'primary' }, textContent: '설치 안내' };
+  homeAction.querySelector = () => homeState;
   homeAction.dataset.downloadTarget = 'windows-x86_64-nsis';
   homeAction.href = 'updates/#latest-download';
+  const msiAction = fakeElement('A', { textContent: 'MSI · 조직·관리 배포 설치 안내' });
+  const msiState = { dataset: { downloadState: 'secondary' }, textContent: '설치 안내 →' };
+  msiAction.querySelector = () => msiState;
+  msiAction.dataset.downloadTarget = 'windows-x86_64-msi';
   const menuAction = fakeElement('SPAN', { textContent: 'Linux x64 AppImage · 준비 중' });
   menuAction.dataset.downloadTarget = 'linux-x86_64-appimage';
   const message = { textContent: '' };
@@ -131,7 +140,7 @@ test('published release hydration은 홈과 dropdown을 exact artifact로 직접
     querySelector: (selector) => selector === '[data-release-note]' ? note : null,
     querySelectorAll: (selector) => ({
       '[data-release-message]': [message],
-      '[data-download-target]': [homeAction, menuAction],
+      '[data-download-target]': [homeAction, msiAction, menuAction],
       '[data-copy-value]': [],
     })[selector] ?? [],
   };
@@ -158,6 +167,8 @@ test('published release hydration은 홈과 dropdown을 exact artifact로 직접
 
   assert.equal(homeAction.href, release.downloads['windows-x86_64-nsis']);
   assert.equal(homeAction.dataset.downloadReady, 'true');
+  assert.equal(homeState.textContent, 'v0.2.0 다운로드');
+  assert.equal(msiState.textContent, '다운로드 →');
   assert.equal(menuAction.replacement.href, release.downloads['linux-x86_64-appimage']);
   assert.equal(menuAction.replacement.dataset.downloadReady, 'true');
   assert.equal(note.replacement.href, 'https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.2.0');
@@ -197,7 +208,7 @@ test('소셜 공유 이미지는 홈을 담는 16:9 PNG로 고정한다', async 
   assert.equal(png.readUInt32BE(20), 1080);
   assert.equal(
     createHash('sha256').update(png).digest('hex'),
-    '5b83c4ac94cd20aaffb572b0734e4f06182b668e2e8b5ec8903b34e744dd867a',
+    '188dd3c0cccd36e68135965fcf388489cc6d95726fbc78929c19e60719e25bcb',
   );
 });
 
@@ -225,37 +236,24 @@ test('홈은 일반 화면에서 스크롤을 막고 작은 화면 fallback과 �
   assert.match(css, /\.home-copy h1 \{[^}]*font-size: clamp\(2\.65rem, 3\.8vw, 3\.25rem\)/);
   assert.match(css, /\.headline-line \{ display: block; white-space: nowrap; \}/);
   assert.match(css, /\.product-window \{[^}]*border: 0; border-radius: 2px;/);
-  assert.match(css, /\.download-chevron \{[^}]*width: 16px; height: 16px/);
-  assert.match(css, /\.download-chevron path \{[^}]*stroke: currentcolor/);
-  assert.match(css, /\.updates-actions \{[^}]*flex-wrap: wrap; align-items: center; justify-content: center/);
-  assert.match(css, /@media \(max-width: 820px\)[\s\S]*\.updates-actions \{ justify-content: center; \}/);
-  assert.match(css, /@media \(max-width: 340px\)[\s\S]*\.updates-actions \{ flex-direction: column; align-items: center; \}/);
-  assert.match(css, /\.download-picker \.page-action-button \{ width: max-content; margin-inline: auto; \}/);
-  assert.match(css, /\.download-options \{ position: static; width: 100%; margin-top: 8px; transform: none; \}/);
-  assert.match(css, /\.updates-hero h1 \{[^}]*font-size: clamp\(40px, 7vw, 72px\)/);
-  assert.match(css, /\.updates-hero > p \{[^}]*font-size: 21px/);
-  assert.match(css, /\.updates-section h2 \{[^}]*font-size: 26px/);
-  assert.match(css, /\.feedback-contact-card h2 \{[^}]*font-size: 26px/);
+  for (const pattern of [/\.download-chevron \{[^}]*width: 16px; height: 16px/, /\.download-chevron path \{[^}]*stroke: currentcolor/]) assert.match(css, pattern);
+  for (const pattern of [/\.updates-actions \{[^}]*flex-wrap: wrap; align-items: center; justify-content: center/, /@media \(max-width: 820px\)[\s\S]*\.updates-actions \{ justify-content: center; \}/, /@media \(max-width: 340px\)[\s\S]*\.updates-actions \{ flex-direction: column; align-items: center; \}/, /\.download-picker \.page-action-button \{ width: max-content; margin-inline: auto; \}/, /\.download-options \{ position: static; width: 100%; margin-top: 8px; transform: none; \}/]) assert.match(css, pattern);
+  for (const pattern of [/\.updates-hero h1 \{[^}]*font-size: clamp\(40px, 7vw, 72px\)/, /\.updates-hero > p \{[^}]*font-size: 21px/, /\.updates-section h2 \{[^}]*font-size: 26px/, /\.feedback-contact-card h2 \{[^}]*font-size: 26px/]) assert.match(css, pattern);
   assert.match(css, /\.install-heading h2 \{[^}]*color: var\(--muted\); font-size: 15px; font-weight: 600/);
-  assert.match(css, /\.install-platform-group h3 \{[^}]*color: var\(--subtle\); font-size: 12px; font-weight: 600/);
-  assert.match(css, /\.install-row \{[^}]*grid-template-columns: minmax\(0, 1fr\) auto/);
-  assert.match(css, /\.install-row-details \{[^}]*grid-template-columns: 44px 78px minmax\(0, 1fr\) auto/);
-  assert.match(css, /\.install-row-details strong \{[^}]*font-size: 14px/);
-  assert.match(css, /\.install-format \{ color: #424245; font-size: 12px; font-weight: 600/);
-  assert.match(css, /\.install-purpose \{[^}]*color: var\(--subtle\); font-size: 12px; font-weight: 400/);
-  assert.match(css, /\.install-badge \{[^}]*border-radius: 999px;[^}]*background: var\(--blue-soft\)/);
-  assert.match(css, /\.install-action \{[^}]*min-height: 32px;[^}]*border: 1px solid var\(--blue\); border-radius: 999px; background: var\(--blue\); color: white;[^}]*font-weight: 600/);
-  assert.match(css, /\.install-action\.secondary \{ background: var\(--paper\); color: var\(--blue\); \}/);
-  assert.match(css, /\.install-action:hover \{[^}]*background: var\(--blue-dark\); color: white;[^}]*box-shadow: 0 3px 8px rgba\(0, 72, 145, 0\.12\)/);
-  assert.match(css, /\.page-action-button \{[^}]*min-height: 46px;[^}]*font-size: 16px/);
-  assert.match(css, /\.page-secondary-link \{[^}]*min-height: 42px;[^}]*font-size: 14px/);
-  assert.match(css, /\.site-footer \{[^}]*padding: 18px 0[^}]*font-size: 13px/);
-  assert.match(css, /\.site-footer-inner \{[^}]*width: min\(980px, calc\(100% - 40px\)\)[^}]*grid-template-columns: minmax\(140px, 1fr\)/);
-  assert.match(css, /\.footer-brand img \{[^}]*width: 24px; height: 24px/);
-  assert.match(css, /\.updates-page \+ \.site-footer \{ margin-top: 48px; \}/);
+  assert.match(css, /\.download-platform-switch \{[^}]*grid-template-columns: repeat\(2, minmax\(92px, 1fr\)\)/);
+  assert.match(css, /#download-platform-windows:checked ~ \.download-platform-panels \.windows-panel/);
+  assert.match(css, /\.download-platform-panels \{ min-height: 139px/);
+  assert.match(css, /\.download-recommended \{[^}]*grid-template-columns: minmax\(0, 1fr\) auto/);
+  assert.match(css, /\.download-recommended-copy h3 \{[^}]*font-size: 16px; font-weight: 650/);
+  assert.match(css, /\.download-primary-action \{[^}]*min-height: 38px;[^}]*background: var\(--blue\); color: white; font-size: 13px/);
+  assert.match(css, /\.download-secondary-option \{[^}]*justify-content: space-between;[^}]*font-size: 12px/);
+  assert.match(css, /\.download-secondary-action \{[^}]*color: var\(--blue\); font-weight: 600/);
+  for (const pattern of [/\.page-action-button \{[^}]*min-height: 46px;[^}]*font-size: 16px/, /\.page-secondary-link \{[^}]*min-height: 42px;[^}]*font-size: 14px/, /\.site-footer \{[^}]*padding: 18px 0[^}]*font-size: 13px/, /\.site-footer-inner \{[^}]*width: min\(980px, calc\(100% - 40px\)\)[^}]*grid-template-columns: minmax\(140px, 1fr\)/, /\.footer-brand img \{[^}]*width: 24px; height: 24px/, /\.updates-page \+ \.site-footer \{ margin-top: 48px; \}/]) assert.match(css, pattern);
   assert.match(script, /fetch\(`\$\{siteRoot\}release\.json`/);
   assert.match(script, /navigator\.clipboard\.writeText/);
   assert.match(script, /isExactDownload\(url, release\.tag\)/);
+  assert.match(script, /state\?\.dataset\.downloadState === 'primary'/);
+  assert.match(script, /\['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'\]/);
 });
 
 test('Pages source에는 지원 범위 밖 제품 표현이 없다', async () => {

@@ -1,7 +1,27 @@
 const siteRoot = document.body.dataset.siteRoot ?? './';
 
+setupPlatformPreference();
 setupReleaseData();
 setupCopyButtons();
+
+function setupPlatformPreference() {
+    const radios = [...document.querySelectorAll('input[name="download-platform"]')];
+    if (radios.length === 0) return;
+    if (/Linux/i.test(navigator.userAgent ?? '')) {
+        const linux = document.querySelector('#download-platform-linux');
+        if (linux) linux.checked = true;
+    }
+    for (const [index, radio] of radios.entries()) {
+        radio.addEventListener('keydown', (event) => {
+            if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return;
+            event.preventDefault();
+            const step = ['ArrowRight', 'ArrowDown'].includes(event.key) ? 1 : -1;
+            const next = radios[(index + step + radios.length) % radios.length];
+            next.checked = true;
+            next.focus();
+        });
+    }
+}
 
 async function setupReleaseData() {
     try {
@@ -38,7 +58,9 @@ function hydrateDownloadAction(action, url, release) {
     link.dataset.downloadReady = 'true';
     link.setAttribute('aria-label', `${link.textContent.trim()} · 알한글 ${release.version} 다운로드`);
     const state = link.querySelector('[data-download-state]');
-    if (state) state.textContent = `${state.textContent.split(' · ')[0]} · ${release.version} 다운로드`;
+    if (state?.dataset.downloadState === 'primary') state.textContent = `v${release.version} 다운로드`;
+    else if (state?.dataset.downloadState === 'secondary') state.textContent = '다운로드 →';
+    else if (state) state.textContent = `${state.textContent.split(' · ')[0]} · ${release.version} 다운로드`;
 }
 
 function hydrateReleaseNote(release) {
