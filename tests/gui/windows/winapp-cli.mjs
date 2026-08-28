@@ -44,6 +44,9 @@ export function createWinAppCli(options = {}) {
       'set-value', safeText(selector, 'selector'), safeValue(value, 'value'),
       '-w', String(windowHandle),
     ]),
+    focus: async (selector) => invokeUi(runtime, [
+      'focus', safeText(selector, 'selector'), '-w', String(windowHandle),
+    ]),
     invoke: async (selector) => invokeUi(runtime, [
       'invoke', safeText(selector, 'selector'), '-w', String(windowHandle),
     ]),

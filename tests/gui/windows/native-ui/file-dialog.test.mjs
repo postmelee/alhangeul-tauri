@@ -40,7 +40,10 @@ test('Open은 새 owner dialog를 고정해 path 설정·확인·종료를 순�
     ['screenshot', 200, 'C:\\evidence\\native-ui\\open-1.png'],
     ['setValue', 200, 'txt-1148-a1b2', 'C:\\repo\\samples\\biz_plan.hwp'],
   ]);
-  assert.deepEqual(harness.calls[4], ['invoke', 200, 'btn-open-b2c3']);
+  assert.deepEqual(harness.calls.slice(4, 6), [
+    ['focus', 200, 'btn-open-b2c3'],
+    ['invoke', 200, 'btn-open-b2c3'],
+  ]);
   assert.equal(harness.dialogOpen, false);
   assert.equal(adapter.takeEvidenceFiles().length, 2);
   assert.equal(adapter.takeEvidenceFiles().length, 0);
@@ -107,6 +110,9 @@ function createHarness(options = {}) {
       },
       setValue: async (selector, value) => {
         harness.calls.push(['setValue', windowHandle, selector, value]);
+      },
+      focus: async (selector) => {
+        harness.calls.push(['focus', windowHandle, selector]);
       },
       invoke: async (selector) => {
         harness.calls.push(['invoke', windowHandle, selector]);

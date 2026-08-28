@@ -12,7 +12,6 @@ const ACTION_NAMES = Object.freeze({
   save: ['save', '저장'],
   cancel: ['cancel', '취소'],
 });
-
 export async function createWindowsNativeUiAdapter(options = {}) {
   const discover = options.discoverWindows ?? discoverWinAppWindows;
   const windows = await discover(discoveryOptions(options, 'Alhangeul'));
@@ -106,6 +105,7 @@ export class WindowsNativeUiAdapter {
 
   async submitPath(dialog, path) {
     await dialog.client.setValue(dialog.controls.entry, path);
+    await dialog.client.focus(dialog.controls.primary);
     await dialog.client.invoke(dialog.controls.primary);
     await this.waitForDialogGone(dialog.hwnd);
   }

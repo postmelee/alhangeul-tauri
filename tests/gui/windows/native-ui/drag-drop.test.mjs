@@ -58,12 +58,11 @@ test('source가 모호하면 좌표 입력 전에 실패하고 Explorer를 닫�
   assert.equal(harness.explorerOpen, false);
 });
 
-test('Explorer가 알려진 확장자를 숨기면 basename stem selector로 한정해 재탐색한다', async () => {
+test('Explorer UIA tree가 알려진 확장자를 숨겨도 basename stem으로 source를 고정한다', async () => {
   const harness = createHarness({ hiddenExtension: true });
   await dragFileIntoWindow(dragOptions(), harness.services);
-  assert.deepEqual(harness.calls.filter(([name]) => name === 'search'), [
-    ['search', 'form-002.hwpx'],
-    ['search', 'form-002'],
+  assert.deepEqual(harness.calls.filter(([name]) => name === 'inspect-source'), [
+    ['inspect-source', 12],
   ]);
   assert.equal(harness.calls.filter(([name]) => name === 'drag').length, 1);
 });
@@ -95,19 +94,20 @@ function createHarness(options = {}) {
       return layout();
     },
     createClient: ({ windowHandle }) => windowHandle === explorer.hwnd ? {
-      search: async (name) => {
-        harness.calls.push(['search', name]);
-        if (options.hiddenExtension && name.endsWith('.hwpx')) return { matchCount: 0, matches: [] };
-        return sourceTree({
-          duplicate: options.duplicateSource,
-          name: options.hiddenExtension ? 'form-002' : 'form-002.hwpx',
-        });
+      inspect: async (depth) => {
+        if (depth === 12) {
+          harness.calls.push(['inspect-source', depth]);
+          return sourceTree({
+            duplicate: options.duplicateSource,
+            name: options.hiddenExtension ? 'form-002' : 'form-002.hwpx',
+          });
+        }
+        return { elements: [{
+          type: 'Button', automationId: 'Close', selector: 'Close',
+          isEnabled: true, isOffscreen: false,
+        }] };
       },
       drag: async (from, to, gesture) => harness.calls.push(['drag', from, to, gesture]),
-      inspect: async () => ({ elements: [{
-        type: 'Button', automationId: 'Close', selector: 'Close',
-        isEnabled: true, isOffscreen: false,
-      }] }),
       invoke: async (selector) => {
         assert.equal(selector, 'Close');
         harness.calls.push(['close']);

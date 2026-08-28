@@ -26,7 +26,7 @@ export async function dragFileIntoWindow(options = {}, services = {}) {
     const layout = await arrange(runtime, app, explorer);
     const explorerClient = createClient(clientOptions(runtime, explorer));
     const appClient = createClient(clientOptions(runtime, app));
-    const sourceTree = await searchExplorerSource(explorerClient, runtime.filePath);
+    const sourceTree = await explorerClient.inspect(12);
     const appTree = await appClient.inspect(8);
     const points = resolveDragPoints(sourceTree, appTree, layout, runtime.filePath);
     const files = await writeDragEvidence(runtime, { layout, sourceTree, appTree }, services);
@@ -44,21 +44,6 @@ export async function dragFileIntoWindow(options = {}, services = {}) {
       }
     }
   }
-}
-
-async function searchExplorerSource(client, filePath) {
-  const parsed = win32.parse(filePath);
-  const names = parsed.ext === '' ? [parsed.base] : [parsed.base, parsed.name];
-  let lastError;
-  for (const name of names) {
-    try {
-      const tree = await client.search(name, 20);
-      if (flattenElements(tree).some((element) => element.name === name)) return tree;
-    } catch (error) {
-      lastError = error;
-    }
-  }
-  throw lastError ?? new Error('Explorer source item을 semantic name으로 찾지 못했습니다');
 }
 
 export function resolveDragPoints(sourceTree, appTree, layout, filePath) {
