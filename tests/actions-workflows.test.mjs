@@ -329,6 +329,7 @@ test('Windows GUI branch probe는 명시적 opt-in이고 기존 desktop 기본 �
 
 test('Windows GUI branch probe는 MSI·NSIS fresh runner에서 same-run artifact를 소비한다', () => {
   const job = getJob(desktopWorkflow, 'windows-gui-probe');
+  const checkout = getStepContaining(job, 'Checkout Windows GUI probe source');
   assert.match(job, /^    needs: build$/m);
   assert.match(job, /^    if: \$\{\{ !cancelled\(\) && inputs\.run_windows_gui_probe \}\}$/m);
   assert.match(job, /^      fail-fast: false$/m);
@@ -336,6 +337,7 @@ test('Windows GUI branch probe는 MSI·NSIS fresh runner에서 same-run artifact
   assert.match(job, /^    runs-on: windows-2025$/m);
   assert.match(job, /name: alhangeul-desktop-windows-x64$/m);
   assert.match(job, /path: artifacts\/windows-x64$/m);
+  assert.match(checkout, /^\s{10}submodules: true$/m);
   assertOrdered(job, [
     '- name: Verify Windows GUI probe commit',
     '- name: Download Windows x64 GUI bundle',
