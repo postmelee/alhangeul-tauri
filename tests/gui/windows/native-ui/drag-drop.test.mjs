@@ -26,7 +26,7 @@ test('Explorer launch는 shell process 종료 코드 대신 spawn 성공까지�
   };
   await launchExplorer(inspectDragEnvironment(dragOptions()), launch);
   assert.deepEqual(calls[0].args, ['/select,C:\\repo\\form-002.hwpx']);
-  assert.equal(calls[0].options.windowsHide, true);
+  assert.equal(calls[0].options.windowsHide, false);
 });
 
 test('drag 좌표는 Explorer item과 Alhangeul BrowserRootView의 실측 bounds 중심이다', () => {

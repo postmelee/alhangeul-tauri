@@ -111,7 +111,7 @@ async function waitForExplorer(options) {
 export function launchExplorer(runtime, launch = spawn) {
   return new Promise((resolve, reject) => {
     const child = launch(runtime.explorerPath, [`/select,${runtime.filePath}`], {
-      env: runtime.env, windowsHide: true, stdio: 'ignore',
+      env: runtime.env, windowsHide: false, stdio: 'ignore',
     });
     child.once('error', (error) => reject(new Error(`Explorer 실행 실패: ${error.message}`)));
     child.once('spawn', resolve);

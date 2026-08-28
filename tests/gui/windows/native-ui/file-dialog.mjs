@@ -6,6 +6,7 @@ import { createWinAppCli, discoverWinAppWindows } from '../winapp-cli.mjs';
 
 const BUTTON_TYPES = new Set(['Button', 'SplitButton']);
 const ENTRY_TYPES = new Set(['Edit', 'ComboBox', 'Document']);
+const ENTRY_IDS = Object.freeze({ open: ['1148'], save: ['1001'] });
 const ACTION_NAMES = Object.freeze({
   open: ['open', '열기'],
   save: ['save', '저장'],
@@ -171,20 +172,20 @@ export class WindowsNativeUiAdapter {
 export function selectFileDialogControls(tree, action) {
   const elements = flattenElements(tree).filter(usableElement);
   return Object.freeze({
-    entry: entrySelector(elements),
+    entry: entrySelector(elements, action),
     primary: actionSelector(elements, action, '1'),
     cancel: actionSelector(elements, 'cancel', '2'),
   });
 }
 
-function entrySelector(elements) {
+function entrySelector(elements, action) {
+  const automationIds = ENTRY_IDS[action] ?? [];
   for (const type of ENTRY_TYPES) {
-    const matches = elements.filter((element) => element.automationId === '1148' && element.type === type);
+    const matches = elements.filter((element) => automationIds.includes(element.automationId) && element.type === type);
     if (matches.length > 0) return uniqueSelector(matches, () => true, 'file name entry');
   }
   return uniqueSelector([], () => true, 'file name entry');
 }
-
 function actionSelector(elements, action, automationId) {
   const names = ACTION_NAMES[action];
   if (!names) throw new Error(`지원하지 않는 file dialog action입니다: ${action}`);

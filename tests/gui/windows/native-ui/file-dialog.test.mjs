@@ -5,15 +5,16 @@ import {
   selectFileDialogControls,
 } from './file-dialog.mjs';
 
-test('표준 Windows file dialog는 AutomationId 1148·1·2를 우선한다', () => {
+test('표준 Windows file dialog는 action별 file name ID와 확인·취소 ID를 우선한다', () => {
   const controls = selectFileDialogControls(dialogTree({ nestedEntry: true }), 'open');
   assert.deepEqual(controls, {
     entry: 'txt-1148-a1b2',
     primary: 'btn-open-b2c3',
     cancel: 'btn-cancel-c3d4',
   });
-  assert.equal(selectFileDialogControls(dialogTree({ korean: true }), 'save').primary,
-    'btn-save-b2c3');
+  const saveControls = selectFileDialogControls(dialogTree({ korean: true, saveEntry: true }), 'save');
+  assert.equal(saveControls.entry, 'txt-1001-a1b2');
+  assert.equal(saveControls.primary, 'btn-save-b2c3');
 });
 
 test('file dialog selector가 모호하거나 action 이름이 다르면 입력 전에 실패한다', () => {
@@ -23,7 +24,7 @@ test('file dialog selector가 모호하거나 action 이름이 다르면 입력 
     selector: 'txt-duplicate',
   });
   assert.throws(() => selectFileDialogControls(tree, 'open'), /entry selector가 2개/);
-  assert.throws(() => selectFileDialogControls(dialogTree(), 'save'), /save button selector가 0개/);
+  assert.throws(() => selectFileDialogControls(dialogTree({ saveEntry: true }), 'save'), /save button selector가 0개/);
 });
 
 test('Open은 새 owner dialog를 고정해 path 설정·확인·종료를 순서대로 수행한다', async () => {
@@ -97,7 +98,7 @@ function createHarness(options = {}) {
       inspect: async (depth) => {
         harness.calls.push(['inspect', windowHandle, depth]);
         return windowHandle === 200
-          ? dialogTree({ korean: options.action === 'save' })
+          ? dialogTree({ korean: options.action === 'save', saveEntry: options.action === 'save' })
           : { windows: [{ hwnd: 100, elements: [{ type: 'Window' }] }] };
       },
       screenshot: async (path) => {
@@ -120,7 +121,8 @@ function dialogTree(options = {}) {
   const korean = options.korean ?? false;
   const entry = {
     type: 'Edit', name: korean ? '파일 이름:' : 'File name:',
-    automationId: '1148', selector: 'txt-1148-a1b2', isEnabled: true,
+    automationId: options.saveEntry ? '1001' : '1148',
+    selector: options.saveEntry ? 'txt-1001-a1b2' : 'txt-1148-a1b2', isEnabled: true,
   };
   return {
     windows: [{

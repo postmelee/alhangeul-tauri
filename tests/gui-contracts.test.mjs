@@ -319,12 +319,13 @@ test('Windows native file·drag 수용은 semantic UIA와 단일 bounded gesture
   const spec = await readFile(
     join(repoRoot, 'tests/gui/specs/windows-native.e2e.ts'), 'utf8',
   );
-  assert.match(fileDialog, /automationId === '1148'/);
+  assert.match(fileDialog, /ENTRY_IDS = Object\.freeze\(\{ open: \['1148'\], save: \['1001'\] \}\)/);
   assert.match(fileDialog, /actionSelector\(elements, action, '1'\)/);
   assert.match(fileDialog, /actionSelector\(elements, 'cancel', '2'\)/);
   assert.match(fileDialog, /window\.ownerHwnd === appTarget\.hwnd/);
   assert.match(fileDialog, /await dialog\.client\.setValue[\s\S]*await dialog\.client\.invoke/);
   assert.match(drag, /await explorerClient\.drag\(/);
+  assert.match(drag, /windowsHide: false/);
   assert.equal((drag.match(/\.drag\(/g) ?? []).length, 1);
   assert.match(drag, /resolveDragPoints\(sourceTree, appTree, layout/);
   assert.match(layout, /GetWindowThreadProcessId/);
