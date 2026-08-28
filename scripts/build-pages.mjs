@@ -78,7 +78,6 @@ export async function assertBuildLayout(layout) {
   }
   assertInside(layout.repositoryRoot, layout.sourceRoot, 'Pages source');
   assertInside(layout.repositoryRoot, layout.outputRoot, 'Pages output');
-  assertInside(layout.sourceRoot, join(layout.sourceRoot, '.pages-boundary'), 'Pages source');
   if (
     layout.sourceRoot === layout.outputRoot
     || isInside(layout.sourceRoot, layout.outputRoot)

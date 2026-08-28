@@ -56,11 +56,11 @@ async function checkTree(context) {
   }
 
   const release = await readReleaseData(context.treeRoot);
-  validateReleaseData(release, { requireUnreleased: true });
+  validateReleaseData(release);
   const referencedAssets = new Set();
   for (const sitePath of files.filter((path) => TEXT_EXTENSIONS.test(path))) {
     const content = await readFile(join(context.treeRoot, sitePath), 'utf8');
-    if (DIRECT_DOWNLOAD.test(content)) {
+    if (release.status === 'unreleased' && DIRECT_DOWNLOAD.test(content)) {
       throw new Error(`unreleased Pages에 direct download URL이 있습니다: ${sitePath}`);
     }
     if (sitePath.endsWith('.html')) assertImageMetadata(sitePath, content);

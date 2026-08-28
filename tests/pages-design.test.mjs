@@ -37,7 +37,8 @@ test('홈은 한 화면 설치 안내와 개별 페이지 탐색 계약을 지�
   assert.equal([...html.matchAll(/class="download-package-option"/g)].length, 5);
   assert.equal([...html.matchAll(/class="download-package-action"/g)].length, 5);
   assert.equal([...html.matchAll(/<a class="download-package-action"/g)].length, 5);
-  assert.equal([...html.matchAll(/href="updates\/#latest-download"/g)].length, 5);
+  assert.equal([...html.matchAll(/href="updates\/#latest-download"/g)].length, 3);
+  assert.equal([...html.matchAll(/href="https:\/\/github\.com\/postmelee\/alhangeul-tauri\/releases" rel="noreferrer" aria-label="Linux/g)].length, 2);
   assert.equal([...html.matchAll(/data-download-state="home"/g)].length, 5);
 
   assert.doesNotMatch(html, /Windows &amp; Linux · Open source/);
@@ -55,6 +56,8 @@ test('홈은 한 화면 설치 안내와 개별 페이지 탐색 계약을 지�
   assert.match(html, /<span class="headline-line">더 이상 <em>낯선 문서<\/em>가<\/span>/);
   assert.doesNotMatch(html, /<a class="header-link"[^>]*>다운로드<\/a>/);
   assert.equal([...html.matchAll(/<a[^>]+data-download-target=/g)].length, 3);
+  assert.match(html, /aria-label="Linux x64 DEB\/RPM 다운로드 — GitHub Releases에서 수동 설치"/);
+  assert.match(html, /aria-label="Linux arm64 DEB 다운로드 — GitHub Releases에서 수동 설치"/);
   assert.equal([...html.matchAll(/assets\/linux-editor\.png/g)].length, 1);
   assert.match(html, /assets\/linux-editor\.png\?v=45-3-9/);
   assert.doesNotMatch(html, /assets\/windows-app\.png|linux-window|windows-window|platform-dot/);
@@ -122,7 +125,8 @@ test('업데이트 페이지는 MSI·NSIS·AppImage와 수동 설치 범위를 f
   assert.doesNotMatch(html, /releases\/download\//);
 });
 
-test('published release hydration은 홈과 dropdown을 exact artifact로 직접 전환한다', async () => {
+for (const manifestPublished of [false, true]) {
+  test(`published release hydration은 manifestPublished=${manifestPublished}에서 exact artifact로 전환한다`, async () => {
   const source = await readSite('script.js', 'utf8');
   const homeAction = fakeElement('A', { textContent: 'NSIS Windows x64 · 일반 설치 권장 다운로드' });
   const homeState = { dataset: { downloadState: 'home' }, textContent: '다운로드' };
@@ -135,11 +139,16 @@ test('published release hydration은 홈과 dropdown을 exact artifact로 직접
   msiAction.dataset.downloadTarget = 'windows-x86_64-msi';
   const menuAction = fakeElement('SPAN', { textContent: 'Linux x64 AppImage · 준비 중' });
   menuAction.dataset.downloadTarget = 'linux-x86_64-appimage';
+  const menuState = { dataset: {}, textContent: 'AppImage · 준비 중' };
   const message = { textContent: '' };
   const note = fakeElement('DIV');
   const document = {
     body: { dataset: { siteRoot: './' } },
-    createElement: (tag) => fakeElement(tag.toUpperCase()),
+    createElement: (tag) => {
+      const element = fakeElement(tag.toUpperCase());
+      if (tag.toUpperCase() === 'A') element.querySelector = () => menuState;
+      return element;
+    },
     querySelector: (selector) => selector === '[data-release-note]' ? note : null,
     querySelectorAll: (selector) => ({
       '[data-release-message]': [message],
@@ -156,7 +165,7 @@ test('published release hydration은 홈과 dropdown을 exact artifact로 직접
       'windows-x86_64-msi': 'https://github.com/postmelee/alhangeul-tauri/releases/download/v0.2.0/Alhangeul_0.2.0_x64.msi',
       'linux-x86_64-appimage': 'https://github.com/postmelee/alhangeul-tauri/releases/download/v0.2.0/Alhangeul_0.2.0_amd64.AppImage',
     },
-    updater: { manifestPublished: false },
+    updater: { manifestPublished },
   };
 
   runInNewContext(source, {
@@ -172,11 +181,20 @@ test('published release hydration은 홈과 dropdown을 exact artifact로 직접
   assert.equal(homeAction.dataset.downloadReady, 'true');
   assert.equal(homeState.textContent, '다운로드');
   assert.equal(msiState.textContent, '다운로드');
+  assert.equal(homeAction['aria-label'], 'Windows x64 NSIS · 알한글 0.2.0 다운로드');
+  assert.equal(msiAction['aria-label'], 'Windows x64 MSI · 알한글 0.2.0 다운로드');
   assert.equal(menuAction.replacement.href, release.downloads['linux-x86_64-appimage']);
   assert.equal(menuAction.replacement.dataset.downloadReady, 'true');
+  assert.equal(menuState.textContent, 'AppImage · 0.2.0 다운로드');
+  assert.equal(
+    menuAction.replacement['aria-label'],
+    'Linux x64 AppImage · 알한글 0.2.0 다운로드',
+  );
+  assert.doesNotMatch(menuAction.replacement['aria-label'], /준비 중/);
   assert.equal(note.replacement.href, 'https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.2.0');
   assert.match(message.textContent, /0\.2\.0 안정 릴리스/);
-});
+  });
+}
 
 test('문의 페이지는 개인정보 안내와 이메일·Issue 경로를 제공한다', async () => {
   const html = await readSite('feedback/index.html', 'utf8');

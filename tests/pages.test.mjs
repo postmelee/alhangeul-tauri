@@ -48,6 +48,26 @@ test('published fixture는 exact tag와 MSI/NSIS/AppImage URL만 승인한다', 
   assert.equal(validateReleaseData(release), release);
 });
 
+test('published release data는 source부터 output checker까지 통과한다', async () => {
+  const fixture = await createFixture();
+  try {
+    await writeFile(
+      join(fixture.root, 'site/release.json'),
+      `${JSON.stringify(publishedFixture(), null, 2)}\n`,
+    );
+    await buildPages({ repositoryRoot: fixture.root });
+    assert.deepEqual(
+      await checkPages({ repositoryRoot: fixture.root }),
+      [
+        { mode: 'source', files: 11, status: 'published' },
+        { mode: 'output', files: 13, status: 'published' },
+      ],
+    );
+  } finally {
+    await rm(fixture.tmp, { recursive: true, force: true });
+  }
+});
+
 for (const [name, mutate, expected] of [
   ['prerelease version', (value) => { value.version = '0.2.0-rc.1'; }, /semantic version/],
   ['불일치 tag', (value) => { value.tag = 'v0.1.9'; }, /tag 값/],
@@ -128,14 +148,20 @@ test('builder는 source를 보존하고 승인 파일만 결정적으로 출력�
   }
 });
 
-test('current output에는 direct installer와 updater manifest가 없다', async () => {
-  const source = await readFile(join(repositoryRoot, '_site/index.html'), 'utf8');
-  assert.doesNotMatch(source, /releases\/download\//);
-  assert.doesNotMatch(source, /\.(?:msi|exe|AppImage)(?:["'?#]|$)/);
-  await assert.rejects(
-    stat(join(repositoryRoot, '_site/updater/stable.json')),
-    (error) => error.code === 'ENOENT',
-  );
+test('current source build에는 direct installer와 updater manifest가 없다', async () => {
+  const fixture = await createFixture();
+  try {
+    const { outputRoot } = await buildPages({ repositoryRoot: fixture.root });
+    const source = await readFile(join(outputRoot, 'index.html'), 'utf8');
+    assert.doesNotMatch(source, /releases\/download\//);
+    assert.doesNotMatch(source, /\.(?:msi|exe|AppImage)(?:["'?#]|$)/);
+    await assert.rejects(
+      stat(join(outputRoot, 'updater/stable.json')),
+      (error) => error.code === 'ENOENT',
+    );
+  } finally {
+    await rm(fixture.tmp, { recursive: true, force: true });
+  }
 });
 
 test('checker는 깨진 URL과 tree 밖 path traversal을 거부한다', async () => {

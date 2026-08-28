@@ -2,8 +2,6 @@ import { lstat, readdir } from 'node:fs/promises';
 import { extname, relative, resolve, sep } from 'node:path';
 
 export const ROOT_ASSETS = Object.freeze([
-  'assets/fonts/Pretendard-Bold.woff2',
-  'assets/fonts/Pretendard-Regular.woff2',
   'assets/logo/favicon.ico',
   'assets/logo/logo-256.png',
 ]);

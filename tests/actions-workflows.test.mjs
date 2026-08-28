@@ -78,6 +78,7 @@ test('Pages workflow는 exact SHA 입력과 최소 배포 권한만 사용한다
       ['id-token', 'write'],
     ]),
   );
+  assert.match(pagesWorkflow, /^  group: alhangeul-pages$/m);
   assert.match(pagesWorkflow, /^  cancel-in-progress: false$/m);
   assert.match(pagesWorkflow, /^      name: github-pages$/m);
   assert.match(

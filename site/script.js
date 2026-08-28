@@ -1,4 +1,9 @@
 const siteRoot = document.body.dataset.siteRoot ?? './';
+const downloadTargetLabels = Object.freeze({
+    'windows-x86_64-nsis': 'Windows x64 NSIS',
+    'windows-x86_64-msi': 'Windows x64 MSI',
+    'linux-x86_64-appimage': 'Linux x64 AppImage',
+});
 
 setupPlatformPreference();
 setupReleaseData();
@@ -56,10 +61,11 @@ function hydrateDownloadAction(action, url, release) {
     link.href = url;
     link.removeAttribute('aria-disabled');
     link.dataset.downloadReady = 'true';
-    link.setAttribute('aria-label', `${link.textContent.trim()} · 알한글 ${release.version} 다운로드`);
     const state = link.querySelector('[data-download-state]');
     if (state?.dataset.downloadState === 'home') state.textContent = '다운로드';
     else if (state) state.textContent = `${state.textContent.split(' · ')[0]} · ${release.version} 다운로드`;
+    const targetLabel = downloadTargetLabels[link.dataset.downloadTarget] ?? link.textContent.trim();
+    link.setAttribute('aria-label', `${targetLabel} · 알한글 ${release.version} 다운로드`);
 }
 
 function hydrateReleaseNote(release) {
@@ -93,7 +99,6 @@ function isPublishedRelease(release) {
     return release?.status === 'published'
         && /^\d+\.\d+\.\d+$/.test(release.version)
         && release.tag === `v${release.version}`
-        && release.updater?.manifestPublished === false
         && release.downloads
         && typeof release.downloads === 'object';
 }

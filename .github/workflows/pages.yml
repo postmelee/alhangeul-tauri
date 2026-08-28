@@ -14,7 +14,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: alhangeul-pages-${{ inputs.deploy_ref }}
+  group: alhangeul-pages
   cancel-in-progress: false
 
 env:

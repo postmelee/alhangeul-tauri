@@ -42,7 +42,7 @@ tracked source를 오염하지 않게 하는 보정이므로 수행계획서 예
 
 - `site/`가 유일한 Pages source다. React/Vue/Svelte, bundler, 외부 CDN, analytics와 cookie를
   추가하지 않는다. JavaScript는 release data hydration, 기능 visual 전환과 reveal에만 쓴다.
-- `scripts/build-pages.mjs`는 `site/`와 승인된 root logo/font를 명시적으로 `_site/`에 복사한다.
+- `scripts/build-pages.mjs`는 `site/`와 실제 참조되는 승인 root logo를 명시적으로 `_site/`에 복사한다.
   임의 경로 삭제를 허용하지 않고 output이 repository root, source 또는 빈 경로면 실패한다.
 - `_site/`는 생성 산출물로 commit하지 않는다. test는 `mkdtemp` 아래 출력만 사용하고 종료 시
   생성한 exact temporary directory만 정리한다.
@@ -118,8 +118,9 @@ tracked source를 오염하지 않게 하는 보정이므로 수행계획서 예
   사용하지 않는다.
 - workflow는 `pnpm install --frozen-lockfile` 뒤 `build:pages`, `check:pages`와 focused test를
   통과해야 upload할 수 있다. 생성된 artifact 안의 `release.json`도 독립 재검증한다.
-- concurrency는 public deployment를 중간 취소하지 않도록 `cancel-in-progress: false`로 두며
-  원인 변경 없이 run을 반복하지 않는다. task branch에서 최종 exact SHA 한 번만 실행한다.
+- concurrency는 모든 Pages 배포가 같은 `alhangeul-pages` group을 사용하고 public deployment를
+  중간 취소하지 않도록 `cancel-in-progress: false`로 둔다. 원인 변경 없이 run을 반복하지 않는다.
+  task branch에서는 배포하지 않고 병합 뒤 최종 exact `devel` SHA 한 번만 실행한다.
 - release/tag/GitHub Release, updater manifest와 native artifact workflow를 호출하지 않는다.
 
 ## Stage 1 — release data·build·exact-SHA 배포 계약
@@ -359,6 +360,32 @@ Task #45 Stage 4: Pages 운영 경계와 exact-SHA 배포 확정
 
 ```text
 Task #45 [Stage 4.1]: Pages 배포를 devel 병합 후로 분리
+```
+
+PR 게시 뒤 수행계획과 배포 경계를 정렬한 보정은 다음 commit으로 남겼다.
+
+```text
+Task #45 [Stage 4.2]: 수행계획의 post-merge 배포 경계 정렬
+```
+
+### Stage 4.3 — PR 리뷰 보정과 최신 `devel` 통합
+
+- Task #14가 병합된 최신 `devel`을 통합하고 썸네일 UI 수동 gate와 automation inventory를
+  Task #45의 Pages·릴리스 계약과 함께 보존한다.
+- `_site/`가 없는 clean checkout에서도 Pages test가 자체 fixture를 build하도록 하고, published
+  `release.json`이 source→build→output checker 전체 경로를 통과하는 회귀 test를 둔다.
+- 웹 클라이언트는 #16 이후 `manifestPublished=true`여도 검증된 exact download를 hydrate하고,
+  target별 고유 접근성 이름은 화면 상태 문구를 포함하지 않는 안정 label로 만든다.
+- updater 대상이 아닌 Linux x64 DEB/RPM과 arm64 DEB는 최신 다운로드 dropdown 대신 GitHub
+  Releases 수동 확인 경로로 연결한다. 이번 task의 세 updater target schema는 확장하지 않는다.
+- site가 참조하지 않는 Pretendard font는 Pages root asset 복사 목록에서 제외하고, Pages workflow는
+  fixed concurrency group으로 직렬화한다. 의미 없는 source child assertion은 제거한다.
+
+검증은 `_site/` 사전 생성 없이 focused Pages test를 먼저 통과한 뒤 전체 platform-neutral gate를
+다시 수행한다. release/tag/artifact/updater 게시와 Pages deployment는 이 Stage에서도 실행하지 않는다.
+
+```text
+Task #45 [Stage 4.3]: PR 리뷰 보정과 최신 devel 통합
 ```
 
 ## 검증
