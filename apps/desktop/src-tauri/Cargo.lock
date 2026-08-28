@@ -43,6 +43,7 @@ dependencies = [
 name = "alhangeul-desktop"
 version = "0.1.0"
 dependencies = [
+ "alhangeul-document-preview",
  "open",
  "pdf-writer",
  "rhwp",
@@ -61,6 +62,16 @@ dependencies = [
  "tempfile",
  "usvg",
  "uuid",
+]
+
+[[package]]
+name = "alhangeul-document-preview"
+version = "0.1.0"
+dependencies = [
+ "blake3",
+ "image",
+ "resvg",
+ "rhwp",
 ]
 
 [[package]]

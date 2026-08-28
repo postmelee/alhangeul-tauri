@@ -743,6 +743,11 @@ pub(crate) fn editable_core_from_bytes(
     Ok(core)
 }
 
+pub(crate) fn direct_preview_svg_from_bytes(bytes: &[u8]) -> Result<String, String> {
+    alhangeul_document_preview::render_first_page_svg(bytes)
+        .map_err(|error| format!("문서 미리보기를 렌더링할 수 없습니다: {error}"))
+}
+
 pub fn parse_json_string(raw: String) -> Result<Value, String> {
     serde_json::from_str(&raw).map_err(|e| format!("JSON 파싱 실패: {}", e))
 }
@@ -781,6 +786,40 @@ mod tests {
             DocumentFormat::Hwpx
         );
         assert!(DocumentFormat::from_path(Path::new("a.txt")).is_err());
+    }
+
+    #[test]
+    fn direct_preview_adapter_matches_editable_render_without_mutating_input() {
+        let fixtures: &[&[u8]] = &[
+            include_bytes!("../../../../third_party/rhwp/saved/blank2010.hwp"),
+            include_bytes!("../../../../third_party/rhwp/saved/blank_hwpx.hwpx"),
+        ];
+        for bytes in fixtures {
+            let original = bytes.to_vec();
+            let direct = direct_preview_svg_from_bytes(bytes).unwrap();
+            let editable = editable_core_from_bytes(
+                bytes,
+                "preview parity parse",
+                "preview parity conversion",
+            )
+            .unwrap()
+            .render_page_svg_native(0)
+            .unwrap();
+
+            assert_eq!(direct, editable);
+            assert_eq!(*bytes, original);
+        }
+    }
+
+    #[test]
+    fn direct_preview_adapter_preserves_bounded_error_contract() {
+        let oversized = vec![0_u8; alhangeul_document_preview::limits::MAX_INPUT_BYTES + 1];
+        assert!(direct_preview_svg_from_bytes(&oversized)
+            .unwrap_err()
+            .contains("input bytes"));
+        assert!(direct_preview_svg_from_bytes(b"not a document")
+            .unwrap_err()
+            .contains("document parse failed"));
     }
 
     #[test]

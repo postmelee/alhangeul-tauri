@@ -39,6 +39,17 @@ studio host의 실제 Vite root와 entry는 각각 `third_party/rhwp/rhwp-studio
 
 `apps/studio-host/alhangeul-overrides.ts`가 adapter owner와 disposition의 진실 원천이다. `apps/studio-host/src/core/upstream-boundary.test.ts`는 12개 alias, `legacy-upstream-copy` 0개, 금지 entry와 제거된 shadow의 물리적 부재, adapter 300 LOC 상한을 검사한다. `tests/rhwp-baseline.test.mjs`는 exact entry, upstream 메뉴 command와 HWPX/PDF 실행 경계를 함께 고정한다. engine API나 renderer bug는 먼저 upstream에서 해결하고, 데스크톱 통합 차이는 이 경계 안의 leaf adapter에 둔다.
 
+## Windows thumbnail parse·render 경계
+
+Windows Explorer thumbnail은 현재 Stable pin의 native `rhwp`를 사용하지만 COM DLL에 engine을 직접 link하지 않는다.
+
+- `crates/document-preview`는 bytes-only 첫 페이지 render, embedded preview 검증, raster와 공통 resource/protocol bounds를 소유한다.
+- `apps/desktop`은 같은 crate의 direct SVG adapter를 사용해 기존 document preview command를 유지한다.
+- `apps/thumbnail-worker`는 crate의 render feature와 native `rhwp`를 사용해 별도 process에서 first-page BGRA를 만든다.
+- `apps/thumbnail-handler`는 render feature 없이 protocol과 bounds만 사용하며 Shell COM, process 격리와 `HBITMAP` 반환만 소유한다.
+
+Stable pin 갱신은 desktop preview와 worker render를 함께 바꾸므로 새 exact SHA에서 Windows native test, thumbnail binary·artifact inventory, installer 등록·rollback과 Explorer UI 수용을 반복한다. process와 installer의 전체 계약은 [WINDOWS_THUMBNAILS.md](WINDOWS_THUMBNAILS.md)를 따른다.
+
 ## 문서 저장, PDF와 실제 인쇄 경계
 
 upstream embed runtime을 상속하는 local leaf wrapper는 `getDesktopStudioHandlers()`로 `loadFile`, `pageCount`, `getPageSvg`, `exportHwp`, `exportHwpx`, `notifySaved`만 native host에 노출한다. HWP/HWPX source save는 현재 형식에 맞는 exporter bytes를 chunk staging하고 Rust에서 요청 형식·확장자·parser 결과가 일치한 뒤 원자적으로 교체한다. native commit 성공 뒤에만 `notifySaved`로 upstream dirty/recovery 상태를 정리한다.
