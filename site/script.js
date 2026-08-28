@@ -58,8 +58,7 @@ function hydrateDownloadAction(action, url, release) {
     link.dataset.downloadReady = 'true';
     link.setAttribute('aria-label', `${link.textContent.trim()} · 알한글 ${release.version} 다운로드`);
     const state = link.querySelector('[data-download-state]');
-    if (state?.dataset.downloadState === 'primary') state.textContent = `v${release.version} 다운로드`;
-    else if (state?.dataset.downloadState === 'secondary') state.textContent = '다운로드 →';
+    if (state?.dataset.downloadState === 'home') state.textContent = '다운로드';
     else if (state) state.textContent = `${state.textContent.split(' · ')[0]} · ${release.version} 다운로드`;
 }
 

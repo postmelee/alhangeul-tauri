@@ -27,18 +27,20 @@ published release metadata가 생기면 Windows NSIS·MSI와 Linux x64 AppImage�
 - Stage 3.15: 앞선 목록형 UI를 폐기하고 native radio 기반 `Windows / Linux` segmented picker로
   다시 설계했다. 한 번에 한 플랫폼과 한 개의 권장 CTA만 강조하며 나머지는 보조 텍스트 링크로
   낮췄다. 클릭·방향키·OS 초기 선택, 공개 전 안내와 published label hydration을 함께 지원한다.
+- Stage 3.16: hero 설명을 제거하고 추천 여부에 따라 달랐던 패키지 표현을 동일한 행 컴포넌트로
+  통일했다. 다섯 항목은 같은 14px 형식명·12px 환경 설명과 오른쪽 `다운로드` pill을 사용한다.
 
 ## 산출물
 
 | 파일 | 변경 요약 |
 |---|---|
-| `site/index.html` (97줄) | native platform picker, 플랫폼별 권장 CTA 1개와 보조 설치 링크 구성 |
+| `site/index.html` (91줄) | native platform picker와 같은 위계의 패키지 다운로드 행 5개 구성 |
 | `site/updates/index.html` (69줄) | 플랫폼 dropdown, updater 범위와 릴리즈 노트 목록 구성 |
 | `site/feedback/index.html` (72줄) | macOS Pages와 같은 hero·privacy note·contact card 계층 구성 |
-| `site/styles.css` (193줄) | segmented switch, 고정 높이 panel, 주·보조 action과 responsive 규칙 |
-| `site/script.js` (114줄) | Linux 초기 선택, 방향키 전환, exact artifact와 공개 버전 label hydration |
+| `site/styles.css` (185줄) | segmented switch, 동일한 패키지 행·pill과 responsive 규칙 |
+| `site/script.js` (113줄) | Linux 초기 선택, 방향키 전환, exact artifact와 홈 `다운로드` label 유지 |
 | `site/assets/linux-editor.png` (1,282×924, 79,227 bytes) | 실제 Linux 네이티브 제목 표시줄과 HWP 편집 화면 |
-| `site/assets/og-main.png` (1,920×1,080, 283,689 bytes) | Stage 3.15 Windows 기본 홈 공유 이미지 |
+| `site/assets/og-main.png` (1,920×1,080, 262,406 bytes) | Stage 3.16 Windows 기본 홈 공유 이미지 |
 | `scripts/build-pages.mjs` (152줄) | 중첩 페이지 root asset 경로 정규화 |
 | `scripts/check-pages.mjs` (235줄) | 필수 페이지, hash 대상, asset와 manifest 계약 검사 |
 | `tests/pages.test.mjs` (282줄) | 중첩 asset, broken hash와 필수 페이지 누락 회귀 검사 |
@@ -46,7 +48,7 @@ published release metadata가 생기면 Windows NSIS·MSI와 Linux x64 AppImage�
 | `mydocs/orders/20260827.md`, `mydocs/orders/20260828.md` | Stage 3 진행 이력과 Stage 4 승인 대기 기록 |
 
 대표 화면 SHA-256은 `a3d4460b8fc432f00a2ce97cd68552582b2f5dfdc88faec9f749e58be132618b`,
-공유 이미지 SHA-256은 `188dd3c0cccd36e68135965fcf388489cc6d95726fbc78929c19e60719e25bcb`이다.
+공유 이미지 SHA-256은 `3dbb74029b0d61b5394d20abfa39c31d7a0158afa3bb6eecfece1d6768c2d182`이다.
 외부 package와 lockfile은 변경하지 않았고 모든 text source는 권장 300줄 상한 이하다.
 
 ## 본문 변경 정도 / 본문 무손실 여부
@@ -58,6 +60,9 @@ feedback과 알한글 macOS Pages가 나눠 담당한다.
 Stage 3.15는 다운로드 표현만 교체했다. 기존 다섯 fallback href와 세 `data-download-target`,
 공개 전 fail-closed와 published exact artifact 전환은 유지했다. native radio이므로 JavaScript가
 없어도 플랫폼을 전환할 수 있고, script는 Linux OS 초기 선택과 방향키·버전 label만 보강한다.
+
+Stage 3.16도 같은 href와 exact target 계약을 유지한다. 다섯 `다운로드` pill 중 NSIS·MSI·AppImage는
+published metadata가 생기면 직접 파일 URL로 바뀌고, 나머지 두 항목은 수동 설치 안내로 남는다.
 
 제품 실행 코드, Pages workflow, `site/release.json` schema와 updater endpoint는 변경하지 않았다.
 `release.json`은 계속 `unreleased`, 세 download 값은 null, manifest는 비게시 상태다.
@@ -89,15 +94,16 @@ git diff --check
 수동 시각·상호작용 결과:
 
 - OK — 1,280×720 Windows 기본 홈은 document가 viewport와 같고 overflow 요소가 없다. Windows
-  panel 하나만 표시되며 segmented switch 196px, 권장 CTA 94×34px, 환경명 16px/650이다.
+  panel 하나만 표시되며 2개 행이 모두 470×44px, 형식명 14px, 설명 12px, pill 76×32px이다.
 - OK — Linux label을 누르면 Linux radio와 panel만 활성화되고 layout shift나 가로 overflow가 없다.
+- OK — Linux의 3개 행도 모두 470×44px이며 형식명·설명·pill 크기와 `다운로드` label이 같다.
 - OK — 390×844 Windows/Linux 모두 document가 viewport와 같고 switch·panel은 x=14~376 안에
-  유지된다. Footer를 포함해 가로·세로 스크롤이 없다.
+  유지된다. 모든 행은 362×44px, pill은 72×32px이고 Footer를 포함해 가로·세로 스크롤이 없다.
 - OK — radio에서 `ArrowRight`를 누르면 checked와 focus가 모두 Linux로 이동한다.
-- OK — 1,920×1,080 OG에는 한 플랫폼 CTA만 강조된 홈, 실제 네이티브 앱 창과 Footer가 보인다.
+- OK — 1,920×1,080 OG에는 동일한 Windows 다운로드 2행, 실제 네이티브 앱 창과 Footer가 보인다.
 - OK — header의 업데이트·문의/제보·GitHub와 하위 페이지의 홈 이동, header 다운로드 제거 확인
-- OK — unpublished 홈은 내부 설치 안내로 이동하고 published fixture는 exact tag의 세 URL과
-  `v0.2.0 다운로드`/`다운로드 →` label로 전환된다.
+- OK — unpublished 홈은 내부 설치 안내로 이동하고 published fixture는 exact tag의 세 URL로
+  전환된 뒤에도 오른쪽 행동 이름을 모두 `다운로드`로 유지한다.
 - OK — updates의 native `<details>` dropdown, SVG chevron, release note와 feedback의 contact card를
   340·390·666·820px에서 확인했으며 viewport 밖 표시 요소가 없다.
 - OK — semantic native link/button/radio, skip link, focus-visible, heading/landmark와 reduced-motion 확인
