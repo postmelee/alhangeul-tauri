@@ -1,7 +1,7 @@
 use alhangeul_document_preview::limits::{
-    bounded_requested_edge, validate_input_len, DIRECT_DEADLINE_MS, FRAME_HEADER_BYTES,
-    MAX_BITMAP_PAYLOAD_BYTES, MAX_FINAL_PIXELS, MAX_FRAME_BYTES, MAX_INPUT_BYTES,
-    MAX_PREVIEW_BYTES, MAX_PREVIEW_PIXELS, MAX_REQUESTED_EDGE, MAX_SVG_BYTES, TOTAL_DEADLINE_MS,
+    bounded_requested_edge, validate_input_len, validate_svg_len, FRAME_HEADER_BYTES,
+    FRAME_SELECTION_DEADLINE_MS, MAX_BITMAP_PAYLOAD_BYTES, MAX_FINAL_PIXELS, MAX_FRAME_BYTES,
+    MAX_INPUT_BYTES, MAX_PREVIEW_BYTES, MAX_PREVIEW_PIXELS, MAX_REQUESTED_EDGE, MAX_SVG_BYTES,
     WORKER_MEMORY_LIMIT_BYTES,
 };
 use alhangeul_document_preview::protocol::{
@@ -10,8 +10,7 @@ use alhangeul_document_preview::protocol::{
 };
 use alhangeul_document_preview::{
     extract_embedded_preview, rasterize_embedded_preview, rasterize_first_page,
-    render_first_page_svg, resolve_document_preview, EmbeddedPreview, EmbeddedPreviewFormat,
-    PreviewError, PreviewSelection,
+    render_first_page_svg, EmbeddedPreview, EmbeddedPreviewFormat, PreviewError,
 };
 use std::io::{Cursor, Read, Write};
 use zip::write::SimpleFileOptions;
@@ -45,8 +44,7 @@ fn stage_one_resource_budgets_are_fixed() {
     assert_eq!(FRAME_HEADER_BYTES, 64);
     assert_eq!(MAX_FRAME_BYTES, 4_194_368);
     assert_eq!(WORKER_MEMORY_LIMIT_BYTES, 256 * 1024 * 1024);
-    assert_eq!(DIRECT_DEADLINE_MS, 1_500);
-    assert_eq!(TOTAL_DEADLINE_MS, 2_000);
+    assert_eq!(FRAME_SELECTION_DEADLINE_MS, 1_500);
     assert_eq!(bounded_requested_edge(4096), Ok(1024));
     assert!(matches!(
         bounded_requested_edge(0),
@@ -55,6 +53,10 @@ fn stage_one_resource_budgets_are_fixed() {
     assert!(matches!(
         validate_input_len(MAX_INPUT_BYTES + 1),
         Err(PreviewError::InputTooLarge { .. })
+    ));
+    assert!(matches!(
+        validate_svg_len(MAX_SVG_BYTES + 1),
+        Err(PreviewError::SvgTooLarge { .. })
     ));
 }
 
@@ -233,27 +235,19 @@ fn direct_and_embedded_rasters_are_bounded_premultiplied_bgra() {
 fn missing_or_stale_preview_does_not_override_direct_render() {
     let missing = mutate_hwpx_preview(HWPX, PreviewMutation::Remove);
     assert!(extract_embedded_preview(&missing).unwrap().is_none());
-    assert!(matches!(
-        resolve_document_preview(&missing).unwrap(),
-        PreviewSelection::DirectSvg(_)
-    ));
+    assert!(render_first_page_svg(&missing).unwrap().contains("<svg"));
 
     let stale = mutate_hwpx_preview(HWPX, PreviewMutation::Replace(PNG_1X1));
     let embedded = extract_embedded_preview(&stale).unwrap().unwrap();
     assert_eq!((embedded.width, embedded.height), (1, 1));
-    assert!(matches!(
-        resolve_document_preview(&stale).unwrap(),
-        PreviewSelection::DirectSvg(_)
-    ));
+    assert!(render_first_page_svg(&stale).unwrap().contains("<svg"));
 }
 
 #[test]
 fn preview_only_input_uses_embedded_fallback_after_direct_failure() {
     let input = preview_only_hwpx(PNG_1X1);
-    let selected = resolve_document_preview(&input).unwrap();
-    let PreviewSelection::Embedded(preview) = selected else {
-        panic!("preview-only input must use the embedded fallback");
-    };
+    assert!(render_first_page_svg(&input).is_err());
+    let preview = extract_embedded_preview(&input).unwrap().unwrap();
     assert_eq!(preview.format, EmbeddedPreviewFormat::Png);
     assert_eq!((preview.width, preview.height), (1, 1));
 }

@@ -9,8 +9,7 @@ mod request;
 #[cfg(feature = "render")]
 pub use render::{
     extract_embedded_preview, rasterize_embedded_preview, rasterize_first_page,
-    render_first_page_svg, resolve_document_preview, Bitmap, EmbeddedPreview,
-    EmbeddedPreviewFormat, PreviewSelection,
+    render_first_page_svg, Bitmap, EmbeddedPreview, EmbeddedPreviewFormat,
 };
 
 use std::fmt;

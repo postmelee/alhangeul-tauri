@@ -29,12 +29,6 @@ pub struct EmbeddedPreview {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum PreviewSelection {
-    DirectSvg(String),
-    Embedded(EmbeddedPreview),
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Bitmap {
     pub width: u32,
     pub height: u32,
@@ -74,18 +68,6 @@ pub fn extract_embedded_preview(bytes: &[u8]) -> Result<Option<EmbeddedPreview>,
     }))
 }
 
-pub fn resolve_document_preview(bytes: &[u8]) -> Result<PreviewSelection, PreviewError> {
-    validate_input_len(bytes.len())?;
-    let embedded = extract_embedded_preview(bytes);
-    match render_first_page_svg(bytes) {
-        Ok(svg) => Ok(PreviewSelection::DirectSvg(svg)),
-        Err(direct_error) => match embedded {
-            Ok(Some(preview)) => Ok(PreviewSelection::Embedded(preview)),
-            Ok(None) | Err(_) => Err(direct_error),
-        },
-    }
-}
-
 pub fn rasterize_first_page(bytes: &[u8], requested_edge: u32) -> Result<Bitmap, PreviewError> {
     let svg = render_first_page_svg(bytes)?;
     let tree = resvg::usvg::Tree::from_str(&svg, &svg_parse_options())
@@ -122,12 +104,10 @@ fn font_database() -> Arc<resvg::usvg::fontdb::Database> {
         fontdb.load_font_data(NOTO_SANS_KR_EXTRA_LIGHT.to_vec());
 
         let bundled_families = ["Noto Sans KR", "NotoSansKR"];
-        let serif = first_existing_family(&fontdb, &bundled_families);
-        let sans = first_existing_family(&fontdb, &bundled_families);
-        let monospace = first_existing_family(&fontdb, &bundled_families);
-        fontdb.set_serif_family(serif);
-        fontdb.set_sans_serif_family(sans);
-        fontdb.set_monospace_family(monospace);
+        let family = first_existing_family(&fontdb, &bundled_families);
+        fontdb.set_serif_family(family.clone());
+        fontdb.set_sans_serif_family(family.clone());
+        fontdb.set_monospace_family(family);
         Arc::new(fontdb)
     }))
 }

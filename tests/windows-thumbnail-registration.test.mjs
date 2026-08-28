@@ -94,7 +94,7 @@ test('registration 구현 파일과 함수는 크기 상한 안에 있다', () =
   for (const source of [transaction, registry]) {
     const lines = source.split(/\r?\n/);
     assert.ok(lines.length <= 300, `registration 파일이 300 LOC를 초과했습니다: ${lines.length}`);
-    const starts = lines.map((line, index) => (/^(?:pub\(super\) )?fn /.test(line) ? index : -1)).filter((index) => index >= 0);
+    const starts = lines.map((line, index) => (/^(?:pub(?:\([^)]*\))? )?(?:unsafe )?fn /.test(line) ? index : -1)).filter((index) => index >= 0);
     for (let index = 0; index < starts.length; index += 1) {
       const start = starts[index];
       const end = index + 1 < starts.length ? starts[index + 1] : lines.length;

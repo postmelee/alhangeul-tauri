@@ -63,10 +63,9 @@ Windows x64 exact SHA `a12e7b77e425d49b9773cd7f493499ac7bc0fd51`에서 정상 7�
 | 최종 BGRA pixels | 1,048,576 px | 축소 또는 실패 |
 | IPC bitmap payload / 전체 frame | 4,194,304 B / 4,194,368 B | frame 폐기·worker 종료 |
 | worker committed memory | 256 MiB | Job 종료, preview 또는 icon fallback |
-| direct deadline | 1,500 ms | worker 종료, preview 후보 사용 |
-| 전체 deadline | 2,000 ms | worker 종료, preview 또는 icon fallback |
+| worker 시작·frame 선택 deadline | 1,500 ms | worker 종료, preview 후보 또는 icon fallback |
 
-- 정상 direct 최대는 81 ms와 peak working set 13,377,536 B, 정상 bench 최대는 385 ms였다. worker spawn·raster·cold font 비용을 포함하지 않는 baseline이므로 1,500/2,000 ms hard deadline을 유지한다.
+- 정상 direct 최대는 81 ms와 peak working set 13,377,536 B, 정상 bench 최대는 385 ms였다. worker spawn·raster·cold font 비용을 포함하지 않는 baseline이므로 요청 시작부터 frame 선택까지 단일 1,500 ms hard deadline을 유지한다.
 - SVG 최대 1,292,217 B, preview 최대 72,948 B와 741,376 px였다. 16 MiB byte cap과 16,777,216 pixel cap은 fixture 밖 복잡 문서를 위한 보수적 headroom으로 유지한다.
 - 64 MiB+1 fixture는 모든 경로에서 실패했고 preview process peak working set이 138,240,000 B까지 증가했다. DLL이 64 MiB 초과를 worker spawn 전에 거부해야 한다.
 - 최대 요청 1024 px의 BGRA payload는 정확히 4,194,304 B이므로 4 MiB payload와 64 byte header를 분리해 전체 frame 상한을 4,194,368 B로 고정한다.
@@ -487,6 +486,75 @@ pnpm run clippy:thumbnail-handler:windows
 ```text
 Task #14 [Stage 6.1]: Explorer thumbnail text와 image raster 보정
 ```
+
+## Stage 7 — PR #46 리뷰 보정과 재현성·제거 안전성 강화
+
+### 진입 근거와 승인
+
+- PR #46 리뷰 댓글 `issuecomment-5449578921`에서 독립 Cargo package lockfile 누락, optional thumbnail 등록 해제 실패의 앱 제거 전파, NSIS 자기 ProgID 재복원, 실효 없는 total deadline과 제품 한계 문서 누락을 확인했다.
+- 작업지시자는 2026-08-28 리뷰 판정과 최소 수정 범위를 확인한 뒤 Stage 7 진행을 승인했다.
+- 기존 COM/worker 격리, extension ShellEx owner path, direct-first rendering과 process-local font 구조는 유지한다. 공개 release·서명·배포는 범위에 포함하지 않는다.
+
+### 산출물
+
+수정:
+
+- `.gitignore`, `apps/thumbnail-handler/Cargo.lock`, `apps/thumbnail-worker/Cargo.lock`, `crates/document-preview/Cargo.lock`
+- `package.json`, `.github/workflows/{ci,alhangeul-desktop}.yml`, Cargo build/test helper와 관련 automation test
+- `apps/desktop/src-tauri/src/{commands,state}.rs`와 desktop preview 회귀 test
+- `apps/desktop/src-tauri/windows/{nsis-hooks.nsh,main.wxs}`
+- `apps/thumbnail-handler/src/process/**`, 필요 시 `apps/thumbnail-handler/src/registration/**`
+- Windows installer·thumbnail source/native smoke와 platform-neutral contract test
+- `crates/document-preview/src/render.rs`, 대표 raster 회귀 test
+- `docs/architecture/WINDOWS_THUMBNAILS.md`, `docs/operations/DESKTOP_RELEASE.md`
+- `mydocs/plans/task_m010_14_impl.md`, `mydocs/working/task_m010_14_stage7.md`, `mydocs/report/task_m010_14_report.md`, `mydocs/orders/20260828.md`
+
+### 변경 내용
+
+- standalone Cargo package 3개의 lockfile을 추적하고 build/test/clippy 경로에 `--locked`를 적용해 dependency resolution drift를 차단한다. exact artifact digest는 실행 산출물 식별자이며 bit-for-bit reproducible build 보장으로 과장하지 않는다.
+- desktop preview의 editable conversion 생략은 renderer에 영향을 주지 않는 distribution serialization metadata 정리임을 fixture test로 고정한다. 공유 64 MiB input·16 MiB SVG 상한과 오류 contract는 승인된 bounded API로 명시하고 초과·parse 오류 test를 추가한다.
+- NSIS/MSI uninstall은 thumbnail unregister 실패를 진단에 남기되 optional extension 실패로 앱 제거 전체를 중단하지 않는다. 가능한 owner-scoped 정리를 계속하고 DLL 누락·unregister failure에서도 제거 완료를 검증한다.
+- NSIS PREUNINSTALL snapshot은 현재 extension default가 `Alhangeul.hwp`/`Alhangeul.hwpx`이면 제거 후 dangling ProgID로 복원하지 않는다. 제3자 default와 부재 상태는 기존 transaction대로 보존한다.
+- `SetRegView 64`는 Tauri의 뒤이은 APP_ASSOCIATE/APP_UNASSOCIATE와 uninstall metadata까지 Registry64에 맞추는 의도된 hook-wide 상태임을 주석·source contract로 고정하고 임의 복원하지 않는다.
+- 실효 없던 total deadline을 제거하고 요청 시작부터 pipe·worker 시작과 frame 선택까지 단일 1,500 ms deadline으로 축소해 코드·계획·아키텍처를 정렬한다. deadline 이전 후보만 fallback에 쓰고 종료·join은 반환 전 cleanup임을 native test로 고정한다.
+- production에서 사용하지 않는 `resolve_document_preview` 정책 API를 제거하거나 실제 worker streaming contract와 동일한 조합으로 정렬한다.
+- 대표 raster gate는 premultiplied BGRA의 alpha 영향을 분리한 luminance/coverage 판정으로 보강하고, registration 함수 길이 검사 regex는 실제 visibility/unsafe 함수 선언을 인식하게 한다.
+- active ProgID thumbnail handler가 extension ShellEx보다 우선하므로 한컴 등 제3자 ProgID handler가 활성화된 환경에서는 Alhangeul thumbnail이 표시되지 않을 수 있음을 최종 보고서와 PR 검증 한계에 명시한다. 2026-08-28 VDI에 한컴 2024가 설치돼 있었던 사실과 active ProgID handler 존재 여부는 구분한다.
+
+### 검증
+
+플랫폼 중립:
+
+```bash
+git diff --check
+pnpm run check:product-boundary
+pnpm run check:product-version
+pnpm run check:release-metadata
+pnpm run check:rhwp-pin
+pnpm run test:automation
+pnpm run test:upstream
+pnpm run test:studio
+pnpm run build:studio
+cargo test --manifest-path crates/document-preview/Cargo.toml --locked
+cargo clippy --manifest-path crates/document-preview/Cargo.toml --locked --all-targets -- -D warnings
+```
+
+Windows/Linux exact-SHA:
+
+- CI Unit tests와 Linux x64/arm64, Windows x64 desktop artifact build를 같은 source candidate에서 재실행한다.
+- Windows handler/worker test·Clippy·COM contract, MSI/NSIS inventory와 fresh-install smoke를 통과한다.
+- unregister failure와 자기 ProgID default fixture에서 앱 제거 성공, Alhangeul dangling association 부재, 제3자 default/thumbnail sentinel 보존을 확인한다.
+- renderer 결과를 변경하지 않으면 VDI 시각 수용은 반복하지 않고 Stage 6.1 증적을 유지한다. raster 또는 font 결과가 바뀌면 대표 fixture 자동 gate와 Windows VDI를 다시 수행한다.
+
+### 커밋
+
+```text
+Task #14 [Stage 7.1]: PR 리뷰 보정 source candidate
+Task #14 Stage 7 + 최종 보고서: exact-SHA 재검증과 PR 보정 완료
+```
+
+- Windows/Linux exact-SHA workflow는 원격 commit을 입력으로 요구하므로 Stage 7.1에서 소스와 로컬 검증 보고서를 먼저 묶어 candidate를 만든다.
+- 같은 candidate의 원격 gate가 끝난 뒤 Stage 7 완료 보고서와 최종 보고서·오늘할일·PR 본문을 두 번째 커밋에 묶는다. 원격 검증 전에는 Stage 7을 완료로 표시하지 않는다.
 
 ## 검증
 

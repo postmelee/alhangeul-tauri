@@ -13,6 +13,8 @@
 ;   다음 설치·제거가 덮어쓰지 않고 같은 원래 기본값을 복원한다.
 ; - 모든 macro는 사용하는 $R0/$R1을 Push/Pop으로 보존한다. hook 본문은 Tauri installer.nsi
 ;   안으로 삽입되며 주변 코드의 register 사용을 알 수 없다.
+; - PRE hook의 SetRegView 64는 의도적으로 복원하지 않는다. PREINSTALL/PREUNINSTALL 뒤에 실행되는
+;   Tauri file-association registry 작업까지 Registry64로 고정해야 snapshot과 실제 변경 view가 같다.
 ; - UPDATEFILEASSOC는 Tauri installer.nsi가 제공하는 내부 macro이며 installerHooks 공개
 ;   계약의 일부가 아니다. Tauri를 올릴 때 존재 여부를 확인한다.
 
@@ -63,14 +65,12 @@
   ${EnableX64FSRedirection}
   ${If} $R0 != 0
     DetailPrint "Alhangeul thumbnail unregistration failed: $R0"
-    Pop $R0
-    SetErrors
-    Abort "Alhangeul thumbnail unregistration failed."
+    ClearErrors
   ${EndIf}
   Pop $R0
 !macroend
 
-!macro ALHANGEUL_SNAPSHOT_EXTENSION_DEFAULT EXT
+!macro ALHANGEUL_SNAPSHOT_EXTENSION_DEFAULT EXT OWNED_PROGID
   Push $R0
   Push $R1
   ClearErrors
@@ -79,6 +79,10 @@
     ClearErrors
     ReadRegStr $R0 SHELL_CONTEXT "Software\Classes\.${EXT}" ""
     ${If} ${Errors}
+      DeleteRegValue SHELL_CONTEXT "${ALHANGEUL_ASSOC_BACKUP_KEY}\.${EXT}" "Default"
+      WriteRegDWORD SHELL_CONTEXT "${ALHANGEUL_ASSOC_BACKUP_KEY}\.${EXT}" "State" 0
+    ${ElseIf} "${OWNED_PROGID}" != ""
+    ${AndIf} "$R0" == "${OWNED_PROGID}"
       DeleteRegValue SHELL_CONTEXT "${ALHANGEUL_ASSOC_BACKUP_KEY}\.${EXT}" "Default"
       WriteRegDWORD SHELL_CONTEXT "${ALHANGEUL_ASSOC_BACKUP_KEY}\.${EXT}" "State" 0
     ${Else}
@@ -140,8 +144,8 @@
 
 !macro NSIS_HOOK_PREINSTALL
   SetRegView 64
-  !insertmacro ALHANGEUL_SNAPSHOT_EXTENSION_DEFAULT "hwp"
-  !insertmacro ALHANGEUL_SNAPSHOT_EXTENSION_DEFAULT "hwpx"
+  !insertmacro ALHANGEUL_SNAPSHOT_EXTENSION_DEFAULT "hwp" ""
+  !insertmacro ALHANGEUL_SNAPSHOT_EXTENSION_DEFAULT "hwpx" ""
 !macroend
 
 !macro NSIS_HOOK_POSTINSTALL
@@ -158,8 +162,8 @@
 !macro NSIS_HOOK_PREUNINSTALL
   SetRegView 64
   !insertmacro ALHANGEUL_UNINSTALL_THUMBNAIL
-  !insertmacro ALHANGEUL_SNAPSHOT_EXTENSION_DEFAULT "hwp"
-  !insertmacro ALHANGEUL_SNAPSHOT_EXTENSION_DEFAULT "hwpx"
+  !insertmacro ALHANGEUL_SNAPSHOT_EXTENSION_DEFAULT "hwp" "Alhangeul.hwp"
+  !insertmacro ALHANGEUL_SNAPSHOT_EXTENSION_DEFAULT "hwpx" "Alhangeul.hwpx"
   !insertmacro ALHANGEUL_REMOVE_OPEN_WITH "hwp" "Alhangeul.hwp"
   !insertmacro ALHANGEUL_REMOVE_OPEN_WITH "hwpx" "Alhangeul.hwpx"
 !macroend

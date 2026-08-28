@@ -11,8 +11,7 @@ pub const MAX_BITMAP_PAYLOAD_BYTES: usize = 4_194_304;
 pub const FRAME_HEADER_BYTES: usize = 64;
 pub const MAX_FRAME_BYTES: usize = 4_194_368;
 pub const WORKER_MEMORY_LIMIT_BYTES: u64 = 256 * 1024 * 1024;
-pub const DIRECT_DEADLINE_MS: u64 = 1_500;
-pub const TOTAL_DEADLINE_MS: u64 = 2_000;
+pub const FRAME_SELECTION_DEADLINE_MS: u64 = 1_500;
 
 pub fn validate_input_len(actual: usize) -> Result<(), PreviewError> {
     if actual > MAX_INPUT_BYTES {

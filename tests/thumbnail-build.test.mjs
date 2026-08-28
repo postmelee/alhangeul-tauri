@@ -38,12 +38,35 @@ test('build plan은 독립 manifest와 desktop target/staging 경로만 사용�
     ],
   );
   assert.ok(plan.commands.every((args) => args.includes('--release')));
+  assert.ok(plan.commands.every((args) => args.includes('--locked')));
   assert.ok(plan.commands.every((args) => args.includes(WINDOWS_X64_TARGET)));
   assert.ok(plan.commands.every((args) => args.includes(plan.targetDirectory)));
   assert.deepEqual(
     plan.outputs.map((output) => basename(output.destination)),
     [STAGING_FILES.worker, STAGING_FILES.handler],
   );
+});
+
+test('독립 Rust package는 추적 lockfile과 locked 자동화 명령을 사용한다', async () => {
+  const packageJson = JSON.parse(
+    await readFile(join(repoRoot, 'package.json'), 'utf8'),
+  );
+  const packages = [
+    ['crates/document-preview', ['test:document-preview', 'clippy:document-preview', 'clippy:document-preview:protocol']],
+    ['apps/thumbnail-worker', ['test:thumbnail-worker:windows', 'clippy:thumbnail-worker:windows']],
+    ['apps/thumbnail-handler', ['test:thumbnail-handler:windows', 'clippy:thumbnail-handler:windows']],
+  ];
+
+  for (const [packagePath, scripts] of packages) {
+    const lockfile = await readFile(join(repoRoot, packagePath, 'Cargo.lock'), 'utf8');
+    assert.match(lockfile, /^version = 4$/m, `${packagePath} lockfile이 필요합니다`);
+    for (const script of scripts) {
+      assert.match(packageJson.scripts[script], /(?:^|\s)--locked(?:\s|$)/);
+    }
+  }
+  for (const script of ['test:desktop', 'clippy:desktop']) {
+    assert.match(packageJson.scripts[script], /(?:^|\s)--locked(?:\s|$)/);
+  }
 });
 
 test('PE parser는 x64 worker EXE와 handler DLL 구분을 fail-closed한다', () => {

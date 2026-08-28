@@ -14,6 +14,7 @@ $registryLocations = @(
 )
 $extensions = @('.hwp', '.hwpx')
 $canonicalProgIds = @('Alhangeul.hwp', 'Alhangeul.hwpx')
+$associationSentinelProgIds = @('Hancom.Hwp.Document', 'Hancom.Hwpx.Document')
 $legacyProgIds = @('HWP Document', 'HWPX Document')
 $msiInstallDirectory = Join-Path $env:ProgramFiles 'Alhangeul'
 $nsisInstallDirectory = Join-Path $env:LOCALAPPDATA 'Alhangeul'
@@ -141,6 +142,7 @@ function Complete-BundleSmoke($Result, $Kind, $State, $ThumbnailSentinels, $Base
   }
   if ($null -ne $State.Entry -or (Test-Path -LiteralPath $State.InstallDirectory)) {
     try {
+      if ($Kind -eq 'nsis') { Set-AssociationDefaultValues $canonicalProgIds; $Result.DefaultsBeforeUninstall = Get-DefaultState }
       $Result.UninstallExitCode = Invoke-Uninstaller $Kind $State (Join-Path $OutputDirectory "$Kind-uninstall.log")
       if ($Result.UninstallExitCode -ne 0) { Add-Failure $Result 'uninstall' "uninstaller exit code: $($Result.UninstallExitCode)" }
       if ($Kind -eq 'msi' -and $Result.UninstallExitCode -ne 0) { $Result.UninstallFailureContext = Write-MsiFailureContext (Join-Path $OutputDirectory "$Kind-uninstall.log") }
@@ -148,6 +150,11 @@ function Complete-BundleSmoke($Result, $Kind, $State, $ThumbnailSentinels, $Base
   }
   if ($Result.ThirdPartySet -and $null -ne $ThumbnailSentinels) { Invoke-Check $Result 'coexistence' 'ThumbnailUninstall' { Assert-UninstalledThumbnail $Kind $ThumbnailSentinels } }
   if ($null -ne $ThumbnailSentinels) { try { Restore-ThumbnailSentinels $ThumbnailSentinels } catch { Add-Failure $Result 'sentinel-restore' $_.Exception.Message } }
+  if ($Kind -eq 'nsis') {
+    $Result.DefaultsImmediatelyAfterUninstall = Get-DefaultState
+    Invoke-Check $Result 'default-mutation' 'NoDanglingCanonicalDefault' { Assert-NoCanonicalDefaults $Result.DefaultsImmediatelyAfterUninstall }
+    Set-AssociationDefaultValues $associationSentinelProgIds
+  }
   $Result.DefaultsAfterUninstall = Get-DefaultState; $Result.After = Get-CleanState
   if (-not $Result.After.Clean) { Add-Failure $Result 'cleanup' '제거 뒤 Alhangeul 소유 상태가 남아 있습니다.' }
   if ((ConvertTo-Json $BaselineDefaults -Depth 12 -Compress) -ne (ConvertTo-Json $Result.DefaultsAfterUninstall -Depth 12 -Compress)) { Add-Failure $Result 'default-mutation' '제거 뒤 기본 연결 또는 UserChoice가 복원되지 않았습니다.' }

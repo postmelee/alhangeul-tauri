@@ -162,6 +162,11 @@ test('MSI thumbnail 등록은 64-bit regsvr32 deferred/rollback transaction이�
     'Action="FailThumbnailRegistrationProbe" After="InstallThumbnailRegistration"',
   ]);
   assert.doesNotMatch(wixTemplate, /(?:taskkill|Stop-Process|explorer\.exe|dllhost\.exe)/i);
+  const uninstall = wixTemplate.match(
+    /<CustomAction\s+Id="UninstallThumbnailRegistration"[\s\S]+?\/>/,
+  )?.[0];
+  assert.ok(uninstall, 'MSI thumbnail 제거 custom action이 필요합니다.');
+  assert.match(uninstall, /Return="ignore"/);
 });
 
 test('NSIS thumbnail 등록은 64-bit regsvr32와 current-user DLL transaction을 사용한다', () => {
@@ -181,6 +186,11 @@ test('NSIS thumbnail 등록은 64-bit regsvr32와 current-user DLL transaction�
   assert.doesNotMatch(nsisHooks, /SetRegView 32/);
   assert.doesNotMatch(nsisHooks, /::AlhangeulThumbnail(?:Install|Uninstall)User/);
   assert.doesNotMatch(nsisHooks, /(?:taskkill|Stop-Process|explorer\.exe|dllhost\.exe)/i);
+  const uninstall = nsisHooks.match(
+    /!macro ALHANGEUL_UNINSTALL_THUMBNAIL[\s\S]+?!macroend/,
+  )?.[0];
+  assert.ok(uninstall, 'NSIS thumbnail 제거 macro가 필요합니다.');
+  assert.doesNotMatch(uninstall, /\bAbort\b|SetErrors/);
 });
 
 test('NSIS hook은 설치·제거 중 extension 기본값을 보존한다', () => {
@@ -290,6 +300,25 @@ test('NSIS snapshot은 중단된 이전 transaction을 덮어쓰지 않는다', 
     defaultWrite < committedState,
     'Default를 먼저 기록하고 State를 transaction commit marker로 마지막에 기록해야 합니다.',
   );
+});
+
+test('NSIS 제거는 자기 ProgID를 복원 snapshot으로 보존하지 않는다', () => {
+  const preinstall = nsisHooks.match(
+    /!macro NSIS_HOOK_PREINSTALL[\s\S]+?!macroend/,
+  )?.[0];
+  const preuninstall = nsisHooks.match(
+    /!macro NSIS_HOOK_PREUNINSTALL[\s\S]+?!macroend/,
+  )?.[0];
+
+  assert.match(preinstall, /ALHANGEUL_SNAPSHOT_EXTENSION_DEFAULT "hwp" ""/);
+  assert.match(preuninstall, /ALHANGEUL_SNAPSHOT_EXTENSION_DEFAULT "hwp" "Alhangeul\.hwp"/);
+  assert.match(preuninstall, /ALHANGEUL_SNAPSHOT_EXTENSION_DEFAULT "hwpx" "Alhangeul\.hwpx"/);
+  assert.match(nsisHooks, /\$R0" == "\$\{OWNED_PROGID\}"[\s\S]+?"State" 0/);
+});
+
+test('NSIS PRE hook은 뒤따르는 Tauri association까지 Registry64를 유지한다', () => {
+  assert.match(nsisHooks, /PREINSTALL\/PREUNINSTALL 뒤에 실행되는[\s\S]+Registry64/);
+  assert.doesNotMatch(nsisHooks, /SetRegView lastused/);
 });
 
 test('NSIS restore는 완전한 snapshot만 적용하고 성공 뒤에만 제거한다', () => {

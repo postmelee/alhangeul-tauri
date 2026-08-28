@@ -59,7 +59,10 @@ fn assert_region_ink(label: &str, bitmap: &Bitmap, region: (f32, f32, f32, f32),
         for x in x0..x1.min(bitmap.width) {
             let offset = ((y * bitmap.width + x) * 4) as usize;
             let pixel = &bitmap.bgra[offset..offset + 4];
-            if pixel[3] > 0 && pixel[..3].iter().any(|channel| *channel < 245) {
+            if composited_over_white(pixel)
+                .iter()
+                .any(|channel| *channel < 245)
+            {
                 ink += 1;
             }
         }
@@ -69,4 +72,19 @@ fn assert_region_ink(label: &str, bitmap: &Bitmap, region: (f32, f32, f32, f32),
         ink >= minimum,
         "{label} region ink {ink} is below {minimum}"
     );
+}
+
+fn composited_over_white(pixel: &[u8]) -> [u8; 3] {
+    let transparent_white = 255_u8.saturating_sub(pixel[3]);
+    [
+        pixel[0].saturating_add(transparent_white),
+        pixel[1].saturating_add(transparent_white),
+        pixel[2].saturating_add(transparent_white),
+    ]
+}
+
+#[test]
+fn premultiplied_transparent_pixels_do_not_count_as_ink() {
+    assert_eq!(composited_over_white(&[0, 0, 0, 0]), [255, 255, 255]);
+    assert_eq!(composited_over_white(&[0, 0, 0, 255]), [0, 0, 0]);
 }

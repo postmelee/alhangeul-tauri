@@ -81,6 +81,9 @@ test('32/64-bit HKLM·HKCU와 handler·기본 연결을 분리해 검사한다',
     assert.ok(source.includes(marker), `registry marker가 필요합니다: ${marker}`);
   }
   assert.match(source, /Restore-AssociationSentinels \$sentinels/);
+  assert.match(source, /Set-AssociationDefaultValues \$canonicalProgIds/);
+  assert.match(source, /Assert-NoCanonicalDefaults/);
+  assert.match(source, /DefaultsImmediatelyAfterUninstall/);
   assert.doesNotMatch(source, /Get-ChildItem[^\n]*-LiteralPath[^\n]*\\\*/);
   assert.match(
     source,
@@ -96,7 +99,8 @@ test('sentinel은 부분 실패에서도 복원 대상으로 남는다', () => {
 
   assert.ok(setter, 'Set-AssociationSentinels 계약이 필요합니다.');
   assert.ok(
-    setter.indexOf('$script:sentinels +=') < setter.indexOf('$key.SetValue'),
+    setter.indexOf('$script:sentinels +=') <
+      setter.indexOf('Set-AssociationDefaultValues $associationSentinelProgIds'),
     'sentinel record는 registry 변경 전에 script scope에 남아야 합니다.',
   );
   assert.doesNotMatch(

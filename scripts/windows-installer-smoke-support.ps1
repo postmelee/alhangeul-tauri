@@ -20,6 +20,23 @@ function Get-DefaultState {
   }
   return $state
 }
+function Set-AssociationDefaultValues($ProgIds) {
+  $base = [Microsoft.Win32.RegistryKey]::OpenBaseKey([Microsoft.Win32.RegistryHive]::CurrentUser, [Microsoft.Win32.RegistryView]::Registry64)
+  try {
+    $classes = $base.CreateSubKey('Software\Classes')
+    for ($index = 0; $index -lt $extensions.Count; $index += 1) {
+      $key = $classes.CreateSubKey($extensions[$index]); $key.SetValue('', $ProgIds[$index], [Microsoft.Win32.RegistryValueKind]::String); $key.Close()
+    }
+    $classes.Close()
+  } finally { $base.Close() }
+}
+function Assert-NoCanonicalDefaults($State) {
+  for ($index = 0; $index -lt $extensions.Count; $index += 1) {
+    $dangling = @($State[$index].Defaults | Where-Object { $_.Exists -and $_.Value -eq $canonicalProgIds[$index] })
+    Assert-Condition ($dangling.Count -eq 0) "$($extensions[$index]) 기본값에 제거된 Alhangeul ProgID가 남았습니다."
+  }
+  return $true
+}
 function Set-AssociationSentinels {
   $base = [Microsoft.Win32.RegistryKey]::OpenBaseKey([Microsoft.Win32.RegistryHive]::CurrentUser, [Microsoft.Win32.RegistryView]::Registry64); $script:sentinels = @()
   try {
@@ -30,12 +47,11 @@ function Set-AssociationSentinels {
       if (-not $keyExisted) { $key = $classes.CreateSubKey($extension) }
       $valueExisted = $key.GetValueNames() -contains ''
       $script:sentinels += [ordered]@{ Extension = $extension; KeyExisted = $keyExisted; ValueExisted = $valueExisted; Value = $key.GetValue('') }
-      $progId = if ($extension -eq '.hwp') { 'Hancom.Hwp.Document' } else { 'Hancom.Hwpx.Document' }
-      $key.SetValue('', $progId, [Microsoft.Win32.RegistryValueKind]::String)
       $key.Close()
     }
     $classes.Close()
   } finally { $base.Close() }
+  Set-AssociationDefaultValues $associationSentinelProgIds
   return $script:sentinels
 }
 function Restore-AssociationSentinels($Records) {

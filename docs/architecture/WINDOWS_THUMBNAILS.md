@@ -60,6 +60,8 @@ worker executable은 handler DLL과 같은 설치 디렉터리에 있어야 한�
 
 `rhwp`가 만든 SVG는 원본 HWP family와 대체 family 목록을 포함한다. rasterizer는 이를 해석할 실제 font database를 명시적으로 제공해야 하며 빈 기본 database로 parse하지 않는다.
 
+desktop의 `render_document_preview`도 같은 공유 `render_first_page_svg`를 호출한다. 이 경로는 원본 바이트를 직접 parse·render하며 편집 세션용 `convert_to_editable_native`를 호출하지 않는다. 현재 pinned `rhwp`의 editable 변환은 배포·직렬화 metadata만 정리하고 page render IR은 바꾸지 않으므로 HWP/HWPX에서 직접 결과와 변환 뒤 결과가 동일한지 회귀 test로 고정한다. desktop command에도 입력 64 MiB와 생성 SVG 16 MiB 상한이 그대로 적용되며 parse·render·상한 초과는 빈 SVG가 아니라 명시적 command error로 반환된다.
+
 - 일회성 worker는 설치된 system font directory를 스캔하지 않는다. 이는 문서마다 새 process를 시작하는 현재 격리 모델에서 1,500 ms cold-start 한도를 지키기 위한 경계이며 desktop editor·PDF의 system font 우선 규칙에는 영향을 주지 않는다.
 - pinned `third_party/rhwp/ttfs/opensource`의 `NotoSansKR-Regular.ttf`와 `NotoSansKR-ExtraLight.ttf`를 worker에 compile-time 포함해 설치 경로나 current directory와 무관한 한글 glyph를 보장한다.
 - 두 TTF의 고정 SHA-256, 저작권과 SIL OFL 1.1은 `assets/fonts/FONTS.md`에 기록하고 desktop bundle의 `licenses/fonts/`에 manifest와 license 원문을 함께 포함한다.
@@ -94,10 +96,9 @@ embedded preview는 빠른 후보일 뿐 최신 문서 내용의 진실 원천�
 | frame header | 64 bytes |
 | 전체 frame | 4,194,368 bytes |
 | worker process memory | 256 MiB |
-| 직접 결과 대기 | 1,500 ms |
-| protocol 전체 ceiling | 2,000 ms |
+| worker 시작·frame 선택 | 1,500 ms |
 
-요청 edge `0`은 거부하고 1024보다 큰 값은 1024로 제한한다. 현재 handler는 직접 결과 deadline인 1,500 ms에 후보를 선택하거나 실패하고 worker를 종료하므로 2,000 ms 전체 ceiling을 넘지 않는다.
+요청 edge `0`은 거부하고 1024보다 큰 값은 1024로 제한한다. handler는 요청 처리를 시작한 시각부터 pipe·worker 시작과 frame 선택에 단일 1,500 ms deadline을 적용한다. deadline에는 이미 검증된 preview 후보만 선택하고 후보가 없으면 실패한 뒤 Job의 worker를 종료한다. worker 종료와 pipe thread join은 반환 전 cleanup이며 별도의 “전체 2,000 ms” 상한으로 표시하지 않는다.
 
 worker는 `CREATE_NO_WINDOW | CREATE_SUSPENDED`로 시작하고 명시한 pipe handle만 상속한다. handler는 active process 1, kill-on-close와 256 MiB process memory 제한을 가진 Job Object에 worker를 배정한 뒤 실행한다. 반환 또는 오류 뒤에는 worker를 종료하고 pipe thread를 join한다.
 
@@ -125,8 +126,9 @@ Software\Alhangeul\ThumbnailHandlerBackup
 - upgrade에서 현재 owner가 Alhangeul이면 이미 commit된 원본 snapshot을 덮어쓰지 않는다.
 - 제거할 때 현재 owner가 여전히 Alhangeul인 slot만 원래 값 또는 부재로 복원한다.
 - 설치 뒤 제3자가 slot을 바꿨다면 그 값을 보존하고 Alhangeul snapshot만 정리한다.
+- NSIS 제거 전 extension 기본값이 제거 대상인 `Alhangeul.hwp`/`Alhangeul.hwpx`이면 이를 복원 snapshot으로 저장하지 않아 dangling ProgID를 만들지 않는다.
 
-MSI는 native System64 `regsvr32`를 deferred action과 rollback action으로 실행한다. NSIS는 x64 filesystem redirection을 끈 native `regsvr32 /n /i:user` 경로를 사용한다. 설치 실패, 재설치와 제거는 binary, CLSID, association과 backup key의 제품 소유 상태가 남지 않는지 실제 Windows smoke로 확인한다.
+MSI는 native System64 `regsvr32`를 deferred action과 rollback action으로 실행한다. NSIS는 x64 filesystem redirection을 끈 native `regsvr32 /n /i:user` 경로를 사용한다. 등록 실패는 installer transaction을 실패시키지만 등록 해제 실패는 진단을 남기고 앱 제거를 계속한다. 설치 실패, 재설치와 제거는 binary, CLSID, association과 backup key의 제품 소유 상태가 남지 않는지 실제 Windows smoke로 확인한다.
 
 ## Build와 자동 gate
 
@@ -163,6 +165,8 @@ Stage 6과 시각 보정 Stage 6.1에서는 source와 hosted 자동 gate를 통�
 6. install, Explorer 사용과 uninstall 뒤 orphan worker, 제품 registry와 backup 상태가 남지 않는다.
 
 Stage 6.1 수용본은 exact SHA `2a1a9c556fdb844ecea4fddb0a6336d9d9481078`이다. CI run `33044851424`와 desktop artifact run `33044853129`가 성공했고, installer smoke job `98431213787`은 MSI·NSIS 각각에서 HWP와 embedded preview가 없는 HWPX의 256 px 실제 Shell bitmap을 `HRESULT=0`으로 확인했다. 2026-08-28 Windows VDI에서는 온새미로, `biz_plan`, `form-002`의 text/background/table과 첫 페이지 비율을 재수용했다. 복학원서 왼쪽 위의 고려대학교 문장과 wordmark는 원본 PDF·upstream 기대 이미지와 위치·내용이 일치하며, 256 px 축소에서 세밀한 검은 선이 뭉쳐 보이는 것은 허용 가능한 축소 결과로 판정했다.
+
+Windows Shell은 active ProgID의 thumbnail handler를 extension ShellEx보다 먼저 선택할 수 있다. 따라서 한컴 등 제3자 ProgID에 별도 handler가 연결된 환경에서는 Alhangeul handler가 정상 등록돼도 Explorer가 제3자 thumbnail 또는 icon을 표시할 수 있다. VDI에 한컴 2024가 설치돼 있었다는 사실만으로 해당 active ProgID handler의 존재·우선 적용을 증명하지는 않으며, 이 제품은 공존을 위해 active ProgID와 `UserChoice`를 강제로 바꾸지 않는다.
 
 unsigned test installer는 Windows SmartScreen이나 보안 정책에 의해 차단될 수 있다. 이는 코드 서명이나 공개 배포를 승인한 것이 아니며, VDI에서는 검증용 exact artifact와 SHA를 확인한 뒤 조직 정책 안에서만 실행한다. 자동 gate와 수동 UI gate가 모두 Go여도 release tag, GitHub Release, 서명, package 게시와 updater는 별도 승인 작업이다.
 

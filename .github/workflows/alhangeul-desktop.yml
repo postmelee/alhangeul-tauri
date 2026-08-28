@@ -149,7 +149,7 @@ jobs:
         if: matrix.name == 'windows-x64'
         continue-on-error: true
         shell: powershell
-        run: cargo build --manifest-path third_party/rhwp/Cargo.toml --bin rhwp --release
+        run: cargo build --manifest-path third_party/rhwp/Cargo.toml --locked --bin rhwp --release
 
       - name: Run Windows thumbnail core probe
         id: run-thumbnail-core-probe

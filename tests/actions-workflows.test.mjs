@@ -165,7 +165,7 @@ test('Windows thumbnail core probe는 exact checkout에서 진단을 항상 보�
   assert.match(buildStep, /^\s{8}id: build-thumbnail-core-probe$/m);
   assert.match(buildStep, /^\s{8}if: matrix\.name == 'windows-x64'$/m);
   assert.match(buildStep, /^\s{8}continue-on-error: true$/m);
-  assert.match(buildStep, /--bin rhwp --release/);
+  assert.match(buildStep, /--locked --bin rhwp --release/);
   assert.match(
     probeStep,
     /^\s{8}if: matrix\.name == 'windows-x64' && steps\.build-thumbnail-core-probe\.outcome == 'success'$/m,

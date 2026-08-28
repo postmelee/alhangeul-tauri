@@ -23,8 +23,8 @@ use commands::{
     create_document, create_editor_window, desktop_platform, destroy_current_window,
     list_local_fonts, list_recent_documents, mark_document_dirty, mutate_document,
     open_document_tracking, prepare_document_open, prepare_staged_document_save, query_document,
-    read_local_font, record_recent_document, remove_recent_document,
-    render_document_preview, render_page_svg, reveal_in_folder, take_pending_open_paths,
+    read_local_font, record_recent_document, remove_recent_document, render_document_preview,
+    render_page_svg, reveal_in_folder, take_pending_open_paths,
 };
 use state::AppState;
 

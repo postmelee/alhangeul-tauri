@@ -789,11 +789,37 @@ mod tests {
     }
 
     #[test]
-    fn direct_preview_adapter_renders_without_editable_conversion() {
-        let bytes = include_bytes!("../../../../third_party/rhwp/saved/blank_hwpx.hwpx");
-        let svg = direct_preview_svg_from_bytes(bytes).unwrap();
+    fn direct_preview_adapter_matches_editable_render_without_mutating_input() {
+        let fixtures: &[&[u8]] = &[
+            include_bytes!("../../../../third_party/rhwp/saved/blank2010.hwp"),
+            include_bytes!("../../../../third_party/rhwp/saved/blank_hwpx.hwpx"),
+        ];
+        for bytes in fixtures {
+            let original = bytes.to_vec();
+            let direct = direct_preview_svg_from_bytes(bytes).unwrap();
+            let editable = editable_core_from_bytes(
+                bytes,
+                "preview parity parse",
+                "preview parity conversion",
+            )
+            .unwrap()
+            .render_page_svg_native(0)
+            .unwrap();
 
-        assert!(svg.contains("<svg"));
+            assert_eq!(direct, editable);
+            assert_eq!(*bytes, original);
+        }
+    }
+
+    #[test]
+    fn direct_preview_adapter_preserves_bounded_error_contract() {
+        let oversized = vec![0_u8; alhangeul_document_preview::limits::MAX_INPUT_BYTES + 1];
+        assert!(direct_preview_svg_from_bytes(&oversized)
+            .unwrap_err()
+            .contains("input bytes"));
+        assert!(direct_preview_svg_from_bytes(b"not a document")
+            .unwrap_err()
+            .contains("document parse failed"));
     }
 
     #[test]

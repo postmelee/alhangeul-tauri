@@ -2,7 +2,7 @@ mod child;
 mod pipe_io;
 
 use alhangeul_document_preview::limits::{
-    bounded_requested_edge, validate_input_len, DIRECT_DEADLINE_MS, TOTAL_DEADLINE_MS,
+    bounded_requested_edge, validate_input_len, FRAME_SELECTION_DEADLINE_MS,
 };
 use alhangeul_document_preview::protocol::{encode_request_header, Frame, FrameKind};
 use child::{Child, Pipes};
@@ -39,6 +39,7 @@ impl fmt::Display for ProcessError {
 }
 
 pub fn render_thumbnail(bytes: Arc<[u8]>, requested_edge: u32) -> Result<BitmapData, ProcessError> {
+    let started = Instant::now();
     validate_input_len(bytes.len()).map_err(|_| ProcessError::InvalidInput)?;
     let edge = bounded_requested_edge(requested_edge).map_err(|_| ProcessError::InvalidInput)?;
     let request = encode_request_header(&bytes, edge).map_err(|_| ProcessError::Protocol)?;
@@ -50,7 +51,7 @@ pub fn render_thumbnail(bytes: Arc<[u8]>, requested_edge: u32) -> Result<BitmapD
     drop(pipes.child_output);
     drop(pipes.child_error);
     drop(pipes.parent_error);
-    let result = await_result(receiver);
+    let result = await_result(receiver, started);
     child.terminate();
     let _ = writer.join();
     let _ = reader.join();
@@ -59,27 +60,24 @@ pub fn render_thumbnail(bytes: Arc<[u8]>, requested_edge: u32) -> Result<BitmapD
 
 fn await_result(
     receiver: Receiver<Result<Frame, ProcessError>>,
+    started: Instant,
 ) -> Result<BitmapData, ProcessError> {
     await_result_until(
         receiver,
-        Duration::from_millis(DIRECT_DEADLINE_MS),
-        Duration::from_millis(TOTAL_DEADLINE_MS),
+        started + Duration::from_millis(FRAME_SELECTION_DEADLINE_MS),
     )
 }
 
 fn await_result_until(
     receiver: Receiver<Result<Frame, ProcessError>>,
-    direct_deadline: Duration,
-    total_deadline: Duration,
+    deadline: Instant,
 ) -> Result<BitmapData, ProcessError> {
-    let started = Instant::now();
     let mut selector = FrameSelector::default();
     loop {
-        let elapsed = started.elapsed();
-        if elapsed >= direct_deadline || elapsed >= total_deadline {
+        let wait = deadline.saturating_duration_since(Instant::now());
+        if wait.is_zero() {
             return selector.fallback();
         }
-        let wait = direct_deadline.min(total_deadline) - elapsed;
         match receiver.recv_timeout(wait) {
             Ok(Ok(frame)) => match selector.accept(frame)? {
                 Some(bitmap) => return Ok(bitmap),
@@ -187,8 +185,7 @@ mod tests {
             .send(Ok(bitmap(FrameKind::PreviewCandidate, 9)))
             .unwrap();
         let selected =
-            await_result_until(receiver, Duration::from_millis(1), Duration::from_millis(2))
-                .unwrap();
+            await_result_until(receiver, Instant::now() + Duration::from_millis(1)).unwrap();
         assert_eq!(selected.bgra, vec![9; 4]);
         drop(sender);
     }
@@ -198,11 +195,19 @@ mod tests {
         let (sender, receiver) = mpsc::channel();
         drop(sender);
         assert_eq!(
-            await_result_until(
-                receiver,
-                Duration::from_millis(10),
-                Duration::from_millis(20),
-            ),
+            await_result_until(receiver, Instant::now() + Duration::from_millis(10),),
+            Err(ProcessError::WorkerUnavailable)
+        );
+    }
+
+    #[test]
+    fn expired_process_deadline_fails_before_accepting_late_frames() {
+        let (sender, receiver) = mpsc::channel();
+        sender.send(Ok(bitmap(FrameKind::DirectBitmap, 4))).unwrap();
+        let now = Instant::now();
+        let expired = now.checked_sub(Duration::from_millis(1)).unwrap_or(now);
+        assert_eq!(
+            await_result_until(receiver, expired),
             Err(ProcessError::WorkerUnavailable)
         );
     }

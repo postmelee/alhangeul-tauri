@@ -56,7 +56,7 @@ Stage 6 VDI에서 발견한 text 누락은 Stage 6.1의 `resvg` text/raster feat
 | 대표 시각 회귀 fixture | 없음 | 온새미로 HWP, `biz_plan.hwp`, `form-002.hwpx` 3개 |
 | 입력 stream 상한 | 없음 | 64 MiB, 초과 시 worker 미기동 |
 | 요청 edge / 최종 bitmap 상한 | 없음 | 1~1,024 px / 1,048,576 pixels |
-| worker deadline / commit memory | 없음 | direct 1,500 ms, 전체 2,000 ms / 256 MiB |
+| worker deadline / commit memory | 없음 | 요청 시작·frame 선택 1,500 ms / 256 MiB |
 | 플랫폼 중립 automation 계약 | thumbnail 전용 계약 없음 | 전체 256개 통과, product boundary 272개 파일 검사 |
 
 ## 검증 결과
@@ -108,6 +108,7 @@ exact-SHA 원격 검증:
 - proprietary 한컴·HY·Microsoft font를 번들하지 않으므로 원본 font가 없는 환경에서는 NotoSansKR fallback에 따라 metric과 줄바꿈이 원본 앱과 다를 수 있다. 대표 gate는 glyph/text 누락을 막지만 모든 font 조합의 pixel identity를 보장하지 않는다.
 - 작은 thumbnail에서 복학원서 문장처럼 고밀도 흑백 logo의 세부 선이 뭉쳐 보일 수 있다. 원본 구조·위치가 유지되는 범위에서 허용한다.
 - Explorer thumbnail cache는 Windows가 소유하므로 uninstall 직후 이전 bitmap이 남을 수 있다. 제품은 Explorer/DllHost 강제 종료나 전역 cache 삭제를 수행하지 않는다.
+- Windows가 active ProgID의 thumbnail handler를 extension ShellEx보다 우선하면 제3자 thumbnail 또는 icon이 표시될 수 있다. 한컴 2024 설치 여부와 active ProgID handler 존재 여부는 같지 않으며, Alhangeul은 공존을 위해 `UserChoice`나 제3자 ProgID를 강제로 변경하지 않는다.
 - VDI 수동 시각 수용은 Stage 6.1 `rhwp v0.8.2` exact candidate에서 수행했다. 최신 `devel` 통합 candidate는 같은 대표 fixture의 자동 SVG/raster와 Windows Shell bitmap gate를 다시 통과시켜 engine 통합을 검증하지만, 사람이 보는 VDI 설치는 반복하지 않았다.
 - 검증 installer는 unsigned Actions artifact다. 공개 release, 서명, package 게시와 updater는 승인 범위가 아니다.
 

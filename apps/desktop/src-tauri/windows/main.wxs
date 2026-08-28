@@ -107,7 +107,7 @@
             ExeCommand="&quot;[System64Folder]regsvr32.exe&quot; /s /u &quot;[INSTALLDIR]AlhangeulThumbnailHandler.dll&quot;"
             Execute="deferred"
             Impersonate="no"
-            Return="check" />
+            Return="ignore" />
         <CustomAction
             Id="FailThumbnailRegistrationProbe"
             Error="Alhangeul thumbnail registration rollback probe." />
