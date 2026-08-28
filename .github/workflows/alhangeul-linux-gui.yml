@@ -208,7 +208,7 @@ jobs:
             printf partial-output > "$2"
             result=partial-exit-42
           else
-            printf '%s' 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M/wHwAF/gL+wsSFygAAAABJRU5ErkJggg==' \
+            printf '%s' 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=' \
               | base64 --decode > "$2"
           fi
           printf '{"sha256":"%s","edge":%s,"result":"%s"}\n' "$sha" "$3" "$result" \
