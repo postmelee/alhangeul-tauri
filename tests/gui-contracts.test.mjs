@@ -209,6 +209,9 @@ test('Linux native 저장·PDF acceptance는 디스크 갱신과 경로별 실�
 
 test('숨김 file input은 test 중에만 표시하고 원래 inline style을 복원한다', async () => {
   const source = await readFile(join(repoRoot, 'tests/gui/specs/document-ux.e2e.ts'), 'utf8');
+  assert.match(source, /for \(let attempt = 0; attempt < 2 && !accepted; attempt \+= 1\)/);
+  assert.match(source, /status\.startsWith\('파일 로딩'\)/);
+  assert.match(source, /FILE_INPUT_ACCEPT_TIMEOUT_MS = 5_000/);
   assert.match(source, /setProperty\('display', 'block', 'important'\)/);
   assert.match(source, /finally \{/);
   assert.match(source, /input\.style\.removeProperty\(property\)/);

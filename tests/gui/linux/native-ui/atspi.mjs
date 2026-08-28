@@ -31,6 +31,8 @@ const BUTTON_ROLES = ['push button', 'button'];
 const DIALOG_PRIMARY_BUTTON = Object.freeze({
   roles: BUTTON_ROLES,
   names: ['open', '열기', 'save', '저장', 'select', '선택'],
+  enabled: true,
+  sensitive: true,
 });
 const PRINT_FILE_BUTTON = Object.freeze({
   roles: BUTTON_ROLES,

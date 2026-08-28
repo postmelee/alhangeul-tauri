@@ -8,10 +8,7 @@ import sys
 import time
 
 PRINT_DIALOG_WINDOW_PATTERN = r"^(Print|인쇄)$"
-FILE_DIALOG_WINDOW_PATTERN = (
-    r"^(Open File|Save File|Select a File|Select a filename|"
-    r"파일 열기|파일 저장|파일 선택|파일 이름 선택)$"
-)
+FILE_DIALOG_WINDOW_PATTERN = r"^(Open File|Save File|Select a File|Select a filename|파일 열기|파일 저장|파일 선택|파일 이름 선택)$"
 NATIVE_ROOT_ROLES = {"dialog", "file chooser"}
 
 
@@ -110,8 +107,11 @@ def matches(node, selector):
     if names and not any(normalized(value) in searchable for value in names):
         return False
     states = safe_states(node)
-    if selector.get("selected", False) and not state_contains(
-            states, pyatspi.STATE_SELECTED):
+    if selector.get("selected", False) and not state_contains(states, pyatspi.STATE_SELECTED):
+        return False
+    if selector.get("enabled", False) and not state_contains(states, pyatspi.STATE_ENABLED):
+        return False
+    if selector.get("sensitive", False) and not state_contains(states, pyatspi.STATE_SENSITIVE):
         return False
     return not selector.get("showing", True) or state_contains(
         states, pyatspi.STATE_SHOWING,

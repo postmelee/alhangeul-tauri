@@ -435,6 +435,27 @@ dialog에서 연쇄된 결과다. 파일 open과 최종 Save As submit은 keyboa
 dialog 내부의 enabled primary 버튼을 semantic click하도록 보정한다. product source는 변경하지 않으며 새 exact
 SHA의 native artifact와 Linux GUI workflow로 다시 검증한다.
 
+semantic submit 보정 candidate `620191b05875401158647c6df3f8f6a7ddd39c38`의
+[native run 33037468639](https://github.com/postmelee/alhangeul-tauri/actions/runs/33037468639)은 Windows x64,
+Linux x64, Linux arm64 build와 artifact 검증을 모두 통과했고 Windows desktop Rust test·Clippy도 통과했다.
+Windows installer smoke artifact ID `9632805160`에서 MSI와 NSIS 반복 lifecycle이 모두 성공했으며, Linux x64
+artifact ID `9632780874`의 digest는
+`sha256:e009f4b1193e68045dbca238128f9091e870e1d281934b4f7a617ae9fd4ed83d`로 고정됐다.
+
+같은 exact SHA와 native artifact를 사용한
+[Linux GUI run 33038195757](https://github.com/postmelee/alhangeul-tauri/actions/runs/33038195757)은 첫 기본 HWP의
+WebDriver file input `change`가 앱 초기화 경쟁으로 전달되지 않아 렌더 대기에서 실패했다. evidence artifact ID
+`9632902718`에서 상태가 `HWP 파일을 선택해주세요.`에 머문 반면 HWPX는 성공했고, 동일 입력은 직전 run에서
+0.5초 안에 성공했으므로 제품 parser 결함이 아니라 startup race로 판정했다. 기본 fixture 입력 뒤 5초 안에
+`파일 로딩` 또는 대상 basename 상태가 관찰되지 않으면 숨김 file input을 한 번만 다시 전달한다.
+
+[Linux GUI 재실행 33038551116](https://github.com/postmelee/alhangeul-tauri/actions/runs/33038551116)은 기본 HWP/HWPX를
+모두 통과하고 native open까지 진입했다. evidence artifact ID `9633083479`의 AT-SPI tree에는 같은 `Open File`
+chooser가 중복 노출되며 한 primary `Open`은 enabled/sensitive, 다른 하나는 disabled/insensitive였다. 기존 semantic
+click은 비활성 복제 버튼을 먼저 선택해 실패했으므로 primary selector가 enabled와 sensitive 상태를 모두 요구하게
+보정한다. 이후 save·drag·PDF·print 실패는 열린 dialog가 남아서 발생한 연쇄 결과로 분류하며 product source는
+변경하지 않는다. 새 exact SHA의 native workflow와 Linux GUI 전체를 다시 실행해 보정을 수용한다.
+
 수정:
 
 - `apps/studio-host/src/command/direct-print.ts`
@@ -477,6 +498,7 @@ SHA의 native artifact와 Linux GUI workflow로 다시 검증한다.
 - `tests/gui/support/webdriver-dom.ts`
 - `mydocs/orders/20260826.md`
 - `mydocs/orders/20260827.md`
+- `mydocs/orders/20260828.md`
 
 플랫폼 중립 검증:
 

@@ -38,6 +38,8 @@ test('Save As는 dialog readiness 뒤 directory와 basename을 semantic field에
   assert.deepEqual(calls[1].selector.names, [
     'open', '열기', 'save', '저장', 'select', '선택',
   ]);
+  assert.equal(calls[1].selector.enabled, true);
+  assert.equal(calls[1].selector.sensitive, true);
   assert.deepEqual(calls[2].applicationNames, LINUX_NATIVE_APPLICATION_NAMES);
   assert.deepEqual(calls[2].within.roles, ['file chooser', 'dialog']);
   assert.deepEqual(calls[2].selector.roles, ['text', 'entry']);
@@ -50,6 +52,8 @@ test('Save As는 dialog readiness 뒤 directory와 basename을 semantic field에
   assert.deepEqual(calls[5].selector.names, [
     'open', '열기', 'save', '저장', 'select', '선택',
   ]);
+  assert.equal(calls[5].selector.enabled, true);
+  assert.equal(calls[5].selector.sensitive, true);
   assert.equal(calls[5].windowScope, 'file-dialog');
   assert.deepEqual(calls[5].within.roles, ['file chooser', 'dialog']);
 });
@@ -69,6 +73,8 @@ test('native open은 GTK location 입력 뒤 primary button으로 submit한다',
   assert.deepEqual(calls[1].selector.names, [
     'open', '열기', 'save', '저장', 'select', '선택',
   ]);
+  assert.equal(calls[1].selector.enabled, true);
+  assert.equal(calls[1].selector.sensitive, true);
   assert.deepEqual(calls[2].applicationNames, LINUX_NATIVE_APPLICATION_NAMES);
   assert.deepEqual(calls[2].within.roles, ['file chooser', 'dialog']);
   assert.equal(calls[2].selector.names, undefined);
@@ -77,6 +83,8 @@ test('native open은 GTK location 입력 뒤 primary button으로 submit한다',
   assert.deepEqual(calls[3].selector.names, [
     'open', '열기', 'save', '저장', 'select', '선택',
   ]);
+  assert.equal(calls[3].selector.enabled, true);
+  assert.equal(calls[3].selector.sensitive, true);
 });
 
 test('native shortcut은 허용된 portal window를 활성화·확인한 뒤 XTEST key를 보낸다', async () => {
@@ -197,11 +205,13 @@ test('AT-SPI Python traversal은 portal 전환 중 null과 stale accessible을 �
   assert.match(source, /if limit is not None and len\(found\) >= limit:/);
   assert.match(source, /role = normalized\(safe_method\(node, "getRoleName", "unknown"\)\)/);
   assert.match(source, /selector\.get\("selected", False\)/);
+  assert.match(source, /selector\.get\("enabled", False\)/);
+  assert.match(source, /selector\.get\("sensitive", False\)/);
   assert.match(source, /"selected": state_contains\(states, pyatspi\.STATE_SELECTED\)/);
   assert.match(source, /"enabled": state_contains\(states, pyatspi\.STATE_ENABLED\)/);
   assert.match(source, /state_contains\(states, pyatspi\.STATE_SENSITIVE\)/);
   assert.match(source, /PRINT_DIALOG_WINDOW_PATTERN = r"\^\(Print\|인쇄\)\$"/);
-  assert.match(source, /FILE_DIALOG_WINDOW_PATTERN = \(/);
+  assert.match(source, /FILE_DIALOG_WINDOW_PATTERN = r/);
   assert.match(source, /request\.get\("searchOrder"\) == "reverse"/);
   assert.match(source, /window_patterns = \{/);
   assert.match(source, /"windowactivate", "--sync", window_id/);

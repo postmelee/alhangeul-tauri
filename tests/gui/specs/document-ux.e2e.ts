@@ -16,6 +16,7 @@ import { dismissLocalFontPrompt, readDomText } from '../support/webdriver-dom.ts
 import { readGuiHarnessInputs } from '../wdio.shared.conf.ts';
 
 const inputs = readGuiHarnessInputs();
+const FILE_INPUT_ACCEPT_TIMEOUT_MS = 5_000;
 let fixtures: DocumentFixture[] = [];
 
 describe('Alhangeul document UX', () => {
@@ -38,16 +39,38 @@ describe('Alhangeul document UX', () => {
 });
 
 async function openFixture(fixture: DocumentFixture): Promise<void> {
-  await setHiddenFileInput(fixture.absolutePath);
+  const startedAt = Date.now();
+  let accepted = false;
+  for (let attempt = 0; attempt < 2 && !accepted; attempt += 1) {
+    await setHiddenFileInput(fixture.absolutePath);
+    accepted = await waitForFileInputAcceptance(fixture);
+  }
+  if (!accepted) throw new Error(`${fixture.id} file input이 앱에 전달되지 않았습니다`);
+  const remainingTimeout = Math.max(5_000, inputs.timeoutMs - (Date.now() - startedAt));
   await browser.waitUntil(async () => {
     if (await dismissLocalFontPrompt()) return false;
     const canvas = await $(GUI_SELECTORS.documentCanvas);
     const status = await readDomText(GUI_SELECTORS.statusMessage);
     return await canvas.isExisting() && status.includes(basename(fixture.absolutePath));
   }, {
-    timeout: inputs.timeoutMs,
+    timeout: remainingTimeout,
     timeoutMsg: `${fixture.id} 문서 렌더가 완료되지 않았습니다`,
   });
+}
+
+async function waitForFileInputAcceptance(fixture: DocumentFixture): Promise<boolean> {
+  try {
+    await browser.waitUntil(async () => {
+      const status = await readDomText(GUI_SELECTORS.statusMessage);
+      return status.startsWith('파일 로딩') || status.includes(basename(fixture.absolutePath));
+    }, {
+      timeout: Math.min(FILE_INPUT_ACCEPT_TIMEOUT_MS, inputs.timeoutMs),
+      timeoutMsg: `${fixture.id} file input 전달을 확인하지 못했습니다`,
+    });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 async function setHiddenFileInput(path: string): Promise<void> {
