@@ -12,10 +12,12 @@ const desktopPath = join(
   'alhangeul-desktop.yml',
 );
 const linuxGuiPath = join(workflowRoot, 'alhangeul-linux-gui.yml');
-const [ciWorkflow, desktopWorkflow, linuxGuiWorkflow] = await Promise.all([
+const pagesPath = join(workflowRoot, 'pages.yml');
+const [ciWorkflow, desktopWorkflow, linuxGuiWorkflow, pagesWorkflow] = await Promise.all([
   readFile(ciPath, 'utf8'),
   readFile(desktopPath, 'utf8'),
   readFile(linuxGuiPath, 'utf8'),
+  readFile(pagesPath, 'utf8'),
 ]);
 
 test('모든 workflow가 공통 또는 전용 contract test inventory에 등록된다', async () => {
@@ -61,6 +63,87 @@ test('대상 workflow는 수동 trigger와 최소 권한만 사용한다', () =>
     new Map([['actions', 'read'], ['contents', 'read']]),
   );
   assert.doesNotMatch(linuxGuiWorkflow, /secrets\./i);
+});
+
+test('Pages workflow는 exact SHA 입력과 최소 배포 권한만 사용한다', () => {
+  assert.deepEqual(getSectionChildKeys(pagesWorkflow, 'on'), ['workflow_dispatch']);
+  assert.match(pagesWorkflow, /^      deploy_ref:$/m);
+  assert.match(pagesWorkflow, /^        required: true$/m);
+  assert.match(pagesWorkflow, /^        type: string$/m);
+  assert.deepEqual(
+    getSectionAssignments(pagesWorkflow, 'permissions'),
+    new Map([
+      ['contents', 'read'],
+      ['pages', 'write'],
+      ['id-token', 'write'],
+    ]),
+  );
+  assert.match(pagesWorkflow, /^  group: alhangeul-pages$/m);
+  assert.match(pagesWorkflow, /^  cancel-in-progress: false$/m);
+  assert.match(pagesWorkflow, /^      name: github-pages$/m);
+  assert.match(
+    pagesWorkflow,
+    /^      url: \$\{\{ steps\.deployment\.outputs\.page_url \}\}$/m,
+  );
+  assert.doesNotMatch(pagesWorkflow, /secrets\./i);
+});
+
+test('Pages workflow는 입력 SHA를 검증하고 같은 commit만 checkout한다', () => {
+  assert.match(
+    pagesWorkflow,
+    /\[\[ "\$DEPLOY_REF" =~ \^\[0-9a-f\]\{40\}\$ \]\]/,
+  );
+  assert.match(pagesWorkflow, /WORKFLOW_SHA: \$\{\{ github\.workflow_sha \}\}/);
+  assert.match(pagesWorkflow, /\[\[ "\$WORKFLOW_SHA" == "\$DEPLOY_REF" \]\]/);
+  assert.match(pagesWorkflow, /ref: \$\{\{ inputs\.deploy_ref \}\}/);
+  assert.match(pagesWorkflow, /actual_sha="\$\(git rev-parse HEAD\)"/);
+  assert.match(pagesWorkflow, /\[\[ "\$actual_sha" == "\$DEPLOY_REF" \]\]/);
+  assertOrdered(pagesWorkflow, [
+    '- name: Validate exact deploy ref',
+    '- name: Checkout exact Pages source',
+    '- name: Verify checked out exact SHA',
+    '- name: Setup Node.js',
+    'corepack enable',
+    'pnpm install --frozen-lockfile',
+    'pnpm run build:pages',
+    'pnpm run check:pages',
+    'node --test tests/pages.test.mjs tests/actions-workflows.test.mjs',
+    'actions/configure-pages@',
+    'actions/upload-pages-artifact@',
+    'actions/deploy-pages@',
+  ]);
+});
+
+test('Pages workflow의 공식 Action은 immutable commit과 version을 함께 기록한다', () => {
+  const expectedActions = [
+    ['actions/checkout', '3d3c42e5aac5ba805825da76410c181273ba90b1', 'v7.0.1'],
+    ['actions/setup-node', '820762786026740c76f36085b0efc47a31fe5020', 'v7.0.0'],
+    ['actions/configure-pages', '45bfe0192ca1faeb007ade9deae92b16b8254a0d', 'v6.0.0'],
+    ['actions/upload-pages-artifact', 'fc324d3547104276b827a68afc52ff2a11cc49c9', 'v5.0.0'],
+    ['actions/deploy-pages', 'cd2ce8fcbc39b97be8ca5fce6e763baed58fa128', 'v5.0.0'],
+  ];
+  for (const [action, sha, version] of expectedActions) {
+    assert.ok(
+      pagesWorkflow.includes(`uses: ${action}@${sha} # ${version}`),
+      `${action} immutable pin이 필요합니다.`,
+    );
+  }
+  assert.doesNotMatch(pagesWorkflow, /uses:\s+[^\s]+@(?:main|master|latest|v\d+)\s*$/m);
+});
+
+test('Pages workflow는 정적 Pages 외 release·updater·native 게시를 수행하지 않는다', () => {
+  for (const pattern of [
+    /\bgh release\b/i,
+    /action-gh-release/i,
+    /pnpm tauri build/i,
+    /createUpdaterArtifacts/i,
+    /updater\/stable\.json/i,
+    /releases\/download/i,
+  ]) {
+    assert.doesNotMatch(pagesWorkflow, pattern);
+  }
+  assert.doesNotMatch(pagesWorkflow, /\brm\s+-rf\b/);
+  assert.doesNotMatch(pagesWorkflow, /\bcp\s+-R\b/);
 });
 
 test('CI workflow는 제품 version·pin과 automation 계약을 native 검사 전에 실행한다', () => {
