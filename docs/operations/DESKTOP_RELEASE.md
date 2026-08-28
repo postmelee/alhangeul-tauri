@@ -149,6 +149,23 @@ MSI와 NSIS는 각각 clean state, silent install exit `0`, 제품 version `0.1.
 
 이 증적은 hosted Windows에서 실제 COM/Shell 경로까지 확인하지만 Explorer 보기 크기·DPI·cache 갱신과 한컴 설치 환경 UI를 대신하지 않는다. 같은 exact 후보의 수동 gate는 [Windows thumbnail 아키텍처](../architecture/WINDOWS_THUMBNAILS.md)에 따라 Stage 6에서 수행한다.
 
+2026-08-28 Task #14 Stage 7의 PR #46 리뷰 보정 source candidate `51099615681432862a51691aeb3c65dafd2da541`은 [CI run 33154309226](https://github.com/postmelee/alhangeul-tauri/actions/runs/33154309226)과 [native run 33154321608](https://github.com/postmelee/alhangeul-tauri/actions/runs/33154321608)을 통과했다.
+
+- CI Unit tests job `98793335089`, Linux x64 job `98793375935`, Windows x64 job `98793376092`, Linux arm64 job `98793376118`, Windows fresh-installer smoke job `98805510881`이 모두 성공했다.
+- MSI와 NSIS는 HWP `111exam_social.hwp`와 embedded preview가 없는 HWPX `03-blank_hwpx.hwpx`의 실제 256 px Shell bitmap을 `HRESULT=0`으로 반환했다. 두 installer 모두 install/uninstall exit `0`, 제거 뒤 owned registry count `0`과 clean state를 확인했다.
+- NSIS는 제거 직전 `.hwp`/`.hwpx` 기본값을 제거 대상 자기 ProgID로 둔 fixture에서도 `NoDanglingCanonicalDefault=true`였고 제3자 Hancom sentinel을 복원했다. MSI injected rollback은 예상 exit `1603` 뒤 원상복구됐다.
+- fixture 실행 전후 hash는 같았다. Stage 7은 제품 renderer·font 출력을 바꾸지 않았고 대표 raster gate가 다시 통과했으므로 Stage 6.1의 Windows VDI 시각 수용을 유지했다.
+
+| artifact | ID | 크기 (bytes) | SHA-256 digest | 만료 |
+|---|---:|---:|---|---|
+| Windows installer smoke | `9680462259` | 45,525 | `6c51feb8602dbc293363160bdcb94b9f0a7ec65f7353a4d23f80e38eac7840ee` | 2026-09-11 |
+| Windows x64 bundle | `9680268296` | 120,675,282 | `19680c69df03d707c2b3d27ca191ff26e1a8d6ed30ba61779a9c8f6ea99bf802` | 2026-09-11 |
+| Linux x64 bundle | `9679593323` | 505,551,400 | `ce5f15945f52eb3c7897579a5f75bebe242371326d07a09d2d2426e796f21670` | 2026-09-11 |
+| Linux arm64 bundle | `9679356860` | 166,327,127 | `ed7442b17d8acfe75de93a13b616245037e72ba4caff18309c2949e268a5e8ec` | 2026-09-11 |
+| Windows thumbnail core diagnostics | `9679337373` | 3,305 | `6c59c444a73e2624bff355f5f0794646c26e2316d79d6cb49f087f52d1885d4d` | 2026-09-11 |
+
+이 자동 증적은 등록 해제 실패 주입 자체를 실행한 것은 아니다. MSI/NSIS source 계약은 thumbnail extension 실패를 best-effort로 고정하고, native smoke는 정상 등록 해제·owner-scoped cleanup과 dangling association 부재를 확인한다. Windows active ProgID가 제3자 thumbnail handler를 소유하면 extension ShellEx보다 우선할 수 있으며 제품은 공존을 위해 `UserChoice`나 제3자 ProgID를 변경하지 않는다.
+
 ### Windows installer 자동 gate를 다시 돌려야 하는 변경
 
 이 workflow는 `workflow_dispatch` 전용이라 push나 PR로 자동 실행되지 않는다. 다음 변경은 자동으로 검증되지 않으므로 수동 dispatch가 필요하다.

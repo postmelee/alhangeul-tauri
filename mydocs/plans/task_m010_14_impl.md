@@ -546,6 +546,13 @@ Windows/Linux exact-SHA:
 - unregister failure와 자기 ProgID default fixture에서 앱 제거 성공, Alhangeul dangling association 부재, 제3자 default/thumbnail sentinel 보존을 확인한다.
 - renderer 결과를 변경하지 않으면 VDI 시각 수용은 반복하지 않고 Stage 6.1 증적을 유지한다. raster 또는 font 결과가 바뀌면 대표 fixture 자동 gate와 Windows VDI를 다시 수행한다.
 
+실행 결과:
+
+- source candidate `51099615681432862a51691aeb3c65dafd2da541`의 [CI run 33154309226](https://github.com/postmelee/alhangeul-tauri/actions/runs/33154309226) Unit tests job `98793335089`가 성공했다.
+- 같은 candidate의 [desktop run 33154321608](https://github.com/postmelee/alhangeul-tauri/actions/runs/33154321608)에서 Linux x64 job `98793375935`, Windows x64 job `98793376092`, Linux arm64 job `98793376118`, Windows fresh-installer smoke job `98805510881`이 모두 성공했다.
+- MSI·NSIS의 HWP/HWPX 실제 256 px Shell bitmap은 `HRESULT=0`이었고 install/uninstall exit `0`, 제거 뒤 owned registry count `0`과 clean state를 확인했다. NSIS 자기 ProgID fixture는 `NoDanglingCanonicalDefault=true`였고 제3자 Hancom sentinel을 복원했다.
+- 제품 renderer·font 출력은 바뀌지 않았고 대표 raster와 Windows Shell bitmap gate가 다시 통과했으므로 Stage 6.1 VDI 시각 수용을 유지했다.
+
 ### 커밋
 
 ```text
