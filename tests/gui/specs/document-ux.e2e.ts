@@ -10,12 +10,15 @@ import { runScenarioWithEvidence } from '../support/scenario-runner.ts';
 import {
   centeredDelta,
   GUI_SELECTORS,
-  parsePageIndicator,
+  readPageIndicator,
+  waitForLoadedDocument,
+  waitForInitialDesktopReady,
 } from '../support/document-ux.ts';
 import { readGuiHarnessInputs } from '../wdio.shared.conf.ts';
 
 const inputs = readGuiHarnessInputs();
 let fixtures: DocumentFixture[] = [];
+let desktopReady = false;
 
 describe('Alhangeul document UX', () => {
   before(async () => {
@@ -39,14 +42,16 @@ describe('Alhangeul document UX', () => {
 async function openFixture(fixture: DocumentFixture): Promise<void> {
   const input = await $(GUI_SELECTORS.fileInput);
   await input.waitForExist({ timeout: inputs.timeoutMs });
-  await input.setValue(fixture.absolutePath);
-  await browser.waitUntil(async () => {
-    const canvas = await $(GUI_SELECTORS.documentCanvas);
-    const status = await $(GUI_SELECTORS.statusMessage).getText();
-    return await canvas.isExisting() && status.includes(basename(fixture.absolutePath));
-  }, {
+  await input.addValue(fixture.absolutePath);
+  await waitForLoadedDocument(
+    browser,
+    basename(fixture.absolutePath),
+    fixture.expectedPageCount,
+    inputs.timeoutMs,
+  );
+  await $(GUI_SELECTORS.documentCanvas).waitForExist({
     timeout: inputs.timeoutMs,
-    timeoutMsg: `${fixture.id} 문서 렌더가 완료되지 않았습니다`,
+    timeoutMsg: `${fixture.id} 문서 canvas가 준비되지 않았습니다`,
   });
 }
 
@@ -71,7 +76,7 @@ async function assertInitialToolbarState(): Promise<void> {
 }
 
 async function assertPageCount(fixture: DocumentFixture): Promise<void> {
-  const page = parsePageIndicator(await $(GUI_SELECTORS.pageIndicator).getText());
+  const page = await readPageIndicator(browser);
   expect(page.current).toBe(1);
   expect(page.total).toBeGreaterThanOrEqual(1);
   if (fixture.expectedPageCount !== null) expect(page.total).toBe(fixture.expectedPageCount);
@@ -115,5 +120,14 @@ async function runWithEvidence(
     fixtures: [fixture],
     screenshotName: 'initial.png',
     captureScreenshot: (path) => browser.saveScreenshot(path),
-  }, action);
+  }, async () => {
+    await ensureDesktopReady();
+    await action();
+  });
+}
+
+async function ensureDesktopReady(): Promise<void> {
+  if (desktopReady) return;
+  await waitForInitialDesktopReady(browser, inputs.timeoutMs);
+  desktopReady = true;
 }

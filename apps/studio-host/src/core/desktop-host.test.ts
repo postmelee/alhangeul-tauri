@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { DocumentExportArtifact } from '@upstream/core/export-content-loss';
 import { DesktopHost, type DesktopHostDependencies } from './desktop-host';
 import type { DesktopStudioHandlers } from '../embed/desktop-runtime';
 
@@ -16,6 +17,7 @@ describe('desktop host', () => {
       throw new Error(`unexpected command: ${command}`);
     });
     const host = new DesktopHost(fixture.dependencies);
+    host.bindCommandServices(fixture.services as never);
 
     await expect(host.openDocumentByPath('/documents/opened.hwp')).resolves.toEqual({
       fileName: 'opened.hwp',
@@ -45,6 +47,7 @@ describe('desktop host', () => {
       throw new Error(`unexpected command: ${command}`);
     });
     const host = new DesktopHost(fixture.dependencies);
+    host.bindCommandServices(fixture.services as never);
 
     await expect(host.openDocumentByPath('/documents/failed.hwp')).rejects.toThrow('parse failed');
 
@@ -65,6 +68,7 @@ describe('desktop host', () => {
       throw new Error(`unexpected command: ${command}`);
     });
     const host = new DesktopHost(fixture.dependencies);
+    host.bindCommandServices(fixture.services as never);
 
     const first = host.openDocumentByPath('/documents/once.hwp');
     const second = host.openDocumentByPath('/documents/once.hwp');
@@ -91,6 +95,7 @@ describe('desktop host', () => {
       throw new Error(`unexpected command: ${command}`);
     });
     const host = new DesktopHost(fixture.dependencies);
+    host.bindCommandServices(fixture.services as never);
     await host.openDocumentByPath('/documents/opened.hwp');
 
     host.markDocumentDirty();
@@ -107,7 +112,7 @@ describe('desktop host', () => {
       targetPath: '/documents/opened.hwp',
       format: 'hwp',
     });
-    expect(fixture.handlers.exportHwpx).not.toHaveBeenCalled();
+    expect(fixture.wasm.exportHwpxWithReport).not.toHaveBeenCalled();
     expect(fixture.handlers.notifySaved).toHaveBeenCalledWith('opened.hwp');
     expect(result).toMatchObject({ revision: 2, dirty: false });
     expect(host.activeSession).toMatchObject({ revision: 2, dirty: false });
@@ -184,13 +189,44 @@ function createFixture() {
     chooseDocumentSavePath: vi.fn().mockResolvedValue(null),
     choosePdfSavePath: vi.fn().mockResolvedValue(null),
     resolveSaveDefaultPath: vi.fn(async (fileName) => `/documents/${fileName}`),
+    chooseDocumentSavePassword: vi.fn().mockResolvedValue(null),
     showMessage: vi.fn().mockResolvedValue('취소'),
     readDocument: vi.fn().mockResolvedValue({ bytes: new Uint8Array([1, 2, 3]) }),
     writeDocument,
     removeFile: vi.fn().mockResolvedValue(undefined),
     handlers: vi.fn().mockResolvedValue(handlers),
   };
-  return { dependencies, handlers: handlers as MockedHandlers, invoke, writeDocument };
+  const wasm = {
+    fileName: 'document.hwp',
+    requiresPasswordForSave: false,
+    getDocumentInfo: vi.fn(() => ({ encrypted: false })),
+    exportHwpWithReport: vi.fn(() => exportArtifact('hwp', [7, 8, 9])),
+    exportHwpxWithReport: vi.fn(() => exportArtifact('hwpx', [4, 5, 6])),
+  };
+  const services = {
+    eventBus: { emit: vi.fn() },
+    wasm,
+    getContext: () => ({ hasDocument: true, isDirty: false }),
+    getInputHandler: () => null,
+  };
+  return {
+    dependencies,
+    handlers: handlers as MockedHandlers,
+    invoke,
+    writeDocument,
+    services,
+    wasm,
+  };
+}
+
+function exportArtifact(
+  outputFormat: 'hwp' | 'hwpx',
+  bytes: number[],
+): DocumentExportArtifact {
+  return {
+    bytes: new Uint8Array(bytes),
+    contentLoss: { schemaVersion: 1 as const, outputFormat, count: 0, losses: [] },
+  };
 }
 
 type MockedHandlers = {

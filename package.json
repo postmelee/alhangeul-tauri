@@ -21,6 +21,7 @@
     "typecheck:gui": "tsc --noEmit -p tests/gui/tsconfig.json",
     "test:gui:contracts": "node --test tests/gui-contracts.test.mjs",
     "test:gui:linux:contracts": "node --test tests/gui/linux/*.test.mjs tests/gui/linux/native-ui/*.test.mjs",
+    "test:gui:linux:native-print": "node tests/gui/linux/native-print.mjs",
     "test:gui:linux": "wdio run tests/gui/wdio.linux.conf.ts",
     "probe:gui:linux": "node tests/gui/linux/probe.mjs",
     "test": "pnpm run test:upstream && pnpm run test:studio && pnpm run test:desktop",

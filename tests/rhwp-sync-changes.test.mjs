@@ -27,9 +27,10 @@ function git(repositoryRoot, args) {
 test('tracked·untracked changed path를 정렬한 exact allowlist로 쓴다', async () => {
   const writes = [];
   const calls = [];
+  const output = resolve('/tmp/changed.txt');
   const result = await verifyRhwpSyncChanges({
     repositoryRoot: '/repo',
-    output: '/tmp/changed.txt',
+    output,
     run: (_command, args) => {
       calls.push(args.join(' '));
       if (args[0] === 'status') return ' M rhwp-core.lock\n?? README.md';

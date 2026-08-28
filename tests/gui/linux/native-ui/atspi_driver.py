@@ -22,7 +22,12 @@ def node_info(node):
         "name": safe_call(node, "name", ""),
         "description": safe_call(node, "description", ""),
         "role": safe_method(node, "getRoleName", "unknown"),
-        "showing": node.getState().contains(pyatspi.STATE_SHOWING),
+        "showing": has_state(node, pyatspi.STATE_SHOWING),
+        "focused": has_state(node, pyatspi.STATE_FOCUSED),
+        "enabled": has_state(node, pyatspi.STATE_ENABLED),
+        "sensitive": has_state(node, pyatspi.STATE_SENSITIVE),
+        "selected": has_state(node, pyatspi.STATE_SELECTED),
+        "selectable": has_state(node, pyatspi.STATE_SELECTABLE),
     }
 
 
@@ -40,6 +45,13 @@ def safe_method(node, method, fallback):
         return fallback
 
 
+def has_state(node, state):
+    try:
+        return node.getState().contains(state)
+    except Exception:
+        return False
+
+
 def children(node):
     try:
         count = min(node.childCount, 512)
@@ -49,31 +61,55 @@ def children(node):
 
 
 def walk(root, max_depth=16, max_nodes=3000):
-    stack = [(root, 0)]
+    stack = [(root, 0, ())]
     seen = 0
     while stack and seen < max_nodes:
-        node, depth = stack.pop()
+        node, depth, ancestors = stack.pop()
         seen += 1
-        yield node, depth
+        yield node, depth, ancestors
         if depth < max_depth:
-            stack.extend((child, depth + 1) for child in reversed(children(node)))
+            stack.extend(
+                (child, depth + 1, (*ancestors, node))
+                for child in reversed(children(node))
+            )
 
 
-def matches(node, selector):
-    info = node_info(node)
+def matches_info(info, selector):
     role = normalized(info["role"])
     names = selector.get("names", [])
+    exact_names = selector.get("exactNames", [])
+    node_name = normalized(info["name"])
     roles = selector.get("roles", [])
     searchable = normalized(f'{info["name"]} {info["description"]}')
     if roles and not any(normalized(value) == role for value in roles):
         return False
     if names and not any(normalized(value) in searchable for value in names):
         return False
-    return not selector.get("showing", True) or info["showing"]
+    if exact_names and not any(normalized(value) == node_name for value in exact_names):
+        return False
+    if selector.get("showing", True) and not info["showing"]:
+        return False
+    focused = selector.get("focused")
+    if isinstance(focused, bool) and info["focused"] != focused:
+        return False
+    selected = selector.get("selected")
+    return not isinstance(selected, bool) or info["selected"] == selected
+
+
+def matches(node, selector, ancestors=()):
+    if not matches_info(node_info(node), selector):
+        return False
+    within = selector.get("within")
+    return not within or any(matches_info(node_info(item), within) for item in ancestors)
 
 
 def applications(request):
     desktop = pyatspi.Registry.getDesktop(0)
+    desktop_scope = request.get("desktopScope", False)
+    if not isinstance(desktop_scope, bool):
+        raise ValueError("desktopScope must be a boolean")
+    if desktop_scope:
+        return children(desktop)
     names = request.get("applicationNames", ["Alhangeul"])
     result = []
     for app in children(desktop):
@@ -87,8 +123,8 @@ def find_matches(request):
     selector = request.get("selector", {})
     found = []
     for app in applications(request):
-        for node, _depth in walk(app):
-            if matches(node, selector):
+        for node, _depth, ancestors in walk(app):
+            if matches(node, selector, ancestors):
                 found.append(node)
     return found
 
@@ -116,7 +152,46 @@ def selected_node(request):
     return found[index]
 
 
+def perform_if_present(request):
+    timeout_ms = int(request.get("timeoutMs", 5000))
+    guard_selector = request.get("guardSelector")
+    if timeout_ms < 100 or timeout_ms > 5000:
+        raise ValueError("optional action timeoutMs must be between 100 and 5000")
+    if not isinstance(guard_selector, dict) or not guard_selector:
+        raise ValueError("optional action requires a non-empty guardSelector")
+    deadline = time.monotonic() + timeout_ms / 1000
+    guard_request = {**request, "selector": guard_selector}
+    while True:
+        found = find_matches(request)
+        if found:
+            return {"performed": True, "node": perform_action(
+                found[0], request.get("actionNames", []))}
+        if not find_matches(guard_request):
+            return {"performed": False}
+        if time.monotonic() >= deadline:
+            raise LookupError("optional action is unavailable while its dialog remains")
+        time.sleep(0.1)
+
+
+def perform_optional(request):
+    timeout_ms = int(request.get("timeoutMs", 5000))
+    if timeout_ms < 100 or timeout_ms > 10000:
+        raise ValueError("optional action timeoutMs must be between 100 and 10000")
+    if not isinstance(request.get("selector"), dict) or not request["selector"]:
+        raise ValueError("optional action requires a non-empty selector")
+    deadline = time.monotonic() + timeout_ms / 1000
+    while True:
+        found = find_matches(request)
+        if found:
+            return {"performed": True, "node": perform_action(
+                found[0], request.get("actionNames", []))}
+        if time.monotonic() >= deadline:
+            return {"performed": False}
+        time.sleep(0.1)
+
+
 def perform_action(node, requested_names):
+    info = node_info(node)
     action = node.queryAction()
     count = action.nActions
     index = 0
@@ -135,15 +210,52 @@ def perform_action(node, requested_names):
             raise LookupError(f"requested action is unavailable: {candidates}")
     if count < 1 or not action.doAction(index):
         raise RuntimeError("AT-SPI action failed")
+    return info
+
+
+def action_names(node):
+    try:
+        action = node.queryAction()
+        return [action.getName(index) for index in range(action.nActions)]
+    except Exception:
+        return []
+
+
+def text_length(node):
+    try:
+        return node.queryText().characterCount
+    except Exception:
+        return None
+
+
+def set_editable_text(node, value):
+    if not isinstance(value, str) or "\0" in value:
+        raise ValueError("text value must be a NUL-free string")
+    if not node.queryComponent().grabFocus():
+        raise RuntimeError("AT-SPI editable text focus failed")
+    if not node.queryEditableText().setTextContents(value):
+        raise RuntimeError("AT-SPI editable text update failed")
+    text = node.queryText()
+    count = text.characterCount
+    if count != len(value) or text.getText(0, count) != value:
+        raise RuntimeError("AT-SPI editable text readback mismatch")
 
 
 def snapshot(request):
     items = []
     for app in applications(request):
-        for node, depth in walk(app, max_depth=12, max_nodes=1500):
+        for node, depth, _ancestors in walk(app, max_depth=16, max_nodes=3000):
             info = node_info(node)
-            if info["name"] or depth < 2:
-                items.append({"depth": depth, **info})
+            if info["name"] or depth < 2 or info["role"] in {"text", "entry"}:
+                item = {"depth": depth, **info}
+                if info["role"] in {
+                    "text", "entry", "push button", "button", "radio button",
+                    "table cell", "list item", "toggle button",
+                }:
+                    item["actions"] = action_names(node)
+                if info["role"] in {"text", "entry"}:
+                    item["textLength"] = text_length(node)
+                items.append(item)
     return {"applications": len(applications(request)), "nodes": items}
 
 
@@ -156,21 +268,23 @@ def dispatch(request):
     if command == "waitAbsent":
         wait_for_matches(request, absent=True)
         return {"absent": True}
+    if command == "actionIfPresent":
+        return perform_if_present(request)
+    if command == "actionOptional":
+        return perform_optional(request)
     node = selected_node(request)
     if command == "action":
-        perform_action(node, request.get("actionNames", []))
+        return perform_action(node, request.get("actionNames", []))
+    if command == "selectByFocus":
+        if not node.queryComponent().grabFocus():
+            raise RuntimeError("AT-SPI selectable cell focus failed")
         return node_info(node)
     if command == "setText":
-        value = request.get("value")
-        if not isinstance(value, str) or "\0" in value:
-            raise ValueError("text value must be a NUL-free string")
-        if not node.queryEditableText().setTextContents(value):
-            raise RuntimeError("AT-SPI editable text update failed")
+        set_editable_text(node, request.get("value"))
         return node_info(node)
-    if command == "focus":
-        if not node.queryComponent().grabFocus():
-            raise RuntimeError("AT-SPI focus failed")
-        return node_info(node)
+    if command == "submitText":
+        set_editable_text(node, request.get("value"))
+        return perform_action(node, ["activate"])
     if command == "extents":
         extents = node.queryComponent().getExtents(pyatspi.DESKTOP_COORDS)
         return {"x": extents.x, "y": extents.y,
