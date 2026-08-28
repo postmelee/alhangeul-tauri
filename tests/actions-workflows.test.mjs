@@ -88,6 +88,11 @@ test('Pages workflow는 exact SHA 입력과 최소 배포 권한만 사용한다
   assert.doesNotMatch(pagesWorkflow, /secrets\./i);
 });
 
+test('Pages workflow는 이미 활성화된 정적 site에 기본 configure 입력만 사용한다', () => {
+  assert.doesNotMatch(pagesWorkflow, /^\s+enablement:/m);
+  assert.doesNotMatch(pagesWorkflow, /^\s+static_site_generator:/m);
+});
+
 test('Pages workflow는 입력 SHA를 검증하고 같은 commit만 checkout한다', () => {
   assert.match(
     pagesWorkflow,
