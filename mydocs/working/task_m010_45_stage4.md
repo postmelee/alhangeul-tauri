@@ -1,4 +1,4 @@
-# Task #45 Stage 4 배포 기준 보고 — 운영 경계와 exact-SHA Pages
+# Task #45 Stage 4 완료 보고 — 운영 경계와 보호 브랜치 Pages
 
 GitHub Issue: [#45](https://github.com/postmelee/alhangeul-tauri/issues/45)
 구현계획서: [`task_m010_45_impl.md`](../plans/task_m010_45_impl.md)
@@ -7,21 +7,22 @@ Stage: 4
 ## 단계 목적
 
 GitHub Release artifact, Pages 다운로드와 updater manifest의 게시 순서를 공식 운영 문서에
-고정한다. 전체 platform-neutral gate가 통과한 source/report commit을 exact `deploy_ref`로
-Pages workflow에 한 번만 전달하고, 공개 사이트가 계속 `unreleased`·manifest 미게시 상태인지
-검증한다. release, native artifact와 updater workflow는 실행하지 않는다.
+고정한다. 전체 platform-neutral gate가 통과한 source/report commit으로 PR을 준비하되,
+`github-pages` 환경은 보호 브랜치 `devel`에서만 배포하도록 유지한다. release, native artifact와
+updater workflow는 실행하지 않는다.
 
-이 보고서는 배포할 exact SHA를 만들기 위해 Stage 4 source와 같은 commit에 포함한다. 원격 run과
-public read-back 결과는 commit을 바꾸지 않고 GitHub Actions run·deployment URL을 진실 원천으로
-삼아 최종 보고서에 계승한다. 원격 검증이 실패하면 Stage 4는 완료로 판정하지 않는다.
+원래 계획에 따라 작업 브랜치의 exact SHA를 한 번 dispatch했으나 Pages 미활성화와 환경 보호
+규칙을 차례로 확인했다. source/build/test 실패가 아님을 분류한 뒤 작업지시자와 장기 경계를
+재검토했고, 작업 브랜치를 허용하지 않기로 결정했다. public 배포와 read-back은 PR 병합 뒤
+`devel`의 exact merge SHA로 수행하는 별도 운영 gate다.
 
 ## 산출물
 
 | 파일 | 변경 요약 |
 |---|---|
 | `docs/operations/DESKTOP_RELEASE.md` | artifact 검증 → Release → release data → Pages → signed updater manifest 순서와 #45 미게시 경계 |
-| `mydocs/working/task_m010_45_stage4.md` | local gate, exact-SHA 실행 조건과 원격 판정 기준 |
-| `mydocs/orders/20260828.md` | Stage 4 local gate 통과와 exact-SHA 배포 진행 상태 |
+| `mydocs/working/task_m010_45_stage4.md` | local gate, 원격 시도 분류와 post-merge 판정 기준 |
+| `mydocs/orders/20260828.md` | Stage 4 통합 gate와 PR 준비 상태 |
 
 `DESKTOP_RELEASE.md`는 기존 수용 이력 때문에 이미 권장 300줄을 넘는 공식 운영 문서다. 구현계획서가
 이 위치를 명시적으로 선택했으므로 새 문서로 분산하지 않고 공개 배포 전 절만 필요한 범위에서
@@ -33,9 +34,9 @@ public read-back 결과는 commit을 바꾸지 않고 GitHub Actions run·deploy
 artifact는 공개물이 아니고, immutable Release asset 검증 뒤에만 `site/release.json`을 published로
 전환하며, Pages read-back 후 별도 Issue #16이 signature와 manifest를 검증한다는 경계를 추가했다.
 
-Task #45가 게시하는 것은 `unreleased` Pages뿐이다. version·tag·download는 null,
+Task #45가 PR에 포함하는 것은 `unreleased` Pages source뿐이다. version·tag·download는 null,
 `manifestPublished=false`이고 `updater/stable.json`은 존재하지 않는다. 설치 파일·signature·updater
-성공을 주장하지 않는 기존 의미를 보존했다.
+성공을 주장하지 않는 기존 의미를 보존했다. 병합 뒤 공개 게시도 같은 미게시 계약을 검증한다.
 
 ## 검증 결과
 
@@ -68,12 +69,23 @@ git status --short
 - OK — 무관한 `.claude/worktrees/pr-review-dc9f5b`를 제외한 격리 snapshot 제품 경계 263파일 통과
 - OK — 변경 파일 whitespace 오류 없음
 
-## exact-SHA 원격 판정 기준
+## 원격 시도와 차단 분류
 
-- 이 보고서와 운영 문서를 묶은 Stage 4 commit의 40자리 SHA를 `deploy_ref`로 사용한다.
-- `publish/task45`는 해당 commit으로 non-force push하고 `pages.yml`은 정확히 한 번 dispatch한다.
-- run event는 `workflow_dispatch`, branch는 `publish/task45`, workflow SHA·input SHA·checkout SHA는
-  모두 deploy SHA와 같아야 한다.
+- source/report SHA: `8fdeb70d0385d059286466363d2833f2632ec00f`
+- [Pages run 33156333776](https://github.com/postmelee/alhangeul-tauri/actions/runs/33156333776)은
+  `workflow_dispatch`, `publish/task45`, 위 exact SHA로 시작했다.
+- attempt 1은 exact ref·checkout·build·Pages check·test까지 success였고 `Configure Pages`에서
+  site가 아직 없으며 workflow token이 이를 만들 권한이 없어 실패했다.
+- 저장소 관리자 인증으로 Pages를 `build_type=workflow`로 활성화했다. 이때 자동 생성된
+  `github-pages` 환경은 `devel`만 허용했다.
+- attempt 2는 runner를 시작하기 전에 `publish/task45`가 환경 보호 규칙에 허용되지 않아
+  차단됐다. source, build, artifact 또는 deploy action의 실패가 아니다.
+- `publish/task45`를 허용 목록에 추가하지 않았고 더 재시도하지 않았다. 환경 보호 규칙은
+  `devel` 전용으로 유지한다.
+
+## post-merge 원격 판정 기준
+
+- PR 병합 뒤 확정된 `devel`의 40자리 merge SHA를 workflow ref와 `deploy_ref`에 동일하게 쓴다.
 - build/check/test/upload/deploy job과 `github-pages` deployment가 모두 success여야 한다.
 - deployment URL은 `https://postmelee.github.io/alhangeul-tauri/`와 일치해야 한다.
 - public root·updates·feedback와 image/font/internal/external link가 응답해야 한다.
@@ -83,17 +95,18 @@ git status --short
 
 ## 잔여 위험
 
-- 기본 브랜치의 기존 Pages workflow는 exact-SHA 계약 이전 버전이다. dispatch ref가
-  `publish/task45`를 가리키고 workflow SHA가 deploy SHA와 일치하는지 run에서 반드시 확인한다.
-- 첫 remote deployment가 실패하면 같은 source를 즉시 반복하지 않고 원인을 분류한다.
+- public Pages 배포와 외부 read-back은 아직 수행하지 않았다. PR 병합 뒤 exact `devel` SHA를
+  알기 전에는 완료할 수 없는 post-merge 운영 gate다.
+- 병합 전 canonical Pages는 이번 task source와 다를 수 있으므로 새 UI가 이미 공개됐다고
+  안내하면 안 된다.
 - 실제 installer와 updater 수용은 Issue #16 및 별도 release 승인 전까지 범위 밖이다.
 
 ## 다음 단계 영향
 
-- 원격 성공과 public read-back 뒤 task-final-report로 최종 보고서, publish branch와 PR을 준비한다.
-- 이후 문서 전용 commit은 deployed SHA를 path audit으로 계승할 수 있지만 site, workflow 또는
-  `release.json`이 바뀌면 새 배포 승인 전에는 PR 준비 완료로 판정하지 않는다.
+- task-final-report로 최종 보고서, publish branch와 `devel` 대상 PR을 준비한다.
+- PR 병합 뒤 `docs/operations/DESKTOP_RELEASE.md`의 순서대로 exact `devel` SHA Pages 배포와
+  public read-back을 수행한다. release data published 전환과 updater manifest는 별도 승인이다.
 
 ## 승인 요청
 
-- Stage 4 exact-SHA 원격 검증과 public read-back이 통과하면 최종 보고·PR 단계 승인을 요청한다.
+- Stage 4 보정과 통합 gate가 통과하면 최종 보고·PR 단계로 진행한다.

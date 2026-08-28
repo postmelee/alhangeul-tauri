@@ -6,7 +6,7 @@ GitHub Issue: [#45](https://github.com/postmelee/alhangeul-tauri/issues/45)
 
 Issue #45는 제품 Pages를 공개 전 `unreleased` 상태로 안전하게 재구성하고 Issue #16이 사용할
 updater URL 계약을 확정하는 task다. release tag·GitHub Release·installer artifact와 updater
-signature가 아직 공개 입력이 아니므로, 이번 task의 live Pages는 다운로드 준비 상태와 수동
+signature가 아직 공개 입력이 아니므로, 이번 task의 Pages source는 다운로드 준비 상태와 수동
 지원 범위를 정확히 안내하되 존재하지 않는 installer나 manifest 링크를 만들지 않는다.
 
 ## 단계 개요
@@ -16,12 +16,13 @@ signature가 아직 공개 입력이 아니므로, 이번 task의 live Pages는 
 | 1 | release data·build·exact-SHA 배포 계약 | metadata validator, deterministic builder, Pages workflow/test | unpublished/published fixture와 workflow fail-closed test |
 | 2 | Windows/Linux 홈과 제품 시각 체계 | 새 home, 실제 app visual, shared CSS/motion | 1280px·390px 시각, 기능·금지 문구, asset provenance |
 | 3 | 업데이트·문의 페이지와 접근성 | updates/feedback, installer 선택·fallback, keyboard/motion | link·landmark·focus·reduced-motion·base path |
-| 4 | 운영 문서·통합 QA와 exact-SHA 배포 | release 운영 경계, Stage report, public Pages run | 전체 중립 gate, 1회 deploy, public desktop/mobile read-back |
+| 4 | 운영 문서·통합 QA와 보호 브랜치 배포 경계 | release 운영 경계, Stage report, post-merge runbook | 전체 중립 gate, 환경 보호 차단 분류, `devel` 병합 후 검증 분리 |
 
 각 Stage가 끝나면 `task-stage-report`로 `mydocs/working/task_m010_45_stage{N}.md`를 작성하고
 해당 Stage 변경과 같은 commit에 묶는다. 다음 Stage는 작업지시자가 단계 보고를 승인한 뒤에만
-시작한다. Stage 4 exact-SHA Pages run은 source/report commit을 먼저 만든 뒤 한 번 실행하며,
-원격 성공 기록은 GitHub Actions run과 deployment URL을 진실 원천으로 사용한다.
+시작한다. 작업 브랜치는 Pages 운영 환경의 배포 source로 사용하지 않는다. Stage 4는 source와
+보고서를 검증해 PR을 준비하고, 병합 뒤 `devel`의 exact merge SHA를 `deploy_ref`로 실행한
+GitHub Actions run과 deployment URL을 post-merge 운영 검증의 진실 원천으로 사용한다.
 
 ## 문서 위치 확인
 
@@ -292,7 +293,7 @@ git diff --check
 Task #45 Stage 3: 업데이트·문의 페이지와 접근성 계약 추가
 ```
 
-## Stage 4 — 운영 문서·통합 QA와 exact-SHA 배포
+## Stage 4 — 운영 문서·통합 QA와 보호 브랜치 배포 경계
 
 ### 산출물
 
@@ -311,17 +312,16 @@ Task #45 Stage 3: 업데이트·문의 페이지와 접근성 계약 추가
   Pages 사용자 download 게시 → #16 signature/manifest 검증 → canonical Pages의
   `updater/stable.json` 원자 게시
   순서를 기록한다.
-- #45 완료 시점은 unpublished Pages이고 updater manifest가 없음을 명시한다. 실제 release
-  version·URL, signature와 updater 활성화 성공을 주장하지 않는다.
+- #45 완료 시점은 unpublished Pages source와 updater 비게시 계약의 PR 준비까지임을 명시한다.
+  실제 release version·URL, signature와 updater 활성화 성공을 주장하지 않는다.
 - clean checkout에서 전체 platform-neutral gate와 Pages source/output 검증을 다시 수행한다.
-- Stage 4 source/report commit을 `publish/task45`에 non-force push하고 그 40자리 SHA를
-  `deploy_ref`로 `pages.yml`에 한 번 전달한다. release/native/updater workflow는 실행하지 않는다.
-- run의 event, branch, workflow SHA, input SHA, checkout SHA, artifact/deployment conclusion과
-  public URL을 대조한다. 실패하면 같은 source를 즉시 재실행하지 않고 원인을 분류한다.
-- public `https://postmelee.github.io/alhangeul-tauri/`의 root/updates/feedback, image/font,
-  GitHub/Issues/Releases link와 unpublished 상태를 1280px/390px에서 read-back한다.
-- Stage 4 뒤 final report/PR commit이 task 문서만 추가하면 deployed SHA를 path audit으로
-  계승한다. site/workflow/release data가 바뀌면 새 배포 승인 없이는 PR 준비 완료로 판정하지 않는다.
+- `publish/task45`는 PR 게시 브랜치로만 사용하고 `github-pages` 환경의 허용 branch를 완화하지
+  않는다. 작업 브랜치에서 발생한 원격 시도는 source 실패와 환경 보호 차단을 구분해 기록한다.
+- PR 병합 뒤 `devel`의 40자리 merge SHA를 workflow ref와 `deploy_ref`에 동일하게 사용한다.
+  release/native/updater workflow는 실행하지 않는다.
+- post-merge run의 event, branch, workflow SHA, input SHA, checkout SHA, artifact/deployment
+  conclusion과 public URL을 대조하고 root/updates/feedback·asset·link·unpublished 상태를
+  1280px/390px에서 read-back한다.
 
 ### 검증
 
@@ -340,9 +340,9 @@ git diff --check
 git status --short
 ```
 
-원격 검증:
+post-merge 운영 검증(PR 수용 gate와 분리):
 
-- Pages workflow가 Stage 4 exact SHA로 한 번 실행되고 모든 build/check/deploy step 성공
+- Pages workflow가 exact `devel` merge SHA로 실행되고 모든 build/check/deploy step success
 - `github-pages` deployment URL과 public base가 `postmelee.github.io/alhangeul-tauri/`로 일치
 - public root/updates/feedback와 asset/internal/external link success
 - direct MSI·NSIS·AppImage URL과 `updater/stable.json` 파일이 공개되지 않음
@@ -354,11 +354,19 @@ git status --short
 Task #45 Stage 4: Pages 운영 경계와 exact-SHA 배포 확정
 ```
 
+작업 브랜치 배포 차단을 반영한 후속 보정은 기존 Stage commit을 재작성하지 않고 다음 commit으로
+남긴다.
+
+```text
+Task #45 [Stage 4.1]: Pages 배포를 devel 병합 후로 분리
+```
+
 ## 검증
 
 - 각 Stage focused 검증과 수동 read-back이 모두 통과해야 단계 보고서와 commit을 만든다.
 - `test:automation`은 Pages metadata, static output과 workflow 계약을 포함하도록 유지한다.
-- Pages deploy는 Stage 4 exact SHA 한 번만 수행하고 Stage 1~3에서는 remote deployment를 하지 않는다.
+- 작업 브랜치에서는 Pages deploy를 완료 조건으로 삼지 않는다. 공개 배포와 read-back은 PR 병합 뒤
+  exact `devel` SHA의 post-merge 운영 gate로 수행한다.
 - native Rust/Tauri build와 Windows/Linux artifact·GUI workflow는 제품 실행 코드가 바뀌지 않으므로
   이 task에서 실행하지 않는다.
 - private key, signature, release artifact가 없어 실패하는 검증을 skip으로 성공 처리하지 않고

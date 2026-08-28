@@ -304,16 +304,20 @@ GitHub Pages, GitHub Release와 updater는 서로 다른 게시 경계다. 공�
    version tag의 GitHub Release에 게시한다. `latest` redirect나 branch URL을 사용하지 않는다.
 3. Release URL과 tag·version·확장자를 검증한 뒤 `site/release.json`을 `published`로 전환한다.
    Windows NSIS·MSI와 Linux x64 AppImage 세 key만 exact Release asset URL을 가진다.
-4. 같은 commit의 Pages workflow를 40자리 `deploy_ref`로 한 번 실행해 사용자 download를
-   게시하고 public root·updates·feedback에서 exact URL과 release note를 다시 읽는다.
+4. release data 변경 PR을 보호 브랜치 `devel`에 병합한 뒤, 그 exact merge commit의 Pages
+   workflow를 `--ref devel`과 같은 40자리 `deploy_ref`로 실행한다. task/publish branch를
+   `github-pages` 환경에 허용하지 않으며 public root·updates·feedback에서 exact URL과 release
+   note를 다시 읽는다.
 5. Issue #16에서 updater signature, public key, version과 세 artifact를 독립 검증한다. 모든 입력이
    일치할 때만 canonical Pages의 `updater/stable.json`을 Pages output에 원자적으로 포함한다.
 6. manifest public read-back과 실제 MSI·NSIS·AppImage update 수용이 끝난 뒤에만 updater 지원을
    활성화됐다고 기록한다. 실패한 manifest와 artifact 조합은 게시하거나 재사용하지 않는다.
 
-Task #45 완료 시점은 4단계의 UI·URL 계약만 공개한 `unreleased` Pages다. `site/release.json`의
-version·tag·download는 null이고 `manifestPublished=false`이며 `updater/stable.json`은 존재하지
-않는다. 따라서 설치 파일, 고정 다운로드 URL, signature 또는 updater 성공을 주장하지 않는다.
+Task #45의 PR 완료 시점은 4단계에서 사용할 UI·URL 계약을 `unreleased` source로 확정한 상태다.
+PR 병합 뒤 exact `devel` SHA로 Pages를 배포하고 public read-back을 통과해야 canonical Pages에
+게시됐다고 판단한다. `site/release.json`의 version·tag·download는 null이고
+`manifestPublished=false`이며 `updater/stable.json`은 존재하지 않는다. 따라서 설치 파일,
+고정 다운로드 URL, signature 또는 updater 성공을 주장하지 않는다.
 
 공식 릴리스 후보를 만들기 전에는 다음 항목도 별도 Issue와 승인 경계에서 확정한다.
 
