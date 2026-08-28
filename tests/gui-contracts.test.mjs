@@ -319,7 +319,7 @@ test('Windows native file·drag 수용은 semantic UIA와 단일 bounded gesture
   const spec = await readFile(
     join(repoRoot, 'tests/gui/specs/windows-native.e2e.ts'), 'utf8',
   );
-  assert.match(fileDialog, /ENTRY_IDS = Object\.freeze\(\{ open: \['1148'\], save: \['1001'\] \}\)/);
+  assert.match(fileDialog, /ENTRY_IDS = Object\.freeze\(\{ open: \['1148'\], save: \['FileNameControlHost'\] \}\)/);
   assert.match(fileDialog, /actionSelector\(elements, action, '1'\)/);
   assert.match(fileDialog, /actionSelector\(elements, 'cancel', '2'\)/);
   assert.match(fileDialog, /window\.ownerHwnd === appTarget\.hwnd/);
@@ -330,6 +330,8 @@ test('Windows native file·drag 수용은 semantic UIA와 단일 bounded gesture
   assert.match(drag, /resolveDragPoints\(sourceTree, appTree, layout/);
   assert.match(layout, /GetWindowThreadProcessId/);
   assert.match(layout, /SetWindowPos/);
+  assert.match(layout, /minimumPaneWidth = 400/);
+  assert.match(layout, /workArea = \[ordered\]/);
   assert.doesNotMatch(layout, /SendKeys|SendInput|Stop-Process/);
   assert.match(spec, /HWP\/HWPX native Save As, current save와 reopen/);
   assert.match(spec, /Open·Save As 취소 반복/);

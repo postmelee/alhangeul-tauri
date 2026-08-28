@@ -13,7 +13,7 @@ test('표준 Windows file dialog는 action별 file name ID와 확인·취소 ID�
     cancel: 'btn-cancel-c3d4',
   });
   const saveControls = selectFileDialogControls(dialogTree({ korean: true, saveEntry: true }), 'save');
-  assert.equal(saveControls.entry, 'txt-1001-a1b2');
+  assert.equal(saveControls.entry, 'cmb-filename-a1b2');
   assert.equal(saveControls.primary, 'btn-save-b2c3');
 });
 
@@ -124,6 +124,10 @@ function dialogTree(options = {}) {
     automationId: options.saveEntry ? '1001' : '1148',
     selector: options.saveEntry ? 'txt-1001-a1b2' : 'txt-1148-a1b2', isEnabled: true,
   };
+  const fileNameControl = options.saveEntry ? {
+    type: 'ComboBox', name: entry.name, automationId: 'FileNameControlHost',
+    selector: 'cmb-filename-a1b2', isEnabled: true, children: [entry],
+  } : entry;
   return {
     windows: [{
       hwnd: 200,
@@ -133,7 +137,7 @@ function dialogTree(options = {}) {
           options.nestedEntry ? {
             type: 'ComboBox', name: entry.name, automationId: '1148',
             selector: 'cmb-1148-parent', isEnabled: true, children: [entry],
-          } : entry,
+          } : fileNameControl,
           {
             type: 'Button', name: korean ? '저장(&S)' : 'Open', automationId: '1',
             selector: korean ? 'btn-save-b2c3' : 'btn-open-b2c3', isEnabled: true,

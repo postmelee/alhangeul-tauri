@@ -73,6 +73,8 @@ test('window layout helper는 PID/HWND를 검증하고 SetWindowPos만 사용한
   assert.match(source, /GetWindowThreadProcessId/);
   assert.match(source, /SetWindowPos/);
   assert.match(source, /SystemParametersInfo/);
+  assert.match(source, /minimumPaneWidth = 400/);
+  assert.match(source, /workArea = \[ordered\]/);
   assert.doesNotMatch(source, /SendKeys|mouse_event|SendInput|Stop-Process/);
 });
 

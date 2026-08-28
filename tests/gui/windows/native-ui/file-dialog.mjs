@@ -6,7 +6,7 @@ import { createWinAppCli, discoverWinAppWindows } from '../winapp-cli.mjs';
 
 const BUTTON_TYPES = new Set(['Button', 'SplitButton']);
 const ENTRY_TYPES = new Set(['Edit', 'ComboBox', 'Document']);
-const ENTRY_IDS = Object.freeze({ open: ['1148'], save: ['1001'] });
+const ENTRY_IDS = Object.freeze({ open: ['1148'], save: ['FileNameControlHost'] });
 const ACTION_NAMES = Object.freeze({
   open: ['open', '열기'],
   save: ['save', '저장'],

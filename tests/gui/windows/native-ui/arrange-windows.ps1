@@ -57,10 +57,16 @@ if (-not [AlhangeulWindowLayout]::SystemParametersInfo(0x0030, 0, [ref]$work, 0)
 }
 $width = $work.Right - $work.Left
 $height = $work.Bottom - $work.Top
-if ($width -lt 1200 -or $height -lt 600) { throw 'Interactive work area is too small' }
 $gap = 16
+$minimumPaneWidth = 400
+if ($width -lt (($minimumPaneWidth * 2) + $gap) -or $height -lt 600) {
+  throw 'Interactive work area is too small'
+}
 $leftWidth = [Math]::Floor(($width - $gap) / 2)
 $rightX = $work.Left + $leftWidth + $gap
 $explorer = Set-Layout $ExplorerHwnd $work.Left $work.Top $leftWidth $height
 $app = Set-Layout $AppHwnd $rightX $work.Top ($work.Right - $rightX) $height
-[ordered]@{ app = $app; explorer = $explorer } | ConvertTo-Json -Compress
+[ordered]@{
+  workArea = [ordered]@{ x = $work.Left; y = $work.Top; width = $width; height = $height }
+  app = $app; explorer = $explorer
+} | ConvertTo-Json -Compress
