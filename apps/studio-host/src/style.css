@@ -24,6 +24,11 @@ textarea {
   font-family: var(--alhangeul-font-family-ui) !important;
 }
 
+/* Classic scrollbar가 첫 문서 로드 중 나타나도 upstream의 초기 가로 중심을 유지한다. */
+#scroll-container {
+  scrollbar-gutter: stable both-edges;
+}
+
 /* Tauri production CSP의 nonce/hash는 upstream inline display:none을 차단할 수 있다. */
 html:not(.alhangeul-toolbar-ready) .tb-rotate-group,
 html:not(.alhangeul-toolbar-ready) .tb-headerfooter-group,

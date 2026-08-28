@@ -173,6 +173,17 @@ describe('upstream Studio override boundary', () => {
     expect(productStyle).toContain('.alhangeul-toolbar-hidden');
   });
 
+  it('keeps the first document centered when classic scrollbars appear', () => {
+    const productStyle = readFileSync(resolve(
+      repositoryRoot,
+      'apps/studio-host/src/style.css',
+    ), 'utf8');
+
+    expect(productStyle).toMatch(
+      /#scroll-container\s*{[^}]*scrollbar-gutter:\s*stable both-edges;/s,
+    );
+  });
+
   it('pins redistributable PDF fonts and keeps the UI fallback in the web bundle', () => {
     const fontAssets = [
       {
