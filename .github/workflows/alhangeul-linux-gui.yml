@@ -157,15 +157,103 @@ jobs:
             gir1.2-gtk-3.0 \
             libgtk-3-0 \
             libwebkit2gtk-4.1-0 \
+            nautilus \
             openbox \
             poppler-utils \
             printer-driver-cups-pdf \
             python3-gi \
             python3-pyatspi \
             scrot \
+            shared-mime-info \
+            thunar \
+            tumbler \
             webkit2gtk-driver \
             xdotool \
             xvfb
+
+      - name: Run Linux thumbnail manager contract probe
+        id: thumbnail-manager-probe
+        continue-on-error: true
+        timeout-minutes: 8
+        shell: bash
+        env:
+          THUMBNAIL_EVIDENCE_ROOT: ${{ env.EVIDENCE_ROOT }}/thumbnail-manager
+        run: |
+          set -euo pipefail
+          probe_root="$(mktemp -d "$RUNNER_TEMP/alhangeul-thumbnail-manager.XXXXXX")"
+          trap 'rm -rf "$probe_root"' EXIT
+          install -d "$THUMBNAIL_EVIDENCE_ROOT" "$probe_root/data/mime/packages" \
+            "$probe_root/data/thumbnailers" "$probe_root/source"
+          cp third_party/rhwp/saved/blank2010.hwp "$probe_root/source/probe.hwp"
+          cp third_party/rhwp/saved/blank_hwpx.hwpx "$probe_root/source/probe.hwpx"
+          source_hashes_before="$(sha256sum "$probe_root/source/probe.hwp" "$probe_root/source/probe.hwpx" | awk '{print $1}')"
+          cat > "$probe_root/data/mime/packages/alhangeul-probe.xml" <<'XML'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+            <mime-type type="application/x-hwp"><glob pattern="*.hwp"/></mime-type>
+            <mime-type type="application/vnd.hancom.hwpx"><glob pattern="*.hwpx"/></mime-type>
+          </mime-info>
+          XML
+          XDG_DATA_HOME="$probe_root/data" update-mime-database "$probe_root/data/mime"
+          stub="$probe_root/alhangeul-thumbnail-stub"
+          cat > "$stub" <<'STUB'
+          #!/usr/bin/env bash
+          set -euo pipefail
+          sha="$(sha256sum "$1" | awk '{print $1}')"
+          printf '{"sha256":"%s","edge":%s}\n' "$sha" "$3" >> "$ALHANGEUL_THUMBNAIL_INVOCATIONS"
+          printf '%s' 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M/wHwAF/gL+wsSFygAAAABJRU5ErkJggg==' \
+            | base64 --decode > "$2"
+          STUB
+          chmod 0755 "$stub"
+          printf '[Thumbnailer Entry]\nTryExec=%s\nExec=%s %%i %%o %%s\nMimeType=application/x-hwp;application/vnd.hancom.hwpx;\n' \
+            "$stub" "$stub" > "$probe_root/data/thumbnailers/alhangeul-probe.thumbnailer"
+          run_manager() {
+            local manager="$1" manager_root="$probe_root/$1" summary="$THUMBNAIL_EVIDENCE_ROOT/$1.json"
+            install -d "$manager_root/cache" "$manager_root/files"
+            cp "$probe_root/source/probe.hwp" "$manager_root/files/probe.hwp"
+            cp "$probe_root/source/probe.hwpx" "$manager_root/files/probe.hwpx"
+            : > "$manager_root/invocations.ndjson"
+            # shellcheck disable=SC2016
+            XDG_DATA_HOME="$probe_root/data" XDG_CACHE_HOME="$manager_root/cache" \
+              ALHANGEUL_THUMBNAIL_INVOCATIONS="$manager_root/invocations.ndjson" \
+              xvfb-run --auto-servernum --server-args='-screen 0 1280x800x24 -nolisten tcp' \
+              dbus-run-session -- bash -euo pipefail -c '
+                manager="$1"; files="$2"; log="$3"; summary="$4"
+                openbox >"$summary.openbox.log" 2>&1 & window_manager_pid=$!
+                trap '\''kill "$window_manager_pid" 2>/dev/null || true'\'' EXIT
+                launch() {
+                  local phase="$1" wait_seconds="$2"
+                  "$manager" "$files" >"$summary.$phase.stdout.log" 2>"$summary.$phase.stderr.log" & pid=$!
+                  sleep "$wait_seconds"
+                  "$manager" --quit >/dev/null 2>&1 || true
+                  wait "$pid" || true
+                }
+                launch first 12
+                first="$(wc -l < "$log")"
+                launch cached 5
+                cached="$(wc -l < "$log")"
+                touch "$files/probe.hwp" "$files/probe.hwpx"
+                launch changed 12
+                changed="$(wc -l < "$log")"
+                [[ "$first" -ge 2 ]]
+                printf '\''{"manager":"%s","first":%s,"cached":%s,"changed":%s}\n'\'' \
+                  "$manager" "$first" "$cached" "$changed" > "$summary"
+              ' bash "$manager" "$manager_root/files" "$manager_root/invocations.ndjson" "$summary"
+            find "$manager_root/cache" -type f -printf '%f %s\n' | sort \
+              > "$THUMBNAIL_EVIDENCE_ROOT/$manager-cache.txt"
+            cp "$manager_root/invocations.ndjson" "$THUMBNAIL_EVIDENCE_ROOT/$manager-invocations.ndjson"
+          }
+          run_manager nautilus
+          run_manager thunar
+          source_hashes_after="$(sha256sum "$probe_root/source/probe.hwp" "$probe_root/source/probe.hwpx" | awk '{print $1}')"
+          [[ "$source_hashes_before" == "$source_hashes_after" ]]
+          {
+            nautilus --version
+            thunar --version
+            tumblerd --version 2>&1 || true
+            printf 'hwp %s\n' "$(XDG_DATA_HOME="$probe_root/data" gio info -a standard::content-type "$probe_root/source/probe.hwp" | sed -n 's/.*standard::content-type: //p')"
+            printf 'hwpx %s\n' "$(XDG_DATA_HOME="$probe_root/data" gio info -a standard::content-type "$probe_root/source/probe.hwpx" | sed -n 's/.*standard::content-type: //p')"
+          } > "$THUMBNAIL_EVIDENCE_ROOT/environment.txt"
 
       - name: Install exact tauri-driver
         id: install-tauri-driver
@@ -290,13 +378,14 @@ jobs:
           DOWNLOAD: ${{ steps.download-artifact.outcome }}
           INVENTORY: ${{ steps.verify-inventory.outcome }}
           INSTALL: ${{ steps.install-deb.outcome }}
+          THUMBNAIL_MANAGER: ${{ steps.thumbnail-manager-probe.outcome }}
           GUI: ${{ steps.run-gui.outcome }}
         run: |
           set -euo pipefail
           mkdir -p "$EVIDENCE_ROOT"
-          printf '{"validate":"%s","checkout":"%s","source":"%s","handoff":"%s","download":"%s","inventory":"%s","install":"%s","gui":"%s"}\n' \
+          printf '{"validate":"%s","checkout":"%s","source":"%s","handoff":"%s","download":"%s","inventory":"%s","install":"%s","thumbnailManager":"%s","gui":"%s"}\n' \
             "$VALIDATE" "$CHECKOUT" "$SOURCE" "$HANDOFF" "$DOWNLOAD" \
-            "$INVENTORY" "$INSTALL" "$GUI" > "$EVIDENCE_ROOT/step-outcomes.json"
+            "$INVENTORY" "$INSTALL" "$THUMBNAIL_MANAGER" "$GUI" > "$EVIDENCE_ROOT/step-outcomes.json"
 
       - name: Upload Linux GUI evidence
         id: upload-evidence
@@ -322,6 +411,7 @@ jobs:
           PNPM: ${{ steps.install-pnpm.outcome }}
           INVENTORY: ${{ steps.verify-inventory.outcome }}
           LINUX_DEPS: ${{ steps.install-linux-dependencies.outcome }}
+          THUMBNAIL_MANAGER: ${{ steps.thumbnail-manager-probe.outcome }}
           DRIVER: ${{ steps.install-tauri-driver.outcome }}
           INSTALL: ${{ steps.install-deb.outcome }}
           CUPS: ${{ steps.configure-cups.outcome }}
@@ -332,6 +422,6 @@ jobs:
           set -euo pipefail
           for outcome in "$VALIDATE" "$CHECKOUT" "$PREPARE" "$SOURCE" "$NODE" "$HANDOFF" \
             "$DOWNLOAD" "$PNPM" "$INVENTORY" "$LINUX_DEPS" "$DRIVER" \
-            "$INSTALL" "$CUPS" "$ENVIRONMENT" "$GUI" "$UPLOAD"; do
+            "$THUMBNAIL_MANAGER" "$INSTALL" "$CUPS" "$ENVIRONMENT" "$GUI" "$UPLOAD"; do
             [[ "$outcome" == success ]]
           done

@@ -87,7 +87,9 @@ jobs:
             libssl-dev \
             libwebkit2gtk-4.1-dev \
             libxdo-dev \
-            pkg-config
+            pkg-config \
+            time \
+            zip
 
       - name: Setup Node.js
         uses: actions/setup-node@v5
@@ -204,6 +206,65 @@ jobs:
           if ($failed.Count -gt 0) {
             throw "Windows thumbnail core probe gate failed: $($failed | ConvertTo-Json -Compress)"
           }
+
+      - name: Prepare Linux thumbnail core diagnostics
+        if: startsWith(matrix.name, 'linux-')
+        shell: bash
+        env:
+          OUTPUT_ROOT: diagnostics/thumbnail-core-${{ matrix.name }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$OUTPUT_ROOT"
+          printf '{"runId":"%s","runAttempt":"%s","repositorySha":"%s","runner":"%s"}\n' \
+            "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$(git rev-parse HEAD)" "${{ matrix.name }}" \
+            > "$OUTPUT_ROOT/workflow-context.json"
+
+      - name: Run Linux thumbnail core probe
+        id: run-linux-thumbnail-core-probe
+        if: startsWith(matrix.name, 'linux-')
+        continue-on-error: true
+        shell: bash
+        env:
+          OUTPUT_ROOT: diagnostics/thumbnail-core-${{ matrix.name }}
+        run: |
+          ./scripts/benchmark-linux-thumbnail-core.sh \
+            "$GITHUB_WORKSPACE" \
+            "$GITHUB_WORKSPACE/third_party/rhwp/saved" \
+            "$OUTPUT_ROOT"
+
+      - name: Record Linux thumbnail core probe outcome
+        if: ${{ always() && startsWith(matrix.name, 'linux-') }}
+        shell: bash
+        env:
+          OUTPUT_ROOT: diagnostics/thumbnail-core-${{ matrix.name }}
+          PROBE_OUTCOME: ${{ steps.run-linux-thumbnail-core-probe.outcome }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$OUTPUT_ROOT"
+          printf '{"probe":"%s","repositorySha":"%s","runner":"%s"}\n' \
+            "$PROBE_OUTCOME" "$(git rev-parse HEAD)" "${{ matrix.name }}" \
+            > "$OUTPUT_ROOT/step-outcomes.json"
+
+      - name: Upload Linux thumbnail core diagnostics
+        id: upload-linux-thumbnail-core-diagnostics
+        if: ${{ always() && startsWith(matrix.name, 'linux-') }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: alhangeul-${{ matrix.name }}-thumbnail-core
+          path: diagnostics/thumbnail-core-${{ matrix.name }}/**
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Require Linux thumbnail core probe success
+        if: ${{ always() && startsWith(matrix.name, 'linux-') }}
+        shell: bash
+        env:
+          PROBE_OUTCOME: ${{ steps.run-linux-thumbnail-core-probe.outcome }}
+          UPLOAD_OUTCOME: ${{ steps.upload-linux-thumbnail-core-diagnostics.outcome }}
+        run: |
+          set -euo pipefail
+          [[ "$PROBE_OUTCOME" == success ]]
+          [[ "$UPLOAD_OUTCOME" == success ]]
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile

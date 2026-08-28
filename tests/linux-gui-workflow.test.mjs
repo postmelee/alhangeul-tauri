@@ -94,9 +94,13 @@ test('native Linux dependency와 driver version이 명시되고 환경 증거를
     'cups',
     'gir1.2-gtk-3.0',
     'libwebkit2gtk-4.1-0',
+    'nautilus',
     'poppler-utils',
     'printer-driver-cups-pdf',
     'python3-pyatspi',
+    'shared-mime-info',
+    'thunar',
+    'tumbler',
     'webkit2gtk-driver',
     'xdotool',
     'xvfb',
@@ -125,6 +129,38 @@ test('native Linux dependency와 driver version이 명시되고 환경 증거를
   assert.doesNotMatch(evidence, /tauri-driver --version/);
   assert.doesNotMatch(evidence, /WebKitWebDriver --version/);
   assert.doesNotMatch(evidence, /cupsd -v/);
+});
+
+test('Nautilus와 Thunar thumbnailer discovery는 disposable XDG 경로만 사용한다', () => {
+  const probe = stepContaining(workflow, 'Run Linux thumbnail manager contract probe');
+  assert.match(probe, /^        id: thumbnail-manager-probe$/m);
+  assert.match(probe, /^        continue-on-error: true$/m);
+  assert.match(probe, /^        timeout-minutes: 8$/m);
+  for (const marker of [
+    'mktemp -d "$RUNNER_TEMP/alhangeul-thumbnail-manager.XXXXXX"',
+    "trap 'rm -rf \"$probe_root\"' EXIT",
+    'XDG_DATA_HOME="$probe_root/data" update-mime-database',
+    'TryExec=%s',
+    'Exec=%s %%i %%o %%s',
+    'MimeType=application/x-hwp;application/vnd.hancom.hwpx;',
+    'run_manager nautilus',
+    'run_manager thunar',
+    'launch first 12',
+    'launch cached 5',
+    'launch changed 12',
+    'source_hashes_before',
+    'source_hashes_after',
+  ]) assert.ok(probe.includes(marker), `thumbnail probe marker가 필요합니다: ${marker}`);
+  assert.match(probe, /"\$manager" --quit/);
+  assert.doesNotMatch(probe, /sudo|\/usr\/share\/thumbnailers|pkill|killall/);
+  assert.doesNotMatch(probe, /\.cache\/thumbnails|rm -rf "\$HOME|rm -rf ~\//);
+
+  const record = stepContaining(workflow, 'step-outcomes.json');
+  const gate = stepContaining(workflow, 'Require Linux GUI acceptance success');
+  assert.match(record, /THUMBNAIL_MANAGER: \$\{\{ steps\.thumbnail-manager-probe\.outcome \}\}/);
+  assert.match(record, /"thumbnailManager":"%s"/);
+  assert.match(gate, /THUMBNAIL_MANAGER: \$\{\{ steps\.thumbnail-manager-probe\.outcome \}\}/);
+  assert.match(gate, /"\$THUMBNAIL_MANAGER"/);
 });
 
 test('Xvfb, DBus, AT-SPI와 CUPS-PDF는 repository fixture만 사용한다', () => {

@@ -195,6 +195,54 @@ test('Windows thumbnail core probe는 exact checkout에서 진단을 항상 보�
   }
 });
 
+test('Linux thumbnail core probe는 x64 arm64 resource 증거를 각각 보존한다', () => {
+  assertOrdered(desktopWorkflow, [
+    '- name: Prepare Linux thumbnail core diagnostics',
+    '- name: Run Linux thumbnail core probe',
+    '- name: Record Linux thumbnail core probe outcome',
+    '- name: Upload Linux thumbnail core diagnostics',
+    '- name: Require Linux thumbnail core probe success',
+    '- name: Install dependencies',
+  ]);
+  const installStep = getStepContaining(desktopWorkflow, 'Install Linux dependencies');
+  const probeStep = getStepContaining(
+    desktopWorkflow,
+    './scripts/benchmark-linux-thumbnail-core.sh',
+  );
+  const outcomeStep = getStepContaining(
+    desktopWorkflow,
+    'Record Linux thumbnail core probe outcome',
+  );
+  const uploadStep = getStepContaining(
+    desktopWorkflow,
+    'alhangeul-${{ matrix.name }}-thumbnail-core',
+  );
+  const gateStep = getStepContaining(
+    desktopWorkflow,
+    'Require Linux thumbnail core probe success',
+  );
+  for (const dependency of ['time', 'zip']) {
+    assert.match(installStep, new RegExp(`^            ${dependency}(?: \\\\)?$`, 'm'));
+  }
+  assert.match(probeStep, /^        id: run-linux-thumbnail-core-probe$/m);
+  assert.match(probeStep, /^        if: startsWith\(matrix\.name, 'linux-'\)$/m);
+  assert.match(probeStep, /^        continue-on-error: true$/m);
+  assert.match(probeStep, /"\$GITHUB_WORKSPACE\/third_party\/rhwp\/saved"/);
+  assert.match(probeStep, /diagnostics\/thumbnail-core-\$\{\{ matrix\.name \}\}/);
+  for (const step of [outcomeStep, uploadStep, gateStep]) {
+    assert.match(
+      step,
+      /^        if: \$\{\{ always\(\) && startsWith\(matrix\.name, 'linux-'\) \}\}$/m,
+    );
+  }
+  assert.match(uploadStep, /uses: actions\/upload-artifact@v7/);
+  assert.match(uploadStep, /path: diagnostics\/thumbnail-core-\$\{\{ matrix\.name \}\}\/\*\*/);
+  assert.match(uploadStep, /^          if-no-files-found: error$/m);
+  assert.match(uploadStep, /^          retention-days: 14$/m);
+  assert.match(gateStep, /steps\.run-linux-thumbnail-core-probe\.outcome/);
+  assert.match(gateStep, /steps\.upload-linux-thumbnail-core-diagnostics\.outcome/);
+});
+
 test('desktop workflow는 checkout commit을 검증하고 pretest를 순서대로 실행한다', () => {
   assert.match(
     desktopWorkflow,
