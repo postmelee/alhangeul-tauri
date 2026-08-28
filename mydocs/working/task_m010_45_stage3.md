@@ -80,6 +80,11 @@ Stage 3.11 피드백 보정에서는 권장 항목에만 적용했던 짙은 파
 사용한다. 권장 여부는 NSIS·AppImage 설명의 `권장` 문구로만 구분하며 hover에서만 모든 버튼이
 공통으로 짙어지도록 해 단일 accent color 체계로 정리했다.
 
+Stage 3.12 피드백 보정에서는 Windows NSIS와 Linux AppImage만 `낯선 문서`와 같은
+`var(--blue)` 주 버튼으로 유지했다. Windows MSI, Linux DEB/RPM과 arm64 DEB는 흰 배경·파란
+테두리·파란 다운로드 아이콘의 보조 버튼으로 분리했다. 모든 버튼의 기본 그림자는 1px/3px·8%
+불투명도로 낮추고 hover에서만 4px/10px·14%와 1px 이동을 적용해 클릭 가능성과 절제를 함께 유지했다.
+
 ## 산출물
 
 | 파일 | 변경 요약 |
@@ -87,18 +92,18 @@ Stage 3.11 피드백 보정에서는 권장 항목에만 적용했던 짙은 파
 | `site/index.html` (84줄) | 5개 다운로드 선택지에 실제 SVG 다운로드 아이콘을 추가하고 공통 최신 다운로드 fallback 보존 |
 | `site/updates/index.html` (69줄) | 참고 페이지 구조의 hero, SVG 꺾쇠가 있는 플랫폼 다운로드 dropdown, 압축된 updater 범위와 릴리즈 노트 안내 |
 | `site/feedback/index.html` (72줄) | 원본과 같은 hero·privacy note·contact card 계층으로 email 복사/작성과 GitHub Issue 안내 재구성 |
-| `site/styles.css` (176줄) | 제목 강조와 모든 설치 버튼을 같은 파란색으로 통일하고 실제 창 경계를 보존하는 제품 wrapper 적용 |
+| `site/styles.css` (180줄) | 주·보조 설치 버튼의 배경·테두리·아이콘·약한 shadow 위계와 실제 창 경계 보존 |
 | `site/script.js` (92줄) | unpublished 내부 안내와 published 홈·dropdown exact artifact 전환, release note hydration 공유 |
 | `site/assets/linux-editor.png` (1,282×924, 79,227 bytes) | 실제 Linux 네이티브 제목 표시줄과 HWP 편집 상태를 함께 보존한 대표 화면 |
-| `site/assets/og-main.png` (1,920×1,080, 332,544 bytes) | 단일 파란색 accent 체계의 홈을 PNG 공유 이미지로 재생성 |
+| `site/assets/og-main.png` (1,920×1,080, 316,646 bytes) | 주·보조 다운로드 버튼 위계를 반영한 홈을 PNG 공유 이미지로 재생성 |
 | `scripts/build-pages.mjs` (152줄) | 중첩 페이지의 root asset 경로를 depth에 맞춰 결정적으로 정규화 |
 | `scripts/check-pages.mjs` (235줄) | 홈·업데이트·문의 필수 파일과 내부 hash 대상 존재 검사를 추가 |
 | `tests/pages.test.mjs` (282줄) | 중첩 asset 출력, broken hash와 필수 페이지 누락 회귀 검사 추가 |
-| `tests/pages-design.test.mjs` (290줄) | 모든 버튼의 공통 파란 배경과 별도 accent override 부재, SVG 아이콘·OG SHA 계약 고정 |
-| `mydocs/orders/20260827.md`, `mydocs/orders/20260828.md` | Stage 3.6 이력 보존과 Stage 3.11 완료·Stage 4 승인 대기 기록 |
+| `tests/pages-design.test.mjs` (292줄) | 흰 보조 버튼·파란 주 버튼·아이콘 색상·약한 shadow와 OG SHA 계약 고정 |
+| `mydocs/orders/20260827.md`, `mydocs/orders/20260828.md` | Stage 3.6 이력 보존과 Stage 3.12 완료·Stage 4 승인 대기 기록 |
 
 대표 화면 SHA-256은 `a3d4460b8fc432f00a2ce97cd68552582b2f5dfdc88faec9f749e58be132618b`,
-공유 이미지 SHA-256은 `33be0b15d260f0d274ca6e25b742fe09a795b348c82b94b3376802c474a06943`이다.
+공유 이미지 SHA-256은 `289a94761c0337a112735e9ce891a3dea674328a0e32c038df92e20996d2bf43`이다.
 외부 package와 lockfile은 변경하지 않았고 모든 text source는 권장 300줄 상한 이하다.
 
 ## 본문 변경 정도 / 본문 무손실 여부
@@ -142,6 +147,10 @@ SVG 아이콘은 장식 요소로 숨겨 link accessible name도 기존 제목�
 
 Stage 3.11에서는 권장 버튼의 색상 override만 제거했다. `accent` class, 설치 형식 문구와 link
 계약은 보존했으며, 색상 외 DOM·accessible name·release hydration 동작은 변경하지 않았다.
+
+Stage 3.12에서는 기존 `accent` class를 주 버튼 스타일에 다시 사용하고 나머지 세 링크를 보조
+스타일로만 분리했다. href, `data-download-target`, 설치 형식 문구, SVG DOM과 release hydration은
+변경하지 않아 공개 전 안내와 published exact artifact 전환 계약을 그대로 보존한다.
 
 제품 실행 코드, Pages workflow, `site/release.json` schema와 updater endpoint는 변경하지 않았다.
 `release.json`은 계속 `unreleased`, 세 download 값은 null, manifest는 비게시 상태다.
@@ -231,6 +240,10 @@ git diff --check
   다섯 버튼과 아이콘은 362px 본문 안에 유지되며 대표 제품 화면은 기존 responsive 규칙대로 숨김
 - OK — Stage 3.11 1,280×720과 390×844에서 `낯선 문서`와 다섯 버튼 배경이 모두
   `rgb(0, 102, 204)`로 정확히 일치하고 두 viewport 모두 가로·세로 스크롤 없음
+- OK — Stage 3.12 1,280×720과 390×844에서 NSIS·AppImage는 `rgb(0, 102, 204)` 배경과 흰
+  아이콘, MSI·DEB/RPM·arm64 DEB는 흰 배경·`rgb(0, 102, 204)` 테두리와 아이콘으로 정확히 분리
+- OK — 다섯 버튼의 기본 shadow는 `0 1px 3px rgba(0, 72, 145, 0.08)`이고 두 viewport 모두
+  document와 viewport 크기가 같아 가로·세로 스크롤 없음
 - OK — 1,920×1,080 공유 화면에서 네이티브 제목 표시줄을 포함한 단일 실제 제품 화면,
   플랫폼별 다운로드 목차, Footer와 document 1,920×1,080을 확인하고 PNG 크기·SHA-256을 고정
 
