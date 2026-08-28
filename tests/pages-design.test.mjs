@@ -32,19 +32,21 @@ test('홈은 한 화면 설치 안내와 개별 페이지 탐색 계약을 지�
     'href="https://github.com/postmelee/alhangeul-tauri"',
   ]) assert.match(html, new RegExp(escapeRegExp(marker)));
 
-  assert.equal([...html.matchAll(/class="install-link(?: [^"]+)?"/g)].length, 5);
-  assert.equal([...html.matchAll(/class="install-link-icon"/g)].length, 5);
+  assert.equal([...html.matchAll(/class="install-row"/g)].length, 5);
+  assert.equal([...html.matchAll(/class="install-action"/g)].length, 5);
   assert.equal([...html.matchAll(/href="updates\/#latest-download"/g)].length, 5);
+  assert.equal([...html.matchAll(/>다운로드<\/a>/g)].length, 3);
+  assert.equal([...html.matchAll(/>설치 안내<\/a>/g)].length, 2);
 
   assert.doesNotMatch(html, /Windows &amp; Linux · Open source/);
   assert.match(html, /HWP\/HWPX/);
   assert.match(html, /<h2 id="install-title">다운로드<\/h2>/);
   assert.equal([...html.matchAll(/class="install-platform-group"/g)].length, 2);
-  assert.match(html, /<h3 id="windows-download-title">Windows<\/h3>[\s\S]*?<strong>x64<\/strong><span>NSIS/);
-  assert.match(html, /<h3 id="linux-download-title">Linux<\/h3>[\s\S]*?<strong>arm64<\/strong><span>DEB/);
+  assert.match(html, /<h3 id="windows-download-title">Windows<\/h3>[\s\S]*?<strong>x64<\/strong><span class="install-format">NSIS<\/span><span class="install-purpose">일반 설치<\/span><span class="install-badge">권장<\/span>/);
+  assert.match(html, /<h3 id="linux-download-title">Linux<\/h3>[\s\S]*?<strong>arm64<\/strong><span class="install-format">DEB<\/span><span class="install-purpose">수동 설치<\/span>/);
   assert.equal([...html.matchAll(/class="headline-line"/g)].length, 3);
   assert.match(html, /<span class="headline-line">더 이상 <em>낯선 문서<\/em>가<\/span>/);
-  assert.doesNotMatch(html, /<nav[^>]*>[\s\S]*?>다운로드<\/a>/);
+  assert.doesNotMatch(html, /<a class="header-link"[^>]*>다운로드<\/a>/);
   assert.equal([...html.matchAll(/<a[^>]+data-download-target=/g)].length, 3);
   assert.equal([...html.matchAll(/assets\/linux-editor\.png/g)].length, 1);
   assert.match(html, /assets\/linux-editor\.png\?v=45-3-9/);
@@ -73,7 +75,7 @@ test('홈·업데이트·문의 페이지는 승인된 메뉴와 공유 메타�
     assert.match(html, /<title>[^<]+<\/title>/);
     assert.match(html, /<meta name="description" content="[^"]+" \/>/);
     assert.match(html, /<meta property="og:image" content="https:\/\/postmelee\.github\.io\/alhangeul-tauri\/assets\/og-main\.png" \/>/);
-    assert.match(html, /styles\.css\?v=45-3-12/);
+    assert.match(html, /styles\.css\?v=45-3-13/);
     assert.match(html, new RegExp(`<link rel="canonical" href="${escapeRegExp(expected.canonical)}" \\/>`));
     assert.match(html, /href="https:\/\/github\.com\/postmelee\/alhangeul-tauri"/);
     for (const link of expected.links) {
@@ -194,7 +196,7 @@ test('소셜 공유 이미지는 홈을 담는 16:9 PNG로 고정한다', async 
   assert.equal(png.readUInt32BE(20), 1080);
   assert.equal(
     createHash('sha256').update(png).digest('hex'),
-    '289a94761c0337a112735e9ce891a3dea674328a0e32c038df92e20996d2bf43',
+    '0f86fd43cac100a960a5a1a17b2fdea6f354a73fa17a7954118970db5343605c',
   );
 });
 
@@ -234,13 +236,13 @@ test('홈은 일반 화면에서 스크롤을 막고 작은 화면 fallback과 �
   assert.match(css, /\.updates-section h2 \{[^}]*font-size: 26px/);
   assert.match(css, /\.feedback-contact-card h2 \{[^}]*font-size: 26px/);
   assert.match(css, /\.install-heading h2 \{[^}]*font-size: 17px/);
-  assert.match(css, /\.install-link strong \{[^}]*font-size: 15px/);
-  assert.match(css, /\.install-link span \{[^}]*font-size: 12px/);
-  assert.match(css, /\.install-link \{[^}]*background: var\(--paper\); color: var\(--ink\);[^}]*box-shadow: 0 1px 3px rgba\(0, 72, 145, 0\.08\)/);
-  assert.match(css, /\.install-link\.accent \{ background: var\(--blue\); color: white; \}/);
-  assert.match(css, /\.install-link-icon \{[^}]*color: var\(--blue\)/);
-  assert.match(css, /\.install-link\.accent \.install-link-icon \{ color: white; \}/);
-  assert.match(css, /\.install-link-icon path \{[^}]*stroke: currentcolor/);
+  assert.match(css, /\.install-row \{[^}]*grid-template-columns: minmax\(0, 1fr\) auto/);
+  assert.match(css, /\.install-row-details \{[^}]*grid-template-columns: 44px 78px minmax\(0, 1fr\) auto/);
+  assert.match(css, /\.install-row-details strong \{[^}]*font-size: 14px/);
+  assert.match(css, /\.install-purpose \{[^}]*font-size: 12px/);
+  assert.match(css, /\.install-badge \{[^}]*border-radius: 999px;[^}]*background: var\(--blue-soft\)/);
+  assert.match(css, /\.install-action \{[^}]*min-height: 34px;[^}]*border-radius: 999px; background: var\(--blue\); color: white;/);
+  assert.match(css, /\.install-action:hover \{[^}]*background: var\(--blue-dark\);[^}]*box-shadow: 0 4px 10px rgba\(0, 72, 145, 0\.16\)/);
   assert.match(css, /\.page-action-button \{[^}]*min-height: 46px;[^}]*font-size: 16px/);
   assert.match(css, /\.page-secondary-link \{[^}]*min-height: 42px;[^}]*font-size: 14px/);
   assert.match(css, /\.site-footer \{[^}]*padding: 18px 0[^}]*font-size: 13px/);
