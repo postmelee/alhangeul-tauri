@@ -36,6 +36,7 @@ test('홈은 한 화면 설치 안내와 개별 페이지 탐색 계약을 지�
   assert.equal([...html.matchAll(/class="download-platform-panel [^"]+-panel"/g)].length, 2);
   assert.equal([...html.matchAll(/class="download-package-option"/g)].length, 5);
   assert.equal([...html.matchAll(/class="download-package-action"/g)].length, 5);
+  assert.equal([...html.matchAll(/<a class="download-package-action"/g)].length, 5);
   assert.equal([...html.matchAll(/href="updates\/#latest-download"/g)].length, 5);
   assert.equal([...html.matchAll(/data-download-state="home"/g)].length, 5);
 
@@ -47,7 +48,8 @@ test('홈은 한 화면 설치 안내와 개별 페이지 탐색 계약을 지�
   assert.match(html, /class="download-platform-panel windows-panel"[\s\S]*?<strong>NSIS<\/strong>/);
   assert.match(html, /class="download-platform-panel linux-panel"[\s\S]*?<strong>AppImage<\/strong>/);
   assert.equal([...html.matchAll(/data-download-state="home">다운로드<\/span>/g)].length, 5);
-  assert.doesNotMatch(html, /class="install-row|class="install-action|download-recommended|download-primary-action|download-secondary-option/);
+  assert.doesNotMatch(html, /<a class="download-package-option"|class="install-row|class="install-action|download-recommended|download-primary-action|download-secondary-option/);
+  assert.match(html, /<p class="home-summary">HWP\/HWPX 문서를 열고, 편집하고, 저장하세요\.<\/p>/);
   assert.doesNotMatch(html, /플랫폼과 용도에 맞는 설치 방식을 한곳에서 안내합니다/);
   assert.equal([...html.matchAll(/class="headline-line"/g)].length, 3);
   assert.match(html, /<span class="headline-line">더 이상 <em>낯선 문서<\/em>가<\/span>/);
@@ -80,7 +82,7 @@ test('홈·업데이트·문의 페이지는 승인된 메뉴와 공유 메타�
     assert.match(html, /<title>[^<]+<\/title>/);
     assert.match(html, /<meta name="description" content="[^"]+" \/>/);
     assert.match(html, /<meta property="og:image" content="https:\/\/postmelee\.github\.io\/alhangeul-tauri\/assets\/og-main\.png" \/>/);
-    assert.match(html, /styles\.css\?v=45-3-16/);
+    assert.match(html, /styles\.css\?v=45-3-17/);
     assert.match(html, new RegExp(`<link rel="canonical" href="${escapeRegExp(expected.canonical)}" \\/>`));
     assert.match(html, /href="https:\/\/github\.com\/postmelee\/alhangeul-tauri"/);
     for (const link of expected.links) {
@@ -209,7 +211,7 @@ test('소셜 공유 이미지는 홈을 담는 16:9 PNG로 고정한다', async 
   assert.equal(png.readUInt32BE(20), 1080);
   assert.equal(
     createHash('sha256').update(png).digest('hex'),
-    '3dbb74029b0d61b5394d20abfa39c31d7a0158afa3bb6eecfece1d6768c2d182',
+    '8e478814d1bcebc233adc82cbdaed0d796c8214c3c6e3fcc1fd78587702ed54d',
   );
 });
 
@@ -248,6 +250,8 @@ test('홈은 일반 화면에서 스크롤을 막고 작은 화면 fallback과 �
   assert.match(css, /\.download-package-copy \{[^}]*grid-template-columns: 76px minmax\(0, 1fr\)/);
   assert.match(css, /\.download-package-copy strong \{[^}]*font-size: 14px; font-weight: 650/);
   assert.match(css, /\.download-package-action \{[^}]*min-width: 76px; min-height: 32px;[^}]*background: var\(--blue\); color: white; font-size: 12px/);
+  assert.match(css, /\.download-package-action:hover \{[^}]*background: var\(--blue-dark\)/);
+  assert.doesNotMatch(css, /\.download-package-option:hover/);
   for (const pattern of [/\.page-action-button \{[^}]*min-height: 46px;[^}]*font-size: 16px/, /\.page-secondary-link \{[^}]*min-height: 42px;[^}]*font-size: 14px/, /\.site-footer \{[^}]*padding: 18px 0[^}]*font-size: 13px/, /\.site-footer-inner \{[^}]*width: min\(980px, calc\(100% - 40px\)\)[^}]*grid-template-columns: minmax\(140px, 1fr\)/, /\.footer-brand img \{[^}]*width: 24px; height: 24px/, /\.updates-page \+ \.site-footer \{ margin-top: 48px; \}/]) assert.match(css, pattern);
   assert.match(script, /fetch\(`\$\{siteRoot\}release\.json`/);
   assert.match(script, /navigator\.clipboard\.writeText/);
