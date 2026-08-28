@@ -33,13 +33,7 @@ test('홈은 한 화면 설치 안내와 개별 페이지 탐색 계약을 지�
   ]) assert.match(html, new RegExp(escapeRegExp(marker)));
 
   assert.equal([...html.matchAll(/class="install-link(?: [^"]+)?"/g)].length, 5);
-  for (const target of [
-    'updates/#windows-nsis',
-    'updates/#windows-msi',
-    'updates/#linux-appimage',
-    'updates/#linux-packages',
-    'updates/#linux-arm64',
-  ]) assert.match(html, new RegExp(`href="${escapeRegExp(target)}"`));
+  assert.equal([...html.matchAll(/href="updates\/#latest-download"/g)].length, 5);
 
   assert.doesNotMatch(html, /Windows &amp; Linux · Open source/);
   assert.match(html, /HWP\/HWPX/);
@@ -51,6 +45,8 @@ test('홈은 한 화면 설치 안내와 개별 페이지 탐색 계약을 지�
   assert.match(html, /<span class="headline-line">더 이상 <em>낯선 문서<\/em>가<\/span>/);
   assert.doesNotMatch(html, /<nav[^>]*>[\s\S]*?>다운로드<\/a>/);
   assert.equal([...html.matchAll(/<a[^>]+data-download-target=/g)].length, 3);
+  assert.equal([...html.matchAll(/assets\/linux-editor\.png/g)].length, 1);
+  assert.doesNotMatch(html, /assets\/windows-app\.png|linux-window|windows-window|platform-dot/);
   assert.doesNotMatch(html, /releases\/download\//);
 });
 
@@ -75,7 +71,7 @@ test('홈·업데이트·문의 페이지는 승인된 메뉴와 공유 메타�
     assert.match(html, /<title>[^<]+<\/title>/);
     assert.match(html, /<meta name="description" content="[^"]+" \/>/);
     assert.match(html, /<meta property="og:image" content="https:\/\/postmelee\.github\.io\/alhangeul-tauri\/assets\/og-main\.png" \/>/);
-    assert.match(html, /styles\.css\?v=45-3-6/);
+    assert.match(html, /styles\.css\?v=45-3-7/);
     assert.match(html, new RegExp(`<link rel="canonical" href="${escapeRegExp(expected.canonical)}" \\/>`));
     assert.match(html, /href="https:\/\/github\.com\/postmelee\/alhangeul-tauri"/);
     for (const link of expected.links) {
@@ -100,30 +96,18 @@ test('업데이트 페이지는 MSI·NSIS·AppImage와 수동 설치 범위를 f
   ]) {
     assert.match(html, new RegExp(`<span[^>]+data-download-target="${target}"`));
   }
-  assert.match(html, /<details class="download-picker">/);
+  assert.match(html, /<details class="download-picker" id="latest-download">/);
   assert.match(html, /<summary class="page-action-button">[\s\S]*최신 버전 다운로드[\s\S]*<svg class="download-chevron"/);
   assert.match(html, /<path d="m4 6 4 4 4-4"><\/path>/);
   assert.doesNotMatch(html, /⌄/);
   assert.match(html, /class="release-note-list"/);
   assert.match(html, /data-release-note/);
   assert.match(html, /앱에서 업데이트 확인/);
-  assert.match(html, /설치 형식/);
   assert.match(html, /릴리즈 노트/);
+  assert.match(html, /DEB·RPM과 Linux arm64는 GitHub Releases/);
+  assert.doesNotMatch(html, /설치 형식|업데이트 manifest 주소|updater\/stable\.json/);
   assert.doesNotMatch(html, /Updates &amp; installation/i);
   assert.doesNotMatch(html, /platform-card|download-action/);
-  for (const id of [
-    'windows-nsis',
-    'windows-msi',
-    'linux-appimage',
-    'linux-packages',
-    'linux-arm64',
-  ]) assert.match(html, new RegExp(`id="${id}"`));
-
-  assert.match(html, /Linux x64 DEB · RPM/);
-  assert.match(html, /Linux arm64 DEB/);
-  assert.match(html, /Linux x64 AppImage/);
-  assert.match(html, /지금은 manifest가 존재하지 않습니다/);
-  assert.match(html, /https:\/\/postmelee\.github\.io\/alhangeul-tauri\/updater\/stable\.json/);
   assert.doesNotMatch(html, /releases\/download\//);
 });
 
@@ -131,7 +115,7 @@ test('published release hydration은 홈과 dropdown을 exact artifact로 직접
   const source = await readSite('script.js', 'utf8');
   const homeAction = fakeElement('A', { textContent: 'Windows x64 NSIS · 일반 설치' });
   homeAction.dataset.downloadTarget = 'windows-x86_64-nsis';
-  homeAction.href = 'updates/#windows-nsis';
+  homeAction.href = 'updates/#latest-download';
   const menuAction = fakeElement('SPAN', { textContent: 'Linux x64 AppImage · 준비 중' });
   menuAction.dataset.downloadTarget = 'linux-x86_64-appimage';
   const message = { textContent: '' };
@@ -191,7 +175,7 @@ test('문의 페이지는 개인정보 안내와 이메일·Issue 경로를 제�
   assert.match(html, /rhwp upstream으로 분류/);
 });
 
-test('홈에 쓰는 실제 제품 화면은 고정한 크기와 SHA-256을 유지한다', async () => {
+test('검증된 실제 제품 화면 자산은 고정한 크기와 SHA-256을 유지한다', async () => {
   for (const [path, expected] of Object.entries(screenshots)) {
     const png = await readSite(path);
     assert.equal(png.subarray(1, 4).toString(), 'PNG');
@@ -208,7 +192,7 @@ test('소셜 공유 이미지는 홈을 담는 16:9 PNG로 고정한다', async 
   assert.equal(png.readUInt32BE(20), 1080);
   assert.equal(
     createHash('sha256').update(png).digest('hex'),
-    '556a85f463018f198e3cb3d76ceeb47cbfc40e2113d81c9bd47fd00295038e94',
+    '33497f704e9c7369ea2e86556523280a75e0527f8a7e706c69340c2429c31427',
   );
 });
 

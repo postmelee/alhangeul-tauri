@@ -52,24 +52,30 @@ Stage 3.6 피드백 보정에서는 HOP의 설치 선택 구조를 참고해 홈
 Header와 정확히 같은 좌우 기준선을 사용하고, 820px·520px breakpoint에서도 각 Header padding과
 같은 16px·12px를 사용하도록 정렬했다.
 
+Stage 3.7 피드백 보정에서는 업데이트 페이지의 성격과 홈 다운로드 선택지의 중복을 줄이기 위해
+`설치 형식` 목록과 공개 전 manifest 주소 노출을 제거했다. updater 지원 범위는 `앱에서 업데이트
+확인` 한 문단에 압축하고, 홈의 다섯 설치 선택지는 공개 전 모두 업데이트 페이지의 최신 다운로드
+dropdown으로 연결했다. 홈의 겹친 Windows/Linux 화면은 검증된 실제 Linux HWP 편집 화면 하나로
+통일해 제품 화면의 가독성과 시각 초점을 높였다.
+
 ## 산출물
 
 | 파일 | 변경 요약 |
 |---|---|
-| `site/index.html` (89줄) | Windows/Linux 목차 아래 x64·arm64 환경을 배치한 5개 다운로드 선택지와 Header 기준선 Footer로 홈 재구성 |
-| `site/updates/index.html` (85줄) | 참고 페이지 구조의 hero, SVG 꺾쇠가 있는 플랫폼 다운로드 dropdown, 설치 형식·릴리즈 노트·manifest 안내 |
+| `site/index.html` (84줄) | 5개 다운로드 선택지의 공통 최신 다운로드 fallback과 검증된 실제 HWP 편집 화면 하나로 홈 보정 |
+| `site/updates/index.html` (69줄) | 참고 페이지 구조의 hero, SVG 꺾쇠가 있는 플랫폼 다운로드 dropdown, 압축된 updater 범위와 릴리즈 노트 안내 |
 | `site/feedback/index.html` (72줄) | 원본과 같은 hero·privacy note·contact card 계층으로 email 복사/작성과 GitHub Issue 안내 재구성 |
-| `site/styles.css` (186줄) | 플랫폼 목차·환경별 선택지와 Header 폭을 공유하는 13px/61px Footer의 responsive 위계를 통합 |
+| `site/styles.css` (174줄) | 단일 제품 화면과 플랫폼 목차·환경별 선택지, Header 폭을 공유하는 13px/61px Footer responsive 위계 통합 |
 | `site/script.js` (92줄) | unpublished 내부 안내와 published 홈·dropdown exact artifact 전환, release note hydration 공유 |
-| `site/assets/og-main.png` (1,920×1,080, 197,210 bytes) | 플랫폼별 다운로드 목차와 정렬된 Footer를 반영한 홈 화면으로 공유 이미지 재생성 |
+| `site/assets/og-main.png` (1,920×1,080, 292,533 bytes) | 단일 실제 제품 화면, 플랫폼별 다운로드 목차와 정렬된 Footer를 반영한 공유 이미지 재생성 |
 | `scripts/build-pages.mjs` (152줄) | 중첩 페이지의 root asset 경로를 depth에 맞춰 결정적으로 정규화 |
 | `scripts/check-pages.mjs` (235줄) | 홈·업데이트·문의 필수 파일과 내부 hash 대상 존재 검사를 추가 |
 | `tests/pages.test.mjs` (282줄) | 중첩 asset 출력, broken hash와 필수 페이지 누락 회귀 검사 추가 |
-| `tests/pages-design.test.mjs` (300줄) | CSS version, 플랫폼 목차·Footer inner 폭, action 높이와 direct-download 계약 고정 |
-| `mydocs/orders/20260827.md` | Stage 3 완료와 Stage 4 승인 대기로 진행 상태 갱신 |
+| `tests/pages-design.test.mjs` (284줄) | CSS version, 공통 최신 다운로드 fallback, 단일 대표 화면과 direct-download 계약 고정 |
+| `mydocs/orders/20260827.md`, `mydocs/orders/20260828.md` | Stage 3.6 이력 보존과 Stage 3.7 완료·Stage 4 승인 대기 기록 |
 
 공유 이미지 SHA-256은
-`556a85f463018f198e3cb3d76ceeb47cbfc40e2113d81c9bd47fd00295038e94`이다. 외부 package와
+`33497f704e9c7369ea2e86556523280a75e0527f8a7e706c69340c2429c31427`이다. 외부 package와
 lockfile은 변경하지 않았고 모든 text source는 권장 300줄 상한 이하다.
 
 ## 본문 변경 정도 / 본문 무손실 여부
@@ -90,6 +96,12 @@ Stage 3.5에서는 작업지시자의 위계 피드백에 따라 Footer의 장�
 Stage 3.6에서는 설치 선택지의 텍스트 계층과 Footer wrapper만 다시 구성했다. 기존 다섯 href,
 세 `data-download-target`, published hydration과 미게시 안내 의미는 그대로 보존했으며, Header와
 Footer의 페이지 이동·외부 링크 계약도 변경하지 않았다.
+
+Stage 3.7에서는 소비자에게 중복되는 설치 형식 목록과 아직 게시하지 않은 manifest endpoint만
+제거했다. 세 `data-download-target`과 published hydration은 그대로라 공개 릴리스 뒤 NSIS·MSI·
+AppImage의 exact artifact 직접 다운로드 동작은 보존된다. 공개 전 다섯 href는 존재하지 않는 세부
+anchor 대신 `#latest-download`로 통일했다. 실제 제품 증적은 삭제하지 않고 Linux 자산 하나만 홈에
+표시하며, 기존 Windows 자산은 검증 증적으로 저장소에 보존한다.
 
 제품 실행 코드, Pages workflow, `site/release.json` schema와 updater endpoint는 변경하지 않았다.
 `release.json`은 계속 `unreleased`, 세 download 값은 null, manifest는 비게시 상태다.
@@ -160,8 +172,14 @@ git diff --check
   모두 x=12~378, 366px로 일치하며 Windows/Linux 목차와 x64·arm64 선택지가 viewport 안에 유지
 - OK — Stage 3.6 1,280×720 feedback도 Header와 Footer inner가 x=150~1,130, 980px로 일치하고
   updates의 action·Footer 역시 같은 980px 기준선을 사용
-- OK — 1,920×1,080 공유 화면에서 플랫폼별 다운로드 목차, Footer 61px와 document
-  1,920×1,080을 확인하고 새 PNG의 크기·SHA-256을 test로 고정
+- OK — Stage 3.7 1,280×720 홈은 document 1,280×720로 스크롤이 없고 실제 Linux HWP 편집 화면
+  하나만 x=645~1,180, 535px 폭으로 표시하며 겹친 가상 window label은 없음
+- OK — Stage 3.7 1,280×720 updates에는 `알한글 업데이트`, `앱에서 업데이트 확인`, `릴리즈 노트`
+  세 heading만 남고 설치 형식 목록과 manifest 주소가 표시되지 않음
+- OK — Stage 3.7 390×844 updates는 document 폭 390px, action group x=20~370, 350px로 중앙 정렬되고
+  horizontal overflow 없이 같은 세 heading과 압축된 updater 범위를 유지
+- OK — 1,920×1,080 공유 화면에서 단일 실제 제품 화면, 플랫폼별 다운로드 목차, Footer 61px와
+  document 1,920×1,080을 확인하고 새 PNG의 크기·SHA-256을 test로 고정
 
 구현계획서의 FAQ용 native `<details>`는 최신 작업지시자가 홈 FAQ를 제거해 단일 화면으로
 보정하도록 한 범위와 충돌하므로 적용 대상에서 제외했다. 대신 updates의 다운로드 선택에는

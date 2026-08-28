@@ -20,7 +20,7 @@ async function setupReleaseData() {
         }
         hydrateReleaseNote(release);
     } catch {
-        // 공개 전 기본 안내와 내부 설치 안내 링크를 유지한다.
+        // 공개 전 기본 안내와 최신 다운로드 안내 링크를 유지한다.
     }
 }
 
