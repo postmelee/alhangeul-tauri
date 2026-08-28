@@ -2,7 +2,7 @@
 
 Alhangeul은 Windows Explorer가 `.hwp`와 `.hwpx` 파일의 첫 페이지 thumbnail을 요청할 때 작은 COM handler DLL과 제한된 별도 worker를 사용한다. 문서 parse와 raster는 Shell process 안에서 실행하지 않는다.
 
-Stage 6 VDI 수동 UI에서 일부 문서의 직접 bitmap에 text가 빠지는 결함을 확인해 Stage 6.1에서 font-aware raster와 representative visual gate를 보정하고 있다. 첫 수정본은 대표 3문서 visual gate와 Windows/Linux native build를 통과했지만, 일회성 Windows worker가 system font directory를 스캔하면서 fresh-install HWPX Shell 요청에 handler의 1,500 ms·256 MiB 제한 안에서 결과를 주지 못했다. worker를 번들 font database로 한정한 수정본의 Windows 자동 gate와 Explorer 재수용이 끝나기 전에는 공개 installer나 release 완료로 보지 않는다.
+Stage 6 VDI 수동 UI에서 일부 문서의 직접 bitmap에 text가 빠지는 결함을 확인해 Stage 6.1에서 font-aware raster와 representative visual gate를 보정했다. 일회성 Windows worker는 system font directory를 스캔하지 않고 pinned NotoSansKR 두 파일만 process-local database에 등록한다. exact SHA `2a1a9c556fdb844ecea4fddb0a6336d9d9481078`의 CI, Windows/Linux native build, fresh-install MSI·NSIS 실제 Shell bitmap smoke와 Windows VDI Explorer 재수용이 모두 통과했다. 이는 공개 installer, release, 서명이나 updater 승인을 뜻하지 않는다.
 
 ## 고정 계약
 
@@ -153,7 +153,7 @@ build script는 DLL과 worker를 고정 filename으로 stage하고 PE x64 machin
 
 ## 수동 Explorer gate와 한계
 
-Stage 6에서는 source와 hosted 자동 gate를 통과한 같은 exact SHA의 installer를 Windows VDI에 설치해 다음을 확인한다.
+Stage 6과 시각 보정 Stage 6.1에서는 source와 hosted 자동 gate를 통과한 같은 exact SHA의 installer를 Windows VDI에 설치해 다음을 확인한다.
 
 1. HWP와 HWPX의 첫 페이지가 Explorer에서 파일별로 구분되어 보인다.
 2. 작은·중간·큰·매우 큰 아이콘 보기와 100%·고DPI 환경에서 비율과 여백이 정상이다.
@@ -161,6 +161,8 @@ Stage 6에서는 source와 hosted 자동 gate를 통과한 같은 exact SHA의 i
 4. 손상, 암호화, 제한 초과 문서는 Explorer를 멈추지 않고 일반 icon으로 fallback한다.
 5. 한컴 설치 환경의 기존 handler/default app을 설치 전 snapshot대로 보존하고 제거 뒤 복원한다.
 6. install, Explorer 사용과 uninstall 뒤 orphan worker, 제품 registry와 backup 상태가 남지 않는다.
+
+Stage 6.1 수용본은 exact SHA `2a1a9c556fdb844ecea4fddb0a6336d9d9481078`이다. CI run `33044851424`와 desktop artifact run `33044853129`가 성공했고, installer smoke job `98431213787`은 MSI·NSIS 각각에서 HWP와 embedded preview가 없는 HWPX의 256 px 실제 Shell bitmap을 `HRESULT=0`으로 확인했다. 2026-08-28 Windows VDI에서는 온새미로, `biz_plan`, `form-002`의 text/background/table과 첫 페이지 비율을 재수용했다. 복학원서 왼쪽 위의 고려대학교 문장과 wordmark는 원본 PDF·upstream 기대 이미지와 위치·내용이 일치하며, 256 px 축소에서 세밀한 검은 선이 뭉쳐 보이는 것은 허용 가능한 축소 결과로 판정했다.
 
 unsigned test installer는 Windows SmartScreen이나 보안 정책에 의해 차단될 수 있다. 이는 코드 서명이나 공개 배포를 승인한 것이 아니며, VDI에서는 검증용 exact artifact와 SHA를 확인한 뒤 조직 정책 안에서만 실행한다. 자동 gate와 수동 UI gate가 모두 Go여도 release tag, GitHub Release, 서명, package 게시와 updater는 별도 승인 작업이다.
 

@@ -441,7 +441,7 @@ Task #14 Stage 6: Windows Explorer exact-SHA thumbnail 수용 확정
 - `docs/architecture/WINDOWS_THUMBNAILS.md`, `docs/DEVELOPMENT.md`
 - `mydocs/plans/task_m010_14_impl.md`
 - `mydocs/working/task_m010_14_stage6_1.md`
-- `mydocs/orders/20260826.md`, `mydocs/orders/20260827.md`
+- `mydocs/orders/20260826.md`, `mydocs/orders/20260827.md`, `mydocs/orders/20260828.md`
 
 ### 변경 내용
 
@@ -480,6 +480,7 @@ pnpm run clippy:thumbnail-handler:windows
 - 첫 candidate `b80cc10a226876abb826dce4b71ba0c866562104`의 CI run `33041176530`과 desktop run `33041178548`에서 온새미로 title/background와 `biz_plan` title 검사는 통과했지만 `biz_plan` 날짜 영역을 실제 SVG baseline 53.4%와 다른 35–50%로 지정해 실패했다. 날짜 영역을 50–56%로 보정하고 세 대표 문서를 독립 test로 분리한 뒤 새 exact SHA gate를 실행한다.
 - 두 번째 candidate `65860cf89e97ba8530b5d363b650c0f47d80b29e`의 CI run `33041482402`에서 대표 3개 visual test는 모두 통과했고, 최신 Clippy가 `usvg::Options`의 default 생성 뒤 field 재할당을 거부했다. 동일 options를 구조체 초기화식으로 표현해 기능 변경 없이 lint를 보정한다.
 - 세 번째 candidate `9c3d4f5e6fa79666af468cee4e80c29574a6f0ee`의 CI run `33041764734`와 desktop run `33041768181`에서 대표 3문서 visual gate, Windows/Linux build, Windows core probe와 artifact inventory는 통과했다. 그러나 fresh-install smoke job `98424713452`에서 MSI·NSIS 설치·등록·제거는 정상인 반면 embedded preview가 없는 HWPX 실제 Shell 요청이 각각 `0x8004b200`, `0x80040154`로 실패했다. 정상 문서의 native SVG 생성은 최대 83 ms·13,348,864 bytes였고 새 raster 단계와 기존 worker의 차이는 전체 system font database 구성이다. handler가 worker 오류를 단일 `E_FAIL`로 축약해 deadline과 Job memory 중 어느 제한인지는 진단만으로 구분할 수 없으므로, macOS 참조의 process-local bundled font 원칙을 더 엄격히 적용해 worker database를 두 NotoSansKR TTF로 한정하고 같은 exact-SHA gate를 반복한다.
+- 최종 candidate `2a1a9c556fdb844ecea4fddb0a6336d9d9481078`의 CI run `33044851424`와 desktop run `33044853129`가 성공했다. Windows/Linux x64·arm64 native gate와 artifact inventory가 통과했고, fresh-install smoke job `98431213787`은 MSI·NSIS 모두 HWP와 embedded preview가 없는 HWPX의 실제 256 px Shell bitmap을 `HRESULT=0`으로 반환하고 설치·재설치·제거·기존 연결 복원을 완료했다. 2026-08-28 VDI에서 온새미로, `biz_plan`, `form-002`의 text/background/table과 비율을 재수용했으며, 복학원서 왼쪽 위 문장은 원본·upstream 기대 이미지와 일치하는 허용 가능한 축소 결과로 판정했다.
 
 ### 커밋
 
