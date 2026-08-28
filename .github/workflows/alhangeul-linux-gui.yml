@@ -186,12 +186,15 @@ jobs:
             "$probe_root/data/thumbnailers" "$probe_root/source"
           cp third_party/rhwp/saved/blank2010.hwp "$probe_root/source/probe.hwp"
           cp third_party/rhwp/saved/blank_hwpx.hwpx "$probe_root/source/probe.hwpx"
-          source_hashes_before="$(sha256sum "$probe_root/source/probe.hwp" "$probe_root/source/probe.hwpx" | awk '{print $1}')"
+          head -c 64 "$probe_root/source/probe.hwp" > "$probe_root/source/probe-fail.hwp"
+          source_hashes_before="$(sha256sum "$probe_root/source/probe.hwp" \
+            "$probe_root/source/probe.hwpx" "$probe_root/source/probe-fail.hwp" | awk '{print $1}')"
+          fail_hash="$(sha256sum "$probe_root/source/probe-fail.hwp" | awk '{print $1}')"
           cat > "$probe_root/data/mime/packages/alhangeul-probe.xml" <<'XML'
           <?xml version="1.0" encoding="UTF-8"?>
           <mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
-            <mime-type type="application/x-hwp"><glob pattern="*.hwp"/></mime-type>
-            <mime-type type="application/vnd.hancom.hwpx"><glob pattern="*.hwpx"/></mime-type>
+            <mime-type type="application/x-hwp"><glob pattern="*.hwp" weight="100"/></mime-type>
+            <mime-type type="application/vnd.hancom.hwpx"><glob pattern="*.hwpx" weight="100"/></mime-type>
           </mime-info>
           XML
           XDG_DATA_HOME="$probe_root/data" update-mime-database "$probe_root/data/mime"
@@ -200,60 +203,116 @@ jobs:
           #!/usr/bin/env bash
           set -euo pipefail
           sha="$(sha256sum "$1" | awk '{print $1}')"
-          printf '{"sha256":"%s","edge":%s}\n' "$sha" "$3" >> "$ALHANGEUL_THUMBNAIL_INVOCATIONS"
-          printf '%s' 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M/wHwAF/gL+wsSFygAAAABJRU5ErkJggg==' \
-            | base64 --decode > "$2"
+          result=success
+          if [[ "$sha" == "$ALHANGEUL_THUMBNAIL_FAIL_SHA" ]]; then
+            printf partial-output > "$2"
+            result=partial-exit-42
+          else
+            printf '%s' 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M/wHwAF/gL+wsSFygAAAABJRU5ErkJggg==' \
+              | base64 --decode > "$2"
+          fi
+          printf '{"sha256":"%s","edge":%s,"result":"%s"}\n' "$sha" "$3" "$result" \
+            >> "$ALHANGEUL_THUMBNAIL_INVOCATIONS"
+          [[ "$result" == success ]] || exit 42
           STUB
           chmod 0755 "$stub"
           printf '[Thumbnailer Entry]\nTryExec=%s\nExec=%s %%i %%o %%s\nMimeType=application/x-hwp;application/vnd.hancom.hwpx;\n' \
             "$stub" "$stub" > "$probe_root/data/thumbnailers/alhangeul-probe.thumbnailer"
+          hwp_type="$(XDG_DATA_HOME="$probe_root/data" gio info -a standard::content-type \
+            "$probe_root/source/probe.hwp" | sed -n 's/.*standard::content-type: //p')"
+          hwpx_type="$(XDG_DATA_HOME="$probe_root/data" gio info -a standard::content-type \
+            "$probe_root/source/probe.hwpx" | sed -n 's/.*standard::content-type: //p')"
+          [[ "$hwp_type" == application/x-hwp ]]
+          [[ "$hwpx_type" == application/vnd.hancom.hwpx ]]
           run_manager() {
             local manager="$1" manager_root="$probe_root/$1" summary="$THUMBNAIL_EVIDENCE_ROOT/$1.json"
-            install -d "$manager_root/cache" "$manager_root/files"
+            local status=0
+            install -d "$manager_root/cache" "$manager_root/config" "$manager_root/files" \
+              "$manager_root/home" "$manager_root/logs" "$manager_root/runtime"
+            chmod 0700 "$manager_root/runtime"
+            touch "$manager_root/home/.gtk-bookmarks"
             cp "$probe_root/source/probe.hwp" "$manager_root/files/probe.hwp"
             cp "$probe_root/source/probe.hwpx" "$manager_root/files/probe.hwpx"
+            cp "$probe_root/source/probe-fail.hwp" "$manager_root/files/probe-fail.hwp"
             : > "$manager_root/invocations.ndjson"
             # shellcheck disable=SC2016
-            XDG_DATA_HOME="$probe_root/data" XDG_CACHE_HOME="$manager_root/cache" \
+            HOME="$manager_root/home" XDG_CONFIG_HOME="$manager_root/config" \
+              XDG_DATA_HOME="$probe_root/data" XDG_CACHE_HOME="$manager_root/cache" \
+              XDG_RUNTIME_DIR="$manager_root/runtime" \
               ALHANGEUL_THUMBNAIL_INVOCATIONS="$manager_root/invocations.ndjson" \
+              ALHANGEUL_THUMBNAIL_FAIL_SHA="$fail_hash" \
               xvfb-run --auto-servernum --server-args='-screen 0 1280x800x24 -nolisten tcp' \
               dbus-run-session -- bash -euo pipefail -c '
                 manager="$1"; files="$2"; log="$3"; summary="$4"
                 openbox >"$summary.openbox.log" 2>&1 & window_manager_pid=$!
                 trap '\''kill "$window_manager_pid" 2>/dev/null || true'\'' EXIT
+                if [[ "$manager" == nautilus ]]; then
+                  gsettings set org.gnome.nautilus.preferences show-image-thumbnails always
+                  gsettings set org.gnome.desktop.thumbnailers disable-all false
+                  # Stage 1 keeps the executable outside /usr. GNOME normally exposes only
+                  # /usr plus input/output to bwrap, so this probe-only marker selects the
+                  # upstream no-nested-sandbox path used when the caller is already sandboxed.
+                  export SNAP_NAME=alhangeul-thumbnail-probe
+                fi
                 launch() {
-                  local phase="$1" wait_seconds="$2"
-                  "$manager" "$files" >"$summary.$phase.stdout.log" 2>"$summary.$phase.stderr.log" & pid=$!
-                  sleep "$wait_seconds"
+                  local phase="$1" expected_delta="$2" wait_seconds="$3"
+                  local before after deadline
+                  before="$(wc -l < "$log")"
+                  G_MESSAGES_DEBUG=all "$manager" "$files" \
+                    >"$summary.$phase.stdout.log" 2>"$summary.$phase.stderr.log" & pid=$!
+                  if (( expected_delta == 0 )); then
+                    sleep "$wait_seconds"
+                  else
+                    deadline=$((SECONDS + wait_seconds))
+                    while (( SECONDS < deadline )); do
+                      after="$(wc -l < "$log")"
+                      if (( after >= before + expected_delta )); then
+                        break
+                      fi
+                      sleep 1
+                    done
+                  fi
+                  scrot "$summary.$phase.png"
                   "$manager" --quit >/dev/null 2>&1 || true
                   wait "$pid" || true
                 }
-                launch first 12
+                launch first 3 20
                 first="$(wc -l < "$log")"
-                launch cached 5
+                launch cached 0 5
                 cached="$(wc -l < "$log")"
-                touch "$files/probe.hwp" "$files/probe.hwpx"
-                launch changed 12
+                touch "$files/probe.hwp" "$files/probe.hwpx" "$files/probe-fail.hwp"
+                launch changed 3 20
                 changed="$(wc -l < "$log")"
-                [[ "$first" -ge 2 ]]
                 printf '\''{"manager":"%s","first":%s,"cached":%s,"changed":%s}\n'\'' \
                   "$manager" "$first" "$cached" "$changed" > "$summary"
+                [[ "$first" -ge 3 ]]
+                [[ "$cached" -eq "$first" ]]
+                [[ "$changed" -ge $((cached + 3)) ]]
               ' bash "$manager" "$manager_root/files" "$manager_root/invocations.ndjson" "$summary"
+            status=$?
             find "$manager_root/cache" -type f -printf '%f %s\n' | sort \
               > "$THUMBNAIL_EVIDENCE_ROOT/$manager-cache.txt"
             cp "$manager_root/invocations.ndjson" "$THUMBNAIL_EVIDENCE_ROOT/$manager-invocations.ndjson"
+            return "$status"
           }
-          run_manager nautilus
-          run_manager thunar
-          source_hashes_after="$(sha256sum "$probe_root/source/probe.hwp" "$probe_root/source/probe.hwpx" | awk '{print $1}')"
+          nautilus_status=0
+          thunar_status=0
+          run_manager nautilus || nautilus_status=$?
+          run_manager thunar || thunar_status=$?
+          source_hashes_after="$(sha256sum "$probe_root/source/probe.hwp" \
+            "$probe_root/source/probe.hwpx" "$probe_root/source/probe-fail.hwp" | awk '{print $1}')"
           [[ "$source_hashes_before" == "$source_hashes_after" ]]
           {
             nautilus --version
             thunar --version
             tumblerd --version 2>&1 || true
-            printf 'hwp %s\n' "$(XDG_DATA_HOME="$probe_root/data" gio info -a standard::content-type "$probe_root/source/probe.hwp" | sed -n 's/.*standard::content-type: //p')"
-            printf 'hwpx %s\n' "$(XDG_DATA_HOME="$probe_root/data" gio info -a standard::content-type "$probe_root/source/probe.hwpx" | sed -n 's/.*standard::content-type: //p')"
+            printf 'hwp %s\n' "$hwp_type"
+            printf 'hwpx %s\n' "$hwpx_type"
+            printf 'nautilus_status %s\n' "$nautilus_status"
+            printf 'thunar_status %s\n' "$thunar_status"
+            printf 'gnome_probe_sandbox disposable-executable-snap-marker\n'
           } > "$THUMBNAIL_EVIDENCE_ROOT/environment.txt"
+          [[ "$nautilus_status" -eq 0 && "$thunar_status" -eq 0 ]]
 
       - name: Install exact tauri-driver
         id: install-tauri-driver
