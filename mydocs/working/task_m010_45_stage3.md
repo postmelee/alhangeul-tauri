@@ -90,25 +90,29 @@ Stage 3.13 피드백 보정에서는 다섯 카드형 선택지를 Windows 2행�
 버튼으로 행동하도록 정렬했다. exact artifact 계약이 있는 NSIS·MSI·AppImage는 `다운로드`, 수동
 패키지인 DEB/RPM·arm64 DEB는 `설치 안내`로 구분하고 390px에서도 모든 행을 한 줄로 유지했다.
 
+Stage 3.14 피드백 보정에서는 검정·600~650에 몰린 다운로드 영역을 회색 단계로 분리했다. 다운로드
+제목은 15px `#6e6e73`, 플랫폼·용도·상태는 12px 이하 `#86868b`, 환경만 14px 검정으로 남겼다.
+세 직접 다운로드는 파란 채움, 두 설치 안내는 흰 배경·파란 테두리로 구분하고 기본 shadow를 제거했다.
+
 ## 산출물
 
 | 파일 | 변경 요약 |
 |---|---|
-| `site/index.html` (99줄) | Windows 2행·Linux 3행의 한 줄 설치 목록과 오른쪽 다운로드·설치 안내 버튼 구성 |
+| `site/index.html` (99줄) | 직접 다운로드 3개와 수동 설치 안내 2개에 의미별 button class 적용 |
 | `site/updates/index.html` (69줄) | 참고 페이지 구조의 hero, SVG 꺾쇠가 있는 플랫폼 다운로드 dropdown, 압축된 updater 범위와 릴리즈 노트 안내 |
 | `site/feedback/index.html` (72줄) | 원본과 같은 hero·privacy note·contact card 계층으로 email 복사/작성과 GitHub Issue 안내 재구성 |
-| `site/styles.css` (184줄) | 행별 환경·형식·용도·권장 위계와 desktop/mobile 공통 pill action 정렬 |
+| `site/styles.css` (186줄) | 제목·플랫폼·환경·형식·용도의 회색/크기/굵기 단계와 주·보조 pill action 정리 |
 | `site/script.js` (92줄) | unpublished 내부 안내와 published 홈·dropdown exact artifact 전환, release note hydration 공유 |
 | `site/assets/linux-editor.png` (1,282×924, 79,227 bytes) | 실제 Linux 네이티브 제목 표시줄과 HWP 편집 상태를 함께 보존한 대표 화면 |
-| `site/assets/og-main.png` (1,920×1,080, 321,309 bytes) | 동일 폭 5행 설치 목록과 우측 action을 반영한 홈 공유 이미지 |
+| `site/assets/og-main.png` (1,920×1,080, 315,203 bytes) | 새 텍스트 위계와 주·보조 action을 반영한 홈 공유 이미지 |
 | `scripts/build-pages.mjs` (152줄) | 중첩 페이지의 root asset 경로를 depth에 맞춰 결정적으로 정규화 |
 | `scripts/check-pages.mjs` (235줄) | 홈·업데이트·문의 필수 파일과 내부 hash 대상 존재 검사를 추가 |
 | `tests/pages.test.mjs` (282줄) | 중첩 asset 출력, broken hash와 필수 페이지 누락 회귀 검사 추가 |
-| `tests/pages-design.test.mjs` (294줄) | 5행·3 다운로드·2 설치 안내, pill style, responsive column과 OG SHA 계약 고정 |
-| `mydocs/orders/20260827.md`, `mydocs/orders/20260828.md` | Stage 3.6 이력 보존과 Stage 3.13 완료·Stage 4 승인 대기 기록 |
+| `tests/pages-design.test.mjs` (298줄) | 2개 secondary class, 회색 위계, shadow 없는 기본 action과 OG SHA 계약 고정 |
+| `mydocs/orders/20260827.md`, `mydocs/orders/20260828.md` | Stage 3.6 이력 보존과 Stage 3.14 완료·Stage 4 승인 대기 기록 |
 
 대표 화면 SHA-256은 `a3d4460b8fc432f00a2ce97cd68552582b2f5dfdc88faec9f749e58be132618b`,
-공유 이미지 SHA-256은 `0f86fd43cac100a960a5a1a17b2fdea6f354a73fa17a7954118970db5343605c`이다.
+공유 이미지 SHA-256은 `5b83c4ac94cd20aaffb572b0734e4f06182b668e2e8b5ec8903b34e744dd867a`이다.
 외부 package와 lockfile은 변경하지 않았고 모든 text source는 권장 300줄 상한 이하다.
 
 ## 본문 변경 정도 / 본문 무손실 여부
@@ -160,6 +164,9 @@ Stage 3.12에서는 기존 `accent` class를 주 버튼 스타일에 다시 사�
 Stage 3.13에서는 카드 DOM과 장식 SVG만 한 줄 목록으로 재구성했다. 기존 다섯 href와 세
 `data-download-target`을 보존해 published exact artifact 전환은 동일하며, 직접 URL 계약이 없는
 두 수동 패키지는 행동 이름만 `설치 안내`로 명확히 했다.
+
+Stage 3.14에서는 두 수동 링크에 시각용 `secondary` class만 추가했다. 다섯 href와 세 exact
+download target, 공개 전 fail-closed와 published hydration 동작은 모두 보존한다.
 
 제품 실행 코드, Pages workflow, `site/release.json` schema와 updater endpoint는 변경하지 않았다.
 `release.json`은 계속 `unreleased`, 세 download 값은 null, manifest는 비게시 상태다.
@@ -257,6 +264,10 @@ git diff --check
   470px 동일 폭이며 오른쪽 action은 76px 폭으로 같은 기준선에 정렬
 - OK — Stage 3.13 390×844 홈은 document 390×844로 스크롤이 없고 다섯 action은 x=304~376,
   72px 폭이며 `arm64`·`DEB`를 포함한 모든 행의 viewport 이탈 요소 0개
+- OK — Stage 3.14 1,280×720에서 다운로드 15px `rgb(110,110,115)`, 플랫폼·용도 12px
+  `rgb(134,134,139)`, 환경 14px `rgb(29,29,31)`이며 3개 채움·2개 테두리 action 확인
+- OK — Stage 3.14 390×844에서 다섯 행은 362px 폭, action은 x=304~376이고 viewport 이탈 요소 0개
+- OK — 무관한 `.claude/worktrees/pr-review-dc9f5b`를 제외한 격리 snapshot 제품 경계 248파일 통과
 - OK — 1,920×1,080 공유 화면에서 네이티브 제목 표시줄을 포함한 단일 실제 제품 화면,
   플랫폼별 다운로드 목차, Footer와 document 1,920×1,080을 확인하고 PNG 크기·SHA-256을 고정
 

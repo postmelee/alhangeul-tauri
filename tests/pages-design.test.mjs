@@ -33,7 +33,8 @@ test('홈은 한 화면 설치 안내와 개별 페이지 탐색 계약을 지�
   ]) assert.match(html, new RegExp(escapeRegExp(marker)));
 
   assert.equal([...html.matchAll(/class="install-row"/g)].length, 5);
-  assert.equal([...html.matchAll(/class="install-action"/g)].length, 5);
+  assert.equal([...html.matchAll(/class="install-action(?: secondary)?"/g)].length, 5);
+  assert.equal([...html.matchAll(/class="install-action secondary"/g)].length, 2);
   assert.equal([...html.matchAll(/href="updates\/#latest-download"/g)].length, 5);
   assert.equal([...html.matchAll(/>다운로드<\/a>/g)].length, 3);
   assert.equal([...html.matchAll(/>설치 안내<\/a>/g)].length, 2);
@@ -75,7 +76,7 @@ test('홈·업데이트·문의 페이지는 승인된 메뉴와 공유 메타�
     assert.match(html, /<title>[^<]+<\/title>/);
     assert.match(html, /<meta name="description" content="[^"]+" \/>/);
     assert.match(html, /<meta property="og:image" content="https:\/\/postmelee\.github\.io\/alhangeul-tauri\/assets\/og-main\.png" \/>/);
-    assert.match(html, /styles\.css\?v=45-3-13/);
+    assert.match(html, /styles\.css\?v=45-3-14/);
     assert.match(html, new RegExp(`<link rel="canonical" href="${escapeRegExp(expected.canonical)}" \\/>`));
     assert.match(html, /href="https:\/\/github\.com\/postmelee\/alhangeul-tauri"/);
     for (const link of expected.links) {
@@ -196,7 +197,7 @@ test('소셜 공유 이미지는 홈을 담는 16:9 PNG로 고정한다', async 
   assert.equal(png.readUInt32BE(20), 1080);
   assert.equal(
     createHash('sha256').update(png).digest('hex'),
-    '0f86fd43cac100a960a5a1a17b2fdea6f354a73fa17a7954118970db5343605c',
+    '5b83c4ac94cd20aaffb572b0734e4f06182b668e2e8b5ec8903b34e744dd867a',
   );
 });
 
@@ -235,14 +236,17 @@ test('홈은 일반 화면에서 스크롤을 막고 작은 화면 fallback과 �
   assert.match(css, /\.updates-hero > p \{[^}]*font-size: 21px/);
   assert.match(css, /\.updates-section h2 \{[^}]*font-size: 26px/);
   assert.match(css, /\.feedback-contact-card h2 \{[^}]*font-size: 26px/);
-  assert.match(css, /\.install-heading h2 \{[^}]*font-size: 17px/);
+  assert.match(css, /\.install-heading h2 \{[^}]*color: var\(--muted\); font-size: 15px; font-weight: 600/);
+  assert.match(css, /\.install-platform-group h3 \{[^}]*color: var\(--subtle\); font-size: 12px; font-weight: 600/);
   assert.match(css, /\.install-row \{[^}]*grid-template-columns: minmax\(0, 1fr\) auto/);
   assert.match(css, /\.install-row-details \{[^}]*grid-template-columns: 44px 78px minmax\(0, 1fr\) auto/);
   assert.match(css, /\.install-row-details strong \{[^}]*font-size: 14px/);
-  assert.match(css, /\.install-purpose \{[^}]*font-size: 12px/);
+  assert.match(css, /\.install-format \{ color: #424245; font-size: 12px; font-weight: 600/);
+  assert.match(css, /\.install-purpose \{[^}]*color: var\(--subtle\); font-size: 12px; font-weight: 400/);
   assert.match(css, /\.install-badge \{[^}]*border-radius: 999px;[^}]*background: var\(--blue-soft\)/);
-  assert.match(css, /\.install-action \{[^}]*min-height: 34px;[^}]*border-radius: 999px; background: var\(--blue\); color: white;/);
-  assert.match(css, /\.install-action:hover \{[^}]*background: var\(--blue-dark\);[^}]*box-shadow: 0 4px 10px rgba\(0, 72, 145, 0\.16\)/);
+  assert.match(css, /\.install-action \{[^}]*min-height: 32px;[^}]*border: 1px solid var\(--blue\); border-radius: 999px; background: var\(--blue\); color: white;[^}]*font-weight: 600/);
+  assert.match(css, /\.install-action\.secondary \{ background: var\(--paper\); color: var\(--blue\); \}/);
+  assert.match(css, /\.install-action:hover \{[^}]*background: var\(--blue-dark\); color: white;[^}]*box-shadow: 0 3px 8px rgba\(0, 72, 145, 0\.12\)/);
   assert.match(css, /\.page-action-button \{[^}]*min-height: 46px;[^}]*font-size: 16px/);
   assert.match(css, /\.page-secondary-link \{[^}]*min-height: 42px;[^}]*font-size: 14px/);
   assert.match(css, /\.site-footer \{[^}]*padding: 18px 0[^}]*font-size: 13px/);
