@@ -58,7 +58,7 @@ button { font: inherit; }
 .install-note { margin: 9px 0 0; color: var(--muted); font-size: 12px; line-height: 1.4; }
 .home-product { position: relative; display: flex; min-width: 0; height: min(650px, 76vh); align-items: center; justify-content: center; margin: 0; }
 .product-glow { position: absolute; inset: 8% 0; border-radius: 50%; background: radial-gradient(circle, rgba(0, 102, 204, 0.18), transparent 68%); filter: blur(28px); }
-.product-window { position: relative; z-index: 1; width: 100%; overflow: hidden; border: 1px solid #cfd2d8; border-radius: 13px; background: white; box-shadow: 0 28px 70px rgba(34, 46, 67, 0.17); }
+.product-window { position: relative; z-index: 1; width: 100%; overflow: hidden; border: 0; border-radius: 2px; background: white; box-shadow: 0 28px 70px rgba(34, 46, 67, 0.17); }
 .product-window img { width: 100%; height: auto; }
 .page-enter { animation: page-enter var(--standard) var(--ease) both; }
 .home-product.page-enter { animation-delay: 60ms; }

@@ -64,6 +64,11 @@ artifact의 성공한 `linux-system-print` 네이티브 전체 화면으로 교�
 창 제어 버튼과 실제 `biz_plan.hwp` 편집 화면을 모두 보존했다. 홈 최대 폭은 1,160px로 넓혀
 1,280px desktop에서 대표 화면을 약 639px로 표시하고, 같은 화면으로 OG 이미지를 다시 생성했다.
 
+Stage 3.9 피드백 보정에서는 네이티브 화면 자체의 1px 창 경계 위에 중복되던 13px CSS radius와
+1px 외곽 border를 제거했다. 제품 화면 wrapper는 2px 최소 radius와 기존 shadow만 사용해 실제
+제목 표시줄의 네 모서리와 창 제어 버튼이 잘리지 않도록 했고, 세 페이지 CSS와 대표 이미지 cache
+version을 함께 갱신했다.
+
 ## 산출물
 
 | 파일 | 변경 요약 |
@@ -71,18 +76,18 @@ artifact의 성공한 `linux-system-print` 네이티브 전체 화면으로 교�
 | `site/index.html` (84줄) | 5개 다운로드 선택지의 공통 최신 다운로드 fallback과 검증된 실제 HWP 편집 화면 하나로 홈 보정 |
 | `site/updates/index.html` (69줄) | 참고 페이지 구조의 hero, SVG 꺾쇠가 있는 플랫폼 다운로드 dropdown, 압축된 updater 범위와 릴리즈 노트 안내 |
 | `site/feedback/index.html` (72줄) | 원본과 같은 hero·privacy note·contact card 계층으로 email 복사/작성과 GitHub Issue 안내 재구성 |
-| `site/styles.css` (174줄) | 단일 제품 화면을 읽기 쉬운 1,160px desktop shell로 확대하고 responsive·Footer 위계 유지 |
+| `site/styles.css` (174줄) | 1,160px desktop shell과 실제 창 경계를 보존하는 2px/무외곽-border 제품 wrapper 적용 |
 | `site/script.js` (92줄) | unpublished 내부 안내와 published 홈·dropdown exact artifact 전환, release note hydration 공유 |
 | `site/assets/linux-editor.png` (1,282×924, 79,227 bytes) | 실제 Linux 네이티브 제목 표시줄과 HWP 편집 상태를 함께 보존한 대표 화면 |
-| `site/assets/og-main.png` (1,920×1,080, 307,178 bytes) | 네이티브 전체 창 대표 화면, 다운로드 목차와 Footer를 반영한 PNG 공유 이미지 재생성 |
+| `site/assets/og-main.png` (1,920×1,080, 308,343 bytes) | 최소 radius로 네이티브 경계를 보존한 홈을 PNG 공유 이미지로 재생성 |
 | `scripts/build-pages.mjs` (152줄) | 중첩 페이지의 root asset 경로를 depth에 맞춰 결정적으로 정규화 |
 | `scripts/check-pages.mjs` (235줄) | 홈·업데이트·문의 필수 파일과 내부 hash 대상 존재 검사를 추가 |
 | `tests/pages.test.mjs` (282줄) | 중첩 asset 출력, broken hash와 필수 페이지 누락 회귀 검사 추가 |
-| `tests/pages-design.test.mjs` (285줄) | CSS/asset version, 네이티브 대표 화면 크기·SHA와 direct-download 계약 고정 |
-| `mydocs/orders/20260827.md`, `mydocs/orders/20260828.md` | Stage 3.6 이력 보존과 Stage 3.8 완료·Stage 4 승인 대기 기록 |
+| `tests/pages-design.test.mjs` (286줄) | CSS/asset version, 2px/무외곽-border wrapper와 이미지·OG SHA 계약 고정 |
+| `mydocs/orders/20260827.md`, `mydocs/orders/20260828.md` | Stage 3.6 이력 보존과 Stage 3.9 완료·Stage 4 승인 대기 기록 |
 
 대표 화면 SHA-256은 `a3d4460b8fc432f00a2ce97cd68552582b2f5dfdc88faec9f749e58be132618b`,
-공유 이미지 SHA-256은 `09e918a49cdab575095f2623e3339015f1643a89f6943fc9d7fdbd470c6b2694`이다.
+공유 이미지 SHA-256은 `44b540ad0ebf8fe7110d6b596f3d3e19bf2b388c072e539e14ba8dfd0b60cc49`이다.
 외부 package와 lockfile은 변경하지 않았고 모든 text source는 권장 300줄 상한 이하다.
 
 ## 본문 변경 정도 / 본문 무손실 여부
@@ -115,6 +120,10 @@ Stage 3.8에서는 제품 동작과 문구를 변경하지 않았다. 새 대표
 `32921517032`, `tauri-driver 2.0.6`에서 성공한 기존 공개 fixture 증적이다. 원본 screenshot
 SHA-256 `e2ece75937eb105d1b51df96d9e01739218d272a2daa3e4807dfe6b6074b681c`에서 앱 창 밖의
 검은 여백만 정확히 제거했으며 가짜 title bar, 보간·합성이나 새 GitHub Job은 사용하지 않았다.
+
+Stage 3.9에서는 대표 PNG 자체를 변경하지 않고 표시 wrapper만 보정했다. 실제 창 경계를 가리던
+장식용 외곽 border를 없애고 radius만 2px로 최소화했으며, 그림자·크기·responsive 노출 조건과
+릴리스 다운로드 계약은 그대로 보존했다.
 
 제품 실행 코드, Pages workflow, `site/release.json` schema와 updater endpoint는 변경하지 않았다.
 `release.json`은 계속 `unreleased`, 세 download 값은 null, manifest는 비게시 상태다.
@@ -195,6 +204,8 @@ git diff --check
   x=581~1,220, 약 639px 폭으로 표시해 아이콘·`Alhangeul` 제목·창 제어 버튼이 함께 보임
 - OK — Stage 3.8 1,024×768과 821×900 홈은 horizontal overflow 없이 각각 약 473px·278px
   대표 화면을 유지하고, 820×900과 390×844에서는 기존 responsive 규칙대로 대표 화면을 숨김
+- OK — Stage 3.9 1,280×720 computed style은 제품 wrapper `border-radius: 2px`, `border-width: 0px`,
+  x=581~1,220 약 639px이며 네이티브 제목 표시줄 모서리와 창 제어 버튼이 잘리지 않음
 - OK — 1,920×1,080 공유 화면에서 네이티브 제목 표시줄을 포함한 단일 실제 제품 화면,
   플랫폼별 다운로드 목차, Footer와 document 1,920×1,080을 확인하고 PNG 크기·SHA-256을 고정
 

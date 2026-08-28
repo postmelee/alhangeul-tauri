@@ -46,7 +46,7 @@ test('홈은 한 화면 설치 안내와 개별 페이지 탐색 계약을 지�
   assert.doesNotMatch(html, /<nav[^>]*>[\s\S]*?>다운로드<\/a>/);
   assert.equal([...html.matchAll(/<a[^>]+data-download-target=/g)].length, 3);
   assert.equal([...html.matchAll(/assets\/linux-editor\.png/g)].length, 1);
-  assert.match(html, /assets\/linux-editor\.png\?v=45-3-8/);
+  assert.match(html, /assets\/linux-editor\.png\?v=45-3-9/);
   assert.doesNotMatch(html, /assets\/windows-app\.png|linux-window|windows-window|platform-dot/);
   assert.doesNotMatch(html, /releases\/download\//);
 });
@@ -72,7 +72,7 @@ test('홈·업데이트·문의 페이지는 승인된 메뉴와 공유 메타�
     assert.match(html, /<title>[^<]+<\/title>/);
     assert.match(html, /<meta name="description" content="[^"]+" \/>/);
     assert.match(html, /<meta property="og:image" content="https:\/\/postmelee\.github\.io\/alhangeul-tauri\/assets\/og-main\.png" \/>/);
-    assert.match(html, /styles\.css\?v=45-3-8/);
+    assert.match(html, /styles\.css\?v=45-3-9/);
     assert.match(html, new RegExp(`<link rel="canonical" href="${escapeRegExp(expected.canonical)}" \\/>`));
     assert.match(html, /href="https:\/\/github\.com\/postmelee\/alhangeul-tauri"/);
     for (const link of expected.links) {
@@ -193,7 +193,7 @@ test('소셜 공유 이미지는 홈을 담는 16:9 PNG로 고정한다', async 
   assert.equal(png.readUInt32BE(20), 1080);
   assert.equal(
     createHash('sha256').update(png).digest('hex'),
-    '09e918a49cdab575095f2623e3339015f1643a89f6943fc9d7fdbd470c6b2694',
+    '44b540ad0ebf8fe7110d6b596f3d3e19bf2b388c072e539e14ba8dfd0b60cc49',
   );
 });
 
@@ -220,6 +220,7 @@ test('홈은 일반 화면에서 스크롤을 막고 작은 화면 fallback과 �
   assert.match(css, /font-family: system-ui, sans-serif/);
   assert.match(css, /\.home-copy h1 \{[^}]*font-size: clamp\(3rem, 4\.45vw, 3\.75rem\)/);
   assert.match(css, /\.headline-line \{ display: block; white-space: nowrap; \}/);
+  assert.match(css, /\.product-window \{[^}]*border: 0; border-radius: 2px;/);
   assert.match(css, /\.download-chevron \{[^}]*width: 16px; height: 16px/);
   assert.match(css, /\.download-chevron path \{[^}]*stroke: currentcolor/);
   assert.match(css, /\.updates-actions \{[^}]*flex-wrap: wrap; align-items: center; justify-content: center/);
