@@ -74,6 +74,41 @@ export function centeredDelta(container: ViewRect, document: ViewRect): number {
   return Math.abs(containerCenter - documentCenter);
 }
 
+export async function waitForCenteredDocument(
+  session: WebdriverIO.Browser,
+  timeoutMs: number,
+  tolerancePx = 3,
+): Promise<void> {
+  await session.waitUntil(async () => {
+    const geometry = await session.execute((containerSelector, documentSelector) => {
+      const container = document.querySelector<HTMLElement>(containerSelector);
+      const page = document.querySelector<HTMLElement>(documentSelector);
+      if (!container || !page) return null;
+      const containerBounds = container.getBoundingClientRect();
+      const pageBounds = page.getBoundingClientRect();
+      return {
+        containerRect: {
+          x: containerBounds.x + container.clientLeft,
+          y: containerBounds.y + container.clientTop,
+          width: container.clientWidth,
+          height: container.clientHeight,
+        },
+        documentRect: {
+          x: pageBounds.x,
+          y: pageBounds.y,
+          width: pageBounds.width,
+          height: pageBounds.height,
+        },
+      };
+    }, GUI_SELECTORS.scrollContainer, GUI_SELECTORS.documentCanvas);
+    return geometry !== null
+      && centeredDelta(geometry.containerRect, geometry.documentRect) <= tolerancePx;
+  }, {
+    timeout: timeoutMs,
+    timeoutMsg: `문서 중앙 정렬이 ${tolerancePx}px 이내로 안정되지 않았습니다`,
+  });
+}
+
 export function isLoadedDocumentState(
   state: DocumentLoadState,
   displayName: string,

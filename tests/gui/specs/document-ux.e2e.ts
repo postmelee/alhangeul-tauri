@@ -8,9 +8,9 @@ import {
 } from '../support/document-fixture.ts';
 import { runScenarioWithEvidence } from '../support/scenario-runner.ts';
 import {
-  centeredDelta,
   GUI_SELECTORS,
   readPageIndicator,
+  waitForCenteredDocument,
   waitForLoadedDocument,
   waitForInitialDesktopReady,
 } from '../support/document-ux.ts';
@@ -33,7 +33,7 @@ describe('Alhangeul document UX', () => {
         await assertKoreanDesktopUi();
         await assertInitialToolbarState();
         await assertPageCount(fixture);
-        await assertInitialCentering();
+        await waitForCenteredDocument(browser, inputs.timeoutMs);
       });
     });
   }
@@ -80,33 +80,6 @@ async function assertPageCount(fixture: DocumentFixture): Promise<void> {
   expect(page.current).toBe(1);
   expect(page.total).toBeGreaterThanOrEqual(1);
   if (fixture.expectedPageCount !== null) expect(page.total).toBe(fixture.expectedPageCount);
-}
-
-async function assertInitialCentering(): Promise<void> {
-  const geometry = await browser.execute((containerSelector, documentSelector) => {
-    const container = document.querySelector<HTMLElement>(containerSelector);
-    const page = document.querySelector<HTMLElement>(documentSelector);
-    if (!container || !page) return null;
-    const containerBounds = container.getBoundingClientRect();
-    const pageBounds = page.getBoundingClientRect();
-    return {
-      containerRect: {
-        x: containerBounds.x + container.clientLeft,
-        y: containerBounds.y + container.clientTop,
-        width: container.clientWidth,
-        height: container.clientHeight,
-      },
-      documentRect: {
-        x: pageBounds.x,
-        y: pageBounds.y,
-        width: pageBounds.width,
-        height: pageBounds.height,
-      },
-    };
-  }, GUI_SELECTORS.scrollContainer, GUI_SELECTORS.documentCanvas);
-  if (!geometry) throw new Error('문서 중앙 정렬 geometry를 읽을 수 없습니다');
-  const { containerRect, documentRect } = geometry;
-  expect(centeredDelta(containerRect, documentRect)).toBeLessThanOrEqual(3);
 }
 
 async function runWithEvidence(

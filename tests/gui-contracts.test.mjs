@@ -24,6 +24,7 @@ import {
   isLoadedDocumentState,
   parsePageIndicator,
   runNativeDocumentCommand,
+  waitForCenteredDocument,
 } from './gui/support/document-ux.ts';
 import { runScenarioWithEvidence } from './gui/support/scenario-runner.ts';
 
@@ -148,6 +149,29 @@ test('쪽 수와 중앙 정렬 판정을 순수 helper로 고정한다', () => {
     { x: 20, y: 0, width: 1000, height: 700 },
     { x: 270, y: 10, width: 500, height: 680 },
   ), 0);
+});
+
+test('첫 문서 resize의 중앙 정렬 과도값은 bounded postcondition으로 기다린다', async () => {
+  const documentXs = [284, 270];
+  let measurements = 0;
+  await waitForCenteredDocument({
+    execute: async () => ({
+      containerRect: { x: 20, y: 0, width: 1000, height: 700 },
+      documentRect: {
+        x: documentXs[Math.min(measurements++, documentXs.length - 1)],
+        y: 10,
+        width: 500,
+        height: 680,
+      },
+    }),
+    waitUntil: async (condition, options) => {
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        if (await condition()) return true;
+      }
+      throw new Error(options.timeoutMsg);
+    },
+  }, 5000);
+  assert.equal(measurements, 2);
 });
 
 test('문서 로드 판정은 브라우저와 native 완료 상태 모두에서 render surface를 요구한다', () => {
