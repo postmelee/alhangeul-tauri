@@ -215,7 +215,7 @@ test('AT-SPI Python traversal은 portal 전환 중 null과 stale accessible을 �
   assert.match(source, /request\.get\("searchOrder"\) == "reverse"/);
   assert.match(source, /window_patterns = \{/);
   assert.match(source, /"windowactivate", "--sync", window_id/);
-  assert.match(source, /"mousemove", "--sync", str\(center_x\), str\(center_y\), "click", "1"/);
+  assert.match(source, /"mousemove", str\(center_x\), str\(center_y\), "click", "1"/);
   assert.match(source, /max_depth=18, max_nodes=2500/);
   assert.match(source, /info\["name"\] or depth < 2 or info\["showing"\]/);
 });

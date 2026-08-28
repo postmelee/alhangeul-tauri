@@ -471,6 +471,21 @@ focus에도 적용되어 `ctrl+l`과 path 입력 전에 대기한 결과다. 초
 실제 semantic click selector는 enabled/sensitive 조건을 유지하도록 분리한다. product source는 변경하지 않고 새
 exact SHA의 native workflow와 Linux GUI 전체를 다시 실행한다.
 
+focus 분리 candidate `0c106667d965be3569ee1fbab81748073695eb19`의
+[native run 33161882665](https://github.com/postmelee/alhangeul-tauri/actions/runs/33161882665)은 첫 attempt의 Linux x64
+AppImage helper 다운로드가 `Connection reset by peer`로 실패했지만, 동일 exact SHA의 failed-job 재실행 attempt 2에서
+Windows x64, Linux x64, Linux arm64 build·artifact 검증과 Windows installer smoke가 모두 성공했다. 첫 실패는
+release-assets 네트워크 reset으로 분류하며 source correction 근거로 사용하지 않는다. Linux x64 artifact ID
+`9682664593`의 digest는 `sha256:d4fe4cc525e6fe6663c28e4088e2e7c0e0c382d241ca0ac79ba253127680d846`이다.
+
+같은 exact SHA와 native artifact의
+[Linux GUI run 33163815497](https://github.com/postmelee/alhangeul-tauri/actions/runs/33163815497)은 initial focus를 지나
+경로 입력과 enabled/sensitive primary의 검증된 좌표까지 도달했다. evidence artifact ID `9682799191`의 open·Save
+As·PDF Save tree는 모두 단일 chooser의 primary가 enabled/sensitive임을 기록했지만, XTEST 명령이
+`mousemove --sync`에서 5초 timeout됐다. 이미 포인터가 같은 좌표이면 xdotool의 이동 완료 대기가 반환하지 않을 수
+있으므로, semantic target 상태·dialog window·geometry·bounds 검증은 유지하고 같은 xdotool invocation의 mousemove에서
+`--sync`만 제거한다. 이어지는 click은 같은 검증 좌표에 순차 실행되며 product source는 변경하지 않는다.
+
 수정:
 
 - `apps/studio-host/src/command/direct-print.ts`

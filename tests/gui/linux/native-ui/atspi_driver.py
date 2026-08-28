@@ -239,7 +239,7 @@ def click_node(node, window_pattern):
             and window_y <= center_y < window_y + window_height):
         raise RuntimeError("semantic click target is outside the native dialog")
     run_xdotool([
-        "mousemove", "--sync", str(center_x), str(center_y), "click", "1",
+        "mousemove", str(center_x), str(center_y), "click", "1",
     ])
     return {"x": extents.x, "y": extents.y,
             "width": extents.width, "height": extents.height}
