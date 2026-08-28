@@ -4,7 +4,7 @@
 GitHub Issue: [#20](https://github.com/postmelee/alhangeul-tauri/issues/20)
 마일스톤: M010
 
-2026-08-24 작업지시자가 수행계획 진행을 승인했다. 승인된 dispatcher/event lifecycle, embed handler lifecycle, dead platform bridge 제거의 세 경계를 유지한다. 다만 dead bridge 코드 변경과 지원 플랫폼의 exact-SHA 수용을 분리하기 위해 마지막 경계를 Stage 3과 Stage 4로 나눈다. Stage 4는 Stage 3 commit을 Windows/Linux에서 검증하는 수용 단계다. 2026-08-26 작업지시자는 첫 Stage 4 실환경 실행에서 확인된 acceptance infrastructure 결함을 Stage 4.1로 보정하고 Windows의 명시적 lifecycle gate까지 추가하는 계획 변경을 승인했다. 이어 같은 날 실제 Linux artifact에서 iframe `window.print()`가 native dialog 없이 반환하는 제품 결함을 확인한 뒤, top-level print surface로의 최소 product correction과 exact-SHA 재수용을 승인했다. top-level `window.print()`도 실제 GTK dialog를 만들지 못한 두 번째 실환경 결과 뒤에는 Linux에서만 Tauri/Wry native print API를 호출하는 얇은 command 추가를 승인했다.
+2026-08-24 작업지시자가 수행계획 진행을 승인했다. 승인된 dispatcher/event lifecycle, embed handler lifecycle, dead platform bridge 제거의 세 경계를 유지한다. 다만 dead bridge 코드 변경과 지원 플랫폼의 exact-SHA 수용을 분리하기 위해 마지막 경계를 Stage 3과 Stage 4로 나눈다. Stage 4는 Stage 3 commit을 Windows/Linux에서 검증하는 수용 단계다. 2026-08-26 작업지시자는 첫 Stage 4 실환경 실행에서 확인된 acceptance infrastructure 결함을 Stage 4.1로 보정하고 Windows의 명시적 lifecycle gate까지 추가하는 계획 변경을 승인했다. 이어 같은 날 실제 Linux artifact에서 iframe `window.print()`가 native dialog 없이 반환하는 제품 결함을 확인한 뒤, top-level print surface로의 최소 product correction과 exact-SHA 재수용을 승인했다. top-level `window.print()`도 실제 GTK dialog를 만들지 못한 두 번째 실환경 결과 뒤에는 Linux에서만 Tauri/Wry native print API를 호출하는 얇은 command 추가를 승인했다. 2026-08-28 작업지시자는 PR 게시 직전 최신 `devel`과 22개 파일의 충돌이 확인되자, history rewrite 없이 `origin/devel`을 병합하고 충돌을 Stage 4.2에서 해소한 뒤 새 exact SHA의 Windows/Linux native와 Linux GUI 수용을 다시 수행하도록 승인했다.
 
 ## 단계 개요
 
@@ -16,6 +16,7 @@ GitHub Issue: [#20](https://github.com/postmelee/alhangeul-tauri/issues/20)
 | 3.1 | platform unknown fixture의 runner 격리 | `platform.test.ts`, 실패 run·재검증 기록 | Windows/Linux 전역 navigator와 무관한 명시 fixture |
 | 4 | exact-SHA Windows/Linux lifecycle 수용 | Stage 3.1 exact commit의 native 결과와 `_stage4.md` | 양 플랫폼 Rust/Clippy/Tauri build와 reload smoke |
 | 4.1 | acceptance harness 보정과 exact-SHA 재수용 | Linux GUI harness, Windows lifecycle gate, 계획·보고 | 플랫폼별 명시 gate와 Linux document/native GUI 전체 통과 |
+| 4.2 | 최신 `devel` 통합과 exact-SHA 재수용 | merge conflict 해소, v0.8.4 경계, 계획·보고 갱신 | 플랫폼 중립 gate와 새 Windows/Linux native·Linux GUI 전체 통과 |
 
 ## 문서 위치 확인
 
@@ -579,11 +580,51 @@ Windows/Linux native와 Linux GUI 수용이 모두 통과한 뒤 `task-stage-rep
 `mydocs/working/task_m010_20_stage4_1.md`를 작성·검증·커밋한다. 수용 전 단계 보고서를 미리 작성하거나
 실패 run을 완료 근거로 사용하지 않는다.
 
+### Stage 4.2 — 최신 devel 통합과 exact-SHA 재수용
+
+2026-08-28 최종 보고서 commit `4d44716168cc83e64fbaff1864c924888630d408`에서 최신
+`origin/devel` `4586539`와 자동 병합을 계산한 결과 workflow, Rust registry, Windows installer smoke,
+Linux GUI harness와 날짜별 오늘할일을 포함한 22개 파일이 충돌했다. 현재 `devel`에는 Task #24의 rhwp v0.8.4,
+Task #34의 Linux GUI native print harness, Task #14의 Windows thumbnail/installer lifecycle, Task #45의 Pages 변경이
+통합되어 있으므로 Stage 4.1 source를 그대로 PR로 게시하지 않는다.
+
+history rewrite나 force push 없이 `origin/devel`을 `local/task20`에 merge한다. 충돌 파일은 최신 `devel`의 upstream
+v0.8.4, workflow, installer/thumbnail, GUI harness와 일일 작업 기록을 기준으로 보존하고, Task #20의 고유한
+dispatcher/event disposer, embed registration, dead platform bridge 제거와 그 negative contract만 누락 없이 통합한다.
+양쪽에 같은 역할의 구현이 있으면 최신 `devel` 구현을 우선하며 Task #20의 오래된 acceptance helper를 병렬로 남기지
+않는다. `third_party/rhwp`는 merge 결과의 v0.8.4 pin을 그대로 사용하고 수동 수정하지 않는다.
+
+충돌 해소 뒤 다음 플랫폼 중립 gate를 실행한다.
+
+```bash
+pnpm exec node --test tests/linux-gui-probe.test.mjs tests/linux-gui-workflow.test.mjs tests/actions-workflows.test.mjs tests/windows-installer-smoke.test.mjs tests/gui/linux/native-ui/atspi.test.mjs
+pnpm run typecheck:gui
+pnpm run test:automation
+pnpm run test:upstream
+pnpm run check:product-boundary
+pnpm run test:studio
+pnpm run build:studio
+git diff --check
+```
+
+merge commit exact SHA를 `publish/task20`에 fast-forward한 뒤 native workflow를 새로 실행한다. Windows x64,
+Linux x64, Linux arm64 build와 Windows installer lifecycle이 성공한 Linux x64 artifact만 Linux GUI workflow에
+전달하며, 기본 문서와 native open/save/drag/direct PDF/system print 전체가 성공해야 Stage 4.2를 완료한다. 이전
+`b0667c7` run은 Stage 4.1 근거로 보존하되 최신 `devel` 통합 완료 근거로 재사용하지 않는다. 완료 뒤
+`mydocs/working/task_m010_20_stage4_2.md`와 최종 보고서를 갱신하고 PR을 게시한다.
+
+커밋:
+
+```text
+Task #20 [Stage 4.2]: 최신 devel 통합과 lifecycle 재수용
+```
+
 ## 통합 검증
 
 - 각 Stage focused test와 `git diff --check`를 해당 단계 보고서 작성 전에 실행한다.
 - Stage 3에서 `pnpm run test:upstream`, `pnpm run test:studio`, `pnpm run build:studio`, `pnpm run check:product-boundary`를 모두 통과한다.
 - Stage 4.1 correction exact SHA의 Windows/Linux native 결과와 Linux GUI 전체 결과를 각각 확보한다.
+- Stage 4.2 merge exact SHA에서 최신 `devel`의 v0.8.4와 병행 task 경계를 보존하고 Windows/Linux native와 Linux GUI 전체 결과를 다시 확보한다.
 - 최종 source에서 adapter 반복 setup은 이전 generation을 회수하고 uninstall 뒤 Tauri listener, close listener, wheel listener, toolbar subscription, handler waiter timer가 남지 않는다.
 - exact upstream Studio entry, 12개 leaf alias, 파일 300 LOC와 함수 50 LOC 권장 상한을 유지한다.
 - 실패한 검증은 단계 완료로 처리하지 않으며 계획 범위를 바꾸는 correction은 먼저 승인을 받는다.
@@ -602,6 +643,7 @@ Windows/Linux native와 Linux GUI 수용이 모두 통과한 뒤 `task-stage-rep
 - Stage 3은 Stage 2 검증·보고서 승인 후 시작한다.
 - Stage 4는 Stage 3 검증·보고서 승인과 exact commit 확정 후 시작한다.
 - Stage 4.1은 첫 Stage 4 수용에서 확인된 harness correction 계획 변경 승인 후 시작하고, 새 exact SHA의 수용이 끝나야 Stage 4를 완료한다.
+- Stage 4.2는 최신 `devel` 자동 병합 충돌 해소 승인 후 시작하고 새 merge exact SHA의 수용이 끝나야 PR을 게시한다.
 - 모든 Stage는 `task-stage-report` 절차로 보고·커밋하고 작업지시자 승인 없이 다음 Stage로 넘어가지 않는다.
 
 ## 위험과 대응
@@ -614,6 +656,7 @@ Windows/Linux native와 Linux GUI 수용이 모두 통과한 뒤 `task-stage-rep
 - **GUI harness 오탐**: direct driver capability, 숨김 입력, portal application 탐색과 environment inventory를 계약 test로 고정하고 실제 Linux GUI run으로 확인한다.
 - **Windows process 생존 오인**: input-idle, main window, responsiveness, graceful close와 두 번째 clean launch를 모두 만족해야 lifecycle smoke로 인정한다.
 - **macOS 검증 오용**: 플랫폼 중립 TypeScript gate만 현재 호스트에서 실행하고 Rust/Tauri 성공은 Windows/Linux 결과만 인정한다.
+- **병행 task 통합 회귀**: 최신 `devel`의 v0.8.4, GUI harness와 installer/thumbnail 구현을 우선하고 Task #20 고유 lifecycle contract를 focused test와 새 exact run으로 다시 검증한다.
 
 ## 승인 요청 사항
 
