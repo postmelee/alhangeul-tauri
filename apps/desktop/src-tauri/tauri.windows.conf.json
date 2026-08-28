@@ -12,5 +12,11 @@
         "zoomHotkeysEnabled": true
       }
     ]
+  },
+  "bundle": {
+    "resources": {
+      "windows/thumbnail-resources/AlhangeulThumbnailHandler.dll": "AlhangeulThumbnailHandler.dll",
+      "windows/thumbnail-resources/AlhangeulThumbnailWorker.exe": "AlhangeulThumbnailWorker.exe"
+    }
   }
 }

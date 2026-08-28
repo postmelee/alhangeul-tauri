@@ -1,6 +1,6 @@
 # 데스크톱 artifact와 배포 준비
 
-Alhangeul은 아직 공식 설치 파일이나 공개 릴리스를 제공하지 않는다. `.github/workflows/alhangeul-desktop.yml`은 Windows/Linux native build 결과와 Windows installer package smoke 진단을 수동 검증하고 14일 동안 Actions artifact로 보존하지만 GitHub Release를 생성하지 않는다.
+Alhangeul은 아직 공식 설치 파일이나 공개 릴리스를 제공하지 않는다. `.github/workflows/alhangeul-desktop.yml`은 Windows/Linux native build 결과와 Windows installer·thumbnail smoke 진단을 수동 검증하고 14일 동안 Actions artifact로 보존하지만 GitHub Release를 생성하지 않는다.
 
 ## 제품 version 기준
 
@@ -22,11 +22,11 @@ workflow는 다음 작업만 수행한다.
 
 1. submodule을 포함한 선택 commit checkout
 2. Node, pnpm, Rust와 Linux Tauri 의존성 준비
-3. 제품 경계·version, `rhwp` pin, automation, upstream과 studio 검증
-4. Tauri bundle 생성
-5. 필수 installer 종류·크기·SHA-256 inventory 검증
+3. 제품 경계·version, `rhwp` pin, automation, upstream·studio와 thumbnail core/source 검증
+4. Windows thumbnail handler·worker와 Tauri bundle 생성
+5. 필수 installer·thumbnail PE 종류·크기·SHA-256 inventory 검증
 6. inventory를 포함한 Actions artifact 업로드
-7. fresh `windows-2025` runner에서 Windows MSI·NSIS 설치·제한 실행·제거 package smoke
+7. fresh `windows-2025` runner에서 Windows MSI·NSIS 설치·rollback·제거와 실제 HWP/HWPX Shell bitmap smoke
 8. installer별 summary와 원본 log를 diagnostic artifact로 항상 업로드하고 build matrix와 smoke 결과를 함께 판정
 
 repository-level Actions는 활성 상태지만 대상 CI와 native workflow는 자동 trigger 없이 수동 `workflow_dispatch`로만 실행한다. Actions 활성 상태는 workflow 성공이나 artifact 가용성을 보장하지 않으므로 run의 exact commit과 job 결과를 함께 확인해야 한다.
@@ -141,6 +141,31 @@ MSI와 NSIS는 각각 clean state, silent install exit `0`, 제품 version `0.1.
 
 이 결과는 fresh hosted runner의 반복 가능한 비대화형 package smoke다. 실제 GUI에서 HWP/HWPX 열기·저장·인쇄, Explorer 기본 앱 선택 UI, 장시간 사용과 Windows 실제 사용자 환경의 최종 수동 검증을 대신하지 않는다. Artifact는 공개 배포물이 아니며 만료 뒤 재사용할 수 없다.
 
+2026-08-26 Task #14 Stage 4는 exact source `e407c20cfd23059b997590462a5e66fb47e1aa03`의 [native run 32948057314](https://github.com/postmelee/alhangeul-tauri/actions/runs/32948057314)에서 Linux arm64 job `98113033201`, Linux x64 `98113033413`, Windows x64 `98113033443`과 installer smoke `98120085085`가 모두 성공했다.
+
+- Windows bundle은 x64 handler DLL과 worker EXE의 고정 filename·PE 종류·inventory를 통과했다.
+- MSI injected rollback은 기대한 exit `1603` 뒤 원상복구됐고, MSI·NSIS 정상 install/uninstall은 exit `0`, NSIS reinstall과 기존·부재·제3자 handler 조건부 복원을 통과했다.
+- 실제 HWP와 HWPX fixture는 모두 요청 edge 256 px에서 Shell 성공 HRESULT와 bitmap을 반환했으며 fixture hash, worker 잔류와 제품 소유 registry cleanup도 통과했다.
+
+이 증적은 hosted Windows에서 실제 COM/Shell 경로까지 확인하지만 Explorer 보기 크기·DPI·cache 갱신과 한컴 설치 환경 UI를 대신하지 않는다. 같은 exact 후보의 수동 gate는 [Windows thumbnail 아키텍처](../architecture/WINDOWS_THUMBNAILS.md)에 따라 Stage 6에서 수행한다.
+
+2026-08-28 Task #14 Stage 7의 PR #46 리뷰 보정 source candidate `51099615681432862a51691aeb3c65dafd2da541`은 [CI run 33154309226](https://github.com/postmelee/alhangeul-tauri/actions/runs/33154309226)과 [native run 33154321608](https://github.com/postmelee/alhangeul-tauri/actions/runs/33154321608)을 통과했다.
+
+- CI Unit tests job `98793335089`, Linux x64 job `98793375935`, Windows x64 job `98793376092`, Linux arm64 job `98793376118`, Windows fresh-installer smoke job `98805510881`이 모두 성공했다.
+- MSI와 NSIS는 HWP `111exam_social.hwp`와 embedded preview가 없는 HWPX `03-blank_hwpx.hwpx`의 실제 256 px Shell bitmap을 `HRESULT=0`으로 반환했다. 두 installer 모두 install/uninstall exit `0`, 제거 뒤 owned registry count `0`과 clean state를 확인했다.
+- NSIS는 제거 직전 `.hwp`/`.hwpx` 기본값을 제거 대상 자기 ProgID로 둔 fixture에서도 `NoDanglingCanonicalDefault=true`였고 제3자 Hancom sentinel을 복원했다. MSI injected rollback은 예상 exit `1603` 뒤 원상복구됐다.
+- fixture 실행 전후 hash는 같았다. Stage 7은 제품 renderer·font 출력을 바꾸지 않았고 대표 raster gate가 다시 통과했으므로 Stage 6.1의 Windows VDI 시각 수용을 유지했다.
+
+| artifact | ID | 크기 (bytes) | SHA-256 digest | 만료 |
+|---|---:|---:|---|---|
+| Windows installer smoke | `9680462259` | 45,525 | `6c51feb8602dbc293363160bdcb94b9f0a7ec65f7353a4d23f80e38eac7840ee` | 2026-09-11 |
+| Windows x64 bundle | `9680268296` | 120,675,282 | `19680c69df03d707c2b3d27ca191ff26e1a8d6ed30ba61779a9c8f6ea99bf802` | 2026-09-11 |
+| Linux x64 bundle | `9679593323` | 505,551,400 | `ce5f15945f52eb3c7897579a5f75bebe242371326d07a09d2d2426e796f21670` | 2026-09-11 |
+| Linux arm64 bundle | `9679356860` | 166,327,127 | `ed7442b17d8acfe75de93a13b616245037e72ba4caff18309c2949e268a5e8ec` | 2026-09-11 |
+| Windows thumbnail core diagnostics | `9679337373` | 3,305 | `6c59c444a73e2624bff355f5f0794646c26e2316d79d6cb49f087f52d1885d4d` | 2026-09-11 |
+
+이 자동 증적은 등록 해제 실패 주입 자체를 실행한 것은 아니다. MSI/NSIS source 계약은 thumbnail extension 실패를 best-effort로 고정하고, native smoke는 정상 등록 해제·owner-scoped cleanup과 dangling association 부재를 확인한다. Windows active ProgID가 제3자 thumbnail handler를 소유하면 extension ShellEx보다 우선할 수 있으며 제품은 공존을 위해 `UserChoice`나 제3자 ProgID를 변경하지 않는다.
+
 ### Windows installer 자동 gate를 다시 돌려야 하는 변경
 
 이 workflow는 `workflow_dispatch` 전용이라 push나 PR로 자동 실행되지 않는다. 다음 변경은 자동으로 검증되지 않으므로 수동 dispatch가 필요하다.
@@ -150,7 +175,8 @@ MSI와 NSIS는 각각 clean state, silent install exit `0`, 제품 version `0.1.
 | Tauri 버전 상향 | NSIS hook은 Tauri 기본 file association 동작을 되돌리는 구조다. upstream이 association 처리나 내부 `UPDATEFILEASSOC` macro를 바꾸면 기존 기본 연결 보존이 조용히 깨진다 |
 | `windows/main.wxs`, `windows/nsis-hooks.nsh`, `tauri.conf.json`의 bundle 항목 | installer가 실제로 쓰는 registry·shortcut 계약이 바뀐다 |
 | `[[bin]] name`, `productName` | 실행 파일명, 설치 경로, ProgID, shortcut 이름이 함께 움직인다 |
-| `scripts/windows-installer-smoke.ps1`, smoke job | 판정 자체가 바뀌므로 source test만으로는 runtime 동작을 보증하지 못한다 |
+| `apps/thumbnail-*`, `crates/document-preview`, `scripts/build-thumbnail-binaries.mjs` | COM ABI, worker protocol·resource 제한과 bundle PE 계약이 바뀐다 |
+| `scripts/windows-installer-smoke.ps1`, `scripts/windows-thumbnail-smoke.ps1`, smoke job | 판정 자체가 바뀌므로 source test만으로는 runtime 동작을 보증하지 못한다 |
 
 플랫폼 중립 test(`pnpm run test:automation`)는 이들 source 계약을 고정하지만 실제 설치·제거 동작은 확인하지 않는다.
 
@@ -323,7 +349,7 @@ PR 병합 뒤 exact `devel` SHA로 Pages를 배포하고 public read-back을 통
 
 - 배포 version·tag·bundle 이름과 checksum 게시 정책
 - Windows signing과 Linux package metadata
-- Linux installer/package 설치·실행·rollback과 Windows 실제 GUI HWP/HWPX·Explorer 기본 앱 수동 gate
+- Linux installer/package 설치·실행·rollback과 Windows 실제 GUI HWP/HWPX·Explorer 기본 앱·thumbnail UI 수동 gate
 - updater 보안 모델과 key 보관 정책
 
 Windows MSI·NSIS의 자동 설치·제한 실행·제거 package smoke는 Task #11과 Task #13 exact

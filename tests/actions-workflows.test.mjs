@@ -157,6 +157,9 @@ test('CI workflow는 제품 version·pin과 automation 계약을 native 검사 �
     'pnpm run test:upstream',
     'pnpm run test:studio',
     'pnpm run build:studio',
+    'pnpm run test:document-preview',
+    'pnpm run clippy:document-preview',
+    'pnpm run clippy:document-preview:protocol',
     'pnpm run test:desktop',
     'pnpm run clippy:desktop',
   ]);
@@ -211,6 +214,69 @@ test('desktop workflow는 checkout 전에 Git LF byte를 command scope로 고정
   );
 });
 
+test('Windows thumbnail core probe는 exact checkout에서 진단을 항상 보존한다', () => {
+  assertOrdered(desktopWorkflow, [
+    '- name: Prepare Windows thumbnail core diagnostics',
+    '- name: Build Windows thumbnail core probe',
+    '- name: Run Windows thumbnail core probe',
+    '- name: Record Windows thumbnail core probe outcome',
+    '- name: Upload Windows thumbnail core diagnostics',
+    '- name: Require Windows thumbnail core probe success',
+    '- name: Install dependencies',
+  ]);
+
+  const buildStep = getStepContaining(
+    desktopWorkflow,
+    'cargo build --manifest-path third_party/rhwp/Cargo.toml',
+  );
+  const probeStep = getStepContaining(
+    desktopWorkflow,
+    'benchmark-thumbnail-core.ps1',
+  );
+  const contextStep = getStepContaining(desktopWorkflow, 'workflow-context.json');
+  const outcomeStep = getStepContaining(desktopWorkflow, 'step-outcomes.json');
+  const uploadStep = getStepContaining(
+    desktopWorkflow,
+    'alhangeul-windows-x64-thumbnail-core',
+  );
+  const gateStep = getStepContaining(
+    desktopWorkflow,
+    'Windows thumbnail core probe gate failed',
+  );
+
+  assert.match(buildStep, /^\s{8}id: build-thumbnail-core-probe$/m);
+  assert.match(buildStep, /^\s{8}if: matrix\.name == 'windows-x64'$/m);
+  assert.match(buildStep, /^\s{8}continue-on-error: true$/m);
+  assert.match(buildStep, /--locked --bin rhwp --release/);
+  assert.match(
+    probeStep,
+    /^\s{8}if: matrix\.name == 'windows-x64' && steps\.build-thumbnail-core-probe\.outcome == 'success'$/m,
+  );
+  assert.match(probeStep, /^\s{8}continue-on-error: true$/m);
+  assert.match(probeStep, /-FixtureRoot 'third_party\\rhwp\\saved'/);
+  assert.match(probeStep, /-OutputDirectory 'diagnostics\\thumbnail-core'/);
+  for (const step of [contextStep, outcomeStep]) {
+    assert.match(step, /repositorySha = \(git rev-parse HEAD\)\.Trim\(\)/);
+  }
+  for (const step of [outcomeStep, uploadStep, gateStep]) {
+    assert.match(
+      step,
+      /^\s{8}if: \$\{\{ always\(\) && matrix\.name == 'windows-x64' \}\}$/m,
+    );
+  }
+  assert.match(uploadStep, /uses: actions\/upload-artifact@v7/);
+  assert.match(uploadStep, /path: diagnostics\/thumbnail-core\/\*\*/);
+  assert.match(uploadStep, /^\s{10}if-no-files-found: error$/m);
+  assert.match(uploadStep, /^\s{10}retention-days: 14$/m);
+  for (const outcome of [
+    'steps.build-thumbnail-core-probe.outcome',
+    'steps.run-thumbnail-core-probe.outcome',
+    'steps.upload-thumbnail-core-diagnostics.outcome',
+  ]) {
+    assert.ok(gateStep.includes(outcome), `probe gate outcome이 필요합니다: ${outcome}`);
+  }
+});
+
 test('desktop workflow는 checkout commit을 검증하고 pretest를 순서대로 실행한다', () => {
   assert.match(
     desktopWorkflow,
@@ -234,6 +300,16 @@ test('desktop workflow는 checkout commit을 검증하고 pretest를 순서대�
     'pnpm run test:automation',
     'pnpm run test:upstream',
     'pnpm run test:studio',
+    'pnpm run test:document-preview',
+    'pnpm run clippy:document-preview',
+    'pnpm run clippy:document-preview:protocol',
+    'pnpm run build:thumbnail-binaries',
+    'pnpm run test:desktop',
+    'pnpm run clippy:desktop',
+    'pnpm run test:thumbnail-worker:windows',
+    'pnpm run test:thumbnail-handler:windows',
+    'pnpm run clippy:thumbnail-worker:windows',
+    'pnpm run clippy:thumbnail-handler:windows',
     'pnpm tauri build',
   ]);
 
@@ -245,15 +321,40 @@ test('desktop workflow는 checkout commit을 검증하고 pretest를 순서대�
     'pnpm run test:automation',
     'pnpm run test:upstream',
     'pnpm run test:studio',
+    'pnpm run test:document-preview',
+    'pnpm run clippy:document-preview',
+    'pnpm run clippy:document-preview:protocol',
+    'pnpm run test:desktop',
+    'pnpm run clippy:desktop',
   ]) {
     const step = getStepContaining(desktopWorkflow, command);
     assert.match(step, /^\s{8}if: inputs\.run_tests$/m);
+  }
+
+  const thumbnailBuild = getStepContaining(
+    desktopWorkflow,
+    'pnpm run build:thumbnail-binaries',
+  );
+  assert.match(thumbnailBuild, /^\s{8}if: matrix\.name == 'windows-x64'$/m);
+  assert.match(thumbnailBuild, /--target x86_64-pc-windows-msvc/);
+  for (const command of [
+    'pnpm run test:thumbnail-worker:windows',
+    'pnpm run test:thumbnail-handler:windows',
+    'pnpm run clippy:thumbnail-worker:windows',
+    'pnpm run clippy:thumbnail-handler:windows',
+  ]) {
+    const step = getStepContaining(desktopWorkflow, command);
+    assert.match(
+      step,
+      /^\s{8}if: inputs\.run_tests && matrix\.name == 'windows-x64'$/m,
+    );
   }
 });
 
 test('desktop workflow는 build 뒤 bundle을 검증하고 inventory와 함께 올린다', () => {
   assertOrdered(desktopWorkflow, [
     '- name: Build Tauri bundles',
+    '- name: Stage Windows thumbnail verification copies',
     '- name: Verify bundle artifact',
     '- name: Upload bundle artifact',
   ]);
@@ -265,6 +366,13 @@ test('desktop workflow는 build 뒤 bundle을 검증하고 inventory와 함께 �
     desktopWorkflow,
     /BUNDLE_ROOT: apps\/desktop\/src-tauri\/target\/\$\{\{ matrix\.target \}\}\/release\/bundle/,
   );
+  const thumbnailCopies = getStepContaining(
+    desktopWorkflow,
+    'Stage Windows thumbnail verification copies',
+  );
+  assert.match(thumbnailCopies, /^\s{8}if: matrix\.name == 'windows-x64'$/m);
+  assert.match(thumbnailCopies, /verification\/AlhangeulThumbnailHandler\.dll/);
+  assert.match(thumbnailCopies, /verification\/AlhangeulThumbnailWorker\.exe/);
   assert.match(
     desktopWorkflow,
     /--platform "\$\{\{ matrix\.name \}\}"/,
@@ -313,6 +421,7 @@ test('installer smoke job은 exact ref와 Windows x64 artifact를 고정한다',
     job,
     /ref: \$\{\{ inputs\.build_ref \|\| github\.sha \}\}/,
   );
+  assert.match(job, /^\s{10}submodules: true$/m);
   assert.match(
     job,
     /EXPECTED_BUILD_REF: \$\{\{ inputs\.build_ref \|\| github\.sha \}\}/,
