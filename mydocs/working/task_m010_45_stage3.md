@@ -75,6 +75,11 @@ Stage 3.10 피드백 보정에서는 홈 제목을 desktop 44.8px, 390px mobile 
 문자 기호가 아닌 16×16 inline SVG 다운로드 아이콘을 추가하고, 보조 문구를 12px로 낮춰 desktop에서
 가장 긴 AppImage 설명도 한 줄에 유지했다.
 
+Stage 3.11 피드백 보정에서는 권장 항목에만 적용했던 짙은 파란색 override를 제거했다. 다섯 설치
+버튼은 모두 제목의 `낯선 문서` 강조와 정확히 같은 `var(--blue)`, 흰 글자와 흰 다운로드 아이콘을
+사용한다. 권장 여부는 NSIS·AppImage 설명의 `권장` 문구로만 구분하며 hover에서만 모든 버튼이
+공통으로 짙어지도록 해 단일 accent color 체계로 정리했다.
+
 ## 산출물
 
 | 파일 | 변경 요약 |
@@ -82,18 +87,18 @@ Stage 3.10 피드백 보정에서는 홈 제목을 desktop 44.8px, 390px mobile 
 | `site/index.html` (84줄) | 5개 다운로드 선택지에 실제 SVG 다운로드 아이콘을 추가하고 공통 최신 다운로드 fallback 보존 |
 | `site/updates/index.html` (69줄) | 참고 페이지 구조의 hero, SVG 꺾쇠가 있는 플랫폼 다운로드 dropdown, 압축된 updater 범위와 릴리즈 노트 안내 |
 | `site/feedback/index.html` (72줄) | 원본과 같은 hero·privacy note·contact card 계층으로 email 복사/작성과 GitHub Issue 안내 재구성 |
-| `site/styles.css` (178줄) | 축소한 홈 제목, 파란 설치 버튼·흰 글자·아이콘 위계와 실제 창 경계를 보존하는 제품 wrapper 적용 |
+| `site/styles.css` (176줄) | 제목 강조와 모든 설치 버튼을 같은 파란색으로 통일하고 실제 창 경계를 보존하는 제품 wrapper 적용 |
 | `site/script.js` (92줄) | unpublished 내부 안내와 published 홈·dropdown exact artifact 전환, release note hydration 공유 |
 | `site/assets/linux-editor.png` (1,282×924, 79,227 bytes) | 실제 Linux 네이티브 제목 표시줄과 HWP 편집 상태를 함께 보존한 대표 화면 |
-| `site/assets/og-main.png` (1,920×1,080, 335,275 bytes) | 축소한 제목과 명시적 다운로드 버튼을 반영한 홈을 PNG 공유 이미지로 재생성 |
+| `site/assets/og-main.png` (1,920×1,080, 332,544 bytes) | 단일 파란색 accent 체계의 홈을 PNG 공유 이미지로 재생성 |
 | `scripts/build-pages.mjs` (152줄) | 중첩 페이지의 root asset 경로를 depth에 맞춰 결정적으로 정규화 |
 | `scripts/check-pages.mjs` (235줄) | 홈·업데이트·문의 필수 파일과 내부 hash 대상 존재 검사를 추가 |
 | `tests/pages.test.mjs` (282줄) | 중첩 asset 출력, broken hash와 필수 페이지 누락 회귀 검사 추가 |
-| `tests/pages-design.test.mjs` (289줄) | 축소한 제목 clamp, 파란 버튼·흰 글자·SVG 아이콘과 이미지·OG SHA 계약 고정 |
-| `mydocs/orders/20260827.md`, `mydocs/orders/20260828.md` | Stage 3.6 이력 보존과 Stage 3.10 완료·Stage 4 승인 대기 기록 |
+| `tests/pages-design.test.mjs` (290줄) | 모든 버튼의 공통 파란 배경과 별도 accent override 부재, SVG 아이콘·OG SHA 계약 고정 |
+| `mydocs/orders/20260827.md`, `mydocs/orders/20260828.md` | Stage 3.6 이력 보존과 Stage 3.11 완료·Stage 4 승인 대기 기록 |
 
 대표 화면 SHA-256은 `a3d4460b8fc432f00a2ce97cd68552582b2f5dfdc88faec9f749e58be132618b`,
-공유 이미지 SHA-256은 `ffbd3e92d0c29df25514536681f3ac8e08235d01258b9e6b48768451c8506524`이다.
+공유 이미지 SHA-256은 `33be0b15d260f0d274ca6e25b742fe09a795b348c82b94b3376802c474a06943`이다.
 외부 package와 lockfile은 변경하지 않았고 모든 text source는 권장 300줄 상한 이하다.
 
 ## 본문 변경 정도 / 본문 무손실 여부
@@ -134,6 +139,9 @@ Stage 3.9에서는 대표 PNG 자체를 변경하지 않고 표시 wrapper만 �
 Stage 3.10에서는 텍스트 위계와 설치 선택지의 시각 표현만 변경했다. 다섯 href와 세
 `data-download-target`, published hydration 및 미게시 fail-closed 동작은 그대로 보존했으며,
 SVG 아이콘은 장식 요소로 숨겨 link accessible name도 기존 제목과 설명만 유지한다.
+
+Stage 3.11에서는 권장 버튼의 색상 override만 제거했다. `accent` class, 설치 형식 문구와 link
+계약은 보존했으며, 색상 외 DOM·accessible name·release hydration 동작은 변경하지 않았다.
 
 제품 실행 코드, Pages workflow, `site/release.json` schema와 updater endpoint는 변경하지 않았다.
 `release.json`은 계속 `unreleased`, 세 download 값은 null, manifest는 비게시 상태다.
@@ -221,6 +229,8 @@ git diff --check
   다섯 설치 버튼은 파란 배경·흰 글자·16px SVG 아이콘을 사용하며 가장 긴 AppImage 설명도 한 줄 유지
 - OK — Stage 3.10 390×844 홈은 document 390×844로 스크롤이 없고 제목은 33.93px·정확히 3줄,
   다섯 버튼과 아이콘은 362px 본문 안에 유지되며 대표 제품 화면은 기존 responsive 규칙대로 숨김
+- OK — Stage 3.11 1,280×720과 390×844에서 `낯선 문서`와 다섯 버튼 배경이 모두
+  `rgb(0, 102, 204)`로 정확히 일치하고 두 viewport 모두 가로·세로 스크롤 없음
 - OK — 1,920×1,080 공유 화면에서 네이티브 제목 표시줄을 포함한 단일 실제 제품 화면,
   플랫폼별 다운로드 목차, Footer와 document 1,920×1,080을 확인하고 PNG 크기·SHA-256을 고정
 

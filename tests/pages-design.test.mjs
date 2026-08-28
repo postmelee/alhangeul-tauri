@@ -73,7 +73,7 @@ test('홈·업데이트·문의 페이지는 승인된 메뉴와 공유 메타�
     assert.match(html, /<title>[^<]+<\/title>/);
     assert.match(html, /<meta name="description" content="[^"]+" \/>/);
     assert.match(html, /<meta property="og:image" content="https:\/\/postmelee\.github\.io\/alhangeul-tauri\/assets\/og-main\.png" \/>/);
-    assert.match(html, /styles\.css\?v=45-3-10/);
+    assert.match(html, /styles\.css\?v=45-3-11/);
     assert.match(html, new RegExp(`<link rel="canonical" href="${escapeRegExp(expected.canonical)}" \\/>`));
     assert.match(html, /href="https:\/\/github\.com\/postmelee\/alhangeul-tauri"/);
     for (const link of expected.links) {
@@ -194,7 +194,7 @@ test('소셜 공유 이미지는 홈을 담는 16:9 PNG로 고정한다', async 
   assert.equal(png.readUInt32BE(20), 1080);
   assert.equal(
     createHash('sha256').update(png).digest('hex'),
-    'ffbd3e92d0c29df25514536681f3ac8e08235d01258b9e6b48768451c8506524',
+    '33be0b15d260f0d274ca6e25b742fe09a795b348c82b94b3376802c474a06943',
   );
 });
 
@@ -237,6 +237,7 @@ test('홈은 일반 화면에서 스크롤을 막고 작은 화면 fallback과 �
   assert.match(css, /\.install-link strong \{[^}]*font-size: 15px/);
   assert.match(css, /\.install-link span \{[^}]*font-size: 12px/);
   assert.match(css, /\.install-link \{[^}]*background: var\(--blue\); color: white;/);
+  assert.doesNotMatch(css, /\.install-link\.accent\s*\{/);
   assert.match(css, /\.install-link-icon path \{[^}]*stroke: currentcolor/);
   assert.match(css, /\.page-action-button \{[^}]*min-height: 46px;[^}]*font-size: 16px/);
   assert.match(css, /\.page-secondary-link \{[^}]*min-height: 42px;[^}]*font-size: 14px/);
