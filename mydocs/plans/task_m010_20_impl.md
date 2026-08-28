@@ -613,6 +613,13 @@ Linux x64, Linux arm64 build와 Windows installer lifecycle이 성공한 Linux x
 `b0667c7` run은 Stage 4.1 근거로 보존하되 최신 `devel` 통합 완료 근거로 재사용하지 않는다. 완료 뒤
 `mydocs/working/task_m010_20_stage4_2.md`와 최종 보고서를 갱신하고 PR을 게시한다.
 
+첫 merge exact SHA `9313ce79fc494288d9fbe3f4af590ad1f28c8d6b`의 native run `33168266935`에서
+Linux x64와 arm64가 모두 desktop `cargo test --locked`의 lockfile 정합성 검사에서 컴파일 전에 종료됐다.
+병합 중 합친 root dependency 목록에서 공존하는 `roxmltree` 버전을 모호하게 기록한 것이 원인이므로 기존
+dependency version을 바꾸지 않고 `roxmltree 0.20.0`으로 lock entry를 정규화한다. 실패 run은 수용 근거로
+사용하지 않으며, 플랫폼 중립 gate 재검증과 correction commit 뒤 완전히 새로운 exact SHA native run부터
+Windows/Linux native 및 Linux GUI 수용을 다시 수행한다.
+
 커밋:
 
 ```text
