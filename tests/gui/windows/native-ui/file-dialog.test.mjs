@@ -6,7 +6,7 @@ import {
 } from './file-dialog.mjs';
 
 test('표준 Windows file dialog는 AutomationId 1148·1·2를 우선한다', () => {
-  const controls = selectFileDialogControls(dialogTree(), 'open');
+  const controls = selectFileDialogControls(dialogTree({ nestedEntry: true }), 'open');
   assert.deepEqual(controls, {
     entry: 'txt-1148-a1b2',
     primary: 'btn-open-b2c3',
@@ -118,16 +118,20 @@ function createHarness(options = {}) {
 
 function dialogTree(options = {}) {
   const korean = options.korean ?? false;
+  const entry = {
+    type: 'Edit', name: korean ? '파일 이름:' : 'File name:',
+    automationId: '1148', selector: 'txt-1148-a1b2', isEnabled: true,
+  };
   return {
     windows: [{
       hwnd: 200,
       elements: [{
         type: 'Window',
         children: [
-          {
-            type: 'Edit', name: korean ? '파일 이름:' : 'File name:',
-            automationId: '1148', selector: 'txt-1148-a1b2', isEnabled: true,
-          },
+          options.nestedEntry ? {
+            type: 'ComboBox', name: entry.name, automationId: '1148',
+            selector: 'cmb-1148-parent', isEnabled: true, children: [entry],
+          } : entry,
           {
             type: 'Button', name: korean ? '저장(&S)' : 'Open', automationId: '1',
             selector: korean ? 'btn-save-b2c3' : 'btn-open-b2c3', isEnabled: true,

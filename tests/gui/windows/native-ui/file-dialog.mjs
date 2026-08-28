@@ -171,11 +171,18 @@ export class WindowsNativeUiAdapter {
 export function selectFileDialogControls(tree, action) {
   const elements = flattenElements(tree).filter(usableElement);
   return Object.freeze({
-    entry: uniqueSelector(elements, (element) =>
-      element.automationId === '1148' && ENTRY_TYPES.has(element.type), 'file name entry'),
+    entry: entrySelector(elements),
     primary: actionSelector(elements, action, '1'),
     cancel: actionSelector(elements, 'cancel', '2'),
   });
+}
+
+function entrySelector(elements) {
+  for (const type of ENTRY_TYPES) {
+    const matches = elements.filter((element) => element.automationId === '1148' && element.type === type);
+    if (matches.length > 0) return uniqueSelector(matches, () => true, 'file name entry');
+  }
+  return uniqueSelector([], () => true, 'file name entry');
 }
 
 function actionSelector(elements, action, automationId) {
@@ -235,12 +242,8 @@ function controlName(value) {
 }
 
 function discoveryOptions(options, appName) {
-  return {
-    executablePath: options.cliPath ?? options.env?.ALHANGEUL_WINAPP_CLI_PATH,
-    appName,
-    timeoutMs: options.timeoutMs,
-    env: options.env,
-  };
+  return { executablePath: options.cliPath ?? options.env?.ALHANGEUL_WINAPP_CLI_PATH,
+    appName, timeoutMs: options.timeoutMs, env: options.env };
 }
 
 function validateAppTarget(value) {

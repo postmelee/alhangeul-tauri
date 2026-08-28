@@ -1,4 +1,4 @@
-import { execFile } from 'node:child_process';
+import { execFile, spawn } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { win32 } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -108,8 +108,14 @@ async function waitForExplorer(options) {
   throw new Error('repository fixture Explorer window가 준비되지 않았습니다');
 }
 
-function launchExplorer(runtime, exec = execFile) {
-  return executeFile(exec, runtime.explorerPath, [`/select,${runtime.filePath}`], runtime);
+export function launchExplorer(runtime, launch = spawn) {
+  return new Promise((resolve, reject) => {
+    const child = launch(runtime.explorerPath, [`/select,${runtime.filePath}`], {
+      env: runtime.env, windowsHide: true, stdio: 'ignore',
+    });
+    child.once('error', (error) => reject(new Error(`Explorer 실행 실패: ${error.message}`)));
+    child.once('spawn', resolve);
+  });
 }
 
 async function arrangeWindows(runtime, app, explorer, exec = execFile) {

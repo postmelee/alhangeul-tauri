@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict';
+import { EventEmitter } from 'node:events';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import {
   dragFileIntoWindow,
   inspectDragEnvironment,
+  launchExplorer,
   resolveDragPoints,
 } from './drag-drop.mjs';
 
@@ -12,6 +14,19 @@ test('Windows drag helper는 absolute fixture·CLI·system root와 interactive h
   assert.equal(runtime.explorerPath, 'C:\\Windows\\explorer.exe');
   assert.throws(() => inspectDragEnvironment(dragOptions({ platform: 'linux' })), /Windows에서만/);
   assert.throws(() => inspectDragEnvironment(dragOptions({ filePath: 'form.hwpx' })), /절대 경로/);
+});
+
+test('Explorer launch는 shell process 종료 코드 대신 spawn 성공까지만 판정한다', async () => {
+  const calls = [];
+  const launch = (file, args, options) => {
+    calls.push({ file, args, options });
+    const child = new EventEmitter();
+    queueMicrotask(() => { child.emit('spawn'); child.emit('close', 1); });
+    return child;
+  };
+  await launchExplorer(inspectDragEnvironment(dragOptions()), launch);
+  assert.deepEqual(calls[0].args, ['/select,C:\\repo\\form-002.hwpx']);
+  assert.equal(calls[0].options.windowsHide, true);
 });
 
 test('drag 좌표는 Explorer item과 Alhangeul BrowserRootView의 실측 bounds 중심이다', () => {
