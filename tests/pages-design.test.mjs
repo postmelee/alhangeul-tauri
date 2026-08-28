@@ -15,9 +15,9 @@ const screenshots = Object.freeze({
     sha256: '9e50463e32afbcfed2e864fb761efa8c1be0d21bf2dfad4a8a9f552fbce1c411',
   },
   'assets/linux-editor.png': {
-    width: 1280,
-    height: 900,
-    sha256: 'a9e9c9889d28e3fc465938fd3b311210bcf92a37346f10952903fa0574c3b14c',
+    width: 1282,
+    height: 924,
+    sha256: 'a3d4460b8fc432f00a2ce97cd68552582b2f5dfdc88faec9f749e58be132618b',
   },
 });
 
@@ -46,6 +46,7 @@ test('홈은 한 화면 설치 안내와 개별 페이지 탐색 계약을 지�
   assert.doesNotMatch(html, /<nav[^>]*>[\s\S]*?>다운로드<\/a>/);
   assert.equal([...html.matchAll(/<a[^>]+data-download-target=/g)].length, 3);
   assert.equal([...html.matchAll(/assets\/linux-editor\.png/g)].length, 1);
+  assert.match(html, /assets\/linux-editor\.png\?v=45-3-8/);
   assert.doesNotMatch(html, /assets\/windows-app\.png|linux-window|windows-window|platform-dot/);
   assert.doesNotMatch(html, /releases\/download\//);
 });
@@ -71,7 +72,7 @@ test('홈·업데이트·문의 페이지는 승인된 메뉴와 공유 메타�
     assert.match(html, /<title>[^<]+<\/title>/);
     assert.match(html, /<meta name="description" content="[^"]+" \/>/);
     assert.match(html, /<meta property="og:image" content="https:\/\/postmelee\.github\.io\/alhangeul-tauri\/assets\/og-main\.png" \/>/);
-    assert.match(html, /styles\.css\?v=45-3-7/);
+    assert.match(html, /styles\.css\?v=45-3-8/);
     assert.match(html, new RegExp(`<link rel="canonical" href="${escapeRegExp(expected.canonical)}" \\/>`));
     assert.match(html, /href="https:\/\/github\.com\/postmelee\/alhangeul-tauri"/);
     for (const link of expected.links) {
@@ -192,7 +193,7 @@ test('소셜 공유 이미지는 홈을 담는 16:9 PNG로 고정한다', async 
   assert.equal(png.readUInt32BE(20), 1080);
   assert.equal(
     createHash('sha256').update(png).digest('hex'),
-    '33497f704e9c7369ea2e86556523280a75e0527f8a7e706c69340c2429c31427',
+    '09e918a49cdab575095f2623e3339015f1643a89f6943fc9d7fdbd470c6b2694',
   );
 });
 

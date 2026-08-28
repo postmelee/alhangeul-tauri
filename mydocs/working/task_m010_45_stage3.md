@@ -58,6 +58,12 @@ Stage 3.7 피드백 보정에서는 업데이트 페이지의 성격과 홈 다�
 dropdown으로 연결했다. 홈의 겹친 Windows/Linux 화면은 검증된 실제 Linux HWP 편집 화면 하나로
 통일해 제품 화면의 가독성과 시각 초점을 높였다.
 
+Stage 3.8 피드백 보정에서는 웹뷰 내용만 담긴 대표 자산을 기존 Linux exact-SHA acceptance
+artifact의 성공한 `linux-system-print` 네이티브 전체 화면으로 교체했다. 1,920×1,080 원본에서
+검은 desktop 여백만 x=319~1,600, y=78~1,001 범위로 제거해 알한글 아이콘, `Alhangeul` 제목,
+창 제어 버튼과 실제 `biz_plan.hwp` 편집 화면을 모두 보존했다. 홈 최대 폭은 1,160px로 넓혀
+1,280px desktop에서 대표 화면을 약 639px로 표시하고, 같은 화면으로 OG 이미지를 다시 생성했다.
+
 ## 산출물
 
 | 파일 | 변경 요약 |
@@ -65,18 +71,19 @@ dropdown으로 연결했다. 홈의 겹친 Windows/Linux 화면은 검증된 실
 | `site/index.html` (84줄) | 5개 다운로드 선택지의 공통 최신 다운로드 fallback과 검증된 실제 HWP 편집 화면 하나로 홈 보정 |
 | `site/updates/index.html` (69줄) | 참고 페이지 구조의 hero, SVG 꺾쇠가 있는 플랫폼 다운로드 dropdown, 압축된 updater 범위와 릴리즈 노트 안내 |
 | `site/feedback/index.html` (72줄) | 원본과 같은 hero·privacy note·contact card 계층으로 email 복사/작성과 GitHub Issue 안내 재구성 |
-| `site/styles.css` (174줄) | 단일 제품 화면과 플랫폼 목차·환경별 선택지, Header 폭을 공유하는 13px/61px Footer responsive 위계 통합 |
+| `site/styles.css` (174줄) | 단일 제품 화면을 읽기 쉬운 1,160px desktop shell로 확대하고 responsive·Footer 위계 유지 |
 | `site/script.js` (92줄) | unpublished 내부 안내와 published 홈·dropdown exact artifact 전환, release note hydration 공유 |
-| `site/assets/og-main.png` (1,920×1,080, 292,533 bytes) | 단일 실제 제품 화면, 플랫폼별 다운로드 목차와 정렬된 Footer를 반영한 공유 이미지 재생성 |
+| `site/assets/linux-editor.png` (1,282×924, 79,227 bytes) | 실제 Linux 네이티브 제목 표시줄과 HWP 편집 상태를 함께 보존한 대표 화면 |
+| `site/assets/og-main.png` (1,920×1,080, 307,178 bytes) | 네이티브 전체 창 대표 화면, 다운로드 목차와 Footer를 반영한 PNG 공유 이미지 재생성 |
 | `scripts/build-pages.mjs` (152줄) | 중첩 페이지의 root asset 경로를 depth에 맞춰 결정적으로 정규화 |
 | `scripts/check-pages.mjs` (235줄) | 홈·업데이트·문의 필수 파일과 내부 hash 대상 존재 검사를 추가 |
 | `tests/pages.test.mjs` (282줄) | 중첩 asset 출력, broken hash와 필수 페이지 누락 회귀 검사 추가 |
-| `tests/pages-design.test.mjs` (284줄) | CSS version, 공통 최신 다운로드 fallback, 단일 대표 화면과 direct-download 계약 고정 |
-| `mydocs/orders/20260827.md`, `mydocs/orders/20260828.md` | Stage 3.6 이력 보존과 Stage 3.7 완료·Stage 4 승인 대기 기록 |
+| `tests/pages-design.test.mjs` (285줄) | CSS/asset version, 네이티브 대표 화면 크기·SHA와 direct-download 계약 고정 |
+| `mydocs/orders/20260827.md`, `mydocs/orders/20260828.md` | Stage 3.6 이력 보존과 Stage 3.8 완료·Stage 4 승인 대기 기록 |
 
-공유 이미지 SHA-256은
-`33497f704e9c7369ea2e86556523280a75e0527f8a7e706c69340c2429c31427`이다. 외부 package와
-lockfile은 변경하지 않았고 모든 text source는 권장 300줄 상한 이하다.
+대표 화면 SHA-256은 `a3d4460b8fc432f00a2ce97cd68552582b2f5dfdc88faec9f749e58be132618b`,
+공유 이미지 SHA-256은 `09e918a49cdab575095f2623e3339015f1643a89f6943fc9d7fdbd470c6b2694`이다.
+외부 package와 lockfile은 변경하지 않았고 모든 text source는 권장 300줄 상한 이하다.
 
 ## 본문 변경 정도 / 본문 무손실 여부
 
@@ -102,6 +109,12 @@ Stage 3.7에서는 소비자에게 중복되는 설치 형식 목록과 아직 �
 AppImage의 exact artifact 직접 다운로드 동작은 보존된다. 공개 전 다섯 href는 존재하지 않는 세부
 anchor 대신 `#latest-download`로 통일했다. 실제 제품 증적은 삭제하지 않고 Linux 자산 하나만 홈에
 표시하며, 기존 Windows 자산은 검증 증적으로 저장소에 보존한다.
+
+Stage 3.8에서는 제품 동작과 문구를 변경하지 않았다. 새 대표 자산은 commit
+`16149e8a99c7c870cca71d89bdc94f1e8069dc58`, native run `32919925454`, acceptance run
+`32921517032`, `tauri-driver 2.0.6`에서 성공한 기존 공개 fixture 증적이다. 원본 screenshot
+SHA-256 `e2ece75937eb105d1b51df96d9e01739218d272a2daa3e4807dfe6b6074b681c`에서 앱 창 밖의
+검은 여백만 정확히 제거했으며 가짜 title bar, 보간·합성이나 새 GitHub Job은 사용하지 않았다.
 
 제품 실행 코드, Pages workflow, `site/release.json` schema와 updater endpoint는 변경하지 않았다.
 `release.json`은 계속 `unreleased`, 세 download 값은 null, manifest는 비게시 상태다.
@@ -178,8 +191,12 @@ git diff --check
   세 heading만 남고 설치 형식 목록과 manifest 주소가 표시되지 않음
 - OK — Stage 3.7 390×844 updates는 document 폭 390px, action group x=20~370, 350px로 중앙 정렬되고
   horizontal overflow 없이 같은 세 heading과 압축된 updater 범위를 유지
-- OK — 1,920×1,080 공유 화면에서 단일 실제 제품 화면, 플랫폼별 다운로드 목차, Footer 61px와
-  document 1,920×1,080을 확인하고 새 PNG의 크기·SHA-256을 test로 고정
+- OK — Stage 3.8 1,280×720 홈은 document 1,280×720로 스크롤이 없고 네이티브 전체 창을
+  x=581~1,220, 약 639px 폭으로 표시해 아이콘·`Alhangeul` 제목·창 제어 버튼이 함께 보임
+- OK — Stage 3.8 1,024×768과 821×900 홈은 horizontal overflow 없이 각각 약 473px·278px
+  대표 화면을 유지하고, 820×900과 390×844에서는 기존 responsive 규칙대로 대표 화면을 숨김
+- OK — 1,920×1,080 공유 화면에서 네이티브 제목 표시줄을 포함한 단일 실제 제품 화면,
+  플랫폼별 다운로드 목차, Footer와 document 1,920×1,080을 확인하고 PNG 크기·SHA-256을 고정
 
 구현계획서의 FAQ용 native `<details>`는 최신 작업지시자가 홈 FAQ를 제거해 단일 화면으로
 보정하도록 한 범위와 충돌하므로 적용 대상에서 제외했다. 대신 updates의 다운로드 선택에는
