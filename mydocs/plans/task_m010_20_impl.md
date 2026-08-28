@@ -486,6 +486,23 @@ As·PDF Save tree는 모두 단일 chooser의 primary가 enabled/sensitive임을
 있으므로, semantic target 상태·dialog window·geometry·bounds 검증은 유지하고 같은 xdotool invocation의 mousemove에서
 `--sync`만 제거한다. 이어지는 click은 같은 검증 좌표에 순차 실행되며 product source는 변경하지 않는다.
 
+semantic click 보정 candidate `b0667c746aa838143fe6043ee4841958ea28ec6b`의
+[native run 33164172488](https://github.com/postmelee/alhangeul-tauri/actions/runs/33164172488)은 Windows x64,
+Linux x64, Linux arm64 build와 artifact 검증을 모두 통과했고 Windows desktop Rust test·Clippy와 MSI·NSIS 반복
+lifecycle smoke도 통과했다. Linux x64 artifact ID `9683147488`의 digest는
+`sha256:cce13333f73ae79d684a23071996e8116e2f5745c14bc6ba75d3fc631ff0d4b9`이며, Windows artifact ID
+`9683535798`, Linux arm64 artifact ID `9683067866`, installer smoke artifact ID `9683681327`도 같은 exact SHA에
+결속됐다.
+
+같은 exact SHA와 Linux x64 artifact를 사용한
+[Linux GUI run 33166298495](https://github.com/postmelee/alhangeul-tauri/actions/runs/33166298495)은 exact handoff,
+environment inventory, production DEB 설치와 여섯 scenario를 모두 통과했다. evidence artifact ID `9683810862`의
+digest는 `sha256:2dc348d2b9195922e0d4bf08bab14ce0b04c0fc6c5d752d52519dc1a2a085f7c`다. 기본 HWP/HWPX,
+native save roundtrip, drag-in, direct PDF, GTK/CUPS system print가 모두 success이고 manifest가 참조한 31개 파일의
+size와 SHA-256을 다시 계산해 일치함을 확인했다. direct·GTK·CUPS PDF는 각각 6쪽 A4 문서이며 제목·본문 text와
+페이지별 non-white content가 확인됐다. 이 결과로 Stage 4.1 correction과 Stage 4 cross-platform lifecycle 수용을
+완료한다.
+
 수정:
 
 - `apps/studio-host/src/command/direct-print.ts`
