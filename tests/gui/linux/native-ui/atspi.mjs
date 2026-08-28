@@ -34,6 +34,7 @@ const DIALOG_PRIMARY_BUTTON = Object.freeze({
   enabled: true,
   sensitive: true,
 });
+const DIALOG_FOCUS_BUTTON = Object.freeze({ roles: BUTTON_ROLES, names: DIALOG_PRIMARY_BUTTON.names });
 const PRINT_FILE_BUTTON = Object.freeze({
   roles: BUTTON_ROLES,
   names: ['output.pdf'],
@@ -92,7 +93,7 @@ export class LinuxNativeUiAdapter {
     return this.withFailureEvidence('open-document', async () => {
       await trigger();
       await this.wait(FILE_DIALOG);
-      await this.focusInFileDialog(DIALOG_PRIMARY_BUTTON);
+      await this.focusInFileDialog(DIALOG_FOCUS_BUTTON);
       await this.shortcut('ctrl+l');
       await this.setFileDialogText(LOCATION_ENTRY, path);
       await this.clickInFileDialog(DIALOG_PRIMARY_BUTTON);
@@ -209,7 +210,7 @@ export class LinuxNativeUiAdapter {
 
   async chooseSavePath(path) {
     await this.wait(FILE_DIALOG);
-    await this.focusInFileDialog(DIALOG_PRIMARY_BUTTON);
+    await this.focusInFileDialog(DIALOG_FOCUS_BUTTON);
     await this.shortcut('ctrl+l');
     await this.setFileDialogText(LOCATION_ENTRY, this.pathApi.dirname(path));
     await this.shortcut('Return');

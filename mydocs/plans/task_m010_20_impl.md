@@ -456,6 +456,21 @@ click은 비활성 복제 버튼을 먼저 선택해 실패했으므로 primary 
 보정한다. 이후 save·drag·PDF·print 실패는 열린 dialog가 남아서 발생한 연쇄 결과로 분류하며 product source는
 변경하지 않는다. 새 exact SHA의 native workflow와 Linux GUI 전체를 다시 실행해 보정을 수용한다.
 
+readiness 보정 candidate `658adc8c1bf0b435c81cd6d187ac7f36596538e2`의
+[native run 33158824880](https://github.com/postmelee/alhangeul-tauri/actions/runs/33158824880)은 Windows x64,
+Linux x64, Linux arm64 build와 artifact 검증을 모두 통과했고 Windows desktop Rust test·Clippy와 MSI·NSIS 반복
+lifecycle smoke도 통과했다. Linux x64 artifact ID `9681209749`의 digest는
+`sha256:e7f660401a9c60011cb18037d2d55c09d2b234cd1e581be5da5077ebc6cfac53`로 고정됐다.
+
+같은 exact SHA와 native artifact를 사용한
+[Linux GUI run 33161020100](https://github.com/postmelee/alhangeul-tauri/actions/runs/33161020100)은 exact handoff와
+기본 HWP/HWPX, drag-in을 통과했지만 native open/save/PDF/print가 primary button 대기에서 실패했다. evidence
+artifact ID `9681862666`의 첫 native tree에는 단일 `Open File` chooser와 disabled/insensitive `Open`만 남았고,
+첫 scenario는 정확히 120초 뒤 종료됐다. 이는 enabled/sensitive 조건이 실제 submit뿐 아니라 dialog 직후의 초기
+focus에도 적용되어 `ctrl+l`과 path 입력 전에 대기한 결과다. 초기 focus selector는 비활성 primary도 허용하되,
+실제 semantic click selector는 enabled/sensitive 조건을 유지하도록 분리한다. product source는 변경하지 않고 새
+exact SHA의 native workflow와 Linux GUI 전체를 다시 실행한다.
+
 수정:
 
 - `apps/studio-host/src/command/direct-print.ts`

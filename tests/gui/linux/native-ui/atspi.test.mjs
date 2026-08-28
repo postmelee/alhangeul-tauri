@@ -38,8 +38,8 @@ test('Save As는 dialog readiness 뒤 directory와 basename을 semantic field에
   assert.deepEqual(calls[1].selector.names, [
     'open', '열기', 'save', '저장', 'select', '선택',
   ]);
-  assert.equal(calls[1].selector.enabled, true);
-  assert.equal(calls[1].selector.sensitive, true);
+  assert.equal(calls[1].selector.enabled, undefined);
+  assert.equal(calls[1].selector.sensitive, undefined);
   assert.deepEqual(calls[2].applicationNames, LINUX_NATIVE_APPLICATION_NAMES);
   assert.deepEqual(calls[2].within.roles, ['file chooser', 'dialog']);
   assert.deepEqual(calls[2].selector.roles, ['text', 'entry']);
@@ -73,8 +73,8 @@ test('native open은 GTK location 입력 뒤 primary button으로 submit한다',
   assert.deepEqual(calls[1].selector.names, [
     'open', '열기', 'save', '저장', 'select', '선택',
   ]);
-  assert.equal(calls[1].selector.enabled, true);
-  assert.equal(calls[1].selector.sensitive, true);
+  assert.equal(calls[1].selector.enabled, undefined);
+  assert.equal(calls[1].selector.sensitive, undefined);
   assert.deepEqual(calls[2].applicationNames, LINUX_NATIVE_APPLICATION_NAMES);
   assert.deepEqual(calls[2].within.roles, ['file chooser', 'dialog']);
   assert.equal(calls[2].selector.names, undefined);
