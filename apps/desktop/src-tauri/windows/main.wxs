@@ -86,6 +86,31 @@
         <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="!(loc.LaunchApp)" />
         <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1"/>
         <CustomAction Id="LaunchApplication" Impersonate="yes" FileKey="Path" ExeCommand="[LAUNCHAPPARGS]" Return="asyncNoWait" />
+        <Property Id="ALHANGEUL_FAIL_THUMBNAIL_INSTALL" Secure="yes" />
+        <CustomAction
+            Id="RollbackThumbnailRegistration"
+            Directory="INSTALLDIR"
+            ExeCommand="&quot;[System64Folder]regsvr32.exe&quot; /s /u &quot;[INSTALLDIR]AlhangeulThumbnailHandler.dll&quot;"
+            Execute="rollback"
+            Impersonate="no"
+            Return="ignore" />
+        <CustomAction
+            Id="InstallThumbnailRegistration"
+            Directory="INSTALLDIR"
+            ExeCommand="&quot;[System64Folder]regsvr32.exe&quot; /s &quot;[INSTALLDIR]AlhangeulThumbnailHandler.dll&quot;"
+            Execute="deferred"
+            Impersonate="no"
+            Return="check" />
+        <CustomAction
+            Id="UninstallThumbnailRegistration"
+            Directory="INSTALLDIR"
+            ExeCommand="&quot;[System64Folder]regsvr32.exe&quot; /s /u &quot;[INSTALLDIR]AlhangeulThumbnailHandler.dll&quot;"
+            Execute="deferred"
+            Impersonate="no"
+            Return="ignore" />
+        <CustomAction
+            Id="FailThumbnailRegistrationProbe"
+            Error="Alhangeul thumbnail registration rollback probe." />
 
         <UI>
             <!-- launch app checkbox -->
@@ -398,6 +423,21 @@
             </Custom>
         </InstallExecuteSequence>
         {{/if}}
+
+        <InstallExecuteSequence>
+            <Custom Action="RollbackThumbnailRegistration" After="InstallFiles">
+                (NOT Installed) OR REINSTALL
+            </Custom>
+            <Custom Action="InstallThumbnailRegistration" After="RollbackThumbnailRegistration">
+                (NOT Installed) OR REINSTALL
+            </Custom>
+            <Custom Action="FailThumbnailRegistrationProbe" After="InstallThumbnailRegistration">
+                (ALHANGEUL_FAIL_THUMBNAIL_INSTALL = "1") AND ((NOT Installed) OR REINSTALL)
+            </Custom>
+            <Custom Action="UninstallThumbnailRegistration" Before="RemoveFiles">
+                (REMOVE = "ALL") AND NOT UPGRADINGPRODUCTCODE
+            </Custom>
+        </InstallExecuteSequence>
 
         <InstallExecuteSequence>
           <Custom Action="LaunchApplication" After="InstallFinalize">AUTOLAUNCHAPP AND NOT Installed</Custom>

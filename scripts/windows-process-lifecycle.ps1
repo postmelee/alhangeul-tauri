@@ -1,4 +1,4 @@
-function Wait-ForStableMainWindow($Process, $Iteration) {
+﻿function Wait-ForStableMainWindow($Process, $Iteration) {
   $deadline = [DateTime]::UtcNow.AddSeconds(30)
   $stableSamples = 0
   $stableHandle = [IntPtr]::Zero

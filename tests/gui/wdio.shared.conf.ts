@@ -1,6 +1,8 @@
 import { isAbsolute, join } from 'node:path';
 
 const DEFAULT_TIMEOUT_MS = 120_000;
+const SCENARIO_TIMEOUT_MULTIPLIER = 5;
+const MAX_SCENARIO_TIMEOUT_MS = 900_000;
 
 export interface GuiHarnessInputs {
   appPath: string;
@@ -49,15 +51,31 @@ export function createSharedWdioConfig(
     reporters: ['spec'],
     outputDir: inputs.outputDir,
     injectGlobals: false,
-    before: async (_capabilities, _specs, session) => {
-      const handle = await session.getWindowHandle();
-      await session.switchToWindow(handle);
+    before: async (_capabilities, _specs, browser) => {
+      await pinSingleWebDriverWindow(browser);
     },
     mochaOpts: {
       ui: 'bdd',
-      timeout: inputs.timeoutMs,
+      timeout: scenarioTimeoutMs(inputs.timeoutMs),
     },
   };
+}
+
+export function scenarioTimeoutMs(operationTimeoutMs: number): number {
+  return Math.min(
+    operationTimeoutMs * SCENARIO_TIMEOUT_MULTIPLIER,
+    MAX_SCENARIO_TIMEOUT_MS,
+  );
+}
+
+export async function pinSingleWebDriverWindow(
+  browser: WebdriverIO.Browser,
+): Promise<void> {
+  const handles = await browser.getWindowHandles();
+  if (handles.length !== 1) {
+    throw new Error(`GUI acceptance 시작 시 WebDriver window가 1개여야 합니다: ${handles.length}개`);
+  }
+  await browser.switchToWindow(handles[0]);
 }
 
 function absoluteEnv(env: NodeJS.ProcessEnv, name: string): string {

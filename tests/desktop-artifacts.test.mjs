@@ -19,11 +19,15 @@ import {
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const scriptPath = join(repoRoot, 'scripts/verify-desktop-artifacts.mjs');
+const PE_MACHINE_X64 = 0x8664;
+const PE_DLL_FLAG = 0x2000;
 
 const platformFixtures = Object.freeze({
   'windows-x64': Object.freeze({
     'msi/Alhangeul_0.3.1_x64_en-US.msi': 'windows msi',
     'nsis/Alhangeul_0.3.1_x64-setup.exe': 'windows nsis',
+    'verification/AlhangeulThumbnailHandler.dll': peFixture(true),
+    'verification/AlhangeulThumbnailWorker.exe': peFixture(false),
   }),
   'linux-x64': Object.freeze({
     'deb/alhangeul_0.3.1_amd64.deb': 'linux deb',
@@ -120,7 +124,7 @@ test('Windows x64의 NSIS bundle 누락을 거부한다', async () => {
         platform: 'windows-x64',
         root: fixture.root,
       }),
-      /필수 bundle 종류가 없습니다: nsis/,
+      /필수 종류 cardinality가 1이 아닙니다: nsis=0/,
     );
   } finally {
     await cleanup(fixture.tmp);
@@ -138,7 +142,7 @@ test('Linux x64의 RPM bundle 누락을 거부한다', async () => {
         platform: 'linux-x64',
         root: fixture.root,
       }),
-      /필수 bundle 종류가 없습니다: rpm/,
+      /필수 종류 cardinality가 1이 아닙니다: rpm=0/,
     );
   } finally {
     await cleanup(fixture.tmp);
@@ -155,7 +159,7 @@ test('Linux arm64의 DEB bundle 누락을 거부한다', async () => {
         platform: 'linux-arm64',
         root: fixture.root,
       }),
-      /필수 bundle 종류가 없습니다: deb/,
+      /필수 종류 cardinality가 1이 아닙니다: deb=0/,
     );
   } finally {
     await cleanup(fixture.tmp);
@@ -172,7 +176,7 @@ test('0바이트 필수 bundle을 거부한다', async () => {
         platform: 'linux-arm64',
         root: fixture.root,
       }),
-      /필수 bundle이 비어 있습니다/,
+    /필수 bundle이 비어 있습니다/,
     );
   } finally {
     await cleanup(fixture.tmp);
@@ -218,7 +222,7 @@ for (const [name, mutate, expectedError] of [
     async (fixture) => {
       await unlink(join(fixture.root, 'deb/alhangeul_0.3.1_arm64.deb'));
     },
-    /필수 bundle 종류가 없습니다: deb/,
+    /필수 종류 cardinality가 1이 아닙니다: deb=0/,
   ],
   [
     '기록 뒤 bundle 추가',
@@ -341,6 +345,16 @@ async function writeFixtureFile(root, path, content) {
   const outputPath = join(root, path);
   await mkdir(dirname(outputPath), { recursive: true });
   await writeFile(outputPath, content);
+}
+
+function peFixture(dll) {
+  const buffer = Buffer.alloc(256);
+  buffer.write('MZ', 0, 'ascii');
+  buffer.writeUInt32LE(0x80, 0x3c);
+  buffer.write('PE\0\0', 0x80, 'ascii');
+  buffer.writeUInt16LE(PE_MACHINE_X64, 0x84);
+  buffer.writeUInt16LE(dll ? PE_DLL_FLAG : 0x0002, 0x96);
+  return buffer;
 }
 
 function runCli(args) {

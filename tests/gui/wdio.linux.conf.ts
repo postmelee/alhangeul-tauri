@@ -24,6 +24,7 @@ export function createLinuxWdioConfig(
   };
   const capabilities: TauriCapabilities[] = [{
     browserName: 'tauri',
+    strictFileInteractability: false,
     'tauri:options': { application: inputs.appPath },
   }];
 

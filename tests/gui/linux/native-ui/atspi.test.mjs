@@ -5,19 +5,11 @@ import * as hostPath from 'node:path';
 import test from 'node:test';
 import {
   createAtspiRunner,
-  LINUX_NATIVE_APPLICATION_NAMES,
   LinuxNativeUiAdapter,
 } from './atspi.mjs';
+import { createWindowShortcutRunner } from './xdotool.mjs';
 
-test('native UI application 범위는 제품과 승인된 xdg portal 구현만 포함한다', () => {
-  assert.deepEqual(LINUX_NATIVE_APPLICATION_NAMES, [
-    'Alhangeul',
-    'xdg-desktop-portal-gtk',
-    'xdg-desktop-portal-gnome',
-  ]);
-});
-
-test('Save As는 dialog readiness 뒤 directory와 basename을 semantic field에 입력한다', async () => {
+test('Save As는 focused location entry에 full target을 넣고 명시적으로 accept한다', async () => {
   const calls = [];
   const shortcuts = [];
   let triggered = false;
@@ -31,116 +23,193 @@ test('Save As는 dialog readiness 뒤 directory와 basename을 semantic field에
   });
 
   assert.equal(triggered, true);
-  assert.deepEqual(shortcuts, ['ctrl+l', 'Return']);
+  assert.deepEqual(shortcuts, ['ctrl+l']);
   assert.deepEqual(calls.map(({ command }) => command), [
-    'wait', 'focus', 'setText', 'wait', 'setText', 'click', 'waitAbsent',
+    'wait', 'submitText', 'actionIfPresent', 'waitAbsent',
   ]);
-  assert.deepEqual(calls[1].selector.names, [
-    'open', '열기', 'save', '저장', 'select', '선택',
-  ]);
-  assert.equal(calls[1].selector.enabled, undefined);
-  assert.equal(calls[1].selector.sensitive, undefined);
-  assert.deepEqual(calls[2].applicationNames, LINUX_NATIVE_APPLICATION_NAMES);
-  assert.deepEqual(calls[2].within.roles, ['file chooser', 'dialog']);
-  assert.deepEqual(calls[2].selector.roles, ['text', 'entry']);
-  assert.equal(calls[2].selector.names, undefined);
-  assert.equal(calls[2].value, '/tmp/output');
-  assert.equal(calls[4].value, 'saved.hwp');
-  assert.deepEqual(calls[4].within.roles, ['file chooser', 'dialog']);
-  assert.deepEqual(calls[4].selector.roles, ['text', 'entry']);
-  assert.equal(calls[4].selector.names, undefined);
-  assert.deepEqual(calls[5].selector.names, [
-    'open', '열기', 'save', '저장', 'select', '선택',
-  ]);
-  assert.equal(calls[5].selector.enabled, true);
-  assert.equal(calls[5].selector.sensitive, true);
-  assert.equal(calls[5].windowScope, 'file-dialog');
-  assert.deepEqual(calls[5].within.roles, ['file chooser', 'dialog']);
+  assert.equal(calls[1].value, '/tmp/output/saved.hwp');
+  assert.equal(calls[1].selector.focused, true);
+  assert.deepEqual(calls[1].selector.within.roles, ['file chooser']);
+  assert.deepEqual(calls[2].selector.exactNames, ['save', '저장']);
+  assert.deepEqual(calls[2].guardSelector.roles, ['file chooser', 'dialog']);
+  assert.deepEqual(calls[2].actionNames, ['click', 'press']);
 });
 
-test('native open은 GTK location 입력 뒤 primary button으로 submit한다', async () => {
+test('native open은 GTK location shortcut을 한 번 쓰고 modal close를 기다린다', async () => {
   const calls = [];
   const shortcuts = [];
+  const windowShortcuts = [];
   const adapter = createAdapter({
     runAtspi: async (request) => { calls.push(request); return {}; },
     runShortcut: async (key) => { shortcuts.push(key); },
+    runWindowShortcut: async (request) => { windowShortcuts.push(request); },
   });
   await adapter.openDocument('/fixtures/biz_plan.hwp', async () => {});
   assert.deepEqual(shortcuts, ['ctrl+l']);
   assert.deepEqual(calls.map(({ command }) => command), [
-    'wait', 'focus', 'setText', 'click', 'waitAbsent',
+    'wait', 'submitText', 'actionIfPresent', 'waitAbsent',
   ]);
-  assert.deepEqual(calls[1].selector.names, [
-    'open', '열기', 'save', '저장', 'select', '선택',
-  ]);
-  assert.equal(calls[1].selector.enabled, undefined);
-  assert.equal(calls[1].selector.sensitive, undefined);
-  assert.deepEqual(calls[2].applicationNames, LINUX_NATIVE_APPLICATION_NAMES);
-  assert.deepEqual(calls[2].within.roles, ['file chooser', 'dialog']);
-  assert.equal(calls[2].selector.names, undefined);
-  assert.equal(calls[2].value, '/fixtures/biz_plan.hwp');
-  assert.equal(calls[3].windowScope, 'file-dialog');
-  assert.deepEqual(calls[3].selector.names, [
-    'open', '열기', 'save', '저장', 'select', '선택',
-  ]);
-  assert.equal(calls[3].selector.enabled, true);
-  assert.equal(calls[3].selector.sensitive, true);
-});
-
-test('native shortcut은 허용된 portal window를 활성화·확인한 뒤 XTEST key를 보낸다', async () => {
-  const processCalls = [];
-  const adapter = createAdapter({
-    runAtspi: async () => ({}),
-    runShortcut: undefined,
-    spawnSync: (command, args) => {
-      processCalls.push([command, args]);
-      if (args[0] === 'search' || args[0] === 'getactivewindow') {
-        return { status: 0, stdout: '4194354\n', stderr: '' };
-      }
-      return { status: 0, stdout: '', stderr: '' };
-    },
-  });
-  await adapter.openDocument('/fixtures/biz_plan.hwp', async () => {});
-  assert.deepEqual(processCalls.map(([, args]) => args[0]), [
-    'search', 'windowactivate', 'getactivewindow', 'key',
-  ]);
-  assert.deepEqual(processCalls[0][1], [
-    'search', '--onlyvisible', '--name',
-    '^(Open File|Save File|Select a File|Select a filename|파일 열기|파일 저장|파일 선택|파일 이름 선택)$',
-  ]);
-  assert.deepEqual(processCalls[2][1], ['getactivewindow']);
-  assert.deepEqual(processCalls[3][1], ['key', '--clearmodifiers', 'ctrl+l']);
+  assert.equal(calls[1].value, '/fixtures/biz_plan.hwp');
+  assert.equal(calls[1].selector.focused, true);
+  assert.deepEqual(calls[1].selector.within.roles, ['file chooser']);
+  assert.deepEqual(calls[2].selector.exactNames, ['open', '열기']);
 });
 
 test('print adapter는 Print to File만 고르고 save/cancel modal 종료를 확인한다', async () => {
   const calls = [];
   const shortcuts = [];
+  const windowShortcuts = [];
+  const fileChooserCalls = [];
   const adapter = createAdapter({
     runAtspi: async (request) => { calls.push(request); return {}; },
     runShortcut: async (key) => { shortcuts.push(key); },
+    runWindowShortcut: async (request) => { windowShortcuts.push(request); },
+    runPrintFileChooser: async (request) => { fileChooserCalls.push(request); return {}; },
   });
   await adapter.printToFile('/tmp/output/gtk.pdf', async () => {});
   await adapter.cancelPrint(async () => {});
   assert.deepEqual(calls.map(({ command }) => command), [
-    'wait', 'click', 'wait', 'click',
-    'wait', 'focus', 'setText', 'wait', 'setText', 'click', 'waitAbsent',
-    'click', 'waitAbsent',
-    'wait', 'click', 'waitAbsent',
+    'wait', 'selectByFocus', 'wait',
+    'action', 'wait', 'wait', 'waitAbsent',
+    'wait', 'action', 'waitAbsent',
   ]);
   assert.deepEqual(calls[1].selector.names, ['print to file', '파일로 인쇄']);
+  assert.equal(calls[1].actionNames, undefined);
   assert.equal(calls[2].selector.selected, true);
-  assert.deepEqual(calls[3].selector.names, ['output.pdf']);
-  assert.deepEqual(calls[3].within, { roles: ['dialog'], names: ['print', '인쇄'] });
-  assert.equal(calls[6].value, '/tmp/output');
-  assert.equal(calls[8].value, 'gtk.pdf');
-  assert.equal(calls[9].windowScope, 'file-dialog');
-  assert.deepEqual(calls[11].selector.names, ['print', '인쇄']);
-  assert.equal(calls[11].searchOrder, 'reverse');
-  assert.deepEqual(shortcuts, ['ctrl+l', 'Return']);
+  assert.deepEqual(calls[3].selector.names, ['.pdf', '.ps', '.svg']);
+  assert.deepEqual(calls[3].actionNames, ['click', 'press']);
+  assert.deepEqual(fileChooserCalls, [
+    { operation: 'wait', titles: ['Select a filename', '파일 이름 선택'], timeoutMs: 5000 },
+    {
+      operation: 'submitPath', titles: ['Select a filename', '파일 이름 선택'],
+      path: '/tmp/output/gtk.pdf', timeoutMs: 5000,
+    },
+  ]);
+  assert.deepEqual(calls[4].selector.names, ['gtk.pdf']);
+  assert.ok(calls.every(({ desktopScope }) => desktopScope === true));
+  assert.deepEqual(calls[5].selector.within, { roles: ['dialog'], names: ['print', '인쇄'] });
+  assert.deepEqual(calls[5].selector.exactNames, ['print', '인쇄']);
+  assert.equal(calls[5].selector.names, undefined);
+  assert.deepEqual(shortcuts, []);
+  assert.deepEqual(windowShortcuts, [{ titles: ['Print', '인쇄'], key: 'alt+p' }]);
+  assert.deepEqual(calls[8].selector.within, { roles: ['dialog'], names: ['print', '인쇄'] });
+  assert.deepEqual(calls[8].selector.exactNames, ['cancel', '취소']);
   await assert.rejects(
     adapter.printWithVirtualPrinter('Office LaserJet', async () => {}),
     /physical printer/,
   );
+});
+
+test('virtual printer는 semantic selection 후에만 Print를 실행한다', async () => {
+  const calls = [];
+  const adapter = createAdapter({
+    runAtspi: async (request) => { calls.push(request); return {}; },
+  });
+  await adapter.printWithVirtualPrinter('PDF', async () => {});
+  assert.deepEqual(calls.map(({ command }) => command), [
+    'wait', 'selectByFocus', 'wait', 'wait', 'waitAbsent',
+  ]);
+  assert.deepEqual(calls[1].selector.names, ['PDF']);
+  assert.equal(calls[1].actionNames, undefined);
+  assert.equal(calls[2].selector.selected, true);
+  assert.equal(calls[1].desktopScope, true);
+  assert.deepEqual(calls[3].selector.exactNames, ['print', '인쇄']);
+  assert.equal(calls[3].actionNames, undefined);
+});
+
+test('system print shortcut은 실제 ctrl+p만 허용하고 AT-SPI 탐색과 분리한다', async () => {
+  const calls = [];
+  const adapter = new LinuxNativeUiAdapter({
+    outputDir: '/tmp/evidence',
+    timeoutMs: 30000,
+    applicationNames: ['Alhangeul'],
+    spawnSync: (command, args) => {
+      calls.push([command, args]);
+      return { status: 0, stdout: '', stderr: '' };
+    },
+    captureScreenshot: async () => {},
+  });
+  await adapter.triggerSystemPrint();
+  assert.deepEqual(calls[0][1], ['key', '--clearmodifiers', 'ctrl+p']);
+  await assert.rejects(adapter.shortcut('ctrl+x'), /허용되지 않은 key/);
+});
+
+test('Print mnemonic은 exact visible window 하나를 활성화한 뒤 전송한다', async () => {
+  const calls = [];
+  const runner = createWindowShortcutRunner({
+    xdotoolPath: '/usr/bin/xdotool',
+    spawnSync: (command, args) => {
+      calls.push([command, args]);
+      if (args[0] === 'search' && args.at(-1) === '^Print$') {
+        return { status: 0, stdout: '410\n', stderr: '' };
+      }
+      return { status: args[0] === 'search' ? 1 : 0, stdout: '', stderr: '' };
+    },
+  });
+  assert.deepEqual(
+    await runner({ titles: ['Print', '인쇄'], key: 'alt+p' }),
+    { windowId: '410' },
+  );
+  assert.deepEqual(calls.at(-1), [
+    '/usr/bin/xdotool', ['windowactivate', '--sync', '410', 'key', '--clearmodifiers', 'alt+p'],
+  ]);
+});
+
+test('production native phase는 선택형 글꼴 버튼과 focused document wait만 허용한다', async () => {
+  const calls = [];
+  const adapter = createAdapter({
+    runAtspi: async (request) => { calls.push(request); return { performed: false }; },
+  });
+  const selector = { roles: ['push button'], names: ['대체 글꼴로 보기'] };
+  assert.deepEqual(await adapter.actionOptional(selector, 5000), { performed: false });
+  await adapter.wait({ roles: ['document text'], names: ['biz_plan.hwp'], focused: true });
+  assert.deepEqual(calls.map(({ command }) => command), ['actionOptional', 'wait']);
+  assert.deepEqual(calls[0].actionNames, ['click', 'press']);
+  assert.equal(calls[0].timeoutMs, 5000);
+});
+
+test('Python bridge는 editable text를 focus·readback한 같은 node에서 semantic activate한다', async () => {
+  const source = await readFile(new URL('./atspi_driver.py', import.meta.url), 'utf8');
+  assert.match(source, /within = selector\.get\("within"\)/);
+  assert.match(source, /desktop_scope = request\.get\("desktopScope", False\)/);
+  assert.match(source, /desktopScope must be a boolean/);
+  assert.match(source, /matches_info\(node_info\(item\), within\)/);
+  assert.match(source, /selected = selector\.get\("selected"\)/);
+  assert.match(source, /exact_names = selector\.get\("exactNames", \[\]\)/);
+  assert.match(source, /normalized\(value\) == node_name/);
+  assert.match(source, /info\["role"\] in \{"text", "entry"\}/);
+  const editable = source.slice(source.indexOf('def set_editable_text'), source.indexOf('def snapshot'));
+  assert.match(editable, /queryComponent\(\)\.grabFocus\(\)/);
+  assert.match(editable, /text\.getText\(0, count\) != value/);
+  assert.ok(editable.indexOf('grabFocus') < editable.indexOf('setTextContents'));
+  assert.ok(editable.indexOf('setTextContents') < editable.indexOf('getText'));
+  const submitText = source.slice(source.indexOf('if command == "submitText":'), source.indexOf('if command == "focus":'));
+  assert.match(submitText, /set_editable_text\(node, request\.get\("value"\)\)/);
+  assert.match(submitText, /perform_action\(node, \["activate"\]\)/);
+  const optionalAction = source.slice(source.indexOf('def perform_if_present'), source.indexOf('def perform_action'));
+  assert.match(optionalAction, /optional action requires a non-empty guardSelector/);
+  assert.match(optionalAction, /if not find_matches\(guard_request\)/);
+  assert.match(optionalAction, /optional action is unavailable while its dialog remains/);
+  assert.match(optionalAction, /def perform_optional/);
+  assert.match(optionalAction, /"node": perform_action/);
+  assert.doesNotMatch(optionalAction, /node_info\(found\[0\]\)/);
+  assert.match(optionalAction, /return \{"performed": False\}/);
+  const snapshot = source.slice(source.indexOf('def snapshot'), source.indexOf('def dispatch'));
+  assert.match(snapshot, /item\["actions"\] = action_names\(node\)/);
+  assert.match(snapshot, /item\["textLength"\] = text_length\(node\)/);
+  assert.doesNotMatch(snapshot, /getText/);
+  const adapter = await readFile(new URL('./atspi.mjs', import.meta.url), 'utf8');
+  assert.doesNotMatch(adapter, /shortcut\('Return'\)/);
+  assert.doesNotMatch(adapter, /'Return'/);
+  assert.doesNotMatch(adapter, /focus\(selector\)/);
+  assert.doesNotMatch(source, /if command == "focus"/);
+  const printerFocus = source.slice(source.indexOf('if command == "selectByFocus":'));
+  assert.match(printerFocus, /node\.queryComponent\(\)\.grabFocus\(\)/);
+  assert.match(printerFocus, /AT-SPI selectable cell focus failed/);
+  const stableAction = source.slice(source.indexOf('def perform_action'), source.indexOf('def action_names'));
+  assert.ok(stableAction.indexOf('node_info(node)') < stableAction.indexOf('action.doAction'));
+  const dispatchAction = source.slice(source.indexOf('if command == "action":'));
+  assert.match(dispatchAction, /return perform_action\(node, request\.get\("actionNames"/);
 });
 
 test('adapter 실패는 tree와 screenshot을 남기고 Escape cleanup 후 원인을 보존한다', async () => {
@@ -177,7 +246,6 @@ test('AT-SPI process bridge는 JSON 1건만 허용하고 driver 오류를 fail-c
   });
   assert.deepEqual(await runner({ command: 'wait', timeoutMs: 5000 }), { role: 'dialog' });
   assert.equal(requests[0][0], '/usr/bin/python3');
-  assert.deepEqual(requests[0][1], ['/tests/atspi_driver.py', 'wait']);
 
   const failing = createAtspiRunner({
     spawnSync: () => ({ status: 1, stdout: '{"ok":false,"error":"missing role"}\n', stderr: 'private' }),
@@ -188,43 +256,23 @@ test('AT-SPI process bridge는 JSON 1건만 허용하고 driver 오류를 fail-c
     spawnSync: () => ({ status: 1, stdout: '{"ok":false,"error":""}\n', stderr: 'driver stderr' }),
   });
   await assert.rejects(emptyError({ command: 'wait' }), /driver stderr/);
-});
 
-test('AT-SPI Python traversal은 portal 전환 중 null과 stale accessible을 숨김 처리한다', async () => {
-  const source = await readFile(new URL('./atspi_driver.py', import.meta.url), 'utf8');
-  assert.match(source, /states = safe_states\(node\)/);
-  assert.match(source, /sys\.argv\[1\] != request\.get\("command"\)/);
-  assert.match(source, /return node\.getState\(\) if node is not None else None/);
-  assert.match(source, /state_contains\(states, pyatspi\.STATE_SHOWING\)/);
-  assert.match(source, /if \(child := node\.getChildAtIndex\(index\)\) is not None/);
-  assert.match(source, /within = request\.get\("within"\)/);
-  assert.match(source, /NATIVE_ROOT_ROLES = \{"dialog", "file chooser"\}/);
-  assert.match(source, /walk\(root, max_depth=3, max_nodes=128, reverse=reverse\)/);
-  assert.match(source, /walk_for_selector\(root, selector, reverse=reverse\)/);
-  assert.match(source, /def find_matches\(request, limit=None\):/);
-  assert.match(source, /if limit is not None and len\(found\) >= limit:/);
-  assert.match(source, /role = normalized\(safe_method\(node, "getRoleName", "unknown"\)\)/);
-  assert.match(source, /selector\.get\("selected", False\)/);
-  assert.match(source, /selector\.get\("enabled", False\)/);
-  assert.match(source, /selector\.get\("sensitive", False\)/);
-  assert.match(source, /"selected": state_contains\(states, pyatspi\.STATE_SELECTED\)/);
-  assert.match(source, /"enabled": state_contains\(states, pyatspi\.STATE_ENABLED\)/);
-  assert.match(source, /state_contains\(states, pyatspi\.STATE_SENSITIVE\)/);
-  assert.match(source, /PRINT_DIALOG_WINDOW_PATTERN = r"\^\(Print\|인쇄\)\$"/);
-  assert.match(source, /FILE_DIALOG_WINDOW_PATTERN = r/);
-  assert.match(source, /request\.get\("searchOrder"\) == "reverse"/);
-  assert.match(source, /window_patterns = \{/);
-  assert.match(source, /"windowactivate", "--sync", window_id/);
-  assert.match(source, /"mousemove", str\(center_x\), str\(center_y\), "click", "1"/);
-  assert.match(source, /max_depth=18, max_nodes=2500/);
-  assert.match(source, /info\["name"\] or depth < 2 or info\["showing"\]/);
+  const timeout = createAtspiRunner({
+    spawnSync: () => ({
+      status: null, stdout: '', stderr: '', error: { message: 'spawnSync python3 ETIMEDOUT' },
+    }),
+  });
+  await assert.rejects(timeout({ command: 'waitAbsent' }), /waitAbsent.*ETIMEDOUT/);
 });
 
 function createAdapter(override = {}) {
   return new LinuxNativeUiAdapter({
     outputDir: '/tmp/evidence',
     timeoutMs: 30000,
+    applicationNames: ['Alhangeul'],
     runShortcut: async () => {},
+    runWindowShortcut: async () => {},
+    runPrintFileChooser: async () => ({}),
     captureScreenshot: async () => {},
     ...override,
   });

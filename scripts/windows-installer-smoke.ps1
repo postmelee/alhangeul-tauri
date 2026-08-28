@@ -14,11 +14,14 @@ $registryLocations = @(
 )
 $extensions = @('.hwp', '.hwpx')
 $canonicalProgIds = @('Alhangeul.hwp', 'Alhangeul.hwpx')
+$associationSentinelProgIds = @('Hancom.Hwp.Document', 'Hancom.Hwpx.Document')
 $legacyProgIds = @('HWP Document', 'HWPX Document')
 $msiInstallDirectory = Join-Path $env:ProgramFiles 'Alhangeul'
 $nsisInstallDirectory = Join-Path $env:LOCALAPPDATA 'Alhangeul'
 function Assert-Condition($Condition, $Message) { if (-not $Condition) { throw $Message } }
-. "$PSScriptRoot/windows-process-lifecycle.ps1"
+. (Join-Path $PSScriptRoot 'windows-installer-smoke-support.ps1')
+. (Join-Path $PSScriptRoot 'windows-thumbnail-smoke.ps1')
+. (Join-Path $PSScriptRoot 'windows-process-lifecycle.ps1')
 function Assert-InventoryRecord($Kind, $File, $Inventory, $Root) {
   $records = @($Inventory.files | Where-Object { $_.kind -eq $Kind })
   Assert-Condition ($records.Count -eq 1) "inventory에 $Kind record가 정확히 하나여야 합니다."
@@ -34,119 +37,24 @@ function Resolve-BundleArtifacts($Root) {
   $inventories = @($files | Where-Object { $_.Name -ceq 'alhangeul-artifact-inventory.json' })
   $msiFiles = @($files | Where-Object { $_.Extension -ieq '.msi' })
   $nsisFiles = @($files | Where-Object { $_.Extension -ieq '.exe' -and $_.Directory.Name -ieq 'nsis' })
+  $handlerFiles = @($files | Where-Object { $_.Name -ceq 'AlhangeulThumbnailHandler.dll' -and $_.Directory.Name -ceq 'verification' })
+  $workerFiles = @($files | Where-Object { $_.Name -ceq 'AlhangeulThumbnailWorker.exe' -and $_.Directory.Name -ceq 'verification' })
   Assert-Condition ($inventories.Count -eq 1) 'artifact inventory가 정확히 하나여야 합니다.'
   Assert-Condition ($msiFiles.Count -eq 1) 'MSI bundle이 정확히 하나여야 합니다.'
   Assert-Condition ($nsisFiles.Count -eq 1) 'NSIS bundle이 정확히 하나여야 합니다.'
+  Assert-Condition ($handlerFiles.Count -eq 1) 'verification handler DLL이 정확히 하나여야 합니다.'
+  Assert-Condition ($workerFiles.Count -eq 1) 'verification worker EXE가 정확히 하나여야 합니다.'
   Assert-Condition ($msiFiles[0].Directory.Name -ieq 'msi') 'MSI는 msi 디렉터리에 있어야 합니다.'
-  Assert-Condition ($files.Count -eq 3) 'inventory, MSI, NSIS 외 파일을 허용하지 않습니다. updater sidecar 도입 시 이 cardinality를 갱신합니다.'
+  Assert-Condition ($files.Count -eq 5) 'inventory, MSI, NSIS, thumbnail verification copy 두 개만 허용합니다.'
   $inventory = Get-Content -LiteralPath $inventories[0].FullName -Raw | ConvertFrom-Json
   Assert-Condition ($inventory.platform -eq 'windows-x64') 'windows-x64 inventory가 필요합니다.'
   Assert-InventoryRecord 'msi' $msiFiles[0] $inventory $rootItem.FullName
   Assert-InventoryRecord 'nsis' $nsisFiles[0] $inventory $rootItem.FullName
-  return [ordered]@{ Msi = $msiFiles[0].FullName; Nsis = $nsisFiles[0].FullName }
-}
-function Read-RegistryValue($Location, $Path, $Name) {
-  $base = [Microsoft.Win32.RegistryKey]::OpenBaseKey($Location.Hive, $Location.View); $key = $null
-  try {
-    $key = $base.OpenSubKey($Path)
-    $exists = $null -ne $key -and $key.GetValueNames() -contains $Name
-    $value = if ($exists) { $key.GetValue($Name, $null, [Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames) } else { $null }
-    return [ordered]@{ Hive = $Location.HiveName; View = $Location.ViewName; Path = $Path; Name = $Name; Exists = $exists; Value = $value }
-  } finally { if ($null -ne $key) { $key.Close() }; $base.Close() }
-}
-function Get-RegistryValues($Path, $Name) { $values = @(); foreach ($location in $registryLocations) { $values += Read-RegistryValue $location $Path $Name }; return $values }
-function Get-DefaultState {
-  $state = @()
-  foreach ($extension in $extensions) {
-    $choices = @()
-    foreach ($location in @($registryLocations | Where-Object { $_.HiveName -eq 'HKCU' })) {
-      $path = "Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\$extension\UserChoice"
-      $choices += [ordered]@{ Hive = $location.HiveName; View = $location.ViewName; ProgId = Read-RegistryValue $location $path 'ProgId'; Hash = Read-RegistryValue $location $path 'Hash' }
-    }
-    $state += [ordered]@{ Extension = $extension; Defaults = @(Get-RegistryValues "Software\Classes\$extension" ''); UserChoice = $choices }
-  }
-  return $state
-}
-function Set-AssociationSentinels {
-  $base = [Microsoft.Win32.RegistryKey]::OpenBaseKey([Microsoft.Win32.RegistryHive]::CurrentUser, [Microsoft.Win32.RegistryView]::Registry64); $script:sentinels = @()
-  try {
-    $classes = $base.CreateSubKey('Software\Classes')
-    foreach ($extension in $extensions) {
-      $key = $classes.OpenSubKey($extension, $true)
-      $keyExisted = $null -ne $key
-      if (-not $keyExisted) { $key = $classes.CreateSubKey($extension) }
-      $valueExisted = $key.GetValueNames() -contains ''
-      $script:sentinels += [ordered]@{ Extension = $extension; KeyExisted = $keyExisted; ValueExisted = $valueExisted; Value = $key.GetValue('') }
-      $key.SetValue('', "AlhangeulSmoke.Existing$extension", [Microsoft.Win32.RegistryValueKind]::String)
-      $key.Close()
-    }
-    $classes.Close()
-  } finally { $base.Close() }
-  return $script:sentinels
-}
-function Restore-AssociationSentinels($Records) {
-  $base = [Microsoft.Win32.RegistryKey]::OpenBaseKey([Microsoft.Win32.RegistryHive]::CurrentUser, [Microsoft.Win32.RegistryView]::Registry64); try {
-    $classes = $base.OpenSubKey('Software\Classes', $true)
-    foreach ($record in $Records) {
-      $key = $classes.OpenSubKey($record.Extension, $true)
-      if ($null -eq $key -and $record.KeyExisted) { $key = $classes.CreateSubKey($record.Extension) }
-      if ($null -eq $key) { continue }
-      if ($record.ValueExisted) { $key.SetValue('', $record.Value) } else { $key.DeleteValue('', $false) }
-      $empty = $key.SubKeyCount -eq 0 -and $key.ValueCount -eq 0
-      $key.Close()
-      if (-not $record.KeyExisted -and $empty) { $classes.DeleteSubKey($record.Extension, $false) }
-    }
-    $classes.Close()
-  } finally { $base.Close() }
-}
-function Get-UninstallEntries {
-  $entries = @()
-  foreach ($location in $registryLocations) {
-    $base = [Microsoft.Win32.RegistryKey]::OpenBaseKey($location.Hive, $location.View)
-    $root = $base.OpenSubKey('Software\Microsoft\Windows\CurrentVersion\Uninstall')
-    if ($null -ne $root) {
-      foreach ($name in $root.GetSubKeyNames()) {
-        $key = $root.OpenSubKey($name)
-        $displayName = $key.GetValue('DisplayName')
-        if ($displayName -eq 'Alhangeul' -or $name -eq 'Alhangeul') {
-          $entries += [ordered]@{ Hive = $location.HiveName; View = $location.ViewName; KeyName = $name; DisplayName = $displayName; DisplayVersion = $key.GetValue('DisplayVersion'); Publisher = $key.GetValue('Publisher'); InstallLocation = $key.GetValue('InstallLocation'); UninstallString = $key.GetValue('UninstallString'); MainBinaryName = $key.GetValue('MainBinaryName') }
-        }
-        $key.Close()
-      }
-      $root.Close()
-    }
-    $base.Close()
-  }
-  return $entries
-}
-function Get-HandlerState($Extension, $ProgId, $Executable) {
-  $classes = @(Get-RegistryValues "Software\Classes\$ProgId" ''); $commands = @(Get-RegistryValues "Software\Classes\$ProgId\shell\open\command" ''); $openWith = @(Get-RegistryValues "Software\Classes\$Extension\OpenWithProgids" $ProgId)
-  $validCommand = @($commands | Where-Object {
-    $_.Exists -and $_.Value -is [string] -and
-    $_.Value.IndexOf($Executable, [StringComparison]::OrdinalIgnoreCase) -ge 0 -and $_.Value.Contains('"%1"')
-  }).Count -gt 0
-  return [ordered]@{ Extension = $Extension; ProgId = $ProgId; Classes = $classes; Commands = $commands; OpenWith = $openWith; Valid = @($classes | Where-Object { $_.Exists }).Count -gt 0 -and $validCommand -and @($openWith | Where-Object { $_.Exists }).Count -gt 0 }
-}
-function Get-ShortcutState($Kind, $Executable) {
-  $desktopFolder = if ($Kind -eq 'msi') { [Environment]::GetFolderPath('CommonDesktopDirectory') } else { [Environment]::GetFolderPath('DesktopDirectory') }; $programsFolder = if ($Kind -eq 'msi') { [Environment]::GetFolderPath('CommonPrograms') } else { [Environment]::GetFolderPath('Programs') }
-  $paths = @((Join-Path $desktopFolder 'Alhangeul.lnk'), (Join-Path $programsFolder 'Alhangeul\Alhangeul.lnk'))
-  $items = @()
-  $shell = New-Object -ComObject WScript.Shell
-  foreach ($path in $paths) {
-    $exists = Test-Path -LiteralPath $path -PathType Leaf
-    $target = if ($exists) { $shell.CreateShortcut($path).TargetPath } else { $null }
-    $items += [ordered]@{ Path = $path; Exists = $exists; Target = $target }
-  }
-  [void][Runtime.InteropServices.Marshal]::ReleaseComObject($shell); $valid = @($items | Where-Object { $_.Exists -and (Test-SamePath $_.Target $Executable) }).Count -eq 2
-  return [ordered]@{ Items = $items; Valid = $valid }
-}
-function ConvertTo-NormalizedPath($Value) { if ([string]::IsNullOrWhiteSpace($Value)) { return $null }; return [IO.Path]::GetFullPath(([string]$Value).Trim().Trim('"')).TrimEnd('\') }
-function Test-SamePath($Left, $Right) { $leftPath = ConvertTo-NormalizedPath $Left; $rightPath = ConvertTo-NormalizedPath $Right; return $null -ne $leftPath -and $null -ne $rightPath -and $leftPath -ieq $rightPath }
-function Get-VersionState($Executable) { $version = (Get-Item -LiteralPath $Executable).VersionInfo; return [ordered]@{ ProductVersion = $version.ProductVersion; FileVersion = $version.FileVersion } }
-function ConvertTo-NormalizedVersion($Value) {
-  $match = [regex]::Match($Value, '^\s*(\d+)\.(\d+)\.(\d+)(?:\.(\d+))?\s*$')
-  Assert-Condition $match.Success "version 형식이 올바르지 않습니다: $Value"
-  Assert-Condition (-not $match.Groups[4].Success -or $match.Groups[4].Value -eq '0') "version 네 번째 성분은 0이어야 합니다: $Value"; return "$($match.Groups[1].Value).$($match.Groups[2].Value).$($match.Groups[3].Value)"
+  Assert-InventoryRecord 'thumbnail-handler' $handlerFiles[0] $inventory $rootItem.FullName
+  Assert-InventoryRecord 'thumbnail-worker' $workerFiles[0] $inventory $rootItem.FullName
+  Assert-PortableExecutable $handlerFiles[0] $true
+  Assert-PortableExecutable $workerFiles[0] $false
+  return [ordered]@{ Msi = $msiFiles[0].FullName; Nsis = $nsisFiles[0].FullName; Handler = $handlerFiles[0].FullName; Worker = $workerFiles[0].FullName }
 }
 function Get-ProductState($Kind, $InstallDirectory) {
   $executable = Join-Path $InstallDirectory 'Alhangeul.exe'
@@ -167,7 +75,7 @@ function Get-CleanState {
   $candidatePaths = @($msiInstallDirectory, $nsisInstallDirectory) + $shortcutPaths
   $residualPaths = @($candidatePaths | Where-Object { Test-Path -LiteralPath $_ })
   $entries = @(Get-UninstallEntries)
-  $registryCount = @($ownedKeys + $ownedOpenWith | Where-Object { $_.Exists }).Count
+  $registryCount = @($ownedKeys + $ownedOpenWith | Where-Object { $_.Exists }).Count + (Get-ThumbnailOwnedRegistryCount)
   return [ordered]@{ Clean = $processes.Count -eq 0 -and $residualPaths.Count -eq 0 -and $entries.Count -eq 0 -and $registryCount -eq 0; Processes = @($processes | ForEach-Object { $_.Id }); Paths = @($residualPaths); Entries = $entries; OwnedRegistryCount = $registryCount }
 }
 function Assert-InstalledRegistry($State, $Kind) {
@@ -183,8 +91,8 @@ function Assert-InstalledVersion($State) {
   Assert-Condition ($null -ne $State.Version) 'version resource를 읽을 수 없습니다.'; Assert-Condition ((ConvertTo-NormalizedVersion $State.Version.ProductVersion) -eq $ExpectedVersion) 'ProductVersion이 다릅니다.'; Assert-Condition ((ConvertTo-NormalizedVersion $State.Version.FileVersion) -eq $ExpectedVersion) 'FileVersion이 다릅니다.'; return $true
 }
 function Assert-InstalledHandlers($State) { Assert-Condition (@($State.Handlers | Where-Object { -not $_.Valid }).Count -eq 0) 'canonical ProgID 또는 OpenWithProgids가 없습니다.'; return $true }
-function Invoke-Installer($Kind, $Path, $LogPath) {
-  $arguments = if ($Kind -eq 'msi') { @('/i', "`"$Path`"", '/qn', '/norestart', '/L*v', "`"$LogPath`"") } else { @('/S') }
+function Invoke-Installer($Kind, $Path, $LogPath, $Update = $false) {
+  $arguments = if ($Kind -eq 'msi') { @('/i', "`"$Path`"", '/qn', '/norestart', '/L*v', "`"$LogPath`"") } elseif ($Update) { @('/S', '/UPDATE') } else { @('/S') }
   $filePath = if ($Kind -eq 'msi') { 'msiexec.exe' } else { $Path }
   return (Start-Process -FilePath $filePath -ArgumentList $arguments -Wait -PassThru).ExitCode
 }
@@ -198,30 +106,58 @@ function Invoke-Uninstaller($Kind, $State, $LogPath) {
   Assert-Condition (Test-Path -LiteralPath $path -PathType Leaf) 'NSIS uninstaller를 찾을 수 없습니다.'
   return (Start-Process -FilePath $path -ArgumentList @('/S') -Wait -PassThru).ExitCode
 }
-function Write-MsiFailureContext($LogPath) {
-  if (-not (Test-Path -LiteralPath $LogPath -PathType Leaf)) { return $null }
-  $lines = @(Get-Content -LiteralPath $LogPath); if ($lines.Count -eq 0) { return $null }
-  $indexes = @(0..($lines.Count - 1) | Where-Object { $lines[$_] -match 'Return value 3' })
-  $context = @()
-  foreach ($index in $indexes) {
-    $start = [Math]::Max(0, $index - 8); $end = [Math]::Min($lines.Count - 1, $index + 8)
-    $context += $lines[$start..$end]
+function Invoke-InstalledChecks($Result, $Kind, $InstallDirectory, $BaselineDefaults, $ThumbnailSentinels) {
+  $state = $Result.InstalledState
+  Invoke-Check $Result 'registry-handler' 'RegistryPathCheck' { Assert-InstalledRegistry $state $Kind }
+  Invoke-Check $Result 'version' 'VersionCheck' { Assert-InstalledVersion $state }
+  Invoke-Check $Result 'registry-handler' 'HandlerCheck' { Assert-InstalledHandlers $state }
+  $Result.ThumbnailRegistrationState = Get-ThumbnailRegistrationState $InstallDirectory $ThumbnailSentinels
+  Invoke-Check $Result 'thumbnail-registration' 'ThumbnailRegistration' { Assert-InstalledThumbnail $Kind $InstallDirectory $ThumbnailSentinels }
+  if ($Kind -eq 'nsis') {
+    Invoke-Check $Result 'installer-rollback' 'Reinstall' { $code = Invoke-Installer $Kind $Result.Path (Join-Path $OutputDirectory 'nsis-reinstall.log') $true; Assert-Condition ($code -eq 0) "NSIS reinstall exit code: $code"; Assert-InstalledThumbnail $Kind $InstallDirectory $ThumbnailSentinels }
   }
-  $path = "$LogPath.return-value-3.txt"
-  Set-Content -LiteralPath $path -Value $context -Encoding UTF8
-  return $path
+  Invoke-Check $Result 'thumbnail-render' 'ThumbnailFixtures' { Invoke-ThumbnailFixtureProbe }
+  Invoke-Check $Result 'shortcut' 'ShortcutCheck' { Assert-Condition $state.Shortcuts.Valid 'shortcut target이 다릅니다.'; return $true }
+  $Result.DefaultsAfterInstall = Get-DefaultState
+  Invoke-Check $Result 'default-mutation' 'DefaultCheck' { Assert-Condition ((ConvertTo-Json $BaselineDefaults -Depth 12 -Compress) -eq (ConvertTo-Json $Result.DefaultsAfterInstall -Depth 12 -Compress)) '기본 연결 또는 UserChoice가 변경되었습니다.'; return $true }
+  Invoke-Check $Result 'launch' 'Launch' { Invoke-Launch $state.Executable }
+  Set-ThirdPartyThumbnail $ThumbnailSentinels
+  $Result.ThirdPartySet = $true
 }
-function Add-Failure($Result, $Category, $Message) { $Result.Failures += [ordered]@{ Category = $Category; Message = $Message } }
-function Invoke-Check($Result, $Category, $Name, $Action) { try { $Result[$Name] = & $Action } catch { Add-Failure $Result $Category $_.Exception.Message; $Result[$Name] = [ordered]@{ Passed = $false; Message = $_.Exception.Message } } }
+function Complete-BundleSmoke($Result, $Kind, $State, $ThumbnailSentinels, $BaselineDefaults) {
+  if ($null -eq $State) {
+    $installDirectory = if ($Kind -eq 'msi') { $msiInstallDirectory } else { $nsisInstallDirectory }
+    $State = Get-ProductState $Kind $installDirectory
+  }
+  if ($null -ne $State.Entry -or (Test-Path -LiteralPath $State.InstallDirectory)) {
+    try {
+      if ($Kind -eq 'nsis') { Set-AssociationDefaultValues $canonicalProgIds; $Result.DefaultsBeforeUninstall = Get-DefaultState }
+      $Result.UninstallExitCode = Invoke-Uninstaller $Kind $State (Join-Path $OutputDirectory "$Kind-uninstall.log")
+      if ($Result.UninstallExitCode -ne 0) { Add-Failure $Result 'uninstall' "uninstaller exit code: $($Result.UninstallExitCode)" }
+      if ($Kind -eq 'msi' -and $Result.UninstallExitCode -ne 0) { $Result.UninstallFailureContext = Write-MsiFailureContext (Join-Path $OutputDirectory "$Kind-uninstall.log") }
+    } catch { Add-Failure $Result 'uninstall' $_.Exception.Message }
+  }
+  if ($Result.ThirdPartySet -and $null -ne $ThumbnailSentinels) { Invoke-Check $Result 'coexistence' 'ThumbnailUninstall' { Assert-UninstalledThumbnail $Kind $ThumbnailSentinels } }
+  if ($null -ne $ThumbnailSentinels) { try { Restore-ThumbnailSentinels $ThumbnailSentinels } catch { Add-Failure $Result 'sentinel-restore' $_.Exception.Message } }
+  if ($Kind -eq 'nsis') {
+    $Result.DefaultsImmediatelyAfterUninstall = Get-DefaultState
+    Invoke-Check $Result 'default-mutation' 'NoDanglingCanonicalDefault' { Assert-NoCanonicalDefaults $Result.DefaultsImmediatelyAfterUninstall }
+    Set-AssociationDefaultValues $associationSentinelProgIds
+  }
+  $Result.DefaultsAfterUninstall = Get-DefaultState; $Result.After = Get-CleanState
+  if (-not $Result.After.Clean) { Add-Failure $Result 'cleanup' '제거 뒤 Alhangeul 소유 상태가 남아 있습니다.' }
+  if ((ConvertTo-Json $BaselineDefaults -Depth 12 -Compress) -ne (ConvertTo-Json $Result.DefaultsAfterUninstall -Depth 12 -Compress)) { Add-Failure $Result 'default-mutation' '제거 뒤 기본 연결 또는 UserChoice가 복원되지 않았습니다.' }
+}
 function Invoke-BundleSmoke($Kind, $Path, $InstallDirectory, $BaselineDefaults) {
-  $result = [ordered]@{ Kind = $Kind; Path = $Path; Status = 'failed'; Failures = @() }
+  $result = [ordered]@{ Kind = $Kind; Path = $Path; Status = 'failed'; Failures = @(); ThirdPartySet = $false }
   $before = Get-CleanState
   $result.Before = $before
   if (-not $before.Clean) { Add-Failure $result 'clean-state' '설치 전 Alhangeul 소유 상태가 남아 있습니다.'; return $result }
   $installLog = Join-Path $OutputDirectory "$Kind-install.log"
-  $uninstallLog = Join-Path $OutputDirectory "$Kind-uninstall.log"
-  $state = $null
+  $state = $null; $thumbnailSentinels = $null
   try {
+    $thumbnailSentinels = Set-ThumbnailSentinels $Kind
+    if ($Kind -eq 'msi') { Invoke-Check $result 'installer-rollback' 'RollbackProbe' { Invoke-MsiThumbnailRollbackProbe $Path $InstallDirectory $thumbnailSentinels } }
     $result.InstallExitCode = Invoke-Installer $Kind $Path $installLog
     if ($result.InstallExitCode -ne 0) {
       $category = if ($result.InstallExitCode -eq 3010) { 'reboot-required' } else { 'install' }
@@ -231,28 +167,9 @@ function Invoke-BundleSmoke($Kind, $Path, $InstallDirectory, $BaselineDefaults) 
     }
     $state = Get-ProductState $Kind $InstallDirectory
     $result.InstalledState = $state
-    if ($result.InstallExitCode -eq 0) {
-      Invoke-Check $result 'registry-handler' 'RegistryPathCheck' { Assert-InstalledRegistry $state $Kind }
-      Invoke-Check $result 'version' 'VersionCheck' { Assert-InstalledVersion $state }
-      Invoke-Check $result 'registry-handler' 'HandlerCheck' { Assert-InstalledHandlers $state }
-      Invoke-Check $result 'shortcut' 'ShortcutCheck' { Assert-Condition $state.Shortcuts.Valid 'shortcut target이 다릅니다.'; return $true }
-      $result.DefaultsAfterInstall = Get-DefaultState
-      Invoke-Check $result 'default-mutation' 'DefaultCheck' { Assert-Condition ((ConvertTo-Json $BaselineDefaults -Depth 12 -Compress) -eq (ConvertTo-Json $result.DefaultsAfterInstall -Depth 12 -Compress)) '기본 연결 또는 UserChoice가 변경되었습니다.'; return $true }
-      Invoke-Check $result 'launch' 'Launch' { Invoke-Launch $state.Executable }
-    }
+    if ($result.InstallExitCode -eq 0) { Invoke-InstalledChecks $result $Kind $InstallDirectory $BaselineDefaults $thumbnailSentinels }
   } catch { Add-Failure $result 'install' $_.Exception.Message } finally {
-    if ($null -eq $state) { $state = Get-ProductState $Kind $InstallDirectory }
-    if ($null -ne $state.Entry -or (Test-Path -LiteralPath $InstallDirectory)) {
-      try {
-        $result.UninstallExitCode = Invoke-Uninstaller $Kind $state $uninstallLog
-        if ($result.UninstallExitCode -ne 0) { Add-Failure $result 'uninstall' "uninstaller exit code: $($result.UninstallExitCode)" }
-        if ($Kind -eq 'msi' -and $result.UninstallExitCode -ne 0) { $result.UninstallFailureContext = Write-MsiFailureContext $uninstallLog }
-      } catch { Add-Failure $result 'uninstall' $_.Exception.Message }
-    }
-    $result.DefaultsAfterUninstall = Get-DefaultState
-    $result.After = Get-CleanState
-    if (-not $result.After.Clean) { Add-Failure $result 'cleanup' '제거 뒤 Alhangeul 소유 상태가 남아 있습니다.' }
-    if ((ConvertTo-Json $BaselineDefaults -Depth 12 -Compress) -ne (ConvertTo-Json $result.DefaultsAfterUninstall -Depth 12 -Compress)) { Add-Failure $result 'default-mutation' '제거 뒤 기본 연결 또는 UserChoice가 복원되지 않았습니다.' }
+    Complete-BundleSmoke $result $Kind $state $thumbnailSentinels $BaselineDefaults
   }
   if ($result.Failures.Count -eq 0) { $result.Status = 'passed' }
   return $result

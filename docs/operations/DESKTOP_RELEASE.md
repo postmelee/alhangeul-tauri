@@ -1,6 +1,6 @@
 # 데스크톱 artifact와 배포 준비
 
-Alhangeul은 아직 공식 설치 파일이나 공개 릴리스를 제공하지 않는다. `.github/workflows/alhangeul-desktop.yml`은 Windows/Linux native build 결과와 Windows installer package smoke 진단을 수동 검증하고 14일 동안 Actions artifact로 보존하지만 GitHub Release를 생성하지 않는다.
+Alhangeul은 아직 공식 설치 파일이나 공개 릴리스를 제공하지 않는다. `.github/workflows/alhangeul-desktop.yml`은 Windows/Linux native build 결과와 Windows installer·thumbnail smoke 진단을 수동 검증하고 14일 동안 Actions artifact로 보존하지만 GitHub Release를 생성하지 않는다.
 
 ## 제품 version 기준
 
@@ -22,11 +22,11 @@ workflow는 다음 작업만 수행한다.
 
 1. submodule을 포함한 선택 commit checkout
 2. Node, pnpm, Rust와 Linux Tauri 의존성 준비
-3. 제품 경계·version, `rhwp` pin, automation, upstream과 studio 검증
-4. Tauri bundle 생성
-5. 필수 installer 종류·크기·SHA-256 inventory 검증
+3. 제품 경계·version, `rhwp` pin, automation, upstream·studio와 thumbnail core/source 검증
+4. Windows thumbnail handler·worker와 Tauri bundle 생성
+5. 필수 installer·thumbnail PE 종류·크기·SHA-256 inventory 검증
 6. inventory를 포함한 Actions artifact 업로드
-7. fresh `windows-2025` runner에서 Windows MSI·NSIS 설치·제한 실행·제거 package smoke
+7. fresh `windows-2025` runner에서 Windows MSI·NSIS 설치·rollback·제거와 실제 HWP/HWPX Shell bitmap smoke
 8. installer별 summary와 원본 log를 diagnostic artifact로 항상 업로드하고 build matrix와 smoke 결과를 함께 판정
 
 repository-level Actions는 활성 상태지만 대상 CI와 native workflow는 자동 trigger 없이 수동 `workflow_dispatch`로만 실행한다. Actions 활성 상태는 workflow 성공이나 artifact 가용성을 보장하지 않으므로 run의 exact commit과 job 결과를 함께 확인해야 한다.
@@ -141,6 +141,31 @@ MSI와 NSIS는 각각 clean state, silent install exit `0`, 제품 version `0.1.
 
 이 결과는 fresh hosted runner의 반복 가능한 비대화형 package smoke다. 실제 GUI에서 HWP/HWPX 열기·저장·인쇄, Explorer 기본 앱 선택 UI, 장시간 사용과 Windows 실제 사용자 환경의 최종 수동 검증을 대신하지 않는다. Artifact는 공개 배포물이 아니며 만료 뒤 재사용할 수 없다.
 
+2026-08-26 Task #14 Stage 4는 exact source `e407c20cfd23059b997590462a5e66fb47e1aa03`의 [native run 32948057314](https://github.com/postmelee/alhangeul-tauri/actions/runs/32948057314)에서 Linux arm64 job `98113033201`, Linux x64 `98113033413`, Windows x64 `98113033443`과 installer smoke `98120085085`가 모두 성공했다.
+
+- Windows bundle은 x64 handler DLL과 worker EXE의 고정 filename·PE 종류·inventory를 통과했다.
+- MSI injected rollback은 기대한 exit `1603` 뒤 원상복구됐고, MSI·NSIS 정상 install/uninstall은 exit `0`, NSIS reinstall과 기존·부재·제3자 handler 조건부 복원을 통과했다.
+- 실제 HWP와 HWPX fixture는 모두 요청 edge 256 px에서 Shell 성공 HRESULT와 bitmap을 반환했으며 fixture hash, worker 잔류와 제품 소유 registry cleanup도 통과했다.
+
+이 증적은 hosted Windows에서 실제 COM/Shell 경로까지 확인하지만 Explorer 보기 크기·DPI·cache 갱신과 한컴 설치 환경 UI를 대신하지 않는다. 같은 exact 후보의 수동 gate는 [Windows thumbnail 아키텍처](../architecture/WINDOWS_THUMBNAILS.md)에 따라 Stage 6에서 수행한다.
+
+2026-08-28 Task #14 Stage 7의 PR #46 리뷰 보정 source candidate `51099615681432862a51691aeb3c65dafd2da541`은 [CI run 33154309226](https://github.com/postmelee/alhangeul-tauri/actions/runs/33154309226)과 [native run 33154321608](https://github.com/postmelee/alhangeul-tauri/actions/runs/33154321608)을 통과했다.
+
+- CI Unit tests job `98793335089`, Linux x64 job `98793375935`, Windows x64 job `98793376092`, Linux arm64 job `98793376118`, Windows fresh-installer smoke job `98805510881`이 모두 성공했다.
+- MSI와 NSIS는 HWP `111exam_social.hwp`와 embedded preview가 없는 HWPX `03-blank_hwpx.hwpx`의 실제 256 px Shell bitmap을 `HRESULT=0`으로 반환했다. 두 installer 모두 install/uninstall exit `0`, 제거 뒤 owned registry count `0`과 clean state를 확인했다.
+- NSIS는 제거 직전 `.hwp`/`.hwpx` 기본값을 제거 대상 자기 ProgID로 둔 fixture에서도 `NoDanglingCanonicalDefault=true`였고 제3자 Hancom sentinel을 복원했다. MSI injected rollback은 예상 exit `1603` 뒤 원상복구됐다.
+- fixture 실행 전후 hash는 같았다. Stage 7은 제품 renderer·font 출력을 바꾸지 않았고 대표 raster gate가 다시 통과했으므로 Stage 6.1의 Windows VDI 시각 수용을 유지했다.
+
+| artifact | ID | 크기 (bytes) | SHA-256 digest | 만료 |
+|---|---:|---:|---|---|
+| Windows installer smoke | `9680462259` | 45,525 | `6c51feb8602dbc293363160bdcb94b9f0a7ec65f7353a4d23f80e38eac7840ee` | 2026-09-11 |
+| Windows x64 bundle | `9680268296` | 120,675,282 | `19680c69df03d707c2b3d27ca191ff26e1a8d6ed30ba61779a9c8f6ea99bf802` | 2026-09-11 |
+| Linux x64 bundle | `9679593323` | 505,551,400 | `ce5f15945f52eb3c7897579a5f75bebe242371326d07a09d2d2426e796f21670` | 2026-09-11 |
+| Linux arm64 bundle | `9679356860` | 166,327,127 | `ed7442b17d8acfe75de93a13b616245037e72ba4caff18309c2949e268a5e8ec` | 2026-09-11 |
+| Windows thumbnail core diagnostics | `9679337373` | 3,305 | `6c59c444a73e2624bff355f5f0794646c26e2316d79d6cb49f087f52d1885d4d` | 2026-09-11 |
+
+이 자동 증적은 등록 해제 실패 주입 자체를 실행한 것은 아니다. MSI/NSIS source 계약은 thumbnail extension 실패를 best-effort로 고정하고, native smoke는 정상 등록 해제·owner-scoped cleanup과 dangling association 부재를 확인한다. Windows active ProgID가 제3자 thumbnail handler를 소유하면 extension ShellEx보다 우선할 수 있으며 제품은 공존을 위해 `UserChoice`나 제3자 ProgID를 변경하지 않는다.
+
 ### Windows installer 자동 gate를 다시 돌려야 하는 변경
 
 이 workflow는 `workflow_dispatch` 전용이라 push나 PR로 자동 실행되지 않는다. 다음 변경은 자동으로 검증되지 않으므로 수동 dispatch가 필요하다.
@@ -150,7 +175,8 @@ MSI와 NSIS는 각각 clean state, silent install exit `0`, 제품 version `0.1.
 | Tauri 버전 상향 | NSIS hook은 Tauri 기본 file association 동작을 되돌리는 구조다. upstream이 association 처리나 내부 `UPDATEFILEASSOC` macro를 바꾸면 기존 기본 연결 보존이 조용히 깨진다 |
 | `windows/main.wxs`, `windows/nsis-hooks.nsh`, `tauri.conf.json`의 bundle 항목 | installer가 실제로 쓰는 registry·shortcut 계약이 바뀐다 |
 | `[[bin]] name`, `productName` | 실행 파일명, 설치 경로, ProgID, shortcut 이름이 함께 움직인다 |
-| `scripts/windows-installer-smoke.ps1`, smoke job | 판정 자체가 바뀌므로 source test만으로는 runtime 동작을 보증하지 못한다 |
+| `apps/thumbnail-*`, `crates/document-preview`, `scripts/build-thumbnail-binaries.mjs` | COM ABI, worker protocol·resource 제한과 bundle PE 계약이 바뀐다 |
+| `scripts/windows-installer-smoke.ps1`, `scripts/windows-thumbnail-smoke.ps1`, smoke job | 판정 자체가 바뀌므로 source test만으로는 runtime 동작을 보증하지 못한다 |
 
 플랫폼 중립 test(`pnpm run test:automation`)는 이들 source 계약을 고정하지만 실제 설치·제거 동작은 확인하지 않는다.
 
@@ -182,6 +208,74 @@ Windows/Linux exact 후보에서 `인쇄`를 선택하면 먼저 다음 항목�
 system dialog 미진입, same-origin hidden surface 접근 실패, 빈 페이지, 쪽 수·방향 불일치는 No-Go다. 이 경우 editor WebView 직접 인쇄로 fallback하지 않고 hidden surface lifecycle과 platform WebView 인쇄 경계를 보정한다.
 
 Stage 6 전에는 branch push·workflow dispatch·artifact 생성을 하지 않는다. Stage 6에서도 release tag, GitHub Release, 서명, package 게시, updater 활성화는 범위 밖이다.
+
+## 검증된 rhwp `v0.8.4` native 수용 기준선
+
+2026-08-14~15 Task #24는 rhwp `v0.8.4` / resolved commit
+`496333b27d21ddb9114ba9ae340bcb895870c9a7`의 core, native Cargo lock, bundled WASM과
+전체 Studio bundle을 다음 Alhangeul exact source에서 검증했다.
+
+- 실행 가능 commit: `88baa5666ec55bf043844bae01ec4d422278851c`
+- [CI run 31688454752](https://github.com/postmelee/alhangeul-tauri/actions/runs/31688454752): Unit tests job `94409981595` 포함 전체 성공
+- [Native run 31688732973](https://github.com/postmelee/alhangeul-tauri/actions/runs/31688732973): Windows x64, Linux x64, Linux arm64 build와 Windows MSI·NSIS installer smoke 전체 성공
+- Windows x64는 NSIS 전체 GUI 수용과 같은 SHA의 MSI 자동 package smoke를 결합했고, Linux x64는 native GitHub Codespaces에서 Stage 3 DEB를 설치해 전체 GUI 수용했다.
+
+### Task #24 artifact provenance
+
+Actions artifact는 14일 retention의 임시 검증물이며 확인 당시 `expired=false`였다. API
+archive SHA-256과 package inventory SHA-256은 서로 다른 검증 대상이다.
+
+| 용도 | Actions artifact | ID | 압축 크기 | Archive SHA-256 | 만료 시각(UTC) |
+|---|---|---:|---:|---|---|
+| Windows installer 진단 | `alhangeul-desktop-windows-x64-installer-smoke` | `9176977156` | 31,191 B | `1e91875ef4bd8b8e3dab99e04602a42bd5a90920c9616ae7919947092e6e077b` | 2026-08-27 10:12:00 |
+| Windows x64 bundle | `alhangeul-desktop-windows-x64` | `9176938095` | 102,217,253 B | `6bfc9e288d94084438ff135d1d6633bd9bb696baf19b17cfbd82995649f8f9ab` | 2026-08-27 10:10:34 |
+| Linux x64 bundle | `alhangeul-desktop-linux-x64` | `9176850348` | 505,449,721 B | `5f7a0df6aa6567d221523243eba8c0e2b1b022f4d23683577a30707d32223d7f` | 2026-08-27 10:07:09 |
+| Linux arm64 bundle | `alhangeul-desktop-linux-arm64` | `9176603779` | 166,240,083 B | `5f6a338b1c013a4ffee3c99d9d89fed6b9584dc06c54a9b731508db118dcfd98` | 2026-08-27 09:59:16 |
+
+동봉 inventory와 별도 SHA-256 계산이 일치한 필수 package는 다음과 같다.
+
+| Platform | 종류·파일 | 크기 | SHA-256 |
+|---|---|---:|---|
+| Windows x64 | MSI `Alhangeul_0.1.0_x64_en-US.msi` | 53,424,128 B | `4861eae6a0bb08b072888dcf652e6eea3121735f167016cf61e5b19dfa1ee652` |
+| Windows x64 | NSIS `Alhangeul_0.1.0_x64-setup.exe` | 49,023,164 B | `a24f3e1331a25226bc1d543709a13133743fab662a3dfd747c0a15d84959667e` |
+| Linux x64 | AppImage `Alhangeul_0.1.0_amd64.AppImage` | 131,820,024 B | `e6ab104b13af5b78b6c8290f5d1979d26f9b785ab72c2e2d6a81f4831c6dc876` |
+| Linux x64 | DEB `Alhangeul_0.1.0_amd64.deb` | 55,423,840 B | `7cb4036fd6886752fdc7fba09766cd8abd4f8677d29c23a6c204e90edbc1cc7b` |
+| Linux x64 | RPM `Alhangeul-0.1.0-1.x86_64.rpm` | 55,423,924 B | `5580af3a9d6f7427dd9078dabf91ab136f6824e141b438d08dcebf8bced286b8` |
+| Linux arm64 | DEB `Alhangeul_0.1.0_arm64.deb` | 55,444,426 B | `7bb17e3480319593f412e1751fc0e93a7db080e72d2c28a99249f95eba35f4d4` |
+
+### Windows x64 GUI 경계
+
+관리자 권한이 없는 Windows x64 VDI에서 NSIS clean install, 앱 실행, HWP/HWPX 파일
+선택·drag-in·저장·다른 이름 저장·재열기, 한글 UI, searchable PDF와 Microsoft Print to
+PDF 저장·취소·반복, uninstall을 확인했다. MSI는 VDI에서 수동 설치하지 않았고 같은 SHA의
+fresh `windows-2025` runner에서 clean install, 제한 실행, canonical association, shortcut,
+기존 기본 연결 보존과 uninstall cleanup을 자동 확인했다. 따라서 MSI의 package-level 수용은
+완료했지만 MSI 경유 수동 GUI는 미실행 한계로 남는다.
+
+### Linux x64 GUI 경계
+
+Stage 3 Linux x64 artifact의 inventory를 다시 검증한 뒤 DEB를 native `amd64` GitHub
+Codespaces에 설치했다. 환경은 Ubuntu 24.04, kernel `6.8.0-1052-azure`, WebKitGTK
+`2.52.3-0ubuntu0.24.04.1`, GTK `3.24.41-4ubuntu1.3`, CUPS
+`2.4.7-1.2ubuntu7.14`, CUPS-PDF `3.0.1-14ubuntu0.24.04.1`이었다.
+
+- 대표 HWP를 GTK file chooser로 열고 6쪽 중앙 정렬·한글 toolbar와 로컬 글꼴 감지 dialog를 확인했다. Codespace에 원본 글꼴 하나가 없어 앱의 `대체 글꼴로 보기` 경로를 사용했다.
+- 대표 HWPX를 PCManFM에서 앱으로 drag-in했고 1쪽 한글 본문과 표가 정상 표시됐다.
+- HWP와 HWPX를 각각 다른 이름으로 저장하고 `Ctrl+S` 뒤 재열었다. 원본 fixture SHA-256은 각각 `8b786d6824622afae2220b203beeef6e5592157e1896fea055ebc602817113c1`, `1f3d2a322383e229862cd6d97526766ce285eb58d062242e03bce09a8aa69406`으로 유지됐다.
+- 직접 저장 PDF는 A4 6쪽, 287,282 B, SHA-256 `488c3ee2c4423bed97a3403a799e79413f84784a0b093c0e53d71d9f893030eb`이며 모든 쪽이 비어 있지 않고 한글 텍스트 검색이 가능했다.
+- `인쇄`는 별도 Alhangeul preview 없이 GTK system print dialog로 직접 진입했다. 전체 페이지와 `CUPS-PDF`를 선택해 저장한 결과는 A4 6쪽, 457,293 B, SHA-256 `34ced0e91e33b5f1a7adacce89a6be58170e1231c65cd91146ae2d167429f619`이며 렌더링한 모든 쪽의 한글 본문·표·방향을 시각 확인했다. 저장 뒤 재인쇄 dialog 진입, 취소, 다시 진입과 editor 복원을 확인했다.
+
+Codespaces는 GPU 없는 일회성 headless X11 환경이라 WebKitGTK의 기본 compositing에서 file
+chooser 전환 뒤 화면이 검게 남았다. 같은 설치 binary를 software WebKit compositing과
+software GL로 재실행하자 필수 GUI 시나리오 전체를 관찰할 수 있었고 앱 log에는 panic,
+fatal, segmentation fault 또는 uncaught error가 없었다. 이 설정은 수용 환경 제약의
+회피이며 제품 source·workflow·GUI harness에는 추가하지 않았다. 수용 종료 뒤 Codespace를
+삭제했다.
+
+AppImage와 RPM은 Stage 3 inventory·checksum까지만 확인했고 이번 GUI는 DEB 설치 binary로
+수행했다. Linux arm64는 hosted runner의 DEB build·inventory만 수용했으며 실제 arm64 GUI를
+실행하지 않았다. 이 Task는 GitHub Release, tag, 서명, package 게시, 고정 다운로드 URL과
+updater를 만들거나 활성화하지 않는다.
 
 ## 검증된 native canary
 
@@ -225,15 +319,38 @@ GitHub API가 반환한 Actions artifact archive metadata는 다음과 같다. �
 
 따라서 workflow artifact를 공식 배포물로 안내하거나 README/site에 다운로드 링크를 추가하면 안 된다.
 
-## 공개 배포 전 후속 작업
+## Pages와 공개 릴리스 게시 순서
 
-공식 배포를 시작하려면 최소한 다음 작업을 별도 Issue와 승인 경계로 수행한다.
+GitHub Pages, GitHub Release와 updater는 서로 다른 게시 경계다. 공식 배포는 다음 순서를
+바꾸거나 일부만 성공한 상태를 다음 단계의 입력으로 사용하지 않는다.
 
-1. 배포 version·tag·bundle 이름과 checksum 게시 정책 확정
-2. Windows signing과 Linux package metadata 검토
-3. Linux installer/package 설치·실행·rollback과 Windows 실제 GUI HWP/HWPX·Explorer 기본 앱 수동 gate 검증
-4. 사용자 다운로드 문서와 지원 범위 작성
-5. 필요할 경우 독립 updater 보안 모델과 key 보관 정책 설계
+1. Windows x64 MSI·NSIS, Linux x64 AppImage와 수동 패키지를 같은 candidate SHA에서 만들고
+   inventory의 파일명·크기·SHA-256을 다시 계산한다. Actions artifact는 아직 공개 배포물이 아니다.
+2. 코드 서명·패키지 metadata와 플랫폼별 설치·실행 gate를 통과한 immutable artifact만 exact
+   version tag의 GitHub Release에 게시한다. `latest` redirect나 branch URL을 사용하지 않는다.
+3. Release URL과 tag·version·확장자를 검증한 뒤 `site/release.json`을 `published`로 전환한다.
+   Windows NSIS·MSI와 Linux x64 AppImage 세 key만 exact Release asset URL을 가진다.
+4. release data 변경 PR을 보호 브랜치 `devel`에 병합한 뒤, 그 exact merge commit의 Pages
+   workflow를 `--ref devel`과 같은 40자리 `deploy_ref`로 실행한다. task/publish branch를
+   `github-pages` 환경에 허용하지 않으며 public root·updates·feedback에서 exact URL과 release
+   note를 다시 읽는다.
+5. Issue #16에서 updater signature, public key, version과 세 artifact를 독립 검증한다. 모든 입력이
+   일치할 때만 canonical Pages의 `updater/stable.json`을 Pages output에 원자적으로 포함한다.
+6. manifest public read-back과 실제 MSI·NSIS·AppImage update 수용이 끝난 뒤에만 updater 지원을
+   활성화됐다고 기록한다. 실패한 manifest와 artifact 조합은 게시하거나 재사용하지 않는다.
+
+Task #45의 PR 완료 시점은 4단계에서 사용할 UI·URL 계약을 `unreleased` source로 확정한 상태다.
+PR 병합 뒤 exact `devel` SHA로 Pages를 배포하고 public read-back을 통과해야 canonical Pages에
+게시됐다고 판단한다. `site/release.json`의 version·tag·download는 null이고
+`manifestPublished=false`이며 `updater/stable.json`은 존재하지 않는다. 따라서 설치 파일,
+고정 다운로드 URL, signature 또는 updater 성공을 주장하지 않는다.
+
+공식 릴리스 후보를 만들기 전에는 다음 항목도 별도 Issue와 승인 경계에서 확정한다.
+
+- 배포 version·tag·bundle 이름과 checksum 게시 정책
+- Windows signing과 Linux package metadata
+- Linux installer/package 설치·실행·rollback과 Windows 실제 GUI HWP/HWPX·Explorer 기본 앱·thumbnail UI 수동 gate
+- updater 보안 모델과 key 보관 정책
 
 Windows MSI·NSIS의 자동 설치·제한 실행·제거 package smoke는 Task #11과 Task #13 exact
 native run에서 완료했다. 공개 prerelease 후보는 Task #13과 후속 Task #15가 merge된 뒤

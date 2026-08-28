@@ -18,7 +18,6 @@ window.move(32, 32)
 label = Gtk.Label(label=path.name)
 source = Gtk.EventBox()
 source.set_visible_window(True)
-source.set_above_child(True)
 source.add(label)
 targets = Gtk.TargetList.new([])
 targets.add_uri_targets(0)
@@ -26,14 +25,22 @@ source.drag_source_set(Gdk.ModifierType.BUTTON1_MASK, [], Gdk.DragAction.COPY)
 source.drag_source_set_target_list(targets)
 
 
+def start_drag(_widget, _context):
+    print("STARTED", flush=True)
+
+
 def supply_uri(_widget, _context, selection, _info, _time):
     selection.set_uris([Gio.File.new_for_path(str(path)).get_uri()])
-    print("URI_SENT", flush=True)
+    print("DATA", flush=True)
 
 
-source.connect("drag-begin", lambda *_args: print("DRAG_BEGIN", flush=True))
+def finish_drag(_widget, _context):
+    print("FINISHED", flush=True)
+
+
+source.connect("drag-begin", start_drag)
 source.connect("drag-data-get", supply_uri)
-source.connect("drag-end", lambda *_args: print("DRAG_END", flush=True))
+source.connect("drag-end", finish_drag)
 window.connect("destroy", Gtk.main_quit)
 window.add(source)
 window.show_all()

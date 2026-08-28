@@ -2,13 +2,13 @@ import { spawnSync } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { runActionWithPostcondition } from './action-postcondition.mjs';
+import {
+  createPrintFileChooserRunner, createShortcutRunner,
+  createWindowShortcutRunner, PRINT_FILE_CHOOSER_TITLES,
+} from './xdotool.mjs';
 
 const DRIVER_PATH = fileURLToPath(new URL('./atspi_driver.py', import.meta.url));
-export const LINUX_NATIVE_APPLICATION_NAMES = Object.freeze([
-  'Alhangeul',
-  'xdg-desktop-portal-gtk',
-  'xdg-desktop-portal-gnome',
-]);
 const FILE_DIALOG = Object.freeze({
   roles: ['file chooser', 'dialog'],
   names: ['file', '파일', 'open', '열기', 'save', '저장', 'name', '이름'],
@@ -17,37 +17,23 @@ const PRINT_DIALOG = Object.freeze({
   roles: ['dialog'],
   names: ['print', '인쇄'],
 });
-const PRINT_TO_FILE = Object.freeze({
-  roles: ['radio button', 'table cell', 'list item', 'toggle button'],
-  names: ['print to file', '파일로 인쇄'],
+const FILE_CHOOSER_SCOPE = Object.freeze({
+  roles: ['file chooser'],
+  names: ['file', '파일', 'open', '열기', 'save', '저장'],
 });
 const LOCATION_ENTRY = Object.freeze({
   roles: ['text', 'entry'],
-});
-const NAME_ENTRY = Object.freeze({
-  roles: ['text', 'entry'],
+  focused: true,
+  within: FILE_CHOOSER_SCOPE,
 });
 const BUTTON_ROLES = ['push button', 'button'];
-const DIALOG_PRIMARY_BUTTON = Object.freeze({
-  roles: BUTTON_ROLES,
-  names: ['open', '열기', 'save', '저장', 'select', '선택'],
-  enabled: true,
-  sensitive: true,
-});
-const DIALOG_FOCUS_BUTTON = Object.freeze({ roles: BUTTON_ROLES, names: DIALOG_PRIMARY_BUTTON.names });
-const PRINT_FILE_BUTTON = Object.freeze({
-  roles: BUTTON_ROLES,
-  names: ['output.pdf'],
-});
-const FILE_DIALOG_WINDOW_PATTERN = '^(Open File|Save File|Select a File|Select a filename|파일 열기|파일 저장|파일 선택|파일 이름 선택)$';
-const NATIVE_DIALOG_WINDOW_PATTERN = '^(Open File|Save File|Select a File|Select a filename|Print|파일 열기|파일 저장|파일 선택|파일 이름 선택|인쇄)$';
 
 export function createAtspiRunner(options = {}) {
   const execute = options.spawnSync ?? spawnSync;
   const pythonPath = options.pythonPath ?? 'python3';
   const driverPath = options.driverPath ?? DRIVER_PATH;
   return async (request) => {
-    const result = execute(pythonPath, [driverPath, request.command], {
+    const result = execute(pythonPath, [driverPath], {
       encoding: 'utf8',
       env: options.env ?? process.env,
       input: JSON.stringify(request),
@@ -57,7 +43,9 @@ export function createAtspiRunner(options = {}) {
     const response = parseDriverResponse(result.stdout);
     if (result.status !== 0 || !response.ok) {
       const responseError = typeof response.error === 'string' ? response.error.trim() : '';
-      throw new Error(`AT-SPI command failed: ${responseError || compactError(result)}`);
+      const processError = compactError(result);
+      const detail = [responseError, processError].filter(Boolean).join('; ');
+      throw new Error(`AT-SPI ${request.command} failed: ${detail}`);
     }
     return response.result;
   };
@@ -69,12 +57,12 @@ export class LinuxNativeUiAdapter {
     if (!this.pathApi.isAbsolute(options.outputDir)) throw new Error('native UI outputDir는 절대 경로여야 합니다');
     this.outputDir = options.outputDir;
     this.timeoutMs = boundedTimeout(options.timeoutMs ?? 30000);
-    this.applicationNames = validateNames(
-      options.applicationNames ?? LINUX_NATIVE_APPLICATION_NAMES,
-    );
+    this.applicationNames = validateNames(options.applicationNames ?? ['Alhangeul']);
     this.saveTargets = options.saveTargets ?? {};
     this.runAtspi = options.runAtspi ?? createAtspiRunner(options);
     this.runShortcut = options.runShortcut ?? createShortcutRunner(options);
+    this.runWindowShortcut = options.runWindowShortcut ?? createWindowShortcutRunner(options);
+    this.runPrintFileChooser = options.runPrintFileChooser ?? createPrintFileChooserRunner(options);
     this.captureScreenshot = options.captureScreenshot ?? (async () => {});
   }
 
@@ -93,11 +81,9 @@ export class LinuxNativeUiAdapter {
     return this.withFailureEvidence('open-document', async () => {
       await trigger();
       await this.wait(FILE_DIALOG);
-      await this.focusInFileDialog(DIALOG_FOCUS_BUTTON);
       await this.shortcut('ctrl+l');
-      await this.setFileDialogText(LOCATION_ENTRY, path);
-      await this.clickInFileDialog(DIALOG_PRIMARY_BUTTON);
-      await this.waitAbsent(FILE_DIALOG);
+      await this.submitText(LOCATION_ENTRY, path);
+      await this.acceptFileChooser(['open', '열기']);
     });
   }
 
@@ -105,7 +91,10 @@ export class LinuxNativeUiAdapter {
     validateAbsoluteFile(path, 'save path', this.pathApi);
     return this.withFailureEvidence(safeLabel(command), async () => {
       await trigger();
-      await this.chooseSavePath(path);
+      await this.wait(FILE_DIALOG);
+      await this.shortcut('ctrl+l');
+      await this.submitText(LOCATION_ENTRY, path);
+      await this.acceptFileChooser(['save', '저장']);
     });
   }
 
@@ -113,13 +102,49 @@ export class LinuxNativeUiAdapter {
     validateAbsoluteFile(path, 'print path', this.pathApi);
     return this.withFailureEvidence('print-to-file', async () => {
       await trigger();
-      await this.wait(PRINT_DIALOG);
-      await this.clickInPrintDialog(PRINT_TO_FILE);
-      await this.wait({ ...PRINT_TO_FILE, selected: true });
-      await this.clickInPrintDialog(PRINT_FILE_BUTTON);
-      await this.chooseSavePath(path);
-      await this.clickInPrintDialog({ roles: BUTTON_ROLES, names: ['print', '인쇄'] });
-      await this.waitAbsent(PRINT_DIALOG);
+      await this.printCommand({ command: 'wait', selector: PRINT_DIALOG });
+      const printer = {
+        roles: ['radio button', 'table cell', 'list item', 'toggle button'],
+        names: ['print to file', '파일로 인쇄'],
+        within: PRINT_DIALOG,
+      };
+      await this.printCommand({ command: 'selectByFocus', selector: printer });
+      await this.printCommand({ command: 'wait', selector: { ...printer, selected: true } });
+      await this.choosePrintFile(path);
+      await this.clickPrintButton();
+      await this.printCommand({ command: 'waitAbsent', selector: PRINT_DIALOG });
+    }, { desktopScope: true });
+  }
+
+  async clickPrintButton() {
+    const selector = { roles: BUTTON_ROLES, exactNames: ['print', '인쇄'], within: PRINT_DIALOG };
+    await this.printCommand({ command: 'wait', selector });
+    await this.runWindowShortcut({ titles: ['Print', '인쇄'], key: 'alt+p' });
+  }
+
+  async choosePrintFile(path) {
+    const fileName = this.pathApi.basename(path);
+    const timeoutMs = Math.min(this.timeoutMs, 5000);
+    await runActionWithPostcondition(
+      (request) => this.printCommand(request),
+      {
+        command: 'action',
+        selector: {
+          roles: BUTTON_ROLES,
+          names: ['.pdf', '.ps', '.svg'],
+          within: PRINT_DIALOG,
+        },
+        actionNames: ['click', 'press'],
+      },
+      { operation: 'wait', titles: PRINT_FILE_CHOOSER_TITLES, timeoutMs },
+      (request) => this.runPrintFileChooser(request),
+    );
+    await this.runPrintFileChooser({
+      operation: 'submitPath', titles: PRINT_FILE_CHOOSER_TITLES, path, timeoutMs,
+    });
+    await this.printCommand({
+      command: 'wait',
+      selector: { roles: BUTTON_ROLES, names: [fileName], within: PRINT_DIALOG },
     });
   }
 
@@ -130,42 +155,54 @@ export class LinuxNativeUiAdapter {
     }
     return this.withFailureEvidence('virtual-printer', async () => {
       await trigger();
-      await this.wait(PRINT_DIALOG);
+      await this.printCommand({ command: 'wait', selector: PRINT_DIALOG });
       const printer = {
         roles: ['radio button', 'table cell', 'list item', 'toggle button'],
         names: [name],
+        within: PRINT_DIALOG,
       };
-      await this.clickInPrintDialog(printer);
-      await this.wait({ ...printer, selected: true });
-      await this.clickInPrintDialog({ roles: BUTTON_ROLES, names: ['print', '인쇄'] });
-      await this.waitAbsent(PRINT_DIALOG);
-    });
+      await this.printCommand({ command: 'selectByFocus', selector: printer });
+      await this.printCommand({ command: 'wait', selector: { ...printer, selected: true } });
+      await this.clickPrintButton();
+      await this.printCommand({ command: 'waitAbsent', selector: PRINT_DIALOG });
+    }, { desktopScope: true });
   }
 
   async cancelPrint(trigger) {
     return this.withFailureEvidence('cancel-print', async () => {
       await trigger();
-      await this.wait(PRINT_DIALOG);
-      await this.clickInPrintDialog({ roles: BUTTON_ROLES, names: ['cancel', '취소'] });
-      await this.waitAbsent(PRINT_DIALOG);
-    });
+      await this.printCommand({ command: 'wait', selector: PRINT_DIALOG });
+      await runActionWithPostcondition(
+        (request) => this.printCommand(request),
+        {
+          command: 'action',
+          selector: { roles: BUTTON_ROLES, exactNames: ['cancel', '취소'], within: PRINT_DIALOG },
+          actionNames: ['click', 'press'],
+        },
+        { command: 'waitAbsent', selector: PRINT_DIALOG, timeoutMs: Math.min(this.timeoutMs, 5000) },
+      );
+    }, { desktopScope: true });
   }
 
-  async dumpTree(label) {
-    const result = await this.command({ command: 'snapshot' });
+  async triggerSystemPrint() {
+    await this.shortcut('ctrl+p');
+  }
+
+  async dumpTree(label, request = {}) {
+    const result = await this.command({ command: 'snapshot', ...request });
     const path = this.pathApi.join(this.outputDir, 'native-ui', `${safeLabel(label)}-tree.json`);
     await mkdir(this.pathApi.dirname(path), { recursive: true });
     await writeFile(path, `${JSON.stringify(result, null, 2)}\n`, { mode: 0o600 });
     return path;
   }
 
-  async withFailureEvidence(label, action) {
+  async withFailureEvidence(label, action, request = {}) {
     try {
       return await action();
     } catch (error) {
       await mkdir(this.pathApi.join(this.outputDir, 'native-ui'), { recursive: true });
       await Promise.allSettled([
-        this.dumpTree(label),
+        this.dumpTree(label, request),
         this.captureScreenshot(this.pathApi.join(this.outputDir, 'native-ui', `${safeLabel(label)}.png`)),
       ]);
       await this.runShortcut('Escape').catch(() => undefined);
@@ -173,58 +210,49 @@ export class LinuxNativeUiAdapter {
     }
   }
 
-  wait(selector) { return this.command({ command: 'wait', selector }); }
+  wait(selector) {
+    return this.command({ command: 'wait', selector });
+  }
 
-  waitAbsent(selector) { return this.command({ command: 'waitAbsent', selector }); }
-  setText(selector, value) { return this.command({ command: 'setText', selector, value }); }
+  waitAbsent(selector) {
+    return this.command({ command: 'waitAbsent', selector });
+  }
 
-  action(selector) { return this.command({ command: 'action', selector }); }
+  setText(selector, value) {
+    return this.command({ command: 'setText', selector, value });
+  }
 
-  focus(selector) { return this.command({ command: 'focus', selector }); }
+  submitText(selector, value) {
+    return this.command({ command: 'submitText', selector, value });
+  }
+
+  acceptFileChooser(names, desktopScope = false) {
+    const timeoutMs = Math.min(this.timeoutMs, 5000);
+    return runActionWithPostcondition(
+      (request) => this.command(request),
+      {
+        command: 'actionIfPresent',
+        selector: { roles: BUTTON_ROLES, exactNames: names, within: FILE_CHOOSER_SCOPE },
+        guardSelector: FILE_DIALOG,
+        actionNames: ['click', 'press'], timeoutMs, desktopScope,
+      },
+      { command: 'waitAbsent', selector: FILE_DIALOG, timeoutMs, desktopScope },
+    );
+  }
+
+  action(selector) {
+    return this.command({ command: 'action', selector });
+  }
+
+  actionOptional(selector, timeoutMs = 5000) {
+    return this.command({
+      command: 'actionOptional', selector, timeoutMs,
+      actionNames: ['click', 'press'],
+    });
+  }
 
   shortcut(key) {
     return this.runShortcut(key);
-  }
-
-  setFileDialogText(selector, value) {
-    return this.fileDialogCommand({ command: 'setText', selector, value });
-  }
-
-  focusInFileDialog(selector) {
-    return this.fileDialogCommand({ command: 'focus', selector });
-  }
-
-  clickInPrintDialog(selector) {
-    return this.command({
-      command: 'click', selector, within: PRINT_DIALOG,
-      windowScope: 'print', searchOrder: 'reverse',
-    });
-  }
-
-  clickInFileDialog(selector) {
-    return this.command({
-      command: 'click', selector, within: FILE_DIALOG,
-      windowScope: 'file-dialog',
-    });
-  }
-
-  async chooseSavePath(path) {
-    await this.wait(FILE_DIALOG);
-    await this.focusInFileDialog(DIALOG_FOCUS_BUTTON);
-    await this.shortcut('ctrl+l');
-    await this.setFileDialogText(LOCATION_ENTRY, this.pathApi.dirname(path));
-    await this.shortcut('Return');
-    await this.wait(FILE_DIALOG);
-    await this.setFileDialogText(NAME_ENTRY, this.pathApi.basename(path));
-    await this.clickInFileDialog(DIALOG_PRIMARY_BUTTON);
-    await this.waitAbsent(FILE_DIALOG);
-  }
-
-  fileDialogCommand(request) {
-    return this.command({
-      ...request,
-      within: FILE_DIALOG,
-    });
   }
 
   command(request) {
@@ -234,37 +262,10 @@ export class LinuxNativeUiAdapter {
       ...request,
     });
   }
-}
 
-function createShortcutRunner(options) {
-  const execute = options.spawnSync ?? spawnSync;
-  return async (key) => {
-    if (!['ctrl+l', 'Return', 'Escape'].includes(key)) throw new Error(`허용되지 않은 key: ${key}`);
-    const command = options.xdotoolPath ?? 'xdotool';
-    const processOptions = {
-      encoding: 'utf8', env: options.env ?? process.env, timeout: 5000,
-    };
-    const windowPattern = key === 'Escape'
-      ? NATIVE_DIALOG_WINDOW_PATTERN
-      : FILE_DIALOG_WINDOW_PATTERN;
-    const search = execute(command, [
-      'search', '--onlyvisible', '--name', windowPattern,
-    ], processOptions);
-    const windowId = String(search.stdout ?? '').trim().split(/\s+/).at(-1) ?? '';
-    if (search.status !== 0 || !/^[1-9][0-9]*$/.test(windowId)) {
-      throw new Error(`xdotool portal search failed: ${compactError(search)}`);
-    }
-    const activate = execute(command, ['windowactivate', '--sync', windowId], processOptions);
-    if (activate.status !== 0) {
-      throw new Error(`xdotool portal activate failed: ${compactError(activate)}`);
-    }
-    const active = execute(command, ['getactivewindow'], processOptions);
-    if (active.status !== 0 || String(active.stdout ?? '').trim() !== windowId) {
-      throw new Error(`xdotool portal focus verification failed: ${compactError(active)}`);
-    }
-    const result = execute(command, ['key', '--clearmodifiers', key], processOptions);
-    if (result.status !== 0) throw new Error(`xdotool portal key failed: ${compactError(result)}`);
-  };
+  printCommand(request) {
+    return this.command({ desktopScope: true, ...request });
+  }
 }
 
 function parseDriverResponse(stdout) {

@@ -10,14 +10,15 @@ import { runScenarioWithEvidence } from '../support/scenario-runner.ts';
 import {
   centeredDelta,
   GUI_SELECTORS,
-  parsePageIndicator,
+  readPageIndicator,
+  waitForLoadedDocument,
+  waitForInitialDesktopReady,
 } from '../support/document-ux.ts';
-import { dismissLocalFontPrompt, readDomText } from '../support/webdriver-dom.ts';
 import { readGuiHarnessInputs } from '../wdio.shared.conf.ts';
 
 const inputs = readGuiHarnessInputs();
-const FILE_INPUT_ACCEPT_TIMEOUT_MS = 5_000;
 let fixtures: DocumentFixture[] = [];
+let desktopReady = false;
 
 describe('Alhangeul document UX', () => {
   before(async () => {
@@ -39,68 +40,19 @@ describe('Alhangeul document UX', () => {
 });
 
 async function openFixture(fixture: DocumentFixture): Promise<void> {
-  const startedAt = Date.now();
-  let accepted = false;
-  for (let attempt = 0; attempt < 2 && !accepted; attempt += 1) {
-    await setHiddenFileInput(fixture.absolutePath);
-    accepted = await waitForFileInputAcceptance(fixture);
-  }
-  if (!accepted) throw new Error(`${fixture.id} file input이 앱에 전달되지 않았습니다`);
-  const remainingTimeout = Math.max(5_000, inputs.timeoutMs - (Date.now() - startedAt));
-  await browser.waitUntil(async () => {
-    if (await dismissLocalFontPrompt()) return false;
-    const canvas = await $(GUI_SELECTORS.documentCanvas);
-    const status = await readDomText(GUI_SELECTORS.statusMessage);
-    return await canvas.isExisting() && status.includes(basename(fixture.absolutePath));
-  }, {
-    timeout: remainingTimeout,
-    timeoutMsg: `${fixture.id} 문서 렌더가 완료되지 않았습니다`,
+  const input = await $(GUI_SELECTORS.fileInput);
+  await input.waitForExist({ timeout: inputs.timeoutMs });
+  await input.addValue(fixture.absolutePath);
+  await waitForLoadedDocument(
+    browser,
+    basename(fixture.absolutePath),
+    fixture.expectedPageCount,
+    inputs.timeoutMs,
+  );
+  await $(GUI_SELECTORS.documentCanvas).waitForExist({
+    timeout: inputs.timeoutMs,
+    timeoutMsg: `${fixture.id} 문서 canvas가 준비되지 않았습니다`,
   });
-}
-
-async function waitForFileInputAcceptance(fixture: DocumentFixture): Promise<boolean> {
-  try {
-    await browser.waitUntil(async () => {
-      const status = await readDomText(GUI_SELECTORS.statusMessage);
-      return status.startsWith('파일 로딩') || status.includes(basename(fixture.absolutePath));
-    }, {
-      timeout: Math.min(FILE_INPUT_ACCEPT_TIMEOUT_MS, inputs.timeoutMs),
-      timeoutMsg: `${fixture.id} file input 전달을 확인하지 못했습니다`,
-    });
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-async function setHiddenFileInput(path: string): Promise<void> {
-  const originalStyle = await browser.execute((selector) => {
-    const input = document.querySelector<HTMLElement>(selector);
-    if (!input) throw new Error(`file input이 없습니다: ${selector}`);
-    const style = input.getAttribute('style');
-    input.style.setProperty('display', 'block', 'important');
-    input.style.setProperty('position', 'fixed', 'important');
-    input.style.setProperty('inset', '0 auto auto 0', 'important');
-    input.style.setProperty('width', '1px', 'important');
-    input.style.setProperty('height', '1px', 'important');
-    input.style.setProperty('opacity', '1', 'important');
-    return style;
-  }, GUI_SELECTORS.fileInput);
-  try {
-    const input = await $(GUI_SELECTORS.fileInput);
-    await input.waitForDisplayed({ timeout: inputs.timeoutMs });
-    await input.setValue(path);
-  } finally {
-    await browser.execute((selector, style) => {
-      const input = document.querySelector<HTMLElement>(selector);
-      if (!input) return;
-      for (const property of ['display', 'position', 'inset', 'width', 'height', 'opacity']) {
-        input.style.removeProperty(property);
-      }
-      input.removeAttribute('style');
-      if (style !== null) input.setAttribute('style', style);
-    }, GUI_SELECTORS.fileInput, originalStyle);
-  }
 }
 
 async function assertKoreanDesktopUi(): Promise<void> {
@@ -124,7 +76,7 @@ async function assertInitialToolbarState(): Promise<void> {
 }
 
 async function assertPageCount(fixture: DocumentFixture): Promise<void> {
-  const page = parsePageIndicator(await readDomText(GUI_SELECTORS.pageIndicator));
+  const page = await readPageIndicator(browser);
   expect(page.current).toBe(1);
   expect(page.total).toBeGreaterThanOrEqual(1);
   if (fixture.expectedPageCount !== null) expect(page.total).toBe(fixture.expectedPageCount);
@@ -168,5 +120,14 @@ async function runWithEvidence(
     fixtures: [fixture],
     screenshotName: 'initial.png',
     captureScreenshot: (path) => browser.saveScreenshot(path),
-  }, action);
+  }, async () => {
+    await ensureDesktopReady();
+    await action();
+  });
+}
+
+async function ensureDesktopReady(): Promise<void> {
+  if (desktopReady) return;
+  await waitForInitialDesktopReady(browser, inputs.timeoutMs);
+  desktopReady = true;
 }

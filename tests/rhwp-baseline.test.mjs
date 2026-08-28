@@ -154,11 +154,18 @@ test('Alhangeul source save and PDF export keep format and current SVG boundarie
     join(repoRoot, 'apps/studio-host/src/core/desktop-persistence.ts'),
     'utf8',
   );
+  const sourceExport = await readFile(
+    join(repoRoot, 'apps/studio-host/src/core/desktop-source-export.ts'),
+    'utf8',
+  );
   const commands = await readFile(join(repoRoot, 'apps/desktop/src-tauri/src/commands.rs'), 'utf8');
   const state = await readFile(join(repoRoot, 'apps/desktop/src-tauri/src/state.rs'), 'utf8');
   const pdfExport = await readFile(join(repoRoot, 'apps/desktop/src-tauri/src/pdf_export.rs'), 'utf8');
 
-  assert.match(persistence, /requestedFormat === 'hwpx'[\s\S]*handlers\.exportHwpx\(\)/);
+  assert.match(persistence, /exportSource\(requestedFormat\)/);
+  assert.match(sourceExport, /exportDocumentWithReportForFormat/);
+  assert.match(sourceExport, /exportPasswordProtectedDocumentWithReportForFormat/);
+  assert.match(sourceExport, /flushDeferredPaginationIfNeeded\('native-save'\)/);
   assert.match(persistence, /handlers\.getPageSvg\(pageIndex\)/);
   assert.match(persistence, /append_pdf_page/);
   assert.doesNotMatch(persistence, /notifySaved/);

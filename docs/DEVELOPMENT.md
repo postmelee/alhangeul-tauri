@@ -41,13 +41,17 @@ pnpm tauri build --debug
 
 ```text
 apps/
-  desktop/       Tauri 2 데스크톱 앱
-  studio-host/   upstream rhwp-studio 위의 Alhangeul adapter
+  desktop/            Tauri 2 데스크톱 앱
+  studio-host/        upstream rhwp-studio 위의 Alhangeul adapter
+  thumbnail-handler/  Windows Explorer COM thumbnail provider DLL
+  thumbnail-worker/   HWP/HWPX 첫 페이지를 raster하는 제한 worker
+crates/
+  document-preview/   desktop·worker가 공유하는 bytes-only preview core
 third_party/
-  rhwp/          현재 읽기 전용 upstream submodule
-assets/          아이콘과 재배포 가능한 폰트
-docs/            사용자·기여자·아키텍처·운영 문서
-scripts/         검증과 의존성 유지보수 script
+  rhwp/               현재 읽기 전용 upstream submodule
+assets/               아이콘과 재배포 가능한 폰트
+docs/                 사용자·기여자·아키텍처·운영 문서
+scripts/              검증과 의존성 유지보수 script
 ```
 
 Alhangeul 전용 동작은 `apps/desktop`과 `apps/studio-host`에 둔다. `third_party/rhwp`는 제품 기능 때문에 직접 수정하지 않는다.
@@ -62,14 +66,16 @@ Alhangeul은 `rhwp`의 문서 엔진과 웹 editor를 기반으로 다음 제품
 - single-instance, file open event, drag/drop과 다중 창
 - 로컬 폰트 catalog와 editor bridge
 - Windows/Linux 파일 연결과 bundle 설정
+- Windows Explorer thumbnail COM handler, 제한 worker와 installer 등록·복원
 
-현재 source submodule, native Cargo lock과 bundled WASM은 `rhwp v0.8.2`의 resolved commit `9b16aa9e23f476e2b335d7c029fc9f24a199d63c`로 고정되어 있다. [rhwp-core.lock](../rhwp-core.lock)이 이 경계의 기계 검증 가능한 진실 원천이며, 자세한 계약은 [UPSTREAM.md](architecture/UPSTREAM.md)를 따른다.
+현재 source submodule, native Cargo lock과 bundled WASM은 `rhwp v0.8.4`의 resolved commit `496333b27d21ddb9114ba9ae340bcb895870c9a7`로 고정되어 있다. [rhwp-core.lock](../rhwp-core.lock)이 이 경계의 기계 검증 가능한 진실 원천이며, 자세한 계약은 [UPSTREAM.md](architecture/UPSTREAM.md)를 따른다.
 
 ## 개발 상태
 
-- HWPX 문서는 열 수 있지만 저장은 지원하지 않는다.
-- autosave/recovery와 외부 파일 변경 감지는 아직 없다.
+- HWP/HWPX source 저장과 형식 변환 저장은 구현됐지만 새 exact-SHA native 후보 수용 전이다.
+- upstream Studio의 browser autosave/recovery는 상속하지만 별도 native recovery 저장소와 외부 파일 변경 감지는 아직 없다.
 - 큰 문서에서는 WASM mirror를 거치는 구간이 남아 있다.
+- Windows thumbnail 자동 gate는 실제 COM activation과 Shell bitmap 반환까지 통과했지만 Explorer UI의 보기 크기·DPI·cache·한컴 설치 환경 수동 수용은 남아 있다.
 - 현재 제품 source version은 독립 Alhangeul의 M010 기준선인 `0.1.0`이며, 공식 release나 tag를 뜻하지 않는다.
 - 공식 설치 파일, 서명, 패키지 게시와 자동 업데이트는 준비되지 않았다.
 - GitHub Actions는 활성 상태지만 CI와 Windows/Linux native artifact workflow는 수동 `workflow_dispatch` 전용이다. Actions artifact는 build smoke 결과이며 공식 설치 파일이나 공개 release가 아니다.
@@ -118,14 +124,41 @@ pnpm run check:desktop-artifacts -- \
 
 검증된 canary commit·run과 platform별 installer SHA-256, 14일 retention 및 공식 배포와의 경계는 [desktop artifact와 배포 준비](operations/DESKTOP_RELEASE.md)를 따른다.
 
+## Windows thumbnail 개발
+
+thumbnail handler와 worker는 Windows x64 MSVC target 전용이다. 지원 Windows 환경에서 다음 source 검증을 실행한다.
+
+```sh
+pnpm run build:thumbnail-binaries -- --target x86_64-pc-windows-msvc
+pnpm run test:thumbnail-worker:windows
+pnpm run test:thumbnail-handler:windows
+pnpm run clippy:thumbnail-worker:windows
+pnpm run clippy:thumbnail-handler:windows
+```
+
+source 계약과 다운로드한 Windows artifact는 각각 다음 명령으로 검증한다.
+
+```sh
+pnpm run test:automation
+pnpm run check:desktop-artifacts -- \
+  --platform windows-x64 \
+  --root <downloaded-artifact-root> \
+  --verify-inventory \
+  <downloaded-artifact-root>/alhangeul-artifact-inventory.json
+```
+
+`pnpm run test:automation`의 thumbnail source 계약은 raster feature와 process-local 한글 fallback이 transitive dependency 변화로 사라지지 않는지 확인한다. `crates/document-preview`의 Rust test는 온새미로 HWP, `biz_plan.hwp`, `form-002.hwpx` 첫 페이지에서 SVG text/image 구조와 영역별 raster content를 검증한다. 지원 Windows/Linux 환경에서 native Rust 변경을 검증할 때는 이 대표 fixture gate가 포함된 `cargo test --manifest-path crates/document-preview/Cargo.toml --target-dir apps/desktop/src-tauri/target`도 실행한다.
+
+실제 installer 등록·복원과 Shell bitmap 반환은 native workflow의 `scripts/windows-installer-smoke.ps1` gate가 소유한다. 다른 host의 플랫폼 중립 test는 protocol과 source 계약 회귀를 잡지만 Windows COM activation, PE 종류와 installer transaction을 대신하지 않는다. process, IPC, resource budget, registry와 Explorer 수동 수용 기준은 [Windows thumbnail 아키텍처](architecture/WINDOWS_THUMBNAILS.md)를 따른다.
+
 ## `rhwp` Stable pin 갱신
 
 `rhwp` 갱신은 일반 기능 작업에 포함하지 않는다. 승인된 의존성 갱신 작업에서 release tag와 그 tag가 가리키는 40자리 commit을 모두 명시한다.
 
 ```sh
 scripts/update-upstream.sh \
-  --tag v0.8.2 \
-  --commit 9b16aa9e23f476e2b335d7c029fc9f24a199d63c \
+  --tag v0.8.4 \
+  --commit 496333b27d21ddb9114ba9ae340bcb895870c9a7 \
   --run-checks
 ```
 
@@ -201,4 +234,5 @@ pnpm run check:rhwp-pin
 - [upstream 경계](architecture/UPSTREAM.md)
 - [초기 코드와 자산 출처](architecture/PROVENANCE.md)
 - [로컬 폰트 규칙](architecture/LOCAL_FONTS.md)
+- [Windows thumbnail 아키텍처](architecture/WINDOWS_THUMBNAILS.md)
 - [desktop artifact와 배포 준비](operations/DESKTOP_RELEASE.md)

@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ko">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>알한글 업데이트</title>
+        <meta name="description" content="알한글 최신 버전 다운로드, 앱 업데이트 지원 범위와 릴리즈 노트를 안내합니다." />
+        <meta property="og:title" content="알한글 업데이트" />
+        <meta property="og:description" content="Windows와 Linux용 알한글 최신 버전과 릴리즈 노트를 확인하세요." />
+        <meta property="og:image" content="https://postmelee.github.io/alhangeul-tauri/assets/og-main.png" />
+        <link rel="canonical" href="https://postmelee.github.io/alhangeul-tauri/updates/" />
+        <link rel="icon" href="../../assets/logo/favicon.ico" />
+        <link rel="stylesheet" href="../styles.css?v=45-3-17" />
+        <script src="../script.js" defer></script>
+    </head>
+    <body data-site-root="../">
+        <a class="skip-link" href="#main">본문으로 이동</a>
+        <header class="site-header" aria-label="주요 탐색">
+            <div class="site-header-inner">
+                <a class="brand-link" href="../" aria-label="알한글 홈"><img src="../../assets/logo/logo-256.png" alt="" width="28" height="28" /><span>알한글</span></a>
+                <nav class="header-actions" aria-label="주요 링크">
+                    <a class="header-link" href="../" aria-label="알한글 홈으로 이동">홈</a>
+                    <a class="header-link" href="../feedback/" aria-label="문의와 제보 안내로 이동">문의/제보</a>
+                    <a class="header-link" href="https://github.com/postmelee/alhangeul-tauri" aria-label="GitHub 저장소로 이동">GitHub</a>
+                </nav>
+            </div>
+        </header>
+
+        <main class="updates-page page-enter" id="main">
+            <section class="updates-hero" aria-labelledby="updates-title">
+                <h1 id="updates-title">알한글 업데이트</h1>
+                <p data-release-message>앱의 업데이트 지원을 준비하고 있으며, 첫 공개 릴리스가 게시되면 Windows와 Linux 설치 파일을 웹에서 직접 받을 수 있습니다.</p>
+                <div class="updates-actions" aria-label="업데이트 주요 링크">
+                    <details class="download-picker" id="latest-download">
+                        <summary class="page-action-button">
+                            최신 버전 다운로드
+                            <svg class="download-chevron" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
+                                <path d="m4 6 4 4 4-4"></path>
+                            </svg>
+                        </summary>
+                        <div class="download-options" aria-label="플랫폼별 다운로드">
+                            <span class="download-option" aria-disabled="true" data-download-target="windows-x86_64-nsis"><strong>Windows x64</strong><span data-download-state>NSIS · 준비 중</span></span>
+                            <span class="download-option" aria-disabled="true" data-download-target="windows-x86_64-msi"><strong>Windows x64</strong><span data-download-state>MSI · 준비 중</span></span>
+                            <span class="download-option" aria-disabled="true" data-download-target="linux-x86_64-appimage"><strong>Linux x64</strong><span data-download-state>AppImage · 준비 중</span></span>
+                        </div>
+                    </details>
+                    <a class="page-secondary-link" href="https://github.com/postmelee/alhangeul-tauri/releases">GitHub Releases</a>
+                </div>
+            </section>
+
+            <div class="updates-content">
+                <section class="updates-section" aria-labelledby="check-in-app-title">
+                    <h2 id="check-in-app-title">앱에서 업데이트 확인</h2>
+                    <p>Issue #16 완료 후 Windows NSIS·MSI 설치본과 Linux x64 AppImage에서 stable 업데이트를 확인하고 설치 여부를 직접 선택할 수 있습니다. DEB·RPM과 Linux arm64는 GitHub Releases에서 새 버전을 확인해 수동으로 설치합니다.</p>
+                </section>
+
+                <section class="updates-section" aria-labelledby="release-notes-title">
+                    <h2 id="release-notes-title">릴리즈 노트</h2>
+                    <div class="release-note-list">
+                        <div class="release-note-empty" data-release-note><strong>첫 공식 릴리즈</strong><span>Windows와 Linux 설치본을 검증하고 있습니다.</span></div>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+
+        <footer class="site-footer"><div class="site-footer-inner"><div class="footer-brand"><img src="../../assets/logo/logo-256.png" alt="" width="24" height="24" /><span>알한글</span></div><p>Windows와 Linux용 HWP/HWPX 문서 편집기입니다.</p><nav aria-label="푸터 링크"><a href="https://github.com/postmelee/alhangeul-tauri/blob/devel/LICENSE" rel="noreferrer">MIT License</a></nav></div></footer>
+    </body>
+</html>
