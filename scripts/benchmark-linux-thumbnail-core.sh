@@ -111,7 +111,7 @@ create_variants() {
   cp "$source" "$stale_preview"
   zip -q -d "$stale_preview" 'Preview/PrvImage*' >/dev/null 2>&1 || true
   install -d "$derived_root/replacement/Preview"
-  printf '%s' 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M/wHwAF/gL+wsSFygAAAABJRU5ErkJggg==' \
+  printf '%s' 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=' \
     | base64 --decode > "$derived_root/replacement/Preview/PrvImage.png"
   (cd "$derived_root/replacement" && zip -q "$stale_preview" Preview/PrvImage.png)
   head -c 128 "$source" > "$derived_root/corrupt.hwpx"

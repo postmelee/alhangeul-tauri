@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
+import { crc32 } from 'node:zlib';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const scriptPath = join(repoRoot, 'scripts/benchmark-linux-thumbnail-core.sh');
@@ -10,6 +11,19 @@ const [source, packageSource] = await Promise.all([
   readFile(scriptPath, 'utf8'),
   readFile(join(repoRoot, 'package.json'), 'utf8'),
 ]);
+
+function assertPngChunkCrcs(encoded) {
+  const png = Buffer.from(encoded, 'base64');
+  assert.deepEqual(png.subarray(0, 8), Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+  let offset = 8;
+  while (offset < png.length) {
+    const length = png.readUInt32BE(offset);
+    const chunk = png.subarray(offset + 4, offset + 8 + length);
+    assert.equal(crc32(chunk), png.readUInt32BE(offset + 8 + length));
+    offset += 12 + length;
+  }
+  assert.equal(offset, png.length);
+}
 
 test('Linux probe contract가 automation inventory에 포함된다', () => {
   const packageJson = JSON.parse(packageSource);
@@ -67,6 +81,12 @@ test('fixture 변형과 64 MiB 경계를 원본과 분리한다', () => {
   assert.match(source, /truncate -s 67108865/);
   assert.match(source, /\[\[ "\$\(lower_sha256 "\$file"\)" == "\$sha" \]\]/);
   assert.match(source, /stat -c '%y'/);
+});
+
+test('stale preview fixture는 chunk CRC가 유효한 PNG를 사용한다', () => {
+  const encoded = source.match(/printf '%s' '([A-Za-z0-9+/=]+)'/)?.[1];
+  assert.ok(encoded, 'stale preview PNG fixture가 필요합니다.');
+  assertPngChunkCrcs(encoded);
 });
 
 test('summary는 exact SHA와 비식별 resource만 기록한다', () => {
