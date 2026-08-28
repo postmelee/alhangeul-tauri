@@ -69,25 +69,31 @@ Stage 3.9 피드백 보정에서는 네이티브 화면 자체의 1px 창 경계
 제목 표시줄의 네 모서리와 창 제어 버튼이 잘리지 않도록 했고, 세 페이지 CSS와 대표 이미지 cache
 version을 함께 갱신했다.
 
+Stage 3.10 피드백 보정에서는 홈 제목을 desktop 44.8px, 390px mobile 33.93px까지 낮춰 제품 화면과
+다운로드 선택지가 함께 읽히는 위계로 정리했다. 다섯 설치 선택지는 파란 배경과 흰 글자를 공통으로
+사용하고 Windows NSIS와 Linux AppImage 권장 항목만 더 짙은 파란색으로 구분했다. 각 선택지에는
+문자 기호가 아닌 16×16 inline SVG 다운로드 아이콘을 추가하고, 보조 문구를 12px로 낮춰 desktop에서
+가장 긴 AppImage 설명도 한 줄에 유지했다.
+
 ## 산출물
 
 | 파일 | 변경 요약 |
 |---|---|
-| `site/index.html` (84줄) | 5개 다운로드 선택지의 공통 최신 다운로드 fallback과 검증된 실제 HWP 편집 화면 하나로 홈 보정 |
+| `site/index.html` (84줄) | 5개 다운로드 선택지에 실제 SVG 다운로드 아이콘을 추가하고 공통 최신 다운로드 fallback 보존 |
 | `site/updates/index.html` (69줄) | 참고 페이지 구조의 hero, SVG 꺾쇠가 있는 플랫폼 다운로드 dropdown, 압축된 updater 범위와 릴리즈 노트 안내 |
 | `site/feedback/index.html` (72줄) | 원본과 같은 hero·privacy note·contact card 계층으로 email 복사/작성과 GitHub Issue 안내 재구성 |
-| `site/styles.css` (174줄) | 1,160px desktop shell과 실제 창 경계를 보존하는 2px/무외곽-border 제품 wrapper 적용 |
+| `site/styles.css` (178줄) | 축소한 홈 제목, 파란 설치 버튼·흰 글자·아이콘 위계와 실제 창 경계를 보존하는 제품 wrapper 적용 |
 | `site/script.js` (92줄) | unpublished 내부 안내와 published 홈·dropdown exact artifact 전환, release note hydration 공유 |
 | `site/assets/linux-editor.png` (1,282×924, 79,227 bytes) | 실제 Linux 네이티브 제목 표시줄과 HWP 편집 상태를 함께 보존한 대표 화면 |
-| `site/assets/og-main.png` (1,920×1,080, 308,343 bytes) | 최소 radius로 네이티브 경계를 보존한 홈을 PNG 공유 이미지로 재생성 |
+| `site/assets/og-main.png` (1,920×1,080, 335,275 bytes) | 축소한 제목과 명시적 다운로드 버튼을 반영한 홈을 PNG 공유 이미지로 재생성 |
 | `scripts/build-pages.mjs` (152줄) | 중첩 페이지의 root asset 경로를 depth에 맞춰 결정적으로 정규화 |
 | `scripts/check-pages.mjs` (235줄) | 홈·업데이트·문의 필수 파일과 내부 hash 대상 존재 검사를 추가 |
 | `tests/pages.test.mjs` (282줄) | 중첩 asset 출력, broken hash와 필수 페이지 누락 회귀 검사 추가 |
-| `tests/pages-design.test.mjs` (286줄) | CSS/asset version, 2px/무외곽-border wrapper와 이미지·OG SHA 계약 고정 |
-| `mydocs/orders/20260827.md`, `mydocs/orders/20260828.md` | Stage 3.6 이력 보존과 Stage 3.9 완료·Stage 4 승인 대기 기록 |
+| `tests/pages-design.test.mjs` (289줄) | 축소한 제목 clamp, 파란 버튼·흰 글자·SVG 아이콘과 이미지·OG SHA 계약 고정 |
+| `mydocs/orders/20260827.md`, `mydocs/orders/20260828.md` | Stage 3.6 이력 보존과 Stage 3.10 완료·Stage 4 승인 대기 기록 |
 
 대표 화면 SHA-256은 `a3d4460b8fc432f00a2ce97cd68552582b2f5dfdc88faec9f749e58be132618b`,
-공유 이미지 SHA-256은 `44b540ad0ebf8fe7110d6b596f3d3e19bf2b388c072e539e14ba8dfd0b60cc49`이다.
+공유 이미지 SHA-256은 `ffbd3e92d0c29df25514536681f3ac8e08235d01258b9e6b48768451c8506524`이다.
 외부 package와 lockfile은 변경하지 않았고 모든 text source는 권장 300줄 상한 이하다.
 
 ## 본문 변경 정도 / 본문 무손실 여부
@@ -125,6 +131,10 @@ Stage 3.9에서는 대표 PNG 자체를 변경하지 않고 표시 wrapper만 �
 장식용 외곽 border를 없애고 radius만 2px로 최소화했으며, 그림자·크기·responsive 노출 조건과
 릴리스 다운로드 계약은 그대로 보존했다.
 
+Stage 3.10에서는 텍스트 위계와 설치 선택지의 시각 표현만 변경했다. 다섯 href와 세
+`data-download-target`, published hydration 및 미게시 fail-closed 동작은 그대로 보존했으며,
+SVG 아이콘은 장식 요소로 숨겨 link accessible name도 기존 제목과 설명만 유지한다.
+
 제품 실행 코드, Pages workflow, `site/release.json` schema와 updater endpoint는 변경하지 않았다.
 `release.json`은 계속 `unreleased`, 세 download 값은 null, manifest는 비게시 상태다.
 
@@ -145,6 +155,7 @@ git diff --check
 
 - OK — Pages build: source 11개와 승인 root asset 4개를 `_site`에 생성
 - OK — Pages check: source 11개, output 15개; 세 필수 페이지·내부 hash·asset·manifest 계약 통과
+- OK — Stage 3 계획서의 Pages/workflow focused test 42개 통과, 실패·skip 없음
 - OK — Pages design/build/release metadata focused test 40개 통과, 실패·skip 없음
 - OK — 제품 경계 269파일 통과; Windows/Linux 지원 범위 밖 font identifier 없음
 - OK — 전체 automation test 254개 통과, 실패·skip 없음
@@ -206,6 +217,10 @@ git diff --check
   대표 화면을 유지하고, 820×900과 390×844에서는 기존 responsive 규칙대로 대표 화면을 숨김
 - OK — Stage 3.9 1,280×720 computed style은 제품 wrapper `border-radius: 2px`, `border-width: 0px`,
   x=581~1,220 약 639px이며 네이티브 제목 표시줄 모서리와 창 제어 버튼이 잘리지 않음
+- OK — Stage 3.10 1,280×720 홈은 document 1,280×720로 스크롤이 없고 제목은 44.8px,
+  다섯 설치 버튼은 파란 배경·흰 글자·16px SVG 아이콘을 사용하며 가장 긴 AppImage 설명도 한 줄 유지
+- OK — Stage 3.10 390×844 홈은 document 390×844로 스크롤이 없고 제목은 33.93px·정확히 3줄,
+  다섯 버튼과 아이콘은 362px 본문 안에 유지되며 대표 제품 화면은 기존 responsive 규칙대로 숨김
 - OK — 1,920×1,080 공유 화면에서 네이티브 제목 표시줄을 포함한 단일 실제 제품 화면,
   플랫폼별 다운로드 목차, Footer와 document 1,920×1,080을 확인하고 PNG 크기·SHA-256을 고정
 
