@@ -31,6 +31,7 @@ jobs:
     timeout-minutes: 45
     env:
       ARTIFACT_ROOT: ${{ github.workspace }}/artifacts/linux-x64
+      THUMBNAILER_ARTIFACT_ROOT: ${{ github.workspace }}/artifacts/linux-thumbnailer-x64
       EVIDENCE_ROOT: /home/runner/PDF
       CUPS_PDF_OUTPUT: /home/runner/PDF/cups-output/biz_plan.pdf
     steps:
@@ -118,6 +119,60 @@ jobs:
           path: ${{ env.ARTIFACT_ROOT }}
           digest-mismatch: error
 
+      - name: Verify exact Linux thumbnailer artifact handoff
+        id: thumbnailer-handoff
+        shell: bash
+        env:
+          BUILD_REF: ${{ inputs.build_ref }}
+          NATIVE_RUN_ID: ${{ inputs.native_run_id }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          node scripts/verify-workflow-artifact.mjs \
+            --repository "$GITHUB_REPOSITORY" \
+            --build-ref "$BUILD_REF" \
+            --run-id "$NATIVE_RUN_ID" \
+            --workflow-path .github/workflows/alhangeul-desktop.yml \
+            --artifact-name alhangeul-linux-x64-thumbnailer \
+            --json-output "$EVIDENCE_ROOT/thumbnailer-artifact-handoff.json" \
+            --github-output "$GITHUB_OUTPUT"
+
+      - name: Download verified Linux thumbnailer artifact
+        id: download-thumbnailer
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          artifact-ids: ${{ steps.thumbnailer-handoff.outputs.artifact_id }}
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.native_run_id }}
+          path: ${{ env.THUMBNAILER_ARTIFACT_ROOT }}
+          digest-mismatch: error
+
+      - name: Verify exact Linux thumbnailer binary
+        id: verify-thumbnailer
+        shell: bash
+        env:
+          BUILD_REF: ${{ inputs.build_ref }}
+        run: |
+          set -euo pipefail
+          helper="$THUMBNAILER_ARTIFACT_ROOT/alhangeul-thumbnailer"
+          summary="$THUMBNAILER_ARTIFACT_ROOT/linux-thumbnailer-summary.json"
+          [[ -f "$helper" && -f "$summary" ]]
+          node -e '
+            const fs = require("node:fs");
+            const [path, sha] = process.argv.slice(1);
+            const value = JSON.parse(fs.readFileSync(path, "utf8"));
+            if (value.repositorySha !== sha || value.target !== "x86_64-unknown-linux-gnu"
+              || value.architecture !== "x64" || value.elfType !== 3 || value.elfMachine !== 62
+              || !/^[0-9a-f]{64}$/.test(value.sha256)) process.exit(1);
+            process.stdout.write(value.sha256);
+          ' "$summary" "$BUILD_REF" > "$EVIDENCE_ROOT/expected-thumbnailer.sha256"
+          actual_sha="$(sha256sum "$helper" | awk '{print $1}')"
+          [[ "$actual_sha" == "$(< "$EVIDENCE_ROOT/expected-thumbnailer.sha256")" ]]
+          chmod 0755 "$helper"
+          printf '%s  %s\n' "$actual_sha" "$helper" > "$EVIDENCE_ROOT/verified-thumbnailer.sha256"
+          printf 'helper_path=%s\n' "$helper" >> "$GITHUB_OUTPUT"
+
       - name: Install pnpm dependencies
         id: install-pnpm
         shell: bash
@@ -165,6 +220,7 @@ jobs:
             python3-pyatspi \
             scrot \
             shared-mime-info \
+            strace \
             thunar \
             tumbler \
             webkit2gtk-driver \
@@ -180,153 +236,8 @@ jobs:
           THUMBNAIL_EVIDENCE_ROOT: ${{ env.EVIDENCE_ROOT }}/thumbnail-manager
         run: |
           set -euo pipefail
-          probe_root="$(mktemp -d "$RUNNER_TEMP/alhangeul-thumbnail-manager.XXXXXX")"
-          trap 'rm -rf "$probe_root"' EXIT
-          install -d "$THUMBNAIL_EVIDENCE_ROOT" "$probe_root/data/mime/packages" \
-            "$probe_root/data/thumbnailers" "$probe_root/source"
-          cp third_party/rhwp/saved/blank2010.hwp "$probe_root/source/probe.hwp"
-          cp third_party/rhwp/saved/blank_hwpx.hwpx "$probe_root/source/probe.hwpx"
-          head -c 64 "$probe_root/source/probe.hwp" > "$probe_root/source/probe-fail.hwp"
-          source_hashes_before="$(sha256sum "$probe_root/source/probe.hwp" \
-            "$probe_root/source/probe.hwpx" "$probe_root/source/probe-fail.hwp" | awk '{print $1}')"
-          fail_hash="$(sha256sum "$probe_root/source/probe-fail.hwp" | awk '{print $1}')"
-          cat > "$probe_root/data/mime/packages/alhangeul-probe.xml" <<'XML'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
-            <mime-type type="application/x-hwp"><glob pattern="*.hwp" weight="100"/></mime-type>
-            <mime-type type="application/vnd.hancom.hwpx"><glob pattern="*.hwpx" weight="100"/></mime-type>
-          </mime-info>
-          XML
-          XDG_DATA_HOME="$probe_root/data" update-mime-database "$probe_root/data/mime"
-          stub="$probe_root/alhangeul-thumbnail-stub"
-          cat > "$stub" <<'STUB'
-          #!/usr/bin/env bash
-          set -euo pipefail
-          sha="$(sha256sum "$1" | awk '{print $1}')"
-          result=success
-          if [[ "$sha" == "$ALHANGEUL_THUMBNAIL_FAIL_SHA" ]]; then
-            printf partial-output > "$2"
-            result=partial-exit-42
-          else
-            printf '%s' 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=' \
-              | base64 --decode > "$2"
-          fi
-          printf '{"sha256":"%s","edge":%s,"result":"%s"}\n' "$sha" "$3" "$result" \
-            >> "$ALHANGEUL_THUMBNAIL_INVOCATIONS"
-          [[ "$result" == success ]] || exit 42
-          STUB
-          chmod 0755 "$stub"
-          printf '[Thumbnailer Entry]\nTryExec=%s\nExec=%s %%i %%o %%s\nMimeType=application/x-hwp;application/vnd.hancom.hwpx;\n' \
-            "$stub" "$stub" > "$probe_root/data/thumbnailers/alhangeul-probe.thumbnailer"
-          hwp_type="$(XDG_DATA_HOME="$probe_root/data" gio info -a standard::content-type \
-            "$probe_root/source/probe.hwp" | sed -n 's/.*standard::content-type: //p')"
-          hwpx_type="$(XDG_DATA_HOME="$probe_root/data" gio info -a standard::content-type \
-            "$probe_root/source/probe.hwpx" | sed -n 's/.*standard::content-type: //p')"
-          [[ "$hwp_type" == application/x-hwp ]]
-          [[ "$hwpx_type" == application/vnd.hancom.hwpx ]]
-          run_manager() {
-            local manager="$1" manager_root="$probe_root/$1" summary="$THUMBNAIL_EVIDENCE_ROOT/$1.json"
-            local status=0
-            install -d "$manager_root/cache" "$manager_root/config" "$manager_root/files" \
-              "$manager_root/home" "$manager_root/logs" "$manager_root/runtime"
-            chmod 0700 "$manager_root/runtime"
-            touch "$manager_root/home/.gtk-bookmarks"
-            cp "$probe_root/source/probe.hwp" "$manager_root/files/probe.hwp"
-            cp "$probe_root/source/probe.hwpx" "$manager_root/files/probe.hwpx"
-            cp "$probe_root/source/probe-fail.hwp" "$manager_root/files/probe-fail.hwp"
-            : > "$manager_root/invocations.ndjson"
-            # shellcheck disable=SC2016
-            HOME="$manager_root/home" XDG_CONFIG_HOME="$manager_root/config" \
-              XDG_DATA_HOME="$probe_root/data" XDG_CACHE_HOME="$manager_root/cache" \
-              XDG_RUNTIME_DIR="$manager_root/runtime" \
-              ALHANGEUL_THUMBNAIL_INVOCATIONS="$manager_root/invocations.ndjson" \
-              ALHANGEUL_THUMBNAIL_FAIL_SHA="$fail_hash" \
-              xvfb-run --auto-servernum --server-args='-screen 0 1280x800x24 -nolisten tcp' \
-              dbus-run-session -- bash -euo pipefail -c '
-                manager="$1"; files="$2"; log="$3"; summary="$4"
-                openbox >"$summary.openbox.log" 2>&1 & window_manager_pid=$!
-                trap '\''kill "$window_manager_pid" 2>/dev/null || true'\'' EXIT
-                if [[ "$manager" == nautilus ]]; then
-                  gsettings set org.gnome.nautilus.preferences show-image-thumbnails always
-                  gsettings set org.gnome.desktop.thumbnailers disable-all false
-                  # Stage 1 keeps the executable outside /usr. GNOME normally exposes only
-                  # /usr plus input/output to bwrap, so this probe-only marker selects the
-                  # upstream no-nested-sandbox path used when the caller is already sandboxed.
-                  export SNAP_NAME=alhangeul-thumbnail-probe
-                fi
-                launch() {
-                  local phase="$1" expected_delta="$2" wait_seconds="$3"
-                  local before after deadline
-                  before="$(wc -l < "$log")"
-                  G_MESSAGES_DEBUG=all "$manager" "$files" \
-                    >"$summary.$phase.stdout.log" 2>"$summary.$phase.stderr.log" & pid=$!
-                  if (( expected_delta == 0 )); then
-                    sleep "$wait_seconds"
-                  else
-                    deadline=$((SECONDS + wait_seconds))
-                    while (( SECONDS < deadline )); do
-                      after="$(wc -l < "$log")"
-                      if (( after >= before + expected_delta )); then
-                        break
-                      fi
-                      sleep 1
-                    done
-                  fi
-                  scrot "$summary.$phase.png"
-                  "$manager" --quit >/dev/null 2>&1 || true
-                  wait "$pid" || true
-                }
-                result_count() {
-                  local result="$1"
-                  awk -v needle="\"result\":\"$result\"" \
-                    "index(\$0, needle) { count += 1 } END { print count + 0 }" "$log"
-                }
-                launch first 3 20
-                first="$(wc -l < "$log")"
-                first_success="$(result_count success)"
-                first_failure="$(result_count partial-exit-42)"
-                launch cached 0 5
-                cached="$(wc -l < "$log")"
-                cached_success="$(result_count success)"
-                cached_failure="$(result_count partial-exit-42)"
-                touch "$files/probe.hwp" "$files/probe.hwpx" "$files/probe-fail.hwp"
-                launch changed 2 20
-                changed="$(wc -l < "$log")"
-                changed_success="$(result_count success)"
-                changed_failure="$(result_count partial-exit-42)"
-                printf '\''{"manager":"%s","first":%s,"cached":%s,"changed":%s,"success":{"first":%s,"cached":%s,"changed":%s},"failure":{"first":%s,"cached":%s,"changed":%s}}\n'\'' \
-                  "$manager" "$first" "$cached" "$changed" \
-                  "$first_success" "$cached_success" "$changed_success" \
-                  "$first_failure" "$cached_failure" "$changed_failure" > "$summary"
-                [[ "$first_success" -eq 2 ]]
-                [[ "$first_failure" -ge 1 ]]
-                [[ "$cached_success" -eq "$first_success" ]]
-                [[ "$changed_success" -ge $((cached_success + 2)) ]]
-              ' bash "$manager" "$manager_root/files" "$manager_root/invocations.ndjson" "$summary"
-            status=$?
-            find "$manager_root/cache" -type f -printf '%f %s\n' | sort \
-              > "$THUMBNAIL_EVIDENCE_ROOT/$manager-cache.txt"
-            cp "$manager_root/invocations.ndjson" "$THUMBNAIL_EVIDENCE_ROOT/$manager-invocations.ndjson"
-            return "$status"
-          }
-          nautilus_status=0
-          thunar_status=0
-          run_manager nautilus || nautilus_status=$?
-          run_manager thunar || thunar_status=$?
-          source_hashes_after="$(sha256sum "$probe_root/source/probe.hwp" \
-            "$probe_root/source/probe.hwpx" "$probe_root/source/probe-fail.hwp" | awk '{print $1}')"
-          [[ "$source_hashes_before" == "$source_hashes_after" ]]
-          {
-            dpkg-query -W -f='nautilus ${Version}\n' nautilus
-            dpkg-query -W -f='thunar ${Version}\n' thunar
-            dpkg-query -W -f='tumbler ${Version}\n' tumbler
-            printf 'hwp %s\n' "$hwp_type"
-            printf 'hwpx %s\n' "$hwpx_type"
-            printf 'nautilus_status %s\n' "$nautilus_status"
-            printf 'thunar_status %s\n' "$thunar_status"
-            printf 'gnome_probe_sandbox disposable-executable-snap-marker\n'
-          } > "$THUMBNAIL_EVIDENCE_ROOT/environment.txt"
-          [[ "$nautilus_status" -eq 0 && "$thunar_status" -eq 0 ]]
+          scripts/linux-thumbnail-manager-probe.sh \
+            "${{ steps.verify-thumbnailer.outputs.helper_path }}"
 
       - name: Install exact tauri-driver
         id: install-tauri-driver
@@ -449,6 +360,9 @@ jobs:
           SOURCE: ${{ steps.verify-source.outcome }}
           HANDOFF: ${{ steps.handoff.outcome }}
           DOWNLOAD: ${{ steps.download-artifact.outcome }}
+          THUMBNAILER_HANDOFF: ${{ steps.thumbnailer-handoff.outcome }}
+          THUMBNAILER_DOWNLOAD: ${{ steps.download-thumbnailer.outcome }}
+          THUMBNAILER_VERIFY: ${{ steps.verify-thumbnailer.outcome }}
           INVENTORY: ${{ steps.verify-inventory.outcome }}
           INSTALL: ${{ steps.install-deb.outcome }}
           THUMBNAIL_MANAGER: ${{ steps.thumbnail-manager-probe.outcome }}
@@ -456,8 +370,9 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$EVIDENCE_ROOT"
-          printf '{"validate":"%s","checkout":"%s","source":"%s","handoff":"%s","download":"%s","inventory":"%s","install":"%s","thumbnailManager":"%s","gui":"%s"}\n' \
+          printf '{"validate":"%s","checkout":"%s","source":"%s","handoff":"%s","download":"%s","thumbnailerHandoff":"%s","thumbnailerDownload":"%s","thumbnailerVerify":"%s","inventory":"%s","install":"%s","thumbnailManager":"%s","gui":"%s"}\n' \
             "$VALIDATE" "$CHECKOUT" "$SOURCE" "$HANDOFF" "$DOWNLOAD" \
+            "$THUMBNAILER_HANDOFF" "$THUMBNAILER_DOWNLOAD" "$THUMBNAILER_VERIFY" \
             "$INVENTORY" "$INSTALL" "$THUMBNAIL_MANAGER" "$GUI" > "$EVIDENCE_ROOT/step-outcomes.json"
 
       - name: Upload Linux GUI evidence
@@ -481,6 +396,9 @@ jobs:
           NODE: ${{ steps.setup-node.outcome }}
           HANDOFF: ${{ steps.handoff.outcome }}
           DOWNLOAD: ${{ steps.download-artifact.outcome }}
+          THUMBNAILER_HANDOFF: ${{ steps.thumbnailer-handoff.outcome }}
+          THUMBNAILER_DOWNLOAD: ${{ steps.download-thumbnailer.outcome }}
+          THUMBNAILER_VERIFY: ${{ steps.verify-thumbnailer.outcome }}
           PNPM: ${{ steps.install-pnpm.outcome }}
           INVENTORY: ${{ steps.verify-inventory.outcome }}
           LINUX_DEPS: ${{ steps.install-linux-dependencies.outcome }}
@@ -494,7 +412,8 @@ jobs:
         run: |
           set -euo pipefail
           for outcome in "$VALIDATE" "$CHECKOUT" "$PREPARE" "$SOURCE" "$NODE" "$HANDOFF" \
-            "$DOWNLOAD" "$PNPM" "$INVENTORY" "$LINUX_DEPS" "$DRIVER" \
+            "$DOWNLOAD" "$THUMBNAILER_HANDOFF" "$THUMBNAILER_DOWNLOAD" \
+            "$THUMBNAILER_VERIFY" "$PNPM" "$INVENTORY" "$LINUX_DEPS" "$DRIVER" \
             "$THUMBNAIL_MANAGER" "$INSTALL" "$CUPS" "$ENVIRONMENT" "$GUI" "$UPLOAD"; do
             [[ "$outcome" == success ]]
           done

@@ -165,6 +165,8 @@ Task #17 Stage 2: bounded Linux thumbnailer와 atomic PNG 구현
 신규:
 
 - `apps/desktop/src-tauri/linux/alhangeul.thumbnailer`
+- `scripts/linux-thumbnail-manager-probe.sh`
+- `scripts/linux-thumbnail-manager-session.sh`
 - `tests/linux-thumbnail-registration.test.mjs`
 - `tests/gui/linux/native-ui/thumbnail-files.test.mjs`
 - `mydocs/working/task_m010_17_stage3.md`
@@ -173,7 +175,6 @@ Task #17 Stage 2: bounded Linux thumbnailer와 atomic PNG 구현
 
 - `.github/workflows/alhangeul-linux-gui.yml`
 - `package.json`
-- `tests/linux-gui-probe.test.mjs`
 - `tests/linux-gui-workflow.test.mjs`
 
 ### 변경 내용
@@ -183,6 +184,8 @@ Task #17 Stage 2: bounded Linux thumbnailer와 atomic PNG 구현
 - 앱에서 한 번도 열지 않은 HWP/HWPX, direct 성공, preview fallback, 둘 다 실패를 실제 아이콘 grid에서 확인하고 128/256/512/1024 및 임의 edge의 PNG 구조·비율·alpha를 수집한다.
 - 전체 cache를 삭제하지 않고 동일 원본 반복 요청의 cache hit, mtime·내용 변경 뒤 invalidation, 손상 문서 failure cache와 MIME icon fallback을 호출 횟수·metadata·screenshot으로 함께 판정한다.
 - file manager 강제 종료, 전역 MIME database 변경, 다른 `.thumbnailer` 제거를 금지하고 disposable sentinel이 보존되는지 확인한다.
+- desktop native run의 별도 `alhangeul-linux-x64-thumbnailer` artifact를 같은 run ID·source SHA로 검증하고, ELF summary와 SHA-256을 확인한 helper만 disposable runner의 제품 절대 경로에 배치한다. inline stub와 `SNAP_NAME` 우회는 제거하고 `execve` trace로 호출 횟수를 관찰한다.
+- Stage 3 진입 시점의 최신 `origin/devel`과 직접 겹치는 예정 경로는 `package.json` 하나다. Task #45 Pages script를 복제하지 않고 `tests/linux-thumbnail-registration.test.mjs` inventory만 최소 추가한다. Linux GUI workflow, registration, 역할별 probe script와 신규 테스트에는 직접 충돌이 없다.
 
 ### 검증
 
@@ -191,6 +194,8 @@ node --test tests/linux-thumbnail-registration.test.mjs
 node --test tests/linux-gui-probe.test.mjs tests/linux-gui-workflow.test.mjs
 pnpm run test:automation
 pnpm run check:product-boundary
+shellcheck scripts/linux-thumbnail-manager-probe.sh scripts/linux-thumbnail-manager-session.sh
+actionlint .github/workflows/alhangeul-linux-gui.yml
 git diff --check
 ```
 
