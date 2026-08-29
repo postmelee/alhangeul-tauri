@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
+import { assertArchivePaths } from '../scripts/linux-thumbnail-package-contract.mjs';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const [configSource, workflow, wrapper, smoke, fixtures, contract, verifier] = await Promise.all([
@@ -120,6 +121,21 @@ test('package 검증은 path mode SHA ELF owner registration과 보존 불변식
   assert.match(contract, /\['query', 'default', mime\]/);
   assert.doesNotMatch(sources, /\['default',/);
   assert.doesNotMatch(sources, /update-desktop-database|update-mime-database|gio set/);
+});
+
+test('DEB와 RPM archive 경로 표기 차이를 절대 경로로 정규화한다', () => {
+  assert.doesNotThrow(() => assertArchivePaths([
+    '-rwxr-xr-x root/root 123 2026-08-30 00:00 ./usr/lib/alhangeul/alhangeul-thumbnailer',
+    '-rw-r--r-- root/root 456 2026-08-30 00:00 ./usr/share/thumbnailers/alhangeul.thumbnailer',
+  ].join('\n')));
+  assert.doesNotThrow(() => assertArchivePaths([
+    '/usr/lib/alhangeul/alhangeul-thumbnailer',
+    '/usr/share/thumbnailers/alhangeul.thumbnailer',
+  ].join('\n')));
+  assert.throws(
+    () => assertArchivePaths('/usr/lib/alhangeul/alhangeul-thumbnailer'),
+    /archive path \/usr\/share\/thumbnailers\/alhangeul\.thumbnailer mismatch/,
+  );
 });
 
 function assertOrdered(source, markers) {

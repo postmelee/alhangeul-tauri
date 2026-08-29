@@ -52,11 +52,16 @@ export function rpmMetadata(path) {
   return { name, version, architecture, archiveSha256: sha256Sync(path) };
 }
 
-export function assertArchivePaths(listing, prefix) {
+export function assertArchivePaths(listing) {
+  const paths = listing.split(/\r?\n/)
+    .map((line) => line.trim().split(/\s+/).at(-1) ?? '')
+    .map((path) => `/${path.replace(/^\.\//, '').replace(/^\//, '')}`);
   for (const path of [HELPER_PATH, REGISTRATION_PATH]) {
-    const expected = `${prefix}${path.replace(/^\//, '')}`;
-    const count = listing.split(/\r?\n/).filter((line) => line.trim().endsWith(expected)).length;
-    assertEqual(count, 1, `archive path ${path}`);
+    const count = paths.filter((candidate) => candidate === path).length;
+    if (count !== 1) {
+      const relevant = paths.filter((candidate) => /alhangeul|thumbnailer/i.test(candidate));
+      throw new Error(`archive path ${path} mismatch: ${count} != 1; found=${relevant.join(',')}`);
+    }
   }
 }
 

@@ -142,7 +142,7 @@ async function runDebLifecycle(context) {
   const metadata = debMetadata(context.archive);
   const expectedArch = context.platform === 'linux-x64' ? 'amd64' : 'arm64';
   assertPackageIdentity(metadata.name, metadata.architecture, expectedArch);
-  assertArchivePaths(run('dpkg-deb', ['--contents', context.archive]).stdout, './');
+  assertArchivePaths(run('dpkg-deb', ['--contents', context.archive]).stdout);
   assertCommandFailed(run('dpkg-query', ['-W', metadata.name], { allowFailure: true }), 'preinstalled DEB');
   context.owned.deb = metadata.name;
   console.log(`DEB clean install: ${metadata.name} ${metadata.version}`);
@@ -183,7 +183,7 @@ async function runDebLifecycle(context) {
 async function runRpmLifecycle(context) {
   const metadata = rpmMetadata(context.archive);
   assertPackageIdentity(metadata.name, metadata.architecture, 'x86_64');
-  assertArchivePaths(run('rpm', ['-qpl', context.archive]).stdout, '');
+  assertArchivePaths(run('rpm', ['-qpl', context.archive]).stdout);
   assertCommandFailed(run('rpm', ['-q', metadata.name], { allowFailure: true }), 'preinstalled RPM');
   context.owned.rpm = metadata.name;
   console.log(`RPM clean install: ${metadata.name} ${metadata.version}`);
