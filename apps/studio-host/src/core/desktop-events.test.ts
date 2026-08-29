@@ -2,12 +2,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { setupDesktopEvents } from './desktop-events';
 
 const tauriListen = vi.hoisted(() => vi.fn());
+const ensureDesktopUpdater = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
 const currentWindow = vi.hoisted(() => ({
   listen: vi.fn(),
   onCloseRequested: vi.fn(),
 }));
 
 vi.mock('@tauri-apps/api/event', () => ({ listen: tauriListen }));
+vi.mock('./desktop-updater', () => ({ ensureDesktopUpdater }));
 vi.mock('@tauri-apps/api/webviewWindow', () => ({
   getCurrentWebviewWindow: () => currentWindow,
 }));
@@ -24,6 +26,7 @@ describe('desktop events', () => {
     await setupDesktopEvents(options());
 
     expect(tauriListen).not.toHaveBeenCalled();
+    expect(ensureDesktopUpdater).not.toHaveBeenCalled();
     expect(currentWindow.listen).not.toHaveBeenCalled();
   });
 
@@ -40,6 +43,8 @@ describe('desktop events', () => {
     });
     const setMessage = vi.fn();
     await setupDesktopEvents(options({ host, setMessage }));
+
+    expect(ensureDesktopUpdater).toHaveBeenCalledWith(setMessage);
 
     await windowHandlers.get('alhangeul-open-paths')?.({
       payload: { paths: ['/documents/older.hwp', '/documents/latest.HWPX'] },

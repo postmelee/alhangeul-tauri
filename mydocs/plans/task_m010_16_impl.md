@@ -183,6 +183,9 @@ Task #16 Stage 1: updater 상태와 native target 계약 추가
 신규:
 
 - `apps/desktop/src-tauri/src/updater/service.rs`
+- `apps/desktop/src-tauri/src/updater/service/apply.rs`
+- `apps/desktop/src-tauri/src/updater/service/native.rs`
+- `apps/desktop/src-tauri/src/updater/service_tests.rs`
 - `apps/desktop/src-tauri/src/updater/commands.rs`
 - `apps/studio-host/src/core/desktop-updater.ts`
 - `apps/studio-host/src/core/desktop-updater.test.ts`
@@ -195,7 +198,7 @@ Task #16 Stage 1: updater 상태와 native target 계약 추가
 - `apps/desktop/src-tauri/Cargo.lock`
 - `apps/desktop/src-tauri/src/lib.rs`
 - `apps/desktop/src-tauri/src/state.rs`
-- `apps/studio-host/src/command/dispatcher.ts`
+- `apps/desktop/src-tauri/src/updater/mod.rs`
 - `apps/studio-host/src/core/desktop-events.ts`
 - `apps/studio-host/src/core/desktop-events.test.ts`
 - `apps/studio-host/src/ui/about-dialog.ts`
@@ -205,6 +208,8 @@ Task #16 Stage 1: updater 상태와 native target 계약 추가
 
 - OS-targeted `tauri-plugin-updater` Rust dependency를 추가하고 plugin backend를 trait 뒤에 둬
   state machine test가 network와 실제 installer 없이 동작하게 한다.
+- updater service 본문은 300 LOC 상한을 지키도록 apply·native backend·mock test를 역할별 파일로
+  분리하되 `service.rs`의 private 상태와 trait 경계 안에서만 연결한다.
 - supported release config에서만 startup check를 spawn한다. dev/일반 artifact/unsupported package는
   `ManualOnly` snapshot을 제공하고 private key나 updater artifact를 요구하지 않는다.
 - `Update::download`와 `Update::install`을 분리 호출해 두 번째 dirty guard를 두 호출 사이에 둔다.

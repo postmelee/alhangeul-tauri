@@ -112,6 +112,15 @@ pub struct AppState {
     pub(crate) pending_open_paths: PendingOpenPaths,
 }
 
+impl AppState {
+    pub fn has_dirty_sessions(&self) -> bool {
+        self.sessions
+            .lock()
+            .expect("document sessions poisoned")
+            .has_dirty_sessions()
+    }
+}
+
 impl DocumentSessionManager {
     pub fn create_document(&mut self) -> Result<DocumentOpenResult, String> {
         let mut core = DocumentCore::new_empty();
