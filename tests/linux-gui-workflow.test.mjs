@@ -166,6 +166,9 @@ test('Nautilus와 Thunar thumbnailer discovery는 disposable XDG 경로만 사�
     'thunar_status=0',
     'source_hashes_before',
     'source_hashes_after',
+    "dpkg-query -W -f='nautilus ${Version}\\n' nautilus",
+    "dpkg-query -W -f='thunar ${Version}\\n' thunar",
+    "dpkg-query -W -f='tumbler ${Version}\\n' tumbler",
   ]) assert.ok(probe.includes(marker), `thumbnail probe marker가 필요합니다: ${marker}`);
   assert.match(probe, /"\$manager" --quit/);
   assert.doesNotMatch(probe, /sudo|\/usr\/share\/thumbnailers|pkill|killall/);

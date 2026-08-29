@@ -317,9 +317,9 @@ jobs:
             "$probe_root/source/probe.hwpx" "$probe_root/source/probe-fail.hwp" | awk '{print $1}')"
           [[ "$source_hashes_before" == "$source_hashes_after" ]]
           {
-            nautilus --version
-            thunar --version
-            tumblerd --version 2>&1 || true
+            dpkg-query -W -f='nautilus ${Version}\n' nautilus
+            dpkg-query -W -f='thunar ${Version}\n' thunar
+            dpkg-query -W -f='tumbler ${Version}\n' tumbler
             printf 'hwp %s\n' "$hwp_type"
             printf 'hwpx %s\n' "$hwpx_type"
             printf 'nautilus_status %s\n' "$nautilus_status"
