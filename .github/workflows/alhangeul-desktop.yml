@@ -3,6 +3,14 @@ name: Alhangeul Desktop Artifact Build
 on:
   workflow_dispatch:
     inputs:
+      mode:
+        description: Build ordinary artifacts or signed updater release artifacts.
+        required: true
+        default: artifact
+        type: choice
+        options:
+          - artifact
+          - updater
       build_ref:
         description: Branch, tag, or commit to build. Empty uses the selected workflow commit.
         required: false
@@ -12,6 +20,26 @@ on:
         description: Run platform-neutral tests before the native build.
         required: true
         default: true
+        type: boolean
+      release_version:
+        description: Stable semantic version for updater mode.
+        required: false
+        default: ""
+        type: string
+      release_tag:
+        description: Exact v-prefixed tag matching release_version.
+        required: false
+        default: ""
+        type: string
+      release_notes:
+        description: Release notes used only by the approved publish job.
+        required: false
+        default: ""
+        type: string
+      publish_release:
+        description: Publish the verified updater artifacts to GitHub Releases.
+        required: true
+        default: false
         type: boolean
 
 permissions:
@@ -32,6 +60,7 @@ env:
 jobs:
   build:
     name: Build ${{ matrix.name }}
+    if: ${{ inputs.mode == 'artifact' }}
     strategy:
       fail-fast: false
       matrix:
@@ -316,7 +345,7 @@ jobs:
   windows-installer-smoke:
     name: Smoke Windows x64 installers
     needs: build
-    if: ${{ !cancelled() }}
+    if: ${{ inputs.mode == 'artifact' && !cancelled() }}
     runs-on: windows-2025
     timeout-minutes: 30
     steps:
@@ -435,3 +464,225 @@ jobs:
           if ($failed.Count -gt 0) {
             throw "Windows installer smoke gate failed: $($failed | ConvertTo-Json -Compress)"
           }
+
+  build-updater:
+    name: Build updater ${{ matrix.name }}
+    if: ${{ inputs.mode == 'updater' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows-x64
+            os: windows-2025
+            target: x86_64-pc-windows-msvc
+            bundles: msi,nsis
+            updater_targets: windows-x86_64-nsis,windows-x86_64-msi
+          - name: linux-x64
+            os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            bundles: appimage
+            updater_targets: linux-x86_64-appimage
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    steps:
+      - name: Validate exact updater inputs
+        shell: bash
+        env:
+          BUILD_REF: ${{ inputs.build_ref }}
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
+          RELEASE_VERSION: ${{ inputs.release_version }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          RELEASE_NOTES: ${{ inputs.release_notes }}
+        run: |
+          set -euo pipefail
+          [[ "$BUILD_REF" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$WORKFLOW_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$BUILD_REF" == "$WORKFLOW_SHA" ]]
+          [[ "$RELEASE_VERSION" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]
+          [[ "$RELEASE_TAG" == "v$RELEASE_VERSION" ]]
+          [[ -n "$RELEASE_NOTES" ]]
+
+      - name: Checkout exact updater source
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.build_ref }}
+          submodules: true
+
+      - name: Verify updater source SHA
+        shell: bash
+        env:
+          BUILD_REF: ${{ inputs.build_ref }}
+        run: |
+          set -euo pipefail
+          [[ "$(git rev-parse HEAD)" == "$BUILD_REF" ]]
+
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            curl \
+            file \
+            libayatana-appindicator3-dev \
+            libgtk-3-dev \
+            librsvg2-dev \
+            libssl-dev \
+            libwebkit2gtk-4.1-dev \
+            libxdo-dev \
+            pkg-config
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Enable pnpm
+        run: corepack enable
+
+      - name: Install exact dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Build temporary updater release config
+        shell: bash
+        env:
+          RELEASE_VERSION: ${{ inputs.release_version }}
+          UPDATER_ENDPOINT: https://postmelee.github.io/alhangeul-tauri/updater/stable.json
+          TAURI_UPDATER_PUBLIC_KEY: ${{ secrets.TAURI_UPDATER_PUBLIC_KEY }}
+          UPDATER_CONFIG: ${{ runner.temp }}/alhangeul-updater.conf.json
+        run: |
+          set -euo pipefail
+          pnpm run build:updater-config -- \
+            --root "$GITHUB_WORKSPACE" \
+            --output "$UPDATER_CONFIG" \
+            --version "$RELEASE_VERSION" \
+            --endpoint "$UPDATER_ENDPOINT" \
+            --public-key-env TAURI_UPDATER_PUBLIC_KEY
+
+      - name: Build signed updater bundles
+        shell: bash
+        env:
+          UPDATER_CONFIG: ${{ runner.temp }}/alhangeul-updater.conf.json
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          pnpm tauri build --verbose \
+            --target "${{ matrix.target }}" \
+            --bundles "${{ matrix.bundles }}" \
+            --config "$UPDATER_CONFIG"
+
+      - name: Verify updater artifact slice
+        shell: bash
+        env:
+          BUNDLE_ROOT: apps/desktop/src-tauri/target/${{ matrix.target }}/release/bundle
+          RELEASE_VERSION: ${{ inputs.release_version }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          SOURCE_SHA: ${{ inputs.build_ref }}
+          TAURI_UPDATER_PUBLIC_KEY: ${{ secrets.TAURI_UPDATER_PUBLIC_KEY }}
+        run: |
+          set -euo pipefail
+          pnpm run check:updater-artifacts -- \
+            --root "$BUNDLE_ROOT" \
+            --version "$RELEASE_VERSION" \
+            --tag "$RELEASE_TAG" \
+            --source-sha "$SOURCE_SHA" \
+            --targets "${{ matrix.updater_targets }}" \
+            --public-key-env TAURI_UPDATER_PUBLIC_KEY
+
+      - name: Upload verified updater artifact slice
+        uses: actions/upload-artifact@v7
+        with:
+          name: alhangeul-updater-${{ matrix.name }}
+          path: apps/desktop/src-tauri/target/${{ matrix.target }}/release/bundle/**
+          if-no-files-found: error
+          retention-days: 14
+
+  publish-updater:
+    name: Publish verified updater release
+    needs: build-updater
+    if: ${{ inputs.mode == 'updater' && inputs.publish_release }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout exact publish source
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.build_ref }}
+          submodules: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Enable pnpm
+        run: corepack enable
+
+      - name: Install exact dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download verified updater slices
+        uses: actions/download-artifact@v8
+        with:
+          pattern: alhangeul-updater-*
+          path: updater-release
+          merge-multiple: true
+
+      - name: Create complete release inventory
+        shell: bash
+        env:
+          RELEASE_VERSION: ${{ inputs.release_version }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          SOURCE_SHA: ${{ inputs.build_ref }}
+          TAURI_UPDATER_PUBLIC_KEY: ${{ secrets.TAURI_UPDATER_PUBLIC_KEY }}
+        run: |
+          set -euo pipefail
+          [[ "$(git rev-parse HEAD)" == "$SOURCE_SHA" ]]
+          pnpm run check:updater-artifacts -- \
+            --root updater-release \
+            --version "$RELEASE_VERSION" \
+            --tag "$RELEASE_TAG" \
+            --source-sha "$SOURCE_SHA" \
+            --public-key-env TAURI_UPDATER_PUBLIC_KEY \
+            --write-inventory updater-release/alhangeul-updater-release-inventory.json
+
+      - name: Publish exact GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          RELEASE_VERSION: ${{ inputs.release_version }}
+          RELEASE_NOTES: ${{ inputs.release_notes }}
+          SOURCE_SHA: ${{ inputs.build_ref }}
+        run: |
+          set -euo pipefail
+          existing_sha=""
+          if git ls-remote --exit-code --tags origin "refs/tags/$RELEASE_TAG" >/dev/null 2>&1; then
+            git fetch --no-tags --depth=1 origin \
+              "refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG"
+            existing_sha="$(git rev-parse "refs/tags/$RELEASE_TAG^{commit}")"
+          fi
+          if [[ -n "$existing_sha" && "$existing_sha" != "$SOURCE_SHA" ]]; then
+            echo "Existing tag does not match exact source SHA" >&2
+            exit 1
+          fi
+          mapfile -t assets < <(find updater-release -type f \
+            \( -name '*.msi' -o -name '*-setup.exe' -o -name '*.AppImage' -o -name '*.sig' \
+              -o -name 'alhangeul-updater-release-inventory.json' \) -print | sort)
+          [[ "${#assets[@]}" -eq 7 ]]
+          gh release create "$RELEASE_TAG" "${assets[@]}" \
+            --target "$SOURCE_SHA" \
+            --title "Alhangeul $RELEASE_VERSION" \
+            --notes "$RELEASE_NOTES"

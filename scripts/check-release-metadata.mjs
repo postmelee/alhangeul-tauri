@@ -71,7 +71,7 @@ export async function verifyReleaseMetadata(options = {}) {
   assertEqual(path, 'bundle.copyright', tauriConfig.bundle?.copyright, RELEASE_METADATA_CONTRACT.copyright);
   assertEqual(path, 'bundle.windows.wix.template', tauriConfig.bundle?.windows?.wix?.template, RELEASE_METADATA_CONTRACT.wixTemplate);
   assertAssociations(path, tauriConfig.bundle?.fileAssociations);
-  assertUpdaterDisabled(rootPackage, desktopPackage, tauriConfig, cargoSource);
+  await assertUpdaterBoundary(repositoryRoot, rootPackage, desktopPackage, tauriConfig, cargoSource);
 
   return {
     productName: tauriConfig.productName,
@@ -115,15 +115,35 @@ function readCargoPackage(source) {
   );
 }
 
-function assertUpdaterDisabled(rootPackage, desktopPackage, tauriConfig, cargoSource) {
+async function assertUpdaterBoundary(repositoryRoot, rootPackage, desktopPackage, tauriConfig, cargoSource) {
   const dependencyNames = [rootPackage, desktopPackage]
     .flatMap((pkg) => ['dependencies', 'devDependencies', 'optionalDependencies']
       .flatMap((field) => Object.keys(pkg[field] ?? {})));
-  if (dependencyNames.includes('@tauri-apps/plugin-updater') || /\btauri-plugin-updater\b/.test(cargoSource)) {
-    throw new Error('release metadata에 updater dependency를 허용하지 않습니다.');
+  if (dependencyNames.includes('@tauri-apps/plugin-updater')) {
+    throw new Error('웹 UI package에 updater dependency를 허용하지 않습니다.');
   }
   if (containsUpdaterKey(tauriConfig)) {
-    throw new Error('Tauri release metadata에 updater 설정을 허용하지 않습니다.');
+    throw new Error('기본 Tauri release metadata에 updater 설정을 허용하지 않습니다.');
+  }
+  const updaterDependency = cargoSource.match(
+    /\[target\.'cfg\(any\(target_os = "windows", target_os = "linux"\)\)'\.dependencies\][\s\S]*?(?=\n\[|$)/,
+  )?.[0];
+  if (!updaterDependency || !/^tauri-plugin-updater = "=2\.10\.1"$/m.test(updaterDependency)) {
+    throw new Error('Windows/Linux updater Rust dependency exact pin이 필요합니다.');
+  }
+  const updaterOccurrences = cargoSource.match(/^tauri-plugin-updater\s*=/gm) ?? [];
+  if (updaterOccurrences.length !== 1) {
+    throw new Error('updater Rust dependency는 지원 target table에 한 번만 있어야 합니다.');
+  }
+  const trackedOverlay = resolve(
+    repositoryRoot,
+    'apps/desktop/src-tauri/tauri.updater.conf.json',
+  );
+  try {
+    await readFile(trackedOverlay, 'utf8');
+    throw new Error('updater release overlay는 repository에 추적할 수 없습니다.');
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
   }
 }
 

@@ -5,6 +5,7 @@ import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { validateReleaseData } from './pages/release-data.mjs';
 import { ROOT_ASSETS, listSiteFiles } from './pages/site-files.mjs';
+import { buildUpdaterManifest, serializeUpdaterManifest } from './updater/manifest.mjs';
 
 const defaultRepositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const usage = 'Usage: node scripts/check-pages.mjs [--mode source|output|all] [--root <repository-root>]';
@@ -45,18 +46,17 @@ export async function checkPages(options = {}) {
 }
 
 async function checkTree(context) {
-  const files = await listSiteFiles(context.treeRoot);
+  const files = await listSiteFiles(context.treeRoot, {
+    allowUpdaterManifest: context.mode === 'output',
+  });
   const fileSet = new Set(files);
   const missingFiles = REQUIRED_SITE_FILES.filter((path) => !fileSet.has(path));
   if (missingFiles.length > 0) {
     throw new Error(`${context.mode} tree에 필수 Pages 파일이 없습니다: ${missingFiles.join(', ')}`);
   }
-  if (fileSet.has('updater/stable.json')) {
-    throw new Error('updater manifest는 Issue #16 검증 전 게시할 수 없습니다.');
-  }
-
   const release = await readReleaseData(context.treeRoot);
-  validateReleaseData(release);
+  validateReleaseData(release, { allowManifestPublished: true });
+  await assertUpdaterManifest(context, fileSet, release);
   const referencedAssets = new Set();
   for (const sitePath of files.filter((path) => TEXT_EXTENSIONS.test(path))) {
     const content = await readFile(join(context.treeRoot, sitePath), 'utf8');
@@ -87,6 +87,23 @@ async function checkTree(context) {
   }
 
   return { mode: context.mode, files: files.length, status: release.status };
+}
+
+async function assertUpdaterManifest(context, fileSet, release) {
+  const sitePath = 'updater/stable.json';
+  const exists = fileSet.has(sitePath);
+  if (context.mode === 'source' && exists) {
+    throw new Error('updater manifest는 source tree에 둘 수 없습니다.');
+  }
+  if (!release.updater.manifestPublished) {
+    if (exists) throw new Error('manifestPublished=false인데 updater manifest가 있습니다.');
+    return;
+  }
+  if (context.mode === 'source') return;
+  if (!exists) throw new Error('manifestPublished=true인데 updater manifest가 없습니다.');
+  const expected = serializeUpdaterManifest(buildUpdaterManifest(release), release);
+  const actual = await readFile(join(context.treeRoot, sitePath), 'utf8');
+  if (actual !== expected) throw new Error('updater manifest가 검증된 release inventory와 다릅니다.');
 }
 
 async function readReleaseData(treeRoot) {

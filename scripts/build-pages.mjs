@@ -11,6 +11,8 @@ import {
 import { dirname, extname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ROOT_ASSETS, assertInside, listSiteFiles } from './pages/site-files.mjs';
+import { validateReleaseData } from './pages/release-data.mjs';
+import { buildUpdaterManifest, serializeUpdaterManifest } from './updater/manifest.mjs';
 
 const defaultRepositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const usage = 'Usage: node scripts/build-pages.mjs [--root <repository-root>]';
@@ -21,6 +23,7 @@ export async function buildPages(options = {}) {
   await assertBuildLayout(layout);
   await assertOutputIsNotSymlink(layout.outputRoot);
   const sourceFiles = await listSiteFiles(layout.sourceRoot);
+  const release = await readReleaseData(layout.sourceRoot);
   await verifyRootAssets(layout.repositoryRoot);
   assertNoRootAssetCollision(sourceFiles);
 
@@ -45,11 +48,27 @@ export async function buildPages(options = {}) {
     await copyFile(join(layout.repositoryRoot, assetPath), output);
   }
 
+  if (release.updater.manifestPublished) {
+    const manifest = buildUpdaterManifest(release);
+    const output = join(layout.outputRoot, 'updater/stable.json');
+    await mkdir(dirname(output), { recursive: true });
+    await writeFile(output, serializeUpdaterManifest(manifest, release), 'utf8');
+  }
+
   return {
     outputRoot: layout.outputRoot,
     sourceFiles: sourceFiles.length,
     rootAssets: ROOT_ASSETS.length,
   };
+}
+
+async function readReleaseData(sourceRoot) {
+  try {
+    const release = JSON.parse(await readFile(join(sourceRoot, 'release.json'), 'utf8'));
+    return validateReleaseData(release, { allowManifestPublished: true });
+  } catch (error) {
+    throw new Error(`Pages release data를 검증할 수 없습니다: ${error.message}`);
+  }
 }
 
 function assertNoRootAssetCollision(sourceFiles) {

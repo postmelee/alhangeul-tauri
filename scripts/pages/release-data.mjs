@@ -1,3 +1,5 @@
+import { validateReleaseInventory } from '../updater/release-inventory.mjs';
+
 export const RELEASE_TARGETS = Object.freeze({
   'windows-x86_64-nsis': '.exe',
   'windows-x86_64-msi': '.msi',
@@ -13,10 +15,11 @@ const ROOT_KEYS = [
   'version',
   'tag',
   'publishedAt',
+  'notes',
   'downloads',
   'updater',
 ];
-const UPDATER_KEYS = ['endpoint', 'manifestPublished'];
+const UPDATER_KEYS = ['endpoint', 'manifestPublished', 'inventory'];
 const SEMANTIC_VERSION = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
 
 export function validateReleaseData(value, options = {}) {
@@ -45,13 +48,14 @@ export function validateReleaseData(value, options = {}) {
 }
 
 function validateUnreleased(value) {
-  for (const field of ['version', 'tag', 'publishedAt']) {
+  for (const field of ['version', 'tag', 'publishedAt', 'notes']) {
     assertEqual(value[field], null, field);
   }
   for (const [target, url] of Object.entries(value.downloads)) {
     assertEqual(url, null, `downloads.${target}`);
   }
   assertEqual(value.updater.manifestPublished, false, 'updater.manifestPublished');
+  assertEqual(value.updater.inventory, null, 'updater.inventory');
 }
 
 function validatePublished(value) {
@@ -72,6 +76,9 @@ function validatePublished(value) {
   ) {
     throw new Error('publishedAt은 UTC ISO timestamp여야 합니다.');
   }
+  if (typeof value.notes !== 'string' || value.notes.trim() === '' || value.notes.length > 4000) {
+    throw new Error('published notes는 비어 있지 않은 4000자 이하 문자열이어야 합니다.');
+  }
 
   const urls = new Set();
   for (const [target, extension] of Object.entries(RELEASE_TARGETS)) {
@@ -79,6 +86,20 @@ function validatePublished(value) {
     validateDownloadUrl(download, target, extension, value);
     if (urls.has(download)) throw new Error('download URL은 target별로 고유해야 합니다.');
     urls.add(download);
+  }
+  if (value.updater.manifestPublished) {
+    const inventory = validateReleaseInventory(value.updater.inventory);
+    assertEqual(inventory.version, value.version, 'updater.inventory.version');
+    assertEqual(inventory.tag, value.tag, 'updater.inventory.tag');
+    for (const target of Object.keys(RELEASE_TARGETS)) {
+      assertEqual(
+        inventory.targets[target].url,
+        value.downloads[target],
+        `updater.inventory.targets.${target}.url`,
+      );
+    }
+  } else {
+    assertEqual(value.updater.inventory, null, 'updater.inventory');
   }
 }
 

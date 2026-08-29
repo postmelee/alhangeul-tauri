@@ -19,6 +19,7 @@ apps/*/node_modules/
 apps/studio-host/dist/
 .pnpm-store/
 /_site/
+/.updater-work/
 
 *.wasm
 !apps/studio-host/vendor/rhwp-core/rhwp_bg.wasm
