@@ -36,6 +36,11 @@ test('registration과 MIME cache는 disposable XDG에만 두고 두 manager를 �
 test('실제 제품 경로의 execve와 visible screenshot으로 cache lifecycle을 판정한다', () => {
   for (const marker of [
     'strace -ff -qq -s 4096 -e trace=execve',
+    'timeout --signal=TERM --kill-after=5s "${phase_timeout}s"',
+    'phase_timeout=$((wait_seconds + 10))',
+    '[[ "$trace_status" -eq 0 || "$trace_status" -eq 124 || "$trace_status" -eq 137 ]]',
+    '[[ -s "$manager_root/$phase.png" ]]',
+    'traceStatus=%s timeoutSeconds=%s',
     'run_phase "$manager" "$manager_root" "$data_root" first 20',
     'run_phase "$manager" "$manager_root" "$data_root" cached 8',
     'run_phase "$manager" "$manager_root" "$data_root" changed 20',

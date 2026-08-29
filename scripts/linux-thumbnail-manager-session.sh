@@ -24,14 +24,20 @@ window_phase() {
 
 run_phase() {
   local manager="$1" manager_root="$2" data_root="$3" phase="$4" wait_seconds="$5"
+  local phase_timeout=$((wait_seconds + 10)) trace_status=0
   HOME="$manager_root/home" XDG_CONFIG_HOME="$manager_root/config" \
     XDG_DATA_HOME="$data_root" XDG_CACHE_HOME="$manager_root/cache" \
     XDG_RUNTIME_DIR="$manager_root/runtime" \
     xvfb-run --auto-servernum --server-args='-screen 0 1280x800x24 -nolisten tcp' \
+    timeout --signal=TERM --kill-after=5s "${phase_timeout}s" \
     strace -ff -qq -s 4096 -e trace=execve -o "$manager_root/traces/$phase" \
     dbus-run-session -- "$self_path" --window "$manager" "$manager_root/files" \
       "$manager_root/$phase.png" "$manager_root/logs/$phase.stdout.log" \
-      "$manager_root/logs/$phase.stderr.log" "$wait_seconds"
+      "$manager_root/logs/$phase.stderr.log" "$wait_seconds" || trace_status=$?
+  [[ "$trace_status" -eq 0 || "$trace_status" -eq 124 || "$trace_status" -eq 137 ]]
+  [[ -s "$manager_root/$phase.png" ]]
+  printf '%s traceStatus=%s timeoutSeconds=%s\n' "$phase" "$trace_status" "$phase_timeout" \
+    >> "$manager_root/logs/trace-status.txt"
 }
 
 count_invocations() {
