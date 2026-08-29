@@ -5,6 +5,7 @@ Cargo.lock
 !/apps/desktop/src-tauri/Cargo.lock
 !/apps/thumbnail-handler/Cargo.lock
 !/apps/thumbnail-worker/Cargo.lock
+!/apps/linux-thumbnailer/Cargo.lock
 !/crates/document-preview/Cargo.lock
 apps/desktop/src-tauri/target/
 apps/desktop/src-tauri/gen/

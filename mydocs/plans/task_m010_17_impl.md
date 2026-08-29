@@ -50,6 +50,7 @@ GitHub Issue: [#17](https://github.com/postmelee/alhangeul-tauri/issues/17)
 
 수정:
 
+- `.gitignore`
 - `package.json`
 - `.github/workflows/alhangeul-desktop.yml`
 - `.github/workflows/alhangeul-linux-gui.yml`
@@ -116,13 +117,16 @@ Task #17 Stage 1: Freedesktop와 resource 계약 확정
 - `apps/linux-thumbnailer/src/render.rs`
 - `apps/linux-thumbnailer/src/output.rs`
 - `apps/linux-thumbnailer/tests/thumbnailer_contract.rs`
+- `scripts/build-linux-thumbnailer.mjs`
 - `tests/linux-thumbnail-build.test.mjs`
 - `mydocs/working/task_m010_17_stage2.md`
 
 수정:
 
 - `package.json`
-- `scripts/build-thumbnail-binaries.mjs` 또는 Stage 1에서 승인된 별도 Linux build script
+- `.github/workflows/alhangeul-desktop.yml`
+- `scripts/check-product-boundary.mjs`
+- `tests/product-boundary.test.mjs`
 - `crates/document-preview/**` — Linux에서 입증된 공용 primitive가 필요할 때만, 계획 보정 후 최소 변경
 
 ### 변경 내용
@@ -133,6 +137,8 @@ Task #17 Stage 1: Freedesktop와 resource 계약 확정
 - 요청 edge를 두 축 최대값으로 적용해 종횡비와 alpha를 보존한다. premultiplied BGRA 변환은 roundtrip pixel test로 고정하고 기존 Windows 결과를 변경하지 않는다.
 - 기존 final output을 실패 시 훼손하지 않는 정책, symlink·directory·동일 input/output·읽기 전용 경로·동시 요청 정책을 Rust test로 고정한다.
 - tracked lockfile, `--locked`, target-specific Linux build 이름과 ELF architecture를 자동 검증한다.
+- desktop workflow의 Linux x64·arm64 job에서 locked test·Clippy·release build와 ELF architecture를 실행하고 helper artifact를 exact SHA에 결속한다. Windows job과 기존 Tauri bundle·installer smoke 순서는 유지한다.
+- Stage 2 진입 시점의 최신 `origin/devel`과 직접 겹치는 경로는 `package.json`, `tests/actions-workflows.test.mjs`다. 전자는 Task #17 script만 최소 추가하고 Task #45 Pages 변경을 복제하지 않으며, 후자는 Stage 2에서 수정하지 않고 신규 `tests/linux-thumbnail-build.test.mjs`가 workflow 계약을 소유한다. `apps/linux-thumbnailer/**`, build helper와 desktop workflow에는 최신 `devel` 직접 충돌이 없다.
 
 ### 검증
 

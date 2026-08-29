@@ -266,6 +266,61 @@ jobs:
           [[ "$PROBE_OUTCOME" == success ]]
           [[ "$UPLOAD_OUTCOME" == success ]]
 
+      - name: Prepare Linux thumbnailer evidence
+        if: startsWith(matrix.name, 'linux-')
+        shell: bash
+        env:
+          OUTPUT_ROOT: diagnostics/linux-thumbnailer-${{ matrix.name }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$OUTPUT_ROOT"
+
+      - name: Build Linux thumbnailer
+        id: build-linux-thumbnailer
+        if: startsWith(matrix.name, 'linux-')
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm run build:linux-thumbnailer -- \
+            --target "${{ matrix.target }}" \
+            --output "diagnostics/linux-thumbnailer-${{ matrix.name }}" \
+            --repository-sha "$(git rev-parse HEAD)"
+
+      - name: Record Linux thumbnailer build outcome
+        if: ${{ always() && startsWith(matrix.name, 'linux-') }}
+        shell: bash
+        env:
+          OUTPUT_ROOT: diagnostics/linux-thumbnailer-${{ matrix.name }}
+          BUILD_OUTCOME: ${{ steps.build-linux-thumbnailer.outcome }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$OUTPUT_ROOT"
+          printf '{"build":"%s","repositorySha":"%s","runner":"%s"}\n' \
+            "$BUILD_OUTCOME" "$(git rev-parse HEAD)" "${{ matrix.name }}" \
+            > "$OUTPUT_ROOT/step-outcomes.json"
+
+      - name: Upload Linux thumbnailer evidence
+        id: upload-linux-thumbnailer-evidence
+        if: ${{ always() && startsWith(matrix.name, 'linux-') }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: alhangeul-${{ matrix.name }}-thumbnailer
+          path: diagnostics/linux-thumbnailer-${{ matrix.name }}/**
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Require Linux thumbnailer build success
+        if: ${{ always() && startsWith(matrix.name, 'linux-') }}
+        shell: bash
+        env:
+          BUILD_OUTCOME: ${{ steps.build-linux-thumbnailer.outcome }}
+          UPLOAD_OUTCOME: ${{ steps.upload-linux-thumbnailer-evidence.outcome }}
+        run: |
+          set -euo pipefail
+          [[ "$BUILD_OUTCOME" == success ]]
+          [[ "$UPLOAD_OUTCOME" == success ]]
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
@@ -308,6 +363,18 @@ jobs:
       - name: Lint document preview protocol-only Rust
         if: inputs.run_tests
         run: pnpm run clippy:document-preview:protocol
+
+      - name: Test Linux thumbnailer
+        if: inputs.run_tests && startsWith(matrix.name, 'linux-')
+        env:
+          CARGO_BUILD_TARGET: ${{ matrix.target }}
+        run: pnpm run test:linux-thumbnailer
+
+      - name: Lint Linux thumbnailer
+        if: inputs.run_tests && startsWith(matrix.name, 'linux-')
+        env:
+          CARGO_BUILD_TARGET: ${{ matrix.target }}
+        run: pnpm run clippy:linux-thumbnailer
 
       - name: Build Windows thumbnail binaries
         if: matrix.name == 'windows-x64'
