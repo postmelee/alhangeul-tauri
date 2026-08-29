@@ -243,6 +243,28 @@ test('Linux thumbnail core probe는 x64 arm64 resource 증거를 각각 보존�
   assert.match(gateStep, /steps\.upload-linux-thumbnail-core-diagnostics\.outcome/);
 });
 
+test('Linux package lifecycle은 build 산출물을 검사하고 evidence를 always gate한다', () => {
+  const install = getStepContaining(desktopWorkflow, 'Install Linux dependencies');
+  for (const dependency of ['rpm', 'xdg-utils']) {
+    assert.match(install, new RegExp(`^            ${dependency}(?: \\\\)?$`, 'm'));
+  }
+  const smoke = getStepContaining(desktopWorkflow, 'Run Linux thumbnail package lifecycle');
+  const record = getStepContaining(desktopWorkflow, 'Record Linux thumbnail package outcome');
+  const upload = getStepContaining(desktopWorkflow, 'Upload Linux thumbnail package evidence');
+  const gate = getStepContaining(desktopWorkflow, 'Require Linux thumbnail package success');
+  assert.match(smoke, /^        id: linux-thumbnail-package-smoke$/m);
+  assert.match(smoke, /^        continue-on-error: true$/m);
+  assert.match(smoke, /^        timeout-minutes: 15$/m);
+  assert.match(smoke, /bash scripts\/linux-thumbnail-package-smoke\.sh/);
+  assert.match(smoke, /tee "\$OUTPUT_ROOT\/lifecycle\.log"/);
+  for (const step of [record, upload, gate]) {
+    assert.match(step, /^        if: \$\{\{ always\(\) && startsWith\(matrix\.name, 'linux-'\) \}\}$/m);
+  }
+  assert.match(upload, /if-no-files-found: error/);
+  assert.match(gate, /steps\.linux-thumbnail-package-smoke\.outcome/);
+  assert.match(gate, /steps\.upload-linux-thumbnail-package-evidence\.outcome/);
+});
+
 test('desktop workflow는 checkout commit을 검증하고 pretest를 순서대로 실행한다', () => {
   assert.match(
     desktopWorkflow,

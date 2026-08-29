@@ -6,6 +6,7 @@ readonly evidence_root="${THUMBNAIL_EVIDENCE_ROOT:-}"
 readonly runner_temp="${RUNNER_TEMP:-}"
 readonly installed_dir=/usr/lib/alhangeul
 readonly installed_helper="$installed_dir/alhangeul-thumbnailer"
+readonly installed_registration=/usr/share/thumbnailers/alhangeul.thumbnailer
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly script_dir
 repository_root="$(cd "$script_dir/.." && pwd)"
@@ -18,7 +19,11 @@ require_inputs() {
   [[ "$helper_source" == /* && -f "$helper_source" && -x "$helper_source" ]]
   [[ "$evidence_root" == /* && "$runner_temp" == /* ]]
   [[ -f "$registration_source" && -x "$session_script" ]]
-  [[ ! -e "$installed_helper" ]]
+  [[ -f "$installed_helper" && -x "$installed_helper" ]]
+  [[ -f "$installed_registration" ]]
+  [[ "$(sha256sum "$helper_source" | awk '{print $1}')" == \
+    "$(sha256sum "$installed_helper" | awk '{print $1}')" ]]
+  cmp "$registration_source" "$installed_registration"
 }
 
 create_preview_fixture() {
@@ -78,8 +83,6 @@ validate_edge_matrix() {
 }
 
 cleanup() {
-  sudo rm -f "$installed_helper"
-  sudo rmdir "$installed_dir" 2>/dev/null || true
   [[ -z "$probe_root" ]] || rm -rf "$probe_root"
 }
 
@@ -99,7 +102,7 @@ record_environment() {
     printf 'hwp %s\n' "$hwp_type"
     printf 'hwpx %s\n' "$hwpx_type"
     printf 'thumbnailer %s\n' "$installed_helper"
-    sha256sum "$installed_helper" "$data_root/thumbnailers/alhangeul.thumbnailer"
+    sha256sum "$installed_helper" "$installed_registration"
     printf 'gnome_probe_sandbox product-helper-no-bypass\n'
   } > "$evidence_root/environment.txt"
 }
@@ -113,16 +116,13 @@ main() {
   source_root="$probe_root/source"
   data_root="$probe_root/data"
   install -d "$evidence_root/edge-matrix" "$data_root/mime/packages" \
-    "$data_root/thumbnailers" "$probe_root/cache" "$source_root"
-  sudo install -d -m 0755 "$installed_dir"
-  sudo install -m 0755 "$helper_source" "$installed_helper"
+    "$probe_root/cache" "$source_root"
   cp third_party/rhwp/saved/blank2010.hwp "$source_root/direct.hwp"
   create_preview_fixture "$source_root/preview.hwpx"
   head -c 64 "$source_root/direct.hwp" > "$source_root/fail.hwp"
   source_hashes_before="$(sha256sum "$source_root"/*)"
   create_mime_database "$data_root"
-  cp "$registration_source" "$data_root/thumbnailers/alhangeul.thumbnailer"
-  printf sentinel > "$data_root/thumbnailers/unrelated.sentinel"
+  printf sentinel > "$probe_root/unrelated-thumbnailer.sentinel"
   printf sentinel > "$probe_root/cache/unrelated.sentinel"
   hwp_type="$(XDG_DATA_HOME="$data_root" gio info -a standard::content-type \
     "$source_root/direct.hwp" | sed -n 's/.*standard::content-type: //p')"
@@ -134,7 +134,7 @@ main() {
   run_manager thunar "$probe_root"
   source_hashes_after="$(sha256sum "$source_root"/*)"
   [[ "$source_hashes_before" == "$source_hashes_after" ]]
-  [[ "$(< "$data_root/thumbnailers/unrelated.sentinel")" == sentinel ]]
+  [[ "$(< "$probe_root/unrelated-thumbnailer.sentinel")" == sentinel ]]
   [[ "$(< "$probe_root/cache/unrelated.sentinel")" == sentinel ]]
   record_environment "$data_root" "$hwp_type" "$hwpx_type"
 }

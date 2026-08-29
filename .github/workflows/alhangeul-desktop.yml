@@ -88,7 +88,9 @@ jobs:
             libwebkit2gtk-4.1-dev \
             libxdo-dev \
             pkg-config \
+            rpm \
             time \
+            xdg-utils \
             zip
 
       - name: Setup Node.js
@@ -321,6 +323,15 @@ jobs:
           [[ "$BUILD_OUTCOME" == success ]]
           [[ "$UPLOAD_OUTCOME" == success ]]
 
+      - name: Stage Linux thumbnailer package resources
+        if: startsWith(matrix.name, 'linux-')
+        shell: bash
+        run: |
+          set -euo pipefail
+          install -D -m 0755 \
+            "diagnostics/linux-thumbnailer-${{ matrix.name }}/alhangeul-thumbnailer" \
+            apps/desktop/src-tauri/linux/thumbnail-resources/alhangeul-thumbnailer
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
@@ -407,6 +418,71 @@ jobs:
       - name: Build Tauri bundles
         shell: bash
         run: pnpm tauri build --verbose --target "${{ matrix.target }}" ${{ matrix.bundle_args }}
+
+      - name: Prepare Linux thumbnail package diagnostics
+        if: startsWith(matrix.name, 'linux-')
+        shell: bash
+        env:
+          OUTPUT_ROOT: diagnostics/linux-thumbnail-package-${{ matrix.name }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$OUTPUT_ROOT"
+
+      - name: Run Linux thumbnail package lifecycle
+        id: linux-thumbnail-package-smoke
+        if: startsWith(matrix.name, 'linux-')
+        continue-on-error: true
+        timeout-minutes: 15
+        shell: bash
+        env:
+          ALHANGEUL_PACKAGE_SMOKE_ALLOW_SYSTEM: "1"
+          BUNDLE_ROOT: apps/desktop/src-tauri/target/${{ matrix.target }}/release/bundle
+          OUTPUT_ROOT: diagnostics/linux-thumbnail-package-${{ matrix.name }}
+        run: |
+          set -euo pipefail
+          evidence="$BUNDLE_ROOT/verification/linux-thumbnail-packages.json"
+          bash scripts/linux-thumbnail-package-smoke.sh \
+            --platform "${{ matrix.name }}" \
+            --bundle-root "$BUNDLE_ROOT" \
+            --helper apps/desktop/src-tauri/linux/thumbnail-resources/alhangeul-thumbnailer \
+            --repository-sha "$(git rev-parse HEAD)" \
+            --evidence "$evidence" \
+            2>&1 | tee "$OUTPUT_ROOT/lifecycle.log"
+          cp "$evidence" "$OUTPUT_ROOT/"
+
+      - name: Record Linux thumbnail package outcome
+        if: ${{ always() && startsWith(matrix.name, 'linux-') }}
+        shell: bash
+        env:
+          OUTPUT_ROOT: diagnostics/linux-thumbnail-package-${{ matrix.name }}
+          SMOKE_OUTCOME: ${{ steps.linux-thumbnail-package-smoke.outcome }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$OUTPUT_ROOT"
+          printf '{"smoke":"%s","repositorySha":"%s","runner":"%s"}\n' \
+            "$SMOKE_OUTCOME" "$(git rev-parse HEAD)" "${{ matrix.name }}" \
+            > "$OUTPUT_ROOT/step-outcomes.json"
+
+      - name: Upload Linux thumbnail package evidence
+        id: upload-linux-thumbnail-package-evidence
+        if: ${{ always() && startsWith(matrix.name, 'linux-') }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: alhangeul-${{ matrix.name }}-thumbnail-package
+          path: diagnostics/linux-thumbnail-package-${{ matrix.name }}/**
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Require Linux thumbnail package success
+        if: ${{ always() && startsWith(matrix.name, 'linux-') }}
+        shell: bash
+        env:
+          SMOKE_OUTCOME: ${{ steps.linux-thumbnail-package-smoke.outcome }}
+          UPLOAD_OUTCOME: ${{ steps.upload-linux-thumbnail-package-evidence.outcome }}
+        run: |
+          set -euo pipefail
+          [[ "$SMOKE_OUTCOME" == success ]]
+          [[ "$UPLOAD_OUTCOME" == success ]]
 
       - name: Stage Windows thumbnail verification copies
         if: matrix.name == 'windows-x64'

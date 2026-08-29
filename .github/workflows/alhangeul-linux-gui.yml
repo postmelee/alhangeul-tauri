@@ -227,6 +227,36 @@ jobs:
             xdotool \
             xvfb
 
+      - name: Install verified DEB
+        id: install-deb
+        shell: bash
+        env:
+          DEB_PATH: ${{ steps.verify-inventory.outputs.deb_path }}
+        run: |
+          set -euo pipefail
+          sudo apt-get install -y "$DEB_PATH"
+          command -v Alhangeul
+
+      - name: Verify installed Linux thumbnail package
+        id: verify-installed-thumbnail
+        shell: bash
+        env:
+          EXPECTED_HELPER: ${{ steps.verify-thumbnailer.outputs.helper_path }}
+        run: |
+          set -euo pipefail
+          helper=/usr/lib/alhangeul/alhangeul-thumbnailer
+          registration=/usr/share/thumbnailers/alhangeul.thumbnailer
+          [[ -f "$helper" && -x "$helper" && -f "$registration" ]]
+          [[ "$(stat -c '%a' "$helper")" == 755 ]]
+          [[ "$(stat -c '%a' "$registration")" == 644 ]]
+          [[ "$(sha256sum "$helper" | awk '{print $1}')" == \
+            "$(sha256sum "$EXPECTED_HELPER" | awk '{print $1}')" ]]
+          cmp apps/desktop/src-tauri/linux/alhangeul.thumbnailer "$registration"
+          dpkg-query --search "$helper" "$registration" \
+            > "$EVIDENCE_ROOT/installed-thumbnail-package-owners.txt"
+          sha256sum "$helper" "$registration" \
+            > "$EVIDENCE_ROOT/installed-thumbnail-package.sha256"
+
       - name: Run Linux thumbnail manager contract probe
         id: thumbnail-manager-probe
         continue-on-error: true
@@ -243,16 +273,6 @@ jobs:
         id: install-tauri-driver
         shell: bash
         run: cargo install tauri-driver --version "$TAURI_DRIVER_VERSION" --locked
-
-      - name: Install verified DEB
-        id: install-deb
-        shell: bash
-        env:
-          DEB_PATH: ${{ steps.verify-inventory.outputs.deb_path }}
-        run: |
-          set -euo pipefail
-          sudo apt-get install -y "$DEB_PATH"
-          command -v Alhangeul
 
       - name: Configure CUPS-PDF
         id: configure-cups
@@ -365,15 +385,17 @@ jobs:
           THUMBNAILER_VERIFY: ${{ steps.verify-thumbnailer.outcome }}
           INVENTORY: ${{ steps.verify-inventory.outcome }}
           INSTALL: ${{ steps.install-deb.outcome }}
+          INSTALLED_THUMBNAIL: ${{ steps.verify-installed-thumbnail.outcome }}
           THUMBNAIL_MANAGER: ${{ steps.thumbnail-manager-probe.outcome }}
           GUI: ${{ steps.run-gui.outcome }}
         run: |
           set -euo pipefail
           mkdir -p "$EVIDENCE_ROOT"
-          printf '{"validate":"%s","checkout":"%s","source":"%s","handoff":"%s","download":"%s","thumbnailerHandoff":"%s","thumbnailerDownload":"%s","thumbnailerVerify":"%s","inventory":"%s","install":"%s","thumbnailManager":"%s","gui":"%s"}\n' \
+          printf '{"validate":"%s","checkout":"%s","source":"%s","handoff":"%s","download":"%s","thumbnailerHandoff":"%s","thumbnailerDownload":"%s","thumbnailerVerify":"%s","inventory":"%s","install":"%s","installedThumbnail":"%s","thumbnailManager":"%s","gui":"%s"}\n' \
             "$VALIDATE" "$CHECKOUT" "$SOURCE" "$HANDOFF" "$DOWNLOAD" \
             "$THUMBNAILER_HANDOFF" "$THUMBNAILER_DOWNLOAD" "$THUMBNAILER_VERIFY" \
-            "$INVENTORY" "$INSTALL" "$THUMBNAIL_MANAGER" "$GUI" > "$EVIDENCE_ROOT/step-outcomes.json"
+            "$INVENTORY" "$INSTALL" "$INSTALLED_THUMBNAIL" "$THUMBNAIL_MANAGER" "$GUI" \
+            > "$EVIDENCE_ROOT/step-outcomes.json"
 
       - name: Upload Linux GUI evidence
         id: upload-evidence
@@ -405,6 +427,7 @@ jobs:
           THUMBNAIL_MANAGER: ${{ steps.thumbnail-manager-probe.outcome }}
           DRIVER: ${{ steps.install-tauri-driver.outcome }}
           INSTALL: ${{ steps.install-deb.outcome }}
+          INSTALLED_THUMBNAIL: ${{ steps.verify-installed-thumbnail.outcome }}
           CUPS: ${{ steps.configure-cups.outcome }}
           ENVIRONMENT: ${{ steps.record-environment.outcome }}
           GUI: ${{ steps.run-gui.outcome }}
@@ -413,7 +436,8 @@ jobs:
           set -euo pipefail
           for outcome in "$VALIDATE" "$CHECKOUT" "$PREPARE" "$SOURCE" "$NODE" "$HANDOFF" \
             "$DOWNLOAD" "$THUMBNAILER_HANDOFF" "$THUMBNAILER_DOWNLOAD" \
-            "$THUMBNAILER_VERIFY" "$PNPM" "$INVENTORY" "$LINUX_DEPS" "$DRIVER" \
-            "$THUMBNAIL_MANAGER" "$INSTALL" "$CUPS" "$ENVIRONMENT" "$GUI" "$UPLOAD"; do
+            "$THUMBNAILER_VERIFY" "$PNPM" "$INVENTORY" "$LINUX_DEPS" "$INSTALL" \
+            "$INSTALLED_THUMBNAIL" "$THUMBNAIL_MANAGER" "$DRIVER" "$CUPS" \
+            "$ENVIRONMENT" "$GUI" "$UPLOAD"; do
             [[ "$outcome" == success ]]
           done

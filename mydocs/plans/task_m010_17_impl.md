@@ -218,17 +218,26 @@ Task #17 Stage 3: GNOME Files와 Thunar thumbnail 통합
 신규:
 
 - `scripts/linux-thumbnail-package-smoke.sh`
+- `scripts/linux-thumbnail-package-smoke.mjs`
+- `scripts/linux-thumbnail-package-fixtures.mjs`
+- `scripts/linux-thumbnail-package-contract.mjs`
+- `scripts/verify-linux-thumbnail-package-evidence.mjs`
 - `tests/linux-thumbnail-packaging.test.mjs`
 - `mydocs/working/task_m010_17_stage4.md`
 
 수정:
 
+- `.gitignore`
 - `apps/desktop/src-tauri/tauri.conf.json`
 - `package.json`
 - `.github/workflows/alhangeul-desktop.yml`
+- `.github/workflows/alhangeul-linux-gui.yml`
+- `scripts/linux-thumbnail-manager-probe.sh`
 - `scripts/verify-desktop-artifacts.mjs`
 - `tests/desktop-artifacts.test.mjs`
 - `tests/actions-workflows.test.mjs`
+- `tests/linux-gui-workflow.test.mjs`
+- `tests/gui/linux/native-ui/thumbnail-files.test.mjs`
 
 ### 변경 내용
 
@@ -237,6 +246,8 @@ Task #17 Stage 3: GNOME Files와 Thunar thumbnail 통합
 - clean install, same-version reinstall, update, injected failure/rollback, uninstall을 disposable native host에서 수행한다. uninstall 뒤 제품 helper/registration은 없어야 하고 기존 MIME default·제3자 thumbnailer sentinel은 같아야 한다.
 - cache PNG는 file manager 소유이므로 제거 대상으로 삼지 않는다. uninstall 후 보이는 과거 cache와 실행 가능한 registration 잔존을 구분해 판정한다.
 - lifecycle script는 Stage 1이 필수로 확정한 refresh만 idempotent하게 추가하고, 전역 cache 삭제·file manager 종료·MIME default 변경을 금지하는 source test를 둔다.
+- GUI exact-SHA 수용은 DEB 설치보다 먼저 제품 helper를 수동 배치하지 않는다. 설치된 helper·registration과 별도 전달된 helper artifact의 SHA-256을 대조한 뒤, `/usr/share/thumbnailers`의 package registration을 Nautilus·Thunar가 직접 발견한 상태에서 screenshot evidence를 만든다.
+- 2026-08-30 기준 최신 `origin/devel`과 Stage 4 대상 경로의 겹침은 `package.json`, `tests/actions-workflows.test.mjs` 두 파일이다. Task #45 Pages 변경은 현재 브랜치에 역으로 가져오지 않고, Task #17 test inventory·workflow assertion만 기존 인접 위치에 최소 변경하여 후속 통합 충돌을 줄인다. 진행 중 task branch에는 merge/rebase를 수행하지 않는다.
 
 ### 검증
 

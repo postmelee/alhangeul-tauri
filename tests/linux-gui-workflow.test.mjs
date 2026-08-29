@@ -52,6 +52,8 @@ test('checkout, run metadata, artifact ID와 inventory를 앱 설치 전에 검�
     '- name: Verify artifact inventory and select one DEB',
     '- name: Install Linux GUI dependencies',
     '- name: Install verified DEB',
+    '- name: Verify installed Linux thumbnail package',
+    '- name: Run Linux thumbnail manager contract probe',
     '- name: Run Linux GUI acceptance',
   ]);
   assert.match(workflow, /^          ref: \$\{\{ github\.workflow_sha \}\}$/m);
@@ -136,7 +138,17 @@ test('native Linux dependency와 driver version이 명시되고 환경 증거를
 });
 
 test('Nautilus와 Thunar 제품 thumbnail 수용은 역할별 bounded script만 호출한다', () => {
+  const installed = stepContaining(workflow, 'Verify installed Linux thumbnail package');
   const probe = stepContaining(workflow, 'Run Linux thumbnail manager contract probe');
+  for (const marker of [
+    '/usr/lib/alhangeul/alhangeul-thumbnailer',
+    '/usr/share/thumbnailers/alhangeul.thumbnailer',
+    'stat -c',
+    'sha256sum "$EXPECTED_HELPER"',
+    'dpkg-query --search',
+    'installed-thumbnail-package-owners.txt',
+  ]) assert.ok(installed.includes(marker), `설치 package 검증 marker가 필요합니다: ${marker}`);
+  assert.match(installed, /cmp apps\/desktop\/src-tauri\/linux\/alhangeul\.thumbnailer/);
   assert.match(probe, /^        id: thumbnail-manager-probe$/m);
   assert.match(probe, /^        continue-on-error: true$/m);
   assert.match(probe, /^        timeout-minutes: 8$/m);
@@ -147,9 +159,13 @@ test('Nautilus와 Thunar 제품 thumbnail 수용은 역할별 bounded script만 
   const record = stepContaining(workflow, 'step-outcomes.json');
   const gate = stepContaining(workflow, 'Require Linux GUI acceptance success');
   assert.match(record, /THUMBNAIL_MANAGER: \$\{\{ steps\.thumbnail-manager-probe\.outcome \}\}/);
+  assert.match(record, /INSTALLED_THUMBNAIL: \$\{\{ steps\.verify-installed-thumbnail\.outcome \}\}/);
   assert.match(record, /"thumbnailManager":"%s"/);
+  assert.match(record, /"installedThumbnail":"%s"/);
   assert.match(gate, /THUMBNAIL_MANAGER: \$\{\{ steps\.thumbnail-manager-probe\.outcome \}\}/);
+  assert.match(gate, /INSTALLED_THUMBNAIL: \$\{\{ steps\.verify-installed-thumbnail\.outcome \}\}/);
   assert.match(gate, /"\$THUMBNAIL_MANAGER"/);
+  assert.match(gate, /"\$INSTALLED_THUMBNAIL"/);
 });
 
 test('Xvfb, DBus, AT-SPI와 CUPS-PDF는 repository fixture만 사용한다', () => {

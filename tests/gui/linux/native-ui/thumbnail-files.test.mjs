@@ -17,11 +17,12 @@ test('제품 helper는 direct와 preview를 다섯 edge에서 RGBA PNG로 검증
   assertPngCrc(Buffer.from(encoded, 'base64'));
 });
 
-test('registration과 MIME cache는 disposable XDG에만 두고 두 manager를 실행한다', () => {
+test('package registration과 disposable MIME cache로 두 manager를 실행한다', () => {
   for (const marker of [
     'mktemp -d "$runner_temp/alhangeul-thumbnail-manager.XXXXXX"',
     'XDG_DATA_HOME="$data_root" update-mime-database "$data_root/mime"',
-    'cp "$registration_source" "$data_root/thumbnailers/alhangeul.thumbnailer"',
+    'readonly installed_registration=/usr/share/thumbnailers/alhangeul.thumbnailer',
+    'cmp "$registration_source" "$installed_registration"',
     'run_manager nautilus',
     'run_manager thunar',
     'source_hashes_before',
@@ -29,7 +30,8 @@ test('registration과 MIME cache는 disposable XDG에만 두고 두 manager를 �
     'unrelated.sentinel',
     'product-helper-no-bypass',
   ]) assert.ok(probe.includes(marker), `manager probe marker가 필요합니다: ${marker}`);
-  assert.doesNotMatch(probe, /\/usr\/share\/thumbnailers|update-desktop-database|SNAP_NAME/);
+  assert.doesNotMatch(probe, /update-desktop-database|SNAP_NAME/);
+  assert.doesNotMatch(probe, /cp "\$registration_source"|sudo install/);
   assert.doesNotMatch(probe, /rm -rf "\$HOME|rm -rf ~\//);
 });
 
@@ -61,12 +63,11 @@ test('실제 제품 경로의 execve와 visible screenshot으로 cache lifecycle
   assert.doesNotMatch(session, /local window_manager_pid/);
 });
 
-test('probe는 만든 /usr helper만 제거하고 기존 file-manager 자산을 건드리지 않는다', () => {
-  assert.match(probe, /\[\[ ! -e "\$installed_helper" \]\]/);
-  assert.match(probe, /sudo install -m 0755 "\$helper_source" "\$installed_helper"/);
-  assert.match(probe, /sudo rm -f "\$installed_helper"/);
-  assert.match(probe, /sudo rmdir "\$installed_dir" 2>\/dev\/null \|\| true/);
-  assert.doesNotMatch(probe, /sudo rm -rf|\/usr\/share|mimeapps\.list/);
+test('probe는 package 소유 /usr 파일을 검증만 하고 설치하거나 제거하지 않는다', () => {
+  assert.match(probe, /\[\[ -f "\$installed_helper" && -x "\$installed_helper" \]\]/);
+  assert.match(probe, /\[\[ -f "\$installed_registration" \]\]/);
+  assert.match(probe, /sha256sum "\$helper_source"/);
+  assert.doesNotMatch(probe, /sudo |rm -f "\$installed|rmdir "\$installed|mimeapps\.list/);
 });
 
 test('역할별 script와 함수가 저장소 크기 상한을 지킨다', () => {

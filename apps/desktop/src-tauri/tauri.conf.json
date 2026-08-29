@@ -69,6 +69,20 @@
         "startMenuFolder": "Alhangeul",
         "installerHooks": "windows/nsis-hooks.nsh"
       }
+    },
+    "linux": {
+      "deb": {
+        "files": {
+          "/usr/lib/alhangeul/alhangeul-thumbnailer": "linux/thumbnail-resources/alhangeul-thumbnailer",
+          "/usr/share/thumbnailers/alhangeul.thumbnailer": "linux/alhangeul.thumbnailer"
+        }
+      },
+      "rpm": {
+        "files": {
+          "/usr/lib/alhangeul/alhangeul-thumbnailer": "linux/thumbnail-resources/alhangeul-thumbnailer",
+          "/usr/share/thumbnailers/alhangeul.thumbnailer": "linux/alhangeul.thumbnailer"
+        }
+      }
     }
   }
 }
