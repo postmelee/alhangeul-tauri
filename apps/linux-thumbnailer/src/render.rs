@@ -47,7 +47,7 @@ fn read_bounded(path: &Path) -> Result<Vec<u8>, RenderError> {
     let mut file = File::open(path).map_err(|_| RenderError::Input)?;
     let capacity = usize::try_from(metadata.len()).map_err(|_| RenderError::Input)?;
     let mut bytes = Vec::with_capacity(capacity.min(MAX_INPUT_BYTES));
-    file.by_ref()
+    Read::by_ref(&mut file)
         .take(MAX_INPUT_BYTES as u64 + 1)
         .read_to_end(&mut bytes)
         .map_err(|_| RenderError::Input)?;
