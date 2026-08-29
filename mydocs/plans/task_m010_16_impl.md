@@ -131,7 +131,10 @@ GitHub Secret 이름, 책임과 복구 절차만 공식 운영 문서와 단계 
 
 - `apps/desktop/src-tauri/src/updater/mod.rs`
 - `apps/desktop/src-tauri/src/updater/model.rs`
+- `apps/desktop/src-tauri/src/updater/model_tests.rs`
 - `apps/desktop/src-tauri/src/updater/target.rs`
+- `apps/desktop/src-tauri/src/updater/target/native.rs`
+- `apps/desktop/src-tauri/src/updater/target_tests.rs`
 - `mydocs/working/task_m010_16_stage1.md`
 
 수정:

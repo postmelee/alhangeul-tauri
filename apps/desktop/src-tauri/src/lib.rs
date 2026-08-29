@@ -10,6 +10,7 @@ mod pdf_text_audit;
 mod pending_open;
 mod recent_documents;
 mod state;
+mod updater;
 mod window_geometry;
 mod windows;
 
