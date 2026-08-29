@@ -26,7 +26,16 @@ test('x64와 arm64 target만 locked release build로 허용한다', () => {
       '--locked',
       '--release',
     ]);
-    assert.match(plan.source, new RegExp(`${target}/release/${LINUX_THUMBNAILER_FILENAME}$`));
+    assert.equal(
+      plan.source,
+      join(
+        repoRoot,
+        'apps/desktop/src-tauri/target',
+        target,
+        'release',
+        LINUX_THUMBNAILER_FILENAME,
+      ),
+    );
     assert.ok(plan.command.includes(plan.target));
   }
   assert.throws(

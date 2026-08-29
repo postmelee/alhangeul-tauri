@@ -67,7 +67,9 @@ export async function stageLinuxThumbnailer(plan) {
   const contents = await readFile(plan.source);
   const inspected = inspectElfImage(contents, plan.machine);
   const sourceStat = await stat(plan.source);
-  if ((sourceStat.mode & 0o111) === 0) throw new Error('Linux thumbnailer가 실행 가능하지 않습니다.');
+  if (process.platform !== 'win32' && (sourceStat.mode & 0o111) === 0) {
+    throw new Error('Linux thumbnailer가 실행 가능하지 않습니다.');
+  }
   await mkdir(plan.outputDirectory, { recursive: true });
   const temporary = `${plan.destination}.tmp`;
   await copyFile(plan.source, temporary);
