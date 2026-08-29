@@ -154,7 +154,9 @@ test('release config는 canonical endpoint와 공개키만 임시 0600 파일로
       publicKey: fixture.publicKey,
     });
     assert.equal(output.outputPath, outputPath);
-    assert.equal((await stat(outputPath)).mode & 0o077, 0);
+    if (process.platform !== 'win32') {
+      assert.equal((await stat(outputPath)).mode & 0o077, 0);
+    }
     await assert.rejects(
       writeUpdaterReleaseConfig({
         repositoryRoot,

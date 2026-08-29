@@ -64,7 +64,10 @@ export async function writeUpdaterReleaseConfig({
     mode: 0o600,
   });
   const outputStat = await stat(output);
-  if (!outputStat.isFile() || (outputStat.mode & 0o077) !== 0) {
+  if (
+    !outputStat.isFile()
+    || (process.platform !== 'win32' && (outputStat.mode & 0o077) !== 0)
+  ) {
     throw new Error('updater config output 권한이 안전하지 않습니다.');
   }
   return { outputPath: output, keyFingerprint: result.keyFingerprint };

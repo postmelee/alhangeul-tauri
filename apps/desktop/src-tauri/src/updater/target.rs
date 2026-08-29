@@ -10,8 +10,11 @@ pub(crate) trait UpdaterTargetProbe {
 pub(crate) struct TargetProbeError;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) enum TargetEvidence {
+    #[cfg_attr(not(target_os = "windows"), allow(dead_code))]
     Windows(WindowsEvidence),
+    #[cfg_attr(not(target_os = "linux"), allow(dead_code))]
     Linux(LinuxEvidence),
+    #[cfg_attr(any(target_os = "windows", target_os = "linux"), allow(dead_code))]
     UnsupportedPlatform,
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -33,6 +36,7 @@ pub(crate) enum WindowsRegistryHive {
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum WindowsRegistryView {
+    #[cfg_attr(not(target_os = "windows"), allow(dead_code))]
     Registry32,
     Registry64,
 }
