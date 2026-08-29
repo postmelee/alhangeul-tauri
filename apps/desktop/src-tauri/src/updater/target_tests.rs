@@ -177,6 +177,21 @@ fn appimage_requires_x64_runtime_linkage_and_writable_target() {
         detected(TargetEvidence::Linux(forged_environment)),
         TargetReason::InstallPathMismatch,
     );
+
+    let mut relative_appimage = linux_fixture();
+    relative_appimage.appimage_path = Some(PathBuf::from("opt/Alhangeul.AppImage"));
+    assert_manual(
+        detected(TargetEvidence::Linux(relative_appimage)),
+        TargetReason::InstallPathMismatch,
+    );
+
+    let mut sibling_appdir = linux_fixture();
+    sibling_appdir.current_executable =
+        PathBuf::from("/tmp/.mount_alhangeul-other/usr/bin/Alhangeul");
+    assert_manual(
+        detected(TargetEvidence::Linux(sibling_appdir)),
+        TargetReason::InstallPathMismatch,
+    );
 }
 
 #[test]

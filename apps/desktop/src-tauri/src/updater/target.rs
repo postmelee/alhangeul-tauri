@@ -277,8 +277,8 @@ fn resolve_linux(evidence: &LinuxEvidence) -> TargetEligibility {
     let (Some(appimage), Some(appdir)) = (&evidence.appimage_path, &evidence.appdir_path) else {
         return unsupported(TargetReason::MissingInstallEvidence);
     };
-    if !appimage.is_absolute()
-        || !appdir.is_absolute()
+    if !appimage.to_string_lossy().starts_with('/')
+        || !appdir.to_string_lossy().starts_with('/')
         || !evidence.appimage_exists
         || !evidence.appdir_exists
         || !evidence.current_executable.starts_with(appdir)
