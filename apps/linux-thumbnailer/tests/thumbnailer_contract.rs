@@ -117,7 +117,7 @@ fn timeout_kills_and_reaps_worker_and_removes_temporary() {
     let output = directory.path().join("timeout.png");
     let started = Instant::now();
     let mut child = spawn_with_behavior(&input, &output, "hang");
-    let worker_pid = wait_for_worker(child.id());
+    let worker_pid = wait_for_limited_worker(child.id());
     let status = wait_with_timeout(&mut child, Duration::from_secs(4));
     assert!(!status.success());
     assert!(started.elapsed() >= Duration::from_millis(1_300));
@@ -133,16 +133,7 @@ fn worker_memory_limit_and_parent_signal_cleanup_are_observable() {
     let input = copy_fixture(&directory, "blank_hwpx.hwpx");
     let output = directory.path().join("signal.png");
     let mut child = spawn_with_behavior(&input, &output, "hang");
-    let worker_pid = wait_for_worker(child.id());
-    let limits = fs::read_to_string(format!("/proc/{worker_pid}/limits")).unwrap();
-    let address = limits
-        .lines()
-        .find(|line| line.starts_with("Max address space"))
-        .unwrap();
-    assert_eq!(
-        address.split_whitespace().collect::<Vec<_>>(),
-        ["Max", "address", "space", "268435456", "268435456", "bytes"]
-    );
+    let worker_pid = wait_for_limited_worker(child.id());
     assert!(Command::new("/bin/kill")
         .args(["-TERM", &child.id().to_string()])
         .status()
@@ -253,18 +244,28 @@ fn preview_only_hwpx() -> Vec<u8> {
     writer.finish().unwrap().into_inner()
 }
 
-fn wait_for_worker(parent_pid: u32) -> u32 {
+fn wait_for_limited_worker(parent_pid: u32) -> u32 {
     let children = format!("/proc/{parent_pid}/task/{parent_pid}/children");
     let deadline = Instant::now() + Duration::from_secs(2);
     loop {
         if let Ok(value) = fs::read_to_string(&children) {
             if let Some(pid) = value.split_whitespace().next() {
-                return pid.parse().unwrap();
+                let pid = pid.parse().unwrap();
+                let limits = fs::read_to_string(format!("/proc/{pid}/limits")).unwrap();
+                let address = limits
+                    .lines()
+                    .find(|line| line.starts_with("Max address space"))
+                    .unwrap();
+                if address.split_whitespace().collect::<Vec<_>>()
+                    == ["Max", "address", "space", "268435456", "268435456", "bytes"]
+                {
+                    return pid;
+                }
             }
         }
         assert!(
             Instant::now() < deadline,
-            "worker process가 시작되지 않았습니다"
+            "worker process의 메모리 제한이 적용되지 않았습니다"
         );
         std::thread::sleep(Duration::from_millis(10));
     }
