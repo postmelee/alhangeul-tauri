@@ -4,11 +4,12 @@ set -euo pipefail
 readonly installed_helper=/usr/lib/alhangeul/alhangeul-thumbnailer
 self_path="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")"
 readonly self_path
+window_manager_pid=
 
 window_phase() {
   local manager="$1" files="$2" screenshot="$3" stdout_log="$4" stderr_log="$5" wait_seconds="$6"
   openbox > "$stdout_log.openbox" 2>&1 &
-  local window_manager_pid=$!
+  window_manager_pid=$!
   trap 'kill "$window_manager_pid" 2>/dev/null || true' EXIT
   if [[ "$manager" == nautilus ]]; then
     gsettings set org.gnome.nautilus.preferences show-image-thumbnails always
@@ -103,19 +104,20 @@ main() {
   changed_direct="$(count_invocations "$manager_root/traces" direct.hwp)"
   changed_preview="$(count_invocations "$manager_root/traces" preview.hwpx)"
   changed_failure="$(count_invocations "$manager_root/traces" fail.hwp)"
-  [[ "$first_direct" -ge 1 && "$first_preview" -ge 1 && "$first_failure" -ge 1 ]]
-  [[ "$cached_direct" -eq "$first_direct" && "$cached_preview" -eq "$first_preview" ]]
-  [[ "$changed_direct" -gt "$cached_direct" && "$changed_preview" -gt "$cached_preview" ]]
-  for phase in first cached changed; do assert_screenshot "$manager_root/$phase.png"; done
   cache_pngs="$(find "$manager_root/cache" -type f -name '*.png' | wc -l)"
-  [[ "$cache_pngs" -ge 2 ]]
-  grep -hF "execve(\"$installed_helper\"" "$manager_root"/traces/* > "$manager_root/invocations.txt"
+  grep -hF "execve(\"$installed_helper\"" "$manager_root"/traces/* \
+    > "$manager_root/invocations.txt" || true
   printf '{"manager":"%s","first":{"direct":%s,"preview":%s,"failure":%s},"cached":{"direct":%s,"preview":%s,"failure":%s},"changed":{"direct":%s,"preview":%s,"failure":%s},"cachePngs":%s}\n' \
     "$manager" "$first_direct" "$first_preview" "$first_failure" \
     "$cached_direct" "$cached_preview" "$cached_failure" \
     "$changed_direct" "$changed_preview" "$changed_failure" "$cache_pngs" \
     > "$manager_root/summary.json"
   copy_evidence "$manager" "$manager_root" "$evidence_root"
+  [[ "$first_direct" -ge 1 && "$first_preview" -ge 1 && "$first_failure" -ge 1 ]]
+  [[ "$cached_direct" -eq "$first_direct" && "$cached_preview" -eq "$first_preview" ]]
+  [[ "$changed_direct" -gt "$cached_direct" && "$changed_preview" -gt "$cached_preview" ]]
+  for phase in first cached changed; do assert_screenshot "$manager_root/$phase.png"; done
+  [[ "$cache_pngs" -ge 2 ]]
 }
 
 if [[ "${1:-}" == --window ]]; then

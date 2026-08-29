@@ -41,6 +41,7 @@ test('실제 제품 경로의 execve와 visible screenshot으로 cache lifecycle
     '[[ "$trace_status" -eq 0 || "$trace_status" -eq 124 || "$trace_status" -eq 137 ]]',
     '[[ -s "$manager_root/$phase.png" ]]',
     'traceStatus=%s timeoutSeconds=%s',
+    'window_manager_pid=',
     'run_phase "$manager" "$manager_root" "$data_root" first 20',
     'run_phase "$manager" "$manager_root" "$data_root" cached 8',
     'run_phase "$manager" "$manager_root" "$data_root" changed 20',
@@ -50,7 +51,14 @@ test('실제 제품 경로의 execve와 visible screenshot으로 cache lifecycle
     "[[ \"$cache_pngs\" -ge 2 ]]",
     'execve(\\"$installed_helper\\"',
   ]) assert.ok(session.includes(marker), `manager session marker가 필요합니다: ${marker}`);
+  assert.ok(
+    session.indexOf('copy_evidence "$manager"')
+      < session.indexOf('[[ "$first_direct" -ge 1'),
+    '실패 evidence는 lifecycle assertion 전에 보존해야 합니다',
+  );
+  assert.match(session, /> "\$manager_root\/invocations\.txt" \|\| true/);
   assert.doesNotMatch(session, /SNAP_NAME|thumbnail-stub|pkill|killall|\.cache\/thumbnails/);
+  assert.doesNotMatch(session, /local window_manager_pid/);
 });
 
 test('probe는 만든 /usr helper만 제거하고 기존 file-manager 자산을 건드리지 않는다', () => {
