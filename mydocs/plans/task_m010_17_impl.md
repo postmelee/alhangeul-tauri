@@ -67,6 +67,17 @@ GitHub Issue: [#17](https://github.com/postmelee/alhangeul-tauri/issues/17)
 - Stage 1 보고서와 구현계획 보정에 file-manager timeout, observed p95/max, peak RSS를 기록하고 single process, supervisor/self-child, 기존 framed worker 중 하나를 선택한다. hard deadline과 memory cap 수치·kill/cleanup 조건까지 승인받기 전 Stage 2로 넘어가지 않는다.
 - Stage 1 probe candidate는 별도 commit으로 `publish/task17`에 push해 exact SHA로 dispatch한다. 성공·실패 run ID와 artifact digest를 보고서에 결속하고, evidence 반영 commit으로 Stage를 닫는다.
 
+### Stage 1 실측 후 확정 계약
+
+- **격리 방식**: public `%i %o %s` entry는 supervisor이고 같은 ELF의 비공개 worker mode를 child로 시작한다. child는 render 진입 전에 Linux memory limit를 적용하고, parent는 monotonic hard deadline 뒤 child를 강제 종료·회수한 다음 임시 출력을 삭제한다. thread-only timeout이나 Tauri/WebView process 재사용은 채택하지 않는다.
+- **resource 상한**: 공유 core의 `FRAME_SELECTION_DEADLINE_MS=1_500`과 `WORKER_MEMORY_LIMIT_BYTES=256 MiB`를 Linux에서도 단일 진실 원천으로 재사용한다. exact Linux probe에서 88건 모두 timeout 없이 x64 wall p95 최대 74 ms·max 167 ms·peak RSS max 70,778,880 bytes, arm64 wall p95 최대 48 ms·max 129 ms·peak RSS max 70,123,520 bytes였다. Stage 2는 worker에 `RLIMIT_AS`를 적용하고 limit 설정 실패도 render 전 nonzero로 닫으며, timeout·limit·signal 회귀에서 `kill`과 `wait` 및 sibling temporary cleanup을 검증한다.
+- **출력 소유권**: worker는 parent가 고른 output sibling temporary에만 PNG를 쓰고, parent가 child 성공·PNG decode·크기/alpha 계약을 확인한 뒤 final path로 atomic rename한다. direct 실패 시에만 preview를 시도하며 둘 다 실패하면 final을 만들지 않는다. 기존 final output은 실패 시 보존한다.
+- **file-manager cache 판정**: 정상 HWP/HWPX 두 건은 Nautilus와 Thunar 모두 최초 각 1회 생성, 동일 원본 재요청 시 success 호출 증가 없음, mtime 변경 뒤 각 1회 이상 재생성을 필수로 한다. 손상 문서의 failure cache는 Nautilus가 유지하고 Thunar/Tumbler가 재시도할 수 있으므로 재시도 횟수를 동일하게 강제하지 않고, `partial-exit-42` 관측·정상 cache 미오염·MIME icon 저하만 판정한다.
+- **GNOME sandbox와 설치 경로**: Stage 1의 `SNAP_NAME`은 disposable XDG 경로의 probe executable를 GNOME nested bwrap 밖에서 호출하기 위한 진단 전용이다. 제품 helper는 GNOME thumbnail sandbox가 노출하는 `/usr` 아래 `/usr/lib/alhangeul/alhangeul-thumbnailer`에 설치하고 registration은 `/usr/share/thumbnailers/alhangeul.thumbnailer`에 둔다. 제품 코드에는 probe marker나 sandbox 우회 환경 변수를 넣지 않는다.
+- **package 계약**: 현재 Tauri 2 toolchain의 DEB/RPM `files` mapping으로 helper와 registration을 선언적으로 소유할 수 있다. fresh XDG session에서 별도 global cache 삭제나 MIME database 변경 없이 registration을 발견했으므로 lifecycle refresh hook은 추가하지 않는다. uninstall은 두 제품 파일만 제거하고 file-manager 소유 thumbnail/failure cache는 남긴다.
+- **수용 matrix**: Linux x64는 helper·DEB·RPM과 GNOME Files/Nautilus·Thunar/Tumbler GUI, Linux arm64는 helper·DEB·직접 PNG/resource 수용으로 확정한다. arm64 RPM·GUI, KDE, AppImage registration, Flatpak/Snap은 이번 task에서 제외한다.
+- **automation 분리 조건**: 기존 제품 GUI acceptance와 Stage 1 disposable manager probe를 exact artifact handoff·단일 outcome gate에 결속하면서 `.github/workflows/alhangeul-linux-gui.yml`이 500줄이 됐다. Stage 3에서 제품 registration 수용을 더하기 전에 manager probe 본문을 `scripts/`의 역할별 shell helper로 분리하고 workflow는 환경 준비·호출·artifact gate만 소유하게 한다.
+
 ### 검증
 
 ```bash
@@ -117,7 +128,7 @@ Task #17 Stage 1: Freedesktop와 resource 계약 확정
 ### 변경 내용
 
 - `%i %o %s` 세 인자만 받는 native binary를 만들고 입력은 canonical local regular file, 출력은 호출자가 지정한 local path, 크기는 1..=1024로 제한한다. remote URI, stdin document, network와 Tauri/WebView를 허용하지 않는다.
-- Stage 1에서 승인된 supervision 방식으로 hard deadline·memory cap을 적용한다. timeout, signal, panic, child failure는 nonzero로 끝내고 orphan process와 final/temporary partial PNG를 남기지 않는다.
+- supervisor는 같은 ELF의 private worker mode를 시작하고 공유 상수의 1,500 ms hard deadline과 256 MiB `RLIMIT_AS`를 적용한다. timeout, signal, panic, child failure는 nonzero로 끝내고 parent가 child를 kill·wait해 orphan process와 final/temporary partial PNG를 남기지 않는다.
 - `document-preview` direct 결과를 먼저 rasterize하고 실패할 때만 embedded preview를 사용한다. 두 결과 모두 RGBA PNG로 decode 재검증한 뒤 출력과 같은 디렉터리의 고유 sibling temp file을 atomic rename한다.
 - 요청 edge를 두 축 최대값으로 적용해 종횡비와 alpha를 보존한다. premultiplied BGRA 변환은 roundtrip pixel test로 고정하고 기존 Windows 결과를 변경하지 않는다.
 - 기존 final output을 실패 시 훼손하지 않는 정책, symlink·directory·동일 input/output·읽기 전용 경로·동시 요청 정책을 Rust test로 고정한다.
