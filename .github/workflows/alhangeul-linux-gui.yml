@@ -276,18 +276,32 @@ jobs:
                   "$manager" --quit >/dev/null 2>&1 || true
                   wait "$pid" || true
                 }
+                result_count() {
+                  local result="$1"
+                  awk -v needle="\"result\":\"$result\"" \
+                    "index(\$0, needle) { count += 1 } END { print count + 0 }" "$log"
+                }
                 launch first 3 20
                 first="$(wc -l < "$log")"
+                first_success="$(result_count success)"
+                first_failure="$(result_count partial-exit-42)"
                 launch cached 0 5
                 cached="$(wc -l < "$log")"
+                cached_success="$(result_count success)"
+                cached_failure="$(result_count partial-exit-42)"
                 touch "$files/probe.hwp" "$files/probe.hwpx" "$files/probe-fail.hwp"
-                launch changed 3 20
+                launch changed 2 20
                 changed="$(wc -l < "$log")"
-                printf '\''{"manager":"%s","first":%s,"cached":%s,"changed":%s}\n'\'' \
-                  "$manager" "$first" "$cached" "$changed" > "$summary"
-                [[ "$first" -ge 3 ]]
-                [[ "$cached" -eq "$first" ]]
-                [[ "$changed" -ge $((cached + 3)) ]]
+                changed_success="$(result_count success)"
+                changed_failure="$(result_count partial-exit-42)"
+                printf '\''{"manager":"%s","first":%s,"cached":%s,"changed":%s,"success":{"first":%s,"cached":%s,"changed":%s},"failure":{"first":%s,"cached":%s,"changed":%s}}\n'\'' \
+                  "$manager" "$first" "$cached" "$changed" \
+                  "$first_success" "$cached_success" "$changed_success" \
+                  "$first_failure" "$cached_failure" "$changed_failure" > "$summary"
+                [[ "$first_success" -eq 2 ]]
+                [[ "$first_failure" -ge 1 ]]
+                [[ "$cached_success" -eq "$first_success" ]]
+                [[ "$changed_success" -ge $((cached_success + 2)) ]]
               ' bash "$manager" "$manager_root/files" "$manager_root/invocations.ndjson" "$summary"
             status=$?
             find "$manager_root/cache" -type f -printf '%f %s\n' | sort \
