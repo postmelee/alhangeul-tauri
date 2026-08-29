@@ -99,7 +99,8 @@ function runCargo(root, args) {
   if (result.status !== 0) throw new Error(`cargo ${args.join(' ')} 실패: ${result.status}`);
 }
 
-function parseArguments(args) {
+export function parseArguments(argv) {
+  const args = argv[0] === '--' ? argv.slice(1) : argv;
   const options = {};
   for (let index = 0; index < args.length; index += 2) {
     const name = args[index];

@@ -9,6 +9,7 @@ import {
   inspectElfImage,
   LINUX_TARGETS,
   LINUX_THUMBNAILER_FILENAME,
+  parseArguments,
   stageLinuxThumbnailer,
 } from '../scripts/build-linux-thumbnailer.mjs';
 
@@ -36,6 +37,19 @@ test('x64와 arm64 target만 locked release build로 허용한다', () => {
     () => createBuildPlan(repoRoot, Object.keys(LINUX_TARGETS)[0], '/tmp/out', 'ABC'),
     /repository SHA/,
   );
+});
+
+test('build CLI는 pnpm argument separator와 exact 세 option만 허용한다', () => {
+  const args = [
+    '--target',
+    'x86_64-unknown-linux-gnu',
+    '--output',
+    'evidence',
+    '--repository-sha',
+    exactSha,
+  ];
+  assert.deepEqual(parseArguments(args), parseArguments(['--', ...args]));
+  assert.throws(() => parseArguments([...args, '--extra', 'value']), /Usage|인자/);
 });
 
 test('ELF64 little-endian target machine을 fail-closed 검증한다', () => {
