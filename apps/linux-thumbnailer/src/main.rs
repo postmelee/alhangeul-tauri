@@ -128,7 +128,7 @@ fn install_signal_handlers() -> Result<(), ()> {
 fn install_signal(signal: libc::c_int) -> Result<(), ()> {
     // SAFETY: zeroed `sigaction` is initialized below before it is installed.
     let mut action = unsafe { std::mem::zeroed::<libc::sigaction>() };
-    action.sa_sigaction = mark_interrupted as libc::sighandler_t;
+    action.sa_sigaction = mark_interrupted as *const () as libc::sighandler_t;
     // SAFETY: `sa_mask` points to initialized storage owned by `action`.
     if unsafe { libc::sigemptyset(&mut action.sa_mask) } != 0 {
         return Err(());

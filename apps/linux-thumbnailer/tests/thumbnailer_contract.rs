@@ -2,7 +2,7 @@
 
 use image::codecs::png::{PngDecoder, PngEncoder};
 use image::{ColorType, ExtendedColorType, ImageDecoder, ImageEncoder};
-use std::fs::{self, File, OpenOptions};
+use std::fs::{self, File};
 use std::io::{BufReader, Cursor, Write};
 use std::os::unix::fs::{symlink, PermissionsExt};
 use std::path::{Path, PathBuf};

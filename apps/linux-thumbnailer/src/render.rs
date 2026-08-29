@@ -98,11 +98,10 @@ fn premultiplied_bgra_to_rgba(bgra: &[u8]) -> Vec<u8> {
         .flat_map(|pixel| {
             let alpha = u16::from(pixel[3]);
             let straight = |channel: u8| {
-                if alpha == 0 {
-                    0
-                } else {
-                    ((u16::from(channel) * 255 + alpha / 2) / alpha).min(255) as u8
-                }
+                (u16::from(channel) * 255 + alpha / 2)
+                    .checked_div(alpha)
+                    .unwrap_or(0)
+                    .min(255) as u8
             };
             [
                 straight(pixel[2]),
