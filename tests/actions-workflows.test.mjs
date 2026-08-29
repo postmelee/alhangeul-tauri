@@ -556,22 +556,27 @@ test('desktop updater 입력은 기본 비활성 publish와 exact release identi
   assert.match(job, /ref: \$\{\{ inputs\.build_ref \}\}/);
 });
 
-test('updater build는 Windows/Linux x64와 임시 config·서명 inventory만 사용한다', () => {
+test('updater build는 Windows/Linux x64와 tracked config·서명 inventory만 사용한다', () => {
   const job = getJob(desktopWorkflow, 'build-updater');
   assert.match(job, /name: windows-x64[\s\S]*target: x86_64-pc-windows-msvc[\s\S]*bundles: msi,nsis/);
   assert.match(job, /name: linux-x64[\s\S]*target: x86_64-unknown-linux-gnu[\s\S]*bundles: appimage/);
   assert.doesNotMatch(job, /linux-arm64|aarch64|--bundles deb/);
+  assert.match(job, /^    environment: release$/m);
+  assert.doesNotMatch(getJob(desktopWorkflow, 'build'), /^    environment: release$/m);
   assertOrdered(job, [
     '- name: Validate exact updater inputs',
     '- name: Checkout exact updater source',
-    'pnpm run build:updater-config',
+    '- name: Verify tracked updater release config',
+    'pnpm run check:release-metadata',
     '- name: Build signed updater bundles',
     'pnpm run check:updater-artifacts',
     '- name: Upload verified updater artifact slice',
   ]);
+  assert.match(job, /UPDATER_CONFIG: \$\{\{ github\.workspace \}\}\/apps\/desktop\/src-tauri\/tauri\.updater\.conf\.json/);
   assert.match(job, /--config "\$UPDATER_CONFIG"/);
   assert.match(job, /--targets "\$\{\{ matrix\.updater_targets \}\}"/);
-  assert.match(job, /TAURI_UPDATER_PUBLIC_KEY: \$\{\{ secrets\.TAURI_UPDATER_PUBLIC_KEY \}\}/);
+  assert.match(job, /require\('\$UPDATER_CONFIG'\)\.plugins\.updater\.pubkey/);
+  assert.doesNotMatch(job, /secrets\.TAURI_UPDATER_PUBLIC_KEY/);
   const signingStep = getStepContaining(job, 'Build signed updater bundles');
   assert.match(signingStep, /TAURI_SIGNING_PRIVATE_KEY: \$\{\{ secrets\.TAURI_SIGNING_PRIVATE_KEY \}\}/);
   assert.match(signingStep, /TAURI_SIGNING_PRIVATE_KEY_PASSWORD: \$\{\{ secrets\.TAURI_SIGNING_PRIVATE_KEY_PASSWORD \}\}/);
@@ -583,9 +588,13 @@ test('updater publish는 boolean gate와 job-level write 권한 뒤 complete inv
   const job = getJob(desktopWorkflow, 'publish-updater');
   assert.match(job, /^    needs: build-updater$/m);
   assert.match(job, /^    if: \$\{\{ inputs\.mode == 'updater' && inputs\.publish_release \}\}$/m);
+  assert.match(job, /^    environment: release$/m);
   assert.match(job, /^    permissions:\n      contents: write$/m);
   assert.doesNotMatch(job, /TAURI_SIGNING_PRIVATE_KEY/);
+  assert.doesNotMatch(job, /secrets\.TAURI_UPDATER_PUBLIC_KEY/);
   assertOrdered(job, [
+    '- name: Verify tracked updater release config',
+    'pnpm run check:release-metadata',
     '- name: Download verified updater slices',
     '- name: Create complete release inventory',
     '--write-inventory updater-release/alhangeul-updater-release-inventory.json',

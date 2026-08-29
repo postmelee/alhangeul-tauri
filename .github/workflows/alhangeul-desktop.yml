@@ -483,6 +483,7 @@ jobs:
             bundles: appimage
             updater_targets: linux-x86_64-appimage
     runs-on: ${{ matrix.os }}
+    environment: release
     timeout-minutes: 90
     steps:
       - name: Validate exact updater inputs
@@ -551,26 +552,25 @@ jobs:
         with:
           targets: ${{ matrix.target }}
 
-      - name: Build temporary updater release config
+      - name: Verify tracked updater release config
         shell: bash
         env:
           RELEASE_VERSION: ${{ inputs.release_version }}
-          UPDATER_ENDPOINT: https://postmelee.github.io/alhangeul-tauri/updater/stable.json
-          TAURI_UPDATER_PUBLIC_KEY: ${{ secrets.TAURI_UPDATER_PUBLIC_KEY }}
-          UPDATER_CONFIG: ${{ runner.temp }}/alhangeul-updater.conf.json
+          UPDATER_CONFIG: ${{ github.workspace }}/apps/desktop/src-tauri/tauri.updater.conf.json
         run: |
           set -euo pipefail
-          pnpm run build:updater-config -- \
-            --root "$GITHUB_WORKSPACE" \
-            --output "$UPDATER_CONFIG" \
-            --version "$RELEASE_VERSION" \
-            --endpoint "$UPDATER_ENDPOINT" \
-            --public-key-env TAURI_UPDATER_PUBLIC_KEY
+          pnpm run check:product-version
+          pnpm run check:release-metadata
+          source_version="$(node -p "require('./package.json').version")"
+          [[ "$source_version" == "$RELEASE_VERSION" ]]
+          public_key="$(node -p "require('$UPDATER_CONFIG').plugins.updater.pubkey")"
+          [[ -n "$public_key" ]]
+          printf 'TAURI_UPDATER_PUBLIC_KEY=%s\n' "$public_key" >> "$GITHUB_ENV"
 
       - name: Build signed updater bundles
         shell: bash
         env:
-          UPDATER_CONFIG: ${{ runner.temp }}/alhangeul-updater.conf.json
+          UPDATER_CONFIG: ${{ github.workspace }}/apps/desktop/src-tauri/tauri.updater.conf.json
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: |
@@ -587,7 +587,6 @@ jobs:
           RELEASE_VERSION: ${{ inputs.release_version }}
           RELEASE_TAG: ${{ inputs.release_tag }}
           SOURCE_SHA: ${{ inputs.build_ref }}
-          TAURI_UPDATER_PUBLIC_KEY: ${{ secrets.TAURI_UPDATER_PUBLIC_KEY }}
         run: |
           set -euo pipefail
           pnpm run check:updater-artifacts -- \
@@ -611,6 +610,7 @@ jobs:
     needs: build-updater
     if: ${{ inputs.mode == 'updater' && inputs.publish_release }}
     runs-on: ubuntu-24.04
+    environment: release
     timeout-minutes: 15
     permissions:
       contents: write
@@ -633,6 +633,21 @@ jobs:
       - name: Install exact dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Verify tracked updater release config
+        shell: bash
+        env:
+          RELEASE_VERSION: ${{ inputs.release_version }}
+          UPDATER_CONFIG: ${{ github.workspace }}/apps/desktop/src-tauri/tauri.updater.conf.json
+        run: |
+          set -euo pipefail
+          pnpm run check:product-version
+          pnpm run check:release-metadata
+          source_version="$(node -p "require('./package.json').version")"
+          [[ "$source_version" == "$RELEASE_VERSION" ]]
+          public_key="$(node -p "require('$UPDATER_CONFIG').plugins.updater.pubkey")"
+          [[ -n "$public_key" ]]
+          printf 'TAURI_UPDATER_PUBLIC_KEY=%s\n' "$public_key" >> "$GITHUB_ENV"
+
       - name: Download verified updater slices
         uses: actions/download-artifact@v8
         with:
@@ -646,7 +661,6 @@ jobs:
           RELEASE_VERSION: ${{ inputs.release_version }}
           RELEASE_TAG: ${{ inputs.release_tag }}
           SOURCE_SHA: ${{ inputs.build_ref }}
-          TAURI_UPDATER_PUBLIC_KEY: ${{ secrets.TAURI_UPDATER_PUBLIC_KEY }}
         run: |
           set -euo pipefail
           [[ "$(git rev-parse HEAD)" == "$SOURCE_SHA" ]]

@@ -21,6 +21,11 @@ apps/studio-host/dist/
 /_site/
 /.updater-work/
 
+# Updater signing material (the public key is embedded only in the tracked release overlay)
+/.updater-keys/
+/apps/desktop/src-tauri/*.key
+/apps/desktop/src-tauri/*.key.pub
+
 *.wasm
 !apps/studio-host/vendor/rhwp-core/rhwp_bg.wasm
 

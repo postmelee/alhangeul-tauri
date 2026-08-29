@@ -1,6 +1,6 @@
 # 데스크톱 artifact와 배포 준비
 
-Alhangeul은 아직 공식 설치 파일이나 공개 릴리스를 제공하지 않는다. `.github/workflows/alhangeul-desktop.yml`은 Windows/Linux native build 결과와 Windows installer·thumbnail smoke 진단을 수동 검증하고 14일 동안 Actions artifact로 보존하지만 GitHub Release를 생성하지 않는다.
+Alhangeul은 아직 공식 설치 파일이나 공개 릴리스를 제공하지 않는다. `.github/workflows/alhangeul-desktop.yml`의 기본 `artifact` mode는 Windows/Linux native build 결과와 Windows installer·thumbnail smoke 진단을 수동 검증하고 14일 동안 Actions artifact로 보존한다. 별도 `updater` mode는 exact source와 production signing 환경을 요구하며, `publish_release=false`가 기본이다. 이 mode가 source에 존재한다는 사실만으로 GitHub Release나 updater가 활성화된 것은 아니다.
 
 ## 제품 version 기준
 
@@ -10,7 +10,7 @@ root `package.json`을 source version의 기준으로 삼고 `pnpm run check:pro
 
 ## 현재 workflow 범위
 
-`Alhangeul Desktop Artifact Build`는 `workflow_dispatch`로만 정의되어 있다.
+`Alhangeul Desktop Artifact Build`는 `workflow_dispatch`로만 정의되어 있다. 기본 `artifact` mode의 대상은 다음과 같다.
 
 | 대상 | Runner | Rust target | 예상 bundle |
 |---|---|---|---|
@@ -30,6 +30,8 @@ workflow는 다음 작업만 수행한다.
 8. installer별 summary와 원본 log를 diagnostic artifact로 항상 업로드하고 build matrix와 smoke 결과를 함께 판정
 
 repository-level Actions는 활성 상태지만 대상 CI와 native workflow는 자동 trigger 없이 수동 `workflow_dispatch`로만 실행한다. Actions 활성 상태는 workflow 성공이나 artifact 가용성을 보장하지 않으므로 run의 exact commit과 job 결과를 함께 확인해야 한다.
+
+`updater` mode는 Windows x64 MSI·NSIS와 Linux x64 AppImage만 별도 matrix에서 만든다. 두 build job과 선택적인 publish job은 `release` protected environment에 묶이며, tracked `tauri.updater.conf.json`의 endpoint·public key fingerprint와 source version을 먼저 확인한다. `publish_release=true`일 때만 job-level `contents: write` 권한을 가진 publish job이 세 installer, 세 `.sig`와 complete inventory를 exact tag의 GitHub Release에 게시할 수 있다. 일반 `artifact` mode에는 release environment, signing Secret, updater overlay와 publish 권한이 없다.
 
 ## Linux x64 exact-SHA GUI acceptance
 
@@ -308,16 +310,16 @@ GitHub API가 반환한 Actions artifact archive metadata는 다음과 같다. �
 
 이 결과는 exact source에서 installer 파일이 생성되고 Actions upload 뒤에도 inventory가 보존됐다는 build smoke 증거다. installer 설치·실행, 코드 서명, GitHub Release, package 게시와 updater는 검증하지 않았다.
 
-## 의도적으로 포함하지 않는 작업
+## 현재 source 변경만으로 완료되지 않는 작업
 
-- GitHub Release 생성·수정
-- 고정 다운로드 URL이나 latest channel 제공
-- 코드 서명과 인증 정보 사용
+- 승인된 exact-SHA updater workflow 실행과 GitHub Release 생성·수정
+- 검증된 고정 다운로드 URL과 stable channel 공개
+- Windows 코드 서명과 배포 인증 정보 사용
 - package registry 또는 배포판 repository 게시
-- updater manifest와 update artifact 생성
+- canonical Pages updater manifest 게시와 실제 N→N+1 설치 수용
 - 태그 생성 또는 이동
 
-따라서 workflow artifact를 공식 배포물로 안내하거나 README/site에 다운로드 링크를 추가하면 안 된다.
+따라서 Actions artifact나 준비된 updater mode를 공식 배포물로 안내하면 안 된다. `site/release.json`이 `unreleased`인 동안 site의 다운로드 항목은 준비 상태를 유지하고 canonical updater manifest는 생성하지 않는다.
 
 ## Pages와 공개 릴리스 게시 순서
 
@@ -350,7 +352,7 @@ PR 병합 뒤 exact `devel` SHA로 Pages를 배포하고 public read-back을 통
 - 배포 version·tag·bundle 이름과 checksum 게시 정책
 - Windows signing과 Linux package metadata
 - Linux installer/package 설치·실행·rollback과 Windows 실제 GUI HWP/HWPX·Explorer 기본 앱·thumbnail UI 수동 gate
-- updater 보안 모델과 key 보관 정책
+- Windows code signing과 공개 배포 정책
 
 Windows MSI·NSIS의 자동 설치·제한 실행·제거 package smoke는 Task #11과 Task #13 exact
 native run에서 완료했다. 공개 prerelease 후보는 Task #13과 후속 Task #15가 merge된 뒤
@@ -358,6 +360,49 @@ native run에서 완료했다. 공개 prerelease 후보는 Task #13과 후속 Ta
 다시 생성·검증한다.
 
 릴리스·서명·패키지 게시·updater 활성화는 작업지시자의 명시 승인 없이는 수행하지 않는다.
+
+### Production updater key와 Secret 책임
+
+tracked `tauri.updater.conf.json`에는 public key만 둔다. release inventory가 고정하는 production
+public-key fingerprint는
+`100c8f3183b25de3366574c46a1a2a66950a1d5f24862f3461c27b095713ffdd`이며,
+`pnpm run check:release-metadata`가 endpoint와 함께 검증한다. private key, 암호, private key의 실제
+보관 경로와 암호 관리자 항목 내용은 source·문서·log·Actions artifact에 기록하지 않는다.
+
+릴리스 책임자는 repository 밖의 접근 제한된 primary private key, 서로 독립적인 암호화 복구본과
+별도 credential store의 암호를 보관한다. 복구본을 만들었다는 사실과 public fingerprint만 확인하며
+평상시 복호화나 private key read-back을 하지 않는다. GitHub `release` environment에는 다음 두
+Secret만 등록한다.
+
+- `TAURI_SIGNING_PRIVATE_KEY`: production private key 전체 내용
+- `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`: key 생성 때 정한 암호
+
+public key는 Secret으로 중복 등록하지 않는다. workflow는 tracked overlay에서 읽으며 log에는
+public value만 환경 파일로 전달한다. Secret 등록 뒤에는 값을 다시 출력해 비교하지 않고 environment의
+Secret 이름과 workflow masking만 확인한다. environment 승인자와 branch/tag 정책은 public release
+권한을 가진 maintainer로 제한한다.
+
+private key가 유실되면 이미 배포된 앱은 새 key로 서명한 update를 신뢰하지 못한다. 첫 공개 릴리스
+전이라면 tracked public key와 fingerprint를 별도 승인 task에서 교체할 수 있지만, 공개 배포 뒤에는
+조용히 rotation하지 않는다. 기존 key로 서명한 bridge release가 가능한지 먼저 검토하고 불가능하면
+수동 재설치와 명시적인 사용자 공지를 포함한 복구 계획을 승인받는다. key 또는 암호의 노출이
+의심되면 release·manifest 게시를 즉시 중단하고 영향 범위를 확인할 때까지 해당 key를 사용하지 않는다.
+
+### 실패, rollback과 no-rerun
+
+updater release는 `exact source SHA → signed installer와 .sig → complete inventory → exact GitHub
+Release → site/release.json → Pages stable manifest → public read-back` 순서를 지킨다. 각 단계는
+바로 전 단계의 immutable output과 source SHA, version, tag, target, size, SHA-256, signature와
+public-key fingerprint를 다시 확인한다. branch, `latest` URL과 이전 run의 일부 artifact를 입력으로
+사용하지 않는다.
+
+build, signing, inventory, publish 또는 read-back이 실패하면 실패 지점을 기록하고 해당 run의
+artifact·inventory를 다음 run에 섞지 않는다. 원인 변경 없이 job만 재실행하지 않으며 source,
+workflow/config, Secret/environment 또는 외부 서비스 중 무엇이 바뀌었는지 먼저 명시한다. GitHub
+Release 게시 전 실패는 candidate를 폐기한다. Release 게시 후 Pages 전 실패는 기존 stable manifest를
+그대로 유지하고 새 Release를 자동으로 노출하지 않는다. manifest 게시 뒤 결함이 발견되면 tag 이동,
+asset 교체나 history rewrite를 하지 않고 기존 stable 복구 또는 더 높은 fixed version 게시를 별도
+승인한다. 상세 runtime 보호는 [updater 아키텍처](../architecture/UPDATER.md)를 따른다.
 
 ## 로컬과 다운로드 후 검증
 
@@ -397,6 +442,16 @@ Windows/Linux에서 native 검증을 추가한다.
 pnpm run test:desktop
 pnpm run clippy:desktop
 pnpm tauri build --debug
+```
+
+updater candidate는 같은 exact source에서 release overlay와 production signing environment를 사용해
+별도로 만든다. 이 명령은 Windows/Linux 승인 환경에서만 실행하며 private key를 command line 인자로
+전달하거나 shell history에 기록하지 않는다.
+
+```sh
+pnpm run test:desktop
+pnpm run clippy:desktop
+pnpm tauri build --config apps/desktop/src-tauri/tauri.updater.conf.json
 ```
 
 생성 bundle과 다운로드한 Actions artifact는 해당 작업의 보존 기간과 검증 기록 안에서만 사용한다.
