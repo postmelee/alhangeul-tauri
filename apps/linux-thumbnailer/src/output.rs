@@ -1,8 +1,9 @@
 use alhangeul_document_preview::limits::checked_bgra_len;
 use image::codecs::png::PngDecoder;
 use image::{ColorType, ImageDecoder};
-use std::fs::{self, File};
-use std::io::BufReader;
+use std::fs::{self, File, OpenOptions};
+use std::io::{BufReader, Write};
+use std::os::unix::fs::{MetadataExt, OpenOptionsExt};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 
@@ -17,12 +18,20 @@ pub enum OutputError {
 
 pub struct PendingOutput {
     path: PathBuf,
+    precreated: Option<OutputIdentity>,
     committed: bool,
+}
+
+#[derive(Clone, Copy)]
+struct OutputIdentity {
+    device: u64,
+    inode: u64,
 }
 
 impl PendingOutput {
     pub fn new(final_path: &Path) -> Result<Self, OutputError> {
         let parent = final_path.parent().ok_or(OutputError::Temporary)?;
+        let precreated = precreated_identity(final_path)?;
         for _ in 0..128 {
             let sequence = TEMP_SEQUENCE.fetch_add(1, Ordering::Relaxed);
             let name = format!(".alhangeul-thumbnail-{}-{sequence}.tmp", std::process::id());
@@ -31,6 +40,7 @@ impl PendingOutput {
                 Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
                     return Ok(Self {
                         path,
+                        precreated,
                         committed: false,
                     });
                 }
@@ -50,15 +60,59 @@ impl PendingOutput {
             return Err(OutputError::Commit);
         }
         validate_png(&self.path, edge)?;
-        if let Ok(metadata) = fs::symlink_metadata(final_path) {
-            if metadata.file_type().is_symlink() || !metadata.is_file() {
-                return Err(OutputError::Commit);
-            }
+        if let Some(identity) = self.precreated {
+            commit_precreated(&self.path, final_path, identity)?;
+        } else {
+            validate_replace_target(final_path)?;
+            fs::rename(&self.path, final_path).map_err(|_| OutputError::Commit)?;
         }
-        fs::rename(&self.path, final_path).map_err(|_| OutputError::Commit)?;
         self.committed = true;
         Ok(())
     }
+}
+
+fn precreated_identity(path: &Path) -> Result<Option<OutputIdentity>, OutputError> {
+    match fs::symlink_metadata(path) {
+        Ok(metadata) if metadata.is_file() && metadata.len() == 0 => Ok(Some(OutputIdentity {
+            device: metadata.dev(),
+            inode: metadata.ino(),
+        })),
+        Ok(metadata) if metadata.is_file() => Ok(None),
+        Ok(_) => Err(OutputError::Temporary),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(None),
+        Err(_) => Err(OutputError::Temporary),
+    }
+}
+
+fn validate_replace_target(path: &Path) -> Result<(), OutputError> {
+    if let Ok(metadata) = fs::symlink_metadata(path) {
+        if metadata.file_type().is_symlink() || !metadata.is_file() {
+            return Err(OutputError::Commit);
+        }
+    }
+    Ok(())
+}
+
+fn commit_precreated(
+    source: &Path,
+    destination: &Path,
+    identity: OutputIdentity,
+) -> Result<(), OutputError> {
+    let png = fs::read(source).map_err(|_| OutputError::Commit)?;
+    let mut output = OpenOptions::new()
+        .write(true)
+        .custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC)
+        .open(destination)
+        .map_err(|_| OutputError::Commit)?;
+    let metadata = output.metadata().map_err(|_| OutputError::Commit)?;
+    if !metadata.is_file() || metadata.dev() != identity.device || metadata.ino() != identity.inode
+    {
+        return Err(OutputError::Commit);
+    }
+    output.set_len(0).map_err(|_| OutputError::Commit)?;
+    output.write_all(&png).map_err(|_| OutputError::Commit)?;
+    drop(output);
+    fs::remove_file(source).map_err(|_| OutputError::Commit)
 }
 
 impl Drop for PendingOutput {

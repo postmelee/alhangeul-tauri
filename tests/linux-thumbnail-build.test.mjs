@@ -141,7 +141,10 @@ test('supervisor, worker limit, direct fallback와 atomic PNG 경계를 고정�
   assert.match(output, /PngDecoder/);
   assert.match(output, /ColorType::Rgba8/);
   assert.match(output, /fs::rename/);
-  for (const marker of ['timeout_kills_and_reaps', 'worker_memory_limit', 'partial_and_panicking', 'concurrent_requests']) {
+  assert.match(output, /libc::O_NOFOLLOW/);
+  assert.match(output, /metadata\.dev\(\).*identity\.device/);
+  assert.match(output, /metadata\.ino\(\).*identity\.inode/);
+  for (const marker of ['timeout_kills_and_reaps', 'worker_memory_limit', 'partial_and_panicking', 'concurrent_requests', 'precreated_output_keeps_tumbler_reader_inode']) {
     assert.match(contract, new RegExp(marker));
   }
 });

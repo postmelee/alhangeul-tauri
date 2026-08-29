@@ -174,7 +174,10 @@ Task #17 Stage 2: bounded Linux thumbnailer와 atomic PNG 구현
 수정:
 
 - `.github/workflows/alhangeul-linux-gui.yml`
+- `apps/linux-thumbnailer/src/output.rs`
+- `apps/linux-thumbnailer/tests/thumbnailer_contract.rs`
 - `package.json`
+- `tests/linux-thumbnail-build.test.mjs`
 - `tests/linux-gui-workflow.test.mjs`
 
 ### 변경 내용
@@ -185,6 +188,7 @@ Task #17 Stage 2: bounded Linux thumbnailer와 atomic PNG 구현
 - 전체 cache를 삭제하지 않고 동일 원본 반복 요청의 cache hit, mtime·내용 변경 뒤 invalidation, 손상 문서 failure cache와 MIME icon fallback을 호출 횟수·metadata·screenshot으로 함께 판정한다.
 - file manager 강제 종료, 전역 MIME database 변경, 다른 `.thumbnailer` 제거를 금지하고 disposable sentinel이 보존되는지 확인한다.
 - desktop native run의 별도 `alhangeul-linux-x64-thumbnailer` artifact를 같은 run ID·source SHA로 검증하고, ELF summary와 SHA-256을 확인한 helper만 disposable runner의 제품 절대 경로에 배치한다. inline stub와 `SNAP_NAME` 우회는 제거하고 `execve` trace로 호출 횟수를 관찰한다.
+- Tumbler 4.16 desktop-thumbnailer는 0바이트 output을 먼저 열고 helper 종료 뒤 같은 inode에서 읽으므로, 이 precreated regular file에 한해 검증 완료 PNG를 같은 inode에 게시한다. 게시 직전 `O_NOFOLLOW`와 device/inode를 재검증하고, 새 output과 기존 non-empty output은 Stage 2의 sibling temporary atomic rename을 유지한다.
 - Stage 3 진입 시점의 최신 `origin/devel`과 직접 겹치는 예정 경로는 `package.json` 하나다. Task #45 Pages script를 복제하지 않고 `tests/linux-thumbnail-registration.test.mjs` inventory만 최소 추가한다. Linux GUI workflow, registration, 역할별 probe script와 신규 테스트에는 직접 충돌이 없다.
 
 ### 검증

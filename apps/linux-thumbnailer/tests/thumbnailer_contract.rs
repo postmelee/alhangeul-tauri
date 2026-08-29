@@ -4,7 +4,7 @@ use image::codecs::png::{PngDecoder, PngEncoder};
 use image::{ColorType, ExtendedColorType, ImageDecoder, ImageEncoder};
 use std::fs::{self, File};
 use std::io::{BufReader, Cursor, Write};
-use std::os::unix::fs::{symlink, PermissionsExt};
+use std::os::unix::fs::{symlink, MetadataExt, PermissionsExt};
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, ExitStatus};
 use std::time::{Duration, Instant};
@@ -36,6 +36,18 @@ fn embedded_preview_is_used_only_when_direct_render_fails() {
     assert!(run(&input, &output, 64).success());
     assert_png(&output, 64);
     assert_no_temporaries(directory.path());
+}
+
+#[test]
+fn precreated_output_keeps_tumbler_reader_inode() {
+    let directory = TempDir::new().unwrap();
+    let input = copy_fixture(&directory, "blank_hwpx.hwpx");
+    let output = directory.path().join("precreated.png");
+    let held = File::create(&output).unwrap();
+    let inode = held.metadata().unwrap().ino();
+    assert!(run(&input, &output, 64).success());
+    assert_eq!(fs::metadata(&output).unwrap().ino(), inode);
+    assert!(held.metadata().unwrap().len() > 0);
 }
 
 #[test]
