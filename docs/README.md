@@ -10,6 +10,7 @@ docs/
   KEYBOARD_SHORTCUTS.md      Windows/Linux 키보드 단축키
   architecture/
     LOCAL_FONTS.md           로컬 폰트 해석과 라이선스 경계
+    LINUX_THUMBNAILS.md      Linux 파일 관리자 thumbnail 처리와 package 경계
     PROVENANCE.md            초기 코드와 제품 자산 출처
     UPSTREAM.md              upstream rhwp 경계와 고정 정책
     WINDOWS_THUMBNAILS.md    Windows Explorer thumbnail 처리와 등록 경계

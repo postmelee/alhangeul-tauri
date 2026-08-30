@@ -332,7 +332,8 @@ Task #17 Stage 5: Linux thumbnail 문서와 회귀 gate 정렬
 
 - Stage 5 source candidate를 `publish/task17`에 push하고 exact SHA를 Linux x64·arm64 artifact workflow와 Linux GUI workflow의 checkout·artifact handoff에 결속한다.
 - x64 DEB/RPM과 arm64 DEB의 helper SHA-256, package digest·inventory, install/update/remove를 기록한다. arm64 RPM·GUI는 Stage 1에서 승인되고 실제 실행된 경우만 포함한다.
-- x64 GNOME Files·Thunar에서 미열람 HWP/HWPX, direct/preview/icon fallback, cache hit/invalidation을 수용하고 screenshot은 공개 fixture만 사용한다.
+- x64 GNOME Files·Thunar에서 미열람 HWP/HWPX, direct/preview/icon fallback, cache hit/invalidation을 수용하고 screenshot은 공개 fixture만 사용한다. path·cache·실패 계약에는 합성 fixture를 유지하되, 시각 수용에는 첫 페이지의 text·table·image가 식별되는 공개 실사용 HWP 1건 이상과 HWPX 1건 이상을 별도로 포함한다.
+- Nautilus와 Thunar 각각에서 공개 실사용 HWP/HWPX thumbnail이 보이는 screenshot을 artifact에 보존하고 에이전트가 실제 이미지를 확인한다. 두 file manager의 대표 캡처를 작업지시자에게 대화에서 직접 제시하기 전에는 Stage 6 시각 수용을 완료로 판정하지 않는다.
 - 정상·손상·암호화·대용량 fixture에서 원본 불변, timeout/RSS/output limit, no orphan/partial PNG와 no network/UI를 확인한다.
 - run ID, job ID, artifact ID/digest, package/binary SHA-256와 검증 배포판·file manager 버전을 Stage 6 보고서에 기록한다. release·배포·PR은 이 Stage에 포함하지 않는다.
 

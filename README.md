@@ -12,10 +12,13 @@ Alhangeul은 Windows와 Linux에서 HWP/HWPX 문서를 열고 편집하기 위�
 - 시스템 인쇄 (Issue #15 보정 merge와 새 exact-SHA 수용 전에는 공개 후보 범위에서 제외)
 - 파일 드래그 앤 드롭과 파일 연결
 - 여러 창에서 문서 열기
+- Linux DEB/RPM에서 HWP/HWPX 첫 페이지 파일 관리자 썸네일
 
 HWPX 저장과 직접 PDF 저장은 소스·플랫폼 중립 test/build와 이전 Windows/Linux exact 후보에서 확인했고, Windows 직접 PDF의 한글 검색·선택·복사도 확인했습니다. 현재 PR 보정 뒤의 새 exact-SHA 후보와 Issue #15의 시스템 인쇄 보정은 다시 수용해야 하므로 아직 공개 릴리스 완료로 간주하지 않습니다. upstream Studio의 브라우저 autosave/recovery는 상속하지만 별도 native recovery 저장소는 제공하지 않으며, native 원본 저장의 외부 파일 변경 감지도 같은 후속 수용 대상입니다.
 
 Windows Explorer HWP/HWPX 첫 페이지 썸네일은 source와 hosted Windows x64 자동 gate에서 COM activation, MSI·NSIS 등록·복원과 실제 Shell bitmap 반환까지 확인했습니다. Explorer 보기 크기·DPI·cache 갱신과 한컴 설치 환경의 수동 UI 수용은 아직 남아 있으므로 현재 공개 기능이나 설치 파일 완료로 간주하지 않습니다. 구조와 검증 경계는 [Windows thumbnail 아키텍처](docs/architecture/WINDOWS_THUMBNAILS.md)를 참고하세요.
+
+Linux 첫 페이지 썸네일은 package candidate에서 x64 DEB/RPM의 설치·업데이트·제거와 Nautilus·Thunar/Tumbler, arm64 DEB의 package lifecycle·직접 PNG까지 자동 검증했습니다. 최종 exact-SHA의 실사용 HWP/HWPX 시각 수용은 남아 있으며 Linux arm64 RPM/GUI, KDE/Dolphin, AppImage registration, Flatpak과 Snap은 현재 범위가 아닙니다. 구조와 정확한 지원 matrix는 [Linux thumbnail 아키텍처](docs/architecture/LINUX_THUMBNAILS.md)를 참고하세요.
 
 ## 지원 범위
 
