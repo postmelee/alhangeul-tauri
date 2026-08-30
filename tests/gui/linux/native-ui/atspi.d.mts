@@ -9,6 +9,7 @@ export interface LinuxNativeUiOptions {
   outputDir: string;
   timeoutMs?: number;
   applicationNames?: readonly string[];
+  defaultPrinterName?: string;
   saveTargets?: Partial<Record<NativeDocumentCommand, string>>;
   env?: NodeJS.ProcessEnv;
   captureScreenshot?(path: string): Promise<unknown>;

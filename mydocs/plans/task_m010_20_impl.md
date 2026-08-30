@@ -626,12 +626,57 @@ Windows/Linux native 및 Linux GUI 수용을 다시 수행한다.
 Task #20 [Stage 4.2]: 최신 devel 통합과 lifecycle 재수용
 ```
 
+### Stage 4.3 — 반복 system print dialog의 이중 채널 수용 보정
+
+Stage 4.2 correction exact SHA `abcb0e51cda59794d6df60485795069b4261b577`의
+[native run 33168940750](https://github.com/postmelee/alhangeul-tauri/actions/runs/33168940750)은
+Windows x64, Linux x64, Linux arm64 build와 Windows thumbnail probe·installer lifecycle을 모두
+통과했다. 같은 SHA와 Linux x64 artifact를 결속한
+[Linux GUI run 33237523243](https://github.com/postmelee/alhangeul-tauri/actions/runs/33237523243)은
+WebDriver phase와 GTK Print to File·Cancel까지 성공했지만 세 번째 CUPS-PDF dialog를 AT-SPI에서
+찾지 못해 실패했다. 실패 screenshot에는 exact title `Print` dialog와 선택된 `PDF` queue가 실제로
+보였지만 같은 시점의 desktop-scope AT-SPI tree에는 main Alhangeul frame만 남았다. 제품 command와
+dialog 자체가 열리지 않은 실패가 아니라 반복 PrintOperation 뒤 GTK 접근성 tree가 dialog를 노출하지
+않은 acceptance channel 결함으로 판정한다.
+
+자동 재실행으로 성공을 채택하지 않는다. 격리 CUPS 설정에서 `PDF` queue를 system default로 지정하고
+`lpstat`으로 exact default를 검증한다. print adapter는 exact visible `Print`/`인쇄` X11 window 1개를
+독립 readiness·close postcondition으로 사용하면서 기존 AT-SPI printer 선택과 selected readback을 우선한다.
+AT-SPI가 dialog 자체를 노출하지 않는 경우에만 workflow에서 검증해 전달한 default printer가 요청한
+virtual `PDF`와 정확히 같을 때 default 선택을 허용한다. 그 밖의 AT-SPI action 오류, window cardinality,
+physical printer, dialog close 실패와 CUPS-PDF 생성·6쪽 A4·text·render 불일치는 계속 fail-closed한다.
+제품 인쇄 source와 일반 Open/Save chooser 경계는 변경하지 않는다.
+
+보정 뒤 다음 플랫폼 중립 gate를 실행한다.
+
+```bash
+pnpm exec node --test tests/gui/linux/native-ui/xdotool.test.mjs tests/gui/linux/native-ui/atspi.test.mjs tests/gui/linux/native-ui/virtual-printer.test.mjs tests/gui/linux/native-print.test.mjs tests/linux-gui-workflow.test.mjs tests/gui-contracts.test.mjs
+pnpm run typecheck:gui
+pnpm run test:automation
+pnpm run test:upstream
+pnpm run check:product-boundary
+pnpm run test:studio
+pnpm run build:studio
+git diff --check
+```
+
+correction exact SHA를 `publish/task20`에 fast-forward한 뒤 새 native workflow와 새 Linux GUI
+workflow를 순서대로 실행한다. 성공한 exact run의 artifact metadata와 Linux GUI evidence를 다시
+검산하고 GTK Print to File·Cancel·CUPS-PDF 및 editor restore가 모두 성공해야 Stage 4.3을 완료한다.
+
+커밋:
+
+```text
+Task #20 [Stage 4.3]: 반복 system print dialog 수용 경계 보정
+```
+
 ## 통합 검증
 
 - 각 Stage focused test와 `git diff --check`를 해당 단계 보고서 작성 전에 실행한다.
 - Stage 3에서 `pnpm run test:upstream`, `pnpm run test:studio`, `pnpm run build:studio`, `pnpm run check:product-boundary`를 모두 통과한다.
 - Stage 4.1 correction exact SHA의 Windows/Linux native 결과와 Linux GUI 전체 결과를 각각 확보한다.
 - Stage 4.2 merge exact SHA에서 최신 `devel`의 v0.8.4와 병행 task 경계를 보존하고 Windows/Linux native와 Linux GUI 전체 결과를 다시 확보한다.
+- Stage 4.3 correction exact SHA에서 검증된 기본 CUPS-PDF와 exact X11 window postcondition을 결속하고 반복 system print 전체 결과를 다시 확보한다.
 - 최종 source에서 adapter 반복 setup은 이전 generation을 회수하고 uninstall 뒤 Tauri listener, close listener, wheel listener, toolbar subscription, handler waiter timer가 남지 않는다.
 - exact upstream Studio entry, 12개 leaf alias, 파일 300 LOC와 함수 50 LOC 권장 상한을 유지한다.
 - 실패한 검증은 단계 완료로 처리하지 않으며 계획 범위를 바꾸는 correction은 먼저 승인을 받는다.
@@ -651,6 +696,7 @@ Task #20 [Stage 4.2]: 최신 devel 통합과 lifecycle 재수용
 - Stage 4는 Stage 3 검증·보고서 승인과 exact commit 확정 후 시작한다.
 - Stage 4.1은 첫 Stage 4 수용에서 확인된 harness correction 계획 변경 승인 후 시작하고, 새 exact SHA의 수용이 끝나야 Stage 4를 완료한다.
 - Stage 4.2는 최신 `devel` 자동 병합 충돌 해소 승인 후 시작하고 새 merge exact SHA의 수용이 끝나야 PR을 게시한다.
+- Stage 4.3은 Stage 4.2 GUI evidence가 확인한 반복 Print dialog 접근성 channel 보정 승인 후 시작하고 새 exact SHA의 수용이 끝나야 PR을 게시한다.
 - 모든 Stage는 `task-stage-report` 절차로 보고·커밋하고 작업지시자 승인 없이 다음 Stage로 넘어가지 않는다.
 
 ## 위험과 대응

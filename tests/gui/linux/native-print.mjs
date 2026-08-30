@@ -69,6 +69,7 @@ export async function runNativePrintAcceptance(env = process.env) {
     outputDir: inputs.outputDir,
     timeoutMs: Math.min(inputs.timeoutMs, 120000),
     applicationNames: ['Alhangeul'],
+    defaultPrinterName: cups.defaultPrinterName,
     captureScreenshot: screenshot,
     env,
   });
@@ -253,13 +254,17 @@ function documentSelector(displayName) {
 function readCupsInputs(outputDir, env) {
   const outputPath = env.ALHANGEUL_GUI_CUPS_PDF_OUTPUT ?? '';
   const printerName = env.ALHANGEUL_GUI_CUPS_PDF_PRINTER ?? 'PDF';
+  const defaultPrinterName = env.ALHANGEUL_GUI_CUPS_PDF_DEFAULT ?? '';
   if (!posix.isAbsolute(outputPath) || !outputPath.startsWith(`${outputDir}/`)) {
     throw new Error('ALHANGEUL_GUI_CUPS_PDF_OUTPUT은 output root 안의 절대 경로여야 합니다');
   }
   if (!/(pdf|print\s+to\s+file|파일)/i.test(printerName)) {
     throw new Error('native print phase는 virtual PDF printer만 허용합니다');
   }
-  return { outputPath, printerName };
+  if (defaultPrinterName !== printerName) {
+    throw new Error('검증된 기본 CUPS-PDF printer가 요청 printer와 일치해야 합니다');
+  }
+  return { outputPath, printerName, defaultPrinterName };
 }
 
 async function removeStale(path) {

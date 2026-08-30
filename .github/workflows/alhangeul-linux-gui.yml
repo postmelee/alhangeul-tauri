@@ -206,9 +206,12 @@ jobs:
               -P /usr/share/ppd/cups-pdf/CUPS-PDF.ppd
           fi
           sudo lpadmin -p PDF -o PageSize=A4
+          sudo lpadmin -d PDF
           sudo cupsenable PDF
           sudo cupsaccept PDF
+          lpoptions -d PDF
           lpstat -p PDF
+          lpstat -d | grep -Fqx 'system default destination: PDF'
           queue_options="$(lpoptions -p PDF)"
           page_size_options="$(lpoptions -p PDF -l | grep -E '^PageSize/')"
           printf 'CUPS-PDF queue options: %s\n' "$queue_options"
@@ -250,6 +253,7 @@ jobs:
           ALHANGEUL_GUI_DRIVER_VERSION: "tauri-driver ${{ env.TAURI_DRIVER_VERSION }}"
           ALHANGEUL_GUI_CUPS_PDF_OUTPUT: ${{ env.CUPS_PDF_OUTPUT }}
           ALHANGEUL_GUI_CUPS_PDF_PRINTER: PDF
+          ALHANGEUL_GUI_CUPS_PDF_DEFAULT: PDF
           NO_AT_BRIDGE: "0"
           GTK_MODULES: gail:atk-bridge
         run: |

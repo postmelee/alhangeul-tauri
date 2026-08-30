@@ -143,6 +143,9 @@ test('Xvfb, DBus, AT-SPI와 CUPS-PDF는 repository fixture만 사용한다', () 
   assert.match(cups, /grep -Fqx "Out \$output_dir" "\$config"/);
   assert.match(cups, /grep -Fqx 'Label 0' "\$config"/);
   assert.match(cups, /lpadmin -p PDF -o PageSize=A4/);
+  assert.match(cups, /lpadmin -d PDF/);
+  assert.match(cups, /lpoptions -d PDF/);
+  assert.match(cups, /lpstat -d \| grep -Fqx 'system default destination: PDF'/);
   assert.doesNotMatch(cups, /lpadmin -p PDF[^\n]*-o media=/);
   assert.ok(cups.includes('queue_options="$(lpoptions -p PDF)"'));
   assert.ok(cups.includes('page_size_options="$(lpoptions -p PDF -l | grep -E \'^PageSize/\')"'));
@@ -157,6 +160,7 @@ test('Xvfb, DBus, AT-SPI와 CUPS-PDF는 repository fixture만 사용한다', () 
   assert.match(gui, /openbox/);
   assert.match(gui, /ALHANGEUL_GUI_FIXTURE_ROOT: \$\{\{ github\.workspace \}\}/);
   assert.match(gui, /ALHANGEUL_GUI_CUPS_PDF_OUTPUT: \$\{\{ env\.CUPS_PDF_OUTPUT \}\}/);
+  assert.match(gui, /ALHANGEUL_GUI_CUPS_PDF_DEFAULT: PDF/);
   assert.match(gui, /NO_AT_BRIDGE: "0"/);
   assert.match(gui, /GTK_MODULES: gail:atk-bridge/);
   assert.match(gui, /run_isolated_phase\(\)/);
