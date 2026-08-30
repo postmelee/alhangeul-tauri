@@ -90,7 +90,7 @@ function assertNoExistingPackages(platform) {
   );
   if (platform === 'linux-x64') {
     assertCommandFailed(
-      run('rpm', ['-q', 'alhangeul'], { allowFailure: true }),
+      run('sudo', ['rpm', '-q', 'alhangeul'], { allowFailure: true }),
       'preinstalled RPM preflight',
     );
   }
@@ -184,7 +184,10 @@ async function runRpmLifecycle(context) {
   const metadata = rpmMetadata(context.archive);
   assertPackageIdentity(metadata.name, metadata.architecture, 'x86_64');
   assertArchivePaths(run('rpm', ['-qpl', context.archive]).stdout);
-  assertCommandFailed(run('rpm', ['-q', metadata.name], { allowFailure: true }), 'preinstalled RPM');
+  assertCommandFailed(
+    run('sudo', ['rpm', '-q', metadata.name], { allowFailure: true }),
+    'preinstalled RPM',
+  );
   context.owned.rpm = metadata.name;
   console.log(`RPM clean install: ${metadata.name} ${metadata.version}`);
   sudoRpm('-i', context.archive);
@@ -242,7 +245,8 @@ async function verifyInstalled(format, metadata, context) {
       throw new Error(`${format} helper must have one owner: ${owners.join(', ')}`);
     }
   } else {
-    const installedPaths = run('rpm', ['-ql', metadata.name]).stdout.trim().split(/\r?\n/);
+    const installedPaths = run('sudo', ['rpm', '-ql', metadata.name])
+      .stdout.trim().split(/\r?\n/);
     assertEqual(
       installedPaths.filter((path) => path === HELPER_PATH).length,
       1,

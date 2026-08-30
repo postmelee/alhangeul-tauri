@@ -119,7 +119,9 @@ test('package 검증은 path mode SHA ELF owner registration과 보존 불변식
     'productFilesRemovedAfterUninstall',
   ]) assert.ok(verifier.includes(marker), `evidence marker가 필요합니다: ${marker}`);
   assert.match(contract, /\['query', 'default', mime\]/);
-  assert.match(smoke, /\['-ql', metadata\.name\]/);
+  assert.match(smoke, /run\('sudo', \['rpm', '-ql', metadata\.name\]\)/);
+  assert.match(smoke, /run\('sudo', \['rpm', '-q', metadata\.name\]/);
+  assert.match(smoke, /run\('sudo', \['rpm', '-q', 'alhangeul'\]/);
   assert.match(smoke, /path === HELPER_PATH/);
   assert.doesNotMatch(smoke, /\['-qf'/);
   assert.doesNotMatch(sources, /\['default',/);
