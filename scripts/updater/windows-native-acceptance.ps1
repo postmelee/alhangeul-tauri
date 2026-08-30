@@ -61,13 +61,13 @@ function Assert-ProductState($State, $Version) {
 function Resolve-Installer {
   Assert-Condition (-not [string]::IsNullOrWhiteSpace($ArtifactRoot)) 'Install phase에는 ArtifactRoot가 필요합니다.'
   $files = @(Get-ChildItem -LiteralPath $ArtifactRoot -Recurse -File)
-  $matches = if ($Kind -eq 'msi') {
-    @($files | Where-Object { $_.Extension -ieq '.msi' })
+  $installers = @(if ($Kind -eq 'msi') {
+    $files | Where-Object { $_.Extension -ieq '.msi' }
   } else {
-    @($files | Where-Object { $_.Name -like '*-setup.exe' })
-  }
-  Assert-Condition ($matches.Count -eq 1) "$Kind N installer가 정확히 하나가 아닙니다."
-  return $matches[0].FullName
+    $files | Where-Object { $_.Name -like '*-setup.exe' }
+  })
+  Assert-Condition ($installers.Count -eq 1) "$Kind N installer가 정확히 하나가 아닙니다."
+  return $installers[0].FullName
 }
 
 function Invoke-Install($Path) {

@@ -7,7 +7,7 @@ interface UpdaterSnapshot {
   status: 'idle' | 'checking' | 'available' | 'downloading' | 'installing' | 'restartRequired' | 'error';
   currentVersion: string | null;
   availableVersion: string | null;
-  target: { target: string; artifactKind: 'msi' | 'nsis' | 'appImage' } | null;
+  target: { target: string; artifactKind: 'msi' | 'nsis' | 'appimage' } | null;
   blocker: 'dirtyDocuments' | 'unsupportedInstall' | 'readOnlyAppImage' | null;
   failure: { code: string; message: string; retryable: boolean } | null;
 }
@@ -140,8 +140,7 @@ function assertAvailable(snapshot: UpdaterSnapshot): void {
   expect(snapshot.currentVersion).toBe(inputs.expectedCurrentVersion);
   expect(snapshot.availableVersion).toBe(inputs.expectedAvailableVersion);
   expect(snapshot.target?.target).toBe(inputs.expectedTarget);
-  const expectedKind = inputs.expectedKind === 'appimage' ? 'appImage' : inputs.expectedKind;
-  expect(snapshot.target?.artifactKind).toBe(expectedKind);
+  expect(snapshot.target?.artifactKind).toBe(inputs.expectedKind);
   expect(snapshot.failure).toBeNull();
 }
 

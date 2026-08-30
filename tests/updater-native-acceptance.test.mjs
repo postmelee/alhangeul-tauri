@@ -95,6 +95,8 @@ test('Windows matrix는 MSI·NSIS를 각각 clean N에서 갱신하고 연결 �
   for (const marker of ['DefaultsPreserved', 'Assert-ProductState', 'Get-DefaultState']) {
     assert.ok(powershell.includes(marker), `Windows helper marker가 필요합니다: ${marker}`);
   }
+  assert.match(powershell, /\$installers = @\(if \(\$Kind -eq 'msi'\)/);
+  assert.doesNotMatch(powershell, /\$matches\s*=/i);
 });
 
 test('Linux AppImage는 writable 갱신 hash·재실행 no-update·read-only fallback을 검증한다', () => {
@@ -130,6 +132,7 @@ test('WebDriver harness는 external driver와 preflight·apply·verify·manual �
     'restartRequired',
     'readOnlyAppImage',
     'unsupportedInstall',
+    "artifactKind: 'msi' | 'nsis' | 'appimage'",
   ]) assert.ok(spec.includes(marker), `native spec marker가 필요합니다: ${marker}`);
 });
 
