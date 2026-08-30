@@ -99,6 +99,8 @@ test('Windows matrix는 MSI·NSIS를 각각 clean N에서 갱신하고 연결 �
 
 test('Linux AppImage는 writable 갱신 hash·재실행 no-update·read-only fallback을 검증한다', () => {
   const accept = job(linux, 'accept-linux-appimage');
+  assert.doesNotMatch(accept, /runner\.temp/);
+  assert.match(accept, /APPIMAGE_PATH: \$\{\{ github\.workspace \}\}\/acceptance-appimage\/Alhangeul\.AppImage/);
   ordered(accept, [
     '- name: Verify D1 N Linux artifact handoff',
     '- name: Download verified N Linux artifact',

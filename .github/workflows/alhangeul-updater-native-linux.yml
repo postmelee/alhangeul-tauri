@@ -28,7 +28,7 @@ jobs:
     env:
       ARTIFACT_ROOT: ${{ github.workspace }}/acceptance-artifacts/n-linux
       EVIDENCE_ROOT: ${{ github.workspace }}/acceptance-evidence/linux-appimage
-      APPIMAGE_PATH: ${{ runner.temp }}/alhangeul-appimage/Alhangeul.AppImage
+      APPIMAGE_PATH: ${{ github.workspace }}/acceptance-appimage/Alhangeul.AppImage
       APPIMAGE_N_PLUS_ONE_SHA256: 77c506812f19b6abc8d08b2f1efc00abd5b314e8dd95d25e53680b0593fe7b75
     steps:
       - name: Checkout exact native harness source
