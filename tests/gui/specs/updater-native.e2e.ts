@@ -26,6 +26,7 @@ describe(`Alhangeul updater native ${inputs.mode}`, () => {
       startedAt: new Date().toISOString(),
     };
     try {
+      evidence.nativeReady = await waitForNativeBridge();
       if (inputs.mode === 'preflight') await runPreflight(evidence);
       else if (inputs.mode === 'apply') await runApply(evidence);
       else if (inputs.mode === 'verify') await runVerify(evidence);
@@ -45,6 +46,27 @@ describe(`Alhangeul updater native ${inputs.mode}`, () => {
     }
   });
 });
+
+async function waitForNativeBridge(): Promise<Record<string, unknown>> {
+  await browser.waitUntil(async () => browser.execute(() => {
+    const bridge = (window as unknown as {
+      __TAURI_INTERNALS__?: { invoke?: unknown };
+    }).__TAURI_INTERNALS__;
+    return document.readyState === 'complete' && typeof bridge?.invoke === 'function';
+  }), {
+    timeout: 120_000,
+    interval: 250,
+    timeoutMsg: 'native document와 Tauri invoke bridge가 제한 시간 안에 준비되지 않았습니다',
+  });
+
+  return browser.execute(() => ({
+    readyState: document.readyState,
+    title: document.title,
+    bridgeAvailable: typeof (window as unknown as {
+      __TAURI_INTERNALS__?: { invoke?: unknown };
+    }).__TAURI_INTERNALS__?.invoke === 'function',
+  }));
+}
 
 async function runPreflight(evidence: Record<string, unknown>): Promise<void> {
   evidence.initial = await ensureAvailable();

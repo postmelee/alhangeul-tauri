@@ -139,6 +139,9 @@ test('WebDriver harness는 external driver와 preflight·apply·verify·manual �
     assert.ok(spec.includes(`inputs.mode === '${mode}'`) || mode === 'manual');
   }
   for (const marker of [
+    'waitForNativeBridge',
+    "document.readyState === 'complete'",
+    "typeof bridge?.invoke === 'function'",
     'duplicateCheck',
     'dirtyBeforeDownload',
     'dirtyAfterDownloadStarted',
