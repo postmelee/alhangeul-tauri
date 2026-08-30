@@ -27,6 +27,9 @@ test('모든 workflow가 공통 또는 전용 contract test inventory에 등록�
   assert.deepEqual(actual, [
     'alhangeul-desktop.yml',
     'alhangeul-linux-gui.yml',
+    'alhangeul-updater-native-acceptance.yml',
+    'alhangeul-updater-native-linux.yml',
+    'alhangeul-updater-native-windows.yml',
     'ci.yml',
     'pages.yml',
     'rhwp-upstream-sync.yml',
@@ -544,6 +547,7 @@ test('desktop updater 입력은 기본 비활성 publish와 exact release identi
   assert.match(dispatch, /^        default: artifact$/m);
   assert.match(dispatch, /^          - updater$/m);
   assert.match(dispatch, /^          - updater-acceptance$/m);
+  assert.match(dispatch, /^          - updater-native-acceptance$/m);
   assert.match(dispatch, /^      release_version:$/m);
   assert.match(dispatch, /^      release_tag:$/m);
   assert.match(dispatch, /^      release_notes:$/m);

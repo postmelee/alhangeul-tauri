@@ -1,0 +1,220 @@
+name: Alhangeul Updater Native Windows Acceptance
+
+on:
+  workflow_call:
+    inputs:
+      candidate_sha:
+        required: true
+        type: string
+      d1_run_id:
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+env:
+  NODE_VERSION: "24"
+  TAURI_DRIVER_VERSION: "2.0.6"
+  N_VERSION: "99.0.0"
+  N_PLUS_ONE_VERSION: "99.0.1"
+
+jobs:
+  accept-windows:
+    name: Accept Windows x64 ${{ matrix.kind }} N to N+1
+    runs-on: windows-2025
+    timeout-minutes: 50
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - kind: msi
+            target: windows-x86_64-msi
+          - kind: nsis
+            target: windows-x86_64-nsis
+    env:
+      ARTIFACT_ROOT: ${{ github.workspace }}\acceptance-artifacts\n-windows
+      EVIDENCE_ROOT: ${{ github.workspace }}\acceptance-evidence\windows-${{ matrix.kind }}
+    steps:
+      - name: Checkout exact native harness source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.workflow_sha }}
+          submodules: false
+
+      - name: Verify native harness source SHA
+        shell: bash
+        env:
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
+        run: |
+          set -euo pipefail
+          [[ "$(git rev-parse HEAD)" == "$WORKFLOW_SHA" ]]
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Install exact pnpm dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          corepack enable
+          pnpm install --frozen-lockfile
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install exact tauri-driver
+        shell: bash
+        run: cargo install tauri-driver --version "$TAURI_DRIVER_VERSION" --locked
+
+      - name: Verify D1 N Windows artifact handoff
+        id: handoff
+        shell: bash
+        env:
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          D1_RUN_ID: ${{ inputs.d1_run_id }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$EVIDENCE_ROOT"
+          node scripts/verify-workflow-artifact.mjs \
+            --repository "$GITHUB_REPOSITORY" \
+            --build-ref "$CANDIDATE_SHA" \
+            --run-id "$D1_RUN_ID" \
+            --workflow-path .github/workflows/alhangeul-desktop.yml \
+            --artifact-name alhangeul-updater-acceptance-n-windows-x64 \
+            --json-output "$EVIDENCE_ROOT/n-artifact-handoff.json" \
+            --github-output "$GITHUB_OUTPUT"
+
+      - name: Download verified N Windows artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          artifact-ids: ${{ steps.handoff.outputs.artifact_id }}
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.d1_run_id }}
+          path: ${{ env.ARTIFACT_ROOT }}
+          digest-mismatch: error
+
+      - name: Verify N Windows signatures and version
+        shell: bash
+        env:
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          TRACKED_UPDATER_CONFIG: ${{ github.workspace }}/apps/desktop/src-tauri/tauri.updater.conf.json
+        run: |
+          set -euo pipefail
+          public_key="$(node -p "require(process.env.TRACKED_UPDATER_CONFIG).plugins.updater.pubkey")"
+          export TAURI_UPDATER_PUBLIC_KEY="$public_key"
+          pnpm run check:updater-acceptance -- \
+            --root "$ARTIFACT_ROOT" \
+            --role n \
+            --source-sha "$CANDIDATE_SHA" \
+            --targets windows-x86_64-nsis,windows-x86_64-msi \
+            --public-key-env TAURI_UPDATER_PUBLIC_KEY
+
+      - name: Clean install Windows N
+        id: install-n
+        shell: pwsh
+        run: >-
+          ./scripts/updater/windows-native-acceptance.ps1
+          -Phase Install
+          -Kind '${{ matrix.kind }}'
+          -ArtifactRoot $env:ARTIFACT_ROOT
+          -OutputDirectory $env:EVIDENCE_ROOT
+          -ExpectedVersion $env:N_VERSION
+
+      - name: Run Windows updater preflight and dirty gates
+        shell: pwsh
+        env:
+          ALHANGEUL_UPDATER_APP_PATH: ${{ steps.install-n.outputs.app_path }}
+          ALHANGEUL_UPDATER_OUTPUT_DIR: ${{ env.EVIDENCE_ROOT }}\preflight
+          ALHANGEUL_UPDATER_MODE: preflight
+          ALHANGEUL_UPDATER_EXPECTED_TARGET: ${{ matrix.target }}
+          ALHANGEUL_UPDATER_EXPECTED_KIND: ${{ matrix.kind }}
+          ALHANGEUL_UPDATER_CURRENT_VERSION: ${{ env.N_VERSION }}
+          ALHANGEUL_UPDATER_AVAILABLE_VERSION: ${{ env.N_PLUS_ONE_VERSION }}
+          ALHANGEUL_UPDATER_CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          ALHANGEUL_UPDATER_D1_RUN_ID: ${{ inputs.d1_run_id }}
+        run: |
+          $env:ALHANGEUL_UPDATER_DRIVER_PATH = Join-Path $env:USERPROFILE '.cargo\bin\tauri-driver.exe'
+          pnpm run test:gui:updater
+
+      - name: Apply Windows N to N+1 through updater
+        id: apply-update
+        continue-on-error: true
+        shell: pwsh
+        env:
+          ALHANGEUL_UPDATER_APP_PATH: ${{ steps.install-n.outputs.app_path }}
+          ALHANGEUL_UPDATER_OUTPUT_DIR: ${{ env.EVIDENCE_ROOT }}\apply
+          ALHANGEUL_UPDATER_MODE: apply
+          ALHANGEUL_UPDATER_EXPECTED_TARGET: ${{ matrix.target }}
+          ALHANGEUL_UPDATER_EXPECTED_KIND: ${{ matrix.kind }}
+          ALHANGEUL_UPDATER_CURRENT_VERSION: ${{ env.N_VERSION }}
+          ALHANGEUL_UPDATER_AVAILABLE_VERSION: ${{ env.N_PLUS_ONE_VERSION }}
+          ALHANGEUL_UPDATER_CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          ALHANGEUL_UPDATER_D1_RUN_ID: ${{ inputs.d1_run_id }}
+        run: |
+          $env:ALHANGEUL_UPDATER_DRIVER_PATH = Join-Path $env:USERPROFILE '.cargo\bin\tauri-driver.exe'
+          pnpm run test:gui:updater
+
+      - name: Validate installed Windows N+1 and preserved associations
+        id: validate-n-plus-one
+        shell: pwsh
+        run: >-
+          ./scripts/updater/windows-native-acceptance.ps1
+          -Phase Validate
+          -Kind '${{ matrix.kind }}'
+          -OutputDirectory $env:EVIDENCE_ROOT
+          -ExpectedVersion $env:N_PLUS_ONE_VERSION
+
+      - name: Verify Windows N+1 no-update state
+        shell: pwsh
+        env:
+          ALHANGEUL_UPDATER_APP_PATH: ${{ steps.validate-n-plus-one.outputs.app_path }}
+          ALHANGEUL_UPDATER_OUTPUT_DIR: ${{ env.EVIDENCE_ROOT }}\verify
+          ALHANGEUL_UPDATER_MODE: verify
+          ALHANGEUL_UPDATER_EXPECTED_TARGET: ${{ matrix.target }}
+          ALHANGEUL_UPDATER_EXPECTED_KIND: ${{ matrix.kind }}
+          ALHANGEUL_UPDATER_CURRENT_VERSION: ${{ env.N_VERSION }}
+          ALHANGEUL_UPDATER_AVAILABLE_VERSION: ${{ env.N_PLUS_ONE_VERSION }}
+          ALHANGEUL_UPDATER_CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          ALHANGEUL_UPDATER_D1_RUN_ID: ${{ inputs.d1_run_id }}
+        run: |
+          $env:ALHANGEUL_UPDATER_DRIVER_PATH = Join-Path $env:USERPROFILE '.cargo\bin\tauri-driver.exe'
+          pnpm run test:gui:updater
+
+      - name: Cleanup Windows test installation
+        id: cleanup
+        if: ${{ always() }}
+        shell: pwsh
+        run: >-
+          ./scripts/updater/windows-native-acceptance.ps1
+          -Phase Cleanup
+          -Kind '${{ matrix.kind }}'
+          -OutputDirectory $env:EVIDENCE_ROOT
+
+      - name: Record Windows step outcomes
+        if: ${{ always() }}
+        shell: pwsh
+        env:
+          INSTALL: ${{ steps.install-n.outcome }}
+          APPLY: ${{ steps.apply-update.outcome }}
+          VALIDATE: ${{ steps.validate-n-plus-one.outcome }}
+          CLEANUP: ${{ steps.cleanup.outcome }}
+        run: |
+          New-Item -ItemType Directory -Path $env:EVIDENCE_ROOT -Force | Out-Null
+          [ordered]@{ install = $env:INSTALL; applyTransport = $env:APPLY; validate = $env:VALIDATE; cleanup = $env:CLEANUP } |
+            ConvertTo-Json | Set-Content -LiteralPath (Join-Path $env:EVIDENCE_ROOT 'step-outcomes.json') -Encoding UTF8
+
+      - name: Upload Windows updater evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: alhangeul-updater-windows-${{ matrix.kind }}-${{ github.run_id }}
+          path: ${{ env.EVIDENCE_ROOT }}\**
+          if-no-files-found: error
+          retention-days: 14

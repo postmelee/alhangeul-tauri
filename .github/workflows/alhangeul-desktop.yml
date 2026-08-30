@@ -12,6 +12,7 @@ on:
           - artifact
           - updater
           - updater-acceptance
+          - updater-native-acceptance
       build_ref:
         description: Branch, tag, or commit to build. Empty uses the selected workflow commit.
         required: false
@@ -42,6 +43,31 @@ on:
         required: true
         default: false
         type: boolean
+      acceptance_candidate_sha:
+        description: Exact D1 source SHA embedded in test N and N+1 artifacts.
+        required: false
+        default: ""
+        type: string
+      acceptance_d1_run_id:
+        description: Successful nonpublishing updater acceptance run ID.
+        required: false
+        default: ""
+        type: string
+      acceptance_candidate_artifact_id:
+        description: Approved updater acceptance candidate artifact ID.
+        required: false
+        default: ""
+        type: string
+      acceptance_candidate_artifact_digest:
+        description: Approved sha256-prefixed candidate archive digest.
+        required: false
+        default: ""
+        type: string
+      acceptance_release_tag:
+        description: Approved test-only updater prerelease tag.
+        required: false
+        default: ""
+        type: string
 
 permissions:
   contents: read
@@ -1102,3 +1128,17 @@ jobs:
             --target "$SOURCE_SHA" \
             --title "Alhangeul $RELEASE_VERSION" \
             --notes "$RELEASE_NOTES"
+
+  updater-native-acceptance:
+    name: Run updater native acceptance
+    if: ${{ inputs.mode == 'updater-native-acceptance' }}
+    permissions:
+      actions: read
+      contents: read
+    uses: ./.github/workflows/alhangeul-updater-native-acceptance.yml
+    with:
+      candidate_sha: ${{ inputs.acceptance_candidate_sha }}
+      d1_run_id: ${{ inputs.acceptance_d1_run_id }}
+      candidate_artifact_id: ${{ inputs.acceptance_candidate_artifact_id }}
+      candidate_artifact_digest: ${{ inputs.acceptance_candidate_artifact_digest }}
+      release_tag: ${{ inputs.acceptance_release_tag }}
