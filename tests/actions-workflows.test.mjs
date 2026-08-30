@@ -583,11 +583,60 @@ test('updater build는 Windows/Linux x64와 tracked config·서명 inventory만 
   assert.match(signingStep, /TAURI_SIGNING_PRIVATE_KEY_PASSWORD: \$\{\{ secrets\.TAURI_SIGNING_PRIVATE_KEY_PASSWORD \}\}/);
   assert.equal((job.match(/secrets\.TAURI_SIGNING_PRIVATE_KEY \}\}/g) ?? []).length, 1);
   assert.equal((job.match(/secrets\.TAURI_SIGNING_PRIVATE_KEY_PASSWORD/g) ?? []).length, 1);
+
+  for (const artifactPath of [
+    'apps/desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/msi/*.msi',
+    'apps/desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/msi/*.msi.sig',
+    'apps/desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*-setup.exe',
+    'apps/desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*-setup.exe.sig',
+    'apps/desktop/src-tauri/target/x86_64-unknown-linux-gnu/release/bundle/appimage/*.AppImage',
+    'apps/desktop/src-tauri/target/x86_64-unknown-linux-gnu/release/bundle/appimage/*.AppImage.sig',
+  ]) {
+    assert.ok(job.includes(artifactPath), `최종 updater 경로가 필요합니다: ${artifactPath}`);
+  }
+  const uploadStep = getStepContaining(job, 'Upload verified updater artifact slice');
+  assert.match(uploadStep, /^\s{10}path: \$\{\{ matrix\.artifact_paths \}\}$/m);
+  assert.doesNotMatch(
+    uploadStep,
+    /bundle\/\*\*/,
+    'AppDir 등 빌드 중간 산출물을 updater artifact에 포함하지 않아야 합니다.',
+  );
+});
+
+test('updater inventory 검증은 게시와 분리되어 read-only complete inventory를 남긴다', () => {
+  const job = getJob(desktopWorkflow, 'verify-updater-release');
+
+  assert.match(job, /^    needs: build-updater$/m);
+  assert.match(job, /^    if: \$\{\{ inputs\.mode == 'updater' \}\}$/m);
+  assert.match(job, /^    permissions:\n      contents: read$/m);
+  assert.doesNotMatch(job, /^    environment: release$/m);
+  assert.doesNotMatch(job, /TAURI_SIGNING_PRIVATE_KEY/);
+  assert.doesNotMatch(job, /secrets\./);
+  assertOrdered(job, [
+    '- name: Checkout exact inventory source',
+    '- name: Verify updater inventory source SHA',
+    '- name: Read tracked updater public key',
+    'pnpm run check:release-metadata',
+    '- name: Download verified updater slices',
+    'pattern: alhangeul-updater-*-x64',
+    '- name: Create complete release inventory',
+    '--write-inventory updater-inventory/alhangeul-updater-release-inventory.json',
+    '- name: Upload verified updater release inventory',
+  ]);
+
+  const uploadStep = getStepContaining(
+    job,
+    'name: alhangeul-updater-release-inventory',
+  );
+  assert.match(
+    uploadStep,
+    /^\s{10}path: updater-inventory\/alhangeul-updater-release-inventory\.json$/m,
+  );
 });
 
 test('updater publish는 boolean gate와 job-level write 권한 뒤 complete inventory만 게시한다', () => {
   const job = getJob(desktopWorkflow, 'publish-updater');
-  assert.match(job, /^    needs: build-updater$/m);
+  assert.match(job, /^    needs: \[build-updater, verify-updater-release\]$/m);
   assert.match(job, /^    if: \$\{\{ inputs\.mode == 'updater' && inputs\.publish_release \}\}$/m);
   assert.match(job, /^    environment: release$/m);
   assert.match(job, /^    permissions:\n      contents: write$/m);
@@ -599,6 +648,7 @@ test('updater publish는 boolean gate와 job-level write 권한 뒤 complete inv
     '- name: Verify tracked updater release config',
     'pnpm run check:release-metadata',
     '- name: Download verified updater slices',
+    'pattern: alhangeul-updater-*-x64',
     '- name: Create complete release inventory',
     '--write-inventory updater-release/alhangeul-updater-release-inventory.json',
     '- name: Publish exact GitHub Release',

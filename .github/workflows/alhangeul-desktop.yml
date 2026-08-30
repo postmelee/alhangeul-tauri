@@ -477,11 +477,19 @@ jobs:
             target: x86_64-pc-windows-msvc
             bundles: msi,nsis
             updater_targets: windows-x86_64-nsis,windows-x86_64-msi
+            artifact_paths: |
+              apps/desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/msi/*.msi
+              apps/desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/msi/*.msi.sig
+              apps/desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*-setup.exe
+              apps/desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*-setup.exe.sig
           - name: linux-x64
             os: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
             bundles: appimage
             updater_targets: linux-x86_64-appimage
+            artifact_paths: |
+              apps/desktop/src-tauri/target/x86_64-unknown-linux-gnu/release/bundle/appimage/*.AppImage
+              apps/desktop/src-tauri/target/x86_64-unknown-linux-gnu/release/bundle/appimage/*.AppImage.sig
     runs-on: ${{ matrix.os }}
     environment: release
     timeout-minutes: 90
@@ -601,13 +609,90 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: alhangeul-updater-${{ matrix.name }}
-          path: apps/desktop/src-tauri/target/${{ matrix.target }}/release/bundle/**
+          path: ${{ matrix.artifact_paths }}
+          if-no-files-found: error
+          retention-days: 14
+
+  verify-updater-release:
+    name: Verify complete updater release inventory
+    needs: build-updater
+    if: ${{ inputs.mode == 'updater' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout exact inventory source
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.build_ref }}
+          submodules: false
+
+      - name: Verify updater inventory source SHA
+        shell: bash
+        env:
+          SOURCE_SHA: ${{ inputs.build_ref }}
+        run: |
+          set -euo pipefail
+          [[ "$(git rev-parse HEAD)" == "$SOURCE_SHA" ]]
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Enable pnpm
+        run: corepack enable
+
+      - name: Install exact dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Read tracked updater public key
+        shell: bash
+        env:
+          UPDATER_CONFIG: ${{ github.workspace }}/apps/desktop/src-tauri/tauri.updater.conf.json
+        run: |
+          set -euo pipefail
+          pnpm run check:release-metadata
+          public_key="$(node -p "require(process.env.UPDATER_CONFIG).plugins.updater.pubkey")"
+          [[ -n "$public_key" ]]
+          printf 'TAURI_UPDATER_PUBLIC_KEY=%s\n' "$public_key" >> "$GITHUB_ENV"
+
+      - name: Download verified updater slices
+        uses: actions/download-artifact@v8
+        with:
+          pattern: alhangeul-updater-*-x64
+          path: updater-release
+          merge-multiple: true
+
+      - name: Create complete release inventory
+        shell: bash
+        env:
+          RELEASE_VERSION: ${{ inputs.release_version }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          SOURCE_SHA: ${{ inputs.build_ref }}
+        run: |
+          set -euo pipefail
+          pnpm run check:updater-artifacts -- \
+            --root updater-release \
+            --version "$RELEASE_VERSION" \
+            --tag "$RELEASE_TAG" \
+            --source-sha "$SOURCE_SHA" \
+            --public-key-env TAURI_UPDATER_PUBLIC_KEY \
+            --write-inventory updater-inventory/alhangeul-updater-release-inventory.json
+
+      - name: Upload verified updater release inventory
+        uses: actions/upload-artifact@v7
+        with:
+          name: alhangeul-updater-release-inventory
+          path: updater-inventory/alhangeul-updater-release-inventory.json
           if-no-files-found: error
           retention-days: 14
 
   publish-updater:
     name: Publish verified updater release
-    needs: build-updater
+    needs: [build-updater, verify-updater-release]
     if: ${{ inputs.mode == 'updater' && inputs.publish_release }}
     runs-on: ubuntu-24.04
     environment: release
@@ -651,7 +736,7 @@ jobs:
       - name: Download verified updater slices
         uses: actions/download-artifact@v8
         with:
-          pattern: alhangeul-updater-*
+          pattern: alhangeul-updater-*-x64
           path: updater-release
           merge-multiple: true
 
