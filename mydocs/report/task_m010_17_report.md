@@ -14,6 +14,8 @@ Linux 전용 `alhangeul-thumbnailer`는 Freedesktop `%i %o %s` 계약만 공개�
 
 Tauri DEB·RPM은 helper와 `.thumbnailer` registration을 선언적으로 소유한다. x64 DEB/RPM과 arm64 DEB의 install·reinstall·update·rollback·uninstall을 exact-SHA native workflow에서 확인했고, x64 DEB를 설치한 Nautilus와 Thunar/Tumbler에서 최초 생성, cache hit, mtime invalidation, 손상 문서 fallback과 공개 실사용 HWP/HWPX의 첫 페이지를 화면으로 수용했다.
 
+PR 게시 후 최신 `origin/devel` 통합에서 발생한 `package.json`·`mydocs/orders/20260828.md` 충돌은 merge commit `3b994ac12cad2fc7152ce110e4fef41376a3af86`에서 해소했다. Pages 빌드/검증과 Task #17 Linux 자동화를 둘 다 보존한 통합 트리를 로컬 재검증한 뒤, 같은 SHA를 고정한 native·GUI workflow로 다시 수용했다.
+
 ## 변경 파일 목록과 영향 범위
 
 | 경로 | 변경 요약 | 영향 범위 |
@@ -60,7 +62,7 @@ Task source와 Stage 보고까지의 `origin/devel...fd31a45` diff는 49개 파�
 | package 수용 matrix | 없음 | x64 DEB/RPM, arm64 DEB lifecycle |
 | file manager 시각 수용 | 없음 | Nautilus 42.6, Thunar 4.16.10/Tumbler 4.16 |
 | 실사용 문서 수용 | 없음 | 공개 HWP 1건 + HWPX 1건, 두 manager와 512 px 상세 PNG |
-| automation 전체 | Stage 1 완료 시점 269/269 | 최종 297/297 |
+| automation 전체 | Stage 1 완료 시점 269/269 | Stage 6 297/297, `devel` 통합 최종 330/330 |
 | 단계 보고 | 0건 | 6건, 총 840줄 |
 
 ## 검증 결과
@@ -74,34 +76,40 @@ Task source와 Stage 보고까지의 `origin/devel...fd31a45` diff는 49개 파�
 | DEB/RPM owner·mode·hash와 install/update/rollback/uninstall | OK — x64 DEB/RPM, arm64 DEB exact native lifecycle 통과 |
 | uninstall이 MIME default·제3자 thumbnailer·file-manager cache를 훼손하지 않음 | OK — 두 제품 파일만 제거되고 세 sentinel/invariant 보존 |
 | 공개 실사용 문서 text·table·image 시각 수용 | OK — 온새미로 HWP와 form-002 HWPX를 Nautilus·Thunar 및 512 px PNG에서 직접 확인·대화 제시 |
-| 제품·upstream·Studio·Windows 회귀 | OK — automation 297/297, upstream 35/35, Studio 105/105·build, exact native Windows x64·installer success |
-| 최신 `origin/devel` 통합 가능성 | OK — merge base 이후 중첩 5개 경로를 확인했고 가상 merge에 conflict marker 없음 |
+| 제품·upstream·Studio·Windows 회귀 | OK — automation 330/330, upstream 35/35, Studio 105/105·build, exact native Windows x64·installer success |
+| 최신 `origin/devel` 통합 | OK — merge commit `3b994ac` 생성, Pages·Task #17 script/test 병합, 통합 SHA native·GUI 재수용 |
 
 ### 최종 로컬 검증
 
-- `pnpm run test:automation`: 297/297
-- `pnpm run check:product-boundary`: 288개 파일
+- `pnpm run test:automation`: 330/330
+- `pnpm run check:product-boundary`: 303개 파일
 - `pnpm run check:product-version`: `0.1.0` 전 surface 일치
 - `pnpm run check:release-metadata`: Alhangeul `0.1.0`
 - `pnpm run check:rhwp-pin`: `v0.8.4`, commit `496333b27d21ddb9114ba9ae340bcb895870c9a7`, 6 artifacts
 - `pnpm run test:upstream`: 35/35
 - `pnpm run test:studio`: 23개 파일, 105/105
 - `pnpm run build:studio`: production build 성공
+- `pnpm run build:pages`: source 11개와 root asset 2개 빌드 성공
+- `pnpm run check:pages`: source 11개, output 13개 검증 성공
 - `shellcheck` 4개 Linux shell entry: 성공
 
 Studio test/build의 첫 sandbox 실행은 격리 worktree `node_modules/.vite-temp` 쓰기가 차단돼 `EPERM`으로 종료됐다. 같은 source와 명령을 worktree 쓰기 권한으로 즉시 재실행해 모두 통과했으며 코드·의존성 변경은 없었다.
 
 ### exact-SHA CI/원격 검증
 
-- 수용 source: `5f8d5f7a1948c20b385f918882f460eeed6371ef`
-- [Native run 33299244542](https://github.com/postmelee/alhangeul-tauri/actions/runs/33299244542): Linux x64 job `99224139798`, Linux arm64 `99224139990`, Windows x64 `99224139931`, Windows installer smoke `99227446164` 모두 success
-- [Linux GUI run 33300506770](https://github.com/postmelee/alhangeul-tauri/actions/runs/33300506770): job `99227639802` success
+- `origin/devel` 통합 수용 source: `3b994ac12cad2fc7152ce110e4fef41376a3af86`
+- [Native run 33301590223](https://github.com/postmelee/alhangeul-tauri/actions/runs/33301590223): Linux x64 job `99230684629`, Linux arm64 `99230684538`, Windows x64 `99230684577`, Windows installer smoke `99234170260` 모두 success
+- [Linux GUI run 33303033480](https://github.com/postmelee/alhangeul-tauri/actions/runs/33303033480): exact native artifact handoff와 GUI job `99234565954` success
 - x64 helper: `5773973c142b84412eb7a51491daf36babf38bf008a2c3dea1ea655ad6ba7af5`
 - arm64 helper: `554f85681cd6518738a310d15c3c67450af9b3e35305ca9e186c5b40b3c0d725`
-- x64 DEB: `c608a95c4f2ca98545661d7a86b17c94630bb9771abd53d927f98d82691d0cff`
-- x64 RPM: `ebe93467feed783d0f367d9fb20b5582d7e5a6a5c963e7fdfbc7678158b79fb4`
-- arm64 DEB: `2e4f83a45d5b7352e78a2cda56838cd6af067aa25983105e0c825f4595928b73`
-- GUI evidence artifact `9728903612`: `sha256:0544237840981b092f67936f099f160f33ea1c69cfe6b98cf95d51e5c389405d`
+- x64 DEB: `c6edceef4ca5069538035f0b86e32821bcabeea2377513b9074133f232f3021f`
+- x64 RPM: `b0f67c2c72323b9a43d894b32a28d5e265c9f5ede9cf60b50f7ddea2b34da8a2`
+- arm64 DEB: `c0d5500e0adf4c4f920637808788078beeca7772186d6d0213031175d36ba254`
+- GUI evidence artifact: [9729688834](https://github.com/postmelee/alhangeul-tauri/actions/runs/33303033480/artifacts/9729688834)
+- Nautilus/Thunar 실사용 grid SHA-256: `d4a819fd3758c81de3588941c1c5f9205de860b6b35a19bedf7298560e5c64df`, `e021e25804200e6596152d4b64d4d0c6cfe47e2d6591309ee0219fc582484ea1`
+- 온새미로/form-002 512 px PNG SHA-256: `2a499693e01e811eff49c6aff3102720945ae54c00d75bb102e56cbdd94a8abf`, `35bd3ce2d05def6bf9ad525bc2a0a5b62f30ad3e1eb7c208e085a9e01a7be8ee`
+
+Stage 6 종료 시점의 source `5f8d5f7a1948c20b385f918882f460eeed6371ef`·native run `33299244542`·GUI run `33300506770`은 단계 보고서에 보존했다. 위 값은 PR 최종 통합 트리를 다시 실행한 최종 수용 근거다.
 
 ### 단계별 검증 결과
 
