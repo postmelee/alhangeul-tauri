@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ko">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>알한글 문의 / 제보</title>
+        <meta name="description" content="알한글의 Windows·Linux 설치 문제, 문서 렌더링 차이와 오류를 제보하는 방법을 안내합니다." />
+        <meta property="og:title" content="알한글 문의 / 제보" />
+        <meta property="og:description" content="사용 중 불편한 점과 재현 가능한 오류를 알려 주세요." />
+        <meta property="og:image" content="https://postmelee.github.io/alhangeul-tauri/assets/og-main.png" />
+        <link rel="canonical" href="https://postmelee.github.io/alhangeul-tauri/feedback/" />
+        <link rel="icon" href="../../assets/logo/favicon.ico" />
+        <link rel="stylesheet" href="../styles.css?v=45-3-17" />
+        <script src="../script.js" defer></script>
+    </head>
+    <body data-site-root="../">
+        <a class="skip-link" href="#main">본문으로 이동</a>
+        <header class="site-header" aria-label="주요 탐색">
+            <div class="site-header-inner">
+                <a class="brand-link" href="../" aria-label="알한글 홈"><img src="../../assets/logo/logo-256.png" alt="" width="30" height="30" /><span>알한글</span></a>
+                <nav class="header-actions" aria-label="주요 링크">
+                    <a class="header-link" href="../" aria-label="알한글 홈으로 이동">홈</a>
+                    <a class="header-link" href="../updates/" aria-label="업데이트 안내로 이동">업데이트</a>
+                    <a class="header-link" href="https://github.com/postmelee/alhangeul-tauri" aria-label="GitHub 저장소로 이동">GitHub</a>
+                </nav>
+            </div>
+        </header>
+        <main class="updates-page feedback-page" id="main">
+            <section class="updates-hero feedback-hero" aria-labelledby="feedback-title">
+                <h1 id="feedback-title">문의 / 제보</h1>
+                <p><span>사용 중 불편한 점, 문서 렌더링 차이와 Windows·Linux 설치 문제를 편하게 알려 주세요.</span></p>
+            </section>
+
+            <div class="updates-content feedback-content">
+                <aside class="feedback-privacy-note" aria-label="민감한 정보 안내">
+                    <span class="feedback-privacy-icon" aria-hidden="true">⚠️</span>
+                    <div><strong>민감한 정보 안내</strong><span>문서에 주민등록번호, 연락처나 내부 내용이 있으면 원본 대신 설명 또는 필요한 일부 화면만 보내 주세요.</span></div>
+                </aside>
+
+                <div class="feedback-card-grid" aria-label="문의와 제보 방법">
+                    <article class="feedback-contact-card" aria-labelledby="feedback-email-title">
+                        <div class="feedback-card-copy">
+                            <h2 id="feedback-email-title">이메일</h2>
+                            <p>기본 제보 경로입니다. 앱 버전, 운영체제와 버전, 문서 형식, 증상과 재현 방법을 함께 보내 주세요.</p>
+                        </div>
+                        <div class="feedback-card-actions feedback-email-actions">
+                            <div class="feedback-email-row">
+                                <a class="feedback-email-address" href="mailto:alhangeul.feedback@gmail.com?subject=%5B%EC%95%8C%ED%95%9C%EA%B8%80%20Windows%2FLinux%20%EB%AC%B8%EC%9D%98%2F%EC%A0%9C%EB%B3%B4%5D">alhangeul.feedback@gmail.com</a>
+                                <button class="feedback-copy-button" type="button" data-copy-value="alhangeul.feedback@gmail.com">복사</button>
+                            </div>
+                            <a class="feedback-send-button" href="mailto:alhangeul.feedback@gmail.com?subject=%5B%EC%95%8C%ED%95%9C%EA%B8%80%20Windows%2FLinux%20%EB%AC%B8%EC%9D%98%2F%EC%A0%9C%EB%B3%B4%5D">이메일 보내기</a>
+                        </div>
+                    </article>
+
+                    <article class="feedback-contact-card" aria-labelledby="feedback-issue-title">
+                        <div class="feedback-card-copy">
+                            <h2 id="feedback-issue-title">GitHub Issue</h2>
+                            <p>공개 재현 절차, 공개 가능한 fixture와 개발 논의가 필요한 버그는 Issue로 남겨 주세요. 문서 엔진 자체 문제는 재현 정보를 확인한 뒤 rhwp upstream으로 분류합니다.</p>
+                        </div>
+                        <div class="feedback-card-actions">
+                            <a class="feedback-issue-button" href="https://github.com/postmelee/alhangeul-tauri/issues" rel="noreferrer">
+                                <svg class="feedback-github-mark" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82A7.62 7.62 0 0 1 8 3.87c.68 0 1.36.09 2 .26 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path></svg>
+                                GitHub Issue
+                            </a>
+                        </div>
+                    </article>
+                </div>
+            </div>
+        </main>
+        <footer class="site-footer"><div class="site-footer-inner"><div class="footer-brand"><img src="../../assets/logo/logo-256.png" alt="" width="24" height="24" /><span>알한글</span></div><p>Windows와 Linux용 HWP/HWPX 문서 편집기입니다.</p><nav aria-label="푸터 링크"><a href="https://github.com/postmelee/alhangeul-tauri/blob/devel/LICENSE" rel="noreferrer">MIT License</a></nav></div></footer>
+    </body>
+</html>
