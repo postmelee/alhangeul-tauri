@@ -116,6 +116,14 @@ jobs:
             --targets windows-x86_64-nsis,windows-x86_64-msi \
             --public-key-env TAURI_UPDATER_PUBLIC_KEY
 
+      - name: Configure elevated WebView2 automation policy
+        id: webview-policy
+        shell: pwsh
+        run: >-
+          ./scripts/updater/windows-webview2-automation-policy.ps1
+          -Phase Setup
+          -OutputDirectory $env:EVIDENCE_ROOT
+
       - name: Clean install Windows N
         id: install-n
         shell: pwsh
@@ -197,6 +205,15 @@ jobs:
           -Kind '${{ matrix.kind }}'
           -OutputDirectory $env:EVIDENCE_ROOT
 
+      - name: Restore elevated WebView2 automation policy
+        id: restore-webview-policy
+        if: ${{ always() }}
+        shell: pwsh
+        run: >-
+          ./scripts/updater/windows-webview2-automation-policy.ps1
+          -Phase Cleanup
+          -OutputDirectory $env:EVIDENCE_ROOT
+
       - name: Record Windows step outcomes
         if: ${{ always() }}
         shell: pwsh
@@ -205,9 +222,11 @@ jobs:
           APPLY: ${{ steps.apply-update.outcome }}
           VALIDATE: ${{ steps.validate-n-plus-one.outcome }}
           CLEANUP: ${{ steps.cleanup.outcome }}
+          WEBVIEW_POLICY_SETUP: ${{ steps.webview-policy.outcome }}
+          WEBVIEW_POLICY_RESTORE: ${{ steps.restore-webview-policy.outcome }}
         run: |
           New-Item -ItemType Directory -Path $env:EVIDENCE_ROOT -Force | Out-Null
-          [ordered]@{ install = $env:INSTALL; applyTransport = $env:APPLY; validate = $env:VALIDATE; cleanup = $env:CLEANUP } |
+          [ordered]@{ install = $env:INSTALL; applyTransport = $env:APPLY; validate = $env:VALIDATE; cleanup = $env:CLEANUP; webviewPolicySetup = $env:WEBVIEW_POLICY_SETUP; webviewPolicyRestore = $env:WEBVIEW_POLICY_RESTORE } |
             ConvertTo-Json | Set-Content -LiteralPath (Join-Path $env:EVIDENCE_ROOT 'step-outcomes.json') -Encoding UTF8
 
       - name: Upload Windows updater evidence

@@ -6,7 +6,7 @@ import test from 'node:test';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const workflows = join(root, '.github', 'workflows');
-const [desktop, orchestrator, windows, linux, config, spec, powershell, linuxRunner] =
+const [desktop, orchestrator, windows, linux, config, spec, powershell, webviewPolicy, linuxRunner] =
   await Promise.all([
     readFile(join(workflows, 'alhangeul-desktop.yml'), 'utf8'),
     readFile(join(workflows, 'alhangeul-updater-native-acceptance.yml'), 'utf8'),
@@ -15,6 +15,7 @@ const [desktop, orchestrator, windows, linux, config, spec, powershell, linuxRun
     readFile(join(root, 'tests/gui/wdio.updater.conf.ts'), 'utf8'),
     readFile(join(root, 'tests/gui/specs/updater-native.e2e.ts'), 'utf8'),
     readFile(join(root, 'scripts/updater/windows-native-acceptance.ps1'), 'utf8'),
+    readFile(join(root, 'scripts/updater/windows-webview2-automation-policy.ps1'), 'utf8'),
     readFile(join(root, 'scripts/updater/run-linux-native-gui.sh'), 'utf8'),
   ]);
 
@@ -82,16 +83,18 @@ test('Windows matrix는 MSI·NSIS를 각각 clean N에서 갱신하고 연결 �
     '- name: Verify D1 N Windows artifact handoff',
     '- name: Download verified N Windows artifact',
     '- name: Verify N Windows signatures and version',
+    '- name: Configure elevated WebView2 automation policy',
     '- name: Clean install Windows N',
     '- name: Run Windows updater preflight and dirty gates',
     '- name: Apply Windows N to N+1 through updater',
     '- name: Validate installed Windows N+1 and preserved associations',
     '- name: Verify Windows N+1 no-update state',
     '- name: Cleanup Windows test installation',
+    '- name: Restore elevated WebView2 automation policy',
     '- name: Upload Windows updater evidence',
   ]);
   assert.match(accept, /-Phase Cleanup/);
-  assert.equal((accept.match(/if: \$\{\{ always\(\) \}\}/g) ?? []).length, 3);
+  assert.equal((accept.match(/if: \$\{\{ always\(\) \}\}/g) ?? []).length, 4);
   for (const marker of ['DefaultsPreserved', 'Assert-ProductState', 'Get-DefaultState']) {
     assert.ok(powershell.includes(marker), `Windows helper marker가 필요합니다: ${marker}`);
   }
@@ -99,6 +102,14 @@ test('Windows matrix는 MSI·NSIS를 각각 clean N에서 갱신하고 연결 �
   assert.doesNotMatch(powershell, /Version\.ProductVersion\) -eq \$Version/);
   assert.match(powershell, /\$installers = @\(if \(\$Kind -eq 'msi'\)/);
   assert.doesNotMatch(powershell, /\$matches\s*=/i);
+
+  assert.match(webviewPolicy, /HKLM:\\SOFTWARE\\Policies\\Microsoft\\Edge\\WebView2\\AdditionalBrowserArguments/);
+  assert.match(webviewPolicy, /io\.github\.postmelee\.alhangeul/);
+  assert.match(webviewPolicy, /Alhangeul\.exe/);
+  assert.match(webviewPolicy, /--remote-debugging-port=0/);
+  assert.match(webviewPolicy, /Remove-ItemProperty/);
+  assert.doesNotMatch(webviewPolicy, /\$AppIds\s*=.*['"]\*['"]/);
+  assert.ok(webviewPolicy.split(/\r?\n/).length <= 300, 'WebView2 policy helper는 300 LOC 이하여야 합니다');
 });
 
 test('Linux AppImage는 writable 갱신 hash·재실행 no-update·read-only fallback을 검증한다', () => {
