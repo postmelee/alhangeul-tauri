@@ -119,7 +119,10 @@ GitHub Secret 이름, 책임과 복구 절차만 공식 운영 문서와 단계 
 - **A — key**: production key pair 생성 위치, password, 독립 백업과 보관 책임을 제시한 뒤 승인.
 - **B — GitHub 설정**: 두 signing Secret과 필요 environment 등록 대상을 제시한 뒤 승인.
 - **C — 원격 build**: exact source SHA, workflow mode와 예상 artifact를 제시한 뒤 승인.
-- **D — test release**: tag/version, 공개 범위, 보존/삭제와 stable endpoint 비접속을 제시한 뒤 승인.
+- **D1 — test 설계**: test-only N/N+1 version, tag namespace, endpoint, 공개 범위와 보존/삭제
+  정책을 제시한 뒤 구현 승인.
+- **D2 — test release 실행**: nonpublishing 검증을 통과한 exact source SHA, 원격 artifact와
+  공개 예정 asset을 제시한 뒤 test prerelease 게시를 별도 승인.
 - **E — Pages stable**: verified release와 manifest source commit을 제시한 뒤 별도 승인. Task #16의
   source·test 완료만으로 실행하지 않는다.
 
@@ -399,11 +402,19 @@ Task #16 Stage 4: updater key와 release 운영 계약 통합
 
 ### 변경 내용
 
-- checkpoint D에서 exact source SHA, test용 N/N+1 SemVer, prerelease tag, endpoint, 공개 범위와
-  종료 후 asset/tag 보존·삭제 방식을 먼저 승인받는다. production stable endpoint와
-  `site/release.json`은 변경하지 않는다.
-- 같은 source와 key에서 N+1 MSI·NSIS·AppImage와 signatures를 만들고 verified test prerelease에
-  게시한다. custom target manifest를 release asset 또는 승인된 test HTTPS endpoint에 둔다.
+- checkpoint D1에서 MSI가 prerelease suffix를 허용하지 않는 경계를 고려해 test-only
+  N=`99.0.0`, N+1=`99.0.1`을 사용한다. N+1 tag는 production `v*` namespace와 분리한
+  `updater-test-v99.0.1`, release title은
+  `[TEST ONLY] Alhangeul Updater Acceptance 99.0.0 → 99.0.1`로 고정한다.
+- N installer는 Actions artifact에만 두고 N+1 MSI·NSIS·AppImage, 각 `.sig`, complete inventory와
+  `alhangeul-updater-test.json`만 GitHub public prerelease asset 후보로 만든다. N config의 endpoint는
+  `https://github.com/postmelee/alhangeul-tauri/releases/download/updater-test-v99.0.1/alhangeul-updater-test.json`
+  하나만 사용한다.
+- stable config·inventory 검증을 완화하지 않고 별도 test-only config·inventory policy와 workflow
+  gate를 둔다. 먼저 `publish=false`로 N/N+1 artifact와 acceptance contract를 검증한 뒤 exact
+  Stage 5 candidate SHA, 원격 artifact ID·digest와 공개 예정 asset 8개를 checkpoint D2에 제시한다.
+- checkpoint D2 승인 뒤에만 같은 source와 production key에서 만든 N+1 asset을 GitHub public
+  prerelease에 게시한다. test release에는 경고 문구와 GitHub prerelease 표식을 함께 둔다.
 - N installer는 test endpoint만 내장한 명시 test config로 다시 만들며 inventory에 override와
   source SHA를 기록한다. 이 binary를 제품 공개 asset이나 stable Pages에 재사용하지 않는다.
 - Windows MSI와 NSIS는 각각 clean install N → check → download → install → N+1 실행을 수행한다.
@@ -412,8 +423,10 @@ Task #16 Stage 4: updater key와 release 운영 계약 통합
   DEB/RPM 실행과 arm64는 자동 설치 없이 manual fallback이어야 한다.
 - 다운로드 중 다른 창을 dirty로 바꾼 뒤 install 차단, 시작부터 dirty, 중복 click, no-update,
   timeout/HTTP 오류, tampered artifact/signature와 cross-format manifest를 검증한다.
-- test release/manifest와 실행 환경을 승인된 방식으로 정리하거나 명시 보존한다. stable manifest,
-  최종 public tag/release와 updater 활성화는 checkpoint E 및 별도 release 승인으로 넘긴다.
+- 수용 증적을 Stage 5 보고서에 기록한 뒤 public test prerelease와
+  `updater-test-v99.0.1` tag를 삭제한다. N/N+1 Actions artifact는 ID·digest를 기록하고 14일
+  retention 만료까지 보존한다. stable manifest, 최종 public tag/release와 updater 활성화는
+  checkpoint E 및 별도 release 승인으로 넘긴다.
 
 ### 검증
 
@@ -455,7 +468,8 @@ Task #16 Stage 5: 세 updater 형식의 N→N+1 수용 확정
 - Stage 2는 Stage 1의 상태·target·dirty query 승인 뒤 시작한다.
 - Stage 3은 Stage 2의 Rust/TypeScript 명령과 UI 계약 승인 뒤 시작한다.
 - Stage 4는 Stage 3 source gate 승인과 checkpoint A/B 승인 뒤 production key를 다룬다.
-- Stage 5는 Stage 4 exact-SHA signed artifact가 완전하고 checkpoint D가 승인된 뒤 시작한다.
+- Stage 5는 Stage 4 exact-SHA signed artifact가 완전하고 checkpoint D1이 승인된 뒤 test-only
+  source를 구현한다. public test release와 native 수용은 checkpoint D2 승인 뒤 시작한다.
 - checkpoint E는 Stage 5 완료 뒤에도 자동 승인되지 않는다. 최종 release 작업에서 verified
   immutable artifact와 Pages source commit을 다시 제시해야 한다.
 
