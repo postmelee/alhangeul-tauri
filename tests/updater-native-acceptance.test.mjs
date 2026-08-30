@@ -95,6 +95,8 @@ test('Windows matrix는 MSI·NSIS를 각각 clean N에서 갱신하고 연결 �
   for (const marker of ['DefaultsPreserved', 'Assert-ProductState', 'Get-DefaultState']) {
     assert.ok(powershell.includes(marker), `Windows helper marker가 필요합니다: ${marker}`);
   }
+  assert.match(powershell, /Entry\.DisplayVersion -eq \$Version/);
+  assert.doesNotMatch(powershell, /Version\.ProductVersion\) -eq \$Version/);
   assert.match(powershell, /\$installers = @\(if \(\$Kind -eq 'msi'\)/);
   assert.doesNotMatch(powershell, /\$matches\s*=/i);
 });

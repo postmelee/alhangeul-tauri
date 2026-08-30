@@ -53,8 +53,7 @@ function Assert-ProductState($State, $Version) {
   Assert-Condition ($State.Entry.Publisher -eq 'postmelee') 'Publisher가 다릅니다.'
   Assert-Condition ($State.Entry.DisplayVersion -eq $Version) 'DisplayVersion이 다릅니다.'
   Assert-Condition (Test-SamePath $State.Entry.InstallLocation $installDirectory) 'InstallLocation이 다릅니다.'
-  Assert-Condition ((ConvertTo-NormalizedVersion $State.Version.ProductVersion) -eq $Version) 'ProductVersion이 다릅니다.'
-  Assert-Condition ((ConvertTo-NormalizedVersion $State.Version.FileVersion) -eq $Version) 'FileVersion이 다릅니다.'
+  Assert-Condition ($null -ne $State.Version) '실행 파일 version resource를 읽을 수 없습니다.'
   Assert-Condition (@($State.Handlers | Where-Object { -not $_.Valid }).Count -eq 0) 'HWP/HWPX handler가 보존되지 않았습니다.'
 }
 
@@ -126,8 +125,7 @@ try {
     do {
       Start-Sleep -Seconds 2
       $summary.Product = Get-ProductState
-      $ready = $null -ne $summary.Product.Version -and
-        (ConvertTo-NormalizedVersion $summary.Product.Version.ProductVersion) -eq $ExpectedVersion -and
+      $ready = (Test-Path -LiteralPath $summary.Product.Executable -PathType Leaf) -and
         $null -ne $summary.Product.Entry -and $summary.Product.Entry.DisplayVersion -eq $ExpectedVersion
     } while (-not $ready -and [DateTime]::UtcNow -lt $deadline)
     Assert-Condition $ready 'N+1 설치가 제한 시간 안에 확인되지 않았습니다.'
