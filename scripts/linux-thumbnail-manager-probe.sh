@@ -13,6 +13,10 @@ repository_root="$(cd "$script_dir/.." && pwd)"
 readonly repository_root
 readonly registration_source="$repository_root/apps/desktop/src-tauri/linux/alhangeul.thumbnailer"
 readonly session_script="$script_dir/linux-thumbnail-manager-session.sh"
+readonly real_hwp_source="$repository_root/third_party/rhwp/samples/[2027] 온새미로 1 본교재.hwp"
+readonly real_hwpx_source="$repository_root/third_party/rhwp/samples/hwpx/form-002.hwpx"
+readonly real_hwp_sha=e8592e74c9a8425c4ee2c5824d012ebe45e9f6dd36880b784ba594b4fd0a31ce
+readonly real_hwpx_sha=5ab8f7c368e02538f75f1cd2bd82bbd8de2f925a54ba7b38ec9395b2cdb804d4
 probe_root=
 
 require_inputs() {
@@ -21,6 +25,9 @@ require_inputs() {
   [[ -f "$registration_source" && -x "$session_script" ]]
   [[ -f "$installed_helper" && -x "$installed_helper" ]]
   [[ -f "$installed_registration" ]]
+  [[ -f "$real_hwp_source" && -f "$real_hwpx_source" ]]
+  [[ "$(sha256sum "$real_hwp_source" | awk '{print $1}')" == "$real_hwp_sha" ]]
+  [[ "$(sha256sum "$real_hwpx_source" | awk '{print $1}')" == "$real_hwpx_sha" ]]
   [[ "$(sha256sum "$helper_source" | awk '{print $1}')" == \
     "$(sha256sum "$installed_helper" | awk '{print $1}')" ]]
   cmp "$registration_source" "$installed_registration"
@@ -82,6 +89,16 @@ validate_edge_matrix() {
   done
 }
 
+validate_real_fixtures() {
+  local source_root="$1" output_root="$2"
+  "$installed_helper" "$source_root/real-onsaemiro.hwp" \
+    "$output_root/real-onsaemiro-512.png" 512
+  "$installed_helper" "$source_root/real-form-002.hwpx" \
+    "$output_root/real-form-002-512.png" 512
+  validate_png "$output_root/real-onsaemiro-512.png" 512
+  validate_png "$output_root/real-form-002-512.png" 512
+}
+
 cleanup() {
   [[ -z "$probe_root" ]] || rm -rf "$probe_root"
 }
@@ -101,6 +118,8 @@ record_environment() {
     dpkg-query -W -f='strace ${Version}\n' strace
     printf 'hwp %s\n' "$hwp_type"
     printf 'hwpx %s\n' "$hwpx_type"
+    printf 'realHwpSha256 %s\n' "$real_hwp_sha"
+    printf 'realHwpxSha256 %s\n' "$real_hwpx_sha"
     printf 'thumbnailer %s\n' "$installed_helper"
     sha256sum "$installed_helper" "$installed_registration"
     printf 'gnome_probe_sandbox product-helper-no-bypass\n'
@@ -120,6 +139,8 @@ main() {
   cp third_party/rhwp/saved/blank2010.hwp "$source_root/direct.hwp"
   create_preview_fixture "$source_root/preview.hwpx"
   head -c 64 "$source_root/direct.hwp" > "$source_root/fail.hwp"
+  cp "$real_hwp_source" "$source_root/real-onsaemiro.hwp"
+  cp "$real_hwpx_source" "$source_root/real-form-002.hwpx"
   source_hashes_before="$(sha256sum "$source_root"/*)"
   create_mime_database "$data_root"
   printf sentinel > "$probe_root/unrelated-thumbnailer.sentinel"
@@ -130,6 +151,7 @@ main() {
     "$source_root/preview.hwpx" | sed -n 's/.*standard::content-type: //p')"
   [[ "$hwp_type" == application/x-hwp && "$hwpx_type" == application/vnd.hancom.hwpx ]]
   validate_edge_matrix "$source_root" "$evidence_root/edge-matrix"
+  validate_real_fixtures "$source_root" "$evidence_root/edge-matrix"
   run_manager nautilus "$probe_root"
   run_manager thunar "$probe_root"
   source_hashes_after="$(sha256sum "$source_root"/*)"

@@ -17,6 +17,18 @@ test('제품 helper는 direct와 preview를 다섯 edge에서 RGBA PNG로 검증
   assertPngCrc(Buffer.from(encoded, 'base64'));
 });
 
+test('공개 실사용 HWP HWPX는 고정 hash와 512px PNG evidence를 사용한다', () => {
+  for (const marker of [
+    'third_party/rhwp/samples/[2027] 온새미로 1 본교재.hwp',
+    'third_party/rhwp/samples/hwpx/form-002.hwpx',
+    'e8592e74c9a8425c4ee2c5824d012ebe45e9f6dd36880b784ba594b4fd0a31ce',
+    '5ab8f7c368e02538f75f1cd2bd82bbd8de2f925a54ba7b38ec9395b2cdb804d4',
+    'real-onsaemiro-512.png',
+    'real-form-002-512.png',
+    'validate_real_fixtures "$source_root" "$evidence_root/edge-matrix"',
+  ]) assert.ok(probe.includes(marker), `실사용 fixture marker가 필요합니다: ${marker}`);
+});
+
 test('package registration과 disposable MIME cache로 두 manager를 실행한다', () => {
   for (const marker of [
     'mktemp -d "$runner_temp/alhangeul-thumbnail-manager.XXXXXX"',
@@ -48,9 +60,11 @@ test('실제 제품 경로의 execve와 visible screenshot으로 cache lifecycle
     'run_phase "$manager" "$manager_root" "$data_root" cached 8',
     'run_phase "$manager" "$manager_root" "$data_root" changed 20',
     '[[ "$cached_direct" -eq "$first_direct" && "$cached_preview" -eq "$first_preview" ]]',
+    '[[ "$first_real_hwp" -ge 1 && "$first_real_hwpx" -ge 1 ]]',
+    '[[ "$cached_real_hwp" -eq "$first_real_hwp" && "$cached_real_hwpx" -eq "$first_real_hwpx" ]]',
     '[[ "$changed_direct" -gt "$cached_direct" && "$changed_preview" -gt "$cached_preview" ]]',
     'scrot "$screenshot"',
-    "[[ \"$cache_pngs\" -ge 2 ]]",
+    "[[ \"$cache_pngs\" -ge 4 ]]",
     'execve(\\"$installed_helper\\"',
   ]) assert.ok(session.includes(marker), `manager session marker가 필요합니다: ${marker}`);
   assert.ok(
