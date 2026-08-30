@@ -575,7 +575,8 @@ test('updater build는 Windows/Linux x64와 tracked config·서명 inventory만 
   assert.match(job, /UPDATER_CONFIG: \$\{\{ github\.workspace \}\}\/apps\/desktop\/src-tauri\/tauri\.updater\.conf\.json/);
   assert.match(job, /--config "\$UPDATER_CONFIG"/);
   assert.match(job, /--targets "\$\{\{ matrix\.updater_targets \}\}"/);
-  assert.match(job, /require\('\$UPDATER_CONFIG'\)\.plugins\.updater\.pubkey/);
+  assert.match(job, /require\(process\.env\.UPDATER_CONFIG\)\.plugins\.updater\.pubkey/);
+  assert.doesNotMatch(job, /require\('\$UPDATER_CONFIG'\)/);
   assert.doesNotMatch(job, /secrets\.TAURI_UPDATER_PUBLIC_KEY/);
   const signingStep = getStepContaining(job, 'Build signed updater bundles');
   assert.match(signingStep, /TAURI_SIGNING_PRIVATE_KEY: \$\{\{ secrets\.TAURI_SIGNING_PRIVATE_KEY \}\}/);
@@ -592,6 +593,8 @@ test('updater publish는 boolean gate와 job-level write 권한 뒤 complete inv
   assert.match(job, /^    permissions:\n      contents: write$/m);
   assert.doesNotMatch(job, /TAURI_SIGNING_PRIVATE_KEY/);
   assert.doesNotMatch(job, /secrets\.TAURI_UPDATER_PUBLIC_KEY/);
+  assert.match(job, /require\(process\.env\.UPDATER_CONFIG\)\.plugins\.updater\.pubkey/);
+  assert.doesNotMatch(job, /require\('\$UPDATER_CONFIG'\)/);
   assertOrdered(job, [
     '- name: Verify tracked updater release config',
     'pnpm run check:release-metadata',

@@ -563,7 +563,7 @@ jobs:
           pnpm run check:release-metadata
           source_version="$(node -p "require('./package.json').version")"
           [[ "$source_version" == "$RELEASE_VERSION" ]]
-          public_key="$(node -p "require('$UPDATER_CONFIG').plugins.updater.pubkey")"
+          public_key="$(node -p "require(process.env.UPDATER_CONFIG).plugins.updater.pubkey")"
           [[ -n "$public_key" ]]
           printf 'TAURI_UPDATER_PUBLIC_KEY=%s\n' "$public_key" >> "$GITHUB_ENV"
 
@@ -644,7 +644,7 @@ jobs:
           pnpm run check:release-metadata
           source_version="$(node -p "require('./package.json').version")"
           [[ "$source_version" == "$RELEASE_VERSION" ]]
-          public_key="$(node -p "require('$UPDATER_CONFIG').plugins.updater.pubkey")"
+          public_key="$(node -p "require(process.env.UPDATER_CONFIG).plugins.updater.pubkey")"
           [[ -n "$public_key" ]]
           printf 'TAURI_UPDATER_PUBLIC_KEY=%s\n' "$public_key" >> "$GITHUB_ENV"
 
