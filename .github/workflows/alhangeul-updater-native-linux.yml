@@ -29,7 +29,7 @@ jobs:
       ARTIFACT_ROOT: ${{ github.workspace }}/acceptance-artifacts/n-linux
       EVIDENCE_ROOT: ${{ github.workspace }}/acceptance-evidence/linux-appimage
       APPIMAGE_PATH: ${{ github.workspace }}/acceptance-appimage/Alhangeul.AppImage
-      APPIMAGE_N_PLUS_ONE_SHA256: 77c506812f19b6abc8d08b2f1efc00abd5b314e8dd95d25e53680b0593fe7b75
+      APPIMAGE_N_PLUS_ONE_SHA256: 341011804d1ad4f5e025421761f64463d8edb1d8bc9a90e268084dc9fb0da0b7
     steps:
       - name: Checkout exact native harness source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
