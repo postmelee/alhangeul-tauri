@@ -236,11 +236,18 @@ async function verifyInstalled(format, metadata, context) {
   const elfArchitecture = context.platform === 'linux-arm64' ? 'aarch64' : 'x86-64';
   const description = run('file', ['--brief', HELPER_PATH]).stdout.toLowerCase();
   if (!description.includes(elfArchitecture)) throw new Error(`${format} ELF mismatch: ${description}`);
-  const owners = format === 'deb'
-    ? run('dpkg-query', ['--search', HELPER_PATH]).stdout.trim().split(/\r?\n/)
-    : run('rpm', ['-qf', HELPER_PATH, '--qf', '%{NAME}\n']).stdout.trim().split(/\r?\n/);
-  if (owners.length !== 1 || !owners[0].startsWith(metadata.name)) {
-    throw new Error(`${format} helper must have one owner: ${owners.join(', ')}`);
+  if (format === 'deb') {
+    const owners = run('dpkg-query', ['--search', HELPER_PATH]).stdout.trim().split(/\r?\n/);
+    if (owners.length !== 1 || !owners[0].startsWith(metadata.name)) {
+      throw new Error(`${format} helper must have one owner: ${owners.join(', ')}`);
+    }
+  } else {
+    const installedPaths = run('rpm', ['-ql', metadata.name]).stdout.trim().split(/\r?\n/);
+    assertEqual(
+      installedPaths.filter((path) => path === HELPER_PATH).length,
+      1,
+      'rpm helper package ownership',
+    );
   }
   return { elfArchitecture, singleOwner: true };
 }
