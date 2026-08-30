@@ -1,13 +1,19 @@
 import { isAbsolute, join } from 'node:path';
 import type { TauriCapabilities, TauriServiceOptions } from '@wdio/tauri-service';
 
-const MODES = new Set(['preflight', 'apply', 'verify', 'manual']);
+const MODES = new Set(['preflight', 'apply', 'verify', 'manual', 'negative']);
+const NEGATIVE_SCENARIOS = new Set([
+  'cross-format',
+  'signature-mismatch',
+  'network-failures',
+]);
 
 export interface UpdaterHarnessInputs {
   appPath: string;
   driverPath: string;
   outputDir: string;
-  mode: 'preflight' | 'apply' | 'verify' | 'manual';
+  mode: 'preflight' | 'apply' | 'verify' | 'manual' | 'negative';
+  negativeScenario: 'cross-format' | 'signature-mismatch' | 'network-failures' | null;
   expectedTarget: string;
   expectedKind: 'msi' | 'nsis' | 'appimage';
   expectedCurrentVersion: string;
@@ -21,6 +27,12 @@ export function readUpdaterHarnessInputs(
 ): UpdaterHarnessInputs {
   const mode = singleLine(env, 'ALHANGEUL_UPDATER_MODE');
   if (!MODES.has(mode)) throw new Error('ALHANGEUL_UPDATER_MODE이 올바르지 않습니다');
+  const negativeScenario = mode === 'negative'
+    ? singleLine(env, 'ALHANGEUL_UPDATER_NEGATIVE_SCENARIO')
+    : null;
+  if (negativeScenario && !NEGATIVE_SCENARIOS.has(negativeScenario)) {
+    throw new Error('ALHANGEUL_UPDATER_NEGATIVE_SCENARIO가 올바르지 않습니다');
+  }
   const expectedKind = singleLine(env, 'ALHANGEUL_UPDATER_EXPECTED_KIND');
   if (!['msi', 'nsis', 'appimage'].includes(expectedKind)) {
     throw new Error('ALHANGEUL_UPDATER_EXPECTED_KIND가 올바르지 않습니다');
@@ -38,6 +50,7 @@ export function readUpdaterHarnessInputs(
     driverPath: absolute(env, 'ALHANGEUL_UPDATER_DRIVER_PATH'),
     outputDir: absolute(env, 'ALHANGEUL_UPDATER_OUTPUT_DIR'),
     mode: mode as UpdaterHarnessInputs['mode'],
+    negativeScenario: negativeScenario as UpdaterHarnessInputs['negativeScenario'],
     expectedTarget: singleLine(env, 'ALHANGEUL_UPDATER_EXPECTED_TARGET'),
     expectedKind: expectedKind as UpdaterHarnessInputs['expectedKind'],
     expectedCurrentVersion: version(env, 'ALHANGEUL_UPDATER_CURRENT_VERSION'),

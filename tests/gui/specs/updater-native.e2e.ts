@@ -30,7 +30,9 @@ describe(`Alhangeul updater native ${inputs.mode}`, () => {
       if (inputs.mode === 'preflight') await runPreflight(evidence);
       else if (inputs.mode === 'apply') await runApply(evidence);
       else if (inputs.mode === 'verify') await runVerify(evidence);
-      else await runManualFallback(evidence);
+      else if (inputs.mode === 'manual') await runManualFallback(evidence);
+      else if (inputs.mode === 'negative') await runNegative(evidence);
+      else throw new Error(`지원하지 않는 updater acceptance mode: ${inputs.mode}`);
       evidence.status = 'passed';
     } catch (error) {
       evidence.status = 'failed';
@@ -76,9 +78,15 @@ async function runPreflight(evidence: Record<string, unknown>): Promise<void> {
   expect(duplicate.filter((result) => result.reason?.includes('updaterBusy'))).toHaveLength(1);
   assertAvailable(await state());
 
-  const dirtyBefore = await createDocument();
+  const secondary = await createSecondaryWindow();
+  evidence.multiWindow = {
+    label: secondary.label,
+    handles: (await browser.getWindowHandles()).length,
+  };
+  const dirtyBefore = await createDocumentInWindow(secondary.handle, secondary.primaryHandle);
   try {
     await markDirty(dirtyBefore.docId);
+    await ensureAvailable();
     const blocked = await invoke<UpdaterSnapshot>('updater_apply');
     evidence.dirtyBeforeDownload = blocked;
     expect(blocked.status).toBe('available');
@@ -87,8 +95,9 @@ async function runPreflight(evidence: Record<string, unknown>): Promise<void> {
     await closeDocument(dirtyBefore.docId);
   }
 
-  const dirtyDuring = await createDocument();
+  const dirtyDuring = await createDocumentInWindow(secondary.handle, secondary.primaryHandle);
   try {
+    await ensureAvailable();
     const blocked = await browser.execute(async (docId) => {
       const bridge = (window as unknown as {
         __TAURI_INTERNALS__: { invoke<T>(command: string, args?: object): Promise<T> };
@@ -143,6 +152,44 @@ async function runManualFallback(evidence: Record<string, unknown>): Promise<voi
   expect(['readOnlyAppImage', 'unsupportedInstall']).toContain(result.blocker);
 }
 
+async function runNegative(evidence: Record<string, unknown>): Promise<void> {
+  const scenario = inputs.negativeScenario;
+  expect(scenario).not.toBeNull();
+  evidence.scenario = scenario;
+  const initial = await waitForCheckCompletion();
+  evidence.initial = initial;
+
+  if (scenario === 'cross-format') {
+    assertFailure(initial, 'invalidUpdateMetadata', false);
+  } else {
+    assertAvailable(initial);
+    const failed = await invoke<UpdaterSnapshot>('updater_apply');
+    evidence.applyFailure = failed;
+    assertFailure(failed, 'updateDownloadFailed', true);
+  }
+
+  const document = await createDocument();
+  try {
+    await markDirty(document.docId);
+    const pageCount = await invoke<number>('query_document', {
+      docId: document.docId,
+      query: 'pageCount',
+      args: {},
+    });
+    evidence.editingContinues = { docId: document.docId, pageCount };
+    expect(pageCount).toBe(1);
+    const retry = await invoke<UpdaterSnapshot>('updater_check');
+    evidence.manualRetry = retry;
+    if (scenario === 'cross-format') {
+      assertFailure(retry, 'invalidUpdateMetadata', false);
+    } else {
+      assertAvailable(retry);
+    }
+  } finally {
+    await closeDocument(document.docId);
+  }
+}
+
 async function ensureAvailable(): Promise<UpdaterSnapshot> {
   const current = await waitForCheckCompletion();
   return current.status === 'available' ? current : invoke<UpdaterSnapshot>('updater_check');
@@ -166,6 +213,12 @@ function assertAvailable(snapshot: UpdaterSnapshot): void {
   expect(snapshot.failure).toBeNull();
 }
 
+function assertFailure(snapshot: UpdaterSnapshot, code: string, retryable: boolean): void {
+  expect(snapshot.status).toBe('error');
+  expect(snapshot.failure?.code).toBe(code);
+  expect(snapshot.failure?.retryable).toBe(retryable);
+}
+
 async function duplicateCheck(): Promise<Array<{ status: string; reason?: string }>> {
   return browser.execute(async () => {
     const bridge = (window as unknown as {
@@ -183,6 +236,33 @@ async function duplicateCheck(): Promise<Array<{ status: string; reason?: string
 
 async function createDocument(): Promise<{ docId: string }> {
   return invoke<{ docId: string }>('create_document');
+}
+
+async function createSecondaryWindow(): Promise<{
+  label: string;
+  handle: string;
+  primaryHandle: string;
+}> {
+  const primaryHandle = await browser.getWindowHandle();
+  const label = await invoke<string>('create_editor_window');
+  await browser.waitUntil(async () => (await browser.getWindowHandles()).length === 2, {
+    timeout: 120_000,
+    interval: 250,
+    timeoutMsg: '두 번째 editor window가 제한 시간 안에 준비되지 않았습니다',
+  });
+  const handle = (await browser.getWindowHandles()).find((value) => value !== primaryHandle);
+  if (!handle) throw new Error('두 번째 editor window handle을 찾지 못했습니다');
+  await browser.switchToWindow(handle);
+  await waitForNativeBridge();
+  await browser.switchToWindow(primaryHandle);
+  return { label, handle, primaryHandle };
+}
+
+async function createDocumentInWindow(handle: string, primaryHandle: string): Promise<{ docId: string }> {
+  await browser.switchToWindow(handle);
+  const document = await createDocument();
+  await browser.switchToWindow(primaryHandle);
+  return document;
 }
 
 async function markDirty(docId: string): Promise<void> {

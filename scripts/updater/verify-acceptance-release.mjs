@@ -14,11 +14,18 @@ import {
   validateUpdaterAcceptanceInventory,
   validateUpdaterAcceptanceManifest,
 } from './acceptance-inventory.mjs';
+import {
+  acceptanceScenario,
+  validateUpdaterAcceptanceScenarioManifest,
+} from './acceptance-scenario.mjs';
 
 const API_VERSION = '2026-03-10';
 const SHA = /^[0-9a-f]{40}$/;
 const REPOSITORY = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
-const CLI_OPTIONS = new Set(['--repository', '--candidate-sha', '--tag', '--json-output']);
+const CLI_OPTIONS = new Set([
+  '--repository', '--candidate-sha', '--tag', '--json-output',
+  '--scenario', '--expected-manifest-sha256',
+]);
 
 export async function verifyUpdaterAcceptanceRelease(options, services = {}) {
   const identity = validateIdentity(options);
@@ -28,7 +35,7 @@ export async function verifyUpdaterAcceptanceRelease(options, services = {}) {
   });
   const release = await readReleaseIdentity(api, identity);
   const assets = exactAssetMap(release.assets);
-  const documents = await readReleaseDocuments(api, assets, identity.candidateSha);
+  const documents = await readReleaseDocuments(api, assets, identity);
   await verifyInstallerAssets(api, assets, documents.inventory);
   return buildResult(identity, release, assets, documents);
 }
@@ -38,12 +45,23 @@ function validateIdentity(options) {
     repository: options.repository,
     candidateSha: options.candidateSha,
     tag: options.tag ?? UPDATER_ACCEPTANCE_TAG,
+    scenario: options.scenario ? acceptanceScenario(options.scenario) : null,
+    expectedManifestSha256: options.expectedManifestSha256 ?? null,
   };
   if (!REPOSITORY.test(identity.repository ?? '') || !SHA.test(identity.candidateSha ?? '')) {
     throw new Error('repository 또는 candidate SHA가 올바르지 않습니다.');
   }
   if (identity.tag !== UPDATER_ACCEPTANCE_TAG) {
     throw new Error('test release tag가 승인된 값과 다릅니다.');
+  }
+  if (identity.scenario) {
+    if (
+      !/^[0-9a-f]{64}$/.test(identity.expectedManifestSha256 ?? '')
+    ) {
+      throw new Error('negative scenario manifest identity가 올바르지 않습니다.');
+    }
+  } else if (identity.expectedManifestSha256) {
+    throw new Error('positive read-back에 negative scenario 입력을 허용하지 않습니다.');
   }
   return identity;
 }
@@ -67,7 +85,7 @@ async function readReleaseIdentity(api, identity) {
   return release;
 }
 
-async function readReleaseDocuments(api, assets, candidateSha) {
+async function readReleaseDocuments(api, assets, identity) {
   const inventoryBytes = await api(
     assets.get(UPDATER_ACCEPTANCE_INVENTORY).browser_download_url,
     { raw: true },
@@ -79,9 +97,23 @@ async function readReleaseDocuments(api, assets, candidateSha) {
   assertDigest(assets.get(UPDATER_ACCEPTANCE_INVENTORY), inventoryBytes);
   assertDigest(assets.get(UPDATER_ACCEPTANCE_MANIFEST), manifestBytes);
   const inventory = validateUpdaterAcceptanceInventory(parseJson(inventoryBytes, 'inventory'));
-  const manifest = validateUpdaterAcceptanceManifest(parseJson(manifestBytes, 'manifest'), inventory);
-  if (inventory.role !== 'n-plus-one' || inventory.sourceSha !== candidateSha) {
+  const parsedManifest = parseJson(manifestBytes, 'manifest');
+  const manifest = identity.scenario
+    ? validateUpdaterAcceptanceScenarioManifest(
+      parsedManifest,
+      inventory,
+      null,
+      identity.scenario,
+    )
+    : validateUpdaterAcceptanceManifest(parsedManifest, inventory);
+  if (inventory.role !== 'n-plus-one' || inventory.sourceSha !== identity.candidateSha) {
     throw new Error('release inventory가 승인된 N+1 source와 다릅니다.');
+  }
+  if (
+    identity.expectedManifestSha256
+    && sha256(manifestBytes) !== identity.expectedManifestSha256
+  ) {
+    throw new Error('negative scenario manifest digest가 승인된 값과 다릅니다.');
   }
   return { inventory, inventoryBytes, manifest, manifestBytes };
 }
@@ -115,6 +147,7 @@ function buildResult(identity, release, assets, documents) {
     title: release.name,
     prerelease: release.prerelease,
     publishedAt: release.published_at,
+    scenario: identity.scenario,
     inventorySha256: sha256(documents.inventoryBytes),
     manifestSha256: sha256(documents.manifestBytes),
     manifestVersion: documents.manifest.version,
@@ -217,6 +250,8 @@ if (isMain) {
       repository: args.get('--repository'),
       candidateSha: args.get('--candidate-sha'),
       tag: args.get('--tag'),
+      scenario: args.get('--scenario'),
+      expectedManifestSha256: args.get('--expected-manifest-sha256'),
     });
     const output = args.get('--json-output');
     if (output) await writeFile(resolve(output), `${JSON.stringify(result, null, 2)}\n`, 'utf8');

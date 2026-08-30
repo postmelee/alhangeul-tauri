@@ -62,9 +62,12 @@ DEB/RPM을 AppImage로 간주하지 않는다.
 ## 확인·설치 보호
 
 manifest 응답은 현재 version보다 높은 안정 SemVer, runtime에서 선택한 exact target, HTTPS download와
-target에 맞는 확장자를 모두 만족해야 한다. MSI, NSIS와 AppImage URL 종류가 다르거나 metadata가
-불완전하면 download 전에 `invalidUpdateMetadata`로 실패한다. artifact bytes와 signature의 최종 신뢰
-검증은 Tauri updater가 embedded production public key로 수행한다.
+target에 맞는 canonical x64/amd64 파일명을 모두 만족해야 한다. MSI, NSIS와 AppImage URL 종류 또는
+architecture가 다르거나 metadata가 불완전하면 download 전에 `invalidUpdateMetadata`로 실패한다.
+artifact bytes와 signature의 최종 신뢰 검증은 Tauri updater가 embedded production public key로
+수행한다. manifest 조회와 installer download는 각각 120초 request timeout 안에서 완료하며,
+timeout과 HTTP 실패는 설치를 시작하지 않고 retry 가능한 `updateCheckFailed` 또는
+`updateDownloadFailed`로 반환한다.
 
 `updater_apply`는 download 전과 download 완료 후에 열린 문서의 dirty 상태를 각각 확인한다.
 어느 시점이든 저장하지 않은 문서가 있으면 `dirtyDocuments`로 `available` 상태에 돌아가며 install,

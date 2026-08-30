@@ -11,6 +11,9 @@ const [
   orchestrator,
   windows,
   linux,
+  negativeOrchestrator,
+  negativeWindows,
+  negativeLinux,
   config,
   spec,
   powershell,
@@ -18,11 +21,15 @@ const [
   linuxRunner,
   target,
   nativeTarget,
+  model,
 ] = await Promise.all([
     readFile(join(workflows, 'alhangeul-desktop.yml'), 'utf8'),
     readFile(join(workflows, 'alhangeul-updater-native-acceptance.yml'), 'utf8'),
     readFile(join(workflows, 'alhangeul-updater-native-windows.yml'), 'utf8'),
     readFile(join(workflows, 'alhangeul-updater-native-linux.yml'), 'utf8'),
+    readFile(join(workflows, 'alhangeul-updater-native-negative-acceptance.yml'), 'utf8'),
+    readFile(join(workflows, 'alhangeul-updater-native-negative-windows.yml'), 'utf8'),
+    readFile(join(workflows, 'alhangeul-updater-native-negative-linux.yml'), 'utf8'),
     readFile(join(root, 'tests/gui/wdio.updater.conf.ts'), 'utf8'),
     readFile(join(root, 'tests/gui/specs/updater-native.e2e.ts'), 'utf8'),
     readFile(join(root, 'scripts/updater/windows-native-acceptance.ps1'), 'utf8'),
@@ -30,17 +37,21 @@ const [
     readFile(join(root, 'scripts/updater/run-linux-native-gui.sh'), 'utf8'),
     readFile(join(root, 'apps/desktop/src-tauri/src/updater/target.rs'), 'utf8'),
     readFile(join(root, 'apps/desktop/src-tauri/src/updater/target/native.rs'), 'utf8'),
+    readFile(join(root, 'apps/desktop/src-tauri/src/updater/model.rs'), 'utf8'),
   ]);
 
 test('desktop mode는 exact D2 입력을 read-only reusable workflow에 전달한다', () => {
   const dispatch = topLevel(desktop, 'on');
   assert.match(dispatch, /^          - updater-native-acceptance$/m);
+  assert.match(dispatch, /^          - updater-native-negative-acceptance$/m);
   for (const input of [
     'acceptance_candidate_sha',
     'acceptance_d1_run_id',
     'acceptance_candidate_artifact_id',
     'acceptance_candidate_artifact_digest',
     'acceptance_release_tag',
+    'acceptance_negative_scenario',
+    'acceptance_manifest_sha256',
   ]) assert.match(dispatch, new RegExp(`^      ${input}:$`, 'm'));
 
   const caller = job(desktop, 'updater-native-acceptance');
@@ -48,19 +59,63 @@ test('desktop mode는 exact D2 입력을 read-only reusable workflow에 전달�
   assert.match(caller, /^    permissions:\n      actions: read\n      contents: read$/m);
   assert.match(caller, /^    uses: \.\/\.github\/workflows\/alhangeul-updater-native-acceptance\.yml$/m);
   assert.doesNotMatch(caller, /secrets:|contents:\s*write/);
+
+  const negativeCaller = job(desktop, 'updater-native-negative-acceptance');
+  assert.match(negativeCaller, /alhangeul-updater-native-negative-acceptance\.yml/);
+  assert.match(negativeCaller, /scenario: \$\{\{ inputs\.acceptance_negative_scenario \}\}/);
+  assert.match(negativeCaller, /manifest_sha256: \$\{\{ inputs\.acceptance_manifest_sha256 \}\}/);
+  assert.doesNotMatch(negativeCaller, /secrets:|contents:\s*write/);
 });
 
-test('세 reusable workflow는 workflow_call과 최소 read 권한만 가진다', () => {
+test('모든 updater reusable workflow는 workflow_call과 최소 read 권한만 가진다', () => {
   for (const [name, source] of [
     ['orchestrator', orchestrator],
     ['windows', windows],
     ['linux', linux],
+    ['negative-orchestrator', negativeOrchestrator],
+    ['negative-windows', negativeWindows],
+    ['negative-linux', negativeLinux],
   ]) {
     assert.deepEqual(childKeys(source, 'on'), ['workflow_call'], name);
     assert.match(source, /^permissions:\n  actions: read\n  contents: read$/m);
     assert.doesNotMatch(source, /secrets\.|contents:\s*write|\bgh release\b/i);
     assert.ok(source.split(/\r?\n/).length <= 300, `${name} workflow는 300 LOC 이하여야 합니다`);
   }
+});
+
+test('negative orchestrator는 exact scenario manifest 뒤 Windows·Linux 실패 안전성을 검증한다', () => {
+  const verify = job(negativeOrchestrator, 'verify-scenario');
+  ordered(verify, [
+    '- name: Validate exact negative inputs',
+    '- name: Verify D1 candidate artifact handoff',
+    '- name: Match approved D1 candidate identity',
+    '- name: Verify public negative scenario read-back',
+    '--expected-manifest-sha256 "$MANIFEST_SHA256"',
+    '- name: Upload negative release handoff evidence',
+  ]);
+  assert.match(verify, /cross-format\|signature-mismatch\|network-failures/);
+  for (const [name, file] of [
+    ['accept-windows', 'alhangeul-updater-native-negative-windows.yml'],
+    ['accept-linux', 'alhangeul-updater-native-negative-linux.yml'],
+  ]) {
+    const call = job(negativeOrchestrator, name);
+    assert.ok(call.includes(`uses: ./.github/workflows/${file}`));
+    assert.match(call, /scenario: \$\{\{ inputs\.scenario \}\}/);
+  }
+
+  const windowsJob = job(negativeWindows, 'reject-windows');
+  const linuxJob = job(negativeLinux, 'reject-linux-appimage');
+  for (const source of [windowsJob, linuxJob]) {
+    ordered(source, [
+      'Verify D1 N',
+      'Download verified N',
+      'Reject negative updater scenario and preserve editing',
+    ]);
+    assert.match(source, /ALHANGEUL_UPDATER_MODE: negative/);
+    assert.match(source, /ALHANGEUL_UPDATER_NEGATIVE_SCENARIO: \$\{\{ inputs\.scenario \}\}/);
+  }
+  assert.match(windowsJob, /Validate Windows N stayed installed and associations preserved/);
+  assert.match(linuxJob, /n-appimage-before\.sha256[\s\S]*n-appimage-after\.sha256/);
 });
 
 test('orchestrator는 D1 identity와 공개 test release를 검증한 뒤 두 native workflow를 호출한다', () => {
@@ -144,11 +199,11 @@ test('Linux AppImage는 writable 갱신 hash·재실행 no-update·read-only fal
   assert.match(linuxRunner, /xvfb-run[\s\S]*dbus-run-session[\s\S]*openbox/);
 });
 
-test('WebDriver harness는 external driver와 preflight·apply·verify·manual 증거를 고정한다', () => {
+test('WebDriver harness는 multi-window dirty와 positive·negative 증거를 고정한다', () => {
   assert.match(config, /driverProvider: 'external'/);
   assert.match(config, /autoInstallTauriDriver: false/);
   assert.match(config, /maxInstances: 1/);
-  for (const mode of ['preflight', 'apply', 'verify', 'manual']) {
+  for (const mode of ['preflight', 'apply', 'verify', 'manual', 'negative']) {
     assert.ok(spec.includes(`inputs.mode === '${mode}'`) || mode === 'manual');
   }
   for (const marker of [
@@ -158,11 +213,20 @@ test('WebDriver harness는 external driver와 preflight·apply·verify·manual �
     'duplicateCheck',
     'dirtyBeforeDownload',
     'dirtyAfterDownloadStarted',
+    'createSecondaryWindow',
+    'editingContinues',
+    'manualRetry',
+    'invalidUpdateMetadata',
+    'updateDownloadFailed',
     'restartRequired',
     'readOnlyAppImage',
     'unsupportedInstall',
     "artifactKind: 'msi' | 'nsis' | 'appimage'",
   ]) assert.ok(spec.includes(marker), `native spec marker가 필요합니다: ${marker}`);
+
+  for (const marker of ['_x64_en-us.msi', '_x64-setup.exe', '_amd64.AppImage']) {
+    assert.ok(model.includes(marker), `canonical x64/amd64 asset marker가 필요합니다: ${marker}`);
+  }
 });
 
 test('Windows 제품 증거는 설치 프로그램이 소유한 HKCU Registry64에서 한 번만 읽는다', () => {

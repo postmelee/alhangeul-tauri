@@ -111,4 +111,15 @@ fn target_and_asset_kind_must_match() {
     assert!(!msi.accepts_asset_path("/Alhangeul_0.2.0_x64-setup.exe"));
     assert!(!nsis.accepts_asset_path("/Alhangeul_0.2.0_x64_en-US.msi"));
     assert!(!appimage.accepts_asset_path("/Alhangeul_0.2.0_amd64.deb"));
+    assert!(!msi.accepts_asset_path("/Alhangeul_0.2.0_arm64_en-US.msi"));
+    assert!(!nsis.accepts_asset_path("/Alhangeul_0.2.0_arm64-setup.exe"));
+    assert!(!appimage.accepts_asset_path("/Alhangeul_0.2.0_arm64.AppImage"));
+}
+
+#[test]
+fn native_backend_bounds_manifest_and_asset_requests() {
+    let source = include_str!("service/native.rs");
+    assert!(source.contains("Duration::from_secs(120)"));
+    assert!(source.contains(".timeout(UPDATER_REQUEST_TIMEOUT)"));
+    assert!(source.contains("update.timeout = Some(UPDATER_REQUEST_TIMEOUT)"));
 }

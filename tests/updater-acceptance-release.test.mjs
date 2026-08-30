@@ -15,6 +15,10 @@ import {
   buildUpdaterAcceptanceManifest,
   createUpdaterAcceptanceInventory,
 } from '../scripts/updater/acceptance-inventory.mjs';
+import {
+  buildUpdaterAcceptanceScenarioManifest,
+  UPDATER_ACCEPTANCE_SCENARIOS,
+} from '../scripts/updater/acceptance-scenario.mjs';
 import { verifyUpdaterAcceptanceRelease } from '../scripts/updater/verify-acceptance-release.mjs';
 
 const SOURCE_SHA = 'b'.repeat(40);
@@ -32,6 +36,54 @@ test('test prerelease read-back은 exact tag·commit·8개 asset digest와 내�
     assert.equal(result.candidateSha, SOURCE_SHA);
     assert.equal(result.manifestVersion, UPDATER_ACCEPTANCE_N_PLUS_ONE_VERSION);
     assert.equal(result.assets.length, 8);
+  } finally {
+    await fixture.cleanup();
+  }
+});
+
+test('negative prerelease read-back은 승인된 scenario manifest와 digest만 허용한다', async () => {
+  const fixture = await createFixture();
+  try {
+    const base = await createReleaseFixture(fixture);
+    for (const scenario of UPDATER_ACCEPTANCE_SCENARIOS) {
+      const manifest = buildUpdaterAcceptanceScenarioManifest(
+        base.inventory,
+        base.manifest,
+        scenario,
+      );
+      const bytes = Buffer.from(`${JSON.stringify(manifest, null, 2)}\n`);
+      const assets = new Map(base.assets);
+      const previous = assets.get(UPDATER_ACCEPTANCE_MANIFEST);
+      assets.set(
+        UPDATER_ACCEPTANCE_MANIFEST,
+        releaseAsset(UPDATER_ACCEPTANCE_MANIFEST, bytes, previous.id),
+      );
+      const release = { ...base.release, assets: [...assets.values()].map(publicAsset) };
+      const digest = createHash('sha256').update(bytes).digest('hex');
+      const result = await verifyUpdaterAcceptanceRelease(
+        {
+          repository: 'postmelee/alhangeul-tauri',
+          candidateSha: SOURCE_SHA,
+          scenario,
+          expectedManifestSha256: digest,
+        },
+        { fetchApi: mockReleaseApi(release, assets) },
+      );
+      assert.equal(result.scenario, scenario);
+      assert.equal(result.manifestSha256, digest);
+      await assert.rejects(
+        verifyUpdaterAcceptanceRelease(
+          {
+            repository: 'postmelee/alhangeul-tauri',
+            candidateSha: SOURCE_SHA,
+            scenario,
+            expectedManifestSha256: '0'.repeat(64),
+          },
+          { fetchApi: mockReleaseApi(release, assets) },
+        ),
+        /scenario manifest digest/,
+      );
+    }
   } finally {
     await fixture.cleanup();
   }
@@ -130,6 +182,8 @@ async function createReleaseFixture(fixture) {
     id + 1,
   ));
   return {
+    inventory,
+    manifest,
     assets,
     release: {
       id: 1234,

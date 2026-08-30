@@ -390,6 +390,21 @@ private key가 유실되면 이미 배포된 앱은 새 key로 서명한 update�
 수동 재설치와 명시적인 사용자 공지를 포함한 복구 계획을 승인받는다. key 또는 암호의 노출이
 의심되면 release·manifest 게시를 즉시 중단하고 영향 범위를 확인할 때까지 해당 key를 사용하지 않는다.
 
+### Test-only negative manifest 수용
+
+Stage 5의 `updater-test-v99.0.1` prerelease에서만 positive D2가 통과한 원본 manifest를 로컬 임시
+증적으로 먼저 보존한 뒤 `cross-format`, `signature-mismatch`, `network-failures` fixture를 한 번에
+하나씩 게시할 수 있다. fixture는 `scripts/updater/acceptance-scenario.mjs`가 exact N+1 inventory와
+원본 manifest에서 생성하며, negative workflow는 전달받은 manifest SHA-256과 공개 read-back이
+일치하기 전에는 설치본을 실행하지 않는다. installer, `.sig`, inventory와 tag는 fixture 실행 중에도
+교체하지 않는다.
+
+각 scenario run이 성공하거나 실패하면 다음 scenario보다 먼저 원본 manifest를 같은 asset 이름으로
+복원하고 일반 `verify-acceptance-release.mjs` read-back을 다시 통과시킨다. 작업이 중단돼도 우선
+원본 manifest 복원부터 수행한다. 이 절차는 test endpoint만 내장한 N binary에 한정하며 stable
+Release, production tag, `site/release.json`과 Pages manifest에는 적용하지 않는다. 모든 negative
+증적이 끝나면 Stage 5 계획대로 test prerelease와 tag를 삭제한다.
+
 ### 실패, rollback과 no-rerun
 
 updater release는 `exact source SHA → signed installer와 .sig → complete inventory → exact GitHub

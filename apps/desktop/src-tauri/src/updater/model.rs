@@ -38,9 +38,9 @@ impl ArtifactKind {
     pub(crate) fn accepts_asset_path(self, path: &str) -> bool {
         let file_name = path.rsplit('/').next().unwrap_or(path);
         match self {
-            Self::Msi => file_name.to_ascii_lowercase().ends_with(".msi"),
-            Self::Nsis => file_name.to_ascii_lowercase().ends_with("-setup.exe"),
-            Self::AppImage => file_name.ends_with(".AppImage"),
+            Self::Msi => file_name.to_ascii_lowercase().ends_with("_x64_en-us.msi"),
+            Self::Nsis => file_name.to_ascii_lowercase().ends_with("_x64-setup.exe"),
+            Self::AppImage => file_name.ends_with("_amd64.AppImage"),
         }
     }
 }

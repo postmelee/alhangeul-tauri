@@ -13,6 +13,7 @@ on:
           - updater
           - updater-acceptance
           - updater-native-acceptance
+          - updater-native-negative-acceptance
       build_ref:
         description: Branch, tag, or commit to build. Empty uses the selected workflow commit.
         required: false
@@ -65,6 +66,16 @@ on:
         type: string
       acceptance_release_tag:
         description: Approved test-only updater prerelease tag.
+        required: false
+        default: ""
+        type: string
+      acceptance_negative_scenario:
+        description: Approved test-only negative manifest scenario.
+        required: false
+        default: ""
+        type: string
+      acceptance_manifest_sha256:
+        description: Exact negative scenario manifest SHA-256.
         required: false
         default: ""
         type: string
@@ -1142,3 +1153,19 @@ jobs:
       candidate_artifact_id: ${{ inputs.acceptance_candidate_artifact_id }}
       candidate_artifact_digest: ${{ inputs.acceptance_candidate_artifact_digest }}
       release_tag: ${{ inputs.acceptance_release_tag }}
+
+  updater-native-negative-acceptance:
+    name: Run updater native negative acceptance
+    if: ${{ inputs.mode == 'updater-native-negative-acceptance' }}
+    permissions:
+      actions: read
+      contents: read
+    uses: ./.github/workflows/alhangeul-updater-native-negative-acceptance.yml
+    with:
+      candidate_sha: ${{ inputs.acceptance_candidate_sha }}
+      d1_run_id: ${{ inputs.acceptance_d1_run_id }}
+      candidate_artifact_id: ${{ inputs.acceptance_candidate_artifact_id }}
+      candidate_artifact_digest: ${{ inputs.acceptance_candidate_artifact_digest }}
+      release_tag: ${{ inputs.acceptance_release_tag }}
+      scenario: ${{ inputs.acceptance_negative_scenario }}
+      manifest_sha256: ${{ inputs.acceptance_manifest_sha256 }}

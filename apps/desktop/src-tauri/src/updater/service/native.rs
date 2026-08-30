@@ -2,9 +2,11 @@ use super::{
     BackendError, BackendFuture, CheckOutcome, UpdateMetadata, UpdatePackage, UpdaterBackend,
 };
 use crate::updater::model::UpdaterTarget;
-use std::sync::Arc;
+use std::{sync::Arc, time::Duration};
 use tauri::AppHandle;
 use tauri_plugin_updater::{Update, UpdaterExt};
+
+const UPDATER_REQUEST_TIMEOUT: Duration = Duration::from_secs(120);
 
 pub(crate) struct NativeUpdaterBackend {
     app: AppHandle,
@@ -24,6 +26,7 @@ impl UpdaterBackend for NativeUpdaterBackend {
                 .app
                 .updater_builder()
                 .target(self.target.target.clone())
+                .timeout(UPDATER_REQUEST_TIMEOUT)
                 .build()
                 .map_err(|_| BackendError::Check)?;
             let current_version = self.app.package_info().version.to_string();
@@ -46,7 +49,10 @@ struct NativeUpdate {
 }
 
 impl NativeUpdate {
-    fn new(update: Update) -> Self {
+    fn new(mut update: Update) -> Self {
+        // tauri-plugin-updater 2.10 does not propagate UpdaterBuilder::timeout
+        // to the Update returned by check(), so bind the download separately.
+        update.timeout = Some(UPDATER_REQUEST_TIMEOUT);
         let metadata = UpdateMetadata {
             current_version: update.current_version.clone(),
             version: update.version.clone(),
