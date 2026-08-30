@@ -4,13 +4,14 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: Build ordinary artifacts or signed updater release artifacts.
+        description: Build ordinary, stable updater, or test-only updater acceptance artifacts.
         required: true
         default: artifact
         type: choice
         options:
           - artifact
           - updater
+          - updater-acceptance
       build_ref:
         description: Branch, tag, or commit to build. Empty uses the selected workflow commit.
         required: false
@@ -610,6 +611,322 @@ jobs:
         with:
           name: alhangeul-updater-${{ matrix.name }}
           path: ${{ matrix.artifact_paths }}
+          if-no-files-found: error
+          retention-days: 14
+
+  build-updater-acceptance:
+    name: Build updater acceptance ${{ matrix.role }} ${{ matrix.name }}
+    if: ${{ inputs.mode == 'updater-acceptance' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - role: n
+            version: 99.0.0
+            name: windows-x64
+            os: windows-2025
+            target: x86_64-pc-windows-msvc
+            bundles: msi,nsis
+            updater_targets: windows-x86_64-nsis,windows-x86_64-msi
+            artifact_paths: |
+              apps/desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/msi/*.msi
+              apps/desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/msi/*.msi.sig
+              apps/desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*-setup.exe
+              apps/desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*-setup.exe.sig
+          - role: n
+            version: 99.0.0
+            name: linux-x64
+            os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            bundles: appimage
+            updater_targets: linux-x86_64-appimage
+            artifact_paths: |
+              apps/desktop/src-tauri/target/x86_64-unknown-linux-gnu/release/bundle/appimage/*.AppImage
+              apps/desktop/src-tauri/target/x86_64-unknown-linux-gnu/release/bundle/appimage/*.AppImage.sig
+          - role: n-plus-one
+            version: 99.0.1
+            name: windows-x64
+            os: windows-2025
+            target: x86_64-pc-windows-msvc
+            bundles: msi,nsis
+            updater_targets: windows-x86_64-nsis,windows-x86_64-msi
+            artifact_paths: |
+              apps/desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/msi/*.msi
+              apps/desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/msi/*.msi.sig
+              apps/desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*-setup.exe
+              apps/desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*-setup.exe.sig
+          - role: n-plus-one
+            version: 99.0.1
+            name: linux-x64
+            os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            bundles: appimage
+            updater_targets: linux-x86_64-appimage
+            artifact_paths: |
+              apps/desktop/src-tauri/target/x86_64-unknown-linux-gnu/release/bundle/appimage/*.AppImage
+              apps/desktop/src-tauri/target/x86_64-unknown-linux-gnu/release/bundle/appimage/*.AppImage.sig
+    runs-on: ${{ matrix.os }}
+    environment: release
+    timeout-minutes: 90
+    steps:
+      - name: Validate exact updater acceptance inputs
+        shell: bash
+        env:
+          BUILD_REF: ${{ inputs.build_ref }}
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
+          RELEASE_VERSION: ${{ inputs.release_version }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          RELEASE_NOTES: ${{ inputs.release_notes }}
+          PUBLISH_RELEASE: ${{ inputs.publish_release }}
+          ACCEPTANCE_ROLE: ${{ matrix.role }}
+          ACCEPTANCE_VERSION: ${{ matrix.version }}
+        run: |
+          set -euo pipefail
+          [[ "$BUILD_REF" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$WORKFLOW_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$BUILD_REF" == "$WORKFLOW_SHA" ]]
+          [[ -z "$RELEASE_VERSION" ]]
+          [[ -z "$RELEASE_TAG" ]]
+          [[ -z "$RELEASE_NOTES" ]]
+          [[ "$PUBLISH_RELEASE" == "false" ]]
+          case "$ACCEPTANCE_ROLE:$ACCEPTANCE_VERSION" in
+            n:99.0.0|n-plus-one:99.0.1) ;;
+            *) exit 1 ;;
+          esac
+
+      - name: Checkout exact updater acceptance source
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.build_ref }}
+          submodules: true
+
+      - name: Verify updater acceptance source SHA
+        shell: bash
+        env:
+          BUILD_REF: ${{ inputs.build_ref }}
+        run: |
+          set -euo pipefail
+          [[ "$(git rev-parse HEAD)" == "$BUILD_REF" ]]
+
+      - name: Install updater acceptance Linux dependencies
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            curl \
+            file \
+            libayatana-appindicator3-dev \
+            libgtk-3-dev \
+            librsvg2-dev \
+            libssl-dev \
+            libwebkit2gtk-4.1-dev \
+            libxdo-dev \
+            pkg-config
+
+      - name: Setup updater acceptance Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Enable updater acceptance pnpm
+        run: corepack enable
+
+      - name: Install updater acceptance exact dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup updater acceptance Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Create external updater acceptance config
+        shell: bash
+        env:
+          ACCEPTANCE_ROLE: ${{ matrix.role }}
+          ACCEPTANCE_VERSION: ${{ matrix.version }}
+          TRACKED_UPDATER_CONFIG: ${{ github.workspace }}/apps/desktop/src-tauri/tauri.updater.conf.json
+          UPDATER_CONFIG: ${{ runner.temp }}/alhangeul-updater-acceptance-${{ matrix.role }}.json
+        run: |
+          set -euo pipefail
+          pnpm run check:product-version
+          pnpm run check:release-metadata
+          public_key="$(node -p "require(process.env.TRACKED_UPDATER_CONFIG).plugins.updater.pubkey")"
+          [[ -n "$public_key" ]]
+          export TAURI_UPDATER_PUBLIC_KEY="$public_key"
+          printf 'TAURI_UPDATER_PUBLIC_KEY=%s\n' "$public_key" >> "$GITHUB_ENV"
+          printf 'UPDATER_ACCEPTANCE_CONFIG=%s\n' "$UPDATER_CONFIG" >> "$GITHUB_ENV"
+          pnpm run build:updater-acceptance-config -- \
+            --root "$GITHUB_WORKSPACE" \
+            --output "$UPDATER_CONFIG" \
+            --role "$ACCEPTANCE_ROLE" \
+            --public-key-env TAURI_UPDATER_PUBLIC_KEY
+          [[ "$(node -p "require(process.env.UPDATER_CONFIG).version")" == "$ACCEPTANCE_VERSION" ]]
+
+      - name: Build signed updater acceptance bundles
+        shell: bash
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          pnpm tauri build --verbose \
+            --target "${{ matrix.target }}" \
+            --bundles "${{ matrix.bundles }}" \
+            --config "$UPDATER_ACCEPTANCE_CONFIG"
+
+      - name: Verify updater acceptance artifact slice
+        shell: bash
+        env:
+          BUNDLE_ROOT: apps/desktop/src-tauri/target/${{ matrix.target }}/release/bundle
+          ACCEPTANCE_ROLE: ${{ matrix.role }}
+          SOURCE_SHA: ${{ inputs.build_ref }}
+        run: |
+          set -euo pipefail
+          pnpm run check:updater-acceptance -- \
+            --root "$BUNDLE_ROOT" \
+            --role "$ACCEPTANCE_ROLE" \
+            --source-sha "$SOURCE_SHA" \
+            --targets "${{ matrix.updater_targets }}" \
+            --public-key-env TAURI_UPDATER_PUBLIC_KEY
+
+      - name: Upload verified updater acceptance slice
+        uses: actions/upload-artifact@v7
+        with:
+          name: alhangeul-updater-acceptance-${{ matrix.role }}-${{ matrix.name }}
+          path: ${{ matrix.artifact_paths }}
+          if-no-files-found: error
+          retention-days: 14
+
+  verify-updater-acceptance:
+    name: Verify nonpublishing updater acceptance candidate
+    needs: build-updater-acceptance
+    if: ${{ inputs.mode == 'updater-acceptance' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout exact updater acceptance inventory source
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.build_ref }}
+          submodules: false
+
+      - name: Verify updater acceptance inventory source SHA
+        shell: bash
+        env:
+          SOURCE_SHA: ${{ inputs.build_ref }}
+        run: |
+          set -euo pipefail
+          [[ "$(git rev-parse HEAD)" == "$SOURCE_SHA" ]]
+
+      - name: Setup updater acceptance inventory Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Enable updater acceptance inventory pnpm
+        run: corepack enable
+
+      - name: Install updater acceptance inventory dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Read tracked updater acceptance public key
+        shell: bash
+        env:
+          TRACKED_UPDATER_CONFIG: ${{ github.workspace }}/apps/desktop/src-tauri/tauri.updater.conf.json
+        run: |
+          set -euo pipefail
+          pnpm run check:release-metadata
+          public_key="$(node -p "require(process.env.TRACKED_UPDATER_CONFIG).plugins.updater.pubkey")"
+          [[ -n "$public_key" ]]
+          printf 'TAURI_UPDATER_PUBLIC_KEY=%s\n' "$public_key" >> "$GITHUB_ENV"
+
+      - name: Download updater acceptance N Windows slice
+        uses: actions/download-artifact@v8
+        with:
+          name: alhangeul-updater-acceptance-n-windows-x64
+          path: updater-acceptance/n
+
+      - name: Download updater acceptance N Linux slice
+        uses: actions/download-artifact@v8
+        with:
+          name: alhangeul-updater-acceptance-n-linux-x64
+          path: updater-acceptance/n
+
+      - name: Download updater acceptance N+1 Windows slice
+        uses: actions/download-artifact@v8
+        with:
+          name: alhangeul-updater-acceptance-n-plus-one-windows-x64
+          path: updater-acceptance/n-plus-one
+
+      - name: Download updater acceptance N+1 Linux slice
+        uses: actions/download-artifact@v8
+        with:
+          name: alhangeul-updater-acceptance-n-plus-one-linux-x64
+          path: updater-acceptance/n-plus-one
+
+      - name: Create updater acceptance N inventory
+        shell: bash
+        env:
+          SOURCE_SHA: ${{ inputs.build_ref }}
+        run: |
+          set -euo pipefail
+          pnpm run check:updater-acceptance -- \
+            --root updater-acceptance/n \
+            --role n \
+            --source-sha "$SOURCE_SHA" \
+            --public-key-env TAURI_UPDATER_PUBLIC_KEY \
+            --write-inventory updater-acceptance-output/alhangeul-updater-test-n-inventory.json
+
+      - name: Create updater acceptance N+1 candidate
+        shell: bash
+        env:
+          SOURCE_SHA: ${{ inputs.build_ref }}
+        run: |
+          set -euo pipefail
+          source_timestamp="$(git show -s --format=%cI HEAD)"
+          pnpm run check:updater-acceptance -- \
+            --root updater-acceptance/n-plus-one \
+            --role n-plus-one \
+            --source-sha "$SOURCE_SHA" \
+            --source-timestamp "$source_timestamp" \
+            --public-key-env TAURI_UPDATER_PUBLIC_KEY \
+            --write-inventory updater-acceptance-output/alhangeul-updater-test-inventory.json \
+            --write-manifest updater-acceptance-output/alhangeul-updater-test.json
+          mapfile -t assets < <(find updater-acceptance/n-plus-one updater-acceptance-output \
+            -type f \( -name '*.msi' -o -name '*-setup.exe' -o -name '*.AppImage' \
+              -o -name '*.sig' -o -name 'alhangeul-updater-test-inventory.json' \
+              -o -name 'alhangeul-updater-test.json' \) -print | sort)
+          [[ "${#assets[@]}" -eq 8 ]]
+          ! printf '%s\n' "${assets[@]}" | grep -q '99\.0\.0'
+
+      - name: Upload updater acceptance N inventory
+        uses: actions/upload-artifact@v7
+        with:
+          name: alhangeul-updater-acceptance-n-inventory
+          path: updater-acceptance-output/alhangeul-updater-test-n-inventory.json
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload updater acceptance public candidate
+        uses: actions/upload-artifact@v7
+        with:
+          name: alhangeul-updater-acceptance-candidate
+          path: |
+            updater-acceptance/n-plus-one/**/*.msi
+            updater-acceptance/n-plus-one/**/*.msi.sig
+            updater-acceptance/n-plus-one/**/*-setup.exe
+            updater-acceptance/n-plus-one/**/*-setup.exe.sig
+            updater-acceptance/n-plus-one/**/*.AppImage
+            updater-acceptance/n-plus-one/**/*.AppImage.sig
+            updater-acceptance-output/alhangeul-updater-test-inventory.json
+            updater-acceptance-output/alhangeul-updater-test.json
           if-no-files-found: error
           retention-days: 14
 

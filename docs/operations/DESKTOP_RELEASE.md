@@ -1,6 +1,6 @@
 # 데스크톱 artifact와 배포 준비
 
-Alhangeul은 아직 공식 설치 파일이나 공개 릴리스를 제공하지 않는다. `.github/workflows/alhangeul-desktop.yml`의 기본 `artifact` mode는 Windows/Linux native build 결과와 Windows installer·thumbnail smoke 진단을 수동 검증하고 14일 동안 Actions artifact로 보존한다. 별도 `updater` mode는 exact source와 production signing 환경을 요구하며, `publish_release=false`가 기본이다. 이 mode가 source에 존재한다는 사실만으로 GitHub Release나 updater가 활성화된 것은 아니다.
+Alhangeul은 아직 공식 설치 파일이나 공개 릴리스를 제공하지 않는다. `.github/workflows/alhangeul-desktop.yml`의 기본 `artifact` mode는 Windows/Linux native build 결과와 Windows installer·thumbnail smoke 진단을 수동 검증하고 14일 동안 Actions artifact로 보존한다. 별도 `updater` mode는 exact source와 production signing 환경을 요구하며, `publish_release=false`가 기본이다. `updater-acceptance` mode도 공개 권한 없이 test-only N/N+1 후보를 Actions artifact로만 만든다. 이 mode들이 source에 존재한다는 사실만으로 GitHub Release나 updater가 활성화된 것은 아니다.
 
 ## 제품 version 기준
 
@@ -32,6 +32,8 @@ workflow는 다음 작업만 수행한다.
 repository-level Actions는 활성 상태지만 대상 CI와 native workflow는 자동 trigger 없이 수동 `workflow_dispatch`로만 실행한다. Actions 활성 상태는 workflow 성공이나 artifact 가용성을 보장하지 않으므로 run의 exact commit과 job 결과를 함께 확인해야 한다.
 
 `updater` mode는 Windows x64 MSI·NSIS와 Linux x64 AppImage만 별도 matrix에서 만든다. 두 build job과 선택적인 publish job은 `release` protected environment에 묶이며, tracked `tauri.updater.conf.json`의 endpoint·public key fingerprint와 source version을 먼저 확인한다. `publish_release=true`일 때만 job-level `contents: write` 권한을 가진 publish job이 세 installer, 세 `.sig`와 complete inventory를 exact tag의 GitHub Release에 게시할 수 있다. 일반 `artifact` mode에는 release environment, signing Secret, updater overlay와 publish 권한이 없다.
+
+`updater-acceptance` mode는 checkpoint D1에서 승인한 N=`99.0.0`, N+1=`99.0.1`만 허용한다. config는 repository 밖의 runner 임시 경로에 만들고 production public key와 test endpoint만 넣는다. 네 build slice와 read-only complete verifier는 N installer를 Actions에만 보존하고 N+1 installer 3개, `.sig` 3개, `alhangeul-updater-test-inventory.json`, `alhangeul-updater-test.json`의 공개 예정 후보 8개를 별도 Actions artifact로 만든다. 이 mode는 `publish_release=false`, top-level `contents: read`를 요구하며 GitHub Release, tag, Pages와 stable manifest를 만들거나 수정하지 않는다. 정확한 source SHA와 run·artifact ID/digest를 checkpoint D2에서 다시 승인하기 전에는 test prerelease도 게시하지 않는다.
 
 ## Linux x64 exact-SHA GUI acceptance
 

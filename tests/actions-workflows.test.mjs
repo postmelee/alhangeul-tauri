@@ -528,6 +528,8 @@ test('일반 build와 CI에는 release, Pages, deploy action이 없다', () => {
     ['alhangeul-desktop.yml build', getJob(desktopWorkflow, 'build')],
     ['alhangeul-desktop.yml smoke', getJob(desktopWorkflow, 'windows-installer-smoke')],
     ['alhangeul-desktop.yml updater build', getJob(desktopWorkflow, 'build-updater')],
+    ['alhangeul-desktop.yml acceptance build', getJob(desktopWorkflow, 'build-updater-acceptance')],
+    ['alhangeul-desktop.yml acceptance verify', getJob(desktopWorkflow, 'verify-updater-acceptance')],
     ['alhangeul-linux-gui.yml', linuxGuiWorkflow],
   ]) {
     for (const pattern of forbiddenPatterns) {
@@ -541,6 +543,7 @@ test('desktop updater 입력은 기본 비활성 publish와 exact release identi
   assert.match(dispatch, /^      mode:$/m);
   assert.match(dispatch, /^        default: artifact$/m);
   assert.match(dispatch, /^          - updater$/m);
+  assert.match(dispatch, /^          - updater-acceptance$/m);
   assert.match(dispatch, /^      release_version:$/m);
   assert.match(dispatch, /^      release_tag:$/m);
   assert.match(dispatch, /^      release_notes:$/m);
@@ -632,6 +635,80 @@ test('updater inventory 검증은 게시와 분리되어 read-only complete inve
     uploadStep,
     /^\s{10}path: updater-inventory\/alhangeul-updater-release-inventory\.json$/m,
   );
+});
+
+test('updater acceptance build는 고정 N/N+1과 Windows·Linux x64만 비게시로 만든다', () => {
+  const job = getJob(desktopWorkflow, 'build-updater-acceptance');
+  assert.match(job, /^    if: \$\{\{ inputs\.mode == 'updater-acceptance' \}\}$/m);
+  assert.match(job, /^    environment: release$/m);
+  assert.equal((job.match(/^          - role: n$/gm) ?? []).length, 2);
+  assert.equal((job.match(/^          - role: n-plus-one$/gm) ?? []).length, 2);
+  assert.equal((job.match(/^            version: 99\.0\.0$/gm) ?? []).length, 2);
+  assert.equal((job.match(/^            version: 99\.0\.1$/gm) ?? []).length, 2);
+  assert.equal((job.match(/^            name: windows-x64$/gm) ?? []).length, 2);
+  assert.equal((job.match(/^            name: linux-x64$/gm) ?? []).length, 2);
+  assert.doesNotMatch(job, /linux-arm64|aarch64|--bundles deb/);
+  assertOrdered(job, [
+    '- name: Validate exact updater acceptance inputs',
+    '[[ "$BUILD_REF" == "$WORKFLOW_SHA" ]]',
+    '[[ "$PUBLISH_RELEASE" == "false" ]]',
+    '- name: Checkout exact updater acceptance source',
+    '- name: Create external updater acceptance config',
+    'pnpm run build:updater-acceptance-config',
+    '- name: Build signed updater acceptance bundles',
+    'pnpm run check:updater-acceptance',
+    '- name: Upload verified updater acceptance slice',
+  ]);
+  assert.match(job, /UPDATER_CONFIG: \$\{\{ runner\.temp \}\}\/alhangeul-updater-acceptance-/);
+  assert.match(job, /--role "\$ACCEPTANCE_ROLE"/);
+  assert.match(job, /--config "\$UPDATER_ACCEPTANCE_CONFIG"/);
+  const signingStep = getStepContaining(job, 'Build signed updater acceptance bundles');
+  assert.match(signingStep, /TAURI_SIGNING_PRIVATE_KEY: \$\{\{ secrets\.TAURI_SIGNING_PRIVATE_KEY \}\}/);
+  assert.match(signingStep, /TAURI_SIGNING_PRIVATE_KEY_PASSWORD: \$\{\{ secrets\.TAURI_SIGNING_PRIVATE_KEY_PASSWORD \}\}/);
+  assert.equal((job.match(/secrets\.TAURI_SIGNING_PRIVATE_KEY \}\}/g) ?? []).length, 1);
+  assert.equal((job.match(/secrets\.TAURI_SIGNING_PRIVATE_KEY_PASSWORD/g) ?? []).length, 1);
+  assert.doesNotMatch(job, /contents:\s*write|\bgh release\b|action-gh-release/i);
+});
+
+test('updater acceptance candidate 검증은 read-only로 정확히 8개 공개 후보를 만든다', () => {
+  const job = getJob(desktopWorkflow, 'verify-updater-acceptance');
+  assert.match(job, /^    needs: build-updater-acceptance$/m);
+  assert.match(job, /^    if: \$\{\{ inputs\.mode == 'updater-acceptance' \}\}$/m);
+  assert.match(job, /^    permissions:\n      contents: read$/m);
+  assert.doesNotMatch(job, /^    environment: release$/m);
+  assert.doesNotMatch(job, /secrets\.|TAURI_SIGNING_PRIVATE_KEY/);
+  assertOrdered(job, [
+    '- name: Checkout exact updater acceptance inventory source',
+    '- name: Verify updater acceptance inventory source SHA',
+    '- name: Download updater acceptance N Windows slice',
+    'name: alhangeul-updater-acceptance-n-windows-x64',
+    '- name: Download updater acceptance N Linux slice',
+    '- name: Download updater acceptance N+1 Windows slice',
+    '- name: Download updater acceptance N+1 Linux slice',
+    '- name: Create updater acceptance N inventory',
+    '--role n',
+    '- name: Create updater acceptance N+1 candidate',
+    '--role n-plus-one',
+    '--write-inventory updater-acceptance-output/alhangeul-updater-test-inventory.json',
+    '--write-manifest updater-acceptance-output/alhangeul-updater-test.json',
+    '[[ "${#assets[@]}" -eq 8 ]]',
+    '- name: Upload updater acceptance public candidate',
+  ]);
+  const candidateUpload = getStepContaining(job, 'name: alhangeul-updater-acceptance-candidate');
+  for (const path of [
+    '**/*.msi',
+    '**/*.msi.sig',
+    '**/*-setup.exe',
+    '**/*-setup.exe.sig',
+    '**/*.AppImage',
+    '**/*.AppImage.sig',
+    'alhangeul-updater-test-inventory.json',
+    'alhangeul-updater-test.json',
+  ]) {
+    assert.ok(candidateUpload.includes(path), `acceptance candidate asset이 필요합니다: ${path}`);
+  }
+  assert.match(candidateUpload, /^\s{10}retention-days: 14$/m);
+  assert.doesNotMatch(job, /contents:\s*write|\bgh release\b|action-gh-release/i);
 });
 
 test('updater publish는 boolean gate와 job-level write 권한 뒤 complete inventory만 게시한다', () => {
