@@ -42,13 +42,13 @@ fn windows_evidence() -> Result<WindowsEvidence, TargetProbeError> {
     let current_user = RegKey::predef(HKEY_CURRENT_USER);
     let local_machine = RegKey::predef(HKEY_LOCAL_MACHINE);
     let mut product_records = Vec::new();
-    for (_, view_flag) in views {
-        if let Ok(key) = current_user.open_subkey_with_flags(PRODUCT_KEY, KEY_READ | view_flag) {
-            product_records.push(WindowsProductRecord {
-                default_install_dir: optional_string(&key, ""),
-                install_dir: optional_string(&key, "InstallDir"),
-            });
-        }
+    if let Ok(key) = current_user.open_subkey_with_flags(PRODUCT_KEY, KEY_READ | KEY_WOW64_64KEY) {
+        product_records.push(WindowsProductRecord {
+            hive: WindowsRegistryHive::CurrentUser,
+            view: WindowsRegistryView::Registry64,
+            default_install_dir: optional_string(&key, ""),
+            install_dir: optional_string(&key, "InstallDir"),
+        });
     }
     let mut uninstall_entries = Vec::new();
     for (hive, root) in [

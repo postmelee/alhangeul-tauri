@@ -26,6 +26,8 @@ pub(crate) struct WindowsEvidence {
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct WindowsProductRecord {
+    pub hive: WindowsRegistryHive,
+    pub view: WindowsRegistryView,
     pub default_install_dir: Option<String>,
     pub install_dir: Option<String>,
 }
@@ -130,10 +132,14 @@ fn resolve_windows(evidence: &WindowsEvidence) -> TargetEligibility {
     }
     let kind = match matching_records[0] {
         WindowsProductRecord {
+            hive: WindowsRegistryHive::CurrentUser,
+            view: WindowsRegistryView::Registry64,
             default_install_dir: Some(_),
             install_dir: None,
         } => ArtifactKind::Nsis,
         WindowsProductRecord {
+            hive: WindowsRegistryHive::CurrentUser,
+            view: WindowsRegistryView::Registry64,
             default_install_dir: None,
             install_dir: Some(_),
         } => ArtifactKind::Msi,

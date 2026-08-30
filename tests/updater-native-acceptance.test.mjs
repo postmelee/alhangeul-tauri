@@ -6,8 +6,19 @@ import test from 'node:test';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const workflows = join(root, '.github', 'workflows');
-const [desktop, orchestrator, windows, linux, config, spec, powershell, webviewPolicy, linuxRunner] =
-  await Promise.all([
+const [
+  desktop,
+  orchestrator,
+  windows,
+  linux,
+  config,
+  spec,
+  powershell,
+  webviewPolicy,
+  linuxRunner,
+  target,
+  nativeTarget,
+] = await Promise.all([
     readFile(join(workflows, 'alhangeul-desktop.yml'), 'utf8'),
     readFile(join(workflows, 'alhangeul-updater-native-acceptance.yml'), 'utf8'),
     readFile(join(workflows, 'alhangeul-updater-native-windows.yml'), 'utf8'),
@@ -17,6 +28,8 @@ const [desktop, orchestrator, windows, linux, config, spec, powershell, webviewP
     readFile(join(root, 'scripts/updater/windows-native-acceptance.ps1'), 'utf8'),
     readFile(join(root, 'scripts/updater/windows-webview2-automation-policy.ps1'), 'utf8'),
     readFile(join(root, 'scripts/updater/run-linux-native-gui.sh'), 'utf8'),
+    readFile(join(root, 'apps/desktop/src-tauri/src/updater/target.rs'), 'utf8'),
+    readFile(join(root, 'apps/desktop/src-tauri/src/updater/target/native.rs'), 'utf8'),
   ]);
 
 test('desktop mode는 exact D2 입력을 read-only reusable workflow에 전달한다', () => {
@@ -150,6 +163,27 @@ test('WebDriver harness는 external driver와 preflight·apply·verify·manual �
     'unsupportedInstall',
     "artifactKind: 'msi' | 'nsis' | 'appimage'",
   ]) assert.ok(spec.includes(marker), `native spec marker가 필요합니다: ${marker}`);
+});
+
+test('Windows 제품 증거는 설치 프로그램이 소유한 HKCU Registry64에서 한 번만 읽는다', () => {
+  const productProbe = nativeTarget.match(
+    /let mut product_records = Vec::new\(\);([\s\S]*?)let mut uninstall_entries = Vec::new\(\);/,
+  )?.[1];
+  assert.ok(productProbe, 'Windows product record probe가 필요합니다');
+  assert.match(productProbe, /HKEY_CURRENT_USER|current_user/);
+  assert.match(productProbe, /KEY_WOW64_64KEY/);
+  assert.doesNotMatch(productProbe, /KEY_WOW64_32KEY|view_flag/);
+  assert.match(productProbe, /hive: WindowsRegistryHive::CurrentUser/);
+  assert.match(productProbe, /view: WindowsRegistryView::Registry64/);
+
+  assert.match(
+    target,
+    /hive: WindowsRegistryHive::CurrentUser,[\s\S]*?view: WindowsRegistryView::Registry64,[\s\S]*?default_install_dir: Some\(_\),[\s\S]*?install_dir: None/,
+  );
+  assert.match(
+    target,
+    /hive: WindowsRegistryHive::CurrentUser,[\s\S]*?view: WindowsRegistryView::Registry64,[\s\S]*?default_install_dir: None,[\s\S]*?install_dir: Some\(_\)/,
+  );
 });
 
 function topLevel(source, name) {

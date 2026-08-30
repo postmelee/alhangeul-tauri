@@ -23,6 +23,8 @@ fn windows_fixture(kind: ArtifactKind) -> WindowsEvidence {
     let (record, entry) = match kind {
         ArtifactKind::Msi => (
             WindowsProductRecord {
+                hive: WindowsRegistryHive::CurrentUser,
+                view: WindowsRegistryView::Registry64,
                 default_install_dir: None,
                 install_dir: Some(root.into()),
             },
@@ -42,6 +44,8 @@ fn windows_fixture(kind: ArtifactKind) -> WindowsEvidence {
         ),
         ArtifactKind::Nsis => (
             WindowsProductRecord {
+                hive: WindowsRegistryHive::CurrentUser,
+                view: WindowsRegistryView::Registry64,
                 default_install_dir: Some(root.into()),
                 install_dir: None,
             },
@@ -125,6 +129,8 @@ fn windows_missing_conflicting_and_path_mismatch_are_manual_only() {
 
     let mut conflicting = windows_fixture(ArtifactKind::Msi);
     conflicting.product_records.push(WindowsProductRecord {
+        hive: WindowsRegistryHive::CurrentUser,
+        view: WindowsRegistryView::Registry64,
         default_install_dir: Some("C:/Program Files/Alhangeul".into()),
         install_dir: None,
     });
@@ -138,6 +144,23 @@ fn windows_missing_conflicting_and_path_mismatch_are_manual_only() {
     assert_manual(
         detected(TargetEvidence::Windows(mismatch)),
         TargetReason::InstallPathMismatch,
+    );
+}
+
+#[test]
+fn windows_product_record_requires_owned_hkcu_registry64_location() {
+    let mut wrong_hive = windows_fixture(ArtifactKind::Msi);
+    wrong_hive.product_records[0].hive = WindowsRegistryHive::LocalMachine;
+    assert_manual(
+        detected(TargetEvidence::Windows(wrong_hive)),
+        TargetReason::ConflictingInstallEvidence,
+    );
+
+    let mut wrong_view = windows_fixture(ArtifactKind::Nsis);
+    wrong_view.product_records[0].view = WindowsRegistryView::Registry32;
+    assert_manual(
+        detected(TargetEvidence::Windows(wrong_view)),
+        TargetReason::ConflictingInstallEvidence,
     );
 }
 
