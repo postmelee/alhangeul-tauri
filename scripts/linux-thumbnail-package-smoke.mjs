@@ -238,7 +238,7 @@ async function verifyInstalled(format, metadata, context) {
   if (!description.includes(elfArchitecture)) throw new Error(`${format} ELF mismatch: ${description}`);
   const owners = format === 'deb'
     ? run('dpkg-query', ['--search', HELPER_PATH]).stdout.trim().split(/\r?\n/)
-    : run('rpm', ['-qf', '--qf', '%{NAME}\n', HELPER_PATH]).stdout.trim().split(/\r?\n/);
+    : run('rpm', ['-qf', HELPER_PATH, '--qf', '%{NAME}\n']).stdout.trim().split(/\r?\n/);
   if (owners.length !== 1 || !owners[0].startsWith(metadata.name)) {
     throw new Error(`${format} helper must have one owner: ${owners.join(', ')}`);
   }

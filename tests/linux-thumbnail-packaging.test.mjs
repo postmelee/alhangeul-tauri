@@ -119,6 +119,7 @@ test('package 검증은 path mode SHA ELF owner registration과 보존 불변식
     'productFilesRemovedAfterUninstall',
   ]) assert.ok(verifier.includes(marker), `evidence marker가 필요합니다: ${marker}`);
   assert.match(contract, /\['query', 'default', mime\]/);
+  assert.match(smoke, /\['-qf', HELPER_PATH, '--qf', '%\{NAME\}\\n'\]/);
   assert.doesNotMatch(sources, /\['default',/);
   assert.doesNotMatch(sources, /update-desktop-database|update-mime-database|gio set/);
 });
