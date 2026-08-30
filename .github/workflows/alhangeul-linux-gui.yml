@@ -31,6 +31,7 @@ jobs:
     timeout-minutes: 45
     env:
       ARTIFACT_ROOT: ${{ github.workspace }}/artifacts/linux-x64
+      THUMBNAILER_ARTIFACT_ROOT: ${{ github.workspace }}/artifacts/linux-thumbnailer-x64
       EVIDENCE_ROOT: /home/runner/PDF
       CUPS_PDF_OUTPUT: /home/runner/PDF/cups-output/biz_plan.pdf
     steps:
@@ -118,6 +119,60 @@ jobs:
           path: ${{ env.ARTIFACT_ROOT }}
           digest-mismatch: error
 
+      - name: Verify exact Linux thumbnailer artifact handoff
+        id: thumbnailer-handoff
+        shell: bash
+        env:
+          BUILD_REF: ${{ inputs.build_ref }}
+          NATIVE_RUN_ID: ${{ inputs.native_run_id }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          node scripts/verify-workflow-artifact.mjs \
+            --repository "$GITHUB_REPOSITORY" \
+            --build-ref "$BUILD_REF" \
+            --run-id "$NATIVE_RUN_ID" \
+            --workflow-path .github/workflows/alhangeul-desktop.yml \
+            --artifact-name alhangeul-linux-x64-thumbnailer \
+            --json-output "$EVIDENCE_ROOT/thumbnailer-artifact-handoff.json" \
+            --github-output "$GITHUB_OUTPUT"
+
+      - name: Download verified Linux thumbnailer artifact
+        id: download-thumbnailer
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          artifact-ids: ${{ steps.thumbnailer-handoff.outputs.artifact_id }}
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.native_run_id }}
+          path: ${{ env.THUMBNAILER_ARTIFACT_ROOT }}
+          digest-mismatch: error
+
+      - name: Verify exact Linux thumbnailer binary
+        id: verify-thumbnailer
+        shell: bash
+        env:
+          BUILD_REF: ${{ inputs.build_ref }}
+        run: |
+          set -euo pipefail
+          helper="$THUMBNAILER_ARTIFACT_ROOT/alhangeul-thumbnailer"
+          summary="$THUMBNAILER_ARTIFACT_ROOT/linux-thumbnailer-summary.json"
+          [[ -f "$helper" && -f "$summary" ]]
+          node -e '
+            const fs = require("node:fs");
+            const [path, sha] = process.argv.slice(1);
+            const value = JSON.parse(fs.readFileSync(path, "utf8"));
+            if (value.repositorySha !== sha || value.target !== "x86_64-unknown-linux-gnu"
+              || value.architecture !== "x64" || value.elfType !== 3 || value.elfMachine !== 62
+              || !/^[0-9a-f]{64}$/.test(value.sha256)) process.exit(1);
+            process.stdout.write(value.sha256);
+          ' "$summary" "$BUILD_REF" > "$EVIDENCE_ROOT/expected-thumbnailer.sha256"
+          actual_sha="$(sha256sum "$helper" | awk '{print $1}')"
+          [[ "$actual_sha" == "$(< "$EVIDENCE_ROOT/expected-thumbnailer.sha256")" ]]
+          chmod 0755 "$helper"
+          printf '%s  %s\n' "$actual_sha" "$helper" > "$EVIDENCE_ROOT/verified-thumbnailer.sha256"
+          printf 'helper_path=%s\n' "$helper" >> "$GITHUB_OUTPUT"
+
       - name: Install pnpm dependencies
         id: install-pnpm
         shell: bash
@@ -157,20 +212,20 @@ jobs:
             gir1.2-gtk-3.0 \
             libgtk-3-0 \
             libwebkit2gtk-4.1-0 \
+            nautilus \
             openbox \
             poppler-utils \
             printer-driver-cups-pdf \
             python3-gi \
             python3-pyatspi \
             scrot \
+            shared-mime-info \
+            strace \
+            thunar \
+            tumbler \
             webkit2gtk-driver \
             xdotool \
             xvfb
-
-      - name: Install exact tauri-driver
-        id: install-tauri-driver
-        shell: bash
-        run: cargo install tauri-driver --version "$TAURI_DRIVER_VERSION" --locked
 
       - name: Install verified DEB
         id: install-deb
@@ -181,6 +236,43 @@ jobs:
           set -euo pipefail
           sudo apt-get install -y "$DEB_PATH"
           command -v Alhangeul
+
+      - name: Verify installed Linux thumbnail package
+        id: verify-installed-thumbnail
+        shell: bash
+        env:
+          EXPECTED_HELPER: ${{ steps.verify-thumbnailer.outputs.helper_path }}
+        run: |
+          set -euo pipefail
+          helper=/usr/lib/alhangeul/alhangeul-thumbnailer
+          registration=/usr/share/thumbnailers/alhangeul.thumbnailer
+          [[ -f "$helper" && -x "$helper" && -f "$registration" ]]
+          [[ "$(stat -c '%a' "$helper")" == 755 ]]
+          [[ "$(stat -c '%a' "$registration")" == 644 ]]
+          [[ "$(sha256sum "$helper" | awk '{print $1}')" == \
+            "$(sha256sum "$EXPECTED_HELPER" | awk '{print $1}')" ]]
+          cmp apps/desktop/src-tauri/linux/alhangeul.thumbnailer "$registration"
+          dpkg-query --search "$helper" "$registration" \
+            > "$EVIDENCE_ROOT/installed-thumbnail-package-owners.txt"
+          sha256sum "$helper" "$registration" \
+            > "$EVIDENCE_ROOT/installed-thumbnail-package.sha256"
+
+      - name: Run Linux thumbnail manager contract probe
+        id: thumbnail-manager-probe
+        continue-on-error: true
+        timeout-minutes: 8
+        shell: bash
+        env:
+          THUMBNAIL_EVIDENCE_ROOT: ${{ env.EVIDENCE_ROOT }}/thumbnail-manager
+        run: |
+          set -euo pipefail
+          scripts/linux-thumbnail-manager-probe.sh \
+            "${{ steps.verify-thumbnailer.outputs.helper_path }}"
+
+      - name: Install exact tauri-driver
+        id: install-tauri-driver
+        shell: bash
+        run: cargo install tauri-driver --version "$TAURI_DRIVER_VERSION" --locked
 
       - name: Configure CUPS-PDF
         id: configure-cups
@@ -288,15 +380,22 @@ jobs:
           SOURCE: ${{ steps.verify-source.outcome }}
           HANDOFF: ${{ steps.handoff.outcome }}
           DOWNLOAD: ${{ steps.download-artifact.outcome }}
+          THUMBNAILER_HANDOFF: ${{ steps.thumbnailer-handoff.outcome }}
+          THUMBNAILER_DOWNLOAD: ${{ steps.download-thumbnailer.outcome }}
+          THUMBNAILER_VERIFY: ${{ steps.verify-thumbnailer.outcome }}
           INVENTORY: ${{ steps.verify-inventory.outcome }}
           INSTALL: ${{ steps.install-deb.outcome }}
+          INSTALLED_THUMBNAIL: ${{ steps.verify-installed-thumbnail.outcome }}
+          THUMBNAIL_MANAGER: ${{ steps.thumbnail-manager-probe.outcome }}
           GUI: ${{ steps.run-gui.outcome }}
         run: |
           set -euo pipefail
           mkdir -p "$EVIDENCE_ROOT"
-          printf '{"validate":"%s","checkout":"%s","source":"%s","handoff":"%s","download":"%s","inventory":"%s","install":"%s","gui":"%s"}\n' \
+          printf '{"validate":"%s","checkout":"%s","source":"%s","handoff":"%s","download":"%s","thumbnailerHandoff":"%s","thumbnailerDownload":"%s","thumbnailerVerify":"%s","inventory":"%s","install":"%s","installedThumbnail":"%s","thumbnailManager":"%s","gui":"%s"}\n' \
             "$VALIDATE" "$CHECKOUT" "$SOURCE" "$HANDOFF" "$DOWNLOAD" \
-            "$INVENTORY" "$INSTALL" "$GUI" > "$EVIDENCE_ROOT/step-outcomes.json"
+            "$THUMBNAILER_HANDOFF" "$THUMBNAILER_DOWNLOAD" "$THUMBNAILER_VERIFY" \
+            "$INVENTORY" "$INSTALL" "$INSTALLED_THUMBNAIL" "$THUMBNAIL_MANAGER" "$GUI" \
+            > "$EVIDENCE_ROOT/step-outcomes.json"
 
       - name: Upload Linux GUI evidence
         id: upload-evidence
@@ -319,11 +418,16 @@ jobs:
           NODE: ${{ steps.setup-node.outcome }}
           HANDOFF: ${{ steps.handoff.outcome }}
           DOWNLOAD: ${{ steps.download-artifact.outcome }}
+          THUMBNAILER_HANDOFF: ${{ steps.thumbnailer-handoff.outcome }}
+          THUMBNAILER_DOWNLOAD: ${{ steps.download-thumbnailer.outcome }}
+          THUMBNAILER_VERIFY: ${{ steps.verify-thumbnailer.outcome }}
           PNPM: ${{ steps.install-pnpm.outcome }}
           INVENTORY: ${{ steps.verify-inventory.outcome }}
           LINUX_DEPS: ${{ steps.install-linux-dependencies.outcome }}
+          THUMBNAIL_MANAGER: ${{ steps.thumbnail-manager-probe.outcome }}
           DRIVER: ${{ steps.install-tauri-driver.outcome }}
           INSTALL: ${{ steps.install-deb.outcome }}
+          INSTALLED_THUMBNAIL: ${{ steps.verify-installed-thumbnail.outcome }}
           CUPS: ${{ steps.configure-cups.outcome }}
           ENVIRONMENT: ${{ steps.record-environment.outcome }}
           GUI: ${{ steps.run-gui.outcome }}
@@ -331,7 +435,9 @@ jobs:
         run: |
           set -euo pipefail
           for outcome in "$VALIDATE" "$CHECKOUT" "$PREPARE" "$SOURCE" "$NODE" "$HANDOFF" \
-            "$DOWNLOAD" "$PNPM" "$INVENTORY" "$LINUX_DEPS" "$DRIVER" \
-            "$INSTALL" "$CUPS" "$ENVIRONMENT" "$GUI" "$UPLOAD"; do
+            "$DOWNLOAD" "$THUMBNAILER_HANDOFF" "$THUMBNAILER_DOWNLOAD" \
+            "$THUMBNAILER_VERIFY" "$PNPM" "$INVENTORY" "$LINUX_DEPS" "$INSTALL" \
+            "$INSTALLED_THUMBNAIL" "$THUMBNAIL_MANAGER" "$DRIVER" "$CUPS" \
+            "$ENVIRONMENT" "$GUI" "$UPLOAD"; do
             [[ "$outcome" == success ]]
           done

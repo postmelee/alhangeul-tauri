@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import {
   mkdir,
   mkdtemp,
@@ -22,6 +23,14 @@ const scriptPath = join(repoRoot, 'scripts/verify-desktop-artifacts.mjs');
 const PE_MACHINE_X64 = 0x8664;
 const PE_DLL_FLAG = 0x2000;
 
+const linuxX64Bundles = Object.freeze({
+  'deb/alhangeul_0.3.1_amd64.deb': 'linux deb',
+  'rpm/alhangeul-0.3.1-1.x86_64.rpm': 'linux rpm',
+  'appimage/alhangeul_0.3.1_amd64.AppImage': 'linux appimage',
+});
+const linuxArm64Bundles = Object.freeze({
+  'deb/alhangeul_0.3.1_arm64.deb': 'linux arm64 deb',
+});
 const platformFixtures = Object.freeze({
   'windows-x64': Object.freeze({
     'msi/Alhangeul_0.3.1_x64_en-US.msi': 'windows msi',
@@ -30,12 +39,18 @@ const platformFixtures = Object.freeze({
     'verification/AlhangeulThumbnailWorker.exe': peFixture(false),
   }),
   'linux-x64': Object.freeze({
-    'deb/alhangeul_0.3.1_amd64.deb': 'linux deb',
-    'rpm/alhangeul-0.3.1-1.x86_64.rpm': 'linux rpm',
-    'appimage/alhangeul_0.3.1_amd64.AppImage': 'linux appimage',
+    ...linuxX64Bundles,
+    'verification/linux-thumbnail-packages.json': linuxEvidence(
+      'linux-x64',
+      linuxX64Bundles,
+    ),
   }),
   'linux-arm64': Object.freeze({
-    'deb/alhangeul_0.3.1_arm64.deb': 'linux arm64 deb',
+    ...linuxArm64Bundles,
+    'verification/linux-thumbnail-packages.json': linuxEvidence(
+      'linux-arm64',
+      linuxArm64Bundles,
+    ),
   }),
 });
 
@@ -215,7 +230,7 @@ for (const [name, mutate, expectedError] of [
         'modified bundle',
       );
     },
-    /artifact inventory가 현재 bundle과 일치하지 않습니다/,
+    /archiveSha256 불일치|artifact inventory가 현재 bundle과 일치하지 않습니다/,
   ],
   [
     '기록 뒤 bundle 삭제',
@@ -366,4 +381,54 @@ function runCli(args) {
 
 async function cleanup(path) {
   await rm(path, { recursive: true, force: true });
+}
+
+function linuxEvidence(platform, files) {
+  const packages = platform === 'linux-x64'
+    ? [
+        ['deb', 'deb/alhangeul_0.3.1_amd64.deb', 'amd64'],
+        ['rpm', 'rpm/alhangeul-0.3.1-1.x86_64.rpm', 'x86_64'],
+      ]
+    : [['deb', 'deb/alhangeul_0.3.1_arm64.deb', 'arm64']];
+  const helperSha256 = '1'.repeat(64);
+  return `${JSON.stringify({
+    schemaVersion: 1,
+    platform,
+    repositorySha: '0'.repeat(40),
+    helperSha256,
+    packages: packages.map(([format, path, architecture]) => ({
+      format,
+      path,
+      archiveSha256: createHash('sha256').update(files[path]).digest('hex'),
+      name: 'alhangeul',
+      version: '0.3.1',
+      architecture,
+      helper: {
+        path: '/usr/lib/alhangeul/alhangeul-thumbnailer',
+        mode: '0755',
+        sha256: helperSha256,
+      },
+      registration: {
+        path: '/usr/share/thumbnailers/alhangeul.thumbnailer',
+        mode: '0644',
+        exec: '/usr/lib/alhangeul/alhangeul-thumbnailer %i %o %s',
+        mime: 'application/x-hwp;application/vnd.hancom.hwpx;',
+      },
+      elfArchitecture: platform === 'linux-x64' ? 'x86-64' : 'aarch64',
+      singleOwner: true,
+      lifecycle: [
+        'clean-install',
+        'same-version-reinstall',
+        'update',
+        'injected-failure-rollback',
+        'uninstall',
+      ],
+    })),
+    invariants: {
+      mimeDefaultsPreserved: true,
+      thirdPartyThumbnailerPreserved: true,
+      cacheSentinelPreserved: true,
+      productFilesRemovedAfterUninstall: true,
+    },
+  }, null, 2)}\n`;
 }

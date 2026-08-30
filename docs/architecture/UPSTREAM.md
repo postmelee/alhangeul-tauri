@@ -50,6 +50,17 @@ Windows Explorer thumbnail은 현재 Stable pin의 native `rhwp`를 사용하지
 
 Stable pin 갱신은 desktop preview와 worker render를 함께 바꾸므로 새 exact SHA에서 Windows native test, thumbnail binary·artifact inventory, installer 등록·rollback과 Explorer UI 수용을 반복한다. process와 installer의 전체 계약은 [WINDOWS_THUMBNAILS.md](WINDOWS_THUMBNAILS.md)를 따른다.
 
+## Linux thumbnail parse·render 경계
+
+Linux 파일 관리자 thumbnail도 같은 Stable pin과 `crates/document-preview`를 사용하지만 Tauri 앱이나 Windows worker를 호출하지 않는다.
+
+- `apps/linux-thumbnailer`의 public process는 Freedesktop `%i %o %s` CLI, Linux child supervision, deadline, `RLIMIT_AS`와 PNG 게시만 소유한다.
+- 같은 ELF의 private worker는 `document-preview`와 native `rhwp`로 첫 페이지를 직접 render하고 실패할 때만 제한된 embedded preview를 사용한다.
+- `apps/desktop/src-tauri/linux/alhangeul.thumbnailer`와 DEB/RPM custom files가 절대 helper 경로와 HWP/HWPX MIME registration을 연결한다.
+- persistent cache, cache invalidation과 icon fallback은 Nautilus·Thunar/Tumbler가 소유한다.
+
+Stable pin 갱신은 Linux helper의 direct render도 바꾸므로 새 exact SHA에서 x64·arm64 helper test/Clippy/build, DEB/RPM package lifecycle과 x64 Nautilus·Thunar의 공개 실사용 HWP/HWPX 첫 페이지를 다시 수용한다. 전체 CLI, resource, PNG, package와 cache 계약은 [LINUX_THUMBNAILS.md](LINUX_THUMBNAILS.md)를 따른다.
+
 ## 문서 저장, PDF와 실제 인쇄 경계
 
 upstream embed runtime을 상속하는 local leaf wrapper는 `getDesktopStudioHandlers()`로 `loadFile`, `pageCount`, `getPageSvg`, `exportHwp`, `exportHwpx`, `notifySaved`만 native host에 노출한다. HWP/HWPX source save는 현재 형식에 맞는 exporter bytes를 chunk staging하고 Rust에서 요청 형식·확장자·parser 결과가 일치한 뒤 원자적으로 교체한다. native commit 성공 뒤에만 `notifySaved`로 upstream dirty/recovery 상태를 정리한다.

@@ -84,6 +84,20 @@ for (const [name, cratePath, sourcePath, source, expected] of [
     '[package]\nname="handler"\nversion="0.1.0"\n[dependencies]\nrhwp="1"\n',
     /handler render or app dependency/,
   ],
+  [
+    'Linux thumbnailer network API',
+    'apps/linux-thumbnailer',
+    'src/main.rs',
+    'fn main() { let _ = std::net::TcpStream::connect("example.invalid:80"); }\n',
+    /Linux thumbnailer network API/,
+  ],
+  [
+    'Linux thumbnailer Tauri dependency',
+    'apps/linux-thumbnailer',
+    'Cargo.toml',
+    '[package]\nname="thumbnailer"\nversion="0.1.0"\n[dependencies]\ntauri="2"\n',
+    /Linux thumbnailer app or Windows dependency/,
+  ],
 ]) {
   test(`${name} 경계 위반을 거부한다`, async () => {
     const fixture = await createFixture();
