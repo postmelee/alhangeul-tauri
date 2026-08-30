@@ -184,6 +184,16 @@ test('Windows 제품 증거는 설치 프로그램이 소유한 HKCU Registry64�
     target,
     /hive: WindowsRegistryHive::CurrentUser,[\s\S]*?view: WindowsRegistryView::Registry64,[\s\S]*?default_install_dir: None,[\s\S]*?install_dir: Some\(_\)/,
   );
+
+  const uninstallProbe = nativeTarget.match(
+    /let mut uninstall_entries = Vec::new\(\);([\s\S]*?)Ok\(WindowsEvidence/,
+  )?.[1];
+  assert.ok(uninstallProbe, 'Windows uninstall entry probe가 필요합니다');
+  assert.match(uninstallProbe, /WindowsRegistryHive::CurrentUser/);
+  assert.match(uninstallProbe, /WindowsRegistryHive::LocalMachine/);
+  assert.match(uninstallProbe, /KEY_WOW64_64KEY/);
+  assert.match(uninstallProbe, /view: WindowsRegistryView::Registry64/);
+  assert.doesNotMatch(uninstallProbe, /KEY_WOW64_32KEY|WindowsRegistryView::Registry32/);
 });
 
 function topLevel(source, name) {

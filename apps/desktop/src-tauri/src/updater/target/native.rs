@@ -28,17 +28,11 @@ impl UpdaterTargetProbe for NativeTargetProbe {
 
 #[cfg(target_os = "windows")]
 fn windows_evidence() -> Result<WindowsEvidence, TargetProbeError> {
-    use winreg::enums::{
-        HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, KEY_READ, KEY_WOW64_32KEY, KEY_WOW64_64KEY,
-    };
+    use winreg::enums::{HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, KEY_READ, KEY_WOW64_64KEY};
     use winreg::RegKey;
 
     const PRODUCT_KEY: &str = r"Software\postmelee\Alhangeul";
     const UNINSTALL_KEY: &str = r"Software\Microsoft\Windows\CurrentVersion\Uninstall";
-    let views = [
-        (WindowsRegistryView::Registry64, KEY_WOW64_64KEY),
-        (WindowsRegistryView::Registry32, KEY_WOW64_32KEY),
-    ];
     let current_user = RegKey::predef(HKEY_CURRENT_USER);
     let local_machine = RegKey::predef(HKEY_LOCAL_MACHINE);
     let mut product_records = Vec::new();
@@ -55,35 +49,33 @@ fn windows_evidence() -> Result<WindowsEvidence, TargetProbeError> {
         (WindowsRegistryHive::CurrentUser, &current_user),
         (WindowsRegistryHive::LocalMachine, &local_machine),
     ] {
-        for (view, view_flag) in views {
-            let Ok(uninstall) = root.open_subkey_with_flags(UNINSTALL_KEY, KEY_READ | view_flag)
+        let Ok(uninstall) = root.open_subkey_with_flags(UNINSTALL_KEY, KEY_READ | KEY_WOW64_64KEY)
+        else {
+            continue;
+        };
+        for key_name in uninstall.enum_keys().flatten() {
+            let Ok(entry) = uninstall.open_subkey_with_flags(&key_name, KEY_READ | KEY_WOW64_64KEY)
             else {
                 continue;
             };
-            for key_name in uninstall.enum_keys().flatten() {
-                let Ok(entry) = uninstall.open_subkey_with_flags(&key_name, KEY_READ | view_flag)
-                else {
-                    continue;
-                };
-                let display_name = optional_string(&entry, "DisplayName");
-                if !display_name
-                    .as_deref()
-                    .is_some_and(|name| name.eq_ignore_ascii_case("Alhangeul"))
-                {
-                    continue;
-                }
-                uninstall_entries.push(WindowsUninstallEntry {
-                    hive,
-                    view,
-                    key_name,
-                    display_name,
-                    publisher: optional_string(&entry, "Publisher"),
-                    install_location: optional_string(&entry, "InstallLocation"),
-                    uninstall_string: optional_string(&entry, "UninstallString"),
-                    main_binary_name: optional_string(&entry, "MainBinaryName"),
-                    windows_installer: entry.get_value("WindowsInstaller").ok(),
-                });
+            let display_name = optional_string(&entry, "DisplayName");
+            if !display_name
+                .as_deref()
+                .is_some_and(|name| name.eq_ignore_ascii_case("Alhangeul"))
+            {
+                continue;
             }
+            uninstall_entries.push(WindowsUninstallEntry {
+                hive,
+                view: WindowsRegistryView::Registry64,
+                key_name,
+                display_name,
+                publisher: optional_string(&entry, "Publisher"),
+                install_location: optional_string(&entry, "InstallLocation"),
+                uninstall_string: optional_string(&entry, "UninstallString"),
+                main_binary_name: optional_string(&entry, "MainBinaryName"),
+                windows_installer: entry.get_value("WindowsInstaller").ok(),
+            });
         }
     }
     Ok(WindowsEvidence {
