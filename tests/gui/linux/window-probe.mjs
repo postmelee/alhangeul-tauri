@@ -70,7 +70,9 @@ export async function runProbe(inputs) {
 async function startSession(request, app) {
   await waitFor(() => request('GET', '/status').catch(() => false), 'tauri-driver status');
   const result = await request('POST', '/session', {
-    capabilities: { alwaysMatch: { browserName: 'tauri', 'tauri:options': { application: app } } },
+    // Match @wdio/tauri-service's external-driver request: its display-only
+    // browserName ('tauri') is removed before capability negotiation.
+    capabilities: { alwaysMatch: { 'tauri:options': { application: app } } },
   });
   if (typeof result?.sessionId !== 'string') throw new Error('No WebDriver session ID');
   const session = result.sessionId;

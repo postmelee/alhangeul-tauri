@@ -59,6 +59,8 @@ test('진단 workflow는 정확한 기존 N artifact만 읽고 세 isolated sess
   assert.doesNotMatch(workflow, /contents: write|secrets\.|gh release|pnpm tauri build|cargo build/);
   assert.doesNotMatch(source, /invoke\(['"]updater_|update_apply|update_check/);
   assert.match(source, /delete env.TAURI_WEBVIEW_AUTOMATION/);
+  assert.match(source, /alwaysMatch: \{ 'tauri:options': \{ application: app \} \}/);
+  assert.doesNotMatch(source, /browserName:\s*['"]/);
   assert.match(source, /stopGroup\(managed\)/);
   assert.match(dispatch, /inputs.mode == 'updater-linux-window-probe'/);
 });
