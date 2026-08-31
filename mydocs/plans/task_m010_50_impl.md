@@ -257,6 +257,12 @@ Linux x64·arm64의 실제 core probe가 모든 expected record를 처리해야 
 strengthened gate에서 새로운 실제 render 실패가 확인되면 기준을 낮춰 통과시키지
 않고 renderer 변경 제외 범위와 대조해 보고한다.
 
+Stage 2 결과: candidate `f228a601520266229eaeb75e6d46bea8d8f25cc9`의
+native run `33374841115`에서 Linux x64·arm64 core가 각각 88개 조합과 required
+gate를 통과했다. 전체 automation 389 pass이며 상세는
+[`Stage 2 보고서`](../working/task_m010_50_stage2.md)에 기록한다. Stage 3 승인을
+기다리며, 같은 실행의 후속 package/desktop 및 Windows 추가 CI는 보고 시점에 진행 중이다.
+
 ### 커밋
 
 ```text
