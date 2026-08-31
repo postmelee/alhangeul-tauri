@@ -18,7 +18,7 @@ GitHub Issue: [#20](https://github.com/postmelee/alhangeul-tauri/issues/20)
 | 4.1 | acceptance harness 보정과 exact-SHA 재수용 | Linux GUI harness, Windows lifecycle gate, 계획·보고 | 플랫폼별 명시 gate와 Linux document/native GUI 전체 통과 |
 | 4.2 | 최신 `devel` 통합과 exact-SHA 재수용 | merge conflict 해소, v0.8.4 경계, 계획·보고 갱신 | 플랫폼 중립 gate와 새 Windows/Linux native·Linux GUI 전체 통과 |
 | 4.3 | 반복 Print dialog의 이중 채널 수용 보정 | 검증된 기본 CUPS-PDF와 exact X11 window postcondition | CI 성공, editor 본문 시각 복원 수용 보류 |
-| 4.4 (승인 대기) | 시스템 인쇄 전후 editor 본문 복원 검증 | 동일 production process의 전후 화면 증거, 필요 시 host print 복원 최소 보정 | 빈 baseline·인쇄 후 빈 본문 fail-closed와 새 exact-SHA 수용 |
+| 4.4 | 시스템 인쇄 전후 editor 본문 복원 검증 | 동일 production process의 전후 화면 증거, 필요 시 host print 복원 최소 보정 | 빈 baseline·인쇄 후 빈 본문 fail-closed와 새 exact-SHA 수용 |
 
 ## 문서 위치 확인
 
@@ -736,9 +736,10 @@ upstream viewport resize는 이미 pool에 있는 page를 항상 다시 그리�
 검산 사본은 `/private/tmp/alhangeul-task20-stage4-3.JdNsS0`에 있다. 임시 경로가 사라지면 해당 run과
 artifact 이름으로 다시 내려받는다. 이 상태 기록은 수용 source와 구분되는 문서 checkpoint로 커밋한다.
 
-### Stage 4.4 제안 — 인쇄 전후 editor 본문 복원 검증 (승인 대기)
+### Stage 4.4 — 인쇄 전후 editor 본문 복원 검증
 
-승인 전에는 다음 source·workflow 변경을 시작하지 않는다.
+2026-08-31 작업지시자가 같은 스레드에서 다음 범위를 승인했다. 기존 격리 worktree와 source 기준선을
+유지하고, 먼저 production process의 초기 화면과 인쇄 후 화면을 구분하는 진단을 수행한다.
 
 1. `tests/gui/linux/native-print.mjs`와 작은 전용 evidence helper에서 동일 production process의 첫
    인쇄 전, Print to File 뒤, Cancel 뒤, CUPS-PDF 뒤 화면을 수집한다. 원본 전체 screenshot과 exact
@@ -758,6 +759,37 @@ artifact 이름으로 다시 내려받는다. 이 상태 기록은 수용 source
 
 문서는 기존 `mydocs/plans/task_m010_20_impl.md`·날짜별 `mydocs/orders/`와 수용 완료 뒤
 `mydocs/working/task_m010_20_stage4_4.md`에 둔다. 신규 공식 제품 문서와 `mydocs/manual` 문서는 만들지 않는다.
+
+#### 진단 구현과 실행 구분
+
+`native-print-sequence.mjs`로 기존 production 순서를 분리하고 첫 인쇄 전·Print to File·Cancel·CUPS-PDF
+뒤에 필수 body probe를 연결한다. `editor-restore.mjs`가 15초 이내 500ms 간격의 연속 두 frame을 요구한다.
+`native-ui/editor-frame.mjs`는 production PID, exact `Alhangeul` title, visible·active X11 window를
+읽기만 하고, `editor-pixels.mjs`는 고정 `biz_plan.hwp` 표지의 page 내부 영역을 분석한다. 창 chrome·ruler·
+status·caret로 통과하지 않게 ink pixel 양·분포를 검사하고 후속 frame은 baseline ink와 90% 이상 일치해야
+한다. window/page geometry가 달라지면 실패한다. 판정 전 입력·resize·scroll·재열기를 수행하지 않는다.
+
+PNG decoding은 기존 Linux GTK 의존성의 GdkPixbuf를 `native-ui/screenshot_raster.py`에서 read-only로
+호출한다. 새로운 패키지는 추가하지 않는다. RGB/RGBA rowstride와 마지막 row의 실제 buffer 크기를
+검증한다([GdkPixbuf pixel API](https://docs.gtk.org/gdk-pixbuf/method.Pixbuf.get_pixels.html)).
+각 원본 screenshot의 상대 경로·size·SHA-256, 관찰 시각, window geometry, 본문 지표와 실패 경계를
+`scenarios/linux-system-print/editor/restore.json`에 성공·실패 모두 기록한다. 초기 실패에도 첫 화면을
+남기며, 실패 시 나머지 인쇄 조작을 실행하지 않는다. fixture와 pure probe/window-reader 회귀 test는
+기존 플랫폼 중립 automation suite에서 수행한다.
+
+기존 원본 screenshot으로 알고리즘을 독립 대조했을 때 정상 HWP 화면의 본문은 dark pixel 9,385개,
+59개 ink row였고 이전 system print 최종 화면은 각각 0이었다. 현재 호스트에서는 PNG artifact 분석만
+수행하며 Linux 앱을 실행하지 않는다. 진단 구현을 먼저 `publish/task20`에 게시한 뒤 기존 workflow의
+분리된 `acceptanceRef`와 `buildRef` 입력으로 검증된 `a5e86de` native run `33367303526`을 재사용한다.
+이는 기존 바이너리의 실패 위치를 찾는 진단 전용 실행이고 새 source의 native 수용이나 최종 성공으로
+승계하지 않는다. 최종 correction 수용은 위 4번대로 새 exact SHA의 native부터 다시 수행한다.
+
+진단 commit 전 검증은 automation 310/310, upstream 36/36, Studio 23개 파일 119/119,
+GUI typecheck, boundary 297개 파일, Studio build, Python decoder syntax와 `git diff --check`를
+통과했다. Studio test의 첫 시도는 worktree 임시 config 쓰기 권한(EPERM)으로 시작하지 못했고
+권한을 받아 같은 test를 실행해 통과했다. 새 helper로 이동한 sequence의 기존 source contract test도
+이동한 파일과 필수 body probe 연결을 검사하도록 정렬했다. 이번에 변경한 runtime 함수는 50 LOC,
+파일은 300 LOC 권장 상한 안이다. 이 commit은 진단 입력 고정이며 단계 완료보고서가 아니다.
 
 ## 통합 검증
 
