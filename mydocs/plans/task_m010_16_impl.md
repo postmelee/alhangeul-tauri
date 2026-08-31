@@ -447,6 +447,44 @@ Task #16 Stage 4: updater key와 release 운영 계약 통합
   같은 binary의 종료 지점을 GDB `exit_group` syscall catch/backtrace로 추가 관측한다.
   GDB는 disposable Linux runner에서만 실행하며 제품 수정이나 재빌드는 하지 않는다.
 
+#### 진단 결과 — Stage 5 수용 미완료
+
+- 첫 진단 `33369394585` / harness `01dc486f2383333e6b4ab15cb6eb7d5679318b92`는
+  raw client의 `browserName: tauri` capability mismatch로 비교 전에 실패했다. 기존
+  `@wdio/tauri-service`가 해당 display-only 값을 제거하는 것을 확인해 같은 계약으로 보정했다.
+  이 run은 제품 다중 창 판정 근거로 사용하지 않는다.
+- 비교 run [33369617161](https://github.com/postmelee/alhangeul-tauri/actions/runs/33369617161)
+  / harness `b4abf7c3cc6c2e7a5cd6db15998ce1944445b6e8` / job `99417487801`:
+  일반 UI, WebDriver + OS 메뉴, WebDriver + native invoke 모두 새 창 생성 직후 native 창이
+  `1 → 0`이 되고 앱 프로세스가 사라졌다. 일반 UI 실행은 exit code `1`을 직접 관측했다.
+  두 WebDriver 실행의 `page crash or hang`은 앱 종료 뒤 나타난 증상이다.
+- 추가 run [33370146445](https://github.com/postmelee/alhangeul-tauri/actions/runs/33370146445)
+  / harness `26b7111ef41d2736056533d33f968e0c1720dfb5` / job `99419150052`에서
+  같은 세 경로의 종료를 재현했다. 일반 실행 + GDB의 main thread는 `exit_group(status=1)`에서
+  멈췄으며 `gtk_widget_realize → gdk_window_new → XSetWMProtocols → XInternAtom →
+  _XReply → _XIOError → GDK → _exit(1)` 스택을 남겼다. GDB batch 자체의 exit `0`은
+  앱 성공이 아니며, 위 두 진단 run의 workflow success는 증적 수집 성공만 의미한다.
+- 환경은 Ubuntu 22.04.5 / Xvfb / Openbox이며 runner WebKitGTK/WebKitWebDriver는 `2.50.4`다.
+  스택에는 AppImage 내부 GTK/GDK와 host `libX11.so.6`가 보인다. X11 연결 오류가 발생한
+  경로까지는 확인했으나 연결이 깨진 최하위 원인과 일반 Linux 데스크톱에서의 재현 여부는
+  아직 확정하지 않았다. WebDriver 제약으로 간주해 다중 창 gate를 생략하지 않는다.
+- 비교 artifact `9749643136`, digest
+  `sha256:18304fd7fa627963504f5c5849d2f57c9b172fa9f73587df78e53069b9a24507`;
+  native stack artifact `9749763715`, digest
+  `sha256:ea27b4b59c8bab8a7305cb03cb9bd94fea82f89974d38f7c5f3b45c559059b15`.
+  상세 결과는 각 artifact의 `*/summary.json`, 화면, `normal-gdb/launcher.stdout.log`에 있다.
+- N AppImage SHA-256은 진단 전후 모두
+  `34bfb79718f2e24463b9bce4687ff98b1f609ee318db01dc79e5bec011ded8de`다.
+  앱 시작 시 자체 update check는 있었지만 다운로드·설치 명령은 실행하지 않았다.
+  test release ID `379566223`의 asset 8개, positive manifest
+  `4a1132f1c87ea2645cca112e723ab90c07dc441afcf431ecb6c93a65b7f3d778`, 제품 소스,
+  production key/config와 stable/Pages는 변경하지 않았다.
+- 다음 권고는 Linux GTK/X11 창 생성 문제의 원인 해소와 해당 구간 단독 재검증이다.
+  제품 수정·재빌드·candidate 교체는 별도 승인 뒤 수행한다. 기존 D2 Windows MSI/NSIS 통과
+  증적은 유지하되 Linux 실제 N→N+1, negative 수용, Stage 5 완료와 릴리스 게시를 주장하지 않는다.
+- 최종 로컬 검증은 관련 Node 단위·계약 테스트 93개, product boundary 324개 파일,
+  변경 workflow 두 개의 actionlint와 `git diff --check` 모두 통과했다.
+
 ### 검증
 
 - MSI N → N+1 성공, MSI target만 요청, 설치/제거 registry와 파일 연결 보존
