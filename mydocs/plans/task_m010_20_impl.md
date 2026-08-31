@@ -17,6 +17,8 @@ GitHub Issue: [#20](https://github.com/postmelee/alhangeul-tauri/issues/20)
 | 4 | exact-SHA Windows/Linux lifecycle 수용 | Stage 3.1 exact commit의 native 결과와 `_stage4.md` | 양 플랫폼 Rust/Clippy/Tauri build와 reload smoke |
 | 4.1 | acceptance harness 보정과 exact-SHA 재수용 | Linux GUI harness, Windows lifecycle gate, 계획·보고 | 플랫폼별 명시 gate와 Linux document/native GUI 전체 통과 |
 | 4.2 | 최신 `devel` 통합과 exact-SHA 재수용 | merge conflict 해소, v0.8.4 경계, 계획·보고 갱신 | 플랫폼 중립 gate와 새 Windows/Linux native·Linux GUI 전체 통과 |
+| 4.3 | 반복 Print dialog의 이중 채널 수용 보정 | 검증된 기본 CUPS-PDF와 exact X11 window postcondition | CI 성공, editor 본문 시각 복원 수용 보류 |
+| 4.4 (승인 대기) | 시스템 인쇄 전후 editor 본문 복원 검증 | 동일 production process의 전후 화면 증거, 필요 시 host print 복원 최소 보정 | 빈 baseline·인쇄 후 빈 본문 fail-closed와 새 exact-SHA 수용 |
 
 ## 문서 위치 확인
 
@@ -647,6 +649,14 @@ virtual `PDF`와 정확히 같을 때 default 선택을 허용한다. 그 밖의
 physical printer, dialog close 실패와 CUPS-PDF 생성·6쪽 A4·text·render 불일치는 계속 fail-closed한다.
 제품 인쇄 source와 일반 Open/Save chooser 경계는 변경하지 않는다.
 
+구현 규모 예외는 `tests/gui/linux/native-ui/xdotool.mjs`의 내부 `waitForExactWindow` 한 곳이다.
+12줄의 공용 polling helper가 runner 설정, exact title, 존재/부재 조건, timeout, test용 delay,
+창 종류별 진단 label의 6개 인자를 받는다. Print dialog와 기존 file chooser의 동일한 cardinality·
+timeout 판정을 복제하지 않고 실패 메시지에서 두 창 종류를 구분하기 위한 제한된 예외이며,
+외부 runner API는 options/request 객체 하나를 받는 경계를 유지한다. 변경한 runtime 파일은 모두
+300 LOC 이하이고 이번 단계에서 추가하거나 수정한 함수는 50 LOC 이하를 유지한다. 기존
+`runPrintScenario`의 52줄 본문은 이번 단계에서 변경하지 않는다.
+
 보정 뒤 다음 플랫폼 중립 gate를 실행한다.
 
 ```bash
@@ -669,6 +679,85 @@ workflow를 순서대로 실행한다. 성공한 exact run의 artifact metadata�
 ```text
 Task #20 [Stage 4.3]: 반복 system print dialog 수용 경계 보정
 ```
+
+#### 2026-08-31 exact-SHA 실행 결과와 수용 보류
+
+작업지시자의 계속 진행 승인으로 correction commit
+`a5e86decb0619b9f7f6e06567350a593f91c3aae`를 `origin/publish/task20`에 fast-forward했다.
+다음 두 실행은 모두 `workflow_dispatch`, attempt 1이며 같은 exact SHA를 사용한다. 실패한 이전
+실행을 재실행해 성공을 고르지 않았고 native watch 연결 timeout 뒤에는 동일 run의 상태 조회만 재연결했다.
+
+- [native run 33367303526](https://github.com/postmelee/alhangeul-tauri/actions/runs/33367303526):
+  Windows x64, Linux x64, Linux arm64, Windows installer smoke 네 job 모두 success다.
+- [Linux GUI run 33372042691](https://github.com/postmelee/alhangeul-tauri/actions/runs/33372042691):
+  위 native run의 Linux x64 artifact를 설치했고 native print·WebDriver phase 모두 exit 0이다.
+  여섯 scenario와 evidence의 여덟 step outcome이 모두 success다.
+
+| Artifact | ID | GitHub API archive digest (SHA-256) |
+|---|---|---|
+| Linux x64 | `9749325628` | `bf2cde77eb5f821d720a054e5e96d4a5c26df76c653dbc2ed3a31ac960986456` |
+| Linux arm64 | `9749096224` | `ce1b5fcb7dcc548551686dd85bb43a22f164399972585586c514677be5f875bb` |
+| Windows x64 | `9750092166` | `83c9092bf0286c1241dd2d31e145344719dda0abe87d1a6292bad1aab40b5eb2` |
+| Windows thumbnail core | `9749116369` | `4ca3af8a2ae05a3a2d5696683833d011cf276d7d6947fb590b833a1df4eeb4ee` |
+| Windows installer smoke | `9750366509` | `bf84fb01e75947160330c579642054af52f282c1e3a4967bcbe0d082824b6d97` |
+| Linux GUI evidence | `9750549039` | `0a80db878aa0ae1118f2d50ab4034ba70ea6c9deba9a57a4696ddd2efc342c55` |
+
+API metadata의 source/run identity·비만료 상태와 GUI handoff의 artifact ID·digest·build ref를 대조했다.
+별도로 내려받은 Windows/Linux inventory의 38개 파일 size·SHA-256을 다시 계산해 모두 일치했고,
+GUI 설치 DEB와 native inventory도 일치했다. 위 archive digest는 API metadata이며 로컬 압축파일
+digest 재계산으로 표현하지 않는다. GUI manifest의 33개 참조(고유 파일 31개)와 원본 fixture의
+size·SHA-256도 일치했다. Windows thumbnail 11개 fixture와 MSI·NSIS install/ready/close/relaunch/
+uninstall, 외부 fixture 보존, defaults 복원, 제거 후 clean state를 확인했다. MSI rollback probe의
+exit 1603은 의도한 rollback 시나리오의 기대값이고 정상 install/uninstall은 모두 exit 0이다.
+
+PDF는 내려받은 원본으로 Poppler 분석과 렌더링을 다시 수행했다. direct PDF, GTK Print to File,
+CUPS-PDF 각각 A4 6쪽·제목 검출·nonblank/noncropped 조건을 통과했다. 페이지별 text count는
+direct `[45, 642, 410, 638, 478, 250]`, GTK와 CUPS 각각 `[45, 54, 408, 637, 478, 250]`으로
+원격 분석과 같았다. 총 18쪽을 시각 확인해 한글 본문·목차·표·쪽 번호가 보이고 잘림이나 빈 페이지가
+없음을 확인했다. 출력 경로별 글꼴 굵기와 여백 차이는 있어 픽셀 동일성이나 임의 문서 품질은 주장하지 않는다.
+
+다만 `scenarios/linux-system-print/final.png`에서 toolbar·문서명·`1 / 6 쪽`·caret는 보이고 Print
+dialog와 인쇄 진행 상태는 사라졌지만, editor page의 실제 본문이 흰 화면으로 남았다. 해당 원본은
+77,421 B, SHA-256 `78a0e89d707c84b603a77fdd41635003ba51bb3330acd2d24fcef5f003b05b84`다.
+같은 run의 별도 WebDriver process에서 찍은 HWP/HWPX 초기 화면과 direct PDF 최종 화면에는 본문이
+보였다. 이전 GUI run `33237523243`의 final screenshot에도 빈 본문이 있어 이번 보정에서 새로
+생긴 회귀라고 단정하지 않는다. 이전 화면은 인쇄 처리 중 상태여서 정상 복원의 근거로도 사용하지 않는다.
+
+`native-print.mjs`의 `waitForEditorRestore`는 focused `document text` 존재만 확인하고 실제 본문
+pixel을 검사하지 않는다. 현재 production phase에는 첫 인쇄 전과 각 반복 직후의 화면 증거도 없다.
+따라서 처음부터 빈 화면이었는지, 인쇄 과정에서 비었는지, headless capture/compositing 문제인지는
+이 증거만으로 확정할 수 없다. native stderr의 ATK/GTK assertion도 원인을 확정하는 근거는 아니다.
+host print cleanup은 title·status·style·container를 복원하지만 별도 view repaint를 요청하지 않으며,
+upstream viewport resize는 이미 pool에 있는 page를 항상 다시 그리지 않는다. 이는 다음 진단 후보이지
+입증된 원인이 아니다. `third_party/rhwp`는 수정하지 않았다.
+
+**판정: workflow·출력 artifact 검증은 성공했으나 editor 본문 복원 수용은 미완료다.** Stage 4.3 완료
+보고서와 최종 보고서·PR을 게시하지 않는다. 원본 evidence는 위 GUI artifact에 보존되어 있고 로컬
+검산 사본은 `/private/tmp/alhangeul-task20-stage4-3.JdNsS0`에 있다. 임시 경로가 사라지면 해당 run과
+artifact 이름으로 다시 내려받는다. 이 상태 기록은 수용 source와 구분되는 문서 checkpoint로 커밋한다.
+
+### Stage 4.4 제안 — 인쇄 전후 editor 본문 복원 검증 (승인 대기)
+
+승인 전에는 다음 source·workflow 변경을 시작하지 않는다.
+
+1. `tests/gui/linux/native-print.mjs`와 작은 전용 evidence helper에서 동일 production process의 첫
+   인쇄 전, Print to File 뒤, Cancel 뒤, CUPS-PDF 뒤 화면을 수집한다. 원본 전체 screenshot과 exact
+   Alhangeul window 기준 page 영역 지표를 함께 남기고 toolbar·caret만으로 본문 정상 판정을 하지 않는다.
+   baseline부터 빈 경우와 반복 뒤 빈 경우를 분리해 fail-closed하며, 판정 전에 resize·scroll·재열기 등
+   화면을 회복시키는 조작을 넣지 않는다. 기존 native 포커스·dialog close·PDF 조건도 유지한다.
+2. 먼저 원인별 실패 위치를 확보한다. host print surface 해제 뒤 view 복원 문제로 확인되는 경우에만
+   `apps/studio-host/src/command/direct-print.ts`의 기존 서비스/event 경계에서 view-only 재그리기를
+   최소 보정한다. 문서 데이터·dirty 상태·저장·upstream renderer를 변경하지 않는다. 초기 렌더나
+   headless 환경 문제가 확인되면 그 증거와 구체적 보정안을 다시 승인받고 환경 workaround를 기본값으로
+   조용히 추가하지 않는다. Rust print 완료 신호를 바꾸어야 하는 경우에도 별도 승인을 요청한다.
+3. helper의 정상/빈 baseline/빈 postcondition/timeout 회귀 test와 print 성공·취소·실패 뒤 상태·surface
+   회수 test를 보강한다. 파일 300 LOC, 함수 50 LOC 권장 상한을 지키도록 evidence 분석을 분리한다.
+4. Stage 4.3의 focused gate·플랫폼 중립 전체 gate를 다시 통과시킨 correction commit을 고정한다.
+   새 exact SHA의 Windows/Linux native 및 Linux GUI를 순서대로 실행하고 전후 본문 복원, PDF 3종,
+   inventory/evidence hash를 모두 재수용한 뒤에만 단계 완료·최종 보고서 승인 경계로 돌아간다.
+
+문서는 기존 `mydocs/plans/task_m010_20_impl.md`·날짜별 `mydocs/orders/`와 수용 완료 뒤
+`mydocs/working/task_m010_20_stage4_4.md`에 둔다. 신규 공식 제품 문서와 `mydocs/manual` 문서는 만들지 않는다.
 
 ## 통합 검증
 
