@@ -115,7 +115,7 @@ create_variants() {
     | base64 --decode > "$derived_root/replacement/Preview/PrvImage.png"
   chmod 0644 "$derived_root/replacement/Preview/PrvImage.png"
   TZ=UTC touch -t 198001010000 "$derived_root/replacement/Preview/PrvImage.png"
-  (cd "$derived_root/replacement" && zip -X -q "$stale_preview" Preview/PrvImage.png)
+  (cd "$derived_root/replacement" && TZ=UTC zip -X -q "$stale_preview" Preview/PrvImage.png)
   head -c 128 "$source" > "$derived_root/corrupt.hwpx"
   truncate -s 67108865 "$derived_root/oversize.hwp"
 }

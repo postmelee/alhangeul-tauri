@@ -186,6 +186,10 @@ pin의 `saved/` 원본 7개의 SHA·size와 preview 구조를 독립 검사했�
 변형은 `03-blank_hwpx.hwpx`를 고정 source로 사용하며 stale PNG의 mode·mtime과
 ZIP extra field를 고정해 네 변형도 SHA로 식별한다. 기존 임의 첫 HWPX 선택과
 실행 시각에 따라 달라지던 변형 SHA를 제거하는 보정이며 renderer는 수정하지 않는다.
+candidate `559d86c` dispatch 후 ZIP 헤더 재점검에서 `touch`만 UTC여도
+`zip`이 로컬 timezone으로 DOS timestamp를 쓰는 차이를 발견했다. `zip` 실행에도
+UTC를 명시하고 1980-01-01 00:00 헤더의 독립 SHA로 보정한다. 기대 성공/실패와
+시간·RSS 한도는 바꾸지 않는다.
 
 ### 산출물
 

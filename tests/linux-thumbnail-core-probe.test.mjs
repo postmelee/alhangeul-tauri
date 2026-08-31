@@ -100,7 +100,7 @@ test('stale preview fixture는 chunk CRC가 유효한 PNG를 사용한다', () =
   assert.ok(source.includes(`hwpx_source="$fixture_root/${VARIANT_SOURCE}"`));
   assert.match(source, /TZ=UTC touch -t 198001010000/);
   assert.match(source, /chmod 0644/);
-  assert.match(source, /zip -X -q/);
+  assert.match(source, /TZ=UTC zip -X -q/);
 });
 
 test('summary는 exact SHA와 비식별 resource만 기록한다', () => {

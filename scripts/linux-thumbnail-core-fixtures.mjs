@@ -31,7 +31,7 @@ const originals = [
 // truncated는 source 앞 128 bytes, oversize는 64 MiB + 1 zero bytes다.
 const variants = [
   ['preview-absent', 'hwpx', '7227d6fae5dfaf11ccbfc7b2cc3fd2b319ae13fd0b951dbfe050e14bc11414a1', 6842, true, false],
-  ['preview-stale', 'hwpx', '872db91e322b9592eed8712b62cecdb9eaa4e7e55354dd0d2eb75ea39e79d811', 7021, true, true],
+  ['preview-stale', 'hwpx', 'cfb6d25f3695e24e9db1cae7f2916a192af5319753d7de5b0608c892404bacbf', 7021, true, true],
   ['corrupt-truncated', 'hwpx', '5db1e500775531a9518dd6ff0029fdd841d9b72ba42bf054487045d0a634d3cb', 128, false, false],
   ['size-boundary-64mib-plus-one', 'hwp', '91990977345985aaf03af1358f4f989d7eaf985b58529efb72f613c588f6599a', 67108865, false, false],
 ].map(([fixtureClass, format, sha256, bytes, direct, preview]) => ({
