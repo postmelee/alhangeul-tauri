@@ -485,6 +485,21 @@ Task #16 Stage 4: updater key와 release 운영 계약 통합
 - 최종 로컬 검증은 관련 Node 단위·계약 테스트 93개, product boundary 324개 파일,
   변경 workflow 두 개의 actionlint와 `git diff --check` 모두 통과했다.
 
+### 승인된 Linux 창 생성 수정과 단독 검증 (2026-08-31, Stage 5.21)
+
+- 작업지시자의 후속 `진행해줘`에 따라 GTK/X11 창 생성 종료의 원인 해소와 Linux 단독
+  검증을 진행한다. 우선 기존 N AppImage의 X11 오류 직전 errno·native stack과 socket
+  syscall을 관측해 연결 오류의 원인을 분리한다. 진단 trace는 disposable runner의
+  빈 문서 실행에 한정하며 syscall buffer 내용은 기록하지 않는다.
+- 원인에 맞는 최소 변경은 `apps/desktop/src-tauri/src/`의 Linux 실행·창 생성 경계 또는
+  해당 문제를 유발한 Linux 진단 환경으로 제한한다. 필요한 경우 Linux 전용 unsigned
+  build로 수정 전후를 대조하며 다중 창 안전 gate를 우회하지 않는다.
+- 검증은 로컬 Node 계약·product-boundary·actionlint와 Linux runner의 일반 UI/자동화
+  다중 창 생존·메뉴 응답으로 나눈다. Windows 전체 matrix는 반복하지 않는다.
+- 문서 위치는 기존 구현계획서·오늘할일을 유지한다. 제품 공식 문서는 변경하지 않는다.
+  test release/tag/manifest와 production key, stable/Pages는 그대로 두며 candidate 교체,
+  재서명·게시 및 AppImage updater 수용 재개는 단독 검증 결과 후 별도 승인으로 넘긴다.
+
 ### 검증
 
 - MSI N → N+1 성공, MSI target만 요청, 설치/제거 registry와 파일 연결 보존

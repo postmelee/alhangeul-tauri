@@ -53,7 +53,7 @@ test('진단 workflow는 기존 N artifact만 읽고 비교·종료 stack을 수
   assert.match(workflow, /9730919657/);
   assert.match(workflow, /62786aa966656d52dd597541ad46636facaf8d8f08d72838e12fedea2e33f368/);
   assert.match(workflow, /digest-mismatch: error/);
-  assert.match(workflow, /for mode in webdriver-ui normal-ui webdriver-invoke normal-gdb/);
+  assert.match(workflow, /for mode in webdriver-ui normal-xio normal-strace/);
   assert.match(workflow, /appimage-before.sha256.*appimage-after.sha256/);
   assert.match(workflow, /if: \$\{\{ always\(\) \}\}/);
   assert.doesNotMatch(workflow, /contents: write|secrets\.|gh release|pnpm tauri build|cargo build/);
@@ -64,5 +64,8 @@ test('진단 workflow는 기존 N artifact만 읽고 비교·종료 stack을 수
   assert.match(source, /stopGroup\(managed\)/);
   assert.match(source, /catch syscall exit_group/);
   assert.match(source, /thread apply all bt 18/);
+  assert.match(source, /break _XIOError/);
+  assert.match(source, /p \(int\) errno/);
+  assert.match(source, /raw=read,readv,write,writev,recvmsg,sendmsg,recvfrom,sendto/);
   assert.match(dispatch, /inputs.mode == 'updater-linux-window-probe'/);
 });

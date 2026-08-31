@@ -12,7 +12,7 @@ export function readInputs(env = process.env, platform = process.platform) {
   if (platform !== 'linux' || env.GITHUB_ACTIONS !== 'true') {
     throw new Error('Linux Actions runner 전용 진단입니다.');
   }
-  const modes = ['webdriver-ui', 'normal-ui', 'webdriver-invoke', 'normal-gdb'];
+  const modes = ['webdriver-ui', 'normal-ui', 'webdriver-invoke', 'normal-gdb', 'normal-xio', 'normal-strace'];
   if (!modes.includes(env.ALHANGEUL_PROBE_MODE)) throw new Error('Invalid probe mode');
   for (const key of ['ALHANGEUL_PROBE_APP', 'ALHANGEUL_PROBE_OUTPUT', 'ALHANGEUL_PROBE_COORDINATES']) {
     if (!env[key] || !isAbsolute(env[key])) throw new Error(`${key}: absolute path required`);
@@ -67,6 +67,23 @@ export async function runProbe(inputs) {
 }
 
 function launchMode({ inputs, runtime, automated, env }) {
+  if (inputs.mode === 'normal-strace') {
+    // Capture descriptor lifecycle, never document/network buffer contents.
+    return launch('strace', ['-f', '-tt', '-yy', '-o', join(inputs.output, 'sockets.trace'),
+      '-e', 'trace=connect,close,shutdown,poll,ppoll,read,readv,write,writev,recvmsg,sendmsg,recvfrom,sendto,exit_group',
+      '-e', 'raw=read,readv,write,writev,recvmsg,sendmsg,recvfrom,sendto', inputs.app], env);
+  }
+  if (inputs.mode === 'normal-xio') {
+    return launch('gdb', ['--batch', '--nx',
+      '-ex', 'set pagination off', '-ex', 'set confirm off',
+      '-ex', 'set breakpoint pending on',
+      '-ex', 'handle SIGPIPE nostop noprint pass',
+      '-ex', 'handle SIGUSR1 nostop noprint pass',
+      '-ex', 'handle SIGUSR2 nostop noprint pass',
+      '-ex', 'break _XIOError', '-ex', 'run',
+      '-ex', 'p (int) errno', '-ex', 'thread apply all bt 24',
+      '-ex', 'info proc mappings', '--args', inputs.app], env);
+  }
   if (inputs.mode === 'normal-gdb') {
     // Trace the existing binary only. Catch its termination syscall before the
     // process disappears; batch mode captures native frames and then cleans up.
