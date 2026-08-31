@@ -443,6 +443,9 @@ Task #16 Stage 4: updater key와 release 운영 계약 통합
   Ubuntu runner에서만 수행한다. 진단 완료는 Stage 5 수용 완료와 구분한다.
 - test release/manifest, stable/Pages, production key와 제품 소스는 변경하지 않는다.
   원인 확인 후 필요한 제품 또는 수용 방식 변경은 별도 승인으로 넘긴다.
+- 비교 run `33369617161`에서 자동화 없는 `파일 → 새 창`도 exit code 1로 종료됨을 확인했다.
+  같은 binary의 종료 지점을 GDB `exit_group` syscall catch/backtrace로 추가 관측한다.
+  GDB는 disposable Linux runner에서만 실행하며 제품 수정이나 재빌드는 하지 않는다.
 
 ### 검증
 

@@ -45,7 +45,7 @@ test('raw WebDriver 성공 응답과 요청 경로를 기록한다', async () =>
   assert.equal(evidence[0].path, '/session/a/window/handles');
 });
 
-test('진단 workflow는 정확한 기존 N artifact만 읽고 세 isolated session을 비교한다', async () => {
+test('진단 workflow는 기존 N artifact만 읽고 비교·종료 stack을 수집한다', async () => {
   const workflow = await readFile(new URL('../../../.github/workflows/alhangeul-updater-linux-window-probe.yml', import.meta.url), 'utf8');
   const source = await readFile(new URL('./window-probe.mjs', import.meta.url), 'utf8');
   const dispatch = await readFile(new URL('../../../.github/workflows/alhangeul-desktop.yml', import.meta.url), 'utf8');
@@ -53,7 +53,7 @@ test('진단 workflow는 정확한 기존 N artifact만 읽고 세 isolated sess
   assert.match(workflow, /9730919657/);
   assert.match(workflow, /62786aa966656d52dd597541ad46636facaf8d8f08d72838e12fedea2e33f368/);
   assert.match(workflow, /digest-mismatch: error/);
-  assert.match(workflow, /for mode in webdriver-ui normal-ui webdriver-invoke/);
+  assert.match(workflow, /for mode in webdriver-ui normal-ui webdriver-invoke normal-gdb/);
   assert.match(workflow, /appimage-before.sha256.*appimage-after.sha256/);
   assert.match(workflow, /if: \$\{\{ always\(\) \}\}/);
   assert.doesNotMatch(workflow, /contents: write|secrets\.|gh release|pnpm tauri build|cargo build/);
@@ -62,5 +62,7 @@ test('진단 workflow는 정확한 기존 N artifact만 읽고 세 isolated sess
   assert.match(source, /alwaysMatch: \{ 'tauri:options': \{ application: app \} \}/);
   assert.doesNotMatch(source, /browserName:\s*['"]/);
   assert.match(source, /stopGroup\(managed\)/);
+  assert.match(source, /catch syscall exit_group/);
+  assert.match(source, /thread apply all bt 18/);
   assert.match(dispatch, /inputs.mode == 'updater-linux-window-probe'/);
 });

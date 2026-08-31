@@ -57,7 +57,7 @@ jobs:
           set -euo pipefail
           sudo apt-get update
           sudo apt-get install -y dbus-x11 libfuse2 libgtk-3-0 libwebkit2gtk-4.1-0 \
-            openbox webkit2gtk-driver xvfb xdotool wmctrl scrot fonts-noto-cjk
+            openbox webkit2gtk-driver xvfb xdotool wmctrl scrot fonts-noto-cjk gdb
           dpkg-query -W libwebkit2gtk-4.1-0 webkit2gtk-driver libgtk-3-0 \
             > "$EVIDENCE_ROOT/native-library-versions.txt"
 
@@ -115,12 +115,12 @@ jobs:
           install -m 0755 "${appimages[0]}" "$ALHANGEUL_PROBE_APP"
           sha256sum "$ALHANGEUL_PROBE_APP" > "$EVIDENCE_ROOT/appimage-before.sha256"
 
-      - name: Compare three isolated Linux sessions without updating
+      - name: Compare isolated Linux sessions and capture native exit without updating
         shell: bash
         run: |
           set -euo pipefail
           failed=0
-          for mode in webdriver-ui normal-ui webdriver-invoke; do
+          for mode in webdriver-ui normal-ui webdriver-invoke normal-gdb; do
             export ALHANGEUL_PROBE_MODE="$mode"
             export ALHANGEUL_PROBE_OUTPUT="$EVIDENCE_ROOT/$mode"
             if ! bash scripts/updater/run-linux-native-gui.sh \

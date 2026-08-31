@@ -12,7 +12,7 @@ export function readInputs(env = process.env, platform = process.platform) {
   if (platform !== 'linux' || env.GITHUB_ACTIONS !== 'true') {
     throw new Error('Linux Actions runner 전용 진단입니다.');
   }
-  const modes = ['webdriver-ui', 'normal-ui', 'webdriver-invoke'];
+  const modes = ['webdriver-ui', 'normal-ui', 'webdriver-invoke', 'normal-gdb'];
   if (!modes.includes(env.ALHANGEUL_PROBE_MODE)) throw new Error('Invalid probe mode');
   for (const key of ['ALHANGEUL_PROBE_APP', 'ALHANGEUL_PROBE_OUTPUT', 'ALHANGEUL_PROBE_COORDINATES']) {
     if (!env[key] || !isAbsolute(env[key])) throw new Error(`${key}: absolute path required`);
@@ -28,9 +28,8 @@ export async function runProbe(inputs) {
   const env = { ...process.env };
   // Normal mode must never inherit the automation switch from the caller.
   delete env.TAURI_WEBVIEW_AUTOMATION;
-  const automated = inputs.mode !== 'normal-ui';
-  const managed = launch(automated ? runtime.driverPath : inputs.app,
-    automated ? ['--port', '4444', '--native-port', '4445'] : [], env);
+  const automated = inputs.mode.startsWith('webdriver-');
+  const managed = launchMode({ inputs, runtime, automated, env });
   const request = webdriverClient(evidence.requests);
   let session;
   try {
@@ -65,6 +64,22 @@ export async function runProbe(inputs) {
     ]);
   }
   return evidence;
+}
+
+function launchMode({ inputs, runtime, automated, env }) {
+  if (inputs.mode === 'normal-gdb') {
+    // Trace the existing binary only. Catch its termination syscall before the
+    // process disappears; batch mode captures native frames and then cleans up.
+    return launch('gdb', ['--batch', '--nx',
+      '-ex', 'set pagination off', '-ex', 'set confirm off',
+      '-ex', 'handle SIGPIPE nostop noprint pass',
+      '-ex', 'handle SIGUSR1 nostop noprint pass',
+      '-ex', 'handle SIGUSR2 nostop noprint pass',
+      '-ex', 'catch syscall exit_group', '-ex', 'run',
+      '-ex', 'thread apply all bt 18', '--args', inputs.app], env);
+  }
+  return launch(automated ? runtime.driverPath : inputs.app,
+    automated ? ['--port', '4444', '--native-port', '4445'] : [], env);
 }
 
 async function startSession(request, app) {
