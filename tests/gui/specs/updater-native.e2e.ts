@@ -2,6 +2,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { browser, expect } from '@wdio/globals';
 import { readUpdaterHarnessInputs } from '../wdio.updater.conf.ts';
+import { createSecondaryWindow } from '../updater-window.ts';
 
 interface UpdaterSnapshot {
   status: 'idle' | 'checking' | 'available' | 'downloading' | 'installing' | 'restartRequired' | 'error';
@@ -78,7 +79,7 @@ async function runPreflight(evidence: Record<string, unknown>): Promise<void> {
   expect(duplicate.filter((result) => result.reason?.includes('updaterBusy'))).toHaveLength(1);
   assertAvailable(await state());
 
-  const secondary = await createSecondaryWindow();
+  const secondary = await createSecondaryWindow(waitForNativeBridge, evidence);
   evidence.multiWindow = {
     label: secondary.label,
     handles: (await browser.getWindowHandles()).length,
@@ -236,26 +237,6 @@ async function duplicateCheck(): Promise<Array<{ status: string; reason?: string
 
 async function createDocument(): Promise<{ docId: string }> {
   return invoke<{ docId: string }>('create_document');
-}
-
-async function createSecondaryWindow(): Promise<{
-  label: string;
-  handle: string;
-  primaryHandle: string;
-}> {
-  const primaryHandle = await browser.getWindowHandle();
-  const label = await invoke<string>('create_editor_window');
-  await browser.waitUntil(async () => (await browser.getWindowHandles()).length === 2, {
-    timeout: 120_000,
-    interval: 250,
-    timeoutMsg: '두 번째 editor window가 제한 시간 안에 준비되지 않았습니다',
-  });
-  const handle = (await browser.getWindowHandles()).find((value) => value !== primaryHandle);
-  if (!handle) throw new Error('두 번째 editor window handle을 찾지 못했습니다');
-  await browser.switchToWindow(handle);
-  await waitForNativeBridge();
-  await browser.switchToWindow(primaryHandle);
-  return { label, handle, primaryHandle };
 }
 
 async function createDocumentInWindow(handle: string, primaryHandle: string): Promise<{ docId: string }> {
