@@ -272,10 +272,21 @@ Task #50 Stage 2: 렌더 결과와 resource 예산의 required 판정 강화
 
 ## Stage 3 — 조상 symlink path 정책 정렬
 
+2026-08-31 작업지시자의 "진행해줘"를 Stage 2 보고 승인과 Stage 3 진입 승인으로
+기록한다. fetch한 `origin/devel`은 기존 `8b865fa` 기준선과 같고 worktree는
+깨끗했다. 기존 통합 테스트가 299 LOC이므로 동일 승인 시나리오를 별도 test target에
+배치하고 공통 도우미만 분리한다. 300 LOC 상한 검사의 파일 목록도 함께 보강한다.
+Linux에서만 실행하도록 승인된 fmt 명령은 기존 native lint step에 연결한다.
+제품 동작 범위는 기존 경로 보정 그대로이며 output 구현은 변경하지 않는다.
+
 ### 산출물
 
 - `apps/linux-thumbnailer/src/cli.rs`
 - `apps/linux-thumbnailer/tests/thumbnailer_contract.rs`
+- `apps/linux-thumbnailer/tests/symlink_contract.rs` — 승인된 symlink 시나리오 분리
+- `apps/linux-thumbnailer/tests/support/mod.rs` — 기존 공통 도우미 이동
+- `tests/linux-thumbnail-build.test.mjs` — 분리 파일의 크기·검증 연결 계약
+- `.github/workflows/alhangeul-desktop.yml` — 기존 lint에 승인된 fmt 검사 연결
 - `mydocs/working/task_m010_50_stage3.md`
 
 ### 변경 내용

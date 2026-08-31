@@ -168,6 +168,7 @@ test('desktop workflow는 Linux x64 arm64 helper를 build·보존·test·lint한
   assert.match(workflow, /CARGO_BUILD_TARGET: \$\{\{ matrix\.target \}\}/);
   assert.match(workflow, /pnpm run test:linux-thumbnailer/);
   assert.match(workflow, /pnpm run clippy:linux-thumbnailer/);
+  assert.match(workflow, /cargo fmt --manifest-path apps\/linux-thumbnailer\/Cargo.toml -- --check/);
 });
 
 test('신규 source와 함수가 구현계획의 크기 상한을 지킨다', async () => {
@@ -179,6 +180,8 @@ test('신규 source와 함수가 구현계획의 크기 상한을 지킨다', as
     'apps/linux-thumbnailer/src/render.rs',
     'apps/linux-thumbnailer/src/output.rs',
     'apps/linux-thumbnailer/tests/thumbnailer_contract.rs',
+    'apps/linux-thumbnailer/tests/symlink_contract.rs',
+    'apps/linux-thumbnailer/tests/support/mod.rs',
   ];
   for (const path of paths) {
     const source = await readFile(join(repoRoot, path), 'utf8');

@@ -1,19 +1,18 @@
 #![cfg(target_os = "linux")]
 
-use image::codecs::png::{PngDecoder, PngEncoder};
-use image::{ColorType, ExtendedColorType, ImageDecoder, ImageEncoder};
+mod support;
+
+use image::codecs::png::PngEncoder;
+use image::{ExtendedColorType, ImageEncoder};
 use std::fs::{self, File};
-use std::io::{BufReader, Cursor, Write};
+use std::io::{Cursor, Write};
 use std::os::unix::fs::{symlink, MetadataExt, PermissionsExt};
-use std::path::{Path, PathBuf};
-use std::process::{Child, Command, ExitStatus};
+use std::process::Command;
 use std::time::{Duration, Instant};
+use support::*;
 use tempfile::TempDir;
 use zip::write::SimpleFileOptions;
 use zip::ZipWriter;
-
-const TEST_BEHAVIOR: &str = "ALHANGEUL_THUMBNAILER_TEST_BEHAVIOR";
-const TEMP_PREFIX: &str = ".alhangeul-thumbnail-";
 
 #[test]
 fn hwp_and_hwpx_render_to_bounded_rgba_png() {
@@ -176,62 +175,6 @@ fn concurrent_requests_publish_only_complete_png() {
     assert_no_temporaries(directory.path());
 }
 
-fn binary() -> &'static str {
-    env!("CARGO_BIN_EXE_alhangeul-thumbnailer")
-}
-
-fn run(input: &Path, output: &Path, edge: u32) -> ExitStatus {
-    spawn(input, output, edge).wait().unwrap()
-}
-
-fn spawn(input: &Path, output: &Path, edge: u32) -> Child {
-    Command::new(binary())
-        .arg(input)
-        .arg(output)
-        .arg(edge.to_string())
-        .spawn()
-        .unwrap()
-}
-
-fn spawn_with_behavior(input: &Path, output: &Path, behavior: &str) -> Child {
-    let mut command = Command::new(binary());
-    command
-        .arg(input)
-        .arg(output)
-        .arg("64")
-        .env(TEST_BEHAVIOR, behavior);
-    command.spawn().unwrap()
-}
-
-fn copy_fixture(directory: &TempDir, name: &str) -> PathBuf {
-    let source = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../third_party/rhwp/saved")
-        .join(name);
-    let destination = directory.path().join(name);
-    fs::copy(source, &destination).unwrap();
-    destination
-}
-
-fn assert_png(path: &Path, edge: u32) {
-    let decoder = PngDecoder::new(BufReader::new(File::open(path).unwrap())).unwrap();
-    assert_eq!(decoder.color_type(), ColorType::Rgba8);
-    let (width, height) = decoder.dimensions();
-    assert_eq!(width.max(height), edge);
-    let mut pixels = vec![0_u8; decoder.total_bytes() as usize];
-    decoder.read_image(&mut pixels).unwrap();
-    assert_eq!(pixels.len(), width as usize * height as usize * 4);
-}
-
-fn assert_no_temporaries(directory: &Path) {
-    let names = fs::read_dir(directory)
-        .unwrap()
-        .map(|entry| entry.unwrap().file_name())
-        .collect::<Vec<_>>();
-    assert!(names
-        .iter()
-        .all(|name| !name.to_string_lossy().starts_with(TEMP_PREFIX)));
-}
-
 fn preview_only_hwpx() -> Vec<u8> {
     let mut png = Cursor::new(Vec::new());
     PngEncoder::new(&mut png)
@@ -242,58 +185,4 @@ fn preview_only_hwpx() -> Vec<u8> {
     writer.start_file("Preview/PrvImage.png", options).unwrap();
     writer.write_all(&png.into_inner()).unwrap();
     writer.finish().unwrap().into_inner()
-}
-
-fn wait_for_limited_worker(parent_pid: u32) -> u32 {
-    let children = format!("/proc/{parent_pid}/task/{parent_pid}/children");
-    let deadline = Instant::now() + Duration::from_secs(2);
-    loop {
-        if let Ok(value) = fs::read_to_string(&children) {
-            if let Some(pid) = value.split_whitespace().next() {
-                let pid = pid.parse().unwrap();
-                let limits = fs::read_to_string(format!("/proc/{pid}/limits")).unwrap();
-                let address = limits
-                    .lines()
-                    .find(|line| line.starts_with("Max address space"))
-                    .unwrap();
-                if address.split_whitespace().collect::<Vec<_>>()
-                    == ["Max", "address", "space", "268435456", "268435456", "bytes"]
-                {
-                    return pid;
-                }
-            }
-        }
-        assert!(
-            Instant::now() < deadline,
-            "worker process의 메모리 제한이 적용되지 않았습니다"
-        );
-        std::thread::sleep(Duration::from_millis(10));
-    }
-}
-
-fn wait_for_process_exit(pid: u32) {
-    let path = format!("/proc/{pid}");
-    let deadline = Instant::now() + Duration::from_secs(2);
-    while Path::new(&path).exists() {
-        assert!(
-            Instant::now() < deadline,
-            "worker process가 회수되지 않았습니다"
-        );
-        std::thread::sleep(Duration::from_millis(10));
-    }
-}
-
-fn wait_with_timeout(child: &mut Child, timeout: Duration) -> ExitStatus {
-    let deadline = Instant::now() + timeout;
-    loop {
-        if let Some(status) = child.try_wait().unwrap() {
-            return status;
-        }
-        if Instant::now() >= deadline {
-            let _ = child.kill();
-            let _ = child.wait();
-            panic!("thumbnailer process timeout");
-        }
-        std::thread::sleep(Duration::from_millis(10));
-    }
 }

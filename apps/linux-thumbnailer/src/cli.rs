@@ -52,8 +52,8 @@ fn validate_request(input: PathBuf, output: PathBuf, edge: u32) -> Result<Reques
     if !(1..=MAX_REQUESTED_EDGE).contains(&edge) {
         return Err(CliError::Edge);
     }
-    validate_input(&input)?;
-    validate_output(&input, &output)?;
+    let input = validate_input(&input)?;
+    let output = validate_output(&input, &output)?;
     Ok(Request {
         input,
         output,
@@ -61,10 +61,17 @@ fn validate_request(input: PathBuf, output: PathBuf, edge: u32) -> Result<Reques
     })
 }
 
-fn validate_input(input: &Path) -> Result<(), CliError> {
+fn validate_input(input: &Path) -> Result<PathBuf, CliError> {
     if !input.is_absolute() {
         return Err(CliError::Input);
     }
+    validate_input_file(input)?;
+    let resolved = fs::canonicalize(input).map_err(|_| CliError::Input)?;
+    validate_input_file(&resolved)?;
+    Ok(resolved)
+}
+
+fn validate_input_file(input: &Path) -> Result<(), CliError> {
     let metadata = fs::symlink_metadata(input).map_err(|_| CliError::Input)?;
     if metadata.file_type().is_symlink()
         || !metadata.is_file()
@@ -72,30 +79,31 @@ fn validate_input(input: &Path) -> Result<(), CliError> {
     {
         return Err(CliError::Input);
     }
-    if fs::canonicalize(input).map_err(|_| CliError::Input)? != input {
-        return Err(CliError::Input);
-    }
     Ok(())
 }
 
-fn validate_output(input: &Path, output: &Path) -> Result<(), CliError> {
-    if !output.is_absolute() || output.file_name().is_none() || input == output {
+fn validate_output(input: &Path, output: &Path) -> Result<PathBuf, CliError> {
+    if !output.is_absolute() {
         return Err(CliError::Output);
     }
+    let name = output.file_name().ok_or(CliError::Output)?;
     let parent = output.parent().ok_or(CliError::Output)?;
-    let metadata = fs::symlink_metadata(parent).map_err(|_| CliError::Output)?;
-    if metadata.file_type().is_symlink()
-        || !metadata.is_dir()
-        || fs::canonicalize(parent).map_err(|_| CliError::Output)? != parent
-    {
+    let parent = fs::canonicalize(parent).map_err(|_| CliError::Output)?;
+    if !fs::metadata(&parent).map_err(|_| CliError::Output)?.is_dir() {
         return Err(CliError::Output);
     }
+    let resolved = parent.join(name);
+    if input == resolved {
+        return Err(CliError::Output);
+    }
+    validate_output_file(&resolved)?;
+    Ok(resolved)
+}
+
+fn validate_output_file(output: &Path) -> Result<(), CliError> {
     match fs::symlink_metadata(output) {
         Ok(metadata) => {
-            if metadata.file_type().is_symlink()
-                || !metadata.is_file()
-                || fs::canonicalize(output).map_err(|_| CliError::Output)? != output
-            {
+            if metadata.file_type().is_symlink() || !metadata.is_file() {
                 return Err(CliError::Output);
             }
         }
@@ -109,6 +117,7 @@ fn validate_output(input: &Path, output: &Path) -> Result<(), CliError> {
 mod tests {
     use super::*;
     use std::fs::File;
+    use std::os::unix::fs::symlink;
     use tempfile::tempdir;
 
     #[test]
@@ -140,6 +149,35 @@ mod tests {
             parse(["a".into(), "b".into(), "1025".into()]),
             Err(CliError::Edge)
         );
+    }
+
+    #[test]
+    fn public_and_worker_store_resolved_paths() {
+        let directory = tempdir().unwrap();
+        let root = fs::canonicalize(directory.path()).unwrap();
+        let alias = root.join("한글 별칭");
+        symlink(&root, &alias).unwrap();
+        let input = root.join("input.hwpx");
+        File::create(&input).unwrap();
+        let output = root.join("output.png");
+        for flag in [None, Some(INTERNAL_WORKER_FLAG)] {
+            let mut args = Vec::new();
+            if let Some(flag) = flag {
+                args.push(OsString::from(flag));
+            }
+            args.extend([
+                alias.join("input.hwpx").into(),
+                alias.join("output.png").into(),
+                "64".into(),
+            ]);
+            let expected = request(&input, &output, 64);
+            let expected = if flag.is_some() {
+                Invocation::Worker(expected)
+            } else {
+                Invocation::Supervisor(expected)
+            };
+            assert_eq!(parse(args).unwrap(), expected);
+        }
     }
 
     fn request(input: &Path, output: &Path, edge: u32) -> Request {

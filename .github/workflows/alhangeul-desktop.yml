@@ -386,7 +386,9 @@ jobs:
         if: inputs.run_tests && startsWith(matrix.name, 'linux-')
         env:
           CARGO_BUILD_TARGET: ${{ matrix.target }}
-        run: pnpm run clippy:linux-thumbnailer
+        run: |
+          cargo fmt --manifest-path apps/linux-thumbnailer/Cargo.toml -- --check
+          pnpm run clippy:linux-thumbnailer
 
       - name: Build Windows thumbnail binaries
         if: matrix.name == 'windows-x64'
