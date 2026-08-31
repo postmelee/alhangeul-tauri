@@ -278,6 +278,13 @@ Task #50 Stage 2: 렌더 결과와 resource 예산의 required 판정 강화
 배치하고 공통 도우미만 분리한다. 300 LOC 상한 검사의 파일 목록도 함께 보강한다.
 Linux에서만 실행하도록 승인된 fmt 명령은 기존 native lint step에 연결한다.
 제품 동작 범위는 기존 경로 보정 그대로이며 output 구현은 변경하지 않는다.
+검증 로그는 기존 helper artifact가 test 전에 올라가는 구조와 분리하여 test/fmt/
+Clippy 전용 artifact에 항상 보존한다. `pipefail`로 실제 실패를 유지하고 exact
+source/workflow SHA 및 outcome을 기록한다. 테스트의 원본 byte 동일성 검사는
+실패해도 문서 byte를 출력하지 않도록 boolean assertion을 사용한다.
+첫 candidate `cf9c48e`의 run `33376235566`에서 arm64의 20개 Rust test가
+통과했으나 fmt가 신규 코드의 줄바꿈 세 곳을 거부했다. Linux formatter diff만
+반영하고 같은 범위에서 재실행하며 lint나 test gate를 완화하지 않는다.
 
 ### 산출물
 
@@ -286,7 +293,7 @@ Linux에서만 실행하도록 승인된 fmt 명령은 기존 native lint step�
 - `apps/linux-thumbnailer/tests/symlink_contract.rs` — 승인된 symlink 시나리오 분리
 - `apps/linux-thumbnailer/tests/support/mod.rs` — 기존 공통 도우미 이동
 - `tests/linux-thumbnail-build.test.mjs` — 분리 파일의 크기·검증 연결 계약
-- `.github/workflows/alhangeul-desktop.yml` — 기존 lint에 승인된 fmt 검사 연결
+- `.github/workflows/alhangeul-desktop.yml` — fmt 검사 및 test/lint 진단 보존
 - `mydocs/working/task_m010_50_stage3.md`
 
 ### 변경 내용

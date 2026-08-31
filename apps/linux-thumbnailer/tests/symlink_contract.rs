@@ -27,7 +27,7 @@ fn ancestor_and_parent_aliases_render_new_outputs() {
     for (source, output) in cases {
         assert!(run(&source, &output, 64).success());
         assert_png(&output, 64);
-        assert_eq!(fs::read(&input).unwrap(), original);
+        assert!(fs::read(&input).unwrap() == original);
     }
     assert_no_temporaries(&real);
     assert_no_temporaries(&real.join("cache"));
@@ -49,7 +49,7 @@ fn aliased_precreated_and_existing_outputs_preserve_publication_contracts() {
             assert_eq!((after.dev(), after.ino()), (before.dev(), before.ino()));
             assert!(held.metadata().unwrap().len() > 0);
         }
-        assert_eq!(fs::read(real.join(INPUT)).unwrap(), original);
+        assert!(fs::read(real.join(INPUT)).unwrap() == original);
     }
     assert_no_temporaries(&real.join("cache"));
 }
@@ -76,7 +76,7 @@ fn invalid_inputs_through_aliases_preserve_original_and_final() {
     ] {
         assert!(!run(&source, &output, 64).success());
         assert_eq!(fs::read(&output).unwrap(), b"existing-final");
-        assert_eq!(fs::read(&input).unwrap(), original);
+        assert!(fs::read(&input).unwrap() == original);
     }
     assert_no_temporaries(&real.join("cache"));
 }
@@ -105,7 +105,7 @@ fn output_leaf_and_parent_failures_preserve_target_sentinels() {
         for source in [real.join(INPUT), alias.join(INPUT)] {
             assert!(!run(&source, &output, 64).success());
         }
-        assert_eq!(fs::read(real.join(INPUT)).unwrap(), original);
+        assert!(fs::read(real.join(INPUT)).unwrap() == original);
         assert_eq!(fs::read(&target).unwrap(), b"target-sentinel");
         assert!(!real.join("missing").exists());
     }
@@ -127,7 +127,7 @@ fn aliased_partial_and_panicking_workers_preserve_final_and_inode() {
             assert!(!wait_with_timeout(&mut child, Duration::from_secs(4)).success());
             assert_eq!(fs::read(&output).unwrap(), initial);
             assert_eq!(fs::metadata(&output).unwrap().ino(), inode);
-            assert_eq!(fs::read(real.join(INPUT)).unwrap(), original);
+            assert!(fs::read(real.join(INPUT)).unwrap() == original);
             assert_no_temporaries(&real.join("cache"));
         }
     }
@@ -155,9 +155,12 @@ fn resolved_worker_paths_survive_alias_retargeting_and_timeout_reaps_worker() {
     symlink(&decoy, &alias).unwrap();
     assert!(!wait_with_timeout(&mut child, Duration::from_secs(4)).success());
     wait_for_process_exit(worker_pid);
-    assert_eq!(fs::read(&input).unwrap(), original);
+    assert!(fs::read(&input).unwrap() == original);
     assert_eq!(fs::read(&output).unwrap(), b"existing-final");
-    assert_eq!(fs::read(decoy.join("cache/final.png")).unwrap(), b"target-sentinel");
+    assert_eq!(
+        fs::read(decoy.join("cache/final.png")).unwrap(),
+        b"target-sentinel"
+    );
     assert_no_temporaries(&real.join("cache"));
     assert_no_temporaries(&decoy.join("cache"));
 }
@@ -168,7 +171,11 @@ fn linked_workspace() -> (TempDir, PathBuf, PathBuf) {
     let alias = directory.path().join("상위 별칭");
     fs::create_dir_all(real.join("cache")).unwrap();
     fs::create_dir_all(real.join("하위 폴더")).unwrap();
-    fs::rename(copy_fixture(&directory, "blank_hwpx.hwpx"), real.join(INPUT)).unwrap();
+    fs::rename(
+        copy_fixture(&directory, "blank_hwpx.hwpx"),
+        real.join(INPUT),
+    )
+    .unwrap();
     symlink(&real, &alias).unwrap();
     (directory, real, alias)
 }

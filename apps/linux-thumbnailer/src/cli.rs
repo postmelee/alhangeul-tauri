@@ -89,7 +89,10 @@ fn validate_output(input: &Path, output: &Path) -> Result<PathBuf, CliError> {
     let name = output.file_name().ok_or(CliError::Output)?;
     let parent = output.parent().ok_or(CliError::Output)?;
     let parent = fs::canonicalize(parent).map_err(|_| CliError::Output)?;
-    if !fs::metadata(&parent).map_err(|_| CliError::Output)?.is_dir() {
+    if !fs::metadata(&parent)
+        .map_err(|_| CliError::Output)?
+        .is_dir()
+    {
         return Err(CliError::Output);
     }
     let resolved = parent.join(name);

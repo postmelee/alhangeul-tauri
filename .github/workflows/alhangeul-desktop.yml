@@ -377,18 +377,56 @@ jobs:
         run: pnpm run clippy:document-preview:protocol
 
       - name: Test Linux thumbnailer
+        id: test-linux-thumbnailer
         if: inputs.run_tests && startsWith(matrix.name, 'linux-')
+        shell: bash
         env:
           CARGO_BUILD_TARGET: ${{ matrix.target }}
-        run: pnpm run test:linux-thumbnailer
+          OUTPUT_ROOT: diagnostics/linux-thumbnailer-tests-${{ matrix.name }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$OUTPUT_ROOT"
+          pnpm run test:linux-thumbnailer 2>&1 | tee "$OUTPUT_ROOT/tests.log"
 
       - name: Lint Linux thumbnailer
+        id: lint-linux-thumbnailer
         if: inputs.run_tests && startsWith(matrix.name, 'linux-')
+        shell: bash
         env:
           CARGO_BUILD_TARGET: ${{ matrix.target }}
+          OUTPUT_ROOT: diagnostics/linux-thumbnailer-tests-${{ matrix.name }}
         run: |
-          cargo fmt --manifest-path apps/linux-thumbnailer/Cargo.toml -- --check
-          pnpm run clippy:linux-thumbnailer
+          set -euo pipefail
+          mkdir -p "$OUTPUT_ROOT"
+          cargo fmt --manifest-path apps/linux-thumbnailer/Cargo.toml -- --check 2>&1 | tee "$OUTPUT_ROOT/fmt.log"
+          pnpm run clippy:linux-thumbnailer 2>&1 | tee "$OUTPUT_ROOT/clippy.log"
+
+      - name: Record Linux thumbnailer test outcome
+        if: ${{ always() && inputs.run_tests && startsWith(matrix.name, 'linux-') }}
+        shell: bash
+        env:
+          OUTPUT_ROOT: diagnostics/linux-thumbnailer-tests-${{ matrix.name }}
+          TEST_OUTCOME: ${{ steps.test-linux-thumbnailer.outcome }}
+          LINT_OUTCOME: ${{ steps.lint-linux-thumbnailer.outcome }}
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
+          RUNNER_NAME: ${{ matrix.name }}
+          BUILD_TARGET: ${{ matrix.target }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$OUTPUT_ROOT"
+          printf '{"schemaVersion":1,"repositorySha":"%s","workflowSha":"%s","runId":"%s","runAttempt":"%s","runner":"%s","target":"%s","test":"%s","lint":"%s"}\n' \
+            "$(git rev-parse HEAD)" "$WORKFLOW_SHA" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" \
+            "$RUNNER_NAME" "$BUILD_TARGET" "$TEST_OUTCOME" "$LINT_OUTCOME" \
+            > "$OUTPUT_ROOT/step-outcomes.json"
+
+      - name: Upload Linux thumbnailer test evidence
+        if: ${{ always() && inputs.run_tests && startsWith(matrix.name, 'linux-') }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: alhangeul-${{ matrix.name }}-thumbnailer-tests
+          path: diagnostics/linux-thumbnailer-tests-${{ matrix.name }}/**
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Build Windows thumbnail binaries
         if: matrix.name == 'windows-x64'

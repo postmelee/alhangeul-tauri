@@ -171,6 +171,33 @@ test('desktop workflow는 Linux x64 arm64 helper를 build·보존·test·lint한
   assert.match(workflow, /cargo fmt --manifest-path apps\/linux-thumbnailer\/Cargo.toml -- --check/);
 });
 
+test('Linux Rust 진단은 실패 상태를 유지하고 exact SHA와 로그를 보존한다', async () => {
+  const workflow = await readFile(join(repoRoot, '.github/workflows/alhangeul-desktop.yml'), 'utf8');
+  const step = (name) => workflow.split('      - name: ').find((item) => item.startsWith(`${name}\n`));
+  for (const name of ['Test Linux thumbnailer', 'Lint Linux thumbnailer']) {
+    const source = step(name);
+    assert.match(source, /if: inputs.run_tests && startsWith\(matrix.name, 'linux-'\)/);
+    assert.match(source, /shell: bash/);
+    assert.match(source, /set -euo pipefail/);
+    assert.match(source, /\| tee "\$OUTPUT_ROOT\//);
+    assert.doesNotMatch(source, /continue-on-error|\|\| true/);
+  }
+  const outcome = step('Record Linux thumbnailer test outcome');
+  const upload = step('Upload Linux thumbnailer test evidence');
+  for (const source of [outcome, upload]) {
+    assert.match(source, /always\(\) && inputs.run_tests && startsWith\(matrix.name, 'linux-'\)/);
+  }
+  assert.match(outcome, /steps.test-linux-thumbnailer.outcome/);
+  assert.match(outcome, /steps.lint-linux-thumbnailer.outcome/);
+  assert.match(outcome, /github.workflow_sha/);
+  assert.match(outcome, /git rev-parse HEAD/);
+  assert.match(upload, /name: alhangeul-\$\{\{ matrix.name \}\}-thumbnailer-tests/);
+  assert.match(upload, /if-no-files-found: error/);
+  assert.match(upload, /retention-days: 14/);
+  const contract = await readFile(join(repoRoot, 'apps/linux-thumbnailer/tests/symlink_contract.rs'), 'utf8');
+  assert.doesNotMatch(contract, /assert_eq!\([^;\n]+, original\)/);
+});
+
 test('신규 source와 함수가 구현계획의 크기 상한을 지킨다', async () => {
   const paths = [
     'scripts/build-linux-thumbnailer.mjs',
