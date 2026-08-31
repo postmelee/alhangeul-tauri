@@ -89,6 +89,7 @@ jobs:
             libxdo-dev \
             pkg-config \
             rpm \
+            shared-mime-info \
             time \
             xdg-utils \
             zip
@@ -441,6 +442,8 @@ jobs:
         run: |
           set -euo pipefail
           evidence="$BUNDLE_ROOT/verification/linux-thumbnail-packages.json"
+          bash scripts/linux-thumbnail-mime-smoke.sh "$GITHUB_WORKSPACE" "$OUTPUT_ROOT/mime-canary.json" \
+            2>&1 | tee "$OUTPUT_ROOT/mime-canary.log"
           bash scripts/linux-thumbnail-package-smoke.sh \
             --platform "${{ matrix.name }}" \
             --bundle-root "$BUNDLE_ROOT" \
@@ -462,6 +465,10 @@ jobs:
           printf '{"smoke":"%s","repositorySha":"%s","runner":"%s"}\n' \
             "$SMOKE_OUTCOME" "$(git rev-parse HEAD)" "${{ matrix.name }}" \
             > "$OUTPUT_ROOT/step-outcomes.json"
+          bundle="apps/desktop/src-tauri/target/${{ matrix.target }}/release/bundle/verification"
+          if [[ -d "$bundle" ]]; then
+            find "$bundle" -maxdepth 1 -name 'linux-thumbnail-packages.json*' -exec cp {} "$OUTPUT_ROOT/" \;
+          fi
 
       - name: Upload Linux thumbnail package evidence
         id: upload-linux-thumbnail-package-evidence

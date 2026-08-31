@@ -1,17 +1,23 @@
 import { createHash } from 'node:crypto';
 import { createReadStream } from 'node:fs';
 import { lstat, readFile } from 'node:fs/promises';
-import { relative, sep } from 'node:path';
+import { join, relative, sep } from 'node:path';
 import { run } from './linux-thumbnail-package-fixtures.mjs';
+import { MIME_PATH } from './linux-thumbnail-mime-contract.mjs';
 
 export const HELPER_PATH = '/usr/lib/alhangeul/alhangeul-thumbnailer';
 export const REGISTRATION_PATH = '/usr/share/thumbnailers/alhangeul.thumbnailer';
 export const SENTINEL_PATH = '/usr/share/thumbnailers/alhangeul-stage4-third-party.thumbnailer';
-const LIFECYCLE = [
+export const LIFECYCLE = [
+  'baseline',
   'clean-install',
   'same-version-reinstall',
+  'interim-uninstall',
+  'old-install',
   'update',
   'injected-failure-rollback',
+  'refresh-failure-observed',
+  'explicit-recovery',
   'uninstall',
 ];
 
@@ -28,11 +34,15 @@ export function packageEvidence(format, metadata, context, installed) {
       path: REGISTRATION_PATH,
       mode: '0644',
       exec: `${HELPER_PATH} %i %o %s`,
-      mime: 'application/x-hwp;application/vnd.hancom.hwpx;',
+      mime: 'application/x-hwp;application/x-hwpx;',
+      sha256: installed.registrationSha256,
     },
+    mime: { path: MIME_PATH, mode: '0644', sha256: context.mimeSha256 },
+    archiveContract: context.archiveContract,
+    owners: installed.owners,
     elfArchitecture: installed.elfArchitecture,
     singleOwner: installed.singleOwner,
-    lifecycle: [...LIFECYCLE],
+    lifecycle: context.transitions,
   };
 }
 
@@ -56,7 +66,10 @@ export function assertArchivePaths(listing) {
   const paths = listing.split(/\r?\n/)
     .map((line) => line.trim().split(/\s+/).at(-1) ?? '')
     .map((path) => `/${path.replace(/^\.\//, '').replace(/^\//, '')}`);
-  for (const path of [HELPER_PATH, REGISTRATION_PATH]) {
+  if (paths.some((path) => /^\/usr\/share\/mime\/(?:aliases|globs2?|magic|mime.cache|types|subclasses|application\/)/.test(path))) {
+    throw new Error('archive must not own generated MIME cache');
+  }
+  for (const path of [HELPER_PATH, REGISTRATION_PATH, MIME_PATH]) {
     const count = paths.filter((candidate) => candidate === path).length;
     if (count !== 1) {
       const relevant = paths.filter((candidate) => /alhangeul|thumbnailer/i.test(candidate));
@@ -73,11 +86,15 @@ export function assertPackageIdentity(name, architecture, expectedArchitecture) 
 export async function assertProductFilesAbsent() {
   assertEqual(await exists(HELPER_PATH), false, `${HELPER_PATH} absence`);
   assertEqual(await exists(REGISTRATION_PATH), false, `${REGISTRATION_PATH} absence`);
+  assertEqual(await exists(MIME_PATH), false, `${MIME_PATH} absence`);
 }
 
 export function queryMimeDefaults() {
   return Object.fromEntries([
     'application/x-hwp',
+    'application/x-hwpx',
+    'application/hwp+zip',
+    'application/x-hwp+zip',
     'application/vnd.hancom.hwpx',
   ].map((mime) => [mime, run('xdg-mime', ['query', 'default', mime], { allowFailure: true }).stdout.trim()]));
 }
@@ -95,7 +112,62 @@ export function mode(value) {
 }
 
 export async function productHashes() {
-  return `${await sha256File(HELPER_PATH)} ${await sha256File(REGISTRATION_PATH)}`;
+  return `${await sha256File(HELPER_PATH)} ${await sha256File(REGISTRATION_PATH)} ${await sha256File(MIME_PATH)}`;
+}
+
+export async function verifyArchiveContract(format, context) {
+  let dependencies;
+  let hooks;
+  if (format === 'deb') {
+    dependencies = commandText('dpkg-deb', ['--field', context.archive, 'Depends']);
+    const control = join(context.smokeRoot, 'candidate-control');
+    run('dpkg-deb', ['--control', context.archive, control]);
+    hooks = await Promise.all(['postinst', 'postrm'].map((name) => readFile(join(control, name), 'utf8')));
+  } else {
+    dependencies = commandText('rpm', ['-qp', '--requires', context.archive]);
+    hooks = ['%{POSTIN}', '%{POSTUN}'].map((field) => commandText('rpm', ['-qp', '--qf', field, context.archive]));
+  }
+  const required = format === 'deb'
+    ? ['shared-mime-info', 'libwebkit2gtk-4.1-0', 'libgtk-3-0']
+    : ['shared-mime-info', 'libwebkit2gtk-4.1.so.0()(64bit)', 'libgtk-3.so.0()(64bit)'];
+  for (const name of required) {
+    if (!dependencies.includes(name)) throw new Error(`missing ${format} dependency: ${name}`);
+  }
+  const expectedHook = (await readFile('apps/desktop/src-tauri/linux/update-mime-database.sh', 'utf8')).trim();
+  for (const hook of hooks) {
+    if (!hook.includes(expectedHook)) throw new Error(`missing ${format} MIME refresh hook`);
+  }
+  return { dependencies: required, refreshHooks: ['post-install', 'post-remove'] };
+}
+
+export async function verifyInstalled(format, metadata, context) {
+  const expected = [[HELPER_PATH, '0755', context.helperSha256],
+    [REGISTRATION_PATH, '0644', createHash('sha256').update(context.expectedRegistration).digest('hex')],
+    [MIME_PATH, '0644', context.mimeSha256]];
+  const owners = {};
+  for (const [path, expectedMode, hash] of expected) {
+    const stat = await lstat(path);
+    assertEqual(stat.isFile() && !stat.isSymbolicLink(), true, `${format} ${path} regular file`);
+    assertEqual(mode(stat.mode), expectedMode, `${format} ${path} mode`);
+    assertEqual(await sha256File(path), hash, `${format} ${path} hash`);
+    const output = format === 'deb'
+      ? run('dpkg-query', ['--search', path]).stdout.trim().split(/\r?\n/).map((line) => line.split(': ')[0])
+      : run('sudo', ['rpm', '-qf', '--qf', '%{NAME}\n', path]).stdout.trim().split(/\r?\n/);
+    assertEqual(output.length, 1, `${format} ${path} owner count`);
+    assertEqual(output[0], metadata.name, `${format} ${path} owner`);
+    owners[path] = output[0];
+  }
+  const elfArchitecture = context.platform === 'linux-arm64' ? 'aarch64' : 'x86-64';
+  const description = run('file', ['--brief', HELPER_PATH]).stdout.toLowerCase();
+  if (!description.includes(elfArchitecture)) throw new Error(`${format} ELF mismatch: ${description}`);
+  return { elfArchitecture, owners, singleOwner: true, registrationSha256: expected[1][2] };
+}
+
+export function packageState(format, name) {
+  const result = format === 'deb'
+    ? run('dpkg-query', ['-W', '-f', '${Status} ${Version}', name], { allowFailure: true })
+    : run('sudo', ['rpm', '-q', '--qf', '%{NAME} %{VERSION}-%{RELEASE}\n', name], { allowFailure: true });
+  return { exitCode: result.status, description: result.stdout.trim() };
 }
 
 export async function sha256File(path) {

@@ -34,6 +34,7 @@ test('현재 HWP/HWPX release metadata를 읽기 전용으로 승인한다', asy
 for (const [name, mutate, expected] of [
   ['HWPX 저장 설명 drift', (config) => { config.bundle.longDescription = 'HWP only'; }, /bundle\.longDescription/],
   ['HWPX association 삭제', (config) => { config.bundle.fileAssociations.pop(); }, /fileAssociations\.length/],
+  ['HWPX canonical MIME drift', (config) => { config.bundle.fileAssociations[1].mimeType = 'application/vnd.hancom.hwpx'; }, /mimeType/],
   ['updater 활성화', (config) => { config.plugins = { updater: {} }; }, /updater 설정/],
 ]) {
   test(`${name}를 거부한다`, async () => {

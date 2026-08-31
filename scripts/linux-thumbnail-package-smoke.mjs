@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { lstat, mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import {
@@ -20,13 +20,20 @@ import {
   assertProductFilesAbsent,
   debMetadata,
   exists,
-  mode,
   packageEvidence,
   productHashes,
   queryMimeDefaults,
   rpmMetadata,
   sha256File,
+  verifyArchiveContract,
+  verifyInstalled,
+  packageState,
 } from './linux-thumbnail-package-contract.mjs';
+
+import {
+  MIME_PATH, assertMimeInstalled, assertMimeRestored, prepareSystemMime,
+  systemMimeSnapshot, cleanupSystemMime,
+} from './linux-thumbnail-mime-contract.mjs';
 
 async function main() {
   requireEphemeralCi();
@@ -81,6 +88,7 @@ async function prepareSentinels(context) {
   await mkdir(dirname(context.cacheSentinel), { recursive: true });
   await writeFile(context.cacheSentinel, 'cache-sentinel\n');
   context.defaultsBefore = queryMimeDefaults();
+  await prepareSystemMime(context);
 }
 
 function assertNoExistingPackages(platform) {
@@ -107,7 +115,9 @@ async function runPackageLifecycles(context) {
   const invariants = await collectInvariants(context, defaultsAfter);
   await mkdir(dirname(context.evidencePath), { recursive: true });
   await writeFile(context.evidencePath, `${JSON.stringify({
-    schemaVersion: 1,
+    schemaVersion: 2,
+    success: true,
+    mimeSha256: context.mimeSha256,
     platform: context.platform,
     repositorySha: context.repositorySha,
     helperSha256: context.helperSha256,
@@ -124,7 +134,7 @@ async function collectInvariants(context, defaultsAfter) {
     thirdPartyThumbnailerPreserved: (await readFile(SENTINEL_PATH, 'utf8')).includes('/usr/bin/true'),
     cacheSentinelPreserved: await readFile(context.cacheSentinel, 'utf8') === 'cache-sentinel\n',
     productFilesRemovedAfterUninstall: !(await exists(HELPER_PATH))
-      && !(await exists(REGISTRATION_PATH)),
+      && !(await exists(REGISTRATION_PATH)) && !(await exists(MIME_PATH)),
   };
   for (const [name, value] of Object.entries(invariants)) {
     if (!value) throw new Error(`package lifecycle invariant failed: ${name}`);
@@ -136,141 +146,108 @@ function cleanupOwnedState(context) {
   if (context.owned.deb) run('sudo', ['dpkg', '--remove', context.owned.deb], { allowFailure: true });
   if (context.owned.rpm) run('sudo', ['rpm', '--nodeps', '-e', context.owned.rpm], { allowFailure: true });
   if (context.sentinelCreated) run('sudo', ['unlink', SENTINEL_PATH], { allowFailure: true });
+  cleanupSystemMime(context);
 }
 
-async function runDebLifecycle(context) {
-  const metadata = debMetadata(context.archive);
-  const expectedArch = context.platform === 'linux-x64' ? 'amd64' : 'arm64';
-  assertPackageIdentity(metadata.name, metadata.architecture, expectedArch);
-  assertArchivePaths(run('dpkg-deb', ['--contents', context.archive]).stdout);
-  assertCommandFailed(run('dpkg-query', ['-W', metadata.name], { allowFailure: true }), 'preinstalled DEB');
-  context.owned.deb = metadata.name;
-  console.log(`DEB clean install: ${metadata.name} ${metadata.version}`);
-  sudoDpkg('-i', context.archive);
-  let installed = await verifyInstalled('deb', metadata, context);
-  sudoDpkg('-i', context.archive);
-  installed = await verifyInstalled('deb', metadata, context);
-  sudoDpkg('--remove', metadata.name);
-  await assertProductFilesAbsent();
-  const old = await buildDebFixture({
-    root: context.smokeRoot,
-    name: metadata.name,
-    architecture: metadata.architecture,
-    version: '0.0.0~stage4',
-    fail: false,
-  });
-  sudoDpkg('-i', old);
-  await assertMarker('stage4-old-deb\n');
-  sudoDpkg('-i', context.archive);
-  installed = await verifyInstalled('deb', metadata, context);
-  const beforeFailure = await productHashes();
-  const failure = await buildDebFixture({
-    root: context.smokeRoot,
-    name: metadata.name,
-    architecture: metadata.architecture,
-    version: '9999.0.0~stage4',
-    fail: true,
-  });
-  assertCommandFailed(run('sudo', ['dpkg', '-i', failure], { allowFailure: true }), 'DEB injected failure');
-  await verifyInstalled('deb', metadata, context);
-  assertEqual(await productHashes(), beforeFailure, 'DEB rollback hashes');
-  sudoDpkg('--remove', metadata.name);
-  context.owned.deb = '';
-  await assertProductFilesAbsent();
-  return packageEvidence('deb', metadata, context, installed);
+const runDebLifecycle = (context) => runLifecycle({ ...context, format: 'deb' });
+const runRpmLifecycle = (context) => runLifecycle({ ...context, format: 'rpm' });
+
+async function runLifecycle(context) {
+  const { format } = context;
+  const metadata = format === 'deb' ? debMetadata(context.archive) : rpmMetadata(context.archive);
+  context.metadata = metadata;
+  context.transitions = [];
+  const arch = format === 'rpm' ? 'x86_64' : context.platform === 'linux-x64' ? 'amd64' : 'arm64';
+  assertPackageIdentity(metadata.name, metadata.architecture, arch);
+  assertArchivePaths(run(format === 'deb' ? 'dpkg-deb' : 'rpm',
+    [format === 'deb' ? '--contents' : '-qpl', context.archive]).stdout);
+  context.archiveContract = await verifyArchiveContract(format, context);
+  await observe(context, 'baseline', 0, 'baseline');
+  context.owned[format] = metadata.name;
+  await installAndObserve(context, 'clean-install');
+  await installAndObserve(context, 'same-version-reinstall');
+  await removeAndObserve(context, 'interim-uninstall');
+  const old = transaction(context, 'install', await fixture(context, false));
+  assertEqual(await readFile(HELPER_PATH, 'utf8'), `stage4-old-${format}\n`, 'old package marker');
+  await observe(context, 'old-install', old.status, 'baseline');
+  await installAndObserve(context, 'update');
+  await checkPreinstallFailure(context);
+  await checkRefreshFailure(context);
+  const installed = await installAndObserve(context, 'explicit-recovery');
+  await removeAndObserve(context, 'uninstall');
+  context.owned[format] = '';
+  return packageEvidence(format, metadata, context, installed);
 }
 
-async function runRpmLifecycle(context) {
-  const metadata = rpmMetadata(context.archive);
-  assertPackageIdentity(metadata.name, metadata.architecture, 'x86_64');
-  assertArchivePaths(run('rpm', ['-qpl', context.archive]).stdout);
-  assertCommandFailed(
-    run('sudo', ['rpm', '-q', metadata.name], { allowFailure: true }),
-    'preinstalled RPM',
-  );
-  context.owned.rpm = metadata.name;
-  console.log(`RPM clean install: ${metadata.name} ${metadata.version}`);
-  sudoRpm('-i', context.archive);
-  let installed = await verifyInstalled('rpm', metadata, context);
-  sudoRpm('-i', '--replacepkgs', context.archive);
-  installed = await verifyInstalled('rpm', metadata, context);
-  sudoRpm('-e', metadata.name);
-  await assertProductFilesAbsent();
-  const old = await buildRpmFixture({
-    root: context.smokeRoot,
-    name: metadata.name,
-    architecture: metadata.architecture,
-    version: '0.0.0',
-    fail: false,
-  });
-  sudoRpm('-i', old);
-  await assertMarker('stage4-old-rpm\n');
-  sudoRpm('-U', context.archive);
-  installed = await verifyInstalled('rpm', metadata, context);
-  const beforeFailure = await productHashes();
-  const failure = await buildRpmFixture({
-    root: context.smokeRoot,
-    name: metadata.name,
-    architecture: metadata.architecture,
-    version: '9999.0.0',
-    fail: true,
-  });
-  assertCommandFailed(
-    run('sudo', ['rpm', '--nodeps', '--nosignature', '-U', failure], { allowFailure: true }),
-    'RPM injected failure',
-  );
-  await verifyInstalled('rpm', metadata, context);
-  assertEqual(await productHashes(), beforeFailure, 'RPM rollback hashes');
-  sudoRpm('-e', metadata.name);
-  context.owned.rpm = '';
-  await assertProductFilesAbsent();
-  return packageEvidence('rpm', metadata, context, installed);
+async function installAndObserve(context, name) {
+  const result = transaction(context, 'install', context.archive);
+  const installed = await verifyInstalled(context.format, context.metadata, context);
+  await observe(context, name, result.status, 'installed', { owners: installed.owners });
+  return installed;
 }
 
-async function verifyInstalled(format, metadata, context) {
-  const helper = await lstat(HELPER_PATH);
-  const registration = await lstat(REGISTRATION_PATH);
-  assertEqual(helper.isFile() && !helper.isSymbolicLink(), true, `${format} helper type`);
-  assertEqual(registration.isFile() && !registration.isSymbolicLink(), true, `${format} registration type`);
-  assertEqual(mode(helper.mode), '0755', `${format} helper mode`);
-  assertEqual(mode(registration.mode), '0644', `${format} registration mode`);
-  assertEqual(await sha256File(HELPER_PATH), context.helperSha256, `${format} helper SHA-256`);
-  assertEqual(await readFile(REGISTRATION_PATH, 'utf8'), context.expectedRegistration, `${format} registration`);
-  const elfArchitecture = context.platform === 'linux-arm64' ? 'aarch64' : 'x86-64';
-  const description = run('file', ['--brief', HELPER_PATH]).stdout.toLowerCase();
-  if (!description.includes(elfArchitecture)) throw new Error(`${format} ELF mismatch: ${description}`);
-  if (format === 'deb') {
-    const owners = run('dpkg-query', ['--search', HELPER_PATH]).stdout.trim().split(/\r?\n/);
-    if (owners.length !== 1 || !owners[0].startsWith(metadata.name)) {
-      throw new Error(`${format} helper must have one owner: ${owners.join(', ')}`);
-    }
-  } else {
-    const installedPaths = run('sudo', ['rpm', '-ql', metadata.name])
-      .stdout.trim().split(/\r?\n/);
-    assertEqual(
-      installedPaths.filter((path) => path === HELPER_PATH).length,
-      1,
-      'rpm helper package ownership',
-    );
+async function removeAndObserve(context, name) {
+  const result = transaction(context, 'remove', context.metadata.name);
+  await assertProductFilesAbsent();
+  await observe(context, name, result.status, 'baseline');
+}
+
+async function checkPreinstallFailure(context) {
+  const before = await productHashes();
+  const result = transaction(context, 'install', await fixture(context, true), true);
+  assertCommandFailed(result, `${context.format} injected failure`);
+  const installed = await verifyInstalled(context.format, context.metadata, context);
+  assertEqual(await productHashes(), before, `${context.format} rollback hashes`);
+  await observe(context, 'injected-failure-rollback', result.status, 'installed', { owners: installed.owners });
+}
+
+async function checkRefreshFailure(context) {
+  const result = transaction(context, 'install', await fixture(context, 'refresh'), true);
+  const diagnostics = `${result.stdout}\n${result.stderr}`;
+  if (!diagnostics.includes('injected MIME refresh failure (42)') || !/exit (?:status|code) 42/.test(diagnostics)) {
+    throw new Error(`MIME refresh failure not observed: ${diagnostics}`);
   }
-  return { elfArchitecture, singleOwner: true };
+  if (context.format === 'deb') assertCommandFailed(result, 'DEB refresh failure');
+  // RPM may return 0 after failed %post. Observe it; recovery below is explicit.
+  await observe(context, 'refresh-failure-observed', result.status, 'observed', {
+    hookExitCode: 42, recovery: 'explicit-candidate-reinstall',
+  });
 }
 
-async function assertMarker(expected) {
-  assertEqual(await readFile(HELPER_PATH, 'utf8'), expected, 'old package marker');
+function fixture(context, fail) {
+  const build = context.format === 'deb' ? buildDebFixture : buildRpmFixture;
+  const version = fail === 'refresh' ? '9998.0.0' : fail ? '9999.0.0' : '0.0.0';
+  return build({ root: context.smokeRoot, name: context.metadata.name,
+    architecture: context.metadata.architecture,
+    version: context.format === 'deb' ? `${version}~stage4` : version, fail });
 }
 
-function sudoDpkg(action, value) {
-  run('sudo', ['env', 'DEBIAN_FRONTEND=noninteractive', 'dpkg', action, value]);
+function transaction(context, action, value, allowFailure = false) {
+  const args = context.format === 'deb'
+    ? ['env', 'DEBIAN_FRONTEND=noninteractive', 'dpkg', action === 'remove' ? '--remove' : '-i', value]
+    : ['rpm', '--nodeps', '--nosignature', ...(action === 'remove' ? ['-e'] : ['-U', '--replacepkgs', '--oldpackage']), value];
+  return run('sudo', args, { allowFailure });
 }
 
-function sudoRpm(action, ...values) {
-  run('sudo', ['rpm', '--nodeps', '--nosignature', action, ...values]);
+async function observe(context, name, exitCode, state, extra = {}) {
+  const mime = await systemMimeSnapshot(context);
+  const filesPresent = {};
+  for (const path of [HELPER_PATH, REGISTRATION_PATH, MIME_PATH]) filesPresent[path] = await exists(path);
+  const record = { name, exitCode, packageState: packageState(context.format, context.metadata.name),
+    mime, filesPresent, ...extra };
+  context.transitions.push(record);
+  // Persist observations before asserting, including a post-install failure.
+  await mkdir(dirname(context.evidencePath), { recursive: true });
+  await writeFile(`${context.evidencePath}.${context.format}.transitions.json`,
+    `${JSON.stringify(context.transitions, null, 2)}\n`);
+  console.log(JSON.stringify({ format: context.format, ...record }));
+  if (state === 'installed') assertMimeInstalled(mime, context.mimeBaseline, context.mimeSha256);
+  if (state === 'baseline') assertMimeRestored(mime, context.mimeBaseline);
 }
 
 function requireEphemeralCi() {
   const temp = process.env.RUNNER_TEMP ?? '';
-  if (process.env.GITHUB_ACTIONS !== 'true'
+  if (process.platform !== 'linux' || process.env.GITHUB_ACTIONS !== 'true'
     || process.env.ALHANGEUL_PACKAGE_SMOKE_ALLOW_SYSTEM !== '1'
     || !temp.startsWith('/')) {
     throw new Error('package lifecycle is restricted to opted-in ephemeral GitHub Actions runners');

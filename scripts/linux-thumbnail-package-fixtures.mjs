@@ -1,8 +1,10 @@
 import { spawnSync } from 'node:child_process';
 import {
   chmod,
+  copyFile,
   mkdir,
   readdir,
+  readFile,
   writeFile,
 } from 'node:fs/promises';
 import { basename, join } from 'node:path';
@@ -10,6 +12,7 @@ import { basename, join } from 'node:path';
 export function run(command, args, options = {}) {
   const result = spawnSync(command, args, {
     cwd: options.cwd,
+    env: options.env,
     encoding: 'utf8',
     stdio: options.inherit ? 'inherit' : 'pipe',
   });
@@ -43,10 +46,18 @@ export async function buildDebFixture({ root, name, architecture, version, fail 
     '',
   ].join('\n'));
   await writeProductFiles(packageRoot, `stage4-${fail ? 'failed' : 'old'}-deb\n`);
-  if (fail) {
+  if (fail === true) {
     const preinst = join(packageRoot, 'DEBIAN', 'preinst');
     await writeFile(preinst, '#!/bin/sh\nexit 42\n');
     await chmod(preinst, 0o755);
+  }
+  if (fail === 'refresh') {
+    await copyRefreshFiles(packageRoot);
+    const hook = await refreshFailureHook(root);
+    await writeFile(join(packageRoot, 'DEBIAN/postinst'), hook);
+    await writeFile(join(packageRoot, 'DEBIAN/postrm'), await productHook());
+    await chmod(join(packageRoot, 'DEBIAN/postinst'), 0o755);
+    await chmod(join(packageRoot, 'DEBIAN/postrm'), 0o755);
   }
   const output = join(root, `${name}_${version}_${architecture}.deb`);
   run('dpkg-deb', ['--build', '--root-owner-group', packageRoot, output]);
@@ -64,7 +75,14 @@ export async function buildRpmFixture({ root, name, architecture, version, fail 
     '[Thumbnailer Entry]\nExec=/usr/bin/false %i %o %s\nMimeType=application/x-hwp;\n',
   );
   const spec = join(top, 'SPECS', `${name}.spec`);
-  await writeFile(spec, rpmSpec({ name, architecture, version, fail }));
+  let refreshHook = '';
+  if (fail === 'refresh') {
+    await copyFile('/usr/lib/alhangeul/alhangeul-thumbnailer', join(top, 'SOURCES/helper'));
+    await copyFile('/usr/share/thumbnailers/alhangeul.thumbnailer', join(top, 'SOURCES/registration'));
+    await copyFile('apps/desktop/src-tauri/linux/alhangeul-hwpx.xml', join(top, 'SOURCES/mime'));
+    refreshHook = await refreshFailureHook(root);
+  }
+  await writeFile(spec, rpmSpec({ name, architecture, version, fail, refreshHook }));
   run('rpmbuild', ['-bb', '--define', `_topdir ${top}`, spec]);
   return findExactlyOne(join(top, 'RPMS'), '.rpm');
 }
@@ -82,7 +100,7 @@ async function writeProductFiles(root, marker) {
   );
 }
 
-function rpmSpec({ name, architecture, version, fail }) {
+function rpmSpec({ name, architecture, version, fail, refreshHook }) {
   return `Name: ${name}
 Version: ${version}
 Release: 1.stage4
@@ -91,6 +109,7 @@ License: MIT
 BuildArch: ${architecture}
 Source0: helper
 Source1: registration
+${refreshHook ? 'Source2: mime' : ''}
 
 %description
 Alhangeul thumbnail package lifecycle fixture.
@@ -102,12 +121,35 @@ Alhangeul thumbnail package lifecycle fixture.
 %install
 install -D -m 0755 %{SOURCE0} %{buildroot}/usr/lib/alhangeul/alhangeul-thumbnailer
 install -D -m 0644 %{SOURCE1} %{buildroot}/usr/share/thumbnailers/alhangeul.thumbnailer
+${refreshHook ? 'install -D -m 0644 %{SOURCE2} %{buildroot}/usr/share/mime/packages/alhangeul-hwpx.xml' : ''}
 
-${fail ? '%pre\nexit 42\n' : ''}
+${fail === true ? '%pre\nexit 42\n' : ''}
+${refreshHook ? `%post\n${refreshHook}\n%postun\nupdate-mime-database /usr/share/mime\n` : ''}
 %files
 /usr/lib/alhangeul/alhangeul-thumbnailer
 /usr/share/thumbnailers/alhangeul.thumbnailer
+${refreshHook ? '/usr/share/mime/packages/alhangeul-hwpx.xml' : ''}
 `;
+}
+
+async function copyRefreshFiles(root) {
+  await copyFile('/usr/lib/alhangeul/alhangeul-thumbnailer', join(root, 'usr/lib/alhangeul/alhangeul-thumbnailer'));
+  await copyFile('/usr/share/thumbnailers/alhangeul.thumbnailer', join(root, 'usr/share/thumbnailers/alhangeul.thumbnailer'));
+  const path = join(root, 'usr/share/mime/packages');
+  await mkdir(path, { recursive: true });
+  await copyFile('apps/desktop/src-tauri/linux/alhangeul-hwpx.xml', join(path, 'alhangeul-hwpx.xml'));
+}
+
+const productHook = () => readFile('apps/desktop/src-tauri/linux/update-mime-database.sh', 'utf8');
+
+async function refreshFailureHook(root) {
+  const bin = join(root, 'refresh-failure-bin');
+  await mkdir(bin, { recursive: true });
+  const stub = join(bin, 'update-mime-database');
+  await writeFile(stub, '#!/bin/sh\necho "injected MIME refresh failure (42)" >&2\nexit 42\n');
+  await chmod(stub, 0o755);
+  const quoted = `'${bin.replaceAll("'", "'\\''")}'`;
+  return (await productHook()).replace('set -eu', `set -eu\nPATH=${quoted}:$PATH\nexport PATH`);
 }
 
 async function walk(root, extension, matches) {

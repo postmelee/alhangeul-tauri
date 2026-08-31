@@ -20,7 +20,7 @@ test('Freedesktop registration은 제품 helper와 HWP HWPX MIME만 선언한다
     '[Thumbnailer Entry]',
     'TryExec=/usr/lib/alhangeul/alhangeul-thumbnailer',
     'Exec=/usr/lib/alhangeul/alhangeul-thumbnailer %i %o %s',
-    'MimeType=application/x-hwp;application/vnd.hancom.hwpx;',
+    'MimeType=application/x-hwp;application/x-hwpx;',
     '',
   ].join('\n'));
   assert.doesNotMatch(registration, /%u|sh -c|env |application\/octet-stream/);

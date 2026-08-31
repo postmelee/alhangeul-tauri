@@ -25,6 +25,7 @@ test('Tauri DEB와 RPM만 동일한 제품 helper와 registration을 설치한�
   const expected = {
     [helperPath]: 'linux/thumbnail-resources/alhangeul-thumbnailer',
     [registrationPath]: 'linux/alhangeul.thumbnailer',
+    '/usr/share/mime/packages/alhangeul-hwpx.xml': 'linux/alhangeul-hwpx.xml',
   };
   assert.deepEqual(config.bundle.linux.deb.files, expected);
   assert.deepEqual(config.bundle.linux.rpm.files, expected);
@@ -58,11 +59,7 @@ test('lifecycle는 기존 설치를 거부하고 만든 package만 정리한다'
       < smoke.indexOf("run('sudo', ['install', '-D'"),
     '두 package DB의 기존 설치 preflight가 최초 system write보다 먼저여야 합니다',
   );
-  for (const format of ['deb', 'rpm']) {
-    const preinstalled = smoke.indexOf(`'preinstalled ${format.toUpperCase()}'`);
-    const owned = smoke.indexOf(`context.owned.${format} = metadata.name`);
-    assert.ok(preinstalled >= 0 && preinstalled < owned, `${format} 기존 설치 확인이 먼저여야 합니다`);
-  }
+  assert.ok(smoke.indexOf('assertNoExistingPackages(context.platform)') < smoke.indexOf('await prepareSystemMime(context)'));
   assert.match(smoke, /if \(context\.owned\.deb\).*dpkg.*--remove/);
   assert.match(smoke, /if \(context\.owned\.rpm\).*rpm.*-e/);
   assert.doesNotMatch(smoke, /rmSync|rm\(|rm -rf|\/\.cache\/thumbnails|pkill|killall/);
@@ -91,12 +88,8 @@ test('DEB와 RPM은 install reinstall update failure rollback uninstall을 검�
     'update',
     'injected-failure-rollback',
     'uninstall',
-    '0.0.0~stage4',
-    '9999.0.0~stage4',
-    "sudoRpm('-i', '--replacepkgs'",
-    "sudoRpm('-U', context.archive)",
-    'DEB rollback hashes',
-    'RPM rollback hashes',
+    '0.0.0', '9999.0.0', '9998.0.0', 'refresh-failure-observed', 'explicit-recovery',
+    '--replacepkgs', '--oldpackage', 'rollback hashes',
   ]) assert.ok(sources.includes(marker), `lifecycle marker가 필요합니다: ${marker}`);
   assert.ok(fixtures.includes("%pre\\nexit 42\\n"));
   assert.match(fixtures, /dpkg-deb.*--root-owner-group/);
@@ -119,23 +112,23 @@ test('package 검증은 path mode SHA ELF owner registration과 보존 불변식
     'productFilesRemovedAfterUninstall',
   ]) assert.ok(verifier.includes(marker), `evidence marker가 필요합니다: ${marker}`);
   assert.match(contract, /\['query', 'default', mime\]/);
-  assert.match(smoke, /run\('sudo', \['rpm', '-ql', metadata\.name\]\)/);
-  assert.match(smoke, /run\('sudo', \['rpm', '-q', metadata\.name\]/);
+  assert.match(contract, /'-qf', '--qf'/);
   assert.match(smoke, /run\('sudo', \['rpm', '-q', 'alhangeul'\]/);
-  assert.match(smoke, /path === HELPER_PATH/);
-  assert.doesNotMatch(smoke, /\['-qf'/);
+  assert.match(contract, /output.length, 1/);
   assert.doesNotMatch(sources, /\['default',/);
-  assert.doesNotMatch(sources, /update-desktop-database|update-mime-database|gio set/);
+  assert.doesNotMatch(sources, /update-desktop-database|gio set/);
 });
 
 test('DEB와 RPM archive 경로 표기 차이를 절대 경로로 정규화한다', () => {
   assert.doesNotThrow(() => assertArchivePaths([
     '-rwxr-xr-x root/root 123 2026-08-30 00:00 ./usr/lib/alhangeul/alhangeul-thumbnailer',
     '-rw-r--r-- root/root 456 2026-08-30 00:00 ./usr/share/thumbnailers/alhangeul.thumbnailer',
+    '-rw-r--r-- root/root 456 2026-08-30 00:00 ./usr/share/mime/packages/alhangeul-hwpx.xml',
   ].join('\n')));
   assert.doesNotThrow(() => assertArchivePaths([
     '/usr/lib/alhangeul/alhangeul-thumbnailer',
     '/usr/share/thumbnailers/alhangeul.thumbnailer',
+    '/usr/share/mime/packages/alhangeul-hwpx.xml',
   ].join('\n')));
   assert.throws(
     () => assertArchivePaths('/usr/lib/alhangeul/alhangeul-thumbnailer'),
