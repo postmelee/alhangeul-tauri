@@ -508,6 +508,47 @@ Task #16 Stage 4: updater key와 release 운영 계약 통합
   이 변경의 문제 해결 여부는 unsigned Linux AppImage의 일반 UI·WebDriver UI·native invoke
   세 독립 세션에서 각각 창 5개와 응답성을 확인하기 전까지 확정하지 않는다.
 
+#### 수정·단독 검증 결과 — Stage 5.22
+
+- [Linux 단독 run 33372263598](https://github.com/postmelee/alhangeul-tauri/actions/runs/33372263598)
+  / job `99425816891` / source·harness `f9c39ccc0a9f1f418c3b8576cecfb6e90c7cf91e`는
+  14분 12초에 성공했다. 기존 D1 source 대비 제품 변경은 `window_geometry.rs` 하나다.
+  창 builder는 기존 worker에서 유지하고 GTK monitor 변환·workarea 조회만 메인 스레드에
+  한정했다. 이는 [GTK/GDK의 메인 스레드 호출 규칙](https://docs.gtk.org/gdk3/func.threads_init.html)에
+  맞춘 변경이며, plain logical rectangle만 worker로 반환한다. Windows 경로는 유지했다.
+- 동일 runner의 수정 전 D1 N AppImage는 WebDriver UI·일반 GDB·일반 strace 실행 모두
+  native 창이 `1 → 0`으로 사라졌다. `_XIOError` 시 errno `11`,
+  `xcb_connection_has_error`는 `0`이었으며 main-process syscall trace에는 종료 직전
+  정상 socket 응답과 EAGAIN 뒤 `exit_group(1)`이 나타났다. 따라서 이전의 "X11 연결 오류"는
+  Xlib 오류 경로 관측을 뜻하며 서버/소켓 단절 자체가 입증된 것은 아니다.
+- 수정본의 일반 OS 메뉴, WebDriver + OS 메뉴, WebDriver + native invoke 세 독립 실행은
+  각각 native 창이 `1 → 2 → 3 → 4 → 5`로 증가해 최종 5개를 유지했다. 두 자동화 실행은
+  별개의 WebDriver handle 5개를 순회하며 각 창의 document ready와 native bridge 응답을
+  확인했다. 일반 실행은 새 창의 실제 메뉴로 다음 창을 만들었고 마지막 화면도 확인했다.
+  창 위치가 같아 screenshot에는 겹쳐 보이므로 창 개수는 OS 목록·handle 증거로 판정했다.
+- Linux `cargo test --release --target x86_64-unknown-linux-gnu --lib window_geometry::tests`
+  6개 통과, Linux unsigned AppImage build 통과. 수정본 SHA-256은
+  `e1b05de719df861222b706a8c3b8d1ad5bbe7cbf27a664cd24a9d88ecd920b9a`다.
+  별도 서명 overlay 없이 제품 기본 `0.1.0` config로 만든 회귀 검증용이므로 기존 test-only
+  `99.0.0 → 99.0.1` updater 수용 또는 배포 후보로 간주하지 않는다. 검증 범위는
+  Ubuntu 22.04 / Xvfb / Openbox이며 모든 Linux 환경에 대한 보증은 아니다.
+- artifact `9750909766`, digest
+  `sha256:9441096019ce016c1b310a9142352057664187168c8c71af8477d438c7826267`에
+  `fixed-*/summary.json`, 창별 driver 요청, native 목록·화면, 원본 GDB/syscall trace,
+  geometry test/build log와 두 binary hash를 보존했다. 비교용 기존 N hash는 변경되지 않았다.
+  앞선 errno 진단 `33371793648`의 artifact는 `9750389959`, digest
+  `sha256:6619b5c6ea73cd8d4aa46eb873f0bcd76ba900fcdfc7e5fd825956f6de5576ed`다.
+- 로컬 `pnpm run test:automation` 351개, product boundary 324개 파일, 변경 workflow의
+  actionlint와 `git diff --check` 통과. native desktop build/test는 Linux runner에서만 실행했다.
+- 기존 test release `379566223`의 asset 8개와 positive manifest
+  `4a1132f1c87ea2645cca112e723ab90c07dc441afcf431ecb6c93a65b7f3d778` 유지 상태를
+  API로 확인했다. production key/config, stable/Pages, release/tag/asset은 변경하지 않았다.
+- 다음 권고는 수정된 exact source의 N/N+1 후보 생성이다. 기존 Windows 통과 증적은
+  보존하지만 서로 다른 source SHA를 하나의 candidate로 섞지 않는다. 새 source·test tag와
+  endpoint·서명 build·게시 범위를 먼저 제시해 승인받은 뒤 D1/D2를 갱신한다. 기존 tag 이동,
+  asset 덮어쓰기 또는 최신 unsigned build를 서명된 N 대신 사용하는 우회는 하지 않는다.
+  Linux 실제 N→N+1·negative 수용, Stage 5 완료와 최종 릴리스는 아직 미완료다.
+
 ### 검증
 
 - MSI N → N+1 성공, MSI target만 요청, 설치/제거 registry와 파일 연결 보존
