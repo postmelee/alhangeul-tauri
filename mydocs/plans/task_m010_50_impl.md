@@ -162,6 +162,12 @@ private MIME XML/cache는 만들지 않고 system MIME 경로를 그대로 검�
 유지해서 회피한다. `rpm -qf`로 되돌리지 않고 전체 설치 package inventory를
 열거하여 세 제품 파일의 실제 owner가 각각 하나인지 검사한다.
 
+Stage 1 결과: candidate `dd1e2a308158854c9ec69a2e7eec4b3bc5ccfd31`의
+native run `33370108591`에서 Linux x64 DEB/RPM과 arm64 DEB의 검증을 완료했다.
+플랫폼 중립 automation은 351 pass다. 상세는
+[`Stage 1 보고서`](../working/task_m010_50_stage1.md)에 기록하며 Stage 2 승인을
+기다린다. 같은 실행의 Windows 추가 CI는 단계 보고 시점에 계속 진행 중이다.
+
 ### 커밋
 
 ```text
