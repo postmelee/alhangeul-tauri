@@ -36,6 +36,7 @@ export async function printDirectlyFromPageSurface(
     setStatus('인쇄 문서를 준비하고 있습니다.');
     return null;
   }
+  const platform = detectDesktopPlatform();
   printJobActive = true;
 
   const { wasm } = services;
@@ -44,7 +45,6 @@ export async function printDirectlyFromPageSurface(
   let originalDocumentTitle: string | null = null;
 
   try {
-    const platform = detectDesktopPlatform();
     flushDeferredPagination(services);
     const pageCount = wasm.pageCount;
     if (pageCount === 0) return;
@@ -57,16 +57,7 @@ export async function printDirectlyFromPageSurface(
     originalDocumentTitle = document.title;
     document.title = pdfPrintTitle(wasm.fileName);
     setStatus('시스템 인쇄 처리 중...');
-    console.info(
-      `[file:print] 시스템 인쇄 호출 `
-      + `(surface=top-level, pages=${pageCount}, profile=print, platform=${platform}, `
-      + `driver=${platform === 'linux' ? 'native-command' : 'window.print'})`,
-    );
-    const returnReason = await runSystemPrint(platform);
-    console.info(
-      `[file:print] 시스템 인쇄 modal lifecycle 종료 `
-      + `(reason=${returnReason}, title=${JSON.stringify(document.title)})`,
-    );
+    await runLoggedSystemPrint(platform, pageCount);
   } finally {
     if (originalDocumentTitle !== null) {
       document.title = originalDocumentTitle;
@@ -74,7 +65,25 @@ export async function printDirectlyFromPageSurface(
     if (originalStatus !== null) setStatus(originalStatus);
     surface?.dispose();
     printJobActive = false;
+    if (surface && platform === 'linux') {
+      // GTK print hides the editor canvases. Restoring CSS alone can leave their
+      // backing pixels blank; request a view-only redraw after surface cleanup.
+      services.eventBus.emit('document-view-changed', 'system-print-return');
+    }
   }
+}
+
+async function runLoggedSystemPrint(platform: DesktopPlatform, pageCount: number): Promise<void> {
+  console.info(
+    `[file:print] 시스템 인쇄 호출 `
+    + `(surface=top-level, pages=${pageCount}, profile=print, platform=${platform}, `
+    + `driver=${platform === 'linux' ? 'native-command' : 'window.print'})`,
+  );
+  const returnReason = await runSystemPrint(platform);
+  console.info(
+    `[file:print] 시스템 인쇄 modal lifecycle 종료 `
+    + `(reason=${returnReason}, title=${JSON.stringify(document.title)})`,
+  );
 }
 
 async function runSystemPrint(platform: DesktopPlatform): Promise<string> {

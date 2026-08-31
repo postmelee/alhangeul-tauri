@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { CommandServices } from '@upstream/command/types';
 import { printDirectlyFromPageSurface } from './direct-print';
+import { createServices, installHostDocument } from './direct-print.test-support';
 
 type NativeFocusListener = (event: { payload: boolean }) => void;
 
@@ -69,6 +69,7 @@ describe('Tauri top-level direct print surface', () => {
     }));
     expect(host.window.print).toHaveBeenCalledOnce();
     expect(invoke).not.toHaveBeenCalled();
+    expect(services.eventBus.emit).not.toHaveBeenCalled();
     expect(host.container.remove).toHaveBeenCalledOnce();
     expect(host.productStyle.textContent).toBe('product css');
     expect(host.classNames.has('alhangeul-print-active')).toBe(false);
@@ -151,14 +152,51 @@ describe('Tauri top-level direct print surface', () => {
         + 'height: calc(297.127mm - 1px); }',
       );
     }));
-    const pendingPrint = printDirectlyFromPageSurface(createServices());
+    const services = createServices();
+    const pendingPrint = printDirectlyFromPageSurface(services);
     await vi.waitFor(() => expect(invoke).toHaveBeenCalledWith('print_current_webview'));
     expect(host.window.print).not.toHaveBeenCalled();
     expect(host.container.remove).not.toHaveBeenCalled();
+    expect(services.eventBus.emit).not.toHaveBeenCalled();
     finishNativePrint();
     await pendingPrint;
     expect(host.productStyle.textContent).toBe('product css');
     expect(host.status.textContent).toBe('파일 열기 완료');
+    expect(services.eventBus.emit).toHaveBeenCalledExactlyOnceWith('document-view-changed', 'system-print-return');
+    expect(services.eventBus.emit.mock.invocationCallOrder[0]).toBeGreaterThan(host.container.remove.mock.invocationCallOrder[0]);
+  });
+
+  it.each(['cancel', 'failure'])('redraws only the restored Linux view after native %s', async (result) => {
+    detectDesktopPlatform.mockReturnValue('linux');
+    const host = installHostDocument();
+    host.status.textContent = '문서 준비';
+    useUniformPrintPages();
+    const services = createServices();
+    services.eventBus.emit.mockImplementation(() => {
+      expect(host.container.remove).toHaveBeenCalledOnce();
+      expect(host.classNames.has('alhangeul-print-active')).toBe(false);
+      expect(host.productStyle.textContent).toBe('product css');
+      expect(host.document.title).toBe('Alhangeul');
+      expect(host.status.textContent).toBe('문서 준비');
+    });
+    // Native cancellation resolves like a completed print; native errors reject.
+    if (result === 'failure') invoke.mockRejectedValueOnce(new Error('native print failed'));
+    const pending = printDirectlyFromPageSurface(services);
+    if (result === 'failure') await expect(pending).rejects.toThrow('native print failed');
+    else await pending;
+    expect(services.eventBus.emit).toHaveBeenCalledExactlyOnceWith('document-view-changed', 'system-print-return');
+    expect(services.documentState.markDirty).not.toHaveBeenCalled();
+    expect(services.documentState.markClean).not.toHaveBeenCalled();
+  });
+
+  it('releases the print guard even if a view observer throws', async () => {
+    detectDesktopPlatform.mockReturnValue('linux');
+    useUniformPrintPages();
+    const services = createServices();
+    services.eventBus.emit.mockImplementationOnce(() => { throw new Error('view observer'); });
+    await expect(printDirectlyFromPageSurface(services)).rejects.toThrow('view observer');
+    await printDirectlyFromPageSurface(createServices());
+    expect(invoke).toHaveBeenCalledTimes(2);
   });
 
   it('retains named pages for mixed-size Linux documents', async () => {
@@ -225,23 +263,6 @@ describe('Tauri top-level direct print surface', () => {
   });
 });
 
-function createServices(inputHandler: unknown = null) {
-  return {
-    wasm: {
-      fileName: 'document.hwp',
-      pageCount: 2,
-      renderPageSvgWithProfile: vi.fn((index: number) => `<svg id="p${index}"/>`),
-      getPageInfo: vi.fn(() => ({ width: 794, height: 1123 })),
-    },
-    getInputHandler: () => inputHandler,
-  } as unknown as CommandServices & {
-    wasm: {
-      renderPageSvgWithProfile: ReturnType<typeof vi.fn>;
-      getPageInfo: ReturnType<typeof vi.fn>;
-    };
-  };
-}
-
 function printPage(index: number) {
   return {
     pageName: `page-${index}`,
@@ -253,44 +274,4 @@ function printPage(index: number) {
 
 function useUniformPrintPages(): void {
   createPrintPage.mockImplementation((_svg, _info, index) => printPage(index));
-}
-
-function installHostDocument(options: {
-  hasFocus?: () => boolean;
-  hasProductStyle?: boolean;
-} = {}) {
-  const status = { textContent: '' };
-  const productStyle = { textContent: 'product css' };
-  const classNames = new Set<string>();
-  const container = {
-    id: '',
-    setAttribute: vi.fn(),
-    remove: vi.fn(),
-  };
-  const windowLike = {
-    print: vi.fn(),
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-  };
-  const documentLike = {
-    title: 'Alhangeul',
-    hasFocus: options.hasFocus ?? (() => true),
-    defaultView: windowLike,
-    head: {
-      querySelector: vi.fn(() => options.hasProductStyle === false ? null : productStyle),
-    },
-    body: { appendChild: vi.fn() },
-    documentElement: {
-      classList: {
-        contains: (name: string) => classNames.has(name),
-        add: (name: string) => classNames.add(name),
-        remove: (name: string) => classNames.delete(name),
-      },
-    },
-    createElement: vi.fn(() => container),
-    getElementById: vi.fn((id: string) => id === 'sb-message' ? status : null),
-  };
-  (globalThis as { document?: unknown }).document = documentLike;
-  (globalThis as { window?: unknown }).window = windowLike;
-  return { status, productStyle, classNames, container, window: windowLike, document: documentLike };
 }

@@ -791,6 +791,35 @@ GUI typecheck, boundary 297개 파일, Studio build, Python decoder syntax와 `g
 이동한 파일과 필수 body probe 연결을 검사하도록 정렬했다. 이번에 변경한 runtime 함수는 50 LOC,
 파일은 300 LOC 권장 상한 안이다. 이 commit은 진단 입력 고정이며 단계 완료보고서가 아니다.
 
+#### 2026-08-31 진단 결과와 Linux view-only 보정
+
+[진단 run 33374503395](https://github.com/postmelee/alhangeul-tauri/actions/runs/33374503395)은
+acceptance SHA `a39a226d3e3968e4e1942fb9d1a25beaefc81809`, build SHA `a5e86de`와 native run
+`33367303526`을 분리해 실행했다. artifact `9751425662`의 API archive digest는
+`sha256:6e9b7782104cba91d151a991e1722bcaf2a0e5251ddebbeeea444a3cf2f90fad`다. workflow는
+기대대로 body gate에서 failure이며 nativePrint exit 1, 별도 WebDriver phase exit 0이다.
+
+동일 PID `6716`, X11 window `6291459`에서 첫 인쇄 전 두 frame은 본문 dark pixel 9,385개·ink row
+59개로 정상이다. 첫 GTK Print to File 뒤 15.3초 동안 21개 frame은 dark pixel 0 또는 26개(caret)·
+ink row 0개로 실패했다. 모든 frame의 window/page geometry는 같았다. 원본 screenshot 23개의
+size·SHA-256을 검산했고 정상 baseline과 마지막 실패 화면을 직접 확인했다. 인쇄 후에는 문서명·쪽 수
+상태가 복원됐지만 본문과 눈금자 글자가 사라졌다. Cancel·CUPS 단계는 실패 이후 실행하지 않았다.
+따라서 초기 렌더 실패가 아니라 첫 system print 이후의 view 복원 결함으로 범위를 좁혔다.
+
+`direct-print.ts`는 기존 native 완료 뒤 title·status·style·surface를 회수한 다음 Linux에서만 기존
+`document-view-changed` event를 `system-print-return` source로 한 번 보낸다. upstream의 기존
+CanvasView·ruler·caret 갱신 경계를 재사용하며 `document-changed`, dirty/clean 변경, 문서 재로드,
+upstream 수정, Rust 완료 신호 변경, software compositing 환경 workaround는 추가하지 않는다.
+print guard는 event 전 해제하므로 observer 예외가 후속 print를 막지 않는다. 로그 호출을 작은 helper로
+분리하고 test fixture는 `direct-print.test-support.ts`로 옮겨 파일·함수 상한을 유지한다.
+
+native 완료 전에는 redraw가 없고 성공·취소·실패 뒤 cleanup이 끝난 다음에만 redraw가 발생함을 test로
+확인한다. 문서 dirty/clean을 바꾸지 않는 조건과 observer 실패 뒤 재인쇄 가능 조건도 고정한다. 이 최소
+보정의 실제 화면 복원 효과는 아직 단정하지 않으며 새 exact SHA native와 Linux GUI 결과로 판단한다.
+
+제품 보정 뒤 automation 310/310, upstream 36/36, Studio 23개 파일 122/122, boundary 298개
+파일과 Studio build를 통과했다. production 파일은 249 LOC이며 runtime 함수 상한도 지켰다.
+
 ## 통합 검증
 
 - 각 Stage focused test와 `git diff --check`를 해당 단계 보고서 작성 전에 실행한다.
