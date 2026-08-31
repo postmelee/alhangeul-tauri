@@ -145,6 +145,7 @@ export async function verifyInstalled(format, metadata, context) {
     [REGISTRATION_PATH, '0644', createHash('sha256').update(context.expectedRegistration).digest('hex')],
     [MIME_PATH, '0644', context.mimeSha256]];
   const owners = {};
+  const rpmInventory = format === 'rpm' ? installedRpmInventory() : [];
   for (const [path, expectedMode, hash] of expected) {
     const stat = await lstat(path);
     assertEqual(stat.isFile() && !stat.isSymbolicLink(), true, `${format} ${path} regular file`);
@@ -152,7 +153,7 @@ export async function verifyInstalled(format, metadata, context) {
     assertEqual(await sha256File(path), hash, `${format} ${path} hash`);
     const output = format === 'deb'
       ? run('dpkg-query', ['--search', path]).stdout.trim().split(/\r?\n/).map((line) => line.split(': ')[0])
-      : run('sudo', ['rpm', '-qf', '--qf', '%{NAME}\n', path]).stdout.trim().split(/\r?\n/);
+      : ownersFromInventory(rpmInventory, path);
     assertEqual(output.length, 1, `${format} ${path} owner count`);
     assertEqual(output[0], metadata.name, `${format} ${path} owner`);
     owners[path] = output[0];
@@ -161,6 +162,18 @@ export async function verifyInstalled(format, metadata, context) {
   const description = run('file', ['--brief', HELPER_PATH]).stdout.toLowerCase();
   if (!description.includes(elfArchitecture)) throw new Error(`${format} ELF mismatch: ${description}`);
   return { elfArchitecture, owners, singleOwner: true, registrationSha256: expected[1][2] };
+}
+
+function installedRpmInventory() {
+  // Ubuntu RPM reverse-file lookup is unreliable; enumerate the actual RPM DB.
+  const names = run('sudo', ['rpm', '-qa', '--qf', '%{NAME}\n']).stdout.trim().split(/\r?\n/).filter(Boolean);
+  return names.map((name) => ({ name,
+    paths: run('sudo', ['rpm', '-ql', name]).stdout.trim().split(/\r?\n/),
+  }));
+}
+
+export function ownersFromInventory(inventory, path) {
+  return inventory.flatMap((entry) => entry.paths.filter((value) => value === path).map(() => entry.name));
 }
 
 export function packageState(format, name) {

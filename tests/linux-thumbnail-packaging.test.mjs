@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
-import { assertArchivePaths } from '../scripts/linux-thumbnail-package-contract.mjs';
+import { assertArchivePaths, ownersFromInventory } from '../scripts/linux-thumbnail-package-contract.mjs';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const [configSource, workflow, wrapper, smoke, fixtures, contract, verifier] = await Promise.all([
@@ -112,7 +112,9 @@ test('package 검증은 path mode SHA ELF owner registration과 보존 불변식
     'productFilesRemovedAfterUninstall',
   ]) assert.ok(verifier.includes(marker), `evidence marker가 필요합니다: ${marker}`);
   assert.match(contract, /\['query', 'default', mime\]/);
-  assert.match(contract, /'-qf', '--qf'/);
+  assert.match(contract, /'rpm', '-qa', '--qf'/);
+  assert.match(contract, /'rpm', '-ql', name/);
+  assert.doesNotMatch(contract, /'rpm', '-qf'/);
   assert.match(smoke, /run\('sudo', \['rpm', '-q', 'alhangeul'\]/);
   assert.match(contract, /output.length, 1/);
   assert.doesNotMatch(sources, /\['default',/);
@@ -144,3 +146,12 @@ function assertOrdered(source, markers) {
     previous = index;
   }
 }
+
+test('RPM inventory는 전체 DB의 중복 owner와 누락을 숨기지 않는다', () => {
+  const inventory = [{ name: 'alhangeul', paths: [helperPath, registrationPath] }];
+  assert.deepEqual(ownersFromInventory(inventory, helperPath), ['alhangeul']);
+  assert.deepEqual(ownersFromInventory(inventory, '/missing'), []);
+  inventory.push({ name: 'other', paths: [helperPath] });
+  assert.deepEqual(ownersFromInventory(inventory, helperPath), ['alhangeul', 'other']);
+  assert.deepEqual(ownersFromInventory([{ name: 'alhangeul', paths: [helperPath, helperPath] }], helperPath), ['alhangeul', 'alhangeul']);
+});

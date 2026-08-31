@@ -158,6 +158,9 @@ gate는 Task #50 전체 성공 근거로 사용하지 않는다.
 확인한 뒤 매 transition의 선택·설정 파일 SHA를 동일하게 요구하도록 보정한다.
 이는 CI의 임시 사용자 설정이며 제품 hook이나 실제 사용자 설정 변경이 아니다.
 private MIME XML/cache는 만들지 않고 system MIME 경로를 그대로 검사한다.
+기존 Task #17 Stage 4에서 확인된 Ubuntu RPM의 reverse-file lookup 문제도
+유지해서 회피한다. `rpm -qf`로 되돌리지 않고 전체 설치 package inventory를
+열거하여 세 제품 파일의 실제 owner가 각각 하나인지 검사한다.
 
 ### 커밋
 
