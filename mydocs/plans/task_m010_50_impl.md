@@ -337,10 +337,18 @@ git diff --check
 기존 timeout/kill/reap, memory limit, panic/partial, 동시 요청과 Tumbler inode
 테스트를 생략하지 않는다. 공유 renderer·worker protocol은 변경하지 않는다.
 
+Stage 3 결과: candidate `dc6be3fe11fa8b0bd524365a551f22d228cf39b5`의
+native run `33377678863`에서 Linux x64·arm64 각각 Rust test 20개와 fmt·Clippy가
+통과했다. 전체 automation 390 pass이며 상세 증적과 최종 metadata 정리의 검증
+경계는 [`Stage 3 보고서`](../working/task_m010_50_stage3.md)에 기록한다.
+Stage 4 승인을 기다리며, 같은 실행의 후속 desktop/package·Windows 추가 CI는
+보고 시점에 진행 중이다.
+
 ### 커밋
 
 ```text
 Task #50 [Stage 3.1]: Linux thumbnail resolved path candidate
+Task #50 [Stage 3.2]: Linux fmt 정렬과 native 검증 진단 보존
 Task #50 Stage 3: 조상 symlink 허용과 leaf output 방어 정렬
 ```
 

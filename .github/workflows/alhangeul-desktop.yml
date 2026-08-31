@@ -409,7 +409,6 @@ jobs:
           TEST_OUTCOME: ${{ steps.test-linux-thumbnailer.outcome }}
           LINT_OUTCOME: ${{ steps.lint-linux-thumbnailer.outcome }}
           WORKFLOW_SHA: ${{ github.workflow_sha }}
-          RUNNER_NAME: ${{ matrix.name }}
           BUILD_TARGET: ${{ matrix.target }}
         run: |
           set -euo pipefail

@@ -190,6 +190,7 @@ test('Linux Rust 진단은 실패 상태를 유지하고 exact SHA와 로그를 
   assert.match(outcome, /steps.test-linux-thumbnailer.outcome/);
   assert.match(outcome, /steps.lint-linux-thumbnailer.outcome/);
   assert.match(outcome, /github.workflow_sha/);
+  assert.doesNotMatch(outcome, /RUNNER_NAME:/);
   assert.match(outcome, /git rev-parse HEAD/);
   assert.match(upload, /name: alhangeul-\$\{\{ matrix.name \}\}-thumbnailer-tests/);
   assert.match(upload, /if-no-files-found: error/);
