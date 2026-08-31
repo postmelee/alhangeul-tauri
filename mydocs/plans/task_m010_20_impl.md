@@ -820,6 +820,24 @@ native 완료 전에는 redraw가 없고 성공·취소·실패 뒤 cleanup이 �
 제품 보정 뒤 automation 310/310, upstream 36/36, Studio 23개 파일 122/122, boundary 298개
 파일과 Studio build를 통과했다. production 파일은 249 LOC이며 runtime 함수 상한도 지켰다.
 
+수용 source는 `4a2438753eb0a5785b1ac20298955c2cff3d77d6`으로 고정했다.
+[native run 33375178840](https://github.com/postmelee/alhangeul-tauri/actions/runs/33375178840)의
+Windows x64·Linux x64·Linux arm64 build와 Windows installer smoke가 모두 성공했다. 세 플랫폼
+inventory의 38개 파일 size·SHA-256을 내려받은 원본으로 검산했다. MSI·NSIS 각각 두 번의 ready
+window·정상 종료, 기존 기본 연결 복원, 외부 fixture 보존과 제거 후 clean 상태를 확인했다.
+같은 source와 native run을 사용한
+[GUI run 33380027513](https://github.com/postmelee/alhangeul-tauri/actions/runs/33380027513)은
+여섯 scenario와 네 editor checkpoint를 모두 통과했다. 동일 PID `6719`·window `6291459`에서
+원본 frame 8개의 본문은 dark pixel 9,385~9,411개·ink row 59개였고 인쇄 뒤 baseline 일치율은
+99.72~100%다. 원본 전후·최종 화면의 본문과 눈금자 복원을 직접 확인했다. evidence 42개 참조·
+40개 고유 파일을 검산했고 PDF 3종의 18쪽을 독립 재렌더링해 시각 확인했다. Stage 4.4 수용을
+완료했으며 상세 결과는 [`task_m010_20_stage4_4.md`](../working/task_m010_20_stage4_4.md)에 둔다.
+
+검토 당시 로컬 `origin/devel`의 `8b865fa55b55aea232d0fb034a518c807ac4c003`에는 #17 Linux
+thumbnail 통합 34개 commit이 추가돼 있다. 읽기 전용 merge preview에서 오늘할일
+`20260830.md`의 add/add 충돌이 확인됐고 실제 merge·해소는 수행하지 않았다. PR 전 통합과 새
+exact-SHA 수용은 다음 승인 경계로 남긴다. 현재 성공 결과를 미통합 `devel`에 승계하지 않는다.
+
 ## 통합 검증
 
 - 각 Stage focused test와 `git diff --check`를 해당 단계 보고서 작성 전에 실행한다.
@@ -847,6 +865,7 @@ native 완료 전에는 redraw가 없고 성공·취소·실패 뒤 cleanup이 �
 - Stage 4.1은 첫 Stage 4 수용에서 확인된 harness correction 계획 변경 승인 후 시작하고, 새 exact SHA의 수용이 끝나야 Stage 4를 완료한다.
 - Stage 4.2는 최신 `devel` 자동 병합 충돌 해소 승인 후 시작하고 새 merge exact SHA의 수용이 끝나야 PR을 게시한다.
 - Stage 4.3은 Stage 4.2 GUI evidence가 확인한 반복 Print dialog 접근성 channel 보정 승인 후 시작하고 새 exact SHA의 수용이 끝나야 PR을 게시한다.
+- Stage 4.4는 인쇄 전후 본문 검증과 조건부 host view-only 복원 보정 승인 후 시작하며, 새 exact SHA의 native·GUI·본문·PDF 수용 완료 뒤 다음 통합 승인 경계로 돌아간다.
 - 모든 Stage는 `task-stage-report` 절차로 보고·커밋하고 작업지시자 승인 없이 다음 Stage로 넘어가지 않는다.
 
 ## 위험과 대응
