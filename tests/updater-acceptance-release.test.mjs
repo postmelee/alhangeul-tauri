@@ -20,6 +20,10 @@ import {
   UPDATER_ACCEPTANCE_SCENARIOS,
 } from '../scripts/updater/acceptance-scenario.mjs';
 import { verifyUpdaterAcceptanceRelease } from '../scripts/updater/verify-acceptance-release.mjs';
+import {
+  validateUpdaterSignatureEncoding,
+  verifyUpdaterSignature,
+} from '../scripts/updater/artifact-verifier.mjs';
 
 const SOURCE_SHA = 'b'.repeat(40);
 const SOURCE_TIMESTAMP = '2026-08-30T01:02:03.000Z';
@@ -124,6 +128,24 @@ test('test prerelease read-back은 extra asset과 digest 불일치를 거부한�
       ),
       /digest/,
     );
+  } finally {
+    await fixture.cleanup();
+  }
+});
+
+test('signature mismatch fixture는 algorithm과 key ID를 보존하고 실제 서명 검증만 실패한다', async () => {
+  const fixture = await createFixture();
+  try {
+    const base = await createReleaseFixture(fixture);
+    const manifest = buildUpdaterAcceptanceScenarioManifest(base.inventory, base.manifest, 'signature-mismatch');
+    for (const [target, entry] of Object.entries(base.inventory.targets)) {
+      const signature = manifest.platforms[target].signature;
+      assert.doesNotThrow(() => validateUpdaterSignatureEncoding(signature));
+      const packet = (value) => Buffer.from(Buffer.from(value, 'base64').toString('utf8').split('\n')[1], 'base64');
+      assert.deepEqual(packet(signature).subarray(0, 10), packet(entry.signature).subarray(0, 10));
+      const bytes = await readFile(join(fixture.root, entry.path));
+      assert.throws(() => verifyUpdaterSignature(bytes, signature, fixture.publicKey), /installer bytes와 일치하지/);
+    }
   } finally {
     await fixture.cleanup();
   }

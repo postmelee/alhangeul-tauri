@@ -120,7 +120,10 @@ function tamperMinisignText(value) {
   if (lines.length < 4 || lines[1].length < 2) {
     throw new Error('tamper 대상 updater signature 형식이 올바르지 않습니다.');
   }
-  lines[1] = `${lines[1][0] === 'A' ? 'B' : 'A'}${lines[1].slice(1)}`;
+  const packet = Buffer.from(lines[1], 'base64');
+  if (packet.length !== 74) throw new Error('tamper 대상 signature packet 길이가 다릅니다.');
+  packet[10] ^= 1;
+  lines[1] = packet.toString('base64');
   return Buffer.from(lines.join('\n'), 'utf8').toString('base64');
 }
 
