@@ -19,7 +19,7 @@ import {
 } from '../scripts/verify-desktop-artifacts.mjs';
 
 import { LIFECYCLE } from '../scripts/linux-thumbnail-package-contract.mjs';
-import { ALIASES, CANONICAL, MIME_PATH } from '../scripts/linux-thumbnail-mime-contract.mjs';
+import { ALIASES, CANONICAL, DEFAULT_APP, MIME_PATH } from '../scripts/linux-thumbnail-mime-contract.mjs';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const scriptPath = join(repoRoot, 'scripts/verify-desktop-artifacts.mjs');
@@ -429,7 +429,8 @@ function transitionFixture(name, owners) {
     mime: { types: { glob: installed ? CANONICAL : 'application/zip',
       magic: installed ? CANONICAL : 'application/zip', generic: 'application/zip' },
       aliases: Object.fromEntries(ALIASES.map((alias) => [alias, installed ? CANONICAL : null])),
-      defaults: Object.fromEntries(['application/x-hwp', CANONICAL, ...ALIASES].map((type) => [type, ''])),
+      defaults: Object.fromEntries(['application/x-hwp', CANONICAL, ...ALIASES].map((type) => [type, DEFAULT_APP])),
+      defaultSettingsSha256: '5'.repeat(64),
       xmlSha256: installed ? '2'.repeat(64) : null,
       otherDefinitions: { 'alhangeul-task50-third-party.xml': '4'.repeat(64) },
     },
@@ -441,6 +442,10 @@ for (const [label, mutate] of [
   ['name-only lifecycle', (e) => { e.packages[0].lifecycle = LIFECYCLE; }],
   ['missing MIME observation', (e) => { delete e.packages[0].lifecycle[1].mime; }],
   ['changed default app', (e) => { e.packages[0].lifecycle[1].mime.defaults[CANONICAL] = 'alhangeul.desktop'; }],
+  ['changed default settings', (e) => { e.packages[0].lifecycle[1].mime.defaultSettingsSha256 = '6'.repeat(64); }],
+  ['missing prior default', (e) => { e.packages[0].lifecycle[0].mime.defaults[CANONICAL] = ''; }],
+  ['wrong installed version prefix', (e) => { e.packages[0].lifecycle[1].packageState.description += '1'; }],
+  ['unconfigured DEB', (e) => { e.packages[0].lifecycle[1].packageState.description = 'install ok half-configured 0.3.1'; }],
   ['wrong owner', (e) => { e.packages[0].owners[MIME_PATH] = 'other'; }],
   ['failed reinstall', (e) => { e.packages[0].lifecycle[2].exitCode = 1; }],
   ['missing hook', (e) => { e.packages[0].archiveContract.refreshHooks.pop(); }],

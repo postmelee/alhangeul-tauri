@@ -11,6 +11,7 @@ export const CANONICAL = 'application/x-hwpx';
 export const ALIASES = ['application/hwp+zip', 'application/vnd.hancom.hwpx', 'application/x-hwp+zip'];
 const wrapXml = (body) => `<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">${body}</mime-info>\n`;
 const sentinelXml = wrapXml('<mime-type type="application/x-alhangeul-task50-sentinel"><glob pattern="*.task50-sentinel"/></mime-type>');
+export const DEFAULT_APP = 'alhangeul-task50-third-party.desktop';
 
 export async function createMimeFixtures(root) {
   await mkdir(root, { recursive: true });
@@ -38,6 +39,7 @@ export async function mimeSnapshot(options) {
   ]));
   return {
     types, defaults,
+    defaultSettingsSha256: await optionalHash(join(env.XDG_CONFIG_HOME ?? join(env.HOME, '.config'), 'mimeapps.list')),
     aliases: Object.fromEntries(ALIASES.map((alias) => [alias,
       aliases.split('\n').find((line) => line.startsWith(`${alias} `))?.split(' ')[1] ?? null])),
     xmlSha256: await optionalHash(join(mimeRoot, 'packages/alhangeul-hwpx.xml')),
@@ -50,6 +52,7 @@ export function assertMimeInstalled(snapshot, baseline, expectedHash) {
   assert.deepEqual(snapshot.types, { glob: CANONICAL, magic: CANONICAL, generic: 'application/zip' });
   assert.deepEqual(snapshot.aliases, Object.fromEntries(ALIASES.map((alias) => [alias, CANONICAL])));
   assert.deepEqual(snapshot.defaults, baseline.defaults, 'MIME defaults preserved');
+  assert.equal(snapshot.defaultSettingsSha256, baseline.defaultSettingsSha256, 'default settings bytes preserved');
   assert.deepEqual(snapshot.otherDefinitions, baseline.otherDefinitions, 'third-party MIME definitions preserved');
 }
 
@@ -60,6 +63,7 @@ export function assertMimeRestored(snapshot, baseline) {
 
 export async function prepareSystemMime(context) {
   if (await optionalHash(MIME_SENTINEL)) throw new Error('MIME sentinel already exists');
+  await prepareDefaultFixture(context.smokeRoot);
   context.mimeFixtures = await createMimeFixtures(join(context.smokeRoot, 'mime-fixtures'));
   const source = join(context.smokeRoot, 'third-party.xml');
   await writeFile(source, sentinelXml);
@@ -68,6 +72,26 @@ export async function prepareSystemMime(context) {
   run('sudo', ['update-mime-database', '/usr/share/mime']);
   context.mimeSha256 = await optionalHash('apps/desktop/src-tauri/linux/alhangeul-hwpx.xml');
   context.mimeBaseline = await systemMimeSnapshot(context);
+  assert.deepEqual(Object.values(context.mimeBaseline.defaults), Array(5).fill(DEFAULT_APP), 'existing default fixture must be effective');
+}
+
+async function prepareDefaultFixture(root) {
+  // A disposable existing-user-preference fixture, not a MIME database override.
+  const config = join(root, 'xdg-config');
+  const data = join(root, 'xdg-data');
+  await mkdir(config, { recursive: true });
+  await mkdir(join(data, 'applications'), { recursive: true });
+  const types = ['application/x-hwp', CANONICAL, ...ALIASES];
+  await writeFile(join(data, 'applications', DEFAULT_APP), [
+    '[Desktop Entry]', 'Type=Application', 'Name=Third-party MIME default sentinel',
+    'Exec=/usr/bin/true %f', `MimeType=${types.join(';')};`, '',
+  ].join('\n'));
+  await writeFile(join(config, 'mimeapps.list'), [
+    '[Default Applications]', ...types.map((type) => `${type}=${DEFAULT_APP};`), '',
+  ].join('\n'));
+  process.env.XDG_CONFIG_HOME = config;
+  process.env.XDG_DATA_HOME = data;
+  process.env.XDG_DATA_DIRS = '/usr/local/share:/usr/share';
 }
 
 export const systemMimeSnapshot = (context) => mimeSnapshot({

@@ -43,7 +43,8 @@ test('MIME 의미 비교는 old/new 설치 전 상태·다른 정의·기본 앱
   for (const type of ['application/zip', CANONICAL]) {
     const baseline = { types: { glob: type, magic: type, generic: 'application/zip' },
       aliases: Object.fromEntries(ALIASES.map((alias) => [alias, type === CANONICAL ? CANONICAL : null])),
-      defaults: { [CANONICAL]: 'third-party.desktop' }, otherDefinitions: { 'other.xml': 'original' }, xmlSha256: null };
+      defaults: { [CANONICAL]: 'third-party.desktop' }, defaultSettingsSha256: 'original-settings',
+      otherDefinitions: { 'other.xml': 'original' }, xmlSha256: null };
     const installed = { ...structuredClone(baseline), xmlSha256: 'product',
       types: { glob: CANONICAL, magic: CANONICAL, generic: 'application/zip' },
       aliases: Object.fromEntries(ALIASES.map((alias) => [alias, CANONICAL])) };
@@ -53,6 +54,7 @@ test('MIME 의미 비교는 old/new 설치 전 상태·다른 정의·기본 앱
       (s) => { s.types.generic = CANONICAL; },
       (s) => { delete s.types.magic; },
       (s) => { s.defaults[CANONICAL] = 'alhangeul.desktop'; },
+      (s) => { s.defaultSettingsSha256 = 'modified-settings'; },
       (s) => { delete s.otherDefinitions['other.xml']; },
       (s) => { s.aliases[ALIASES[0]] = 'application/zip'; },
     ]) {

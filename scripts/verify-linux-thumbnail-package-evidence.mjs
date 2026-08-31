@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import assert from 'node:assert/strict';
 import { LIFECYCLE } from './linux-thumbnail-package-contract.mjs';
-import { MIME_PATH, MIME_SENTINEL, ALIASES, assertMimeInstalled, assertMimeRestored } from './linux-thumbnail-mime-contract.mjs';
+import { MIME_PATH, MIME_SENTINEL, ALIASES, DEFAULT_APP, assertMimeInstalled, assertMimeRestored } from './linux-thumbnail-mime-contract.mjs';
 
 const HELPER_PATH = '/usr/lib/alhangeul/alhangeul-thumbnailer';
 const REGISTRATION_PATH = '/usr/share/thumbnailers/alhangeul.thumbnailer';
@@ -67,6 +67,7 @@ function assertMimeEvidence(value, hash) {
   const baseline = value.lifecycle[0].mime;
   assertSnapshotShape(baseline);
   assertEqual(baseline.xmlSha256, null, 'baseline.xmlSha256');
+  assert.deepEqual(Object.values(baseline.defaults), Array(5).fill(DEFAULT_APP), 'effective preexisting default fixture');
   for (const record of value.lifecycle) assertTransition(record, baseline, value, hash);
 }
 
@@ -77,6 +78,7 @@ function assertSnapshotShape(snapshot) {
   assert.deepEqual(Object.keys(snapshot.aliases).sort(), [...ALIASES].sort());
   assert.deepEqual(Object.keys(snapshot.defaults).sort(), ['application/x-hwp', 'application/x-hwpx', ...ALIASES].sort());
   for (const value of Object.values(snapshot.defaults)) assert.equal(typeof value, 'string');
+  assertPattern(snapshot.defaultSettingsSha256, /^[0-9a-f]{64}$/, 'default settings hash');
   assertPattern(snapshot.otherDefinitions?.[MIME_SENTINEL.split('/').at(-1)], /^[0-9a-f]{64}$/, 'third-party MIME sentinel');
 }
 
@@ -90,7 +92,8 @@ function assertTransition(record, baseline, value, hash) {
     assertMimeInstalled(record.mime, baseline, hash);
     assert.deepEqual(record.owners, value.owners, 'observed file owners');
     assertEqual(record.packageState.exitCode, 0, 'installed package query');
-    assert.ok(record.packageState.description.includes(value.version), 'installed package version');
+    assertEqual(record.packageState.description.split(/\s+/).at(-1), value.version, 'installed package version');
+    if (value.format === 'deb') assert.ok(record.packageState.description.startsWith('install ok installed '));
   } else if (record.name !== 'refresh-failure-observed') assertMimeRestored(record.mime, baseline);
   for (const path of [HELPER_PATH, REGISTRATION_PATH, MIME_PATH]) {
     const present = installed || record.name === 'refresh-failure-observed' || (record.name === 'old-install' && path !== MIME_PATH);
@@ -102,6 +105,7 @@ function assertTransition(record, baseline, value, hash) {
     assertEqual(record.recovery, 'explicit-candidate-reinstall', 'refresh failure recovery');
     if (value.format === 'deb') assert.notEqual(record.exitCode, 0);
     assert.deepEqual(record.mime.defaults, baseline.defaults);
+    assertEqual(record.mime.defaultSettingsSha256, baseline.defaultSettingsSha256, 'default settings hash');
     assert.deepEqual(record.mime.otherDefinitions, baseline.otherDefinitions);
   } else assertEqual(record.exitCode, 0, `${record.name} exit`);
 }

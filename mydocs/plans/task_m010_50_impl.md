@@ -150,6 +150,15 @@ Linux native candidate에서 MIME canary, x64 DEB/RPM 및 arm64 DEB archive·hoo
 metadata와 lifecycle이 통과해야 한다. 이 시점의 기존 GUI MIME 주입과 기존 core
 gate는 Task #50 전체 성공 근거로 사용하지 않는다.
 
+2026-08-31 Stage 1 검증 보정: candidate `56c2ce7`의 native run
+`33367986557`에서 arm64 MIME canary와 실제 HWPX glob/magic 등록은 통과했다.
+다만 기본 앱이 없는 runner에서 HWP의 조회 fallback이 설치된 앱으로 바뀌어
+"기존 기본 앱 보존" 검사가 실패했다. 설치 전 테스트 전용 XDG config/data에
+제3자 desktop entry와 명시적 기본 앱 fixture를 준비하고, 선택이 유효함을 먼저
+확인한 뒤 매 transition의 선택·설정 파일 SHA를 동일하게 요구하도록 보정한다.
+이는 CI의 임시 사용자 설정이며 제품 hook이나 실제 사용자 설정 변경이 아니다.
+private MIME XML/cache는 만들지 않고 system MIME 경로를 그대로 검사한다.
+
 ### 커밋
 
 ```text

@@ -87,8 +87,8 @@ async function prepareSentinels(context) {
   context.sentinelCreated = true;
   await mkdir(dirname(context.cacheSentinel), { recursive: true });
   await writeFile(context.cacheSentinel, 'cache-sentinel\n');
-  context.defaultsBefore = queryMimeDefaults();
   await prepareSystemMime(context);
+  context.defaultsBefore = queryMimeDefaults();
 }
 
 function assertNoExistingPackages(platform) {
