@@ -329,6 +329,10 @@ test('Linux thumbnail core probe는 x64 arm64 resource 증거를 각각 보존�
   assert.match(uploadStep, /^          retention-days: 14$/m);
   assert.match(gateStep, /steps\.run-linux-thumbnail-core-probe\.outcome/);
   assert.match(gateStep, /steps\.upload-linux-thumbnail-core-diagnostics\.outcome/);
+  assert.match(gateStep, /\[\[ "\$PROBE_OUTCOME" == success \]\]/);
+  assert.match(gateStep, /\[\[ "\$UPLOAD_OUTCOME" == success \]\]/);
+  assert.doesNotMatch(probeStep, /\|\| true/);
+  assert.doesNotMatch(gateStep, /continue-on-error: true/);
 });
 
 test('Linux package lifecycle은 build 산출물을 검사하고 evidence를 always gate한다', () => {

@@ -177,6 +177,16 @@ Task #50 Stage 1: HWPX MIME 소유권과 설치 제거 계약 확정
 
 ## Stage 2 — Core probe required gate 강화
 
+2026-08-31 작업지시자의 "진행해줘"를 Stage 1 보고 승인과 Stage 2 진입
+승인으로 기록한다. 진입 시 fetch한 `origin/devel`은 기존 기준선
+`8b865fa55b55aea232d0fb034a518c807ac4c003`과 같으며 worktree는 깨끗했다.
+pin의 `saved/` 원본 7개의 SHA·size와 preview 구조를 독립 검사했다. HWP 3개는
+`/PrvImage` PNG를 보유하고, HWPX 4개는 동일한 68-byte PNG의 IDAT CRC가
+손상돼 preview 기대값을 `false`로 고정한다. 정상 direct 기대값은 모두 `true`다.
+변형은 `03-blank_hwpx.hwpx`를 고정 source로 사용하며 stale PNG의 mode·mtime과
+ZIP extra field를 고정해 네 변형도 SHA로 식별한다. 기존 임의 첫 HWPX 선택과
+실행 시각에 따라 달라지던 변형 SHA를 제거하는 보정이며 renderer는 수정하지 않는다.
+
 ### 산출물
 
 신규:
