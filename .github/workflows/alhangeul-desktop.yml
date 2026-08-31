@@ -14,6 +14,7 @@ on:
           - updater-acceptance
           - updater-native-acceptance
           - updater-native-negative-acceptance
+          - updater-linux-window-probe
       build_ref:
         description: Branch, tag, or commit to build. Empty uses the selected workflow commit.
         required: false
@@ -1139,6 +1140,17 @@ jobs:
             --target "$SOURCE_SHA" \
             --title "Alhangeul $RELEASE_VERSION" \
             --notes "$RELEASE_NOTES"
+
+  updater-linux-window-probe:
+    name: Diagnose Linux window automation only
+    if: ${{ inputs.mode == 'updater-linux-window-probe' }}
+    permissions:
+      actions: read
+      contents: read
+    uses: ./.github/workflows/alhangeul-updater-linux-window-probe.yml
+    with:
+      candidate_sha: ${{ inputs.acceptance_candidate_sha }}
+      d1_run_id: ${{ inputs.acceptance_d1_run_id }}
 
   updater-native-acceptance:
     name: Run updater native acceptance

@@ -428,6 +428,22 @@ Task #16 Stage 4: updater key와 release 운영 계약 통합
   retention 만료까지 보존한다. stable manifest, 최종 public tag/release와 updater 활성화는
   checkpoint E 및 별도 release 승인으로 넘긴다.
 
+### 승인된 Linux 다중 창 분리 진단 (2026-08-31, Stage 5.17)
+
+- 작업지시자의 `진행해줘` 승인은 실패한 Linux 다중 창 구간의 원인 분리로 한정한다.
+  D1 `33307079307` / source `de5b8dd2f5e7e69cc7ed05f955ff8b5f2649b9c8`의
+  서명된 N AppImage를 그대로 재사용한다. 제품 재빌드와 Windows 재검증은 하지 않는다.
+- Linux 전용 read-only workflow에서 일반 실행의 파일 → 새 창과 WebDriver 실행의 같은
+  OS 메뉴 입력을 비교한다. 별도 WebDriver 세션의 native invoke 재현도 함께 수집한다.
+  각 실행은 독립 Xvfb/D-Bus 세션이며 native 창 목록, 프로세스 상태, 화면과 raw driver
+  stdout/stderr를 남긴다. WebDriver 소실만으로 제품 crash나 수용 성공을 판정하지 않는다.
+- 변경 위치는 `.github/workflows/`의 전용 진단 workflow와 `tests/gui/linux/`의 진단 도구 및
+  관련 contract test다. 본 구현계획서와 오늘할일만 갱신하며 공식 제품 문서는 변경하지 않는다.
+- 로컬에서는 Node 단위/계약 테스트, actionlint와 diff 검사를 수행한다. Linux 앱 실행은
+  Ubuntu runner에서만 수행한다. 진단 완료는 Stage 5 수용 완료와 구분한다.
+- test release/manifest, stable/Pages, production key와 제품 소스는 변경하지 않는다.
+  원인 확인 후 필요한 제품 또는 수용 방식 변경은 별도 승인으로 넘긴다.
+
 ### 검증
 
 - MSI N → N+1 성공, MSI target만 요청, 설치/제거 registry와 파일 연결 보존

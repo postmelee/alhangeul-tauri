@@ -1,0 +1,142 @@
+name: Alhangeul Linux Window Diagnostic
+
+on:
+  workflow_call:
+    inputs:
+      candidate_sha:
+        required: true
+        type: string
+      d1_run_id:
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  probe-linux-windows:
+    name: Compare normal and automated Linux windows (diagnostic only)
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    env:
+      ARTIFACT_ROOT: ${{ github.workspace }}/window-probe-artifact
+      EVIDENCE_ROOT: ${{ github.workspace }}/window-probe-evidence
+      ALHANGEUL_PROBE_APP: ${{ github.workspace }}/window-probe-app/Alhangeul.AppImage
+      ALHANGEUL_PROBE_COORDINATES: ${{ github.workspace }}/window-probe-evidence/menu-coordinates.json
+    steps:
+      - name: Checkout exact diagnostic source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.workflow_sha }}
+          submodules: false
+
+      - name: Verify diagnostic source and approved D1
+        shell: bash
+        env:
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          D1_RUN_ID: ${{ inputs.d1_run_id }}
+        run: |
+          set -euo pipefail
+          [[ "$(git rev-parse HEAD)" == "$WORKFLOW_SHA" ]]
+          [[ "$CANDIDATE_SHA" == de5b8dd2f5e7e69cc7ed05f955ff8b5f2649b9c8 ]]
+          [[ "$D1_RUN_ID" == 33307079307 ]]
+          mkdir -p "$EVIDENCE_ROOT"
+          git rev-parse HEAD > "$EVIDENCE_ROOT/harness-sha.txt"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+          package-manager-cache: false
+
+      - name: Install Linux diagnostic dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y dbus-x11 libfuse2 libgtk-3-0 libwebkit2gtk-4.1-0 \
+            openbox webkit2gtk-driver xvfb xdotool wmctrl scrot fonts-noto-cjk
+          dpkg-query -W libwebkit2gtk-4.1-0 webkit2gtk-driver libgtk-3-0 \
+            > "$EVIDENCE_ROOT/native-library-versions.txt"
+
+      - name: Setup Rust for diagnostic driver only
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install exact tauri-driver
+        run: cargo install tauri-driver --version 2.0.6 --locked
+
+      - name: Verify approved N Linux artifact handoff
+        id: handoff
+        shell: bash
+        env:
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          D1_RUN_ID: ${{ inputs.d1_run_id }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          node scripts/verify-workflow-artifact.mjs \
+            --repository "$GITHUB_REPOSITORY" --build-ref "$CANDIDATE_SHA" \
+            --run-id "$D1_RUN_ID" --workflow-path .github/workflows/alhangeul-desktop.yml \
+            --artifact-name alhangeul-updater-acceptance-n-linux-x64 \
+            --json-output "$EVIDENCE_ROOT/n-artifact-handoff.json" --github-output "$GITHUB_OUTPUT"
+          node --input-type=module -e '
+            import {readFileSync} from "node:fs";
+            const data = JSON.parse(readFileSync(process.env.EVIDENCE_ROOT + "/n-artifact-handoff.json"));
+            if (data.artifactId !== 9730919657 || data.artifactDigest !==
+              "sha256:62786aa966656d52dd597541ad46636facaf8d8f08d72838e12fedea2e33f368")
+              throw new Error("Approved N artifact identity mismatch");'
+
+      - name: Download verified N Linux artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          artifact-ids: ${{ steps.handoff.outputs.artifact_id }}
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.d1_run_id }}
+          path: ${{ env.ARTIFACT_ROOT }}
+          digest-mismatch: error
+
+      - name: Verify signature and copy unchanged AppImage
+        shell: bash
+        env:
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+        run: |
+          set -euo pipefail
+          TAURI_UPDATER_PUBLIC_KEY="$(node -p "require('./apps/desktop/src-tauri/tauri.updater.conf.json').plugins.updater.pubkey")"
+          export TAURI_UPDATER_PUBLIC_KEY
+          node scripts/updater/acceptance-inventory.mjs \
+            --root "$ARTIFACT_ROOT" --role n --source-sha "$CANDIDATE_SHA" \
+            --targets linux-x86_64-appimage --public-key-env TAURI_UPDATER_PUBLIC_KEY
+          mapfile -t appimages < <(find "$ARTIFACT_ROOT" -type f -name '*.AppImage' -print)
+          [[ "${#appimages[@]}" -eq 1 ]]
+          install -d -m 0755 "$(dirname "$ALHANGEUL_PROBE_APP")"
+          install -m 0755 "${appimages[0]}" "$ALHANGEUL_PROBE_APP"
+          sha256sum "$ALHANGEUL_PROBE_APP" > "$EVIDENCE_ROOT/appimage-before.sha256"
+
+      - name: Compare three isolated Linux sessions without updating
+        shell: bash
+        run: |
+          set -euo pipefail
+          failed=0
+          for mode in webdriver-ui normal-ui webdriver-invoke; do
+            export ALHANGEUL_PROBE_MODE="$mode"
+            export ALHANGEUL_PROBE_OUTPUT="$EVIDENCE_ROOT/$mode"
+            if ! bash scripts/updater/run-linux-native-gui.sh \
+              "$EVIDENCE_ROOT/openbox-$mode.log" node tests/gui/linux/window-probe.mjs; then
+              failed=1
+            fi
+          done
+          sha256sum "$ALHANGEUL_PROBE_APP" > "$EVIDENCE_ROOT/appimage-after.sha256"
+          cmp "$EVIDENCE_ROOT/appimage-before.sha256" "$EVIDENCE_ROOT/appimage-after.sha256"
+          exit "$failed"
+
+      - name: Upload diagnostic observations (not updater acceptance)
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: alhangeul-linux-window-probe-${{ github.run_id }}
+          path: ${{ env.EVIDENCE_ROOT }}/**
+          if-no-files-found: error
+          retention-days: 14
