@@ -15,6 +15,7 @@ on:
           - updater-native-acceptance
           - updater-native-negative-acceptance
           - updater-linux-window-probe
+          - updater-linux-window-verify
       build_ref:
         description: Branch, tag, or commit to build. Empty uses the selected workflow commit.
         required: false
@@ -1143,7 +1144,7 @@ jobs:
 
   updater-linux-window-probe:
     name: Diagnose Linux window automation only
-    if: ${{ inputs.mode == 'updater-linux-window-probe' }}
+    if: ${{ inputs.mode == 'updater-linux-window-probe' || inputs.mode == 'updater-linux-window-verify' }}
     permissions:
       actions: read
       contents: read
@@ -1151,6 +1152,7 @@ jobs:
     with:
       candidate_sha: ${{ inputs.acceptance_candidate_sha }}
       d1_run_id: ${{ inputs.acceptance_d1_run_id }}
+      verify_fix: ${{ inputs.mode == 'updater-linux-window-verify' }}
 
   updater-native-acceptance:
     name: Run updater native acceptance

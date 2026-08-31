@@ -9,6 +9,10 @@ on:
       d1_run_id:
         required: true
         type: string
+      verify_fix:
+        description: Build unsigned Linux-only source and require five responsive windows.
+        default: false
+        type: boolean
 
 permissions:
   actions: read
@@ -18,7 +22,7 @@ jobs:
   probe-linux-windows:
     name: Compare normal and automated Linux windows (diagnostic only)
     runs-on: ubuntu-22.04
-    timeout-minutes: 20
+    timeout-minutes: 60
     env:
       ARTIFACT_ROOT: ${{ github.workspace }}/window-probe-artifact
       EVIDENCE_ROOT: ${{ github.workspace }}/window-probe-evidence
@@ -130,6 +134,65 @@ jobs:
           done
           sha256sum "$ALHANGEUL_PROBE_APP" > "$EVIDENCE_ROOT/appimage-after.sha256"
           cmp "$EVIDENCE_ROOT/appimage-before.sha256" "$EVIDENCE_ROOT/appimage-after.sha256"
+          exit "$failed"
+
+      - name: Prepare Linux-only unsigned verification build
+        if: ${{ inputs.verify_fix }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git submodule update --init third_party/rhwp
+          [[ "$(git -C third_party/rhwp rev-parse HEAD)" == 496333b27d21ddb9114ba9ae340bcb895870c9a7 ]]
+          sudo apt-get install -y build-essential libayatana-appindicator3-dev \
+            libgtk-3-dev librsvg2-dev libssl-dev libwebkit2gtk-4.1-dev libxdo-dev pkg-config
+          corepack enable
+          pnpm install --frozen-lockfile
+          pnpm run build:studio
+
+      - name: Restore existing Linux Cargo cache
+        if: ${{ inputs.verify_fix }}
+        uses: actions/cache/restore@v5
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            apps/desktop/src-tauri/target
+            third_party/rhwp/target
+          key: desktop-linux-x64-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: desktop-linux-x64-cargo-
+
+      - name: Test geometry and build unsigned Linux AppImage
+        if: ${{ inputs.verify_fix }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml --locked \
+            --release --target x86_64-unknown-linux-gnu --lib window_geometry::tests \
+            2>&1 | tee "$EVIDENCE_ROOT/geometry-tests.log"
+          pnpm tauri build --target x86_64-unknown-linux-gnu --bundles appimage \
+            2>&1 | tee "$EVIDENCE_ROOT/unsigned-build.log"
+          fixed_app="$GITHUB_WORKSPACE/apps/desktop/src-tauri/target/x86_64-unknown-linux-gnu/release/bundle/appimage/Alhangeul_0.1.0_amd64.AppImage"
+          [[ -f "$fixed_app" ]]
+          sha256sum "$fixed_app" > "$EVIDENCE_ROOT/unsigned-fixed-appimage.sha256"
+          printf 'ALHANGEUL_FIXED_APP=%s\n' "$fixed_app" >> "$GITHUB_ENV"
+
+      - name: Require five responsive windows in independent fixed sessions
+        if: ${{ inputs.verify_fix }}
+        shell: bash
+        env:
+          ALHANGEUL_PROBE_VERIFY_WINDOWS: "true"
+        run: |
+          set -euo pipefail
+          export ALHANGEUL_PROBE_APP="$ALHANGEUL_FIXED_APP"
+          failed=0
+          for mode in webdriver-ui normal-ui webdriver-invoke; do
+            export ALHANGEUL_PROBE_MODE="$mode"
+            export ALHANGEUL_PROBE_OUTPUT="$EVIDENCE_ROOT/fixed-$mode"
+            if ! bash scripts/updater/run-linux-native-gui.sh \
+              "$EVIDENCE_ROOT/openbox-fixed-$mode.log" node tests/gui/linux/window-probe.mjs; then
+              failed=1
+            fi
+          done
           exit "$failed"
 
       - name: Upload diagnostic observations (not updater acceptance)

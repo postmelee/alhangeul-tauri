@@ -56,7 +56,7 @@ test('진단 workflow는 기존 N artifact만 읽고 비교·종료 stack을 수
   assert.match(workflow, /for mode in webdriver-ui normal-xio normal-strace/);
   assert.match(workflow, /appimage-before.sha256.*appimage-after.sha256/);
   assert.match(workflow, /if: \$\{\{ always\(\) \}\}/);
-  assert.doesNotMatch(workflow, /contents: write|secrets\.|gh release|pnpm tauri build|cargo build/);
+  assert.doesNotMatch(workflow, /contents: write|secrets\.|gh release|environment: release/);
   assert.doesNotMatch(source, /invoke\(['"]updater_|update_apply|update_check/);
   assert.match(source, /delete env.TAURI_WEBVIEW_AUTOMATION/);
   assert.match(source, /alwaysMatch: \{ 'tauri:options': \{ application: app \} \}/);
@@ -68,4 +68,21 @@ test('진단 workflow는 기존 N artifact만 읽고 비교·종료 stack을 수
   assert.match(source, /p \(int\) errno/);
   assert.match(source, /raw=read,readv,write,writev,recvmsg,sendmsg,recvfrom,sendto/);
   assert.match(dispatch, /inputs.mode == 'updater-linux-window-probe'/);
+});
+
+test('Linux 수정 검증만 unsigned build와 5개 창 생존을 요구한다', async () => {
+  const workflow = await readFile(new URL('../../../.github/workflows/alhangeul-updater-linux-window-probe.yml', import.meta.url), 'utf8');
+  const source = await readFile(new URL('./window-probe.mjs', import.meta.url), 'utf8');
+  const geometry = await readFile(new URL('../../../apps/desktop/src-tauri/src/window_geometry.rs', import.meta.url), 'utf8');
+  assert.match(workflow, /verify_fix:[\s\S]*default: false/);
+  assert.match(workflow, /if: \$\{\{ inputs.verify_fix \}\}/);
+  assert.match(workflow, /pnpm tauri build --target x86_64-unknown-linux-gnu --bundles appimage/);
+  assert.doesNotMatch(workflow, /TAURI_SIGNING|--config|windows-2025/);
+  assert.match(workflow, /ALHANGEUL_PROBE_VERIFY_WINDOWS: "true"/);
+  assert.match(source, /Expected three live windows/);
+  assert.match(source, /handles.length !== 5/);
+  assert.match(source, /verifiedWindowCount !== 5/);
+  assert.match(geometry, /#\[cfg\(target_os = "linux"\)\][\s\S]*run_on_main_thread/);
+  assert.match(geometry, /sender.send\(read_active_monitor_logical_work_area\(&main_thread_app\)\)/);
+  assert.match(geometry, /receiver.recv\(\).ok\(\).flatten\(\)/);
 });

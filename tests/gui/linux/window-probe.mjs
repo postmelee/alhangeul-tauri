@@ -18,7 +18,8 @@ export function readInputs(env = process.env, platform = process.platform) {
     if (!env[key] || !isAbsolute(env[key])) throw new Error(`${key}: absolute path required`);
   }
   return { mode: env.ALHANGEUL_PROBE_MODE, app: env.ALHANGEUL_PROBE_APP,
-    output: env.ALHANGEUL_PROBE_OUTPUT, coordinates: env.ALHANGEUL_PROBE_COORDINATES };
+    output: env.ALHANGEUL_PROBE_OUTPUT, coordinates: env.ALHANGEUL_PROBE_COORDINATES,
+    verifyWindows: env.ALHANGEUL_PROBE_VERIFY_WINDOWS === 'true' };
 }
 
 export async function runProbe(inputs) {
@@ -48,6 +49,7 @@ export async function runProbe(inputs) {
     if (inputs.mode === 'webdriver-invoke') await dispatchNative(request, session);
     else await openNewWindow(initial.id, points, inputs.output, managed);
     await observe({ inputs, evidence, managed, initial, points, request, session });
+    if (inputs.verifyWindows) await verifyWindows({ inputs, evidence, managed, points, request, session });
     evidence.status = 'observed';
   } catch (error) {
     evidence.status = 'diagnostic-error';
@@ -69,7 +71,8 @@ export async function runProbe(inputs) {
 function launchMode({ inputs, runtime, automated, env }) {
   if (inputs.mode === 'normal-strace') {
     // Capture descriptor lifecycle, never document/network buffer contents.
-    return launch('strace', ['-f', '-tt', '-yy', '-o', join(inputs.output, 'sockets.trace'),
+    // Do not follow fusermount: tracing that setuid helper prevents FUSE mount.
+    return launch('strace', ['-tt', '-yy', '-o', join(inputs.output, 'sockets.trace'),
       '-e', 'trace=connect,close,shutdown,poll,ppoll,read,readv,write,writev,recvmsg,sendmsg,recvfrom,sendto,exit_group',
       '-e', 'raw=read,readv,write,writev,recvmsg,sendmsg,recvfrom,sendto', inputs.app], env);
   }
@@ -81,7 +84,9 @@ function launchMode({ inputs, runtime, automated, env }) {
       '-ex', 'handle SIGUSR1 nostop noprint pass',
       '-ex', 'handle SIGUSR2 nostop noprint pass',
       '-ex', 'break _XIOError', '-ex', 'run',
-      '-ex', 'p (int) errno', '-ex', 'thread apply all bt 24',
+      '-ex', 'p (int) errno', '-ex', 'set $xio_display = $rdi',
+      '-ex', 'p (int)xcb_connection_has_error((void*)XGetXCBConnection((void*)$xio_display))',
+      '-ex', 'thread apply all bt 24',
       '-ex', 'info proc mappings', '--args', inputs.app], env);
   }
   if (inputs.mode === 'normal-gdb') {
@@ -174,6 +179,33 @@ async function observe({ inputs, evidence, managed, initial, points, request, se
     await delay(3000);
     evidence.thirdWindow = await snapshot(inputs.output, 'third-window', managed);
   }
+}
+
+async function verifyWindows({ inputs, evidence, managed, points, request, session }) {
+  let list = await windows();
+  if (list.length !== 3) throw new Error(`Expected three live windows, got ${list.length}`);
+  for (const count of [4, 5]) {
+    await openNewWindow(list.at(-1).id, points, inputs.output, managed);
+    list = await waitFor(async () => {
+      const current = await windows();
+      return current.length === count && current;
+    }, `${count} live native windows`);
+    await delay(1500);
+    evidence.timeline.push(await snapshot(inputs.output, `verified-${count}`, managed));
+  }
+  if (session) {
+    const handles = await request('GET', `/session/${session}/window/handles`);
+    if (handles.length !== 5) throw new Error(`Expected five WebDriver windows, got ${handles.length}`);
+    for (const handle of handles) {
+      await request('POST', `/session/${session}/window`, { handle });
+      await waitFor(() => request('POST', `/session/${session}/execute/sync`, {
+        script: 'return document.readyState === "complete" && typeof window.__TAURI_INTERNALS__?.invoke === "function"', args: [],
+      }), `responsive native bridge in ${handle}`);
+    }
+    evidence.verifiedHandles = handles;
+  }
+  evidence.verifiedWindowCount = (await windows()).length;
+  if (evidence.verifiedWindowCount !== 5) throw new Error('A native window disappeared');
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

@@ -499,6 +499,14 @@ Task #16 Stage 4: updater key와 release 운영 계약 통합
 - 문서 위치는 기존 구현계획서·오늘할일을 유지한다. 제품 공식 문서는 변경하지 않는다.
   test release/tag/manifest와 production key, stable/Pages는 그대로 두며 candidate 교체,
   재서명·게시 및 AppImage updater 수용 재개는 단독 검증 결과 후 별도 승인으로 넘긴다.
+- 첫 추적 run `33371793648`에서는 두 번째 창까지 생존했으나 세 번째 창 생성에서 종료됐다.
+  `_XIOError`의 errno는 `11`이며 이것만으로 원인을 단정하지 않는다. strace의 child 추적은
+  setuid fusermount를 방해해 시작 전에 실패했으므로 main process만 추적하도록 보정한다.
+- `window_geometry.rs`에서 GTK monitor 변환·workarea 조회를 메인 스레드로 옮기는 최소
+  수정안을 검증한다. Tauri 2.10.1은 monitor handle을 호출 스레드에서 변환한다는 소스
+  근거가 있으며, Rust 창 builder 자체는 기존 worker에 유지해 동기 생성 deadlock을 피한다.
+  이 변경의 문제 해결 여부는 unsigned Linux AppImage의 일반 UI·WebDriver UI·native invoke
+  세 독립 세션에서 각각 창 5개와 응답성을 확인하기 전까지 확정하지 않는다.
 
 ### 검증
 
