@@ -51,6 +51,7 @@ test('checkout, run metadata, artifact ID와 inventory를 앱 설치 전에 검�
     '- name: Verify exact Linux thumbnailer binary',
     '- name: Verify artifact inventory and select one DEB',
     '- name: Install Linux GUI dependencies',
+    '- name: Record pre-install Linux MIME state',
     '- name: Install verified DEB',
     '- name: Verify installed Linux thumbnail package',
     '- name: Run Linux thumbnail manager contract probe',
@@ -138,17 +139,32 @@ test('native Linux dependency와 driver version이 명시되고 환경 증거를
 });
 
 test('Nautilus와 Thunar 제품 thumbnail 수용은 역할별 bounded script만 호출한다', () => {
+  const preinstall = stepContaining(workflow, 'Record pre-install Linux MIME state');
   const installed = stepContaining(workflow, 'Verify installed Linux thumbnail package');
   const probe = stepContaining(workflow, 'Run Linux thumbnail manager contract probe');
   for (const marker of [
     '/usr/lib/alhangeul/alhangeul-thumbnailer',
     '/usr/share/thumbnailers/alhangeul.thumbnailer',
+    '/usr/share/mime/packages/alhangeul-hwpx.xml',
     'stat -c',
     'sha256sum "$EXPECTED_HELPER"',
     'dpkg-query --search',
     'installed-thumbnail-package-owners.txt',
+    '| sort -u)" == alhangeul',
   ]) assert.ok(installed.includes(marker), `설치 package 검증 marker가 필요합니다: ${marker}`);
+  for (const marker of [
+    'continue-on-error: true',
+    'productMimeXml absent',
+    'sharedMimeInfoVersion',
+    'systemMimeRoot /usr/share/mime',
+    'pre-install-mime.txt',
+    'realHwp %s',
+    'realHwpx %s',
+  ]) assert.ok(preinstall.includes(marker), `설치 전 MIME marker가 필요합니다: ${marker}`);
+  assert.doesNotMatch(preinstall, /update-mime-database|sudo (?:install|cp)/);
   assert.match(installed, /cmp apps\/desktop\/src-tauri\/linux\/alhangeul\.thumbnailer/);
+  assert.match(installed, /cmp apps\/desktop\/src-tauri\/linux\/alhangeul-hwpx\.xml/);
+  assert.match(installed, /application\/x-hwp && "\$hwpx_type" == application\/x-hwpx/);
   assert.match(probe, /^        id: thumbnail-manager-probe$/m);
   assert.match(probe, /^        continue-on-error: true$/m);
   assert.match(probe, /^        timeout-minutes: 8$/m);
@@ -159,10 +175,14 @@ test('Nautilus와 Thunar 제품 thumbnail 수용은 역할별 bounded script만 
   const record = stepContaining(workflow, 'step-outcomes.json');
   const gate = stepContaining(workflow, 'Require Linux GUI acceptance success');
   assert.match(record, /THUMBNAIL_MANAGER: \$\{\{ steps\.thumbnail-manager-probe\.outcome \}\}/);
+  assert.match(record, /PREINSTALL_MIME: \$\{\{ steps\.record-preinstall-mime\.outcome \}\}/);
+  assert.match(record, /"preinstallMime":"%s"/);
   assert.match(record, /INSTALLED_THUMBNAIL: \$\{\{ steps\.verify-installed-thumbnail\.outcome \}\}/);
   assert.match(record, /"thumbnailManager":"%s"/);
   assert.match(record, /"installedThumbnail":"%s"/);
   assert.match(gate, /THUMBNAIL_MANAGER: \$\{\{ steps\.thumbnail-manager-probe\.outcome \}\}/);
+  assert.match(gate, /PREINSTALL_MIME: \$\{\{ steps\.record-preinstall-mime\.outcome \}\}/);
+  assert.match(gate, /"\$PREINSTALL_MIME"/);
   assert.match(gate, /INSTALLED_THUMBNAIL: \$\{\{ steps\.verify-installed-thumbnail\.outcome \}\}/);
   assert.match(gate, /"\$THUMBNAIL_MANAGER"/);
   assert.match(gate, /"\$INSTALLED_THUMBNAIL"/);

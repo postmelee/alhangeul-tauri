@@ -354,6 +354,18 @@ Task #50 Stage 3: 조상 symlink 허용과 leaf output 방어 정렬
 
 ## Stage 4 — 실제 package와 file-manager 재수용
 
+2026-09-01 작업지시자의 "진행해줘"를 Stage 3 보고 승인과 Stage 4 진입 승인으로
+기록한다. fetch한 `origin/devel`은 기존 `8b865fa` 기준선과 같고, Stage 3 완료
+worktree도 깨끗했다. Stage 3의 exact run `33377678863`은 보고 뒤 Linux x64·arm64,
+Windows 및 installer smoke까지 전체 성공으로 끝났다. 기존 manager probe가
+private `XDG_DATA_HOME`에 `alhangeul-probe.xml`과 구 HWPX MIME을 만들던 false
+positive를 확인했다. 이 생성·`update-mime-database` 호출을 제거하고 설치된
+system XML·registration·helper만 신뢰한다. 실제 HWP/HWPX는 합성 fixture와
+별도로 최초·cached·changed 호출을 모두 판정하며 성공 cache PNG metadata와
+손상 fixture의 성공 PNG 부재를 기록한다. 기존 GUI workflow와 그 계약 test는
+이미 권장 300 LOC를 넘는 단일 역할 파일이다. 이번 변경은 동일 acceptance
+순서·outcome 계약에 한정하고, unrelated 구조 분리는 이 Stage에 섞지 않는다.
+
 ### 산출물
 
 - `scripts/linux-thumbnail-manager-probe.sh`
