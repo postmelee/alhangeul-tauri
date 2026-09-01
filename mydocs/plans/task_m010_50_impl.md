@@ -365,6 +365,12 @@ system XML·registration·helper만 신뢰한다. 실제 HWP/HWPX는 합성 fixt
 손상 fixture의 성공 PNG 부재를 기록한다. 기존 GUI workflow와 그 계약 test는
 이미 권장 300 LOC를 넘는 단일 역할 파일이다. 이번 변경은 동일 acceptance
 순서·outcome 계약에 한정하고, unrelated 구조 분리는 이 Stage에 섞지 않는다.
+첫 GUI run `33500966551`은 pre/post MIME, installed owner, Nautilus lifecycle과
+전체 앱 GUI가 통과했으나 nested `thumbnails/fail/gnome-thumbnail-factory`의
+실패 marker를 immediate parent 이름만 보고 성공 PNG로 잘못 셌다. artifact에서
+해당 URI의 PNG가 failure cache 아래에만 있고 정상 네 문서는 `large` cache에
+있음을 확인했다. 전체 relative path component로 failure cache를 제외하고 같은
+gate를 재실행하며 손상 문서의 성공 PNG 허용으로 기준을 낮추지 않는다.
 
 ### 산출물
 

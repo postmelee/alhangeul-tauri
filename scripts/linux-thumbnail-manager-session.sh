@@ -116,7 +116,7 @@ import sys
 root, name = Path(sys.argv[1]), sys.argv[2]
 uri = (root.parent / "files" / name).resolve().as_uri()
 key = md5(uri.encode()).hexdigest() + ".png"
-print(sum(path.parent.name != "fail" for path in root.rglob(key)))
+print(sum("fail" not in path.relative_to(root).parts for path in root.rglob(key)))
 PY
 }
 

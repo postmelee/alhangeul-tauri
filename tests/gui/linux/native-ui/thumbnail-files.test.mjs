@@ -72,6 +72,7 @@ test('실제 제품 경로의 execve와 visible screenshot으로 cache lifecycle
     '[[ "$changed_direct" -gt "$cached_direct" && "$changed_preview" -gt "$cached_preview" ]]',
     '[[ "$changed_real_hwp" -gt "$cached_real_hwp" && "$changed_real_hwpx" -gt "$cached_real_hwpx" ]]',
     '[[ "$failure_success_pngs" -eq 0 ]]',
+    '"fail" not in path.relative_to(root).parts',
     '$manager-cache-metadata.txt',
     "grep -F 'real-onsaemiro.hwp'",
     "grep -F 'real-form-002.hwpx'",
