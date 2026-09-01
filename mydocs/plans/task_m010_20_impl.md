@@ -838,6 +838,35 @@ thumbnail 통합 34개 commit이 추가돼 있다. 읽기 전용 merge preview�
 `20260830.md`의 add/add 충돌이 확인됐고 실제 merge·해소는 수행하지 않았다. PR 전 통합과 새
 exact-SHA 수용은 다음 승인 경계로 남긴다. 현재 성공 결과를 미통합 `devel`에 승계하지 않는다.
 
+### Stage 4.5 — Issue #17 포함 최신 devel 통합과 exact-SHA 재수용
+
+2026-09-01 작업지시자가 같은 스레드에서 Stage 4.4 다음 승인 경계였던 최신 `devel` 통합·충돌
+해소·새 exact-SHA 재수용을 승인했다. `git fetch origin` 뒤 대상은
+`8b865fa55b55aea232d0fb034a518c807ac4c003`으로 고정하며, `local/task20`에 일반 merge commit으로
+통합한다. rebase나 history rewrite는 수행하지 않는다. 통합 직전 원격 `devel`이 바뀌면 새 변경과
+충돌 범위를 다시 검토한다.
+
+1. Issue #17의 Linux thumbnailer source·DEB/RPM package·native workflow·Linux GUI manager probe·
+   문서·회귀 test를 그대로 보존한다. Task #20의 adapter lifecycle, 반복 system print, editor body
+   restore gate와 exact artifact handoff도 보존한다. 새로운 제품 기능은 추가하지 않는다.
+2. `mydocs/orders/20260830.md` add/add 충돌은 두 타스크의 역사적 행을 모두 남겨 해소한다. 공통으로
+   바뀐 workflow·`UPSTREAM.md`·`DESKTOP_RELEASE.md`·automation test는 어느 쪽 gate도 삭제하지 않고
+   의미 단위로 검토한다.
+3. 병합 뒤 Task #20 focused test, GUI typecheck, 전체 automation·upstream·Studio test, Studio build,
+   product-boundary와 Issue #17의 플랫폼 중립 package/workflow contract를 실행한다. 현재 macOS
+   호스트에서는 Rust desktop, Tauri build와 Linux 전용 실행을 성공으로 대체하지 않는다.
+4. 검증을 통과한 새 source commit을 `publish/task20`에 게시하고 동일 exact SHA로 전체 desktop native
+   workflow를 실행한다. Windows x64·Linux x64·Linux arm64·Windows installer smoke와 Issue #17이
+   추가한 Linux thumbnail core/build/package evidence를 모두 확인한다. 그 native run과 같은 source를
+   Linux GUI workflow에 전달해 thumbnail artifact handoff·설치·manager probe, Task #20 여섯 scenario,
+   네 editor body checkpoint, PDF 3종을 다시 검증한다.
+
+Stage 4.4의 성공 run은 새 merge source에 승계하지 않는다. 새 native·GUI run의 workflow SHA,
+`build_ref`, `acceptance_ref`, artifact inventory·hash와 원본 화면·PDF까지 일치한 경우에만 Stage 4.5를
+완료한다. 통합 과정에서 새로운 제품 설계나 승인 범위 밖 보정이 필요하면 구현하지 않고 다시 승인받는다.
+문서는 이 계획서와 날짜별 `mydocs/orders/`, 완료 뒤 `mydocs/working/task_m010_20_stage4_5.md`에 두며
+신규 공식 제품 문서나 `mydocs/manual` 문서는 만들지 않는다.
+
 ## 통합 검증
 
 - 각 Stage focused test와 `git diff --check`를 해당 단계 보고서 작성 전에 실행한다.
@@ -866,6 +895,7 @@ exact-SHA 수용은 다음 승인 경계로 남긴다. 현재 성공 결과를 �
 - Stage 4.2는 최신 `devel` 자동 병합 충돌 해소 승인 후 시작하고 새 merge exact SHA의 수용이 끝나야 PR을 게시한다.
 - Stage 4.3은 Stage 4.2 GUI evidence가 확인한 반복 Print dialog 접근성 channel 보정 승인 후 시작하고 새 exact SHA의 수용이 끝나야 PR을 게시한다.
 - Stage 4.4는 인쇄 전후 본문 검증과 조건부 host view-only 복원 보정 승인 후 시작하며, 새 exact SHA의 native·GUI·본문·PDF 수용 완료 뒤 다음 통합 승인 경계로 돌아간다.
+- Stage 4.5는 Issue #17 포함 최신 `devel` 통합 승인 후 시작하며, 새 merge exact SHA의 native·GUI·thumbnail·본문·PDF 수용 완료 뒤에만 최종 보고서 승인 경계로 이동한다.
 - 모든 Stage는 `task-stage-report` 절차로 보고·커밋하고 작업지시자 승인 없이 다음 Stage로 넘어가지 않는다.
 
 ## 위험과 대응
