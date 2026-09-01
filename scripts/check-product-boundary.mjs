@@ -68,6 +68,11 @@ const thumbnailHandlerBoundaryRules = [
   ['handler filesystem or network API', /\bstd::(?:fs|net)\b/],
 ];
 
+const linuxThumbnailerBoundaryRules = [
+  ['Linux thumbnailer network API', /\bstd::net\b|\b(?:TcpListener|TcpStream|UdpSocket)\b/],
+  ['Linux thumbnailer app or Windows dependency', /\b(?:tauri|windows_sys|winreg)(?:::|\s*=)/],
+];
+
 const forbiddenPathPart = /(^|[/_.-])(hop|quicklook|macos)(?=$|[/_.-])/i;
 const maxTextFileBytes = 1024 * 1024;
 
@@ -178,6 +183,18 @@ export async function verifyProductBoundary(options = {}) {
       || repositoryPath.startsWith('apps/thumbnail-handler/src/');
     if (isThumbnailHandlerBoundary) {
       const boundaryViolation = findRuleViolation(content, thumbnailHandlerBoundaryRules);
+      if (boundaryViolation) {
+        violations.push(
+          `${repositoryPath}:${boundaryViolation.line}: ${boundaryViolation.label}`,
+        );
+      }
+    }
+
+    const isLinuxThumbnailerBoundary =
+      repositoryPath === 'apps/linux-thumbnailer/Cargo.toml'
+      || repositoryPath.startsWith('apps/linux-thumbnailer/src/');
+    if (isLinuxThumbnailerBoundary) {
+      const boundaryViolation = findRuleViolation(content, linuxThumbnailerBoundaryRules);
       if (boundaryViolation) {
         violations.push(
           `${repositoryPath}:${boundaryViolation.line}: ${boundaryViolation.label}`,

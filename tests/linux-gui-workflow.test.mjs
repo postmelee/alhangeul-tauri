@@ -46,9 +46,14 @@ test('checkout, run metadata, artifact ID와 inventory를 앱 설치 전에 검�
     '- name: Verify checked out exact SHA',
     '- name: Verify native run and exact artifact handoff',
     '- name: Download verified Linux x64 artifact',
+    '- name: Verify exact Linux thumbnailer artifact handoff',
+    '- name: Download verified Linux thumbnailer artifact',
+    '- name: Verify exact Linux thumbnailer binary',
     '- name: Verify artifact inventory and select one DEB',
     '- name: Install Linux GUI dependencies',
     '- name: Install verified DEB',
+    '- name: Verify installed Linux thumbnail package',
+    '- name: Run Linux thumbnail manager contract probe',
     '- name: Run Linux GUI acceptance',
   ]);
   assert.match(workflow, /^          ref: \$\{\{ github\.workflow_sha \}\}$/m);
@@ -68,7 +73,7 @@ test('checkout, run metadata, artifact ID와 inventory를 앱 설치 전에 검�
 });
 
 test('artifact download는 검증된 ID, repository와 run ID에 직접 결속된다', () => {
-  const step = stepContaining(workflow, 'artifact-ids:');
+  const step = stepContaining(workflow, 'steps.handoff.outputs.artifact_id');
   assert.match(step, /artifact-ids: \$\{\{ steps\.handoff\.outputs\.artifact_id \}\}/);
   assert.match(step, /github-token: \$\{\{ github\.token \}\}/);
   assert.match(step, /repository: \$\{\{ github\.repository \}\}/);
@@ -94,9 +99,14 @@ test('native Linux dependency와 driver version이 명시되고 환경 증거를
     'cups',
     'gir1.2-gtk-3.0',
     'libwebkit2gtk-4.1-0',
+    'nautilus',
     'poppler-utils',
     'printer-driver-cups-pdf',
     'python3-pyatspi',
+    'shared-mime-info',
+    'strace',
+    'thunar',
+    'tumbler',
     'webkit2gtk-driver',
     'xdotool',
     'xvfb',
@@ -125,6 +135,37 @@ test('native Linux dependency와 driver version이 명시되고 환경 증거를
   assert.doesNotMatch(evidence, /tauri-driver --version/);
   assert.doesNotMatch(evidence, /WebKitWebDriver --version/);
   assert.doesNotMatch(evidence, /cupsd -v/);
+});
+
+test('Nautilus와 Thunar 제품 thumbnail 수용은 역할별 bounded script만 호출한다', () => {
+  const installed = stepContaining(workflow, 'Verify installed Linux thumbnail package');
+  const probe = stepContaining(workflow, 'Run Linux thumbnail manager contract probe');
+  for (const marker of [
+    '/usr/lib/alhangeul/alhangeul-thumbnailer',
+    '/usr/share/thumbnailers/alhangeul.thumbnailer',
+    'stat -c',
+    'sha256sum "$EXPECTED_HELPER"',
+    'dpkg-query --search',
+    'installed-thumbnail-package-owners.txt',
+  ]) assert.ok(installed.includes(marker), `설치 package 검증 marker가 필요합니다: ${marker}`);
+  assert.match(installed, /cmp apps\/desktop\/src-tauri\/linux\/alhangeul\.thumbnailer/);
+  assert.match(probe, /^        id: thumbnail-manager-probe$/m);
+  assert.match(probe, /^        continue-on-error: true$/m);
+  assert.match(probe, /^        timeout-minutes: 8$/m);
+  assert.match(probe, /scripts\/linux-thumbnail-manager-probe\.sh/);
+  assert.match(probe, /steps\.verify-thumbnailer\.outputs\.helper_path/);
+  assert.doesNotMatch(probe, /mktemp|thumbnail-stub|SNAP_NAME|pkill|killall/);
+
+  const record = stepContaining(workflow, 'step-outcomes.json');
+  const gate = stepContaining(workflow, 'Require Linux GUI acceptance success');
+  assert.match(record, /THUMBNAIL_MANAGER: \$\{\{ steps\.thumbnail-manager-probe\.outcome \}\}/);
+  assert.match(record, /INSTALLED_THUMBNAIL: \$\{\{ steps\.verify-installed-thumbnail\.outcome \}\}/);
+  assert.match(record, /"thumbnailManager":"%s"/);
+  assert.match(record, /"installedThumbnail":"%s"/);
+  assert.match(gate, /THUMBNAIL_MANAGER: \$\{\{ steps\.thumbnail-manager-probe\.outcome \}\}/);
+  assert.match(gate, /INSTALLED_THUMBNAIL: \$\{\{ steps\.verify-installed-thumbnail\.outcome \}\}/);
+  assert.match(gate, /"\$THUMBNAIL_MANAGER"/);
+  assert.match(gate, /"\$INSTALLED_THUMBNAIL"/);
 });
 
 test('Xvfb, DBus, AT-SPI와 CUPS-PDF는 repository fixture만 사용한다', () => {
@@ -210,11 +251,12 @@ test('이번 workflow의 외부 Action은 full immutable SHA와 version 주석�
     ['actions/upload-artifact', ['043fb46d1a93c77aae656e7c1c64a875d1fc6a0a', 'v7.0.1']],
   ]);
   const uses = [...workflow.matchAll(/^\s*uses: ([^@\s]+)@([0-9a-f]{40}) # (v\S+)$/gm)];
-  assert.equal(uses.length, expected.size);
+  assert.equal(uses.length, expected.size + 1);
   for (const [, action, sha, version] of uses) {
     assert.deepEqual([sha, version], expected.get(action), `${action} pin이 다릅니다`);
-    expected.delete(action);
+    if (action !== 'actions/download-artifact') expected.delete(action);
   }
+  expected.delete('actions/download-artifact');
   assert.equal(expected.size, 0);
   assert.equal((workflow.match(/^\s*uses:/gm) ?? []).length, uses.length);
 });
