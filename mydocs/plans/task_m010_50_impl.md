@@ -372,6 +372,19 @@ system XML·registration·helper만 신뢰한다. 실제 HWP/HWPX는 합성 fixt
 있음을 확인했다. 전체 relative path component로 failure cache를 제외하고 같은
 gate를 재실행하며 손상 문서의 성공 PNG 허용으로 기준을 낮추지 않는다.
 
+2026-09-01 최종 candidate
+`241e0674d2abe41b8fc5bd521725321ddadc4398`에서 native run `33502167628`의
+Linux x64·arm64, Windows x64 및 Windows installer smoke가 모두 성공했다.
+같은 SHA와 native run ID를 받은 Linux GUI run `33504817069`도 pre-install MIME,
+package 설치, installed thumbnail, Nautilus·Thunar/Tumbler manager probe와 기존
+제품 GUI를 모두 통과했다. private MIME path는 전후 모두 없었고 실제 HWPX는
+설치 전 `application/zip`, 설치 후 `application/x-hwpx`였다. 두 manager 모두
+실제 HWP/HWPX의 최초·cached·changed 호출·cache metadata와 손상 문서의 성공
+PNG 부재를 충족했다. 실사용 512px PNG 및 file-manager screenshot을 사람이
+판독해 온새미로 표지와 form-002 표·본문이 서로 구분되어 보임을 확인했다.
+상세 증적은 `mydocs/working/task_m010_50_stage4.md`에 고정하며 Stage 5 공식 문서
+변경은 작업지시자 승인을 기다린다.
+
 ### 산출물
 
 - `scripts/linux-thumbnail-manager-probe.sh`
@@ -439,6 +452,7 @@ gh workflow run alhangeul-linux-gui.yml --ref publish/task50 -f build_ref=<exact
 
 ```text
 Task #50 [Stage 4.1]: MIME 주입 없는 package-installed GUI candidate
+Task #50 [Stage 4.2]: nested failure cache 경로 판정 보정
 Task #50 Stage 4: Linux HWPX 실제 설치와 파일 관리자 시각 수용
 ```
 
