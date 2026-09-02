@@ -17,6 +17,7 @@ GitHub Issue: [#50](https://github.com/postmelee/alhangeul-tauri/issues/50)
 | 3 | 조상 symlink path 정책 | resolved Request, CLI·output 회귀 | Linux x64·arm64 Rust test/Clippy |
 | 4 | Package-installed file-manager 재수용 | MIME 주입 제거, install 전후 evidence, GUI 캡처 | x64 DEB/RPM, arm64 DEB, x64 Nautilus·Thunar |
 | 5 | 공식 문서와 최종 회귀 | architecture·개발·운영·README 정렬 | 플랫폼 중립 검증과 exact-SHA native 결과 |
+| 6 | PR 리뷰 package lifecycle·evidence 보정 | remove hook, upstream canary, stale/purge evidence | x64 DEB/RPM, arm64 DEB, Windows와 Linux GUI 재수용 |
 
 ## 문서 위치 확인
 
@@ -595,9 +596,9 @@ URL을 기록해 `tests/fixtures/`에 둔다. 새 공식 문서나 `mydocs/manua
 - archive 계약은 `/usr/share/mime/` 하위 regular file 중
   `packages/alhangeul-hwpx.xml`만 허용한다. aliases, magic뿐 아니라 모든 media
   directory와 향후 생성 cache 파일의 package 소유를 거부한다.
-- 공식 문서는 Stage 4 역사적 chain을 보존하면서 최종 통합 source
-  `75f9f8c1a87c6e42e514254c82d9169aa3f5bbea`, native run `33587996496`, GUI run
-  `33590789637`과 artifact digest를 추가한다. 비표준 HWPX ZIP은 mimetype magic이
+- 공식 문서는 Stage 4 역사적 chain을 보존하면서 최종 Stage 6 source
+  `dbf09404e8b2e4fd07f510ddc60329e71a596643`, native run `33607431684`, GUI run
+  `33610310800`과 artifact digest를 추가한다. 비표준 HWPX ZIP은 mimetype magic이
   맞지 않아 확장자 glob에 의존한다는 알려진 한계를 기록한다.
 - URL 실행 path는 `fileURLToPath()`를 사용하고 Linux MIME smoke wrapper를
   executable mode로 정렬한다.
@@ -628,11 +629,26 @@ git diff --check
   package-only HWP/HWPX, Nautilus·Thunar first/cached/changed와 기존 제품 GUI를
   다시 수용한다.
 
+Stage 6 결과: 최종 source/workflow candidate
+`dbf09404e8b2e4fd07f510ddc60329e71a596643`의 native run
+`33607431684`에서 Linux x64·arm64, Windows x64와 MSI·NSIS installer smoke
+4개 job이 모두 통과했다. x64 DEB/RPM과 arm64 DEB는 실제 stale MIME cache,
+명시적 복구, update/rollback/uninstall을 확인했고 DEB는
+`update-mime-database` 없는 purge까지 성공했다. 같은 candidate와 native run을
+입력한 GUI run `33610310800`도 package-only Nautilus·Thunar 실사용 문서와 기존
+제품 GUI를 통과했다. 플랫폼 중립 검증은 대상 48 tests, automation 413 tests,
+product boundary 332 files, upstream 36 tests, Studio 125 tests와 228-module build를
+통과했다. 상세 진단 실행과 artifact ID·digest는
+[`Stage 6 보고서`](../working/task_m010_50_stage6.md)에 기록한다.
+
 ### 커밋
 
 ```text
 Task #50 [Stage 6.1]: Linux remove hook과 MIME lifecycle 보정
-Task #50 Stage 6: PR 리뷰 package evidence와 최종 수용 정렬
+Task #50 [Stage 6.2]: Linux MIME 검증 근거 문서 정렬
+Task #50 [Stage 6.3]: Linux CI lifecycle failure injection 보정
+Task #50 [Stage 6.4]: Debian MIME trigger 복구 절차 보정
+Task #50 Stage 6 + 최종 보고서: PR 리뷰 package evidence 재수용
 ```
 
 ## 검증
@@ -677,7 +693,7 @@ Task #50 Stage 6: PR 리뷰 package evidence와 최종 수용 정렬
 
 ## 승인 요청 사항
 
-- 위 5단계의 세부 산출물·검증·커밋과 candidate push/기존 수동 workflow 실행
+- 위 6단계의 세부 산출물·검증·커밋과 candidate push/기존 수동 workflow 실행
 - MIME helper·fixture·artifact verifier 보조 파일을 포함한 예상 변경 경로 보정
 - fixture 기대값 matrix, record 완전성, 1,500 ms/256 MiB 경계와 실패 증적 보존
 - Stage 4에서 실제 설치 문서 screenshot을 다시 제시하는 수용 기준

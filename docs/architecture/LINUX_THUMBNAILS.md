@@ -117,7 +117,7 @@ Nautilus와 Thunar gate는 fresh XDG 경로와 virtual display에서 package-ins
 - Flatpak과 Snap
 - 실제 사용자 desktop session의 배포판·file-manager 조합 전체
 
-Task #50 Stage 4 exact source `241e0674d2abe41b8fc5bd521725321ddadc4398`에서는 x64/arm64 native package와 같은 x64 DEB를 사용해 공개 온새미로 HWP와 form-002 HWPX를 재수용했다. PR의 최신 `devel`을 통합한 exact source `75f9f8c1a87c6e42e514254c82d9169aa3f5bbea`에서도 native run [33587996496](https://github.com/postmelee/alhangeul-tauri/actions/runs/33587996496)과 Linux GUI run [33590789637](https://github.com/postmelee/alhangeul-tauri/actions/runs/33590789637)가 같은 결과를 재확인했다. Nautilus와 Thunar에서 두 문서의 서로 구분되는 첫 페이지, cached 호출 무증가, mtime 변경 뒤 재호출과 손상 HWP의 성공 cache PNG 부재를 확인했고 screenshot과 512px render를 사람이 판독했다. 이 근거는 위 matrix의 Ubuntu 22.04 hosted 환경에 한정한다.
+Task #50 Stage 4 exact source `241e0674d2abe41b8fc5bd521725321ddadc4398`에서는 x64/arm64 native package와 같은 x64 DEB를 사용해 공개 온새미로 HWP와 form-002 HWPX를 재수용했다. 최신 `devel` 통합 뒤 PR 리뷰 보정까지 포함한 source/workflow candidate `dbf09404e8b2e4fd07f510ddc60329e71a596643`에서도 native run [33607431684](https://github.com/postmelee/alhangeul-tauri/actions/runs/33607431684)과 Linux GUI run [33610310800](https://github.com/postmelee/alhangeul-tauri/actions/runs/33610310800)이 같은 결과를 재확인했다. Nautilus와 Thunar에서 두 문서의 서로 구분되는 첫 페이지, cached 호출 무증가, mtime 변경 뒤 재호출과 손상 HWP의 성공 cache PNG 부재를 확인했고 screenshot과 512px render를 사람이 판독했다. 이 근거는 위 matrix의 Ubuntu 22.04 hosted 환경에 한정한다.
 
 ## Build와 검증
 

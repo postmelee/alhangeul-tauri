@@ -370,12 +370,12 @@ package가 설치한 system MIME XML·registration·helper만으로 수용했다
 - helper, registration과 `/usr/share/mime/packages/alhangeul-hwpx.xml`은 package `alhangeul` 단일 owner였고 source·설치 hash가 일치했다.
 - 공개 온새미로 HWP와 form-002 HWPX는 Nautilus·Thunar에서 서로 구분되는 첫 페이지를 보였다. cached 단계는 helper 호출이 늘지 않았고 mtime 변경 뒤 재호출됐으며 URI·mtime cache metadata가 일치했다. 손상 HWP의 성공 cache PNG는 0개였다.
 
-PR 게시 뒤 최신 `devel`을 통합한 최종 exact source
-`75f9f8c1a87c6e42e514254c82d9169aa3f5bbea`도 다음 연쇄 수용을 통과했다.
+PR 게시 뒤 최신 `devel` 통합과 PR 리뷰 보정을 포함한 최종 source/workflow
+candidate `dbf09404e8b2e4fd07f510ddc60329e71a596643`도 다음 연쇄 수용을 통과했다.
 
-- [Native run 33587996496](https://github.com/postmelee/alhangeul-tauri/actions/runs/33587996496): Linux x64·arm64와 Windows x64 build, x64 DEB/RPM·arm64 DEB package lifecycle 및 Windows installer smoke 4개 job 전체 성공
-- [Linux GUI run 33590789637](https://github.com/postmelee/alhangeul-tauri/actions/runs/33590789637): 같은 exact source와 native run의 x64 DEB로 Nautilus·Thunar/Tumbler 및 기존 제품 GUI 전체 성공
-- GUI evidence artifact `alhangeul-linux-gui-33590789637`: ID `9831776242`, archive digest `sha256:094e02bf2c724f3c53e41ee4ee7ecd5065810d357bed818bbbe8d7d13c7369b7`, 7일 retention
+- [Native run 33607431684](https://github.com/postmelee/alhangeul-tauri/actions/runs/33607431684): Linux x64·arm64와 Windows x64 build, x64 DEB/RPM·arm64 DEB package lifecycle 및 Windows installer smoke 4개 job 전체 성공
+- [Linux GUI run 33610310800](https://github.com/postmelee/alhangeul-tauri/actions/runs/33610310800): 같은 exact source와 native run의 x64 DEB로 Nautilus·Thunar/Tumbler 및 기존 제품 GUI 전체 성공
+- GUI evidence artifact `alhangeul-linux-gui-33610310800`: ID `9838928525`, archive digest `sha256:1e3dcf66d04d5c249925392234f87845d2330048c7a656f323e62dd816c92f11`, 7일 retention
 - 두 실사용 문서의 512 px render SHA-256은 각각 `2a499693e01e811eff49c6aff3102720945ae54c00d75bb102e56cbdd94a8abf`, `35bd3ce2d05def6bf9ad525bc2a0a5b62f30ad3e1eb7c208e085a9e01a7be8ee`로 Stage 4와 동일했다.
 
 package lifecycle은 install/reinstall/update/rollback/uninstall 외에 MIME XML은 배치됐지만 refresh가 실패해 cache가 설치 전 상태인 전이와 명시적 candidate reinstall 복구를 구분한다. DEB는 `update-mime-database`를 PATH에서 제거한 purge에서도 `postrm`이 성공하고 제품 파일이 남지 않아야 한다. Archive는 `/usr/share/mime/packages/alhangeul-hwpx.xml`만 소유하며 `mime.cache`, `generic-icons`, type XML 같은 파생 cache 파일을 포함하면 실패한다.
