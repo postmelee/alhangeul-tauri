@@ -104,6 +104,7 @@ test('DEB와 RPM은 install reinstall stale refresh recovery update rollback uni
   assert.match(fixtures, /rpmbuild.*-bb/);
   assert.match(smoke, /dpkgPathWithoutMimeRefresh/);
   assert.match(smoke, /PATH=\$\{path\}.*\/usr\/bin\/dpkg.*--purge/);
+  assert.match(smoke, /dpkg.*--configure.*shared-mime-info/);
   assert.doesNotMatch(fixtures, /update-mime-database.*dpkg-without-mime-refresh/);
 });
 

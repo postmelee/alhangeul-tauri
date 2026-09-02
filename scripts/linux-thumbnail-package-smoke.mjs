@@ -223,6 +223,7 @@ async function checkRefreshFailure(context) {
   await observe(context, 'refresh-failure-observed', result.status, 'observed', {
     hookExitCode: 42, recovery: 'explicit-candidate-reinstall',
   });
+  if (context.format === 'deb') run('sudo', ['/usr/bin/env', 'DEBIAN_FRONTEND=noninteractive', 'dpkg', '--configure', 'shared-mime-info']);
 }
 
 function fixture(context, fail) {
@@ -277,7 +278,6 @@ function requireEphemeralCi() {
 function joinRunnerTemp(prefix) {
   return resolve(process.env.RUNNER_TEMP ?? tmpdir(), prefix);
 }
-
 function required(options, name) {
   const value = options.get(name);
   if (!value) throw new Error(`${name} is required`);
