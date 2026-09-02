@@ -754,6 +754,48 @@ Task #16 Stage 4: updater key와 release 운영 계약 통합
 Task #16 Stage 5: 세 updater 형식의 N→N+1 수용 확정
 ```
 
+## Stage 6 — PR #53 리뷰 안전성 보정
+
+PR #53의 [리뷰 댓글](https://github.com/postmelee/alhangeul-tauri/pull/53#issuecomment-5508768032)을
+현재 head `b15a8dec0d199f9c60a128fd5f336d0438d7e482`와 대조했다. 신뢰 사슬·게시 권한·서명 검증과
+Pages fail-closed 경계는 유지하고, merge 전에 다음 보정만 수행한다.
+
+- `target="_blank"` anchor를 제거하고 updater module의 인자 없는 Rust command가 canonical
+  `https://postmelee.github.io/alhangeul-tauri/updates/`만 기본 브라우저로 열게 한다. blocker뿐 아니라
+  check/download/install 오류에서도 수동 다운로드 버튼을 제공한다.
+- Linux AppImage와 부모 directory의 permission bit 존재 여부가 아니라 현재 process의 실제
+  `W_OK` 결과를 판정한다. root 소유 0755처럼 쓰기 bit가 있지만 현재 사용자가 쓸 수 없는 경로를
+  `readOnlyAppImage`로 닫고 native probe의 실제 filesystem test를 추가한다.
+- release inventory의 target 계약을 runtime과 같은 exact basename으로 강화해 locale·architecture
+  token drift를 publish 이전에 거부한다.
+- 다운로드 전 dirty guard가 backend `download()`를 호출하지 않음을 별도 unit test로 고정한다.
+- production workflow가 tracked `tauri.updater.conf.json`을 기준으로 확정된 뒤 호출되지 않는
+  `release-config.mjs`와 `build:updater-config` 및 전용 test를 제거한다.
+- negative scenario builder와 validator의 유사 변환은 독립 expected-path 검증을 위한 의도적인
+  분리이므로 공통 helper로 합치지 않고 주석으로 이유를 남긴다.
+- Linux monitor geometry의 blocking receive는 현재 두 호출자가 모두 `spawn_blocking`을 사용한다.
+  동작을 바꾸지 않고 main thread 호출 금지 전제를 source에 명시한다.
+
+공식 문서는 기존에 승인한 `docs/architecture/UPDATER.md`와
+`docs/operations/DESKTOP_RELEASE.md`의 현재 위치에서 실제 fallback·권한 판정만 최소 보정한다.
+새 문서 위치는 만들지 않는다. production stable release, tag, Pages deploy, updater manifest 게시,
+key·Secret 변경과 N/N+1 후보 재생성은 범위 밖이다.
+
+### Stage 6 검증
+
+- 변경된 Studio bridge/UI unit test와 `pnpm run build:studio`
+- updater release·automation contract test와 `pnpm run test:automation`
+- Cargo locked metadata, Rust formatting과 Linux native target/probe test
+- `git diff --check`
+- 기존 Stage 5 N/N+1 positive·negative run은 artifact·manifest·runtime 흐름이 바뀌지 않으므로
+  반복하지 않는다.
+
+### Stage 6 커밋
+
+```text
+Task #16 Stage 6: PR 리뷰 updater fallback과 release 계약 보정
+```
+
 ## 검증
 
 - 각 Stage 검증은 단계 보고서 전에 실행하고 실패 상태를 완료로 기록하지 않는다.
