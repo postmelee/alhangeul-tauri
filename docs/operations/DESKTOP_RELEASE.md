@@ -49,6 +49,7 @@ repository-level Actions는 활성 상태지만 대상 CI와 native workflow는 
 | `workflow-context.json`, `checked-out-sha.txt` | 요청 SHA·native run ID와 checkout SHA가 candidate 기록과 같은가 |
 | `artifact-handoff.json`, inventory, `installed-deb.sha256` | 원본 native run·artifact ID·archive digest와 설치 DEB hash가 한 chain으로 결속되는가 |
 | `native-environment.txt`, `step-outcomes.json` | Node/pnpm/Rust/driver/WebKitGTK/GTK/CUPS/Poppler version과 GUI 실행 전 주요 step outcome이 기록됐는가 |
+| `pre-install-mime.txt`, `post-install-mime.txt`, `private-mime-state.txt` | package 설치 전후 실제 HWP/HWPX type, 제품 XML·owner·hash와 private MIME 주입 부재가 기록됐는가 |
 | scenario manifest·screenshot·native UI tree | toolbar 초기 숨김, 문서 중앙 정렬, 한글 glyph, dialog 상태와 실패 지점이 summary와 일치하는가 |
 | 직접/GTK/CUPS PDF와 render PNG | 6쪽 A4, 한글 text, 빈 쪽·crop·tofu 이상이 없는가 |
 | `thumbnail-manager/`의 screenshot·summary·`execve` trace | 설치된 helper·registration으로 Nautilus·Thunar가 direct/preview/icon fallback과 cache hit/invalidation을 수행했는가 |
@@ -344,16 +345,37 @@ Task #17 Stage 4는 exact source `c0cc4af46f132d199e843abf2dad014ae4a07709`에�
 - Nautilus 42.6과 Thunar 4.16.10/Tumbler 4.16이 `/usr/lib/alhangeul/alhangeul-thumbnailer`를 직접 실행
 - direct와 preview fixture는 first/cached/changed를 통과했고, 손상 fixture는 제품 cache 없이 MIME icon으로 저하
 
-Stage 4 screenshot의 direct fixture는 빈 흰 페이지, preview fixture는 검은 합성 preview이므로 file-manager discovery와 cache 경로만 증명한다. Stage 6은 같은 exact SHA의 새 native candidate에서 text·table·image가 식별되는 공개 실사용 HWP/HWPX를 Nautilus와 Thunar에서 직접 확인해야 한다.
+Stage 4 screenshot의 direct fixture는 빈 흰 페이지, preview fixture는 검은 합성 preview이므로 file-manager discovery와 cache 경로만 증명한다. 이 한계는 아래 Task #50의 package-only MIME 및 공개 실사용 문서 수용으로 보완했다.
 
 설치 후 thumbnail이 만들어졌다면 앱 package를 제거해도 file-manager cache가 잠시 남을 수 있다. 정상 제거 판정은 cache 삭제가 아니라 다음을 사용한다.
 
 ```sh
 test ! -e /usr/lib/alhangeul/alhangeul-thumbnailer
 test ! -e /usr/share/thumbnailers/alhangeul.thumbnailer
+test ! -e /usr/share/mime/packages/alhangeul-hwpx.xml
 ```
 
-전역 XDG thumbnail cache 삭제나 file manager 강제 종료는 설치·제거 절차에 포함하지 않는다. 전체 설계와 제외 matrix는 [Linux thumbnail 아키텍처](../architecture/LINUX_THUMBNAILS.md)를 따른다.
+package 제거 hook은 남은 system MIME 정의를 반영하도록 `/usr/share/mime` 파생 cache를 갱신한다. 전역 XDG thumbnail cache 삭제나 file manager 강제 종료는 설치·제거 절차에 포함하지 않는다. 전체 설계와 제외 matrix는 [Linux thumbnail 아키텍처](../architecture/LINUX_THUMBNAILS.md)를 따른다.
+
+## Task #50 Linux HWPX package-only MIME와 실사용 문서 기준선
+
+2026-09-01 Task #50 Stage 4는 exact source
+`241e0674d2abe41b8fc5bd521725321ddadc4398`에서 probe 자체 MIME 주입 없이
+package가 설치한 system MIME XML·registration·helper만으로 최종 수용했다.
+
+- [Native run 33502167628](https://github.com/postmelee/alhangeul-tauri/actions/runs/33502167628): Linux x64·arm64와 Windows x64 build, x64 DEB/RPM·arm64 DEB package lifecycle 및 Windows installer smoke 전체 성공
+- [Linux GUI run 33504817069](https://github.com/postmelee/alhangeul-tauri/actions/runs/33504817069): 같은 SHA와 native run ID의 x64 DEB, Nautilus·Thunar/Tumbler 및 기존 제품 GUI 전체 성공
+- GUI evidence artifact `alhangeul-linux-gui-33504817069`: ID `9799546121`, archive digest `sha256:5444688b8402f9e0e80c78d8a84fba04d3a0c1b1977f8b4a7b5dadb0856e3da3`, 7일 retention
+- 설치 전 실제 HWP는 `application/x-hwp`, HWPX는 `application/zip`이었고 설치 후 각각 `application/x-hwp`, `application/x-hwpx`였다. private MIME path는 전후 모두 없었다.
+- helper, registration과 `/usr/share/mime/packages/alhangeul-hwpx.xml`은 package `alhangeul` 단일 owner였고 source·설치 hash가 일치했다.
+- 공개 온새미로 HWP와 form-002 HWPX는 Nautilus·Thunar에서 서로 구분되는 첫 페이지를 보였다. cached 단계는 helper 호출이 늘지 않았고 mtime 변경 뒤 재호출됐으며 URI·mtime cache metadata가 일치했다. 손상 HWP의 성공 cache PNG는 0개였다.
+
+이 GUI 근거는 Ubuntu 22.04 x64, Nautilus `1:42.6-0ubuntu2`, Thunar
+`4.16.10-1`, Tumbler `4.16.0-1`, shared-mime-info `2.1-2`에 한정한다. x64 RPM은
+Ubuntu runner의 `rpm --nodeps` transaction 근거이며 Fedora dependency resolution이나
+RPM GUI 수용이 아니다. Linux arm64 GUI, KDE/Dolphin, AppImage registration,
+Flatpak/Snap과 실제 사용자 desktop 조합 전체를 대신하지 않는다. Actions artifact는
+임시 검증물이며 공개 설치 파일이나 release가 아니다.
 
 ## 의도적으로 포함하지 않는 작업
 

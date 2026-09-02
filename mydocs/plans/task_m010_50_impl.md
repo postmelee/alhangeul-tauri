@@ -458,6 +458,24 @@ Task #50 Stage 4: Linux HWPX 실제 설치와 파일 관리자 시각 수용
 
 ## Stage 5 — 공식 문서와 최종 회귀 정렬
 
+2026-09-02 작업지시자의 "진행해줘"를 Stage 4 보고 승인과 Stage 5 진입 승인으로
+기록한다. fetch한 `origin/devel`은 `8b865fa55b55aea232d0fb034a518c807ac4c003`,
+원격 `publish/task50`은 Stage 4 완료 commit
+`39e98f9c614606530c617cfddeafe96b9a704804`로 기존 기준과 같고 worktree는
+깨끗했다. 대상 독자는 Linux 사용자·기여자·배포 운영자이며, 기존 공식 문서
+루트의 `README.md`, `docs/architecture/LINUX_THUMBNAILS.md`,
+`docs/DEVELOPMENT.md`, `docs/operations/DESKTOP_RELEASE.md`를 최소 보정한다.
+아키텍처 계약은 architecture 문서, 개발 명령은 DEVELOPMENT, exact artifact와
+운영 한계는 DESKTOP_RELEASE, 요약만 README에 두는 기존 소유 경계를 유지한다.
+새 문서나 `mydocs/manual` 대안은 중복 진실 원천이 되므로 선택하지 않는다.
+기존 문서를 구현과 대조해 canonical HWPX MIME, 세 package 소유 경로와 MIME
+refresh, 조상/leaf symlink 구분, peak RSS와 `RLIMIT_AS`의 독립 경계 및 Stage 4
+실사용 evidence만 보정했다. 플랫폼 중립 검증은 product boundary 312 files,
+upstream 35 tests, Studio 105 tests, Studio production build, automation 390 tests와
+`git diff --check`를 통과했다. 첫 Studio test는 분리 worktree의 Vite 임시 폴더
+쓰기가 sandbox에 막혀 같은 명령을 허용된 worktree write로 재실행했으며 제품
+실패가 아니었다. 문서 commit 뒤 exact SHA로 native와 GUI를 새로 실행한다.
+
 ### 산출물
 
 - `README.md`

@@ -12,11 +12,13 @@ Alhangeul은 Linux에서 Freedesktop thumbnailer 계약으로 `.hwp`와 `.hwpx`�
 | 요청 edge | `1..=1024` px |
 | 입력 상한 | 64 MiB |
 | worker deadline | 1,500 ms |
-| worker address-space 상한 | 256 MiB |
+| worker address-space 상한 | 256 MiB `RLIMIT_AS` |
+| core 수용 peak RSS 상한 | 256 MiB |
 | 최종 형식 | RGBA PNG |
 | helper 설치 경로 | `/usr/lib/alhangeul/alhangeul-thumbnailer` |
 | registration 경로 | `/usr/share/thumbnailers/alhangeul.thumbnailer` |
-| MIME | `application/x-hwp`, `application/vnd.hancom.hwpx` |
+| HWPX MIME XML 경로 | `/usr/share/mime/packages/alhangeul-hwpx.xml` |
+| canonical MIME | `application/x-hwp`, `application/x-hwpx` |
 
 registration은 다음 절대 경로만 사용한다.
 
@@ -24,7 +26,7 @@ registration은 다음 절대 경로만 사용한다.
 [Thumbnailer Entry]
 TryExec=/usr/lib/alhangeul/alhangeul-thumbnailer
 Exec=/usr/lib/alhangeul/alhangeul-thumbnailer %i %o %s
-MimeType=application/x-hwp;application/vnd.hancom.hwpx;
+MimeType=application/x-hwp;application/x-hwpx;
 ```
 
 `%u`, shell wrapper, 원격 URI와 PATH lookup은 허용하지 않는다.
@@ -49,9 +51,9 @@ Nautilus 또는 Thunar/Tumbler
 
 ## 입력과 실패 계약
 
-입력은 canonical absolute local regular file이어야 한다. symlink, 상대 경로, directory, 64 MiB 초과, 입력과 같은 출력은 요청 전에 거부한다. 출력 parent도 canonical absolute local directory여야 한다.
+입력과 출력은 absolute local path여야 한다. 경로의 조상 directory가 symlink인 것은 허용하고, input과 존재하는 output parent를 canonicalize한 resolved absolute path만 worker에 전달한다. input leaf symlink·dangling symlink·directory·64 MiB 초과, output leaf symlink·non-regular file 및 resolved input과 같은 output은 요청 전에 거부한다. output parent는 canonicalize 가능한 existing directory여야 한다.
 
-public supervisor는 같은 실행 파일의 private worker mode를 시작한다. worker 환경은 비우고 render 전에 `RLIMIT_AS=256 MiB`를 적용한다. supervisor는 요청 시작부터 단일 monotonic 1,500 ms deadline을 적용하며 timeout, signal, panic, child failure에는 child를 kill·wait하고 실패한다. orphan process나 final/temporary partial PNG를 남기지 않는다.
+public supervisor는 같은 실행 파일의 private worker mode를 시작한다. worker 환경은 비우고 render 전에 가상 주소공간 제한인 `RLIMIT_AS=256 MiB`를 적용한다. 별도의 core acceptance는 process peak RSS를 계측해 256 MiB 이하를 요구하며, RSS 성공을 `RLIMIT_AS` 적용 증거로 대신하거나 그 반대로 해석하지 않는다. supervisor는 요청 시작부터 단일 monotonic 1,500 ms deadline을 적용하며 timeout, signal, panic, child failure에는 child를 kill·wait하고 실패한다. orphan process나 final/temporary partial PNG를 남기지 않는다.
 
 문서 경로·본문은 log나 artifact에 기록하지 않는다. 자동 evidence는 공개 fixture class, hash, byte 크기, 시간, RSS와 구조화 결과만 사용한다.
 
@@ -79,7 +81,9 @@ worker는 final output에 직접 쓰지 않고 같은 directory의 고유 siblin
 
 ## Package와 cache lifecycle
 
-DEB/RPM은 helper를 mode `0755`, registration을 mode `0644`로 각각 한 번만 소유한다. clean install, same-version reinstall, update, injected failure rollback과 uninstall에서 두 제품 파일의 소유 상태를 검사한다.
+DEB/RPM은 helper를 mode `0755`, registration과 HWPX MIME XML을 mode `0644`로 각각 한 번만 소유한다. MIME XML은 canonical `application/x-hwpx`, `*.hwpx` glob, ZIP `mimetype` signature와 기존 공개 MIME alias를 함께 선언한다. clean install, same-version reinstall, update, injected failure rollback과 uninstall에서 세 제품 파일의 소유 상태를 검사한다.
+
+install/remove hook은 package manager가 제품 XML을 배치하거나 제거한 뒤 고정 경로 `update-mime-database /usr/share/mime`를 실행해 파생 MIME cache를 갱신한다. 명령 부재나 실패를 성공으로 숨기지 않는다. 제품은 다른 package의 MIME XML을 수정하지 않으며, 제거 뒤에는 남은 system 정의를 기준으로 cache가 다시 만들어진다.
 
 설치·제거는 다음 외부 상태를 변경하지 않는다.
 
@@ -87,7 +91,7 @@ DEB/RPM은 helper를 mode `0755`, registration을 mode `0644`로 각각 한 번�
 - 제3자 `.thumbnailer` registration
 - XDG thumbnail/failure cache
 - 실행 중인 file manager process
-- system-wide MIME database
+- 제3자 MIME XML과 제품 외 system MIME 정의
 
 제거 뒤 기존 thumbnail이 잠시 보일 수 있는 것은 file-manager cache가 남기 때문이다. 실행 가능한 제품 registration이나 helper가 남은 것과 구분해야 한다. 제품은 전역 cache를 삭제하거나 Nautilus·Thunar를 강제 종료하지 않는다.
 
@@ -97,11 +101,11 @@ AppImage는 `/usr` registration을 소유할 package transaction이 없으므로
 
 | 대상 | 자동 검증 범위 |
 |---|---|
-| Linux x64 DEB | inventory, helper·registration mode/hash, install/reinstall/update/rollback/uninstall, Nautilus 42.6, Thunar 4.16.10/Tumbler 4.16 |
-| Linux x64 RPM | inventory, helper·registration mode/hash, install/reinstall/update/rollback/uninstall |
-| Linux arm64 DEB | inventory, ELF architecture, 직접 PNG/resource, install/reinstall/update/rollback/uninstall |
+| Linux x64 DEB | inventory, helper·registration·MIME XML mode/hash, install/reinstall/update/rollback/uninstall, Nautilus 42.6, Thunar 4.16.10/Tumbler 4.16 |
+| Linux x64 RPM | inventory, helper·registration·MIME XML mode/hash, install/reinstall/update/rollback/uninstall |
+| Linux arm64 DEB | inventory, ELF architecture, helper·registration·MIME XML, 직접 PNG/resource, install/reinstall/update/rollback/uninstall |
 
-Nautilus와 Thunar gate는 fresh XDG 경로와 virtual display에서 package-installed helper를 발견하게 한 뒤 direct, preview fallback, icon fallback, cache hit와 mtime invalidation을 검사한다. screenshot, `execve` trace, 호출 횟수와 cache PNG를 함께 판정한다.
+Nautilus와 Thunar gate는 fresh XDG 경로와 virtual display에서 package-installed system MIME XML·helper·registration만 발견하게 한 뒤 direct, preview fallback, icon fallback, cache hit와 mtime invalidation을 검사한다. probe는 private MIME XML을 만들거나 MIME database를 갱신하지 않는다. screenshot, `execve` trace, 호출 횟수, cache PNG의 URI·mtime metadata를 함께 판정한다.
 
 다음 항목은 검증하지 않았으므로 현재 지원 완료로 표시하지 않는다.
 
@@ -111,7 +115,7 @@ Nautilus와 Thunar gate는 fresh XDG 경로와 virtual display에서 package-ins
 - Flatpak과 Snap
 - 실제 사용자 desktop session의 배포판·file-manager 조합 전체
 
-Stage 6에서는 Stage 5와 같은 exact SHA의 x64/arm64 native artifact를 다시 만들고, 공개 실사용 HWP/HWPX가 Nautilus와 Thunar에서 서로 구분되는 첫 페이지로 보이는지 screenshot을 사람이 확인한다.
+Task #50 exact source `241e0674d2abe41b8fc5bd521725321ddadc4398`에서는 x64/arm64 native package와 같은 x64 DEB를 사용해 공개 온새미로 HWP와 form-002 HWPX를 재수용했다. Nautilus와 Thunar에서 두 문서의 서로 구분되는 첫 페이지, cached 호출 무증가, mtime 변경 뒤 재호출과 손상 HWP의 성공 cache PNG 부재를 확인했고 screenshot과 512px render를 사람이 판독했다. 이 근거는 아래 matrix의 Ubuntu 22.04 hosted 환경에 한정한다.
 
 ## Build와 검증
 
