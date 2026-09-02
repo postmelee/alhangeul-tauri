@@ -38,7 +38,7 @@ symlink 조상 디렉터리는 허용한다. 마지막으로 probe의 private MI
 | `docs/DEVELOPMENT.md`, `docs/operations/DESKTOP_RELEASE.md` | 개발 검증과 exact package/GUI 운영 근거 | 기여자·release 운영 문서 |
 | `mydocs/plans/`, `mydocs/working/`, `mydocs/report/`, `mydocs/orders/` | 승인, 5단계 결과와 최종 추적 문서 | Hyper-Waterfall 작업 기록 |
 
-전체 diff는 `devel` 기준 **48 files, +3,388 / -458 lines**다. 제품 renderer,
+전체 diff는 최신 `devel` 기준 **49 files, +3,542 / -458 lines**다. 제품 renderer,
 공유 `document-preview`, Windows handler 구현, `third_party/rhwp` gitlink와 fixture
 원본은 변경하지 않았다.
 
@@ -68,15 +68,16 @@ symlink 조상 디렉터리는 허용한다. 마지막으로 probe의 private MI
 | GUI MIME 전제 | probe private XML 주입 | private MIME path 0, package system XML만 사용 |
 | 실제 GUI 문서 | 주입된 MIME 기반 fixture | 온새미로 HWP·form-002 HWPX first/cached/changed |
 | 손상 문서 성공 cache PNG | nested failure path 오판 가능 | Nautilus·Thunar 모두 0 |
-| 플랫폼 중립 automation | 이슈 전 계약 | 390 pass, 0 fail |
+| 플랫폼 중립 automation | 이슈 전 계약 | 408 pass, 0 fail |
 
 ## 검증 결과
 
-최종 source/workflow candidate는
-`a07bd1330363ee767b9e1cc7a80bed6a685cebcf`, 기준 `devel`은
-`8b865fa55b55aea232d0fb034a518c807ac4c003`, rhwp pin은
-`496333b27d21ddb9114ba9ae340bcb895870c9a7`이다. exact candidate 이후에는
-단계·최종 보고서와 오늘할일만 변경했다.
+Stage 5 source/workflow candidate는
+`a07bd1330363ee767b9e1cc7a80bed6a685cebcf`였다. PR 게시 뒤 최신 `devel`
+`28d01b9a4e1a642b3834755cfe3623c6eb543b39`를 통합한 최종 수용 candidate는
+`75f9f8c1a87c6e42e514254c82d9169aa3f5bbea`, rhwp pin은
+`496333b27d21ddb9114ba9ae340bcb895870c9a7`이다. 아래 최종 native와 GUI
+workflow는 모두 이 통합 candidate를 checkout하고 exact SHA를 검증했다.
 
 | 수용 기준 | 결과 |
 |---|---|
@@ -89,29 +90,43 @@ symlink 조상 디렉터리는 허용한다. 마지막으로 probe의 private MI
 
 통합 플랫폼 중립 검증은 다음 결과를 확인했다.
 
-- `pnpm run check:product-boundary`: **312 files scanned, passed**.
-- `pnpm run test:upstream`: **35 pass, 0 fail**.
-- `pnpm run test:studio`: **23 files, 105 pass, 0 fail**.
-- `pnpm run build:studio`: **227 modules transformed, 성공**.
-- `pnpm run test:automation`: **390 pass, 0 fail**.
+- `pnpm run check:product-boundary`: **330 files scanned, passed**.
+- `pnpm run test:upstream`: **36 pass, 0 fail**.
+- `pnpm run test:studio`: **23 files, 125 pass, 0 fail**.
+- `pnpm run build:studio`: **228 modules transformed, 성공**.
+- `pnpm run test:automation`: **408 pass, 0 fail**.
 - `git diff --check`: OK.
 
-지원 대상 native 검증은
-[Alhangeul Desktop run 33582889787](https://github.com/postmelee/alhangeul-tauri/actions/runs/33582889787)에서
+지원 대상 최종 native 검증은
+[Alhangeul Desktop run 33587996496](https://github.com/postmelee/alhangeul-tauri/actions/runs/33587996496)에서
 Linux arm64·x64 build, Windows x64 build와 MSI·NSIS installer smoke **4개 job
 전체 성공**으로 확인했다. Linux x64·arm64 helper test/fmt/Clippy, core probe,
 x64 DEB/RPM, arm64 DEB lifecycle와 Windows HWP/HWPX thumbnail 호출이 통과했다.
 
-같은 candidate와 native run을 입력한
-[Linux GUI run 33585227125](https://github.com/postmelee/alhangeul-tauri/actions/runs/33585227125)는
-전체 성공했다. GUI artifact `alhangeul-linux-gui-33585227125`는 ID
-`9830072758`, SHA-256
-`256bdccf8e417478b587a6f0ec4be3e26dc7d15da3125bfbf140a35a3d62b908`이다.
+| 최종 native artifact | ID | SHA-256 |
+|---|---:|---|
+| `alhangeul-desktop-linux-x64` | `9831169440` | `05f7e2cb13d4f3d23cbea0ed8ae136d225fcf322d58082432dfc566a2f723e43` |
+| `alhangeul-linux-x64-thumbnail-package` | `9831161863` | `bdd7597c606e04009c49d744b9231dc232ae2c270147974cf9215b9231766720` |
+| `alhangeul-desktop-linux-arm64` | `9831041951` | `7d841f89225f9bd1af441fdc5b129853849b0a06d54deff67b72534cb100881d` |
+| `alhangeul-linux-arm64-thumbnail-package` | `9831039819` | `abd7335790436219cfb96c16003b41fbaf565229fd7a252d708678ba95b8cd7f` |
+| `alhangeul-desktop-windows-x64` | `9831385925` | `9af926ab0eafb23221394089d6cfd1d4b9c448358582eba7da4d940d1af5d62a` |
+| `alhangeul-desktop-windows-x64-installer-smoke` | `9831624486` | `347bea731c14759a1eb5c70b1d0939c32790d74ee866eb6070a8e58e63291df5` |
+
+같은 final candidate와 native run을 입력한
+[Linux GUI run 33590789637](https://github.com/postmelee/alhangeul-tauri/actions/runs/33590789637)는
+전체 성공했다. GUI artifact `alhangeul-linux-gui-33590789637`는 ID
+`9831776242`, SHA-256
+`094e02bf2c724f3c53e41ee4ee7ecd5065810d357bed818bbbe8d7d13c7369b7`이다.
+workflow context는 build ref와 acceptance ref가 모두 final candidate이고 native run
+ID가 `33587996496`임을 기록한다. Nautilus·Thunar 모두 실제 HWP/HWPX first
+2/2·cached 2/2·changed 4/4 호출, 손상 문서 성공 cache PNG 0을 재확인했다.
 512px render SHA-256은 온새미로
 `2a499693e01e811eff49c6aff3102720945ae54c00d75bb102e56cbdd94a8abf`,
 form-002
 `35bd3ce2d05def6bf9ad525bc2a0a5b62f30ad3e1eb7c208e085a9e01a7be8ee`로
-Stage 4와 Stage 5에서 동일하게 재현됐다.
+Stage 4, Stage 5와 최신 `devel` 통합 뒤에도 동일하게 재현됐다. 잘못 입력한
+존재하지 않는 SHA로 시작된 run `33587925275`는 checkout 실패를 확인한 즉시
+취소했으며 어떤 수용 근거에도 포함하지 않았다.
 
 ### 단계별 검증 결과
 
