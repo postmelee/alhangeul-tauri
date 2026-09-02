@@ -74,7 +74,7 @@
       "deb": {
         "depends": ["shared-mime-info"],
         "postInstallScript": "linux/update-mime-database.sh",
-        "postRemoveScript": "linux/update-mime-database.sh",
+        "postRemoveScript": "linux/update-mime-database-remove.sh",
         "files": {
           "/usr/lib/alhangeul/alhangeul-thumbnailer": "linux/thumbnail-resources/alhangeul-thumbnailer",
           "/usr/share/thumbnailers/alhangeul.thumbnailer": "linux/alhangeul.thumbnailer",
@@ -84,7 +84,7 @@
       "rpm": {
         "depends": ["shared-mime-info"],
         "postInstallScript": "linux/update-mime-database.sh",
-        "postRemoveScript": "linux/update-mime-database.sh",
+        "postRemoveScript": "linux/update-mime-database-remove.sh",
         "files": {
           "/usr/lib/alhangeul/alhangeul-thumbnailer": "linux/thumbnail-resources/alhangeul-thumbnailer",
           "/usr/share/thumbnailers/alhangeul.thumbnailer": "linux/alhangeul.thumbnailer",

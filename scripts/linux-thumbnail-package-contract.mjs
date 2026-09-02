@@ -13,13 +13,15 @@ export const LIFECYCLE = [
   'clean-install',
   'same-version-reinstall',
   'interim-uninstall',
+  'refresh-failure-observed',
+  'explicit-recovery',
   'old-install',
   'update',
   'injected-failure-rollback',
-  'refresh-failure-observed',
-  'explicit-recovery',
   'uninstall',
 ];
+export const DEB_LIFECYCLE = [...LIFECYCLE, 'purge-without-update-mime-database'];
+export const lifecycleFor = (format) => (format === 'deb' ? DEB_LIFECYCLE : LIFECYCLE);
 
 export function packageEvidence(format, metadata, context, installed) {
   return {
@@ -66,7 +68,11 @@ export function assertArchivePaths(listing) {
   const paths = listing.split(/\r?\n/)
     .map((line) => line.trim().split(/\s+/).at(-1) ?? '')
     .map((path) => `/${path.replace(/^\.\//, '').replace(/^\//, '')}`);
-  if (paths.some((path) => /^\/usr\/share\/mime\/(?:aliases|globs2?|magic|mime.cache|types|subclasses|application\/)/.test(path))) {
+  const allowedMimePaths = new Set([
+    '/usr/share/mime', '/usr/share/mime/', '/usr/share/mime/packages',
+    '/usr/share/mime/packages/', MIME_PATH,
+  ]);
+  if (paths.some((path) => path.startsWith('/usr/share/mime/') && !allowedMimePaths.has(path))) {
     throw new Error('archive must not own generated MIME cache');
   }
   for (const path of [HELPER_PATH, REGISTRATION_PATH, MIME_PATH]) {
@@ -133,9 +139,12 @@ export async function verifyArchiveContract(format, context) {
   for (const name of required) {
     if (!dependencies.includes(name)) throw new Error(`missing ${format} dependency: ${name}`);
   }
-  const expectedHook = (await readFile('apps/desktop/src-tauri/linux/update-mime-database.sh', 'utf8')).trim();
-  for (const hook of hooks) {
-    if (!hook.includes(expectedHook)) throw new Error(`missing ${format} MIME refresh hook`);
+  const expectedHooks = await Promise.all([
+    'apps/desktop/src-tauri/linux/update-mime-database.sh',
+    'apps/desktop/src-tauri/linux/update-mime-database-remove.sh',
+  ].map(async (path) => (await readFile(path, 'utf8')).trim()));
+  for (let index = 0; index < hooks.length; index += 1) {
+    if (!hooks[index].includes(expectedHooks[index])) throw new Error(`missing ${format} MIME refresh hook`);
   }
   return { dependencies: required, refreshHooks: ['post-install', 'post-remove'] };
 }

@@ -124,6 +124,8 @@ async function canary(repository, output) {
   const root = await mkdtemp(join(process.env.RUNNER_TEMP ?? '/tmp', 'alhangeul-mime-canary-'));
   const fixtures = await createMimeFixtures(join(root, 'fixtures'));
   const xml = await readFile(join(repository, 'apps/desktop/src-tauri/linux/alhangeul-hwpx.xml'), 'utf8');
+  const upstreamXml = await readFile(join(repository, 'tests/fixtures/shared-mime-info-2.5-hwpx.xml'), 'utf8');
+  assert.notEqual(upstreamXml, xml, 'upstream fixture must be independent from the product XML');
   const hash = createHash('sha256').update(xml).digest('hex');
   const observations = [];
   for (const generation of ['old', 'new']) {
@@ -135,7 +137,7 @@ async function canary(repository, output) {
       '<mime-type type="application/zip"><glob pattern="*.zip"/><magic><match type="string" value="PK\\003\\004" offset="0"/></magic></mime-type>',
     ));
     await writeFile(join(packages, 'third-party.xml'), sentinelXml);
-    if (generation === 'new') await writeFile(join(packages, 'upstream.xml'), xml);
+    if (generation === 'new') await writeFile(join(packages, 'upstream.xml'), upstreamXml);
     const env = { ...process.env, LC_ALL: 'C', XDG_DATA_HOME: data, XDG_DATA_DIRS: data,
       XDG_CONFIG_HOME: join(root, 'config'), XDG_CONFIG_DIRS: join(root, 'config') };
     run('update-mime-database', [mimeRoot], { env });

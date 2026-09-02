@@ -18,7 +18,10 @@ import {
   verifyDesktopArtifacts,
 } from '../scripts/verify-desktop-artifacts.mjs';
 
-import { LIFECYCLE } from '../scripts/linux-thumbnail-package-contract.mjs';
+import {
+  LIFECYCLE,
+  lifecycleFor,
+} from '../scripts/linux-thumbnail-package-contract.mjs';
 import { ALIASES, CANONICAL, DEFAULT_APP, MIME_PATH } from '../scripts/linux-thumbnail-mime-contract.mjs';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -414,24 +417,35 @@ function linuxPackage({ format, path, architecture, platform, files }) {
     archiveContract: { refreshHooks: ['post-install', 'post-remove'], dependencies: format === 'deb'
       ? ['shared-mime-info', 'libwebkit2gtk-4.1-0', 'libgtk-3-0']
       : ['shared-mime-info', 'libwebkit2gtk-4.1.so.0()(64bit)', 'libgtk-3.so.0()(64bit)'] },
-    lifecycle: LIFECYCLE.map((name) => transitionFixture(name, owners)),
+    lifecycle: lifecycleFor(format).map((name) => transitionFixture(name, owners)),
   };
 }
 
 function transitionFixture(name, owners) {
-  const installed = !['baseline', 'interim-uninstall', 'old-install', 'uninstall'].includes(name);
+  const installed = [
+    'clean-install',
+    'same-version-reinstall',
+    'explicit-recovery',
+    'update',
+    'injected-failure-rollback',
+  ].includes(name);
+  const refreshFailure = name === 'refresh-failure-observed';
+  const purged = name === 'purge-without-update-mime-database';
   return {
     name, exitCode: ['injected-failure-rollback', 'refresh-failure-observed'].includes(name) ? 1 : 0,
-    packageState: { exitCode: 0, description: 'install ok installed 0.3.1' },
+    packageState: purged
+      ? { exitCode: 1, description: '' }
+      : { exitCode: 0, description: 'install ok installed 0.3.1' },
     owners, hookExitCode: 42, recovery: 'explicit-candidate-reinstall',
+    ...(purged ? { updateMimeDatabaseAvailable: false } : {}),
     filesPresent: Object.fromEntries(Object.keys(owners).map((path) => [path,
-      installed || (name === 'old-install' && path !== MIME_PATH)])),
+      installed || refreshFailure || (name === 'old-install' && path !== MIME_PATH)])),
     mime: { types: { glob: installed ? CANONICAL : 'application/zip',
       magic: installed ? CANONICAL : 'application/zip', generic: 'application/zip' },
       aliases: Object.fromEntries(ALIASES.map((alias) => [alias, installed ? CANONICAL : null])),
       defaults: Object.fromEntries(['application/x-hwp', CANONICAL, ...ALIASES].map((type) => [type, DEFAULT_APP])),
       defaultSettingsSha256: '5'.repeat(64),
-      xmlSha256: installed ? '2'.repeat(64) : null,
+      xmlSha256: installed || refreshFailure ? '2'.repeat(64) : null,
       otherDefinitions: { 'alhangeul-task50-third-party.xml': '4'.repeat(64) },
     },
   };
@@ -450,7 +464,9 @@ for (const [label, mutate] of [
   ['failed reinstall', (e) => { e.packages[0].lifecycle[2].exitCode = 1; }],
   ['missing hook', (e) => { e.packages[0].archiveContract.refreshHooks.pop(); }],
   ['missing MIME dependency', (e) => { e.packages[0].archiveContract.dependencies.shift(); }],
-  ['uninstall leaves XML', (e) => { e.packages[0].lifecycle.at(-1).mime.xmlSha256 = '2'.repeat(64); }],
+  ['uninstall leaves XML', (e) => {
+    e.packages[0].lifecycle.find((record) => record.name === 'uninstall').mime.xmlSha256 = '2'.repeat(64);
+  }],
 ]) {
   test(`Linux evidence rejects ${label}`, async () => {
     const files = { ...platformFixtures['linux-arm64'] };

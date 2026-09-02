@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { readFile } from 'node:fs/promises';
+import { lstat, readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
@@ -80,13 +80,17 @@ test('package lifecycle executable은 opt-in GitHub runner 밖에서 명령 전�
   assert.doesNotMatch(result.stderr, /sudo|dpkg|rpm/);
 });
 
-test('DEB와 RPM은 install reinstall update failure rollback uninstall을 검증한다', () => {
+test('MIME smoke wrapper는 CI에서 직접 실행할 수 있다', async () => {
+  assert.equal((await lstat(join(repoRoot, 'scripts/linux-thumbnail-mime-smoke.sh'))).mode & 0o111, 0o111);
+});
+
+test('DEB와 RPM은 install reinstall stale refresh recovery update rollback uninstall을 검증한다', () => {
   const sources = `${smoke}\n${fixtures}\n${contract}`;
   for (const marker of [
     'clean-install',
     'same-version-reinstall',
     'update',
-    'injected-failure-rollback',
+    'injected-failure-rollback', 'purge-without-update-mime-database',
     'uninstall',
     '0.0.0', '9999.0.0', '9998.0.0', 'refresh-failure-observed', 'explicit-recovery',
     '--replacepkgs', '--oldpackage', 'rollback hashes',
@@ -94,6 +98,7 @@ test('DEB와 RPM은 install reinstall update failure rollback uninstall을 검�
   assert.ok(fixtures.includes("%pre\\nexit 42\\n"));
   assert.match(fixtures, /dpkg-deb.*--root-owner-group/);
   assert.match(fixtures, /rpmbuild.*-bb/);
+  assert.match(smoke, /PATH=\/nonexistent.*\/usr\/bin\/dpkg.*--purge/);
 });
 
 test('package 검증은 path mode SHA ELF owner registration과 보존 불변식을 고정한다', () => {
@@ -136,6 +141,21 @@ test('DEB와 RPM archive 경로 표기 차이를 절대 경로로 정규화한�
     () => assertArchivePaths('/usr/lib/alhangeul/alhangeul-thumbnailer'),
     /archive path \/usr\/share\/thumbnailers\/alhangeul\.thumbnailer mismatch/,
   );
+  for (const generatedPath of [
+    '/usr/share/mime/mime.cache',
+    '/usr/share/mime/generic-icons',
+    '/usr/share/mime/text/x-hwpx.xml',
+  ]) {
+    assert.throws(
+      () => assertArchivePaths([
+        helperPath,
+        registrationPath,
+        '/usr/share/mime/packages/alhangeul-hwpx.xml',
+        generatedPath,
+      ].join('\n')),
+      /archive must not own generated MIME cache/,
+    );
+  }
 });
 
 function assertOrdered(source, markers) {

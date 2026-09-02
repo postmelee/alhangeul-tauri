@@ -61,6 +61,8 @@ async function createContext(args) {
     resolve('apps/desktop/src-tauri/linux/alhangeul.thumbnailer'),
     'utf8',
   );
+  const registrationSource = resolve('apps/desktop/src-tauri/linux/alhangeul.thumbnailer');
+  const mimeSource = resolve('apps/desktop/src-tauri/linux/alhangeul-hwpx.xml');
   const helperSha256 = await sha256File(helperSource);
   const smokeRoot = await mkdtemp(joinRunnerTemp('alhangeul-package-smoke-'));
   return {
@@ -68,10 +70,13 @@ async function createContext(args) {
     cacheSentinel: resolve(smokeRoot, 'cache/unrelated.sentinel'),
     evidencePath,
     expectedRegistration,
+    helperSource,
     helperSha256,
+    mimeSource,
     owned: { deb: '', rpm: '' },
     platform,
     repositorySha,
+    registrationSource,
     sentinelCreated: false,
     smokeRoot,
   };
@@ -167,14 +172,15 @@ async function runLifecycle(context) {
   await installAndObserve(context, 'clean-install');
   await installAndObserve(context, 'same-version-reinstall');
   await removeAndObserve(context, 'interim-uninstall');
+  await checkRefreshFailure(context);
+  const installed = await installAndObserve(context, 'explicit-recovery');
   const old = transaction(context, 'install', await fixture(context, false));
   assertEqual(await readFile(HELPER_PATH, 'utf8'), `stage4-old-${format}\n`, 'old package marker');
   await observe(context, 'old-install', old.status, 'baseline');
   await installAndObserve(context, 'update');
   await checkPreinstallFailure(context);
-  await checkRefreshFailure(context);
-  const installed = await installAndObserve(context, 'explicit-recovery');
   await removeAndObserve(context, 'uninstall');
+  if (format === 'deb') await purgeDebWithoutRefreshCommand(context);
   context.owned[format] = '';
   return packageEvidence(format, metadata, context, installed);
 }
@@ -190,6 +196,14 @@ async function removeAndObserve(context, name) {
   const result = transaction(context, 'remove', context.metadata.name);
   await assertProductFilesAbsent();
   await observe(context, name, result.status, 'baseline');
+}
+
+async function purgeDebWithoutRefreshCommand(context) {
+  const result = run('sudo', ['env', 'PATH=/nonexistent', '/usr/bin/dpkg', '--purge', context.metadata.name]);
+  await assertProductFilesAbsent();
+  await observe(context, 'purge-without-update-mime-database', result.status, 'baseline', {
+    updateMimeDatabaseAvailable: false,
+  });
 }
 
 async function checkPreinstallFailure(context) {
@@ -219,7 +233,10 @@ function fixture(context, fail) {
   const version = fail === 'refresh' ? '9998.0.0' : fail ? '9999.0.0' : '0.0.0';
   return build({ root: context.smokeRoot, name: context.metadata.name,
     architecture: context.metadata.architecture,
-    version: context.format === 'deb' ? `${version}~stage4` : version, fail });
+    version: context.format === 'deb' ? `${version}~stage4` : version, fail,
+    sources: { helper: context.helperSource, registration: context.registrationSource,
+      mime: context.mimeSource },
+  });
 }
 
 function transaction(context, action, value, allowFailure = false) {

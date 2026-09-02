@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import assert from 'node:assert/strict';
-import { LIFECYCLE } from './linux-thumbnail-package-contract.mjs';
+import { lifecycleFor } from './linux-thumbnail-package-contract.mjs';
 import { MIME_PATH, MIME_SENTINEL, ALIASES, DEFAULT_APP, assertMimeInstalled, assertMimeRestored } from './linux-thumbnail-mime-contract.mjs';
 
 const HELPER_PATH = '/usr/lib/alhangeul/alhangeul-thumbnailer';
@@ -63,7 +63,7 @@ function assertMimeEvidence(value, hash) {
     : ['shared-mime-info', 'libwebkit2gtk-4.1.so.0()(64bit)', 'libgtk-3.so.0()(64bit)'];
   assert.deepEqual(value.archiveContract?.dependencies, dependencies);
   assert.deepEqual(value.archiveContract?.refreshHooks, ['post-install', 'post-remove']);
-  assert.deepEqual(value.lifecycle?.map((record) => record.name), LIFECYCLE, 'complete observed lifecycle');
+  assert.deepEqual(value.lifecycle?.map((record) => record.name), lifecycleFor(value.format), 'complete observed lifecycle');
   const baseline = value.lifecycle[0].mime;
   assertSnapshotShape(baseline);
   assertEqual(baseline.xmlSha256, null, 'baseline.xmlSha256');
@@ -94,7 +94,8 @@ function assertTransition(record, baseline, value, hash) {
     assertEqual(record.packageState.exitCode, 0, 'installed package query');
     assertEqual(record.packageState.description.split(/\s+/).at(-1), value.version, 'installed package version');
     if (value.format === 'deb') assert.ok(record.packageState.description.startsWith('install ok installed '));
-  } else if (record.name !== 'refresh-failure-observed') assertMimeRestored(record.mime, baseline);
+  } else if (record.name === 'refresh-failure-observed') assertMimeStale(record.mime, baseline, hash);
+  else assertMimeRestored(record.mime, baseline);
   for (const path of [HELPER_PATH, REGISTRATION_PATH, MIME_PATH]) {
     const present = installed || record.name === 'refresh-failure-observed' || (record.name === 'old-install' && path !== MIME_PATH);
     assertEqual(record.filesPresent?.[path], present, `${record.name} ${path}`);
@@ -107,7 +108,18 @@ function assertTransition(record, baseline, value, hash) {
     assert.deepEqual(record.mime.defaults, baseline.defaults);
     assertEqual(record.mime.defaultSettingsSha256, baseline.defaultSettingsSha256, 'default settings hash');
     assert.deepEqual(record.mime.otherDefinitions, baseline.otherDefinitions);
+  } else if (record.name === 'purge-without-update-mime-database') {
+    assertEqual(record.updateMimeDatabaseAvailable, false, 'purge missing refresh command');
   } else assertEqual(record.exitCode, 0, `${record.name} exit`);
+}
+
+function assertMimeStale(snapshot, baseline, hash) {
+  assertEqual(snapshot.xmlSha256, hash, 'stale product XML hash');
+  assert.deepEqual(snapshot.types, baseline.types, 'stale MIME types');
+  assert.deepEqual(snapshot.aliases, baseline.aliases, 'stale MIME aliases');
+  assert.deepEqual(snapshot.defaults, baseline.defaults, 'stale MIME defaults');
+  assertEqual(snapshot.defaultSettingsSha256, baseline.defaultSettingsSha256, 'stale default settings');
+  assert.deepEqual(snapshot.otherDefinitions, baseline.otherDefinitions, 'stale third-party definitions');
 }
 
 function assertEqual(actual, expected, field) {

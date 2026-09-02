@@ -34,7 +34,7 @@ export async function findExactlyOne(root, extension) {
   return matches[0];
 }
 
-export async function buildDebFixture({ root, name, architecture, version, fail }) {
+export async function buildDebFixture({ root, name, architecture, version, fail, sources }) {
   const packageRoot = join(root, `deb-${version}`);
   await mkdir(join(packageRoot, 'DEBIAN'), { recursive: true });
   await writeFile(join(packageRoot, 'DEBIAN', 'control'), [
@@ -52,10 +52,10 @@ export async function buildDebFixture({ root, name, architecture, version, fail 
     await chmod(preinst, 0o755);
   }
   if (fail === 'refresh') {
-    await copyRefreshFiles(packageRoot);
+    await copyRefreshFiles(packageRoot, sources);
     const hook = await refreshFailureHook(root);
     await writeFile(join(packageRoot, 'DEBIAN/postinst'), hook);
-    await writeFile(join(packageRoot, 'DEBIAN/postrm'), await productHook());
+    await writeFile(join(packageRoot, 'DEBIAN/postrm'), await productRemoveHook());
     await chmod(join(packageRoot, 'DEBIAN/postinst'), 0o755);
     await chmod(join(packageRoot, 'DEBIAN/postrm'), 0o755);
   }
@@ -64,7 +64,7 @@ export async function buildDebFixture({ root, name, architecture, version, fail 
   return output;
 }
 
-export async function buildRpmFixture({ root, name, architecture, version, fail }) {
+export async function buildRpmFixture({ root, name, architecture, version, fail, sources }) {
   const top = join(root, `rpm-${version}`);
   for (const directory of ['BUILD', 'BUILDROOT', 'RPMS', 'SOURCES', 'SPECS', 'SRPMS']) {
     await mkdir(join(top, directory), { recursive: true });
@@ -76,13 +76,15 @@ export async function buildRpmFixture({ root, name, architecture, version, fail 
   );
   const spec = join(top, 'SPECS', `${name}.spec`);
   let refreshHook = '';
+  let removeHook = '';
   if (fail === 'refresh') {
-    await copyFile('/usr/lib/alhangeul/alhangeul-thumbnailer', join(top, 'SOURCES/helper'));
-    await copyFile('/usr/share/thumbnailers/alhangeul.thumbnailer', join(top, 'SOURCES/registration'));
-    await copyFile('apps/desktop/src-tauri/linux/alhangeul-hwpx.xml', join(top, 'SOURCES/mime'));
+    await copyFile(sources.helper, join(top, 'SOURCES/helper'));
+    await copyFile(sources.registration, join(top, 'SOURCES/registration'));
+    await copyFile(sources.mime, join(top, 'SOURCES/mime'));
     refreshHook = await refreshFailureHook(root);
+    removeHook = await productRemoveHook();
   }
-  await writeFile(spec, rpmSpec({ name, architecture, version, fail, refreshHook }));
+  await writeFile(spec, rpmSpec({ name, architecture, version, fail, refreshHook, removeHook }));
   run('rpmbuild', ['-bb', '--define', `_topdir ${top}`, spec]);
   return findExactlyOne(join(top, 'RPMS'), '.rpm');
 }
@@ -100,7 +102,7 @@ async function writeProductFiles(root, marker) {
   );
 }
 
-function rpmSpec({ name, architecture, version, fail, refreshHook }) {
+function rpmSpec({ name, architecture, version, fail, refreshHook, removeHook }) {
   return `Name: ${name}
 Version: ${version}
 Release: 1.stage4
@@ -124,7 +126,7 @@ install -D -m 0644 %{SOURCE1} %{buildroot}/usr/share/thumbnailers/alhangeul.thum
 ${refreshHook ? 'install -D -m 0644 %{SOURCE2} %{buildroot}/usr/share/mime/packages/alhangeul-hwpx.xml' : ''}
 
 ${fail === true ? '%pre\nexit 42\n' : ''}
-${refreshHook ? `%post\n${refreshHook}\n%postun\nupdate-mime-database /usr/share/mime\n` : ''}
+${refreshHook ? `%post\n${refreshHook}\n%postun\n${removeHook}\n` : ''}
 %files
 /usr/lib/alhangeul/alhangeul-thumbnailer
 /usr/share/thumbnailers/alhangeul.thumbnailer
@@ -132,15 +134,19 @@ ${refreshHook ? '/usr/share/mime/packages/alhangeul-hwpx.xml' : ''}
 `;
 }
 
-async function copyRefreshFiles(root) {
-  await copyFile('/usr/lib/alhangeul/alhangeul-thumbnailer', join(root, 'usr/lib/alhangeul/alhangeul-thumbnailer'));
-  await copyFile('/usr/share/thumbnailers/alhangeul.thumbnailer', join(root, 'usr/share/thumbnailers/alhangeul.thumbnailer'));
+async function copyRefreshFiles(root, sources) {
+  await copyFile(sources.helper, join(root, 'usr/lib/alhangeul/alhangeul-thumbnailer'));
+  await copyFile(sources.registration, join(root, 'usr/share/thumbnailers/alhangeul.thumbnailer'));
   const path = join(root, 'usr/share/mime/packages');
   await mkdir(path, { recursive: true });
-  await copyFile('apps/desktop/src-tauri/linux/alhangeul-hwpx.xml', join(path, 'alhangeul-hwpx.xml'));
+  await copyFile(sources.mime, join(path, 'alhangeul-hwpx.xml'));
 }
 
 const productHook = () => readFile('apps/desktop/src-tauri/linux/update-mime-database.sh', 'utf8');
+const productRemoveHook = () => readFile(
+  'apps/desktop/src-tauri/linux/update-mime-database-remove.sh',
+  'utf8',
+);
 
 async function refreshFailureHook(root) {
   const bin = join(root, 'refresh-failure-bin');
