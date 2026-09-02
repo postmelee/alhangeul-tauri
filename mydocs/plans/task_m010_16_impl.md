@@ -621,6 +621,35 @@ Task #16 Stage 4: updater key와 release 운영 계약 통합
   Windows x64 MSI·NSIS와 Linux x64 AppImage의 실제 `99.1.0 → 99.1.1` native 수용이며,
   아직 실행하거나 성공으로 판정하지 않는다.
 
+#### 첫 native 수용 결과와 Linux harness 최소 보정 계획 — Stage 5.27
+
+- 작업지시자 승인 뒤 exact candidate source
+  `9d5ddbdbdaeb2b1759363f0776db21008e976e51`, D1 run `33612953592`, candidate artifact
+  `9840727986` / `sha256:e9a2b4ccc6c0eecf753b645d49a8840857ffe804cb0ea49f9e8cd77dd3511075`,
+  D2 tag `updater-test-v99.1.1`을 입력으로
+  [native run 33616611952](https://github.com/postmelee/alhangeul-tauri/actions/runs/33616611952)를
+  실행했다. harness SHA는 `336e971ec65535265565eaf2adaf00cc82c39d7e`이며 release handoff와
+  public test prerelease read-back은 통과했다.
+- Windows MSI job `100203871854`와 NSIS job `100203871850`은 N clean install, target별
+  preflight·dirty gate, 실제 `99.1.0 → 99.1.1` apply, 설치 record·파일 연결 보존, N+1
+  no-update, 제거와 WebView2 정책 복원까지 모두 통과했다. 증적 artifact는 MSI
+  `9841269613` / `sha256:3f4f444d4dcfad456e018c9a8d5a0cbf926dcfc081cfe56fd11980afeee525fa`,
+  NSIS `9841280513` / `sha256:544c89503b9b5503a721d0fbe42b2a0df66fcf203caa069043ef7930223b462a`다.
+- Linux AppImage job `100203872003`은 설치·실행 전 `Read verified N+1 AppImage identity`에서
+  실패했다. exact candidate 전체 8개 파일을 단일 Linux target root로 검사하면서 정상 Windows
+  MSI signature를 `대응 installer가 없는 signature`로 판정한 것이 직접 원인이다. candidate
+  handoff와 digest 일치는 이미 통과했으며 AppImage 업데이트 자체는 실행되지 않았으므로 제품
+  실패로 판정하지 않는다. 실패 증적 artifact는 `9841247344` /
+  `sha256:893dbc44d6cad3b23a3fc61b40d59b8b6a61d7075972bd4f8ae9cee7c6b440c5`다.
+- 보정은 `.github/workflows/alhangeul-updater-native-linux.yml`과 해당 계약 test로 제한한다.
+  승인된 전체 candidate root는 그대로 보존하고, 정확히 하나인 AppImage와 같은 경로의 `.sig`를
+  별도 Linux 검증 root에 복사한 뒤 기존 `check:updater-acceptance`의 strict single-target 검사를
+  적용한다. 공용 verifier의 unexpected signature 거부 규칙은 완화하지 않는다.
+- 로컬 updater acceptance·전체 automation, product boundary, actionlint와 diff 검증 뒤 harness만
+  새 SHA로 push한다. D1/D2 candidate·release는 재빌드·교체하지 않고 같은 exact identity로 positive
+  native 수용을 새로 한 번 실행한다. 기존 실패 run의 job 재실행은 옛 workflow SHA를 재사용하므로
+  수행하지 않는다. source 수정과 새 run은 본 보정 계획의 별도 승인 전 시작하지 않는다.
+
 ### 검증
 
 - MSI N → N+1 성공, MSI target만 요청, 설치/제거 registry와 파일 연결 보존
