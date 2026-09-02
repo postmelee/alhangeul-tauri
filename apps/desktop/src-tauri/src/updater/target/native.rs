@@ -112,6 +112,17 @@ fn linux_evidence() -> Result<LinuxEvidence, TargetProbeError> {
         .as_ref()
         .and_then(|path| path.parent())
         .and_then(|path| std::fs::metadata(path).ok());
+    let appimage_writable = appimage_metadata
+        .as_ref()
+        .is_some_and(|meta| meta.is_file())
+        && appimage_path
+            .as_deref()
+            .is_some_and(has_effective_write_access);
+    let parent_writable = parent_metadata.as_ref().is_some_and(|meta| meta.is_dir())
+        && appimage_path
+            .as_deref()
+            .and_then(std::path::Path::parent)
+            .is_some_and(has_effective_write_access);
     Ok(LinuxEvidence {
         architecture: std::env::consts::ARCH.to_string(),
         current_executable,
@@ -121,17 +132,8 @@ fn linux_evidence() -> Result<LinuxEvidence, TargetProbeError> {
             .as_ref()
             .is_some_and(|meta| meta.is_file()),
         appdir_exists: appdir_metadata.as_ref().is_some_and(|meta| meta.is_dir()),
-        appimage_writable: appimage_metadata
-            .as_ref()
-            .is_some_and(|meta| meta.is_file())
-            && appimage_path
-                .as_deref()
-                .is_some_and(has_effective_write_access),
-        parent_writable: parent_metadata.as_ref().is_some_and(|meta| meta.is_dir())
-            && appimage_path
-                .as_deref()
-                .and_then(std::path::Path::parent)
-                .is_some_and(has_effective_write_access),
+        appimage_writable,
+        parent_writable,
     })
 }
 
