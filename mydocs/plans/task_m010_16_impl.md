@@ -596,6 +596,31 @@ Task #16 Stage 4: updater key와 release 운영 계약 통합
   checkpoint D2에서 별도 승인받은 뒤 새 test prerelease만 게시하는 것이다. stable release와
   Pages 게시는 계속 금지한다.
 
+#### D2 결과 — test-only public prerelease 게시·read-back 완료
+
+- 작업지시자의 checkpoint D2 승인에 따라 exact source
+  `9d5ddbdbdaeb2b1759363f0776db21008e976e51`과 D1 candidate artifact `9840727986`만 사용해
+  [`updater-test-v99.1.1`](https://github.com/postmelee/alhangeul-tauri/releases/tag/updater-test-v99.1.1)을
+  게시했다. release ID는 `381136281`, 제목은
+  `[TEST ONLY] Alhangeul Updater Acceptance 99.1.0 → 99.1.1`이며 `draft=false`,
+  `prerelease=true`, latest 비지정 상태다. tag ref와 `target_commitish`는 모두 위 exact source다.
+- 공개 전 draft에서 8개 asset만 존재하는지 확인하고 새 임시 경로로 전부 다시 내려받아
+  D1 SHA-256과 일치함을 확인했다. 공개 후 프로젝트 `verify-acceptance-release.mjs`로 tag ref,
+  release identity, asset cardinality·size·digest·URL, inventory·manifest, 세 signature read-back을
+  다시 검증했다. verifier 결과는 `Updater acceptance release verified: updater-test-v99.1.1
+  (8 assets)`다.
+- asset ID는 AppImage·signature `540960119`·`540960125`, MSI·signature
+  `540960118`·`540960139`, NSIS·signature `540960143`·`540960141`, inventory·manifest
+  `540960120`·`540960117`이다. inventory·manifest SHA-256은 D1과 같은
+  `62c59092c7694105b00df56ef7fb9bb976512d61a79e47ba807b19c427765300`,
+  `55ebb86c8ea5bb21e4625b00d9cbe1d9319e4c35511fd816847acca395ab705c`다.
+- 기존 `updater-test-v99.0.1`은 source
+  `de5b8dd2f5e7e69cc7ed05f955ff8b5f2649b9c8`, `draft=false`, `prerelease=true`, 8개 asset
+  상태로 유지됐다. stable release와 Pages는 생성·수정하지 않았다.
+- D2는 게시와 원격 동일성 검증까지만 완료했다. 다음 단계는 이 공개 endpoint를 사용하는
+  Windows x64 MSI·NSIS와 Linux x64 AppImage의 실제 `99.1.0 → 99.1.1` native 수용이며,
+  아직 실행하거나 성공으로 판정하지 않는다.
+
 ### 검증
 
 - MSI N → N+1 성공, MSI target만 요청, 설치/제거 registry와 파일 연결 보존
