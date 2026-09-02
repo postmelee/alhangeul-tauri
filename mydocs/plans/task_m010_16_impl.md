@@ -650,6 +650,20 @@ Task #16 Stage 4: updater key와 release 운영 계약 통합
   native 수용을 새로 한 번 실행한다. 기존 실패 run의 job 재실행은 옛 workflow SHA를 재사용하므로
   수행하지 않는다. source 수정과 새 run은 본 보정 계획의 별도 승인 전 시작하지 않는다.
 
+#### Linux harness 최소 보정 구현 — Stage 5.28
+
+- 작업지시자의 `진행해줘` 승인에 따라 위 Stage 5.27 보정만 구현했다. 승인된 전체 candidate에서
+  정확히 하나인 AppImage와 같은 경로의 regular `.sig`를 요구하고, 두 파일을 별도 Linux root에
+  복사한 뒤 기존 strict single-target verifier와 SHA-256 판정을 수행한다.
+- 공용 `artifact-verifier.mjs`의 unexpected signature 거부 규칙, 제품 source, updater identity,
+  D1/D2 artifact·release와 stable·Pages는 변경하지 않았다. 변경 파일은 Linux native workflow와
+  해당 workflow 계약 test뿐이며 workflow는 계산 기준 300 LOC 상한을 지킨다.
+- `pnpm run test:updater-acceptance` 23개와 전체 `pnpm run test:automation` 351개,
+  `pnpm run check:product-boundary` 324개 파일, 관련 workflow actionlint와 `git diff --check`가
+  통과했다. 다음 실행은 새 harness SHA를 사용하되 candidate source
+  `9d5ddbdbdaeb2b1759363f0776db21008e976e51`, D1 run,
+  candidate artifact ID·digest와 D2 tag는 Stage 5.27과 같은 값으로 고정한다.
+
 ### 검증
 
 - MSI N → N+1 성공, MSI target만 요청, 설치/제거 registry와 파일 연결 보존

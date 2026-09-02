@@ -19,7 +19,6 @@ on:
 permissions:
   actions: read
   contents: read
-
 env:
   NODE_VERSION: "24"
   TAURI_DRIVER_VERSION: "2.0.6"
@@ -162,15 +161,20 @@ jobs:
           TRACKED_UPDATER_CONFIG: ${{ github.workspace }}/apps/desktop/src-tauri/tauri.updater.conf.json
         run: |
           set -euo pipefail
+          mapfile -t appimages < <(find "$N_PLUS_ONE_ARTIFACT_ROOT" -type f -name '*.AppImage' -print)
+          [[ "${#appimages[@]}" -eq 1 && -f "${appimages[0]}.sig" && ! -L "${appimages[0]}.sig" ]]
+          slice_root="${N_PLUS_ONE_ARTIFACT_ROOT}-linux"
+          install -d -m 0755 "$slice_root"
+          install -m 0644 "${appimages[0]}" "${appimages[0]}.sig" "$slice_root/"
           public_key="$(node -p "require(process.env.TRACKED_UPDATER_CONFIG).plugins.updater.pubkey")"
           export TAURI_UPDATER_PUBLIC_KEY="$public_key"
           pnpm run check:updater-acceptance -- \
-            --root "$N_PLUS_ONE_ARTIFACT_ROOT" \
+            --root "$slice_root" \
             --role n-plus-one \
             --source-sha "$CANDIDATE_SHA" \
             --targets linux-x86_64-appimage \
             --public-key-env TAURI_UPDATER_PUBLIC_KEY
-          mapfile -t appimages < <(find "$N_PLUS_ONE_ARTIFACT_ROOT" -type f -name '*.AppImage' -print)
+          mapfile -t appimages < <(find "$slice_root" -type f -name '*.AppImage' -print)
           [[ "${#appimages[@]}" -eq 1 ]]
           expected_sha="$(sha256sum "${appimages[0]}" | awk '{print $1}')"
           [[ "$expected_sha" =~ ^[0-9a-f]{64}$ ]]

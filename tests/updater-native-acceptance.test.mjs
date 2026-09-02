@@ -202,6 +202,12 @@ test('Linux AppImage는 writable 갱신 hash·재실행 no-update·read-only fal
     '- name: Verify read-only AppImage manual fallback',
     '- name: Upload Linux updater evidence',
   ]);
+  assert.match(accept, /find "\$N_PLUS_ONE_ARTIFACT_ROOT" -type f -name '\*\.AppImage'/);
+  assert.match(accept, /\[\[ "\$\{#appimages\[@\]\}" -eq 1 && -f "\$\{appimages\[0\]\}\.sig" && ! -L "\$\{appimages\[0\]\}\.sig" \]\]/);
+  assert.match(accept, /slice_root="\$\{N_PLUS_ONE_ARTIFACT_ROOT\}-linux"/);
+  assert.match(accept, /install -m 0644 "\$\{appimages\[0\]\}" "\$\{appimages\[0\]\}\.sig" "\$slice_root\/"/);
+  assert.match(accept, /--root "\$slice_root"/);
+  assert.doesNotMatch(accept, /--root "\$N_PLUS_ONE_ARTIFACT_ROOT"/);
   assert.doesNotMatch(accept, /APPIMAGE_N_PLUS_ONE_SHA256: [0-9a-f]{64}/);
   assert.equal((accept.match(/run-linux-native-gui\.sh/g) ?? []).length, 4);
   assert.match(linuxRunner, /xvfb-run[\s\S]*dbus-run-session[\s\S]*openbox/);
