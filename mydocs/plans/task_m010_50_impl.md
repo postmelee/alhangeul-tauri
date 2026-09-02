@@ -515,6 +515,22 @@ git diff --check
 installer gate, 같은 SHA의 Linux x64 GUI를 확인한다. 결과는 run ID·artifact
 digest와 함께 보고하며 릴리스 게시를 수행하지 않는다.
 
+Stage 5 결과: 공식 문서 candidate
+`a07bd1330363ee767b9e1cc7a80bed6a685cebcf`를 기준으로 native run
+`33582889787`의 Linux x64·arm64 및 Windows x64 4개 job과 GUI run
+`33585227125`를 모두 통과했다. Linux package evidence는 x64 DEB·RPM과 arm64
+DEB의 설치·재설치·update·주입된 refresh 실패·명시적 복구·제거를 확인했고,
+core probe는 두 architecture 모두 88 records와 1,500 ms/256 MiB gate를
+통과했다. Windows MSI·NSIS installer smoke도 HWP/HWPX thumbnail 호출과 제거를
+통과했다. Linux GUI는 package 소유 system MIME XML만으로 실제 온새미로 HWP와
+form-002 HWPX를 Nautilus·Thunar에서 최초·cached·changed 수용했고 손상 문서의
+성공 PNG는 0개였다. 512px 실제 문서 render는 Stage 4와 같은 SHA로 재현됐다.
+최종 플랫폼 중립 검증은 product boundary 312 files, upstream 35 tests, Studio
+105 tests와 production build, automation 390 tests 및 `git diff --check`를
+통과했다. 상세 artifact ID·digest와 미검증 조합은
+[`Stage 5 보고서`](../working/task_m010_50_stage5.md)에 기록한다. 다섯 구현
+Stage는 완료했으며 작업지시자의 승인 전 최종 보고서·PR 절차에는 진입하지 않는다.
+
 ### 커밋
 
 ```text
