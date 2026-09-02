@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { lstat, readFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
@@ -81,7 +81,11 @@ test('package lifecycle executable은 opt-in GitHub runner 밖에서 명령 전�
 });
 
 test('MIME smoke wrapper는 CI에서 직접 실행할 수 있다', async () => {
-  assert.equal((await lstat(join(repoRoot, 'scripts/linux-thumbnail-mime-smoke.sh'))).mode & 0o111, 0o111);
+  const result = spawnSync('git', [
+    'ls-files', '--stage', '--', 'scripts/linux-thumbnail-mime-smoke.sh',
+  ], { cwd: repoRoot, encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /^100755 /);
 });
 
 test('DEB와 RPM은 install reinstall stale refresh recovery update rollback uninstall을 검증한다', () => {
@@ -98,7 +102,9 @@ test('DEB와 RPM은 install reinstall stale refresh recovery update rollback uni
   assert.ok(fixtures.includes("%pre\\nexit 42\\n"));
   assert.match(fixtures, /dpkg-deb.*--root-owner-group/);
   assert.match(fixtures, /rpmbuild.*-bb/);
-  assert.match(smoke, /PATH=\/nonexistent.*\/usr\/bin\/dpkg.*--purge/);
+  assert.match(smoke, /dpkgPathWithoutMimeRefresh/);
+  assert.match(smoke, /PATH=\$\{path\}.*\/usr\/bin\/dpkg.*--purge/);
+  assert.doesNotMatch(fixtures, /update-mime-database.*dpkg-without-mime-refresh/);
 });
 
 test('package 검증은 path mode SHA ELF owner registration과 보존 불변식을 고정한다', () => {

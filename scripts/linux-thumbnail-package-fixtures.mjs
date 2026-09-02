@@ -1,10 +1,13 @@
 import { spawnSync } from 'node:child_process';
+import { constants } from 'node:fs';
 import {
+  access,
   chmod,
   copyFile,
   mkdir,
   readdir,
   readFile,
+  symlink,
   writeFile,
 } from 'node:fs/promises';
 import { basename, join } from 'node:path';
@@ -32,6 +35,17 @@ export async function findExactlyOne(root, extension) {
     throw new Error(`${extension} package cardinality must be one: ${matches.length}`);
   }
   return matches[0];
+}
+
+export async function dpkgPathWithoutMimeRefresh(root) {
+  const output = join(root, 'dpkg-without-mime-refresh');
+  await mkdir(output, { recursive: true });
+  for (const command of [
+    'cat', 'diff', 'dpkg-deb', 'ldconfig', 'rm', 'sh', 'start-stop-daemon', 'tar',
+  ]) {
+    await symlink(await findExecutable(command), join(output, command));
+  }
+  return output;
 }
 
 export async function buildDebFixture({ root, name, architecture, version, fail, sources }) {
@@ -164,4 +178,17 @@ async function walk(root, extension, matches) {
     if (entry.isDirectory()) await walk(path, extension, matches);
     else if (entry.isFile() && basename(path).endsWith(extension)) matches.push(path);
   }
+}
+
+async function findExecutable(command) {
+  for (const directory of (process.env.PATH ?? '').split(':').filter(Boolean)) {
+    const candidate = join(directory, command);
+    try {
+      await access(candidate, constants.X_OK);
+      return candidate;
+    } catch (error) {
+      if (error.code !== 'ENOENT' && error.code !== 'EACCES') throw error;
+    }
+  }
+  throw new Error(`required executable not found: ${command}`);
 }

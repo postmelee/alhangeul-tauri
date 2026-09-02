@@ -4,10 +4,7 @@ import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import {
-  buildDebFixture,
-  buildRpmFixture,
-  findExactlyOne,
-  run,
+  buildDebFixture, buildRpmFixture, dpkgPathWithoutMimeRefresh, findExactlyOne, run,
 } from './linux-thumbnail-package-fixtures.mjs';
 import {
   HELPER_PATH,
@@ -30,10 +27,8 @@ import {
   packageState,
 } from './linux-thumbnail-package-contract.mjs';
 
-import {
-  MIME_PATH, assertMimeInstalled, assertMimeRestored, prepareSystemMime,
-  systemMimeSnapshot, cleanupSystemMime,
-} from './linux-thumbnail-mime-contract.mjs';
+import { MIME_PATH, assertMimeInstalled, assertMimeRestored, prepareSystemMime,
+  systemMimeSnapshot, cleanupSystemMime } from './linux-thumbnail-mime-contract.mjs';
 
 async function main() {
   requireEphemeralCi();
@@ -199,7 +194,8 @@ async function removeAndObserve(context, name) {
 }
 
 async function purgeDebWithoutRefreshCommand(context) {
-  const result = run('sudo', ['env', 'PATH=/nonexistent', '/usr/bin/dpkg', '--purge', context.metadata.name]);
+  const path = await dpkgPathWithoutMimeRefresh(context.smokeRoot);
+  const result = run('sudo', ['/usr/bin/env', `PATH=${path}`, '/usr/bin/dpkg', '--purge', context.metadata.name]);
   await assertProductFilesAbsent();
   await observe(context, 'purge-without-update-mime-database', result.status, 'baseline', {
     updateMimeDatabaseAvailable: false,
@@ -216,7 +212,8 @@ async function checkPreinstallFailure(context) {
 }
 
 async function checkRefreshFailure(context) {
-  const result = transaction(context, 'install', await fixture(context, 'refresh'), true);
+  const path = `${resolve(context.smokeRoot, 'refresh-failure-bin')}:${process.env.PATH}`;
+  const result = transaction(context, 'install', await fixture(context, 'refresh'), true, path);
   const diagnostics = `${result.stdout}\n${result.stderr}`;
   if (!diagnostics.includes('injected MIME refresh failure (42)') || !/exit (?:status|code) 42/.test(diagnostics)) {
     throw new Error(`MIME refresh failure not observed: ${diagnostics}`);
@@ -239,10 +236,16 @@ function fixture(context, fail) {
   });
 }
 
-function transaction(context, action, value, allowFailure = false) {
-  const args = context.format === 'deb'
-    ? ['env', 'DEBIAN_FRONTEND=noninteractive', 'dpkg', action === 'remove' ? '--remove' : '-i', value]
-    : ['rpm', '--nodeps', '--nosignature', ...(action === 'remove' ? ['-e'] : ['-U', '--replacepkgs', '--oldpackage']), value];
+function transaction(context, action, value, allowFailure = false, path = '') {
+  const environment = [
+    ...(context.format === 'deb' ? ['DEBIAN_FRONTEND=noninteractive'] : []),
+    ...(path ? [`PATH=${path}`] : []),
+  ];
+  const command = context.format === 'deb' ? 'dpkg' : 'rpm';
+  const commandArgs = context.format === 'deb'
+    ? [action === 'remove' ? '--remove' : '-i', value]
+    : ['--nodeps', '--nosignature', ...(action === 'remove' ? ['-e'] : ['-U', '--replacepkgs', '--oldpackage']), value];
+  const args = ['/usr/bin/env', ...environment, command, ...commandArgs];
   return run('sudo', args, { allowFailure });
 }
 
@@ -274,7 +277,6 @@ function requireEphemeralCi() {
 function joinRunnerTemp(prefix) {
   return resolve(process.env.RUNNER_TEMP ?? tmpdir(), prefix);
 }
-
 
 function required(options, name) {
   const value = options.get(name);
