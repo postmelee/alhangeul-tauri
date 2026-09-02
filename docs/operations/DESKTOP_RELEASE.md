@@ -355,13 +355,13 @@ test ! -e /usr/share/thumbnailers/alhangeul.thumbnailer
 test ! -e /usr/share/mime/packages/alhangeul-hwpx.xml
 ```
 
-package 제거 hook은 남은 system MIME 정의를 반영하도록 `/usr/share/mime` 파생 cache를 갱신한다. 전역 XDG thumbnail cache 삭제나 file manager 강제 종료는 설치·제거 절차에 포함하지 않는다. 전체 설계와 제외 matrix는 [Linux thumbnail 아키텍처](../architecture/LINUX_THUMBNAILS.md)를 따른다.
+package 제거 hook은 `update-mime-database`가 남아 있으면 `/usr/share/mime` 파생 cache를 갱신하고 실패를 전달한다. Debian `postrm`처럼 dependency가 이미 제거될 수 있는 단계에서는 명령 부재만 성공으로 건너뛴다. 전역 XDG thumbnail cache 삭제나 file manager 강제 종료는 설치·제거 절차에 포함하지 않는다. 전체 설계와 제외 matrix는 [Linux thumbnail 아키텍처](../architecture/LINUX_THUMBNAILS.md)를 따른다.
 
 ## Task #50 Linux HWPX package-only MIME와 실사용 문서 기준선
 
-2026-09-01 Task #50 Stage 4는 exact source
+2026-09-01 Task #50 Stage 4 기준선은 exact source
 `241e0674d2abe41b8fc5bd521725321ddadc4398`에서 probe 자체 MIME 주입 없이
-package가 설치한 system MIME XML·registration·helper만으로 최종 수용했다.
+package가 설치한 system MIME XML·registration·helper만으로 수용했다.
 
 - [Native run 33502167628](https://github.com/postmelee/alhangeul-tauri/actions/runs/33502167628): Linux x64·arm64와 Windows x64 build, x64 DEB/RPM·arm64 DEB package lifecycle 및 Windows installer smoke 전체 성공
 - [Linux GUI run 33504817069](https://github.com/postmelee/alhangeul-tauri/actions/runs/33504817069): 같은 SHA와 native run ID의 x64 DEB, Nautilus·Thunar/Tumbler 및 기존 제품 GUI 전체 성공
@@ -369,6 +369,16 @@ package가 설치한 system MIME XML·registration·helper만으로 최종 수�
 - 설치 전 실제 HWP는 `application/x-hwp`, HWPX는 `application/zip`이었고 설치 후 각각 `application/x-hwp`, `application/x-hwpx`였다. private MIME path는 전후 모두 없었다.
 - helper, registration과 `/usr/share/mime/packages/alhangeul-hwpx.xml`은 package `alhangeul` 단일 owner였고 source·설치 hash가 일치했다.
 - 공개 온새미로 HWP와 form-002 HWPX는 Nautilus·Thunar에서 서로 구분되는 첫 페이지를 보였다. cached 단계는 helper 호출이 늘지 않았고 mtime 변경 뒤 재호출됐으며 URI·mtime cache metadata가 일치했다. 손상 HWP의 성공 cache PNG는 0개였다.
+
+PR 게시 뒤 최신 `devel`을 통합한 최종 exact source
+`75f9f8c1a87c6e42e514254c82d9169aa3f5bbea`도 다음 연쇄 수용을 통과했다.
+
+- [Native run 33587996496](https://github.com/postmelee/alhangeul-tauri/actions/runs/33587996496): Linux x64·arm64와 Windows x64 build, x64 DEB/RPM·arm64 DEB package lifecycle 및 Windows installer smoke 4개 job 전체 성공
+- [Linux GUI run 33590789637](https://github.com/postmelee/alhangeul-tauri/actions/runs/33590789637): 같은 exact source와 native run의 x64 DEB로 Nautilus·Thunar/Tumbler 및 기존 제품 GUI 전체 성공
+- GUI evidence artifact `alhangeul-linux-gui-33590789637`: ID `9831776242`, archive digest `sha256:094e02bf2c724f3c53e41ee4ee7ecd5065810d357bed818bbbe8d7d13c7369b7`, 7일 retention
+- 두 실사용 문서의 512 px render SHA-256은 각각 `2a499693e01e811eff49c6aff3102720945ae54c00d75bb102e56cbdd94a8abf`, `35bd3ce2d05def6bf9ad525bc2a0a5b62f30ad3e1eb7c208e085a9e01a7be8ee`로 Stage 4와 동일했다.
+
+package lifecycle은 install/reinstall/update/rollback/uninstall 외에 MIME XML은 배치됐지만 refresh가 실패해 cache가 설치 전 상태인 전이와 명시적 candidate reinstall 복구를 구분한다. DEB는 `update-mime-database`를 PATH에서 제거한 purge에서도 `postrm`이 성공하고 제품 파일이 남지 않아야 한다. Archive는 `/usr/share/mime/packages/alhangeul-hwpx.xml`만 소유하며 `mime.cache`, `generic-icons`, type XML 같은 파생 cache 파일을 포함하면 실패한다.
 
 이 GUI 근거는 Ubuntu 22.04 x64, Nautilus `1:42.6-0ubuntu2`, Thunar
 `4.16.10-1`, Tumbler `4.16.0-1`, shared-mime-info `2.1-2`에 한정한다. x64 RPM은

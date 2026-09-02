@@ -81,9 +81,11 @@ worker는 final output에 직접 쓰지 않고 같은 directory의 고유 siblin
 
 ## Package와 cache lifecycle
 
-DEB/RPM은 helper를 mode `0755`, registration과 HWPX MIME XML을 mode `0644`로 각각 한 번만 소유한다. MIME XML은 canonical `application/x-hwpx`, `*.hwpx` glob, ZIP `mimetype` signature와 기존 공개 MIME alias를 함께 선언한다. clean install, same-version reinstall, update, injected failure rollback과 uninstall에서 세 제품 파일의 소유 상태를 검사한다.
+DEB/RPM은 helper를 mode `0755`, registration과 HWPX MIME XML을 mode `0644`로 각각 한 번만 소유한다. MIME XML은 canonical `application/x-hwpx`, `*.hwpx` glob, ZIP `mimetype` signature와 기존 공개 MIME alias를 함께 선언한다. clean install, same-version reinstall, interim uninstall, refresh 실패 뒤 stale cache 관찰과 명시적 복구, update, injected failure rollback과 uninstall에서 세 제품 파일의 소유 상태를 검사한다. DEB는 dependency가 이미 사라진 purge도 별도로 검사한다.
 
-install/remove hook은 package manager가 제품 XML을 배치하거나 제거한 뒤 고정 경로 `update-mime-database /usr/share/mime`를 실행해 파생 MIME cache를 갱신한다. 명령 부재나 실패를 성공으로 숨기지 않는다. 제품은 다른 package의 MIME XML을 수정하지 않으며, 제거 뒤에는 남은 system 정의를 기준으로 cache가 다시 만들어진다.
+install hook은 package manager가 제품 XML을 배치한 뒤 고정 경로 `update-mime-database /usr/share/mime`를 실행하며 명령 부재와 실행 실패를 그대로 실패시킨다. remove hook도 명령이 있으면 같은 갱신 실패를 전달하지만, Debian `postrm`처럼 package dependency를 더는 보장할 수 없는 단계에서는 명령 부재만 성공으로 건너뛴다. 제품은 다른 package의 MIME XML을 수정하지 않으며, 정상 제거 뒤에는 남은 system 정의를 기준으로 cache가 다시 만들어진다.
+
+제품 XML의 ZIP magic은 local-header의 첫 entry가 저장 방식의 `mimetype=application/hwp+zip`인 문서를 판별한다. 추적된 upstream HWPX 298개 중 ZIP 292개를 조사했을 때 274개가 이 조건에 직접 맞았고, 나머지 18개는 첫 entry가 `Contents/content.hpf`(13), 압축된 `mimetype`(4), `BinData/`(1)였다. 이 문서들은 `*.hwpx` glob으로 분류되지만 확장자가 없거나 잘못된 파일까지 magic으로 판별하는 범위에는 포함되지 않는다.
 
 설치·제거는 다음 외부 상태를 변경하지 않는다.
 
@@ -101,9 +103,9 @@ AppImage는 `/usr` registration을 소유할 package transaction이 없으므로
 
 | 대상 | 자동 검증 범위 |
 |---|---|
-| Linux x64 DEB | inventory, helper·registration·MIME XML mode/hash, install/reinstall/update/rollback/uninstall, Nautilus 42.6, Thunar 4.16.10/Tumbler 4.16 |
-| Linux x64 RPM | inventory, helper·registration·MIME XML mode/hash, install/reinstall/update/rollback/uninstall |
-| Linux arm64 DEB | inventory, ELF architecture, helper·registration·MIME XML, 직접 PNG/resource, install/reinstall/update/rollback/uninstall |
+| Linux x64 DEB | inventory, helper·registration·MIME XML mode/hash, install/reinstall/stale refresh/recovery/update/rollback/uninstall/dependency 없는 purge, Nautilus 42.6, Thunar 4.16.10/Tumbler 4.16 |
+| Linux x64 RPM | inventory, helper·registration·MIME XML mode/hash, install/reinstall/stale refresh/recovery/update/rollback/uninstall |
+| Linux arm64 DEB | inventory, ELF architecture, helper·registration·MIME XML, 직접 PNG/resource, install/reinstall/stale refresh/recovery/update/rollback/uninstall/dependency 없는 purge |
 
 Nautilus와 Thunar gate는 fresh XDG 경로와 virtual display에서 package-installed system MIME XML·helper·registration만 발견하게 한 뒤 direct, preview fallback, icon fallback, cache hit와 mtime invalidation을 검사한다. probe는 private MIME XML을 만들거나 MIME database를 갱신하지 않는다. screenshot, `execve` trace, 호출 횟수, cache PNG의 URI·mtime metadata를 함께 판정한다.
 
@@ -115,7 +117,7 @@ Nautilus와 Thunar gate는 fresh XDG 경로와 virtual display에서 package-ins
 - Flatpak과 Snap
 - 실제 사용자 desktop session의 배포판·file-manager 조합 전체
 
-Task #50 exact source `241e0674d2abe41b8fc5bd521725321ddadc4398`에서는 x64/arm64 native package와 같은 x64 DEB를 사용해 공개 온새미로 HWP와 form-002 HWPX를 재수용했다. Nautilus와 Thunar에서 두 문서의 서로 구분되는 첫 페이지, cached 호출 무증가, mtime 변경 뒤 재호출과 손상 HWP의 성공 cache PNG 부재를 확인했고 screenshot과 512px render를 사람이 판독했다. 이 근거는 아래 matrix의 Ubuntu 22.04 hosted 환경에 한정한다.
+Task #50 Stage 4 exact source `241e0674d2abe41b8fc5bd521725321ddadc4398`에서는 x64/arm64 native package와 같은 x64 DEB를 사용해 공개 온새미로 HWP와 form-002 HWPX를 재수용했다. PR의 최신 `devel`을 통합한 exact source `75f9f8c1a87c6e42e514254c82d9169aa3f5bbea`에서도 native run [33587996496](https://github.com/postmelee/alhangeul-tauri/actions/runs/33587996496)과 Linux GUI run [33590789637](https://github.com/postmelee/alhangeul-tauri/actions/runs/33590789637)가 같은 결과를 재확인했다. Nautilus와 Thunar에서 두 문서의 서로 구분되는 첫 페이지, cached 호출 무증가, mtime 변경 뒤 재호출과 손상 HWP의 성공 cache PNG 부재를 확인했고 screenshot과 512px render를 사람이 판독했다. 이 근거는 위 matrix의 Ubuntu 22.04 hosted 환경에 한정한다.
 
 ## Build와 검증
 
