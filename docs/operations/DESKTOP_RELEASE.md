@@ -399,6 +399,12 @@ Stage 5의 `updater-test-v99.1.1` prerelease에서만 positive D2가 통과한 �
 일치하기 전에는 설치본을 실행하지 않는다. installer, `.sig`, inventory와 tag는 fixture 실행 중에도
 교체하지 않는다.
 
+GitHub에서 같은 이름의 release asset을 교체하면 API metadata와 공개 download redirect가 잠시
+서로 다른 asset 세대를 가리키거나 삭제된 이전 blob에 404를 반환할 수 있다. 따라서 asset metadata만
+보고 negative run을 시작하지 않고, `verify-acceptance-release.mjs`가 exact manifest digest·scenario
+의미·8개 asset 전체를 한 번에 통과할 때까지 bounded interval로 read-back을 확인한다. 이 사전 gate의
+digest 불일치·404는 native updater 실패 증거가 아니며, 수렴 전에 workflow를 dispatch하지 않는다.
+
 각 scenario run이 성공하거나 실패하면 다음 scenario보다 먼저 원본 manifest를 같은 asset 이름으로
 복원하고 일반 `verify-acceptance-release.mjs` read-back을 다시 통과시킨다. 작업이 중단돼도 우선
 원본 manifest 복원부터 수행한다. 이 절차는 test endpoint만 내장한 N binary에 한정하며 stable

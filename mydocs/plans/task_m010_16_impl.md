@@ -693,6 +693,49 @@ Task #16 Stage 4: updater key와 release 운영 계약 통합
   동작을 검증하고 각 시나리오 뒤 원래 positive manifest를 복원·재검증해야 한다. stable release,
   Pages와 production updater manifest는 계속 변경하지 않는다.
 
+#### Negative native 수용과 test-only 정리 결과 — Stage 5.30
+
+- 작업지시자의 승인에 따라 positive manifest SHA-256
+  `55ebb86c8ea5bb21e4625b00d9cbe1d9319e4c35511fd816847acca395ab705c`를 저장한 뒤,
+  `cross-format`, `signature-mismatch`, `network-failures`를 한 번에 하나씩 게시했다. 각 fixture의
+  SHA-256은 순서대로 `c4bda2d6f3370e1513548e3728b52e01b5b3898b86658c9d651f2e421902447c`,
+  `688446f6f13121aeb101523442fabe11ce70a65cadfa8b1913ea72de5b005370`,
+  `9c0beea73e4b82a0f7b5e33f79db2b5e890e9be6891f0c906e272f6f0367b3e1`이다. GitHub의 같은 이름
+  asset 교체 직후 metadata와 공개 download redirect가 최대 약 2분 동안 서로 다른 세대를
+  가리키는 현상을 관측했으며, digest·scenario 의미·8개 asset 전체 read-back이 수렴하기 전에는
+  native workflow를 실행하지 않았다.
+- [cross-format run 33619575159](https://github.com/postmelee/alhangeul-tauri/actions/runs/33619575159)은
+  MSI·NSIS의 URL/signature 교차와 AppImage architecture 불일치를 세 경로 모두
+  `invalidUpdateMetadata`로 download 전에 거부했다. startup과 manual retry 모두 fail-closed였고
+  문서 편집, Windows N 설치 record·기본 연결과 Linux N AppImage hash가 보존됐다. 증적은 handoff
+  `9842341237` / `sha256:a45bee235f7f85820847797359a7b7edb2c5fa56da1c7ced75392d159bbaf59f`,
+  MSI `9842438616` / `sha256:90ac3329fb38b396baba018501465c1e77bb1641110726693f3aa7be52e0397b`,
+  NSIS `9842420940` / `sha256:894866c507542503f1ae0cdee656481b6f77d61195754a258bedaad9cdfbcb64`,
+  Linux `9842408158` / `sha256:86bf39696c1cab0614e46620b1b096fb1d5b072e8ca3a00378e218e44b17f5f7`다.
+- [signature-mismatch run 33620147777](https://github.com/postmelee/alhangeul-tauri/actions/runs/33620147777)은
+  algorithm과 key ID를 유지한 변조 signature를 세 형식 모두 `updateDownloadFailed`로 거부했다.
+  다운로드·서명 실패 뒤 문서 편집과 manual retry가 가능했고 N 설치 상태가 유지됐다. 증적은 handoff
+  `9842561220` / `sha256:faa4e494500724aea2e7020e9b594755d5c5699a009d467420b08e09bef6918c`,
+  MSI `9842642058` / `sha256:8301f5be12ee0ac8c93402142ea648c373cb84ef881813dea08bc4ebf2713aa0`,
+  NSIS `9842646750` / `sha256:8a96a1d0b976dd32b56799c3d7c2c9b2c0b41e7688bf5c51e7310f1fdd8ff233`,
+  Linux `9842623678` / `sha256:17727e889d4d1a5e63cf86ef3c461448ff4d8cf095fbd74b49540036ad11410d`다.
+- [network-failures run 33620606595](https://github.com/postmelee/alhangeul-tauri/actions/runs/33620606595)은
+  NSIS 비응답 주소와 MSI·AppImage의 존재하지 않는 release asset을 세 경로 모두
+  retryable `updateDownloadFailed`로 처리했다. 오류 뒤 N version, 문서 편집과 manual retry가
+  유지됐다. 증적은 handoff `9842739322` /
+  `sha256:383bf5dc67a03846636c24798315aa41f248864157353212fdff71d7cfd929fd`, MSI
+  `9842841700` / `sha256:c4577182b9e533ebb0ffb0bae60bc69087b7b97482bdbab6dd490a0ef9d591bb`,
+  NSIS `9842834074` / `sha256:49d10260b4d9f159a4df8d1553fa06001e2d12b298c19a7b80d064cf7a431afa`,
+  Linux `9842778635` / `sha256:a6417f4deedd0d00d19b6e0bcd4bd391c8c488771dcbe9d0b898f04e86065b14`다.
+- 각 시나리오 뒤 positive manifest를 복원하고 일반 release verifier를 통과시켰다. 마지막 복원도
+  manifest SHA-256 `55ebb86c8ea5bb21e4625b00d9cbe1d9319e4c35511fd816847acca395ab705c`와
+  exact 8개 asset을 확인했다. 이후 계획대로 `updater-test-v99.0.1`과
+  `updater-test-v99.1.1` prerelease 및 원격 tag를 삭제했고 로컬에 남은 첫 tag도 제거했다.
+  확인 시점의 test release와 matching tag 수는 모두 0이다. Actions 증적은 retention 동안 유지한다.
+- Stage 5의 positive·negative native 수용과 test-only 정리는 완료했다. stable release, production
+  tag, `site/release.json`, Pages output과 production updater manifest는 생성·수정하지 않았다.
+  checkpoint E는 자동 승인되지 않으며 최종 보고·PR과 실제 첫 공개 릴리스는 별도 승인 경계다.
+
 ### 검증
 
 - MSI N → N+1 성공, MSI target만 요청, 설치/제거 registry와 파일 연결 보존
