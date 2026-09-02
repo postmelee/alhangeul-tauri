@@ -867,6 +867,42 @@ Stage 4.4의 성공 run은 새 merge source에 승계하지 않는다. 새 nativ
 문서는 이 계획서와 날짜별 `mydocs/orders/`, 완료 뒤 `mydocs/working/task_m010_20_stage4_5.md`에 두며
 신규 공식 제품 문서나 `mydocs/manual` 문서는 만들지 않는다.
 
+### Stage 4.6 — PR #51 리뷰 후 인쇄·teardown 복구 경계 보정
+
+2026-09-02 작업지시자는 같은 스레드에서
+[PR review 5077569953](https://github.com/postmelee/alhangeul-tauri/pull/51#pullrequestreview-5077569953)의
+검토 결과에 이어 진행하도록 승인했다. 리뷰의 동작 지적 중 Linux native print 무기한 대기, parent
+window 부재, stale print class, production teardown 도달성과 Windows 출력 미수용 기록을 하나의
+correction으로 처리한다.
+
+1. Linux `PrintOperationResponse::Print` 뒤 `finished`가 오지 않아도 bounded watchdog이 completion을
+   오류로 settle하고 keepalive를 해제하도록 한다. 정상 finish·failed·cancel·unknown response와
+   watchdog이 단일 completion 소유권을 공유하며 timer·operation cycle을 남기지 않는다.
+2. Tauri `WebviewWindow::gtk_window()`를 GTK print dialog parent로 전달해 editor와 transient/modal
+   관계를 명시한다. 새 platform이나 printer backend를 추가하지 않는다.
+3. top-level print surface를 만들기 전에 stale container와 제품 전용 `alhangeul-print-active` class를
+   함께 정리한다. 현재 job이 만든 surface/class의 복원 계약과 dirty/document data는 바꾸지 않는다.
+4. dispatcher adapter registration과 embed runtime registration을 `pagehide`에서 해제해 반환 disposer가
+   production full-page navigation/reload 경로에서도 실제로 호출되게 한다. 반복 install replacement와
+   명시 disposer는 계속 idempotent하고 upstream `main.ts`를 fork하지 않는다.
+5. Windows가 top-level `window.print()` 경로를 사용하지만 WebView2의 실제 출력/PDF 저장은 이번
+   Linux GUI 수용으로 검증되지 않았음을 최종 보고서와 PR 검증 한계에 명시한다. Windows 인쇄 동작을
+   근거 없이 성공으로 표현하지 않는다.
+
+리뷰의 dependency caret 주석, source substring test 중복, `formatMm` 정리, 대용량 문서 성능은 현재
+재현된 동작 결함과 분리해 잔여 위험·후속 후보로 기록한다. 이 correction에서 dependency 갱신,
+test architecture 개편, 대용량 최적화나 새 제품 기능은 수행하지 않는다.
+
+보정 source는 플랫폼 중립 focused·automation·upstream·Studio test, GUI typecheck, Studio build,
+product-boundary와 `git diff --check`를 통과해야 한다. 그 exact SHA로 Windows x64·Linux x64·Linux
+arm64 native workflow와 Windows installer, Linux thumbnail core/helper/package evidence를 다시
+수용하고, 같은 source/native run으로 Linux GUI 여섯 scenario·Nautilus/Thunar·네 editor body
+checkpoint·PDF 3종을 재수용한다. 이전 `bddbe88` 성공은 새 source에 승계하지 않는다.
+
+문서는 이 계획서, `mydocs/orders/20260902.md`, 완료 뒤
+`mydocs/working/task_m010_20_stage4_6.md`, 기존 최종 보고서와 PR 본문만 갱신한다. 신규 공식 제품
+문서나 `mydocs/manual` 문서는 만들지 않는다.
+
 ## 통합 검증
 
 - 각 Stage focused test와 `git diff --check`를 해당 단계 보고서 작성 전에 실행한다.
@@ -896,6 +932,7 @@ Stage 4.4의 성공 run은 새 merge source에 승계하지 않는다. 새 nativ
 - Stage 4.3은 Stage 4.2 GUI evidence가 확인한 반복 Print dialog 접근성 channel 보정 승인 후 시작하고 새 exact SHA의 수용이 끝나야 PR을 게시한다.
 - Stage 4.4는 인쇄 전후 본문 검증과 조건부 host view-only 복원 보정 승인 후 시작하며, 새 exact SHA의 native·GUI·본문·PDF 수용 완료 뒤 다음 통합 승인 경계로 돌아간다.
 - Stage 4.5는 Issue #17 포함 최신 `devel` 통합 승인 후 시작하며, 새 merge exact SHA의 native·GUI·thumbnail·본문·PDF 수용 완료 뒤에만 최종 보고서 승인 경계로 이동한다.
+- Stage 4.6은 PR #51 리뷰 검토와 보정 승인 후 시작하며, watchdog·parent·stale state·production teardown 보정의 새 exact SHA를 전체 재수용한 뒤에만 PR review 재요청 경계로 이동한다.
 - 모든 Stage는 `task-stage-report` 절차로 보고·커밋하고 작업지시자 승인 없이 다음 Stage로 넘어가지 않는다.
 
 ## 위험과 대응
