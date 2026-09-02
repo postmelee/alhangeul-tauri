@@ -567,6 +567,35 @@ Task #16 Stage 4: updater key와 release 운영 계약 통합
   push하고 D1을 한 번 실행한다. 성공한 run과 candidate artifact ID·digest·8개 asset inventory를
   확인한 뒤, 새 prerelease 게시는 checkpoint D2의 별도 승인으로 넘긴다.
 
+#### D1 재개 결과 — 비게시 후보 생성 완료
+
+- exact source `9d5ddbdbdaeb2b1759363f0776db21008e976e51`의
+  [D1 run 33612953592](https://github.com/postmelee/alhangeul-tauri/actions/runs/33612953592)는
+  Windows/Linux N·N+1 서명 build 네 개와 read-only complete verifier를 모두 통과했다.
+  `publish_release=false`로 실행해 Release, tag와 Pages는 생성하거나 수정하지 않았다.
+- 공개 예정 candidate artifact는 ID `9840727986`, digest
+  `sha256:e9a2b4ccc6c0eecf753b645d49a8840857ffe804cb0ea49f9e8cd77dd3511075`다.
+  N inventory는 ID `9840722833`, digest
+  `sha256:f8cd47980d86a3bf83ee17c17d2d848812d32e6f9f73e168b97f044b71ba3493`다.
+  N Windows/Linux와 N+1 Windows/Linux slice ID는 각각 `9840667481`, `9840698265`,
+  `9840674018`, `9840277997`이며 모두 source SHA와 14일 보존 기한에 결속됐다.
+- N+1 inventory는 version `99.1.1`, tag `updater-test-v99.1.1`, 승인 endpoint와 production
+  public-key fingerprint `100c8f3183b25de3366574c46a1a2a66950a1d5f24862f3461c27b095713ffdd`를
+  기록한다. installer SHA-256은 NSIS
+  `b55c2323973e47232149e17886e1b103ec252823f57592e3d3a0099f37467360`, MSI
+  `0382713673667be43a5235eaee2752c166db7bd87a7ba1586aab3e003c697a3c`, AppImage
+  `5e49dadb900dfd4756cbda91f602a788c6a98c81fa93dff47955ae7adca45cd7`다.
+  inventory·manifest SHA-256은 각각
+  `62c59092c7694105b00df56ef7fb9bb976512d61a79e47ba807b19c427765300`,
+  `55ebb86c8ea5bb21e4625b00d9cbe1d9319e4c35511fd816847acca395ab705c`다.
+- candidate 8개 파일을 임시 경로에 내려받아 cardinality·SHA-256을 다시 계산했고,
+  `check:updater-acceptance`로 세 installer의 실제 Minisign signature를 재검증했다.
+  로컬 전체 automation 351개, product boundary 324개 파일, 관련 actionlint와 diff 검사도 통과했다.
+- 기존 `updater-test-v99.0.1` prerelease의 source와 8개 asset은 유지됐다. 새
+  `updater-test-v99.1.1`은 아직 존재하지 않는다. 다음 단계는 이 candidate ID·digest를
+  checkpoint D2에서 별도 승인받은 뒤 새 test prerelease만 게시하는 것이다. stable release와
+  Pages 게시는 계속 금지한다.
+
 ### 검증
 
 - MSI N → N+1 성공, MSI target만 요청, 설치/제거 registry와 파일 연결 보존
