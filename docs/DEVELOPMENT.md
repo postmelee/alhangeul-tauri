@@ -43,6 +43,7 @@ pnpm tauri build --debug
 apps/
   desktop/            Tauri 2 데스크톱 앱
   studio-host/        upstream rhwp-studio 위의 Alhangeul adapter
+  linux-thumbnailer/  Freedesktop HWP/HWPX 첫 페이지 PNG helper
   thumbnail-handler/  Windows Explorer COM thumbnail provider DLL
   thumbnail-worker/   HWP/HWPX 첫 페이지를 raster하는 제한 worker
 crates/
@@ -66,6 +67,7 @@ Alhangeul은 `rhwp`의 문서 엔진과 웹 editor를 기반으로 다음 제품
 - single-instance, file open event, drag/drop과 다중 창
 - 로컬 폰트 catalog와 editor bridge
 - Windows/Linux 파일 연결과 bundle 설정
+- Linux Freedesktop thumbnail helper, registration과 package lifecycle
 - Windows Explorer thumbnail COM handler, 제한 worker와 installer 등록·복원
 
 현재 source submodule, native Cargo lock과 bundled WASM은 `rhwp v0.8.4`의 resolved commit `496333b27d21ddb9114ba9ae340bcb895870c9a7`로 고정되어 있다. [rhwp-core.lock](../rhwp-core.lock)이 이 경계의 기계 검증 가능한 진실 원천이며, 자세한 계약은 [UPSTREAM.md](architecture/UPSTREAM.md)를 따른다.
@@ -76,6 +78,7 @@ Alhangeul은 `rhwp`의 문서 엔진과 웹 editor를 기반으로 다음 제품
 - upstream Studio의 browser autosave/recovery는 상속하지만 별도 native recovery 저장소와 외부 파일 변경 감지는 아직 없다.
 - 큰 문서에서는 WASM mirror를 거치는 구간이 남아 있다.
 - Windows thumbnail 자동 gate는 실제 COM activation과 Shell bitmap 반환까지 통과했지만 Explorer UI의 보기 크기·DPI·cache·한컴 설치 환경 수동 수용은 남아 있다.
+- Linux thumbnail exact-SHA package candidate는 x64 DEB/RPM lifecycle, arm64 DEB lifecycle·직접 PNG와 x64 DEB의 Nautilus·Thunar/Tumbler gate를 통과했다. package-installed system MIME만 사용한 공개 실사용 HWP/HWPX의 서로 구분되는 첫 페이지도 시각 확인했다.
 - 현재 제품 source version은 독립 Alhangeul의 M010 기준선인 `0.1.0`이며, 공식 release나 tag를 뜻하지 않는다.
 - 공식 설치 파일, 서명, 패키지 게시와 자동 업데이트는 준비되지 않았다.
 - GitHub Actions는 활성 상태지만 CI와 Windows/Linux native artifact workflow는 수동 `workflow_dispatch` 전용이다. Actions artifact는 build smoke 결과이며 공식 설치 파일이나 공개 release가 아니다.
@@ -150,6 +153,28 @@ pnpm run check:desktop-artifacts -- \
 `pnpm run test:automation`의 thumbnail source 계약은 raster feature와 process-local 한글 fallback이 transitive dependency 변화로 사라지지 않는지 확인한다. `crates/document-preview`의 Rust test는 온새미로 HWP, `biz_plan.hwp`, `form-002.hwpx` 첫 페이지에서 SVG text/image 구조와 영역별 raster content를 검증한다. 지원 Windows/Linux 환경에서 native Rust 변경을 검증할 때는 이 대표 fixture gate가 포함된 `cargo test --manifest-path crates/document-preview/Cargo.toml --target-dir apps/desktop/src-tauri/target`도 실행한다.
 
 실제 installer 등록·복원과 Shell bitmap 반환은 native workflow의 `scripts/windows-installer-smoke.ps1` gate가 소유한다. 다른 host의 플랫폼 중립 test는 protocol과 source 계약 회귀를 잡지만 Windows COM activation, PE 종류와 installer transaction을 대신하지 않는다. process, IPC, resource budget, registry와 Explorer 수동 수용 기준은 [Windows thumbnail 아키텍처](architecture/WINDOWS_THUMBNAILS.md)를 따른다.
+
+## Linux thumbnail 개발
+
+`apps/linux-thumbnailer`는 Linux 전용이다. helper test·Clippy·ELF build는 Tauri와 동일하게 지원 Linux host에서 실행한다.
+
+```sh
+cargo fmt --manifest-path apps/linux-thumbnailer/Cargo.toml -- --check
+pnpm run test:linux-thumbnailer
+pnpm run clippy:linux-thumbnailer
+pnpm run build:linux-thumbnailer -- \
+  --target x86_64-unknown-linux-gnu \
+  --output <absolute-output-directory> \
+  --repository-sha <40-character-sha>
+```
+
+arm64는 target을 `aarch64-unknown-linux-gnu`로 바꾼다. build는 `/usr/lib/alhangeul/alhangeul-thumbnailer`에 package될 ELF와 SHA-256 summary를 만든다. registration 원본은 `apps/desktop/src-tauri/linux/alhangeul.thumbnailer`, HWPX canonical MIME 원본은 `apps/desktop/src-tauri/linux/alhangeul-hwpx.xml`이다. DEB/RPM은 두 파일과 helper를 설치하고 package hook으로 `/usr/share/mime`의 파생 cache를 갱신한다.
+
+모든 host에서 source·workflow·package 계약을 `pnpm run test:automation`과 `pnpm run check:product-boundary`로 검증할 수 있다. 실제 DEB/RPM install/reinstall/update/rollback/uninstall, `/usr/share/mime` refresh와 `/usr/share/thumbnailers` discovery는 opted-in ephemeral Linux Actions runner에서만 수행한다. file-manager probe는 private MIME 정의를 만들지 않고 설치 package의 system 정의만 사용한다. 개발 장비의 MIME default, system MIME cache, XDG thumbnail cache와 file manager를 임의로 변경하거나 종료하지 않는다.
+
+CLI는 input/output의 조상 directory symlink를 resolved absolute path로 정규화하지만 input/output leaf symlink는 거부한다. core gate가 계측하는 256 MiB peak RSS와 worker의 256 MiB `RLIMIT_AS`는 서로 다른 제한이므로 검증 결과를 대체해 기록하지 않는다.
+
+지원 matrix, direct-first fallback, resource limit, atomic PNG와 Tumbler precreated-output 예외는 [Linux thumbnail 아키텍처](architecture/LINUX_THUMBNAILS.md), exact artifact와 package evidence는 [desktop artifact와 배포 준비](operations/DESKTOP_RELEASE.md)를 따른다.
 
 ## `rhwp` Stable pin 갱신
 
@@ -235,4 +260,5 @@ pnpm run check:rhwp-pin
 - [초기 코드와 자산 출처](architecture/PROVENANCE.md)
 - [로컬 폰트 규칙](architecture/LOCAL_FONTS.md)
 - [Windows thumbnail 아키텍처](architecture/WINDOWS_THUMBNAILS.md)
+- [Linux thumbnail 아키텍처](architecture/LINUX_THUMBNAILS.md)
 - [desktop artifact와 배포 준비](operations/DESKTOP_RELEASE.md)

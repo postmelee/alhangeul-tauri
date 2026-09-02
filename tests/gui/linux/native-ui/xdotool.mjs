@@ -1,7 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import { posix } from 'node:path';
 
-const PRINT_TITLES = ['Print', '인쇄'];
+export const PRINT_DIALOG_TITLES = Object.freeze(['Print', '인쇄']);
 export const PRINT_FILE_CHOOSER_TITLES = Object.freeze(['Select a filename', '파일 이름 선택']);
 
 export function createShortcutRunner(options = {}) {
@@ -18,7 +18,7 @@ export function createShortcutRunner(options = {}) {
 export function createWindowShortcutRunner(options = {}) {
   const execute = options.spawnSync ?? spawnSync;
   return async ({ titles, key }) => {
-    if (key !== 'alt+p' || !sameTitles(titles, PRINT_TITLES)) {
+    if (key !== 'alt+p' || !sameTitles(titles, PRINT_DIALOG_TITLES)) {
       throw new Error('허용되지 않은 dialog shortcut입니다');
     }
     const config = runnerConfig(options, execute);
@@ -32,13 +32,29 @@ export function createWindowShortcutRunner(options = {}) {
   };
 }
 
+export function createPrintWindowRunner(options = {}) {
+  const execute = options.spawnSync ?? spawnSync;
+  const delay = options.delay ?? ((ms) => new Promise((resolve) => setTimeout(resolve, ms)));
+  const config = runnerConfig(options, execute);
+  return async (request) => {
+    validatePrintWindowRequest(request);
+    const present = request.operation === 'wait';
+    const windowId = await waitForExactWindow(
+      config, request.titles, present, request.timeoutMs, delay, 'print',
+    );
+    return present ? { windowId } : { absent: true };
+  };
+}
+
 export function createPrintFileChooserRunner(options = {}) {
   const execute = options.spawnSync ?? spawnSync;
   const delay = options.delay ?? ((ms) => new Promise((resolve) => setTimeout(resolve, ms)));
   const config = runnerConfig(options, execute);
   return async (request) => {
     validateChooserRequest(request);
-    const windowId = await waitForExactWindow(config, request.titles, true, request.timeoutMs, delay);
+    const windowId = await waitForExactWindow(
+      config, request.titles, true, request.timeoutMs, delay, 'file chooser',
+    );
     if (request.operation === 'wait') return { windowId };
     run(config, ['windowactivate', '--sync', windowId], 'chooser activation');
     assertActiveWindow(config, windowId);
@@ -49,7 +65,9 @@ export function createPrintFileChooserRunner(options = {}) {
     ], 'chooser basename');
     assertActiveWindow(config, windowId);
     run(config, ['key', '--clearmodifiers', 'Return'], 'chooser default response');
-    await waitForExactWindow(config, request.titles, false, request.timeoutMs, delay);
+    await waitForExactWindow(
+      config, request.titles, false, request.timeoutMs, delay, 'file chooser',
+    );
     return { windowId };
   };
 }
@@ -62,16 +80,29 @@ function assertActiveWindow(config, expectedId) {
   }
 }
 
-async function waitForExactWindow(config, titles, present, timeoutMs, delay) {
+async function waitForExactWindow(config, titles, present, timeoutMs, delay, label) {
   const deadline = Date.now() + timeoutMs;
   while (true) {
     const ids = findVisibleWindowIds(config, titles);
-    if (ids.size > 1) throw new Error(`exact file chooser window cardinality가 ${ids.size}입니다`);
+    if (ids.size > 1) throw new Error(`exact ${label} window cardinality가 ${ids.size}입니다`);
     if ((present && ids.size === 1) || (!present && ids.size === 0)) return ids.values().next().value;
     if (Date.now() >= deadline) {
-      throw new Error(`exact file chooser window가 ${present ? '나타나지' : '닫히지'} 않았습니다`);
+      throw new Error(`exact ${label} window가 ${present ? '나타나지' : '닫히지'} 않았습니다`);
     }
     await delay(100);
+  }
+}
+
+function validatePrintWindowRequest(request) {
+  if (!sameTitles(request.titles, PRINT_DIALOG_TITLES)) {
+    throw new Error('허용되지 않은 print dialog title입니다');
+  }
+  if (!['wait', 'waitAbsent'].includes(request.operation)) {
+    throw new Error('허용되지 않은 print window operation입니다');
+  }
+  if (!Number.isSafeInteger(request.timeoutMs)
+    || request.timeoutMs < 100 || request.timeoutMs > 120000) {
+    throw new Error('print window timeout은 100~120000ms여야 합니다');
   }
 }
 

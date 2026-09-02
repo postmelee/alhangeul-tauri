@@ -23,7 +23,8 @@ describe('desktop events', () => {
   });
 
   it('does nothing outside the Tauri runtime', async () => {
-    await setupDesktopEvents(options());
+    const dispose = await setupDesktopEvents(options());
+    dispose();
 
     expect(tauriListen).not.toHaveBeenCalled();
     expect(ensureDesktopUpdater).not.toHaveBeenCalled();
@@ -42,7 +43,7 @@ describe('desktop events', () => {
       }),
     });
     const setMessage = vi.fn();
-    await setupDesktopEvents(options({ host, setMessage }));
+    const dispose = await setupDesktopEvents(options({ host, setMessage }));
 
     expect(ensureDesktopUpdater).toHaveBeenCalledWith(setMessage);
 
@@ -53,18 +54,20 @@ describe('desktop events', () => {
     expect(host.openDocumentByPath).toHaveBeenCalledTimes(1);
     expect(host.openDocumentByPath).toHaveBeenCalledWith('/documents/latest.HWPX');
     expect(setMessage).toHaveBeenLastCalledWith('latest.HWPX — 3페이지');
+    dispose();
   });
 
   it('reports unsupported paths without opening a document', async () => {
     const { windowHandlers } = installTauriEnvironment();
     const host = createHost();
     const setMessage = vi.fn();
-    await setupDesktopEvents(options({ host, setMessage }));
+    const dispose = await setupDesktopEvents(options({ host, setMessage }));
 
     await windowHandlers.get('alhangeul-open-paths')?.({ payload: { paths: ['notes.txt'] } });
 
     expect(host.openDocumentByPath).not.toHaveBeenCalled();
     expect(setMessage).toHaveBeenCalledWith('HWP/HWPX 파일만 열 수 있습니다');
+    dispose();
   });
 
   it('routes native menu, drag state, and close through shared adapters', async () => {
@@ -72,12 +75,8 @@ describe('desktop events', () => {
     const host = createHost();
     const dispatcher = { dispatch: vi.fn() };
     const classList = { toggle: vi.fn() };
-    (globalThis as { document?: unknown }).document = {
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-      getElementById: vi.fn(() => ({ classList })),
-    };
-    await setupDesktopEvents(options({ host, dispatcher }));
+    setDocument({ getElementById: vi.fn(() => ({ classList })) });
+    const dispose = await setupDesktopEvents(options({ host, dispatcher }));
 
     await windowHandlers.get('alhangeul-menu-command')?.({ payload: 'file:save' });
     await windowHandlers.get('tauri://drag-enter')?.({ payload: { paths: ['doc.hwpx'] } });
@@ -91,6 +90,7 @@ describe('desktop events', () => {
     expect(preventDefault).toHaveBeenCalled();
     expect(host.confirmWindowClose).toHaveBeenCalledOnce();
     expect(host.destroyCurrentWindow).toHaveBeenCalledOnce();
+    dispose();
   });
 
   it('keeps the window open and reports a close failure', async () => {
@@ -100,12 +100,58 @@ describe('desktop events', () => {
       confirmWindowClose: vi.fn().mockRejectedValue(new Error('dialog failed')),
     });
     const setMessage = vi.fn();
-    await setupDesktopEvents(options({ host, setMessage }));
+    const dispose = await setupDesktopEvents(options({ host, setMessage }));
 
     await getCloseHandler()?.({ preventDefault: vi.fn() });
 
     expect(host.destroyCurrentWindow).not.toHaveBeenCalled();
     expect(setMessage).toHaveBeenCalledWith('창 닫기 실패: Error: dialog failed');
+    dispose();
+  });
+
+  it('unlistens every native event and removes transient state exactly once', async () => {
+    const { unlisteners, documentLike } = installTauriEnvironment();
+    const classList = { toggle: vi.fn() };
+    setDocument({ getElementById: vi.fn(() => ({ classList })) }, documentLike);
+    const dispose = await setupDesktopEvents(options());
+
+    dispose();
+    dispose();
+
+    expect(unlisteners).toHaveLength(7);
+    for (const unlisten of unlisteners) expect(unlisten).toHaveBeenCalledOnce();
+    expect(documentLike.removeEventListener).toHaveBeenCalledOnce();
+    expect(classList.toggle).toHaveBeenLastCalledWith('drag-over', false);
+  });
+
+  it('rolls back completed registrations when one listener fails', async () => {
+    const { unlisteners, documentLike } = installTauriEnvironment();
+    currentWindow.listen.mockRejectedValueOnce(new Error('menu listener failed'));
+
+    await expect(setupDesktopEvents(options())).rejects.toThrow('menu listener failed');
+
+    expect(unlisteners.length).toBeGreaterThan(0);
+    for (const unlisten of unlisteners) expect(unlisten).toHaveBeenCalledOnce();
+    expect(documentLike.removeEventListener).toHaveBeenCalledOnce();
+  });
+
+  it('unlistens a late registration after setup is aborted', async () => {
+    const { unlisteners, documentLike } = installTauriEnvironment();
+    const lateRegistration = deferred<() => void>();
+    const lateUnlisten = vi.fn();
+    currentWindow.listen.mockImplementationOnce(() => lateRegistration.promise);
+    const controller = new AbortController();
+    const setup = setupDesktopEvents(options(), controller.signal);
+    const rejection = expect(setup).rejects.toMatchObject({ name: 'AbortError' });
+    await vi.waitFor(() => expect(currentWindow.listen).toHaveBeenCalled());
+
+    controller.abort();
+    lateRegistration.resolve(lateUnlisten);
+    await rejection;
+
+    expect(lateUnlisten).toHaveBeenCalledOnce();
+    for (const unlisten of unlisteners) expect(unlisten).toHaveBeenCalledOnce();
+    expect(documentLike.removeEventListener).toHaveBeenCalledOnce();
   });
 });
 
@@ -118,25 +164,52 @@ function installTauriEnvironment() {
     __TAURI_INTERNALS__: {},
     location: { protocol: 'tauri:' },
   };
-  const currentDocument = (globalThis as { document?: object }).document ?? {};
-  (globalThis as { document?: unknown }).document = {
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    getElementById: vi.fn(() => null),
-    ...currentDocument,
-  };
+  const documentLike = setDocument();
   const windowHandlers = new Map<string, (event: { payload: unknown }) => unknown>();
+  const globalHandlers = new Map<string, (event: { payload: unknown }) => unknown>();
+  const unlisteners: Array<ReturnType<typeof vi.fn>> = [];
   let closeHandler: ((event: { preventDefault(): void }) => Promise<void>) | undefined;
-  tauriListen.mockResolvedValue(vi.fn());
+  tauriListen.mockImplementation(async (name, handler) => {
+    globalHandlers.set(name, handler);
+    return trackedUnlisten(unlisteners, () => globalHandlers.delete(name));
+  });
   currentWindow.listen.mockImplementation(async (name, handler) => {
     windowHandlers.set(name, handler);
-    return vi.fn();
+    return trackedUnlisten(unlisteners, () => windowHandlers.delete(name));
   });
   currentWindow.onCloseRequested.mockImplementation(async (handler) => {
     closeHandler = handler;
-    return vi.fn();
+    return trackedUnlisten(unlisteners, () => { closeHandler = undefined; });
   });
-  return { windowHandlers, getCloseHandler: () => closeHandler };
+  return {
+    documentLike,
+    unlisteners,
+    windowHandlers,
+    getCloseHandler: () => closeHandler,
+  };
+}
+
+function trackedUnlisten(
+  unlisteners: Array<ReturnType<typeof vi.fn>>,
+  cleanup: () => void,
+) {
+  const unlisten = vi.fn(cleanup);
+  unlisteners.push(unlisten);
+  return unlisten;
+}
+
+function setDocument(
+  overrides: Record<string, unknown> = {},
+  base?: { addEventListener: ReturnType<typeof vi.fn>; removeEventListener: ReturnType<typeof vi.fn> },
+) {
+  const documentLike = {
+    addEventListener: base?.addEventListener ?? vi.fn(),
+    removeEventListener: base?.removeEventListener ?? vi.fn(),
+    getElementById: vi.fn(() => null),
+    ...overrides,
+  };
+  (globalThis as { document?: unknown }).document = documentLike;
+  return documentLike;
 }
 
 function createHost(overrides: Record<string, unknown> = {}) {
@@ -156,4 +229,10 @@ function options(overrides: Record<string, unknown> = {}) {
     setMessage: vi.fn(),
     ...overrides,
   } as never;
+}
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((accept) => { resolve = accept; });
+  return { promise, resolve };
 }

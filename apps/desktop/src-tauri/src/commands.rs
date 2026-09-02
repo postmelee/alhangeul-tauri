@@ -54,6 +54,11 @@ pub fn take_pending_open_paths(
 }
 
 #[tauri::command]
+pub async fn print_current_webview(window: WebviewWindow) -> Result<(), String> {
+    crate::system_print::print_current_webview(window).await
+}
+
+#[tauri::command]
 pub fn prepare_document_open(app: AppHandle, path: String) -> Result<(), String> {
     let path = PathBuf::from(path);
     ensure_document_open_path(&path)?;
@@ -291,17 +296,6 @@ pub fn destroy_current_window(window: WebviewWindow) -> Result<(), String> {
     window
         .destroy()
         .map_err(|e| format!("창을 닫을 수 없습니다: {}", e))
-}
-
-#[tauri::command]
-pub fn desktop_platform() -> &'static str {
-    if cfg!(windows) {
-        "windows"
-    } else if cfg!(target_os = "linux") {
-        "linux"
-    } else {
-        "unknown"
-    }
 }
 
 #[tauri::command]

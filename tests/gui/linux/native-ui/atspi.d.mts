@@ -3,10 +3,13 @@ import type {
   NativeDocumentCommand,
 } from '../../support/document-ux.ts';
 
+export const LINUX_NATIVE_APPLICATION_NAMES: readonly string[];
+
 export interface LinuxNativeUiOptions {
   outputDir: string;
   timeoutMs?: number;
-  applicationNames?: string[];
+  applicationNames?: readonly string[];
+  defaultPrinterName?: string;
   saveTargets?: Partial<Record<NativeDocumentCommand, string>>;
   env?: NodeJS.ProcessEnv;
   captureScreenshot?(path: string): Promise<unknown>;

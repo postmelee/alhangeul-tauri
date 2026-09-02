@@ -17,6 +17,7 @@ import {
 } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { inspectPeImage } from './build-thumbnail-binaries.mjs';
+import { assertLinuxPackageEvidence } from './verify-linux-thumbnail-package-evidence.mjs';
 
 export const INVENTORY_SCHEMA_VERSION = 1;
 export const INVENTORY_FILENAME = 'alhangeul-artifact-inventory.json';
@@ -27,8 +28,8 @@ export const PLATFORM_REQUIREMENTS = Object.freeze({
     'thumbnail-handler',
     'thumbnail-worker',
   ]),
-  'linux-x64': Object.freeze(['appimage', 'deb', 'rpm']),
-  'linux-arm64': Object.freeze(['deb']),
+  'linux-x64': Object.freeze(['appimage', 'deb', 'rpm', 'linux-thumbnail-packages']),
+  'linux-arm64': Object.freeze(['deb', 'linux-thumbnail-packages']),
 });
 
 const SUPPORTED_OPTIONS = new Set([
@@ -191,6 +192,8 @@ async function assertArtifactContract(platform, requiredKinds, files, rootPath) 
   }
   if (platform === 'windows-x64') {
     await assertWindowsThumbnailPe(files, rootPath);
+  } else {
+    await assertLinuxPackageEvidence(platform, files, rootPath);
   }
 }
 
@@ -221,6 +224,9 @@ function classifyArtifact(path) {
   if (normalized.endsWith('.deb')) return 'deb';
   if (normalized.endsWith('.rpm')) return 'rpm';
   if (normalized.endsWith('.appimage')) return 'appimage';
+  if (normalized === 'verification/linux-thumbnail-packages.json') {
+    return 'linux-thumbnail-packages';
+  }
   return 'other';
 }
 

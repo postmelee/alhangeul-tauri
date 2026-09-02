@@ -1,6 +1,6 @@
 # 데스크톱 artifact와 배포 준비
 
-Alhangeul은 아직 공식 설치 파일이나 공개 릴리스를 제공하지 않는다. `.github/workflows/alhangeul-desktop.yml`의 기본 `artifact` mode는 Windows/Linux native build 결과와 Windows installer·thumbnail smoke 진단을 수동 검증하고 14일 동안 Actions artifact로 보존한다. 별도 `updater` mode는 exact source와 production signing 환경을 요구하며, `publish_release=false`가 기본이다. `updater-acceptance` mode도 공개 권한 없이 test-only N/N+1 후보를 Actions artifact로만 만든다. 이 mode들이 source에 존재한다는 사실만으로 GitHub Release나 updater가 활성화된 것은 아니다.
+Alhangeul은 아직 공식 설치 파일이나 공개 릴리스를 제공하지 않는다. `.github/workflows/alhangeul-desktop.yml`의 기본 `artifact` mode는 Windows/Linux native build 결과, Windows installer·thumbnail smoke와 Linux thumbnail package lifecycle 진단을 수동 검증하고 14일 동안 Actions artifact로 보존한다. 별도 `updater` mode는 exact source와 production signing 환경을 요구하며, `publish_release=false`가 기본이다. `updater-acceptance` mode도 공개 권한 없이 test-only N/N+1 후보를 Actions artifact로만 만든다. 이 mode들이 source에 존재한다는 사실만으로 GitHub Release나 updater가 활성화된 것은 아니다.
 
 ## 제품 version 기준
 
@@ -23,11 +23,12 @@ workflow는 다음 작업만 수행한다.
 1. submodule을 포함한 선택 commit checkout
 2. Node, pnpm, Rust와 Linux Tauri 의존성 준비
 3. 제품 경계·version, `rhwp` pin, automation, upstream·studio와 thumbnail core/source 검증
-4. Windows thumbnail handler·worker와 Tauri bundle 생성
-5. 필수 installer·thumbnail PE 종류·크기·SHA-256 inventory 검증
+4. Windows thumbnail handler·worker, Linux x64·arm64 thumbnail helper와 Tauri bundle 생성
+5. 필수 installer·thumbnail binary 종류·architecture·크기·SHA-256 inventory 검증
 6. inventory를 포함한 Actions artifact 업로드
-7. fresh `windows-2025` runner에서 Windows MSI·NSIS 설치·rollback·제거와 실제 HWP/HWPX Shell bitmap smoke
-8. installer별 summary와 원본 log를 diagnostic artifact로 항상 업로드하고 build matrix와 smoke 결과를 함께 판정
+7. Linux x64 DEB/RPM과 arm64 DEB의 thumbnail helper·registration install/reinstall/update/rollback/uninstall
+8. fresh `windows-2025` runner에서 Windows MSI·NSIS 설치·rollback·제거와 실제 HWP/HWPX Shell bitmap smoke
+9. installer별 summary와 원본 log를 diagnostic artifact로 항상 업로드하고 build matrix와 smoke 결과를 함께 판정
 
 repository-level Actions는 활성 상태지만 대상 CI와 native workflow는 자동 trigger 없이 수동 `workflow_dispatch`로만 실행한다. Actions 활성 상태는 workflow 성공이나 artifact 가용성을 보장하지 않으므로 run의 exact commit과 job 결과를 함께 확인해야 한다.
 
@@ -44,7 +45,7 @@ repository-level Actions는 활성 상태지만 대상 CI와 native workflow는 
 1. `Alhangeul Desktop Artifact Build`를 수동 실행하고 대상 candidate의 정확한 40자리 commit SHA와 성공한 native run ID를 기록한다.
 2. `Alhangeul Linux GUI Acceptance`를 열어 같은 SHA를 `build_ref`, 같은 run ID를 `native_run_id`로 입력한다. branch, tag, latest run이나 artifact 이름만으로 대체하지 않는다.
 3. workflow가 checkout SHA, native run의 repository·workflow·event·conclusion, Linux x64 artifact ID·digest와 동봉 inventory를 검증한 뒤 단일 DEB만 설치하는지 확인한다.
-4. GUI job이 HWP/HWPX 열기·저장·재열기, drag-in, 직접 PDF, GTK Print to File와 CUPS-PDF 반복 인쇄를 통과하는지 확인한다.
+4. GUI job이 HWP/HWPX 열기·저장·재열기, drag-in, 직접 PDF, GTK Print to File와 CUPS-PDF 반복 인쇄에 더해 package-installed helper의 Nautilus·Thunar/Tumbler thumbnail probe를 통과하는지 확인한다.
 5. acceptance run의 `alhangeul-linux-gui-<run-id>` evidence artifact를 내려받아 아래 read-back 항목을 확인한다. 보존 기간은 7일이다.
 
 | Evidence | 확인 항목 |
@@ -52,8 +53,10 @@ repository-level Actions는 활성 상태지만 대상 CI와 native workflow는 
 | `workflow-context.json`, `checked-out-sha.txt` | 요청 SHA·native run ID와 checkout SHA가 candidate 기록과 같은가 |
 | `artifact-handoff.json`, inventory, `installed-deb.sha256` | 원본 native run·artifact ID·archive digest와 설치 DEB hash가 한 chain으로 결속되는가 |
 | `native-environment.txt`, `step-outcomes.json` | Node/pnpm/Rust/driver/WebKitGTK/GTK/CUPS/Poppler version과 GUI 실행 전 주요 step outcome이 기록됐는가 |
+| `pre-install-mime.txt`, `post-install-mime.txt`, `private-mime-state.txt` | package 설치 전후 실제 HWP/HWPX type, 제품 XML·owner·hash와 private MIME 주입 부재가 기록됐는가 |
 | scenario manifest·screenshot·native UI tree | toolbar 초기 숨김, 문서 중앙 정렬, 한글 glyph, dialog 상태와 실패 지점이 summary와 일치하는가 |
 | 직접/GTK/CUPS PDF와 render PNG | 6쪽 A4, 한글 text, 빈 쪽·crop·tofu 이상이 없는가 |
+| `thumbnail-manager/`의 screenshot·summary·`execve` trace | 설치된 helper·registration으로 Nautilus·Thunar가 direct/preview/icon fallback과 cache hit/invalidation을 수행했는가 |
 
 GUI 실패는 evidence 업로드를 위해 일시적으로 다음 step에 전달되지만 마지막 gate가 원래 실패를 다시 실패로 판정한다. 반대로 GUI가 성공해도 evidence 업로드가 실패하거나 파일이 없으면 run은 실패한다. 자동 재시도는 없으며 실패 원인을 확인한 뒤 새 run으로 다시 검증한다.
 
@@ -68,7 +71,7 @@ xvfb-run --auto-servernum -- \
   --output-dir /tmp/alhangeul-gui-probe
 ```
 
-이 gate가 자동화하는 범위는 hosted Linux x64의 production DEB와 가상 display·가상 PDF printer다. Linux arm64, RPM/AppImage 설치·desktop integration, GNOME/Nautilus와 Xfce/Thunar의 실제 사용자 세션, physical printer, Windows GUI는 여전히 별도 native 수용 대상이다. screenshot과 PDF render의 한글 glyph·배치 read-back도 prerelease 후보 확정 때 사람이 확인한다. GitHub Codespaces는 이 workflow의 실행 환경이 아니며, 무료 allowance와 spending limit을 먼저 확인한 경우의 선택적 troubleshooting에만 사용한다.
+이 gate가 자동화하는 범위는 hosted Linux x64의 production DEB, Xvfb의 Nautilus 42.6·Thunar 4.16.10/Tumbler 4.16과 가상 PDF printer다. physical user session, Linux arm64 GUI, RPM/AppImage desktop integration, KDE/Dolphin, Flatpak/Snap, physical printer와 Windows GUI는 별도 native 수용 대상이다. screenshot과 PDF render의 한글 glyph·배치 read-back은 사람이 확인한다. GitHub Codespaces는 이 workflow의 실행 환경이 아니며, 무료 allowance와 spending limit을 먼저 확인한 경우의 선택적 troubleshooting에만 사용한다.
 
 Task #34 PR merge 전에는 workflow가 default branch에 없으므로 실제 dispatch 성공을 주장하지 않는다. merge 뒤 같은 exact SHA의 native build와 위 GUI run·evidence read-back이 성공해야 Issue #34의 live close gate가 완료된다.
 
@@ -311,6 +314,82 @@ GitHub API가 반환한 Actions artifact archive metadata는 다음과 같다. �
 | Linux arm64 | DEB | `deb/Alhangeul_0.3.1_arm64.deb` | 30,049,140 | `f0b841837cc66a699c1f917552287d263394e562be01bd1f2e5b419c3544595f` |
 
 이 결과는 exact source에서 installer 파일이 생성되고 Actions upload 뒤에도 inventory가 보존됐다는 build smoke 증거다. installer 설치·실행, 코드 서명, GitHub Release, package 게시와 updater는 검증하지 않았다.
+
+## Task #17 Linux thumbnail package 기준선
+
+Task #17 Stage 4는 exact source `c0cc4af46f132d199e843abf2dad014ae4a07709`에서 package-owned Linux thumbnail helper와 registration을 검증했다. 이는 Stage 6 최종 수용 전의 package 기준선이며 공개 release가 아니다.
+
+### Native package evidence
+
+- native run: [33285514829](https://github.com/postmelee/alhangeul-tauri/actions/runs/33285514829), conclusion `success`
+- Linux x64 job `99187922697`: helper, DEB/RPM lifecycle, inventory와 artifact gate `success`
+- Linux arm64 job `99187922567`: helper, DEB lifecycle, inventory와 artifact gate `success`
+- 같은 run의 Windows x64 job `99187922705`와 installer smoke job `99194195353`: 기존 Windows thumbnail 회귀 `success`
+
+| Platform | Artifact ID | Archive digest |
+|---|---:|---|
+| Linux x64 desktop | `9724657370` | `sha256:dfddd84401fe5e613346e685580c007598b70bc6e86b029f6a37966bddf78be3` |
+| Linux x64 package evidence | `9724652854` | `sha256:27d39170a3df6a2757713a597c02ddc3fb7bee4962a56f6262831a4489691029` |
+| Linux arm64 desktop | `9724444215` | `sha256:7aa53fe9924da2bb22e5b98c053141a08c677444e8808cda87cdaa2226d1622a` |
+| Linux arm64 package evidence | `9724442976` | `sha256:15fec166e328b9bc09729c19fe3d8aefaa88d6d843a23e00dc93395edaa61ee8` |
+
+| Package | Package SHA-256 | Helper SHA-256 |
+|---|---|---|
+| x64 DEB `Alhangeul_0.1.0_amd64.deb` | `675fe493112f160eb8fc9d0345ed4cecff45a79848cfec1779ef0dddd315795e` | `5773973c142b84412eb7a51491daf36babf38bf008a2c3dea1ea655ad6ba7af5` |
+| x64 RPM `Alhangeul-0.1.0-1.x86_64.rpm` | `a64373969c3718c31b0845c616447141c2ccf18c1219c42bc7b162f316cde5f7` | `5773973c142b84412eb7a51491daf36babf38bf008a2c3dea1ea655ad6ba7af5` |
+| arm64 DEB `Alhangeul_0.1.0_arm64.deb` | `d1147b8d31b76cfa0858fc6c2f9e55416297b0f2f33f98f059beed0e995fb6c6` | `554f85681cd6518738a310d15c3c67450af9b3e35305ca9e186c5b40b3c0d725` |
+
+세 package 모두 clean install, same-version reinstall, 이전 version update, injected failure rollback과 uninstall을 통과했다. helper와 registration은 단일 package owner였고 uninstall 뒤 제거됐다. HWP/HWPX MIME default, 제3자 `.thumbnailer`와 무관한 cache sentinel은 모든 transition에서 보존됐다.
+
+### Package-installed file-manager evidence
+
+- GUI run: [33287990400](https://github.com/postmelee/alhangeul-tauri/actions/runs/33287990400), job `99194484235`, conclusion `success`
+- evidence artifact ID `9725165768`, digest `sha256:fb9d1ac4a2fc825dc7a36fc571f9d6b6abc501c9a37d5a97e59cef042c8ec892`
+- installed DEB와 helper SHA-256은 native package evidence와 일치
+- Nautilus 42.6과 Thunar 4.16.10/Tumbler 4.16이 `/usr/lib/alhangeul/alhangeul-thumbnailer`를 직접 실행
+- direct와 preview fixture는 first/cached/changed를 통과했고, 손상 fixture는 제품 cache 없이 MIME icon으로 저하
+
+Stage 4 screenshot의 direct fixture는 빈 흰 페이지, preview fixture는 검은 합성 preview이므로 file-manager discovery와 cache 경로만 증명한다. 이 한계는 아래 Task #50의 package-only MIME 및 공개 실사용 문서 수용으로 보완했다.
+
+설치 후 thumbnail이 만들어졌다면 앱 package를 제거해도 file-manager cache가 잠시 남을 수 있다. 정상 제거 판정은 cache 삭제가 아니라 다음을 사용한다.
+
+```sh
+test ! -e /usr/lib/alhangeul/alhangeul-thumbnailer
+test ! -e /usr/share/thumbnailers/alhangeul.thumbnailer
+test ! -e /usr/share/mime/packages/alhangeul-hwpx.xml
+```
+
+package 제거 hook은 `update-mime-database`가 남아 있으면 `/usr/share/mime` 파생 cache를 갱신하고 실패를 전달한다. Debian `postrm`처럼 dependency가 이미 제거될 수 있는 단계에서는 명령 부재만 성공으로 건너뛴다. 전역 XDG thumbnail cache 삭제나 file manager 강제 종료는 설치·제거 절차에 포함하지 않는다. 전체 설계와 제외 matrix는 [Linux thumbnail 아키텍처](../architecture/LINUX_THUMBNAILS.md)를 따른다.
+
+## Task #50 Linux HWPX package-only MIME와 실사용 문서 기준선
+
+2026-09-01 Task #50 Stage 4 기준선은 exact source
+`241e0674d2abe41b8fc5bd521725321ddadc4398`에서 probe 자체 MIME 주입 없이
+package가 설치한 system MIME XML·registration·helper만으로 수용했다.
+
+- [Native run 33502167628](https://github.com/postmelee/alhangeul-tauri/actions/runs/33502167628): Linux x64·arm64와 Windows x64 build, x64 DEB/RPM·arm64 DEB package lifecycle 및 Windows installer smoke 전체 성공
+- [Linux GUI run 33504817069](https://github.com/postmelee/alhangeul-tauri/actions/runs/33504817069): 같은 SHA와 native run ID의 x64 DEB, Nautilus·Thunar/Tumbler 및 기존 제품 GUI 전체 성공
+- GUI evidence artifact `alhangeul-linux-gui-33504817069`: ID `9799546121`, archive digest `sha256:5444688b8402f9e0e80c78d8a84fba04d3a0c1b1977f8b4a7b5dadb0856e3da3`, 7일 retention
+- 설치 전 실제 HWP는 `application/x-hwp`, HWPX는 `application/zip`이었고 설치 후 각각 `application/x-hwp`, `application/x-hwpx`였다. private MIME path는 전후 모두 없었다.
+- helper, registration과 `/usr/share/mime/packages/alhangeul-hwpx.xml`은 package `alhangeul` 단일 owner였고 source·설치 hash가 일치했다.
+- 공개 온새미로 HWP와 form-002 HWPX는 Nautilus·Thunar에서 서로 구분되는 첫 페이지를 보였다. cached 단계는 helper 호출이 늘지 않았고 mtime 변경 뒤 재호출됐으며 URI·mtime cache metadata가 일치했다. 손상 HWP의 성공 cache PNG는 0개였다.
+
+PR 게시 뒤 최신 `devel` 통합과 PR 리뷰 보정을 포함한 최종 source/workflow
+candidate `dbf09404e8b2e4fd07f510ddc60329e71a596643`도 다음 연쇄 수용을 통과했다.
+
+- [Native run 33607431684](https://github.com/postmelee/alhangeul-tauri/actions/runs/33607431684): Linux x64·arm64와 Windows x64 build, x64 DEB/RPM·arm64 DEB package lifecycle 및 Windows installer smoke 4개 job 전체 성공
+- [Linux GUI run 33610310800](https://github.com/postmelee/alhangeul-tauri/actions/runs/33610310800): 같은 exact source와 native run의 x64 DEB로 Nautilus·Thunar/Tumbler 및 기존 제품 GUI 전체 성공
+- GUI evidence artifact `alhangeul-linux-gui-33610310800`: ID `9838928525`, archive digest `sha256:1e3dcf66d04d5c249925392234f87845d2330048c7a656f323e62dd816c92f11`, 7일 retention
+- 두 실사용 문서의 512 px render SHA-256은 각각 `2a499693e01e811eff49c6aff3102720945ae54c00d75bb102e56cbdd94a8abf`, `35bd3ce2d05def6bf9ad525bc2a0a5b62f30ad3e1eb7c208e085a9e01a7be8ee`로 Stage 4와 동일했다.
+
+package lifecycle은 install/reinstall/update/rollback/uninstall 외에 MIME XML은 배치됐지만 refresh가 실패해 cache가 설치 전 상태인 전이와 명시적 candidate reinstall 복구를 구분한다. DEB는 `update-mime-database`를 PATH에서 제거한 purge에서도 `postrm`이 성공하고 제품 파일이 남지 않아야 한다. Archive는 `/usr/share/mime/packages/alhangeul-hwpx.xml`만 소유하며 `mime.cache`, `generic-icons`, type XML 같은 파생 cache 파일을 포함하면 실패한다.
+
+이 GUI 근거는 Ubuntu 22.04 x64, Nautilus `1:42.6-0ubuntu2`, Thunar
+`4.16.10-1`, Tumbler `4.16.0-1`, shared-mime-info `2.1-2`에 한정한다. x64 RPM은
+Ubuntu runner의 `rpm --nodeps` transaction 근거이며 Fedora dependency resolution이나
+RPM GUI 수용이 아니다. Linux arm64 GUI, KDE/Dolphin, AppImage registration,
+Flatpak/Snap과 실제 사용자 desktop 조합 전체를 대신하지 않는다. Actions artifact는
+임시 검증물이며 공개 설치 파일이나 release가 아니다.
 
 ## 현재 source 변경만으로 완료되지 않는 작업
 

@@ -57,7 +57,7 @@
         "ext": ["hwpx"],
         "name": "Alhangeul.hwpx",
         "description": "Hangul Word Processor XML document",
-        "mimeType": "application/vnd.hancom.hwpx"
+        "mimeType": "application/x-hwpx"
       }
     ],
     "windows": {
@@ -68,6 +68,28 @@
         "installMode": "currentUser",
         "startMenuFolder": "Alhangeul",
         "installerHooks": "windows/nsis-hooks.nsh"
+      }
+    },
+    "linux": {
+      "deb": {
+        "depends": ["shared-mime-info"],
+        "postInstallScript": "linux/update-mime-database.sh",
+        "postRemoveScript": "linux/update-mime-database-remove.sh",
+        "files": {
+          "/usr/lib/alhangeul/alhangeul-thumbnailer": "linux/thumbnail-resources/alhangeul-thumbnailer",
+          "/usr/share/thumbnailers/alhangeul.thumbnailer": "linux/alhangeul.thumbnailer",
+          "/usr/share/mime/packages/alhangeul-hwpx.xml": "linux/alhangeul-hwpx.xml"
+        }
+      },
+      "rpm": {
+        "depends": ["shared-mime-info"],
+        "postInstallScript": "linux/update-mime-database.sh",
+        "postRemoveScript": "linux/update-mime-database-remove.sh",
+        "files": {
+          "/usr/lib/alhangeul/alhangeul-thumbnailer": "linux/thumbnail-resources/alhangeul-thumbnailer",
+          "/usr/share/thumbnailers/alhangeul.thumbnailer": "linux/alhangeul.thumbnailer",
+          "/usr/share/mime/packages/alhangeul-hwpx.xml": "linux/alhangeul-hwpx.xml"
+        }
       }
     }
   }

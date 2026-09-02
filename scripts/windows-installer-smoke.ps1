@@ -21,6 +21,7 @@ $nsisInstallDirectory = Join-Path $env:LOCALAPPDATA 'Alhangeul'
 function Assert-Condition($Condition, $Message) { if (-not $Condition) { throw $Message } }
 . (Join-Path $PSScriptRoot 'windows-installer-smoke-support.ps1')
 . (Join-Path $PSScriptRoot 'windows-thumbnail-smoke.ps1')
+. (Join-Path $PSScriptRoot 'windows-process-lifecycle.ps1')
 function Assert-InventoryRecord($Kind, $File, $Inventory, $Root) {
   $records = @($Inventory.files | Where-Object { $_.kind -eq $Kind })
   Assert-Condition ($records.Count -eq 1) "inventory에 $Kind record가 정확히 하나여야 합니다."
@@ -104,18 +105,6 @@ function Invoke-Uninstaller($Kind, $State, $LogPath) {
   $path = if ($null -ne $State.Entry -and $State.Entry.UninstallString) { $State.Entry.UninstallString.Trim().Trim('"') } else { Join-Path $State.InstallDirectory 'uninstall.exe' }
   Assert-Condition (Test-Path -LiteralPath $path -PathType Leaf) 'NSIS uninstaller를 찾을 수 없습니다.'
   return (Start-Process -FilePath $path -ArgumentList @('/S') -Wait -PassThru).ExitCode
-}
-function Invoke-Launch($Executable) {
-  $process = Start-Process -FilePath $Executable -PassThru
-  try {
-    Start-Sleep -Seconds 5
-    $process.Refresh()
-    Assert-Condition (-not $process.HasExited) 'Alhangeul process가 5초 전에 종료되었습니다.'
-    return [ordered]@{ Pid = $process.Id; SurvivedSeconds = 5 }
-  } finally {
-    $process.Refresh()
-    if (-not $process.HasExited) { Stop-Process -Id $process.Id -Force; Wait-Process -Id $process.Id -ErrorAction SilentlyContinue }
-  }
 }
 function Invoke-InstalledChecks($Result, $Kind, $InstallDirectory, $BaselineDefaults, $ThumbnailSentinels) {
   $state = $Result.InstalledState

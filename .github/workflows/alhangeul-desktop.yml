@@ -156,7 +156,12 @@ jobs:
             libssl-dev \
             libwebkit2gtk-4.1-dev \
             libxdo-dev \
-            pkg-config
+            pkg-config \
+            rpm \
+            shared-mime-info \
+            time \
+            xdg-utils \
+            zip
 
       - name: Setup Node.js
         uses: actions/setup-node@v5
@@ -274,6 +279,129 @@ jobs:
             throw "Windows thumbnail core probe gate failed: $($failed | ConvertTo-Json -Compress)"
           }
 
+      - name: Prepare Linux thumbnail core diagnostics
+        if: startsWith(matrix.name, 'linux-')
+        shell: bash
+        env:
+          OUTPUT_ROOT: diagnostics/thumbnail-core-${{ matrix.name }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$OUTPUT_ROOT"
+          printf '{"runId":"%s","runAttempt":"%s","repositorySha":"%s","runner":"%s"}\n' \
+            "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$(git rev-parse HEAD)" "${{ matrix.name }}" \
+            > "$OUTPUT_ROOT/workflow-context.json"
+
+      - name: Run Linux thumbnail core probe
+        id: run-linux-thumbnail-core-probe
+        if: startsWith(matrix.name, 'linux-')
+        continue-on-error: true
+        shell: bash
+        env:
+          OUTPUT_ROOT: diagnostics/thumbnail-core-${{ matrix.name }}
+        run: |
+          ./scripts/benchmark-linux-thumbnail-core.sh \
+            "$GITHUB_WORKSPACE" \
+            "$GITHUB_WORKSPACE/third_party/rhwp/saved" \
+            "$OUTPUT_ROOT"
+
+      - name: Record Linux thumbnail core probe outcome
+        if: ${{ always() && startsWith(matrix.name, 'linux-') }}
+        shell: bash
+        env:
+          OUTPUT_ROOT: diagnostics/thumbnail-core-${{ matrix.name }}
+          PROBE_OUTCOME: ${{ steps.run-linux-thumbnail-core-probe.outcome }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$OUTPUT_ROOT"
+          printf '{"probe":"%s","repositorySha":"%s","runner":"%s"}\n' \
+            "$PROBE_OUTCOME" "$(git rev-parse HEAD)" "${{ matrix.name }}" \
+            > "$OUTPUT_ROOT/step-outcomes.json"
+
+      - name: Upload Linux thumbnail core diagnostics
+        id: upload-linux-thumbnail-core-diagnostics
+        if: ${{ always() && startsWith(matrix.name, 'linux-') }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: alhangeul-${{ matrix.name }}-thumbnail-core
+          path: diagnostics/thumbnail-core-${{ matrix.name }}/**
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Require Linux thumbnail core probe success
+        if: ${{ always() && startsWith(matrix.name, 'linux-') }}
+        shell: bash
+        env:
+          PROBE_OUTCOME: ${{ steps.run-linux-thumbnail-core-probe.outcome }}
+          UPLOAD_OUTCOME: ${{ steps.upload-linux-thumbnail-core-diagnostics.outcome }}
+        run: |
+          set -euo pipefail
+          [[ "$PROBE_OUTCOME" == success ]]
+          [[ "$UPLOAD_OUTCOME" == success ]]
+
+      - name: Prepare Linux thumbnailer evidence
+        if: startsWith(matrix.name, 'linux-')
+        shell: bash
+        env:
+          OUTPUT_ROOT: diagnostics/linux-thumbnailer-${{ matrix.name }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$OUTPUT_ROOT"
+
+      - name: Build Linux thumbnailer
+        id: build-linux-thumbnailer
+        if: startsWith(matrix.name, 'linux-')
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm run build:linux-thumbnailer -- \
+            --target "${{ matrix.target }}" \
+            --output "diagnostics/linux-thumbnailer-${{ matrix.name }}" \
+            --repository-sha "$(git rev-parse HEAD)"
+
+      - name: Record Linux thumbnailer build outcome
+        if: ${{ always() && startsWith(matrix.name, 'linux-') }}
+        shell: bash
+        env:
+          OUTPUT_ROOT: diagnostics/linux-thumbnailer-${{ matrix.name }}
+          BUILD_OUTCOME: ${{ steps.build-linux-thumbnailer.outcome }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$OUTPUT_ROOT"
+          printf '{"build":"%s","repositorySha":"%s","runner":"%s"}\n' \
+            "$BUILD_OUTCOME" "$(git rev-parse HEAD)" "${{ matrix.name }}" \
+            > "$OUTPUT_ROOT/step-outcomes.json"
+
+      - name: Upload Linux thumbnailer evidence
+        id: upload-linux-thumbnailer-evidence
+        if: ${{ always() && startsWith(matrix.name, 'linux-') }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: alhangeul-${{ matrix.name }}-thumbnailer
+          path: diagnostics/linux-thumbnailer-${{ matrix.name }}/**
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Require Linux thumbnailer build success
+        if: ${{ always() && startsWith(matrix.name, 'linux-') }}
+        shell: bash
+        env:
+          BUILD_OUTCOME: ${{ steps.build-linux-thumbnailer.outcome }}
+          UPLOAD_OUTCOME: ${{ steps.upload-linux-thumbnailer-evidence.outcome }}
+        run: |
+          set -euo pipefail
+          [[ "$BUILD_OUTCOME" == success ]]
+          [[ "$UPLOAD_OUTCOME" == success ]]
+
+      - name: Stage Linux thumbnailer package resources
+        if: startsWith(matrix.name, 'linux-')
+        shell: bash
+        run: |
+          set -euo pipefail
+          install -D -m 0755 \
+            "diagnostics/linux-thumbnailer-${{ matrix.name }}/alhangeul-thumbnailer" \
+            apps/desktop/src-tauri/linux/thumbnail-resources/alhangeul-thumbnailer
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
@@ -317,6 +445,57 @@ jobs:
         if: inputs.run_tests
         run: pnpm run clippy:document-preview:protocol
 
+      - name: Test Linux thumbnailer
+        id: test-linux-thumbnailer
+        if: inputs.run_tests && startsWith(matrix.name, 'linux-')
+        shell: bash
+        env:
+          CARGO_BUILD_TARGET: ${{ matrix.target }}
+          OUTPUT_ROOT: diagnostics/linux-thumbnailer-tests-${{ matrix.name }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$OUTPUT_ROOT"
+          pnpm run test:linux-thumbnailer 2>&1 | tee "$OUTPUT_ROOT/tests.log"
+
+      - name: Lint Linux thumbnailer
+        id: lint-linux-thumbnailer
+        if: inputs.run_tests && startsWith(matrix.name, 'linux-')
+        shell: bash
+        env:
+          CARGO_BUILD_TARGET: ${{ matrix.target }}
+          OUTPUT_ROOT: diagnostics/linux-thumbnailer-tests-${{ matrix.name }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$OUTPUT_ROOT"
+          cargo fmt --manifest-path apps/linux-thumbnailer/Cargo.toml -- --check 2>&1 | tee "$OUTPUT_ROOT/fmt.log"
+          pnpm run clippy:linux-thumbnailer 2>&1 | tee "$OUTPUT_ROOT/clippy.log"
+
+      - name: Record Linux thumbnailer test outcome
+        if: ${{ always() && inputs.run_tests && startsWith(matrix.name, 'linux-') }}
+        shell: bash
+        env:
+          OUTPUT_ROOT: diagnostics/linux-thumbnailer-tests-${{ matrix.name }}
+          TEST_OUTCOME: ${{ steps.test-linux-thumbnailer.outcome }}
+          LINT_OUTCOME: ${{ steps.lint-linux-thumbnailer.outcome }}
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
+          BUILD_TARGET: ${{ matrix.target }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$OUTPUT_ROOT"
+          printf '{"schemaVersion":1,"repositorySha":"%s","workflowSha":"%s","runId":"%s","runAttempt":"%s","runner":"%s","target":"%s","test":"%s","lint":"%s"}\n' \
+            "$(git rev-parse HEAD)" "$WORKFLOW_SHA" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" \
+            "$RUNNER_NAME" "$BUILD_TARGET" "$TEST_OUTCOME" "$LINT_OUTCOME" \
+            > "$OUTPUT_ROOT/step-outcomes.json"
+
+      - name: Upload Linux thumbnailer test evidence
+        if: ${{ always() && inputs.run_tests && startsWith(matrix.name, 'linux-') }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: alhangeul-${{ matrix.name }}-thumbnailer-tests
+          path: diagnostics/linux-thumbnailer-tests-${{ matrix.name }}/**
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Build Windows thumbnail binaries
         if: matrix.name == 'windows-x64'
         run: pnpm run build:thumbnail-binaries -- --target x86_64-pc-windows-msvc
@@ -348,6 +527,77 @@ jobs:
       - name: Build Tauri bundles
         shell: bash
         run: pnpm tauri build --verbose --target "${{ matrix.target }}" ${{ matrix.bundle_args }}
+
+      - name: Prepare Linux thumbnail package diagnostics
+        if: startsWith(matrix.name, 'linux-')
+        shell: bash
+        env:
+          OUTPUT_ROOT: diagnostics/linux-thumbnail-package-${{ matrix.name }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$OUTPUT_ROOT"
+
+      - name: Run Linux thumbnail package lifecycle
+        id: linux-thumbnail-package-smoke
+        if: startsWith(matrix.name, 'linux-')
+        continue-on-error: true
+        timeout-minutes: 15
+        shell: bash
+        env:
+          ALHANGEUL_PACKAGE_SMOKE_ALLOW_SYSTEM: "1"
+          BUNDLE_ROOT: apps/desktop/src-tauri/target/${{ matrix.target }}/release/bundle
+          OUTPUT_ROOT: diagnostics/linux-thumbnail-package-${{ matrix.name }}
+        run: |
+          set -euo pipefail
+          evidence="$BUNDLE_ROOT/verification/linux-thumbnail-packages.json"
+          bash scripts/linux-thumbnail-mime-smoke.sh "$GITHUB_WORKSPACE" "$OUTPUT_ROOT/mime-canary.json" \
+            2>&1 | tee "$OUTPUT_ROOT/mime-canary.log"
+          bash scripts/linux-thumbnail-package-smoke.sh \
+            --platform "${{ matrix.name }}" \
+            --bundle-root "$BUNDLE_ROOT" \
+            --helper apps/desktop/src-tauri/linux/thumbnail-resources/alhangeul-thumbnailer \
+            --repository-sha "$(git rev-parse HEAD)" \
+            --evidence "$evidence" \
+            2>&1 | tee "$OUTPUT_ROOT/lifecycle.log"
+          cp "$evidence" "$OUTPUT_ROOT/"
+
+      - name: Record Linux thumbnail package outcome
+        if: ${{ always() && startsWith(matrix.name, 'linux-') }}
+        shell: bash
+        env:
+          OUTPUT_ROOT: diagnostics/linux-thumbnail-package-${{ matrix.name }}
+          SMOKE_OUTCOME: ${{ steps.linux-thumbnail-package-smoke.outcome }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$OUTPUT_ROOT"
+          printf '{"smoke":"%s","repositorySha":"%s","runner":"%s"}\n' \
+            "$SMOKE_OUTCOME" "$(git rev-parse HEAD)" "${{ matrix.name }}" \
+            > "$OUTPUT_ROOT/step-outcomes.json"
+          bundle="apps/desktop/src-tauri/target/${{ matrix.target }}/release/bundle/verification"
+          if [[ -d "$bundle" ]]; then
+            find "$bundle" -maxdepth 1 -name 'linux-thumbnail-packages.json*' -exec cp {} "$OUTPUT_ROOT/" \;
+          fi
+
+      - name: Upload Linux thumbnail package evidence
+        id: upload-linux-thumbnail-package-evidence
+        if: ${{ always() && startsWith(matrix.name, 'linux-') }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: alhangeul-${{ matrix.name }}-thumbnail-package
+          path: diagnostics/linux-thumbnail-package-${{ matrix.name }}/**
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Require Linux thumbnail package success
+        if: ${{ always() && startsWith(matrix.name, 'linux-') }}
+        shell: bash
+        env:
+          SMOKE_OUTCOME: ${{ steps.linux-thumbnail-package-smoke.outcome }}
+          UPLOAD_OUTCOME: ${{ steps.upload-linux-thumbnail-package-evidence.outcome }}
+        run: |
+          set -euo pipefail
+          [[ "$SMOKE_OUTCOME" == success ]]
+          [[ "$UPLOAD_OUTCOME" == success ]]
 
       - name: Stage Windows thumbnail verification copies
         if: matrix.name == 'windows-x64'

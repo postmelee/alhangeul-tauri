@@ -46,9 +46,15 @@ test('checkout, run metadata, artifact ID와 inventory를 앱 설치 전에 검�
     '- name: Verify checked out exact SHA',
     '- name: Verify native run and exact artifact handoff',
     '- name: Download verified Linux x64 artifact',
+    '- name: Verify exact Linux thumbnailer artifact handoff',
+    '- name: Download verified Linux thumbnailer artifact',
+    '- name: Verify exact Linux thumbnailer binary',
     '- name: Verify artifact inventory and select one DEB',
     '- name: Install Linux GUI dependencies',
+    '- name: Record pre-install Linux MIME state',
     '- name: Install verified DEB',
+    '- name: Verify installed Linux thumbnail package',
+    '- name: Run Linux thumbnail manager contract probe',
     '- name: Run Linux GUI acceptance',
   ]);
   assert.match(workflow, /^          ref: \$\{\{ github\.workflow_sha \}\}$/m);
@@ -68,7 +74,7 @@ test('checkout, run metadata, artifact ID와 inventory를 앱 설치 전에 검�
 });
 
 test('artifact download는 검증된 ID, repository와 run ID에 직접 결속된다', () => {
-  const step = stepContaining(workflow, 'artifact-ids:');
+  const step = stepContaining(workflow, 'steps.handoff.outputs.artifact_id');
   assert.match(step, /artifact-ids: \$\{\{ steps\.handoff\.outputs\.artifact_id \}\}/);
   assert.match(step, /github-token: \$\{\{ github\.token \}\}/);
   assert.match(step, /repository: \$\{\{ github\.repository \}\}/);
@@ -94,9 +100,14 @@ test('native Linux dependency와 driver version이 명시되고 환경 증거를
     'cups',
     'gir1.2-gtk-3.0',
     'libwebkit2gtk-4.1-0',
+    'nautilus',
     'poppler-utils',
     'printer-driver-cups-pdf',
     'python3-pyatspi',
+    'shared-mime-info',
+    'strace',
+    'thunar',
+    'tumbler',
     'webkit2gtk-driver',
     'xdotool',
     'xvfb',
@@ -127,6 +138,56 @@ test('native Linux dependency와 driver version이 명시되고 환경 증거를
   assert.doesNotMatch(evidence, /cupsd -v/);
 });
 
+test('Nautilus와 Thunar 제품 thumbnail 수용은 역할별 bounded script만 호출한다', () => {
+  const preinstall = stepContaining(workflow, 'Record pre-install Linux MIME state');
+  const installed = stepContaining(workflow, 'Verify installed Linux thumbnail package');
+  const probe = stepContaining(workflow, 'Run Linux thumbnail manager contract probe');
+  for (const marker of [
+    '/usr/lib/alhangeul/alhangeul-thumbnailer',
+    '/usr/share/thumbnailers/alhangeul.thumbnailer',
+    '/usr/share/mime/packages/alhangeul-hwpx.xml',
+    'stat -c',
+    'sha256sum "$EXPECTED_HELPER"',
+    'dpkg-query --search',
+    'installed-thumbnail-package-owners.txt',
+    '| sort -u)" == alhangeul',
+  ]) assert.ok(installed.includes(marker), `설치 package 검증 marker가 필요합니다: ${marker}`);
+  for (const marker of [
+    'continue-on-error: true',
+    'productMimeXml absent',
+    'sharedMimeInfoVersion',
+    'systemMimeRoot /usr/share/mime',
+    'pre-install-mime.txt',
+    'realHwp %s',
+    'realHwpx %s',
+  ]) assert.ok(preinstall.includes(marker), `설치 전 MIME marker가 필요합니다: ${marker}`);
+  assert.doesNotMatch(preinstall, /update-mime-database|sudo (?:install|cp)/);
+  assert.match(installed, /cmp apps\/desktop\/src-tauri\/linux\/alhangeul\.thumbnailer/);
+  assert.match(installed, /cmp apps\/desktop\/src-tauri\/linux\/alhangeul-hwpx\.xml/);
+  assert.match(installed, /application\/x-hwp && "\$hwpx_type" == application\/x-hwpx/);
+  assert.match(probe, /^        id: thumbnail-manager-probe$/m);
+  assert.match(probe, /^        continue-on-error: true$/m);
+  assert.match(probe, /^        timeout-minutes: 8$/m);
+  assert.match(probe, /scripts\/linux-thumbnail-manager-probe\.sh/);
+  assert.match(probe, /steps\.verify-thumbnailer\.outputs\.helper_path/);
+  assert.doesNotMatch(probe, /mktemp|thumbnail-stub|SNAP_NAME|pkill|killall/);
+
+  const record = stepContaining(workflow, 'step-outcomes.json');
+  const gate = stepContaining(workflow, 'Require Linux GUI acceptance success');
+  assert.match(record, /THUMBNAIL_MANAGER: \$\{\{ steps\.thumbnail-manager-probe\.outcome \}\}/);
+  assert.match(record, /PREINSTALL_MIME: \$\{\{ steps\.record-preinstall-mime\.outcome \}\}/);
+  assert.match(record, /"preinstallMime":"%s"/);
+  assert.match(record, /INSTALLED_THUMBNAIL: \$\{\{ steps\.verify-installed-thumbnail\.outcome \}\}/);
+  assert.match(record, /"thumbnailManager":"%s"/);
+  assert.match(record, /"installedThumbnail":"%s"/);
+  assert.match(gate, /THUMBNAIL_MANAGER: \$\{\{ steps\.thumbnail-manager-probe\.outcome \}\}/);
+  assert.match(gate, /PREINSTALL_MIME: \$\{\{ steps\.record-preinstall-mime\.outcome \}\}/);
+  assert.match(gate, /"\$PREINSTALL_MIME"/);
+  assert.match(gate, /INSTALLED_THUMBNAIL: \$\{\{ steps\.verify-installed-thumbnail\.outcome \}\}/);
+  assert.match(gate, /"\$THUMBNAIL_MANAGER"/);
+  assert.match(gate, /"\$INSTALLED_THUMBNAIL"/);
+});
+
 test('Xvfb, DBus, AT-SPI와 CUPS-PDF는 repository fixture만 사용한다', () => {
   const cups = stepContaining(workflow, 'Configure CUPS-PDF');
   assert.match(workflow, /CUPS_PDF_OUTPUT: \/home\/runner\/PDF\/cups-output\/biz_plan\.pdf/);
@@ -143,6 +204,9 @@ test('Xvfb, DBus, AT-SPI와 CUPS-PDF는 repository fixture만 사용한다', () 
   assert.match(cups, /grep -Fqx "Out \$output_dir" "\$config"/);
   assert.match(cups, /grep -Fqx 'Label 0' "\$config"/);
   assert.match(cups, /lpadmin -p PDF -o PageSize=A4/);
+  assert.match(cups, /lpadmin -d PDF/);
+  assert.match(cups, /lpoptions -d PDF/);
+  assert.match(cups, /lpstat -d \| grep -Fqx 'system default destination: PDF'/);
   assert.doesNotMatch(cups, /lpadmin -p PDF[^\n]*-o media=/);
   assert.ok(cups.includes('queue_options="$(lpoptions -p PDF)"'));
   assert.ok(cups.includes('page_size_options="$(lpoptions -p PDF -l | grep -E \'^PageSize/\')"'));
@@ -157,6 +221,7 @@ test('Xvfb, DBus, AT-SPI와 CUPS-PDF는 repository fixture만 사용한다', () 
   assert.match(gui, /openbox/);
   assert.match(gui, /ALHANGEUL_GUI_FIXTURE_ROOT: \$\{\{ github\.workspace \}\}/);
   assert.match(gui, /ALHANGEUL_GUI_CUPS_PDF_OUTPUT: \$\{\{ env\.CUPS_PDF_OUTPUT \}\}/);
+  assert.match(gui, /ALHANGEUL_GUI_CUPS_PDF_DEFAULT: PDF/);
   assert.match(gui, /NO_AT_BRIDGE: "0"/);
   assert.match(gui, /GTK_MODULES: gail:atk-bridge/);
   assert.match(gui, /run_isolated_phase\(\)/);
@@ -206,11 +271,12 @@ test('이번 workflow의 외부 Action은 full immutable SHA와 version 주석�
     ['actions/upload-artifact', ['043fb46d1a93c77aae656e7c1c64a875d1fc6a0a', 'v7.0.1']],
   ]);
   const uses = [...workflow.matchAll(/^\s*uses: ([^@\s]+)@([0-9a-f]{40}) # (v\S+)$/gm)];
-  assert.equal(uses.length, expected.size);
+  assert.equal(uses.length, expected.size + 1);
   for (const [, action, sha, version] of uses) {
     assert.deepEqual([sha, version], expected.get(action), `${action} pin이 다릅니다`);
-    expected.delete(action);
+    if (action !== 'actions/download-artifact') expected.delete(action);
   }
+  expected.delete('actions/download-artifact');
   assert.equal(expected.size, 0);
   assert.equal((workflow.match(/^\s*uses:/gm) ?? []).length, uses.length);
 });
