@@ -146,6 +146,31 @@ describe('upstream Studio override boundary', () => {
     }
   });
 
+  it('keeps retired handler and platform bridges out of production boundaries', () => {
+    const embedRuntime = readFileSync(resolve(
+      repositoryRoot,
+      'apps/studio-host/src/embed/desktop-runtime.ts',
+    ), 'utf8');
+    const platformAdapter = readFileSync(resolve(
+      repositoryRoot,
+      'apps/studio-host/src/core/platform.ts',
+    ), 'utf8');
+    const nativeCommands = readFileSync(resolve(
+      repositoryRoot,
+      'apps/desktop/src-tauri/src/commands.rs',
+    ), 'utf8');
+    const nativeEntry = readFileSync(resolve(
+      repositoryRoot,
+      'apps/desktop/src-tauri/src/lib.rs',
+    ), 'utf8');
+    expect(embedRuntime).toContain('waitForDesktopStudioHandlers');
+    expect(embedRuntime).not.toContain('getDesktopStudioHandlers');
+    expect(platformAdapter).toContain('detectDesktopPlatform');
+    expect(platformAdapter).not.toContain('hydrateDesktopPlatform');
+    expect(nativeCommands).not.toContain('desktop_platform');
+    expect(nativeEntry).not.toContain('desktop_platform');
+  });
+
   it('keeps the Stage 2 Studio entry and renderer shadows physically absent', () => {
     const studioHostRoot = resolve(repositoryRoot, 'apps/studio-host');
     for (const path of removedStageTwoPaths) {
@@ -246,7 +271,7 @@ describe('upstream Studio override boundary', () => {
     expect(upstreamSurface).toContain("hostWindow.open(surfaceUrl, '_blank')");
   });
 
-  it('uses an upstream hidden page surface only for Tauri direct printing', () => {
+  it('uses the top-level product page surface only for Tauri direct printing', () => {
     const desktopConfig = JSON.parse(readFileSync(resolve(
       repositoryRoot,
       'apps/desktop/src-tauri/tauri.conf.json',
@@ -263,6 +288,10 @@ describe('upstream Studio override boundary', () => {
     const nativeWindows = readFileSync(resolve(
       repositoryRoot,
       'apps/desktop/src-tauri/src/windows.rs',
+    ), 'utf8');
+    const nativeCommands = readFileSync(resolve(
+      repositoryRoot,
+      'apps/desktop/src-tauri/src/commands.rs',
     ), 'utf8');
     const nativeEntry = readFileSync(resolve(
       repositoryRoot,
@@ -301,15 +330,46 @@ describe('upstream Studio override boundary', () => {
 
     expect(localFileCommand).toContain("['file:print', async (services) => {");
     expect(localFileCommand).toContain('printDirectlyFromPageSurface(services)');
-    expect(directPrint).toContain('createPrintSurface()');
+    expect(directPrint).toContain('createHostPrintSurface(printPages, platform)');
     expect(directPrint).toContain("renderPageSvgWithProfile(pageIndex, 'print')");
     expect(directPrint).toContain('createPrintPage(');
-    expect(directPrint).toContain('buildPrintStyleText(pages)');
-    expect(directPrint).toContain('appendSvgPage(target, target.body, page)');
+    expect(directPrint).toContain('appendSvgPage(document, container, page)');
     expect(directPrint).toContain('await waitForPrintSurfaceReady(surface)');
-    expect(directPrint).toContain('surface.window.print()');
+    expect(directPrint).toContain("const NATIVE_PRINT_COMMAND = 'print_current_webview'");
+    expect(directPrint).toContain("if (platform === 'linux')");
+    expect(directPrint).toContain('await invoke(NATIVE_PRINT_COMMAND)');
+    expect(directPrint).toContain('window.print()');
+    expect(directPrint).toContain("const HOST_PRINT_SURFACE_ID = 'alhangeul-direct-print-surface'");
+    expect(directPrint).toContain(
+      "const PRODUCT_STYLE_SELECTOR = 'style[data-alhangeul-product-style=\"true\"]'",
+    );
+    expect(directPrint).not.toContain('createPrintSurface()');
+    expect(nativeCommands).toContain('pub async fn print_current_webview(window: WebviewWindow)');
+    expect(nativeCommands).toContain('crate::system_print::print_current_webview(window).await');
+    const systemPrint = readFileSync(resolve(
+      repositoryRoot,
+      'apps/desktop/src-tauri/src/system_print.rs',
+    ), 'utf8');
+    expect(systemPrint).toContain('.with_webview(move |platform_webview|');
+    expect(systemPrint).toContain('operation.connect_failed');
+    expect(systemPrint).toContain('operation.connect_finished');
+    expect(systemPrint).toContain('PrintOperationResponse::Cancel');
+    expect(systemPrint).toContain('state.keepalive.take()');
+    expect(systemPrint).toContain('timeout_add_local_once(PRINT_COMPLETION_TIMEOUT');
+    expect(systemPrint).toContain('operation.run_dialog(Some(&parent))');
+    expect(nativeEntry).toContain('print_current_webview,');
     expect(upstreamPrintSurface).toContain("const PRINT_FRAME_ID = 'rhwp-print-surface';");
     expect(productStyle).toContain('#rhwp-print-surface');
+    expect(productStyle).toContain('#alhangeul-direct-print-surface');
+    expect(productStyle).toContain('html.alhangeul-print-active');
+    expect(productStyle).toMatch(
+      /#alhangeul-direct-print-surface\s*\{[^}]*z-index: -1 !important;[^}]*\}/,
+    );
+    expect(productStyle).not.toMatch(
+      /#alhangeul-direct-print-surface\s*\{[^}]*opacity: 0 !important;[^}]*\}/,
+    );
+    expect(productStyle).toContain('opacity: 0 !important');
+    expect(productStyle).toContain('opacity: 1 !important');
   });
 
   it('pins the source lock and read-only submodule worktree to the resolved release commit', () => {

@@ -95,6 +95,35 @@ describe('desktop toolbar mode sync', () => {
     expect(hidden(elements.headerFooterGroup)).toBe(false);
     expect(hidden(elements.noteGroup)).toBe(false);
   });
+
+  it('does not render a queued toolbar update after disposal', () => {
+    const { elements, eventBus, flush } = fixture();
+    const dispose = installToolbarModeSync(eventBus, elements, flush.schedule);
+
+    eventBus.emit('headerFooterModeChanged', 'header');
+    dispose();
+    const toggleCount = vi.mocked(elements.headerFooterGroup!.classList.toggle).mock.calls.length;
+    flush.run();
+
+    expect(vi.mocked(elements.headerFooterGroup!.classList.toggle)).toHaveBeenCalledTimes(
+      toggleCount,
+    );
+    expect(hidden(elements.headerFooterGroup)).toBe(false);
+    expect(elements.rootElement?.classList.contains(DESKTOP_TOOLBAR_READY_CLASS)).toBe(false);
+  });
+
+  it('disposes subscriptions and managed classes only once', () => {
+    const unsubscribe = vi.fn();
+    const eventBus = { on: vi.fn(() => unsubscribe) };
+    const { elements } = fixture();
+    const dispose = installToolbarModeSync(eventBus as never, elements);
+
+    dispose();
+    dispose();
+
+    expect(unsubscribe).toHaveBeenCalledTimes(3);
+    expect(elements.rootElement?.classList.remove).toHaveBeenCalledTimes(1);
+  });
 });
 
 function fixture() {
