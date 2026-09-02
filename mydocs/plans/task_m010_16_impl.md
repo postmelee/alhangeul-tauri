@@ -664,6 +664,35 @@ Task #16 Stage 4: updater key와 release 운영 계약 통합
   `9d5ddbdbdaeb2b1759363f0776db21008e976e51`, D1 run,
   candidate artifact ID·digest와 D2 tag는 Stage 5.27과 같은 값으로 고정한다.
 
+#### Positive native 수용 결과 — Stage 5.29
+
+- 보정 harness `9d016869010658ac15b721056f420a103989cf8f`에서
+  [native run 33617676623](https://github.com/postmelee/alhangeul-tauri/actions/runs/33617676623)을
+  실행했다. candidate source `9d5ddbdbdaeb2b1759363f0776db21008e976e51`, D1 run
+  `33612953592`, candidate artifact `9840727986`와 digest, D2 tag `updater-test-v99.1.1`은
+  변경하지 않았다. release handoff job `100207200951`은 exact artifact와 public test prerelease
+  8개 asset read-back을 통과했다.
+- Windows MSI job `100207255407`과 NSIS job `100207255412`은 각각 clean N 설치,
+  target별 preflight·dirty-before/after-download 차단, 실제 `99.1.0 → 99.1.1` 적용, 설치 record와
+  파일 연결 보존, N+1 no-update, 제거와 WebView2 정책 복원을 모두 통과했다. step outcome은 두
+  형식 모두 install·applyTransport·validate·cleanup·policy setup/restore가 `success`다.
+- Linux AppImage job `100207255413`은 격리 root에서 N+1 AppImage signature와 hash를 검증하고,
+  multi-window preflight·중복 요청·dirty-before/after-download 차단, 실제 N→N+1 적용과 재실행,
+  N+1 no-update, read-only AppImage manual fallback을 모두 통과했다. 다운로드는
+  `133364216/133364216` bytes였고 교체 후 AppImage SHA-256은 승인 후보와 같은
+  `5e49dadb900dfd4756cbda91f602a788c6a98c81fa93dff47955ae7adca45cd7`다. read-only fallback은
+  `https://postmelee.github.io/alhangeul-tauri/updates/`만 안내했다.
+- 증적 artifact는 release handoff `9841600768` /
+  `sha256:d2c8f08dd7692226a0eafcbc566ab51de54c9eee4cd693b376d70b9a8dd13ce3`, MSI
+  `9841701419` / `sha256:6e189bc8f63faf58ad49789563513bcbbe8224bd0815acb1c037e3bd45d683a9`,
+  NSIS `9841705110` / `sha256:85a416d54a2c6d5b63100aa29c3efa319a045c6d58b308ef7ed0ea6c4e0f7c9a`,
+  Linux `9841662685` / `sha256:3e19d8dc07be9525c210b5976f20ad499e7f678ad2ba6c8bf13354dcc9a31476`이며
+  2026-09-16까지 보존된다.
+- positive native 수용은 완료했다. Stage 5 전체 완료 전에는 별도 승인 아래 test prerelease의
+  제한된 `cross-format`, `signature-mismatch`, `network-failures` manifest를 사용해 fail-closed
+  동작을 검증하고 각 시나리오 뒤 원래 positive manifest를 복원·재검증해야 한다. stable release,
+  Pages와 production updater manifest는 계속 변경하지 않는다.
+
 ### 검증
 
 - MSI N → N+1 성공, MSI target만 요청, 설치/제거 registry와 파일 연결 보존
