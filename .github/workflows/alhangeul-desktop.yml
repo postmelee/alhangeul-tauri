@@ -661,7 +661,7 @@ jobs:
       matrix:
         include:
           - role: n
-            version: 99.0.0
+            version: 99.1.0
             name: windows-x64
             os: windows-2025
             target: x86_64-pc-windows-msvc
@@ -673,7 +673,7 @@ jobs:
               apps/desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*-setup.exe
               apps/desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*-setup.exe.sig
           - role: n
-            version: 99.0.0
+            version: 99.1.0
             name: linux-x64
             os: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
@@ -683,7 +683,7 @@ jobs:
               apps/desktop/src-tauri/target/x86_64-unknown-linux-gnu/release/bundle/appimage/*.AppImage
               apps/desktop/src-tauri/target/x86_64-unknown-linux-gnu/release/bundle/appimage/*.AppImage.sig
           - role: n-plus-one
-            version: 99.0.1
+            version: 99.1.1
             name: windows-x64
             os: windows-2025
             target: x86_64-pc-windows-msvc
@@ -695,7 +695,7 @@ jobs:
               apps/desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*-setup.exe
               apps/desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*-setup.exe.sig
           - role: n-plus-one
-            version: 99.0.1
+            version: 99.1.1
             name: linux-x64
             os: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
@@ -729,7 +729,7 @@ jobs:
           [[ -z "$RELEASE_NOTES" ]]
           [[ "$PUBLISH_RELEASE" == "false" ]]
           case "$ACCEPTANCE_ROLE:$ACCEPTANCE_VERSION" in
-            n:99.0.0|n-plus-one:99.0.1) ;;
+            n:99.1.0|n-plus-one:99.1.1) ;;
             *) exit 1 ;;
           esac
 
@@ -943,7 +943,7 @@ jobs:
               -o -name '*.sig' -o -name 'alhangeul-updater-test-inventory.json' \
               -o -name 'alhangeul-updater-test.json' \) -print | sort)
           [[ "${#assets[@]}" -eq 8 ]]
-          ! printf '%s\n' "${assets[@]}" | grep -q '99\.0\.0'
+          ! printf '%s\n' "${assets[@]}" | grep -q '99\.1\.0'
 
       - name: Upload updater acceptance N inventory
         uses: actions/upload-artifact@v7

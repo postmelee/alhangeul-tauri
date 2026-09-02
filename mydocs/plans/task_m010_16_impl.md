@@ -549,6 +549,24 @@ Task #16 Stage 4: updater key와 release 운영 계약 통합
   asset 덮어쓰기 또는 최신 unsigned build를 서명된 N 대신 사용하는 우회는 하지 않는다.
   Linux 실제 N→N+1·negative 수용, Stage 5 완료와 최종 릴리스는 아직 미완료다.
 
+### 승인된 수정 source의 D1 재개 (2026-09-02, Stage 5.24)
+
+- 작업지시자의 `진행해줘` 승인은 Linux 창 생성 수정이 포함된 exact source에서 새 서명 후보를
+  생성하는 D1 재개로 한정한다. 기존 `99.0.0 → 99.0.1` test release/tag/asset은 변경하지 않는다.
+- 새 격리 identity는 N=`99.1.0`, N+1=`99.1.1`, tag=`updater-test-v99.1.1`, endpoint는
+  `https://github.com/postmelee/alhangeul-tauri/releases/download/updater-test-v99.1.1/alhangeul-updater-test.json`으로
+  고정한다. 첫 실행은 `publish_release=false`인 Actions artifact 생성만 허용한다.
+- Linux native 수용은 소스에 N+1 AppImage 해시를 수동 고정하지 않는다. 승인된 D1 candidate
+  artifact ID·digest를 다시 검증하고 그 안의 서명된 AppImage SHA-256을 읽어 실제 업데이트 뒤
+  파일과 대조한다. 따라서 후보 해시 기록을 위한 source 변경·재빌드 순환 없이 같은 exact source를
+  D1과 D2에 사용한다.
+- 변경 위치는 updater acceptance policy·release verifier, 관련 workflow·contract test,
+  본 구현계획서·오늘할일과 기존 공식 운영 문서다. stable config, Pages, production release와
+  기존 test release는 변경하지 않는다.
+- 로컬 Node 계약·전체 automation test, product boundary, actionlint와 diff 검증 뒤 exact source를
+  push하고 D1을 한 번 실행한다. 성공한 run과 candidate artifact ID·digest·8개 asset inventory를
+  확인한 뒤, 새 prerelease 게시는 checkpoint D2의 별도 승인으로 넘긴다.
+
 ### 검증
 
 - MSI N → N+1 성공, MSI target만 요청, 설치/제거 registry와 파일 연결 보존

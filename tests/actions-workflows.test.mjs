@@ -651,8 +651,8 @@ test('updater acceptance build는 고정 N/N+1과 Windows·Linux x64만 비게�
   assert.match(job, /^    environment: release$/m);
   assert.equal((job.match(/^          - role: n$/gm) ?? []).length, 2);
   assert.equal((job.match(/^          - role: n-plus-one$/gm) ?? []).length, 2);
-  assert.equal((job.match(/^            version: 99\.0\.0$/gm) ?? []).length, 2);
-  assert.equal((job.match(/^            version: 99\.0\.1$/gm) ?? []).length, 2);
+  assert.equal((job.match(/^            version: 99\.1\.0$/gm) ?? []).length, 2);
+  assert.equal((job.match(/^            version: 99\.1\.1$/gm) ?? []).length, 2);
   assert.equal((job.match(/^            name: windows-x64$/gm) ?? []).length, 2);
   assert.equal((job.match(/^            name: linux-x64$/gm) ?? []).length, 2);
   assert.doesNotMatch(job, /linux-arm64|aarch64|--bundles deb/);

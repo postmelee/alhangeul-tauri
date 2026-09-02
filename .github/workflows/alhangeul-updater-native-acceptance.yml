@@ -34,7 +34,7 @@ concurrency:
 
 env:
   NODE_VERSION: "24"
-  TEST_RELEASE_TAG: updater-test-v99.0.1
+  TEST_RELEASE_TAG: updater-test-v99.1.1
   CANDIDATE_ARTIFACT_NAME: alhangeul-updater-acceptance-candidate
 
 jobs:
@@ -155,3 +155,5 @@ jobs:
     with:
       candidate_sha: ${{ inputs.candidate_sha }}
       d1_run_id: ${{ inputs.d1_run_id }}
+      candidate_artifact_id: ${{ inputs.candidate_artifact_id }}
+      candidate_artifact_digest: ${{ inputs.candidate_artifact_digest }}

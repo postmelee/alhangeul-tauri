@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import {
   UPDATER_ACCEPTANCE_INVENTORY,
   UPDATER_ACCEPTANCE_MANIFEST,
+  UPDATER_ACCEPTANCE_N_PLUS_ONE_VERSION,
   UPDATER_ACCEPTANCE_TAG,
   UPDATER_ACCEPTANCE_TITLE,
 } from './acceptance-policy.mjs';
@@ -165,12 +166,12 @@ function exactAssetMap(values) {
   if (!Array.isArray(values)) throw new Error('release asset 목록이 없습니다.');
   const map = new Map(values.map((asset) => [asset?.name, asset]));
   const expected = new Set([
-    'Alhangeul_99.0.1_x64-setup.exe',
-    'Alhangeul_99.0.1_x64-setup.exe.sig',
-    'Alhangeul_99.0.1_x64_en-US.msi',
-    'Alhangeul_99.0.1_x64_en-US.msi.sig',
-    'Alhangeul_99.0.1_amd64.AppImage',
-    'Alhangeul_99.0.1_amd64.AppImage.sig',
+    `Alhangeul_${UPDATER_ACCEPTANCE_N_PLUS_ONE_VERSION}_x64-setup.exe`,
+    `Alhangeul_${UPDATER_ACCEPTANCE_N_PLUS_ONE_VERSION}_x64-setup.exe.sig`,
+    `Alhangeul_${UPDATER_ACCEPTANCE_N_PLUS_ONE_VERSION}_x64_en-US.msi`,
+    `Alhangeul_${UPDATER_ACCEPTANCE_N_PLUS_ONE_VERSION}_x64_en-US.msi.sig`,
+    `Alhangeul_${UPDATER_ACCEPTANCE_N_PLUS_ONE_VERSION}_amd64.AppImage`,
+    `Alhangeul_${UPDATER_ACCEPTANCE_N_PLUS_ONE_VERSION}_amd64.AppImage.sig`,
     UPDATER_ACCEPTANCE_INVENTORY,
     UPDATER_ACCEPTANCE_MANIFEST,
   ]);

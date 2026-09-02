@@ -5,13 +5,13 @@ import { dirname, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { publicKeyFingerprint } from './artifact-verifier.mjs';
 
-export const UPDATER_ACCEPTANCE_N_VERSION = '99.0.0';
-export const UPDATER_ACCEPTANCE_N_PLUS_ONE_VERSION = '99.0.1';
-export const UPDATER_ACCEPTANCE_TAG = 'updater-test-v99.0.1';
+export const UPDATER_ACCEPTANCE_N_VERSION = '99.1.0';
+export const UPDATER_ACCEPTANCE_N_PLUS_ONE_VERSION = '99.1.1';
+export const UPDATER_ACCEPTANCE_TAG = 'updater-test-v99.1.1';
 export const UPDATER_ACCEPTANCE_TITLE =
-  '[TEST ONLY] Alhangeul Updater Acceptance 99.0.0 → 99.0.1';
+  '[TEST ONLY] Alhangeul Updater Acceptance 99.1.0 → 99.1.1';
 export const UPDATER_ACCEPTANCE_ENDPOINT =
-  'https://github.com/postmelee/alhangeul-tauri/releases/download/updater-test-v99.0.1/alhangeul-updater-test.json';
+  'https://github.com/postmelee/alhangeul-tauri/releases/download/updater-test-v99.1.1/alhangeul-updater-test.json';
 export const UPDATER_ACCEPTANCE_INVENTORY = 'alhangeul-updater-test-inventory.json';
 export const UPDATER_ACCEPTANCE_MANIFEST = 'alhangeul-updater-test.json';
 

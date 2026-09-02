@@ -40,10 +40,10 @@ test('acceptance policy는 승인된 N/N+1 identity와 test endpoint만 만든�
       assert.equal(result.config.bundle.createUpdaterArtifacts, true);
       assert.deepEqual(result.config.plugins.updater.windows, { installMode: 'passive' });
     }
-    assert.equal(UPDATER_ACCEPTANCE_TAG, 'updater-test-v99.0.1');
+    assert.equal(UPDATER_ACCEPTANCE_TAG, 'updater-test-v99.1.1');
     assert.equal(
       UPDATER_ACCEPTANCE_TITLE,
-      '[TEST ONLY] Alhangeul Updater Acceptance 99.0.0 → 99.0.1',
+      '[TEST ONLY] Alhangeul Updater Acceptance 99.1.0 → 99.1.1',
     );
     assert.throws(
       () => buildUpdaterAcceptanceConfig({ role: 'candidate', publicKey: fixture.publicKey }),

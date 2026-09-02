@@ -141,6 +141,9 @@ test('orchestrator는 D1 identity와 공개 test release를 검증한 뒤 두 na
     assert.match(call, /candidate_sha: \$\{\{ inputs\.candidate_sha \}\}/);
     assert.match(call, /d1_run_id: \$\{\{ inputs\.d1_run_id \}\}/);
   }
+  const linuxCall = job(orchestrator, 'accept-linux-appimage');
+  assert.match(linuxCall, /candidate_artifact_id: \$\{\{ inputs\.candidate_artifact_id \}\}/);
+  assert.match(linuxCall, /candidate_artifact_digest: \$\{\{ inputs\.candidate_artifact_digest \}\}/);
 });
 
 test('Windows matrix는 MSI·NSIS를 각각 clean N에서 갱신하고 연결 보존 뒤 항상 제거한다', () => {
@@ -187,14 +190,19 @@ test('Linux AppImage는 writable 갱신 hash·재실행 no-update·read-only fal
   ordered(accept, [
     '- name: Verify D1 N Linux artifact handoff',
     '- name: Download verified N Linux artifact',
+    '- name: Verify D1 N+1 candidate artifact handoff',
+    '- name: Match approved D1 N+1 candidate identity',
+    '- name: Download approved D1 N+1 candidate',
+    '- name: Read verified N+1 AppImage identity',
     '- name: Verify N Linux signature and prepare writable AppImage',
     '- name: Run Linux AppImage updater preflight and dirty gates',
     '- name: Apply Linux AppImage N to N+1',
-    '[[ "$actual_sha" == "$APPIMAGE_N_PLUS_ONE_SHA256" ]]',
+    '[[ "$actual_sha" == "$EXPECTED_N_PLUS_ONE_SHA256" ]]',
     '- name: Verify Linux AppImage N+1 no-update state',
     '- name: Verify read-only AppImage manual fallback',
     '- name: Upload Linux updater evidence',
   ]);
+  assert.doesNotMatch(accept, /APPIMAGE_N_PLUS_ONE_SHA256: [0-9a-f]{64}/);
   assert.equal((accept.match(/run-linux-native-gui\.sh/g) ?? []).length, 4);
   assert.match(linuxRunner, /xvfb-run[\s\S]*dbus-run-session[\s\S]*openbox/);
 });

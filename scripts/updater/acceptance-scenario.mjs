@@ -132,7 +132,7 @@ function releaseUrl(fileName) {
 }
 
 function missingReleaseUrl(fileName) {
-  return `https://github.com/postmelee/alhangeul-tauri/releases/download/updater-test-missing-v99.0.1/${fileName}`;
+  return `https://github.com/postmelee/alhangeul-tauri/releases/download/updater-test-missing-v99.1.1/${fileName}`;
 }
 
 function parseArguments(args) {

@@ -17,8 +17,8 @@ permissions:
 env:
   NODE_VERSION: "24"
   TAURI_DRIVER_VERSION: "2.0.6"
-  N_VERSION: "99.0.0"
-  N_PLUS_ONE_VERSION: "99.0.1"
+  N_VERSION: "99.1.0"
+  N_PLUS_ONE_VERSION: "99.1.1"
 
 jobs:
   accept-windows:

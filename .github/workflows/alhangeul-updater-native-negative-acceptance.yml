@@ -35,7 +35,7 @@ concurrency:
 
 env:
   NODE_VERSION: "24"
-  TEST_RELEASE_TAG: updater-test-v99.0.1
+  TEST_RELEASE_TAG: updater-test-v99.1.1
   CANDIDATE_ARTIFACT_NAME: alhangeul-updater-acceptance-candidate
 
 jobs:

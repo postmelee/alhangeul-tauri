@@ -33,7 +33,7 @@ repository-level Actions는 활성 상태지만 대상 CI와 native workflow는 
 
 `updater` mode는 Windows x64 MSI·NSIS와 Linux x64 AppImage만 별도 matrix에서 만든다. 두 build job과 선택적인 publish job은 `release` protected environment에 묶이며, tracked `tauri.updater.conf.json`의 endpoint·public key fingerprint와 source version을 먼저 확인한다. `publish_release=true`일 때만 job-level `contents: write` 권한을 가진 publish job이 세 installer, 세 `.sig`와 complete inventory를 exact tag의 GitHub Release에 게시할 수 있다. 일반 `artifact` mode에는 release environment, signing Secret, updater overlay와 publish 권한이 없다.
 
-`updater-acceptance` mode는 checkpoint D1에서 승인한 N=`99.0.0`, N+1=`99.0.1`만 허용한다. config는 repository 밖의 runner 임시 경로에 만들고 production public key와 test endpoint만 넣는다. 네 build slice와 read-only complete verifier는 N installer를 Actions에만 보존하고 N+1 installer 3개, `.sig` 3개, `alhangeul-updater-test-inventory.json`, `alhangeul-updater-test.json`의 공개 예정 후보 8개를 별도 Actions artifact로 만든다. 이 mode는 `publish_release=false`, top-level `contents: read`를 요구하며 GitHub Release, tag, Pages와 stable manifest를 만들거나 수정하지 않는다. 정확한 source SHA와 run·artifact ID/digest를 checkpoint D2에서 다시 승인하기 전에는 test prerelease도 게시하지 않는다.
+`updater-acceptance` mode는 Linux 창 생성 수정 뒤 재개한 checkpoint D1에서 승인한 N=`99.1.0`, N+1=`99.1.1`만 허용한다. config는 repository 밖의 runner 임시 경로에 만들고 production public key와 `updater-test-v99.1.1` endpoint만 넣는다. 네 build slice와 read-only complete verifier는 N installer를 Actions에만 보존하고 N+1 installer 3개, `.sig` 3개, `alhangeul-updater-test-inventory.json`, `alhangeul-updater-test.json`의 공개 예정 후보 8개를 별도 Actions artifact로 만든다. 이 mode는 `publish_release=false`, top-level `contents: read`를 요구하며 GitHub Release, tag, Pages와 stable manifest를 만들거나 수정하지 않는다. 정확한 source SHA와 run·artifact ID/digest를 checkpoint D2에서 다시 승인하기 전에는 test prerelease도 게시하지 않는다. 이전 `99.0.0 → 99.0.1` 후보와 prerelease는 과거 증적으로만 보존하고 asset이나 tag를 덮어쓰지 않는다.
 
 ## Linux x64 exact-SHA GUI acceptance
 
@@ -392,7 +392,7 @@ private key가 유실되면 이미 배포된 앱은 새 key로 서명한 update�
 
 ### Test-only negative manifest 수용
 
-Stage 5의 `updater-test-v99.0.1` prerelease에서만 positive D2가 통과한 원본 manifest를 로컬 임시
+Stage 5의 `updater-test-v99.1.1` prerelease에서만 positive D2가 통과한 원본 manifest를 로컬 임시
 증적으로 먼저 보존한 뒤 `cross-format`, `signature-mismatch`, `network-failures` fixture를 한 번에
 하나씩 게시할 수 있다. fixture는 `scripts/updater/acceptance-scenario.mjs`가 exact N+1 inventory와
 원본 manifest에서 생성하며, negative workflow는 전달받은 manifest SHA-256과 공개 read-back이

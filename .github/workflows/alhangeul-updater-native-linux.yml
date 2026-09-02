@@ -9,6 +9,12 @@ on:
       d1_run_id:
         required: true
         type: string
+      candidate_artifact_id:
+        required: true
+        type: string
+      candidate_artifact_digest:
+        required: true
+        type: string
 
 permissions:
   actions: read
@@ -17,8 +23,8 @@ permissions:
 env:
   NODE_VERSION: "24"
   TAURI_DRIVER_VERSION: "2.0.6"
-  N_VERSION: "99.0.0"
-  N_PLUS_ONE_VERSION: "99.0.1"
+  N_VERSION: "99.1.0"
+  N_PLUS_ONE_VERSION: "99.1.1"
 
 jobs:
   accept-linux-appimage:
@@ -27,9 +33,9 @@ jobs:
     timeout-minutes: 50
     env:
       ARTIFACT_ROOT: ${{ github.workspace }}/acceptance-artifacts/n-linux
+      N_PLUS_ONE_ARTIFACT_ROOT: ${{ github.workspace }}/acceptance-artifacts/n-plus-one
       EVIDENCE_ROOT: ${{ github.workspace }}/acceptance-evidence/linux-appimage
       APPIMAGE_PATH: ${{ github.workspace }}/acceptance-appimage/Alhangeul.AppImage
-      APPIMAGE_N_PLUS_ONE_SHA256: 9604b1defc1705d4ae66aeb0564fb236c4fb4e1a3729e9462e7a4f74d5016f41
     steps:
       - name: Checkout exact native harness source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -108,6 +114,70 @@ jobs:
           path: ${{ env.ARTIFACT_ROOT }}
           digest-mismatch: error
 
+      - name: Verify D1 N+1 candidate artifact handoff
+        id: candidate-handoff
+        shell: bash
+        env:
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          D1_RUN_ID: ${{ inputs.d1_run_id }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          node scripts/verify-workflow-artifact.mjs \
+            --repository "$GITHUB_REPOSITORY" \
+            --build-ref "$CANDIDATE_SHA" \
+            --run-id "$D1_RUN_ID" \
+            --workflow-path .github/workflows/alhangeul-desktop.yml \
+            --artifact-name alhangeul-updater-acceptance-candidate \
+            --json-output "$EVIDENCE_ROOT/n-plus-one-artifact-handoff.json" \
+            --github-output "$GITHUB_OUTPUT"
+
+      - name: Match approved D1 N+1 candidate identity
+        shell: bash
+        env:
+          ACTUAL_ID: ${{ steps.candidate-handoff.outputs.artifact_id }}
+          ACTUAL_DIGEST: ${{ steps.candidate-handoff.outputs.artifact_digest }}
+          APPROVED_ID: ${{ inputs.candidate_artifact_id }}
+          APPROVED_DIGEST: ${{ inputs.candidate_artifact_digest }}
+        run: |
+          set -euo pipefail
+          [[ "$ACTUAL_ID" == "$APPROVED_ID" ]]
+          [[ "$ACTUAL_DIGEST" == "$APPROVED_DIGEST" ]]
+
+      - name: Download approved D1 N+1 candidate
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          artifact-ids: ${{ inputs.candidate_artifact_id }}
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.d1_run_id }}
+          path: ${{ env.N_PLUS_ONE_ARTIFACT_ROOT }}
+          digest-mismatch: error
+
+      - name: Read verified N+1 AppImage identity
+        id: n-plus-one-appimage
+        shell: bash
+        env:
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          TRACKED_UPDATER_CONFIG: ${{ github.workspace }}/apps/desktop/src-tauri/tauri.updater.conf.json
+        run: |
+          set -euo pipefail
+          public_key="$(node -p "require(process.env.TRACKED_UPDATER_CONFIG).plugins.updater.pubkey")"
+          export TAURI_UPDATER_PUBLIC_KEY="$public_key"
+          pnpm run check:updater-acceptance -- \
+            --root "$N_PLUS_ONE_ARTIFACT_ROOT" \
+            --role n-plus-one \
+            --source-sha "$CANDIDATE_SHA" \
+            --targets linux-x86_64-appimage \
+            --public-key-env TAURI_UPDATER_PUBLIC_KEY
+          mapfile -t appimages < <(find "$N_PLUS_ONE_ARTIFACT_ROOT" -type f -name '*.AppImage' -print)
+          [[ "${#appimages[@]}" -eq 1 ]]
+          expected_sha="$(sha256sum "${appimages[0]}" | awk '{print $1}')"
+          [[ "$expected_sha" =~ ^[0-9a-f]{64}$ ]]
+          printf 'sha256=%s\n' "$expected_sha" >> "$GITHUB_OUTPUT"
+          printf '%s  %s\n' "$expected_sha" "${appimages[0]}" \
+            > "$EVIDENCE_ROOT/expected-n-plus-one-appimage.sha256"
+
       - name: Verify N Linux signature and prepare writable AppImage
         shell: bash
         env:
@@ -151,6 +221,7 @@ jobs:
       - name: Apply Linux AppImage N to N+1
         shell: bash
         env:
+          EXPECTED_N_PLUS_ONE_SHA256: ${{ steps.n-plus-one-appimage.outputs.sha256 }}
           ALHANGEUL_UPDATER_APP_PATH: ${{ env.APPIMAGE_PATH }}
           ALHANGEUL_UPDATER_DRIVER_PATH: /home/runner/.cargo/bin/tauri-driver
           ALHANGEUL_UPDATER_OUTPUT_DIR: ${{ env.EVIDENCE_ROOT }}/apply
@@ -167,7 +238,7 @@ jobs:
             "$EVIDENCE_ROOT/openbox-apply.log" \
             pnpm run test:gui:updater
           actual_sha="$(sha256sum "$APPIMAGE_PATH" | awk '{print $1}')"
-          [[ "$actual_sha" == "$APPIMAGE_N_PLUS_ONE_SHA256" ]]
+          [[ "$actual_sha" == "$EXPECTED_N_PLUS_ONE_SHA256" ]]
           printf '%s  %s\n' "$actual_sha" "$APPIMAGE_PATH" > "$EVIDENCE_ROOT/n-plus-one-appimage.sha256"
 
       - name: Verify Linux AppImage N+1 no-update state
