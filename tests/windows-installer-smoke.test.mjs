@@ -10,6 +10,7 @@ const scriptBytes = await readFile(scriptPath);
 const helperPaths = [
   join(repoRoot, 'scripts/windows-installer-smoke-support.ps1'),
   join(repoRoot, 'scripts/windows-thumbnail-smoke.ps1'),
+  join(repoRoot, 'scripts/windows-process-lifecycle.ps1'),
 ];
 const helperBytes = await Promise.all(helperPaths.map((path) => readFile(path)));
 const entrySource = scriptBytes.toString('utf8');
@@ -34,6 +35,7 @@ test('entry parameter는 artifact, output, expected version 세 개로 제한한
     .map((match) => match[1]);
   assert.deepEqual(names, ['ArtifactRoot', 'OutputDirectory', 'ExpectedVersion']);
   assert.match(entrySource, /Set-StrictMode -Version Latest/);
+  assert.match(entrySource, /windows-process-lifecycle\.ps1/);
   assert.doesNotMatch(source, /\bImport-Module\b/);
 });
 
@@ -163,7 +165,16 @@ test('version, shortcut, 제한 실행과 targeted cleanup을 검사한다', () 
   assert.match(source, /ReleaseComObject\(\$shell\)/);
   assert.match(source, /\.Trim\(\)\.Trim\('\"'\)/);
   assert.match(source, /\$leftPath = ConvertTo-NormalizedPath \$Left/);
-  assert.match(source, /Start-Sleep -Seconds 5/);
+  assert.match(source, /foreach \(\$iteration in 1\.\.2\)/);
+  assert.match(source, /WaitForInputIdle\(30000\)/);
+  assert.match(source, /function Wait-ForStableMainWindow\(\$Process, \$Iteration\)/);
+  assert.match(source, /\$stableSamples -ge 11/);
+  assert.match(source, /Start-Sleep -Milliseconds 500/);
+  assert.match(source, /\$currentHandle -ne \[IntPtr\]::Zero -and \$Process\.Responding/);
+  assert.match(source, /\$process\.CloseMainWindow\(\)/);
+  assert.match(source, /WaitForExit\(30000\)/);
+  assert.match(source, /CycleCount = \$cycles\.Count/);
+  assert.doesNotMatch(source, /Start-Sleep -Seconds 5/);
   assert.match(source, /Stop-Process -Id \$process\.Id -Force/);
   assert.doesNotMatch(source, /Stop-Process\s+-Name/);
   assert.match(source, /Get-CleanState/);

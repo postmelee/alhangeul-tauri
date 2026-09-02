@@ -44,6 +44,8 @@ name = "alhangeul-desktop"
 version = "0.1.0"
 dependencies = [
  "alhangeul-document-preview",
+ "futures-channel",
+ "gtk",
  "open",
  "pdf-writer",
  "rhwp",
@@ -62,6 +64,7 @@ dependencies = [
  "tempfile",
  "usvg",
  "uuid",
+ "webkit2gtk",
 ]
 
 [[package]]

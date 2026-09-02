@@ -207,6 +207,32 @@ test('Alhangeul reconnects native lifecycle through leaf adapters without a nati
   }
 });
 
+test('Alhangeul keeps handler acquisition async and platform detection in Studio', async () => {
+  const embedRuntime = await readFile(
+    join(repoRoot, 'apps/studio-host/src/embed/desktop-runtime.ts'),
+    'utf8',
+  );
+  const platformAdapter = await readFile(
+    join(repoRoot, 'apps/studio-host/src/core/platform.ts'),
+    'utf8',
+  );
+  const nativeCommands = await readFile(
+    join(repoRoot, 'apps/desktop/src-tauri/src/commands.rs'),
+    'utf8',
+  );
+  const nativeEntry = await readFile(
+    join(repoRoot, 'apps/desktop/src-tauri/src/lib.rs'),
+    'utf8',
+  );
+
+  assert.match(embedRuntime, /waitForDesktopStudioHandlers/);
+  assert.doesNotMatch(embedRuntime, /getDesktopStudioHandlers/);
+  assert.match(platformAdapter, /detectDesktopPlatform/);
+  assert.doesNotMatch(platformAdapter, /hydrateDesktopPlatform/);
+  assert.doesNotMatch(nativeCommands, /desktop_platform/);
+  assert.doesNotMatch(nativeEntry, /desktop_platform/);
+});
+
 function git(args) {
   const result = spawnSync('git', args, {
     cwd: repoRoot,

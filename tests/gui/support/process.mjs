@@ -44,15 +44,22 @@ export async function stopProcess(child, options = {}) {
   child.kill('SIGTERM');
   const graceMs = options.graceMs ?? 2000;
   const exited = once(child, 'exit').then(() => true);
-  let timeoutId;
-  const timeout = new Promise((resolve) => {
-    timeoutId = setTimeout(() => resolve(false), graceMs);
-  });
-  const exitedDuringGrace = await Promise.race([exited, timeout]);
-  if (timeoutId !== undefined) clearTimeout(timeoutId);
+  const exitedDuringGrace = await waitForExit(exited, graceMs);
   if (exitedDuringGrace) return;
   child.kill('SIGKILL');
-  await once(child, 'exit').catch(() => {});
+  if (!await waitForExit(exited, graceMs)) {
+    throw new Error('process가 SIGKILL 뒤에도 종료되지 않았습니다.');
+  }
+}
+
+async function waitForExit(exited, timeoutMs) {
+  let timeoutId;
+  const timeout = new Promise((resolve) => {
+    timeoutId = setTimeout(() => resolve(false), timeoutMs);
+  });
+  const result = await Promise.race([exited, timeout]);
+  if (timeoutId !== undefined) clearTimeout(timeoutId);
+  return result;
 }
 
 export function createBoundedCollector(limit = DEFAULT_LOG_LIMIT) {

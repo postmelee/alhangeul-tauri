@@ -22,54 +22,81 @@ interface CloseRequestEvent {
   preventDefault(): void;
 }
 
-const setupByHost = new WeakMap<object, Promise<void>>();
-
-export function ensureDesktopEvents(options: DesktopEventsOptions): Promise<void> {
-  const key = options.host as object;
-  const existing = setupByHost.get(key);
-  if (existing) return existing;
-  const pending = setupDesktopEvents(options);
-  setupByHost.set(key, pending);
-  return pending;
-}
+type Disposer = () => void;
+type TauriListen = typeof import('@tauri-apps/api/event').listen;
+type CurrentWebviewWindow = ReturnType<
+  typeof import('@tauri-apps/api/webviewWindow').getCurrentWebviewWindow
+>;
 
 export async function setupDesktopEvents({
   host,
   dispatcher,
   setMessage,
-}: DesktopEventsOptions): Promise<void> {
-  if (!isTauriRuntime()) return;
+}: DesktopEventsOptions, signal?: AbortSignal): Promise<Disposer> {
+  if (!isTauriRuntime()) return () => {};
   const { listen } = await import('@tauri-apps/api/event');
   const { getCurrentWebviewWindow } = await import('@tauri-apps/api/webviewWindow');
   const currentWindow = getCurrentWebviewWindow();
-  if (detectDesktopPlatform() === 'windows') installWindowsWheelZoomReroute();
+  const disposers = new DisposerStack(signal);
 
-  await listen('alhangeul-job-progress', (event) => {
-    const payload = event.payload as { message?: string };
-    if (payload?.message) setMessage(payload.message);
-  });
-  await currentWindow.listen('alhangeul-menu-command', (event) => {
-    const command = String(event.payload || '');
-    if (command) dispatcher.dispatch(command);
-  });
-  await currentWindow.listen('alhangeul-open-paths', async (event) => {
-    const payload = event.payload as { paths?: string[] };
-    const pending = await host.takePendingOpenPaths();
-    await openLatestDesktopDocument(host, [...(payload.paths ?? []), ...pending], setMessage);
-  });
-  await currentWindow.listen('tauri://drag-enter', (event) => {
-    const payload = event.payload as { paths?: string[] };
-    if (!hasSupportedDocumentPath(payload.paths ?? [])) return;
-    setDesktopDragActive(true);
-    setMessage('HWP/HWPX 파일을 놓으면 문서를 엽니다');
-  });
-  await currentWindow.listen('tauri://drag-leave', () => setDesktopDragActive(false));
-  await currentWindow.listen('tauri://drag-drop', () => setDesktopDragActive(false));
-  await currentWindow.onCloseRequested(async (event) => {
-    await handleDesktopCloseRequest(event, host, setMessage);
-  });
+  try {
+    disposers.throwIfDisposed();
+    disposers.add(() => setDesktopDragActive(false));
+    if (detectDesktopPlatform() === 'windows') {
+      disposers.add(installWindowsWheelZoomReroute());
+    }
+    await registerDesktopListeners(disposers, listen, currentWindow, {
+      host,
+      dispatcher,
+      setMessage,
+    });
 
-  await openLatestDesktopDocument(host, await host.takePendingOpenPaths(), setMessage);
+    disposers.throwIfDisposed();
+    await openLatestDesktopDocument(host, await host.takePendingOpenPaths(), setMessage);
+    disposers.throwIfDisposed();
+    return () => disposers.dispose();
+  } catch (error) {
+    disposers.dispose();
+    throw error;
+  }
+}
+
+async function registerDesktopListeners(
+  disposers: DisposerStack,
+  listen: TauriListen,
+  currentWindow: CurrentWebviewWindow,
+  { host, dispatcher, setMessage }: DesktopEventsOptions,
+): Promise<void> {
+  await Promise.all([
+    disposers.track(listen('alhangeul-job-progress', (event) => {
+      const payload = event.payload as { message?: string };
+      if (payload?.message) setMessage(payload.message);
+    })),
+    disposers.track(currentWindow.listen('alhangeul-menu-command', (event) => {
+      const command = String(event.payload || '');
+      if (command) dispatcher.dispatch(command);
+    })),
+    disposers.track(currentWindow.listen('alhangeul-open-paths', async (event) => {
+      const payload = event.payload as { paths?: string[] };
+      const pending = await host.takePendingOpenPaths();
+      await openLatestDesktopDocument(host, [...(payload.paths ?? []), ...pending], setMessage);
+    })),
+    disposers.track(currentWindow.listen('tauri://drag-enter', (event) => {
+      const payload = event.payload as { paths?: string[] };
+      if (!hasSupportedDocumentPath(payload.paths ?? [])) return;
+      setDesktopDragActive(true);
+      setMessage('HWP/HWPX 파일을 놓으면 문서를 엽니다');
+    })),
+    disposers.track(currentWindow.listen('tauri://drag-leave', () => {
+      setDesktopDragActive(false);
+    })),
+    disposers.track(currentWindow.listen('tauri://drag-drop', () => {
+      setDesktopDragActive(false);
+    })),
+    disposers.track(currentWindow.onCloseRequested(async (event) => {
+      await handleDesktopCloseRequest(event, host, setMessage);
+    })),
+  ]);
 }
 
 async function handleDesktopCloseRequest(
@@ -87,7 +114,62 @@ async function handleDesktopCloseRequest(
 }
 
 function setDesktopDragActive(active: boolean): void {
+  if (typeof document === 'undefined') return;
   document.getElementById('scroll-container')?.classList.toggle('drag-over', active);
+}
+
+class DisposerStack {
+  private readonly disposers: Disposer[] = [];
+  private disposed = false;
+
+  constructor(private readonly signal?: AbortSignal) {
+    signal?.addEventListener('abort', this.handleAbort, { once: true });
+    if (signal?.aborted) this.dispose();
+  }
+
+  add(disposer: Disposer): void {
+    if (!this.disposed) {
+      this.disposers.push(disposer);
+      return;
+    }
+    runDisposer(disposer);
+  }
+
+  async track(pendingDisposer: Promise<Disposer>): Promise<void> {
+    const disposer = await pendingDisposer;
+    if (this.disposed) {
+      runDisposer(disposer);
+      throw setupAbortedError();
+    }
+    this.disposers.push(disposer);
+  }
+
+  throwIfDisposed(): void {
+    if (this.disposed) throw setupAbortedError();
+  }
+
+  dispose(): void {
+    if (this.disposed) return;
+    this.disposed = true;
+    this.signal?.removeEventListener('abort', this.handleAbort);
+    while (this.disposers.length > 0) runDisposer(this.disposers.pop()!);
+  }
+
+  private readonly handleAbort = () => this.dispose();
+}
+
+function runDisposer(disposer: Disposer): void {
+  try {
+    disposer();
+  } catch (error) {
+    console.warn('[desktop-events] cleanup failed:', error);
+  }
+}
+
+function setupAbortedError(): Error {
+  const error = new Error('desktop event setup aborted');
+  error.name = 'AbortError';
+  return error;
 }
 
 async function openLatestDesktopDocument(

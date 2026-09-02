@@ -46,6 +46,54 @@ html:not(.alhangeul-toolbar-ready) .tb-note-group,
   z-index: -1 !important;
 }
 
+#alhangeul-direct-print-surface {
+  display: block !important;
+  position: fixed !important;
+  inset: 0 !important;
+  pointer-events: none !important;
+  z-index: -1 !important;
+}
+
+@media print {
+  html.alhangeul-print-active body > :not(#alhangeul-direct-print-surface) {
+    display: none !important;
+  }
+
+  html.alhangeul-print-active #alhangeul-direct-print-surface {
+    display: block !important;
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    overflow: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    z-index: auto !important;
+    background: #fff !important;
+  }
+
+  #alhangeul-direct-print-surface,
+  #alhangeul-direct-print-surface * {
+    margin: 0;
+    padding: 0;
+  }
+
+  #alhangeul-direct-print-surface .page {
+    overflow: hidden;
+    break-after: page;
+    page-break-after: always;
+  }
+
+  #alhangeul-direct-print-surface .page:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  #alhangeul-direct-print-surface .page svg {
+    width: 100%;
+    height: 100%;
+  }
+}
+
 .about-alhangeul-version {
   margin-top: 2px;
   color: var(--color-text-muted);
