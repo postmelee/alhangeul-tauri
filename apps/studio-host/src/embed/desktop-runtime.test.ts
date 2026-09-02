@@ -22,10 +22,12 @@ describe('desktop embed runtime adapter', () => {
       upstreamUninstallers.push(uninstall);
       return uninstall;
     });
+    delete (globalThis as { window?: unknown }).window;
   });
 
   afterEach(() => {
     while (runtimeUninstallers.length > 0) runtimeUninstallers.pop()?.();
+    delete (globalThis as { window?: unknown }).window;
     vi.useRealTimers();
   });
 
@@ -125,6 +127,19 @@ describe('desktop embed runtime adapter', () => {
       loadFile: second.handlers.loadFile,
     });
     expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('uninstalls the production runtime and rejects its waiters on pagehide', async () => {
+    const windowLike = new EventTarget();
+    (globalThis as { window?: unknown }).window = windowLike;
+    installRuntime(runtimeOptions('pagehide'));
+    const pending = waitForDesktopStudioHandlers();
+    const rejection = expect(pending).rejects.toThrow('runtime이 준비 완료 전에 종료');
+
+    windowLike.dispatchEvent(new Event('pagehide'));
+
+    await rejection;
+    expect(upstreamUninstallers[0]).toHaveBeenCalledOnce();
   });
 
   it('does not let repeated stale cleanup reject consumers waiting for a reinstall', async () => {

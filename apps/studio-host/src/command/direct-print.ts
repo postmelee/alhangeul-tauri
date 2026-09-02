@@ -139,14 +139,12 @@ function createHostPrintSurface(
     throw new Error('top-level 인쇄 surface를 만들 수 없습니다.');
   }
   document.getElementById(HOST_PRINT_SURFACE_ID)?.remove();
+  document.documentElement.classList.remove(PRINT_ACTIVE_CLASS);
   const originalStyle = style.textContent ?? '';
-  const hadPrintClass = document.documentElement.classList.contains(PRINT_ACTIVE_CLASS);
   const container = document.createElement('div');
   container.id = HOST_PRINT_SURFACE_ID;
   container.setAttribute('aria-hidden', 'true');
-  const dispose = createHostPrintDisposer(
-    container, style, originalStyle, hadPrintClass,
-  );
+  const dispose = createHostPrintDisposer(container, style, originalStyle);
   try {
     style.textContent = originalStyle + buildHostPrintStyle(pages, platform);
     for (const page of pages) appendSvgPage(document, container, page);
@@ -163,7 +161,6 @@ function createHostPrintDisposer(
   container: HTMLElement,
   style: HTMLStyleElement,
   originalStyle: string,
-  hadPrintClass: boolean,
 ): () => void {
   let disposed = false;
   return () => {
@@ -171,7 +168,7 @@ function createHostPrintDisposer(
     disposed = true;
     container.remove();
     style.textContent = originalStyle;
-    if (!hadPrintClass) document.documentElement.classList.remove(PRINT_ACTIVE_CLASS);
+    document.documentElement.classList.remove(PRINT_ACTIVE_CLASS);
   };
 }
 

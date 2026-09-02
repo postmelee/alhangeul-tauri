@@ -62,6 +62,23 @@ describe('desktop command dispatcher adapter', () => {
     expect(disposeToolbar).toHaveBeenCalledOnce();
   });
 
+  it('disposes the active registration on production pagehide', async () => {
+    const windowLike = installTauriEnvironment();
+    const disposeToolbar = vi.fn();
+    const disposeEvents = vi.fn();
+    installDesktopToolbarModeSync.mockReturnValue(disposeToolbar);
+    setupDesktopEvents.mockResolvedValue(disposeEvents);
+
+    const dispatcher = createDispatcher();
+    await flushSetup();
+    windowLike.dispatchEvent(new Event('pagehide'));
+
+    expect(disposeEvents).toHaveBeenCalledOnce();
+    expect(disposeToolbar).toHaveBeenCalledOnce();
+    dispatcher.dispose();
+    expect(disposeEvents).toHaveBeenCalledOnce();
+  });
+
   it('replaces the previous registration without letting stale cleanup reach the latest one', async () => {
     installTauriEnvironment();
     const disposeToolbarFirst = vi.fn();
@@ -142,12 +159,15 @@ function createDispatcher(services: object = {}, eventBus: object = {}): Command
   return dispatcher;
 }
 
-function installTauriEnvironment(): void {
-  (globalThis as { window?: unknown }).window = {
+function installTauriEnvironment(): EventTarget {
+  const windowLike = new EventTarget();
+  Object.assign(windowLike, {
     __TAURI_INTERNALS__: {},
     location: { protocol: 'tauri:' },
-  };
+  });
+  (globalThis as { window?: unknown }).window = windowLike;
   (globalThis as { document?: unknown }).document = { getElementById: vi.fn(() => null) };
+  return windowLike;
 }
 
 async function flushSetup(): Promise<void> {

@@ -240,6 +240,17 @@ describe('Tauri top-level direct print surface', () => {
     expect(host.classNames.has('alhangeul-print-active')).toBe(false);
   });
 
+  it('clears a stale product print container and class before the next job', async () => {
+    const host = installHostDocument({ hasStalePrintState: true });
+    useUniformPrintPages();
+
+    await printDirectlyFromPageSurface(createServices());
+
+    expect(host.staleContainer.remove).toHaveBeenCalledOnce();
+    expect(host.container.remove).toHaveBeenCalledOnce();
+    expect(host.classNames.has('alhangeul-print-active')).toBe(false);
+  });
+
   it('stops before creating a surface when page preparation fails', async () => {
     const host = installHostDocument();
     createPrintPage.mockImplementationOnce(() => {

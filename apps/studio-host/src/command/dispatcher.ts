@@ -5,6 +5,7 @@ import type { EventBus } from '@upstream/core/event-bus';
 import { getDesktopHost } from '../core/desktop-host';
 import { setupDesktopEvents } from '../core/desktop-events';
 import { installDesktopToolbarModeSync } from '../core/desktop-toolbar-mode-sync';
+import { installPageHideCleanup } from '../core/page-lifecycle';
 import { isTauriRuntime } from '../core/platform';
 
 type Disposer = () => void;
@@ -49,12 +50,14 @@ function installDesktopAdapters({
   const abortController = new AbortController();
   const disposeToolbar = installDesktopToolbarModeSync(eventBus);
   let disposeEvents: Disposer | null = null;
+  let removePageHideCleanup: Disposer = () => {};
   let disposed = false;
 
   const registration: DesktopAdapterRegistration = {
     dispose() {
       if (disposed) return;
       disposed = true;
+      removePageHideCleanup();
       abortController.abort();
       disposeEvents?.();
       disposeToolbar();
@@ -65,6 +68,7 @@ function installDesktopAdapters({
     if (activeDesktopRegistration === registration) activeDesktopRegistration = null;
   };
   activeDesktopRegistration = registration;
+  removePageHideCleanup = installPageHideCleanup(uninstall);
 
   void setupDesktopEvents({ host, dispatcher, setMessage }, abortController.signal)
     .then((dispose) => {

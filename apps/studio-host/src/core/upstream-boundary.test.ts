@@ -354,7 +354,9 @@ describe('upstream Studio override boundary', () => {
     expect(systemPrint).toContain('operation.connect_failed');
     expect(systemPrint).toContain('operation.connect_finished');
     expect(systemPrint).toContain('PrintOperationResponse::Cancel');
-    expect(systemPrint).toContain('keepalive_for_signal.borrow_mut().take()');
+    expect(systemPrint).toContain('state.keepalive.take()');
+    expect(systemPrint).toContain('timeout_add_local_once(PRINT_COMPLETION_TIMEOUT');
+    expect(systemPrint).toContain('operation.run_dialog(Some(&parent))');
     expect(nativeEntry).toContain('print_current_webview,');
     expect(upstreamPrintSurface).toContain("const PRINT_FRAME_ID = 'rhwp-print-surface';");
     expect(productStyle).toContain('#rhwp-print-surface');

@@ -24,10 +24,13 @@ export function createServices(inputHandler: unknown = null) {
 export function installHostDocument(options: {
   hasFocus?: () => boolean;
   hasProductStyle?: boolean;
+  hasStalePrintState?: boolean;
 } = {}) {
   const status = { textContent: '' };
   const productStyle = { textContent: 'product css' };
   const classNames = new Set<string>();
+  if (options.hasStalePrintState) classNames.add('alhangeul-print-active');
+  const staleContainer = { remove: vi.fn() };
   const container = {
     id: '',
     setAttribute: vi.fn(),
@@ -54,9 +57,23 @@ export function installHostDocument(options: {
       },
     },
     createElement: vi.fn(() => container),
-    getElementById: vi.fn((id: string) => id === 'sb-message' ? status : null),
+    getElementById: vi.fn((id: string) => {
+      if (id === 'sb-message') return status;
+      if (id === 'alhangeul-direct-print-surface' && options.hasStalePrintState) {
+        return staleContainer;
+      }
+      return null;
+    }),
   };
   (globalThis as { document?: unknown }).document = documentLike;
   (globalThis as { window?: unknown }).window = windowLike;
-  return { status, productStyle, classNames, container, window: windowLike, document: documentLike };
+  return {
+    status,
+    productStyle,
+    classNames,
+    staleContainer,
+    container,
+    window: windowLike,
+    document: documentLike,
+  };
 }

@@ -1,5 +1,6 @@
 import { installEmbedRuntime as installUpstreamEmbedRuntime } from '@upstream/embed/runtime';
 import type { EmbedRpcHandlers } from '@upstream/embed/rpc-router';
+import { installPageHideCleanup } from '../core/page-lifecycle';
 
 export type DesktopStudioHandlers = Pick<
   EmbedRpcHandlers,
@@ -42,6 +43,7 @@ export function installEmbedRuntime(
   );
   const previousRegistration = activeRegistration;
   activeRegistration = registration;
+  registration.attachPageHideCleanup();
   previousRegistration?.dispose();
   registration.adoptPendingWaiters(pendingHandlerWaiters);
   return () => registration.dispose();
@@ -51,11 +53,16 @@ class EmbedRuntimeRegistration {
   private readonly waiters = new Set<HandlerWaiter>();
   private disposed = false;
   private resolutionScheduled = false;
+  private removePageHideCleanup: () => void = () => {};
 
   constructor(
     private readonly handlers: DesktopStudioHandlers,
     private readonly uninstallUpstream: () => void,
   ) {}
+
+  attachPageHideCleanup(): void {
+    this.removePageHideCleanup = installPageHideCleanup(() => this.dispose());
+  }
 
   waitForHandlers(timeoutMs: number): Promise<DesktopStudioHandlers> {
     const pending = createHandlerWaiter(this.waiters, timeoutMs);
@@ -75,6 +82,7 @@ class EmbedRuntimeRegistration {
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
+    this.removePageHideCleanup();
     const ownedActiveRegistration = activeRegistration === this;
     if (ownedActiveRegistration) activeRegistration = null;
     settleHandlerWaiters(this.waiters, { error: runtimeDisposedError() });
