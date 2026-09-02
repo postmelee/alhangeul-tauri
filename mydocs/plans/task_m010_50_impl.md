@@ -538,6 +538,103 @@ Task #50 [Stage 5.1]: Linux thumbnail MIME 계약과 공식 문서 정렬
 Task #50 Stage 5: 플랫폼 회귀와 최종 수용 증적 확인
 ```
 
+## Stage 6 — PR 리뷰 package lifecycle·evidence 보정
+
+2026-09-02 작업지시자의 "진행해줘"를 PR #52 리뷰
+`issuecomment-5504713215` 검토 결과 승인과 Stage 6 진입 승인으로 기록한다.
+시작 시 `origin/devel`은 `28d01b9a4e1a642b3834755cfe3623c6eb543b39`,
+원격 `publish/task50`과 로컬 HEAD는
+`4958631989e438e2d1ce5dce3daa6921473a18b8`로 일치하고 worktree는 깨끗하다.
+리뷰의 merge blocker인 DEB `postrm` dependency 부재를 우선 해소하고, 같은
+package/MIME evidence 계약에 속하는 medium·low 지적을 함께 고정한다. renderer,
+공유 preview, Windows handler, `third_party/rhwp` gitlink와 공개 release 범위는
+변경하지 않는다.
+
+공식 문서는 기존 승인 위치를 유지한다. package·magic 계약은
+`docs/architecture/LINUX_THUMBNAILS.md`, 최종 exact run·artifact chain은
+`docs/operations/DESKTOP_RELEASE.md`가 소유한다. README는 run ID의 진실 원천이
+아니므로 기능 범위가 바뀌지 않는 한 수정하지 않는다. shared-mime-info 2.5의
+HWPX 한 블록은 제품 문서가 아니라 외부 호환성 test fixture이므로 출처 tag와
+URL을 기록해 `tests/fixtures/`에 둔다. 새 공식 문서나 `mydocs/manual`은 만들지
+않는다.
+
+### 산출물
+
+- `apps/desktop/src-tauri/linux/update-mime-database-remove.sh`
+- `apps/desktop/src-tauri/tauri.conf.json`
+- `scripts/linux-thumbnail-mime-contract.mjs`
+- `scripts/linux-thumbnail-package-contract.mjs`
+- `scripts/linux-thumbnail-package-smoke.mjs`
+- `scripts/verify-linux-thumbnail-package-evidence.mjs`
+- `tests/fixtures/shared-mime-info-2.5-hwpx.xml`
+- `tests/linux-thumbnail-mime.test.mjs`
+- `tests/linux-thumbnail-packaging.test.mjs`
+- `tests/desktop-artifacts.test.mjs`
+- `scripts/linux-thumbnail-mime-smoke.sh` — executable mode 정렬
+- `docs/architecture/LINUX_THUMBNAILS.md`
+- `docs/operations/DESKTOP_RELEASE.md`
+- `mydocs/working/task_m010_50_stage6.md`
+
+### 변경 내용
+
+- install hook은 명령 부재와 refresh 실패를 계속 nonzero로 전달한다. remove
+  hook은 `command -v update-mime-database`가 실패할 때 성공 종료하고, 명령이
+  존재하지만 refresh가 실패하면 nonzero를 유지한다. DEB와 RPM config의
+  post-remove만 새 hook을 사용한다.
+- DEB lifecycle은 최종 remove 뒤 제한된 PATH에서 실제 `dpkg --purge`를 실행해
+  dependency command가 없는 `postrm purge`가 성공하고 package가 완전히
+  사라지는지 관측한다. RPM에는 존재하지 않는 purge 의미를 합성하지 않고
+  evidence verifier가 format별 기대 transition을 판정한다.
+- refresh failure fixture는 제품 MIME이 cache에 없는 interim uninstall 직후에
+  설치한다. 제품 XML은 배치됐지만 cache는 baseline인 실제 stale 상태와 hook
+  exit 42를 관측하고, candidate 재설치만이 canonical MIME을 복구하는지
+  단언한다. 이후 old-install/update/rollback/uninstall 회귀를 유지한다.
+- new-generation canary는 제품 XML 복제본이 아니라 shared-mime-info 2.5 tag의
+  실제 `application/x-hwpx` 블록 fixture를 사용한다. canonical type, glob,
+  magic과 alias가 제품 설치·제거 전후에 병합·복원되는지 검증한다.
+- archive 계약은 `/usr/share/mime/` 하위 regular file 중
+  `packages/alhangeul-hwpx.xml`만 허용한다. aliases, magic뿐 아니라 모든 media
+  directory와 향후 생성 cache 파일의 package 소유를 거부한다.
+- 공식 문서는 Stage 4 역사적 chain을 보존하면서 최종 통합 source
+  `75f9f8c1a87c6e42e514254c82d9169aa3f5bbea`, native run `33587996496`, GUI run
+  `33590789637`과 artifact digest를 추가한다. 비표준 HWPX ZIP은 mimetype magic이
+  맞지 않아 확장자 glob에 의존한다는 알려진 한계를 기록한다.
+- URL 실행 path는 `fileURLToPath()`를 사용하고 Linux MIME smoke wrapper를
+  executable mode로 정렬한다.
+
+### 검증
+
+플랫폼 중립:
+
+```bash
+node --test tests/linux-thumbnail-mime.test.mjs tests/linux-thumbnail-packaging.test.mjs tests/desktop-artifacts.test.mjs
+pnpm run check:product-boundary
+pnpm run test:upstream
+pnpm run test:studio
+pnpm run build:studio
+pnpm run test:automation
+shellcheck apps/desktop/src-tauri/linux/update-mime-database.sh apps/desktop/src-tauri/linux/update-mime-database-remove.sh scripts/linux-thumbnail-mime-smoke.sh scripts/linux-thumbnail-package-smoke.sh
+git diff --check
+```
+
+지원 대상 native/GUI:
+
+- final source/workflow candidate를 `publish/task50`에 push한 뒤
+  `alhangeul-desktop.yml`을 exact SHA로 실행한다.
+- Linux x64는 DEB purge-without-command, DEB/RPM stale-cache recovery와
+  archive allowlist를, Linux arm64는 DEB 동일 lifecycle을 통과해야 한다.
+- Windows x64 build와 MSI·NSIS installer smoke를 기존 required gate로 유지한다.
+- 같은 candidate와 성공 native run ID를 `alhangeul-linux-gui.yml`에 전달해
+  package-only HWP/HWPX, Nautilus·Thunar first/cached/changed와 기존 제품 GUI를
+  다시 수용한다.
+
+### 커밋
+
+```text
+Task #50 [Stage 6.1]: Linux remove hook과 MIME lifecycle 보정
+Task #50 Stage 6: PR 리뷰 package evidence와 최종 수용 정렬
+```
+
 ## 검증
 
 - 각 Stage는 위 검증을 통과한 뒤 단계 보고서를 작성한다. 검증 실패 상태를
