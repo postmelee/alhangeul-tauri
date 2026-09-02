@@ -89,6 +89,7 @@ jobs:
             libxdo-dev \
             pkg-config \
             rpm \
+            shared-mime-info \
             time \
             xdg-utils \
             zip
@@ -376,16 +377,55 @@ jobs:
         run: pnpm run clippy:document-preview:protocol
 
       - name: Test Linux thumbnailer
+        id: test-linux-thumbnailer
         if: inputs.run_tests && startsWith(matrix.name, 'linux-')
+        shell: bash
         env:
           CARGO_BUILD_TARGET: ${{ matrix.target }}
-        run: pnpm run test:linux-thumbnailer
+          OUTPUT_ROOT: diagnostics/linux-thumbnailer-tests-${{ matrix.name }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$OUTPUT_ROOT"
+          pnpm run test:linux-thumbnailer 2>&1 | tee "$OUTPUT_ROOT/tests.log"
 
       - name: Lint Linux thumbnailer
+        id: lint-linux-thumbnailer
         if: inputs.run_tests && startsWith(matrix.name, 'linux-')
+        shell: bash
         env:
           CARGO_BUILD_TARGET: ${{ matrix.target }}
-        run: pnpm run clippy:linux-thumbnailer
+          OUTPUT_ROOT: diagnostics/linux-thumbnailer-tests-${{ matrix.name }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$OUTPUT_ROOT"
+          cargo fmt --manifest-path apps/linux-thumbnailer/Cargo.toml -- --check 2>&1 | tee "$OUTPUT_ROOT/fmt.log"
+          pnpm run clippy:linux-thumbnailer 2>&1 | tee "$OUTPUT_ROOT/clippy.log"
+
+      - name: Record Linux thumbnailer test outcome
+        if: ${{ always() && inputs.run_tests && startsWith(matrix.name, 'linux-') }}
+        shell: bash
+        env:
+          OUTPUT_ROOT: diagnostics/linux-thumbnailer-tests-${{ matrix.name }}
+          TEST_OUTCOME: ${{ steps.test-linux-thumbnailer.outcome }}
+          LINT_OUTCOME: ${{ steps.lint-linux-thumbnailer.outcome }}
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
+          BUILD_TARGET: ${{ matrix.target }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$OUTPUT_ROOT"
+          printf '{"schemaVersion":1,"repositorySha":"%s","workflowSha":"%s","runId":"%s","runAttempt":"%s","runner":"%s","target":"%s","test":"%s","lint":"%s"}\n' \
+            "$(git rev-parse HEAD)" "$WORKFLOW_SHA" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" \
+            "$RUNNER_NAME" "$BUILD_TARGET" "$TEST_OUTCOME" "$LINT_OUTCOME" \
+            > "$OUTPUT_ROOT/step-outcomes.json"
+
+      - name: Upload Linux thumbnailer test evidence
+        if: ${{ always() && inputs.run_tests && startsWith(matrix.name, 'linux-') }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: alhangeul-${{ matrix.name }}-thumbnailer-tests
+          path: diagnostics/linux-thumbnailer-tests-${{ matrix.name }}/**
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Build Windows thumbnail binaries
         if: matrix.name == 'windows-x64'
@@ -441,6 +481,8 @@ jobs:
         run: |
           set -euo pipefail
           evidence="$BUNDLE_ROOT/verification/linux-thumbnail-packages.json"
+          bash scripts/linux-thumbnail-mime-smoke.sh "$GITHUB_WORKSPACE" "$OUTPUT_ROOT/mime-canary.json" \
+            2>&1 | tee "$OUTPUT_ROOT/mime-canary.log"
           bash scripts/linux-thumbnail-package-smoke.sh \
             --platform "${{ matrix.name }}" \
             --bundle-root "$BUNDLE_ROOT" \
@@ -462,6 +504,10 @@ jobs:
           printf '{"smoke":"%s","repositorySha":"%s","runner":"%s"}\n' \
             "$SMOKE_OUTCOME" "$(git rev-parse HEAD)" "${{ matrix.name }}" \
             > "$OUTPUT_ROOT/step-outcomes.json"
+          bundle="apps/desktop/src-tauri/target/${{ matrix.target }}/release/bundle/verification"
+          if [[ -d "$bundle" ]]; then
+            find "$bundle" -maxdepth 1 -name 'linux-thumbnail-packages.json*' -exec cp {} "$OUTPUT_ROOT/" \;
+          fi
 
       - name: Upload Linux thumbnail package evidence
         id: upload-linux-thumbnail-package-evidence

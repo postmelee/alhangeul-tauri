@@ -7,11 +7,14 @@ readonly runner_temp="${RUNNER_TEMP:-}"
 readonly installed_dir=/usr/lib/alhangeul
 readonly installed_helper="$installed_dir/alhangeul-thumbnailer"
 readonly installed_registration=/usr/share/thumbnailers/alhangeul.thumbnailer
+readonly installed_mime_xml=/usr/share/mime/packages/alhangeul-hwpx.xml
+readonly system_data_dirs="${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly script_dir
 repository_root="$(cd "$script_dir/.." && pwd)"
 readonly repository_root
 readonly registration_source="$repository_root/apps/desktop/src-tauri/linux/alhangeul.thumbnailer"
+readonly mime_source="$repository_root/apps/desktop/src-tauri/linux/alhangeul-hwpx.xml"
 readonly session_script="$script_dir/linux-thumbnail-manager-session.sh"
 readonly real_hwp_source="$repository_root/third_party/rhwp/samples/[2027] 온새미로 1 본교재.hwp"
 readonly real_hwpx_source="$repository_root/third_party/rhwp/samples/hwpx/form-002.hwpx"
@@ -24,13 +27,14 @@ require_inputs() {
   [[ "$evidence_root" == /* && "$runner_temp" == /* ]]
   [[ -f "$registration_source" && -x "$session_script" ]]
   [[ -f "$installed_helper" && -x "$installed_helper" ]]
-  [[ -f "$installed_registration" ]]
+  [[ -f "$installed_registration" && -f "$installed_mime_xml" ]]
   [[ -f "$real_hwp_source" && -f "$real_hwpx_source" ]]
   [[ "$(sha256sum "$real_hwp_source" | awk '{print $1}')" == "$real_hwp_sha" ]]
   [[ "$(sha256sum "$real_hwpx_source" | awk '{print $1}')" == "$real_hwpx_sha" ]]
   [[ "$(sha256sum "$helper_source" | awk '{print $1}')" == \
     "$(sha256sum "$installed_helper" | awk '{print $1}')" ]]
   cmp "$registration_source" "$installed_registration"
+  cmp "$mime_source" "$installed_mime_xml"
 }
 
 create_preview_fixture() {
@@ -49,16 +53,18 @@ with zipfile.ZipFile(sys.argv[1], "w", zipfile.ZIP_DEFLATED) as archive:
 PY
 }
 
-create_mime_database() {
-  local data_root="$1"
-  cat > "$data_root/mime/packages/alhangeul-probe.xml" <<'XML'
-<?xml version="1.0" encoding="UTF-8"?>
-<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
-  <mime-type type="application/x-hwp"><glob pattern="*.hwp" weight="100"/></mime-type>
-  <mime-type type="application/vnd.hancom.hwpx"><glob pattern="*.hwpx" weight="100"/></mime-type>
-</mime-info>
-XML
-  XDG_DATA_HOME="$data_root" update-mime-database "$data_root/mime"
+content_type() {
+  local data_root="$1" path="$2"
+  XDG_DATA_HOME="$data_root" XDG_DATA_DIRS="$system_data_dirs" \
+    gio info -a standard::content-type "$path" \
+    | sed -n 's/.*standard::content-type: //p'
+}
+
+record_private_mime_state() {
+  local data_root="$1" phase="$2"
+  [[ ! -e "$data_root/mime" ]]
+  printf '%s privateMimePath absent\n' "$phase" \
+    >> "$evidence_root/private-mime-state.txt"
 }
 
 validate_png() {
@@ -110,18 +116,24 @@ run_manager() {
 }
 
 record_environment() {
-  local data_root="$1" hwp_type="$2" hwpx_type="$3"
+  local hwp_type="$1" hwpx_type="$2" real_hwp_type="$3" real_hwpx_type="$4"
   {
     dpkg-query -W -f='nautilus ${Version}\n' nautilus
     dpkg-query -W -f='thunar ${Version}\n' thunar
     dpkg-query -W -f='tumbler ${Version}\n' tumbler
     dpkg-query -W -f='strace ${Version}\n' strace
+    dpkg-query -W -f='shared-mime-info ${Version}\n' shared-mime-info
     printf 'hwp %s\n' "$hwp_type"
     printf 'hwpx %s\n' "$hwpx_type"
+    printf 'realHwp %s\n' "$real_hwp_type"
+    printf 'realHwpx %s\n' "$real_hwpx_type"
+    printf 'xdgDataHome %s\n' "$probe_root/data"
+    printf 'xdgDataDirs %s\n' "$system_data_dirs"
+    printf 'systemMimeRoot /usr/share/mime\n'
     printf 'realHwpSha256 %s\n' "$real_hwp_sha"
     printf 'realHwpxSha256 %s\n' "$real_hwpx_sha"
     printf 'thumbnailer %s\n' "$installed_helper"
-    sha256sum "$installed_helper" "$installed_registration"
+    sha256sum "$installed_helper" "$installed_registration" "$installed_mime_xml"
     printf 'gnome_probe_sandbox product-helper-no-bypass\n'
   } > "$evidence_root/environment.txt"
 }
@@ -129,12 +141,12 @@ record_environment() {
 main() {
   require_inputs
   local source_root data_root source_hashes_before source_hashes_after
-  local hwp_type hwpx_type
+  local hwp_type hwpx_type real_hwp_type real_hwpx_type
   probe_root="$(mktemp -d "$runner_temp/alhangeul-thumbnail-manager.XXXXXX")"
   trap cleanup EXIT
   source_root="$probe_root/source"
   data_root="$probe_root/data"
-  install -d "$evidence_root/edge-matrix" "$data_root/mime/packages" \
+  install -d "$evidence_root/edge-matrix" "$data_root" \
     "$probe_root/cache" "$source_root"
   cp third_party/rhwp/saved/blank2010.hwp "$source_root/direct.hwp"
   create_preview_fixture "$source_root/preview.hwpx"
@@ -142,23 +154,26 @@ main() {
   cp "$real_hwp_source" "$source_root/real-onsaemiro.hwp"
   cp "$real_hwpx_source" "$source_root/real-form-002.hwpx"
   source_hashes_before="$(sha256sum "$source_root"/*)"
-  create_mime_database "$data_root"
+  export XDG_DATA_DIRS="$system_data_dirs"
+  record_private_mime_state "$data_root" before
   printf sentinel > "$probe_root/unrelated-thumbnailer.sentinel"
   printf sentinel > "$probe_root/cache/unrelated.sentinel"
-  hwp_type="$(XDG_DATA_HOME="$data_root" gio info -a standard::content-type \
-    "$source_root/direct.hwp" | sed -n 's/.*standard::content-type: //p')"
-  hwpx_type="$(XDG_DATA_HOME="$data_root" gio info -a standard::content-type \
-    "$source_root/preview.hwpx" | sed -n 's/.*standard::content-type: //p')"
-  [[ "$hwp_type" == application/x-hwp && "$hwpx_type" == application/vnd.hancom.hwpx ]]
+  hwp_type="$(content_type "$data_root" "$source_root/direct.hwp")"
+  hwpx_type="$(content_type "$data_root" "$source_root/preview.hwpx")"
+  real_hwp_type="$(content_type "$data_root" "$source_root/real-onsaemiro.hwp")"
+  real_hwpx_type="$(content_type "$data_root" "$source_root/real-form-002.hwpx")"
+  [[ "$hwp_type" == application/x-hwp && "$real_hwp_type" == application/x-hwp ]]
+  [[ "$hwpx_type" == application/x-hwpx && "$real_hwpx_type" == application/x-hwpx ]]
   validate_edge_matrix "$source_root" "$evidence_root/edge-matrix"
   validate_real_fixtures "$source_root" "$evidence_root/edge-matrix"
   run_manager nautilus "$probe_root"
   run_manager thunar "$probe_root"
+  record_private_mime_state "$data_root" after
   source_hashes_after="$(sha256sum "$source_root"/*)"
   [[ "$source_hashes_before" == "$source_hashes_after" ]]
   [[ "$(< "$probe_root/unrelated-thumbnailer.sentinel")" == sentinel ]]
   [[ "$(< "$probe_root/cache/unrelated.sentinel")" == sentinel ]]
-  record_environment "$data_root" "$hwp_type" "$hwpx_type"
+  record_environment "$hwp_type" "$hwpx_type" "$real_hwp_type" "$real_hwpx_type"
 }
 
 main "$@"

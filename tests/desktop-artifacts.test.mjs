@@ -18,6 +18,12 @@ import {
   verifyDesktopArtifacts,
 } from '../scripts/verify-desktop-artifacts.mjs';
 
+import {
+  LIFECYCLE,
+  lifecycleFor,
+} from '../scripts/linux-thumbnail-package-contract.mjs';
+import { ALIASES, CANONICAL, DEFAULT_APP, MIME_PATH } from '../scripts/linux-thumbnail-mime-contract.mjs';
+
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const scriptPath = join(repoRoot, 'scripts/verify-desktop-artifacts.mjs');
 const PE_MACHINE_X64 = 0x8664;
@@ -385,50 +391,90 @@ async function cleanup(path) {
 
 function linuxEvidence(platform, files) {
   const packages = platform === 'linux-x64'
-    ? [
-        ['deb', 'deb/alhangeul_0.3.1_amd64.deb', 'amd64'],
-        ['rpm', 'rpm/alhangeul-0.3.1-1.x86_64.rpm', 'x86_64'],
-      ]
+    ? [['deb', 'deb/alhangeul_0.3.1_amd64.deb', 'amd64'], ['rpm', 'rpm/alhangeul-0.3.1-1.x86_64.rpm', 'x86_64']]
     : [['deb', 'deb/alhangeul_0.3.1_arm64.deb', 'arm64']];
-  const helperSha256 = '1'.repeat(64);
-  return `${JSON.stringify({
-    schemaVersion: 1,
-    platform,
-    repositorySha: '0'.repeat(40),
-    helperSha256,
-    packages: packages.map(([format, path, architecture]) => ({
-      format,
-      path,
-      archiveSha256: createHash('sha256').update(files[path]).digest('hex'),
-      name: 'alhangeul',
-      version: '0.3.1',
-      architecture,
-      helper: {
-        path: '/usr/lib/alhangeul/alhangeul-thumbnailer',
-        mode: '0755',
-        sha256: helperSha256,
-      },
-      registration: {
-        path: '/usr/share/thumbnailers/alhangeul.thumbnailer',
-        mode: '0644',
-        exec: '/usr/lib/alhangeul/alhangeul-thumbnailer %i %o %s',
-        mime: 'application/x-hwp;application/vnd.hancom.hwpx;',
-      },
-      elfArchitecture: platform === 'linux-x64' ? 'x86-64' : 'aarch64',
-      singleOwner: true,
-      lifecycle: [
-        'clean-install',
-        'same-version-reinstall',
-        'update',
-        'injected-failure-rollback',
-        'uninstall',
-      ],
-    })),
-    invariants: {
-      mimeDefaultsPreserved: true,
-      thirdPartyThumbnailerPreserved: true,
-      cacheSentinelPreserved: true,
-      productFilesRemovedAfterUninstall: true,
+  return JSON.stringify({
+    schemaVersion: 2, success: true, platform, repositorySha: '0'.repeat(40),
+    helperSha256: '1'.repeat(64), mimeSha256: '2'.repeat(64),
+    packages: packages.map(([format, path, architecture]) => linuxPackage({ format, path, architecture, platform, files })),
+    invariants: { mimeDefaultsPreserved: true, thirdPartyThumbnailerPreserved: true,
+      cacheSentinelPreserved: true, productFilesRemovedAfterUninstall: true },
+  });
+}
+
+function linuxPackage({ format, path, architecture, platform, files }) {
+  const helperPath = '/usr/lib/alhangeul/alhangeul-thumbnailer';
+  const registrationPath = '/usr/share/thumbnailers/alhangeul.thumbnailer';
+  const owners = Object.fromEntries([helperPath, registrationPath, MIME_PATH].map((p) => [p, 'alhangeul']));
+  return {
+    format, path, architecture, name: 'alhangeul', version: '0.3.1',
+    archiveSha256: createHash('sha256').update(files[path]).digest('hex'),
+    helper: { path: helperPath, mode: '0755', sha256: '1'.repeat(64) },
+    registration: { path: registrationPath, mode: '0644', sha256: '3'.repeat(64),
+      exec: `${helperPath} %i %o %s`, mime: 'application/x-hwp;application/x-hwpx;' },
+    mime: { path: MIME_PATH, mode: '0644', sha256: '2'.repeat(64) },
+    elfArchitecture: platform === 'linux-x64' ? 'x86-64' : 'aarch64', singleOwner: true, owners,
+    archiveContract: { refreshHooks: ['post-install', 'post-remove'], dependencies: format === 'deb'
+      ? ['shared-mime-info', 'libwebkit2gtk-4.1-0', 'libgtk-3-0']
+      : ['shared-mime-info', 'libwebkit2gtk-4.1.so.0()(64bit)', 'libgtk-3.so.0()(64bit)'] },
+    lifecycle: lifecycleFor(format).map((name) => transitionFixture(name, owners)),
+  };
+}
+
+function transitionFixture(name, owners) {
+  const installed = [
+    'clean-install',
+    'same-version-reinstall',
+    'explicit-recovery',
+    'update',
+    'injected-failure-rollback',
+  ].includes(name);
+  const refreshFailure = name === 'refresh-failure-observed';
+  const purged = name === 'purge-without-update-mime-database';
+  return {
+    name, exitCode: ['injected-failure-rollback', 'refresh-failure-observed'].includes(name) ? 1 : 0,
+    packageState: purged
+      ? { exitCode: 1, description: '' }
+      : { exitCode: 0, description: 'install ok installed 0.3.1' },
+    owners, hookExitCode: 42, recovery: 'explicit-candidate-reinstall',
+    ...(purged ? { updateMimeDatabaseAvailable: false } : {}),
+    filesPresent: Object.fromEntries(Object.keys(owners).map((path) => [path,
+      installed || refreshFailure || (name === 'old-install' && path !== MIME_PATH)])),
+    mime: { types: { glob: installed ? CANONICAL : 'application/zip',
+      magic: installed ? CANONICAL : 'application/zip', generic: 'application/zip' },
+      aliases: Object.fromEntries(ALIASES.map((alias) => [alias, installed ? CANONICAL : null])),
+      defaults: Object.fromEntries(['application/x-hwp', CANONICAL, ...ALIASES].map((type) => [type, DEFAULT_APP])),
+      defaultSettingsSha256: '5'.repeat(64),
+      xmlSha256: installed || refreshFailure ? '2'.repeat(64) : null,
+      otherDefinitions: { 'alhangeul-task50-third-party.xml': '4'.repeat(64) },
     },
-  }, null, 2)}\n`;
+  };
+}
+
+for (const [label, mutate] of [
+  ['legacy schema', (e) => { e.schemaVersion = 1; }],
+  ['name-only lifecycle', (e) => { e.packages[0].lifecycle = LIFECYCLE; }],
+  ['missing MIME observation', (e) => { delete e.packages[0].lifecycle[1].mime; }],
+  ['changed default app', (e) => { e.packages[0].lifecycle[1].mime.defaults[CANONICAL] = 'alhangeul.desktop'; }],
+  ['changed default settings', (e) => { e.packages[0].lifecycle[1].mime.defaultSettingsSha256 = '6'.repeat(64); }],
+  ['missing prior default', (e) => { e.packages[0].lifecycle[0].mime.defaults[CANONICAL] = ''; }],
+  ['wrong installed version prefix', (e) => { e.packages[0].lifecycle[1].packageState.description += '1'; }],
+  ['unconfigured DEB', (e) => { e.packages[0].lifecycle[1].packageState.description = 'install ok half-configured 0.3.1'; }],
+  ['wrong owner', (e) => { e.packages[0].owners[MIME_PATH] = 'other'; }],
+  ['failed reinstall', (e) => { e.packages[0].lifecycle[2].exitCode = 1; }],
+  ['missing hook', (e) => { e.packages[0].archiveContract.refreshHooks.pop(); }],
+  ['missing MIME dependency', (e) => { e.packages[0].archiveContract.dependencies.shift(); }],
+  ['uninstall leaves XML', (e) => {
+    e.packages[0].lifecycle.find((record) => record.name === 'uninstall').mime.xmlSha256 = '2'.repeat(64);
+  }],
+]) {
+  test(`Linux evidence rejects ${label}`, async () => {
+    const files = { ...platformFixtures['linux-arm64'] };
+    const path = 'verification/linux-thumbnail-packages.json';
+    const evidence = JSON.parse(files[path]); mutate(evidence);
+    files[path] = JSON.stringify(evidence);
+    const fixture = await createFixture(files);
+    try { await assert.rejects(verifyDesktopArtifacts({ platform: 'linux-arm64', root: fixture.root })); }
+    finally { await cleanup(fixture.tmp); }
+  });
 }

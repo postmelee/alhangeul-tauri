@@ -227,6 +227,33 @@ jobs:
             xdotool \
             xvfb
 
+      - name: Record pre-install Linux MIME state
+        id: record-preinstall-mime
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          mime_xml=/usr/share/mime/packages/alhangeul-hwpx.xml
+          helper=/usr/lib/alhangeul/alhangeul-thumbnailer
+          registration=/usr/share/thumbnailers/alhangeul.thumbnailer
+          real_hwp='third_party/rhwp/samples/[2027] 온새미로 1 본교재.hwp'
+          real_hwpx=third_party/rhwp/samples/hwpx/form-002.hwpx
+          [[ ! -e "$mime_xml" && ! -e "$helper" && ! -e "$registration" ]]
+          content_type() {
+            gio info -a standard::content-type "$1" \
+              | sed -n 's/.*standard::content-type: //p'
+          }
+          {
+            printf 'sharedMimeInfoVersion %s\n' \
+              "$(dpkg-query -W -f='${Version}' shared-mime-info)"
+            printf 'xdgDataDirs %s\n' "${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
+            printf 'systemMimeRoot /usr/share/mime\n'
+            printf 'productMimeXml absent\n'
+            printf 'realHwp %s\n' "$(content_type "$real_hwp")"
+            printf 'realHwpx %s\n' "$(content_type "$real_hwpx")"
+            sha256sum "$real_hwp" "$real_hwpx"
+          } > "$EVIDENCE_ROOT/pre-install-mime.txt"
+
       - name: Install verified DEB
         id: install-deb
         shell: bash
@@ -246,16 +273,31 @@ jobs:
           set -euo pipefail
           helper=/usr/lib/alhangeul/alhangeul-thumbnailer
           registration=/usr/share/thumbnailers/alhangeul.thumbnailer
-          [[ -f "$helper" && -x "$helper" && -f "$registration" ]]
+          mime_xml=/usr/share/mime/packages/alhangeul-hwpx.xml
+          real_hwp='third_party/rhwp/samples/[2027] 온새미로 1 본교재.hwp'
+          real_hwpx=third_party/rhwp/samples/hwpx/form-002.hwpx
+          [[ -f "$helper" && -x "$helper" && -f "$registration" && -f "$mime_xml" ]]
           [[ "$(stat -c '%a' "$helper")" == 755 ]]
           [[ "$(stat -c '%a' "$registration")" == 644 ]]
+          [[ "$(stat -c '%a' "$mime_xml")" == 644 ]]
           [[ "$(sha256sum "$helper" | awk '{print $1}')" == \
             "$(sha256sum "$EXPECTED_HELPER" | awk '{print $1}')" ]]
           cmp apps/desktop/src-tauri/linux/alhangeul.thumbnailer "$registration"
-          dpkg-query --search "$helper" "$registration" \
+          cmp apps/desktop/src-tauri/linux/alhangeul-hwpx.xml "$mime_xml"
+          hwp_type="$(gio info -a standard::content-type "$real_hwp" \
+            | sed -n 's/.*standard::content-type: //p')"
+          hwpx_type="$(gio info -a standard::content-type "$real_hwpx" \
+            | sed -n 's/.*standard::content-type: //p')"
+          [[ "$hwp_type" == application/x-hwp && "$hwpx_type" == application/x-hwpx ]]
+          dpkg-query --search "$helper" "$registration" "$mime_xml" \
             > "$EVIDENCE_ROOT/installed-thumbnail-package-owners.txt"
-          sha256sum "$helper" "$registration" \
+          [[ "$(wc -l < "$EVIDENCE_ROOT/installed-thumbnail-package-owners.txt")" -eq 3 ]]
+          [[ "$(cut -d: -f1 "$EVIDENCE_ROOT/installed-thumbnail-package-owners.txt" \
+            | sort -u)" == alhangeul ]]
+          sha256sum "$helper" "$registration" "$mime_xml" \
             > "$EVIDENCE_ROOT/installed-thumbnail-package.sha256"
+          printf 'realHwp %s\nrealHwpx %s\n' "$hwp_type" "$hwpx_type" \
+            > "$EVIDENCE_ROOT/post-install-mime.txt"
 
       - name: Run Linux thumbnail manager contract probe
         id: thumbnail-manager-probe
@@ -388,6 +430,7 @@ jobs:
           THUMBNAILER_DOWNLOAD: ${{ steps.download-thumbnailer.outcome }}
           THUMBNAILER_VERIFY: ${{ steps.verify-thumbnailer.outcome }}
           INVENTORY: ${{ steps.verify-inventory.outcome }}
+          PREINSTALL_MIME: ${{ steps.record-preinstall-mime.outcome }}
           INSTALL: ${{ steps.install-deb.outcome }}
           INSTALLED_THUMBNAIL: ${{ steps.verify-installed-thumbnail.outcome }}
           THUMBNAIL_MANAGER: ${{ steps.thumbnail-manager-probe.outcome }}
@@ -395,10 +438,11 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$EVIDENCE_ROOT"
-          printf '{"validate":"%s","checkout":"%s","source":"%s","handoff":"%s","download":"%s","thumbnailerHandoff":"%s","thumbnailerDownload":"%s","thumbnailerVerify":"%s","inventory":"%s","install":"%s","installedThumbnail":"%s","thumbnailManager":"%s","gui":"%s"}\n' \
+          printf '{"validate":"%s","checkout":"%s","source":"%s","handoff":"%s","download":"%s","thumbnailerHandoff":"%s","thumbnailerDownload":"%s","thumbnailerVerify":"%s","inventory":"%s","preinstallMime":"%s","install":"%s","installedThumbnail":"%s","thumbnailManager":"%s","gui":"%s"}\n' \
             "$VALIDATE" "$CHECKOUT" "$SOURCE" "$HANDOFF" "$DOWNLOAD" \
             "$THUMBNAILER_HANDOFF" "$THUMBNAILER_DOWNLOAD" "$THUMBNAILER_VERIFY" \
-            "$INVENTORY" "$INSTALL" "$INSTALLED_THUMBNAIL" "$THUMBNAIL_MANAGER" "$GUI" \
+            "$INVENTORY" "$PREINSTALL_MIME" "$INSTALL" "$INSTALLED_THUMBNAIL" \
+            "$THUMBNAIL_MANAGER" "$GUI" \
             > "$EVIDENCE_ROOT/step-outcomes.json"
 
       - name: Upload Linux GUI evidence
@@ -428,6 +472,7 @@ jobs:
           PNPM: ${{ steps.install-pnpm.outcome }}
           INVENTORY: ${{ steps.verify-inventory.outcome }}
           LINUX_DEPS: ${{ steps.install-linux-dependencies.outcome }}
+          PREINSTALL_MIME: ${{ steps.record-preinstall-mime.outcome }}
           THUMBNAIL_MANAGER: ${{ steps.thumbnail-manager-probe.outcome }}
           DRIVER: ${{ steps.install-tauri-driver.outcome }}
           INSTALL: ${{ steps.install-deb.outcome }}
@@ -440,7 +485,8 @@ jobs:
           set -euo pipefail
           for outcome in "$VALIDATE" "$CHECKOUT" "$PREPARE" "$SOURCE" "$NODE" "$HANDOFF" \
             "$DOWNLOAD" "$THUMBNAILER_HANDOFF" "$THUMBNAILER_DOWNLOAD" \
-            "$THUMBNAILER_VERIFY" "$PNPM" "$INVENTORY" "$LINUX_DEPS" "$INSTALL" \
+            "$THUMBNAILER_VERIFY" "$PNPM" "$INVENTORY" "$LINUX_DEPS" \
+            "$PREINSTALL_MIME" "$INSTALL" \
             "$INSTALLED_THUMBNAIL" "$THUMBNAIL_MANAGER" "$DRIVER" "$CUPS" \
             "$ENVIRONMENT" "$GUI" "$UPLOAD"; do
             [[ "$outcome" == success ]]

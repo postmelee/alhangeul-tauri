@@ -78,7 +78,7 @@ Alhangeul은 `rhwp`의 문서 엔진과 웹 editor를 기반으로 다음 제품
 - upstream Studio의 browser autosave/recovery는 상속하지만 별도 native recovery 저장소와 외부 파일 변경 감지는 아직 없다.
 - 큰 문서에서는 WASM mirror를 거치는 구간이 남아 있다.
 - Windows thumbnail 자동 gate는 실제 COM activation과 Shell bitmap 반환까지 통과했지만 Explorer UI의 보기 크기·DPI·cache·한컴 설치 환경 수동 수용은 남아 있다.
-- Linux thumbnail package candidate는 x64 DEB/RPM lifecycle과 Nautilus·Thunar/Tumbler, arm64 DEB lifecycle·직접 PNG gate를 통과했다. 최종 exact-SHA의 공개 실사용 HWP/HWPX 시각 수용은 남아 있다.
+- Linux thumbnail exact-SHA package candidate는 x64 DEB/RPM lifecycle, arm64 DEB lifecycle·직접 PNG와 x64 DEB의 Nautilus·Thunar/Tumbler gate를 통과했다. package-installed system MIME만 사용한 공개 실사용 HWP/HWPX의 서로 구분되는 첫 페이지도 시각 확인했다.
 - 현재 제품 source version은 독립 Alhangeul의 M010 기준선인 `0.1.0`이며, 공식 release나 tag를 뜻하지 않는다.
 - 공식 설치 파일, 서명, 패키지 게시와 자동 업데이트는 준비되지 않았다.
 - GitHub Actions는 활성 상태지만 CI와 Windows/Linux native artifact workflow는 수동 `workflow_dispatch` 전용이다. Actions artifact는 build smoke 결과이며 공식 설치 파일이나 공개 release가 아니다.
@@ -168,9 +168,11 @@ pnpm run build:linux-thumbnailer -- \
   --repository-sha <40-character-sha>
 ```
 
-arm64는 target을 `aarch64-unknown-linux-gnu`로 바꾼다. build는 `/usr/lib/alhangeul/alhangeul-thumbnailer`에 package될 ELF와 SHA-256 summary를 만들며, registration 원본은 `apps/desktop/src-tauri/linux/alhangeul.thumbnailer`다.
+arm64는 target을 `aarch64-unknown-linux-gnu`로 바꾼다. build는 `/usr/lib/alhangeul/alhangeul-thumbnailer`에 package될 ELF와 SHA-256 summary를 만든다. registration 원본은 `apps/desktop/src-tauri/linux/alhangeul.thumbnailer`, HWPX canonical MIME 원본은 `apps/desktop/src-tauri/linux/alhangeul-hwpx.xml`이다. DEB/RPM은 두 파일과 helper를 설치하고 package hook으로 `/usr/share/mime`의 파생 cache를 갱신한다.
 
-모든 host에서 source·workflow·package 계약을 `pnpm run test:automation`과 `pnpm run check:product-boundary`로 검증할 수 있다. 실제 DEB/RPM install/reinstall/update/rollback/uninstall과 `/usr/share/thumbnailers` discovery는 opted-in ephemeral Linux Actions runner에서만 수행한다. 개발 장비의 MIME default, XDG cache와 file manager를 변경하거나 종료하지 않는다.
+모든 host에서 source·workflow·package 계약을 `pnpm run test:automation`과 `pnpm run check:product-boundary`로 검증할 수 있다. 실제 DEB/RPM install/reinstall/update/rollback/uninstall, `/usr/share/mime` refresh와 `/usr/share/thumbnailers` discovery는 opted-in ephemeral Linux Actions runner에서만 수행한다. file-manager probe는 private MIME 정의를 만들지 않고 설치 package의 system 정의만 사용한다. 개발 장비의 MIME default, system MIME cache, XDG thumbnail cache와 file manager를 임의로 변경하거나 종료하지 않는다.
+
+CLI는 input/output의 조상 directory symlink를 resolved absolute path로 정규화하지만 input/output leaf symlink는 거부한다. core gate가 계측하는 256 MiB peak RSS와 worker의 256 MiB `RLIMIT_AS`는 서로 다른 제한이므로 검증 결과를 대체해 기록하지 않는다.
 
 지원 matrix, direct-first fallback, resource limit, atomic PNG와 Tumbler precreated-output 예외는 [Linux thumbnail 아키텍처](architecture/LINUX_THUMBNAILS.md), exact artifact와 package evidence는 [desktop artifact와 배포 준비](operations/DESKTOP_RELEASE.md)를 따른다.
 

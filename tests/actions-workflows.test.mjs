@@ -329,11 +329,15 @@ test('Linux thumbnail core probe는 x64 arm64 resource 증거를 각각 보존�
   assert.match(uploadStep, /^          retention-days: 14$/m);
   assert.match(gateStep, /steps\.run-linux-thumbnail-core-probe\.outcome/);
   assert.match(gateStep, /steps\.upload-linux-thumbnail-core-diagnostics\.outcome/);
+  assert.match(gateStep, /\[\[ "\$PROBE_OUTCOME" == success \]\]/);
+  assert.match(gateStep, /\[\[ "\$UPLOAD_OUTCOME" == success \]\]/);
+  assert.doesNotMatch(probeStep, /\|\| true/);
+  assert.doesNotMatch(gateStep, /continue-on-error: true/);
 });
 
 test('Linux package lifecycle은 build 산출물을 검사하고 evidence를 always gate한다', () => {
   const install = getStepContaining(desktopWorkflow, 'Install Linux dependencies');
-  for (const dependency of ['rpm', 'xdg-utils']) {
+  for (const dependency of ['rpm', 'xdg-utils', 'shared-mime-info']) {
     assert.match(install, new RegExp(`^            ${dependency}(?: \\\\)?$`, 'm'));
   }
   const smoke = getStepContaining(desktopWorkflow, 'Run Linux thumbnail package lifecycle');
@@ -344,6 +348,8 @@ test('Linux package lifecycle은 build 산출물을 검사하고 evidence를 alw
   assert.match(smoke, /^        continue-on-error: true$/m);
   assert.match(smoke, /^        timeout-minutes: 15$/m);
   assert.match(smoke, /bash scripts\/linux-thumbnail-package-smoke\.sh/);
+  assertOrdered(smoke, ['set -euo pipefail', 'bash scripts/linux-thumbnail-mime-smoke.sh', 'bash scripts/linux-thumbnail-package-smoke.sh']);
+  assert.match(record, /linux-thumbnail-packages\.json\*/);
   assert.match(smoke, /tee "\$OUTPUT_ROOT\/lifecycle\.log"/);
   for (const step of [record, upload, gate]) {
     assert.match(step, /^        if: \$\{\{ always\(\) && startsWith\(matrix\.name, 'linux-'\) \}\}$/m);

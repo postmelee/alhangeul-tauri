@@ -73,7 +73,51 @@ copy_evidence() {
   cp "$manager_root/summary.json" "$evidence_root/$manager.json"
   find "$manager_root/cache" -type f -printf '%P %s\n' | sort \
     > "$evidence_root/$manager-cache.txt"
+  record_cache_metadata "$manager_root/cache" \
+    > "$evidence_root/$manager-cache-metadata.txt"
   cp -R "$manager_root/logs" "$evidence_root/$manager-logs"
+}
+
+record_cache_metadata() {
+  local cache_root="$1"
+  python3 - "$cache_root" <<'PY'
+from pathlib import Path
+import struct
+import sys
+
+root = Path(sys.argv[1])
+for path in sorted(root.rglob("*.png")):
+    data = path.read_bytes()
+    if data[:8] != b"\x89PNG\r\n\x1a\n":
+        continue
+    offset, values = 8, {}
+    while offset + 12 <= len(data):
+        size = struct.unpack(">I", data[offset:offset + 4])[0]
+        kind = data[offset + 4:offset + 8]
+        body = data[offset + 8:offset + 8 + size]
+        if kind == b"tEXt" and b"\0" in body:
+            key, value = body.split(b"\0", 1)
+            values[key.decode("latin-1")] = value.decode("latin-1")
+        offset += size + 12
+    relative = path.relative_to(root).as_posix()
+    uri = values.get("Thumb::URI", "-")
+    mtime = values.get("Thumb::MTime", "-")
+    print(f"{relative}\t{uri}\t{mtime}")
+PY
+}
+
+count_success_thumbnails() {
+  local cache_root="$1" file_name="$2"
+  python3 - "$cache_root" "$file_name" <<'PY'
+from hashlib import md5
+from pathlib import Path
+import sys
+
+root, name = Path(sys.argv[1]), sys.argv[2]
+uri = (root.parent / "files" / name).resolve().as_uri()
+key = md5(uri.encode()).hexdigest() + ".png"
+print(sum("fail" not in path.relative_to(root).parts for path in root.rglob(key)))
+PY
 }
 
 copy_fixtures() {
@@ -85,6 +129,20 @@ copy_fixtures() {
   cp "$source_root/real-form-002.hwpx" "$destination/real-form-002.hwpx"
 }
 
+assert_lifecycle() {
+  [[ "$first_direct" -ge 1 && "$first_preview" -ge 1 && "$first_failure" -ge 1 ]]
+  [[ "$first_real_hwp" -ge 1 && "$first_real_hwpx" -ge 1 ]]
+  [[ "$cached_direct" -eq "$first_direct" && "$cached_preview" -eq "$first_preview" ]]
+  [[ "$cached_real_hwp" -eq "$first_real_hwp" && "$cached_real_hwpx" -eq "$first_real_hwpx" ]]
+  [[ "$changed_direct" -gt "$cached_direct" && "$changed_preview" -gt "$cached_preview" ]]
+  [[ "$changed_real_hwp" -gt "$cached_real_hwp" && "$changed_real_hwpx" -gt "$cached_real_hwpx" ]]
+  [[ "$failure_success_pngs" -eq 0 ]]
+  grep -F 'real-onsaemiro.hwp' "$evidence_root/$manager-cache-metadata.txt"
+  grep -F 'real-form-002.hwpx' "$evidence_root/$manager-cache-metadata.txt"
+  for phase in first cached changed; do assert_screenshot "$manager_root/$phase.png"; done
+  [[ "$cache_pngs" -ge 4 ]]
+}
+
 main() {
   [[ "$#" -eq 5 ]]
   local manager="$1" manager_root="$2" data_root="$3" source_root="$4" evidence_parent="$5"
@@ -93,6 +151,7 @@ main() {
   local evidence_root="$evidence_parent/$manager" first_direct first_preview first_failure
   local first_real_hwp first_real_hwpx cached_real_hwp cached_real_hwpx
   local cached_direct cached_preview cached_failure changed_direct changed_preview changed_failure cache_pngs
+  local changed_real_hwp changed_real_hwpx failure_success_pngs
   install -d "$evidence_root" "$manager_root/cache" "$manager_root/config" \
     "$manager_root/files" "$manager_root/home" "$manager_root/logs" \
     "$manager_root/runtime" "$manager_root/traces"
@@ -111,28 +170,28 @@ main() {
   cached_failure="$(count_invocations "$manager_root/traces" fail.hwp)"
   cached_real_hwp="$(count_invocations "$manager_root/traces" real-onsaemiro.hwp)"
   cached_real_hwpx="$(count_invocations "$manager_root/traces" real-form-002.hwpx)"
-  touch "$manager_root/files/direct.hwp" "$manager_root/files/preview.hwpx" "$manager_root/files/fail.hwp"
+  touch "$manager_root/files/direct.hwp" "$manager_root/files/preview.hwpx" \
+    "$manager_root/files/fail.hwp" "$manager_root/files/real-onsaemiro.hwp" \
+    "$manager_root/files/real-form-002.hwpx"
   run_phase "$manager" "$manager_root" "$data_root" changed 20
   changed_direct="$(count_invocations "$manager_root/traces" direct.hwp)"
   changed_preview="$(count_invocations "$manager_root/traces" preview.hwpx)"
   changed_failure="$(count_invocations "$manager_root/traces" fail.hwp)"
+  changed_real_hwp="$(count_invocations "$manager_root/traces" real-onsaemiro.hwp)"
+  changed_real_hwpx="$(count_invocations "$manager_root/traces" real-form-002.hwpx)"
   cache_pngs="$(find "$manager_root/cache" -type f -name '*.png' | wc -l)"
+  failure_success_pngs="$(count_success_thumbnails "$manager_root/cache" fail.hwp)"
   grep -hF "execve(\"$installed_helper\"" "$manager_root"/traces/* \
     > "$manager_root/invocations.txt" || true
-  printf '{"manager":"%s","first":{"direct":%s,"preview":%s,"failure":%s},"cached":{"direct":%s,"preview":%s,"failure":%s},"changed":{"direct":%s,"preview":%s,"failure":%s},"realUse":{"first":{"hwp":%s,"hwpx":%s},"cached":{"hwp":%s,"hwpx":%s}},"cachePngs":%s}\n' \
+  printf '{"manager":"%s","first":{"direct":%s,"preview":%s,"failure":%s},"cached":{"direct":%s,"preview":%s,"failure":%s},"changed":{"direct":%s,"preview":%s,"failure":%s},"realUse":{"first":{"hwp":%s,"hwpx":%s},"cached":{"hwp":%s,"hwpx":%s},"changed":{"hwp":%s,"hwpx":%s}},"cachePngs":%s,"failureSuccessPngs":%s}\n' \
     "$manager" "$first_direct" "$first_preview" "$first_failure" \
     "$cached_direct" "$cached_preview" "$cached_failure" \
     "$changed_direct" "$changed_preview" "$changed_failure" \
-    "$first_real_hwp" "$first_real_hwpx" "$cached_real_hwp" "$cached_real_hwpx" "$cache_pngs" \
+    "$first_real_hwp" "$first_real_hwpx" "$cached_real_hwp" "$cached_real_hwpx" \
+    "$changed_real_hwp" "$changed_real_hwpx" "$cache_pngs" "$failure_success_pngs" \
     > "$manager_root/summary.json"
   copy_evidence "$manager" "$manager_root" "$evidence_root"
-  [[ "$first_direct" -ge 1 && "$first_preview" -ge 1 && "$first_failure" -ge 1 ]]
-  [[ "$first_real_hwp" -ge 1 && "$first_real_hwpx" -ge 1 ]]
-  [[ "$cached_direct" -eq "$first_direct" && "$cached_preview" -eq "$first_preview" ]]
-  [[ "$cached_real_hwp" -eq "$first_real_hwp" && "$cached_real_hwpx" -eq "$first_real_hwpx" ]]
-  [[ "$changed_direct" -gt "$cached_direct" && "$changed_preview" -gt "$cached_preview" ]]
-  for phase in first cached changed; do assert_screenshot "$manager_root/$phase.png"; done
-  [[ "$cache_pngs" -ge 4 ]]
+  assert_lifecycle
 }
 
 if [[ "${1:-}" == --window ]]; then

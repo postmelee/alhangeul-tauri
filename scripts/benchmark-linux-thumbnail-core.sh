@@ -9,7 +9,7 @@ fi
 repo_root="$(cd "$1" && pwd -P)"
 fixture_root="$(cd "$2" && pwd -P)"
 output_root="$3"
-command_timeout_seconds=120
+command_timeout_seconds=5
 
 assert_linux_host() {
   [[ "$(uname -s)" == Linux ]] || { echo "Linux host가 필요합니다." >&2; exit 1; }
@@ -21,7 +21,7 @@ assert_linux_host() {
 
 require_commands() {
   local command
-  for command in cargo node sha256sum stat timeout zip base64; do
+  for command in cargo node sha256sum stat timeout zip base64 touch chmod; do
     command -v "$command" >/dev/null || { echo "$command 명령이 필요합니다." >&2; exit 1; }
   done
   [[ -x /usr/bin/time ]] || { echo "/usr/bin/time 명령이 필요합니다." >&2; exit 1; }
@@ -113,19 +113,15 @@ create_variants() {
   install -d "$derived_root/replacement/Preview"
   printf '%s' 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=' \
     | base64 --decode > "$derived_root/replacement/Preview/PrvImage.png"
-  (cd "$derived_root/replacement" && zip -q "$stale_preview" Preview/PrvImage.png)
+  chmod 0644 "$derived_root/replacement/Preview/PrvImage.png"
+  TZ=UTC touch -t 198001010000 "$derived_root/replacement/Preview/PrvImage.png"
+  (cd "$derived_root/replacement" && TZ=UTC zip -X -q "$stale_preview" Preview/PrvImage.png)
   head -c 128 "$source" > "$derived_root/corrupt.hwpx"
   truncate -s 67108865 "$derived_root/oversize.hwp"
 }
 
 json_result() {
-  local path="$1"
-  if node -e 'JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"))' "$path" \
-    >/dev/null 2>&1; then
-    tr -d '\r\n' < "$path"
-  else
-    printf '{"success":false}'
-  fi
+  node "$repo_root/scripts/linux-thumbnail-core-summary.mjs" --parse-result "$1"
 }
 
 run_measured() {
@@ -142,7 +138,7 @@ run_measured() {
   metric_path="$scratch_root/$record_id.time"
   start_ms="$(date +%s%3N)"
   set +e
-  /usr/bin/time -v -o "$metric_path" timeout --signal=TERM --kill-after=5s \
+  /usr/bin/time -v -o "$metric_path" timeout --signal=TERM --kill-after=1s \
     "${command_timeout_seconds}s" "$probe_binary" "$mode" "$file" "$edge" \
     > "$stdout_path" 2> "$stderr_path"
   status=$?
@@ -173,34 +169,8 @@ probe_fixture() {
 }
 
 write_summary() {
-  REPOSITORY_SHA="$repository_sha" RHWP_SHA="$rhwp_sha" node - "$records_path" "$summary_path" <<'NODE'
-const fs = require('node:fs');
-const os = require('node:os');
-const lines = fs.readFileSync(process.argv[2], 'utf8').trim().split('\n').filter(Boolean);
-const records = lines.map((line) => JSON.parse(line));
-const number = (field) => records.map((item) => item[field]).sort((a, b) => a - b);
-const percentile95 = (values) => values[Math.max(0, Math.ceil(values.length * 0.95) - 1)] ?? 0;
-const wall = number('wallMs');
-const rss = number('peakRssBytes');
-const summary = {
-  schemaVersion: 1,
-  kind: 'alhangeul-linux-thumbnail-core-probe',
-  status: records.length > 0 && records.every((item) => !item.timedOut) ? 'passed' : 'failed',
-  repositorySha: process.env.REPOSITORY_SHA,
-  rhwpSha: process.env.RHWP_SHA,
-  runner: { platform: os.platform(), release: os.release(), architecture: os.arch() },
-  observed: {
-    recordCount: records.length,
-    wallMsP95: percentile95(wall),
-    wallMsMax: wall.at(-1) ?? 0,
-    peakRssBytesP95: percentile95(rss),
-    peakRssBytesMax: rss.at(-1) ?? 0,
-  },
-  records,
-};
-fs.writeFileSync(process.argv[3], `${JSON.stringify(summary, null, 2)}\n`);
-if (summary.status !== 'passed') process.exitCode = 1;
-NODE
+  REPOSITORY_SHA="$repository_sha" RHWP_SHA="$rhwp_sha" \
+    node "$repo_root/scripts/linux-thumbnail-core-summary.mjs" "$records_path" "$summary_path"
 }
 
 assert_linux_host
@@ -235,8 +205,8 @@ done
 
 derived_root="$scratch_root/derived"
 install -d "$derived_root"
-hwpx_source="$(find "$fixture_root" -type f -iname '*.hwpx' -print -quit)"
-[[ -n "$hwpx_source" ]]
+hwpx_source="$fixture_root/03-blank_hwpx.hwpx"
+[[ -f "$hwpx_source" ]]
 create_variants "$hwpx_source" "$derived_root"
 probe_fixture "$derived_root/without-preview.hwpx" preview-absent "$probe_binary"
 probe_fixture "$derived_root/stale-preview.hwpx" preview-stale "$probe_binary"

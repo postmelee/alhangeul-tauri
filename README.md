@@ -18,7 +18,7 @@ HWPX 저장과 직접 PDF 저장은 소스·플랫폼 중립 test/build와 이�
 
 Windows Explorer HWP/HWPX 첫 페이지 썸네일은 source와 hosted Windows x64 자동 gate에서 COM activation, MSI·NSIS 등록·복원과 실제 Shell bitmap 반환까지 확인했습니다. Explorer 보기 크기·DPI·cache 갱신과 한컴 설치 환경의 수동 UI 수용은 아직 남아 있으므로 현재 공개 기능이나 설치 파일 완료로 간주하지 않습니다. 구조와 검증 경계는 [Windows thumbnail 아키텍처](docs/architecture/WINDOWS_THUMBNAILS.md)를 참고하세요.
 
-Linux 첫 페이지 썸네일은 package candidate에서 x64 DEB/RPM의 설치·업데이트·제거와 Nautilus·Thunar/Tumbler, arm64 DEB의 package lifecycle·직접 PNG까지 자동 검증했습니다. 최종 exact-SHA의 실사용 HWP/HWPX 시각 수용은 남아 있으며 Linux arm64 RPM/GUI, KDE/Dolphin, AppImage registration, Flatpak과 Snap은 현재 범위가 아닙니다. 구조와 정확한 지원 matrix는 [Linux thumbnail 아키텍처](docs/architecture/LINUX_THUMBNAILS.md)를 참고하세요.
+Linux 첫 페이지 썸네일은 exact-SHA package candidate에서 x64 DEB/RPM의 설치·업데이트·rollback·제거, arm64 DEB lifecycle·직접 PNG와 x64 DEB의 Nautilus·Thunar/Tumbler를 자동 검증했습니다. package가 설치한 system MIME 정의만 사용해 실제 HWP/HWPX의 서로 구분되는 첫 페이지, cache hit·mtime 갱신과 손상 문서 icon fallback까지 확인했습니다. Linux arm64 RPM/GUI, Fedora RPM GUI, KDE/Dolphin, AppImage registration, Flatpak과 Snap은 현재 범위가 아닙니다. 구조와 정확한 지원 matrix는 [Linux thumbnail 아키텍처](docs/architecture/LINUX_THUMBNAILS.md)를 참고하세요.
 
 ## 지원 범위
 

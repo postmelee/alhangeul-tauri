@@ -20,7 +20,7 @@ test('Freedesktop registration은 제품 helper와 HWP HWPX MIME만 선언한다
     '[Thumbnailer Entry]',
     'TryExec=/usr/lib/alhangeul/alhangeul-thumbnailer',
     'Exec=/usr/lib/alhangeul/alhangeul-thumbnailer %i %o %s',
-    'MimeType=application/x-hwp;application/vnd.hancom.hwpx;',
+    'MimeType=application/x-hwp;application/x-hwpx;',
     '',
   ].join('\n'));
   assert.doesNotMatch(registration, /%u|sh -c|env |application\/octet-stream/);
@@ -54,6 +54,7 @@ test('helper summary와 ELF identity를 검증한 경로만 manager probe에 전
   assert.match(probe, /scripts\/linux-thumbnail-manager-probe\.sh/);
   assert.match(probe, /steps\.verify-thumbnailer\.outputs\.helper_path/);
   assert.doesNotMatch(probe, /thumbnail-stub|SNAP_NAME|base64 --decode/);
+  assert.doesNotMatch(probe, /update-mime-database|alhangeul-probe\.xml/);
   const record = stepContaining(workflow, 'step-outcomes.json');
   const gate = stepContaining(workflow, 'Require Linux GUI acceptance success');
   for (const marker of [

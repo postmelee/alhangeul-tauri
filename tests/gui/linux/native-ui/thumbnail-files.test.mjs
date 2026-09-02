@@ -29,12 +29,17 @@ test('공개 실사용 HWP HWPX는 고정 hash와 512px PNG evidence를 사용�
   ]) assert.ok(probe.includes(marker), `실사용 fixture marker가 필요합니다: ${marker}`);
 });
 
-test('package registration과 disposable MIME cache로 두 manager를 실행한다', () => {
+test('package-installed system MIME만 사용해 두 manager를 실행한다', () => {
   for (const marker of [
     'mktemp -d "$runner_temp/alhangeul-thumbnail-manager.XXXXXX"',
-    'XDG_DATA_HOME="$data_root" update-mime-database "$data_root/mime"',
     'readonly installed_registration=/usr/share/thumbnailers/alhangeul.thumbnailer',
+    'readonly installed_mime_xml=/usr/share/mime/packages/alhangeul-hwpx.xml',
     'cmp "$registration_source" "$installed_registration"',
+    'cmp "$mime_source" "$installed_mime_xml"',
+    'record_private_mime_state "$data_root" before',
+    'record_private_mime_state "$data_root" after',
+    '[[ "$hwpx_type" == application/x-hwpx && "$real_hwpx_type" == application/x-hwpx ]]',
+    'printf \'systemMimeRoot /usr/share/mime\\n\'',
     'run_manager nautilus',
     'run_manager thunar',
     'source_hashes_before',
@@ -42,8 +47,10 @@ test('package registration과 disposable MIME cache로 두 manager를 실행한�
     'unrelated.sentinel',
     'product-helper-no-bypass',
   ]) assert.ok(probe.includes(marker), `manager probe marker가 필요합니다: ${marker}`);
-  assert.doesNotMatch(probe, /update-desktop-database|SNAP_NAME/);
-  assert.doesNotMatch(probe, /cp "\$registration_source"|sudo install/);
+  assert.doesNotMatch(probe, /update-(?:desktop|mime)-database|SNAP_NAME/);
+  assert.doesNotMatch(probe, /alhangeul-probe\.xml|application\/vnd\.hancom\.hwpx/);
+  assert.doesNotMatch(probe, /install -d[^\n]*\$data_root\/mime/);
+  assert.doesNotMatch(probe, /cp "\$(?:registration|mime)_source"|sudo install/);
   assert.doesNotMatch(probe, /rm -rf "\$HOME|rm -rf ~\//);
 });
 
@@ -63,13 +70,19 @@ test('실제 제품 경로의 execve와 visible screenshot으로 cache lifecycle
     '[[ "$first_real_hwp" -ge 1 && "$first_real_hwpx" -ge 1 ]]',
     '[[ "$cached_real_hwp" -eq "$first_real_hwp" && "$cached_real_hwpx" -eq "$first_real_hwpx" ]]',
     '[[ "$changed_direct" -gt "$cached_direct" && "$changed_preview" -gt "$cached_preview" ]]',
+    '[[ "$changed_real_hwp" -gt "$cached_real_hwp" && "$changed_real_hwpx" -gt "$cached_real_hwpx" ]]',
+    '[[ "$failure_success_pngs" -eq 0 ]]',
+    '"fail" not in path.relative_to(root).parts',
+    '$manager-cache-metadata.txt',
+    "grep -F 'real-onsaemiro.hwp'",
+    "grep -F 'real-form-002.hwpx'",
     'scrot "$screenshot"',
     "[[ \"$cache_pngs\" -ge 4 ]]",
     'execve(\\"$installed_helper\\"',
   ]) assert.ok(session.includes(marker), `manager session marker가 필요합니다: ${marker}`);
-  assert.ok(
-    session.indexOf('copy_evidence "$manager"')
-      < session.indexOf('[[ "$first_direct" -ge 1'),
+  assert.match(
+    session,
+    /copy_evidence "\$manager" "\$manager_root" "\$evidence_root"\n  assert_lifecycle/,
     '실패 evidence는 lifecycle assertion 전에 보존해야 합니다',
   );
   assert.match(session, /> "\$manager_root\/invocations\.txt" \|\| true/);
@@ -79,7 +92,7 @@ test('실제 제품 경로의 execve와 visible screenshot으로 cache lifecycle
 
 test('probe는 package 소유 /usr 파일을 검증만 하고 설치하거나 제거하지 않는다', () => {
   assert.match(probe, /\[\[ -f "\$installed_helper" && -x "\$installed_helper" \]\]/);
-  assert.match(probe, /\[\[ -f "\$installed_registration" \]\]/);
+  assert.match(probe, /\[\[ -f "\$installed_registration" && -f "\$installed_mime_xml" \]\]/);
   assert.match(probe, /sha256sum "\$helper_source"/);
   assert.doesNotMatch(probe, /sudo |rm -f "\$installed|rmdir "\$installed|mimeapps\.list/);
 });

@@ -33,7 +33,7 @@ export const RELEASE_METADATA_CONTRACT = Object.freeze({
       ext: Object.freeze(['hwpx']),
       name: 'Alhangeul.hwpx',
       description: 'Hangul Word Processor XML document',
-      mimeType: 'application/vnd.hancom.hwpx',
+      mimeType: 'application/x-hwpx',
     }),
   ]),
 });

@@ -1,15 +1,11 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import assert from 'node:assert/strict';
+import { lifecycleFor } from './linux-thumbnail-package-contract.mjs';
+import { MIME_PATH, MIME_SENTINEL, ALIASES, DEFAULT_APP, assertMimeInstalled, assertMimeRestored } from './linux-thumbnail-mime-contract.mjs';
 
 const HELPER_PATH = '/usr/lib/alhangeul/alhangeul-thumbnailer';
 const REGISTRATION_PATH = '/usr/share/thumbnailers/alhangeul.thumbnailer';
-const LIFECYCLE = [
-  'clean-install',
-  'same-version-reinstall',
-  'update',
-  'injected-failure-rollback',
-  'uninstall',
-];
 
 export async function assertLinuxPackageEvidence(platform, files, rootPath) {
   const evidenceFile = files.find((file) => file.kind === 'linux-thumbnail-packages');
@@ -17,10 +13,12 @@ export async function assertLinuxPackageEvidence(platform, files, rootPath) {
   const expected = platform === 'linux-x64'
     ? [['deb', 'amd64'], ['rpm', 'x86_64']]
     : [['deb', 'arm64']];
-  assertEqual(evidence.schemaVersion, 1, 'schemaVersion');
+  assertEqual(evidence.schemaVersion, 2, 'schemaVersion');
+  assertEqual(evidence.success, true, 'success');
   assertEqual(evidence.platform, platform, 'platform');
   assertPattern(evidence.repositorySha, /^[0-9a-f]{40}$/, 'repositorySha');
   assertPattern(evidence.helperSha256, /^[0-9a-f]{64}$/, 'helperSha256');
+  assertPattern(evidence.mimeSha256, /^[0-9a-f]{64}$/, 'mimeSha256');
   assertEqual(evidence.packages?.length, expected.length, 'packages.length');
   for (const [format, architecture] of expected) {
     const value = evidence.packages.find((entry) => entry.format === format);
@@ -39,14 +37,12 @@ export async function assertLinuxPackageEvidence(platform, files, rootPath) {
     assertEqual(value.registration?.exec, `${HELPER_PATH} %i %o %s`, `${format}.registration.exec`);
     assertEqual(
       value.registration?.mime,
-      'application/x-hwp;application/vnd.hancom.hwpx;',
+      'application/x-hwp;application/x-hwpx;',
       `${format}.registration.mime`,
     );
     assertEqual(value.singleOwner, true, `${format}.singleOwner`);
     assertEqual(value.elfArchitecture, platform === 'linux-x64' ? 'x86-64' : 'aarch64', `${format}.elfArchitecture`);
-    if (JSON.stringify(value.lifecycle) !== JSON.stringify(LIFECYCLE)) {
-      throw new Error(`${format}.lifecycle가 완전하지 않습니다.`);
-    }
+    assertMimeEvidence(value, evidence.mimeSha256);
   }
   for (const invariant of [
     'mimeDefaultsPreserved',
@@ -54,6 +50,76 @@ export async function assertLinuxPackageEvidence(platform, files, rootPath) {
     'cacheSentinelPreserved',
     'productFilesRemovedAfterUninstall',
   ]) assertEqual(evidence.invariants?.[invariant], true, `invariants.${invariant}`);
+}
+
+function assertMimeEvidence(value, hash) {
+  assertEqual(value.mime?.path, MIME_PATH, 'mime.path');
+  assertEqual(value.mime?.mode, '0644', 'mime.mode');
+  assertEqual(value.mime?.sha256, hash, 'mime.sha256');
+  assertPattern(value.registration?.sha256, /^[0-9a-f]{64}$/, 'registration.sha256');
+  assert.deepEqual(value.owners, Object.fromEntries([HELPER_PATH, REGISTRATION_PATH, MIME_PATH].map((path) => [path, 'alhangeul'])));
+  const dependencies = value.format === 'deb'
+    ? ['shared-mime-info', 'libwebkit2gtk-4.1-0', 'libgtk-3-0']
+    : ['shared-mime-info', 'libwebkit2gtk-4.1.so.0()(64bit)', 'libgtk-3.so.0()(64bit)'];
+  assert.deepEqual(value.archiveContract?.dependencies, dependencies);
+  assert.deepEqual(value.archiveContract?.refreshHooks, ['post-install', 'post-remove']);
+  assert.deepEqual(value.lifecycle?.map((record) => record.name), lifecycleFor(value.format), 'complete observed lifecycle');
+  const baseline = value.lifecycle[0].mime;
+  assertSnapshotShape(baseline);
+  assertEqual(baseline.xmlSha256, null, 'baseline.xmlSha256');
+  assert.deepEqual(Object.values(baseline.defaults), Array(5).fill(DEFAULT_APP), 'effective preexisting default fixture');
+  for (const record of value.lifecycle) assertTransition(record, baseline, value, hash);
+}
+
+function assertSnapshotShape(snapshot) {
+  assert.deepEqual(Object.keys(snapshot?.types ?? {}).sort(), ['generic', 'glob', 'magic']);
+  for (const type of Object.values(snapshot.types)) assertPattern(type, /^application\/[\w.+-]+$/, 'GIO type');
+  assertEqual(snapshot.types.generic, 'application/zip', 'generic ZIP');
+  assert.deepEqual(Object.keys(snapshot.aliases).sort(), [...ALIASES].sort());
+  assert.deepEqual(Object.keys(snapshot.defaults).sort(), ['application/x-hwp', 'application/x-hwpx', ...ALIASES].sort());
+  for (const value of Object.values(snapshot.defaults)) assert.equal(typeof value, 'string');
+  assertPattern(snapshot.defaultSettingsSha256, /^[0-9a-f]{64}$/, 'default settings hash');
+  assertPattern(snapshot.otherDefinitions?.[MIME_SENTINEL.split('/').at(-1)], /^[0-9a-f]{64}$/, 'third-party MIME sentinel');
+}
+
+function assertTransition(record, baseline, value, hash) {
+  assert.ok(Number.isInteger(record.exitCode) && record.exitCode >= 0, 'observed command exit');
+  assert.ok(Number.isInteger(record.packageState?.exitCode), 'observed package state exit');
+  assert.equal(typeof record.packageState?.description, 'string');
+  assertSnapshotShape(record.mime);
+  const installed = ['clean-install', 'same-version-reinstall', 'update', 'injected-failure-rollback', 'explicit-recovery'].includes(record.name);
+  if (installed) {
+    assertMimeInstalled(record.mime, baseline, hash);
+    assert.deepEqual(record.owners, value.owners, 'observed file owners');
+    assertEqual(record.packageState.exitCode, 0, 'installed package query');
+    assertEqual(record.packageState.description.split(/\s+/).at(-1), value.version, 'installed package version');
+    if (value.format === 'deb') assert.ok(record.packageState.description.startsWith('install ok installed '));
+  } else if (record.name === 'refresh-failure-observed') assertMimeStale(record.mime, baseline, hash);
+  else assertMimeRestored(record.mime, baseline);
+  for (const path of [HELPER_PATH, REGISTRATION_PATH, MIME_PATH]) {
+    const present = installed || record.name === 'refresh-failure-observed' || (record.name === 'old-install' && path !== MIME_PATH);
+    assertEqual(record.filesPresent?.[path], present, `${record.name} ${path}`);
+  }
+  if (record.name === 'injected-failure-rollback') assert.notEqual(record.exitCode, 0);
+  else if (record.name === 'refresh-failure-observed') {
+    assertEqual(record.hookExitCode, 42, 'refresh hook exit');
+    assertEqual(record.recovery, 'explicit-candidate-reinstall', 'refresh failure recovery');
+    if (value.format === 'deb') assert.notEqual(record.exitCode, 0);
+    assert.deepEqual(record.mime.defaults, baseline.defaults);
+    assertEqual(record.mime.defaultSettingsSha256, baseline.defaultSettingsSha256, 'default settings hash');
+    assert.deepEqual(record.mime.otherDefinitions, baseline.otherDefinitions);
+  } else if (record.name === 'purge-without-update-mime-database') {
+    assertEqual(record.updateMimeDatabaseAvailable, false, 'purge missing refresh command');
+  } else assertEqual(record.exitCode, 0, `${record.name} exit`);
+}
+
+function assertMimeStale(snapshot, baseline, hash) {
+  assertEqual(snapshot.xmlSha256, hash, 'stale product XML hash');
+  assert.deepEqual(snapshot.types, baseline.types, 'stale MIME types');
+  assert.deepEqual(snapshot.aliases, baseline.aliases, 'stale MIME aliases');
+  assert.deepEqual(snapshot.defaults, baseline.defaults, 'stale MIME defaults');
+  assertEqual(snapshot.defaultSettingsSha256, baseline.defaultSettingsSha256, 'stale default settings');
+  assert.deepEqual(snapshot.otherDefinitions, baseline.otherDefinitions, 'stale third-party definitions');
 }
 
 function assertEqual(actual, expected, field) {
