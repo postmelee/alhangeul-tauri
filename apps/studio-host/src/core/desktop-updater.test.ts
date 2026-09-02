@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   DesktopUpdaterController,
   invokeUpdaterButton,
+  shouldOfferManualDownloads,
   type DesktopUpdaterBridge,
   type UpdaterSnapshot,
 } from './desktop-updater';
@@ -82,7 +83,8 @@ describe('desktop updater controller', () => {
 
   it('invokes native work only from a button with an updater action', async () => {
     const check = vi.fn().mockResolvedValue(snapshot());
-    const controller = new DesktopUpdaterController(fixtureBridge({ check }));
+    const openManualDownloads = vi.fn().mockResolvedValue(undefined);
+    const controller = new DesktopUpdaterController(fixtureBridge({ check, openManualDownloads }));
 
     expect(await invokeUpdaterButton(
       { tagName: 'DIV', dataset: { updaterAction: 'check' } } as never,
@@ -94,6 +96,27 @@ describe('desktop updater controller', () => {
       controller,
     )).toBe(true);
     expect(check).toHaveBeenCalledOnce();
+    expect(await invokeUpdaterButton(
+      { tagName: 'A', dataset: { updaterAction: 'manualDownloads' } } as never,
+      controller,
+    )).toBe(false);
+    expect(openManualDownloads).not.toHaveBeenCalled();
+    expect(await invokeUpdaterButton(
+      { tagName: 'BUTTON', dataset: { updaterAction: 'manualDownloads' } } as never,
+      controller,
+    )).toBe(true);
+    expect(openManualDownloads).toHaveBeenCalledOnce();
+  });
+
+  it('offers the manual download route for blockers and updater errors', () => {
+    expect(shouldOfferManualDownloads(null)).toBe(false);
+    expect(shouldOfferManualDownloads(snapshot())).toBe(false);
+    expect(shouldOfferManualDownloads(snapshot({
+      blocker: 'unsupportedInstall',
+      manualDownloadsUrl: 'https://example.test/updates/',
+    }))).toBe(true);
+    expect(shouldOfferManualDownloads(snapshot({ status: 'error' }))).toBe(true);
+    expect(shouldOfferManualDownloads(snapshot(), 'invoke failed')).toBe(true);
   });
 
   it('preserves unsupported-install fallback and allows a failed check retry', async () => {
@@ -128,6 +151,7 @@ function fixtureBridge(overrides: Partial<DesktopUpdaterBridge> = {}): DesktopUp
     check: vi.fn().mockResolvedValue(snapshot()),
     apply: vi.fn().mockResolvedValue(snapshot()),
     restart: vi.fn().mockResolvedValue(snapshot()),
+    openManualDownloads: vi.fn().mockResolvedValue(undefined),
     ...overrides,
   };
 }

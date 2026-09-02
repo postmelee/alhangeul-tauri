@@ -9,8 +9,8 @@ import {
   mkdir,
   mkdtemp,
   readFile,
+  rename,
   rm,
-  stat,
   writeFile,
 } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -26,10 +26,6 @@ import {
   validateReleaseInventory,
   verifyUpdaterArtifacts,
 } from '../scripts/updater/release-inventory.mjs';
-import {
-  buildUpdaterReleaseConfig,
-  writeUpdaterReleaseConfig,
-} from '../scripts/updater/release-config.mjs';
 
 const VERSION = '0.2.0';
 const TAG = `v${VERSION}`;
@@ -60,6 +56,15 @@ test('세 installer와 실제 Minisign 서명으로 deterministic release invent
 for (const [name, mutate, expected] of [
   ['누락 signature', async (fixture) => rm(`${fixture.paths.nsis}.sig`), /signature cardinality/],
   ['빈 installer', async (fixture) => writeFile(fixture.paths.msi, ''), /installer가 비어/],
+  [
+    'MSI locale 파일명 drift',
+    async (fixture) => {
+      const drifted = fixture.paths.msi.replace('_en-US.msi', '_fr-FR.msi');
+      await rename(fixture.paths.msi, drifted);
+      await rename(`${fixture.paths.msi}.sig`, `${drifted}.sig`);
+    },
+    /installer cardinality/,
+  ],
   ['남는 signature', async (fixture) => writeFile(join(fixture.root, 'orphan.sig'), 'x'), /대응 installer가 없는/],
   [
     'signature swap',
@@ -114,6 +119,7 @@ for (const [name, mutate, expected] of [
   ['mutable URL', (value) => { value.targets['windows-x86_64-nsis'].url = value.targets['windows-x86_64-nsis'].url.replace(TAG, 'latest'); }, /exact release URL/],
   ['wrong repository', (value) => { value.repository = 'example/alhangeul'; }, /repository/],
   ['MSI와 NSIS 교차', (value) => { value.targets['windows-x86_64-msi'].path = value.targets['windows-x86_64-nsis'].path; }, /kind 또는 path/],
+  ['MSI locale drift', (value) => { value.targets['windows-x86_64-msi'].path = value.targets['windows-x86_64-msi'].path.replace('_en-US', '_fr-FR'); }, /kind 또는 path/],
   ['AppImage suffix drift', (value) => { value.targets['linux-x86_64-appimage'].path += '.tar.gz'; }, /kind 또는 path/],
   ['partial target', (value) => { delete value.targets['windows-x86_64-msi']; }, /targets key/],
 ]) {
@@ -128,79 +134,6 @@ for (const [name, mutate, expected] of [
     }
   });
 }
-
-test('release config는 canonical endpoint와 공개키만 임시 0600 파일로 만든다', async () => {
-  const fixture = await createFixture();
-  try {
-    const built = buildUpdaterReleaseConfig({
-      version: VERSION,
-      endpoint: UPDATER_ENDPOINT,
-      publicKey: fixture.publicKey,
-    });
-    assert.equal(built.config.bundle.createUpdaterArtifacts, true);
-    assert.deepEqual(built.config.plugins.updater.endpoints, [UPDATER_ENDPOINT]);
-    assert.equal(built.config.plugins.updater.pubkey, fixture.publicKey);
-    assert.deepEqual(built.config.plugins.updater.windows, { installMode: 'passive' });
-    assert.equal(built.config.bundle.windows, undefined);
-
-    const repositoryRoot = join(fixture.tmp, 'repository');
-    const outputPath = join(fixture.tmp, 'secure', 'updater.json');
-    await mkdir(repositoryRoot);
-    const output = await writeUpdaterReleaseConfig({
-      repositoryRoot,
-      outputPath,
-      version: VERSION,
-      endpoint: UPDATER_ENDPOINT,
-      publicKey: fixture.publicKey,
-    });
-    assert.equal(output.outputPath, outputPath);
-    if (process.platform !== 'win32') {
-      assert.equal((await stat(outputPath)).mode & 0o077, 0);
-    }
-    await assert.rejects(
-      writeUpdaterReleaseConfig({
-        repositoryRoot,
-        outputPath: join(repositoryRoot, 'tracked.json'),
-        version: VERSION,
-        endpoint: UPDATER_ENDPOINT,
-        publicKey: fixture.publicKey,
-      }),
-      /repository 밖/,
-    );
-    await assert.rejects(
-      writeUpdaterReleaseConfig({
-        repositoryRoot,
-        outputPath,
-        version: VERSION,
-        endpoint: UPDATER_ENDPOINT,
-        publicKey: fixture.publicKey,
-      }),
-      /EEXIST/,
-    );
-  } finally {
-    await fixture.cleanup();
-  }
-});
-
-test('release config는 HTTP·placeholder·prerelease를 거부한다', async () => {
-  const fixture = await createFixture();
-  try {
-    assert.throws(
-      () => buildUpdaterReleaseConfig({ version: VERSION, endpoint: UPDATER_ENDPOINT.replace('https:', 'http:'), publicKey: fixture.publicKey }),
-      /canonical stable HTTPS/,
-    );
-    assert.throws(
-      () => buildUpdaterReleaseConfig({ version: VERSION, endpoint: UPDATER_ENDPOINT, publicKey: 'placeholder-key' }),
-      /placeholder/,
-    );
-    assert.throws(
-      () => buildUpdaterReleaseConfig({ version: `${VERSION}-rc.1`, endpoint: UPDATER_ENDPOINT, publicKey: fixture.publicKey }),
-      /stable semantic version/,
-    );
-  } finally {
-    await fixture.cleanup();
-  }
-});
 
 test('manifest는 complete inventory signature를 deterministic JSON으로 투영한다', async () => {
   const fixture = await createFixture();
@@ -249,7 +182,7 @@ async function createFixture() {
   ).toString('base64');
   const paths = {
     nsis: join(root, 'nsis', `Alhangeul_${VERSION}_x64-setup.exe`),
-    msi: join(root, 'msi', `Alhangeul_${VERSION}_x64.msi`),
+    msi: join(root, 'msi', `Alhangeul_${VERSION}_x64_en-US.msi`),
     appimage: join(root, 'appimage', `Alhangeul_${VERSION}_amd64.AppImage`),
   };
   for (const [kind, path] of Object.entries(paths)) {

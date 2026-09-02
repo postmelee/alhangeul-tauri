@@ -29,7 +29,9 @@ use commands::{
     render_page_svg, reveal_in_folder, take_pending_open_paths,
 };
 use state::AppState;
-use updater::commands::{updater_apply, updater_check, updater_get_state, updater_restart};
+use updater::commands::{
+    updater_apply, updater_check, updater_get_state, updater_open_manual_downloads, updater_restart,
+};
 
 pub fn run() {
     #[cfg(target_os = "linux")]
@@ -94,6 +96,7 @@ pub fn run() {
             updater_get_state,
             updater_check,
             updater_apply,
+            updater_open_manual_downloads,
             updater_restart,
         ])
         .build(tauri::generate_context!())

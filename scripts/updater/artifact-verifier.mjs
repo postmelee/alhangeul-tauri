@@ -4,9 +4,9 @@ import { basename, resolve } from 'node:path';
 import { inspectArtifactFiles } from '../verify-desktop-artifacts.mjs';
 
 export const UPDATER_TARGETS = Object.freeze({
-  'windows-x86_64-nsis': Object.freeze({ kind: 'nsis', suffix: '-setup.exe' }),
-  'windows-x86_64-msi': Object.freeze({ kind: 'msi', suffix: '.msi' }),
-  'linux-x86_64-appimage': Object.freeze({ kind: 'appimage', suffix: '.AppImage' }),
+  'windows-x86_64-nsis': Object.freeze({ kind: 'nsis', suffix: '_x64-setup.exe' }),
+  'windows-x86_64-msi': Object.freeze({ kind: 'msi', suffix: '_x64_en-US.msi' }),
+  'linux-x86_64-appimage': Object.freeze({ kind: 'appimage', suffix: '_amd64.AppImage' }),
 });
 
 const SEMVER = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
@@ -75,7 +75,7 @@ export async function verifyUpdaterArtifactFiles({
 
 export function acceptsUpdaterTarget(path, contract, version) {
   const filename = basename(path);
-  return SAFE_FILENAME.test(filename) && filename.includes(version) && filename.endsWith(contract.suffix);
+  return SAFE_FILENAME.test(filename) && filename === `Alhangeul_${version}${contract.suffix}`;
 }
 
 export function verifyUpdaterSignature(bytes, signature, publicKey) {

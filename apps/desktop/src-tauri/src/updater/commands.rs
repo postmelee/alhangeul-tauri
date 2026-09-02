@@ -92,6 +92,12 @@ pub(crate) fn updater_get_state(updater: State<'_, UpdaterService>) -> UpdaterSn
 }
 
 #[tauri::command]
+pub(crate) fn updater_open_manual_downloads() -> Result<(), String> {
+    open::that(MANUAL_DOWNLOADS_URL)
+        .map_err(|error| format!("다운로드 페이지를 열 수 없습니다: {error}"))
+}
+
+#[tauri::command]
 pub(crate) async fn updater_check(
     app: AppHandle,
     updater: State<'_, UpdaterService>,

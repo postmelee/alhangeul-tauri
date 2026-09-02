@@ -50,6 +50,7 @@ dependencies = [
  "pdf-writer",
  "rhwp",
  "roxmltree 0.20.0",
+ "rustix",
  "semver",
  "serde",
  "serde_json",

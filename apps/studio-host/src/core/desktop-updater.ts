@@ -33,6 +33,7 @@ export interface DesktopUpdaterBridge {
   check(): Promise<UpdaterSnapshot>;
   apply(): Promise<UpdaterSnapshot>;
   restart(): Promise<UpdaterSnapshot>;
+  openManualDownloads(): Promise<void>;
 }
 
 type UpdaterListener = (snapshot: UpdaterSnapshot) => void;
@@ -74,6 +75,10 @@ export class DesktopUpdaterController {
 
   async restart(): Promise<UpdaterSnapshot> {
     return this.accept(await this.bridge.restart());
+  }
+
+  async openManualDownloads(): Promise<void> {
+    await this.bridge.openManualDownloads();
   }
 
   private async connect(): Promise<void> {
@@ -135,6 +140,9 @@ export async function invokeUpdaterButton(
     case 'restart':
       await controller.restart();
       return true;
+    case 'manualDownloads':
+      await controller.openManualDownloads();
+      return true;
     default:
       return false;
   }
@@ -158,6 +166,13 @@ export function updaterStatusMessage(snapshot: UpdaterSnapshot): string {
       ? `현재 ${snapshot.currentVersion} 버전이 최신입니다.`
       : '업데이트 상태를 확인할 수 있습니다.';
   }
+}
+
+export function shouldOfferManualDownloads(
+  snapshot: UpdaterSnapshot | null,
+  actionError?: string,
+): boolean {
+  return Boolean(actionError || snapshot?.manualDownloadsUrl || snapshot?.status === 'error');
 }
 
 function progressSuffix(snapshot: UpdaterSnapshot): string {
@@ -202,6 +217,10 @@ function createTauriUpdaterBridge(): DesktopUpdaterBridge {
     async restart() {
       const { invoke } = await import('@tauri-apps/api/core');
       return invoke<UpdaterSnapshot>('updater_restart');
+    },
+    async openManualDownloads() {
+      const { invoke } = await import('@tauri-apps/api/core');
+      await invoke<void>('updater_open_manual_downloads');
     },
   };
 }

@@ -12,8 +12,8 @@ updater가 배포 환경에서 활성화됐다고 판단하지 않는다.
 ## 소유 경계
 
 - `apps/studio-host/src/core/desktop-updater.ts`는 Tauri bridge, stale event 제거와 UI 구독을 소유한다.
-- `apps/studio-host/src/ui/update-dialog.ts`는 상태·진행률·릴리스 노트, 명시 설치와 수동 다운로드
-  안내만 표시한다.
+- `apps/studio-host/src/ui/update-dialog.ts`는 상태·진행률·릴리스 노트, 명시 설치와 native command를
+  통한 수동 다운로드 안내만 표시한다.
 - `apps/desktop/src-tauri/src/updater/`는 설치 형식 판별, 상태 전이, 단일 작업 직렬화,
   metadata 검증, 다운로드·설치와 dirty document 차단을 소유한다.
 - `tauri-plugin-updater`는 HTTPS manifest 조회와 Tauri updater signature 검증·설치를 담당한다.
@@ -27,13 +27,14 @@ production public key와 Windows passive install을 활성화한다. debug build
 
 ## command, event와 상태
 
-TypeScript는 다음 네 command만 호출한다.
+TypeScript는 다음 다섯 command만 호출한다.
 
 | Command | 역할 |
 |---|---|
 | `updater_get_state` | 현재 snapshot 조회 |
 | `updater_check` | 사용자가 요청한 새 버전 확인 |
 | `updater_apply` | 사용자가 선택한 update 다운로드 후 설치 |
+| `updater_open_manual_downloads` | 인자 없이 canonical 업데이트 페이지를 OS 기본 브라우저로 열기 |
 | `updater_restart` | AppImage 설치 완료 뒤 명시 재시작 |
 
 Rust는 상태가 바뀔 때 `alhangeul-updater-state` event로 전체 snapshot을 보낸다. 상태는
@@ -53,7 +54,7 @@ blocker, retry 가능 여부가 있는 failure와 manual download URL을 포함�
 |---|---|---|
 | Windows x64 NSIS | 실행 경로와 일치하는 제품 record 하나, current-user uninstall entry 하나, NSIS uninstaller·binary 근거 | `windows-x86_64-nsis` |
 | Windows x64 MSI | 실행 경로와 일치하는 제품 record 하나, 64-bit machine uninstall entry 하나, product code·Windows Installer 근거 | `windows-x86_64-msi` |
-| Linux x64 AppImage | 절대 `APPIMAGE`·`APPDIR`, 실제 파일·디렉터리, 실행 파일이 AppDir 내부, AppImage와 부모 경로 쓰기 가능 | `linux-x86_64-appimage` |
+| Linux x64 AppImage | 절대 `APPIMAGE`·`APPDIR`, 실제 파일·디렉터리, 실행 파일이 AppDir 내부, 현재 process의 실효 권한으로 AppImage와 부모 경로에 `W_OK` | `linux-x86_64-appimage` |
 
 architecture 불일치, 근거 누락·중복·경로 불일치와 probe 오류는 `unsupportedInstall`로 닫힌다.
 읽기 전용 AppImage는 `readOnlyAppImage`로 닫힌다. Windows MSI와 NSIS를 교차 선택하거나 Linux
@@ -75,9 +76,10 @@ timeout과 HTTP 실패는 설치를 시작하지 않고 retry 가능한 `updateC
 AppImage만 설치 성공 후 명시 재시작을 요구하며 Windows installer의 종료 동작은 native updater가
 소유한다.
 
-network, download와 install 오류는 편집 session을 유지한 채 `error`와 retryable failure로 표시한다.
-지원하지 않는 설치본과 읽기 전용 AppImage는 command를 실패시키는 대신 수동 다운로드 URL을 계속
-제공한다.
+network, download와 install 오류는 편집 session을 유지한 채 `error`와 retryable failure로 표시하고
+수동 다운로드 동작도 함께 제공한다. 지원하지 않는 설치본과 읽기 전용 AppImage도 command를
+실패시키는 대신 수동 다운로드 URL을 계속 제공한다. UI는 snapshot의 URL을 직접 열지 않으며,
+`updater_open_manual_downloads`가 인자를 받지 않고 고정된 canonical URL만 연다.
 
 ## 배포 신뢰 사슬
 

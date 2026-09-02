@@ -85,6 +85,8 @@ fn active_monitor_logical_work_area(app: &AppHandle) -> Option<LogicalWorkArea> 
         // Tauri 2.10 converts its GTK monitor handle on the calling thread.
         // Keep GDK access (including workarea()) on the GTK main thread; only
         // the plain logical rectangle may cross back to the window worker.
+        // Callers must run on a non-main worker because waiting here on the GTK
+        // main thread would deadlock the queued callback below.
         let (sender, receiver) = std::sync::mpsc::channel();
         let main_thread_app = app.clone();
         app.run_on_main_thread(move || {

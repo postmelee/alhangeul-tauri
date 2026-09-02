@@ -178,7 +178,7 @@ async function createFixture(role, reusedKeys = null) {
   const version = role === 'n' ? UPDATER_ACCEPTANCE_N_VERSION : UPDATER_ACCEPTANCE_N_PLUS_ONE_VERSION;
   const paths = {
     nsis: join(root, 'nsis', `Alhangeul_${version}_x64-setup.exe`),
-    msi: join(root, 'msi', `Alhangeul_${version}_x64.msi`),
+    msi: join(root, 'msi', `Alhangeul_${version}_x64_en-US.msi`),
     appimage: join(root, 'appimage', `Alhangeul_${version}_amd64.AppImage`),
   };
   for (const [kind, path] of Object.entries(paths)) {

@@ -63,6 +63,7 @@ impl UpdaterBackend for PendingBackend {
 
 struct FixturePackage {
     metadata: UpdateMetadata,
+    downloaded: Arc<AtomicBool>,
     installed: Arc<AtomicBool>,
 }
 
@@ -76,6 +77,7 @@ impl UpdatePackage for FixturePackage {
         on_chunk: Arc<dyn Fn(usize, Option<u64>) + Send + Sync>,
     ) -> BackendFuture<'a, Vec<u8>> {
         Box::pin(async move {
+            self.downloaded.store(true, Ordering::Relaxed);
             on_chunk(3, Some(8));
             on_chunk(5, Some(8));
             Ok(vec![1, 2, 3])
@@ -124,12 +126,39 @@ fn appimage_lifecycle_publishes_progress_and_requires_restart() {
 }
 
 #[test]
-fn dirty_document_guard_runs_before_install_and_keeps_update_retryable() {
+fn dirty_document_guard_blocks_before_download() {
+    let downloaded = Arc::new(AtomicBool::new(false));
     let installed = Arc::new(AtomicBool::new(false));
     let service = fixture_service(
         ArtifactKind::AppImage,
-        vec![Ok(update_outcome(
+        vec![Ok(tracked_update_outcome(
             ArtifactKind::AppImage,
+            downloaded.clone(),
+            installed.clone(),
+        ))],
+    );
+    let events = RecordedEvents::new();
+    tauri::async_runtime::block_on(service.check(UpdaterTrigger::Manual, events.clone()))
+        .expect("check should succeed");
+
+    let blocked = tauri::async_runtime::block_on(service.apply(|| true, events))
+        .expect("dirty document should return a state snapshot");
+
+    assert_eq!(blocked.status, UpdaterStatus::Available);
+    assert_eq!(blocked.blocker, Some(UpdaterBlocker::DirtyDocuments));
+    assert!(!downloaded.load(Ordering::Relaxed));
+    assert!(!installed.load(Ordering::Relaxed));
+}
+
+#[test]
+fn dirty_document_guard_runs_before_install_and_keeps_update_retryable() {
+    let downloaded = Arc::new(AtomicBool::new(false));
+    let installed = Arc::new(AtomicBool::new(false));
+    let service = fixture_service(
+        ArtifactKind::AppImage,
+        vec![Ok(tracked_update_outcome(
+            ArtifactKind::AppImage,
+            downloaded.clone(),
             installed.clone(),
         ))],
     );
@@ -145,6 +174,7 @@ fn dirty_document_guard_runs_before_install_and_keeps_update_retryable() {
 
     assert_eq!(blocked.status, UpdaterStatus::Available);
     assert_eq!(blocked.blocker, Some(UpdaterBlocker::DirtyDocuments));
+    assert!(downloaded.load(Ordering::Relaxed));
     assert!(!installed.load(Ordering::Relaxed));
 }
 
@@ -221,8 +251,16 @@ fn fixture_service(
 }
 
 fn update_outcome(kind: ArtifactKind, installed: Arc<AtomicBool>) -> CheckOutcome {
+    tracked_update_outcome(kind, Arc::new(AtomicBool::new(false)), installed)
+}
+
+fn tracked_update_outcome(
+    kind: ArtifactKind,
+    downloaded: Arc<AtomicBool>,
+    installed: Arc<AtomicBool>,
+) -> CheckOutcome {
     let asset_path = match kind {
-        ArtifactKind::Msi => "Alhangeul_0.2.0_x64.msi",
+        ArtifactKind::Msi => "Alhangeul_0.2.0_x64_en-US.msi",
         ArtifactKind::Nsis => "Alhangeul_0.2.0_x64-setup.exe",
         ArtifactKind::AppImage => "Alhangeul_0.2.0_amd64.AppImage",
     };
@@ -237,6 +275,7 @@ fn update_outcome(kind: ArtifactKind, installed: Arc<AtomicBool>) -> CheckOutcom
                 secure_download: true,
                 release_notes: Some("fixture release".into()),
             },
+            downloaded,
             installed,
         })),
     }

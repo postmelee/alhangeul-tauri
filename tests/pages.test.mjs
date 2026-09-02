@@ -135,7 +135,7 @@ for (const [name, mutate, expected] of [
     '다른 repository',
     (value) => {
       value.downloads['windows-x86_64-msi'] =
-        'https://github.com/example/alhangeul-tauri/releases/download/v0.2.0/Alhangeul_0.2.0_x64.msi';
+        'https://github.com/example/alhangeul-tauri/releases/download/v0.2.0/Alhangeul_0.2.0_x64_en-US.msi';
     },
     /exact release tag/,
   ],
@@ -330,7 +330,7 @@ function publishedFixture() {
       'windows-x86_64-nsis':
         'https://github.com/postmelee/alhangeul-tauri/releases/download/v0.2.0/Alhangeul_0.2.0_x64-setup.exe',
       'windows-x86_64-msi':
-        'https://github.com/postmelee/alhangeul-tauri/releases/download/v0.2.0/Alhangeul_0.2.0_x64.msi',
+        'https://github.com/postmelee/alhangeul-tauri/releases/download/v0.2.0/Alhangeul_0.2.0_x64_en-US.msi',
       'linux-x86_64-appimage':
         'https://github.com/postmelee/alhangeul-tauri/releases/download/v0.2.0/Alhangeul_0.2.0_amd64.AppImage',
     },
@@ -343,7 +343,7 @@ function publishedManifestFixture() {
   const signature = fixtureSignature();
   const paths = {
     'windows-x86_64-nsis': ['nsis', `Alhangeul_${release.version}_x64-setup.exe`],
-    'windows-x86_64-msi': ['msi', `Alhangeul_${release.version}_x64.msi`],
+    'windows-x86_64-msi': ['msi', `Alhangeul_${release.version}_x64_en-US.msi`],
     'linux-x86_64-appimage': ['appimage', `Alhangeul_${release.version}_amd64.AppImage`],
   };
   const kinds = {

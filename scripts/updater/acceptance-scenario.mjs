@@ -86,6 +86,7 @@ export function validateUpdaterAcceptanceScenarioManifest(
 }
 
 function buildExpectedWithoutValidation(inventory, positiveManifest, scenario) {
+  // builder 결함이 공유 helper를 통해 스스로 통과하지 않도록 검증용 변환은 독립적으로 유지한다.
   const verifiedInventory = validateUpdaterAcceptanceInventory(inventory);
   const positive = validateUpdaterAcceptanceManifest(positiveManifest, verifiedInventory);
   const manifest = structuredClone(positive);

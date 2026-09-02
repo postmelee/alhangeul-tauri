@@ -3,6 +3,7 @@ import {
   ensureDesktopUpdater,
   getDesktopUpdaterController,
   invokeUpdaterButton,
+  shouldOfferManualDownloads,
   updaterStatusMessage,
   type DesktopUpdaterController,
   type UpdaterSnapshot,
@@ -89,13 +90,15 @@ class UpdateDialog extends ModalDialog {
       });
       this.content.appendChild(action);
     }
-    if (snapshot?.manualDownloadsUrl) {
-      const fallback = document.createElement('a');
+    if (shouldOfferManualDownloads(snapshot, actionError)) {
+      const fallback = document.createElement('button');
+      fallback.type = 'button';
       fallback.className = 'dialog-btn updater-dialog-downloads-link';
-      fallback.href = snapshot.manualDownloadsUrl;
-      fallback.target = '_blank';
-      fallback.rel = 'noopener noreferrer';
+      fallback.dataset.updaterAction = 'manualDownloads';
       fallback.textContent = '다운로드 페이지 열기';
+      fallback.addEventListener('click', (event) => {
+        void this.runAction(event.currentTarget);
+      });
       this.content.appendChild(fallback);
     }
   }

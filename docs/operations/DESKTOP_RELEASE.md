@@ -442,6 +442,12 @@ native run에서 완료했다. 공개 prerelease 후보는 Task #13과 후속 Ta
 
 릴리스·서명·패키지 게시·updater 활성화는 작업지시자의 명시 승인 없이는 수행하지 않는다.
 
+앱의 수동 복구 경로는 snapshot URL을 웹뷰에서 직접 열지 않는다. 인자를 받지 않는 native command가
+고정된 canonical 업데이트 페이지만 OS 기본 브라우저로 열며, 지원하지 않는 설치본·읽기 전용
+AppImage뿐 아니라 확인·다운로드·설치 실패에서도 이 경로를 유지한다. Linux AppImage 자동 설치
+자격은 mode bit 존재가 아니라 현재 process의 실효 `W_OK`로 판정한다. 검사 뒤 권한이나 파일 상태가
+바뀌어 설치가 실패하더라도 자동 우회하지 않고 수동 복구 경로를 제공한다.
+
 ### Production updater key와 Secret 책임
 
 tracked `tauri.updater.conf.json`에는 public key만 둔다. release inventory가 고정하는 production

@@ -97,8 +97,6 @@ fn optional_string(key: &winreg::RegKey, name: &str) -> Option<String> {
 
 #[cfg(target_os = "linux")]
 fn linux_evidence() -> Result<LinuxEvidence, TargetProbeError> {
-    use std::os::unix::fs::PermissionsExt;
-
     let current_executable = std::env::current_exe()
         .and_then(std::fs::canonicalize)
         .map_err(|_| TargetProbeError)?;
@@ -125,11 +123,23 @@ fn linux_evidence() -> Result<LinuxEvidence, TargetProbeError> {
         appdir_exists: appdir_metadata.as_ref().is_some_and(|meta| meta.is_dir()),
         appimage_writable: appimage_metadata
             .as_ref()
-            .is_some_and(|meta| meta.permissions().mode() & 0o222 != 0),
-        parent_writable: parent_metadata
-            .as_ref()
-            .is_some_and(|meta| meta.permissions().mode() & 0o222 != 0),
+            .is_some_and(|meta| meta.is_file())
+            && appimage_path
+                .as_deref()
+                .is_some_and(has_effective_write_access),
+        parent_writable: parent_metadata.as_ref().is_some_and(|meta| meta.is_dir())
+            && appimage_path
+                .as_deref()
+                .and_then(std::path::Path::parent)
+                .is_some_and(has_effective_write_access),
     })
+}
+
+#[cfg(target_os = "linux")]
+fn has_effective_write_access(path: &std::path::Path) -> bool {
+    use rustix::fs::{accessat, Access, AtFlags, CWD};
+
+    accessat(CWD, path, Access::WRITE_OK, AtFlags::EACCESS).is_ok()
 }
 
 #[cfg(target_os = "linux")]
@@ -153,3 +163,24 @@ fn _keep_windows_types_linked(
 
 #[cfg(not(target_os = "linux"))]
 fn _keep_linux_type_linked(_: LinuxEvidence) {}
+
+#[cfg(all(test, target_os = "linux"))]
+mod linux_tests {
+    use super::has_effective_write_access;
+    use std::os::unix::fs::PermissionsExt;
+
+    #[test]
+    fn effective_write_probe_tracks_current_user_file_and_directory_access() {
+        let root = tempfile::tempdir().expect("temporary directory");
+        let file = root.path().join("Alhangeul.AppImage");
+        std::fs::write(&file, b"fixture").expect("fixture AppImage");
+
+        assert!(has_effective_write_access(root.path()));
+        assert!(has_effective_write_access(&file));
+
+        std::fs::set_permissions(&file, std::fs::Permissions::from_mode(0o400))
+            .expect("read-only fixture");
+        assert!(!has_effective_write_access(&file));
+        assert!(!has_effective_write_access(&root.path().join("missing")));
+    }
+}
