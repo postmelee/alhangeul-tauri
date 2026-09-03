@@ -38,7 +38,9 @@ pub(crate) enum WindowsRegistryHive {
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum WindowsRegistryView {
-    #[cfg_attr(not(target_os = "windows"), allow(dead_code))]
+    // Native discovery intentionally reads only the 64-bit view. Keep the
+    // rejected 32-bit value so eligibility tests can prove that boundary.
+    #[allow(dead_code)]
     Registry32,
     Registry64,
 }
