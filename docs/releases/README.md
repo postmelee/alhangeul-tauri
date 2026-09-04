@@ -19,6 +19,8 @@
 | 위치 | 역할 |
 |---|---|
 | [데스크톱 릴리즈 정책](../operations/DESKTOP_RELEASE.md) | 반복 승인·지원 matrix·신뢰·복구 기준 |
+| [공개 실행 가이드](../operations/PUBLIC_RELEASE_RUNBOOK.md) | 입력·명령·승인·중단·재개 순서 |
+| [최소 검증 체크리스트](../operations/RELEASE_CHECKLIST.md) | 매 공개 기본 확인과 변경 영향별 추가 확인 |
 | 이 인덱스 | 버전별 상태와 기록 진입점 |
 | `v<version>.md` | 해당 버전의 식별자·변경점·검증·결정·실패 재개·인계 |
 | [기록 템플릿](../../mydocs/_templates/release_record.md) | 다음 버전의 작성 형식; 실제 결과를 미리 채우지 않음 |
@@ -26,8 +28,6 @@
 | [사용자 업데이트 페이지](https://postmelee.github.io/alhangeul-tauri/updates/) | 짧은 변경 요약과 플랫폼별 다운로드 진입점 |
 | `site/release.json`, Pages output manifest | 별도 승인으로 게시하는 다운로드·updater 기계 입력 |
 | `mydocs/working/`, `mydocs/report/` | 특정 Task의 단계·최종 결과; 제품 공개 기록과 구분 |
-
-공개 실행 runbook과 검증 체크리스트의 진입점은 Task #54 Stage 2에서 연결한다.
 
 ## 작성·갱신 규칙
 

@@ -6,6 +6,8 @@
 - 작성 시점: 릴리즈 준비 시작 시 생성하고 gate 실행·승인·실패·공개 read-back 직후 갱신한다.
 - 작성 언어: 한국어(`ko`). 사용자용 요약은 사용자 용어로, 기술 근거는 별도 섹션으로 작성한다.
 - 반복 정책은 `docs/operations/DESKTOP_RELEASE.md`, Task 결과는 `mydocs/working/`·`report/`에 둔다.
+- 실행 gate는 [공개 가이드](../../docs/operations/PUBLIC_RELEASE_RUNBOOK.md), 검증 선택은
+  [체크리스트](../../docs/operations/RELEASE_CHECKLIST.md)를 따르고 실제 결과만 기록한다.
 - 본 템플릿의 설명·placeholder를 실제 실행 성공으로 복사하지 않는다. 미확정은 `미확정`,
   미실행은 이유와 다음 담당자를 쓰며 첫 공개의 이전 version은 `없음`으로 적는다.
 

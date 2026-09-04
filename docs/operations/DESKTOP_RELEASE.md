@@ -9,14 +9,15 @@
 | 문서 | 답하는 질문 |
 |---|---|
 | 이 문서 | 무엇을 배포하며 어떤 승인·신뢰 경계를 지키는가 |
+| [공개 실행 가이드](PUBLIC_RELEASE_RUNBOOK.md) | 어떤 입력·명령·승인으로 진행하고 어디서 멈추는가 |
+| [최소 검증 체크리스트](RELEASE_CHECKLIST.md) | 이번 변경에서 무엇을 실행하고 재사용하는가 |
 | [릴리즈 기록 인덱스](../releases/README.md) | 어느 버전이 준비 중이고 무엇이 실제 공개됐는가 |
 | 버전별 기록 | 이전 버전·후보·변경점·검증·승인·공개 근거가 무엇인가 |
 | [기록 템플릿](../../mydocs/_templates/release_record.md) | 새 버전의 기록을 어떤 형식으로 작성하는가 |
 | [updater 아키텍처](../architecture/UPDATER.md) | 설치 형식 판별·서명·dirty 보호·수동 복구는 어떻게 동작하는가 |
 | [개발 문서](../DEVELOPMENT.md)·[upstream 경계](../architecture/UPSTREAM.md) | 개발 검증과 의존성 갱신은 어디서 시작하는가 |
 
-실행 명령 중심의 `PUBLIC_RELEASE_RUNBOOK.md`와 변경 영향별 `RELEASE_CHECKLIST.md`는
-Task #54 Stage 2에서 추가할 문서다. 현재 정책만으로 공개 실행 승인을 대신하지 않는다.
+정책·실행 가이드·체크리스트를 읽은 것만으로 공개 실행 승인을 대신하지 않는다.
 
 ## 제품 version과 source 기준
 
