@@ -154,11 +154,18 @@ test('Alhangeul source save and PDF export keep format and current SVG boundarie
     join(repoRoot, 'apps/studio-host/src/core/desktop-persistence.ts'),
     'utf8',
   );
+  const sourceExport = await readFile(
+    join(repoRoot, 'apps/studio-host/src/core/desktop-source-export.ts'),
+    'utf8',
+  );
   const commands = await readFile(join(repoRoot, 'apps/desktop/src-tauri/src/commands.rs'), 'utf8');
   const state = await readFile(join(repoRoot, 'apps/desktop/src-tauri/src/state.rs'), 'utf8');
   const pdfExport = await readFile(join(repoRoot, 'apps/desktop/src-tauri/src/pdf_export.rs'), 'utf8');
 
-  assert.match(persistence, /requestedFormat === 'hwpx'[\s\S]*handlers\.exportHwpx\(\)/);
+  assert.match(persistence, /exportSource\(requestedFormat\)/);
+  assert.match(sourceExport, /exportDocumentWithReportForFormat/);
+  assert.match(sourceExport, /exportPasswordProtectedDocumentWithReportForFormat/);
+  assert.match(sourceExport, /flushDeferredPaginationIfNeeded\('native-save'\)/);
   assert.match(persistence, /handlers\.getPageSvg\(pageIndex\)/);
   assert.match(persistence, /append_pdf_page/);
   assert.doesNotMatch(persistence, /notifySaved/);
@@ -198,6 +205,32 @@ test('Alhangeul reconnects native lifecycle through leaf adapters without a nati
   ]) {
     await assert.rejects(access(join(repoRoot, path)), { code: 'ENOENT' });
   }
+});
+
+test('Alhangeul keeps handler acquisition async and platform detection in Studio', async () => {
+  const embedRuntime = await readFile(
+    join(repoRoot, 'apps/studio-host/src/embed/desktop-runtime.ts'),
+    'utf8',
+  );
+  const platformAdapter = await readFile(
+    join(repoRoot, 'apps/studio-host/src/core/platform.ts'),
+    'utf8',
+  );
+  const nativeCommands = await readFile(
+    join(repoRoot, 'apps/desktop/src-tauri/src/commands.rs'),
+    'utf8',
+  );
+  const nativeEntry = await readFile(
+    join(repoRoot, 'apps/desktop/src-tauri/src/lib.rs'),
+    'utf8',
+  );
+
+  assert.match(embedRuntime, /waitForDesktopStudioHandlers/);
+  assert.doesNotMatch(embedRuntime, /getDesktopStudioHandlers/);
+  assert.match(platformAdapter, /detectDesktopPlatform/);
+  assert.doesNotMatch(platformAdapter, /hydrateDesktopPlatform/);
+  assert.doesNotMatch(nativeCommands, /desktop_platform/);
+  assert.doesNotMatch(nativeEntry, /desktop_platform/);
 });
 
 function git(args) {

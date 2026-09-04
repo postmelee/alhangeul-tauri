@@ -1,7 +1,7 @@
 use crate::font_catalog::LocalFontEntry;
 use crate::recent_documents::{self, RecentDocument};
 use crate::state::{
-    editable_core_from_bytes, AppState, DocumentFormat, DocumentOpenResult,
+    direct_preview_svg_from_bytes, AppState, DocumentFormat, DocumentOpenResult,
     ExternalModificationStatus, FileFingerprint, MutationResult, PageSvgResult, SaveResult,
 };
 use serde::Deserialize;
@@ -51,6 +51,11 @@ pub fn take_pending_open_paths(
     state: State<'_, AppState>,
 ) -> Result<Vec<String>, String> {
     state.pending_open_paths.take_for_window(window.label())
+}
+
+#[tauri::command]
+pub async fn print_current_webview(window: WebviewWindow) -> Result<(), String> {
+    crate::system_print::print_current_webview(window).await
 }
 
 #[tauri::command]
@@ -154,9 +159,7 @@ pub fn render_document_preview(path: String) -> Result<String, String> {
             e
         )
     })?;
-    let core = editable_core_from_bytes(&bytes, "문서 파싱 실패", "미리보기용 문서 변환 실패")?;
-    core.render_page_svg_native(0)
-        .map_err(|e| format!("문서 미리보기를 렌더링할 수 없습니다: {}", e))
+    direct_preview_svg_from_bytes(&bytes)
 }
 
 #[tauri::command]
@@ -293,17 +296,6 @@ pub fn destroy_current_window(window: WebviewWindow) -> Result<(), String> {
     window
         .destroy()
         .map_err(|e| format!("창을 닫을 수 없습니다: {}", e))
-}
-
-#[tauri::command]
-pub fn desktop_platform() -> &'static str {
-    if cfg!(windows) {
-        "windows"
-    } else if cfg!(target_os = "linux") {
-        "linux"
-    } else {
-        "unknown"
-    }
 }
 
 #[tauri::command]

@@ -16,6 +16,7 @@ const fixturePaths = [
   'apps/desktop/src-tauri/Cargo.lock',
   'apps/desktop/src-tauri/tauri.conf.json',
   'apps/desktop/src-tauri/linux/main.desktop',
+  'apps/desktop/src-tauri/tauri.updater.conf.json',
 ];
 
 test('현재 HWP/HWPX release metadata를 읽기 전용으로 승인한다', async () => {
@@ -29,6 +30,7 @@ test('현재 HWP/HWPX release metadata를 읽기 전용으로 승인한다', asy
   assert.equal(result.productName, 'Alhangeul');
   assert.equal(result.version, '0.1.0');
   assert.deepEqual(result.fileAssociations, ['hwp', 'hwpx']);
+  assert.equal(result.updaterKeyFingerprint, '100c8f3183b25de3366574c46a1a2a66950a1d5f24862f3461c27b095713ffdd');
   assert.deepEqual(after, before);
 });
 
@@ -37,6 +39,7 @@ for (const [name, mutate, expected] of [
   ['HWPX association 삭제', (config) => { config.bundle.fileAssociations.pop(); }, /fileAssociations\.length/],
   ['DEB desktop template drift', (config) => { config.bundle.linux.deb.desktopTemplate = 'linux/other.desktop'; }, /bundle\.linux\.deb\.desktopTemplate/],
   ['RPM desktop template drift', (config) => { config.bundle.linux.rpm.desktopTemplate = 'linux/other.desktop'; }, /bundle\.linux\.rpm\.desktopTemplate/],
+  ['HWPX canonical MIME drift', (config) => { config.bundle.fileAssociations[1].mimeType = 'application/vnd.hancom.hwpx'; }, /mimeType/],
   ['updater 활성화', (config) => { config.plugins = { updater: {} }; }, /updater 설정/],
 ]) {
   test(`${name}를 거부한다`, async () => {
@@ -52,6 +55,39 @@ for (const [name, mutate, expected] of [
     }
   });
 }
+
+for (const [name, mutate, expected] of [
+  ['updater endpoint drift', (config) => { config.plugins.updater.endpoints[0] = 'http://example.com/stable.json'; }, /endpoints/],
+  ['updater public key drift', (config) => { config.plugins.updater.pubkey = 'placeholder-key'; }, /pubkey/],
+  ['updater artifact 비활성화', (config) => { config.bundle.createUpdaterArtifacts = false; }, /createUpdaterArtifacts/],
+  ['Windows updater install mode drift', (config) => { config.plugins.updater.windows.installMode = 'basicUi'; }, /installMode/],
+]) {
+  test(`${name}를 거부한다`, async () => {
+    const fixture = await createFixture();
+    try {
+      const configPath = join(fixture.root, 'apps/desktop/src-tauri/tauri.updater.conf.json');
+      const config = JSON.parse(await readFile(configPath, 'utf8'));
+      mutate(config);
+      await writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`);
+      await assert.rejects(verifyReleaseMetadata({ repositoryRoot: fixture.root }), expected);
+    } finally {
+      await rm(fixture.tmp, { recursive: true, force: true });
+    }
+  });
+}
+
+test('tracked updater release overlay 누락을 거부한다', async () => {
+  const fixture = await createFixture();
+  try {
+    await rm(join(fixture.root, 'apps/desktop/src-tauri/tauri.updater.conf.json'));
+    await assert.rejects(
+      verifyReleaseMetadata({ repositoryRoot: fixture.root }),
+      /tauri\.updater\.conf\.json을 읽을 수 없습니다/,
+    );
+  } finally {
+    await rm(fixture.tmp, { recursive: true, force: true });
+  }
+});
 
 test('CLI는 repository, root override와 잘못된 인자를 구분한다', async () => {
   const direct = runCli([]);

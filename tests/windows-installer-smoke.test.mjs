@@ -7,7 +7,15 @@ import test from 'node:test';
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const scriptPath = join(repoRoot, 'scripts/windows-installer-smoke.ps1');
 const scriptBytes = await readFile(scriptPath);
-const source = scriptBytes.toString('utf8');
+const helperPaths = [
+  join(repoRoot, 'scripts/windows-installer-smoke-support.ps1'),
+  join(repoRoot, 'scripts/windows-thumbnail-smoke.ps1'),
+  join(repoRoot, 'scripts/windows-process-lifecycle.ps1'),
+];
+const helperBytes = await Promise.all(helperPaths.map((path) => readFile(path)));
+const entrySource = scriptBytes.toString('utf8');
+const sources = [entrySource, ...helperBytes.map((bytes) => bytes.toString('utf8'))];
+const source = sources.join('\n');
 
 test('Windows PowerShell 5.1이 UTF-8 source를 인식하도록 BOM을 유지한다', () => {
   assert.deepEqual(
@@ -15,15 +23,19 @@ test('Windows PowerShell 5.1이 UTF-8 source를 인식하도록 BOM을 유지한
     [0xef, 0xbb, 0xbf],
     'PowerShell script는 UTF-8 BOM으로 시작해야 합니다.',
   );
+  for (const bytes of helperBytes) {
+    assert.deepEqual([...bytes.subarray(0, 3)], [0xef, 0xbb, 0xbf]);
+  }
 });
 
 test('entry parameter는 artifact, output, expected version 세 개로 제한한다', () => {
-  const parameterBlock = source.match(/param\(([\s\S]*?)\)\nSet-StrictMode/);
+  const parameterBlock = entrySource.match(/param\(([\s\S]*?)\)\nSet-StrictMode/);
   assert.ok(parameterBlock, 'PowerShell parameter block이 필요합니다.');
   const names = [...parameterBlock[1].matchAll(/\[string\]\$(\w+)/g)]
     .map((match) => match[1]);
   assert.deepEqual(names, ['ArtifactRoot', 'OutputDirectory', 'ExpectedVersion']);
-  assert.match(source, /Set-StrictMode -Version Latest/);
+  assert.match(entrySource, /Set-StrictMode -Version Latest/);
+  assert.match(entrySource, /windows-process-lifecycle\.ps1/);
   assert.doesNotMatch(source, /\bImport-Module\b/);
 });
 
@@ -31,7 +43,10 @@ test('installer cardinality와 inventory hash를 설치 전에 검증한다', ()
   assert.match(source, /Get-ChildItem -LiteralPath \$rootItem\.FullName -Recurse -File/);
   assert.match(source, /\$msiFiles\.Count -eq 1/);
   assert.match(source, /\$nsisFiles\.Count -eq 1/);
-  assert.match(source, /\$files\.Count -eq 3/);
+  assert.match(source, /\$files\.Count -eq 5/);
+  assert.match(source, /AlhangeulThumbnailHandler\.dll/);
+  assert.match(source, /AlhangeulThumbnailWorker\.exe/);
+  assert.match(source, /Assert-PortableExecutable/);
   assert.match(source, /alhangeul-artifact-inventory\.json/);
   assert.match(source, /Get-FileHash -LiteralPath \$File\.FullName -Algorithm SHA256/);
   assertOrdered([
@@ -47,6 +62,7 @@ test('MSI와 NSIS silent install 및 원본 진단 log 계약을 유지한다', 
   }
   assert.match(source, /Start-Process -FilePath \$filePath -ArgumentList \$arguments -Wait -PassThru/);
   assert.match(source, /Start-Process -FilePath \$path -ArgumentList @\('\/S'\) -Wait -PassThru/);
+  assert.match(source, /@\('\/S', '\/UPDATE'\)/, '동일 버전 NSIS 재설치는 update mode를 사용해야 합니다.');
   assert.match(source, /Return value 3/);
   assert.match(source, /InstallFailureContext/);
   assert.match(source, /UninstallFailureContext/);
@@ -62,11 +78,14 @@ test('32/64-bit HKLM·HKCU와 handler·기본 연결을 분리해 검사한다',
     'Alhangeul.hwpx',
     'OpenWithProgids',
     'UserChoice',
-    'AlhangeulSmoke.Existing',
+    'Hancom.Hwp.Document',
   ]) {
     assert.ok(source.includes(marker), `registry marker가 필요합니다: ${marker}`);
   }
   assert.match(source, /Restore-AssociationSentinels \$sentinels/);
+  assert.match(source, /Set-AssociationDefaultValues \$canonicalProgIds/);
+  assert.match(source, /Assert-NoCanonicalDefaults/);
+  assert.match(source, /DefaultsImmediatelyAfterUninstall/);
   assert.doesNotMatch(source, /Get-ChildItem[^\n]*-LiteralPath[^\n]*\\\*/);
   assert.match(
     source,
@@ -82,7 +101,8 @@ test('sentinel은 부분 실패에서도 복원 대상으로 남는다', () => {
 
   assert.ok(setter, 'Set-AssociationSentinels 계약이 필요합니다.');
   assert.ok(
-    setter.indexOf('$script:sentinels +=') < setter.indexOf('$key.SetValue'),
+    setter.indexOf('$script:sentinels +=') <
+      setter.indexOf('Set-AssociationDefaultValues $associationSentinelProgIds'),
     'sentinel record는 registry 변경 전에 script scope에 남아야 합니다.',
   );
   assert.doesNotMatch(
@@ -135,6 +155,7 @@ test('version, shortcut, 제한 실행과 targeted cleanup을 검사한다', () 
   assert.match(source, /version 네 번째 성분은 0이어야 합니다/);
   assert.match(source, /CreateShortcut\(\$path\)\.TargetPath/);
   assert.match(source, /function ConvertTo-NormalizedPath\(\$Value\)/);
+  assert.match(source, /Get-Item -LiteralPath \$path -Force/, '8.3 path는 기존 file의 long path로 정규화해야 합니다.');
   assert.match(source, /function ConvertTo-NormalizedVersion\(\$Value\)/);
   assert.doesNotMatch(
     source,
@@ -144,7 +165,16 @@ test('version, shortcut, 제한 실행과 targeted cleanup을 검사한다', () 
   assert.match(source, /ReleaseComObject\(\$shell\)/);
   assert.match(source, /\.Trim\(\)\.Trim\('\"'\)/);
   assert.match(source, /\$leftPath = ConvertTo-NormalizedPath \$Left/);
-  assert.match(source, /Start-Sleep -Seconds 5/);
+  assert.match(source, /foreach \(\$iteration in 1\.\.2\)/);
+  assert.match(source, /WaitForInputIdle\(30000\)/);
+  assert.match(source, /function Wait-ForStableMainWindow\(\$Process, \$Iteration\)/);
+  assert.match(source, /\$stableSamples -ge 11/);
+  assert.match(source, /Start-Sleep -Milliseconds 500/);
+  assert.match(source, /\$currentHandle -ne \[IntPtr\]::Zero -and \$Process\.Responding/);
+  assert.match(source, /\$process\.CloseMainWindow\(\)/);
+  assert.match(source, /WaitForExit\(30000\)/);
+  assert.match(source, /CycleCount = \$cycles\.Count/);
+  assert.doesNotMatch(source, /Start-Sleep -Seconds 5/);
   assert.match(source, /Stop-Process -Id \$process\.Id -Force/);
   assert.doesNotMatch(source, /Stop-Process\s+-Name/);
   assert.match(source, /Get-CleanState/);
@@ -189,27 +219,62 @@ test('fixture, summary, failure category와 finally 증적을 항상 남긴다',
     'cleanup',
     'fixture',
     'sentinel-restore',
+    'installer-rollback',
+    'thumbnail-registration',
+    'thumbnail-render',
+    'coexistence',
   ]) {
     assert.ok(source.includes(`'${category}'`), `failure category가 필요합니다: ${category}`);
   }
 });
 
 test('script와 함수가 구현계획의 크기 상한을 지킨다', () => {
-  const lines = source.split(/\r?\n/);
-  assert.ok(lines.length <= 300, `script가 300 LOC를 초과했습니다: ${lines.length}`);
-
-  const starts = lines
-    .map((line, index) => (/^function /.test(line) ? index : -1))
-    .filter((index) => index >= 0);
-  const mainStart = lines.findIndex((line) => line === '# Main');
-  for (let index = 0; index < starts.length; index += 1) {
-    const start = starts[index];
-    const end = index + 1 < starts.length ? starts[index + 1] : mainStart;
-    assert.ok(end - start <= 50, `${lines[start]} 함수가 50 LOC를 초과했습니다.`);
-    const signature = lines[start].split('{', 1)[0];
-    const parameters = signature.match(/\$(\w+)/g) ?? [];
-    assert.ok(parameters.length <= 5, `${lines[start]} 함수 parameter가 5개를 초과했습니다.`);
+  for (const fileSource of sources) {
+    const lines = fileSource.split(/\r?\n/);
+    assert.ok(lines.length <= 300, `script가 300 LOC를 초과했습니다: ${lines.length}`);
+    const starts = lines.map((line, index) => (/^function /.test(line) ? index : -1)).filter((index) => index >= 0);
+    const mainStart = lines.findIndex((line) => line === '# Main');
+    for (let index = 0; index < starts.length; index += 1) {
+      const start = starts[index];
+      const candidates = [index + 1 < starts.length ? starts[index + 1] : lines.length];
+      if (mainStart > start) candidates.push(mainStart);
+      const end = Math.min(...candidates);
+      assert.ok(end - start <= 50, `${lines[start]} 함수가 50 LOC를 초과했습니다.`);
+      const signature = lines[start].split('{', 1)[0];
+      const parameters = signature.match(/\$(\w+)/g) ?? [];
+      assert.ok(parameters.length <= 5, `${lines[start]} 함수 parameter가 5개를 초과했습니다.`);
+    }
   }
+});
+
+test('thumbnail smoke는 rollback·공존·실제 Shell bitmap 계약을 검사한다', () => {
+  for (const marker of [
+    'ALHANGEUL_FAIL_THUMBNAIL_INSTALL=1',
+    'Invoke-MsiThumbnailRollbackProbe',
+    'nsis-reinstall.log',
+    'IShellItemImageFactory',
+    'SHCreateItemFromParsingName',
+    'ThumbnailSmokeInterop]::Request',
+    'third_party\\rhwp\\saved',
+    '$thumbnailThirdParty',
+    'ThumbnailHandlerBackup',
+    'AlhangeulThumbnailHandler.dll',
+    'AlhangeulThumbnailWorker.exe',
+  ]) {
+    assert.ok(source.includes(marker), `thumbnail smoke marker가 필요합니다: ${marker}`);
+  }
+  assert.doesNotMatch(source, /Stop-Process\s+-Name/);
+  assert.match(
+    source,
+    /Get-ThumbnailAssociationPath \$extension\)[^\n]+Where-Object \{ \$_\.Hive -ne \$target\.HiveName \}/,
+    'Software\\Classes association은 WOW64 공유 view를 별도 변경으로 판정하면 안 됩니다.',
+  );
+  assert.match(
+    source,
+    /Get-ThumbnailClassPath\)[^\n]+Where-Object \{ \$_\.Hive -ne \$target\.HiveName -or \$_\.View -ne \$target\.ViewName \}/,
+    'InprocServer32 CLSID는 redirected 32/64 view를 계속 분리해야 합니다.',
+  );
+  assert.match(source, /ThumbnailRegistrationState = Get-ThumbnailRegistrationState/);
 });
 
 function assertOrdered(markers) {

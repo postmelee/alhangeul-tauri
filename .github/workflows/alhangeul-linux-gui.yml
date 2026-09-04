@@ -1,0 +1,493 @@
+name: Alhangeul Linux GUI Acceptance
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_ref:
+        description: Exact 40-character commit SHA to accept.
+        required: true
+        type: string
+      native_run_id:
+        description: Successful Alhangeul Desktop Artifact Build run ID for build_ref.
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+concurrency:
+  group: alhangeul-linux-gui-${{ inputs.build_ref }}-${{ inputs.native_run_id }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "24"
+  TAURI_DRIVER_VERSION: "2.0.6"
+  GUI_TIMEOUT_MS: "120000"
+
+jobs:
+  accept-linux-x64:
+    name: Accept Linux x64 GUI
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    env:
+      ARTIFACT_ROOT: ${{ github.workspace }}/artifacts/linux-x64
+      THUMBNAILER_ARTIFACT_ROOT: ${{ github.workspace }}/artifacts/linux-thumbnailer-x64
+      EVIDENCE_ROOT: /home/runner/PDF
+      CUPS_PDF_OUTPUT: /home/runner/PDF/cups-output/biz_plan.pdf
+    steps:
+      - name: Validate dispatch inputs
+        id: validate-inputs
+        shell: bash
+        env:
+          ACCEPTANCE_REF: ${{ github.workflow_sha }}
+          BUILD_REF: ${{ inputs.build_ref }}
+          NATIVE_RUN_ID: ${{ inputs.native_run_id }}
+        run: |
+          set -euo pipefail
+          [[ "$ACCEPTANCE_REF" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$BUILD_REF" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$NATIVE_RUN_ID" =~ ^[1-9][0-9]*$ ]]
+
+      - name: Checkout exact acceptance source
+        id: checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.workflow_sha }}
+          submodules: true
+
+      - name: Prepare evidence context
+        id: prepare-evidence
+        if: ${{ always() }}
+        shell: bash
+        env:
+          ACCEPTANCE_REF: ${{ github.workflow_sha }}
+          BUILD_REF: ${{ inputs.build_ref }}
+          NATIVE_RUN_ID: ${{ inputs.native_run_id }}
+          WORKFLOW_REF: ${{ github.workflow_ref }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$EVIDENCE_ROOT/generated"
+          printf '{"acceptanceRef":"%s","workflowRef":"%s","buildRef":"%s","nativeRunId":"%s","acceptanceRunId":"%s","runAttempt":"%s"}\n' \
+            "$ACCEPTANCE_REF" "$WORKFLOW_REF" "$BUILD_REF" "$NATIVE_RUN_ID" \
+            "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" \
+            > "$EVIDENCE_ROOT/workflow-context.json"
+
+      - name: Verify checked out exact SHA
+        id: verify-source
+        shell: bash
+        env:
+          ACCEPTANCE_REF: ${{ github.workflow_sha }}
+        run: |
+          set -euo pipefail
+          actual_sha="$(git rev-parse HEAD)"
+          [[ "$actual_sha" == "$ACCEPTANCE_REF" ]]
+          printf '%s\n' "$actual_sha" > "$EVIDENCE_ROOT/checked-out-sha.txt"
+
+      - name: Setup Node.js
+        id: setup-node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Verify native run and exact artifact handoff
+        id: handoff
+        shell: bash
+        env:
+          BUILD_REF: ${{ inputs.build_ref }}
+          NATIVE_RUN_ID: ${{ inputs.native_run_id }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          node scripts/verify-workflow-artifact.mjs \
+            --repository "$GITHUB_REPOSITORY" \
+            --build-ref "$BUILD_REF" \
+            --run-id "$NATIVE_RUN_ID" \
+            --workflow-path .github/workflows/alhangeul-desktop.yml \
+            --artifact-name alhangeul-desktop-linux-x64 \
+            --json-output "$EVIDENCE_ROOT/artifact-handoff.json" \
+            --github-output "$GITHUB_OUTPUT"
+
+      - name: Download verified Linux x64 artifact
+        id: download-artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          artifact-ids: ${{ steps.handoff.outputs.artifact_id }}
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.native_run_id }}
+          path: ${{ env.ARTIFACT_ROOT }}
+          digest-mismatch: error
+
+      - name: Verify exact Linux thumbnailer artifact handoff
+        id: thumbnailer-handoff
+        shell: bash
+        env:
+          BUILD_REF: ${{ inputs.build_ref }}
+          NATIVE_RUN_ID: ${{ inputs.native_run_id }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          node scripts/verify-workflow-artifact.mjs \
+            --repository "$GITHUB_REPOSITORY" \
+            --build-ref "$BUILD_REF" \
+            --run-id "$NATIVE_RUN_ID" \
+            --workflow-path .github/workflows/alhangeul-desktop.yml \
+            --artifact-name alhangeul-linux-x64-thumbnailer \
+            --json-output "$EVIDENCE_ROOT/thumbnailer-artifact-handoff.json" \
+            --github-output "$GITHUB_OUTPUT"
+
+      - name: Download verified Linux thumbnailer artifact
+        id: download-thumbnailer
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          artifact-ids: ${{ steps.thumbnailer-handoff.outputs.artifact_id }}
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.native_run_id }}
+          path: ${{ env.THUMBNAILER_ARTIFACT_ROOT }}
+          digest-mismatch: error
+
+      - name: Verify exact Linux thumbnailer binary
+        id: verify-thumbnailer
+        shell: bash
+        env:
+          BUILD_REF: ${{ inputs.build_ref }}
+        run: |
+          set -euo pipefail
+          helper="$THUMBNAILER_ARTIFACT_ROOT/alhangeul-thumbnailer"
+          summary="$THUMBNAILER_ARTIFACT_ROOT/linux-thumbnailer-summary.json"
+          [[ -f "$helper" && -f "$summary" ]]
+          node -e '
+            const fs = require("node:fs");
+            const [path, sha] = process.argv.slice(1);
+            const value = JSON.parse(fs.readFileSync(path, "utf8"));
+            if (value.repositorySha !== sha || value.target !== "x86_64-unknown-linux-gnu"
+              || value.architecture !== "x64" || value.elfType !== 3 || value.elfMachine !== 62
+              || !/^[0-9a-f]{64}$/.test(value.sha256)) process.exit(1);
+            process.stdout.write(value.sha256);
+          ' "$summary" "$BUILD_REF" > "$EVIDENCE_ROOT/expected-thumbnailer.sha256"
+          actual_sha="$(sha256sum "$helper" | awk '{print $1}')"
+          [[ "$actual_sha" == "$(< "$EVIDENCE_ROOT/expected-thumbnailer.sha256")" ]]
+          chmod 0755 "$helper"
+          printf '%s  %s\n' "$actual_sha" "$helper" > "$EVIDENCE_ROOT/verified-thumbnailer.sha256"
+          printf 'helper_path=%s\n' "$helper" >> "$GITHUB_OUTPUT"
+
+      - name: Install pnpm dependencies
+        id: install-pnpm
+        shell: bash
+        run: |
+          set -euo pipefail
+          corepack enable
+          pnpm install --frozen-lockfile
+          printf 'product_version=%s\n' "$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Verify artifact inventory and select one DEB
+        id: verify-inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm run check:desktop-artifacts -- \
+            --platform linux-x64 \
+            --root "$ARTIFACT_ROOT" \
+            --verify-inventory "$ARTIFACT_ROOT/alhangeul-artifact-inventory.json"
+          mapfile -d '' packages < <(find "$ARTIFACT_ROOT/deb" -maxdepth 1 -type f -name '*.deb' -print0)
+          [[ "${#packages[@]}" -eq 1 ]]
+          printf 'deb_path=%s\n' "${packages[0]}" >> "$GITHUB_OUTPUT"
+          sha256sum "${packages[0]}" > "$EVIDENCE_ROOT/installed-deb.sha256"
+          cp "$ARTIFACT_ROOT/alhangeul-artifact-inventory.json" "$EVIDENCE_ROOT/"
+
+      - name: Install Linux GUI dependencies
+        id: install-linux-dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y \
+            at-spi2-core \
+            cups \
+            dbus-x11 \
+            fonts-noto-cjk \
+            fonts-unfonts-core \
+            gir1.2-gtk-3.0 \
+            libgtk-3-0 \
+            libwebkit2gtk-4.1-0 \
+            nautilus \
+            openbox \
+            poppler-utils \
+            printer-driver-cups-pdf \
+            python3-gi \
+            python3-pyatspi \
+            scrot \
+            shared-mime-info \
+            strace \
+            thunar \
+            tumbler \
+            webkit2gtk-driver \
+            xdotool \
+            xvfb
+
+      - name: Record pre-install Linux MIME state
+        id: record-preinstall-mime
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          mime_xml=/usr/share/mime/packages/alhangeul-hwpx.xml
+          helper=/usr/lib/alhangeul/alhangeul-thumbnailer
+          registration=/usr/share/thumbnailers/alhangeul.thumbnailer
+          real_hwp='third_party/rhwp/samples/[2027] 온새미로 1 본교재.hwp'
+          real_hwpx=third_party/rhwp/samples/hwpx/form-002.hwpx
+          [[ ! -e "$mime_xml" && ! -e "$helper" && ! -e "$registration" ]]
+          content_type() {
+            gio info -a standard::content-type "$1" \
+              | sed -n 's/.*standard::content-type: //p'
+          }
+          {
+            printf 'sharedMimeInfoVersion %s\n' \
+              "$(dpkg-query -W -f='${Version}' shared-mime-info)"
+            printf 'xdgDataDirs %s\n' "${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
+            printf 'systemMimeRoot /usr/share/mime\n'
+            printf 'productMimeXml absent\n'
+            printf 'realHwp %s\n' "$(content_type "$real_hwp")"
+            printf 'realHwpx %s\n' "$(content_type "$real_hwpx")"
+            sha256sum "$real_hwp" "$real_hwpx"
+          } > "$EVIDENCE_ROOT/pre-install-mime.txt"
+
+      - name: Install verified DEB
+        id: install-deb
+        shell: bash
+        env:
+          DEB_PATH: ${{ steps.verify-inventory.outputs.deb_path }}
+        run: |
+          set -euo pipefail
+          sudo apt-get install -y "$DEB_PATH"
+          command -v Alhangeul
+
+      - name: Verify installed Linux thumbnail package
+        id: verify-installed-thumbnail
+        shell: bash
+        env:
+          EXPECTED_HELPER: ${{ steps.verify-thumbnailer.outputs.helper_path }}
+        run: |
+          set -euo pipefail
+          helper=/usr/lib/alhangeul/alhangeul-thumbnailer
+          registration=/usr/share/thumbnailers/alhangeul.thumbnailer
+          mime_xml=/usr/share/mime/packages/alhangeul-hwpx.xml
+          real_hwp='third_party/rhwp/samples/[2027] 온새미로 1 본교재.hwp'
+          real_hwpx=third_party/rhwp/samples/hwpx/form-002.hwpx
+          [[ -f "$helper" && -x "$helper" && -f "$registration" && -f "$mime_xml" ]]
+          [[ "$(stat -c '%a' "$helper")" == 755 ]]
+          [[ "$(stat -c '%a' "$registration")" == 644 ]]
+          [[ "$(stat -c '%a' "$mime_xml")" == 644 ]]
+          [[ "$(sha256sum "$helper" | awk '{print $1}')" == \
+            "$(sha256sum "$EXPECTED_HELPER" | awk '{print $1}')" ]]
+          cmp apps/desktop/src-tauri/linux/alhangeul.thumbnailer "$registration"
+          cmp apps/desktop/src-tauri/linux/alhangeul-hwpx.xml "$mime_xml"
+          hwp_type="$(gio info -a standard::content-type "$real_hwp" \
+            | sed -n 's/.*standard::content-type: //p')"
+          hwpx_type="$(gio info -a standard::content-type "$real_hwpx" \
+            | sed -n 's/.*standard::content-type: //p')"
+          [[ "$hwp_type" == application/x-hwp && "$hwpx_type" == application/x-hwpx ]]
+          dpkg-query --search "$helper" "$registration" "$mime_xml" \
+            > "$EVIDENCE_ROOT/installed-thumbnail-package-owners.txt"
+          [[ "$(wc -l < "$EVIDENCE_ROOT/installed-thumbnail-package-owners.txt")" -eq 3 ]]
+          [[ "$(cut -d: -f1 "$EVIDENCE_ROOT/installed-thumbnail-package-owners.txt" \
+            | sort -u)" == alhangeul ]]
+          sha256sum "$helper" "$registration" "$mime_xml" \
+            > "$EVIDENCE_ROOT/installed-thumbnail-package.sha256"
+          printf 'realHwp %s\nrealHwpx %s\n' "$hwp_type" "$hwpx_type" \
+            > "$EVIDENCE_ROOT/post-install-mime.txt"
+
+      - name: Run Linux thumbnail manager contract probe
+        id: thumbnail-manager-probe
+        continue-on-error: true
+        timeout-minutes: 8
+        shell: bash
+        env:
+          THUMBNAIL_EVIDENCE_ROOT: ${{ env.EVIDENCE_ROOT }}/thumbnail-manager
+        run: |
+          set -euo pipefail
+          scripts/linux-thumbnail-manager-probe.sh \
+            "${{ steps.verify-thumbnailer.outputs.helper_path }}"
+
+      - name: Install exact tauri-driver
+        id: install-tauri-driver
+        shell: bash
+        run: cargo install tauri-driver --version "$TAURI_DRIVER_VERSION" --locked
+
+      - name: Configure CUPS-PDF
+        id: configure-cups
+        shell: bash
+        run: |
+          set -euo pipefail
+          output_dir="$(dirname "$CUPS_PDF_OUTPUT")"
+          install -d -m 0777 "$output_dir"
+          printf 'a4\n' | sudo tee /etc/papersize >/dev/null
+          config=/etc/cups/cups-pdf.conf
+          directive_pattern='^[[:space:]]*#?[[:space:]]*(Out|Label)[[:space:]]'
+          echo 'CUPS-PDF directives before normalization:'
+          grep -En "$directive_pattern" "$config" || true
+          sudo sed -Ei '/^[[:space:]]*(Out|Label)[[:space:]]/d' "$config"
+          printf 'Out %s\nLabel 0\n' "$output_dir" | sudo tee -a "$config" >/dev/null
+          echo 'CUPS-PDF directives after normalization:'
+          grep -En "$directive_pattern" "$config" || true
+          grep -Fqx "Out $output_dir" "$config"
+          grep -Fqx 'Label 0' "$config"
+          sudo service cups restart
+          if ! lpstat -p PDF >/dev/null 2>&1; then
+            sudo lpadmin -p PDF -E -v cups-pdf:/ \
+              -P /usr/share/ppd/cups-pdf/CUPS-PDF.ppd
+          fi
+          sudo lpadmin -p PDF -o PageSize=A4
+          sudo lpadmin -d PDF
+          sudo cupsenable PDF
+          sudo cupsaccept PDF
+          lpoptions -d PDF
+          lpstat -p PDF
+          lpstat -d | grep -Fqx 'system default destination: PDF'
+          queue_options="$(lpoptions -p PDF)"
+          page_size_options="$(lpoptions -p PDF -l | grep -E '^PageSize/')"
+          printf 'CUPS-PDF queue options: %s\n' "$queue_options"
+          printf 'CUPS-PDF PageSize options: %s\n' "$page_size_options"
+          printf '%s\n' "$page_size_options" \
+            | grep -Eq '(^|[[:space:]])\*(A4|iso_a4_210x297mm)([[:space:]]|$)'
+
+      - name: Record native environment
+        id: record-environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          webkit_webdriver_path="$(command -v WebKitWebDriver)"
+          {
+            node --version
+            pnpm --version
+            rustc --version
+            cargo --version
+            printf 'tauri-driver %s\n' "$TAURI_DRIVER_VERSION"
+            printf 'WebKitWebDriver %s\n' "$webkit_webdriver_path"
+            dpkg-query -W cups libgtk-3-0 libwebkit2gtk-4.1-0 webkit2gtk-driver
+            pdfinfo -v 2>&1 | head -n 1
+          } > "$EVIDENCE_ROOT/native-environment.txt"
+
+      - name: Run Linux GUI acceptance
+        id: run-gui
+        continue-on-error: true
+        timeout-minutes: 25
+        shell: bash
+        env:
+          ALHANGEUL_GUI_APP_PATH: /usr/bin/Alhangeul
+          ALHANGEUL_GUI_BUILD_REF: ${{ inputs.build_ref }}
+          ALHANGEUL_GUI_NATIVE_RUN_ID: ${{ inputs.native_run_id }}
+          ALHANGEUL_GUI_DRIVER_PATH: /home/runner/.cargo/bin/tauri-driver
+          ALHANGEUL_GUI_FIXTURE_ROOT: ${{ github.workspace }}
+          ALHANGEUL_GUI_OUTPUT_DIR: ${{ env.EVIDENCE_ROOT }}
+          ALHANGEUL_GUI_TIMEOUT_MS: ${{ env.GUI_TIMEOUT_MS }}
+          ALHANGEUL_GUI_APP_VERSION: ${{ steps.install-pnpm.outputs.product_version }}
+          ALHANGEUL_GUI_DRIVER_VERSION: "tauri-driver ${{ env.TAURI_DRIVER_VERSION }}"
+          ALHANGEUL_GUI_CUPS_PDF_OUTPUT: ${{ env.CUPS_PDF_OUTPUT }}
+          ALHANGEUL_GUI_CUPS_PDF_PRINTER: PDF
+          ALHANGEUL_GUI_CUPS_PDF_DEFAULT: PDF
+          NO_AT_BRIDGE: "0"
+          GTK_MODULES: gail:atk-bridge
+        run: |
+          set -euo pipefail
+          run_isolated_phase() {
+            local phase="$1"
+            shift
+            # shellcheck disable=SC2016
+            xvfb-run --auto-servernum --server-args='-screen 0 1920x1080x24 -nolisten tcp' \
+              dbus-run-session -- bash -euo pipefail -c '
+                phase="$1"
+                shift
+                openbox >"$ALHANGEUL_GUI_OUTPUT_DIR/openbox-$phase.log" 2>&1 &
+                window_manager_pid=$!
+                trap '\''kill "$window_manager_pid" 2>/dev/null || true'\'' EXIT
+                "$@"
+              ' bash "$phase" "$@"
+          }
+          native_print_status=0
+          run_isolated_phase native-print pnpm run test:gui:linux:native-print \
+            || native_print_status=$?
+          webdriver_status=0
+          run_isolated_phase webdriver pnpm run test:gui:linux \
+            || webdriver_status=$?
+          printf '{"nativePrint":%s,"webdriver":%s}\n' \
+            "$native_print_status" "$webdriver_status" \
+            > "$ALHANGEUL_GUI_OUTPUT_DIR/gui-phase-outcomes.json"
+          [[ "$native_print_status" -eq 0 && "$webdriver_status" -eq 0 ]]
+
+      - name: Record acceptance outcomes
+        if: ${{ always() }}
+        shell: bash
+        env:
+          VALIDATE: ${{ steps.validate-inputs.outcome }}
+          CHECKOUT: ${{ steps.checkout.outcome }}
+          SOURCE: ${{ steps.verify-source.outcome }}
+          HANDOFF: ${{ steps.handoff.outcome }}
+          DOWNLOAD: ${{ steps.download-artifact.outcome }}
+          THUMBNAILER_HANDOFF: ${{ steps.thumbnailer-handoff.outcome }}
+          THUMBNAILER_DOWNLOAD: ${{ steps.download-thumbnailer.outcome }}
+          THUMBNAILER_VERIFY: ${{ steps.verify-thumbnailer.outcome }}
+          INVENTORY: ${{ steps.verify-inventory.outcome }}
+          PREINSTALL_MIME: ${{ steps.record-preinstall-mime.outcome }}
+          INSTALL: ${{ steps.install-deb.outcome }}
+          INSTALLED_THUMBNAIL: ${{ steps.verify-installed-thumbnail.outcome }}
+          THUMBNAIL_MANAGER: ${{ steps.thumbnail-manager-probe.outcome }}
+          GUI: ${{ steps.run-gui.outcome }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$EVIDENCE_ROOT"
+          printf '{"validate":"%s","checkout":"%s","source":"%s","handoff":"%s","download":"%s","thumbnailerHandoff":"%s","thumbnailerDownload":"%s","thumbnailerVerify":"%s","inventory":"%s","preinstallMime":"%s","install":"%s","installedThumbnail":"%s","thumbnailManager":"%s","gui":"%s"}\n' \
+            "$VALIDATE" "$CHECKOUT" "$SOURCE" "$HANDOFF" "$DOWNLOAD" \
+            "$THUMBNAILER_HANDOFF" "$THUMBNAILER_DOWNLOAD" "$THUMBNAILER_VERIFY" \
+            "$INVENTORY" "$PREINSTALL_MIME" "$INSTALL" "$INSTALLED_THUMBNAIL" \
+            "$THUMBNAIL_MANAGER" "$GUI" \
+            > "$EVIDENCE_ROOT/step-outcomes.json"
+
+      - name: Upload Linux GUI evidence
+        id: upload-evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: alhangeul-linux-gui-${{ github.run_id }}
+          path: ${{ env.EVIDENCE_ROOT }}/**
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Require Linux GUI acceptance success
+        if: ${{ always() }}
+        shell: bash
+        env:
+          VALIDATE: ${{ steps.validate-inputs.outcome }}
+          CHECKOUT: ${{ steps.checkout.outcome }}
+          PREPARE: ${{ steps.prepare-evidence.outcome }}
+          SOURCE: ${{ steps.verify-source.outcome }}
+          NODE: ${{ steps.setup-node.outcome }}
+          HANDOFF: ${{ steps.handoff.outcome }}
+          DOWNLOAD: ${{ steps.download-artifact.outcome }}
+          THUMBNAILER_HANDOFF: ${{ steps.thumbnailer-handoff.outcome }}
+          THUMBNAILER_DOWNLOAD: ${{ steps.download-thumbnailer.outcome }}
+          THUMBNAILER_VERIFY: ${{ steps.verify-thumbnailer.outcome }}
+          PNPM: ${{ steps.install-pnpm.outcome }}
+          INVENTORY: ${{ steps.verify-inventory.outcome }}
+          LINUX_DEPS: ${{ steps.install-linux-dependencies.outcome }}
+          PREINSTALL_MIME: ${{ steps.record-preinstall-mime.outcome }}
+          THUMBNAIL_MANAGER: ${{ steps.thumbnail-manager-probe.outcome }}
+          DRIVER: ${{ steps.install-tauri-driver.outcome }}
+          INSTALL: ${{ steps.install-deb.outcome }}
+          INSTALLED_THUMBNAIL: ${{ steps.verify-installed-thumbnail.outcome }}
+          CUPS: ${{ steps.configure-cups.outcome }}
+          ENVIRONMENT: ${{ steps.record-environment.outcome }}
+          GUI: ${{ steps.run-gui.outcome }}
+          UPLOAD: ${{ steps.upload-evidence.outcome }}
+        run: |
+          set -euo pipefail
+          for outcome in "$VALIDATE" "$CHECKOUT" "$PREPARE" "$SOURCE" "$NODE" "$HANDOFF" \
+            "$DOWNLOAD" "$THUMBNAILER_HANDOFF" "$THUMBNAILER_DOWNLOAD" \
+            "$THUMBNAILER_VERIFY" "$PNPM" "$INVENTORY" "$LINUX_DEPS" \
+            "$PREINSTALL_MIME" "$INSTALL" \
+            "$INSTALLED_THUMBNAIL" "$THUMBNAIL_MANAGER" "$DRIVER" "$CUPS" \
+            "$ENVIRONMENT" "$GUI" "$UPLOAD"; do
+            [[ "$outcome" == success ]]
+          done

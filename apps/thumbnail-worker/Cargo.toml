@@ -1,0 +1,21 @@
+[package]
+name = "alhangeul-thumbnail-worker"
+version = "0.1.0"
+edition = "2021"
+description = "Bounded out-of-process document thumbnail renderer for Alhangeul"
+license = "MIT"
+publish = false
+
+[[bin]]
+name = "AlhangeulThumbnailWorker"
+path = "src/main.rs"
+
+[dependencies]
+alhangeul-document-preview = { path = "../../crates/document-preview", default-features = false, features = ["render"] }
+
+[dev-dependencies]
+image = { version = "0.25", default-features = false, features = ["png"] }
+zip = { version = "8.5", default-features = false, features = ["deflate"] }
+
+[lints.rust]
+unsafe_code = "forbid"

@@ -1,0 +1,4 @@
+[Thumbnailer Entry]
+TryExec=/usr/lib/alhangeul/alhangeul-thumbnailer
+Exec=/usr/lib/alhangeul/alhangeul-thumbnailer %i %o %s
+MimeType=application/x-hwp;application/x-hwpx;

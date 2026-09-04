@@ -1,0 +1,165 @@
+name: Alhangeul Updater Native Negative Linux
+
+on:
+  workflow_call:
+    inputs:
+      candidate_sha:
+        required: true
+        type: string
+      d1_run_id:
+        required: true
+        type: string
+      scenario:
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+env:
+  NODE_VERSION: "24"
+  TAURI_DRIVER_VERSION: "2.0.6"
+  N_VERSION: 99.1.0
+  N_PLUS_ONE_VERSION: 99.1.1
+
+jobs:
+  reject-linux-appimage:
+    name: Reject Linux x64 AppImage ${{ inputs.scenario }}
+    runs-on: ubuntu-22.04
+    timeout-minutes: 35
+    env:
+      ARTIFACT_ROOT: ${{ github.workspace }}/acceptance-artifacts/n-linux
+      EVIDENCE_ROOT: ${{ github.workspace }}/acceptance-evidence/linux-${{ inputs.scenario }}
+      APPIMAGE_PATH: ${{ github.workspace }}/acceptance-appimage/Alhangeul.AppImage
+    steps:
+      - name: Checkout exact negative harness source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.workflow_sha }}
+          submodules: false
+
+      - name: Verify negative harness source SHA
+        shell: bash
+        env:
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
+        run: |
+          set -euo pipefail
+          [[ "$(git rev-parse HEAD)" == "$WORKFLOW_SHA" ]]
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Install exact pnpm dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          corepack enable
+          pnpm install --frozen-lockfile
+
+      - name: Install Linux native dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y \
+            dbus-x11 \
+            libfuse2 \
+            libgtk-3-0 \
+            libwebkit2gtk-4.1-0 \
+            openbox \
+            webkit2gtk-driver \
+            xvfb
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install exact tauri-driver
+        shell: bash
+        run: cargo install tauri-driver --version "$TAURI_DRIVER_VERSION" --locked
+
+      - name: Verify D1 N Linux artifact handoff
+        id: handoff
+        shell: bash
+        env:
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          D1_RUN_ID: ${{ inputs.d1_run_id }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$EVIDENCE_ROOT"
+          node scripts/verify-workflow-artifact.mjs \
+            --repository "$GITHUB_REPOSITORY" \
+            --build-ref "$CANDIDATE_SHA" \
+            --run-id "$D1_RUN_ID" \
+            --workflow-path .github/workflows/alhangeul-desktop.yml \
+            --artifact-name alhangeul-updater-acceptance-n-linux-x64 \
+            --json-output "$EVIDENCE_ROOT/n-artifact-handoff.json" \
+            --github-output "$GITHUB_OUTPUT"
+
+      - name: Download verified N Linux artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          artifact-ids: ${{ steps.handoff.outputs.artifact_id }}
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.d1_run_id }}
+          path: ${{ env.ARTIFACT_ROOT }}
+          digest-mismatch: error
+
+      - name: Verify N Linux signature and prepare writable AppImage
+        shell: bash
+        env:
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          TRACKED_UPDATER_CONFIG: ${{ github.workspace }}/apps/desktop/src-tauri/tauri.updater.conf.json
+        run: |
+          set -euo pipefail
+          public_key="$(node -p "require(process.env.TRACKED_UPDATER_CONFIG).plugins.updater.pubkey")"
+          export TAURI_UPDATER_PUBLIC_KEY="$public_key"
+          pnpm run check:updater-acceptance -- \
+            --root "$ARTIFACT_ROOT" \
+            --role n \
+            --source-sha "$CANDIDATE_SHA" \
+            --targets linux-x86_64-appimage \
+            --public-key-env TAURI_UPDATER_PUBLIC_KEY
+          mapfile -t appimages < <(find "$ARTIFACT_ROOT" -type f -name '*.AppImage' -print)
+          [[ "${#appimages[@]}" -eq 1 ]]
+          install -d -m 0755 "$(dirname "$APPIMAGE_PATH")"
+          install -m 0755 "${appimages[0]}" "$APPIMAGE_PATH"
+          sha256sum "$APPIMAGE_PATH" > "$EVIDENCE_ROOT/n-appimage-before.sha256"
+
+      - name: Reject negative updater scenario and preserve editing
+        shell: bash
+        env:
+          ALHANGEUL_UPDATER_APP_PATH: ${{ env.APPIMAGE_PATH }}
+          ALHANGEUL_UPDATER_DRIVER_PATH: /home/runner/.cargo/bin/tauri-driver
+          ALHANGEUL_UPDATER_OUTPUT_DIR: ${{ env.EVIDENCE_ROOT }}/negative
+          ALHANGEUL_UPDATER_MODE: negative
+          ALHANGEUL_UPDATER_NEGATIVE_SCENARIO: ${{ inputs.scenario }}
+          ALHANGEUL_UPDATER_EXPECTED_TARGET: linux-x86_64-appimage
+          ALHANGEUL_UPDATER_EXPECTED_KIND: appimage
+          ALHANGEUL_UPDATER_CURRENT_VERSION: ${{ env.N_VERSION }}
+          ALHANGEUL_UPDATER_AVAILABLE_VERSION: ${{ env.N_PLUS_ONE_VERSION }}
+          ALHANGEUL_UPDATER_CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          ALHANGEUL_UPDATER_D1_RUN_ID: ${{ inputs.d1_run_id }}
+        run: |
+          set -euo pipefail
+          bash scripts/updater/run-linux-native-gui.sh \
+            "$EVIDENCE_ROOT/openbox-negative.log" \
+            pnpm run test:gui:updater
+          before="$(awk '{print $1}' "$EVIDENCE_ROOT/n-appimage-before.sha256")"
+          after="$(sha256sum "$APPIMAGE_PATH" | awk '{print $1}')"
+          [[ "$after" == "$before" ]]
+          printf '%s  %s\n' "$after" "$APPIMAGE_PATH" > "$EVIDENCE_ROOT/n-appimage-after.sha256"
+
+      - name: Upload Linux negative evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: alhangeul-updater-negative-linux-${{ inputs.scenario }}-${{ github.run_id }}
+          path: ${{ env.EVIDENCE_ROOT }}/**
+          if-no-files-found: error
+          retention-days: 14

@@ -1,407 +1,218 @@
-# 데스크톱 artifact와 배포 준비
+# 데스크톱 릴리즈 정책
 
-Alhangeul은 아직 공식 설치 파일이나 공개 릴리스를 제공하지 않는다. `.github/workflows/alhangeul-desktop.yml`은 Windows/Linux native build 결과와 Windows installer package smoke 진단을 수동 검증하고 14일 동안 Actions artifact로 보존하지만 GitHub Release를 생성하지 않는다.
+이 문서는 Windows/Linux Alhangeul의 반복 배포 기준이다. 실행 결과와 공개 여부는
+[릴리즈 기록 인덱스](../releases/README.md), 첫 공개 준비는 [v0.1.0 기록](../releases/v0.1.0.md)을
+따른다. 기능 구현, 검증 성공, Release 게시, updater 활성화는 서로 다른 완료 상태다.
 
-## 제품 version 기준
+## 문서 읽는 순서
 
-현재 저장소의 제품 source version은 M010에서 승인한 독립 Alhangeul 기준선 `0.1.0`이다. 초기 코드의 `0.3.1`은 이전 제품의 release 계보이며 아래 Task #5의 `0.3.1` artifact는 version 재정렬 전에 생성한 native build smoke 증적이다. 둘 다 Alhangeul의 공식 release 계보로 간주하지 않는다.
+| 문서 | 답하는 질문 |
+|---|---|
+| 이 문서 | 무엇을 배포하며 어떤 승인·신뢰 경계를 지키는가 |
+| [공개 실행 가이드](PUBLIC_RELEASE_RUNBOOK.md) | 어떤 입력·명령·승인으로 진행하고 어디서 멈추는가 |
+| [최소 검증 체크리스트](RELEASE_CHECKLIST.md) | 이번 변경에서 무엇을 실행하고 재사용하는가 |
+| [릴리즈 기록 인덱스](../releases/README.md) | 어느 버전이 준비 중이고 무엇이 실제 공개됐는가 |
+| 버전별 기록 | 이전 버전·후보·변경점·검증·승인·공개 근거가 무엇인가 |
+| [기록 템플릿](../../mydocs/_templates/release_record.md) | 새 버전의 기록을 어떤 형식으로 작성하는가 |
+| [updater 아키텍처](../architecture/UPDATER.md) | 설치 형식 판별·서명·dirty 보호·수동 복구는 어떻게 동작하는가 |
+| [개발 문서](../DEVELOPMENT.md)·[upstream 경계](../architecture/UPSTREAM.md) | 개발 검증과 의존성 갱신은 어디서 시작하는가 |
 
-root `package.json`을 source version의 기준으로 삼고 `pnpm run check:product-version`이 desktop package, Cargo manifest·lock과 Tauri 설정을 함께 검증한다. 아래 Task #7 exact-SHA 검증에서 `0.1.0` native artifact 생성을 확인했지만 `0.1.0` tag나 GitHub Release는 만들지 않았다. 공식 release, 고정 다운로드 경로와 updater 활성화는 별도 Issue와 승인이 필요하다.
+정책·실행 가이드·체크리스트를 읽은 것만으로 공개 실행 승인을 대신하지 않는다.
 
-## 현재 workflow 범위
+## 제품 version과 source 기준
 
-`Alhangeul Desktop Artifact Build`는 `workflow_dispatch`로만 정의되어 있다.
+- 제품 source version의 기준은 root `package.json`이다. desktop package, Cargo manifest·lock,
+  Tauri 설정의 일치는 `pnpm run check:product-version`으로 확인한다.
+- 공개 식별자는 승인한 version, `v<version>` tag와 tag가 가리키는 exact 40자리 commit이다.
+  branch 이름이나 `latest` redirect만으로 후보·다운로드를 식별하지 않는다.
+- 초기 HOP version과 Alhangeul의 독립 계보는 [출처 문서](../architecture/PROVENANCE.md)를
+  따른다. 과거 canary installer를 Alhangeul의 공개 릴리즈로 재분류하지 않는다.
+- `rhwp`는 Stable tag와 resolved commit을 함께 고정한다. source submodule, native Cargo lock,
+  bundled WASM과 전체 upstream Studio는 같은 release여야 한다. 버전 갱신은 별도 Task다.
+- 릴리즈 시작 시 최신 공개 앱과 upstream 상태를 다시 읽는다. 새 upstream이 있어도 임의로
+  교체하지 않고 현재 pin 유지 이유 또는 별도 갱신 순서를 승인받아 기록한다.
+- version·candidate·이전 공개 버전·채널·배포 패키지·known limitations가 미확정이면 게시하지 않는다.
 
-| 대상 | Runner | Rust target | 예상 bundle |
+## 지원 패키지와 통합 범위
+
+다음은 현재 구현 matrix이며 모든 조합의 실기기 수용이나 공개 완료를 뜻하지 않는다.
+
+| 대상 | 일반 artifact bundle | 앱 내 updater | 파일 관리자 썸네일 |
 |---|---|---|---|
-| Windows x64 | `windows-2025` | `x86_64-pc-windows-msvc` | MSI, NSIS |
-| Linux x64 | `ubuntu-22.04` | `x86_64-unknown-linux-gnu` | DEB, RPM, AppImage |
-| Linux arm64 | `ubuntu-22.04-arm` | `aarch64-unknown-linux-gnu` | DEB |
+| Windows x64 | MSI, NSIS | release overlay로 만든 동일 설치 형식 | 두 installer의 COM handler·worker 등록 |
+| Linux x64 | AppImage | release overlay와 실행·쓰기 자격을 갖춘 AppImage | AppImage 자체의 Freedesktop 등록 없음 |
+| Linux x64 | DEB, RPM | 수동 다운로드 안내 | package-owned helper·MIME XML·thumbnailer |
+| Linux arm64 | DEB | 수동 다운로드 안내 | package-owned helper·MIME XML·thumbnailer |
 
-workflow는 다음 작업만 수행한다.
+- Windows MSI·NSIS를 교차 업데이트하지 않는다. 설치 근거가 불명확하면 수동 안내로 닫힌다.
+- Linux AppImage는 실제 실행 경로와 현재 process의 실효 `W_OK`가 필요하다. 읽기 전용
+  AppImage·DEB·RPM·arm64는 자동 설치 대상이 아니다.
+- Windows ARM64, Linux arm64 RPM, KDE/Dolphin, Flatpak/Snap과 AppImage 등록은 위 matrix 밖이다.
+- Linux arm64 GUI, Fedora RPM GUI·dependency resolution과 모든 Windows DPI·한컴 조합은
+  자동 수용 결과로 추정하지 않는다. 버전 기록에 실행 환경과 미검증 범위를 적는다.
+- [Windows thumbnail](../architecture/WINDOWS_THUMBNAILS.md)과
+  [Linux thumbnail](../architecture/LINUX_THUMBNAILS.md) 아키텍처가 세부 통합 계약을 소유한다.
 
-1. submodule을 포함한 선택 commit checkout
-2. Node, pnpm, Rust와 Linux Tauri 의존성 준비
-3. 제품 경계·version·release metadata, `rhwp` pin, automation, upstream과 studio 검증
-4. Tauri bundle 생성
-5. 필수 installer 종류·크기·SHA-256 inventory 검증
-6. inventory를 포함한 Actions artifact 업로드
-7. fresh `windows-2025` runner에서 Windows MSI·NSIS 설치·제한 실행·제거 package smoke
-8. installer별 summary와 원본 log를 diagnostic artifact로 항상 업로드하고 build matrix와 smoke 결과를 함께 판정
+## workflow와 산출물 계층
 
-repository-level Actions는 활성 상태지만 대상 CI와 native workflow는 자동 trigger 없이 수동 `workflow_dispatch`로만 실행한다. Actions 활성 상태는 workflow 성공이나 artifact 가용성을 보장하지 않으므로 run의 exact commit과 job 결과를 함께 확인해야 한다.
+진실 원천은 [desktop workflow](../../.github/workflows/alhangeul-desktop.yml),
+[Linux GUI workflow](../../.github/workflows/alhangeul-linux-gui.yml),
+[Pages workflow](../../.github/workflows/pages.yml)다. 수동 dispatch 승인은 제품 공개 승인과 다르다.
 
-## `v0.1.0` prerelease 후보 계약
-
-첫 공개 후보는 stable/latest가 아닌 GitHub prerelease로만 검토한다. Task #9 candidate는 준비와 수용 검증용이며, 게시 task에서는 release PR로 승격된 `main`의 immutable `v0.1.0` tag exact SHA에서 bundle과 checksum을 새로 생성한다. Task #9 Actions artifact를 공개 asset으로 재사용하지 않는다.
-
-필수 baseline bundle:
-
-| 환경 | 공개 후보 bundle | 필수 수용 경계 |
+| 경로 | 결과 | 공개 권한·용도 |
 |---|---|---|
-| Windows x64 | MSI, NSIS | 각 installer 설치·실행·파일 연결·제거 |
-| Linux x64 | AppImage, DEB, RPM | AppImage 실행, DEB와 RPM의 호환 배포판 설치·실행·제거 |
-| Linux arm64 | DEB | arm64 Debian 계열 설치·실행·제거 |
-
-Windows ARM64 MSI·NSIS는 Issue #10의 별도 build·native 검증이 Go일 때만 후속 게시 task에서 조건부로 추가한다. 외부 배포 채널과 지원 범위 밖 운영체제 bundle은 이 baseline에 포함하지 않는다.
-
-첫 Windows prerelease installer는 unsigned를 허용한다. Release 제목과 본문에 unsigned 상태와 SmartScreen 경고 가능성을 명시하고, 모든 공개 installer를 상대 경로 순으로 정렬한 `SHA256SUMS`를 함께 제공한다. Linux direct-download package도 별도 package signing 없이 GitHub HTTPS와 같은 checksum 계약을 사용한다. checksum은 publisher identity나 code signing을 대체한다고 표현하지 않는다.
-
-필수 bundle 하나라도 build·inventory·checksum 또는 승인된 native 시나리오를 통과하지 못하면 Task #9는 No-Go다. candidate 실패 시 artifact를 폐기하고 공개 상태를 만들지 않는다. 게시 뒤 중대 결함은 tag나 asset을 덮어쓰지 않고 prerelease를 withdrawn/superseded로 표시하거나 수정 version으로 fix-forward한다. uninstall·rollback은 파일 연결을 정리하되 사용자 문서를 삭제하지 않아야 한다.
-
-`pnpm run check:release-metadata`는 package와 Tauri config의 제품명·version·identifier·publisher·설명·category·file association·license와 updater 비활성 경계를 읽기 전용으로 검사한다. `pnpm run create:release-checksums`는 명시한 artifact root에서 MSI·NSIS·AppImage·DEB·RPM만 받아 결정적인 `SHA256SUMS`를 생성한다.
-
-## Task #9 prerelease candidate build·checksum 검증
-
-### 현재 candidate — PR #18·#22 통합 exact 재검증
-
-2026-08-12에 PR #18의 upstream-first Studio·HWP/HWPX·direct PDF와 PR #22의
-Windows/Linux system print를 포함한 Stage 4.5 commit
-`8b4ae60bb0f9619caa6c1f4d9f5a3796a42edcd9`을 `publish/task9`에 고정했다.
-
-- [CI run 31584608310](https://github.com/postmelee/alhangeul-tauri/actions/runs/31584608310):
-  `workflow_dispatch`, `publish/task9`, exact SHA 일치, `Unit tests` 성공
-- [Native run 31584610236 attempt 2](https://github.com/postmelee/alhangeul-tauri/actions/runs/31584610236/attempts/2):
-  같은 exact SHA의 Windows x64·Linux x64·Linux arm64 build와 Windows installer smoke 성공
-
-첫 native attempt의 Windows pin tag fetch는 Corepack registry 연결 단절로 실패했으며 source
-failure가 아니다. 실패 job 재실행 attempt 2를 최종 증거로 사용하고 첫 attempt의 불완전 smoke
-artifact는 제외했다.
-
-| Platform | 종류 | 크기 (bytes) | SHA-256 |
-|---|---|---:|---|
-| Windows x64 | MSI | 52,785,152 | `5ac82b3a8298dcb3f05f1259d6b96701ffd39c34d1b465b04072a4646ab12864` |
-| Windows x64 | NSIS | 48,469,684 | `f13e7335d2737c5d74a775646ffb6416d32ff0fe2ec2a4124c26feb9e3d49384` |
-| Linux x64 | AppImage | 131,144,184 | `256becf050212db787f728f43f0dd1073bbeb0d77505f33f12f7ae5cc91d6dc4` |
-| Linux x64 | DEB | 54,729,740 | `e4edd4d794f2d88fccba39e9e8c9121811d889b02f6dca69c722b3460e6aab33` |
-| Linux x64 | RPM | 54,729,462 | `6689bd8658e16c498f6d6c105f5d143527c4f09f34f00725fab3d325d1580baf` |
-| Linux arm64 | DEB | 54,685,236 | `691b6e5835003f32a2169e38dc3380ff8106cfb4edee67b38d2f8408e48e57e9` |
-
-세 platform inventory를 다운로드 후 독립 검증했고 여섯 파일로 생성한 `SHA256SUMS`도 모두
-`OK`였다. `SHA256SUMS` 자체 SHA-256은
-`6c43efe3a3b3d84c9ebd3204b48a4b058ee4b54537c6f11bed2253d39a4d348a`다.
-
-Windows MSI·NSIS 자동 smoke는 설치·version·HWP/HWPX handler·Open With·기존 기본 연결
-보존·제한 실행·제거·최종 clean과 외부 fixture 무손실을 통과했다. Linux x64 AppImage·DEB·
-RPM과 Linux arm64 DEB는 native CPU 환경에서 설치 또는 integration, `%F` launcher 문서
-경로 전달, HWP/HWPX 표시와 제거·rollback을 직접 통과했다. x64 HWP 6쪽·HWPX 10쪽과 arm64
-HWP 6쪽이 중앙에서 열렸고 fixture hash가 유지됐다.
-
-Task #15 최종 제품 source `b5b75e2…`에서 이번 candidate까지 Studio·Rust runtime,
-`third_party/rhwp`와 font diff는 0건이다. Windows 저장·PDF·system print와 Linux 저장·PDF·
-인쇄 대표 기능은 Task #13·#15의 승인된 GUI 결과, 이 runtime 무변경과 새 exact package
-gate를 결합해 수용했다. 이번 exact Windows installer GUI를 직접 반복하지 않았다는 제한,
-5분 넘는 Windows print modal과 Linux 혼합 페이지 media 전환 미검증은 공개한다.
-
-Actions artifact는 최종 tag artifact가 아니며 공개 asset으로 재사용하지 않는다. 실제 게시
-task는 `main`의 immutable `v0.1.0` tag exact SHA에서 bundle과 checksum을 다시 만든다.
-
-### 폐기한 과거 candidate — Task #11 통합 재검증
-
-2026-08-02에 Task #11 merge를 포함한 통합 commit `dd67d58f5367b478315417279ac8f6561bd5b718`을 `publish/task9`에 고정하고 같은 exact SHA를 수동 검증했다.
-
-- [CI run 30707725441](https://github.com/postmelee/alhangeul-tauri/actions/runs/30707725441): `workflow_dispatch`, `publish/task9`, exact SHA 일치, `Unit tests` 성공
-- [Native run 30707721476](https://github.com/postmelee/alhangeul-tauri/actions/runs/30707721476): `workflow_dispatch`, `publish/task9`, exact SHA 일치, `Build windows-x64`, `Build linux-x64`, `Build linux-arm64`, `Smoke Windows x64 installers` 모두 성공
-
-native run의 build artifact 세 개와 installer smoke 진단 artifact를 별도 임시 디렉터리에 내려받았다. 동봉된 inventory를 기준으로 모든 파일의 크기와 SHA-256을 다시 계산했으며 세 platform inventory가 build 시 기록된 값과 일치했다.
-
-GitHub API가 반환한 Actions artifact archive metadata는 다음과 같다. 확인 시점에 모두 `expired: false`였으며 API archive digest와 아래 installer SHA-256은 서로 다른 검증 대상이다.
-
-| 대상 | Actions artifact | ID | Archive 크기 (bytes) | API archive digest | 만료 시각 (UTC) |
-|---|---|---:|---:|---|---|
-| Windows x64 | `alhangeul-desktop-windows-x64` | `8820936566` | 53,661,441 | `sha256:ecd2acfeedc05a0662e491fb0db940ff6200dd97d6b3a883532d1369d78d0232` | `2026-08-15T16:23:30Z` |
-| Linux x64 | `alhangeul-desktop-linux-x64` | `8820940757` | 353,969,511 | `sha256:0c7fedc1226e6fa563df72c11e7edc3751e6f568fc8cd3dfe2e5f5fa26c81272` | `2026-08-15T16:23:35Z` |
-| Linux arm64 | `alhangeul-desktop-linux-arm64` | `8820883528` | 90,029,396 | `sha256:3e2e54b86297e0abcce0289d99b90ef1bb24e8ec5dee568c54af1fce140cd747` | `2026-08-15T16:19:04Z` |
-| Windows smoke | `alhangeul-desktop-windows-x64-installer-smoke` | `8820953739` | 28,948 | `sha256:e933e52682279c15b2fe541c09363a9ba4d0d400b2534095965772ef1f0e2204` | `2026-08-15T16:24:57Z` |
-
-다운로드 후 독립 재검증한 필수 `0.1.0` installer inventory:
-
-| Platform | 종류 | 파일 | 크기 (bytes) | SHA-256 |
-|---|---|---|---:|---|
-| Windows x64 | MSI | `msi/Alhangeul_0.1.0_x64_en-US.msi` | 28,188,672 | `065e5d8e073128f4d6ffb6a764fd31c36843d38933efeb55796bf81e8df13c02` |
-| Windows x64 | NSIS | `nsis/Alhangeul_0.1.0_x64-setup.exe` | 25,708,275 | `20463d0021610a6607f7bb8752d185bcf7b8cf4be4d5437f02c1389492e1ecec` |
-| Linux x64 | AppImage | `appimage/Alhangeul_0.1.0_amd64.AppImage` | 106,838,520 | `5478ab6beff2e46e2a1290c35ae38ab27b8eb35d77e4678638c5595fb6c8bf1e` |
-| Linux x64 | DEB | `deb/Alhangeul_0.1.0_amd64.deb` | 30,092,908 | `67312f5720a4013388bd7d962f76ea73ff52dec29519e6428bd9766a90d8f040` |
-| Linux x64 | RPM | `rpm/Alhangeul-0.1.0-1.x86_64.rpm` | 30,093,106 | `54436f3e689760978031dcf1fe2d6ce035c4958c1d7ca34c07fd72996b78f259` |
-| Linux arm64 | DEB | `deb/Alhangeul_0.1.0_arm64.deb` | 30,050,132 | `9c45634f7486be1effa5983f76f1eb33acaa4f376fc94c7dfee79841572658e4` |
-
-installer 여섯 개만 깨끗한 임시 `release-assets` root에 평탄화해 생성하고 독립 재검증한 candidate `SHA256SUMS` 초안:
-
-```text
-54436f3e689760978031dcf1fe2d6ce035c4958c1d7ca34c07fd72996b78f259  Alhangeul-0.1.0-1.x86_64.rpm
-5478ab6beff2e46e2a1290c35ae38ab27b8eb35d77e4678638c5595fb6c8bf1e  Alhangeul_0.1.0_amd64.AppImage
-67312f5720a4013388bd7d962f76ea73ff52dec29519e6428bd9766a90d8f040  Alhangeul_0.1.0_amd64.deb
-9c45634f7486be1effa5983f76f1eb33acaa4f376fc94c7dfee79841572658e4  Alhangeul_0.1.0_arm64.deb
-20463d0021610a6607f7bb8752d185bcf7b8cf4be4d5437f02c1389492e1ecec  Alhangeul_0.1.0_x64-setup.exe
-065e5d8e073128f4d6ffb6a764fd31c36843d38933efeb55796bf81e8df13c02  Alhangeul_0.1.0_x64_en-US.msi
-```
-
-`shasum -a 256 -c SHA256SUMS`는 여섯 파일을 모두 `OK`로 판정했다. 568 bytes인 `SHA256SUMS` 자체 SHA-256은 `856f8aeb90a4b9c7e2cf507662c83b26b7d68ea33c7aff7e875591c053b940fc`였다.
-
-Windows installer smoke 진단은 MSI와 NSIS 각각에 대해 설치·version·경로·canonical ProgID·shortcut·기존 기본 연결 보존·5초 제한 실행·제거를 통과했다. 두 installer 모두 설치·제거 exit code가 `0`이고 최종 경로·process clean은 `true`, 소유 registry 잔여는 `0`이었다. installer 범위 밖 fixture의 전후 SHA-256도 같았다. 이 결과는 package 자동 수용 증거이며 실제 Explorer UI와 HWP/HWPX 편집 시나리오를 대체하지 않는다.
-
-검증용 임시 디렉터리와 checksum 초안은 검증 뒤 삭제했고 공개 release나 tag는 만들지 않았다. 이 candidate는 Task #11 계약을 포함한 Stage 3 exact-SHA build·inventory·checksum·Windows package smoke 증거다. 이후 보고·운영 문서 commit이 추가되므로 최종 `v0.1.0` tag artifact나 공개 asset이 아니다.
-
-### 폐기한 과거 candidate — 역사 증적 전용
-
-2026-07-29에 Stage 2 승인 commit `6e0adc941b9eedbd2d7cceab12bf31dddf184c3a`를 `publish/task9`에 고정하고 같은 exact SHA를 수동 검증했다.
-
-- [CI run 30426710424](https://github.com/postmelee/alhangeul-tauri/actions/runs/30426710424): `workflow_dispatch`, `publish/task9`, exact SHA 일치, `Unit tests` 성공
-- [Native run 30426711693](https://github.com/postmelee/alhangeul-tauri/actions/runs/30426711693): `workflow_dispatch`, `publish/task9`, exact SHA 일치, `Build windows-x64`, `Build linux-x64`, `Build linux-arm64` 모두 성공
-
-native run의 artifact 세 개를 별도 임시 디렉터리에 내려받고 동봉된 inventory를 기준으로 모든 파일의 크기와 SHA-256을 다시 계산했다. 세 inventory는 build 시 기록된 값과 일치했다.
-
-GitHub API가 반환한 Actions artifact archive metadata는 다음과 같다. 확인 시점에 모두 `expired: false`였으며 API archive digest와 아래 installer SHA-256은 서로 다른 검증 대상이다.
-
-| Platform | Actions artifact | ID | Archive 크기 (bytes) | API archive digest | 만료 시각 (UTC) |
-|---|---|---:|---:|---|---|
-| Windows x64 | `alhangeul-desktop-windows-x64` | `8714152971` | 53,660,040 | `sha256:3577c43739592df2f992046f73c40beefc5ad2f968f08459ded3dcb68d6d1fc9` | `2026-08-12T06:13:55Z` |
-| Linux x64 | `alhangeul-desktop-linux-x64` | `8714085967` | 354,129,629 | `sha256:2751d8990c6e1234770268b25df9662008490d588fab647d7dc1c2ef4e34f8cc` | `2026-08-12T06:10:21Z` |
-| Linux arm64 | `alhangeul-desktop-linux-arm64` | `8714005780` | 90,029,873 | `sha256:e5806c1263b2c25453646421f279bf960faeeb8d2eb9c62840f51bf444c38b48` | `2026-08-12T06:06:25Z` |
-
-다운로드 후 독립 재검증한 필수 `0.1.0` installer inventory:
-
-| Platform | 종류 | 파일 | 크기 (bytes) | SHA-256 |
-|---|---|---|---:|---|
-| Windows x64 | MSI | `msi/Alhangeul_0.1.0_x64_en-US.msi` | 28,192,768 | `b7647416466cff7a3ac787d5d903f2950c2a1b735974482899e7778ce2de5aa4` |
-| Windows x64 | NSIS | `nsis/Alhangeul_0.1.0_x64-setup.exe` | 25,706,433 | `af7968393f05d042d62a0331640ab73cf29471021ee2eb35e8f1ca8112600fb9` |
-| Linux x64 | AppImage | `appimage/Alhangeul_0.1.0_amd64.AppImage` | 106,842,616 | `a21c422eff17e38a80f301d7bd97d1256a9b2e706668593acaae02f1d2475d23` |
-| Linux x64 | DEB | `deb/Alhangeul_0.1.0_amd64.deb` | 30,092,878 | `253ebe576131f62d8a1c1d2f2f8e885eea09ed9bc7947d739ed9502b2470ccd9` |
-| Linux x64 | RPM | `rpm/Alhangeul-0.1.0-1.x86_64.rpm` | 30,093,097 | `b4101b9cca740472103d262d14c11abafa7c8962b9c1551e27100e777da1463b` |
-| Linux arm64 | DEB | `deb/Alhangeul_0.1.0_arm64.deb` | 30,049,998 | `7cbd918634bbe6cc15d656cbc7a3e3caa67d0e06b6857c5334ef505ba8e7d62e` |
-
-Actions artifact에는 inventory와 Tauri의 DEB/RPM 중간 전개 파일도 들어 있으므로, 공개 후보 checksum은 위 installer 여섯 개만 깨끗한 임시 `release-assets` root에 평탄화해 생성했다. 결정적으로 정렬된 candidate `SHA256SUMS` 초안은 다음과 같으며 `shasum -a 256 -c SHA256SUMS`로 여섯 파일을 독립 재검증했다.
-
-```text
-b4101b9cca740472103d262d14c11abafa7c8962b9c1551e27100e777da1463b  Alhangeul-0.1.0-1.x86_64.rpm
-a21c422eff17e38a80f301d7bd97d1256a9b2e706668593acaae02f1d2475d23  Alhangeul_0.1.0_amd64.AppImage
-253ebe576131f62d8a1c1d2f2f8e885eea09ed9bc7947d739ed9502b2470ccd9  Alhangeul_0.1.0_amd64.deb
-7cbd918634bbe6cc15d656cbc7a3e3caa67d0e06b6857c5334ef505ba8e7d62e  Alhangeul_0.1.0_arm64.deb
-af7968393f05d042d62a0331640ab73cf29471021ee2eb35e8f1ca8112600fb9  Alhangeul_0.1.0_x64-setup.exe
-b7647416466cff7a3ac787d5d903f2950c2a1b735974482899e7778ce2de5aa4  Alhangeul_0.1.0_x64_en-US.msi
-```
-
-이 `SHA256SUMS` 파일 자체의 SHA-256은 `9e80f506fcc73f0b60018b383fba15b872e03bb9f69a8c6a9f90fb45a870cab2`였다. 검증용 임시 디렉터리와 checksum 초안은 검증 뒤 삭제했고 공개 release나 tag는 만들지 않았다.
-
-이 과거 candidate는 당시 필수 bundle의 exact-SHA build·inventory·checksum gate를 통과했지만 Task #11 installer 계약을 포함하지 않는다. 현재 수용 결과와 후속 Go/No-Go 입력에서는 폐기하며 artifact와 checksum을 현재 candidate 또는 공개 asset으로 재사용하지 않는다.
-
-## 검증된 `0.1.0` 기준선
-
-2026-07-29에 다음 exact commit을 `publish/task7`에서 검증했다.
-
-- Commit: `02931beb43e2944083e78d792603bff82200478c`
-- [CI run 30383886807](https://github.com/postmelee/alhangeul-tauri/actions/runs/30383886807): 제품 version gate를 포함한 platform-neutral 검사와 Ubuntu desktop Rust test·Clippy 성공
-- [Native run 30384403366](https://github.com/postmelee/alhangeul-tauri/actions/runs/30384403366): 같은 SHA에서 Windows x64, Linux x64, Linux arm64의 `0.1.0` build·inventory·upload 성공
-
-native run의 artifact 세 개를 별도 임시 디렉터리에 내려받고 각 artifact의 `alhangeul-artifact-inventory.json`을 기준으로 압축 해제된 모든 파일의 크기와 SHA-256을 다시 계산했다. 세 inventory는 build 시 기록된 값과 일치했고 검증용 임시 디렉터리는 삭제했다.
-
-GitHub API가 반환한 Actions artifact archive metadata는 다음과 같다. 세 artifact는 확인 시점에 `expired: false`였고 14일 retention을 사용한다. API archive digest와 아래 installer SHA-256은 서로 다른 검증 대상이다.
-
-| Platform | Actions artifact | ID | Archive 크기 (bytes) | API archive digest | 만료 시각 (UTC) |
-|---|---|---:|---:|---|---|
-| Windows x64 | `alhangeul-desktop-windows-x64` | `8698659028` | 53,659,794 | `sha256:74f8ae91c83c6cb857b94e2ec3851460fb36dcf9a060160e88da8b72036edb22` | `2026-08-11T17:57:32Z` |
-| Linux x64 | `alhangeul-desktop-linux-x64` | `8698704612` | 354,129,430 | `sha256:3b63ab15180e33c72683f3f129cd661673ba7ac55a644c0d1e7cdada68b8803a` | `2026-08-11T17:58:51Z` |
-| Linux arm64 | `alhangeul-desktop-linux-arm64` | `8698559801` | 90,030,240 | `sha256:20a0c4f3195ab078bc8f7e2c89428096ede7937a41e4ec6d87ec3401bbdaa8fc` | `2026-08-11T17:54:09Z` |
-
-다운로드 후 독립 재검증한 필수 `0.1.0` installer inventory:
-
-| Platform | 종류 | 파일 | 크기 (bytes) | SHA-256 |
-|---|---|---|---:|---|
-| Windows x64 | MSI | `msi/Alhangeul_0.1.0_x64_en-US.msi` | 28,192,768 | `b03dff87b050cde11153f7c12d71fe7efeef529653693e4035f9eef157626316` |
-| Windows x64 | NSIS | `nsis/Alhangeul_0.1.0_x64-setup.exe` | 25,706,193 | `a75834e758d73ef5c5ae520926df67a2b9f4c4dd7af7d78ef8960b95f82b8487` |
-| Linux x64 | AppImage | `appimage/Alhangeul_0.1.0_amd64.AppImage` | 106,838,520 | `a03971f3de13c65f8c109018a6fe7d345ef3fb326328699183f6d4fcf61da945` |
-| Linux x64 | DEB | `deb/Alhangeul_0.1.0_amd64.deb` | 30,092,866 | `29220ca6834588f3602429cb6eb7ab9edf7c589fdddb8f78f36b8968a4f7848c` |
-| Linux x64 | RPM | `rpm/Alhangeul-0.1.0-1.x86_64.rpm` | 30,093,069 | `2fa1997d1932085f21030da0ed60c990e73f6c4e6b43ce4bccf4563822d6dd19` |
-| Linux arm64 | DEB | `deb/Alhangeul_0.1.0_arm64.deb` | 30,049,994 | `15124f7a98d508aec74e930a542705ee5eeaeda0d03bcfc6bdf99399e0cfd737` |
-
-이 결과는 `0.1.0` source version이 exact source에서 installer 파일명과 package metadata에 반영되고 Actions upload 뒤에도 inventory가 보존됐다는 Task #7 당시의 build smoke 증거다. 이 Task #7 run 자체에서는 installer 설치·실행, 코드 서명, GitHub Release, package 게시와 updater를 검증하지 않았다.
-
-## 검증된 Windows installer package smoke
-
-2026-08-02 Task #11은 PR #12 최종 검토 보정 뒤 다음 exact commit에서 Windows installer 자동 수용 기준과 기존 세 플랫폼 build matrix를 모두 통과했다.
-
-- Commit: `0a344d3ee63220e25ad2d920a583f7366b51c1d2`
-- [Native run 30706473386](https://github.com/postmelee/alhangeul-tauri/actions/runs/30706473386): `workflow_dispatch`, `publish/task11`, 같은 exact SHA
-- Windows x64 build job `91386363519`, Linux x64 build job `91386363546`, Linux arm64 build job `91386363548`, Windows installer smoke job `91387110741`: 모두 `success`
-- smoke job의 `checked-out-sha.txt`가 같은 SHA를 기록해 검증 대상과 소비 source가 일치함을 확인했다
-
-선행 run [30697442296](https://github.com/postmelee/alhangeul-tauri/actions/runs/30697442296)(`d698d40…`)도 성공했으나, 이후 최종 검토 보정으로 NSIS 중단 transaction의 기존 snapshot 보존과 smoke의 삭제 key 복구가 바뀌었다. 현재 유효한 수용 증적은 위 `0a344d3…` run이다.
-
-GitHub API가 반환한 Actions artifact archive metadata는 다음과 같다. 네 artifact는 14일 retention을 사용하며 아래 installer SHA-256과 API archive digest는 서로 다른 검증 대상이다.
-
-| 용도 | Actions artifact | ID | Archive 크기 (bytes) | API archive digest | 만료 시각 (UTC) |
-|---|---|---:|---:|---|---|
-| Windows installer 진단 | `alhangeul-desktop-windows-x64-installer-smoke` | `8820566083` | 29,054 | `sha256:540b1641f3a387dd48cb1e81f227931b0d6b3b14ccef76600e19f57e6764112d` | `2026-08-15T15:49:51Z` |
-| Windows x64 bundle | `alhangeul-desktop-windows-x64` | `8820554656` | 53,661,343 | `sha256:2115c9dd0827dd5e8faa3442c9874c60f6c9cbb493d079fa9de142d4ce03684b` | `2026-08-15T15:48:50Z` |
-| Linux x64 bundle | `alhangeul-desktop-linux-x64` | `8820557797` | 353,970,140 | `sha256:7583130821b58b2273c537ddd5534bf2212546ac0cf220baef0ff28338b53376` | `2026-08-15T15:48:51Z` |
-| Linux arm64 bundle | `alhangeul-desktop-linux-arm64` | `8820517301` | 90,030,122 | `sha256:ad23e638bb0cb93cd4bf1cb7a053f054ed993d948e9f969d9e495a3987a32799` | `2026-08-15T15:45:29Z` |
-
-Windows bundle을 별도 임시 디렉터리에 내려받아 동봉 inventory와 파일을 독립 재검증했다.
-
-| 종류 | 파일 | 크기 (bytes) | SHA-256 |
-|---|---|---:|---|
-| MSI | `msi/Alhangeul_0.1.0_x64_en-US.msi` | 28,188,672 | `d6052adea195c9e296a3732956ed407f5f6882465f8b81e72fffd75aea51865a` |
-| NSIS | `nsis/Alhangeul_0.1.0_x64-setup.exe` | 25,708,174 | `44fb23efaa1ad6ea9a353df4c62ade31abf25e55f2f4e4ade3d2587890278143` |
-
-MSI와 NSIS는 각각 clean state, silent install exit `0`, 제품 version `0.1.0`, canonical HWP/HWPX handler, 기존 기본 연결 불변, Desktop·Start Menu shortcut, bounded process launch, uninstall exit `0`, 제품 소유 상태 cleanup을 통과했다. Fixture는 실행 전후 SHA-256이 동일했다. MSI verbose log에는 Desktop·Start Menu·uninstall shortcut의 `ShortcutCreate` 세 개와 대응하는 세 `ShortcutRemove`가 기록됐고 `Return value 3`은 없었다.
-
-리뷰 반영으로 바뀐 경로는 다음 증적으로 확인했다.
-
-| 변경 | 확인 방법 |
-|---|---|
-| NSIS snapshot key를 `Software\Alhangeul\FileAssocBackup`으로 이동 | NSIS `default-mutation` 판정 통과. Tauri NSIS는 설치 중 `.hwp`/`.hwpx` 기본값을 덮어쓰므로, 새 key로의 snapshot·복원이 실제로 동작하지 않으면 baseline과 달라져 실패한다 |
-| 중단된 NSIS transaction의 committed snapshot 보존 | 기존 `State`가 있으면 snapshot을 덮어쓰지 않고 `Default` 뒤 `State`를 기록하는 source 계약 통과. Native smoke는 변경된 hook의 정상 install/uninstall과 backup cleanup을 확인했으며 강제 종료·재시도 주입은 수행하지 않았다 |
-| 새 backup key의 cleanup | uninstall 뒤 clean-state의 소유 registry 수 `0`. 판정 대상에 backup key의 `State` value를 포함했다 |
-| smoke의 삭제 extension key 복구 | 원래 존재한 key만 재생성하는 source 계약 통과. MSI·NSIS smoke의 default 불변과 최종 clean state 모두 통과 |
-| WiX protocol block `[#Path]` 통일 | MSI validation 통과와 silent install exit `0` |
-| workflow `!cancelled()`와 `Join-Path` 경로 정리 | diagnostic artifact 업로드 성공과 step outcome 4개 모두 `success` |
-
-이 결과는 fresh hosted runner의 반복 가능한 비대화형 package smoke다. 실제 GUI에서 HWP/HWPX 열기·저장·인쇄, Explorer 기본 앱 선택 UI, 장시간 사용과 Windows 실제 사용자 환경의 최종 수동 검증을 대신하지 않는다. Artifact는 공개 배포물이 아니며 만료 뒤 재사용할 수 없다.
-
-### Windows installer 자동 gate를 다시 돌려야 하는 변경
-
-이 workflow는 `workflow_dispatch` 전용이라 push나 PR로 자동 실행되지 않는다. 다음 변경은 자동으로 검증되지 않으므로 수동 dispatch가 필요하다.
-
-| 변경 | 이유 |
-|---|---|
-| Tauri 버전 상향 | NSIS hook은 Tauri 기본 file association 동작을 되돌리는 구조다. upstream이 association 처리나 내부 `UPDATEFILEASSOC` macro를 바꾸면 기존 기본 연결 보존이 조용히 깨진다 |
-| `windows/main.wxs`, `windows/nsis-hooks.nsh`, `tauri.conf.json`의 bundle 항목 | installer가 실제로 쓰는 registry·shortcut 계약이 바뀐다 |
-| `[[bin]] name`, `productName` | 실행 파일명, 설치 경로, ProgID, shortcut 이름이 함께 움직인다 |
-| `scripts/windows-installer-smoke.ps1`, smoke job | 판정 자체가 바뀌므로 source test만으로는 runtime 동작을 보증하지 못한다 |
-
-플랫폼 중립 test(`pnpm run test:automation`)는 이들 source 계약을 고정하지만 실제 설치·제거 동작은 확인하지 않는다.
-
-Task #13은 exact upstream `v0.8.2` Studio entry, HWPX native 저장과 현재 페이지 SVG 기반 직접 PDF 경계를 다시 구성했다. 따라서 Task #9의 기존 candidate와 위 Task #11 artifact·SHA는 Task #13의 기능 수용이나 공개 후보로 승계하지 않는다. Stage 5의 플랫폼 중립 gate가 통과해도 native 수용 증거는 아니며, 별도 승인한 Stage 6에서 Stage 5 commit을 포함한 새 exact SHA로 Windows/Linux bundle과 GUI·저장·PDF·package gate를 다시 검증해야 한다. 그 결과가 Go일 때만 해당 exact SHA를 Task #9 prerelease 후보 재개 입력으로 사용한다.
-
-2026-08-08 Task #13 Stage 6 exact SHA `63a2703cebf3a79d11a010974203fdaf4ccd3e76`은
-[CI run 31255124269](https://github.com/postmelee/alhangeul-tauri/actions/runs/31255124269)와
-[native run 31255131950](https://github.com/postmelee/alhangeul-tauri/actions/runs/31255131950)에서
-Windows x64·Linux x64·Linux arm64 build, inventory와 Windows MSI·NSIS installer smoke를
-통과했다. Windows와 최소 Linux에서 직접 PDF 저장이 성공했고 Windows PDF의 한글
-검색·선택·복사를 확인했다. 다만 같은 후보의 실제 인쇄가 editor WebView의 빈 한 쪽을
-출력해 별도 Issue #15로 분리됐다. Task #13 PR은 이 분리 경계를 기록한 뒤 진행할 수
-있지만, Task #9 prerelease 후보 재개는 Task #15 merge와 두 task를 포함한 새 exact SHA의
-Windows/Linux 수용 전까지 No-Go다.
+| `artifact` | Windows x64, Linux x64·arm64 bundle·inventory와 package/thumbnail 진단 | 비게시 검증; updater overlay·서명 Secret 없음 |
+| `updater`, `publish_release=false` | Windows MSI·NSIS, Linux x64 AppImage·서명·검증 inventory | `release` 환경의 비게시 서명 후보 |
+| `updater`, `publish_release=true` | 같은 run의 세 installer·세 `.sig`·complete inventory, 총 7개 Release asset | 별도 공개 승인 필요 |
+| `updater-acceptance` 및 native acceptance mode | 시험용 N/N+1·positive·negative 근거 | 별도 시험 승인; production 수용을 대신하지 않음 |
+| Linux GUI acceptance | 지정 native run의 exact DEB와 GUI·인쇄·thumbnail 증거 | 비게시 수용 |
+| Pages | 검증된 `site/`를 `_site/`로 빌드·배포 | 별도 배포 승인; 앱 installer를 만들지 않음 |
+
+일반 native build와 updater build를 혼용하지 않는다. 기본 build의 성공은 production endpoint와
+서명이 포함된 파일의 검증이 아니다. updater build는 일반 build의 전체 test·package smoke를
+자동으로 반복하는 경로가 아니므로 변경 영향과 실제 job 결과를 따로 확인한다.
+
+`updater`는 `build_ref`, workflow SHA, checkout SHA의 일치와 stable `X.Y.Z` version,
+일치하는 `vX.Y.Z` tag, 비어 있지 않은 release notes를 요구한다. 서명 build와 publish job은
+`release` environment를 사용하며 publish job에만 필요한 `contents: write`를 부여한다.
+
+현재 workflow에는 draft/prerelease 입력이나 이전 비게시 run의 파일을 그대로 승격하는 입력이 없다.
+`publish_release=true`는 새 build를 거친 게시이며, DEB/RPM·arm64 파일은 이 7개 asset에 포함되지
+않는다. 다른 게시 흐름이 필요하면 공개 전 승인된 운영 방법 또는 별도 구현 Task를 확보한다.
+서로 다른 run의 일부 파일을 섞거나 없는 옵션을 가정해 문서만으로 이 경계를 우회하지 않는다.
+
+Actions archive는 임시 검증물이다. 현재 desktop/updater artifact는 14일, Linux GUI evidence는
+7일 retention이며 run 성공만으로 파일이 아직 내려받아지는 것은 아니다. 버전 기록에는 archive
+ID·digest·만료와 실제 파일의 크기·SHA-256을 구분한다. 만료된 근거는 기록으로 남되 만료된 파일을
+게시하거나 재빌드 파일이 같은 bytes라고 간주하지 않는다.
+
+## 승인과 게시 순서
+
+1. release owner가 변경 범위, 이전 버전, 후보 SHA·version·tag·채널, 서명 정책과 지원 matrix를
+   승인한다. 일반 Task PR은 `devel`로, release PR은 `devel → main`으로 진행하는
+   [브랜치 원칙](../../mydocs/manual/git_workflow_guide.md)을 따른다.
+2. 승인한 source의 영향 검증과 실제 게시할 installer의 metadata·무결성·서명·설치 기본 동작을
+   확인한다. 미게시 수용 이후 다시 빌드하면 새 파일로 다시 확인해야 한다.
+3. 공개 승인 뒤 검증된 exact tag의 GitHub Release를 게시한다. version·target·source SHA·
+   파일명·크기·hash·서명을 inventory와 맞추고 공개 asset을 다시 내려받아 대조한다.
+4. Release read-back이 통과한 뒤 별도 승인으로 `site/release.json` 변경 PR을 `devel`에 병합한다.
+   installer source SHA와 Pages source SHA는 역할이 다르므로 각각 기록한다.
+5. Pages workflow SHA와 `deploy_ref`가 같은 exact `devel` commit을 배포한다. 배포 전에 현재
+   `devel` ref가 이동하지 않았는지 확인하며 task/publish branch로 환경 정책을 우회하지 않는다.
+6. 공개 홈·업데이트·문의 화면의 링크와 manifest를 다시 읽고, 버전 기록에 배포 run·SHA와
+   대상별 결과를 남긴다. 실제 사용자 설치본의 확인과 두 버전 업데이트 결과는 따로 기록한다.
+
+위 순서는 요구되는 승인 경계다. 현재 workflow가 게시할 동일 bytes의 수동 설치 확인을 자동으로
+기다리거나 보장하지는 않는다. 이를 만족하는 게시 gate가 정해지지 않았다면 3단계 전에 멈춘다.
+문서 PR merge, environment 이름, required reviewer의 존재만으로 공개가 승인된 것도 아니다.
+실행 직전 승인자·허용 branch/tag·실제 protection rule을 확인하고 차이를 owner에게 보고한다.
+
+## Pages와 updater 신뢰 사슬
+
+[release data validator](../../scripts/pages/release-data.mjs)와
+[inventory validator](../../scripts/updater/release-inventory.mjs)를 기준으로 다음을 지킨다.
+
+- `site/release.json`이 `unreleased`이면 version·tag·download는 null이고 manifest는 생성하지 않는다.
+- 현재 release data 채널은 `stable`만 허용한다. 다운로드 key는
+  `windows-x86_64-nsis`, `windows-x86_64-msi`, `linux-x86_64-appimage` 세 개다.
+- `published` 전환에는 세 target의 version-tag 고정 GitHub HTTPS URL이 모두 필요하다.
+  수동 패키지 URL은 이 schema가 자동 게시하지 않는다.
+- `manifestPublished=true`에는 세 target을 모두 가진 complete inventory와 release data의
+  version·tag·URL 정합성이 필요하다. [manifest 생성기](../../scripts/updater/manifest.mjs)는
+  검증된 inventory의 URL·signature만 투영한다.
+- 이 구조 검증은 실제 원격 bytes의 서명 검증이나 public read-back을 수행한 증거가 아니다.
+  build/publish 검증과 원격 read-back 결과를 버전 기록에서 연결해야 한다.
+- endpoint는 `https://postmelee.github.io/alhangeul-tauri/updater/stable.json`이다.
+  수동 복구는 native command가 고정 [업데이트 페이지](https://postmelee.github.io/alhangeul-tauri/updates/)만
+  OS 기본 브라우저로 열며 WebView가 임의 URL을 대신 열지 않는다.
+
+첫 공개에는 이전 공개 설치본이 없으므로 같은 버전에서 '업데이트 없음'을 확인할 수 있다.
+이는 실제 `N → N+1` 성공이 아니다. 첫 공개 MSI·NSIS의 격리 설치본과 writable AppImage를
+보존하고, 다음 실제 공개 후 동일 target의 다운로드·서명·설치·재실행·version을 확인한다.
+시험 endpoint의 성공, production manifest 게시, 실제 production 업그레이드 성공을 구분한다.
+
+## Production updater key와 Secret 책임
+
+[tracked release overlay](../../apps/desktop/src-tauri/tauri.updater.conf.json)에는 public key만 둔다.
+[release metadata 계약](../../scripts/check-release-metadata.mjs)의 공개 fingerprint는
+`100c8f3183b25de3366574c46a1a2a66950a1d5f24862f3461c27b095713ffdd`다.
+updater Minisign 서명은 Windows Authenticode 인증서 서명과 별개이며 서로의 성공을 대신하지 않는다.
+
+릴리즈 책임자는 repository 밖의 접근 제한된 primary key, 독립적인 암호화 복구본과 별도 credential
+store의 암호를 보관한다. 복구본 존재와 공개 fingerprint만 확인하며 평상시 private material을
+복호화·read-back하지 않는다. `release` environment의 Secret 이름은 다음과 같다.
+
+- `TAURI_SIGNING_PRIVATE_KEY`
+- `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`
+
+키·암호·실제 보관 경로·credential store 항목 내용은 source·문서·log·PR·artifact·shell history에
+기록하지 않는다. public key를 Secret으로 중복 등록하지 않으며, Secret 등록 후 값을 출력해
+비교하지 않는다. 서명 key·암호·환경 변경은 별도 승인을 받아 수행한다.
+
+키 유실 시 기존 설치본은 새 key의 update를 신뢰하지 못한다. 첫 공개 전 교체는 별도 승인 Task로,
+공개 후에는 기존 key로 서명한 bridge release 가능성부터 검토한다. 불가능하면 수동 재설치와 사용자
+공지를 포함한 복구 승인이 필요하다. 노출 의심 시 release·manifest 게시와 해당 key 사용을 중단한다.
+
+## 검증 선택과 수용 한계
+
+검증은 반복 횟수가 아니라 변경 영향과 공개할 파일을 기준으로 선택한다.
+
+- 과거 성공 run의 exact SHA와 현재 candidate diff에서 관련 runtime·config·의존성·판정 도구가
+  그대로인지 확인하고 재사용 이유를 기록한다. 문서-only merge만으로 전체 native/negative suite를
+  다시 실행하지 않는다.
+- 새 installer bytes에는 이전 파일의 checksum·서명·설치 성공을 승계하지 않는다.
+- 제품명·Tauri·WiX/NSIS·file association·thumbnail binary/protocol·installer smoke가 바뀌면
+  Windows 설치·rollback·제거·기존 연결 보존·Shell bitmap 경로를 다시 확인한다.
+- Linux helper·MIME·registration·package hook이 바뀌면 해당 architecture의 lifecycle과
+  package-only file-manager 경로를 확인한다. private MIME 주입으로 설치 성공을 대신하지 않는다.
+- upstream pin 변경은 core·Studio·WASM·저장·PDF·인쇄 및 두 thumbnail renderer에 영향을 준다.
+  [upstream 수용 기준](../architecture/UPSTREAM.md)을 적용하며 updater negative 전체 반복과는 구분한다.
+- 실패한 check를 면제하려면 알려진 이름만 같다는 이유가 아니라 정확한 실패 지점·영향과
+  owner 결정을 기록한다. 미실행 항목과 위험 수용을 '통과'로 쓰지 않는다.
 
 ### 실제 인쇄와 PDF 직접 저장의 분리 gate
 
-PDF 직접 저장 성공은 실제 인쇄 성공을 대신하지 않는다. `file:print-to-pdf`는 Alhangeul의 Rust searchable PDF job이다. `file:print`는 모든 문서 페이지를 upstream `profile=print` SVG와 print-page primitive로 조립한 전용 surface만 system print로 보내며, browser는 upstream visible preview를, Tauri는 hidden same-origin surface의 직접 `window.print()`를 사용한다.
+직접 PDF 성공은 system print 성공이 아니다. HWP/HWPX 열기·저장·재열기와 함께 다음을 확인한다.
 
-Windows/Linux exact 후보에서 `인쇄`를 선택하면 먼저 다음 항목을 확인한다.
+- 별도 Alhangeul preview 없이 system print dialog로 진입한다.
+- 출력 쪽 수·방향·한글·표가 열린 문서와 같고 Studio chrome이나 빈 editor 한 쪽을 출력하지 않는다.
+- 취소·완료·반복 뒤 orphan surface 없이 편집기로 복귀한다.
+- Windows Microsoft Print to PDF, Linux GTK/CUPS 가상 출력과 physical printer의 실행 여부를
+  구분한다. PDF render·한글 glyph는 수치 gate와 시각 read-back을 함께 기록한다.
 
-1. Tauri에서는 별도 Alhangeul preview 창 없이 system print dialog가 직접 열린다.
-2. system preview의 제목·쪽 수·세로/가로 방향과 본문이 열린 문서와 일치한다.
-3. 메뉴·리본·상태 표시줄 같은 Studio chrome이나 빈 editor 한 쪽이 문서 대신 표시되지 않는다.
-4. 취소·완료·반복 인쇄 뒤 hidden surface나 orphan 창이 남지 않고 editor가 계속 동작한다.
-5. Windows에서는 단일·다중 페이지 한글 문서를 Microsoft Print to PDF 또는 사용 가능한 프린터로 보내고 결과 쪽 수·내용을 확인한다.
-6. Linux에서는 system print dialog 진입과 전용 surface의 전체 페이지·한글 표시를 확인한다.
+dialog 미진입, 빈 페이지, 잘못된 쪽 수·방향이면 공개 판단을 중단한다. editor WebView 직접 인쇄로
+우회하지 않는다. 문서 revision 일관성 등 알려진 결함은 버전 기록의 별도 결정 항목이다.
 
-system dialog 미진입, same-origin hidden surface 접근 실패, 빈 페이지, 쪽 수·방향 불일치는 No-Go다. 이 경우 editor WebView 직접 인쇄로 fallback하지 않고 hidden surface lifecycle과 platform WebView 인쇄 경계를 보정한다.
+### Linux x64 exact-SHA GUI acceptance
 
-Stage 6 전에는 branch push·workflow dispatch·artifact 생성을 하지 않는다. Stage 6에서도 release tag, GitHub Release, 서명, package 게시, updater 활성화는 범위 밖이다.
+GUI gate는 exact 40자리 `build_ref`와 성공한 `native_run_id`에 연결된 단일 DEB를 설치한다.
+원본 artifact ID·archive digest·inventory와 설치 DEB hash가 같은 chain인지 먼저 확인한다.
+source/runtime metadata, step outcome, package-only MIME 전후 상태, screenshot·native UI tree,
+직접/GTK/CUPS PDF와 thumbnail helper 실행·cache 근거를 결과와 함께 남긴다.
+GUI 실패뿐 아니라 증거 누락·upload 실패도 gate 실패다.
 
-## 검증된 native canary
+hosted Ubuntu x64의 Xvfb·Nautilus·Thunar/Tumbler·가상 printer 결과는 Windows GUI, Linux arm64
+GUI, Fedora RPM·AppImage desktop integration, Wayland/GPU·physical printer 결과가 아니다.
+진단 probe는 수용 gate를 대체하지 않는다. legacy threshold와 특정 환경 회피 설정은
+[과거 근거](../releases/v0.1.0.md#과거-증거-원문-보존)를 참고하며 현재 후보에 무조건 적용하지 않는다.
 
-2026-07-28에 다음 exact commit을 `publish/task5`에서 검증했다.
+## 실패와 복구
 
-- Commit: `b8847f5086eab7c0f8243e999f2c145271ef713c`
-- [CI run 30357007192](https://github.com/postmelee/alhangeul-tauri/actions/runs/30357007192): platform-neutral 검사와 Ubuntu desktop Rust test·Clippy 성공
-- [Native run 30357240402](https://github.com/postmelee/alhangeul-tauri/actions/runs/30357240402): Windows x64, Linux x64, Linux arm64 build·inventory·upload 성공
+- build·signing·inventory·publish·read-back 중 실패한 단계, exact 입력, 오류와 영향 범위를 기록한다.
+  source/config·환경·외부 상태의 변화 없이 job만 재실행하지 않는다.
+- 게시 전 실패한 candidate는 공개 입력에서 제외한다. 실패 run의 파일을 새 run에 일부 섞지 않는다.
+- Release 이후 Pages 전 실패는 기존 stable manifest를 유지하고 문제 Release를 웹 다운로드·feed로
+  새로 노출하지 않는다. 첫 공개라면 unreleased 상태를 유지한다.
+- manifest 게시 후 결함은 owner 승인으로 이전 stable 안내 복구 또는 더 높은 fixed version을
+  선택한다. feed 복구가 이미 업데이트된 설치본의 자동 downgrade를 뜻하지는 않는다.
+- stable tag 이동, asset 교체, history rewrite와 무단 key rotation은 하지 않는다.
+- 시험 전용 negative fixture의 manifest 교체·복원은 승인된 test endpoint 안에서만 수행한다.
+  production release에 적용하지 않으며 과거 시험 절차는 [기록](../releases/v0.1.0.md#과거-증거-원문-보존)으로 보존한다.
 
-같은 날 native run의 artifact 세 개를 별도 임시 디렉터리에 내려받고 각 artifact에 포함된 `alhangeul-artifact-inventory.json`을 기준으로 모든 파일의 크기와 SHA-256을 다시 계산했다. 세 inventory는 build 시 기록된 값과 일치했다.
+## 검증된 rhwp `v0.8.4` native 수용 기준선
 
-GitHub API가 반환한 Actions artifact archive metadata는 다음과 같다. 세 artifact는 확인 시점에 `expired: false`였으며 14일 retention으로 2026-08-11에 만료될 예정이다.
-
-| Platform | Actions artifact | Archive 크기 (bytes) | API archive digest |
-|---|---|---:|---|
-| Windows x64 | `alhangeul-desktop-windows-x64` | 53,615,008 | `sha256:fc9f6dc395475d699eb2b7bbf00da80139474318ac4cc6776f1f12459f77b595` |
-| Linux x64 | `alhangeul-desktop-linux-x64` | 354,121,922 | `sha256:0b9c5826c1726ee06639b265acff254cb6468a5375f6d9240909881bcf792d4d` |
-| Linux arm64 | `alhangeul-desktop-linux-arm64` | 90,022,918 | `sha256:7581e2cc2fb76cf6f2ad8e6335751fe3e06db804fe627fdfa70d223eb7dd353d` |
-
-다운로드 후 독립 재검증한 필수 installer inventory:
-
-| Platform | 종류 | 파일 | 크기 (bytes) | SHA-256 |
-|---|---|---|---:|---|
-| Windows x64 | MSI | `msi/Alhangeul_0.3.1_x64_en-US.msi` | 28,192,768 | `bfab22693473c2cbd60b5e3aa396ccad9a6b7c7649d19d671f84ecf11afa45b9` |
-| Windows x64 | NSIS | `nsis/Alhangeul_0.3.1_x64-setup.exe` | 25,661,219 | `c2e152bcec79a1c423f1ae1410840a96b1441f50710320b12a93eb5ce89191be` |
-| Linux x64 | AppImage | `appimage/Alhangeul_0.3.1_amd64.AppImage` | 106,834,424 | `1c8f678f3a1e97d0498129934f637ffc82e8479378df8a07be3c76d56246b10b` |
-| Linux x64 | DEB | `deb/Alhangeul_0.3.1_amd64.deb` | 30,091,764 | `f6df90bf962ef33759b50f1c7452998278ec72fbe941751c9698ad5015d6422d` |
-| Linux x64 | RPM | `rpm/Alhangeul-0.3.1-1.x86_64.rpm` | 30,092,577 | `5445382ba9f4d5e7f30a61a47991d7becd333ff0f7725f253f05b1e52ed98293` |
-| Linux arm64 | DEB | `deb/Alhangeul_0.3.1_arm64.deb` | 30,049,140 | `f0b841837cc66a699c1f917552287d263394e562be01bd1f2e5b419c3544595f` |
-
-이 결과는 exact source에서 installer 파일이 생성되고 Actions upload 뒤에도 inventory가 보존됐다는 build smoke 증거다. installer 설치·실행, 코드 서명, GitHub Release, package 게시와 updater는 검증하지 않았다.
-
-## 의도적으로 포함하지 않는 작업
-
-- GitHub Release 생성·수정
-- 고정 다운로드 URL이나 latest channel 제공
-- 코드 서명과 인증 정보 사용
-- package registry 또는 배포판 repository 게시
-- updater manifest와 update artifact 생성
-- 태그 생성 또는 이동
-
-따라서 workflow artifact를 공식 배포물로 안내하거나 README/site에 다운로드 링크를 추가하면 안 된다.
-
-## 공개 배포 전 후속 작업
-
-공식 배포를 시작하려면 최소한 다음 작업을 별도 Issue와 승인 경계로 수행한다.
-
-1. 배포 version·tag·bundle 이름과 checksum 게시 정책 확정
-2. Windows signing과 Linux package metadata 검토
-3. Linux installer/package 설치·실행·rollback과 Windows 실제 GUI HWP/HWPX·Explorer 기본 앱 수동 gate 검증
-4. 사용자 다운로드 문서와 지원 범위 작성
-5. 필요할 경우 독립 updater 보안 모델과 key 보관 정책 설계
-
-Windows MSI·NSIS의 자동 설치·제한 실행·제거 package smoke는 Task #11과 Task #13 exact
-native run에서 완료했다. 공개 prerelease 후보는 Task #13과 후속 Task #15가 merge된 뒤
-두 변경을 포함한 새 exact SHA의 Windows/Linux native 수용이 Go로 확정됐을 때 Task #9에서
-다시 생성·검증한다.
-
-릴리스·서명·패키지 게시·updater 활성화는 작업지시자의 명시 승인 없이는 수행하지 않는다.
-
-## 로컬과 다운로드 후 검증
-
-모든 호스트에서 먼저 platform-neutral 검증을 실행한다.
-
-```sh
-pnpm install --frozen-lockfile
-pnpm run check:product-boundary
-pnpm run check:product-version
-pnpm run check:release-metadata
-pnpm run check:rhwp-pin
-pnpm run test:automation
-pnpm run test:upstream
-pnpm run test:studio
-pnpm run build:studio
-```
-
-Actions artifact를 검증할 때는 임시 디렉터리에 내려받고 각 platform 디렉터리의 동봉 inventory를 다시 계산한다.
-
-```sh
-gh run download <native-run-id> \
-  --repo postmelee/alhangeul-tauri \
-  --dir <temporary-directory>
-
-pnpm run check:desktop-artifacts -- \
-  --platform <windows-x64|linux-x64|linux-arm64> \
-  --root <downloaded-artifact-root> \
-  --verify-inventory \
-  <downloaded-artifact-root>/alhangeul-artifact-inventory.json
-
-# 다운로드 artifact에서 공개할 installer만 깨끗한 임시 root로 선별한다.
-pnpm run create:release-checksums -- \
-  --root <temporary-release-assets-directory> \
-  --output <temporary-release-assets-directory>/SHA256SUMS
-```
-
-검증이 끝난 임시 artifact는 별도 배포 경로로 옮기지 않고 정리한다.
-
-Windows/Linux에서 native 검증을 추가한다.
-
-```sh
-pnpm run test:desktop
-pnpm run clippy:desktop
-pnpm tauri build --debug
-```
-
-생성 bundle과 다운로드한 Actions artifact는 해당 작업의 보존 기간과 검증 기록 안에서만 사용한다.
+기존 upstream 문서의 Task #24 참조를 유지하는 역사적 진입점이다.
+[버전 기록의 근거 목록](../releases/v0.1.0.md#기존-검증-근거)에서 Windows NSIS GUI와 MSI package,
+Linux x64 DEB GUI 및 arm64 미실행 한계를 구분한다. 이 과거 수용은 새 공개 후보 승인이나 새 파일의
+검증 성공이 아니다. 원래 문서의 Task #5·#7·#11·#13·#14·#17·#24·#50·updater 고유 값과 제한은
+[고정 원문](../releases/v0.1.0.md#과거-증거-원문-보존)에 보존한다.
