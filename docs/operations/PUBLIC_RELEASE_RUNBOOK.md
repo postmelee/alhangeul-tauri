@@ -253,7 +253,9 @@ manifest 미게시 상태를 확인한다. HTTP 200만으로 installer 서명 �
 공개 홈·`/updates/`·`/feedback/`를 열고 다운로드 버튼/드롭다운이 승인한 파일로 연결되는지
 확인한다. release notes·수동 안내·모바일 줄바꿈도 Pages 변경 영향 안에서 확인한다.
 
-첫 공개: 앱 version·production key/endpoint·같은 version의 '업데이트 없음'을 확인한다.
+첫 공개: 앱 version·production key/endpoint를 확인하고 manifest 게시 시 같은 version의
+'업데이트 없음'을 확인한다. 다운로드만 공개하고 manifest는 미게시라면 앱의 production 확인도
+미실행 사유로 남긴다. endpoint 오류를 '업데이트 없음'으로 기록하지 않는다.
 MSI/NSIS는 서로 격리한 설치본, AppImage는 실제 실행 경로와 파일/부모 디렉터리의 실효 쓰기
 자격을 갖춘 기준선을 다음 릴리즈까지 보존한다. 보존 위치의 개인 경로·문서는 공개하지 않는다.
 다음 공개: 각 **동일 설치 형식**에서 실제 N → N+1 확인·다운로드·서명 검증·동의·설치·재실행·
@@ -278,9 +280,11 @@ owner가 결과를 확인한 뒤 해당 작업의 보고·PR·merge 후 정리�
 |---|---|---|
 | 후보 build·서명·inventory·설치 | 실패 입력·run·비밀 없는 오류; 게시 금지 | 원인 변화 확인 후 Gate 1~3의 영향 부분만 |
 | Release 게시 요청 결과 불명확 | exact tag/Release/asset 먼저 조회; 중복 생성 금지 | 미게시라면 원인 해결, 일부 게시면 owner 복구 판단 |
-| Release 성공, Pages 전/배포 실패 | Release/tag 유지, 기존 stable feed 또는 첫 unreleased 상태 유지 | Gate 5; 실제 공개 상태 확인 후 Pages만 재개 |
+| Release 성공, Pages 전/배포 실패 | Release/tag 유지; 먼저 공개 상태를 조회해 기존 feed/첫 unreleased 유지 여부 확인 | 변경되지 않았다면 Gate 5에서 Pages만 재개; 변경됐다면 아래 사후 결함 경로 |
 | manifest 게시 후 결함 | 새 유입·이미 업데이트한 사용자 영향 분리, 추가 게시 중단 | 이전 검증 feed/안내 복구 또는 더 높은 fixed version 승인 |
 
 원인·입력·외부 상태가 그대로인데 CI만 반복하지 않는다. 잘못된 asset은 덮어쓰거나 tag를 이동해
 고치지 않는다. feed 복구는 이미 업데이트된 앱의 자동 downgrade가 아니다. key 노출·유실은
 [키 책임 정책](DESKTOP_RELEASE.md#production-updater-key와-secret-책임)으로 별도 처리한다.
+첫 공개처럼 이전 stable이 없으면 복구할 이전 version을 만들지 않는다. owner가 unreleased
+안내·manifest 미게시로의 복구 또는 더 높은 수정 버전을 승인하고 앱의 조회 오류 가능성도 알린다.

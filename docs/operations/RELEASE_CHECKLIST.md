@@ -101,7 +101,7 @@ dialog 미진입·빈 페이지·쪽 수/방향 오류는 중단한다. 알려�
 
 | 시점 | 필수 확인과 남길 근거 | 완료로 주장하지 않을 것 |
 |---|---|---|
-| 첫 공개 | 세 형식의 production key/endpoint·설치 version, 공개 manifest와 같은 버전의 업데이트 없음, 기준선 보존 | 이전 공개본이 없으므로 실제 N→N+1 성공은 아님 |
+| 첫 공개 | 세 형식의 production key/endpoint·설치 version, manifest 게시 시 같은 버전의 업데이트 없음, 기준선 보존 | manifest 미게시/endpoint 오류는 업데이트 없음이 아니며, 이전 공개본이 없으므로 N→N+1 성공도 아님 |
 | 다음 공개 | 이전 공개 installer/hash를 설치한 격리 환경, 같은 형식 N→N+1 확인·다운로드·서명·동의·설치·재실행·version | NSIS→MSI 전환이나 시험 endpoint 성공으로 대체 불가 |
 | 수동 패키지 | DEB/RPM/arm64의 수동 다운로드 안내·해당 package 설치 확인 | 자동 updater 성공 대상 아님 |
 
@@ -116,7 +116,7 @@ version은 각각 승인받는다. updater 시험을 위해 미승인 가짜 pro
 ## 검증을 멈춰야 하는 경우
 
 - [ ] 실패한 gate/입력/run·영향·원인 변화를 기록하기 전 같은 CI를 재실행하지 않음.
-- [ ] Release만 성공했다면 기존 manifest/안내를 유지하고 Pages 단계부터 재개 판단.
+- [ ] Release만 성공했다면 실제 공개 manifest/안내의 유지 여부부터 확인하고 Pages 재개 또는 사후 복구 판단.
 - [ ] 배포 후 결함이면 owner에게 이전 검증 feed/안내 복구 또는 더 높은 fixed version 판단 요청.
 - [ ] tag 이동·asset 덮어쓰기·history rewrite·무단 key rotation으로 실패를 숨기지 않음.
 

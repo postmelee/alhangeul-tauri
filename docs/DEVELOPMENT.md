@@ -69,19 +69,24 @@ Alhangeul은 `rhwp`의 문서 엔진과 웹 editor를 기반으로 다음 제품
 - Windows/Linux 파일 연결과 bundle 설정
 - Linux Freedesktop thumbnail helper, registration과 package lifecycle
 - Windows Explorer thumbnail COM handler, 제한 worker와 installer 등록·복원
+- MSI/NSIS·Linux x64 AppImage updater runtime과 release inventory·Pages manifest 연결
 
 현재 source submodule, native Cargo lock과 bundled WASM은 `rhwp v0.8.4`의 resolved commit `496333b27d21ddb9114ba9ae340bcb895870c9a7`로 고정되어 있다. [rhwp-core.lock](../rhwp-core.lock)이 이 경계의 기계 검증 가능한 진실 원천이며, 자세한 계약은 [UPSTREAM.md](architecture/UPSTREAM.md)를 따른다.
 
 ## 개발 상태
 
-- HWP/HWPX source 저장과 형식 변환 저장은 구현됐지만 새 exact-SHA native 후보 수용 전이다.
-- upstream Studio의 browser autosave/recovery는 상속하지만 별도 native recovery 저장소와 외부 파일 변경 감지는 아직 없다.
+- HWP/HWPX 저장·형식 변환·재열기, 직접 PDF와 시스템 인쇄는 rhwp v0.8.4의 Windows NSIS·Linux x64 DEB 대표 환경에서 수용했다. 새 공개 파일 검증과는 구분한다.
+- upstream Studio의 browser autosave/recovery를 상속하며 별도 native recovery 저장소는 없다. native 저장에는 외부 원본 변경 감지·덮어쓰기 확인이 구현되어 있다.
 - 큰 문서에서는 WASM mirror를 거치는 구간이 남아 있다.
-- Windows thumbnail 자동 gate는 실제 COM activation과 Shell bitmap 반환까지 통과했지만 Explorer UI의 보기 크기·DPI·cache·한컴 설치 환경 수동 수용은 남아 있다.
+- Windows thumbnail은 COM activation·Shell bitmap 자동 gate와 VDI 대표 시각 수용 근거가 있다. 과거 VDI 근거의 재사용 조건과 모든 DPI·보기 크기·제3자 조합의 미검증은 버전 기록에서 구분한다.
 - Linux thumbnail exact-SHA package candidate는 x64 DEB/RPM lifecycle, arm64 DEB lifecycle·직접 PNG와 x64 DEB의 Nautilus·Thunar/Tumbler gate를 통과했다. package-installed system MIME만 사용한 공개 실사용 HWP/HWPX의 서로 구분되는 첫 페이지도 시각 확인했다.
 - 현재 제품 source version은 독립 Alhangeul의 M010 기준선인 `0.1.0`이며, 공식 release나 tag를 뜻하지 않는다.
-- 공식 설치 파일, 서명, 패키지 게시와 자동 업데이트는 준비되지 않았다.
+- updater runtime·production overlay·서명 build와 시험용 N→N+1 수용은 구현·검증되었다. 공식 Release·production manifest와 실제 공개본 간 업그레이드는 아직 미실행이다. 일반 artifact/debug build는 updater overlay를 사용하지 않는다.
 - GitHub Actions는 활성 상태지만 CI와 Windows/Linux native artifact workflow는 수동 `workflow_dispatch` 전용이다. Actions artifact는 build smoke 결과이며 공식 설치 파일이나 공개 release가 아니다.
+
+exact SHA·실행 환경·미해결 위험은 [v0.1.0 기록](releases/v0.1.0.md)을 확인한다. 릴리즈 때는
+[실행 가이드](operations/PUBLIC_RELEASE_RUNBOOK.md)와 [최소 체크리스트](operations/RELEASE_CHECKLIST.md)로
+필요한 검증을 선택하며 문서-only 변경에 전체 native·negative 검증을 반복하지 않는다.
 
 ## 검증 명령
 
@@ -125,7 +130,7 @@ pnpm run check:desktop-artifacts -- \
   <downloaded-artifact-root>/alhangeul-artifact-inventory.json
 ```
 
-검증된 canary commit·run과 platform별 installer SHA-256, 14일 retention 및 공식 배포와의 경계는 [desktop artifact와 배포 준비](operations/DESKTOP_RELEASE.md)를 따른다.
+검증된 canary commit·run과 installer SHA-256은 [버전별 기록](releases/README.md), retention과 공식 배포 경계는 [릴리즈 정책](operations/DESKTOP_RELEASE.md)을 따른다. 위 명령은 일반 artifact용이며 updater 서명 파일의 검증·게시 절차는 [실행 가이드](operations/PUBLIC_RELEASE_RUNBOOK.md)를 사용한다.
 
 ## Windows thumbnail 개발
 
@@ -174,7 +179,7 @@ arm64는 target을 `aarch64-unknown-linux-gnu`로 바꾼다. build는 `/usr/lib/
 
 CLI는 input/output의 조상 directory symlink를 resolved absolute path로 정규화하지만 input/output leaf symlink는 거부한다. core gate가 계측하는 256 MiB peak RSS와 worker의 256 MiB `RLIMIT_AS`는 서로 다른 제한이므로 검증 결과를 대체해 기록하지 않는다.
 
-지원 matrix, direct-first fallback, resource limit, atomic PNG와 Tumbler precreated-output 예외는 [Linux thumbnail 아키텍처](architecture/LINUX_THUMBNAILS.md), exact artifact와 package evidence는 [desktop artifact와 배포 준비](operations/DESKTOP_RELEASE.md)를 따른다.
+지원 matrix, direct-first fallback, resource limit, atomic PNG와 Tumbler precreated-output 예외는 [Linux thumbnail 아키텍처](architecture/LINUX_THUMBNAILS.md), exact artifact와 package evidence는 [버전별 기록](releases/README.md)을 따른다.
 
 ## `rhwp` Stable pin 갱신
 
@@ -221,7 +226,7 @@ candidate writer에는 현재 repository에 설치된 GitHub App과 다음 Actio
 
 기존 Alhangeul Automation GitHub App인 `alhangeul-rhwp-sync-bot` 재사용을 기본으로 한다. installation에 이 repository를 포함하고 Client ID와 private key를 준비한 뒤 activation variable을 마지막으로 `true`로 설정한다. rollback 또는 credential 교체 때는 activation variable을 먼저 `false`로 바꾼다. 이 App의 다른 repository용 권한과 관계없이 Tauri workflow가 발급하는 installation token은 Contents `Read and write`, Pull requests `Read and write`만 명시적으로 요청한다. Issues, Actions, Administration, Workflows, Releases 권한은 Tauri token에 요청하거나 사용하지 않는다. credential 값, private key와 발급 token을 문서·로그·PR에 기록하지 않는다. resolve job은 기본 read-only `GITHUB_TOKEN`을 사용하며 App token은 모든 후보 검증 뒤 push와 draft PR 생성 단계에서만 발급된다.
 
-생성된 draft PR은 자동 검증이 통과했더라도 Windows/Linux native 수용 전이다. target release를 명시한 별도 Issue에서 Rust·Tauri build, GUI와 packaging을 검토하며 candidate PR 또는 수용 Issue를 자동 merge·close하지 않는다. 최초 `v0.8.4` 수용은 현재 [Issue #24](https://github.com/postmelee/alhangeul-tauri/issues/24)에서 진행한다.
+생성된 draft PR은 자동 검증이 통과했더라도 Windows/Linux native 수용 전이다. target release를 명시한 별도 Issue에서 Rust·Tauri build, GUI와 packaging을 검토하며 candidate PR 또는 수용 Issue를 자동 merge·close하지 않는다. `v0.8.4` 수용은 [Task #24 근거](releases/v0.1.0.md#기존-검증-근거)에 보존하며 이후 pin 변경은 별도 작업으로 수행한다.
 
 ### candidate 장애 복구
 
@@ -261,4 +266,8 @@ pnpm run check:rhwp-pin
 - [로컬 폰트 규칙](architecture/LOCAL_FONTS.md)
 - [Windows thumbnail 아키텍처](architecture/WINDOWS_THUMBNAILS.md)
 - [Linux thumbnail 아키텍처](architecture/LINUX_THUMBNAILS.md)
-- [desktop artifact와 배포 준비](operations/DESKTOP_RELEASE.md)
+- [updater 아키텍처](architecture/UPDATER.md)
+- [릴리즈 정책](operations/DESKTOP_RELEASE.md)
+- [공개 실행 가이드](operations/PUBLIC_RELEASE_RUNBOOK.md)
+- [최소 검증 체크리스트](operations/RELEASE_CHECKLIST.md)
+- [버전별 릴리즈 기록](releases/README.md)
