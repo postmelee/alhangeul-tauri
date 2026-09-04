@@ -40,6 +40,9 @@ gh api "repos/$ALH_REPO/environments/github-pages/deployment-branch-policies"
 현재 [desktop workflow](../../.github/workflows/alhangeul-desktop.yml)의 `updater`와
 [Pages 데이터](../../scripts/pages/release-data.mjs)는 stable `X.Y.Z`만 지원한다.
 prerelease·draft·수동 DEB/RPM·arm64 동시 게시가 필요하면 현재 명령으로 우회하지 않는다.
+첫 Pages 공개 전환에는 `tests/pages.test.mjs`의 미공개 고정 단언 보정이 필요하다.
+#9에서 변경 범위·담당·검증과 Gate 5 반영을 소스 변경으로 사전 승인받는다. 승인된 전환
+계획이 없으면 Gate 4 Release 게시도 진행하지 않는다.
 **중단/재개:** 미정 입력·공개 정책 차이가 있으면 owner 결정 후 이 gate부터 재확인한다.
 
 ## Gate 1 — 변경 범위와 검증 선택
@@ -210,6 +213,11 @@ Release의 평면 파일명을 구분한다. inventory 자체 hash와 Release as
 다운로드만 먼저 게시하기로 승인했다면 manifest는 false/inventory null이다. 처음에는
 unreleased/null 상태를 유지한다. `published`로 바꾸려면 세 다운로드 URL 모두 있어야 한다.
 기존 manifest를 제거하는 변경은 단순 UI 변경이 아니므로 별도 복구 승인이 필요하다.
+`tests/pages.test.mjs`의 `requireUnreleased`·null 단언과 현재 source 복사 후 manifest 부재
+검사는 published 데이터와 충돌한다. Gate 0에서 승인한 테스트 전환을 함께 반영해야 한다.
+미공개 fail-closed 검사는 고정 fixture로 보존하고 실제 source의 상태별 계약과 분리한다.
+`manifestPublished=true/false` 경로 모두 검증하며 단언 삭제·검사 제외로 우회하지 않는다.
+현재 CI는 수동 dispatch이며 Pages workflow도 같은 테스트를 실행하므로 미보정 상태로 배포하지 않는다.
 
 로컬 생성·검사 — 승인된 Pages checkout에서:
 

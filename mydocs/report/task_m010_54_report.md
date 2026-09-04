@@ -62,8 +62,8 @@ GitHub Issue: [#54](https://github.com/postmelee/alhangeul-tauri/issues/54)
 | 지표 | 변경 전 | 변경 후 |
 |---|---|---|
 | 단일 배포 정책 문서 | 565줄, 반복 정책·과거 결과 혼재 | 218줄, 반복 정책과 링크 중심 |
-| 전용 공개 walkthrough / 체크리스트 | 없음 / 없음 | 290줄 / 124줄 |
-| 공식 버전 기록 인덱스 / 첫 버전 기록 | 없음 / 없음 | 49줄 / 192줄, 준비 상태 |
+| 전용 공개 walkthrough / 체크리스트 | 없음 / 없음 | 298줄 / 125줄, PR 리뷰 보정 포함 |
+| 공식 버전 기록 인덱스 / 첫 버전 기록 | 없음 / 없음 | 49줄 / 193줄, 준비 상태 |
 | 재사용 릴리즈 기록 양식 | 없음 | 138줄, 준비/공개 후 필수 항목 구분 |
 | 원문 역사적 근거 | 565줄·제목 23개·고유 SHA/digest 69개 | 14개 연속 원문 구간과 원본 보고서로 추적 유지 |
 | 문서상 정상·실패 walkthrough | 별도 수용표 없음 | 5개 상황의 시작·정지·재개·기록 경로 확인 |
@@ -75,14 +75,15 @@ GitHub Issue: [#54](https://github.com/postmelee/alhangeul-tauri/issues/54)
 |---|---|
 | 정책·실행·검증 선택·버전 기록 역할 분리 | OK — 공식 진입점과 양식·기록 출력 위치 연결 |
 | 과거 증거와 현재 공개 상태 구분 | OK — 원문 링크 불변, 565줄 전체 연결; v0.1.0은 준비 상태 |
-| 실제 구현과 명령 정합성 | OK — Stage 2에서 workflow 입력·권한·script 인자·산출물 대조, 없는 승격 기능은 중단 조건 |
+| 실제 구현과 명령 정합성 | OK — workflow·script 대조, 없는 승격 기능은 중단 조건; PR 리뷰에서 발견한 Pages 테스트 전환도 승인·중단 조건으로 보완 |
 | 최소 검증·재사용 기준 | OK — source 근거와 새 bytes 검증 분리, 문서-only 전체 native/negative 재실행 금지 |
 | 첫 공개·다음 공개·실패 인계 | OK — 5개 모의 점검과 #9의 9개 결정·승인·중단 지점 |
 | 승인된 문서 위치·변경 경계 | OK — 문서 17개, 제품 코드·workflow·site·pin 변경 0개 |
 | 링크·양식·길이·예제 문법 | OK — 상대 경로/앵커·reference 정의, 필수 섹션·300 LOC 목표·Bash 문법 확인 |
 | 실제 미실행·미승인 작업 표시 | OK — 릴리즈·배포·native·production N→N+1을 성공으로 기록하지 않음 |
 
-통합 검증은 구현계획의 마지막 Stage 명령으로 수행했다.
+초기 PR 게시 전 통합 검증은 구현계획의 마지막 Stage 명령으로 수행했다. 리뷰 보정 뒤 같은
+명령을 다시 실행했으며 추가 결과는 아래 별도 기록한다.
 
 ```bash
 git diff --check
@@ -96,7 +97,7 @@ wc -l README.md docs/README.md docs/DEVELOPMENT.md docs/operations/DESKTOP_RELEA
   최종 보고·계획 링크·완료 상태 작성 후에는 17개 문서의 상대 링크/앵커 186개·reference
   사용 19개와 최종 보고 필수 7개 섹션·오늘할일 완료 시각을 다시 검사해 통과했다.
 - 일회성 읽기 전용 Node 검사로 승인 경로·링크·앵커·공백·마지막 개행·길이를 확인했다.
-  모든 변경 문서가 300 LOC 이내이며 가장 긴 파일은 runbook 290줄이다.
+  당시 모든 변경 문서가 300 LOC 이내이며 가장 긴 파일은 runbook 290줄이었다.
 - runbook의 Bash 예제 11개는 `bash -n`만 수행했다. 예제의 배포 명령은 실행하지 않았다.
 - Stage 1 commit 대비 원문 reference 정의 불변, 14개 구간의 연속성·565줄 전체 포함을 확인했다.
 - `site/release.json`은 `unreleased`, `manifestPublished=false`다. 원격 조회는 2026-09-04
@@ -119,6 +120,33 @@ Actions dispatch·Release/tag·Pages/manifest 게시와 production N→N+1 시�
 문서-only Task에는 필요하지 않으며 과거 수용 결과를 이번의 새 실행 성공으로 재표기하지 않았다.
 링크 검사는 저장소 상대 링크·앵커·고정 원문 근거 중심이며 모든 외부 URL 가용성 시험은 아니다.
 
+### PR #55 리뷰 보정 — Pages 공개 전환 선행 조건
+
+2026-09-04 [리뷰 댓글](https://github.com/postmelee/alhangeul-tauri/pull/55#issuecomment-5540981392)을
+검토하고 작업지시자의 “보정 및 보정 코멘트를 게시해줘” 승인을 받아 반영했다.
+
+- [Pages 테스트](../../tests/pages.test.mjs)의 source 고정 `requireUnreleased`·null 단언은
+  published 데이터와 충돌한다. 같은 파일의 현재 site를 복사하는 fixture·manifest 부재 검사도
+  활성화 시 충돌하므로 단일 옵션 제거만으로 해결되지 않는다.
+- [CI](../../.github/workflows/ci.yml)는 `workflow_dispatch` 전용이다. PR 생성만으로 자동 실패하는
+  것은 아니지만 automation 검사 실행과 [Pages 배포](../../.github/workflows/pages.yml)의 계약 검사에서
+  막힌다. build/check가 published를 지원한다는 것만으로 배포 가능하다고 판단하지 않는다.
+- runbook Gate 0에 전환 범위·담당·검증·Gate 5 반영 사전 승인, 미승인 시 Release 게시 중단을
+  추가했다. Gate 5에는 승인된 테스트 보정·미공개 fixture 보존·source 상태별 검증 분리와
+  manifest true/false 검증을 명시했다. 테스트 삭제·검사 제외로 우회하지 않는다.
+- 체크리스트의 후보 판단·Pages 행, v0.1.0 한계·#9 인계 8번에도 같은 선행 조건을 연결했다.
+  실제 테스트 분리·보정은 #9의 승인된 소스 변경이며 이번 PR에서 구현하지 않았다.
+- 위 4개 문서 명령은 재검증 모두 exit 0이다. published/manifest fixture를 메모리에만 만들어
+  유효 데이터 수용과 기존 옵션의 거부를 확인한 진단 5개도 통과했다. 빌드·배포는 하지 않았다.
+- 보정은 기존 Markdown 7개(운영/인계 3개, 계획 2개, 최종 보고, 오늘할일)이며 PR 전체는
+  17개다. 이전 Stage 보고서·테스트·source·workflow·site 데이터 변경은 없다.
+- 보정 후 상대 링크/앵커 189개·reference 사용 19개, runbook Bash 문법 11개, 승인 경로·
+  보고서 필수 섹션·완료 시각 검사를 통과했다. 최대 길이는 runbook 298줄이며 원문 보존
+  14개 구간·565줄·제목 23개·고유 SHA/digest 69개와 unreleased/manifest false 상태는 그대로다.
+
+문서 누락은 보완했지만 공개 전환 테스트 구현이 완료된 것은 아니다. #9의 승인·구현·검증과
+PR 재검토·merge는 별도로 남으며, 테스트가 현재 공개 상태를 이미 수용한다고 주장하지 않는다.
+
 ## 잔여 위험과 후속 작업
 
 ### 잔여 위험
@@ -129,6 +157,8 @@ Actions dispatch·Release/tag·Pages/manifest 게시와 production N→N+1 시�
   승인된 운영 경로나 별도 구현이 없으면 공개를 진행하지 않는다. 문서화로 해결된 것이 아니다.
 - DEB/RPM·arm64는 updater publish의 7개 asset에 포함되지 않는다. 실제 공개 범위와
   checksum·게시/안내 경로는 따로 확정해야 한다.
+- Pages 공개 데이터 전환에는 미공개 고정 테스트 보정이 필요하다. Gate 0에서 범위·담당·검증을
+  승인하고 Gate 5 반영·통과를 확인해야 하며, 현재 코드 그대로의 공개 전환은 아직 불가능하다.
 - Windows Authenticode/미서명 안내, release 환경 허용 ref·승인자와 #28 보호 조건은 owner 판단이다.
   updater Minisign 검증이 Authenticode 서명을 대체하지 않는다.
 - #19 PDF revision/stale job 위험, 암호 저장 GUI·배포판/architecture 한계는 수정 또는 명시
@@ -147,6 +177,7 @@ Actions dispatch·Release/tag·Pages/manifest 게시와 production N→N+1 시�
 
 ## 작업지시자 승인 요청
 
-- 이번 지시로 최종 보고와 `publish/task54` push·`devel` 대상 Open PR 게시를 진행한다.
+- 최초 승인으로 `publish/task54` → `devel`의 PR #55를 게시했다. 이번 승인으로 문서 보정
+  커밋·PR 본문 갱신·보정 댓글 게시를 진행한다.
 - 최종 보고·문서 diff를 검토한 뒤 PR merge 승인을 요청한다. self-merge·#54 close는 하지 않는다.
 - 실제 릴리즈·배포·서명·updater 활성화·upstream 갱신은 각각의 후속 승인 작업으로 유지한다.

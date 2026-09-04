@@ -27,6 +27,7 @@ N→N+1을 만들 필요도 없다. 릴리즈를 실제 게시한다면 아래 �
 - [ ] Windows Authenticode와 updater Minisign 구분, 미서명 경고·배포 정책 판단.
 - [ ] `release`/`github-pages` 실제 reviewer·허용 ref 확인; 변경이 필요하면 별도 승인.
 - [ ] 변경 영향·재사용 근거·미검증 Windows/Linux 환경과 필수 위험 처리 결정.
+- [ ] 첫 Pages 공개 시 미공개 고정 테스트의 전환 범위·담당·검증·Gate 5 반영 사전 승인. 미정이면 Release 게시 중단.
 
 ### 파일·설치 — runbook Gate 2~3
 
@@ -67,7 +68,7 @@ N→N+1을 만들 필요도 없다. 릴리즈를 실제 게시한다면 아래 �
 | Linux helper·MIME·hook·package | 해당 architecture lifecycle, package-only MIME/thumbnailer, helper/cache·제거, file manager 확인 | DEB x64 GUI를 arm64/RPM GUI로 확대하지 않음; private MIME 주입 금지 |
 | updater Rust/형식 판별/dirty·설치 | 변경 target 계약, 동일 형식 positive 설치·재실행, 영향받은 fail-closed/쓰기 자격/dirty 보호 | 수정된 분기의 이전 수용은 재사용 불가; 무관한 negative 전체는 반복 불필요 |
 | updater key·endpoint·manifest/schema | 공개키 신뢰·서명·target URL/bytes, 필요 malformed/wrong-signature/wrong-target 시험, 기존 설치본 연속성 | 승인된 test-only 범위로 시험; production feed에 negative fixture 주입 금지 |
-| Pages UI/release data/배포 workflow | build:pages/check:pages, Pages·updater·workflow 계약, 변경 화면 반응형·링크·public read-back | 앱 source가 같으면 native/thumbnail suite 재실행 불필요 |
+| Pages UI/release data/배포 workflow | build:pages/check:pages, Pages·updater·workflow 계약, 반응형·링크·read-back; published 전환 시 승인된 tests/pages.test.mjs 보정(미공개 고정/null 단언·manifest 부재 검사), manifest true/false 확인 | 미공개 fail-closed는 고정 fixture로 보존하고 실제 source 검증과 분리; 앱 source가 같으면 native/thumbnail 재실행 불필요 |
 | 문서만 | diff·사실/명령·상대 링크/앵커·미공개 표현·기록 정합성 | runtime/config/pin/판정 도구가 같으면 기존 source 수용 재사용 |
 | build/lock/toolchain/workflow | 생성물·권한·provenance 변화에 해당하는 위 항목과 대상 package 확인 | source 코드가 같아도 새 bytes의 무결성/서명/설치는 재사용 불가 |
 
