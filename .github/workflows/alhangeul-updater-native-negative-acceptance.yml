@@ -1,0 +1,171 @@
+name: Alhangeul Updater Native Negative Acceptance
+
+on:
+  workflow_call:
+    inputs:
+      candidate_sha:
+        required: true
+        type: string
+      d1_run_id:
+        required: true
+        type: string
+      candidate_artifact_id:
+        required: true
+        type: string
+      candidate_artifact_digest:
+        required: true
+        type: string
+      release_tag:
+        required: true
+        type: string
+      scenario:
+        required: true
+        type: string
+      manifest_sha256:
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: alhangeul-updater-negative-${{ inputs.candidate_sha }}-${{ inputs.scenario }}
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: "24"
+  TEST_RELEASE_TAG: updater-test-v99.1.1
+  CANDIDATE_ARTIFACT_NAME: alhangeul-updater-acceptance-candidate
+
+jobs:
+  verify-scenario:
+    name: Verify exact negative release handoff
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Validate exact negative inputs
+        shell: bash
+        env:
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          D1_RUN_ID: ${{ inputs.d1_run_id }}
+          CANDIDATE_ARTIFACT_ID: ${{ inputs.candidate_artifact_id }}
+          CANDIDATE_ARTIFACT_DIGEST: ${{ inputs.candidate_artifact_digest }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          SCENARIO: ${{ inputs.scenario }}
+          MANIFEST_SHA256: ${{ inputs.manifest_sha256 }}
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
+        run: |
+          set -euo pipefail
+          [[ "$WORKFLOW_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$CANDIDATE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$D1_RUN_ID" =~ ^[1-9][0-9]*$ ]]
+          [[ "$CANDIDATE_ARTIFACT_ID" =~ ^[1-9][0-9]*$ ]]
+          [[ "$CANDIDATE_ARTIFACT_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
+          [[ "$RELEASE_TAG" == "$TEST_RELEASE_TAG" ]]
+          [[ "$MANIFEST_SHA256" =~ ^[0-9a-f]{64}$ ]]
+          case "$SCENARIO" in
+            cross-format|signature-mismatch|network-failures) ;;
+            *) exit 1 ;;
+          esac
+
+      - name: Checkout exact negative harness source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.workflow_sha }}
+          submodules: false
+
+      - name: Verify negative harness source SHA
+        shell: bash
+        env:
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
+        run: |
+          set -euo pipefail
+          [[ "$(git rev-parse HEAD)" == "$WORKFLOW_SHA" ]]
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Verify D1 candidate artifact handoff
+        id: handoff
+        shell: bash
+        env:
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          D1_RUN_ID: ${{ inputs.d1_run_id }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p release-evidence
+          node scripts/verify-workflow-artifact.mjs \
+            --repository "$GITHUB_REPOSITORY" \
+            --build-ref "$CANDIDATE_SHA" \
+            --run-id "$D1_RUN_ID" \
+            --workflow-path .github/workflows/alhangeul-desktop.yml \
+            --artifact-name "$CANDIDATE_ARTIFACT_NAME" \
+            --json-output release-evidence/d1-candidate-handoff.json \
+            --github-output "$GITHUB_OUTPUT"
+
+      - name: Match approved D1 candidate identity
+        shell: bash
+        env:
+          ACTUAL_ID: ${{ steps.handoff.outputs.artifact_id }}
+          ACTUAL_DIGEST: ${{ steps.handoff.outputs.artifact_digest }}
+          APPROVED_ID: ${{ inputs.candidate_artifact_id }}
+          APPROVED_DIGEST: ${{ inputs.candidate_artifact_digest }}
+        run: |
+          set -euo pipefail
+          [[ "$ACTUAL_ID" == "$APPROVED_ID" ]]
+          [[ "$ACTUAL_DIGEST" == "$APPROVED_DIGEST" ]]
+
+      - name: Verify public negative scenario read-back
+        shell: bash
+        env:
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          SCENARIO: ${{ inputs.scenario }}
+          MANIFEST_SHA256: ${{ inputs.manifest_sha256 }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          node scripts/updater/verify-acceptance-release.mjs \
+            --repository "$GITHUB_REPOSITORY" \
+            --candidate-sha "$CANDIDATE_SHA" \
+            --tag "$RELEASE_TAG" \
+            --scenario "$SCENARIO" \
+            --expected-manifest-sha256 "$MANIFEST_SHA256" \
+            --json-output release-evidence/release-readback.json
+
+      - name: Upload negative release handoff evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: alhangeul-updater-negative-handoff-${{ inputs.scenario }}-${{ github.run_id }}
+          path: release-evidence/**
+          if-no-files-found: error
+          retention-days: 14
+
+  accept-windows:
+    name: Reject negative Windows updater formats
+    needs: verify-scenario
+    permissions:
+      actions: read
+      contents: read
+    uses: ./.github/workflows/alhangeul-updater-native-negative-windows.yml
+    with:
+      candidate_sha: ${{ inputs.candidate_sha }}
+      d1_run_id: ${{ inputs.d1_run_id }}
+      scenario: ${{ inputs.scenario }}
+
+  accept-linux:
+    name: Reject negative Linux AppImage updater
+    needs: verify-scenario
+    permissions:
+      actions: read
+      contents: read
+    uses: ./.github/workflows/alhangeul-updater-native-negative-linux.yml
+    with:
+      candidate_sha: ${{ inputs.candidate_sha }}
+      d1_run_id: ${{ inputs.d1_run_id }}
+      scenario: ${{ inputs.scenario }}

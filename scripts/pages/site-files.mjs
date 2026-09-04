@@ -21,18 +21,18 @@ const ALLOWED_EXTENSIONS = new Set([
 ]);
 const FORBIDDEN_NAMES = new Set(['.DS_Store']);
 
-export async function listSiteFiles(root) {
+export async function listSiteFiles(root, options = {}) {
   const canonicalRoot = resolve(root);
   const rootStat = await lstat(canonicalRoot);
   if (!rootStat.isDirectory() || rootStat.isSymbolicLink()) {
     throw new Error(`Pages root는 실제 directory여야 합니다: ${canonicalRoot}`);
   }
   const files = [];
-  await visit(canonicalRoot, canonicalRoot, files);
+  await visit(canonicalRoot, canonicalRoot, files, options);
   return files;
 }
 
-async function visit(root, directory, files) {
+async function visit(root, directory, files, options) {
   const entries = await readdir(directory, { withFileTypes: true });
   entries.sort((left, right) => left.name.localeCompare(right.name, 'en'));
   for (const entry of entries) {
@@ -40,16 +40,16 @@ async function visit(root, directory, files) {
     const sitePath = toSitePath(root, path);
     if (entry.isSymbolicLink()) throw new Error(`symlink를 허용하지 않습니다: ${sitePath}`);
     if (entry.isDirectory()) {
-      await visit(root, path, files);
+      await visit(root, path, files, options);
       continue;
     }
     if (!entry.isFile()) throw new Error(`일반 파일이 아닙니다: ${sitePath}`);
-    assertAllowedFile(sitePath);
+    assertAllowedFile(sitePath, options);
     files.push(sitePath);
   }
 }
 
-export function assertAllowedFile(sitePath) {
+export function assertAllowedFile(sitePath, options = {}) {
   const name = sitePath.split('/').at(-1);
   if (
     FORBIDDEN_NAMES.has(name)
@@ -58,8 +58,8 @@ export function assertAllowedFile(sitePath) {
   ) {
     throw new Error(`Pages에 허용되지 않은 파일입니다: ${sitePath}`);
   }
-  if (sitePath === 'updater/stable.json') {
-    throw new Error('updater manifest는 Issue #16 검증 전 게시할 수 없습니다.');
+  if (sitePath === 'updater/stable.json' && !options.allowUpdaterManifest) {
+    throw new Error('updater manifest는 source에 둘 수 없으며 검증된 output에서만 허용합니다.');
   }
 }
 

@@ -162,7 +162,7 @@ for (const manifestPublished of [false, true]) {
     tag: 'v0.2.0',
     downloads: {
       'windows-x86_64-nsis': 'https://github.com/postmelee/alhangeul-tauri/releases/download/v0.2.0/Alhangeul_0.2.0_x64-setup.exe',
-      'windows-x86_64-msi': 'https://github.com/postmelee/alhangeul-tauri/releases/download/v0.2.0/Alhangeul_0.2.0_x64.msi',
+      'windows-x86_64-msi': 'https://github.com/postmelee/alhangeul-tauri/releases/download/v0.2.0/Alhangeul_0.2.0_x64_en-US.msi',
       'linux-x86_64-appimage': 'https://github.com/postmelee/alhangeul-tauri/releases/download/v0.2.0/Alhangeul_0.2.0_amd64.AppImage',
     },
     updater: { manifestPublished },

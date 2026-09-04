@@ -27,6 +27,13 @@ test('모든 workflow가 공통 또는 전용 contract test inventory에 등록�
   assert.deepEqual(actual, [
     'alhangeul-desktop.yml',
     'alhangeul-linux-gui.yml',
+    'alhangeul-updater-linux-window-probe.yml',
+    'alhangeul-updater-native-acceptance.yml',
+    'alhangeul-updater-native-linux.yml',
+    'alhangeul-updater-native-negative-acceptance.yml',
+    'alhangeul-updater-native-negative-linux.yml',
+    'alhangeul-updater-native-negative-windows.yml',
+    'alhangeul-updater-native-windows.yml',
     'ci.yml',
     'pages.yml',
     'rhwp-upstream-sync.yml',
@@ -51,8 +58,13 @@ test('대상 workflow는 수동 trigger와 최소 권한만 사용한다', () =>
       new Map([['contents', 'read']]),
       `${name} permissions는 contents: read만 허용한다`,
     );
-    assert.doesNotMatch(source, /secrets\./i, `${name}은 secret을 참조하지 않는다`);
+    if (name === 'ci.yml') {
+      assert.doesNotMatch(source, /secrets\./i, `${name}은 secret을 참조하지 않는다`);
+    }
   }
+
+  assert.doesNotMatch(getJob(desktopWorkflow, 'build'), /secrets\./i);
+  assert.doesNotMatch(getJob(desktopWorkflow, 'windows-installer-smoke'), /secrets\./i);
 
   assert.deepEqual(
     getSectionChildKeys(linuxGuiWorkflow, 'on'),
@@ -112,7 +124,7 @@ test('Pages workflow는 입력 SHA를 검증하고 같은 commit만 checkout한�
     'pnpm install --frozen-lockfile',
     'pnpm run build:pages',
     'pnpm run check:pages',
-    'node --test tests/pages.test.mjs tests/actions-workflows.test.mjs',
+    'node --test tests/updater-release.test.mjs tests/pages.test.mjs tests/actions-workflows.test.mjs',
     'actions/configure-pages@',
     'actions/upload-pages-artifact@',
     'actions/deploy-pages@',
@@ -172,6 +184,7 @@ test('CI workflow는 제품 version·pin과 automation 계약을 native 검사 �
 });
 
 test('desktop workflow의 Windows/Linux matrix가 exact target을 유지한다', () => {
+  const job = getJob(desktopWorkflow, 'build');
   const expectedEntries = [
     [
       '          - name: windows-x64',
@@ -194,16 +207,16 @@ test('desktop workflow의 Windows/Linux matrix가 exact target을 유지한다',
   ];
 
   const matrixNames = [
-    ...desktopWorkflow.matchAll(/^          - name: ([a-z0-9-]+)$/gm),
+    ...job.matchAll(/^          - name: ([a-z0-9-]+)$/gm),
   ].map((match) => match[1]);
   assert.deepEqual(matrixNames, ['windows-x64', 'linux-x64', 'linux-arm64']);
   for (const entry of expectedEntries) {
-    assert.ok(desktopWorkflow.includes(entry), `matrix entry가 필요합니다:\n${entry}`);
+    assert.ok(job.includes(entry), `matrix entry가 필요합니다:\n${entry}`);
   }
 
   const unsupportedRunner = ['ma', 'cos'].join('');
   assert.doesNotMatch(
-    desktopWorkflow,
+    job,
     new RegExp(`runs-on:\\s+${unsupportedRunner}`, 'i'),
   );
 });
@@ -476,7 +489,7 @@ test('fresh Windows installer smoke job은 build 결과와 무관하게 artifact
   const job = getJob(desktopWorkflow, 'windows-installer-smoke');
 
   assert.match(job, /^    needs: build$/m);
-  assert.match(job, /^    if: \$\{\{ !cancelled\(\) \}\}$/m);
+  assert.match(job, /^    if: \$\{\{ inputs\.mode == 'artifact' && !cancelled\(\) \}\}$/m);
   assert.doesNotMatch(
     job,
     /^    if: \$\{\{ always\(\) \}\}$/m,
@@ -584,7 +597,7 @@ test('installer smoke 진단은 항상 보존되고 마지막 gate가 실패를 
   }
 });
 
-test('대상 workflow에는 release, Pages, deploy action이 없다', () => {
+test('일반 build와 CI에는 release, Pages, deploy action이 없다', () => {
   const forbiddenPatterns = [
     /actions\/upload-pages-artifact/i,
     /actions\/deploy-pages/i,
@@ -595,13 +608,215 @@ test('대상 workflow에는 release, Pages, deploy action이 없다', () => {
 
   for (const [name, source] of [
     ['ci.yml', ciWorkflow],
-    ['alhangeul-desktop.yml', desktopWorkflow],
+    ['alhangeul-desktop.yml build', getJob(desktopWorkflow, 'build')],
+    ['alhangeul-desktop.yml smoke', getJob(desktopWorkflow, 'windows-installer-smoke')],
+    ['alhangeul-desktop.yml updater build', getJob(desktopWorkflow, 'build-updater')],
+    ['alhangeul-desktop.yml acceptance build', getJob(desktopWorkflow, 'build-updater-acceptance')],
+    ['alhangeul-desktop.yml acceptance verify', getJob(desktopWorkflow, 'verify-updater-acceptance')],
     ['alhangeul-linux-gui.yml', linuxGuiWorkflow],
   ]) {
     for (const pattern of forbiddenPatterns) {
       assert.doesNotMatch(source, pattern, `${name}에 배포 action을 허용하지 않는다`);
     }
   }
+});
+
+test('desktop updater 입력은 기본 비활성 publish와 exact release identity를 요구한다', () => {
+  const dispatch = getTopLevelSection(desktopWorkflow, 'on').join('\n');
+  assert.match(dispatch, /^      mode:$/m);
+  assert.match(dispatch, /^        default: artifact$/m);
+  assert.match(dispatch, /^          - updater$/m);
+  assert.match(dispatch, /^          - updater-acceptance$/m);
+  assert.match(dispatch, /^          - updater-native-acceptance$/m);
+  assert.match(dispatch, /^      release_version:$/m);
+  assert.match(dispatch, /^      release_tag:$/m);
+  assert.match(dispatch, /^      release_notes:$/m);
+  assert.match(dispatch, /^      publish_release:$/m);
+  assert.match(dispatch, /^        default: false$/m);
+
+  const job = getJob(desktopWorkflow, 'build-updater');
+  assert.match(job, /^    if: \$\{\{ inputs\.mode == 'updater' \}\}$/m);
+  assert.match(job, /\[\[ "\$BUILD_REF" =~ \^\[0-9a-f\]\{40\}\$ \]\]/);
+  assert.match(job, /\[\[ "\$BUILD_REF" == "\$WORKFLOW_SHA" \]\]/);
+  assert.match(job, /\[\[ "\$RELEASE_TAG" == "v\$RELEASE_VERSION" \]\]/);
+  assert.match(job, /\[\[ -n "\$RELEASE_NOTES" \]\]/);
+  assert.match(job, /ref: \$\{\{ inputs\.build_ref \}\}/);
+});
+
+test('updater build는 Windows/Linux x64와 tracked config·서명 inventory만 사용한다', () => {
+  const job = getJob(desktopWorkflow, 'build-updater');
+  assert.match(job, /name: windows-x64[\s\S]*target: x86_64-pc-windows-msvc[\s\S]*bundles: msi,nsis/);
+  assert.match(job, /name: linux-x64[\s\S]*target: x86_64-unknown-linux-gnu[\s\S]*bundles: appimage/);
+  assert.doesNotMatch(job, /linux-arm64|aarch64|--bundles deb/);
+  assert.match(job, /^    environment: release$/m);
+  assert.doesNotMatch(getJob(desktopWorkflow, 'build'), /^    environment: release$/m);
+  assertOrdered(job, [
+    '- name: Validate exact updater inputs',
+    '- name: Checkout exact updater source',
+    '- name: Verify tracked updater release config',
+    'pnpm run check:release-metadata',
+    '- name: Build signed updater bundles',
+    'pnpm run check:updater-artifacts',
+    '- name: Upload verified updater artifact slice',
+  ]);
+  assert.match(job, /UPDATER_CONFIG: \$\{\{ github\.workspace \}\}\/apps\/desktop\/src-tauri\/tauri\.updater\.conf\.json/);
+  assert.match(job, /--config "\$UPDATER_CONFIG"/);
+  assert.match(job, /--targets "\$\{\{ matrix\.updater_targets \}\}"/);
+  assert.match(job, /require\(process\.env\.UPDATER_CONFIG\)\.plugins\.updater\.pubkey/);
+  assert.doesNotMatch(job, /require\('\$UPDATER_CONFIG'\)/);
+  assert.doesNotMatch(job, /secrets\.TAURI_UPDATER_PUBLIC_KEY/);
+  const signingStep = getStepContaining(job, 'Build signed updater bundles');
+  assert.match(signingStep, /TAURI_SIGNING_PRIVATE_KEY: \$\{\{ secrets\.TAURI_SIGNING_PRIVATE_KEY \}\}/);
+  assert.match(signingStep, /TAURI_SIGNING_PRIVATE_KEY_PASSWORD: \$\{\{ secrets\.TAURI_SIGNING_PRIVATE_KEY_PASSWORD \}\}/);
+  assert.equal((job.match(/secrets\.TAURI_SIGNING_PRIVATE_KEY \}\}/g) ?? []).length, 1);
+  assert.equal((job.match(/secrets\.TAURI_SIGNING_PRIVATE_KEY_PASSWORD/g) ?? []).length, 1);
+
+  for (const artifactPath of [
+    'apps/desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/msi/*.msi',
+    'apps/desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/msi/*.msi.sig',
+    'apps/desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*-setup.exe',
+    'apps/desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*-setup.exe.sig',
+    'apps/desktop/src-tauri/target/x86_64-unknown-linux-gnu/release/bundle/appimage/*.AppImage',
+    'apps/desktop/src-tauri/target/x86_64-unknown-linux-gnu/release/bundle/appimage/*.AppImage.sig',
+  ]) {
+    assert.ok(job.includes(artifactPath), `최종 updater 경로가 필요합니다: ${artifactPath}`);
+  }
+  const uploadStep = getStepContaining(job, 'Upload verified updater artifact slice');
+  assert.match(uploadStep, /^\s{10}path: \$\{\{ matrix\.artifact_paths \}\}$/m);
+  assert.doesNotMatch(
+    uploadStep,
+    /bundle\/\*\*/,
+    'AppDir 등 빌드 중간 산출물을 updater artifact에 포함하지 않아야 합니다.',
+  );
+});
+
+test('updater inventory 검증은 게시와 분리되어 read-only complete inventory를 남긴다', () => {
+  const job = getJob(desktopWorkflow, 'verify-updater-release');
+
+  assert.match(job, /^    needs: build-updater$/m);
+  assert.match(job, /^    if: \$\{\{ inputs\.mode == 'updater' \}\}$/m);
+  assert.match(job, /^    permissions:\n      contents: read$/m);
+  assert.doesNotMatch(job, /^    environment: release$/m);
+  assert.doesNotMatch(job, /TAURI_SIGNING_PRIVATE_KEY/);
+  assert.doesNotMatch(job, /secrets\./);
+  assertOrdered(job, [
+    '- name: Checkout exact inventory source',
+    '- name: Verify updater inventory source SHA',
+    '- name: Read tracked updater public key',
+    'pnpm run check:release-metadata',
+    '- name: Download verified updater slices',
+    'pattern: alhangeul-updater-*-x64',
+    '- name: Create complete release inventory',
+    '--write-inventory updater-inventory/alhangeul-updater-release-inventory.json',
+    '- name: Upload verified updater release inventory',
+  ]);
+
+  const uploadStep = getStepContaining(
+    job,
+    'name: alhangeul-updater-release-inventory',
+  );
+  assert.match(
+    uploadStep,
+    /^\s{10}path: updater-inventory\/alhangeul-updater-release-inventory\.json$/m,
+  );
+});
+
+test('updater acceptance build는 고정 N/N+1과 Windows·Linux x64만 비게시로 만든다', () => {
+  const job = getJob(desktopWorkflow, 'build-updater-acceptance');
+  assert.match(job, /^    if: \$\{\{ inputs\.mode == 'updater-acceptance' \}\}$/m);
+  assert.match(job, /^    environment: release$/m);
+  assert.equal((job.match(/^          - role: n$/gm) ?? []).length, 2);
+  assert.equal((job.match(/^          - role: n-plus-one$/gm) ?? []).length, 2);
+  assert.equal((job.match(/^            version: 99\.1\.0$/gm) ?? []).length, 2);
+  assert.equal((job.match(/^            version: 99\.1\.1$/gm) ?? []).length, 2);
+  assert.equal((job.match(/^            name: windows-x64$/gm) ?? []).length, 2);
+  assert.equal((job.match(/^            name: linux-x64$/gm) ?? []).length, 2);
+  assert.doesNotMatch(job, /linux-arm64|aarch64|--bundles deb/);
+  assertOrdered(job, [
+    '- name: Validate exact updater acceptance inputs',
+    '[[ "$BUILD_REF" == "$WORKFLOW_SHA" ]]',
+    '[[ "$PUBLISH_RELEASE" == "false" ]]',
+    '- name: Checkout exact updater acceptance source',
+    '- name: Create external updater acceptance config',
+    'pnpm run build:updater-acceptance-config',
+    '- name: Build signed updater acceptance bundles',
+    'pnpm run check:updater-acceptance',
+    '- name: Upload verified updater acceptance slice',
+  ]);
+  assert.match(job, /UPDATER_CONFIG: \$\{\{ runner\.temp \}\}\/alhangeul-updater-acceptance-/);
+  assert.match(job, /--role "\$ACCEPTANCE_ROLE"/);
+  assert.match(job, /--config "\$UPDATER_ACCEPTANCE_CONFIG"/);
+  const signingStep = getStepContaining(job, 'Build signed updater acceptance bundles');
+  assert.match(signingStep, /TAURI_SIGNING_PRIVATE_KEY: \$\{\{ secrets\.TAURI_SIGNING_PRIVATE_KEY \}\}/);
+  assert.match(signingStep, /TAURI_SIGNING_PRIVATE_KEY_PASSWORD: \$\{\{ secrets\.TAURI_SIGNING_PRIVATE_KEY_PASSWORD \}\}/);
+  assert.equal((job.match(/secrets\.TAURI_SIGNING_PRIVATE_KEY \}\}/g) ?? []).length, 1);
+  assert.equal((job.match(/secrets\.TAURI_SIGNING_PRIVATE_KEY_PASSWORD/g) ?? []).length, 1);
+  assert.doesNotMatch(job, /contents:\s*write|\bgh release\b|action-gh-release/i);
+});
+
+test('updater acceptance candidate 검증은 read-only로 정확히 8개 공개 후보를 만든다', () => {
+  const job = getJob(desktopWorkflow, 'verify-updater-acceptance');
+  assert.match(job, /^    needs: build-updater-acceptance$/m);
+  assert.match(job, /^    if: \$\{\{ inputs\.mode == 'updater-acceptance' \}\}$/m);
+  assert.match(job, /^    permissions:\n      contents: read$/m);
+  assert.doesNotMatch(job, /^    environment: release$/m);
+  assert.doesNotMatch(job, /secrets\.|TAURI_SIGNING_PRIVATE_KEY/);
+  assertOrdered(job, [
+    '- name: Checkout exact updater acceptance inventory source',
+    '- name: Verify updater acceptance inventory source SHA',
+    '- name: Download updater acceptance N Windows slice',
+    'name: alhangeul-updater-acceptance-n-windows-x64',
+    '- name: Download updater acceptance N Linux slice',
+    '- name: Download updater acceptance N+1 Windows slice',
+    '- name: Download updater acceptance N+1 Linux slice',
+    '- name: Create updater acceptance N inventory',
+    '--role n',
+    '- name: Create updater acceptance N+1 candidate',
+    '--role n-plus-one',
+    '--write-inventory updater-acceptance-output/alhangeul-updater-test-inventory.json',
+    '--write-manifest updater-acceptance-output/alhangeul-updater-test.json',
+    '[[ "${#assets[@]}" -eq 8 ]]',
+    '- name: Upload updater acceptance public candidate',
+  ]);
+  const candidateUpload = getStepContaining(job, 'name: alhangeul-updater-acceptance-candidate');
+  for (const path of [
+    '**/*.msi',
+    '**/*.msi.sig',
+    '**/*-setup.exe',
+    '**/*-setup.exe.sig',
+    '**/*.AppImage',
+    '**/*.AppImage.sig',
+    'alhangeul-updater-test-inventory.json',
+    'alhangeul-updater-test.json',
+  ]) {
+    assert.ok(candidateUpload.includes(path), `acceptance candidate asset이 필요합니다: ${path}`);
+  }
+  assert.match(candidateUpload, /^\s{10}retention-days: 14$/m);
+  assert.doesNotMatch(job, /contents:\s*write|\bgh release\b|action-gh-release/i);
+});
+
+test('updater publish는 boolean gate와 job-level write 권한 뒤 complete inventory만 게시한다', () => {
+  const job = getJob(desktopWorkflow, 'publish-updater');
+  assert.match(job, /^    needs: \[build-updater, verify-updater-release\]$/m);
+  assert.match(job, /^    if: \$\{\{ inputs\.mode == 'updater' && inputs\.publish_release \}\}$/m);
+  assert.match(job, /^    environment: release$/m);
+  assert.match(job, /^    permissions:\n      contents: write$/m);
+  assert.doesNotMatch(job, /TAURI_SIGNING_PRIVATE_KEY/);
+  assert.doesNotMatch(job, /secrets\.TAURI_UPDATER_PUBLIC_KEY/);
+  assert.match(job, /require\(process\.env\.UPDATER_CONFIG\)\.plugins\.updater\.pubkey/);
+  assert.doesNotMatch(job, /require\('\$UPDATER_CONFIG'\)/);
+  assertOrdered(job, [
+    '- name: Verify tracked updater release config',
+    'pnpm run check:release-metadata',
+    '- name: Download verified updater slices',
+    'pattern: alhangeul-updater-*-x64',
+    '- name: Create complete release inventory',
+    '--write-inventory updater-release/alhangeul-updater-release-inventory.json',
+    '- name: Publish exact GitHub Release',
+    'gh release create "$RELEASE_TAG"',
+  ]);
+  assert.match(job, /--target "\$SOURCE_SHA"/);
+  assert.match(job, /\[\[ "\$\{#assets\[@\]\}" -eq 7 \]\]/);
 });
 
 function getTopLevelSection(source, name) {

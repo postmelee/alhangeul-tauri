@@ -1,6 +1,7 @@
 import type { CommandDispatcher } from '@upstream/command/dispatcher';
 import type { DesktopHost } from './desktop-host';
 import { findLatestSupportedDocumentPath, hasSupportedDocumentPath } from './document-files';
+import { ensureDesktopUpdater } from './desktop-updater';
 import { detectDesktopPlatform, isTauriRuntime } from './platform';
 import { installWindowsWheelZoomReroute } from './windows-wheel-zoom';
 
@@ -34,6 +35,9 @@ export async function setupDesktopEvents({
   setMessage,
 }: DesktopEventsOptions, signal?: AbortSignal): Promise<Disposer> {
   if (!isTauriRuntime()) return () => {};
+  await ensureDesktopUpdater(setMessage).catch((error) => {
+    console.error('[desktop-updater] setup failed:', error);
+  });
   const { listen } = await import('@tauri-apps/api/event');
   const { getCurrentWebviewWindow } = await import('@tauri-apps/api/webviewWindow');
   const currentWindow = getCurrentWebviewWindow();

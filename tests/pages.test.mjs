@@ -26,6 +26,7 @@ import {
   validateReleaseData,
 } from '../scripts/pages/release-data.mjs';
 import { ROOT_ASSETS, listSiteFiles } from '../scripts/pages/site-files.mjs';
+import { buildUpdaterManifest, serializeUpdaterManifest } from '../scripts/updater/manifest.mjs';
 import './pages-design.test.mjs';
 
 const repositoryRoot = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -37,6 +38,8 @@ test('현재 source release data는 unpublished fail-closed 계약을 지킨다'
   assert.equal(validateReleaseData(release, { requireUnreleased: true }), release);
   assert.equal(release.updater.endpoint, UPDATER_ENDPOINT);
   assert.equal(release.updater.manifestPublished, false);
+  assert.equal(release.updater.inventory, null);
+  assert.equal(release.notes, null);
   assert.deepEqual(
     Object.fromEntries(Object.keys(RELEASE_TARGETS).map((target) => [target, null])),
     release.downloads,
@@ -68,6 +71,55 @@ test('published release data는 source부터 output checker까지 통과한다',
   }
 });
 
+test('manifestPublished=true이면 complete inventory에서 output manifest만 생성한다', async () => {
+  const fixture = await createFixture();
+  try {
+    const release = publishedManifestFixture();
+    await writeFile(
+      join(fixture.root, 'site/release.json'),
+      `${JSON.stringify(release, null, 2)}\n`,
+    );
+    await buildPages({ repositoryRoot: fixture.root });
+    const manifestPath = join(fixture.root, '_site/updater/stable.json');
+    assert.equal(
+      await readFile(manifestPath, 'utf8'),
+      serializeUpdaterManifest(buildUpdaterManifest(release), release),
+    );
+    await assert.rejects(
+      stat(join(fixture.root, 'site/updater/stable.json')),
+      (error) => error.code === 'ENOENT',
+    );
+    assert.deepEqual(
+      await checkPages({ repositoryRoot: fixture.root }),
+      [
+        { mode: 'source', files: 11, status: 'published' },
+        { mode: 'output', files: 14, status: 'published' },
+      ],
+    );
+    await writeFile(manifestPath, '{}\n');
+    await assert.rejects(
+      checkPages({ repositoryRoot: fixture.root, mode: 'output' }),
+      /manifest가 검증된 release inventory와 다릅니다/,
+    );
+  } finally {
+    await rm(fixture.tmp, { recursive: true, force: true });
+  }
+});
+
+test('Pages source는 tracked updater manifest를 항상 거부한다', async () => {
+  const fixture = await createFixture();
+  try {
+    await mkdir(join(fixture.root, 'site/updater'));
+    await writeFile(join(fixture.root, 'site/updater/stable.json'), '{}\n');
+    await assert.rejects(
+      checkPages({ repositoryRoot: fixture.root, mode: 'source' }),
+      /manifest는 source에 둘 수 없으며 검증된 output에서만 허용/,
+    );
+  } finally {
+    await rm(fixture.tmp, { recursive: true, force: true });
+  }
+});
+
 for (const [name, mutate, expected] of [
   ['prerelease version', (value) => { value.version = '0.2.0-rc.1'; }, /semantic version/],
   ['불일치 tag', (value) => { value.tag = 'v0.1.9'; }, /tag 값/],
@@ -83,7 +135,7 @@ for (const [name, mutate, expected] of [
     '다른 repository',
     (value) => {
       value.downloads['windows-x86_64-msi'] =
-        'https://github.com/example/alhangeul-tauri/releases/download/v0.2.0/Alhangeul_0.2.0_x64.msi';
+        'https://github.com/example/alhangeul-tauri/releases/download/v0.2.0/Alhangeul_0.2.0_x64_en-US.msi';
     },
     /exact release tag/,
   ],
@@ -273,16 +325,69 @@ function publishedFixture() {
     version: '0.2.0',
     tag: 'v0.2.0',
     publishedAt: '2026-08-27T00:00:00.000Z',
+    notes: 'Alhangeul 0.2.0 release notes',
     downloads: {
       'windows-x86_64-nsis':
         'https://github.com/postmelee/alhangeul-tauri/releases/download/v0.2.0/Alhangeul_0.2.0_x64-setup.exe',
       'windows-x86_64-msi':
-        'https://github.com/postmelee/alhangeul-tauri/releases/download/v0.2.0/Alhangeul_0.2.0_x64.msi',
+        'https://github.com/postmelee/alhangeul-tauri/releases/download/v0.2.0/Alhangeul_0.2.0_x64_en-US.msi',
       'linux-x86_64-appimage':
         'https://github.com/postmelee/alhangeul-tauri/releases/download/v0.2.0/Alhangeul_0.2.0_amd64.AppImage',
     },
-    updater: { endpoint: UPDATER_ENDPOINT, manifestPublished: false },
+    updater: { endpoint: UPDATER_ENDPOINT, manifestPublished: false, inventory: null },
   };
+}
+
+function publishedManifestFixture() {
+  const release = publishedFixture();
+  const signature = fixtureSignature();
+  const paths = {
+    'windows-x86_64-nsis': ['nsis', `Alhangeul_${release.version}_x64-setup.exe`],
+    'windows-x86_64-msi': ['msi', `Alhangeul_${release.version}_x64_en-US.msi`],
+    'linux-x86_64-appimage': ['appimage', `Alhangeul_${release.version}_amd64.AppImage`],
+  };
+  const kinds = {
+    'windows-x86_64-nsis': 'nsis',
+    'windows-x86_64-msi': 'msi',
+    'linux-x86_64-appimage': 'appimage',
+  };
+  const targets = Object.fromEntries(
+    Object.entries(paths).map(([target, [directory, filename]], index) => [target, {
+      kind: kinds[target],
+      path: `${directory}/${filename}`,
+      url: release.downloads[target],
+      size: index + 1,
+      sha256: String(index + 1).repeat(64),
+      signature,
+    }]),
+  );
+  release.updater = {
+    endpoint: UPDATER_ENDPOINT,
+    manifestPublished: true,
+    inventory: {
+      schemaVersion: 1,
+      repository: 'postmelee/alhangeul-tauri',
+      sourceSha: 'a'.repeat(40),
+      version: release.version,
+      tag: release.tag,
+      keyFingerprint: 'f'.repeat(64),
+      targets,
+    },
+  };
+  return release;
+}
+
+function fixtureSignature() {
+  const packet = Buffer.alloc(74);
+  packet.write('ED');
+  const globalSignature = Buffer.alloc(64);
+  const source = [
+    'untrusted comment: fixture signature',
+    packet.toString('base64'),
+    'trusted comment: timestamp:1788048000 file:fixture prehashed',
+    globalSignature.toString('base64'),
+  ].join('\n');
+  return Buffer.from(source).toString('base64');
 }
 
 async function createFixture() {

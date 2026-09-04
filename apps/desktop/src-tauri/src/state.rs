@@ -112,6 +112,15 @@ pub struct AppState {
     pub(crate) pending_open_paths: PendingOpenPaths,
 }
 
+impl AppState {
+    pub fn has_dirty_sessions(&self) -> bool {
+        self.sessions
+            .lock()
+            .expect("document sessions poisoned")
+            .has_dirty_sessions()
+    }
+}
+
 impl DocumentSessionManager {
     pub fn create_document(&mut self) -> Result<DocumentOpenResult, String> {
         let mut core = DocumentCore::new_empty();
@@ -175,7 +184,6 @@ impl DocumentSessionManager {
         Ok(())
     }
 
-    #[cfg(not(debug_assertions))]
     pub fn has_dirty_sessions(&self) -> bool {
         self.sessions.values().any(|session| session.dirty)
     }
@@ -834,8 +842,10 @@ mod tests {
     #[test]
     fn new_document_starts_clean() {
         let mut manager = DocumentSessionManager::default();
+        assert!(!manager.has_dirty_sessions());
         let result = manager.create_document().unwrap();
         assert!(!result.dirty);
+        assert!(!manager.has_dirty_sessions());
     }
 
     #[test]
@@ -1202,6 +1212,7 @@ mod tests {
         manager.mark_document_dirty(&opened.doc_id).unwrap();
 
         assert!(manager.session(&opened.doc_id).unwrap().dirty);
+        assert!(manager.has_dirty_sessions());
         assert!(manager.mark_document_dirty("missing").is_err());
     }
 }

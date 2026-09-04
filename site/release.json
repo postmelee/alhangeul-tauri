@@ -4,6 +4,7 @@
   "version": null,
   "tag": null,
   "publishedAt": null,
+  "notes": null,
   "downloads": {
     "windows-x86_64-nsis": null,
     "windows-x86_64-msi": null,
@@ -11,6 +12,7 @@
   },
   "updater": {
     "endpoint": "https://postmelee.github.io/alhangeul-tauri/updater/stable.json",
-    "manifestPublished": false
+    "manifestPublished": false,
+    "inventory": null
   }
 }

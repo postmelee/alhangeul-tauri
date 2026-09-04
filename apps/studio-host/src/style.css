@@ -99,3 +99,52 @@ html:not(.alhangeul-toolbar-ready) .tb-note-group,
   color: var(--color-text-muted);
   font-size: 12px;
 }
+
+.about-update-button {
+  display: block;
+  margin: 10px auto 2px;
+}
+
+.updater-dialog-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 18px 20px;
+  line-height: 1.55;
+}
+
+.updater-dialog-status,
+.updater-dialog-notes,
+.updater-dialog-error {
+  margin: 0;
+}
+
+.updater-dialog-status {
+  color: var(--color-text);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.updater-dialog-notes {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  white-space: pre-line;
+}
+
+.updater-dialog-error {
+  color: var(--color-error, #b42318);
+  font-size: 13px;
+}
+
+.updater-dialog-progress {
+  width: 100%;
+  accent-color: var(--color-primary);
+}
+
+.updater-dialog-action,
+.updater-dialog-downloads-link {
+  align-self: flex-end;
+  box-sizing: border-box;
+  text-decoration: none;
+}

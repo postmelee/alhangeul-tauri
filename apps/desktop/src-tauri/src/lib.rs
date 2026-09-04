@@ -11,6 +11,7 @@ mod pending_open;
 mod recent_documents;
 mod state;
 mod system_print;
+mod updater;
 mod window_geometry;
 mod windows;
 
@@ -28,6 +29,9 @@ use commands::{
     render_page_svg, reveal_in_folder, take_pending_open_paths,
 };
 use state::AppState;
+use updater::commands::{
+    updater_apply, updater_check, updater_get_state, updater_open_manual_downloads, updater_restart,
+};
 
 pub fn run() {
     #[cfg(target_os = "linux")]
@@ -52,6 +56,7 @@ pub fn run() {
         }))
         .setup(|app| {
             app.set_menu(tauri::menu::Menu::new(app)?)?;
+            updater::commands::setup(app)?;
             queue_open_paths(app.handle(), startup_document_paths());
             if let Some(window) = app.get_webview_window("main") {
                 windows::install_editor_window_minimum(&window);
@@ -88,6 +93,11 @@ pub fn run() {
             record_recent_document,
             remove_recent_document,
             render_document_preview,
+            updater_get_state,
+            updater_check,
+            updater_apply,
+            updater_open_manual_downloads,
+            updater_restart,
         ])
         .build(tauri::generate_context!())
         .expect("failed to build Alhangeul desktop app");

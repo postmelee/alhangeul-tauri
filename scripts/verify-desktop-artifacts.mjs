@@ -78,7 +78,7 @@ export async function verifyDesktopArtifacts({
   const excludedPath = excludedInventoryPath
     ? resolve(excludedInventoryPath)
     : null;
-  const files = await inspectFiles(rootPath, excludedPath);
+  const files = await inspectArtifactFiles(rootPath, excludedPath);
   await assertArtifactContract(platform, requiredKinds, files, rootPath);
 
   const inventory = {
@@ -120,7 +120,7 @@ export function serializeInventory(inventory) {
   return `${JSON.stringify(inventory, null, 2)}\n`;
 }
 
-async function inspectFiles(rootPath, excludedPath) {
+export async function inspectArtifactFiles(rootPath, excludedPath = null) {
   const files = [];
   await walk(rootPath, rootPath, excludedPath, files);
   files.sort((left, right) => compareText(left.path, right.path));
@@ -242,7 +242,7 @@ function toRelativePath(rootPath, absolutePath) {
   return path.split(sep).join('/');
 }
 
-async function sha256File(path) {
+export async function sha256File(path) {
   const hash = createHash('sha256');
   const input = createReadStream(path);
   for await (const chunk of input) {

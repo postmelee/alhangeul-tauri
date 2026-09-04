@@ -4,6 +4,8 @@ import { readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { verifyProductVersion } from './check-product-version.mjs';
+import { UPDATER_ENDPOINT } from './pages/release-data.mjs';
+import { publicKeyFingerprint } from './updater/release-inventory.mjs';
 
 const defaultRepositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const usage = 'Usage: node scripts/check-release-metadata.mjs [--root <repository-root>]';
@@ -22,6 +24,9 @@ export const RELEASE_METADATA_CONTRACT = Object.freeze({
   copyright: 'Alhangeul contributors',
   license: 'MIT',
   wixTemplate: 'windows/main.wxs',
+  updaterConfigPath: 'apps/desktop/src-tauri/tauri.updater.conf.json',
+  updaterEndpoint: UPDATER_ENDPOINT,
+  updaterPublicKeyFingerprint: '100c8f3183b25de3366574c46a1a2a66950a1d5f24862f3461c27b095713ffdd',
   fileAssociations: Object.freeze([
     Object.freeze({
       ext: Object.freeze(['hwp']),
@@ -41,10 +46,11 @@ export const RELEASE_METADATA_CONTRACT = Object.freeze({
 export async function verifyReleaseMetadata(options = {}) {
   const repositoryRoot = resolve(options.repositoryRoot ?? defaultRepositoryRoot);
   const versionResult = await verifyProductVersion({ repositoryRoot });
-  const [rootPackage, desktopPackage, tauriConfig, cargoSource] = await Promise.all([
+  const [rootPackage, desktopPackage, tauriConfig, updaterConfig, cargoSource] = await Promise.all([
     readJson(repositoryRoot, 'package.json'),
     readJson(repositoryRoot, 'apps/desktop/package.json'),
     readJson(repositoryRoot, 'apps/desktop/src-tauri/tauri.conf.json'),
+    readJson(repositoryRoot, RELEASE_METADATA_CONTRACT.updaterConfigPath),
     readSource(repositoryRoot, 'apps/desktop/src-tauri/Cargo.toml'),
   ]);
   const cargoPackage = readCargoPackage(cargoSource);
@@ -71,13 +77,20 @@ export async function verifyReleaseMetadata(options = {}) {
   assertEqual(path, 'bundle.copyright', tauriConfig.bundle?.copyright, RELEASE_METADATA_CONTRACT.copyright);
   assertEqual(path, 'bundle.windows.wix.template', tauriConfig.bundle?.windows?.wix?.template, RELEASE_METADATA_CONTRACT.wixTemplate);
   assertAssociations(path, tauriConfig.bundle?.fileAssociations);
-  assertUpdaterDisabled(rootPackage, desktopPackage, tauriConfig, cargoSource);
+  const updaterKeyFingerprint = assertUpdaterBoundary(
+    rootPackage,
+    desktopPackage,
+    tauriConfig,
+    updaterConfig,
+    cargoSource,
+  );
 
   return {
     productName: tauriConfig.productName,
     version: versionResult.version,
     identifier: tauriConfig.identifier,
     fileAssociations: tauriConfig.bundle.fileAssociations.map(({ ext }) => ext[0]),
+    updaterKeyFingerprint,
   };
 }
 
@@ -115,16 +128,56 @@ function readCargoPackage(source) {
   );
 }
 
-function assertUpdaterDisabled(rootPackage, desktopPackage, tauriConfig, cargoSource) {
+function assertUpdaterBoundary(rootPackage, desktopPackage, tauriConfig, updaterConfig, cargoSource) {
   const dependencyNames = [rootPackage, desktopPackage]
     .flatMap((pkg) => ['dependencies', 'devDependencies', 'optionalDependencies']
       .flatMap((field) => Object.keys(pkg[field] ?? {})));
-  if (dependencyNames.includes('@tauri-apps/plugin-updater') || /\btauri-plugin-updater\b/.test(cargoSource)) {
-    throw new Error('release metadata에 updater dependency를 허용하지 않습니다.');
+  if (dependencyNames.includes('@tauri-apps/plugin-updater')) {
+    throw new Error('웹 UI package에 updater dependency를 허용하지 않습니다.');
   }
   if (containsUpdaterKey(tauriConfig)) {
-    throw new Error('Tauri release metadata에 updater 설정을 허용하지 않습니다.');
+    throw new Error('기본 Tauri release metadata에 updater 설정을 허용하지 않습니다.');
   }
+  const updaterDependency = cargoSource.match(
+    /\[target\.'cfg\(any\(target_os = "windows", target_os = "linux"\)\)'\.dependencies\][\s\S]*?(?=\n\[|$)/,
+  )?.[0];
+  if (!updaterDependency || !/^tauri-plugin-updater = "=2\.10\.1"$/m.test(updaterDependency)) {
+    throw new Error('Windows/Linux updater Rust dependency exact pin이 필요합니다.');
+  }
+  const updaterOccurrences = cargoSource.match(/^tauri-plugin-updater\s*=/gm) ?? [];
+  if (updaterOccurrences.length !== 1) {
+    throw new Error('updater Rust dependency는 지원 target table에 한 번만 있어야 합니다.');
+  }
+  return assertUpdaterOverlay(RELEASE_METADATA_CONTRACT.updaterConfigPath, updaterConfig);
+}
+
+function assertUpdaterOverlay(path, config) {
+  assertExactKeys(path, config, ['$schema', 'bundle', 'plugins']);
+  assertEqual(path, '$schema', config.$schema, 'https://schema.tauri.app/config/2');
+  assertExactKeys(path, config.bundle, ['createUpdaterArtifacts']);
+  assertEqual(path, 'bundle.createUpdaterArtifacts', config.bundle.createUpdaterArtifacts, true);
+  assertExactKeys(path, config.plugins, ['updater']);
+  const updater = config.plugins.updater;
+  assertExactKeys(path, updater, ['endpoints', 'pubkey', 'windows']);
+  assertEqual(path, 'plugins.updater.endpoints', updater.endpoints, [RELEASE_METADATA_CONTRACT.updaterEndpoint]);
+  assertExactKeys(path, updater.windows, ['installMode']);
+  assertEqual(path, 'plugins.updater.windows.installMode', updater.windows.installMode, 'passive');
+  if (containsPrivateMaterial(config)) {
+    throw new Error(`${path}에 private key, password 또는 Secret을 허용하지 않습니다.`);
+  }
+  let fingerprint;
+  try {
+    fingerprint = publicKeyFingerprint(updater.pubkey);
+  } catch (error) {
+    throw new Error(`${path} plugins.updater.pubkey가 올바르지 않습니다: ${error.message}`);
+  }
+  assertEqual(
+    path,
+    'plugins.updater.pubkey fingerprint',
+    fingerprint,
+    RELEASE_METADATA_CONTRACT.updaterPublicKeyFingerprint,
+  );
+  return fingerprint;
 }
 
 function containsUpdaterKey(value) {
@@ -133,6 +186,13 @@ function containsUpdaterKey(value) {
     key.toLowerCase() === 'updater'
     || key === 'createUpdaterArtifacts'
     || containsUpdaterKey(child));
+}
+
+function containsPrivateMaterial(value) {
+  if (!value || typeof value !== 'object') return false;
+  return Object.entries(value).some(([key, child]) =>
+    /private|password|secret/i.test(key)
+    || containsPrivateMaterial(child));
 }
 
 async function readJson(repositoryRoot, path) {
@@ -155,6 +215,17 @@ async function readSource(repositoryRoot, path) {
 function assertEqual(path, field, actual, expected) {
   if (JSON.stringify(actual) === JSON.stringify(expected)) return;
   throw new Error(`${path} ${field} 값이 다릅니다: ${JSON.stringify(actual)} (expected ${JSON.stringify(expected)})`);
+}
+
+function assertExactKeys(path, value, expected) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error(`${path} ${expected.join('/')} object가 필요합니다.`);
+  }
+  const actual = Object.keys(value).sort();
+  const wanted = [...expected].sort();
+  if (JSON.stringify(actual) !== JSON.stringify(wanted)) {
+    throw new Error(`${path} key가 다릅니다: ${JSON.stringify(actual)} (expected ${JSON.stringify(wanted)})`);
+  }
 }
 
 function parseArguments(args) {
