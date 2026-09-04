@@ -2,7 +2,7 @@
 
 GitHub Issue: [#9](https://github.com/postmelee/alhangeul-tauri/issues/9)
 마일스톤: M010
-상태: 2026-09-04 수행계획 재승인 대기
+상태: 2026-09-04 수행계획 승인, 구현계획 승인 대기
 
 ## 목적
 
@@ -27,8 +27,8 @@ GitHub Issue: [#9](https://github.com/postmelee/alhangeul-tauri/issues/9)
 - 마지막 일반 native 수용 SHA `50e91247841b47d5dc50773c0a2584720829dbdc`에서
   PR #55 merge `46e3b010398ee391db0ed59b510f49421e2dd13c`까지는 문서만 달랐다.
   이 근거는 새 installer의 서명·설치 성공을 뜻하지 않는다.
-- GitHub Issue 본문과 기존 구현계획서는 아직 옛 계약이다. 본 수행계획 승인 후 정렬하며,
-  기존 구현계획서의 Stage 5나 원격 실행 명령을 재승인 없이 실행하지 않는다.
+- GitHub Issue 본문은 아직 옛 계약이며 Stage 4.8에서 정렬한다. 수행계획 승인 후
+  [구현계획서](task_m010_9_impl.md)를 보정했으며, 구현계획 승인 전 단계를 실행하지 않는다.
 
 ### 승인된 브랜치 복구와 이력 보존
 
@@ -195,7 +195,8 @@ updater overlay·runtime·pin·workflow 자체 변경은 이번 계획에 포함
 - 수행계획 보정: 병합 부모/원격 ref 보존, 변경 범위, 필수 섹션·링크·diff 검사.
   기존 경계 실패는 보정 계획에 남기며 전체 검증 성공으로 기록하지 않는다.
 - Stage 4.8: 원격 공개 상태·승인 환경 조회, 문서 명령과 실제 workflow/CLI 옵션 대조,
-  package/서명/manifest 역할·확정값·미결정 risk 확인. 원격 write·서명 dispatch 없음.
+  package/서명/manifest 역할·확정값·미결정 risk 확인. 원격 write는 #9 제목/본문 정렬만;
+  릴리즈·설정 변경과 서명 dispatch는 없음.
 - Stage 4.9: pnpm exec node --test로 pages, updater-release, actions-workflows,
   product-boundary 및 변경된 회귀 테스트만 실행. pnpm run build:pages / check:pages,
   check:product-boundary / check:product-version / check:release-metadata / check:rhwp-pin.
@@ -236,5 +237,5 @@ updater overlay·runtime·pin·workflow 자체 변경은 이번 계획에 포함
 - Pages 테스트와 제품 경계 오탐의 최소 보정 및 위 문서 위치 판단.
 - 남은 Stage 4.8 → 4.9 → 5와 영향 기반 최소 검증; 수행계획 승인 뒤 구현계획을 먼저 보정.
 
-위 제안은 아직 공개 승인이나 위험 수용이 아니다. 승인 후 구현계획서의 단계·명령·커밋을
-보정해 다시 승인 요청하며, 그 전에는 다음 구현 단계에 진입하지 않는다.
+2026-09-04 작업지시자가 수행계획에 따른 구현계획 보정을 승인했다. 공개 승인이나 위험
+수용은 아니며, 구현계획서의 단계·명령·커밋 승인 전에는 다음 구현 단계에 진입하지 않는다.
