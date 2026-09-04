@@ -3,9 +3,10 @@
 수행계획서: [task_m010_54.md](task_m010_54.md)
 GitHub Issue: [#54](https://github.com/postmelee/alhangeul-tauri/issues/54)
 마일스톤: M010
-상태: 구현계획 승인 대기
+상태: 구현계획 승인 완료 / Stage 1 완료 / Stage 2 승인 대기
 작성일: 2026-09-04
 수행계획 승인: 같은 날 작업지시자의 “진행해줘”
+구현계획·Stage 1 승인: 같은 날 구현계획 보고 뒤 작업지시자의 “진행해줘”
 기준: `devel` / `10c8c9aedb2b72436896ea3296b5200aa88793a7`
 작업 브랜치: `local/task54`
 
@@ -241,7 +242,8 @@ Stage 3 보고 후 최종 보고·PR 게시 승인을 별도로 요청한다. �
 
 ## 단계 의존성
 
-- 현재는 구현계획 작성 단계다. 구현계획 승인 후 Stage 1을 시작한다.
+- 2026-09-04 구현계획 승인 뒤 Stage 1을 완료했다. [단계 보고서](../working/task_m010_54_stage1.md)를
+  검토하고 Stage 2 진행 승인을 받는다.
 - Stage 1 보고·승인 후 Stage 2, Stage 2 보고·승인 후 Stage 3을 진행한다.
 - 문서 PR merge가 첫 공개 승인, #9 완료, #19 위험 수용 또는 updater 활성화가 되지 않는다.
 
