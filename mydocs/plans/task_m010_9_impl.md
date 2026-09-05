@@ -257,6 +257,18 @@ Task #9: 최종 보고서 작성과 게시 준비
 
 ## 검증·커밋 공통 규칙
 
+### PR #56 리뷰 보정 승인 — 2026-09-06
+
+작업지시자의 “권고대로 진행해줘”를 다음 보정·집중 검증·최종 head CI 1회·리뷰 답변 승인으로 기록한다.
+문서 위치는 기존 docs/operations/와 본 계획·최종 보고서이며 별도 제품 문서를 만들지 않는다.
+Pages requireUnreleased의 published 거부 회귀, 승인 참조의 규칙군 분리·실제 문서 존재 검사,
+updater 게시 파일을 checksum 도구에 넣었을 때 Gate 4 안내를 보완한다. runbook·체크리스트의
+전환 완료 상태와 PR 승인 책임, Linux 아이콘 그룹핑 인계, 과거 orders 파일 목록을 정렬한다.
+검사 파일 수는 로컬 생성물에 따른 관측값이며 합격 조건은 위반 0건이다. 기존 예외 경로는 확대하지 않는다.
+관련 Pages/updater/boundary/checksum/metadata/Linux entry/workflow 테스트와 문서·Pages·경계 검사를
+통과한 단일 보정 commit을 push하고, ci.yml을 publish/task9에서 한 번 dispatch한다.
+CI의 head SHA를 확인하고 결과를 리뷰 코멘트로 게시한다. 이 승인은 PR merge·릴리즈 게시를 포함하지 않는다.
+
 - 계획 보정은 문서 구조·링크·Bash 구문·변경 경계만 검사한다. 위 실행 명령은 미실행이다.
 - 단계별 명령은 해당 단계 승인 뒤 수행하고 실제 결과를 보고서와 함께 커밋한다.
 - source·계획·scope가 달라지면 변경 영향과 필요한 검사부터 다시 승인받는다.

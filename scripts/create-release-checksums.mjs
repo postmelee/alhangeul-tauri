@@ -102,6 +102,12 @@ async function walk(rootPath, directory, outputPath, files) {
 
     const kind = classifyInstaller(path);
     if (!kind) {
+      if (entry.name.endsWith('.sig') || entry.name === 'alhangeul-updater-release-inventory.json') {
+        throw new Error(
+          `installer 전용 checksum 도구에 updater 게시 파일을 넣을 수 없습니다: ${path}. `
+          + 'docs/operations/PUBLIC_RELEASE_RUNBOOK.md Gate 4의 shasum 명시 파일 목록을 사용하세요.',
+        );
+      }
       throw new Error(`공개 checksum에 지원하지 않는 파일입니다: ${path}`);
     }
     const fileStat = await lstat(absolutePath);

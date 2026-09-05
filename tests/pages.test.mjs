@@ -91,6 +91,15 @@ test('published fixture는 exact tag와 MSI/NSIS/AppImage URL만 승인한다', 
   assert.equal(validateReleaseData(release), release);
 });
 
+test('requireUnreleased는 구조가 유효한 published 입력도 거부한다', () => {
+  for (const release of [publishedFixture(), publishedManifestFixture()]) {
+    assert.throws(
+      () => validateReleaseData(release, { requireUnreleased: true, allowManifestPublished: true }),
+      /현재 Pages release data는 unreleased여야/,
+    );
+  }
+});
+
 test('manifestPublished=true이면 complete inventory에서 output manifest만 생성한다', async () => {
   const release = publishedManifestFixture();
   const fixture = await createPagesFixture(release);

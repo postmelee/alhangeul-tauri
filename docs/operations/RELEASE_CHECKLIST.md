@@ -27,7 +27,7 @@ N→N+1을 만들 필요도 없다. 릴리즈를 실제 게시한다면 아래 �
 - [ ] Windows Authenticode와 updater Minisign 구분, 미서명 경고·배포 정책 판단.
 - [ ] `release`/`github-pages` 실제 reviewer·허용 ref 확인; 변경이 필요하면 별도 승인.
 - [ ] 변경 영향·재사용 근거·미검증 Windows/Linux 환경과 필수 위험 처리 결정.
-- [ ] 첫 Pages 공개 시 미공개 고정 테스트의 전환 범위·담당·검증·Gate 5 반영 사전 승인. 미정이면 Release 게시 중단.
+- [ ] Pages 상태별 검사는 공개 권한 검사가 아님을 확인. 첫 전환은 Release read-back 후 별도 데이터 PR·배포 승인으로 통제.
 
 ### 파일·설치 — runbook Gate 2~3
 
@@ -36,6 +36,7 @@ N→N+1을 만들 필요도 없다. 릴리즈를 실제 게시한다면 아래 �
 - [ ] updater 대상 MSI·NSIS·AppImage 각각의 `.sig`를 production 공개키로 실제 검증.
 - [ ] complete inventory의 version/tag/sourceSha/keyFingerprint와 target별 파일·URL·hash·서명 대조.
 - [ ] **게시할 bytes**에서 대상별 설치·실행·앱 version·대표 문서 열기/저장/재열기 확인.
+- [ ] Linux launcher의 파일 인자와 taskbar 아이콘 그룹핑 확인; StartupWMClass와 실제 창 식별 불일치 시 기록·보정.
 - [ ] 지원 updater 형식·production 설정 확인; 수동 패키지는 해당 설치/안내 경로 확인.
 - [ ] 동일 파일 검증 뒤 게시를 보장하는 승인 경로 확인. 재빌드하면 새 파일 검증으로 돌아감.
 - [ ] 6종 공개 시 updater 한 run의 세 installer·서명·inventory와 같은 SHA 일반 run의 수동 3종만 선택.

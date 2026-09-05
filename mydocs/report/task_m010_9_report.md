@@ -82,8 +82,27 @@ GitHub Issue: [#9](https://github.com/postmelee/alhangeul-tauri/issues/9)
 
 최종 보고 단계에서 Stage 5의 diff·이력·Release/tag 확인을 통과했다. 문서 상대 링크 48개,
 버전 기록의 역사 표·고정 원문 링크 무손실과 unreleased 유지도 확인했다.
-변경 없는 Stage 4.9 테스트를 반복하지 않는다. 현재 PR의 native/GUI 실행, signing·Release·Pages
-게시는 수행하지 않았으며 과거 CI 성공을 현재 PR head의 CI 결과로 표시하지 않는다.
+최초 PR 게시까지 변경 없는 Stage 4.9 테스트 결과를 재사용했다. 후속 리뷰 보정과 새 검증은
+아래에 구분한다. 과거 CI 성공을 현재 PR head의 CI 결과로 표시하지 않는다.
+
+### PR #56 리뷰 보정
+
+[리뷰 코멘트](https://github.com/postmelee/alhangeul-tauri/pull/56#issuecomment-5553817530)에 대한
+권고를 작업지시자가 승인해 다음을 반영했다.
+
+- 실제 Pages source 검사는 구조·URL·inventory 검증이며 공개 승인 검사가 아님을 runbook과
+  체크리스트에 명시했다. 이미 완료한 테스트 전환을 다시 요구하던 문구를 수정했다.
+- requireUnreleased가 유효한 published 입력 두 종류를 거부하는 회귀 검사를 추가했다.
+- 문서 참조 면제를 legacy/platform 규칙군별로 제한하고 승인된 두 문장의 실제 존재를 검사했다.
+- installer checksum 도구의 signature/updater inventory 입력 거부에 Gate 4 shasum 안내를 추가했다.
+- 후속 Linux 설치 확인에 아이콘 그룹핑을 포함하고 계획서에 과거 orders 병합 목록을 보완했다.
+- `402개`는 당시 로컬 관측값이다. `_site` 등 생성물에 따라 수가 달라지며 합격 기준은 위반 0건이다.
+
+보정 검증: Pages/updater/product-boundary/checksum/metadata/Linux entry/workflow 7개 test entry
+**123/123 통과**. Pages source 11/output 13 검사·제품 경계 위반 0건·release metadata 통과.
+문서 상대 링크 30개·Bash 블록 18개 구문·diff 검사도 통과했다. checker 295행, runbook 300행이다.
+승인된 ci.yml은 보정 commit을 push한 뒤 1회 dispatch하며 head SHA·run URL·결과를 PR에
+기록한다. 이 문서 작성 시 원격 실행 결과는 미확정이다. 설치 파일 빌드·서명·공개는 포함하지 않는다.
 
 ## 잔여 위험과 후속 작업
 

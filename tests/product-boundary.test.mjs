@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -12,6 +12,16 @@ const approvedHandoffReference =
   `- 초기 ${legacyProduct} version과 Alhangeul의 독립 계보는 [출처 문서](../architecture/PROVENANCE.md)를`;
 const approvedSyncReference =
   `3. [${unsupportedPlatform} sync PR #491](https://github.com/postmelee/${unsupportedRepository}/pull/491)은 참고만 한다.`;
+
+test('승인된 참조 문장은 실제 해당 문서에 존재한다', async () => {
+  for (const [path, line] of [
+    ['docs/operations/DESKTOP_RELEASE.md', approvedHandoffReference],
+    ['docs/releases/v0.1.0.md', approvedSyncReference],
+  ]) {
+    const source = await readFile(new URL(`../${path}`, import.meta.url), 'utf8');
+    assert.ok(source.split(/\r?\n/).includes(line), `${path}의 승인 참조가 변경되거나 사라졌습니다.`);
+  }
+});
 
 test('document preview 공유 core의 bytes-only 경계를 승인한다', async () => {
   const fixture = await createFixture();

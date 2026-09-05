@@ -168,7 +168,8 @@ updater overlay·runtime·pin·workflow 자체 변경은 이번 계획에 포함
 - GitHub #9 제목/본문의 옛 prerelease·updater 제외·검증 책임은 계획 승인 뒤 정렬.
 
 이번 Task 산출물:
-- mydocs/orders/20260904.md
+- mydocs/orders/20260904.md, mydocs/orders/20260906.md
+- 이력 보존 병합에 포함된 mydocs/orders/20260729.md·20260802.md·20260804.md·20260812.md
 - mydocs/plans/task_m010_9.md, 승인 후 기존 task_m010_9_impl.md 보정
 - mydocs/working/task_m010_9_stage4_8.md, task_m010_9_stage4_9.md, task_m010_9_stage5.md
 - mydocs/report/task_m010_9_report.md

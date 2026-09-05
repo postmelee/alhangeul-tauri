@@ -64,6 +64,16 @@ test('baseline installer checksum을 상대 경로 순으로 결정적으로 생
 
 for (const [name, files, expectedError] of [
   [
+    'updater signature 입력에 게시 경로를 안내하고',
+    { ...baselineFiles, 'Alhangeul_0.1.0_amd64.AppImage.sig': 'signature' },
+    /installer 전용.*PUBLIC_RELEASE_RUNBOOK\.md Gate 4의 shasum/,
+  ],
+  [
+    'updater inventory 입력에 게시 경로를 안내하고',
+    { ...baselineFiles, 'alhangeul-updater-release-inventory.json': '{}' },
+    /installer 전용.*PUBLIC_RELEASE_RUNBOOK\.md Gate 4의 shasum/,
+  ],
+  [
     '지원하지 않는 파일',
     {
       ...baselineFiles,

@@ -33,12 +33,12 @@ const unsupportedPlatformAllowlist = new Set([
 ]);
 
 const approvedReferenceLines = new Map([
-  ['docs/operations/DESKTOP_RELEASE.md', new Set([
+  ['docs/operations/DESKTOP_RELEASE.md', { group: 'legacy', lines: new Set([
     '- 초기 HOP version과 Alhangeul의 독립 계보는 [출처 문서](../architecture/PROVENANCE.md)를',
-  ])],
-  ['docs/releases/v0.1.0.md', new Set([
+  ]) }],
+  ['docs/releases/v0.1.0.md', { group: 'platform', lines: new Set([
     '3. [macOS sync PR #491](https://github.com/postmelee/alhangeul-macos/pull/491)은 참고만 한다.',
-  ])],
+  ]) }],
 ]);
 
 const legacyRules = [
@@ -156,10 +156,10 @@ async function registeredNestedWorktrees(repositoryRoot) {
   return roots;
 }
 
-function maskApprovedReferenceLines(repositoryPath, content) {
+function maskApprovedReferenceLines(repositoryPath, content, group) {
   const approved = approvedReferenceLines.get(repositoryPath);
-  if (!approved) return content;
-  return content.split('\n').map((line) => (approved.has(line) ? '' : line)).join('\n');
+  if (approved?.group !== group) return content;
+  return content.split('\n').map((line) => (approved.lines.has(line) ? '' : line)).join('\n');
 }
 
 function findRuleViolation(content, rules) {
@@ -199,10 +199,11 @@ export async function verifyProductBoundary(options = {}) {
     const buffer = await readFile(file);
     if (buffer.includes(0)) continue;
     const content = buffer.toString('utf8');
-    const referenceMaskedContent = maskApprovedReferenceLines(repositoryPath, content);
+    const legacyContent = maskApprovedReferenceLines(repositoryPath, content, 'legacy');
+    const platformContent = maskApprovedReferenceLines(repositoryPath, content, 'platform');
 
     if (!historicalAllowlist.has(repositoryPath)) {
-      const legacyViolation = findRuleViolation(referenceMaskedContent, legacyRules);
+      const legacyViolation = findRuleViolation(legacyContent, legacyRules);
       if (legacyViolation) {
         violations.push(
           `${repositoryPath}:${legacyViolation.line}: ${legacyViolation.label}`,
@@ -210,7 +211,7 @@ export async function verifyProductBoundary(options = {}) {
       }
     }
 
-    const platformViolation = findRuleViolation(referenceMaskedContent, unsupportedPlatformRules);
+    const platformViolation = findRuleViolation(platformContent, unsupportedPlatformRules);
     if (platformViolation && !unsupportedPlatformAllowlist.has(repositoryPath)) {
       violations.push(
         `${repositoryPath}:${platformViolation.line}: ${platformViolation.label}`,

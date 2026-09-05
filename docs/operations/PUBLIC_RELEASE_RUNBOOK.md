@@ -34,8 +34,8 @@ gh api "repos/$ALH_REPO/environments/github-pages/deployment-branch-policies"
 
 현재 [updater workflow](../../.github/workflows/alhangeul-desktop.yml)와 [Pages 데이터](../../scripts/pages/release-data.mjs)는 stable `X.Y.Z`만 지원한다.
 prerelease는 별도 구현이다. Gate 4 draft는 stable 공개 전 확인 단계이며, 수동 3종은 같은 SHA 일반 run에서 보완한다.
-첫 Pages 공개 전환에는 `tests/pages.test.mjs`의 미공개 고정 단언 보정이 필요하다.
-#9에서 전환 범위·담당·검증·Gate 5 반영을 사전 승인받는다. 전환 계획이 없으면 Gate 4도 중단한다.
+Pages 검사는 #9에서 실제 source와 고정 상태 fixture로 분리했다. 상태별 구조 검증은 공개 승인을 확인하지 않는다.
+첫 공개 전 source는 unreleased를 유지하고, Release read-back 뒤 Gate 5의 별도 데이터 PR·배포 승인으로 전환한다.
 **중단/재개:** 미정 입력·공개 정책 차이가 있으면 owner 결정 후 이 gate부터 재확인한다.
 
 ## Gate 1 — 변경 범위와 검증 선택
@@ -229,10 +229,10 @@ Release 평면 파일명을 구분하며 inventory 자체 hash·Release/asset ID
 
 다운로드만 승인하면 manifest false/inventory null이며, 그 전에는 unreleased/null을 유지한다.
 `published`에는 세 URL이 필수다. 기존 manifest 제거는 UI 변경이 아니라 별도 복구 승인이 필요하다.
-`tests/pages.test.mjs`의 `requireUnreleased`·null 단언과 현재 source 복사 후 manifest 부재
-검사는 published 데이터와 충돌한다. Gate 0에서 승인한 테스트 전환을 함께 반영해야 한다.
-미공개 fail-closed는 고정 fixture로 보존하고 실제 source와 분리한다. manifest true/false 모두 검사하며 skip으로 우회하지 않는다.
-현재 CI는 수동 dispatch, Pages도 같은 테스트를 실행하므로 미보정 상태로 배포하지 않는다.
+`tests/pages.test.mjs`는 실제 source의 상태별 구조·URL·inventory와 세 고정 fixture를 검사한다.
+`requireUnreleased`는 미공개만 허용할 호출자의 옵션이다. 일반 source 검사에는 강제하지 않는다.
+유효한 published 입력도 검사를 통과하므로 첫 공개 전환의 권한은 별도 데이터 PR·Release read-back·배포 승인으로 통제한다.
+고정 unreleased의 null·manifest 부재와 published manifest true/false 검사를 유지하며 skip으로 우회하지 않는다.
 
 로컬 생성·검사 — 승인된 Pages checkout에서:
 
