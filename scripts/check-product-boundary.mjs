@@ -1,5 +1,5 @@
-import { readdir, readFile, stat } from 'node:fs/promises';
-import { dirname, relative, resolve } from 'node:path';
+import { lstat, readdir, readFile, stat } from 'node:fs/promises';
+import { dirname, isAbsolute, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const defaultRepositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -30,6 +30,15 @@ const unsupportedPlatformAllowlist = new Set([
   'docs/architecture/PROVENANCE.md',
   'pnpm-lock.yaml',
   'scripts/check-product-boundary.mjs',
+]);
+
+const approvedReferenceLines = new Map([
+  ['docs/operations/DESKTOP_RELEASE.md', { group: 'legacy', lines: new Set([
+    '- 초기 HOP version과 Alhangeul의 독립 계보는 [출처 문서](../architecture/PROVENANCE.md)를',
+  ]) }],
+  ['docs/releases/v0.1.0.md', { group: 'platform', lines: new Set([
+    '3. [macOS sync PR #491](https://github.com/postmelee/alhangeul-macos/pull/491)은 참고만 한다.',
+  ]) }],
 ]);
 
 const legacyRules = [
@@ -80,17 +89,17 @@ function toRepositoryPath(repositoryRoot, path) {
   return relative(repositoryRoot, path).split('\\').join('/');
 }
 
-function isExcluded(path) {
+function isExcluded(path, registeredWorktrees) {
   const normalized = path.endsWith('/') ? path : `${path}/`;
   if (path.split('/').some((part) => excludedDirectoryNames.has(part))) return true;
-  return excludedPrefixes.some(
+  return [...excludedPrefixes, ...registeredWorktrees.map((root) => `${root}/`)].some(
     (prefix) => path === prefix.slice(0, -1) || normalized.startsWith(prefix),
   );
 }
 
-async function collectFiles(repositoryRoot, path, files) {
+async function collectFiles(repositoryRoot, path, files, registeredWorktrees) {
   const repositoryPath = toRepositoryPath(repositoryRoot, path);
-  if (repositoryPath && isExcluded(repositoryPath)) return;
+  if (repositoryPath && isExcluded(repositoryPath, registeredWorktrees)) return;
 
   const entryStat = await stat(path);
   if (entryStat.isFile()) {
@@ -102,8 +111,55 @@ async function collectFiles(repositoryRoot, path, files) {
   const entries = await readdir(path, { withFileTypes: true });
   for (const entry of entries) {
     if (entry.isSymbolicLink()) continue;
-    await collectFiles(repositoryRoot, resolve(path, entry.name), files);
+    await collectFiles(repositoryRoot, resolve(path, entry.name), files, registeredWorktrees);
   }
+}
+
+async function registeredNestedWorktrees(repositoryRoot) {
+  const adminRoot = resolve(repositoryRoot, '.git/worktrees');
+  let entries;
+  try {
+    entries = await readdir(adminRoot, { withFileTypes: true });
+  } catch (error) {
+    if (error.code === 'ENOENT' || error.code === 'ENOTDIR') return [];
+    throw error;
+  }
+
+  const roots = [];
+  for (const entry of entries) {
+    if (!entry.isDirectory() || entry.isSymbolicLink()) continue;
+    const adminDirectory = resolve(adminRoot, entry.name);
+    const gitdirPath = resolve(adminDirectory, 'gitdir');
+    try {
+      if (!(await lstat(gitdirPath)).isFile()) continue;
+      const worktreeGitFile = resolve(
+        adminDirectory,
+        (await readFile(gitdirPath, 'utf8')).trim(),
+      );
+      const worktreeRoot = dirname(worktreeGitFile);
+      const repositoryPath = toRepositoryPath(repositoryRoot, worktreeRoot);
+      if (
+        !repositoryPath
+        || repositoryPath === '..'
+        || repositoryPath.startsWith('../')
+        || isAbsolute(repositoryPath)
+        || !(await lstat(worktreeGitFile)).isFile()
+      ) continue;
+      const marker = (await readFile(worktreeGitFile, 'utf8')).trim();
+      if (!marker.startsWith('gitdir: ')) continue;
+      const reciprocalAdmin = resolve(worktreeRoot, marker.slice('gitdir: '.length));
+      if (reciprocalAdmin === adminDirectory) roots.push(repositoryPath);
+    } catch (error) {
+      if (error.code !== 'ENOENT' && error.code !== 'ENOTDIR') throw error;
+    }
+  }
+  return roots;
+}
+
+function maskApprovedReferenceLines(repositoryPath, content, group) {
+  const approved = approvedReferenceLines.get(repositoryPath);
+  if (approved?.group !== group) return content;
+  return content.split('\n').map((line) => (approved.lines.has(line) ? '' : line)).join('\n');
 }
 
 function findRuleViolation(content, rules) {
@@ -118,9 +174,15 @@ function findRuleViolation(content, rules) {
 
 export async function verifyProductBoundary(options = {}) {
   const repositoryRoot = resolve(options.repositoryRoot ?? defaultRepositoryRoot);
+  const registeredWorktrees = await registeredNestedWorktrees(repositoryRoot);
   const files = [];
   for (const root of scanRoots) {
-    await collectFiles(repositoryRoot, resolve(repositoryRoot, root), files);
+    await collectFiles(
+      repositoryRoot,
+      resolve(repositoryRoot, root),
+      files,
+      registeredWorktrees,
+    );
   }
 
   const violations = [];
@@ -137,9 +199,11 @@ export async function verifyProductBoundary(options = {}) {
     const buffer = await readFile(file);
     if (buffer.includes(0)) continue;
     const content = buffer.toString('utf8');
+    const legacyContent = maskApprovedReferenceLines(repositoryPath, content, 'legacy');
+    const platformContent = maskApprovedReferenceLines(repositoryPath, content, 'platform');
 
     if (!historicalAllowlist.has(repositoryPath)) {
-      const legacyViolation = findRuleViolation(content, legacyRules);
+      const legacyViolation = findRuleViolation(legacyContent, legacyRules);
       if (legacyViolation) {
         violations.push(
           `${repositoryPath}:${legacyViolation.line}: ${legacyViolation.label}`,
@@ -147,7 +211,7 @@ export async function verifyProductBoundary(options = {}) {
       }
     }
 
-    const platformViolation = findRuleViolation(content, unsupportedPlatformRules);
+    const platformViolation = findRuleViolation(platformContent, unsupportedPlatformRules);
     if (platformViolation && !unsupportedPlatformAllowlist.has(repositoryPath)) {
       violations.push(
         `${repositoryPath}:${platformViolation.line}: ${platformViolation.label}`,

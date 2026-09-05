@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { readFile } from 'node:fs/promises';
+import { lstat, readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { verifyProductVersion } from './check-product-version.mjs';
@@ -24,6 +24,7 @@ export const RELEASE_METADATA_CONTRACT = Object.freeze({
   copyright: 'Alhangeul contributors',
   license: 'MIT',
   wixTemplate: 'windows/main.wxs',
+  linuxDesktopTemplate: 'linux/main.desktop',
   updaterConfigPath: 'apps/desktop/src-tauri/tauri.updater.conf.json',
   updaterEndpoint: UPDATER_ENDPOINT,
   updaterPublicKeyFingerprint: '100c8f3183b25de3366574c46a1a2a66950a1d5f24862f3461c27b095713ffdd',
@@ -46,12 +47,22 @@ export const RELEASE_METADATA_CONTRACT = Object.freeze({
 export async function verifyReleaseMetadata(options = {}) {
   const repositoryRoot = resolve(options.repositoryRoot ?? defaultRepositoryRoot);
   const versionResult = await verifyProductVersion({ repositoryRoot });
-  const [rootPackage, desktopPackage, tauriConfig, updaterConfig, cargoSource] = await Promise.all([
+  const linuxDesktopPath =
+    `apps/desktop/src-tauri/${RELEASE_METADATA_CONTRACT.linuxDesktopTemplate}`;
+  const [
+    rootPackage,
+    desktopPackage,
+    tauriConfig,
+    updaterConfig,
+    cargoSource,
+    linuxDesktopSource,
+  ] = await Promise.all([
     readJson(repositoryRoot, 'package.json'),
     readJson(repositoryRoot, 'apps/desktop/package.json'),
     readJson(repositoryRoot, 'apps/desktop/src-tauri/tauri.conf.json'),
     readJson(repositoryRoot, RELEASE_METADATA_CONTRACT.updaterConfigPath),
     readSource(repositoryRoot, 'apps/desktop/src-tauri/Cargo.toml'),
+    readSource(repositoryRoot, linuxDesktopPath, { requireRegularFile: true }),
   ]);
   const cargoPackage = readCargoPackage(cargoSource);
   const path = 'apps/desktop/src-tauri/tauri.conf.json';
@@ -76,7 +87,10 @@ export async function verifyReleaseMetadata(options = {}) {
   assertEqual(path, 'bundle.category', tauriConfig.bundle?.category, RELEASE_METADATA_CONTRACT.category);
   assertEqual(path, 'bundle.copyright', tauriConfig.bundle?.copyright, RELEASE_METADATA_CONTRACT.copyright);
   assertEqual(path, 'bundle.windows.wix.template', tauriConfig.bundle?.windows?.wix?.template, RELEASE_METADATA_CONTRACT.wixTemplate);
+  assertEqual(path, 'bundle.linux.deb.desktopTemplate', tauriConfig.bundle?.linux?.deb?.desktopTemplate, RELEASE_METADATA_CONTRACT.linuxDesktopTemplate);
+  assertEqual(path, 'bundle.linux.rpm.desktopTemplate', tauriConfig.bundle?.linux?.rpm?.desktopTemplate, RELEASE_METADATA_CONTRACT.linuxDesktopTemplate);
   assertAssociations(path, tauriConfig.bundle?.fileAssociations);
+  verifyLinuxDesktopEntrySource(linuxDesktopSource);
   const updaterKeyFingerprint = assertUpdaterBoundary(
     rootPackage,
     desktopPackage,
@@ -92,6 +106,41 @@ export async function verifyReleaseMetadata(options = {}) {
     fileAssociations: tauriConfig.bundle.fileAssociations.map(({ ext }) => ext[0]),
     updaterKeyFingerprint,
   };
+}
+
+export function verifyLinuxDesktopEntrySource(source) {
+  const path = 'apps/desktop/src-tauri/linux/main.desktop';
+  const lines = source.split(/\r?\n/);
+  const requiredLines = [
+    '[Desktop Entry]',
+    'Categories={{categories}}',
+    'Comment={{comment}}',
+    'StartupWMClass={{exec}}',
+    'Icon={{icon}}',
+    'Name={{name}}',
+    'Terminal=false',
+    'Type=Application',
+  ];
+  for (const line of requiredLines) {
+    if (!lines.includes(line)) {
+      throw new Error(`${path} 필수 줄이 없습니다: ${line}`);
+    }
+  }
+  assertEqual(
+    path,
+    'Exec',
+    source.match(/^Exec=.*$/gm) ?? [],
+    ['Exec={{exec}} %F'],
+  );
+  assertEqual(
+    path,
+    'file field code',
+    source.match(/%[fFuU]/g) ?? [],
+    ['%F'],
+  );
+  if (!/{{#if mime_type}}\r?\nMimeType={{mime_type}}\r?\n{{\/if}}/.test(source)) {
+    throw new Error(`${path} MIME 조건부 출력이 필요합니다.`);
+  }
 }
 
 function assertAssociations(path, associations) {
@@ -204,9 +253,13 @@ async function readJson(repositoryRoot, path) {
   }
 }
 
-async function readSource(repositoryRoot, path) {
+async function readSource(repositoryRoot, path, options = {}) {
   try {
-    return await readFile(resolve(repositoryRoot, path), 'utf8');
+    const filePath = resolve(repositoryRoot, path);
+    if (options.requireRegularFile && !(await lstat(filePath)).isFile()) {
+      throw new Error('일반 파일이 아닙니다.');
+    }
+    return await readFile(filePath, 'utf8');
   } catch (error) {
     throw new Error(`${path}을 읽을 수 없습니다: ${error.message}`);
   }

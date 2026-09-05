@@ -15,6 +15,7 @@ const fixturePaths = [
   'apps/desktop/src-tauri/Cargo.toml',
   'apps/desktop/src-tauri/Cargo.lock',
   'apps/desktop/src-tauri/tauri.conf.json',
+  'apps/desktop/src-tauri/linux/main.desktop',
   'apps/desktop/src-tauri/tauri.updater.conf.json',
 ];
 
@@ -36,6 +37,8 @@ test('현재 HWP/HWPX release metadata를 읽기 전용으로 승인한다', asy
 for (const [name, mutate, expected] of [
   ['HWPX 저장 설명 drift', (config) => { config.bundle.longDescription = 'HWP only'; }, /bundle\.longDescription/],
   ['HWPX association 삭제', (config) => { config.bundle.fileAssociations.pop(); }, /fileAssociations\.length/],
+  ['DEB desktop template drift', (config) => { config.bundle.linux.deb.desktopTemplate = 'linux/other.desktop'; }, /bundle\.linux\.deb\.desktopTemplate/],
+  ['RPM desktop template drift', (config) => { config.bundle.linux.rpm.desktopTemplate = 'linux/other.desktop'; }, /bundle\.linux\.rpm\.desktopTemplate/],
   ['HWPX canonical MIME drift', (config) => { config.bundle.fileAssociations[1].mimeType = 'application/vnd.hancom.hwpx'; }, /mimeType/],
   ['updater 활성화', (config) => { config.plugins = { updater: {} }; }, /updater 설정/],
 ]) {

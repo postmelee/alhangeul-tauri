@@ -27,7 +27,7 @@ N→N+1을 만들 필요도 없다. 릴리즈를 실제 게시한다면 아래 �
 - [ ] Windows Authenticode와 updater Minisign 구분, 미서명 경고·배포 정책 판단.
 - [ ] `release`/`github-pages` 실제 reviewer·허용 ref 확인; 변경이 필요하면 별도 승인.
 - [ ] 변경 영향·재사용 근거·미검증 Windows/Linux 환경과 필수 위험 처리 결정.
-- [ ] 첫 Pages 공개 시 미공개 고정 테스트의 전환 범위·담당·검증·Gate 5 반영 사전 승인. 미정이면 Release 게시 중단.
+- [ ] Pages 상태별 검사는 공개 권한 검사가 아님을 확인. 첫 전환은 Release read-back 후 별도 데이터 PR·배포 승인으로 통제.
 
 ### 파일·설치 — runbook Gate 2~3
 
@@ -36,19 +36,24 @@ N→N+1을 만들 필요도 없다. 릴리즈를 실제 게시한다면 아래 �
 - [ ] updater 대상 MSI·NSIS·AppImage 각각의 `.sig`를 production 공개키로 실제 검증.
 - [ ] complete inventory의 version/tag/sourceSha/keyFingerprint와 target별 파일·URL·hash·서명 대조.
 - [ ] **게시할 bytes**에서 대상별 설치·실행·앱 version·대표 문서 열기/저장/재열기 확인.
+- [ ] Linux launcher의 파일 인자와 taskbar 아이콘 그룹핑 확인; StartupWMClass와 실제 창 식별 불일치 시 기록·보정.
 - [ ] 지원 updater 형식·production 설정 확인; 수동 패키지는 해당 설치/안내 경로 확인.
 - [ ] 동일 파일 검증 뒤 게시를 보장하는 승인 경로 확인. 재빌드하면 새 파일 검증으로 돌아감.
+- [ ] 6종 공개 시 updater 한 run의 세 installer·서명·inventory와 같은 SHA 일반 run의 수동 3종만 선택.
+- [ ] 평면 파일명 10개와 SHA256SUMS의 10행 대조, checksum 자체 hash 별도 기록; 총 11개 asset 확정.
 
 과거 GUI 기능 수용 전체를 매번 반복하지 않지만 새 파일의 최소 설치 확인을 생략하지 않는다.
 현재 `publish_release=true`에는 기존 비게시 artifact 승격이나 동일 bytes 수동 설치 대기 보장이
-없다. 이 차이를 해소할 게시 경로가 미정이면 공개하지 않는다.
+없다. runbook Gate 4의 유지관리자 CLI 경로도 별도 승인이 필요하며, 환경 reviewer가
+CLI 게시까지 보호하지 않는다. 인증 주체·허용 ref·최종 파일 승인 기록이 미정이면 공개하지 않는다.
 
 ### 공개·read-back — runbook Gate 4~7
 
 - [ ] source/채널/최종 asset/notes 공개 승인 후 게시. 비게시 서명 승인을 공개 승인으로 쓰지 않음.
 - [ ] exact tag가 후보 commit을 가리키며 Release draft/prerelease 상태가 승인 채널과 일치.
 - [ ] 원격 installer를 새로 받아 크기/hash/서명/inventory를 게시 전 근거와 비교.
-- [ ] 수동 DEB/RPM/arm64는 updater 7개 asset 게시 job 밖임을 확인, 공개 시 별도 승인 경로 기록.
+- [ ] draft에 고정 목록 전체를 올려 read-back한 뒤 stable 공개; 공개 후 다시 내려받아 동일 bytes 확인.
+- [ ] 기존 tag/Release 선조회, tag resolved SHA 대조; 불명확한 응답은 재조회하고 중복 생성/덮어쓰기 금지.
 - [ ] Release read-back 후 `site/release.json` PR 검토·devel merge·Pages/manifest 게시 승인.
 - [ ] exact Pages SHA/workflow/deploy_ref 일치, build/check/test/upload/deploy 성공.
 - [ ] 공개 홈·업데이트·문의의 링크/다운로드와 승인된 manifest version/URL/서명 read-back.
@@ -94,6 +99,7 @@ dialog 미진입·빈 페이지·쪽 수/방향 오류는 중단한다. 알려�
 - [ ] Linux GUI artifact ID/digest·DEB hash·source/run과 설치 환경이 같은 증거 사슬인지 확인.
 - [ ] screenshot·native UI tree·helper 실행/cache·필수 upload 누락을 성공으로 처리하지 않음.
 - [ ] AppImage 자체 Freedesktop 등록, Fedora RPM GUI, arm64 GUI, Wayland/GPU 등의 미검증 구분.
+- [ ] Linux desktopTemplate 변경 시 DEB/RPM과 AppImage 내부 launcher의 `%F` 및 실제 argv·열린 문서 확인.
 
 상세 환경·과거 예외는 [정책의 수용 한계](DESKTOP_RELEASE.md#검증-선택과-수용-한계)와
 해당 버전 기록에 둔다. probe나 `rpm --nodeps` 성공을 실사용 배포판 GUI 수용으로 쓰지 않는다.
