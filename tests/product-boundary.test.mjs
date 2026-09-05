@@ -5,6 +5,14 @@ import { join } from 'node:path';
 import test from 'node:test';
 import { verifyProductBoundary } from '../scripts/check-product-boundary.mjs';
 
+const legacyProduct = ['H', 'OP'].join('');
+const unsupportedPlatform = ['ma', 'cOS'].join('');
+const unsupportedRepository = ['alhangeul-ma', 'cos'].join('');
+const approvedHandoffReference =
+  `- 초기 ${legacyProduct} version과 Alhangeul의 독립 계보는 [출처 문서](../architecture/PROVENANCE.md)를`;
+const approvedSyncReference =
+  `3. [${unsupportedPlatform} sync PR #491](https://github.com/postmelee/${unsupportedRepository}/pull/491)은 참고만 한다.`;
+
 test('document preview 공유 core의 bytes-only 경계를 승인한다', async () => {
   const fixture = await createFixture();
   try {
@@ -24,6 +32,104 @@ test('독립 Cargo crate의 target 산출물은 제품 소스로 검사하지 �
     await writeFile(join(cargoTarget, '.rustc_info.json'), `{"host":"${unsupportedHost}"}\n`);
     const result = await verifyProductBoundary({ repositoryRoot: fixture.root });
     assert.deepEqual(result.violations, []);
+  } finally {
+    await rm(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test('승인된 릴리즈 문서의 정확한 외부 계보 참조만 허용한다', async () => {
+  const fixture = await createFixture();
+  try {
+    await writeRepositoryFile(
+      fixture.root,
+      'docs/operations/DESKTOP_RELEASE.md',
+      `${approvedHandoffReference}\n`,
+    );
+    await writeRepositoryFile(
+      fixture.root,
+      'docs/releases/v0.1.0.md',
+      `${approvedSyncReference}\n`,
+    );
+    const result = await verifyProductBoundary({ repositoryRoot: fixture.root });
+    assert.deepEqual(result.violations, []);
+  } finally {
+    await rm(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test('승인 문서에서도 다른 줄의 legacy·unsupported 표현은 거부한다', async () => {
+  const fixture = await createFixture();
+  try {
+    await writeRepositoryFile(
+      fixture.root,
+      'docs/operations/DESKTOP_RELEASE.md',
+      `${approvedHandoffReference}\n${legacyProduct} 제품을 다시 사용한다.\n`,
+    );
+    await writeRepositoryFile(
+      fixture.root,
+      'docs/releases/v0.1.0.md',
+      `${approvedSyncReference}\n${unsupportedPlatform} 배포도 지원한다.\n`,
+    );
+    const result = await verifyProductBoundary({ repositoryRoot: fixture.root });
+    assert.equal(result.violations.length, 2);
+    assert.match(result.violations.join('\n'), /legacy product name/);
+    assert.match(result.violations.join('\n'), /unsupported platform identifier/);
+  } finally {
+    await rm(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test('일반 제품 source의 legacy·unsupported 표현은 계속 거부한다', async () => {
+  const fixture = await createFixture();
+  try {
+    await writeRepositoryFile(
+      fixture.root,
+      'src/product.ts',
+      `export const names = ["${legacyProduct}", "${unsupportedPlatform}"];\n`,
+    );
+    const result = await verifyProductBoundary({ repositoryRoot: fixture.root });
+    assert.equal(result.violations.length, 2);
+    assert.match(result.violations.join('\n'), /legacy product name/);
+    assert.match(result.violations.join('\n'), /unsupported platform identifier/);
+  } finally {
+    await rm(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test('Git metadata가 상호 확인된 등록 중첩 worktree만 검사에서 제외한다', async () => {
+  const fixture = await createFixture();
+  try {
+    const nestedRoot = join(fixture.root, '.claude/worktrees/review');
+    const nestedGitFile = join(nestedRoot, '.git');
+    const adminDirectory = join(fixture.root, '.git/worktrees/review');
+    await mkdir(adminDirectory, { recursive: true });
+    await mkdir(nestedRoot, { recursive: true });
+    await writeFile(join(adminDirectory, 'gitdir'), `${nestedGitFile}\n`);
+    await writeFile(nestedGitFile, `gitdir: ${adminDirectory}\n`);
+    await writeFile(
+      join(nestedRoot, 'legacy.txt'),
+      `${legacyProduct} for ${unsupportedPlatform}\n`,
+    );
+    const result = await verifyProductBoundary({ repositoryRoot: fixture.root });
+    assert.deepEqual(result.violations, []);
+  } finally {
+    await rm(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test('등록되지 않은 가짜 중첩 worktree marker는 검사 제외 근거가 아니다', async () => {
+  const fixture = await createFixture();
+  try {
+    const fakeRoot = join(fixture.root, '.claude/worktrees/fake');
+    await mkdir(fakeRoot, { recursive: true });
+    await writeFile(
+      join(fakeRoot, '.git'),
+      `gitdir: ${join(fixture.root, '.git/worktrees/fake')}\n`,
+    );
+    await writeFile(join(fakeRoot, 'legacy.txt'), `${legacyProduct} product\n`);
+    const result = await verifyProductBoundary({ repositoryRoot: fixture.root });
+    assert.equal(result.violations.length, 1);
+    assert.match(result.violations[0], /legacy product name/);
   } finally {
     await rm(fixture.root, { recursive: true, force: true });
   }
@@ -136,4 +242,10 @@ async function createFixture() {
     'pub fn render(bytes: &[u8]) -> usize { bytes.len() }\n',
   );
   return { root, crateRoot };
+}
+
+async function writeRepositoryFile(root, path, content) {
+  const destination = join(root, path);
+  await mkdir(join(destination, '..'), { recursive: true });
+  await writeFile(destination, content);
 }

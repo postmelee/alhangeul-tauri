@@ -3,7 +3,7 @@
 수행계획서: [task_m010_9.md](task_m010_9.md)
 GitHub Issue: [#9](https://github.com/postmelee/alhangeul-tauri/issues/9)
 마일스톤: M010
-상태: 2026-09-06 Stage 4.8 산출물·검증 완료, 단계 결과 승인 대기
+상태: 2026-09-06 Stage 4.9 산출물·검증 완료, 단계 결과 승인 대기
 
 ## 기준과 승인 경계
 
