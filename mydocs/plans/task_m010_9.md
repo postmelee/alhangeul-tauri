@@ -2,7 +2,7 @@
 
 GitHub Issue: [#9](https://github.com/postmelee/alhangeul-tauri/issues/9)
 마일스톤: M010
-상태: 2026-09-04 수행계획 승인, 구현계획 승인 대기
+상태: 2026-09-06 Stage 4.8 산출물·검증 완료, 단계 결과 승인 대기
 
 ## 목적
 
@@ -27,8 +27,9 @@ GitHub Issue: [#9](https://github.com/postmelee/alhangeul-tauri/issues/9)
 - 마지막 일반 native 수용 SHA `50e91247841b47d5dc50773c0a2584720829dbdc`에서
   PR #55 merge `46e3b010398ee391db0ed59b510f49421e2dd13c`까지는 문서만 달랐다.
   이 근거는 새 installer의 서명·설치 성공을 뜻하지 않는다.
-- GitHub Issue 본문은 아직 옛 계약이며 Stage 4.8에서 정렬한다. 수행계획 승인 후
-  [구현계획서](task_m010_9_impl.md)를 보정했으며, 구현계획 승인 전 단계를 실행하지 않는다.
+- 수행계획 승인 후 [구현계획서](task_m010_9_impl.md)를 보정했고, 2026-09-04 후속
+  “진행해줘”로 구현계획과 Stage 4.8 진입이 승인됐다. GitHub Issue도 이 단계에서 정렬한다.
+  위험 수용·실제 서명/게시와 다음 Stage 승인은 포함하지 않는다.
 
 ### 승인된 브랜치 복구와 이력 보존
 
@@ -91,11 +92,11 @@ workflow 6개 집중 테스트 파일, version/metadata/pin 검사, 설정·테�
 | 다운로드 | Windows x64 NSIS·MSI, Linux x64 AppImage·DEB·RPM, arm64 DEB | 6종 범위를 제안하며 미검증 배포판·GUI 한계를 명시 |
 | updater | NSIS·MSI·Linux x64 AppImage 세 형식 | 동일 형식만, production 설정과 실제 파일 서명 확인 |
 | 썸네일 | 현재 Windows/Linux package 통합 | AppImage 자체 등록이나 모든 file manager 지원으로 확대하지 않음 |
-| Windows Authenticode | 첫 공개 미서명 허용 제안 | SmartScreen 경고 명시; updater Minisign과 별개 |
+| Windows Authenticode | 첫 공개 미서명 허용 확정 | SmartScreen 경고 가능성을 안내하되 보호 기능 해제는 요구하지 않음; updater Minisign과 별개 |
 | 공개 후보 | #9 PR merge 뒤 main 승격의 exact SHA | 이번 merge commit을 최종 tag 후보로 미리 지정하지 않음 |
 | Pages | 기존 디자인 유지, 공개 데이터는 Release read-back 뒤 별도 PR | 이 준비 단계의 release.json은 unreleased/null 유지 |
-| #19·암호 저장·환경 한계 | owner가 수정 또는 위험 수용 결정 | 이번 계획 승인으로 위험을 자동 수용하지 않음 |
-| release 환경 / #28 | 공개에 필요한 ref·승인자 보호만 판단 | 실제 정책 재조회; 변경 필요 시 별도 승인 |
+| #19·암호 저장·환경 한계 | #19는 첫 공개 전 수정 확정; 나머지는 최종 파일의 최소 GUI 수용에서 판정 | #19를 #9에서 구현하지 않고 별도 작업 완료 후 후속 게시 작업 진입 |
+| release 환경 / #28 | 첫 공개는 owner가 승인한 main SHA·명시 파일을 CLI로 게시; #28은 후속 분리 | 현재 자동 보호 부재를 기록하고 실제 파일 공개 승인을 다시 받음 |
 
 ### 동일 파일 게시와 불필요한 재빌드 제거
 
