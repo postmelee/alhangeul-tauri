@@ -2,7 +2,7 @@
 
 GitHub Issue: [#9](https://github.com/postmelee/alhangeul-tauri/issues/9)
 마일스톤: M010
-상태: 2026-09-06 Stage 4.9 산출물·검증 완료, 단계 결과 승인 대기
+상태: 2026-09-06 Stage 5 준비 Go/실제 공개 No-Go 판단 완료, 단계 결과 승인 대기
 
 ## 목적
 
