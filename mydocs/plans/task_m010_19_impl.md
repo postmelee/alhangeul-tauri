@@ -10,6 +10,24 @@ GitHub Issue: [#19](https://github.com/postmelee/alhangeul-tauri/issues/19)
 
 ## 단계 개요
 
+### 2026-09-07 Stage 4.16 재발 방지 지식·동작 회귀 연결 승인
+
+공통 native UI 가이드와 사건 기록, 기존 실행 경로가 쓰는 문서 identity·PDF evidence
+판정 함수의 재현 데이터 테스트를 묶는다. 수행계획서의 새 문서 위치 판단을 적용한다.
+기존 branch/issue를 유지하며 제품·helper·workflow 및 Win32 adapter는 바꾸지 않는다.
+증거 재생은 실제 UI 조작이나 PDF 렌더링 검증이 아니며, ID 충돌/미지원 확인창의
+native 동작 테스트 공백은 숨기지 않고 가이드의 현재 상태·후속 항목에 명시한다.
+
+- 신규: `docs/operations/NATIVE_UI_TESTING.md`,
+  `mydocs/troubleshootings/task_m010_19_windows_pdf_automation.md`,
+  `tests/fixtures/windows-pdf-regressions.json`, `tests/windows-pdf-regressions.test.mjs`.
+- 수정: 기존 개발 안내·docs 인덱스·릴리즈 체크리스트의 링크,
+  `package.json` focused 명령과 `test:automation` 등록, plans/orders/단계 보고서.
+- 검증: `pnpm run test:gui:windows:contracts`, `pnpm run typecheck:gui`,
+  문서 상대 링크/앵커·fixture 원본 대조·`git diff --check`.
+- 결과 기록: Stage 4.16 가이드/판정 회귀만 완료 여부를 판단한다. 이전 전체 Windows
+  run `34043594332`의 overwrite 실패를 통과로 바꾸지 않으며 긴 workflow는 재실행하지 않는다.
+
 ### 2026-09-07 Stage 4.15 버튼 ID/class 충돌 보정 승인
 
 작업지시자가 ID1 파일 목록 항목과 실제 버튼의 충돌 보정 및 open-only 재검증을 승인했다.
