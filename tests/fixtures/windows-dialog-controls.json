@@ -11,5 +11,22 @@
   "confirmation": [
     { "Id": "CommandButton_6", "Class": "CCPushButton", "Type": "ControlType.Pane", "Enabled": true },
     { "Id": "CommandButton_7", "Class": "CCPushButton", "Type": "ControlType.Pane", "Enabled": true }
-  ]
+  ],
+  "controlledProbe": {
+    "runUrl": "https://github.com/postmelee/alhangeul-tauri/actions/runs/34047467032",
+    "harnessSha": "cd77b5704470f14ee674c72351b60af92e638b05",
+    "imageVersion": "20260824.214.3",
+    "powerShell": "5.1.26100.33296",
+    "uiCulture": "en-US",
+    "productTested": false,
+    "overwriteInvoked": false,
+    "fixtureUnchanged": true,
+    "confirmationOwnedBySave": true,
+    "promptTemplate": "<fixture> already exists. Do you want to replace it?",
+    "buttons": [
+      { "id": "CommandButton_6", "class": "CCPushButton", "type": "ControlType.Button", "enabled": true, "hasNativeHandle": true, "patterns": [10000] },
+      { "id": "CommandButton_7", "class": "CCPushButton", "type": "ControlType.Button", "enabled": true, "hasNativeHandle": true, "patterns": [10000] }
+    ],
+    "note": "자체 WinForms fixture 관측. raw PID/HWND/경로와 중복 tree 노드를 제거했다. 실제 Alhangeul의 Pane 관측과 다르므로 InvokePattern 지원을 제품에 일반화하지 않는다."
+  }
 }

@@ -53,13 +53,36 @@ adapter를 구현하기 전에는 무조건 Yes 또는 숫자 ID 교체로 우�
   후속 PDF 내용/렌더 분석은 실행되지 않았으므로 PDF 품질 전체 통과로 쓰지 않는다.
 - **재실행 덮어쓰기: 미해결.** HWP의 첫 overwrite 확인창에서 안전하게 실패했다.
   HWPX restart와 전체 PDF 분석은 미실행이다. 제품 저장 결함이 확인된 것은 아니다.
-- **판단 분리: Stage 4.17 구현, Windows 결과 대기.** 실제 helper의 순수 함수와 PS5.1
+- **판단 분리: Stage 4.17 Windows 검사 28개 통과.** 실제 helper의 순수 함수와 PS5.1
   실행 테스트를 연결했다. ID/class 충돌의 관측값을 재사용하고 PID/HWND는 합성한다.
   클릭 직전 UIA 재조회와 native 재검증을 추가했으므로 이전 open-only 성공을 새 helper의
   성공으로 그대로 옮기지 않는다. legacy ID6도 의미 adapter가 없으면 거부한다.
-- **작은 OS 관측: 실행 준비.** `windows-dialog-probe`는 제어된 저장창의 확인창까지
+- **작은 OS 관측: 첫 실행 통과.** `windows-dialog-probe`는 제어된 저장창의 확인창까지
   관측하고 Yes는 누르지 않는다. 제품 재빌드·설치·PDF 분석 없이 지원 pattern·소유 관계를
   수집하며, 이 결과가 확인창 실행 adapter의 다음 승인 근거다.
+
+### Stage 4.17 관측과 다음 adapter 판단
+
+run `34047467032`, harness `cd77b5704470f14ee674c72351b60af92e638b05`의 작은 job은
+27초에 통과했다. Windows image `20260824.214.3`, PS `5.1.26100.33296`, UI 언어 `en-US`다.
+PS 실행 검사 28개(환경 확인 1개 포함), 실제 C# Add-Type compile/load, Save focus·입력·
+readback·재조회/native 검증·제출을 확인했다. 시험 파일 hash 불변, 시험 process 종료와
+임시 디렉터리·cleanup state 정리가 통과했다. 제품 설치나 PDF 렌더링은 실행하지 않았다.
+
+- 확인창은 저장창을 native owner로 가지며 같은 process다. 저장창 disabled/확인창 enabled.
+- `ContentText`는 공개 fixture 이름과 기존 파일 대체 질문에 정확히 대응했다.
+- `CommandButton_6/7`의 class는 이전 제품 관측과 같은 `CCPushButton`이다.
+  다만 이번 **WinForms fixture는 ControlType.Button과 InvokePattern(10000)**을 제공한다.
+  이전 **Alhangeul은 ControlType.Pane**이었고 pattern 근거가 없다. 같은 형태라는 이유로
+  실제 앱도 InvokePattern을 지원한다고 단정하지 않는다.
+- 다음 단계 후보는 소유·의미·target·capability 재검증 뒤 **확인된 InvokePattern만 호출**하는
+  경로다. fixture로 호출·취소/거부 사후 조건을 먼저 확인하고, 실제 앱에서 pattern이 없다면
+  미지원으로 보고한다. BM_CLICK/TDM_CLICK_BUTTON/LegacyIAccessible를 차례로 시도하지 않는다.
+- Yes는 이번 단계에서 호출하지 않았으므로 overwrite adapter는 아직 미구현/미검증이다.
+  이 단계의 cleanup은 프로세스 회수이지 사용자 취소 시나리오의 통과가 아니다.
+
+수치 HWND/PID, 원문 경로와 중복 노드를 제외한 관측은
+[축약 fixture](../../tests/fixtures/windows-dialog-controls.json)의 `controlledProbe`에 보존한다.
 
 변경 경계는 [dialog helper](../../scripts/windows-pdf-dialog.ps1),
 [Win32 adapter](../../scripts/windows-pdf-win32.ps1),
@@ -88,12 +111,14 @@ adapter를 구현하기 전에는 무조건 Yes 또는 숫자 ID 교체로 우�
 | [34042086165](https://github.com/postmelee/alhangeul-tauri/actions/runs/34042086165), harness `1021b8d` | native identity 검증으로 ID-only selector의 파일 항목 오선택 발견 |
 | [34042833704](https://github.com/postmelee/alhangeul-tauri/actions/runs/34042833704), harness `903164b` | HWP/HWPX open-only 성공; `pdfTested=false` |
 | [34043594332](https://github.com/postmelee/alhangeul-tauri/actions/runs/34043594332), harness `903164b` | fresh 두 문서 성공, HWP restart의 미지원 확인창 실패; Linux PDF 분석 skipped |
+| [34047467032](https://github.com/postmelee/alhangeul-tauri/actions/runs/34047467032), harness `cd77b57` | 작은 policy/WinForms 확인창 관측·cleanup 통과, 실제 제품/PDF/Yes 호출 없음 |
 
 2026-09-06 작업지시자는 실제 Windows NSIS에서 두 문서의 PDF 저장·검색·쪽 수·시각 확인,
 원본 보존과 재실행 덮어쓰기를 문제없이 완료했다고 보고했다. 해당 수동 근거는 유지한다.
 설치 SHA/OS 상세 버전은 별도 제공되지 않아 위 exact-SHA 자동 성공으로 바꾸어 기록하지 않는다.
 
-로컬 회귀 결과와 단계 승인 상태는 [Stage 4.16](../working/task_m010_19_stage4.16.md)에 둔다.
+로컬 회귀와 이전 가이드 작업은 [Stage 4.16](../working/task_m010_19_stage4.16.md),
+작은 Windows 검증과 다음 승인 경계는 [Stage 4.17](../working/task_m010_19_stage4.17.md)에 둔다.
 
 ## 참고
 

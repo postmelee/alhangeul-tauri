@@ -33,6 +33,11 @@ ID/class뿐 아니라 가장 가까운 dialog/PID, enabled, 후보 중복을 검
 - 문서: 수행계획서에서 승인된 기존 공식 가이드·사건 기록·orders/working만 갱신한다.
   신규 외부 의존성 없음. PowerShell 동작·native 관측·제품 수용 결과를 구분한다.
 
+결과: run `34047467032`/harness `cd77b57`에서 PS 검사 28개와 제어된 확인창 관측·cleanup이
+27초에 통과했다. 실제 제품은 미실행이다. WinForms는 InvokePattern을 제공하지만 이전 제품
+관측은 Pane이므로 capability를 일반화하지 않는다. 다음 adapter는 관측된 InvokePattern만
+후보로 하며, 구현·작은 통합 검증은 Stage 4.18 승인 뒤 진행한다.
+
 ### 2026-09-07 Stage 4.16 재발 방지 지식·동작 회귀 연결 승인
 
 공통 native UI 가이드와 사건 기록, 기존 실행 경로가 쓰는 문서 identity·PDF evidence

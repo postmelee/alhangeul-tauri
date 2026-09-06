@@ -200,6 +200,23 @@ test('Open probe is distinct from PDF acceptance and focuses filename before edi
   assert.doesNotMatch(native, /AttachThreadInput/);
 });
 
+test('Controlled observation preserves its provenance and differs from product control types', async () => {
+  const fixture = JSON.parse(await readFile(new URL('./fixtures/windows-dialog-controls.json', import.meta.url), 'utf8'));
+  const probe = fixture.controlledProbe;
+  assert.match(probe.runUrl, /actions\/runs\/34047467032$/);
+  assert.match(probe.harnessSha, /^[0-9a-f]{40}$/);
+  assert.equal(probe.productTested, false);
+  assert.equal(probe.overwriteInvoked, false);
+  assert.equal(probe.fixtureUnchanged, true);
+  assert.equal(probe.confirmationOwnedBySave, true);
+  assert.equal(probe.buttons.length, 2);
+  for (const button of probe.buttons) {
+    assert.equal(button.type, 'ControlType.Button');
+    assert.deepEqual(button.patterns, [10000]);
+  }
+  assert.ok(fixture.confirmation.every((button) => button.Type === 'ControlType.Pane'));
+});
+
 test('PDF evidence validator rejects missing, failed, wrong SHA and incomplete overwrite results', () => {
   validateEvidence(valid, expected);
   for (const mutation of [
