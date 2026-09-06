@@ -116,7 +116,7 @@ pnpm run typecheck:gui
 | Windows dialog 판단 | [순수 정책](../../scripts/windows-pdf-dialog-policy.ps1), [실제 함수 테스트](../../tests/windows-pdf-dialog-policy.test.ps1), [UIA 관측](../../scripts/windows-pdf-dialog-observation.ps1) | 실제 helper가 같은 함수를 사용. 합성 PID/HWND·의미 입력은 native 성공 증거가 아님 |
 | Windows 작은 OS 관측 | [probe](../../tests/gui/windows-dialog/probe.ps1), [workflow](../../.github/workflows/alhangeul-windows-dialog.yml), [메시지 adapter](../../scripts/windows-pdf-win32.ps1) | 제어된 WinForms 저장창의 확인창까지 관측하며 Yes는 실행하지 않음. 실제 앱·PDF·overwrite 수용과 별개 |
 | Windows 작은 통합 | [확인창 adapter](../../scripts/windows-pdf-confirmation.ps1), [integration](../../tests/gui/windows-dialog/integration.ps1) | 실제 helper와 같은 확인창 처리를 사용. 공개 sentinel의 열기·새 저장·overwrite·거절/취소·잘못된 target 거부를 검사하며 제품/PDF 수용은 아님 |
-| Windows 실제 설치본 | [spec](../../tests/gui/specs/windows-pdf.e2e.ts), [workflow](../../.github/workflows/alhangeul-windows-pdf.yml) | open-only/full PDF 모드. 새 확인창 adapter의 설치본 검증은 아직 미실행; 미지원 capability는 안전하게 중단 |
+| Windows 실제 설치본 | [spec](../../tests/gui/specs/windows-pdf.e2e.ts), [workflow](../../.github/workflows/alhangeul-windows-pdf.yml) | open-only/full PDF 모드. 새 adapter에서 fresh 두 문서 저장 통과; restart는 실제 확인창의 InvokePattern 미지원으로 중단. 전체 수용은 미완료 |
 | Linux native UI | [AT-SPI adapter](../../tests/gui/linux/native-ui/atspi.mjs), [사후 조건](../../tests/gui/linux/native-ui/action-postcondition.mjs), [spec](../../tests/gui/specs/linux-native.e2e.ts) | Windows ID/class 가정을 Linux에 이식하지 않음; 각 테스트의 실행 환경을 확인 |
 
 Windows PowerShell 5.1의 순수 함수 테스트 진입점은 `pnpm run test:gui:windows:policy`다.
@@ -132,8 +132,10 @@ Windows PowerShell 5.1의 순수 함수 테스트 진입점은 `pnpm run test:gu
 경우에만 지정 sentinel을 쓴다. No 후 저장창 복귀·Cancel 결과와 세 파일의 보존을 별도 검사한다.
 현재 제어된 WinForms fixture의 다섯 사례와 cleanup은 모두 통과했다. UIA/native class를
 동일시한 검사 오류를 진단하고 native 기대값을 관측된 `Button`으로 보정한 결과다.
-UIA `CCPushButton` 조건과 다른 안전장치는 유지한다. 실제 Alhangeul 설치본에서의 확인창
-capability·PDF 저장은 별도 검증 대상이며 이 작은 통합 성공으로 대체하지 않는다.
+UIA `CCPushButton` 조건과 다른 안전장치는 유지한다. 후속 실제 Alhangeul 검증에서는 같은
+UIA class/command ID가 Pane으로 노출되고 지원 pattern 목록이 비어 있어 overwrite가 중단됐다.
+작은 host의 성공을 실제 앱의 capability 지원으로 일반화하지 않는다. 이 차이가 해소되기 전
+동일 전체 PDF 실행을 반복하지 않고 실제 앱의 해당 확인창으로 진단 범위를 좁힌다.
 
 native 재검증 오류의 `nativeFailure`는 실제 승인 판정에 쓴 snapshot에서 나온다.
 `checks`/`failedChecks`와 `classes.nativeButtonClass`를 보고, UIA 관측의 `class`와 구분한다.
@@ -144,12 +146,22 @@ native 재검증 오류의 `nativeFailure`는 실제 승인 판정에 쓴 snapsh
 확인창 adapter는 관측된 영문 대체 질문·정확한 파일명·저장창 owner·PID·enabled·유일한
 UIA `CCPushButton`·native `Button`·실제 InvokePattern을 검사한다. 문구가 다른 언어나 pattern이 없는 경우에는
 명시적으로 실패한다. 파일명의 공백/구두점을 바꾸어 다른 파일과 일치시키지 않는다.
-legacy IDYES·다른 메시지 API로 fallback하지 않는다. 실제 제품의 capability는 작은 fixture와
-다를 수 있으며 설치본 통합에서 따로 확인해야 한다. Invoke 호출 성공 뒤에도 파일·창 상태를
+legacy IDYES·다른 메시지 API로 fallback하지 않는다. 실제 제품에서 관측한 pattern 미지원은
+현재 adapter의 알려진 공백이다. 다음 adapter는 제품의 native 속성·지원 API를 별도 확인하고
+승인받아 구현한다. Invoke 호출 성공 뒤에도 파일·창 상태를
 검증한다. 공급자에 따라 호출이 차단될 수 있어 helper/step 상한과 독립 cleanup을 유지한다.
 ([Microsoft Invoke 계약](https://learn.microsoft.com/en-us/dotnet/api/system.windows.automation.invokepattern.invoke))
 최신 실행 결과는 [사건 기록](../../mydocs/troubleshootings/task_m010_19_windows_pdf_automation.md)에 둔다.
 Pester/PSScriptAnalyzer는 설치하지 않는다. Node 소스 계약을 PS 실행으로 세지 않는다.
+
+실제 앱 확인창만 관측하려면 승인된 Desktop dispatcher의 `windows-pdf-dialog-probe`를 쓴다.
+기존 exact 제품 SHA와 native run ID를 전달하며 설치·driver 준비는 기존 경로를 재사용한다.
+공개 HWP 한 개와 고유 시험 target을 사용해 Save 확인창까지 도달하되 Yes/No는 누르지 않는다.
+`confirmation-probe-Save.json`의 `confirmationObservation.buttons`에서 UIA type/pattern과
+native class/control ID·dialog 활성 상태·guard 관측을 따로 확인한다. `observed`는 관측 완료이며
+버튼 실행·PDF·취소 수용이 아니다. 앱 정리 뒤 별도 hash 검사로 두 파일의 보존을 확인한다.
+이 mode는 HWPX/restart/전체 PDF 분석을 실행하지 않는다. 미지원 확인창을 바로 승인하는
+fallback은 추가하지 않으며 관측 뒤 사용할 API와 안전 조건을 별도 승인받는다.
 
 ## 새 helper·Action 변경의 완료 기준
 

@@ -1,7 +1,7 @@
 . (Join-Path $PSScriptRoot 'windows-pdf-dialog-observation.ps1')
 . (Join-Path $PSScriptRoot 'windows-pdf-native-diagnostics.ps1')
 
-function Get-PdfConfirmationSnapshot($Dialog, $Intent, $Action) {
+function Get-PdfConfirmationObservation($Dialog, $Intent, $Action) {
   if ($Action -notin @('Confirm', 'Decline')) { throw 'Invalid confirmation action.' }
   $handle = $Dialog.Current.NativeWindowHandle
   $owned = [PdfDialogNative]::OwnsConfirmation([IntPtr]$Intent.SaveHandle, [IntPtr]$handle, $Intent.ProcessId)
@@ -32,7 +32,12 @@ function Get-PdfConfirmationSnapshot($Dialog, $Intent, $Action) {
     $node
   })
   $expected = @{ Id = $id; ProcessId = $Intent.ProcessId; DialogHandle = $handle }
-  $selected = Select-PdfConfirmationButton $candidates $expected
+  return @{ Candidates = $candidates; Expected = $expected }
+}
+
+function Get-PdfConfirmationSnapshot($Dialog, $Intent, $Action) {
+  $observation = Get-PdfConfirmationObservation $Dialog $Intent $Action
+  $selected = Select-PdfConfirmationButton $observation.Candidates $observation.Expected
   return $selected.Element
 }
 

@@ -17,8 +17,8 @@ export function readPdfInputs(env = process.env) {
   const buildRef = required('PDF_BUILD_REF');
   if (!/^[0-9a-f]{40}$/.test(buildRef)) throw new Error('Invalid PDF_BUILD_REF');
   const scenario = env.PDF_SCENARIO ?? 'pdf';
-  if (scenario !== 'pdf' && scenario !== 'open-only') throw new Error('Invalid PDF_SCENARIO');
-  if (scenario === 'open-only' && phase !== 'fresh') throw new Error('Open probe requires fresh phase');
+  if (!['pdf', 'open-only', 'confirmation-probe'].includes(scenario)) throw new Error('Invalid PDF_SCENARIO');
+  if (scenario !== 'pdf' && phase !== 'fresh') throw new Error('Probe requires fresh phase');
   return {
     phase, buildRef, scenario,
     appPath: absolute('PDF_APP_PATH'),
@@ -45,7 +45,8 @@ const capabilities: TauriCapabilities[] = [{
 }];
 export const config: WebdriverIO.Config = {
   runner: 'local',
-  specs: [join(import.meta.dirname, 'specs/windows-pdf.e2e.ts')],
+  specs: [join(import.meta.dirname, inputs.scenario === 'confirmation-probe'
+    ? 'specs/windows-confirmation-probe.e2e.ts' : 'specs/windows-pdf.e2e.ts')],
   maxInstances: 1,
   capabilities,
   services: [['@wdio/tauri-service', service]],

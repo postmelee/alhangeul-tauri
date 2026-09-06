@@ -7,17 +7,19 @@ GitHub Issue: [#19](https://github.com/postmelee/alhangeul-tauri/issues/19)
 
 helper가 성공을 반환해도 다른 문서가 열리거나 요청과 다른 파일명으로 저장되었다.
 열기 보정 이후 최초 HWP/HWPX PDF 생성은 통과했으나 재실행 덮어쓰기 확인창에서 중단했다.
-최신 전체 run은 실패이며, 아래 해결 상태는 경계별로 구분한다.
+최신 전체 run `34049930142`도 실패다. 새 확인창 adapter는 실제 앱이 InvokePattern을
+제공하지 않아 호출 전에 중단했다. 아래 해결 상태는 경계별로 구분한다.
 
 ## 재현 조건
 
 - 관측 환경: GitHub hosted `windows-2025`, Windows NSIS 설치본,
   `tauri-driver 2.0.6`, `@wdio/tauri-service 1.3.0`.
-- 최신 전체 run의 WebView2 보고 버전: `151.0.4129.101`.
+- 이전 전체 run `34043594332`의 WebView2 보고 버전: `151.0.4129.101`.
   runner label은 고정 OS image build를 뜻하지 않는다. 언어/DPI의 별도 검증 근거는 없다.
 - 제품 SHA: `69b22650df96323a2c59e473d474ed3195cc9cc7`.
   기존 installer artifact run: `34021920074`.
-- 열기 성공·최신 전체 실행 harness: `903164b428a4d19265f7d078a85323596261a7c2`.
+- 이전 열기 성공 harness: `903164b428a4d19265f7d078a85323596261a7c2`.
+  최신 전체 실행 harness: `23b631d03ee84cce631c3e798ffb4875d39297bc`.
 - 입력은 저장소의 공개 HWP/HWPX fixture 복사본이다. 개인 문서는 사용하지 않았다.
 
 현재 판정 함수의 빠른 재현:
@@ -38,8 +40,9 @@ pnpm run test:gui:windows:contracts
 | helper 성공인데 HWPX 대신 이전 HWP가 열림 | ID `1`이 `UIItem`과 `Button` 양쪽에 존재; ID-only `FindFirst`는 파일 항목을 고를 수 있었음 | ID/class·범위·중복 검사와 최종 문서 identity를 모두 유지 |
 | 입력칸이 보이지만 UIA focus/pattern이 안 됨 | 관측된 control이 기대 pattern을 제공하지 않음; 표시된 ControlType만으로 조작 방식을 추정했음 | 관측 capability 기반 adapter와 focus/readback/실제 결과를 구분 |
 | 입력 문자열 readback 후에도 다른 파일명/문서 | readback은 텍스트 상태만 확인하며 실제 dialog 선택·처리 완료의 증거가 아님 | 실제 경로·title 사후 조건 추가; 문자열 확인만으로 성공 금지 |
-| 재시작 Save에서 `Unsupported overwrite confirmation controls` | 당시 helper는 ID `6`/class `Button`만 실행했지만 실제 확인창은 `CommandButton_6/7`, UIA class `CCPushButton`으로 관측 | 새 adapter의 작은 통합은 통과; 실제 제품 capability/수용 검증은 별도 |
+| 재시작 Save에서 `Unsupported overwrite confirmation controls` | 당시 helper는 ID `6`/class `Button`만 실행했지만 실제 확인창은 `CommandButton_6/7`, UIA class `CCPushButton`으로 관측 | ID 교체만으로 해결하지 않고 의미·대상·capability를 확인 |
 | 작은 확인창에서 native 재검증 실패 | UIA class `CCPushButton`을 native에도 요구했으나 실제 native class는 `Button`; 다른 12개 guard는 통과 | UIA/native 속성을 별도로 관측·검증하고 같은 판정 snapshot에서 실패 조건 기록 |
+| 새 adapter에서 `Confirmation InvokePattern unsupported.` | 작은 WinForms host는 Button/InvokePattern을 제공하지만 실제 앱의 두 command는 Pane, `patterns=[]` | 실제 host의 capability 차이를 별도 경계로 취급; native guard/호출 성공을 추정하지 않음 |
 
 관측한 ID/class는 이 runner의 사실이며 Windows 공통 API 계약으로 일반화하지 않는다.
 Yes/No 모양만으로 덮어쓰기라고 단정하지 않는다. 실제 확인창 대상·소유 관계를 검증하는
@@ -49,11 +52,12 @@ adapter를 구현하기 전에는 무조건 Yes 또는 숫자 ID 교체로 우�
 
 - **열기: 이전 harness 검증됨.** `903164b`에서 ID AND class `Button`, 중복 거부를 적용했다.
   focus·입력·native submit 뒤 spec이 clean title을 정확히 검사한다.
-- **최초 PDF 생성: 해당 시나리오 통과.** HWP 6쪽/HWPX 10쪽의 정확한 title,
-  파일 생성, source hash·dirty 보존이 최신 전체 실행의 fresh 결과에 기록되었다.
-  후속 PDF 내용/렌더 분석은 실행되지 않았으므로 PDF 품질 전체 통과로 쓰지 않는다.
-- **제품 재실행 덮어쓰기: 새 adapter 미검증.** 이전 전체 run은 HWP의 첫 확인창에서 실패했다.
-  HWPX restart와 전체 PDF 분석은 미실행이다. 제품 저장 결함이 확인된 것은 아니다.
+- **최초 PDF 생성: 해당 시나리오 통과.** 최신 전체 실행에서 HWP 6쪽/HWPX 10쪽의 정확한
+  title·파일 생성·source hash·dirty 보존을 확인했다. 두 PDF의 별도 분석/시각 관측은 아래
+  Stage 4.19에 둔다. 원격 전체 PDF 분석과 재실행 수용의 통과로 쓰지 않는다.
+- **제품 재실행 덮어쓰기: 새 adapter의 미지원 capability 확인.** HWP 첫 확인창에서
+  InvokePattern이 없어 안전하게 중단했다. HWPX restart와 원격 전체 PDF 분석은 미실행이다.
+  제품 저장 결함이 확인된 것은 아니다.
 - **판단 분리: Stage 4.17 Windows 검사 28개 통과.** 실제 helper의 순수 함수와 PS5.1
   실행 테스트를 연결했다. ID/class 충돌의 관측값을 재사용하고 PID/HWND는 합성한다.
   클릭 직전 UIA 재조회와 native 재검증을 추가했으므로 이전 open-only 성공을 새 helper의
@@ -63,6 +67,53 @@ adapter를 구현하기 전에는 무조건 Yes 또는 숫자 ID 교체로 우�
   수집하며, 이 결과가 확인창 실행 adapter의 다음 승인 근거다.
 - **작은 OS 통합: Stage 4.18 완료.** `d553f8e`에서 열기·새 저장·덮어쓰기·No/Cancel·
   잘못된 target 거부와 공개 fixture의 파일 사후 조건·cleanup이 모두 통과했다. 제품/PDF 성공은 아니다.
+
+### Stage 4.19 실제 설치본 — InvokePattern 미지원 확인
+
+[run 34049930142](https://github.com/postmelee/alhangeul-tauri/actions/runs/34049930142),
+harness `23b631d03ee84cce631c3e798ffb4875d39297bc`의 Windows job은 14분 13초에 실패했다.
+4.18 이후 제품/helper/workflow 변경은 없고 승인·상태 문서만 변경했다.
+기존 제품 SHA/native run은 위와 같다. artifact `9986364323`의 provenance·digest·inventory와
+NSIS 설치가 통과했으며 제품을 재빌드하지 않았다.
+
+- fresh HWP/HWPX: 정확한 clean title에서 시작해 편집 입력·PDF 저장·source hash/dirty 보존을
+  통과했다. 입력은 DOM event이며 physical IME나 동시 편집 검사가 아니다.
+- HWP restart: 정확한 문서를 열었으나 Save helper의 `confirming-overwrite`에서
+  `Confirmation InvokePattern unsupported.`로 중단했다. `CommandButton_6/7`은 모두
+  `CCPushButton`, enabled, `ControlType.Pane`, `patterns=[]`로 기록됐다.
+- 실패 위치는 `Select-PdfConfirmationButton`이다. 소유·의미 판정을 거쳐 후보 capability에서
+  거부됐고 `ValidateCommand`/실제 Invoke는 호출되지 않았다. `nativeFailure=null`은 native
+  guard 통과를 뜻하지 않는다. 실제 native button class/ID의 실행 적합성은 여전히 미확정이다.
+- HWPX restart와 Ubuntu analyze job은 skipped다. `windows-pdf-summary.json`은 없다.
+  NSIS cleanup과 WebView2 정책 복구는 passed다. 수집된 source 두 개·기존 target PDF 두 개의
+  SHA-256이 fresh 기록과 그대로 일치함을 추가 확인했다. restart 저장 성공은 아니다.
+- raw artifact `9994424240`, `windows-pdf-raw-34049930142`, 3737995 bytes,
+  digest `sha256:896c6d18fb71c69d2b9b9b483f6d7371f75dc5798c0bec6e5764976b56b9f71c`.
+  로컬 증거는 `/private/tmp/alhangeul-pdf-stage419.Zyl9q7`에 보존했다. raw 자료는 커밋하지 않는다.
+
+부분 PDF 검토: 이미 Windows에서 생성된 `biz-plan-hwp-fresh.pdf`, `form-hwpx-fresh.pdf`만
+로컬 Poppler 26.07.0과 기존 `analyzePdf()`로 검사했다. Mac 제품 실행/build가 아니며
+skipped된 원격 analyze의 성공으로 기록하지 않는다. 두 PDF hash가 evidence와 일치하고,
+쪽수 6/10·A4·`PDF검증` 검색·쪽별 text·nonblank·페이지 가장자리 clipping 검사가 통과했다.
+HWP text counts는 `[50,642,410,638,478,250]`, HWPX는
+`[994,1257,1005,1029,1010,1184,971,1185,982,1132]`다.
+
+`partial-analysis/pdf/`의 16쪽 PNG를 모두 열람했다. 빈 쪽·전면적인 문자 깨짐은 없고,
+HWP 본문/표는 판독 가능하다. HWPX 1/3/5/7/9쪽 상단 표의 긴 프로젝트 문구 등이 오른쪽
+셀 경계에 밀착한다. 페이지 가장자리 검사로 셀 내부 잘림까지 보장할 수 없으므로 원본 앱의
+같은 위치/기준 출력과 대조하기 전에는 조판 전체 정상 또는 신규 PDF 결함으로 단정하지 않는다.
+제공된 앱 screenshot은 2쪽 일부여서 이 상단 표의 대조 근거가 아니다.
+
+Stage 4.19는 미완료다. 완료 보고서·완료 커밋·새 원격 실행은 보류했다.
+다음 승인 권고는 **같은 실제 앱의 확인창만 대상으로 native 속성/호출 경로를 확정하는 최소
+진단**이다. 기존 bytes·공개 fixture를 재사용하고 PDF 전 사례·제품 build는 반복하지 않는다.
+관측 없이 BM_CLICK/TDM_CLICK_BUTTON/다른 API를 순차 시도하거나 Invoke 조건만 삭제하지 않는다.
+이 제한된 진단/보정 계획과 HWPX 표의 원본 대조 범위를 승인받은 뒤 진행한다.
+
+후속 승인으로 Stage 4.20의 실제 확인창 관측-only mode를 구현했다. HWP 한 개와 사전 생성한
+sentinel만 사용하고 확인 버튼은 호출하지 않는다. 기존 의미/owner 관측과 native guard snapshot을
+재사용해 UIA pattern, native class/ID, dialog 활성 상태를 함께 수집한다. 기존 Invoke 정책은
+바꾸지 않았다. HWPX 원본 대조는 제외했다. 실제 관측·호출 지원 판단은 원격 결과를 기다린다.
 
 ### Stage 4.18 작은 통합 — class 비교 보정 후 완료
 
@@ -207,6 +258,7 @@ readback·재조회/native 검증·제출을 확인했다. 시험 파일 hash �
 | [34048114390](https://github.com/postmelee/alhangeul-tauri/actions/runs/34048114390), harness `f198449` | PS 50개·Open/Fresh·cleanup 통과; Overwrite native 재검증 실패, Invoke/Decline/WrongTarget 미실행 |
 | [34048778670](https://github.com/postmelee/alhangeul-tauri/actions/runs/34048778670), harness `5096438` | PS 정책 50개·진단 22개·Open/Fresh·cleanup 통과; native class만 불일치 확인, 통합은 실패 유지 |
 | [34049005561](https://github.com/postmelee/alhangeul-tauri/actions/runs/34049005561), harness `d553f8e` | PS 정책 50개·진단 22개·통합 5개·cleanup 통과; 실제 제품/PDF는 미실행 |
+| [34049930142](https://github.com/postmelee/alhangeul-tauri/actions/runs/34049930142), harness `23b631d` | fresh 두 문서 저장 통과; 실제 HWP restart 확인창의 Invoke 미지원으로 실패, HWPX restart/원격 analyze skipped; fresh PDF만 별도 로컬 분석 |
 
 2026-09-06 작업지시자는 실제 Windows NSIS에서 두 문서의 PDF 저장·검색·쪽 수·시각 확인,
 원본 보존과 재실행 덮어쓰기를 문제없이 완료했다고 보고했다. 해당 수동 근거는 유지한다.

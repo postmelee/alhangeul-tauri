@@ -6,6 +6,9 @@ on:
       open_only:
         type: boolean
         default: false
+      confirmation_probe:
+        type: boolean
+        default: false
       build_ref:
         required: true
         type: string
@@ -16,6 +19,10 @@ on:
     inputs:
       open_only:
         description: Diagnose document opening only, without PDF export
+        type: boolean
+        default: false
+      confirmation_probe:
+        description: Observe one installed-app Save confirmation without invoking Yes or No
         type: boolean
         default: false
       build_ref:
@@ -45,10 +52,14 @@ jobs:
       PDF_BUILD_REF: ${{ inputs.build_ref }}
       NATIVE_RUN_ID: ${{ inputs.native_run_id }}
       ACCEPTANCE_REF: ${{ github.workflow_sha }}
+      PDF_SCENARIO: ${{ inputs.confirmation_probe && 'confirmation-probe' || inputs.open_only && 'open-only' || 'pdf' }}
     steps:
       - name: Validate inputs
         shell: pwsh
+        env:
+          PROBE_CONFLICT: ${{ inputs.open_only && inputs.confirmation_probe }}
         run: |
+          if ($env:PROBE_CONFLICT -eq 'true') { throw 'Probe modes are mutually exclusive' }
           if ($env:PDF_BUILD_REF -cnotmatch '^[0-9a-f]{40}$') { throw 'Invalid build_ref' }
           if ($env:NATIVE_RUN_ID -notmatch '^[1-9][0-9]*$') { throw 'Invalid native_run_id' }
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -63,6 +74,20 @@ jobs:
           @{ acceptanceRef = $env:ACCEPTANCE_REF; buildRef = $env:PDF_BUILD_REF;
              nativeRunId = $env:NATIVE_RUN_ID; runId = $env:GITHUB_RUN_ID } |
             ConvertTo-Json | Set-Content "$env:EVIDENCE_ROOT/workflow-context.json"
+      - name: Check confirmation probe PowerShell before installation
+        if: ${{ inputs.confirmation_probe }}
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Get-ChildItem scripts/windows-pdf-*.ps1 | ForEach-Object {
+            $parseErrors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$null, [ref]$parseErrors) | Out-Null
+            if ($parseErrors.Count) { throw "PowerShell parse failure: $($_.Name)" }
+          }
+          & powershell.exe -NoProfile -File tests/windows-pdf-dialog-policy.test.ps1 -EvidencePath "$env:EVIDENCE_ROOT/policy.json"
+          if ($LASTEXITCODE -ne 0) { throw 'Policy tests failed' }
+          & powershell.exe -NoProfile -File tests/windows-pdf-native-diagnostics.test.ps1 -EvidencePath "$env:EVIDENCE_ROOT/native-diagnostics.json"
+          if ($LASTEXITCODE -ne 0) { throw 'Native diagnostics tests failed' }
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "24"
@@ -116,10 +141,9 @@ jobs:
           PDF_APP_PATH: ${{ steps.install.outputs.app_path }}
           PDF_OUTPUT_DIR: ${{ env.EVIDENCE_ROOT }}
           PDF_FIXTURE_ROOT: ${{ github.workspace }}
-          PDF_SCENARIO: ${{ inputs.open_only && 'open-only' || 'pdf' }}
         run: |
           $env:PDF_DRIVER_PATH = Join-Path $env:USERPROFILE '.cargo\bin\tauri-driver.exe'
-          $phases = if ($env:PDF_SCENARIO -eq 'open-only') { @('fresh') } else { @('fresh', 'restart') }
+          $phases = if ($env:PDF_SCENARIO -ne 'pdf') { @('fresh') } else { @('fresh', 'restart') }
           foreach ($phase in $phases) {
             $env:PDF_PHASE = $phase
             pnpm exec wdio run tests/gui/wdio.windows-pdf.conf.ts
@@ -137,6 +161,17 @@ jobs:
         if: ${{ always() && steps.policy.outcome != 'skipped' }}
         shell: pwsh
         run: ./scripts/updater/windows-webview2-automation-policy.ps1 -Phase Cleanup -OutputDirectory $env:EVIDENCE_ROOT
+      - name: Verify probe files after app cleanup
+        if: ${{ always() && inputs.confirmation_probe && steps.install.outcome == 'success' }}
+        shell: pwsh
+        run: |
+          $evidence = Get-Content "$env:EVIDENCE_ROOT/confirmation-probe.json" -Raw | ConvertFrom-Json
+          if ($evidence.status -ne 'observed') { throw 'Confirmation probe incomplete' }
+          $source = (Get-FileHash "$env:EVIDENCE_ROOT/confirmation-probe-source.hwp" -Algorithm SHA256).Hash
+          $target = (Get-FileHash "$env:EVIDENCE_ROOT/confirmation-probe-target.pdf" -Algorithm SHA256).Hash
+          if ($source -ne $evidence.sourceHash -or $target -ne $evidence.targetHash) { throw 'Probe file changed' }
+          @{ status = 'passed'; sourceUnchanged = $true; targetUnchanged = $true; pdfTested = $false } |
+            ConvertTo-Json | Set-Content "$env:EVIDENCE_ROOT/confirmation-probe-cleanup.json"
       - name: Upload raw evidence
         if: ${{ always() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -148,7 +183,7 @@ jobs:
 
   analyze:
     needs: windows-pdf
-    if: ${{ !inputs.open_only }}
+    if: ${{ !inputs.open_only && !inputs.confirmation_probe }}
     runs-on: ubuntu-22.04
     timeout-minutes: 10
     steps:

@@ -97,6 +97,17 @@ Test-Case 'real Win32 invalid handles reject without a UI action' {
   Assert-Equal ([PdfDialogNative]::OwnsConfirmation([IntPtr]::Zero, [IntPtr]::Zero, 0)) $false
 }
 
+Test-Case 'read-only command probe reports invalid handles without performing an action' {
+  $result = [PdfDialogNative]::ReadCommandProbe([IntPtr]::Zero, [IntPtr]::Zero, [IntPtr]::Zero, 0)
+  Assert-Equal $result.nativeControlId 0
+  Assert-Equal $result.dialogThreadObserved $false
+  Assert-Equal $result.dialogActive $false
+  Assert-Equal $result.buttonClassMatches $false
+  foreach ($key in $guardKeys) {
+    if ($result[$key] -isnot [bool]) { throw 'Probe guard was not a boolean.' }
+  }
+}
+
 $failed = @($cases | Where-Object { -not $_.passed })
 @{ schemaVersion = 1; kind = 'native-guard-diagnostics'; passed = $failed.Count -eq 0;
    cases = @($cases.ToArray()); nativeUiTested = $false; invalidHandlesTested = $true } |

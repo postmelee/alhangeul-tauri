@@ -18,6 +18,7 @@ on:
           - updater-linux-window-verify
           - windows-pdf-acceptance
           - windows-pdf-open-probe
+          - windows-pdf-dialog-probe
           - windows-dialog-probe
           - windows-dialog-verify
       build_ref:
@@ -1407,13 +1408,14 @@ jobs:
 
   windows-pdf-acceptance:
     name: Verify existing Windows product PDF export
-    if: ${{ inputs.mode == 'windows-pdf-acceptance' || inputs.mode == 'windows-pdf-open-probe' }}
+    if: ${{ inputs.mode == 'windows-pdf-acceptance' || inputs.mode == 'windows-pdf-open-probe' || inputs.mode == 'windows-pdf-dialog-probe' }}
     permissions:
       actions: read
       contents: read
     uses: ./.github/workflows/alhangeul-windows-pdf.yml
     with:
       open_only: ${{ inputs.mode == 'windows-pdf-open-probe' }}
+      confirmation_probe: ${{ inputs.mode == 'windows-pdf-dialog-probe' }}
       build_ref: ${{ inputs.acceptance_candidate_sha }}
       native_run_id: ${{ inputs.acceptance_d1_run_id }}
 

@@ -137,6 +137,10 @@ public static class PdfDialogNative {
     throw error;
   }
   public static void ValidateCommand(IntPtr save, IntPtr confirm, IntPtr button, uint pid) {
+    var checks = ReadCommandChecks(save, confirm, button, pid);
+    RequireCommandChecks(checks);
+  }
+  public static Dictionary<string, object> ReadCommandChecks(IntPtr save, IntPtr confirm, IntPtr button, uint pid) {
     var checks = ReadConfirmationChecks(save, confirm, pid);
     uint buttonPid;
     GetWindowThreadProcessId(button, out buttonPid);
@@ -147,7 +151,19 @@ public static class PdfDialogNative {
     checks["buttonClassMatches"] = buttonClass == "Button";
     checks["buttonEnabled"] = IsWindowEnabled(button);
     checks["nativeButtonClass"] = buttonClass;
-    RequireCommandChecks(checks);
+    return checks;
+  }
+  public static Dictionary<string, object> ReadCommandProbe(IntPtr save, IntPtr confirm, IntPtr button, uint pid) {
+    var checks = ReadCommandChecks(save, confirm, button, pid);
+    checks["nativeControlId"] = GetDlgCtrlID(button);
+    uint observedPid;
+    var thread = GetWindowThreadProcessId(confirm, out observedPid);
+    var info = new GuiThreadInfo();
+    info.cbSize = (uint)Marshal.SizeOf(typeof(GuiThreadInfo));
+    var observed = thread != 0 && observedPid == pid && GetGUIThreadInfo(thread, ref info);
+    checks["dialogThreadObserved"] = observed;
+    checks["dialogActive"] = observed && info.hwndActive == confirm;
+    return checks;
   }
 }
 '@

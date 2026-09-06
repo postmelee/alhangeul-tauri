@@ -10,6 +10,36 @@ GitHub Issue: [#19](https://github.com/postmelee/alhangeul-tauri/issues/19)
 
 ## 단계 개요
 
+### 2026-09-07 Stage 4.20 실제 앱 확인창 최소 진단 승인
+
+작업지시자가 4.19의 Invoke 미지원 결과 뒤 실제 앱 확인창만 대상으로 하는 최소 진단을
+승인했다. 같은 issue/branch에서 미커밋 실패 기록을 보존한다. 제품 SHA/native run/artifact는
+4.19와 같으며 유효성 재확인 뒤 기존 bytes를 설치한다.
+
+- 기존 PDF reusable/dispatcher에 `windows-pdf-dialog-probe`를 추가한다. 한 fresh session에서
+  공개 HWP 복사본만 열고 새로 만든 sentinel `.pdf`에 저장 요청한다. 실제 PDF 생성·marker 입력·
+  HWPX·restart·Ubuntu analyze는 실행하지 않는다. 기존 driver/설치/권한/cleanup 경계를 재사용한다.
+- 별도 짧은 spec은 기존 dialog helper에 관측-only switch를 전달한다. helper는 기존 파일·Save
+  의도·정확한 prompt/target·owner/PID를 검사한 뒤 두 command의 UIA/native 속성만 수집하고
+  `observed`를 반환한다. 확인창 Yes/No를 호출하지 않는다. sentinel/source hash 불변을 확인하며
+  modal/앱 종료는 기존 설치본 cleanup에 맡긴다. 이것을 사용자 Cancel 성공으로 기록하지 않는다.
+- 기존 확인창 adapter의 관측 부분과 native snapshot을 실행 부분에서 추출해 함께 사용한다.
+  Invoke 조건/guard는 유지한다. native class·control ID·dialog 활성 상태·13개 guard,
+  UIA type/pattern을 허용된 구조로 기록하며 원문 prompt·문서 본문·경로는 새 진단에 넣지 않는다.
+- 예상 파일: 기존 `scripts/windows-pdf-{dialog,confirmation,win32}.ps1`, 새
+  `scripts/windows-pdf-confirmation-probe.ps1`, 새 `tests/gui/specs/windows-confirmation-probe.e2e.ts`,
+  기존 Wdio config/두 workflow/focused 계약. 새 파일 300 LOC·함수 50 LOC 이내.
+  기존 대형 dispatcher/계약 suite는 이번 진단에 필요한 연결만 추가하며 구조 분리하지 않는다.
+- 검증: focused Windows contracts·GUI typecheck·workflow/handoff contracts·actionlint·diff,
+  Windows PS5.1 parser 및 기존 policy/native 진단 tests를 원격 probe의 사전 단계로 연결한다.
+  checkpoint commit/push 후 원격 진단 한 번. 관측 결과와 호출 성공을 구분하며 API 변경/전체
+  재실행은 별도 승인이다. 기존 가이드·사건 기록·plans/orders 및 진단 완료 시 4.20 보고서만 갱신한다.
+- HWPX 표의 원본 대조는 이번 확인창 진단에 섞지 않고 미확정 관측으로 유지한다.
+
+구현 후 focused Node 계약 51개, workflow/handoff 계약 76개(중복 import 포함), GUI typecheck,
+actionlint와 diff 검사가 통과했다. 실제 PS/C#·앱 관측은 아직 원격 실행 전이다. 기존 artifact의
+SHA/digest/크기와 유효성도 다시 확인했다. checkpoint 게시 후 관측-only 한 번을 실행한다.
+
 ### 2026-09-07 Stage 4.19 기존 설치본 전체 PDF 검증 승인
 
 작업지시자가 Stage 4.18 결과 뒤 `진행해줘`로 기존 설치본의 실제 HWP/HWPX PDF 전체 검증을
@@ -31,6 +61,16 @@ GitHub Issue: [#19](https://github.com/postmelee/alhangeul-tauri/issues/19)
   변경 없는 로컬 suite와 작은 Windows 통합을 반복하지 않는다.
 - 제외: 제품 재빌드·MSI/썸네일/updater 반복·릴리즈/배포·Mac native 검증. 환경 준비용 기존
   driver 설치는 Windows job에서 그대로 수행한다. 실패하면 증거를 분류하고 자동 보정/재시도하지 않는다.
+
+결과: harness `23b631d03ee84cce631c3e798ffb4875d39297bc`, run `34049930142`는 실패했다.
+HWP 6쪽/HWPX 10쪽 fresh 저장·source/dirty 보존은 통과했으나 실제 HWP restart 확인창의
+InvokePattern 미지원으로 호출 전 중단했다. 작은 WinForms fixture와 실제 앱의 capability 차이를
+확인했으며 native button guard까지 도달하지 않았다. HWPX restart·원격 analyze는 skipped다.
+NSIS cleanup·WebView2 정책 복구는 통과했다. 전체 PDF summary/단계 완료 보고는 만들지 않는다.
+받아둔 fresh PDF 두 개만 로컬 Poppler 26.07.0으로 별도 분석했다. hash·검색 marker·쪽수/A4·
+쪽별 text·blank/page-edge 검사는 통과했고 16쪽 PNG를 열람했다. HWPX 홀수 쪽 상단 표의 긴
+문구가 우측 셀 경계에 밀착하는 관측은 원본 대비 미확정으로 남긴다. Mac 앱 검증은 아니다.
+상세 근거·다음 승인 범위는 [사건 기록](../troubleshootings/task_m010_19_windows_pdf_automation.md)에 둔다.
 
 ### 2026-09-07 Stage 4.18 확인창 adapter·작은 통합 승인
 

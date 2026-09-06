@@ -42,7 +42,7 @@ test('Windows PDF workflow는 read-only dispatch와 기존 exact artifact만 사
 test('등록된 dispatcher는 PDF 전용 reusable workflow에 기존 artifact identity만 전달한다', () => {
   assert.match(workflow, /workflow_call:\n    inputs:\n      open_only:/);
   const job = dispatcher.split('\n  windows-pdf-acceptance:\n')[1].split('\n  updater-linux-window-probe:')[0];
-  assert.match(job, /if: \$\{\{ inputs.mode == 'windows-pdf-acceptance' \|\| inputs.mode == 'windows-pdf-open-probe' \}\}/);
+  assert.match(job, /if: \$\{\{ inputs.mode == 'windows-pdf-acceptance' \|\| inputs.mode == 'windows-pdf-open-probe' \|\| inputs.mode == 'windows-pdf-dialog-probe' \}\}/);
   assert.match(job, /uses: \.\/.github\/workflows\/alhangeul-windows-pdf.yml/);
   assert.match(job, /build_ref: \$\{\{ inputs.acceptance_candidate_sha \}\}/);
   assert.match(job, /native_run_id: \$\{\{ inputs.acceptance_d1_run_id \}\}/);
@@ -184,8 +184,8 @@ test('Small Windows job runs real PS5.1 assertions then controlled observation w
 
 test('Open probe is distinct from PDF acceptance and focuses filename before editing', () => {
   assert.match(dispatcher, /open_only: \$\{\{ inputs.mode == 'windows-pdf-open-probe' \}\}/);
-  assert.match(workflow, /if: \$\{\{ !inputs.open_only \}\}/);
-  assert.match(workflow, /\$phases = if \(\$env:PDF_SCENARIO -eq 'open-only'\) \{ @\('fresh'\) \}/);
+  assert.match(workflow, /if: \$\{\{ !inputs.open_only && !inputs.confirmation_probe \}\}/);
+  assert.match(workflow, /\$phases = if \(\$env:PDF_SCENARIO -ne 'pdf'\) \{ @\('fresh'\) \}/);
   assert.match(spec, /pdfTested: false/);
   const probe = spec.slice(spec.indexOf("if (inputs.scenario === 'open-only')"), spec.indexOf('await insertMarker()'));
   assert.match(probe, /continue;/);
@@ -216,6 +216,40 @@ test('Controlled observation preserves its provenance and differs from product c
     assert.deepEqual(button.patterns, [10000]);
   }
   assert.ok(fixture.confirmation.every((button) => button.Type === 'ControlType.Pane'));
+});
+
+test('Actual app confirmation probe is observation only, isolated from complete PDF acceptance (static contract)', async () => {
+  const probe = await readFile(new URL('../scripts/windows-pdf-confirmation-probe.ps1', import.meta.url), 'utf8');
+  const probeSpec = await readFile(new URL('./gui/specs/windows-confirmation-probe.e2e.ts', import.meta.url), 'utf8');
+  const config = await readFile(new URL('./gui/wdio.windows-pdf.conf.ts', import.meta.url), 'utf8');
+  assert.match(dispatcher, /confirmation_probe: \$\{\{ inputs.mode == 'windows-pdf-dialog-probe' \}\}/);
+  assert.match(workflow, /Probe modes are mutually exclusive/);
+  assert.match(workflow, /Parser\]::ParseFile/);
+  assert.match(workflow, /windows-pdf-native-diagnostics.test.ps1 -EvidencePath/);
+  assert.match(workflow, /Verify probe files after app cleanup/);
+  assert.match(workflow, /if \(\$source -ne \$evidence.sourceHash -or \$target -ne \$evidence.targetHash\)/);
+  assert.match(config, /inputs.scenario === 'confirmation-probe'\s+\? 'specs\/windows-confirmation-probe.e2e.ts'/);
+  assert.match(config, /scenario !== 'pdf' && phase !== 'fresh'/);
+  assert.match(probeSpec, /item.id === 'biz-plan-hwp'/);
+  assert.match(probeSpec, /flag: 'wx'/);
+  assert.match(probeSpec, /expect\(await hash\(target\)\).toBe\(evidence.targetHash\)/);
+  assert.match(probeSpec, /expect\(await hash\(source\)\).toBe\(evidence.sourceHash\)/);
+  assert.doesNotMatch(probeSpec, /reloadSession|insertMarker|InputEvent|__TAURI_INTERNALS__/);
+  assert.match(probe, /Get-PdfConfirmationObservation/);
+  assert.match(probe, /Assert-PdfCandidateIdentity/);
+  assert.match(probe, /ReadCommandProbe/);
+  assert.match(probe, /GetSupportedPatterns/);
+  assert.match(probe, /commandInvoked = \$false; pdfTested = \$false/);
+  assert.doesNotMatch(probe, /\.Invoke\(|::Click\(|Invoke-PdfConfirmation|PostMessage|SendKeys|\.Name\b|TargetPath/);
+  const branch = dialog.split('if ($ConfirmationProbe) {')[1].split("$buttonMethod = Invoke-PdfConfirmation")[0];
+  assert.match(branch, /Read-PdfConfirmationProbe/);
+  assert.match(branch, /Write-Evidence 'observed' \$null\s+return/);
+  assert.match(dialog, /\$ConfirmationProbe -and -not \$allowOverwrite/);
+  const nativeProbe = native.split('public static Dictionary<string, object> ReadCommandProbe')[1].split("\n}\n'@")[0];
+  assert.match(nativeProbe, /ReadCommandChecks/);
+  assert.match(nativeProbe, /GetDlgCtrlID\(button\)/);
+  assert.match(nativeProbe, /info.hwndActive == confirm/);
+  assert.doesNotMatch(nativeProbe, /PostMessage|ControlMessage|SetTextMessage|RequireCommandChecks/);
 });
 
 test('PDF evidence validator rejects missing, failed, wrong SHA and incomplete overwrite results', () => {
