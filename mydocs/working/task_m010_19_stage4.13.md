@@ -42,3 +42,21 @@ open-only 진단을 한 번 실행한다. 전체 PDF workflow를 반복하지 �
 ## 승인 상태
 
 작업지시자가 native 포커스 보정과 진단 재실행을 승인했다.
+
+## 원격 결과 — 포커스 확인 통과, 문서 선택 불일치 유지
+
+[run 34040941920](https://github.com/postmelee/alhangeul-tauri/actions/runs/34040941920),
+harness `66f6a67`, open-only 실행 결과 failure. 2026-09-07 KST 결과를 확인했다.
+
+- 첫 HWP: filenameFocused=true, Win32-EditReplaceSelection, Win32-BM_CLICK,
+  정확한 `source-biz-plan-hwp.hwp - Alhangeul` identity 통과.
+- 두 번째 HWPX: filenameFocused=true, Win32-EditReplaceSelection, UIA-InvokePattern,
+  실제 title은 다시 `source-biz-plan-hwp.hwp - Alhangeul`이며 identity 실패.
+- 두 helper 모두 submitted=true, dialogCount=0, additionalDialog=none이다.
+- PID는 각각 3024/8352로 달랐다. 포커스 이동만으로 문제는 해결되지 않았다.
+- PDF 생성/분석은 실행하지 않았으며 cleanup/정책 복원/증거 업로드는 통과했다.
+- 로컬 증거: `/private/tmp/alhangeul-native-focus.Ehd8Nh`.
+
+후속 조사 변수는 제출 경로(UIA Invoke 대 Win32 BM_CLICK)다. 첫/두 번째 문서와 제출 방식이
+동시에 달라 인과관계를 확정할 수 없다. 검증된 HWND의 동일 native 제출 경로로 비교하는
+open-only 실험이 가능하다. 사용자 수동 통과 증거를 변경하지 않는다.
