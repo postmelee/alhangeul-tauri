@@ -35,23 +35,35 @@ function Get-PdfConfirmationObservation($Dialog, $Intent, $Action) {
   return @{ Candidates = $candidates; Expected = $expected }
 }
 
-function Get-PdfConfirmationSnapshot($Dialog, $Intent, $Action) {
-  $observation = Get-PdfConfirmationObservation $Dialog $Intent $Action
-  $selected = Select-PdfConfirmationButton $observation.Candidates $observation.Expected
-  return $selected.Element
+function Get-PdfConfirmationPair($Dialog, $Intent, $Action) {
+  $otherAction = if ($Action -eq 'Confirm') { 'Decline' } else { 'Confirm' }
+  $first = Get-PdfConfirmationObservation $Dialog $Intent $Action
+  $second = Get-PdfConfirmationObservation $Dialog $Intent $otherAction
+  $selected = Select-PdfConfirmationCandidate $first.Candidates $first.Expected
+  $other = Select-PdfConfirmationCandidate $second.Candidates $second.Expected
+  return @{ Selected = $selected; Other = $other; Method = (Get-PdfConfirmationMethod $selected $other) }
 }
 
 function Invoke-PdfConfirmation($Dialog, $Intent, $Action) {
-  $button = Get-PdfConfirmationSnapshot $Dialog $Intent $Action
+  $pair = Get-PdfConfirmationPair $Dialog $Intent $Action
   # Re-read meaning, ownership and candidate identity immediately before invoking.
-  $current = Get-PdfConfirmationSnapshot $Dialog $Intent $Action
-  if (-not [System.Windows.Automation.Automation]::Compare($button, $current)) {
-    throw 'Confirmation button changed before invocation.'
+  $current = Get-PdfConfirmationPair $Dialog $Intent $Action
+  foreach ($key in @('Selected', 'Other')) {
+    if ($pair[$key].NativeHandle -ne $current[$key].NativeHandle -or
+        -not [System.Windows.Automation.Automation]::Compare($pair[$key].Element, $current[$key].Element)) {
+      throw 'Confirmation button changed before invocation.'
+    }
+  }
+  if ($pair.Method -cne $current.Method) { throw 'Confirmation capability changed before invocation.' }
+  if ($current.Method -ceq 'Win32-BM_CLICK-command') {
+    [PdfDialogNative]::ClickCommand([IntPtr]$Intent.SaveHandle, [IntPtr]$Dialog.Current.NativeWindowHandle,
+      [IntPtr]$current.Selected.NativeHandle, [IntPtr]$current.Other.NativeHandle, [uint32]$Intent.ProcessId)
+    return $current.Method
   }
   [PdfDialogNative]::ValidateCommand([IntPtr]$Intent.SaveHandle, [IntPtr]$Dialog.Current.NativeWindowHandle,
-    [IntPtr]$current.Current.NativeWindowHandle, [uint32]$Intent.ProcessId)
+    [IntPtr]$current.Selected.NativeHandle, [uint32]$Intent.ProcessId)
   $pattern = $null
-  if (-not $current.TryGetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern, [ref]$pattern)) {
+  if (-not $current.Selected.Element.TryGetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern, [ref]$pattern)) {
     throw 'Confirmation InvokePattern unsupported.'
   }
   $pattern.Invoke()

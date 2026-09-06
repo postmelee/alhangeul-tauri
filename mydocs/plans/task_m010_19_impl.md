@@ -10,6 +10,41 @@ GitHub Issue: [#19](https://github.com/postmelee/alhangeul-tauri/issues/19)
 
 ## 단계 개요
 
+### 2026-09-07 Stage 4.21 native 호출 보정·실제 앱 제한 검증 승인
+
+작업지시자가 4.20의 후속 권고를 승인했다. clean `local/task19`와 열린 #19/M010을 유지하며
+신규 issue/branch 생성·devel 재통합은 하지 않는다. 기존 제품 SHA `69b22650df96323a2c59e473d474ed3195cc9cc7`,
+native run `34021920074`/Windows artifact `9986364323`을 유효성 재확인 후 재사용한다.
+
+- 공유 확인창 adapter는 기존 의미/정확한 target·owner/PID·command 유일성/재조회를 유지한다.
+  UIA Invoke를 지원하면 기존 경로를 사용하며, 관측된 Pane/Invoke 미지원인 경우에만 native
+  `Button` HWND에 `BM_CLICK`을 게시한다. 실패 뒤 다른 API로 재시도하지 않는다.
+- 두 command의 서로 다른 nonzero HWND와 재조회 동일성, 각각의 native guard 및 dialog 활성
+  상태를 확인한다. 숫자 ID 0/6/7로 탐색하지 않는다. 메시지 게시와 실제 저장/취소를 구분한다.
+  비활성·모호한 후보·wrong target은 fail-closed이며 전역 키/좌표/강제 활성화는 추가하지 않는다.
+- 기존 reusable/dispatcher에 `windows-pdf-dialog-verify` mode를 연결한다. 한 fresh session에서
+  공개 HWP 복사본 한 개만 열어 Decline, WrongTarget 거부 후 Decline, Confirm을 검사한다.
+  두 거절은 저장창 복귀·Cancel·sentinel/source/다른 target 불변, 확인은 같은 sentinel의 PDF
+  교체·저장 완료·clean title·원본/다른 target 보존과 출력 header/EOF를 검사한다.
+  시험 target은 고유 output에 새로 만들며 사용자 문서를 덮어쓰지 않는다.
+- 기존 관측-only spec은 유지한다. 새 짧은 spec/거절 helper를 기존 PDF helper에 연결한다.
+  앱 정리 뒤 expected source/target/other hash를 다시 검사한다. raw 증거와 실패 업로드를 유지한다.
+- 예상 수정: 기존 policy/observation/confirmation/Win32/dialog 및 진단 필터, 새
+  `scripts/windows-pdf-confirmation-verify.ps1`, `tests/gui/specs/windows-confirmation-verify.e2e.ts`,
+  기존 config/두 workflow/PS·Node 계약. 새 파일 300 LOC/함수 50 LOC 이내. 기존 대형
+  dispatcher/계약 suite와 dialog 상태 루프는 필요한 연결만 추가하며 이 크기 예외를 유지한다.
+- 검증: focused Node 계약·GUI typecheck·workflow/handoff 계약·actionlint·diff. 원격 설치 전에
+  PS5.1 parser·실제 policy/native 진단 테스트로 중복 HWND/미지원 capability/비활성/guard 거부를
+  검사한다. checkpoint commit/push 후 실제 앱 제한 run 한 번. 실패 시 원인/증거를 기록하고
+  같은 전체 테스트 반복·임의 API 변경은 하지 않는다.
+- 문서 위치는 승인된 기존 가이드/사건 기록/plans/orders와 성공 시 Stage 4.21 보고서다.
+  제품 재빌드·HWPX·restart·편집/IME·전체 PDF 품질/Ubuntu 분석·MSI/썸네일/updater/릴리즈는 제외한다.
+  HWPX 표 대조와 4.19/#19 전체 수용은 이 단계 성공 여부와 별개로 남긴다.
+
+구현 후 로컬 focused 계약 53개·workflow/handoff 78개(중복 import 포함), GUI typecheck,
+actionlint·diff 검사가 통과했다. artifact metadata의 SHA/digest/크기·미만료 상태를 재확인했다.
+원격 PS5.1/native 실행과 실제 확인창 호출은 아직 검증 전이며 checkpoint 게시 후 한 번 실행한다.
+
 ### 2026-09-07 Stage 4.20 실제 앱 확인창 최소 진단 승인
 
 작업지시자가 4.19의 Invoke 미지원 결과 뒤 실제 앱 확인창만 대상으로 하는 최소 진단을

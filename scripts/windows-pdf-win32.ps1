@@ -165,6 +165,26 @@ public static class PdfDialogNative {
     checks["dialogActive"] = observed && info.hwndActive == confirm;
     return checks;
   }
+  public static void RequireCommandPairChecks(Dictionary<string, object> selected, Dictionary<string, object> other) {
+    RequireCommandChecks(selected);
+    RequireCommandChecks(other);
+    if (ChecksPass(selected, new[] { "buttonsDistinct", "dialogThreadObserved", "dialogActive" })) return;
+    var error = new Exception("Confirmation native pair or active state mismatch");
+    error.Data["PdfConfirmationNative"] = selected;
+    throw error;
+  }
+  public static void ValidateCommandPair(IntPtr save, IntPtr confirm, IntPtr button, IntPtr other, uint pid) {
+    var checks = ReadCommandProbe(save, confirm, button, pid);
+    checks["buttonsDistinct"] = button != IntPtr.Zero && other != IntPtr.Zero && button != other;
+    RequireCommandPairChecks(checks, ReadCommandChecks(save, confirm, other, pid));
+  }
+  public static void ClickCommand(IntPtr save, IntPtr confirm, IntPtr button, IntPtr other, uint pid) {
+    ValidateCommandPair(save, confirm, button, other, pid);
+    // Post once to the revalidated HWND, never to an inferred numeric control ID.
+    // Posting is not proof of a click/save; the caller must verify UI/file postconditions.
+    if (!PostMessage(button, 0x00F5, IntPtr.Zero, IntPtr.Zero))
+      throw new Exception("Confirmation BM_CLICK posting failed");
+  }
 }
 '@
 

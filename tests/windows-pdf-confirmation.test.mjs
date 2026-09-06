@@ -17,8 +17,8 @@ test('Actual PDF helper and controlled integration share the guarded confirmatio
   assert.match(support, /Invoke-PdfConfirmation \$extra\[0\] \$Intent \$action/);
   assert.match(adapter, /Get-PdfOverwriteDecision \$context/);
   assert.match(adapter, /Test-PdfReplacePrompt/);
-  assert.match(adapter, /Select-PdfConfirmationButton/);
-  assert.match(adapter, /Automation\]::Compare\(\$button, \$current\)/);
+  assert.match(adapter, /Select-PdfConfirmationCandidate/);
+  assert.match(adapter, /Automation\]::Compare\(\$pair\[\$key\].Element, \$current\[\$key\].Element\)/);
   assert.match(adapter, /ValidateCommand/);
   assert.match(adapter, /TryGetCurrentPattern/);
   assert.match(adapter, /Confirmation InvokePattern unsupported/);
@@ -29,6 +29,25 @@ test('Actual PDF helper and controlled integration share the guarded confirmatio
   assert.match(native, /"saveDisabled", !IsWindowEnabled\(save\)/);
   assert.match(native, /"confirmationEnabled", IsWindowEnabled\(confirm\)/);
   assert.match(native, /checks\["buttonIsChild"\] = IsChild\(confirm, button\)/);
+});
+
+test('Native confirmation route is selected before invocation and revalidates distinct active controls', async () => {
+  const policy = await read('../scripts/windows-pdf-dialog-policy.ps1');
+  assert.match(adapter, /Get-PdfConfirmationMethod \$selected \$other/);
+  assert.match(adapter, /\$pair.Method -cne \$current.Method/);
+  assert.match(adapter, /\$pair\[\$key\].NativeHandle -ne \$current\[\$key\].NativeHandle/);
+  assert.match(policy, /\$Selected.NativeHandle -eq \$Other.NativeHandle/);
+  assert.match(policy, /if \(\$Selected.SupportsInvoke\) \{ return 'UIA-InvokePattern' \}/);
+  assert.match(policy, /\$Selected.Type -cne 'ControlType.Pane'/);
+  const invoke = adapter.split('function Invoke-PdfConfirmation')[1].split('function Close-PdfFileDialog')[0];
+  assert.match(invoke, /ClickCommand\(/);
+  assert.doesNotMatch(invoke, /catch|SetActiveWindow|GetDlgCtrlID|TDM_CLICK_BUTTON/);
+  const click = native.split('public static void ClickCommand')[1];
+  assert.ok(click.indexOf('ValidateCommandPair(') < click.indexOf('PostMessage('));
+  assert.match(click, /PostMessage\(button, 0x00F5, IntPtr.Zero, IntPtr.Zero\)/);
+  assert.doesNotMatch(click, /GetDlgCtrlID|GetDlgItem|SetActiveWindow|ControlMessage/);
+  assert.match(native, /RequireCommandChecks\(other\)/);
+  assert.match(native, /"buttonsDistinct", "dialogThreadObserved", "dialogActive"/);
 });
 
 test('Native diagnostics preserve the guard and share a filtered exception extractor', async () => {

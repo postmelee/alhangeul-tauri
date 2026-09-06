@@ -17,7 +17,7 @@ function Get-PdfButtonObservation($Element) {
   return [pscustomobject]@{ Id = $info.AutomationId; Class = $info.ClassName;
     ProcessId = $info.ProcessId; DialogProcessId = $dialogProcessId;
     DialogHandle = $dialogHandle; NativeHandle = $info.NativeWindowHandle;
-    Enabled = $info.IsEnabled; Element = $Element }
+    Enabled = $info.IsEnabled; Type = $info.ControlType.ProgrammaticName; Element = $Element }
 }
 
 function Find-PdfNativeButton($Root, $Id, $AppProcessId) {

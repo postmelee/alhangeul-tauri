@@ -169,6 +169,19 @@ UIA Invoke 호출 실패 후 다른 API를 차례로 시도하지 않고, capabi
 이 경로는 아직 구현/검증하지 않았다. API 후보에 대한 추론과 실제 호출 지원은 구분한다.
 Stage 4.19/#19 전체 수용, HWPX 표 대조, 전체 PDF 재실행은 미완료/별도 승인으로 유지한다.
 
+### Stage 4.21 실제 앱 native 호출 보정 — 구현, 원격 검증 대기
+
+후속 승인에 따라 기존 의미/target·owner·유일한 UIA command와 native guard를 유지한
+HWND `BM_CLICK` 경로를 구현했다. Invoke 지원 시 기존 경로를 사용하고, 두 command가
+Pane/Invoke 미지원일 때만 native 경로를 선택한다. 두 HWND의 nonzero·구별·재조회 동일성,
+각 native guard·dialog 활성 상태를 확인한다. native 숫자 ID는 선택 근거로 사용하지 않는다.
+메시지 게시 후 다른 API로 재시도하지 않는다. 원격 성공 근거는 아직 없다.
+
+`windows-pdf-dialog-verify`는 실제 앱·공개 HWP 한 개에서 Decline, WrongTarget 거부 뒤
+Decline, Confirm을 검사한다. No 후 저장창 복귀·Cancel·앱 이전 상태 복구·세 파일 보존,
+확인 후 PDF header/EOF·저장 완료·원본/다른 target 보존을 구분한다. 형식 외 쪽수/검색/조판,
+HWPX/restart/전체 PDF 수용은 이번에 실행하지 않는다. 기존 cleanup 뒤 hash 검사도 유지한다.
+
 ### Stage 4.18 작은 통합 — class 비교 보정 후 완료
 
 4.17에서 관측한 InvokePattern만 사용하는 확인창 adapter를 실제 PDF helper와 작은 통합에

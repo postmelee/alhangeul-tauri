@@ -15,6 +15,11 @@ function Get-PdfNativeFailure($ErrorRecord) {
         } else { $null }
       }
       $classes = @{}
+      foreach ($key in @('buttonsDistinct', 'dialogThreadObserved', 'dialogActive')) {
+        if ($snapshot.ContainsKey($key)) {
+          $checks[$key] = if ($snapshot[$key] -is [bool]) { $snapshot[$key] } else { $null }
+        }
+      }
       foreach ($key in @('nativeSaveClass', 'nativeConfirmationClass', 'nativeButtonClass')) {
         $value = if ($snapshot.ContainsKey($key)) { $snapshot[$key] } else { $null }
         $classes[$key] = if ($value -is [string] -and $value -cmatch '\A[A-Za-z0-9_#.:\-]{0,128}\z') {

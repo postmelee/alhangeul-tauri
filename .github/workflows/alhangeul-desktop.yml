@@ -19,6 +19,7 @@ on:
           - windows-pdf-acceptance
           - windows-pdf-open-probe
           - windows-pdf-dialog-probe
+          - windows-pdf-dialog-verify
           - windows-dialog-probe
           - windows-dialog-verify
       build_ref:
@@ -1408,7 +1409,7 @@ jobs:
 
   windows-pdf-acceptance:
     name: Verify existing Windows product PDF export
-    if: ${{ inputs.mode == 'windows-pdf-acceptance' || inputs.mode == 'windows-pdf-open-probe' || inputs.mode == 'windows-pdf-dialog-probe' }}
+    if: ${{ inputs.mode == 'windows-pdf-acceptance' || inputs.mode == 'windows-pdf-open-probe' || inputs.mode == 'windows-pdf-dialog-probe' || inputs.mode == 'windows-pdf-dialog-verify' }}
     permissions:
       actions: read
       contents: read
@@ -1416,6 +1417,7 @@ jobs:
     with:
       open_only: ${{ inputs.mode == 'windows-pdf-open-probe' }}
       confirmation_probe: ${{ inputs.mode == 'windows-pdf-dialog-probe' }}
+      confirmation_verify: ${{ inputs.mode == 'windows-pdf-dialog-verify' }}
       build_ref: ${{ inputs.acceptance_candidate_sha }}
       native_run_id: ${{ inputs.acceptance_d1_run_id }}
 

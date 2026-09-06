@@ -148,11 +148,12 @@ native 재검증 오류의 `nativeFailure`는 실제 승인 판정에 쓴 snapsh
 합성 조건·실패 추출과 HWND 0의 거부를 검사하며, 실제 버튼 호출 검증을 대체하지 않는다.
 
 확인창 adapter는 관측된 영문 대체 질문·정확한 파일명·저장창 owner·PID·enabled·유일한
-UIA `CCPushButton`·native `Button`·실제 InvokePattern을 검사한다. 문구가 다른 언어나 pattern이 없는 경우에는
-명시적으로 실패한다. 파일명의 공백/구두점을 바꾸어 다른 파일과 일치시키지 않는다.
-legacy IDYES·다른 메시지 API로 fallback하지 않는다. 실제 제품에서 관측한 pattern 미지원은
-현재 adapter의 알려진 공백이다. 다음 adapter는 제품의 native 속성·지원 API를 별도 확인하고
-승인받아 구현한다. Invoke 호출 성공 뒤에도 파일·창 상태를
+UIA `CCPushButton`·native `Button`을 검사한다. 호출 전에 실제 Invoke 지원 여부로 경로를
+선택한다. Invoke를 지원하면 기존 경로를 쓰고, 두 command가 관측된 Pane/Invoke 미지원 형태일
+때만 native HWND 경로를 선택한다. 두 nonzero HWND의 구별·재조회 동일성과 각각의 native
+guard·활성 dialog를 추가 검사한다. 다른 형태/언어와 모호한 identity는 명시적으로 실패한다.
+파일명의 공백/구두점을 바꾸어 다른 파일과 일치시키지 않는다. legacy 숫자 ID나 호출 실패 뒤
+다른 API로 fallback하지 않는다. 호출 성공 뒤에도 파일·창 상태를
 검증한다. 공급자에 따라 호출이 차단될 수 있어 helper/step 상한과 독립 cleanup을 유지한다.
 ([Microsoft Invoke 계약](https://learn.microsoft.com/en-us/dotnet/api/system.windows.automation.invokepattern.invoke))
 최신 실행 결과는 [사건 기록](../../mydocs/troubleshootings/task_m010_19_windows_pdf_automation.md)에 둔다.
@@ -171,11 +172,19 @@ fallback은 추가하지 않으며 관측 뒤 사용할 API와 안전 조건을 
 활성 dialog였지만 UIA Invoke는 여전히 없고 native ID 조회는 0이었다. source/target 보존과
 cleanup은 통과했다. raw 수치 HWND와 상호 동일성은 진단에 없으므로 두 command가 별개의
 native control인지까지 입증한 것은 아니다. 이 관측만으로 클릭 지원을 선언하지 않는다.
-후속 후보인 HWND 대상 `BM_CLICK`은 native class에 근거한 선택이며 아직 구현/검증 전이다.
-도입한다면 정확한 UIA command와 현재 HWND의 대응·두 command의 구별·의미/owner·활성 상태를
-검증해야 한다. 메시지 자체에는 반환값이 없으므로 전달 결과와 파일/창의 사후 조건을 구분한다.
-현재 승인 범위에는 호출·비활성 창 강제 활성화·다른 API 연쇄 시도가 포함되지 않는다.
+후속 승인으로 HWND 대상 `BM_CLICK` 경로와 실제 앱 제한 검증을 구현했으며 원격 결과는
+아직 확인 전이다. 정확한 UIA command와 현재 HWND의 대응·두 command의 구별·의미/owner·
+활성 상태를 검증한다. 메시지 자체에는 반환값이 없으므로 전달 결과와 파일/창의 사후 조건을
+구분한다. 비활성 창 강제 활성화·다른 API 연쇄 시도는 하지 않는다.
 ([BM_CLICK 계약](https://learn.microsoft.com/en-us/windows/win32/controls/bm-click))
+
+실제 앱 제한 호출 검증은 `windows-pdf-dialog-verify`다. 같은 exact SHA/native run 입력과
+기존 설치 경로를 쓰며 공개 HWP 하나로 Decline, WrongTarget 거부 후 Decline, Confirm을
+실행한다. 앞선 두 사례는 저장창 복귀·Cancel·이전 앱 상태 메시지 복구·세 파일 보존, 마지막은
+sentinel의 PDF 교체·저장 완료·원본/다른 target 보존을 검사한다. source/target/other hash를
+앱 cleanup 뒤 다시 확인한다. `confirmation-verify.json`과 각 helper JSON, cleanup JSON을
+함께 읽는다. PDF header/EOF 검사는 형식의 최소 확인이며 쪽 수·검색·시각 품질 수용이 아니다.
+이 mode는 HWPX/restart/전체 PDF 분석을 실행하지 않으며 기존 관측-only mode와 중복 선택할 수 없다.
 
 ## 새 helper·Action 변경의 완료 기준
 

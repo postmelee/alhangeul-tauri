@@ -145,6 +145,47 @@ Test-Case 'filename whitespace is not normalized into another filename' {
 Test-Case 'filename cannot inject regular expression' {
   Assert-Equal (Test-PdfReplacePrompt 'axb.pdf already exists. Do you want to replace it?' 'a.b.pdf') $false
 }
+
+$yes = $command.Clone(); $yes.Type = 'ControlType.Pane'; $yes.SupportsInvoke = $false
+$no = $yes.Clone(); $no.Id = 'CommandButton_7'; $no.NativeHandle = 102
+Test-Case 'observed Pane pair is eligible for guarded HWND messages, not an OS success' {
+  Assert-Equal (Get-PdfConfirmationMethod $yes $no) 'Win32-BM_CLICK-command'
+  Assert-Equal (Get-PdfConfirmationMethod $no $yes) 'Win32-BM_CLICK-command'
+  Assert-Equal (Select-PdfConfirmationCandidate @($yes) $commandExpected).Id 'CommandButton_6'
+}
+Test-Case 'supported Invoke still selects the original API before any call' {
+  Assert-Equal (Get-PdfConfirmationMethod $command $no) 'UIA-InvokePattern'
+}
+foreach ($field in @('NativeHandle', 'Id')) {
+  Test-Case "confirmation rejects shared $field" {
+    $changed = $no.Clone(); $changed[$field] = $yes[$field]
+    Assert-Rejects { Get-PdfConfirmationMethod $yes $changed } 'Confirmation commands must have distinct identities.'
+  }
+}
+Test-Case 'confirmation rejects absent HWND' {
+  $changed = $no.Clone(); $changed.NativeHandle = 0
+  Assert-Rejects { Get-PdfConfirmationMethod $yes $changed } 'Confirmation commands must have distinct identities.'
+}
+foreach ($value in @($null, 'false')) {
+  foreach ($side in @('selected', 'other')) {
+    Test-Case "confirmation rejects untyped $side capability ($value)" {
+      $a = $yes.Clone(); $b = $no.Clone()
+      if ($side -eq 'selected') { $a.SupportsInvoke = $value } else { $b.SupportsInvoke = $value }
+      Assert-Rejects { Get-PdfConfirmationMethod $a $b } 'Invalid confirmation capability.'
+    }
+  }
+}
+foreach ($side in @('selected', 'other')) {
+  Test-Case "non-Invoke $side with unobserved type is refused" {
+    $a = $yes.Clone(); $b = $no.Clone()
+    if ($side -eq 'selected') { $a.Type = 'ControlType.Button' } else { $b.Type = 'ControlType.Button' }
+    Assert-Rejects { Get-PdfConfirmationMethod $a $b } 'Unsupported native confirmation shape.'
+  }
+}
+Test-Case 'mixed native command family is refused' {
+  $changed = $no.Clone(); $changed.SupportsInvoke = $true
+  Assert-Rejects { Get-PdfConfirmationMethod $yes $changed } 'Unsupported native confirmation shape.'
+}
 $failed = @($cases | Where-Object { -not $_.passed })
 @{ schemaVersion = 1; kind = 'pure-policy'; powerShell = $PSVersionTable.PSVersion.ToString();
    passed = $failed.Count -eq 0; cases = @($cases.ToArray()); nativeUiTested = $false } |

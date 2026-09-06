@@ -9,6 +9,9 @@ on:
       confirmation_probe:
         type: boolean
         default: false
+      confirmation_verify:
+        type: boolean
+        default: false
       build_ref:
         required: true
         type: string
@@ -23,6 +26,10 @@ on:
         default: false
       confirmation_probe:
         description: Observe one installed-app Save confirmation without invoking Yes or No
+        type: boolean
+        default: false
+      confirmation_verify:
+        description: Verify installed-app confirmation commands with one HWP, without full PDF acceptance
         type: boolean
         default: false
       build_ref:
@@ -52,12 +59,12 @@ jobs:
       PDF_BUILD_REF: ${{ inputs.build_ref }}
       NATIVE_RUN_ID: ${{ inputs.native_run_id }}
       ACCEPTANCE_REF: ${{ github.workflow_sha }}
-      PDF_SCENARIO: ${{ inputs.confirmation_probe && 'confirmation-probe' || inputs.open_only && 'open-only' || 'pdf' }}
+      PDF_SCENARIO: ${{ inputs.confirmation_verify && 'confirmation-verify' || inputs.confirmation_probe && 'confirmation-probe' || inputs.open_only && 'open-only' || 'pdf' }}
     steps:
       - name: Validate inputs
         shell: pwsh
         env:
-          PROBE_CONFLICT: ${{ inputs.open_only && inputs.confirmation_probe }}
+          PROBE_CONFLICT: ${{ (inputs.open_only && inputs.confirmation_probe) || (inputs.confirmation_verify && (inputs.open_only || inputs.confirmation_probe)) }}
         run: |
           if ($env:PROBE_CONFLICT -eq 'true') { throw 'Probe modes are mutually exclusive' }
           if ($env:PDF_BUILD_REF -cnotmatch '^[0-9a-f]{40}$') { throw 'Invalid build_ref' }
@@ -74,8 +81,8 @@ jobs:
           @{ acceptanceRef = $env:ACCEPTANCE_REF; buildRef = $env:PDF_BUILD_REF;
              nativeRunId = $env:NATIVE_RUN_ID; runId = $env:GITHUB_RUN_ID } |
             ConvertTo-Json | Set-Content "$env:EVIDENCE_ROOT/workflow-context.json"
-      - name: Check confirmation probe PowerShell before installation
-        if: ${{ inputs.confirmation_probe }}
+      - name: Check confirmation PowerShell before installation
+        if: ${{ inputs.confirmation_probe || inputs.confirmation_verify }}
         shell: powershell
         run: |
           $ErrorActionPreference = 'Stop'
@@ -135,7 +142,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Product metadata fetch failed' }
           $version = (git show "${env:PDF_BUILD_REF}:package.json" | ConvertFrom-Json).version
           ./scripts/updater/windows-native-acceptance.ps1 -Phase Install -Kind nsis -ArtifactRoot $env:ARTIFACT_ROOT -OutputDirectory $env:EVIDENCE_ROOT -ExpectedVersion $version
-      - name: Run fresh and restarted app PDF smoke
+      - name: Run selected installed app scenario
         shell: pwsh
         env:
           PDF_APP_PATH: ${{ steps.install.outputs.app_path }}
@@ -172,6 +179,19 @@ jobs:
           if ($source -ne $evidence.sourceHash -or $target -ne $evidence.targetHash) { throw 'Probe file changed' }
           @{ status = 'passed'; sourceUnchanged = $true; targetUnchanged = $true; pdfTested = $false } |
             ConvertTo-Json | Set-Content "$env:EVIDENCE_ROOT/confirmation-probe-cleanup.json"
+      - name: Verify confirmation files after app cleanup
+        if: ${{ always() && inputs.confirmation_verify && steps.install.outcome == 'success' }}
+        shell: pwsh
+        run: |
+          $evidence = Get-Content "$env:EVIDENCE_ROOT/confirmation-verify.json" -Raw | ConvertFrom-Json
+          if ($evidence.status -ne 'passed') { throw 'Confirmation verification incomplete' }
+          $expected = @{ 'source.hwp' = $evidence.sourceHash; 'target.pdf' = $evidence.finalTargetHash; 'other.pdf' = $evidence.otherHash }
+          foreach ($file in $expected.Keys) {
+            $actual = (Get-FileHash "$env:EVIDENCE_ROOT/confirmation-verify-$file" -Algorithm SHA256).Hash
+            if (-not $expected[$file] -or $actual -ne $expected[$file]) { throw 'Confirmation file changed after cleanup' }
+          }
+          @{ status = 'passed'; sourceUnchanged = $true; targetMatchesConfirmed = $true; otherUnchanged = $true; fullPdfTested = $false } |
+            ConvertTo-Json | Set-Content "$env:EVIDENCE_ROOT/confirmation-verify-cleanup.json"
       - name: Upload raw evidence
         if: ${{ always() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -183,7 +203,7 @@ jobs:
 
   analyze:
     needs: windows-pdf
-    if: ${{ !inputs.open_only && !inputs.confirmation_probe }}
+    if: ${{ !inputs.open_only && !inputs.confirmation_probe && !inputs.confirmation_verify }}
     runs-on: ubuntu-22.04
     timeout-minutes: 10
     steps:

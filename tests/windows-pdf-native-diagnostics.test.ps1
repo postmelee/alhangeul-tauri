@@ -108,6 +108,45 @@ Test-Case 'read-only command probe reports invalid handles without performing an
   }
 }
 
+function New-PairChecks {
+  $checks = New-Checks
+  foreach ($key in @('buttonsDistinct', 'dialogThreadObserved', 'dialogActive')) { $checks[$key] = $true }
+  return ,$checks
+}
+Test-Case 'native pair predicate accepts only complete synthetic guards' {
+  [PdfDialogNative]::RequireCommandPairChecks((New-PairChecks), (New-Checks))
+}
+foreach ($key in @('buttonsDistinct', 'dialogThreadObserved', 'dialogActive')) {
+  foreach ($value in @($false, $null, 'true', 'missing')) {
+    Test-Case "native pair rejects $key ($value)" {
+      $checks = New-PairChecks
+      if ($value -ceq 'missing') { $null = $checks.Remove($key) } else { $checks[$key] = $value }
+      $rejection = $null
+      try { [PdfDialogNative]::RequireCommandPairChecks($checks, (New-Checks)) } catch { $rejection = $_ }
+      if ($null -eq $rejection) { throw 'Unsafe pair accepted.' }
+      if ($value -is [bool]) {
+        Assert-Equal ((Get-PdfNativeFailure $rejection).failedChecks -join ',') $key
+      }
+    }
+  }
+}
+foreach ($key in $guardKeys) {
+  Test-Case "native pair retains counterpart guard $key" {
+    $other = New-Checks; $other[$key] = $false
+    $rejection = $null
+    try { [PdfDialogNative]::RequireCommandPairChecks((New-PairChecks), $other) } catch { $rejection = $_ }
+    if ($null -eq $rejection) { throw 'Invalid counterpart accepted.' }
+    Assert-Equal ((Get-PdfNativeFailure $rejection).failedChecks -join ',') $key
+  }
+}
+Test-Case 'real native pair rejects invalid HWNDs without posting' {
+  $rejection = $null
+  try { [PdfDialogNative]::ValidateCommandPair([IntPtr]::Zero, [IntPtr]::Zero, [IntPtr]::Zero, [IntPtr]::Zero, 0) }
+  catch { $rejection = $_ }
+  if ($null -eq $rejection) { throw 'Invalid HWND pair accepted.' }
+  Assert-Equal (Get-PdfNativeFailure $rejection).checks.buttonsDistinct $false
+}
+
 $failed = @($cases | Where-Object { -not $_.passed })
 @{ schemaVersion = 1; kind = 'native-guard-diagnostics'; passed = $failed.Count -eq 0;
    cases = @($cases.ToArray()); nativeUiTested = $false; invalidHandlesTested = $true } |

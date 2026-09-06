@@ -2,7 +2,8 @@ param(
   [Parameter(Mandatory = $true)][string]$TargetPath,
   [Parameter(Mandatory = $true)][ValidateSet('Open', 'Save')][string]$Mode,
   [Parameter(Mandatory = $true)][string]$EvidencePath,
-  [switch]$ConfirmationProbe
+  [switch]$ConfirmationProbe,
+  [ValidateSet('Confirm', 'Decline', 'WrongTarget')][string]$ConfirmationCase
 )
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
@@ -12,12 +13,16 @@ Add-Type -AssemblyName UIAutomationTypes
 . (Join-Path $PSScriptRoot 'windows-pdf-dialog-observation.ps1')
 . (Join-Path $PSScriptRoot 'windows-pdf-confirmation.ps1')
 . (Join-Path $PSScriptRoot 'windows-pdf-confirmation-probe.ps1')
+. (Join-Path $PSScriptRoot 'windows-pdf-confirmation-verify.ps1')
 $scope = [System.Windows.Automation.TreeScope]::Descendants
 $deadline = [DateTime]::UtcNow.AddSeconds(90)
 $submitted = $false
 $overwriteConfirmed = $false
 $allowOverwrite = $Mode -eq 'Save' -and (Test-Path -LiteralPath $TargetPath -PathType Leaf)
 if ($ConfirmationProbe -and -not $allowOverwrite) { throw 'Probe requires Save with an existing test target.' }
+if ($ConfirmationCase -and ($ConfirmationProbe -or -not $allowOverwrite)) {
+  throw 'Confirmation case requires existing Save target and cannot run with observation mode.'
+}
 $startedAt = [DateTime]::UtcNow
 $stage = 'waiting-dialog'
 $observedTree = @()
@@ -34,6 +39,7 @@ $overwriteDecision = 'not-observed'
 $saveHandle = 0
 $nativeFailure = $null
 $confirmationObservation = $null
+$confirmationVerification = $null
 
 function Write-Evidence($Status, $ErrorText) {
   @{ mode = $Mode; status = $Status; error = $ErrorText; stage = $stage;
@@ -44,6 +50,7 @@ function Write-Evidence($Status, $ErrorText) {
      filenameFocused = $filenameFocused;
      overwriteDecision = $overwriteDecision; nativeFailure = $nativeFailure;
      confirmationObservation = $confirmationObservation;
+     confirmationVerification = $confirmationVerification;
      tree = $observedTree } |
     ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $EvidencePath -Encoding utf8
 }
@@ -162,6 +169,15 @@ try {
           $confirmationObservation = Read-PdfConfirmationProbe $extraDialogs[0] $intent
           $stage = 'observed-confirmation'
           Write-Evidence 'observed' $null
+          return
+        }
+        if ($ConfirmationCase) {
+          $confirmationObservation = Read-PdfConfirmationProbe $extraDialogs[0] $intent
+        }
+        if ($ConfirmationCase -in @('Decline', 'WrongTarget')) {
+          $confirmationVerification = Test-PdfAppDecline $extraDialogs[0] $intent $ConfirmationCase
+          $stage = 'declined-confirmation'
+          Write-Evidence 'cancelled' $null
           return
         }
         $buttonMethod = Invoke-PdfConfirmation $extraDialogs[0] $intent 'Confirm'
