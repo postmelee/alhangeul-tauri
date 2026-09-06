@@ -44,3 +44,19 @@ git diff --check
 ## 승인 상태
 
 이 단계 보정·게시·원격 실행은 승인됨. #19 전체 수용·PR·merge·release 완료는 아니다.
+
+## 원격 실행 결과 — 미완료
+
+- harness `d3d44ebc797254bbe66fc96418ae6606f6ca7d6b`를 publish/task19에 게시했다.
+- [run 34032021269](https://github.com/postmelee/alhangeul-tauri/actions/runs/34032021269)는
+  dispatcher 연결에 성공했고 제품 build/updater/publish 작업은 실행하지 않았다.
+- exact artifact handoff·다운로드·inventory·의존성·driver·WebView2 policy·NSIS 설치는 통과했다.
+- 첫 `biz-plan-hwp` Open 대화상자 자동 조작에서 `Native file dialog timed out.`으로 실패했다.
+  PDF 생성/분석·두 번째 fixture·재시작 검증에는 도달하지 않았다. 제품 PDF 결함을 입증하는 결과가 아니다.
+- 메뉴 제목 탐색은 12:07:55 UTC, 파일 메뉴 클릭은 12:08:15, `file:open` 실제 클릭은
+  12:08:48이었다. helper의 90초 제한은 메뉴 조작 전부터 시작하므로 이 지연도 포함된다.
+  저장된 화면은 WebView만 포함하고 native dialog tree가 없어 정확한 탐색 실패 원인은 미확정이다.
+- raw artifact `windows-pdf-raw-34032021269`에 증거가 보존됐다. 로컬 열람 경로는
+  `/private/tmp/alhangeul-pdf-run.EhdrYb`이다. cleanup `Status=passed`, WebView2 policy `restored=true`.
+- 자동 재실행은 하지 않았다. 후속 권고는 앱 소유 native dialog tree와 helper 진행 상태를
+  기록하고 메뉴 조작 지연과 dialog 제한을 분리하는 좁은 harness 보정이다. 제품 재빌드는 불필요하다.
