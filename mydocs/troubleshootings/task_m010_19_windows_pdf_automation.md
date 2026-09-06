@@ -9,6 +9,8 @@ helper가 성공을 반환해도 다른 문서가 열리거나 요청과 다른 
 열기 보정 이후 최초 HWP/HWPX PDF 생성은 통과했으나 재실행 덮어쓰기 확인창에서 중단했다.
 최신 전체 run `34049930142`도 실패다. 새 확인창 adapter는 실제 앱이 InvokePattern을
 제공하지 않아 호출 전에 중단했다. 아래 해결 상태는 경계별로 구분한다.
+후속 제한 run `34053001644`는 native 거절 경로를 통과했지만 Confirm 전 보조 UIA 트리
+수집 예외로 실패했다. 실제 Confirm의 새 경로 지원은 여전히 미검증이다.
 
 ## 재현 조건
 
@@ -45,6 +47,7 @@ pnpm run test:gui:windows:contracts
 | 작은 확인창에서 native 재검증 실패 | UIA class `CCPushButton`을 native에도 요구했으나 실제 native class는 `Button`; 다른 12개 guard는 통과 | UIA/native 속성을 별도로 관측·검증하고 같은 판정 snapshot에서 실패 조건 기록 |
 | 새 adapter에서 `Confirmation InvokePattern unsupported.` | 작은 WinForms host는 Button/InvokePattern을 제공하지만 실제 앱의 두 command는 Pane, `patterns=[]` | 실제 host의 capability 차이를 별도 경계로 취급; native guard/호출 성공을 추정하지 않음 |
 | UIA command 이름은 6/7인데 native ID 조회는 둘 다 0 | 실제 제품 관측에서 native class/owner/상태는 확인됐으나 ID는 고유 선택 근거가 아님; 조회 실패 여부는 미확정 | UIA ID 숫자를 native ID로 이식하지 않음; HWND 기반 호출은 별도 의미/identity/상태 검증과 승인 필요 |
+| 새 native No는 성공하지만 Confirm 전에 `ElementNotAvailableException` | 보조 `Read-AppTree`의 desktop-wide `FindAll` 오류가 실행 흐름까지 중단; Confirm adapter에는 도달하지 않음 | 보조 진단의 unavailable과 필수 identity 실패를 분리; 진단 예외로 성공/실패를 잘못 승격하지 않음 |
 
 관측한 ID/class는 이 runner의 사실이며 Windows 공통 API 계약으로 일반화하지 않는다.
 Yes/No 모양만으로 덮어쓰기라고 단정하지 않는다. 실제 확인창 대상·소유 관계를 검증하는
@@ -71,6 +74,8 @@ adapter를 구현하기 전에는 무조건 Yes 또는 숫자 ID 교체로 우�
   잘못된 target 거부와 공개 fixture의 파일 사후 조건·cleanup이 모두 통과했다. 제품/PDF 성공은 아니다.
 - **실제 앱 확인창 관측: Stage 4.20 완료.** native `Button`/활성 상태와 13개 guard true,
   UIA Invoke 미지원·native ID 조회 0을 확인했다. 버튼 실행 지원은 여전히 미검증이다.
+- **실제 앱 native 거절: Stage 4.21 일부 통과.** No·저장창 복귀·Cancel·파일 보존과 잘못된
+  target의 호출 전 거부를 검증했다. Confirm은 보조 진단 예외 때문에 호출 전 중단했다.
 
 ### Stage 4.19 실제 설치본 — InvokePattern 미지원 확인
 
@@ -169,18 +174,73 @@ UIA Invoke 호출 실패 후 다른 API를 차례로 시도하지 않고, capabi
 이 경로는 아직 구현/검증하지 않았다. API 후보에 대한 추론과 실제 호출 지원은 구분한다.
 Stage 4.19/#19 전체 수용, HWPX 표 대조, 전체 PDF 재실행은 미완료/별도 승인으로 유지한다.
 
-### Stage 4.21 실제 앱 native 호출 보정 — 구현, 원격 검증 대기
+### Stage 4.21 실제 앱 native 호출 보정 — 거절 통과, Confirm 전 보조 진단 실패
 
 후속 승인에 따라 기존 의미/target·owner·유일한 UIA command와 native guard를 유지한
 HWND `BM_CLICK` 경로를 구현했다. Invoke 지원 시 기존 경로를 사용하고, 두 command가
 Pane/Invoke 미지원일 때만 native 경로를 선택한다. 두 HWND의 nonzero·구별·재조회 동일성,
 각 native guard·dialog 활성 상태를 확인한다. native 숫자 ID는 선택 근거로 사용하지 않는다.
-메시지 게시 후 다른 API로 재시도하지 않는다. 원격 성공 근거는 아직 없다.
+메시지 게시 후 다른 API로 재시도하지 않는다. 아래 원격 결과는 경로별로 구분한다.
 
 `windows-pdf-dialog-verify`는 실제 앱·공개 HWP 한 개에서 Decline, WrongTarget 거부 뒤
 Decline, Confirm을 검사한다. No 후 저장창 복귀·Cancel·앱 이전 상태 복구·세 파일 보존,
 확인 후 PDF header/EOF·저장 완료·원본/다른 target 보존을 구분한다. 형식 외 쪽수/검색/조판,
 HWPX/restart/전체 PDF 수용은 이번에 실행하지 않는다. 기존 cleanup 뒤 hash 검사도 유지한다.
+
+[run 34053001644](https://github.com/postmelee/alhangeul-tauri/actions/runs/34053001644),
+harness `816edd5aa3366a1c88c98e2596952b935eaecbfe`: Windows job **11분 8초 실패**.
+제품 SHA/native run/artifact는 4.20과 같고 재빌드하지 않았다. PS5.1 parser·정책 **62/62**·
+native 진단 **50/50**은 통과했다. 실제 spec은 다음 두 사례만 완료했다.
+
+| 사례 | 실제 결과 |
+|---|---|
+| Decline | `Win32-BM_CLICK-command` No, enabled 저장창 복귀, native ID2 Cancel, dialog 0개, 이전 앱 상태 복구·clean title·세 파일 보존 통과 |
+| WrongTarget | 다른 존재하는 target 요청을 `unknown-prompt`로 호출 전에 거부; 정확한 intent로 No 후 같은 복귀/취소/보존 통과 |
+| Confirm | 저장창 제출 뒤 보조 트리 열거 예외; 확인 버튼/새 native 호출·PDF 생성은 미실행 |
+
+Confirm helper는 2개 dialog를 관측한 뒤 `Read-AppTree`의
+`RootElement.FindAll($scope, $AppCondition)`에서 실패했다. 실행 harness의
+`scripts/windows-pdf-dialog.ps1:59`이며 로그의 `FullyQualifiedErrorId`는
+`ElementNotAvailableException`이다. 호출부는 같은 파일 115행의 보조 `tree` 갱신이다.
+필수 확인창 의미·후보 판정이나 `ClickCommand`의 실패로 해석하지 않는다.
+`status=failed`, `stage=waiting-dialog-close`, `submitted=true`, `dialogCount=2`,
+`overwriteConfirmed=false`, `confirmationObservation=null`, `nativeFailure=null`이다.
+`buttonMethod=Win32-BM_CLICK`은 직전 **저장창 제출** 기록이지 확인 버튼 실행 기록이 아니다.
+
+Microsoft는 이 예외를 더 이상 사용 가능한 UI에 대응하지 않는 요소 접근으로 설명한다.
+따라서 이번 근본 결합 문제는 **보조 진단 열거 오류가 필수 실행까지 중단**한 것이다.
+실제로 사라진 노드나 provider 내부 원인은 현재 로그만으로 확정하지 않는다.
+([ElementNotAvailableException](https://learn.microsoft.com/en-us/dotnet/api/system.windows.automation.elementnotavailableexception))
+desktop root의 전체 하위 탐색은 광범위하다. 상위 window를 찾을 때는 Children을 사용하라는
+공식 권고와, 앱/dialog 범위로 좁힌 후 진단을 수집하는 설계를 후속에 적용한다.
+([FindAll 탐색 범위](https://learn.microsoft.com/en-us/dotnet/api/system.windows.automation.automationelement.findall))
+
+NSIS cleanup과 WebView2 정책 복구는 통과했다. 후속 `Verify confirmation files after app
+cleanup`은 전체 `status=failed`를 보고 hash 비교 전에 거부했다. cleanup 실패나 파일 훼손이
+관측된 것은 아니다. 업로드된 정리 후 세 파일의 SHA-256을 별도 로컬 검사한 결과 최초 값과
+모두 일치한다. `confirmation-verify-cleanup.json`은 없으므로 원격 후속 step 성공으로 기록하지 않는다.
+
+- source HWP (33792 bytes): `8b786d6824622afae2220b203beeef6e5592157e1896fea055ebc602817113c1`.
+- target sentinel (29 bytes): `602e30f3952244156aac2dfdc4f84ac4c07e75adafd0b592a5b83859f8800489`.
+- other sentinel (22 bytes): `24b02870c932659268c975abfe50d39a1867361e942eda30ef25128fd5bf7947`.
+- raw artifact `9995278936`, `windows-pdf-raw-34053001644`, 460297 bytes,
+  digest `sha256:6f84a1583af73414c5541ffc0108e215b9dc3a8afa437811d2188396d3217ff1`.
+  로컬 `/private/tmp/alhangeul-confirmation-stage421.osqT2f`에 보존하고 raw는 커밋하지 않는다.
+
+Stage 4.21은 미완료다. 완료 보고서와 추가 실행을 보류한다. 다음 승인 범위는 **보조 진단
+탐색 축소·ElementNotAvailable 예외 격리·Confirm-only 검증**이다. 진단 수집 불능은 명시하되
+원문 예외/문서 내용을 저장하지 않는다. 필수 의미/target/owner/identity·native guard의 오류는
+그대로 실패시키며 일반 catch-all·무조건 클릭·timeout 증가를 추가하지 않는다. 새 예외 분류를
+실제 PowerShell 함수 회귀로 확인하고, 같은 설치본에서 남은 Confirm만 한 번 검증한다.
+이미 통과한 두 거절 사례를 반복하거나 제품을 재빌드하지 않는 범위로 승인을 요청한다.
+
+후속 `진행해줘`로 같은 4.21의 보정을 승인받았다. 보조 진단은 관측된 dialog 하위 최대 100개
+노드로 줄이고, typed `ElementNotAvailableException`만 제한된 inner chain에서 분류해
+`unavailable`/고정 reason/빈 tree로 기록한다. 예외 문구로 판정하지 않고 부분 snapshot을 버린다.
+필수 dialog/정확한 target/owner/identity/native guard와 클릭 adapter는 그대로 유지한다.
+기존 verify mode의 `confirmation_cases=confirm-only`로 남은 Confirm만 실행하며 선택 범위를
+spec/cleanup 증거에 명시한다. PS 합성 예외 회귀는 실제 wrapper를 호출하고 설치 전에 실행한다.
+이전 실패 run 및 두 거절 결과는 그대로 유지한다. 원격 결과는 검증 뒤 별도로 기록한다.
 
 ### Stage 4.18 작은 통합 — class 비교 보정 후 완료
 
@@ -327,6 +387,7 @@ readback·재조회/native 검증·제출을 확인했다. 시험 파일 hash �
 | [34049005561](https://github.com/postmelee/alhangeul-tauri/actions/runs/34049005561), harness `d553f8e` | PS 정책 50개·진단 22개·통합 5개·cleanup 통과; 실제 제품/PDF는 미실행 |
 | [34049930142](https://github.com/postmelee/alhangeul-tauri/actions/runs/34049930142), harness `23b631d` | fresh 두 문서 저장 통과; 실제 HWP restart 확인창의 Invoke 미지원으로 실패, HWPX restart/원격 analyze skipped; fresh PDF만 별도 로컬 분석 |
 | [34051827068](https://github.com/postmelee/alhangeul-tauri/actions/runs/34051827068), harness `f090ea0` | PS 정책 50개·native 진단 23개·실제 앱 확인창 관측·파일 보존·cleanup 통과; 확인 버튼 호출/PDF 미실행 |
+| [34053001644](https://github.com/postmelee/alhangeul-tauri/actions/runs/34053001644), harness `816edd5` | PS 정책 62개·native 진단 50개·Decline/WrongTarget 통과; Confirm 전 보조 UIA 열거 예외, 세 파일 보존 별도 확인; 전체 제한 검증은 실패 |
 
 2026-09-06 작업지시자는 실제 Windows NSIS에서 두 문서의 PDF 저장·검색·쪽 수·시각 확인,
 원본 보존과 재실행 덮어쓰기를 문제없이 완료했다고 보고했다. 해당 수동 근거는 유지한다.

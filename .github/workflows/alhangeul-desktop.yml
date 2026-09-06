@@ -27,6 +27,14 @@ on:
         required: false
         default: ""
         type: string
+      confirmation_cases:
+        description: Cases for windows-pdf-dialog-verify only; confirm-only reuses prior decline evidence.
+        required: false
+        default: all
+        type: choice
+        options:
+          - all
+          - confirm-only
       run_tests:
         description: Run platform-neutral tests before the native build.
         required: true
@@ -1418,6 +1426,7 @@ jobs:
       open_only: ${{ inputs.mode == 'windows-pdf-open-probe' }}
       confirmation_probe: ${{ inputs.mode == 'windows-pdf-dialog-probe' }}
       confirmation_verify: ${{ inputs.mode == 'windows-pdf-dialog-verify' }}
+      confirmation_cases: ${{ inputs.confirmation_cases || 'all' }}
       build_ref: ${{ inputs.acceptance_candidate_sha }}
       native_run_id: ${{ inputs.acceptance_d1_run_id }}
 

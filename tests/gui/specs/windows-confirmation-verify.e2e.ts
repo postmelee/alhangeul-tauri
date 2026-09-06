@@ -18,14 +18,15 @@ const cases: Record<string, unknown>[] = [];
 const evidence: Record<string, unknown> = {
   schemaVersion: 1, scenario: inputs.scenario, buildRef: inputs.buildRef,
   status: 'failed', fullPdfTested: false, cases,
+  confirmationCases: inputs.confirmationCases, selectedCases: inputs.selectedCases,
 };
 
 describe('Installed app confirmation commands (one HWP)', () => {
-  it('declines, rejects a wrong target, then confirms the exact target', async () => {
+  it(`verifies selected confirmation cases: ${inputs.selectedCases.join(', ')}`, async () => {
     await mkdir(inputs.outputDir, { recursive: true });
     try {
       await prepareDocument();
-      for (const action of ['Decline', 'WrongTarget', 'Confirm'] as const) await exercise(action);
+      for (const action of inputs.selectedCases) await exercise(action);
       evidence.finalTargetHash = await hash(target);
       evidence.status = 'passed';
     } finally {

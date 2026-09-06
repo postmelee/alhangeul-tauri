@@ -1,5 +1,6 @@
 import { isAbsolute, join } from 'node:path';
 import type { TauriCapabilities, TauriServiceOptions } from '@wdio/tauri-service';
+import { selectConfirmationCases } from './support/confirmation-cases.ts';
 
 export function readPdfInputs(env = process.env) {
   const required = (key: string) => {
@@ -19,8 +20,10 @@ export function readPdfInputs(env = process.env) {
   const scenario = env.PDF_SCENARIO ?? 'pdf';
   if (!['pdf', 'open-only', 'confirmation-probe', 'confirmation-verify'].includes(scenario)) throw new Error('Invalid PDF_SCENARIO');
   if (scenario !== 'pdf' && phase !== 'fresh') throw new Error('Probe requires fresh phase');
+  const confirmationCases = env.PDF_CONFIRMATION_CASES ?? 'all';
+  const selectedCases = selectConfirmationCases(scenario, confirmationCases);
   return {
-    phase, buildRef, scenario,
+    phase, buildRef, scenario, confirmationCases, selectedCases,
     appPath: absolute('PDF_APP_PATH'),
     driverPath: absolute('PDF_DRIVER_PATH'),
     outputDir: absolute('PDF_OUTPUT_DIR'),

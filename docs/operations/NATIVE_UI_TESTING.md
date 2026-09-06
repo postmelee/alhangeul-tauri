@@ -61,6 +61,17 @@ Windows/Linux의 대화상자·메시지·버튼 조작을 포함하는 테스�
 - 좌표·전역 키 입력·무조건 Enter/Yes를 실패 우회용으로 추가하지 않는다.
 - 여러 guard를 묶어 검사할 때도 실패한 조건은 식별 가능해야 한다. PID 일치·자식/owner 관계·
   활성 상태·class 일치 여부를 구분하며 임의 예외 메시지나 개인 경로를 진단에 노출하지 않는다.
+- 보조 screenshot/tree 수집 실패와 필수 identity·의미 판정 실패를 구분한다. 진단 중 UI 요소가
+  사라졌다면 수집 불능을 명시하며, 이를 사용자 작업의 성공이나 잘못된 target 승인으로 바꾸지 않는다.
+  desktop 전체 하위 tree 열거 대신 확인된 앱/dialog 범위를 사용한다. `FindAll`의 상위 window
+  검색에는 Children 범위가 권고된다. [탐색 범위 계약](https://learn.microsoft.com/en-us/dotnet/api/system.windows.automation.automationelement.findall)
+- [보조 tree 수집기](../../scripts/windows-pdf-tree-diagnostics.ps1)는 이미 확인한 dialog root 안에서
+  최대 100개 노드만 순회한다. typed `ElementNotAvailableException`만 최대 8단계의
+  InnerException에서 식별하여 `treeDiagnostic.status=unavailable`과 고정 reason을 기록하고
+  부분 노드는 버린다. 문구 비교/catch-all/클릭 재시도는 하지 않는다. 필수 dialog 탐색과
+  의미/대상/owner/identity 판정은 수집기 밖에 두며 오류를 그대로 실패시킨다.
+  [PS 회귀](../../tests/windows-pdf-tree-diagnostics.test.ps1)는 같은 wrapper의 합성 예외를 검사한다.
+  실제 UI 전환 재현과 구분하며 Windows 설치 전 검사에 연결한다.
 
 ### 덮어쓰기와 취소
 
@@ -120,7 +131,7 @@ pnpm run typecheck:gui
 | Windows dialog 판단 | [순수 정책](../../scripts/windows-pdf-dialog-policy.ps1), [실제 함수 테스트](../../tests/windows-pdf-dialog-policy.test.ps1), [UIA 관측](../../scripts/windows-pdf-dialog-observation.ps1) | 실제 helper가 같은 함수를 사용. 합성 PID/HWND·의미 입력은 native 성공 증거가 아님 |
 | Windows 작은 OS 관측 | [probe](../../tests/gui/windows-dialog/probe.ps1), [workflow](../../.github/workflows/alhangeul-windows-dialog.yml), [메시지 adapter](../../scripts/windows-pdf-win32.ps1) | 제어된 WinForms 저장창의 확인창까지 관측하며 Yes는 실행하지 않음. 실제 앱·PDF·overwrite 수용과 별개 |
 | Windows 작은 통합 | [확인창 adapter](../../scripts/windows-pdf-confirmation.ps1), [integration](../../tests/gui/windows-dialog/integration.ps1) | 실제 helper와 같은 확인창 처리를 사용. 공개 sentinel의 열기·새 저장·overwrite·거절/취소·잘못된 target 거부를 검사하며 제품/PDF 수용은 아님 |
-| Windows 실제 설치본 | [spec](../../tests/gui/specs/windows-pdf.e2e.ts), [workflow](../../.github/workflows/alhangeul-windows-pdf.yml) | open-only/full PDF 모드. 새 adapter에서 fresh 두 문서 저장 통과; restart는 실제 확인창의 InvokePattern 미지원으로 중단. 전체 수용은 미완료 |
+| Windows 실제 설치본 | [spec](../../tests/gui/specs/windows-pdf.e2e.ts), [workflow](../../.github/workflows/alhangeul-windows-pdf.yml) | 전체 PDF는 fresh 두 문서 저장 후 restart의 Invoke 미지원으로 중단한 상태. 후속 native 제한 검증의 No/잘못된 target 거부는 통과했으나 Confirm 전 보조 진단 예외; 전체 수용 미완료 |
 | Linux native UI | [AT-SPI adapter](../../tests/gui/linux/native-ui/atspi.mjs), [사후 조건](../../tests/gui/linux/native-ui/action-postcondition.mjs), [spec](../../tests/gui/specs/linux-native.e2e.ts) | Windows ID/class 가정을 Linux에 이식하지 않음; 각 테스트의 실행 환경을 확인 |
 
 Windows PowerShell 5.1의 순수 함수 테스트 진입점은 `pnpm run test:gui:windows:policy`다.
@@ -172,8 +183,8 @@ fallback은 추가하지 않으며 관측 뒤 사용할 API와 안전 조건을 
 활성 dialog였지만 UIA Invoke는 여전히 없고 native ID 조회는 0이었다. source/target 보존과
 cleanup은 통과했다. raw 수치 HWND와 상호 동일성은 진단에 없으므로 두 command가 별개의
 native control인지까지 입증한 것은 아니다. 이 관측만으로 클릭 지원을 선언하지 않는다.
-후속 승인으로 HWND 대상 `BM_CLICK` 경로와 실제 앱 제한 검증을 구현했으며 원격 결과는
-아직 확인 전이다. 정확한 UIA command와 현재 HWND의 대응·두 command의 구별·의미/owner·
+후속 승인으로 HWND 대상 `BM_CLICK` 경로와 실제 앱 제한 검증을 구현했다.
+정확한 UIA command와 현재 HWND의 대응·두 command의 구별·의미/owner·
 활성 상태를 검증한다. 메시지 자체에는 반환값이 없으므로 전달 결과와 파일/창의 사후 조건을
 구분한다. 비활성 창 강제 활성화·다른 API 연쇄 시도는 하지 않는다.
 ([BM_CLICK 계약](https://learn.microsoft.com/en-us/windows/win32/controls/bm-click))
@@ -185,6 +196,20 @@ sentinel의 PDF 교체·저장 완료·원본/다른 target 보존을 검사한�
 앱 cleanup 뒤 다시 확인한다. `confirmation-verify.json`과 각 helper JSON, cleanup JSON을
 함께 읽는다. PDF header/EOF 검사는 형식의 최소 확인이며 쪽 수·검색·시각 품질 수용이 아니다.
 이 mode는 HWPX/restart/전체 PDF 분석을 실행하지 않으며 기존 관측-only mode와 중복 선택할 수 없다.
+
+`confirmation_cases`의 기본값은 `all`이다. 이전 거절 경로 통과 근거가 있고 남은 확인만 검증하도록
+승인받았다면 같은 mode에 `confirmation_cases=confirm-only`를 전달한다. 다른 PDF mode와의 조합은
+거부한다. `confirmation-verify.json`의 `selectedCases`와 실제 `cases`, cleanup의 선택 범위가
+정확히 일치해야 통과한다. 단일 Confirm 결과를 세 사례 일괄 통과 또는 전체 PDF 수용으로 해석하지
+않는다. 서로 다른 실행을 재사용할 때는 각각의 harness SHA/제품 bytes와 변경 경계를 기록한다.
+
+실제 run `34053001644`에서 No·저장창 복귀·Cancel·파일 보존과 wrong-target 호출 전 거부가
+통과했다. Confirm은 기존 보조 `Read-AppTree`의 `FindAll`에서 `ElementNotAvailableException`이
+발생해 호출 전에 중단됐다. 이 예외는 더 이상 사용할 수 없는 UI 요소 접근을 뜻하며 정확히
+어느 요소인지까지 이번 자료가 식별하지는 않는다.
+([예외 계약](https://learn.microsoft.com/en-us/dotnet/api/system.windows.automation.elementnotavailableexception))
+후속 승인으로 위 보조 진단 격리와 Confirm-only 선택을 구현했다. 실제 Windows 결과는 아직
+검증 전이며 실패한 전체 run을 통과로 소급하지 않는다. 필수 판정과 클릭 adapter는 변경하지 않았다.
 
 ## 새 helper·Action 변경의 완료 기준
 

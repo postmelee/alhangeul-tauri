@@ -12,6 +12,33 @@ GitHub Issue: [#19](https://github.com/postmelee/alhangeul-tauri/issues/19)
 
 ### 2026-09-07 Stage 4.21 native 호출 보정·실제 앱 제한 검증 승인
 
+#### 같은 단계의 보조 진단 보정·Confirm-only 후속 승인
+
+작업지시자의 후속 `진행해줘`로 아래 보정을 승인받았다. 이전 실패 기록과 5개 미커밋 문서를
+보존한다. 새 단계/이슈를 만들지 않고 4.21을 계속한다.
+
+- 보조 tree 수집을 작은 `scripts/windows-pdf-tree-diagnostics.ps1`로 분리한다. 이미 관측한
+  dialog root 안에서 최대 100개 노드를 순회하며 desktop 전체를 다시 열거하지 않는다.
+  typed `ElementNotAvailableException` 및 제한된 InnerException 체인만 수집 불능으로 기록한다.
+  노드는 비우고 상태/reason을 명시하며, 다른 예외와 필수 dialog/의미/identity 판정은 그대로 실패한다.
+- 실제 수집 wrapper를 호출하는 `tests/windows-pdf-tree-diagnostics.test.ps1`에서 정상·직접/감싼
+  typed 예외·동일 문구의 다른 예외·알 수 없는 오류와 정보 비노출을 검증한다. 합성 예외 회귀를
+  실제 UI 전환 재현이라고 부르지 않는다. 기존 Windows 설치 전 PS5.1 단계에서 실행한다.
+- 기존 dispatcher/reusable의 `confirmation_cases=all|confirm-only` 입력을 연결한다. 기본은 all이며
+  confirm-only는 확인창 검증에서만 허용한다. 선택 사례를 증거와 cleanup에 기록/대조한다.
+  새 workflow/mode는 만들지 않는다. spec은 같은 공개 HWP에서 Confirm 한 사례만 실행한다.
+- 로컬 focused 계약·GUI typecheck·workflow/handoff·actionlint·diff 통과 후 checkpoint commit/push,
+  기존 제품 SHA/native artifact를 재사용하는 원격 Confirm-only 한 번만 실행한다.
+  Decline/WrongTarget·제품 빌드·전체 PDF는 반복하지 않는다. 클릭 adapter/안전 guard는 변경하지 않는다.
+- 문서 위치는 승인된 기존 가이드/사건 기록/plans/orders와 성공 시 4.21 보고서를 유지한다.
+  두 실행을 합친 부분별 증거임을 명시하며, 현재 harness의 세 사례 일괄 통과로 표현하지 않는다.
+
+후속 구현의 focused Node 계약 **57/57**, workflow/handoff **82/82**(중복 import 포함),
+GUI typecheck·actionlint·diff가 통과했다. 기본 세 사례 배열을 직접 찾던 정적 assertion은
+선택 함수의 실제 동작 테스트와 spec 연결 검사로 갱신했다. PS5.1의 새 합성 예외 회귀 10개는
+Windows 설치 전 실행 예정이며 로컬 통과라고 기록하지 않는다. 기존 제품 artifact는 미만료이고
+SHA/digest/크기가 동일하다. 제품 파일과 클릭/안전 판정 helper는 checkpoint 이전 대비 변경 없다.
+
 작업지시자가 4.20의 후속 권고를 승인했다. clean `local/task19`와 열린 #19/M010을 유지하며
 신규 issue/branch 생성·devel 재통합은 하지 않는다. 기존 제품 SHA `69b22650df96323a2c59e473d474ed3195cc9cc7`,
 native run `34021920074`/Windows artifact `9986364323`을 유효성 재확인 후 재사용한다.
@@ -43,7 +70,24 @@ native run `34021920074`/Windows artifact `9986364323`을 유효성 재확인 �
 
 구현 후 로컬 focused 계약 53개·workflow/handoff 78개(중복 import 포함), GUI typecheck,
 actionlint·diff 검사가 통과했다. artifact metadata의 SHA/digest/크기·미만료 상태를 재확인했다.
-원격 PS5.1/native 실행과 실제 확인창 호출은 아직 검증 전이며 checkpoint 게시 후 한 번 실행한다.
+checkpoint `816edd5aa3366a1c88c98e2596952b935eaecbfe` 게시 후 원격 한 번을 실행했다.
+
+결과: run `34053001644`는 **11분 8초 실패**다. 실제 PS 정책 62개·native 진단 50개,
+Decline 및 WrongTarget 거부 뒤 Decline은 통과했다. 새 HWND 메시지 경로로 No·저장창 복귀·
+Cancel·앱 이전 상태 복구·source/target/other 보존을 확인했다. Confirm은 호출 전 기존
+`Read-AppTree`의 desktop-wide `FindAll`(helper 59행)에서 `ElementNotAvailableException`이
+발생해 중단했다. 필수 버튼/의미 판정이 아니라 보조 진단 열거가 실패 원인이다.
+어느 노드가 사라졌는지는 로그만으로 확정하지 않는다. Confirm의 `overwriteConfirmed=false`,
+`confirmationObservation=null`이며 PDF를 만들지 않았다. NSIS cleanup·WebView2 복구는 통과했다.
+정리 후 검증 step은 전체 결과 미완료를 정상적으로 거부했고, 다운로드한 세 파일의 SHA-256이
+모두 최초 값과 일치함을 별도로 확인했다. 이를 해당 step 성공으로 소급하지 않는다.
+
+Stage 4.21은 미완료이며 단계 완료 보고/커밋·추가 원격 실행은 보류한다. 다음 승인 권고는
+**보조 트리 진단의 좁은 탐색·ElementNotAvailable 예외 격리와 남은 Confirm 한 사례 검증**이다.
+필수 target/owner/identity/native guard와 호출 adapter는 그대로 유지하고 해당 오류를
+저장 성공으로 바꾸지 않는다. 진단 unavailable을 명시하며 일반 예외/필수 판정 오류는 삼키지
+않는다. 예외 분류 회귀와 같은 설치 bytes의 Confirm-only 실행만 추가하고 이미 통과한
+두 거절 사례·제품 재빌드·전체 PDF는 반복하지 않는 범위로 승인받는다. 상세는 사건 기록에 둔다.
 
 ### 2026-09-07 Stage 4.20 실제 앱 확인창 최소 진단 승인
 

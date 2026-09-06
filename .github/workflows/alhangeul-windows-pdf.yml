@@ -12,6 +12,9 @@ on:
       confirmation_verify:
         type: boolean
         default: false
+      confirmation_cases:
+        type: string
+        default: all
       build_ref:
         required: true
         type: string
@@ -32,6 +35,13 @@ on:
         description: Verify installed-app confirmation commands with one HWP, without full PDF acceptance
         type: boolean
         default: false
+      confirmation_cases:
+        description: Run all commands or only the remaining Confirm case
+        type: choice
+        default: all
+        options:
+          - all
+          - confirm-only
       build_ref:
         description: Exact existing product commit SHA
         required: true
@@ -60,6 +70,7 @@ jobs:
       NATIVE_RUN_ID: ${{ inputs.native_run_id }}
       ACCEPTANCE_REF: ${{ github.workflow_sha }}
       PDF_SCENARIO: ${{ inputs.confirmation_verify && 'confirmation-verify' || inputs.confirmation_probe && 'confirmation-probe' || inputs.open_only && 'open-only' || 'pdf' }}
+      PDF_CONFIRMATION_CASES: ${{ inputs.confirmation_cases }}
     steps:
       - name: Validate inputs
         shell: pwsh
@@ -67,6 +78,8 @@ jobs:
           PROBE_CONFLICT: ${{ (inputs.open_only && inputs.confirmation_probe) || (inputs.confirmation_verify && (inputs.open_only || inputs.confirmation_probe)) }}
         run: |
           if ($env:PROBE_CONFLICT -eq 'true') { throw 'Probe modes are mutually exclusive' }
+          if ($env:PDF_CONFIRMATION_CASES -cnotin @('all', 'confirm-only')) { throw 'Invalid confirmation_cases' }
+          if ($env:PDF_CONFIRMATION_CASES -eq 'confirm-only' -and $env:PDF_SCENARIO -ne 'confirmation-verify') { throw 'Confirm-only requires confirmation-verify' }
           if ($env:PDF_BUILD_REF -cnotmatch '^[0-9a-f]{40}$') { throw 'Invalid build_ref' }
           if ($env:NATIVE_RUN_ID -notmatch '^[1-9][0-9]*$') { throw 'Invalid native_run_id' }
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -79,7 +92,8 @@ jobs:
           if ((git rev-parse HEAD) -ne $env:ACCEPTANCE_REF) { throw 'Checkout mismatch' }
           New-Item -ItemType Directory -Path $env:EVIDENCE_ROOT -Force | Out-Null
           @{ acceptanceRef = $env:ACCEPTANCE_REF; buildRef = $env:PDF_BUILD_REF;
-             nativeRunId = $env:NATIVE_RUN_ID; runId = $env:GITHUB_RUN_ID } |
+             nativeRunId = $env:NATIVE_RUN_ID; runId = $env:GITHUB_RUN_ID;
+             scenario = $env:PDF_SCENARIO; confirmationCases = $env:PDF_CONFIRMATION_CASES } |
             ConvertTo-Json | Set-Content "$env:EVIDENCE_ROOT/workflow-context.json"
       - name: Check confirmation PowerShell before installation
         if: ${{ inputs.confirmation_probe || inputs.confirmation_verify }}
@@ -95,6 +109,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Policy tests failed' }
           & powershell.exe -NoProfile -File tests/windows-pdf-native-diagnostics.test.ps1 -EvidencePath "$env:EVIDENCE_ROOT/native-diagnostics.json"
           if ($LASTEXITCODE -ne 0) { throw 'Native diagnostics tests failed' }
+          & powershell.exe -NoProfile -File tests/windows-pdf-tree-diagnostics.test.ps1 -EvidencePath "$env:EVIDENCE_ROOT/tree-diagnostics.json"
+          if ($LASTEXITCODE -ne 0) { throw 'Tree diagnostics tests failed' }
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "24"
@@ -185,12 +201,18 @@ jobs:
         run: |
           $evidence = Get-Content "$env:EVIDENCE_ROOT/confirmation-verify.json" -Raw | ConvertFrom-Json
           if ($evidence.status -ne 'passed') { throw 'Confirmation verification incomplete' }
+          [string[]]$selected = if ($env:PDF_CONFIRMATION_CASES -eq 'confirm-only') { @('Confirm') } else { @('Decline', 'WrongTarget', 'Confirm') }
+          if ($evidence.confirmationCases -cne $env:PDF_CONFIRMATION_CASES -or
+              ($evidence.selectedCases -join ',') -cne ($selected -join ',') -or
+              ($evidence.cases.case -join ',') -cne ($selected -join ',') -or
+              @($evidence.cases | Where-Object { $_.status -cne 'passed' }).Count -ne 0) { throw 'Confirmation case evidence mismatch' }
           $expected = @{ 'source.hwp' = $evidence.sourceHash; 'target.pdf' = $evidence.finalTargetHash; 'other.pdf' = $evidence.otherHash }
           foreach ($file in $expected.Keys) {
             $actual = (Get-FileHash "$env:EVIDENCE_ROOT/confirmation-verify-$file" -Algorithm SHA256).Hash
             if (-not $expected[$file] -or $actual -ne $expected[$file]) { throw 'Confirmation file changed after cleanup' }
           }
-          @{ status = 'passed'; sourceUnchanged = $true; targetMatchesConfirmed = $true; otherUnchanged = $true; fullPdfTested = $false } |
+          @{ status = 'passed'; confirmationCases = $env:PDF_CONFIRMATION_CASES; selectedCases = $selected;
+             sourceUnchanged = $true; targetMatchesConfirmed = $true; otherUnchanged = $true; fullPdfTested = $false } |
             ConvertTo-Json | Set-Content "$env:EVIDENCE_ROOT/confirmation-verify-cleanup.json"
       - name: Upload raw evidence
         if: ${{ always() }}

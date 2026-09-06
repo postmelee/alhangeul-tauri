@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import './windows-pdf-confirmation.test.mjs';
+import './windows-pdf-tree-diagnostics.test.mjs';
 import { createHash } from 'node:crypto';
 import { readFile, writeFile, mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -11,6 +12,7 @@ import { assertDocumentIdentity } from './gui/support/document-identity.ts';
 const workflow = await readFile(new URL('../.github/workflows/alhangeul-windows-pdf.yml', import.meta.url), 'utf8');
 const spec = await readFile(new URL('./gui/specs/windows-pdf.e2e.ts', import.meta.url), 'utf8');
 const dialog = await readFile(new URL('../scripts/windows-pdf-dialog.ps1', import.meta.url), 'utf8');
+const tree = await readFile(new URL('../scripts/windows-pdf-tree-diagnostics.ps1', import.meta.url), 'utf8');
 const native = await readFile(new URL('../scripts/windows-pdf-win32.ps1', import.meta.url), 'utf8');
 const dispatcher = await readFile(new URL('../.github/workflows/alhangeul-desktop.yml', import.meta.url), 'utf8');
 const observation = await readFile(new URL('../scripts/windows-pdf-dialog-observation.ps1', import.meta.url), 'utf8');
@@ -81,10 +83,11 @@ test('PDF smoke는 source hash·dirty·overwrite를 단언하고 native dialogs�
 test('native helper budget begins after menu click and records bounded content-free diagnostics', () => {
   const helper = spec.slice(spec.indexOf('async function nativeDialog'));
   assert.ok(helper.indexOf('data-cmd=') < helper.indexOf("run('powershell.exe'"));
-  assert.match(dialog, /\$result.Count -ge 100/);
+  assert.match(tree, /\$queued -ge 100/);
   assert.match(dialog, /Write-Evidence 'failed' \$_\.Exception.Message/);
   assert.match(dialog, /stage = \$stage/);
   assert.doesNotMatch(dialog, /\$info\.(Name|Value)/);
+  assert.doesNotMatch(tree, /\$info\.(Name|Value)/);
 });
 
 test('Win32 fallback restricts control identity and verifies bounded filename readback', () => {
@@ -259,7 +262,7 @@ test('Actual app command verification is one-HWP, isolated, and checks decline/c
   assert.match(workflow, /inputs.confirmation_verify && \(inputs.open_only \|\| inputs.confirmation_probe\)/);
   assert.match(workflow, /Verify confirmation files after app cleanup/);
   assert.match(workflow, /targetMatchesConfirmed = \$true/);
-  assert.match(verify, /\['Decline', 'WrongTarget', 'Confirm'\]/);
+  assert.match(verify, /for \(const action of inputs.selectedCases\) await exercise\(action\)/);
   assert.match(verify, /item.id === 'biz-plan-hwp'/);
   assert.match(verify, /fullPdfTested: false/);
   assert.match(verify, /flag: 'wx'/);

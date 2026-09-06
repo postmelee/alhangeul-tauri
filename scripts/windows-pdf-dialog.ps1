@@ -14,6 +14,7 @@ Add-Type -AssemblyName UIAutomationTypes
 . (Join-Path $PSScriptRoot 'windows-pdf-confirmation.ps1')
 . (Join-Path $PSScriptRoot 'windows-pdf-confirmation-probe.ps1')
 . (Join-Path $PSScriptRoot 'windows-pdf-confirmation-verify.ps1')
+. (Join-Path $PSScriptRoot 'windows-pdf-tree-diagnostics.ps1')
 $scope = [System.Windows.Automation.TreeScope]::Descendants
 $deadline = [DateTime]::UtcNow.AddSeconds(90)
 $submitted = $false
@@ -26,6 +27,7 @@ if ($ConfirmationCase -and ($ConfirmationProbe -or -not $allowOverwrite)) {
 $startedAt = [DateTime]::UtcNow
 $stage = 'waiting-dialog'
 $observedTree = @()
+$treeDiagnostic = @{ status = 'not-collected'; reason = $null; nodes = @() }
 $observedProcessId = $null
 $dialogCount = 0
 $fileNameId = if ($Mode -eq 'Open') { '1148' } else { '1001' }
@@ -51,25 +53,9 @@ function Write-Evidence($Status, $ErrorText) {
      overwriteDecision = $overwriteDecision; nativeFailure = $nativeFailure;
      confirmationObservation = $confirmationObservation;
      confirmationVerification = $confirmationVerification;
+     treeDiagnostic = @{ status = $treeDiagnostic.status; reason = $treeDiagnostic.reason };
      tree = $observedTree } |
     ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $EvidencePath -Encoding utf8
-}
-
-function Read-AppTree($AppCondition) {
-  $nodes = [System.Windows.Automation.AutomationElement]::RootElement.FindAll($scope, $AppCondition)
-  $result = @()
-  foreach ($node in $nodes) {
-    if ($result.Count -ge 100) { break }
-    $info = $node.Current
-    # No Name or Value: keep diagnostics free of document text or file names.
-    $patterns = @()
-    if ($info.AutomationId -in @('CommandButton_6', 'CommandButton_7')) {
-      $patterns = @($node.GetSupportedPatterns() | ForEach-Object { $_.Id })
-    }
-    $result += @{ id = $info.AutomationId; class = $info.ClassName;
-      type = $info.ControlType.ProgrammaticName; enabled = $info.IsEnabled; patterns = $patterns }
-  }
-  return $result
 }
 
 function Find-Id($Root, $Id) {
@@ -110,9 +96,10 @@ try {
       [System.Windows.Automation.PropertyCondition]::new(
         [System.Windows.Automation.AutomationElement]::ClassNameProperty, '#32770'))
     $dialogs = [System.Windows.Automation.AutomationElement]::RootElement.FindAll($scope, $condition)
-    if ($dialogCount -ne $dialogs.Count -or $observedTree.Count -eq 0) {
+    if ($dialogCount -ne $dialogs.Count -or $treeDiagnostic.status -eq 'not-collected') {
       $dialogCount = $dialogs.Count
-      $observedTree = @(Read-AppTree $appCondition)
+      $treeDiagnostic = Read-PdfDialogTree $dialogs
+      $observedTree = @($treeDiagnostic.nodes)
       Write-Evidence 'running' $null
     }
     if ($submitted -and $dialogs.Count -eq 0) { break }
