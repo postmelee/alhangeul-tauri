@@ -39,3 +39,19 @@ PDF 전용 mode만 실행한다. 첫 문서 열기 이후 새 실패가 있으�
 ## 승인 상태
 
 최소 보정·게시·재실행 승인됨. release·제품 재빌드·#19 완료는 수행하지 않는다.
+
+## 원격 결과 — Open 해결, Save ID 차이 확인
+
+[run 34034309219](https://github.com/postmelee/alhangeul-tauri/actions/runs/34034309219)는
+harness `e34a63a`로 실행했다. Open은 nativeFallbackUsed=true로 12:55:30.980~12:55:33.789 UTC
+약 2.8초에 성공했다. 앱은 HWP 6쪽을 로드했고 편집 dirty 대기와 고정 page count 단언 뒤
+Save 단계까지 진행했다.
+
+Save는 `submitted=false`, `stage=finding-filename-field`로 timeout했다. UIA 진단에
+실제 입력칸은 `id=1001`, `class=Edit`, `type=ControlType.Pane`으로 나타난다.
+현재 native filename fallback은 1148/Edit만 허용해 Save 입력칸을 제외한다.
+제품 PDF 변환에는 여전히 도달하지 않았으며 HWPX/재시작 검증도 미실행이다.
+
+raw artifact `windows-pdf-raw-34034309219`, 로컬 `/private/tmp/alhangeul-win32-pdf.xvFrQP`에
+증거가 있다. 후속은 Open=1148, Save=1001로 mode별 identity를 제한하는 보정이다.
+동일 조건 재실행이나 제품 재빌드는 하지 않았다.
