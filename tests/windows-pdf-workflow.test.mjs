@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import './windows-pdf-confirmation.test.mjs';
 import { createHash } from 'node:crypto';
 import { readFile, writeFile, mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -98,7 +99,7 @@ test('Win32 fallback restricts control identity and verifies bounded filename re
   assert.match(native, /mode != "Open" && mode != "Save"/);
   assert.match(native, /int id = mode == "Open" \? 1148 : 1001/);
   assert.match(native, /Validate\(dialog, edit, pid, id, "Edit"\)/);
-  assert.match(native, /id != 1 && id != 6/);
+  assert.match(native, /id != 1 && id != 2 && id != 6/);
   assert.match(native, /readback.ToString\(\) != text/);
   assert.match(native, /2, 2000, out result/);
   assert.doesNotMatch(native, /SendKeys|SendInput|mouse_event|SetCursorPos/);
@@ -147,7 +148,7 @@ test('Native helper wires the actual policy and live revalidation (static contra
   assert.match(observation, /\[PdfDialogNative\]::ValidateButton/);
   assert.match(dialog, /Assert-PdfButtonCurrent \$Dialog \$Button \$observedProcessId \$Id/);
   assert.match(dialog, /\$button = Find-PdfNativeButton \$dialog '1' \$observedProcessId/);
-  assert.match(dialog, /Get-PdfOverwriteDecision/);
+  assert.match(dialog, /Invoke-PdfConfirmation/);
   assert.doesNotMatch(dialog, /Invoke-Button \$dialog \$yes/);
   assert.doesNotMatch(dialog, /Find-Id \$dialog '[16]'/);
   assert.doesNotMatch(policy, /Get-Process|Test-Path|Add-Type|\.Invoke\(|PostMessage|FindAll|SendKeys/);

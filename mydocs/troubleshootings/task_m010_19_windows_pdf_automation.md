@@ -61,7 +61,15 @@ adapter를 구현하기 전에는 무조건 Yes 또는 숫자 ID 교체로 우�
   관측하고 Yes는 누르지 않는다. 제품 재빌드·설치·PDF 분석 없이 지원 pattern·소유 관계를
   수집하며, 이 결과가 확인창 실행 adapter의 다음 승인 근거다.
 
-### Stage 4.17 관측과 다음 adapter 판단
+### Stage 4.18 구현 — 작은 통합 실행 대기
+
+4.17에서 관측한 InvokePattern만 사용하는 확인창 adapter를 실제 PDF helper와 작은 통합에
+연결했다. 저장창 owner/PID·Save 및 제출 경로·기존 target·영문 질문의 정확한 파일명·
+command 유일성/상태/pattern을 확인하고 호출 직전 재조회한다. No 후 저장창 복귀와 ID2 취소,
+다른 파일을 기대한 잘못된 요청의 거부를 제어된 Windows fixture에서 검사한다.
+아직 이번 adapter의 Windows 실행 결과와 실제 제품 PDF 결과는 미검증이다.
+
+### Stage 4.17 관측과 당시 adapter 판단
 
 run `34047467032`, harness `cd77b5704470f14ee674c72351b60af92e638b05`의 작은 job은
 27초에 통과했다. Windows image `20260824.214.3`, PS `5.1.26100.33296`, UI 언어 `en-US`다.

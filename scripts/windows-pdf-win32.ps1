@@ -22,6 +22,7 @@ public static class PdfDialogNative {
   [DllImport("user32.dll")] static extern bool IsChild(IntPtr parent, IntPtr child);
   [DllImport("user32.dll")] static extern bool IsWindowEnabled(IntPtr h);
   [DllImport("user32.dll")] static extern int GetDlgCtrlID(IntPtr h);
+  [DllImport("user32.dll")] static extern IntPtr GetWindow(IntPtr h, uint command);
   [DllImport("user32.dll", CharSet = CharSet.Unicode, EntryPoint = "SendMessageTimeoutW")]
   static extern IntPtr SetTextMessage(IntPtr h, uint msg, UIntPtr w, string text,
     uint flags, uint timeout, out UIntPtr result);
@@ -89,9 +90,24 @@ public static class PdfDialogNative {
     if (!PostMessage(button, 0x00F5, IntPtr.Zero, IntPtr.Zero)) throw new Exception("BM_CLICK failed");
   }
   public static void ValidateButton(IntPtr dialog, IntPtr button, uint pid, int id) {
-    if (id != 1 && id != 6) throw new Exception("Unexpected button ID");
+    if (id != 1 && id != 2 && id != 6) throw new Exception("Unexpected button ID");
     Validate(dialog, button, pid, id, "Button");
     if (!IsWindowEnabled(dialog)) throw new Exception("Native dialog is disabled");
+  }
+  public static bool OwnsConfirmation(IntPtr save, IntPtr confirm, uint pid) {
+    uint savePid, confirmPid;
+    GetWindowThreadProcessId(save, out savePid);
+    GetWindowThreadProcessId(confirm, out confirmPid);
+    return pid != 0 && savePid == pid && confirmPid == pid && save != confirm
+      && ClassName(save) == "#32770" && ClassName(confirm) == "#32770"
+      && GetWindow(confirm, 4) == save && !IsWindowEnabled(save) && IsWindowEnabled(confirm);
+  }
+  public static void ValidateCommand(IntPtr save, IntPtr confirm, IntPtr button, uint pid) {
+    uint buttonPid;
+    GetWindowThreadProcessId(button, out buttonPid);
+    if (!OwnsConfirmation(save, confirm, pid) || buttonPid != pid || !IsChild(confirm, button)
+      || ClassName(button) != "CCPushButton" || !IsWindowEnabled(button))
+      throw new Exception("Confirmation native identity mismatch");
   }
 }
 '@

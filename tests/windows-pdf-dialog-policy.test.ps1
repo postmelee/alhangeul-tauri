@@ -91,6 +91,60 @@ foreach ($mutation in $negative) {
     Assert-Equal (Get-PdfOverwriteDecision $changed) $mutation[2]
   }
 }
+Test-Case 'cancel ID2 stays scoped to native file dialog' {
+  $changed = $expected.Clone(); $changed.Id = '2'
+  $cancel = $button.Clone(); $cancel.Id = '2'
+  Assert-Equal (Select-PdfDialogButton @($cancel) $changed).Id '2'
+}
+$commandExpected = @{ Id = 'CommandButton_6'; ProcessId = 10; DialogHandle = 100 }
+$command = New-Candidate $fixture.confirmation[0]
+$command.SupportsInvoke = $true
+Test-Case 'confirmation selects capability, not ControlType' {
+  Assert-Equal (Select-PdfConfirmationButton @($command) $commandExpected).Id 'CommandButton_6'
+}
+Test-Case 'decline uses CommandButton_7 only' {
+  $changed = $commandExpected.Clone(); $changed.Id = 'CommandButton_7'
+  $decline = $command.Clone(); $decline.Id = 'CommandButton_7'
+  Assert-Equal (Select-PdfConfirmationButton @($decline) $changed).Id 'CommandButton_7'
+}
+foreach ($supported in @($false, 'true', $null)) {
+  Test-Case "unsupported/untyped confirmation capability ($supported)" {
+    $changed = $command.Clone(); $changed.SupportsInvoke = $supported
+    Assert-Rejects { Select-PdfConfirmationButton @($changed) $commandExpected } 'Confirmation InvokePattern unsupported.'
+  }
+}
+Test-Case 'missing confirmation command rejected' {
+  Assert-Rejects { Select-PdfConfirmationButton @() $commandExpected } 'Expected unique confirmation command.'
+}
+Test-Case 'duplicate confirmation command rejected' {
+  Assert-Rejects { Select-PdfConfirmationButton @($command, $command.Clone()) $commandExpected } 'Expected unique confirmation command.'
+}
+foreach ($field in @('ProcessId', 'DialogProcessId', 'DialogHandle', 'NativeHandle')) {
+  Test-Case "confirmation rejects wrong $field" {
+    $changed = $command.Clone(); $changed[$field] = 0
+    Assert-Rejects { Select-PdfConfirmationButton @($changed) $commandExpected } 'Dialog button identity or state mismatch.'
+  }
+}
+Test-Case 'disabled confirmation rejected' {
+  $changed = $command.Clone(); $changed.Enabled = $false
+  Assert-Rejects { Select-PdfConfirmationButton @($changed) $commandExpected } 'Dialog button identity or state mismatch.'
+}
+foreach ($separator in @(' ', "`n", "`r`n")) {
+  Test-Case 'observed replace prompt and line break normalization' {
+    Assert-Equal (Test-PdfReplacePrompt "a [1].pdf already exists.${separator}Do you want to replace it?" 'a [1].pdf') $true
+  }
+}
+foreach ($prompt in @('b.pdf already exists. Do you want to replace it?',
+    'a.pdf already exists. Do you want to delete it?', 'Replace a.pdf?',
+    'a.pdf already exists. Do you want to replace it? More text')) {
+  Test-Case 'wrong target/unknown meaning/extra content rejected' { Assert-Equal (Test-PdfReplacePrompt $prompt 'a.pdf') $false }
+}
+Test-Case 'filename whitespace is not normalized into another filename' {
+  Assert-Equal (Test-PdfReplacePrompt 'a  b.pdf already exists. Do you want to replace it?' 'a b.pdf') $false
+}
+Test-Case 'filename cannot inject regular expression' {
+  Assert-Equal (Test-PdfReplacePrompt 'axb.pdf already exists. Do you want to replace it?' 'a.b.pdf') $false
+}
 $failed = @($cases | Where-Object { -not $_.passed })
 @{ schemaVersion = 1; kind = 'pure-policy'; powerShell = $PSVersionTable.PSVersion.ToString();
    passed = $failed.Count -eq 0; cases = @($cases.ToArray()); nativeUiTested = $false } |

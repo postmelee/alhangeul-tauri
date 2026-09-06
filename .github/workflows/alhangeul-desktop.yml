@@ -19,6 +19,7 @@ on:
           - windows-pdf-acceptance
           - windows-pdf-open-probe
           - windows-dialog-probe
+          - windows-dialog-verify
       build_ref:
         description: Branch, tag, or commit to build. Empty uses the selected workflow commit.
         required: false
@@ -1397,10 +1398,12 @@ jobs:
 
   windows-dialog-probe:
     name: Test dialog policy and observe controlled confirmation
-    if: ${{ inputs.mode == 'windows-dialog-probe' }}
+    if: ${{ inputs.mode == 'windows-dialog-probe' || inputs.mode == 'windows-dialog-verify' }}
     permissions:
       contents: read
     uses: ./.github/workflows/alhangeul-windows-dialog.yml
+    with:
+      verify: ${{ inputs.mode == 'windows-dialog-verify' }}
 
   windows-pdf-acceptance:
     name: Verify existing Windows product PDF export

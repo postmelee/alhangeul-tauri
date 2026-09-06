@@ -9,6 +9,7 @@ Add-Type -AssemblyName UIAutomationClient
 Add-Type -AssemblyName UIAutomationTypes
 . (Join-Path $PSScriptRoot 'windows-pdf-win32.ps1')
 . (Join-Path $PSScriptRoot 'windows-pdf-dialog-observation.ps1')
+. (Join-Path $PSScriptRoot 'windows-pdf-confirmation.ps1')
 $scope = [System.Windows.Automation.TreeScope]::Descendants
 $deadline = [DateTime]::UtcNow.AddSeconds(90)
 $submitted = $false
@@ -27,6 +28,7 @@ $additionalDialog = 'none'
 $filenameFocused = $false
 $submittedPath = $null
 $overwriteDecision = 'not-observed'
+$saveHandle = 0
 
 function Write-Evidence($Status, $ErrorText) {
   @{ mode = $Mode; status = $Status; error = $ErrorText; stage = $stage;
@@ -47,8 +49,12 @@ function Read-AppTree($AppCondition) {
     if ($result.Count -ge 100) { break }
     $info = $node.Current
     # No Name or Value: keep diagnostics free of document text or file names.
+    $patterns = @()
+    if ($info.AutomationId -in @('CommandButton_6', 'CommandButton_7')) {
+      $patterns = @($node.GetSupportedPatterns() | ForEach-Object { $_.Id })
+    }
     $result += @{ id = $info.AutomationId; class = $info.ClassName;
-      type = $info.ControlType.ProgrammaticName; enabled = $info.IsEnabled }
+      type = $info.ControlType.ProgrammaticName; enabled = $info.IsEnabled; patterns = $patterns }
   }
   return $result
 }
@@ -120,21 +126,11 @@ try {
         Set-NativeFileName $dialog $field $observedProcessId $TargetPath $Mode
         $stage = 'invoking-submit'
         Write-Evidence 'running' $null
+        $saveHandle = $dialog.Current.NativeWindowHandle
         Invoke-Button $dialog $button '1'
         $submitted = $true
         $submittedPath = $TargetPath
         $stage = 'waiting-dialog-close'
-      } elseif ($allowOverwrite -and -not $overwriteConfirmed) {
-        $yes = Find-PdfNativeButton $dialog '6' $observedProcessId
-        if ($null -ne $yes) {
-          # No verified prompt/ownership adapter yet: even a legacy IDYES is not permission.
-          $overwriteDecision = Get-PdfOverwriteDecision @{
-            Mode = $Mode; TargetExists = $allowOverwrite; TargetPath = $TargetPath;
-            SubmittedPath = $submittedPath; Cancelled = $false; OwnedBySaveDialog = $false;
-            PromptKind = 'unknown'; PromptTarget = $null
-          }
-          throw "Unverified overwrite confirmation: $overwriteDecision; refusing confirmation."
-        }
       }
     }
     if ($submitted -and $dialogs.Count -gt 1) {
@@ -150,7 +146,15 @@ try {
         throw 'Unexpected additional dialog for a new PDF target; refusing confirmation.'
       }
       if (-not $overwriteConfirmed) {
-        throw 'Unsupported overwrite confirmation controls; refusing blind confirmation.'
+        $extraDialogs = @($dialogs | Where-Object { $_.Current.NativeWindowHandle -ne $saveHandle })
+        if ($dialogs.Count -ne 2 -or $extraDialogs.Count -ne 1) { throw 'Ambiguous overwrite dialog.' }
+        $intent = @{ Mode = $Mode; TargetExists = $allowOverwrite; TargetPath = $TargetPath;
+          SubmittedPath = $submittedPath; Cancelled = $false; SaveHandle = $saveHandle; ProcessId = $observedProcessId }
+        $stage = 'confirming-overwrite'
+        Write-Evidence 'running' $null
+        $buttonMethod = Invoke-PdfConfirmation $extraDialogs[0] $intent 'Confirm'
+        $overwriteDecision = 'eligible'
+        $overwriteConfirmed = $true
       }
     }
     Start-Sleep -Milliseconds 200

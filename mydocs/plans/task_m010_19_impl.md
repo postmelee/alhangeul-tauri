@@ -10,6 +10,29 @@ GitHub Issue: [#19](https://github.com/postmelee/alhangeul-tauri/issues/19)
 
 ## 단계 개요
 
+### 2026-09-07 Stage 4.18 확인창 adapter·작은 통합 승인
+
+작업지시자가 4.17 결과와 미확정 제품 capability를 확인하고 다음 구현을 승인했다.
+같은 #19 브랜치를 유지한다. 확인창은 native owner가 직전 저장창이며 같은 PID인지,
+Save/기존 파일/제출 경로와 관측된 영문 대체 질문의 파일명이 일치하는지 검사한다.
+`CommandButton_6/7`·`CCPushButton`의 유일성·enabled·HWND/부모·InvokePattern을 재조회하고
+확인된 UIA Invoke만 호출한다. ControlType.Button/Panes를 지원 여부로 추측하지 않는다.
+일반 파일창 취소는 검증된 ID2 native 버튼으로 처리한다. 다른 API fallback은 추가하지 않는다.
+
+- 코드: `scripts/windows-pdf-confirmation.ps1`, 기존 policy/observation/Win32/dialog helper.
+  실제 PDF helper와 작은 통합이 같은 확인창 adapter를 호출한다.
+- 테스트: 기존 실제 PS 정책 suite에 prompt/command 선택 거부 사례 추가.
+  `tests/gui/windows-dialog/`의 integration host/support/runner에서 열기·새 저장·overwrite·
+  No 후 취소·다른 target 거부의 다섯 사례를 실행한다. 공개 sentinel만 다루고 host는 OK 및
+  정확한 fixture 경로를 확인한 경우에만 지정 파일에 새 sentinel을 쓴다. PDF 렌더링은 아님.
+- workflow: 기존 reusable에 verify 입력, dispatcher에 `windows-dialog-verify` mode 추가.
+  관측-only mode는 유지하고 통합 mode는 정책 검사 뒤 다섯 사례만 실행한다. 기존 8분 상한,
+  읽기 전용·no retry·always cleanup/증거 정책을 재사용한다. 제품 설치/build/서명 없음.
+- 검증: focused Node 계약, workflow inventory, GUI typecheck, actionlint, diff 후 checkpoint
+  commit/push 및 작은 Windows 통합 한 번. 실패를 전체 E2E 반복으로 우회하지 않는다.
+- 문서: 승인된 기존 공식 가이드·사건 기록·plans/orders/working만 갱신한다.
+  새 의존성 없음. 새 파일 300 LOC/함수 50 LOC 이내로 역할을 분리한다.
+
 ### 2026-09-07 Stage 4.17 판단 분리·작은 Windows 관측 승인
 
 실제 helper가 사용하는 `windows-pdf-dialog-policy.ps1`와 UIA 관측 adapter를 분리한다.

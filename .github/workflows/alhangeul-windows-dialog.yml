@@ -2,6 +2,10 @@ name: Alhangeul Windows Dialog Policy and Probe
 
 on:
   workflow_call:
+    inputs:
+      verify:
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -47,9 +51,15 @@ jobs:
           & ./tests/windows-pdf-dialog-policy.test.ps1 -EvidencePath "$env:EVIDENCE_ROOT/policy.json"
           if ($LASTEXITCODE -ne 0) { throw 'Policy tests failed' }
       - name: Compile native helper and observe controlled dialog
+        if: ${{ !inputs.verify }}
         timeout-minutes: 3
         run: |
           & ./tests/gui/windows-dialog/probe.ps1 -EvidencePath "$env:EVIDENCE_ROOT/probe.json" -CleanupStatePath $env:CLEANUP_STATE
+      - name: Verify controlled dialog postconditions
+        if: ${{ inputs.verify }}
+        timeout-minutes: 3
+        run: |
+          & ./tests/gui/windows-dialog/integration.ps1 -EvidencePath "$env:EVIDENCE_ROOT/integration.json" -CleanupStatePath $env:CLEANUP_STATE
       - name: Clean only owned fixture resources
         if: ${{ always() }}
         run: |

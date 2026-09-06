@@ -110,6 +110,7 @@ pnpm run typecheck:gui
 | PDF 결과 판정 | [분석기](../../tests/gui/windows-pdf/analyze.mjs), [기존 계약](../../tests/windows-pdf-workflow.test.mjs), [재현 데이터](../../tests/fixtures/windows-pdf-regressions.json) | mock PDF 분석을 쓰는 단위 테스트는 실제 PDF 품질 증거가 아님 |
 | Windows dialog 판단 | [순수 정책](../../scripts/windows-pdf-dialog-policy.ps1), [실제 함수 테스트](../../tests/windows-pdf-dialog-policy.test.ps1), [UIA 관측](../../scripts/windows-pdf-dialog-observation.ps1) | 실제 helper가 같은 함수를 사용. 합성 PID/HWND·의미 입력은 native 성공 증거가 아님 |
 | Windows 작은 OS 관측 | [probe](../../tests/gui/windows-dialog/probe.ps1), [workflow](../../.github/workflows/alhangeul-windows-dialog.yml), [메시지 adapter](../../scripts/windows-pdf-win32.ps1) | 제어된 WinForms 저장창의 확인창까지 관측하며 Yes는 실행하지 않음. 실제 앱·PDF·overwrite 수용과 별개 |
+| Windows 작은 통합 | [확인창 adapter](../../scripts/windows-pdf-confirmation.ps1), [integration](../../tests/gui/windows-dialog/integration.ps1) | 실제 helper와 같은 확인창 처리를 사용. 공개 sentinel의 열기·새 저장·overwrite·거절/취소·잘못된 target 거부를 검사하며 제품/PDF 수용은 아님 |
 | Windows 실제 설치본 | [spec](../../tests/gui/specs/windows-pdf.e2e.ts), [workflow](../../.github/workflows/alhangeul-windows-pdf.yml) | open-only/full PDF 모드만 있음. 미지원 overwrite control은 안전하게 중단 |
 | Linux native UI | [AT-SPI adapter](../../tests/gui/linux/native-ui/atspi.mjs), [사후 조건](../../tests/gui/linux/native-ui/action-postcondition.mjs), [spec](../../tests/gui/specs/linux-native.e2e.ts) | Windows ID/class 가정을 Linux에 이식하지 않음; 각 테스트의 실행 환경을 확인 |
 
@@ -121,8 +122,17 @@ Windows PowerShell 5.1의 순수 함수 테스트 진입점은 `pnpm run test:gu
 실제 경로가 든 cleanup state는 업로드하지 않는다. 항상 실행되는 cleanup은 PID/시작 시각과
 유일한 임시 디렉터리를 검증한 뒤 자기 자원만 정리한다.
 
-확인창의 의미·대상 adapter가 아직 미구현이므로 legacy IDYES도 자동 승인하지 않는다.
-새 overwrite 실행 API는 관측 검토 후 추가하고, 성공 여부를 별도 사후 조건으로 검증해야 한다.
+작은 통합은 같은 dispatcher의 `windows-dialog-verify`로 실행한다. policy 검사 후 위 다섯
+사례를 실행하며 관측-only probe는 중복 실행하지 않는다. host는 OK 및 선택 경로를 검증한
+경우에만 지정 sentinel을 쓴다. No 후 저장창 복귀·Cancel 결과와 세 파일의 보존을 별도 검사한다.
+
+확인창 adapter는 관측된 영문 대체 질문·정확한 파일명·저장창 owner·PID·enabled·유일한
+`CCPushButton`·실제 InvokePattern을 검사한다. 문구가 다른 언어나 pattern이 없는 경우에는
+명시적으로 실패한다. 파일명의 공백/구두점을 바꾸어 다른 파일과 일치시키지 않는다.
+legacy IDYES·다른 메시지 API로 fallback하지 않는다. 실제 제품의 capability는 작은 fixture와
+다를 수 있으며 설치본 통합에서 따로 확인해야 한다. Invoke 호출 성공 뒤에도 파일·창 상태를
+검증한다. 공급자에 따라 호출이 차단될 수 있어 helper/step 상한과 독립 cleanup을 유지한다.
+([Microsoft Invoke 계약](https://learn.microsoft.com/en-us/dotnet/api/system.windows.automation.invokepattern.invoke))
 최신 실행 결과는 [사건 기록](../../mydocs/troubleshootings/task_m010_19_windows_pdf_automation.md)에 둔다.
 Pester/PSScriptAnalyzer는 설치하지 않는다. Node 소스 계약을 PS 실행으로 세지 않는다.
 
