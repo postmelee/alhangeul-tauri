@@ -3,7 +3,10 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: 구현계획 승인 대기
+상태: Stage 1 구현·로컬 검증 완료, 단계 보고 승인 대기
+
+승인 근거: 2026-09-06 같은 스레드의 구현계획 승인 요청에 작업지시자가
+“진행해줘”로 Stage 1 진행을 지시했다. Stage 2 원격 게시·실행은 별도 승인 대상으로 유지한다.
 
 ## 단계 개요
 
@@ -18,7 +21,7 @@ GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 - 시작 source: `c93ac8c58a796a45227f764f37b7aaffaa81899e`, 수행계획 커밋: `f05e01e`.
 - #19 메인 worktree와 #35 GUI E2E 범위를 보존한다. 브랜치 최신화가 필요하면 차이를
   확인하고 별도 승인받으며 임의 rebase·merge하지 않는다.
-- 현재 단계는 문서만 작성한다. 아래 native/원격 명령은 실행 계획이며 실행 결과가 아니다.
+- 아래 native/원격 명령은 실행 계획이며 Stage 1의 로컬 source-contract 검사와 구분한다.
 
 ## 문서 위치 확인
 

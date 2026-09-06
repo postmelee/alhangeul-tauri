@@ -2,35 +2,9 @@
 $thumbnailCategory = '{E357FCCD-A995-4576-B01F-234630154E96}'
 $thumbnailBackupRoot = 'Software\Alhangeul\ThumbnailHandlerBackup'
 $thumbnailThirdParty = '{4A64F47A-2B10-4E74-AFA0-6B7D59B76155}'
-$thumbnailInterop = @'
-using System;
-using System.Runtime.InteropServices;
-[StructLayout(LayoutKind.Sequential)] public struct NativeSize { public int cx; public int cy; }
-[ComImport, Guid("BCC18B79-BA16-442F-80C4-8A59C30C463B"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-interface IShellItemImageFactory {
-  [PreserveSig] int GetImage(NativeSize size, uint flags, out IntPtr bitmap);
+if ($null -eq ('Alhangeul.ThumbnailDiagnostics.Probe' -as [type])) {
+  Add-Type -Path @((Join-Path $PSScriptRoot 'windows-thumbnail-native.cs'), (Join-Path $PSScriptRoot 'windows-thumbnail-interop.cs'))
 }
-public static class ThumbnailSmokeInterop {
-  [DllImport("shell32.dll", CharSet = CharSet.Unicode, PreserveSig = true)]
-  static extern int SHCreateItemFromParsingName(string path, IntPtr bind, ref Guid iid, [MarshalAs(UnmanagedType.Interface)] out IShellItemImageFactory factory);
-  [DllImport("gdi32.dll")] static extern bool DeleteObject(IntPtr handle);
-  public static int Request(string path, int size) {
-    Guid iid = new Guid("BCC18B79-BA16-442F-80C4-8A59C30C463B");
-    IShellItemImageFactory factory;
-    int result = SHCreateItemFromParsingName(path, IntPtr.Zero, ref iid, out factory);
-    if (result != 0) return result;
-    IntPtr bitmap = IntPtr.Zero;
-    try {
-      result = factory.GetImage(new NativeSize { cx = size, cy = size }, 0x8, out bitmap);
-      return result;
-    } finally {
-      if (bitmap != IntPtr.Zero) DeleteObject(bitmap);
-      Marshal.ReleaseComObject(factory);
-    }
-  }
-}
-'@
-if ($null -eq ('ThumbnailSmokeInterop' -as [type])) { Add-Type -TypeDefinition $thumbnailInterop }
 
 function Get-ThumbnailTarget($Kind) {
   if ($Kind -eq 'msi') {
@@ -159,10 +133,12 @@ function Invoke-ThumbnailFixtureProbe {
   foreach ($extension in $extensions) {
     $fixture = Get-ChildItem -LiteralPath $root -Recurse -File | Where-Object { $_.Extension -ieq $extension } | Select-Object -First 1
     Assert-Condition ($null -ne $fixture) "$extension thumbnail fixture가 없습니다."
-    $before = Get-ThumbnailFixtureState $fixture.FullName; $hresult = [ThumbnailSmokeInterop]::Request($fixture.FullName, 256); $after = Get-ThumbnailFixtureState $fixture.FullName
-    Assert-Condition ($hresult -eq 0) "$extension IShellItemImageFactory 실패: 0x$('{0:x8}' -f $hresult)"
+    $before = Get-ThumbnailFixtureState $fixture.FullName
+    $probe = [Alhangeul.ThumbnailDiagnostics.Probe]::Run('shell', $fixture.FullName, 256)
+    $after = Get-ThumbnailFixtureState $fixture.FullName
+    Assert-Condition ($probe.status -eq 'ok' -and $probe.bitmapPresent -eq $true) "$extension Shell bitmap 실패: $($probe.phase), $($probe.hresult), $($probe.detailCode)"
     Assert-Condition ((ConvertTo-Json $before -Compress) -eq (ConvertTo-Json $after -Compress)) "$extension 원본 fixture가 변경되었습니다."
-    $results += [ordered]@{ Fixture = $before; HResult = $hresult; Size = 256 }
+    $results += [ordered]@{ Fixture = $before; HResult = 0; Size = 256; Probe = $probe }
   }
   $afterProcesses = @(Get-Process -Name 'Alhangeul', 'msedgewebview2' -ErrorAction SilentlyContinue | ForEach-Object { $_.Id })
   Assert-Condition (@($afterProcesses | Where-Object { $beforeProcesses -notcontains $_ }).Count -eq 0) 'thumbnail 요청이 Alhangeul 또는 WebView process를 시작했습니다.'

@@ -15,7 +15,9 @@ const helperPaths = [
 const helperBytes = await Promise.all(helperPaths.map((path) => readFile(path)));
 const entrySource = scriptBytes.toString('utf8');
 const sources = [entrySource, ...helperBytes.map((bytes) => bytes.toString('utf8'))];
-const source = sources.join('\n');
+const interopSources = await Promise.all(['native', 'interop'].map((role) =>
+  readFile(join(repoRoot, `scripts/windows-thumbnail-${role}.cs`), 'utf8')));
+const source = [...sources, ...interopSources].join('\n');
 
 test('Windows PowerShell 5.1이 UTF-8 source를 인식하도록 BOM을 유지한다', () => {
   assert.deepEqual(
@@ -254,7 +256,7 @@ test('thumbnail smoke는 rollback·공존·실제 Shell bitmap 계약을 검사�
     'nsis-reinstall.log',
     'IShellItemImageFactory',
     'SHCreateItemFromParsingName',
-    'ThumbnailSmokeInterop]::Request',
+    'Alhangeul.ThumbnailDiagnostics.Probe]::Run',
     'third_party\\rhwp\\saved',
     '$thumbnailThirdParty',
     'ThumbnailHandlerBackup',
@@ -275,6 +277,9 @@ test('thumbnail smoke는 rollback·공존·실제 Shell bitmap 계약을 검사�
     'InprocServer32 CLSID는 redirected 32/64 view를 계속 분리해야 합니다.',
   );
   assert.match(source, /ThumbnailRegistrationState = Get-ThumbnailRegistrationState/);
+  assert.match(source, /\$probe.status -eq 'ok' -and \$probe.bitmapPresent -eq \$true/);
+  assert.match(source, /Probe = \$probe/);
+  assert.doesNotMatch(source, /ThumbnailSmokeInterop/);
 });
 
 function assertOrdered(markers) {
