@@ -24,7 +24,16 @@ GitHub Issue: [#19](https://github.com/postmelee/alhangeul-tauri/issues/19)
 
 - `node --test tests/windows-pdf-workflow.test.mjs tests/gui-contracts.test.mjs`: 33/33 통과.
 - `git diff --check`: 통과.
-- 로컬 테스트는 selector 구성에 대한 정적 계약이며 실제 Windows UI 회귀 검증은 후속 run이다.
+- 로컬 테스트는 selector 구성에 대한 정적 계약이다.
+- 실제 Windows [run 34042833704](https://github.com/postmelee/alhangeul-tauri/actions/runs/34042833704): 성공.
+  harness commit `903164b`, 제품 SHA `69b22650df96323a2c59e473d474ed3195cc9cc7`,
+  native artifact run `34021920074`를 사용했다.
+- HWP: `source-biz-plan-hwp.hwp - Alhangeul`, identity 확인 통과, 6쪽.
+- HWPX: `source-form-hwpx.hwpx - Alhangeul`, identity 확인 통과, 10쪽.
+  캡처에서도 이전 HWP가 아닌 실제 HWPX 표/서식 문서를 확인했다.
+- 두 Open helper 모두 `status=passed`, `filenameFocused=true`,
+  `buttonMethod=Win32-BM_CLICK`이다. 두 결과 모두 `scenario=open-only`,
+  `pdfTested=false`이므로 PDF acceptance 통과로 간주하지 않는다.
 
 ## 잔여 위험
 
@@ -32,8 +41,10 @@ GitHub Issue: [#19](https://github.com/postmelee/alhangeul-tauri/issues/19)
 
 ## 다음 단계 영향
 
-제품 SHA `69b22650df96323a2c59e473d474ed3195cc9cc7`/native run `34021920074`로
-open-only 진단을 한 번 실행하여 두 파일의 정확한 identity를 확인한다.
+열기 전용 진단이 성공하여 ID-only 탐색의 파일 목록 항목 오인 문제가 해소되었다.
+다음 단계 승인 후 동일 제품 artifact로 전체 PDF acceptance를 한 번 실행하여
+저장과 재실행 후 덮어쓰기를 확인한다. 사용자가 완료한 수동 Windows 검증 결과는
+그대로 유지하며, 이번 자동 열기 검증과 별도 근거로 취급한다.
 
 ## 승인 상태
 
