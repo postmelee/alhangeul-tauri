@@ -3,6 +3,9 @@ name: Alhangeul Windows PDF Acceptance
 on:
   workflow_call:
     inputs:
+      open_only:
+        type: boolean
+        default: false
       build_ref:
         required: true
         type: string
@@ -11,6 +14,10 @@ on:
         type: string
   workflow_dispatch:
     inputs:
+      open_only:
+        description: Diagnose document opening only, without PDF export
+        type: boolean
+        default: false
       build_ref:
         description: Exact existing product commit SHA
         required: true
@@ -109,9 +116,11 @@ jobs:
           PDF_APP_PATH: ${{ steps.install.outputs.app_path }}
           PDF_OUTPUT_DIR: ${{ env.EVIDENCE_ROOT }}
           PDF_FIXTURE_ROOT: ${{ github.workspace }}
+          PDF_SCENARIO: ${{ inputs.open_only && 'open-only' || 'pdf' }}
         run: |
           $env:PDF_DRIVER_PATH = Join-Path $env:USERPROFILE '.cargo\bin\tauri-driver.exe'
-          foreach ($phase in @('fresh', 'restart')) {
+          $phases = if ($env:PDF_SCENARIO -eq 'open-only') { @('fresh') } else { @('fresh', 'restart') }
+          foreach ($phase in $phases) {
             $env:PDF_PHASE = $phase
             pnpm exec wdio run tests/gui/wdio.windows-pdf.conf.ts
             if ($LASTEXITCODE -ne 0) { throw "PDF $phase failed" }
@@ -139,6 +148,7 @@ jobs:
 
   analyze:
     needs: windows-pdf
+    if: ${{ !inputs.open_only }}
     runs-on: ubuntu-22.04
     timeout-minutes: 10
     steps:

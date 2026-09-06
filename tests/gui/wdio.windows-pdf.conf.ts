@@ -16,8 +16,11 @@ export function readPdfInputs(env = process.env) {
   if (phase !== 'fresh' && phase !== 'restart') throw new Error('Invalid PDF_PHASE');
   const buildRef = required('PDF_BUILD_REF');
   if (!/^[0-9a-f]{40}$/.test(buildRef)) throw new Error('Invalid PDF_BUILD_REF');
+  const scenario = env.PDF_SCENARIO ?? 'pdf';
+  if (scenario !== 'pdf' && scenario !== 'open-only') throw new Error('Invalid PDF_SCENARIO');
+  if (scenario === 'open-only' && phase !== 'fresh') throw new Error('Open probe requires fresh phase');
   return {
-    phase, buildRef,
+    phase, buildRef, scenario,
     appPath: absolute('PDF_APP_PATH'),
     driverPath: absolute('PDF_DRIVER_PATH'),
     outputDir: absolute('PDF_OUTPUT_DIR'),

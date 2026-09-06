@@ -10,6 +10,18 @@ GitHub Issue: [#19](https://github.com/postmelee/alhangeul-tauri/issues/19)
 
 ## 단계 개요
 
+### 2026-09-06 Stage 4.12 Open 전용 진단 승인
+
+작업지시자가 파일 열기 경계를 좁혀 검증하도록 승인했다. 기존 #19 브랜치를 유지한다.
+기존 dispatcher/reusable workflow에 open-only 진단을 추가하고 같은 fixture 두 개를 새
+session으로 열어 정확한 title identity만 확인한다. PDF 편집/저장/분석은 실행하지 않으며
+진단 통과를 PDF 수용으로 오인하지 않도록 증거 이름·scenario를 구분한다.
+입력 전 UIA SetFocus와 HasKeyboardFocus를 확인하는 최소 보정으로 포커스 가설을 검사한다.
+포커스 실패 시 즉시 중단하고 우회하지 않는다. 제품·driver·timeout 변경은 제외한다.
+변경은 두 workflow, 기존 PDF config/spec/helper/계약 테스트와 내부 plans/working이다.
+GUI typecheck·focused contracts·actionlint·diff 검사 후 게시하고 Open 전용 진단을 한 번
+실행한다. 문서 위치는 기존 내부 plans/working이며 공식 제품 문서는 변경하지 않는다.
+
 ### 2026-09-06 Stage 4.11 재사용 가능한 문서 identity 검증 승인
 
 작업지시자는 Windows NSIS 수동 HWP/HWPX PDF 저장·검색/쪽수/시각 확인·원본 보존·

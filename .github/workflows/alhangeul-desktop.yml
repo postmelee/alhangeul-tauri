@@ -17,6 +17,7 @@ on:
           - updater-linux-window-probe
           - updater-linux-window-verify
           - windows-pdf-acceptance
+          - windows-pdf-open-probe
       build_ref:
         description: Branch, tag, or commit to build. Empty uses the selected workflow commit.
         required: false
@@ -1395,12 +1396,13 @@ jobs:
 
   windows-pdf-acceptance:
     name: Verify existing Windows product PDF export
-    if: ${{ inputs.mode == 'windows-pdf-acceptance' }}
+    if: ${{ inputs.mode == 'windows-pdf-acceptance' || inputs.mode == 'windows-pdf-open-probe' }}
     permissions:
       actions: read
       contents: read
     uses: ./.github/workflows/alhangeul-windows-pdf.yml
     with:
+      open_only: ${{ inputs.mode == 'windows-pdf-open-probe' }}
       build_ref: ${{ inputs.acceptance_candidate_sha }}
       native_run_id: ${{ inputs.acceptance_d1_run_id }}
 

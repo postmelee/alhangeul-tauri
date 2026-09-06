@@ -29,7 +29,7 @@ describe('Windows installed app PDF smoke', () => {
       const source = join(inputs.outputDir, `source-${fixture.id}.${fixture.format}`);
       const pdf = join(inputs.outputDir, `${fixture.id}.pdf`);
       const evidence: Record<string, unknown> = {
-        buildRef: inputs.buildRef, phase: inputs.phase, fixture: fixture.id,
+        buildRef: inputs.buildRef, phase: inputs.phase, fixture: fixture.id, scenario: inputs.scenario,
         inputMethod: 'DOM input event through editor input handler',
         nativeDialogs: true, concurrentEditTested: false,
       };
@@ -51,6 +51,10 @@ describe('Windows installed app PDF smoke', () => {
         Object.assign(evidence, { schemaVersion: 2, openedTitle, documentIdentityVerified: false });
         assertDocumentIdentity(openedTitle, basename(source));
         evidence.documentIdentityVerified = true;
+        if (inputs.scenario === 'open-only') {
+          Object.assign(evidence, { status: 'passed', sourceHash, pdfTested: false });
+          continue;
+        }
         await insertMarker();
         await browser.waitUntil(async () => (await browser.getTitle()).startsWith('• '), { timeout });
         const beforeTitle = await browser.getTitle();
@@ -73,10 +77,11 @@ describe('Windows installed app PDF smoke', () => {
         Object.assign(evidence, { status: 'failed', error: String(error) });
         throw error;
       } finally {
-        await writeFile(join(inputs.outputDir, `${fixture.id}-${inputs.phase}.json`),
+        const label = inputs.scenario === 'open-only' ? `${fixture.id}-open-only` : `${fixture.id}-${inputs.phase}`;
+        await writeFile(join(inputs.outputDir, `${label}.json`),
           JSON.stringify(evidence, null, 2));
-        await browser.saveScreenshot(join(inputs.outputDir, `${fixture.id}-${inputs.phase}.png`));
-        if (evidence.status === 'passed') {
+        await browser.saveScreenshot(join(inputs.outputDir, `${label}.png`));
+        if (evidence.status === 'passed' && inputs.scenario === 'pdf') {
           await copyFile(pdf, join(inputs.outputDir, `${fixture.id}-${inputs.phase}.pdf`));
         }
       }

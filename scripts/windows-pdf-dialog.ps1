@@ -23,6 +23,7 @@ $nativeFallbackUsed = $false
 $filenameMethod = 'not-used'
 $buttonMethod = 'not-used'
 $additionalDialog = 'none'
+$filenameFocused = $false
 
 function Write-Evidence($Status, $ErrorText) {
   @{ mode = $Mode; status = $Status; error = $ErrorText; stage = $stage;
@@ -30,6 +31,7 @@ function Write-Evidence($Status, $ErrorText) {
      processId = $observedProcessId; dialogCount = $dialogCount; submitted = $submitted;
      overwriteConfirmed = $overwriteConfirmed; nativeFallbackUsed = $nativeFallbackUsed;
      filenameMethod = $filenameMethod; buttonMethod = $buttonMethod; additionalDialog = $additionalDialog;
+     filenameFocused = $filenameFocused;
      tree = $observedTree } |
     ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $EvidencePath -Encoding utf8
 }
@@ -95,6 +97,11 @@ try {
         if ($null -eq $field) { continue }
         $button = Find-Id $dialog '1'
         if ($null -eq $button) { continue }
+        $stage = 'focusing-filename'
+        Write-Evidence 'running' $null
+        $field.SetFocus()
+        $filenameFocused = $field.Current.HasKeyboardFocus
+        if (-not $filenameFocused) { throw 'Filename edit did not receive keyboard focus.' }
         $stage = 'setting-filename'
         Write-Evidence 'running' $null
         $filenameMethod = 'Win32-EditReplaceSelection'

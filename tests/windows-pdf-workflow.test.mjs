@@ -36,9 +36,9 @@ test('Windows PDF workflow는 read-only dispatch와 기존 exact artifact만 사
 });
 
 test('등록된 dispatcher는 PDF 전용 reusable workflow에 기존 artifact identity만 전달한다', () => {
-  assert.match(workflow, /workflow_call:\n    inputs:\n      build_ref:/);
+  assert.match(workflow, /workflow_call:\n    inputs:\n      open_only:/);
   const job = dispatcher.split('\n  windows-pdf-acceptance:\n')[1].split('\n  updater-linux-window-probe:')[0];
-  assert.match(job, /if: \$\{\{ inputs.mode == 'windows-pdf-acceptance' \}\}/);
+  assert.match(job, /if: \$\{\{ inputs.mode == 'windows-pdf-acceptance' \|\| inputs.mode == 'windows-pdf-open-probe' \}\}/);
   assert.match(job, /uses: \.\/.github\/workflows\/alhangeul-windows-pdf.yml/);
   assert.match(job, /build_ref: \$\{\{ inputs.acceptance_candidate_sha \}\}/);
   assert.match(job, /native_run_id: \$\{\{ inputs.acceptance_d1_run_id \}\}/);
@@ -124,6 +124,19 @@ test('Document identity rejects wrong fixture, dirty document, generic status an
   }
   assert.throws(() => assertDocumentIdentity(' - Alhangeul', ''));
   assert.ok(spec.indexOf('assertDocumentIdentity(openedTitle') < spec.indexOf('await insertMarker()'));
+});
+
+test('Open probe is distinct from PDF acceptance and focuses filename before editing', () => {
+  assert.match(dispatcher, /open_only: \$\{\{ inputs.mode == 'windows-pdf-open-probe' \}\}/);
+  assert.match(workflow, /if: \$\{\{ !inputs.open_only \}\}/);
+  assert.match(workflow, /\$phases = if \(\$env:PDF_SCENARIO -eq 'open-only'\) \{ @\('fresh'\) \}/);
+  assert.match(spec, /pdfTested: false/);
+  const probe = spec.slice(spec.indexOf("if (inputs.scenario === 'open-only')"), spec.indexOf('await insertMarker()'));
+  assert.match(probe, /continue;/);
+  assert.match(spec, /evidence.status === 'passed' && inputs.scenario === 'pdf'/);
+  assert.match(dialog, /\$field.SetFocus\(\)/);
+  assert.match(dialog, /\$filenameFocused = \$field.Current.HasKeyboardFocus/);
+  assert.ok(dialog.indexOf('$field.SetFocus()') < dialog.indexOf('Set-NativeFileName $dialog'));
 });
 
 test('PDF evidence validator rejects missing, failed, wrong SHA and incomplete overwrite results', () => {
