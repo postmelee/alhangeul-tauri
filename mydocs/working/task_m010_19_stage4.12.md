@@ -42,3 +42,19 @@ open-only 진단 한 번을 실행한다. 제품 재빌드·게시·릴리스를
 ## 승인 상태
 
 작업지시자가 좁힌 파일 열기 검증 진행을 승인했다. 구현 계약 통과 후 원격 진단 결과를 확인한다.
+
+## 원격 진단 결과
+
+[run 34040438690](https://github.com/postmelee/alhangeul-tauri/actions/runs/34040438690),
+harness `0a939d3`, open-only 모드를 한 번 실행했다. 전체 결과 failure다.
+첫 HWP Open에서 UIA SetFocus가 `Target element cannot receive focus`를 반환했다.
+stage=focusing-filename, filenameFocused=false, submitted=false, filenameMethod=not-used다.
+tree에는 ComboBoxEx32/ComboBox/Edit가 모두 ID1148 및 ControlType.Pane으로 관측됐다.
+파일명 편집 전 실패했으므로 기존 잘못된 문서 선택 문제에 대한 포커스 가설은 미검증이다.
+이 결과를 HWP 로드나 제품 기능 실패로 취급하지 않는다.
+
+설치/정리/정책 복원/증거 업로드는 통과했다. PDF 분석 job은 의도대로 skipped였다.
+증거는 `/private/tmp/alhangeul-open-probe.azbJxz`에 내려받았다.
+후속은 UIA 포커스를 강제 반복하는 대신 앱 소유 HWND를 검증한 native dialog focus 및
+실제 focus HWND 확인으로 대체하여 같은 open-only 진단을 수행하는 방안이다.
+현재 UIA 방식은 실제 Windows에서 실패했으므로 사용 가능한 완성 자동화로 선언하지 않는다.
