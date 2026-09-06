@@ -3,7 +3,7 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: Stage 2.2 구현·로컬 검증 완료 — Windows 후보 실행 승인 대기, Stage 2 미완료
+상태: Stage 2 진단 계약 검증·보고 완료 — 보고 검토 및 Stage 3 세부계획 승인 대기
 
 승인 근거: 2026-09-06 같은 스레드의 구현계획 승인 요청에 작업지시자가
 “진행해줘”로 Stage 1 진행을 지시했다. Stage 2 원격 게시·실행은 별도 승인 대상으로 유지한다.
@@ -18,7 +18,7 @@ push했고 원격 SHA가 후보와 일치함을 확인했다.
 [run 34042095817](https://github.com/postmelee/alhangeul-tauri/actions/runs/34042095817)의
 `headSha`도 동일하다. 입력은 `mode=artifact`, `artifact_platform=windows-x64`,
 `build_ref=32c903dd3d54f0388ccec81788cbdd3b2f9a68fe`, `run_tests=true`,
-`publish_release=false`이며 추가 실행은 승인받지 않았다.
+`publish_release=false`이며 당시 추가 실행은 승인받지 않았다.
 
 동일 run의 선행 core 진단은 통과했다. artifact `9992208828`
 (`alhangeul-windows-x64-thumbnail-core`)의 다운로드 archive SHA-256은
@@ -31,8 +31,17 @@ rhwp SHA `496333b27d21ddb9114ba9ae340bcb895870c9a7`을 확인했다.
 보완 계획 작성 승인: 2026-09-07 실측 보고 후 작업지시자가 “진행해줘”로
 NSIS 제한 감지·MSI 안내와 MSI 재부팅 상태 처리의 계획 구체화를 승인했다.
 아래 Stage 2.2는 그 산출물이다. 이어 같은 스레드의 “진행해줘”로
-**수용 기준 분리·구현·로컬 검증·후보 커밋**을 승인받았다. 추가 원격 실행과 Stage 3는
-별도 승인 대상이며 이번 구현 승인으로 push/dispatch하지 않는다.
+**수용 기준 분리·구현·로컬 검증·후보 커밋**을 승인받았다. 이 승인만으로 원격 실행이나
+Stage 3에 진입하지 않았으며, 추가 실행은 아래와 같이 따로 승인받았다.
+
+Stage 2.2 원격 실행 승인: 후보 `001cc3adeab003260fb7b830f6f757b53c65d489` 게시와
+Windows-only 추가 1회 실행 요청에 작업지시자가 “진행해줘”로 승인했다.
+[run 34047889263](https://github.com/postmelee/alhangeul-tauri/actions/runs/34047889263)은
+같은 SHA·artifact mode·windows-x64·run_tests=true·publish_release=false로 완료됐다.
+진단 synthetic/증거 계약은 세 job 모두 성공, MSI 일반 lifecycle 성공이며 NSIS 썸네일과
+MSI 강제 교체의 제품 gate 실패는 유지한다. 분석 후 “진행해줘” 지시에 따라
+[Stage 2 보고서](../working/task_m010_57_stage2.md)에 근거와 수용 범위를 기록했다.
+이후 추가 실행·제품 등록 보정·Stage 3 구현은 아직 승인받지 않았다.
 
 ## 단계 개요
 
@@ -428,7 +437,7 @@ UAC 0/1의 동일 실패, 성공 NSIS, HKLM 실패, JPG 실패, 부분 성공, c
 이 후보 커밋은 미검증 표시 후 원격 실행 승인을 요청하며, 진단 단계 보고는 위 새 수용
 계약의 명시 승인과 실제 검증 후에만 작성한다.
 
-#### 4. Stage 2.2 구현 결과와 로컬 검증
+#### 4. Stage 2.2 후보 작성 당시 구현 결과와 로컬 검증
 
 - 순수 assessment는 19개/phase의 probe 계약, 등록 파일 hash/크기·scope, 연결·직접 COM,
   JPG 대조군과 문서별 Shell/force를 검사한다. 원시 status/HRESULT/bitmap은 변경하지 않는다.
@@ -608,8 +617,10 @@ CI 실행을 위한 후보 커밋과 결과 보고 커밋의 SHA 차이를 명�
 ## 단계 의존성
 
 - 구현계획 승인 후 Stage 1을 시작한다. Stage 1 보고 승인 후 Stage 2를 진행한다.
-- 현재는 Stage 2.1 실패 관측 후 Stage 2.2 구현·로컬 검증을 완료했다. 승인된 진단 단계
-  수용 기준은 새 후보에 적용하며 기존 실행의 실패 상태는 유지한다. Windows 검증은 미실행이다.
+- 현재는 Stage 2.2 후보의 Windows 진단 계약 검증과 Stage 2 결과 보고를 완료했다.
+  승인된 진단 단계 수용 기준만 충족한 것이며 두 run의 제품 실패 상태는 유지한다.
+- Stage 2 보고 검토 후 Stage 3의 수동 진단 제공 파일·진입점·제공 경로와 검증 범위를
+  먼저 확정한다. 아직 미정인 제공 방식까지 구현 승인된 것으로 간주하지 않는다.
 - Stage 2 관측을 근거로 Stage 3의 제품 보정·client 시험 범위를 승인받는다.
 - Stage 3 결과 승인 후 Stage 4로 진행한다. #58은 확정된 등록·권한 경계를 인계받는다.
 
@@ -627,8 +638,8 @@ CI 실행을 위한 후보 커밋과 결과 보고 커밋의 SHA 차이를 명�
    기존 failed run·향후 제품 기능 실패를 성공으로 바꾸지 않는 조건이다.
 2. 공통 assessment, MSI 재부팅 상태 수집, 정상 lifecycle와 강제 교체의 독립 job,
    지정된 회귀 검사의 **구현·로컬 검증·후보 커밋까지** 승인받았다.
-3. 후보 SHA 확정 후 Windows-only 추가 1회 실행을 다시 승인받는다. 이번 계획 승인만으로
-   원격 push/dispatch·재부팅·client VM 사용을 수행하지 않는다.
+3. 후보 `001cc3adeab003260fb7b830f6f757b53c65d489`의 Windows-only 추가 1회는 별도
+   승인받아 run `34047889263`으로 완료했다. 이후 추가 원격 실행·재부팅·client VM 사용은 미승인이다.
 4. Stage 3의 진단 진입점·사용자 안내 적용은 별도 승인받는다. 제품 등록 변경,
    NSIS 전체 사용자 설치·#58·릴리즈는 이번 구현 승인 범위에도 포함하지 않는다.
 
