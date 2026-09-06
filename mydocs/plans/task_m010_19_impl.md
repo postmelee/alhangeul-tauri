@@ -12,6 +12,18 @@ GitHub Issue: [#19](https://github.com/postmelee/alhangeul-tauri/issues/19)
 
 ### 2026-09-07 Stage 4.22 — 수용 근거 보정과 최소 OS 회귀
 
+#### 완료 결과 — 승인된 최소 보완 통과
+
+[4.22 보고서](../working/task_m010_19_stage4.22.md)에 수용 근거와 한계를 정리했다.
+후속 checkpoint `e401863450cfd33c2f9213d644270d4c1b7ee155`의 Windows run `34064903014`는
+**8분 19초 통과**다. 실제 cleanup 6개(최상위/내부 junction 포함), failed/ignored 0,
+92 filtered out이며 컴파일 5분 34초·실제 검사 3.05초다. full CI는 skipped다.
+`windows-2025`, Rust 1.98.1이며 artifact `9998729762`(7093 bytes),
+digest `sha256:0d415617ac164bc2549974c2f61f139ec65274fabf13d16e2f57959305015beb`를 확인했다.
+이전 Linux run `34063977183` 성공을 재사용하고 다시 실행하지 않았다. 제품/배포 설정은
+변경 없다. Stage 4 수용 근거 정리를 완료하고 #19 최종 보고/PR 승인을 요청한다.
+조판 위험과 실제 동시 편집/reload/장시간/재시작 통합 미실행은 그대로 남긴다.
+
 #### 후속 승인 — Windows cleanup test의 packaging resource 분리
 
 작업지시자의 `진행해줘`로 아래 보정을 같은 4.22에서 승인받았다. 아래 최초 실패 기록은
@@ -65,9 +77,9 @@ format·product boundary·diff 통과다. workflow 계약의 full 분기 순서 
 third_party/assets/lockfile의 차이는 `#[cfg(test)]`로 로드하는 cleanup test 파일뿐이다.
 제품·설치본 재빌드 및 Windows PDF/인쇄/thumbnail/updater 재실행은 하지 않았다.
 
-4.22는 미완료다. `task-stage-report`의 실패 gate에 따라 완료 보고서/PR을 만들지 않고
-이 결과 문서는 보정과 함께 묶도록 미커밋 상태로 남긴다. 자동 수정·재dispatch는 하지 않았다.
-다음 권고는 **이 cleanup test step에만** `TAURI_CONFIG`의 `bundle.resources=[]`를 적용해
+최초 실행 당시 4.22는 미완료였다. `task-stage-report`의 실패 gate에 따라 완료 보고서/PR을
+만들지 않고 결과 문서를 보정과 함께 묶도록 남겼다. 자동 수정·재dispatch는 하지 않았다.
+당시 권고는 **이 cleanup test step에만** `TAURI_CONFIG`의 `bundle.resources=[]`를 적용해
 무관한 packaging resource 요구를 분리하는 것이다. 빈 DLL/EXE를 만들거나 실제 package
 설정을 바꾸지 않는다. 해당 설정이 test step 밖에 유출되지 않는 계약을 추가하고 Windows
 제한 검사만 한 번 재검증하도록 승인받는다. Linux 성공은 재사용하며 다시 실행하지 않는다.
