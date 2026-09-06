@@ -3,7 +3,7 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: Stage 5.1 비교 코드·로컬 회귀 완료 — Windows 후보 게시·1회 실행 승인 대기
+상태: Stage 5.1 후보 게시 완료 — Windows 비교 run 34065777777 결과 대기
 
 승인 근거: 2026-09-06 같은 스레드의 구현계획 승인 요청에 작업지시자가
 “진행해줘”로 Stage 1 진행을 지시했다. Stage 2 원격 게시·실행은 별도 승인 대상으로 유지한다.
@@ -981,6 +981,28 @@ raw phase와 개별 probe의 재대조·기존 COM 계약 검사를 수행한다
 MSI 대조를 함께 읽은 뒤 수정 후보를 판단한다. API bitmap 성공은 Explorer 시각 수용이 아니다.
 Windows run 뒤 Stage 5 보고서를 작성하며 지금 최종 보고·PR·close로 넘어가지 않는다.
 
+### Stage 5.1 후보 게시·Windows 1회 실행
+
+2026-09-07 같은 스레드의 “진행해줘”로 위 후보 게시·Windows-only opt-in 비교
+1회 실행을 승인받았다. 기존 원격 `f1cdd0711f747b443c723a750f868faa5c0349f1`이 후보의
+조상임을 확인하고 `publish/task57`에 non-force push했다. 원격 SHA 재조회 뒤 dispatch를
+한 번만 수행했으며 추가 실행·재실행·릴리즈 게시를 하지 않았다.
+
+| 항목 | 실행 기록 |
+|---|---|
+| 후보 / workflow head SHA | `1cb8b9f6ba9c7f26190600e496720b26d5754675` |
+| 원격 ref | `publish/task57` |
+| Run | [34065777777](https://github.com/postmelee/alhangeul-tauri/actions/runs/34065777777), attempt 1, workflow_dispatch |
+| 생성 시각 | 2026-09-07 08:03:28 KST (`2026-09-06T23:03:28Z`) |
+| 전송 입력 | `mode=artifact`, `artifact_platform=windows-x64`, `build_ref=1cb8b9f6ba9c7f26190600e496720b26d5754675`, `run_tests=true`, `publish_release=false`, `thumbnail_context_experiment=true` |
+| 최초 API read-back | head SHA·branch 일치, Windows build `101574159911` 진행중, updater·Linux 진단·릴리즈 게시 job skipped |
+| 후속 예정 | build 성공 후 기존 smoke 3개와 독립 비교 replica 2개; 총 6개 활성 job 계획 |
+
+입력은 성공한 dispatch 명령의 전송값이며 run API에서 전체 입력 객체를 재조회한 것으로
+표현하지 않는다. 최초 조회 시 후속 job은 아직 시작 전이다. 새 bundle/support hash·Windows
+native 검사·phase 원시 probe·복원·제품 gate 결과는 완료 후 읽어 검증한다. 현 시점에는
+NSIS 해결·실험 성공·Stage 5 완료를 주장하지 않으며 결과 문서 커밋은 실행 후보와 분리한다.
+
 ## 검증
 
 - 이번 구현계획 작성은 문서 필수 섹션·경로·승인 경계·diff만 확인한다. 제품 검증 결과가 아니다.
@@ -1023,8 +1045,9 @@ Windows run 뒤 Stage 5 보고서를 작성하며 지금 최종 보고·PR·clos
 4. 이어 “진행해줘”로 Stage 4 문서 정합화·기존 근거 재사용·플랫폼 중립 회귀·인계를
    승인받아 완료했다. 추가 Actions·실제 client/VDI·재부팅은 실행하지 않았다.
    이후 #57 지속 진행·비교 계획 작성과 코드 구현을 순서대로 승인받았다.
-   Stage 5.1 비교 코드·로컬 검사를 완료했으며 다음 요청은 후보 게시·Windows-only
-   opt-in 비교 1회 실행이다. 위의 exact SHA·6개 job·실험 전용 권한 경계를 따른다.
+   Stage 5.1 비교 코드·로컬 검사 후 후보 게시·Windows-only opt-in 비교 1회 실행도
+   승인받아 run `34065777777`을 시작했다. 위의 exact SHA·6개 job·실험 전용 권한 경계를
+   유지하며 현재 원격 결과를 기다린다. 추가 실행·제품 수정은 자동 진행하지 않는다.
 5. 제품 등록 변경·NSIS 전체 사용자 설치·#58 구현·앱 UI·보안 정책 변경·최종 PR 게시·
    issue close·릴리즈는 별도 승인 대상이다.
 
