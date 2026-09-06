@@ -1,5 +1,8 @@
 # Optional diagnostics only: never use this snapshot to select or authorize a button.
-function Invoke-PdfTreeDiagnosticCapture([scriptblock]$ReadNodes) {
+function Invoke-PdfTreeDiagnosticCapture([scriptblock]$ReadNodes, [switch]$Enabled) {
+  if (-not $Enabled) {
+    return @{ status = 'disabled'; reason = 'diagnostic-mode-only'; nodes = @() }
+  }
   try {
     $nodes = @(& $ReadNodes)
     return @{ status = 'available'; reason = $null; nodes = $nodes }
@@ -20,6 +23,11 @@ function Get-PdfDiagnosticToken([string]$Value) {
   return 'redacted'
 }
 
+function Get-PdfDiagnosticControlType($ControlType) {
+  if ($ControlType -isnot [System.Windows.Automation.ControlType]) { return 'unavailable' }
+  return Get-PdfDiagnosticToken $ControlType.ProgrammaticName
+}
+
 function Get-PdfDialogTreeNodes($Dialogs) {
   $pending = [System.Collections.Generic.Queue[object]]::new()
   $queued = 0
@@ -37,7 +45,7 @@ function Get-PdfDialogTreeNodes($Dialogs) {
       $patterns = @($node.GetSupportedPatterns() | ForEach-Object { $_.Id })
     }
     @{ id = Get-PdfDiagnosticToken $info.AutomationId; class = Get-PdfDiagnosticToken $info.ClassName;
-       type = Get-PdfDiagnosticToken $info.ControlType.ProgrammaticName; enabled = $info.IsEnabled; patterns = $patterns }
+       type = Get-PdfDiagnosticControlType $info.ControlType; enabled = $info.IsEnabled; patterns = $patterns }
     if ($queued -ge 100) { continue }
     $child = $walker.GetFirstChild($node)
     while ($null -ne $child -and $queued -lt 100) {
@@ -47,6 +55,6 @@ function Get-PdfDialogTreeNodes($Dialogs) {
   }
 }
 
-function Read-PdfDialogTree($Dialogs) {
-  return Invoke-PdfTreeDiagnosticCapture { Get-PdfDialogTreeNodes $Dialogs }
+function Read-PdfDialogTree($Dialogs, [switch]$Enabled) {
+  return Invoke-PdfTreeDiagnosticCapture { Get-PdfDialogTreeNodes $Dialogs } -Enabled:$Enabled
 }

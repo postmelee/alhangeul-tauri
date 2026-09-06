@@ -98,7 +98,10 @@ try {
     $dialogs = [System.Windows.Automation.AutomationElement]::RootElement.FindAll($scope, $condition)
     if ($dialogCount -ne $dialogs.Count -or $treeDiagnostic.status -eq 'not-collected') {
       $dialogCount = $dialogs.Count
-      $treeDiagnostic = Read-PdfDialogTree $dialogs
+      # A failed capture must not retain a previous available snapshot.
+      $treeDiagnostic = @{ status = 'collecting'; reason = $null; nodes = @() }
+      $observedTree = @()
+      $treeDiagnostic = Read-PdfDialogTree $dialogs -Enabled:$ConfirmationProbe
       $observedTree = @($treeDiagnostic.nodes)
       Write-Evidence 'running' $null
     }

@@ -7,11 +7,13 @@ GitHub Issue: [#19](https://github.com/postmelee/alhangeul-tauri/issues/19)
 
 helper가 성공을 반환해도 다른 문서가 열리거나 요청과 다른 파일명으로 저장되었다.
 열기 보정 이후 최초 HWP/HWPX PDF 생성은 통과했으나 재실행 덮어쓰기 확인창에서 중단했다.
-최신 전체 run `34049930142`도 실패다. 새 확인창 adapter는 실제 앱이 InvokePattern을
+이전 전체 run `34049930142`도 실패다. 새 확인창 adapter는 실제 앱이 InvokePattern을
 제공하지 않아 호출 전에 중단했다. 아래 해결 상태는 경계별로 구분한다.
 후속 제한 run `34053001644`는 native 거절 경로를 통과했지만 Confirm 전 보조 UIA 트리
 수집 예외로 실패했다. 보조 진단 격리 후 run `34055921568`의 Confirm-only는 PDF 교체·
 원본/다른 target 보존·cleanup까지 통과했다. 세 사례는 두 실행의 부분별 근거이며 전체 PDF는 미완료다.
+최신 전체 run `34056914386`은 fresh 두 문서 저장을 통과했으나 HWP restart에서 보조 tree의
+`ProgrammaticName` 속성 접근 오류로 확인 버튼 호출 전에 중단했다. 제품 저장 결함으로 판정하지 않는다.
 
 ## 재현 조건
 
@@ -22,7 +24,8 @@ helper가 성공을 반환해도 다른 문서가 열리거나 요청과 다른 
 - 제품 SHA: `69b22650df96323a2c59e473d474ed3195cc9cc7`.
   기존 installer artifact run: `34021920074`.
 - 이전 열기 성공 harness: `903164b428a4d19265f7d078a85323596261a7c2`.
-  최신 전체 실행 harness: `23b631d03ee84cce631c3e798ffb4875d39297bc`.
+  이전 전체 실행 harness: `23b631d03ee84cce631c3e798ffb4875d39297bc`.
+  최신 전체 실행 harness: `910289e96ddc654e0da0f975afe15dab1edc598d`.
 - 입력은 저장소의 공개 HWP/HWPX fixture 복사본이다. 개인 문서는 사용하지 않았다.
 
 현재 판정 함수의 빠른 재현:
@@ -50,6 +53,7 @@ pnpm run test:gui:windows:contracts
 | 새 adapter에서 `Confirmation InvokePattern unsupported.` | 작은 WinForms host는 Button/InvokePattern을 제공하지만 실제 앱의 두 command는 Pane, `patterns=[]` | 실제 host의 capability 차이를 별도 경계로 취급; native guard/호출 성공을 추정하지 않음 |
 | UIA command 이름은 6/7인데 native ID 조회는 둘 다 0 | 실제 제품 관측에서 native class/owner/상태는 확인됐으나 ID는 고유 선택 근거가 아님; 조회 실패 여부는 미확정 | UIA ID 숫자를 native ID로 이식하지 않음; HWND 기반 호출은 별도 의미/identity/상태 검증과 승인 필요 |
 | 새 native No는 성공하지만 Confirm 전에 `ElementNotAvailableException` | 보조 `Read-AppTree`의 desktop-wide `FindAll` 오류가 실행 흐름까지 중단; Confirm adapter에는 도달하지 않음 | 보조 진단의 unavailable과 필수 identity 실패를 분리; 진단 예외로 성공/실패를 잘못 승격하지 않음 |
+| 제한 Confirm 통과 후 전체 restart에서 `PropertyNotFoundStrict` | 보조 raw-view 수집기가 모든 노드의 `ControlType.ProgrammaticName` 존재를 가정; typed UI 전환 예외와 다른 오류라 재전파됨 | 정상 경로와 선택적 진단을 분리하는 보정 필요; wrapper 예외 회귀와 실제 metadata 직렬화 검사를 구분 |
 
 관측한 ID/class는 이 runner의 사실이며 Windows 공통 API 계약으로 일반화하지 않는다.
 Yes/No 모양만으로 덮어쓰기라고 단정하지 않는다. 실제 확인창 대상·소유 관계를 검증하는
@@ -62,9 +66,9 @@ adapter를 구현하기 전에는 무조건 Yes 또는 숫자 ID 교체로 우�
 - **최초 PDF 생성: 해당 시나리오 통과.** 최신 전체 실행에서 HWP 6쪽/HWPX 10쪽의 정확한
   title·파일 생성·source hash·dirty 보존을 확인했다. 두 PDF의 별도 분석/시각 관측은 아래
   Stage 4.19에 둔다. 원격 전체 PDF 분석과 재실행 수용의 통과로 쓰지 않는다.
-- **제품 재실행 덮어쓰기: 새 adapter의 미지원 capability 확인.** HWP 첫 확인창에서
-  InvokePattern이 없어 안전하게 중단했다. HWPX restart와 원격 전체 PDF 분석은 미실행이다.
-  제품 저장 결함이 확인된 것은 아니다.
+- **제품 재실행 덮어쓰기: 미완료.** 이전 Invoke 미지원은 후속 native 제한 검증에서 보정됐으나
+  최신 전체 실행은 HWP restart의 보조 tree metadata 오류로 확인 전에 중단했다.
+  HWPX restart와 원격 전체 PDF 분석은 미실행이며 제품 저장 결함이 확인된 것은 아니다.
 - **판단 분리: Stage 4.17 Windows 검사 28개 통과.** 실제 helper의 순수 함수와 PS5.1
   실행 테스트를 연결했다. ID/class 충돌의 관측값을 재사용하고 PID/HWND는 합성한다.
   클릭 직전 UIA 재조회와 native 재검증을 추가했으므로 이전 open-only 성공을 새 helper의
@@ -75,7 +79,7 @@ adapter를 구현하기 전에는 무조건 Yes 또는 숫자 ID 교체로 우�
 - **작은 OS 통합: Stage 4.18 완료.** `d553f8e`에서 열기·새 저장·덮어쓰기·No/Cancel·
   잘못된 target 거부와 공개 fixture의 파일 사후 조건·cleanup이 모두 통과했다. 제품/PDF 성공은 아니다.
 - **실제 앱 확인창 관측: Stage 4.20 완료.** native `Button`/활성 상태와 13개 guard true,
-  UIA Invoke 미지원·native ID 조회 0을 확인했다. 버튼 실행 지원은 여전히 미검증이다.
+  UIA Invoke 미지원·native ID 조회 0을 확인했다. 이 관측 단계 자체는 버튼 실행 증거가 아니다.
 - **실제 앱 native 호출: Stage 4.21 완료.** 첫 run의 No·저장창 복귀·Cancel·파일 보존과
   잘못된 target 거부, 후속 Confirm-only의 PDF 교체·원본 보존·cleanup을 부분별 근거로 확인했다.
   첫 run의 Confirm 전 보조 진단 실패는 유지하며 전체 PDF 수용으로 승격하지 않는다.
@@ -121,6 +125,62 @@ Stage 4.19는 미완료다. 완료 보고서·완료 커밋·새 원격 실행�
 진단**이다. 기존 bytes·공개 fixture를 재사용하고 PDF 전 사례·제품 build는 반복하지 않는다.
 관측 없이 BM_CLICK/TDM_CLICK_BUTTON/다른 API를 순차 시도하거나 Invoke 조건만 삭제하지 않는다.
 이 제한된 진단/보정 계획과 HWPX 표의 원본 대조 범위를 승인받은 뒤 진행한다.
+
+### Stage 4.19 재개 — 보조 tree metadata 오류로 확인 전 중단
+
+[run 34056914386](https://github.com/postmelee/alhangeul-tauri/actions/runs/34056914386),
+harness `910289e96ddc654e0da0f975afe15dab1edc598d`: Windows job **14분 27초 실패**.
+image `20260824.214.3`/OS `10.0.26100`, 기존 제품 SHA와 artifact `9986364323`을 재사용했다.
+4.21 `b980e10` 이후 scripts/tests/workflow 변경 없이 전체 PDF mode를 한 번 실행했다.
+이번 mode는 PS 정책/native/tree 사전 검사를 실행하지 않으므로 4.21의 122개를 재검증한 것이 아니다.
+
+- fresh HWP 6쪽/HWPX 10쪽: 정확한 문서 identity·marker 편집·PDF 저장·source/dirty 보존 통과.
+- HWP restart: `scripts/windows-pdf-tree-diagnostics.ps1:40`의
+  `$info.ControlType.ProgrammaticName` 접근에서 `PropertyNotFoundStrict` 발생.
+  호출자는 `scripts/windows-pdf-dialog.ps1:101`의 `Read-PdfDialogTree`다.
+  모든 raw-view 노드가 해당 속성을 제공한다는 자동화 코드의 가정이 잘못됐다.
+  어느 노드였는지, ControlType이 null인지 다른 값이었는지는 증거만으로 확정하지 않는다.
+- 실패 evidence는 `stage=waiting-dialog-close`, `dialogCount=2`, `overwriteConfirmed=false`,
+  `confirmationObservation=null`이다. `buttonMethod=Win32-BM_CLICK`은 앞선 Save 제출이며
+  확인 command 호출이 아니다. `treeDiagnostic.status=available`도 대입 중 예외로 남은
+  이전 snapshot 값이지 이번 수집 성공이 아니다. helper는 약 1.77초에 실패했으며 timeout이 아니다.
+- HWPX restart는 실행되지 않았고 Ubuntu analyze는 skipped다. 전체 summary는 없다.
+  NSIS cleanup·WebView2 복구는 통과했다. 다운로드한 두 source는 fixture hash와 같고,
+  두 target PDF는 각각 fresh PDF와 같아 실패한 restart가 기존 파일을 바꾸지 않았음을 확인했다.
+- raw artifact `9996455216`, `windows-pdf-raw-34056914386`, 3767691 bytes,
+  digest `sha256:d20c039410998faf5b7138957ad9b467d0e097425795701164dea0629b200e5b`.
+  로컬 증거: `/private/tmp/alhangeul-pdf-stage419-resume.neC9bC`; raw 자료는 커밋하지 않는다.
+
+별도 부분 분석은 기존 `analyzePdf()`로 fresh 두 PDF만 읽었다. 각 PDF hash는 evidence와
+일치하며 HWP `c46a6f07a316e4c8484b0b82c8fc88c99450a036ed76f6cdd814455d2c209745`,
+HWPX `df8592475c369d90551da2088910f215854625d1dc5a0e76a7123cf3e1645bd6`이다.
+6/10쪽·A4·marker 검색·쪽별 text/nonblank·페이지 가장자리 검사는 통과했다. 16쪽 PNG 모두
+앞서 전 쪽을 시각 검토한 4.19 fresh 렌더와 SHA-256이 같아 중복 전 쪽 열람은 하지 않았다.
+이를 skipped된 원격 분석이나 restart 포함 전체 성공으로 쓰지 않는다.
+
+원본 공개 `form-002.hwpx`(SHA-256
+`5ab8f7c368e02538f75f1cd2bd82bbd8de2f925a54ba7b38ec9395b2cdb804d4`)의
+동봉 `Preview/PrvImage.png`도 추출해 첫 쪽과 대조했다. 미리보기에는 긴 문구가 셀 안에
+있으나 생성 PDF는 폰트/배치가 다르고 일부 문구가 오른쪽 셀 경계에 밀착·잘려 보인다.
+이는 앞선 관측과 동일하다. 동봉 미리보기는 현재 앱 렌더의 증거가 아니고 이번 앱 screenshot도
+2쪽 일부여서 PDF 변환·렌더러·폰트 중 원인을 확정하거나 조판 전체 정상으로 판정하지 않는다.
+
+4.19는 미완료다. 4.21의 제한 통과와 사용자의 수동 통과는 유지한다. 완료 보고서/커밋,
+소스 보정과 추가 실행은 보류했다. 권고는 예외 사례를 계속 늘리기보다 **정상 PDF 경로에서
+범용 보조 tree 수집을 빼고 명시적 진단 mode에서만 실행**하는 최소 보정이다. 필수 dialog
+탐색·의미/target/owner/identity/native guard와 확인 adapter는 그대로 둔다.
+현재 예외 회귀는 wrapper에 합성 예외를 전달할 뿐 실제 metadata 직렬화의 누락/타입을
+검사하지 않는다는 공백도 남긴다. 진단 mode를 유지할 경우 이 입력 경계를 검사해야 한다.
+이 보정과 영향에 맞는 재검증은 당시 다음 승인 범위로 남겼다.
+
+후속 `진행해줘` 승인으로 같은 4.19 안에서 보정했다. helper는 기존 `ConfirmationProbe`에만
+수집을 활성화하며 기본 wrapper는 callback 미호출·`disabled`/빈 노드를 반환한다. 실제
+ControlType만 ProgrammaticName을 읽고 null/미지원 값은 고정 토큰으로 남긴다. 수집 직전
+snapshot도 비워 이전 available을 재사용하지 않는다. 필수 탐색/의미/identity/native guard와
+확인 adapter는 변경하지 않았다. 실제 PS 테스트에 활성/비활성·누락/타입 직렬화 경계를 추가했고,
+기존 PDF workflow의 설치 전 PS 검사를 모든 mode로 연결했다. 새 mode/workflow는 없다.
+로컬 focused 계약 58개·workflow/handoff 83개(중복 import 포함), GUI typecheck·actionlint·diff가
+통과했다. PS 16개 회귀와 실제 전체 PDF는 같은 원격 한 번에서 검증 예정이며 아직 통과로 세지 않는다.
 
 ### Stage 4.20 실제 앱 확인창 — 관측 완료, 호출은 미검증
 
@@ -423,6 +483,7 @@ readback·재조회/native 검증·제출을 확인했다. 시험 파일 hash �
 | [34051827068](https://github.com/postmelee/alhangeul-tauri/actions/runs/34051827068), harness `f090ea0` | PS 정책 50개·native 진단 23개·실제 앱 확인창 관측·파일 보존·cleanup 통과; 확인 버튼 호출/PDF 미실행 |
 | [34053001644](https://github.com/postmelee/alhangeul-tauri/actions/runs/34053001644), harness `816edd5` | PS 정책 62개·native 진단 50개·Decline/WrongTarget 통과; Confirm 전 보조 UIA 열거 예외, 세 파일 보존 별도 확인; 전체 제한 검증은 실패 |
 | [34055921568](https://github.com/postmelee/alhangeul-tauri/actions/runs/34055921568), harness `b980e10` | PS 정책 62개·native 50개·tree 예외 10개, Confirm-only의 PDF 교체·원본/다른 target 보존·cleanup 통과; 이전 두 거절과 부분별 근거, 전체 PDF는 미실행 |
+| [34056914386](https://github.com/postmelee/alhangeul-tauri/actions/runs/34056914386), harness `910289e` | fresh 두 문서 통과; HWP restart의 보조 tree `ProgrammaticName` 접근 오류로 확인 전 실패, HWPX restart/원격 analyze 미실행; 원본/target 보존·fresh 부분 분석 별도 확인 |
 
 2026-09-06 작업지시자는 실제 Windows NSIS에서 두 문서의 PDF 저장·검색·쪽 수·시각 확인,
 원본 보존과 재실행 덮어쓰기를 문제없이 완료했다고 보고했다. 해당 수동 근거는 유지한다.

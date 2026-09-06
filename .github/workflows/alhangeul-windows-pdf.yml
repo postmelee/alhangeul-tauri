@@ -95,8 +95,7 @@ jobs:
              nativeRunId = $env:NATIVE_RUN_ID; runId = $env:GITHUB_RUN_ID;
              scenario = $env:PDF_SCENARIO; confirmationCases = $env:PDF_CONFIRMATION_CASES } |
             ConvertTo-Json | Set-Content "$env:EVIDENCE_ROOT/workflow-context.json"
-      - name: Check confirmation PowerShell before installation
-        if: ${{ inputs.confirmation_probe || inputs.confirmation_verify }}
+      - name: Check dialog PowerShell before installation
         shell: powershell
         run: |
           $ErrorActionPreference = 'Stop'

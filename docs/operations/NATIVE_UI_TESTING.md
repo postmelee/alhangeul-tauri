@@ -65,13 +65,19 @@ Windows/Linux의 대화상자·메시지·버튼 조작을 포함하는 테스�
   사라졌다면 수집 불능을 명시하며, 이를 사용자 작업의 성공이나 잘못된 target 승인으로 바꾸지 않는다.
   desktop 전체 하위 tree 열거 대신 확인된 앱/dialog 범위를 사용한다. `FindAll`의 상위 window
   검색에는 Children 범위가 권고된다. [탐색 범위 계약](https://learn.microsoft.com/en-us/dotnet/api/system.windows.automation.automationelement.findall)
-- [보조 tree 수집기](../../scripts/windows-pdf-tree-diagnostics.ps1)는 이미 확인한 dialog root 안에서
-  최대 100개 노드만 순회한다. typed `ElementNotAvailableException`만 최대 8단계의
+- [보조 tree 수집기](../../scripts/windows-pdf-tree-diagnostics.ps1)는 기본 비활성이다. 일반 PDF/Open과
+  확인/거절 실행 검증에서는 callback을 호출하지 않고 `disabled`/`diagnostic-mode-only`와 빈 tree를
+  기록한다. 기존 `ConfirmationProbe` 관측 전용 모드에서만 이미 확인한 dialog root 안의
+  최대 100개 노드를 순회한다. typed `ElementNotAvailableException`만 최대 8단계의
   InnerException에서 식별하여 `treeDiagnostic.status=unavailable`과 고정 reason을 기록하고
   부분 노드는 버린다. 문구 비교/catch-all/클릭 재시도는 하지 않는다. 필수 dialog 탐색과
   의미/대상/owner/identity 판정은 수집기 밖에 두며 오류를 그대로 실패시킨다.
-  [PS 회귀](../../tests/windows-pdf-tree-diagnostics.test.ps1)는 같은 wrapper의 합성 예외를 검사한다.
-  실제 UI 전환 재현과 구분하며 Windows 설치 전 검사에 연결한다.
+  ControlType은 실제 타입을 확인한 뒤 직렬화하며 null/미지원 값은 `unavailable`로 기록한다.
+  수집 전 snapshot을 비워 오류가 이전 available로 보이지 않게 한다.
+  [PS 회귀](../../tests/windows-pdf-tree-diagnostics.test.ps1)는 같은 wrapper의 합성 예외,
+  비활성 callback 미호출과 실제 ControlType 직렬화 함수의 정상/누락/다른 타입을 검사한다.
+  실제 UI 전환 재현과 구분하며 모든 PDF mode의 Windows 설치 전 검사에 연결한다.
+  이는 보조 수집 분리이지 필수 탐색/안전 guard의 생략이 아니다.
 
 ### 덮어쓰기와 취소
 
@@ -215,6 +221,14 @@ Confirm·PDF 교체·source/다른 target 보존·cleanup을 통과했다. PS5.1
 이번 최종 tree 진단은 available이며 실제 UI 전환에서 같은 예외가 발생·포착됐다는 증거는 아니다.
 [4.21 보고서](../../mydocs/working/task_m010_19_stage4.21.md)에 출처와 한계를 기록한다.
 기존 실패 run이나 미실행인 HWPX/restart/전체 PDF 수용을 통과로 소급하지 않는다.
+
+전체 재개 run `34056914386`은 HWP/HWPX fresh 저장을 통과했지만 HWP restart에서 위 보조
+metadata 오류로 확인 adapter 호출 전에 실패했다. HWPX restart와 원격 분석은 미실행이다.
+원본/기존 target 보존과 fresh 두 PDF의 별도 분석은 전체 수용과 구분한다. 실패 JSON의
+`available` 같은 상태도 현재 수집 실패 전 snapshot일 수 있으므로 stage/예외/사후 조건과
+함께 판독한다. 선택적 수집의 입력 계약을 검사할 때는 예외 wrapper뿐 아니라 실제 직렬화의
+속성 누락·타입 불일치를 포함한다. 후속 승인으로 위 비활성 기본값/직렬화/설치 전 검사를
+보정했으며 실제 Windows 결과는 사건 기록에서 확인한다. 이전 실패를 통과로 소급하지 않는다.
 
 ## 새 helper·Action 변경의 완료 기준
 

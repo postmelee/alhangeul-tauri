@@ -10,6 +10,76 @@ GitHub Issue: [#19](https://github.com/postmelee/alhangeul-tauri/issues/19)
 
 ## 단계 개요
 
+### 2026-09-07 Stage 4.19 보조 수집 분리 보정 승인
+
+작업지시자의 후속 `진행해줘`로 정상 검증과 보조 tree 진단 분리를 승인받았다. 기존 #19/M010,
+`local/task19`와 앞선 실패 기록 5개 문서의 미커밋 변경을 보존하고 같은 4.19 안에서 보정한다.
+새 issue/branch·devel 재통합·별도 진단 workflow는 추가하지 않는다.
+
+- 기존 `ConfirmationProbe` 관측-only 모드에서만 tree 수집을 활성화한다. 일반 PDF/Open 및
+  확인/거절 실행 검증은 callback을 호출하지 않고 `disabled`/빈 노드를 기록한다.
+  필수 dialog 탐색·의미/target/owner/identity/native guard·확인 adapter는 그대로 유지한다.
+- 진단용 ControlType 직렬화는 실제 타입을 확인한 뒤에만 ProgrammaticName을 읽는다.
+  null/미지원 값은 고정 `unavailable` 토큰으로 표현한다. 새 수집 전에 이전 snapshot을 비워
+  실패가 과거 available로 보이지 않게 한다. 일반 예외/필수 판정 오류를 catch-all하지 않는다.
+- 기존 실제 PS 회귀에 기본 비활성·명시 활성·callback 미호출·누락/다른 타입/정상 ControlType
+  직렬화를 추가한다. 기존 PDF workflow의 설치 전 PS5.1 parser/정책/native/tree 검사를
+  모든 mode에서 실행하여 긴 준비 전에 이 경계를 검증한다. Node 계약도 해당 연결을 검사한다.
+- 수정 범위는 두 helper, 기존 PS/Node tree 회귀, PDF reusable workflow와 기존 가이드/사건 기록/
+  plans/orders, 성공 시 4.19 보고서다. 공식 독자는 자동화 유지보수자이며 기존
+  `docs/operations/NATIVE_UI_TESTING.md`를 유지한다. 새 공식 문서/manual은 만들지 않는다.
+- 로컬 focused 계약·GUI typecheck·workflow/handoff·actionlint·diff 통과 후 실행용 checkpoint를
+  `publish/task19`에 게시한다. 동일 제품 artifact의 유효성 확인 후 `windows-pdf-acceptance`를
+  한 번만 실행해 PS 사전 검사와 실제 fresh/restart/기존 분석을 함께 확인한다.
+  별도 작은 workflow·제품 재빌드·MSI/썸네일/updater/릴리즈·Mac native 검증은 실행하지 않는다.
+- 원격 실행에 필요한 소스 checkpoint 뒤 결과 문서를 묶는 기존 예외를 유지한다.
+  실패 시 근거를 남기고 자동 재시도/범위 확장을 하지 않는다. 전체 PDF 결과와 HWPX 조판 관측,
+  #19의 동시 편집/reload/TTL 수용은 구분한다.
+
+보정 후 로컬 focused 계약 **58/58**, workflow/handoff **83/83**(중복 import 포함), GUI
+typecheck·actionlint·diff가 통과했다. 실제 PS 검사 16개는 원격 설치 전 실행 예정이며 Mac에서
+실행했다고 기록하지 않는다. 필수 guard/클릭 adapter와 제품 경로는 이전 checkpoint 대비 변경 없다.
+기존 Windows artifact의 미만료·SHA/digest/크기도 재확인했다.
+
+### 2026-09-07 Stage 4.19 전체 PDF 검증 재개 승인 — 4.21 adapter 사용
+
+작업지시자가 4.21 보고 후 `진행해줘`로 기존 HWP/HWPX PDF 전체 회귀 검증을 승인했다.
+새 구현 단계를 만들지 않고 미완료인 4.19를 재개한다. clean `local/task19`/열린 #19/M010을
+유지하며 devel 재통합·새 issue/branch 생성은 하지 않는다.
+
+- 제품 SHA `69b22650df96323a2c59e473d474ed3195cc9cc7`, native run `34021920074`,
+  Windows artifact `9986364323`/123231295 bytes/digest
+  `sha256:02c13e35d515d08c7793d315905125932a33209b8e63b1f750998a62b1226bdc`를 재사용한다.
+  재개 전 미만료·동일 SHA/digest/크기를 확인했다.
+- 4.21 실행 harness `b980e10` 이후 scripts/tests/workflow 변경 없음과 기존 제품 bytes 대비
+  apps/crates/third_party/lockfile 변경 없음을 확인했다. 이번에는 제품/helper/workflow를 수정하지 않는다.
+- 기존 Desktop dispatcher의 `windows-pdf-acceptance`, `confirmation_cases=all` 기본값,
+  candidate SHA/native run 지정, `run_tests=false`, `publish_release=false`로 한 번 실행한다.
+  Windows NSIS 설치 후 HWP/HWPX fresh/restart, 기존 Ubuntu PDF 분석을 그대로 수행한다.
+- 네 결과의 정확한 문서·원본/dirty 보존·저장/덮어쓰기, hash·검색 marker·쪽 수/A4·쪽별 내용·
+  빈 쪽/쪽 경계와 cleanup을 검토한다. PDF 스킬로 생성 PNG를 시각 확인하며 수치 통과와 구분한다.
+  fresh/restart PNG가 byte-identical이면 동일 쪽은 중복 열람하지 않는다. 기존 HWPX 표 관측은
+  확보된 앱 screenshot/결과와 대조하고, 원본 동등성 근거가 부족하면 미확정으로 남긴다.
+- 변경 문서는 승인된 기존 plans/orders·사건 기록·공식 가이드 및 검증 완료 시 4.19 보고서뿐이다.
+  실패 이력은 보존한다. 계획/결과 문서는 이번 단계 종료에 묶어 커밋하며, 코드가 같으므로
+  새 실행 checkpoint 없이 이미 게시된 `910289e` harness를 사용한다.
+- 변경 없는 로컬 계약/PS/작은 확인창 검증·제품 재빌드·MSI/썸네일/updater/릴리즈·Mac native
+  검증은 반복하지 않는다. 실패 시 원인/범위를 기록하고 자동 보정/재시도하지 않는다.
+  #19의 동시 편집/reload/TTL 등 별도 수용 경계를 이번 전체 PDF smoke 통과로 완료 처리하지 않는다.
+
+재개 run `34056914386`은 **14분 27초 실패**다. fresh HWP/HWPX 저장·원본/dirty 보존은
+통과했으나 HWP restart에서 보조 tree 수집기의 `ControlType.ProgrammaticName` 접근이
+`PropertyNotFoundStrict`로 실패했다. 확인 adapter 호출 전이며 제품 덮어쓰기 결함으로
+판정하지 않는다. HWPX restart·원격 analyze는 미실행, NSIS cleanup·WebView2 복구는 통과했다.
+다운로드한 source/target hash 보존 및 fresh 두 PDF의 별도 분석은 통과했다. 16쪽 렌더는
+앞서 시각 검토한 4.19 fresh 결과와 byte-identical이다. HWPX 동봉 미리보기와의 폰트/배치
+차이는 확인했지만 현재 앱의 같은 위치 대조가 없어 원인·조판 동등성을 확정하지 않는다.
+상세는 [사건 기록](../troubleshootings/task_m010_19_windows_pdf_automation.md)에 둔다.
+4.21의 제한 통과는 유지하고 4.19는 미완료로 남긴다. 소스 보정·추가 실행·완료 커밋은 하지 않았다.
+다음 승인 권고는 **정상 PDF 경로에서 보조 tree 수집을 제외하고 명시적 진단 mode에 한정**하는
+최소 보정이다. 필수 탐색/의미/target/owner/identity/native guard와 확인 adapter는 유지한다.
+이는 미구현 권고이며 재검증 범위와 함께 별도 승인받는다.
+
 ### 2026-09-07 Stage 4.21 native 호출 보정·실제 앱 제한 검증 승인
 
 #### 같은 단계의 보조 진단 보정·Confirm-only 후속 승인
