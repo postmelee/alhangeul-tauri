@@ -72,6 +72,7 @@
     },
     "linux": {
       "deb": {
+        "desktopTemplate": "linux/main.desktop",
         "depends": ["shared-mime-info"],
         "postInstallScript": "linux/update-mime-database.sh",
         "postRemoveScript": "linux/update-mime-database-remove.sh",
@@ -82,6 +83,7 @@
         }
       },
       "rpm": {
+        "desktopTemplate": "linux/main.desktop",
         "depends": ["shared-mime-info"],
         "postInstallScript": "linux/update-mime-database.sh",
         "postRemoveScript": "linux/update-mime-database-remove.sh",

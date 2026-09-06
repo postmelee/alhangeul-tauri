@@ -96,6 +96,7 @@ exact SHA·실행 환경·미해결 위험은 [v0.1.0 기록](releases/v0.1.0.md
 pnpm install --frozen-lockfile
 pnpm run check:product-boundary
 pnpm run check:product-version
+pnpm run check:release-metadata
 pnpm run check:rhwp-pin
 pnpm run test:automation
 pnpm run test:upstream
@@ -128,6 +129,14 @@ pnpm run check:desktop-artifacts -- \
   --root <downloaded-artifact-root> \
   --verify-inventory \
   <downloaded-artifact-root>/alhangeul-artifact-inventory.json
+```
+
+검증한 installer만 한 임시 root에 모으면 아래 명령으로 결정적인 checksum 목록을 생성할 수 있다. MSI·NSIS·AppImage·DEB·RPM만 허용하며 inventory, 기존 output과 AppDir 중간 산출물은 제외한다. 빈 installer, 지원하지 않는 파일과 중복 공개 파일명은 거부한다. `.sig`나 updater inventory의 검증·checksum 생성을 대신하지 않으며 공개 권한을 부여하지 않는다.
+
+```sh
+pnpm run create:release-checksums -- \
+  --root <downloaded-artifacts-root> \
+  --output <downloaded-artifacts-root>/SHA256SUMS
 ```
 
 검증된 canary commit·run과 installer SHA-256은 [버전별 기록](releases/README.md), retention과 공식 배포 경계는 [릴리즈 정책](operations/DESKTOP_RELEASE.md)을 따른다. 위 명령은 일반 artifact용이며 updater 서명 파일의 검증·게시 절차는 [실행 가이드](operations/PUBLIC_RELEASE_RUNBOOK.md)를 사용한다.

@@ -163,7 +163,7 @@ test('Pages workflow는 정적 Pages 외 release·updater·native 게시를 수�
   assert.doesNotMatch(pagesWorkflow, /\bcp\s+-R\b/);
 });
 
-test('CI workflow는 제품 version·pin과 automation 계약을 native 검사 전에 실행한다', () => {
+test('CI workflow는 제품·release 계약과 automation을 native 검사 전에 실행한다', () => {
   assert.match(ciWorkflow, /^    runs-on: ubuntu-24\.04$/m);
   assertOrdered(ciWorkflow, [
     'pnpm run check:product-boundary',

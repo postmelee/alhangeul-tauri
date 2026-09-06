@@ -78,8 +78,13 @@
 
 현재 workflow에는 draft/prerelease 입력이나 이전 비게시 run의 파일을 그대로 승격하는 입력이 없다.
 `publish_release=true`는 새 build를 거친 게시이며, DEB/RPM·arm64 파일은 이 7개 asset에 포함되지
-않는다. 다른 게시 흐름이 필요하면 공개 전 승인된 운영 방법 또는 별도 구현 Task를 확보한다.
-서로 다른 run의 일부 파일을 섞거나 없는 옵션을 가정해 문서만으로 이 경계를 우회하지 않는다.
+않는다. 동일 bytes 게시에는 [runbook Gate 4](PUBLIC_RELEASE_RUNBOOK.md#gate-4--github-release-게시와-원격-파일-재검증)의
+maintainer CLI 경로를 별도 승인받는다. 하나의 성공한 비게시 updater run에서 세 installer·서명·
+complete inventory 전체를 가져오고, **같은 exact SHA**의 지정 일반 run에서 수동 패키지만 보완한다.
+실패 run·다른 SHA·일반 MSI/NSIS/AppImage로 서명 후보를 대체하지 않는다. 기본 공개 목록은
+installer 6개 + `.sig` 3개 + complete inventory + `SHA256SUMS`, 총 11개이며 버전별로 확정한다.
+CLI에는 Actions environment 승인 규칙이 자동 적용되지 않는다. 인증 주체·허용 ref·파일 목록과
+공개 승인 기록을 별도로 남기고, 그 경로를 허용하지 않는 보호 정책이면 실행하지 않는다.
 
 Actions archive는 임시 검증물이다. 현재 desktop/updater artifact는 14일, Linux GUI evidence는
 7일 retention이며 run 성공만으로 파일이 아직 내려받아지는 것은 아니다. 버전 기록에는 archive
