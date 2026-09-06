@@ -3,7 +3,7 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: Stage 2 진단 계약 검증·보고 완료 — 보고 검토 및 Stage 3 세부계획 승인 대기
+상태: Stage 3 세부계획 작성 완료 — 구현 승인 대기
 
 승인 근거: 2026-09-06 같은 스레드의 구현계획 승인 요청에 작업지시자가
 “진행해줘”로 Stage 1 진행을 지시했다. Stage 2 원격 게시·실행은 별도 승인 대상으로 유지한다.
@@ -42,6 +42,9 @@ Windows-only 추가 1회 실행 요청에 작업지시자가 “진행해줘”�
 MSI 강제 교체의 제품 gate 실패는 유지한다. 분석 후 “진행해줘” 지시에 따라
 [Stage 2 보고서](../working/task_m010_57_stage2.md)에 근거와 수용 범위를 기록했다.
 이후 추가 실행·제품 등록 보정·Stage 3 구현은 아직 승인받지 않았다.
+Stage 2 보고 커밋 `343b5200009cd90aa23421d2402c5b4ac3b6a690` 제시 후 작업지시자가
+“진행해줘”로 Stage 3 세부계획 확정을 지시했다. 아래 제공 방식·파일·검증 범위는
+그 산출물이며 제품/진단 코드 수정이나 원격 실행까지 승인된 것은 아니다.
 
 ## 단계 개요
 
@@ -498,7 +501,7 @@ Stage 2.2 이후의 우선 제안은 **진단 결과 기반 안내**다. 다음 
 임시 복사본을 사용하고 새 자식 process·timeout·민감 경로 비출력 계약을 유지한다.
 실제 API 실행과 캐시 변경 가능성을 안내하고 관리자 권한 실행을 필수로 요구하지 않는다.
 설치 중 자동 문서 탐색·진단 실행이나 앱 설정 UI 추가는 이번 우선안에 포함하지 않는다.
-배포할 진단 도구의 파일 목록·진입점·제공 경로는 Stage 3 진입 승인 때 확정한다.
+제공할 진단 도구의 파일 목록·진입점·제공 경로는 아래 세부안으로 승인받는다.
 
 MSI 전환 안내는 문서 저장·앱 종료 → 기존 NSIS 제거 → 같은 버전/아키텍처 MSI 설치 →
 재부팅 요청이 있으면 재부팅 → 사용자의 일반 Explorer 세션에서 재확인 순서로 작성한다.
@@ -507,14 +510,124 @@ MSI 전환 안내는 문서 저장·앱 종료 → 기존 NSIS 제거 → 같은
 공식 문서는 기존 승인 위치인 README, `docs/architecture/WINDOWS_THUMBNAILS.md`,
 `docs/operations/DESKTOP_RELEASE.md`를 필요한 만큼 보완하며 신규 FAQ/문서 루트는 만들지 않는다.
 
+### Stage 3 세부안 — 구현 승인 대상
+
+#### 제공 방식과 빌드 식별
+
+- 앱 설정·installer 체크박스가 아닌 **별도 수동 PowerShell 진단 묶음**을 제공한다.
+  사용자는 Windows x64 PowerShell 5.1에서 압축을 풀고 명령을 실행한다.
+  Node/Rust/Git/rhwp submodule은 사용자 PC에서 요구하지 않는다.
+- Windows 일반 artifact build의 inventory 검증 뒤, 별도 output directory에 지원 묶음을
+  만들고 `alhangeul-windows-x64-thumbnail-support` artifact로 올리는 workflow 변경을 제안한다.
+  14일 임시 검증물이며 설치 파일·릴리즈 asset·updater payload에는 넣지 않는다.
+  기존 bundle의 정확히 5개 파일 계약과 공개 다운로드 목록도 바꾸지 않는다.
+- 같은 run의 설치 파일과 지원 묶음을 사용한다. 버전 문자열만 같다는 이유로 다른 빌드의
+  해시를 수용하지 않는다. 동봉 inventory와 실제 등록된 DLL/worker의 bytes·SHA-256을
+  비교하며 맞지 않으면 `reference-mismatch`로 멈추고 맞는 묶음을 안내한다.
+- `support-manifest.json`은 schemaVersion, exact source SHA, product version, platform,
+  허용 파일 상대 경로·bytes·SHA-256을 담는다. 도구 시작 시 누락·변조·중복·경로 이탈을
+  검사한다. 자기 해시는 manifest에 포함하지 않는다. hash 검사는 서명/출처 인증을
+  대체하지 않으므로 GitHub run·source SHA·artifact digest를 별도로 확인하도록 안내한다.
+- 지원 묶음은 아래 실행 파일 10개와 같은 빌드의 `alhangeul-artifact-inventory.json`,
+  기존 공식 문서의 복사본 `WINDOWS_THUMBNAILS.md`, manifest만 포함한다.
+  installer/DLL/worker/문서 fixture·MSI 로그·사용자 진단 결과는 포함하지 않는다.
+- 런타임 자동 다운로드·업로드·설치·업데이트는 없다. Release/웹사이트 제공 전환은 별도 승인이다.
+
+#### 사용자 진입점과 안전 계약
+
+신규 `scripts/windows-thumbnail-check.ps1`의 입력은 네 개다.
+
+```powershell
+.\windows-thumbnail-check.ps1 `
+  -DocumentPath 'C:\Samples\document.hwp' `
+  -JpgPath 'C:\Samples\control.jpg' `
+  -OutputDirectory 'C:\Samples\thumbnail-check-new' `
+  -Consent
+```
+
+- `DocumentPath`: 명시한 HWP 또는 HWPX **한 개**. 두 형식·여러 문서를 확인하려면
+  새 출력 디렉터리로 별도 실행한다. 작은/큰 문서를 검사했다고 임의 표기하지 않는다.
+- `JpgPath`: 명시한 JPG/JPEG 대조군 한 개. 각 입력은 로컬 일반 파일, 0 초과 64 MiB 이하로
+  제한한다. 이 제한은 진단 도구의 복사·자원 경계이지 새 제품 엔진 제한이 아니다.
+- UNC·device namespace·원격 드라이브·alternate data stream·reparse point와 그 경유 경로,
+  입력 중복·입력/출력 충돌은 거부한다. 출력은 새 디렉터리만 허용하고 기존 파일을 덮어쓰지 않는다.
+- `Consent`가 없으면 부작용 안내와 사용법만 출력하고 종료 코드 2로 끝낸다.
+  동의 전 문서 복사·COM/Shell 호출·결과 파일 생성은 하지 않는다.
+- 사용자에게 문서/이미지 처리기 실행과 Windows thumbnail cache 생성 가능성을 알린다.
+  일반 사용자 세션 실행을 기본 안내로 삼으며 자동 승격·관리자 권한 필수 요구는 하지 않는다.
+  실행 정책·조직 보안 차단은 오류로 남기고 Bypass/전역 정책 변경을 기본 해법으로 안내하지 않는다.
+- 입력 원본은 읽기만 한다. task 소유 임시 하위 폴더에 무작위 이름의 독립 복사본을 만들고,
+  source/copy hash·크기·mtime을 메모리에서 확인한다. 동시 수정·무결성 실패는 중단한다.
+  원본 파일명·경로·hash·문서 bytes·bitmap·예외 원문을 보고서나 console에 출력하지 않는다.
+- finally에서 **해당 실행이 만든 임시 폴더만** 정리한다. 정리 실패는 코드로 남기고
+  진단 완료로 취급하지 않는다. 사용자 출력 폴더나 기존 임시 폴더를 재귀 삭제하지 않는다.
+- 기존 x64 STA 자식·256 px·probe별 30초 timeout 계약을 재사용한다. 타임아웃 시
+  자신이 시작한 자식만 종료하고 Explorer/dllhost/사용자의 앱은 종료하지 않는다.
+
+#### 실행 순서와 판정
+
+1. 동의·입력·묶음 무결성을 검증한 뒤 state와 선택 확장자의 association을 읽는다.
+   DLL/worker reference가 맞고 실제 조회 처리기가 Alhangeul일 때만 문서 API를 호출한다.
+   다른 처리기 선택·등록 중복·scope 미확인·읽기 실패는 별도 결과로 남기고 강제 변경하지 않는다.
+2. 문서·JPG의 fresh 복사본에 Shell 요청을 먼저 한다. 직접 COM/force 호출을 앞세우지 않는다.
+3. 각 입력에서 별도 복사본의 cache-only, 또 다른 복사본의 force-extract와 그 복사본의
+   after-force cache-only를 수집한다. 마지막에 직접 COM 생성과 종료 state를 수집한다.
+4. 전체 실행 시 association 1 + activation 1 + 문서/JPG 각각 4모드 = **10개 probe**와
+   state 2개를 기대한다. 사전 차단은 phase/skip reason을 명시하며 전체 검사를 통과했다고 쓰지 않는다.
+5. CI의 `Get-ThumbnailPhaseAssessment`는 3종 fixture·19개 probe 전용으로 유지한다.
+   사용자 진단은 신규 순수 분류 helper에서 `Test-ThumbnailProbeContract`,
+   `Test-ThumbnailBitmap`, `Get-ThumbnailDocumentFinding`을 재사용한다.
+   단일 문서를 3종으로 복제하거나 누락된 CI 증거를 성공 값으로 채우지 않는다.
+6. HKCU/HKLM은 **관측한 등록 범위**로 기록하며 그 값만으로 실제 installer 종류를 확정하지 않는다.
+   해당 확장자·등록 파일·threading·scope를 동봉 inventory와 비교하고, 양 hive 동시 등록은
+   `registration-ambiguous`, 타 처리기 선택은 `other-handler-selected`로 판정한다.
+7. JPG Shell/force 성공 + 선택 문서의 Shell/force 모두 0x80040154 + 직접 COM 성공 +
+   검증된 HKCU-only 등록일 때만 `per-user-shell-activation-failed`와 `consider-msi`를 제시한다.
+   UAC/IconsOnly 값만으로 이 분류를 만들지 않는다. HKLM 실패·부분 성공은 미분류로 남긴다.
+8. 문서/JPG Shell/force 성공은 `thumbnail-api-ok`이며 선택한 문서와 실행 문맥에만 적용한다.
+   Windows Explorer UI·다른 문서·재부팅 이후·제품 전체의 성공을 뜻하지 않는다.
+
+출력은 원시 probe JSON, 비식별 state, `thumbnail-check-summary.json`과 짧은 한국어
+console 요약이다. summary는 schema/source SHA, referenceStatus, registrationScope,
+evidenceStatus, thumbnailStatus, finding, recommendedAction, probe label, 무결성·정리 여부를
+담는다. lifecycleStatus는 `not-tested`로 명시하고 설치/재부팅 성공 값을 만들지 않는다.
+종료 코드는 0=선택 문서 API 검사 통과, 1=유효한 검사에서 썸네일 실패,
+2=진단 불완전·입력/참조 불일치·사전 차단·실행 불가다. 실패·생략을 0으로 바꾸지 않는다.
+보고서는 로컬에만 저장하며 제출 여부는 사용자가 결정한다.
+
+#### 사용자 안내와 문서 위치
+
+| 독자 / 내용 | 위치 | 대안과 선택 이유 |
+|---|---|---|
+| 사용자: 제한 요약과 진단 진입 링크 | `README.md` 기존 Windows 썸네일 문단 | 새 FAQ 대신 기존 첫 진입점 보완 |
+| 사용자·기여자: 실행 예, 결과 해석, MSI 전환, 개인정보·보안 한계 | `docs/architecture/WINDOWS_THUMBNAILS.md` | 상세 계약의 기존 진실 원천이며 지원 묶음에도 그대로 복사 |
+| 유지보수자: 지원 artifact 식별·해시·보존 기간·실패 gate | `docs/operations/DESKTOP_RELEASE.md` | 새 배포 문서/루트 대신 기존 artifact 정책 보완 |
+
+- 역사적인 VDI/기존 CI 성공은 삭제하지 않고 새 격리 검사 실패와 범위를 나란히 표시한다.
+  “NSIS는 항상 실패”, “한글 2022 충돌”, “UAC를 꺼야/켜야 해결”로 안내하지 않는다.
+- MSI 전환은 저장·앱 종료 → 기존 NSIS 제거 → 승인된 같은 빌드/아키텍처 MSI 설치 →
+  재부팅 요청 시 사용자가 재부팅 → 일반 Explorer 세션 재확인 순서다. 자동 실행하지 않는다.
+- 파일 연결·개인 설정의 보존을 무조건 보장하지 않는다. 사용자 파일/설정 삭제나 기본 앱
+  강제 변경을 안내하지 않으며 회사/PC방 관리 정책상 설치 불가 시 관리자에게 문의하도록 한다.
+- MSI 3010은 재부팅 필요 상태이며 설치 코드 0/파일 정리와 OS 재부팅 대기는 별개라고 설명한다.
+
 ### 산출물
 
-- 공통 진단 helper와 실패 분류 tests
-- 조건부 `apps/desktop/src-tauri/windows/nsis-hooks.nsh`,
-  `apps/desktop/src-tauri/windows/main.wxs`,
-  `apps/thumbnail-handler/src/registration/windows.rs` 및 관련 registration/packaging tests
-- 안내가 확정되면 `README.md`, `docs/architecture/WINDOWS_THUMBNAILS.md`의 최소 보완
-- `mydocs/working/task_m010_57_stage3.md`, 오늘할일
+| 파일 | 변경 범위 |
+|---|---|
+| `scripts/windows-thumbnail-check.ps1` (신규) | 네 입력의 사용자 진입점·안내·결과 출력 |
+| `scripts/windows-thumbnail-check-support.ps1` (신규) | 입력/묶음 검증·임시 복사·무결성·정리·probe orchestration |
+| `scripts/windows-thumbnail-check-assessment.ps1` (신규) | 1문서+JPG의 순수 분류, CI 판정 완화 없음 |
+| 기존 `windows-thumbnail-diagnostics.ps1`, `-probe.ps1`, `-state.ps1`, `-assessment.ps1`, `-native.cs`, `-interop.cs`, `-token.cs` | 지원 묶음의 실행 의존 파일 7개; 기존 계약 유지, 원칙적으로 무수정 재사용 |
+| `scripts/build-windows-thumbnail-support.mjs` (신규) | allowlist 10개 실행 파일·공식 문서·inventory 복사, manifest 생성/검증 |
+| `scripts/windows-thumbnail-check-tests.ps1` (신규, 묶음 제외) | Windows PS 5.1 입력·오류·분류·안전 회귀 |
+| `tests/windows-thumbnail-check.test.mjs`, `tests/windows-thumbnail-support.test.mjs` (신규), `package.json` | 플랫폼 중립 source/manifest 계약·automation 연결 |
+| `.github/workflows/alhangeul-desktop.yml`, `tests/actions-workflows.test.mjs` | Windows 일반 build의 별도 지원 artifact, installer job 다운로드·검증 gate |
+| `scripts/windows-thumbnail-fixtures.ps1`, `tests/windows-thumbnail-fixtures.test.mjs` | 기존 최초 fixture 관측 이후, 재설치 이전에 지원 묶음 실사용 검사 연결 |
+| 위 공식 문서 3개, 단계 보고·계획·오늘할일 | 안내와 검증 범위 기록 |
+
+신규 구현 파일 300 LOC·함수 50 LOC·입력 5개 이내를 유지한다. 범위를 넘는 helper 추가나
+기존 smoke entry 변경이 필요하면 구현 전에 계획에 반영한다. NSIS/WiX/등록 Rust·엔진은 제외한다.
 
 ### 변경 내용
 
@@ -536,23 +649,49 @@ MSI 전환 안내는 문서 저장·앱 종료 → 기존 NSIS 제거 → 같은
   범위를 먼저 승인받는다. 실사용 VDI를 자동으로 runner로 등록하지 않는다.
 - 전체 사용자 NSIS나 신규 권한 helper가 필요하면 별도 범위 승인을 요청하고 자동 확대하지 않는다.
 
-### 검증
+### 검증 및 실행 승인 경계
+
+이번 세부계획 작성에서는 문서 섹션·의존 파일·공식 문서 경로·입력 계약·승인 경계와
+변경 allowlist(계획 2개·오늘할일 1개), `git diff --check`를 검사했고 통과했다.
+코드·native 검증·묶음 생성·원격 실행은 하지 않았다. 아래는 **구현 승인 후** 범위다.
 
 ```sh
-node --test tests/windows-thumbnail-diagnostics.test.mjs tests/windows-thumbnail-registration.test.mjs tests/windows-packaging.test.mjs
+node --test tests/windows-thumbnail-check.test.mjs tests/windows-thumbnail-support.test.mjs tests/windows-thumbnail-assessment.test.mjs tests/windows-thumbnail-diagnostics.test.mjs tests/windows-thumbnail-fixtures.test.mjs tests/windows-thumbnail-registration.test.mjs tests/windows-packaging.test.mjs tests/actions-workflows.test.mjs
 pnpm run check:product-boundary
 pnpm run test:automation
+actionlint -shellcheck='' .github/workflows/alhangeul-desktop.yml
 git diff --check
 ```
 
-검출 조건의 positive/negative·정보 미설정·권한 거부·다른 처리기 변경을 검사한다. native 보정은
-Windows에서 실제 적용 전후를 검증한다. client 환경을 확보하지 못했으면 해당 수용은 미실행으로
-남기고 해결 완료나 단계 통과로 포장하지 않는다. 필요한 추가 검증은 대상별로 승인받는다.
+- 비지원 호스트는 플랫폼 중립 source/manifest 계약만 검사하며 PowerShell·native 실행이나
+  실제 배포 묶음 생성은 Windows CI에서 한다. 테스트용 manifest 검사는 제품 패키징과 구분한다.
+- Windows PS 5.1 회귀: consent 없음, x86/비지원 실행, 누락·중복·초과 크기·비로컬 입력,
+  따옴표/한글 경로, 출력 충돌, 문서 동시 변경, timeout·깨진 JSON·권한 거부·정리 실패,
+  manifest/file 변조·다른 빌드 reference·양 hive 등록·타 handler·정책 미설정/읽기 실패,
+  JPG 실패·부분 성공·캐시만 성공·UAC 0/1 같은 결과·개인 경로/파일 hash 비출력을 검사한다.
+- 지원 artifact의 파일 allowlist·source SHA·각 hash를 검증하고, 기존 installer job이
+  다운로드한 묶음의 entry를 **압축 해제된 제공 형태 그대로** 실행한다. source tree에만 있는
+  파일이나 submodule에 의존하면 실패한다. fake manifest만으로 native 검증을 대신하지 않는다.
+- 기존 최초 Shell·19-probe 관측이 끝난 뒤 재설치 전에 공개 작은 HWP·큰 HWP·HWPX를
+  각각 JPG와 함께 검사한다. 사용자는 1문서 단위로 실행하지만 CI는 세 번 실행해 형식을 덮는다.
+  추가 진단이 DLL을 load할 수 있으므로 이후 재설치의 3010 및 표식은 기존처럼 관측한다.
+- 지원 도구의 10개 probe/state/summary/종료 코드와 CI의 판정을 대조한다.
+  NSIS의 알려진 실패는 사용자 도구에서도 exit 1과 `consider-msi`로 남고, 기존 제품 gate는
+  실패를 유지한다. 도구 오류·판정 불일치·누락은 새 지원 도구 검증 실패다.
+- 검증 결과는 기존 installer 진단 artifact의 `manual-check/<fixture-id>/`에 둔다.
+  자동 artifact 업로드는 공개 CI fixture 결과만 대상이며 개인 문서는 포함하지 않는다.
+- 구현·로컬 검사·후보 커밋 후 exact SHA로 Windows-only 비게시 **추가 1회** 게시/dispatch를
+  따로 승인받는다. source/workflow/artifact SHA, 지원 묶음 해시 및 실제 installed hash를 대조한다.
+  이번 계획 승인만으로 workflow 실행·릴리즈·기존 실행 재시도는 하지 않는다.
+- Stage 3의 도구/안내 검증 수용은 Windows native 회귀·패키지 실사용 증거가 있어야 한다.
+  Windows 10/11 일반 로그인 Explorer·실제 한컴·VDI·재부팅 후 검증은 별도 환경 승인 대상이며
+  미실행 시 명시한다. 이 제한을 현장 해결 또는 #57 전체 완료로 바꾸지 않는다.
 
 ### 커밋
 
 ```text
-Task #57 Stage 3: 재현 근거에 따른 썸네일 설치 대응과 제한 안내
+Task #57 [Stage 3.1]: 수동 썸네일 진단 묶음과 MSI 안내 구현 후보
+Task #57 Stage 3: 수동 진단 도구 검증과 제한 안내 결과 보고
 ```
 
 ## Stage 4 — 회귀 수용·문서·#58 인계
@@ -619,8 +758,8 @@ CI 실행을 위한 후보 커밋과 결과 보고 커밋의 SHA 차이를 명�
 - 구현계획 승인 후 Stage 1을 시작한다. Stage 1 보고 승인 후 Stage 2를 진행한다.
 - 현재는 Stage 2.2 후보의 Windows 진단 계약 검증과 Stage 2 결과 보고를 완료했다.
   승인된 진단 단계 수용 기준만 충족한 것이며 두 run의 제품 실패 상태는 유지한다.
-- Stage 2 보고 검토 후 Stage 3의 수동 진단 제공 파일·진입점·제공 경로와 검증 범위를
-  먼저 확정한다. 아직 미정인 제공 방식까지 구현 승인된 것으로 간주하지 않는다.
+- Stage 2 보고 이후 수동 진단 제공 파일·진입점·제공 경로와 검증 범위의 세부계획을
+  작성했다. 이번 지시는 계획 확정까지이며 Stage 3 구현은 아래 범위 승인 후 시작한다.
 - Stage 2 관측을 근거로 Stage 3의 제품 보정·client 시험 범위를 승인받는다.
 - Stage 3 결과 승인 후 Stage 4로 진행한다. #58은 확정된 등록·권한 경계를 인계받는다.
 
@@ -640,8 +779,10 @@ CI 실행을 위한 후보 커밋과 결과 보고 커밋의 SHA 차이를 명�
    지정된 회귀 검사의 **구현·로컬 검증·후보 커밋까지** 승인받았다.
 3. 후보 `001cc3adeab003260fb7b830f6f757b53c65d489`의 Windows-only 추가 1회는 별도
    승인받아 run `34047889263`으로 완료했다. 이후 추가 원격 실행·재부팅·client VM 사용은 미승인이다.
-4. Stage 3의 진단 진입점·사용자 안내 적용은 별도 승인받는다. 제품 등록 변경,
-   NSIS 전체 사용자 설치·#58·릴리즈는 이번 구현 승인 범위에도 포함하지 않는다.
+4. 이번 Stage 3 세부안의 단일 문서+JPG 수동 진단, 같은 빌드의 독립 지원 artifact,
+   기존 문서 3개의 안내, 지정된 회귀 검사를 **구현·로컬 검증·후보 커밋까지** 승인 요청한다.
+5. 새 후보 SHA를 제시한 뒤 Windows-only 비게시 추가 1회는 별도로 승인받는다.
+   제품 등록 변경·NSIS 전체 사용자 설치·#58·앱 UI·보안 정책 변경·릴리즈는 제외한다.
 
 ## 기술 근거
 
