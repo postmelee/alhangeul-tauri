@@ -37,6 +37,7 @@ const SUPPORTED_OPTIONS = new Set([
   '--root',
   '--write-inventory',
   '--verify-inventory',
+  '--source-sha',
 ]);
 
 export async function verifyDesktopArtifacts({
@@ -44,7 +45,11 @@ export async function verifyDesktopArtifacts({
   root,
   writeInventoryPath,
   verifyInventoryPath,
+  sourceSha,
 }) {
+  if (sourceSha !== undefined && !/^[0-9a-f]{40}$/.test(sourceSha)) {
+    throw new Error('source SHA must be an exact 40-character commit');
+  }
   const requiredKinds = PLATFORM_REQUIREMENTS[platform];
   if (!requiredKinds) {
     throw new Error(
@@ -87,7 +92,8 @@ export async function verifyDesktopArtifacts({
     requiredKinds: [...requiredKinds],
     files,
   };
-  const serialized = serializeInventory(inventory);
+  if (sourceSha) inventory.sourceSha = sourceSha;
+  let serialized = serializeInventory(inventory);
 
   if (writeInventoryPath) {
     const outputPath = resolve(writeInventoryPath);
@@ -106,6 +112,14 @@ export async function verifyDesktopArtifacts({
       );
     }
 
+    const recordedSha = JSON.parse(expected).sourceSha;
+    if (recordedSha !== undefined) {
+      if (!/^[0-9a-f]{40}$/.test(recordedSha) || (sourceSha && recordedSha !== sourceSha)) {
+        throw new Error('artifact inventory source SHA mismatch');
+      }
+      inventory.sourceSha = recordedSha;
+      serialized = serializeInventory(inventory);
+    }
     if (expected !== serialized) {
       throw new Error(
         `artifact inventory가 현재 bundle과 일치하지 않습니다: ${inventoryPath}`,
@@ -286,6 +300,7 @@ function parseArguments(argv) {
     root: values.get('--root'),
     writeInventoryPath: values.get('--write-inventory'),
     verifyInventoryPath: values.get('--verify-inventory'),
+    sourceSha: values.get('--source-sha'),
   };
 }
 
@@ -309,6 +324,7 @@ function usage() {
     '    --platform <windows-x64|linux-x64|linux-arm64> \\',
     '    --root <bundle-root> \\',
     '    [--write-inventory <json-path> | --verify-inventory <json-path>]',
+    '    [--source-sha <40-character-product-sha>]',
   ].join('\n');
 }
 

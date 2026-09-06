@@ -20,6 +20,8 @@
 
 기존 artifact는 정확한 repository/run/workflow/ID/name/digest, 만료 여부 및 성공한 producer를 검사한다. 검증 전에 압축 bytes SHA-256을 재계산하고, 추출 후 inventory를 재계산한다. 누락·만료·불일치·중복·실패한 producer는 거부한다. latest 검색이나 artifact 이름만으로 대체하지 않는다.
 
+새 제품 inventory에는 `sourceSha`를 기록한다. 과거 inventory는 일반 파일 검증에서 계속 읽을 수 있지만 sourceSha가 없는 과거 artifact를 새 재사용 profile에 넘기면 거부한다. 새로운 provenance를 갖춘 제품 artifact를 한 번 생성해야 한다. 검사 버전은 harness의 package.json이 아니라 product SHA의 package.json에서 가져온다.
+
 #19의 GUI/PDF handoff와 #57의 installer 진단은 별도 진행 중인 기능이다. 이 작업은 해당 branch의 미완료 제품 source를 가져오지 않는다. 후속 통합 때 공통 handoff와 빠른 Windows test 목록에 연결하되 기존 실제 진단과 gate 의미를 보존한다.
 
 ## 상태 해석

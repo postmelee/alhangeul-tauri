@@ -622,6 +622,7 @@ jobs:
           pnpm run check:desktop-artifacts -- \
             --platform "${{ matrix.name }}" \
             --root "$BUNDLE_ROOT" \
+            --source-sha "$(git rev-parse HEAD)" \
             --write-inventory "$BUNDLE_ROOT/alhangeul-artifact-inventory.json"
 
       - name: Upload bundle artifact

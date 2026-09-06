@@ -1,0 +1,104 @@
+name: Alhangeul existing Windows installer validation
+
+on:
+  workflow_call:
+    inputs:
+      product_sha:
+        required: true
+        type: string
+      product_run_id:
+        required: true
+        type: string
+      artifact_id:
+        required: true
+        type: string
+      artifact_digest:
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+env:
+  GIT_CONFIG_COUNT: "1"
+  GIT_CONFIG_KEY_0: core.autocrlf
+  GIT_CONFIG_VALUE_0: "false"
+
+jobs:
+  installer:
+    name: Reused Windows product, current harness
+    runs-on: windows-2025
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.workflow_sha }}
+          submodules: true
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          package-manager-cache: false
+      - name: Verify harness checkout
+        shell: bash
+        env:
+          HARNESS_SHA: ${{ github.workflow_sha }}
+        run: test "$(git rev-parse HEAD)" = "$HARNESS_SHA"
+      - name: Verify approved product handoff
+        id: handoff
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PRODUCT_SHA: ${{ inputs.product_sha }}
+          HARNESS_SHA: ${{ github.workflow_sha }}
+          PRODUCT_RUN_ID: ${{ inputs.product_run_id }}
+          PRODUCT_ARTIFACT_ID: ${{ inputs.artifact_id }}
+          PRODUCT_ARTIFACT_DIGEST: ${{ inputs.artifact_digest }}
+        run: node scripts/ci/artifact-handoff.mjs
+      - name: Download exact archive and require matching digest
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          artifact-ids: ${{ steps.handoff.outputs.artifact_id }}
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.product_run_id }}
+          path: artifacts/windows-x64
+          digest-mismatch: error
+      - name: Verify product SHA and file inventory before installation
+        shell: bash
+        env:
+          PRODUCT_SHA: ${{ inputs.product_sha }}
+        run: |
+          node scripts/verify-desktop-artifacts.mjs \
+            --platform windows-x64 --root artifacts/windows-x64 \
+            --source-sha "$PRODUCT_SHA" \
+            --verify-inventory artifacts/windows-x64/alhangeul-artifact-inventory.json
+      - name: Run current Windows regressions
+        shell: powershell
+        run: .\scripts\ci\windows-tests.ps1
+      - name: Test real MSI and NSIS without rebuilding
+        id: smoke
+        shell: powershell
+        env:
+          PRODUCT_VERSION: ${{ steps.handoff.outputs.product_version }}
+        run: |
+          & '.\scripts\windows-installer-smoke.ps1' `
+            -ArtifactRoot 'artifacts\windows-x64' `
+            -OutputDirectory 'diagnostics\installer-reuse' `
+            -ExpectedVersion $env:PRODUCT_VERSION
+      - name: Record reuse scope and actual result
+        if: ${{ always() }}
+        shell: powershell
+        env:
+          PRODUCT_SHA: ${{ inputs.product_sha }}
+          HARNESS_SHA: ${{ github.workflow_sha }}
+          SMOKE_RESULT: ${{ steps.smoke.outcome }}
+        run: |
+          Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Value "Existing product: $env:PRODUCT_SHA; harness: $env:HARNESS_SHA; installer result: $env:SMOKE_RESULT. New product/native/updater acceptance: unverified."
+      - name: Preserve handoff and installer diagnostics
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: alhangeul-installer-reuse-evidence
+          path: diagnostics/installer-reuse/**
+          if-no-files-found: error
+          retention-days: 14

@@ -104,6 +104,22 @@ for (const [platform, fixtureFiles] of Object.entries(platformFixtures)) {
   });
 }
 
+test('product source SHA is required for explicit reuse but legacy inventory remains readable', async () => {
+  const fixture = await createFixture(platformFixtures['windows-x64']);
+  const options = { platform: 'windows-x64', root: fixture.root };
+  const sha = 'a'.repeat(40);
+  try {
+    await verifyDesktopArtifacts({ ...options, writeInventoryPath: fixture.inventoryPath });
+    await assert.rejects(verifyDesktopArtifacts({ ...options, sourceSha: sha, verifyInventoryPath: fixture.inventoryPath }));
+    await verifyDesktopArtifacts({ ...options, sourceSha: sha, writeInventoryPath: fixture.inventoryPath });
+    const result = await verifyDesktopArtifacts({ ...options, sourceSha: sha, verifyInventoryPath: fixture.inventoryPath });
+    assert.equal(result.sourceSha, sha);
+    await verifyDesktopArtifacts({ ...options, verifyInventoryPath: fixture.inventoryPath });
+    await assert.rejects(verifyDesktopArtifacts({ ...options, sourceSha: 'b'.repeat(40), verifyInventoryPath: fixture.inventoryPath }));
+    await assert.rejects(verifyDesktopArtifacts({ ...options, sourceSha: 'main' }));
+  } finally { await cleanup(fixture.tmp); }
+});
+
 test('Linux x64는 Tauri AppDir 중간 트리만 inventory에서 제외한다', async () => {
   const fixture = await createFixture({
     ...platformFixtures['linux-x64'],
