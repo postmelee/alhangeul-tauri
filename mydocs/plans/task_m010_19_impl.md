@@ -10,6 +10,13 @@ GitHub Issue: [#19](https://github.com/postmelee/alhangeul-tauri/issues/19)
 
 ## 단계 개요
 
+### 2026-09-06 Stage 4.9 열기/저장 입력칸 구분 승인
+
+작업지시자가 관측된 Open=1148, Save=1001 입력칸 구분 보정과 재검증을 승인했다.
+두 Windows helper와 전용 계약 테스트, plans/working 내부 기록만 수정한다.
+선택 mode에서 기대하는 ID만 허용하며 PID·class·dialog 자식 검증은 유지한다.
+focused 계약·diff 검증 후 기존 제품 artifact로 PDF 전용 검증을 실행한다.
+
 ### 2026-09-06 Stage 4.8 Win32 대화상자 fallback 승인
 
 작업지시자가 Pane으로 노출되는 파일명 입력칸/버튼의 Win32 fallback과 재검증을 승인했다.

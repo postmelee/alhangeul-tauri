@@ -18,6 +18,7 @@ $stage = 'waiting-dialog'
 $observedTree = @()
 $observedProcessId = $null
 $dialogCount = 0
+$fileNameId = if ($Mode -eq 'Open') { '1148' } else { '1001' }
 $nativeFallbackUsed = $false
 
 function Write-Evidence($Status, $ErrorText) {
@@ -79,8 +80,7 @@ try {
     foreach ($dialog in $dialogs) {
       if (-not $submitted) {
         $stage = 'finding-filename-field'
-        $field = Find-Id $dialog '1148'
-        if ($null -eq $field) { $field = Find-Id $dialog '1001' }
+        $field = Find-Id $dialog $fileNameId
         if ($null -eq $field) { continue }
         $value = $null
         if (-not $field.TryGetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern, [ref]$value)) {
@@ -88,7 +88,7 @@ try {
             [System.Windows.Automation.PropertyCondition]::new(
               [System.Windows.Automation.AutomationElement]::ClassNameProperty, 'Edit'),
             [System.Windows.Automation.PropertyCondition]::new(
-              [System.Windows.Automation.AutomationElement]::AutomationIdProperty, '1148'))
+              [System.Windows.Automation.AutomationElement]::AutomationIdProperty, $fileNameId))
           $field = $dialog.FindFirst($scope, $editCondition)
           if ($null -eq $field) { continue }
           [void]$field.TryGetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern, [ref]$value)
@@ -101,7 +101,7 @@ try {
           $value.SetValue($TargetPath)
         } else {
           $nativeFallbackUsed = $true
-          Set-NativeFileName $dialog $field $observedProcessId $TargetPath
+          Set-NativeFileName $dialog $field $observedProcessId $TargetPath $Mode
         }
         $stage = 'invoking-submit'
         Write-Evidence 'running' $null

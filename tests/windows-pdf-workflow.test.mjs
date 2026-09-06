@@ -82,13 +82,16 @@ test('native helper budget begins after menu click and records bounded content-f
 
 test('Win32 fallback restricts control identity and verifies bounded filename readback', () => {
   assert.match(dialog, /ClassNameProperty, 'Edit'/);
-  assert.match(dialog, /AutomationIdProperty, '1148'/);
+  assert.match(dialog, /AutomationIdProperty, \$fileNameId/);
+  assert.match(dialog, /\$fileNameId = if \(\$Mode -eq 'Open'\) \{ '1148' \} else \{ '1001' \}/);
   assert.match(dialog, /Set-NativeFileName \$dialog \$field \$observedProcessId \$TargetPath/);
   assert.match(native, /dialogPid != expectedPid \|\| controlPid != expectedPid/);
   assert.match(native, /!IsChild\(dialog, control\)/);
   assert.match(native, /GetDlgCtrlID\(control\) != id/);
   assert.match(native, /ClassName\(control\) != cls/);
-  assert.match(native, /Validate\(dialog, edit, pid, 1148, "Edit"\)/);
+  assert.match(native, /mode != "Open" && mode != "Save"/);
+  assert.match(native, /int id = mode == "Open" \? 1148 : 1001/);
+  assert.match(native, /Validate\(dialog, edit, pid, id, "Edit"\)/);
   assert.match(native, /id != 1 && id != 6/);
   assert.match(native, /readback.ToString\(\) != text/);
   assert.match(native, /2, 2000, out result/);

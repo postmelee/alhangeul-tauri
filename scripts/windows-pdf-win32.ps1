@@ -33,8 +33,10 @@ public static class PdfDialogNative {
       || GetDlgCtrlID(control) != id || ClassName(control) != cls || !IsWindowEnabled(control))
       throw new Exception("Native dialog control identity mismatch");
   }
-  public static void SetFileName(IntPtr dialog, IntPtr edit, uint pid, string text) {
-    Validate(dialog, edit, pid, 1148, "Edit");
+  public static void SetFileName(IntPtr dialog, IntPtr edit, uint pid, string text, string mode) {
+    if (mode != "Open" && mode != "Save") throw new Exception("Unexpected dialog mode");
+    int id = mode == "Open" ? 1148 : 1001;
+    Validate(dialog, edit, pid, id, "Edit");
     if (String.IsNullOrEmpty(text) || text.IndexOf('\0') >= 0) throw new Exception("Invalid filename");
     UIntPtr result;
     if (SetTextMessage(edit, 0x000C, UIntPtr.Zero, text, 2, 2000, out result) == IntPtr.Zero
@@ -52,9 +54,9 @@ public static class PdfDialogNative {
 }
 '@
 
-function Set-NativeFileName($Dialog, $Field, $AppProcessId, $Text) {
+function Set-NativeFileName($Dialog, $Field, $AppProcessId, $Text, $Mode) {
   [PdfDialogNative]::SetFileName([IntPtr]$Dialog.Current.NativeWindowHandle,
-    [IntPtr]$Field.Current.NativeWindowHandle, [uint32]$AppProcessId, $Text)
+    [IntPtr]$Field.Current.NativeWindowHandle, [uint32]$AppProcessId, $Text, $Mode)
 }
 
 function Invoke-NativeDialogButton($Dialog, $Button, $AppProcessId, $Id) {
