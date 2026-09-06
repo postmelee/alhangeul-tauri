@@ -46,6 +46,10 @@ Windows/Linux의 대화상자·메시지·버튼 조작을 포함하는 테스�
 - UIA `ClassName`과 native `GetClassName(HWND)`는 따로 관측한다. UIA class는 provider가
   제공하는 값이므로 native class와 같다고 가정해 검사 조건으로 옮기지 않는다.
   [ClassName 계약](https://learn.microsoft.com/en-us/windows/win32/winauto/uiauto-automation-element-propids)
+- UIA command 이름의 숫자를 native control ID로 옮기지 않는다. 실제 제품에서는
+  `CommandButton_6/7` 양쪽의 `GetDlgCtrlID` 조회가 0을 반환했다. 0은 실패 반환값이기도 하므로
+  오류 정보 없이 유효 ID로 확정하지 않으며, 고유 버튼 선택의 근거로 쓰지 않는다.
+  [GetDlgCtrlID 계약](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getdlgctrlid)
 
 ### 실행: 안전한 경계 안에서만 조작한다
 
@@ -162,6 +166,16 @@ native class/control ID·dialog 활성 상태·guard 관측을 따로 확인한�
 버튼 실행·PDF·취소 수용이 아니다. 앱 정리 뒤 별도 hash 검사로 두 파일의 보존을 확인한다.
 이 mode는 HWPX/restart/전체 PDF 분석을 실행하지 않는다. 미지원 확인창을 바로 승인하는
 fallback은 추가하지 않으며 관측 뒤 사용할 API와 안전 조건을 별도 승인받는다.
+
+실제 앱 관측 run `34051827068`에서는 두 command 모두 native `Button`, 13개 guard true,
+활성 dialog였지만 UIA Invoke는 여전히 없고 native ID 조회는 0이었다. source/target 보존과
+cleanup은 통과했다. raw 수치 HWND와 상호 동일성은 진단에 없으므로 두 command가 별개의
+native control인지까지 입증한 것은 아니다. 이 관측만으로 클릭 지원을 선언하지 않는다.
+후속 후보인 HWND 대상 `BM_CLICK`은 native class에 근거한 선택이며 아직 구현/검증 전이다.
+도입한다면 정확한 UIA command와 현재 HWND의 대응·두 command의 구별·의미/owner·활성 상태를
+검증해야 한다. 메시지 자체에는 반환값이 없으므로 전달 결과와 파일/창의 사후 조건을 구분한다.
+현재 승인 범위에는 호출·비활성 창 강제 활성화·다른 API 연쇄 시도가 포함되지 않는다.
+([BM_CLICK 계약](https://learn.microsoft.com/en-us/windows/win32/controls/bm-click))
 
 ## 새 helper·Action 변경의 완료 기준
 

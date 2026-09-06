@@ -37,8 +37,24 @@ GitHub Issue: [#19](https://github.com/postmelee/alhangeul-tauri/issues/19)
 - HWPX 표의 원본 대조는 이번 확인창 진단에 섞지 않고 미확정 관측으로 유지한다.
 
 구현 후 focused Node 계약 51개, workflow/handoff 계약 76개(중복 import 포함), GUI typecheck,
-actionlint와 diff 검사가 통과했다. 실제 PS/C#·앱 관측은 아직 원격 실행 전이다. 기존 artifact의
-SHA/digest/크기와 유효성도 다시 확인했다. checkpoint 게시 후 관측-only 한 번을 실행한다.
+actionlint와 diff 검사가 통과했다. 기존 artifact의 SHA/digest/크기와 유효성도 다시 확인했다.
+checkpoint `f090ea0c7e22544829c3c2a6d0cf76c17f64a0fe` 게시 후 관측-only를 한 번 실행했다.
+
+결과: run `34051827068`은 **8분 34초 통과**했다. Windows PS5.1 parser·정책 50개·native
+진단 23개가 통과했다. 실제 앱의 두 command는 UIA Pane/Invoke 미지원, native `Button`이며
+각각 13개 guard가 모두 true이고 dialog가 active였다. `GetDlgCtrlID` 반환값은 둘 다 0으로,
+숫자 6/7 또는 유효한 고유 native ID가 확인된 것은 아니다. 오류 코드와 두 HWND의 상호
+동일성은 이번 자료에 없어 추정하지 않는다. source/sentinel hash는 관측 시점·앱 cleanup 뒤·
+내려받은 파일에서 모두 불변이다. NSIS cleanup·WebView2 정책 복구도 통과했다.
+`observed`/`commandInvoked=false`/`pdfTested=false`이며 실제 확인·거절·PDF 성공이 아니다.
+Stage 4.20은 진단 완료로 [보고서](../working/task_m010_19_stage4.20.md)에 기록한다.
+
+다음 승인 권고는 기존 의미/대상·UIA command 유일성/재조회와 native guard를 유지한
+HWND 기반 `BM_CLICK` adapter 및 실제 앱 단일 HWP의 제한된 호출 검증이다. native 숫자 ID로
+선택하지 않으며 두 command의 HWND가 별개인지와 활성 상태도 호출 전에 검증해야 한다.
+이 API는 관측된 native class에 근거한 후보이지 검증된 제품 지원이 아니다. 승인 뒤 실제
+Confirm/Decline·잘못된 target 거부와 파일 사후 조건을 확인하고, 전체 PDF 수용은 그 뒤 별도
+승인한다. 다른 API의 연쇄 시도·강제 활성화·제품 재빌드는 추가하지 않는다. 아직 구현하지 않았다.
 
 ### 2026-09-07 Stage 4.19 기존 설치본 전체 PDF 검증 승인
 

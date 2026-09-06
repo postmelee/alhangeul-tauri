@@ -29,7 +29,8 @@ pnpm run test:gui:windows:contracts
 ```
 
 이는 Windows dialog 재현 명령이 아니다. 실제 재현은 별도 승인 후 기존 Desktop dispatcher의
-`windows-pdf-open-probe` 또는 `windows-pdf-acceptance`를 사용하며, candidate SHA와
+`windows-pdf-open-probe`, 확인창만 관측하는 `windows-pdf-dialog-probe` 또는
+`windows-pdf-acceptance`를 사용하며, candidate SHA와
 성공한 native artifact run ID를 명시한다. artifact 만료 여부를 먼저 확인한다.
 현재 미지원 overwrite를 그대로 둔 전체 실행을 반복하지 않는다.
 
@@ -43,6 +44,7 @@ pnpm run test:gui:windows:contracts
 | 재시작 Save에서 `Unsupported overwrite confirmation controls` | 당시 helper는 ID `6`/class `Button`만 실행했지만 실제 확인창은 `CommandButton_6/7`, UIA class `CCPushButton`으로 관측 | ID 교체만으로 해결하지 않고 의미·대상·capability를 확인 |
 | 작은 확인창에서 native 재검증 실패 | UIA class `CCPushButton`을 native에도 요구했으나 실제 native class는 `Button`; 다른 12개 guard는 통과 | UIA/native 속성을 별도로 관측·검증하고 같은 판정 snapshot에서 실패 조건 기록 |
 | 새 adapter에서 `Confirmation InvokePattern unsupported.` | 작은 WinForms host는 Button/InvokePattern을 제공하지만 실제 앱의 두 command는 Pane, `patterns=[]` | 실제 host의 capability 차이를 별도 경계로 취급; native guard/호출 성공을 추정하지 않음 |
+| UIA command 이름은 6/7인데 native ID 조회는 둘 다 0 | 실제 제품 관측에서 native class/owner/상태는 확인됐으나 ID는 고유 선택 근거가 아님; 조회 실패 여부는 미확정 | UIA ID 숫자를 native ID로 이식하지 않음; HWND 기반 호출은 별도 의미/identity/상태 검증과 승인 필요 |
 
 관측한 ID/class는 이 runner의 사실이며 Windows 공통 API 계약으로 일반화하지 않는다.
 Yes/No 모양만으로 덮어쓰기라고 단정하지 않는다. 실제 확인창 대상·소유 관계를 검증하는
@@ -67,6 +69,8 @@ adapter를 구현하기 전에는 무조건 Yes 또는 숫자 ID 교체로 우�
   수집하며, 이 결과가 확인창 실행 adapter의 다음 승인 근거다.
 - **작은 OS 통합: Stage 4.18 완료.** `d553f8e`에서 열기·새 저장·덮어쓰기·No/Cancel·
   잘못된 target 거부와 공개 fixture의 파일 사후 조건·cleanup이 모두 통과했다. 제품/PDF 성공은 아니다.
+- **실제 앱 확인창 관측: Stage 4.20 완료.** native `Button`/활성 상태와 13개 guard true,
+  UIA Invoke 미지원·native ID 조회 0을 확인했다. 버튼 실행 지원은 여전히 미검증이다.
 
 ### Stage 4.19 실제 설치본 — InvokePattern 미지원 확인
 
@@ -110,10 +114,60 @@ Stage 4.19는 미완료다. 완료 보고서·완료 커밋·새 원격 실행�
 관측 없이 BM_CLICK/TDM_CLICK_BUTTON/다른 API를 순차 시도하거나 Invoke 조건만 삭제하지 않는다.
 이 제한된 진단/보정 계획과 HWPX 표의 원본 대조 범위를 승인받은 뒤 진행한다.
 
-후속 승인으로 Stage 4.20의 실제 확인창 관측-only mode를 구현했다. HWP 한 개와 사전 생성한
+### Stage 4.20 실제 앱 확인창 — 관측 완료, 호출은 미검증
+
+후속 승인으로 실제 확인창 관측-only mode를 구현했다. HWP 한 개와 사전 생성한
 sentinel만 사용하고 확인 버튼은 호출하지 않는다. 기존 의미/owner 관측과 native guard snapshot을
 재사용해 UIA pattern, native class/ID, dialog 활성 상태를 함께 수집한다. 기존 Invoke 정책은
-바꾸지 않았다. HWPX 원본 대조는 제외했다. 실제 관측·호출 지원 판단은 원격 결과를 기다린다.
+바꾸지 않았다. HWPX 원본 대조는 제외했다.
+
+[run 34051827068](https://github.com/postmelee/alhangeul-tauri/actions/runs/34051827068),
+harness `f090ea0c7e22544829c3c2a6d0cf76c17f64a0fe`의 Windows job은 **8분 34초 통과**했다.
+제품 SHA/native run/artifact는 4.19와 같고 제품을 재빌드하지 않았다. PS5.1 parser 및 실제
+정책 50개·native 진단 23개가 통과했다. 합성 조건 검사는 실제 UI 호출 검증과 별개다.
+
+`confirmation-probe-Save.json`에서 `status=observed`, `stage=observed-confirmation`,
+`overwriteConfirmed=false`, 정확한 시험 target 질문 일치와 다음 관측을 확인했다.
+아래는 원문 경로/본문·수치 PID/HWND를 제외한 진단 필드 요약이다.
+
+| 관측 | Confirm / Decline 각각의 결과 |
+|---|---|
+| UIA ID | `CommandButton_6` / `CommandButton_7` |
+| UIA class / type | 둘 다 `CCPushButton` / `ControlType.Pane` |
+| UIA capability | 둘 다 enabled, `supportsInvoke=false`, `patterns=[]` |
+| native class | 저장창·확인창 `#32770`, 버튼 `Button` |
+| native 13개 guard | 두 후보 각각 모두 true: PID·owner·자식/창 class·enabled 및 저장창 disabled |
+| dialog 상태 | 둘 다 `dialogThreadObserved=true`, `dialogActive=true` |
+| `GetDlgCtrlID` 반환값 | 둘 다 `0`; 숫자 6/7 또는 고유 native ID가 확인된 것이 아님 |
+
+`GetDlgCtrlID`는 실패할 때도 0을 반환한다. 이번 probe는 오류 코드를 수집하지 않아
+실패인지 실제 0 ID인지 판정하지 않는다. UIA 이름의 숫자를 native ID로 바꾸는 근거로
+쓰지 않는다. 두 후보의 HWND가 서로 다른지도 이번 축약 자료만으로는 확인할 수 없다.
+([Microsoft GetDlgCtrlID 계약](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getdlgctrlid))
+
+`confirmation-probe.json`은 `documentIdentityVerified=true`, `commandInvoked=false`,
+`pdfTested=false`다. 원본 HWP와 시험 target은 관측 시점 및 앱 정리 뒤 hash가 불변이다.
+다운로드한 두 파일도 같은 hash임을 재확인했다. source는
+`8b786d6824622afae2220b203beeef6e5592157e1896fea055ebc602817113c1`, target은
+`d603dd3f3cbfbc96cc4d7c2acd1d4c6be600c4080bb7c0b3af6019ccac73223a`다.
+`confirmation-probe-cleanup.json`의 두 보존 판정, `cleanup.json`의 NSIS 제거,
+`webview2-policy-after.json`의 정책 복구가 통과했다. 확인창 No/Cancel 성공은 아니다.
+
+raw artifact `9994901868`, `windows-pdf-raw-34051827068`, 294742 bytes,
+digest `sha256:d4dfa633d2e3374e0c189546ad3f3b4a887d34b07d65ac5e881b0f758d1e3361`.
+로컬 원본은 `/private/tmp/alhangeul-confirmation-stage420.yLLsCm`에 보존하고 커밋하지 않는다.
+이 run은 실제 앱을 실행했지만 PDF 생성·HWPX·restart·Ubuntu analyze를 수행하지 않았다.
+
+**다음 승인 권고**: native `Button`/활성 상태 관측을 근거로 HWND 대상 `BM_CLICK` 경로 하나를
+구현하고, 같은 설치본·HWP 한 개로 실제 호출을 제한 검증한다. UIA command/의미·target·owner
+재조회와 모든 native guard를 유지하고 두 HWND의 구별·활성 상태를 호출 전에 확인한다.
+UIA Invoke 호출 실패 후 다른 API를 차례로 시도하지 않고, capability에 따라 지원 경로를
+호출 전에 선택한다. native 숫자 ID 0/6/7로 버튼을 탐색하지 않는다.
+`BM_CLICK`은 반환값이 없으므로 Confirm 후 실제 파일 생성/원본 보존, Decline 후 저장창
+복귀/target 보존, 잘못된 target의 호출 전 거부를 별도 검사해야 한다.
+([Microsoft BM_CLICK 계약](https://learn.microsoft.com/en-us/windows/win32/controls/bm-click))
+이 경로는 아직 구현/검증하지 않았다. API 후보에 대한 추론과 실제 호출 지원은 구분한다.
+Stage 4.19/#19 전체 수용, HWPX 표 대조, 전체 PDF 재실행은 미완료/별도 승인으로 유지한다.
 
 ### Stage 4.18 작은 통합 — class 비교 보정 후 완료
 
@@ -259,6 +313,7 @@ readback·재조회/native 검증·제출을 확인했다. 시험 파일 hash �
 | [34048778670](https://github.com/postmelee/alhangeul-tauri/actions/runs/34048778670), harness `5096438` | PS 정책 50개·진단 22개·Open/Fresh·cleanup 통과; native class만 불일치 확인, 통합은 실패 유지 |
 | [34049005561](https://github.com/postmelee/alhangeul-tauri/actions/runs/34049005561), harness `d553f8e` | PS 정책 50개·진단 22개·통합 5개·cleanup 통과; 실제 제품/PDF는 미실행 |
 | [34049930142](https://github.com/postmelee/alhangeul-tauri/actions/runs/34049930142), harness `23b631d` | fresh 두 문서 저장 통과; 실제 HWP restart 확인창의 Invoke 미지원으로 실패, HWPX restart/원격 analyze skipped; fresh PDF만 별도 로컬 분석 |
+| [34051827068](https://github.com/postmelee/alhangeul-tauri/actions/runs/34051827068), harness `f090ea0` | PS 정책 50개·native 진단 23개·실제 앱 확인창 관측·파일 보존·cleanup 통과; 확인 버튼 호출/PDF 미실행 |
 
 2026-09-06 작업지시자는 실제 Windows NSIS에서 두 문서의 PDF 저장·검색·쪽 수·시각 확인,
 원본 보존과 재실행 덮어쓰기를 문제없이 완료했다고 보고했다. 해당 수동 근거는 유지한다.
@@ -266,7 +321,8 @@ readback·재조회/native 검증·제출을 확인했다. 시험 파일 hash �
 
 로컬 회귀와 이전 가이드 작업은 [Stage 4.16](../working/task_m010_19_stage4.16.md),
 작은 Windows 관측은 [Stage 4.17](../working/task_m010_19_stage4.17.md),
-확인창 실행·통합과 다음 승인 경계는 [Stage 4.18](../working/task_m010_19_stage4.18.md)에 둔다.
+작은 확인창 실행·통합은 [Stage 4.18](../working/task_m010_19_stage4.18.md),
+실제 앱 관측과 다음 승인 경계는 [Stage 4.20](../working/task_m010_19_stage4.20.md)에 둔다.
 
 ## 참고
 
