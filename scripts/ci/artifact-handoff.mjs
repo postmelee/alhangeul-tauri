@@ -9,11 +9,16 @@ export async function verifyProductHandoff(input, services = {}) {
   }
   if (!/^[1-9]\d*$/.test(String(input.artifactId)) || !Number.isSafeInteger(Number(input.artifactId))) throw new Error('Invalid artifact ID');
   if (!/^sha256:[0-9a-f]{64}$/.test(input.artifactDigest ?? '')) throw new Error('Invalid artifact digest');
+  if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(input.repository ?? '') || !/^[1-9]\d*$/.test(String(input.runId))) throw new Error('Invalid producer identity');
   const fetchJson = services.fetchJson ?? createGitHubApiClient({ token: process.env.GITHUB_TOKEN });
+  const runPath = `/repos/${input.repository}/actions/runs/${input.runId}`;
+  const run = await fetchJson(runPath);
+  const workflowPath = run?.path?.split('@', 1)[0];
+  if (!['.github/workflows/alhangeul-desktop.yml', '.github/workflows/ci.yml'].includes(workflowPath)) throw new Error('Unsupported product producer workflow');
   const verified = await verifyWorkflowArtifact({
     repository: input.repository, buildRef: input.productSha, runId: input.runId,
-    artifactName: 'alhangeul-desktop-windows-x64',
-  }, { fetchJson });
+    artifactName: 'alhangeul-desktop-windows-x64', workflowPath,
+  }, { fetchJson: (path) => path === runPath ? run : fetchJson(path) });
   if (verified.artifactId !== Number(input.artifactId) || verified.artifactDigest !== input.artifactDigest) {
     throw new Error('Approved artifact ID/digest mismatch');
   }

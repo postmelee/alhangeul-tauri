@@ -10,6 +10,8 @@ GitHub Issue: [#64](https://github.com/postmelee/alhangeul-tauri/issues/64)
 
 ## Stage 1 — 계약과 구현
 
+기존 1,000줄 이상 entry에서 native platform 구현과 fresh Windows smoke를 소유 workflow로 이동한다. 기존 native build/lifecycle 단계가 약 400줄인 예외는 이번 이동의 무손실 검토를 위해 유지한다. 신규 정책·집계 모듈과 orchestrator는 300줄 이내로 둔다. updater/release 본문은 이동·수정하지 않는다.
+
 - #60: 운영 계약·기준 실행 기록. #61: reusable fast lane 및 PowerShell parser/exit-code 계약.
 - #62: exact artifact handoff/download/inventory와 독립 installer workflow.
 - #63: core 의존 분리, compiler/lock/source cache key 및 갱신.
@@ -35,4 +37,3 @@ GitHub Issue: [#64](https://github.com/postmelee/alhangeul-tauri/issues/64)
 - timing summary와 canonical CI 가이드·관련 entry 링크 확인.
 - 단계/최종 보고와 보드 완료 표시 후 parent PR 1개 생성. 미검증을 통과로 표시하지 않는다.
 - 커밋: `Task #64 Stage 3 + 최종 보고서: 통합 수용 근거`.
-

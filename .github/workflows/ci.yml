@@ -4,10 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       profile:
-        description: Fast contracts only, or contracts plus Linux native unit tests.
+        description: Select validation scope; auto uses an exact base SHA and falls back to full.
         type: choice
         default: native
-        options: [fast, native, installer]
+        options: [auto, fast, native, installer, windows-package, linux-package, full]
+      base_sha:
+        description: Auto profile only - exact comparison SHA; missing/unavailable means full.
+        type: string
       product_sha:
         description: Installer profile only - exact product commit.
         type: string
@@ -34,15 +37,50 @@ env:
   NODE_VERSION: "24"
 
 jobs:
+  select:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      profile: ${{ steps.select.outputs.profile }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          submodules: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          package-manager-cache: false
+      - name: Fetch only the requested comparison commit
+        if: ${{ inputs.profile == 'auto' }}
+        shell: bash
+        env:
+          BASE_SHA: ${{ inputs.base_sha }}
+        run: |
+          if [[ "$BASE_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            git fetch --no-tags --depth=1 origin "$BASE_SHA" || echo 'Comparison unavailable; selector will use full.'
+          fi
+      - id: select
+        env:
+          VALIDATION_PROFILE: ${{ inputs.profile }}
+          BASE_SHA: ${{ inputs.base_sha }}
+          PRODUCT_SHA: ${{ inputs.product_sha }}
+          PRODUCT_RUN_ID: ${{ inputs.product_run_id }}
+          PRODUCT_ARTIFACT_ID: ${{ inputs.artifact_id }}
+          PRODUCT_ARTIFACT_DIGEST: ${{ inputs.artifact_digest }}
+        run: node scripts/ci/select.mjs
   fast:
+    needs: select
+    if: ${{ contains(fromJSON('["fast","native","installer"]'), needs.select.outputs.profile) }}
     uses: ./.github/workflows/alhangeul-ci-fast.yml
     with:
       source_ref: ${{ github.sha }}
 
   unit-tests:
     name: Unit tests
-    needs: fast
-    if: ${{ inputs.profile == 'native' }}
+    needs: [select, fast]
+    if: ${{ needs.select.outputs.profile == 'native' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
@@ -156,8 +194,8 @@ jobs:
         run: pnpm run clippy:desktop
 
   installer:
-    needs: fast
-    if: ${{ inputs.profile == 'installer' }}
+    needs: [select, fast]
+    if: ${{ needs.select.outputs.profile == 'installer' }}
     permissions:
       actions: read
       contents: read
@@ -167,3 +205,13 @@ jobs:
       product_run_id: ${{ inputs.product_run_id }}
       artifact_id: ${{ inputs.artifact_id }}
       artifact_digest: ${{ inputs.artifact_digest }}
+
+  artifacts:
+    needs: select
+    if: ${{ contains(fromJSON('["windows-package","linux-package","full"]'), needs.select.outputs.profile) }}
+    uses: ./.github/workflows/alhangeul-artifacts.yml
+    with:
+      build_ref: ${{ github.sha }}
+      platform: ${{ needs.select.outputs.profile == 'windows-package' && 'windows-x64' || needs.select.outputs.profile == 'linux-package' && 'linux' || 'all' }}
+      profile: full
+      run_tests: true

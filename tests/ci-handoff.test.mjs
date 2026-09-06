@@ -25,6 +25,18 @@ test('handoff separates product/harness SHA and pins approved archive', async ()
   assert.equal(result.productVersion, '0.1.0');
   assert.equal(result.mode, 'reused');
 });
+test('selected CI package producer is reusable with the same strict provenance', async () => {
+  const f = fixtures();
+  f.run.path = '.github/workflows/ci.yml';
+  assert.equal((await verifyProductHandoff(input, service(f))).workflowPath, f.run.path);
+  f.run.conclusion = 'failure';
+  await assert.rejects(verifyProductHandoff(input, service(f)));
+});
+test('other producer workflows cannot supply approved product bytes', async () => {
+  const f = fixtures();
+  f.run.path = '.github/workflows/arbitrary.yml';
+  await assert.rejects(verifyProductHandoff(input, service(f)), /Unsupported product producer/);
+});
 for (const [name, change] of [
   ['ID', { artifactId: '43' }], ['digest', { artifactDigest: `sha256:${'d'.repeat(64)}` }],
   ['harness SHA', { harnessSha: 'main' }], ['product SHA', { productSha: 'main' }],

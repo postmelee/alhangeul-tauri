@@ -150,7 +150,7 @@ test('supervisor, worker limit, direct fallback와 atomic PNG 경계를 고정�
 });
 
 test('desktop workflow는 Linux x64 arm64 helper를 build·보존·test·lint한다', async () => {
-  const workflow = await readFile(join(repoRoot, '.github/workflows/alhangeul-desktop.yml'), 'utf8');
+  const workflow = await readFile(join(repoRoot, '.github/workflows/alhangeul-artifact-platform.yml'), 'utf8');
   for (const marker of [
     '- name: Build Linux thumbnailer',
     '- name: Upload Linux thumbnailer evidence',
@@ -173,7 +173,7 @@ test('desktop workflow는 Linux x64 arm64 helper를 build·보존·test·lint한
 });
 
 test('Linux Rust 진단은 실패 상태를 유지하고 exact SHA와 로그를 보존한다', async () => {
-  const workflow = await readFile(join(repoRoot, '.github/workflows/alhangeul-desktop.yml'), 'utf8');
+  const workflow = await readFile(join(repoRoot, '.github/workflows/alhangeul-artifact-platform.yml'), 'utf8');
   const step = (name) => workflow.split('      - name: ').find((item) => item.startsWith(`${name}\n`));
   for (const name of ['Test Linux thumbnailer', 'Lint Linux thumbnailer']) {
     const source = step(name);
