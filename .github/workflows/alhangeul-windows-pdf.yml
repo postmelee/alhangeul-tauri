@@ -1,6 +1,14 @@
 name: Alhangeul Windows PDF Acceptance
 
 on:
+  workflow_call:
+    inputs:
+      build_ref:
+        required: true
+        type: string
+      native_run_id:
+        required: true
+        type: string
   workflow_dispatch:
     inputs:
       build_ref:

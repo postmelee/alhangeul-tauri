@@ -9,6 +9,7 @@ import { analyzeWindowsPdfs, validateEvidence } from './gui/windows-pdf/analyze.
 const workflow = await readFile(new URL('../.github/workflows/alhangeul-windows-pdf.yml', import.meta.url), 'utf8');
 const spec = await readFile(new URL('./gui/specs/windows-pdf.e2e.ts', import.meta.url), 'utf8');
 const dialog = await readFile(new URL('../scripts/windows-pdf-dialog.ps1', import.meta.url), 'utf8');
+const dispatcher = await readFile(new URL('../.github/workflows/alhangeul-desktop.yml', import.meta.url), 'utf8');
 const buildRef = 'a'.repeat(40);
 const expected = { buildRef, fixture: 'biz-plan-hwp', phase: 'fresh' };
 const valid = {
@@ -28,6 +29,21 @@ test('Windows PDF workflow는 read-only dispatch와 기존 exact artifact만 사
   assert.match(workflow, /digest-mismatch: error/);
   assert.match(workflow, /--verify-inventory/);
   assert.doesNotMatch(workflow, /secrets\.|contents: write|build:desktop|tauri build|release create|publish_release/);
+});
+
+test('등록된 dispatcher는 PDF 전용 reusable workflow에 기존 artifact identity만 전달한다', () => {
+  assert.match(workflow, /workflow_call:\n    inputs:\n      build_ref:/);
+  const job = dispatcher.split('\n  windows-pdf-acceptance:\n')[1].split('\n  updater-linux-window-probe:')[0];
+  assert.match(job, /if: \$\{\{ inputs.mode == 'windows-pdf-acceptance' \}\}/);
+  assert.match(job, /uses: \.\/.github\/workflows\/alhangeul-windows-pdf.yml/);
+  assert.match(job, /build_ref: \$\{\{ inputs.acceptance_candidate_sha \}\}/);
+  assert.match(job, /native_run_id: \$\{\{ inputs.acceptance_d1_run_id \}\}/);
+  assert.doesNotMatch(job, /write|secrets|publish_release/);
+  for (const name of ['build', 'windows-installer-smoke', 'build-updater', 'build-updater-acceptance', 'publish-updater']) {
+    const block = dispatcher.split(`\n  ${name}:\n`)[1].split(/\n  [a-z][\w-]*:\n/)[0];
+    assert.doesNotMatch(block.split('steps:')[0], /windows-pdf-acceptance/);
+    assert.match(block, /if: \$\{\{ inputs.mode == '(artifact|updater|updater-acceptance)'/);
+  }
 });
 
 test('Windows PDF workflow는 두 실제 앱 실행과 실패 증거 및 cleanup을 유지한다', () => {

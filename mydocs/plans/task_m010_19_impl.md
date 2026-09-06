@@ -10,6 +10,16 @@ GitHub Issue: [#19](https://github.com/postmelee/alhangeul-tauri/issues/19)
 
 ## 단계 개요
 
+### 2026-09-06 Stage 4.6 기존 dispatcher 연결 승인
+
+작업지시자가 새 workflow의 default branch 미등록(404)을 해결하기 위해 기존 Desktop
+dispatcher에 `windows-pdf-acceptance` 모드를 연결하고 원격 검증까지 이어가도록 승인했다.
+신규 PDF workflow에 `workflow_call` 입력을 추가하고 기존 acceptance candidate/run 입력을
+PDF buildRef/nativeRunId로 전달한다. 기존 build·updater·publish 조건은 유지한다.
+변경 파일은 두 workflow와 Windows PDF focused contract, 이 계획 및 단계 보고서다.
+문서는 내부 작업 증거인 기존 plans/working 경로에만 둔다. 제품 소스와 default branch는
+변경하지 않는다. focused contracts·actionlint·diff check 후 커밋/게시하고 기존 산출물로 실행한다.
+
 ### 2026-09-06 Stage 4.5 Windows PDF 최소 자동화 승인
 
 작업지시자가 Windows 자동화 기반을 재사용하는 최소 PDF 검증 구현을 승인했다.
