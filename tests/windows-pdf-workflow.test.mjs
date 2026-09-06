@@ -70,6 +70,15 @@ test('PDF smoke는 source hash·dirty·overwrite를 단언하고 native dialogs�
   assert.match(dialog, /Native overwrite confirmation was not observed/);
 });
 
+test('native helper budget begins after menu click and records bounded content-free diagnostics', () => {
+  const helper = spec.slice(spec.indexOf('async function nativeDialog'));
+  assert.ok(helper.indexOf('data-cmd=') < helper.indexOf("run('powershell.exe'"));
+  assert.match(dialog, /\$result.Count -ge 100/);
+  assert.match(dialog, /Write-Evidence 'failed' \$_\.Exception.Message/);
+  assert.match(dialog, /stage = \$stage/);
+  assert.doesNotMatch(dialog, /\$info\.(Name|Value)/);
+});
+
 test('PDF evidence validator rejects missing, failed, wrong SHA and incomplete overwrite results', () => {
   validateEvidence(valid, expected);
   for (const mutation of [

@@ -10,6 +10,15 @@ GitHub Issue: [#19](https://github.com/postmelee/alhangeul-tauri/issues/19)
 
 ## 단계 개요
 
+### 2026-09-06 Stage 4.7 대화상자 대기 경계와 진단 보정 승인
+
+작업지시자가 첫 Windows PDF timeout의 최소 harness 보정 및 재실행을 승인했다.
+메뉴 클릭 완료 뒤 native helper를 실행해 90초를 전부 대화상자 조작에 사용한다.
+helper는 앱 소유 UIAutomation tree(값·문서 내용 제외), process ID, 진행 상태와 시간을
+성공·실패 모두 기록한다. 제품 코드나 드라이버 버전은 변경하지 않는다.
+spec/helper/전용 contract 및 plans/working 내부 기록만 수정하고 GUI typecheck·focused
+contract·diff 검증 뒤 기존 제품 artifact로 한 번 재실행한다.
+
 ### 2026-09-06 Stage 4.6 기존 dispatcher 연결 승인
 
 작업지시자가 새 workflow의 default branch 미등록(404)을 해결하기 위해 기존 Desktop

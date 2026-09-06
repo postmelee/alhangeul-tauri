@@ -95,6 +95,10 @@ async function insertMarker() {
 }
 
 async function nativeDialog(mode: 'Open' | 'Save', path: string, command: string, fixture: string) {
+  // Native dialogs do not block WebDriver's WebView click response. Start the
+  // helper afterwards so plugin discovery/menu delays cannot consume its budget.
+  await $('#menu-bar .menu-title').click();
+  await $(`.md-item[data-cmd="${command}"]`).click();
   const operation = run('powershell.exe', ['-NoProfile', '-File',
     join(inputs.fixtureRoot, 'scripts/windows-pdf-dialog.ps1'),
     '-Mode', mode, '-TargetPath', path, '-EvidencePath',
@@ -103,8 +107,6 @@ async function nativeDialog(mode: 'Open' | 'Save', path: string, command: string
   // Observe rejection immediately while the WebDriver command is running.
   const result = operation.then(() => null, (error: unknown) => error);
   try {
-    await $('#menu-bar .menu-title').click();
-    await $(`.md-item[data-cmd="${command}"]`).click();
     const error = await result;
     if (error) throw error;
   } finally {
