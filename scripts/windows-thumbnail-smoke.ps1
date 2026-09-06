@@ -2,9 +2,6 @@
 $thumbnailCategory = '{E357FCCD-A995-4576-B01F-234630154E96}'
 $thumbnailBackupRoot = 'Software\Alhangeul\ThumbnailHandlerBackup'
 $thumbnailThirdParty = '{4A64F47A-2B10-4E74-AFA0-6B7D59B76155}'
-if ($null -eq ('Alhangeul.ThumbnailDiagnostics.Probe' -as [type])) {
-  Add-Type -Path @((Join-Path $PSScriptRoot 'windows-thumbnail-native.cs'), (Join-Path $PSScriptRoot 'windows-thumbnail-interop.cs'))
-}
 
 function Get-ThumbnailTarget($Kind) {
   if ($Kind -eq 'msi') {
@@ -82,6 +79,8 @@ function Assert-InstalledThumbnail($Kind, $InstallDirectory, $Sentinels) {
   $target = $Sentinels.Target; $handler = Join-Path $InstallDirectory 'AlhangeulThumbnailHandler.dll'; $worker = Join-Path $InstallDirectory 'AlhangeulThumbnailWorker.exe'
   Assert-Condition (Test-Path -LiteralPath $handler -PathType Leaf) '설치된 thumbnail handler가 없습니다.'
   Assert-Condition (Test-Path -LiteralPath $worker -PathType Leaf) '설치된 thumbnail worker가 없습니다.'
+  Assert-Condition ((Get-FileHash -LiteralPath $handler -Algorithm SHA256).Hash -eq (Get-FileHash -LiteralPath $artifacts.Handler -Algorithm SHA256).Hash) '설치된 handler hash가 bundle과 다릅니다.'
+  Assert-Condition ((Get-FileHash -LiteralPath $worker -Algorithm SHA256).Hash -eq (Get-FileHash -LiteralPath $artifacts.Worker -Algorithm SHA256).Hash) '설치된 worker hash가 bundle과 다릅니다.'
   $inproc = Read-RegistryValue $target (Get-ThumbnailClassPath) ''
   $threading = Read-RegistryValue $target (Get-ThumbnailClassPath) 'ThreadingModel'
   Assert-Condition ($inproc.Exists -and (Test-SamePath $inproc.Value $handler)) 'InprocServer32 절대경로가 다릅니다.'
@@ -127,20 +126,14 @@ function Get-ThumbnailFixtureState($Path) {
   $item = Get-Item -LiteralPath $Path
   return [ordered]@{ Name = $item.Name; Size = $item.Length; Mtime = $item.LastWriteTimeUtc.Ticks; Sha256 = (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash }
 }
-function Invoke-ThumbnailFixtureProbe {
-  $root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\third_party\rhwp\saved')); $results = @()
-  $beforeProcesses = @(Get-Process -Name 'Alhangeul', 'msedgewebview2' -ErrorAction SilentlyContinue | ForEach-Object { $_.Id })
-  foreach ($extension in $extensions) {
-    $fixture = Get-ChildItem -LiteralPath $root -Recurse -File | Where-Object { $_.Extension -ieq $extension } | Select-Object -First 1
-    Assert-Condition ($null -ne $fixture) "$extension thumbnail fixture가 없습니다."
-    $before = Get-ThumbnailFixtureState $fixture.FullName
-    $probe = [Alhangeul.ThumbnailDiagnostics.Probe]::Run('shell', $fixture.FullName, 256)
-    $after = Get-ThumbnailFixtureState $fixture.FullName
-    Assert-Condition ($probe.status -eq 'ok' -and $probe.bitmapPresent -eq $true) "$extension Shell bitmap 실패: $($probe.phase), $($probe.hresult), $($probe.detailCode)"
-    Assert-Condition ((ConvertTo-Json $before -Compress) -eq (ConvertTo-Json $after -Compress)) "$extension 원본 fixture가 변경되었습니다."
-    $results += [ordered]@{ Fixture = $before; HResult = 0; Size = 256; Probe = $probe }
-  }
-  $afterProcesses = @(Get-Process -Name 'Alhangeul', 'msedgewebview2' -ErrorAction SilentlyContinue | ForEach-Object { $_.Id })
-  Assert-Condition (@($afterProcesses | Where-Object { $beforeProcesses -notcontains $_ }).Count -eq 0) 'thumbnail 요청이 Alhangeul 또는 WebView process를 시작했습니다.'
-  return $results
+function Invoke-PostUninstallRollback($Path, $InstallDirectory) {
+  $sentinels = $null
+  try {
+    Assert-Condition (Get-CleanState).Clean 'rollback 전 제품 소유 상태가 남았습니다.'
+    $defaults = Get-DefaultState
+    $sentinels = Set-ThumbnailSentinels 'msi'
+    $result = Invoke-MsiThumbnailRollbackProbe $Path $InstallDirectory $sentinels
+    Assert-Condition ((ConvertTo-Json $defaults -Depth 12 -Compress) -eq (ConvertTo-Json (Get-DefaultState) -Depth 12 -Compress)) 'MSI rollback이 기본 연결을 변경했습니다.'
+    return $result
+  } finally { if ($null -ne $sentinels) { Restore-ThumbnailSentinels $sentinels } }
 }

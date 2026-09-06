@@ -10,6 +10,7 @@ const scriptBytes = await readFile(scriptPath);
 const helperPaths = [
   join(repoRoot, 'scripts/windows-installer-smoke-support.ps1'),
   join(repoRoot, 'scripts/windows-thumbnail-smoke.ps1'),
+  join(repoRoot, 'scripts/windows-thumbnail-fixtures.ps1'),
   join(repoRoot, 'scripts/windows-process-lifecycle.ps1'),
 ];
 const helperBytes = await Promise.all(helperPaths.map((path) => readFile(path)));
@@ -30,12 +31,13 @@ test('Windows PowerShell 5.1이 UTF-8 source를 인식하도록 BOM을 유지한
   }
 });
 
-test('entry parameter는 artifact, output, expected version 세 개로 제한한다', () => {
+test('entry parameter는 artifact, output, version, 선택 installer 네 개로 제한한다', () => {
   const parameterBlock = entrySource.match(/param\(([\s\S]*?)\)\nSet-StrictMode/);
   assert.ok(parameterBlock, 'PowerShell parameter block이 필요합니다.');
   const names = [...parameterBlock[1].matchAll(/\[string\]\$(\w+)/g)]
     .map((match) => match[1]);
-  assert.deepEqual(names, ['ArtifactRoot', 'OutputDirectory', 'ExpectedVersion']);
+  assert.deepEqual(names, ['ArtifactRoot', 'OutputDirectory', 'ExpectedVersion', 'InstallerKind']);
+  assert.match(entrySource, /ValidateSet\('nsis', 'msi'\)/);
   assert.match(entrySource, /Set-StrictMode -Version Latest/);
   assert.match(entrySource, /windows-process-lifecycle\.ps1/);
   assert.doesNotMatch(source, /\bImport-Module\b/);
@@ -53,8 +55,7 @@ test('installer cardinality와 inventory hash를 설치 전에 검증한다', ()
   assert.match(source, /Get-FileHash -LiteralPath \$File\.FullName -Algorithm SHA256/);
   assertOrdered([
     'Resolve-BundleArtifacts $ArtifactRoot',
-    "Invoke-BundleSmoke 'msi'",
-    "Invoke-BundleSmoke 'nsis'",
+    'Invoke-BundleSmoke $InstallerKind $selectedPath $selectedDirectory',
   ]);
 });
 
@@ -253,11 +254,11 @@ test('thumbnail smoke는 rollback·공존·실제 Shell bitmap 계약을 검사�
   for (const marker of [
     'ALHANGEUL_FAIL_THUMBNAIL_INSTALL=1',
     'Invoke-MsiThumbnailRollbackProbe',
-    'nsis-reinstall.log',
+    '$Kind-reinstall.log',
     'IShellItemImageFactory',
     'SHCreateItemFromParsingName',
-    'Alhangeul.ThumbnailDiagnostics.Probe]::Run',
-    'third_party\\rhwp\\saved',
+    'windows-thumbnail-diagnostics.ps1',
+    'windows-thumbnail-fixtures.json',
     '$thumbnailThirdParty',
     'ThumbnailHandlerBackup',
     'AlhangeulThumbnailHandler.dll',
@@ -277,8 +278,8 @@ test('thumbnail smoke는 rollback·공존·실제 Shell bitmap 계약을 검사�
     'InprocServer32 CLSID는 redirected 32/64 view를 계속 분리해야 합니다.',
   );
   assert.match(source, /ThumbnailRegistrationState = Get-ThumbnailRegistrationState/);
-  assert.match(source, /\$probe.status -eq 'ok' -and \$probe.bitmapPresent -eq \$true/);
-  assert.match(source, /Probe = \$probe/);
+  assert.match(source, /\$probe.status -ne 'ok' -or \$probe.bitmapPresent -ne \$true/);
+  assert.match(source, /Result = \$probe/);
   assert.doesNotMatch(source, /ThumbnailSmokeInterop/);
 });
 

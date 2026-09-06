@@ -183,42 +183,19 @@ test('CI workflow는 제품·release 계약과 automation을 native 검사 전�
   ]);
 });
 
-test('desktop workflow의 Windows/Linux matrix가 exact target을 유지한다', () => {
+test('ordinary artifact matrix는 all 기본값과 Windows-only 선택을 분리한다', () => {
   const job = getJob(desktopWorkflow, 'build');
-  const expectedEntries = [
-    [
-      '          - name: windows-x64',
-      '            os: windows-2025',
-      '            target: x86_64-pc-windows-msvc',
-      '            bundle_args: ""',
-    ].join('\n'),
-    [
-      '          - name: linux-x64',
-      '            os: ubuntu-22.04',
-      '            target: x86_64-unknown-linux-gnu',
-      '            bundle_args: ""',
-    ].join('\n'),
-    [
-      '          - name: linux-arm64',
-      '            os: ubuntu-22.04-arm',
-      '            target: aarch64-unknown-linux-gnu',
-      '            bundle_args: "--bundles deb"',
-    ].join('\n'),
+  const choices = [...job.matchAll(/'(\[[^\n]+?\])'/g)].map((match) => JSON.parse(match[1]));
+  const expected = [
+    { name: 'windows-x64', os: 'windows-2025', target: 'x86_64-pc-windows-msvc', bundle_args: '' },
+    { name: 'linux-x64', os: 'ubuntu-22.04', target: 'x86_64-unknown-linux-gnu', bundle_args: '' },
+    { name: 'linux-arm64', os: 'ubuntu-22.04-arm', target: 'aarch64-unknown-linux-gnu', bundle_args: '--bundles deb' },
   ];
-
-  const matrixNames = [
-    ...job.matchAll(/^          - name: ([a-z0-9-]+)$/gm),
-  ].map((match) => match[1]);
-  assert.deepEqual(matrixNames, ['windows-x64', 'linux-x64', 'linux-arm64']);
-  for (const entry of expectedEntries) {
-    assert.ok(job.includes(entry), `matrix entry가 필요합니다:\n${entry}`);
-  }
-
-  const unsupportedRunner = ['ma', 'cos'].join('');
-  assert.doesNotMatch(
-    job,
-    new RegExp(`runs-on:\\s+${unsupportedRunner}`, 'i'),
-  );
+  assert.deepEqual(choices, [[expected[0]], expected]);
+  assert.match(job, /fromJSON\(inputs.artifact_platform == 'windows-x64' &&/);
+  assert.match(desktopWorkflow, /artifact_platform:\n[\s\S]*?default: all\n\s+type: choice\n\s+options:\n\s+- all\n\s+- windows-x64/);
+  assert.doesNotMatch(getJob(desktopWorkflow, 'build-updater'), /artifact_platform/);
+  assert.doesNotMatch(getJob(desktopWorkflow, 'build-updater-acceptance'), /artifact_platform/);
 });
 
 test('desktop workflow는 checkout 전에 Git LF byte를 command scope로 고정한다', () => {
@@ -496,7 +473,9 @@ test('fresh Windows installer smoke job은 build 결과와 무관하게 artifact
     'job 조건은 취소된 workflow까지 계속 실행하지 않아야 합니다.',
   );
   assert.match(job, /^    runs-on: windows-2025$/m);
-  assert.doesNotMatch(job, /^\s+strategy:/m);
+  assert.match(job, /^    strategy:/m);
+  assert.match(job, /^      fail-fast: false$/m);
+  assert.match(job, /^        installer: \[nsis, msi\]$/m);
   assertOrdered(job, [
     '- name: Checkout installer smoke source',
     '- name: Prepare installer smoke diagnostics',
@@ -535,7 +514,7 @@ test('installer smoke job은 exact ref와 Windows x64 artifact를 고정한다',
   assert.match(job, /path: artifacts\/windows-x64$/m);
 });
 
-test('installer smoke는 root version과 세 입력을 PowerShell script에 전달한다', () => {
+test('installer smoke는 root version과 installer를 PowerShell script에 전달한다', () => {
   const job = getJob(desktopWorkflow, 'windows-installer-smoke');
   const step = getStepContaining(job, 'windows-installer-smoke.ps1');
 
@@ -549,6 +528,8 @@ test('installer smoke는 root version과 세 입력을 PowerShell script에 전�
     /-OutputDirectory 'diagnostics\\windows-installer-smoke'/,
   );
   assert.match(step, /-ExpectedVersion \$expectedVersion/);
+  assert.match(step, /-InstallerKind \$env:INSTALLER_KIND/);
+  assert.match(job, /INSTALLER_KIND: \$\{\{ matrix\.installer \}\}/);
 });
 
 test('installer smoke 진단은 항상 보존되고 마지막 gate가 실패를 전달한다', () => {
@@ -557,7 +538,7 @@ test('installer smoke 진단은 항상 보존되고 마지막 gate가 실패를 
   const recordStep = getStepContaining(job, 'step-outcomes.json');
   const uploadStep = getStepContaining(
     job,
-    'alhangeul-desktop-windows-x64-installer-smoke',
+    'name: alhangeul-desktop-windows-x64-${{ matrix.installer }}-installer-smoke',
   );
   const gateStep = getStepContaining(job, 'Windows installer smoke gate failed');
 

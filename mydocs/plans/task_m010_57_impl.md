@@ -3,10 +3,13 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: Stage 1 구현·로컬 검증 완료, 단계 보고 승인 대기
+상태: Stage 2.1 후보 구현·로컬 검증 완료, 원격 게시·Actions 실행 승인 대기
 
 승인 근거: 2026-09-06 같은 스레드의 구현계획 승인 요청에 작업지시자가
 “진행해줘”로 Stage 1 진행을 지시했다. Stage 2 원격 게시·실행은 별도 승인 대상으로 유지한다.
+
+Stage 2 승인: Stage 1 보고 뒤 작업지시자가 “진행해줘”로 Stage 2 구현을 승인했다.
+원격 후보 게시·Actions 실행은 후보 SHA를 제시한 후 별도 승인받는다.
 
 ## 단계 개요
 
@@ -157,6 +160,46 @@ Windows job은 기존 pinned dependency 준비와 native test·Clippy·bundle bu
 ```
 
 실제 ExpectedVersion은 package.json에서 읽고 유효성을 확인한다. 위 버전은 현재 기준선 예시다.
+
+### Stage 2.1 후보 구현·로컬 검증 결과 — 2026-09-07
+
+- ordinary artifact build에 `artifact_platform=all|windows-x64` 선택을 추가했다.
+  기본 Linux/Windows target과 updater 경로는 유지한다.
+- installer job은 `installer: [nsis, msi]`, `fail-fast: false`로 분리했다.
+  두 job이 같은 bundle을 받지만 선택 installer만 실행하며 진단 artifact 이름도 분리한다.
+- 최초 설치의 Shell 요청 → 별도 cache/force/COM probe → 재설치와 재검사 →
+  앱 launch·제3자 takeover·제거 순서다. MSI rollback은 최초 Shell 성공과 clean 제거를
+  확인한 뒤에만 주입하며 기본 연결 불변도 확인한다.
+- `scripts/windows-thumbnail-fixtures.json`과 `windows-thumbnail-fixtures.ps1`을
+  승인된 fixture helper 분리 범위로 추가했다. small HWP 13,824 bytes,
+  large HWP 10,418,688 bytes, HWPX 131,571 bytes, JPG 81,040 bytes의 경로·hash·선정
+  근거를 고정했다. 네 파일은 현재 pin에서 LFS pointer가 아닌 실제 파일이다.
+- 최초·재설치별 19개 probe, 합계 38개의 결과와 설치 전·설치 후·정리 후 환경 JSON을
+  남긴다. Shell·force-extract에는 실제 bitmap 성공을 요구한다. cache-only의 API 실패는
+  원래 실패 status/HRESULT를 보존하는 관측값이며 이를 cache miss나 새 추출 성공으로
+  단정하지 않는다. cache API 진입 전 실패·timeout·JSON 누락은 harness 실패다.
+  Stage 2 보고에서는 cache API 오류의 의미까지 검토하며 workflow 통과만으로 수용하지 않는다.
+- fixture 복사본은 진단 업로드 디렉터리 밖의 전용 임시 폴더에 두고 원본/복사본 hash를
+  확인한 뒤 해당 폴더만 정리한다. 설치 DLL/worker의 실제 hash도 bundle과 비교한다.
+- `tests/windows-thumbnail-fixtures.test.mjs` 9개를 추가하고 automation에 포함했다.
+  관련 검사 72개, 전체 automation 522개가 통과했다. 제품 경계 검사
+  `394 files scanned`, `git diff --check`, 추가 workflow 문법 검사
+  `actionlint -shellcheck='' .github/workflows/alhangeul-desktop.yml`도 통과했다.
+- Windows PowerShell/COM/GDI·설치 실행은 아직 수행하지 않았다. Stage 2 전체 완료 보고서는
+  원격 실행 결과를 수집한 뒤 작성한다. 제품 등록 모델·엔진·worker 제한 변경은 없다.
+- 원격 read-only 확인에서 #57은 OPEN이며 `publish/task57` 브랜치는 없었다.
+  실제 push 직전 다시 확인한다. 승인 요청 대상은 이번 Stage 2.1 후보 커밋의 전체 SHA이며,
+  아래 Windows-only 비게시 dispatch 1회다. source/workflow ref를 같은 후보에 고정한다.
+
+추가 로컬 검증:
+
+```sh
+node --test tests/windows-thumbnail-diagnostics.test.mjs tests/windows-installer-smoke.test.mjs tests/windows-packaging.test.mjs tests/actions-workflows.test.mjs tests/windows-thumbnail-fixtures.test.mjs
+actionlint -shellcheck='' .github/workflows/alhangeul-desktop.yml
+```
+
+cache/강제 추출의 의미는 [Microsoft WTS_FLAGS](https://learn.microsoft.com/en-us/windows/win32/api/thumbcache/ne-thumbcache-wts_flags)
+및 [GetThumbnail 반환 계약](https://learn.microsoft.com/en-us/windows/win32/api/thumbcache/nf-thumbcache-ithumbnailcache-getthumbnail)을 확인했다.
 
 ### 원격 실행과 승인 경계
 

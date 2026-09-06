@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "rhwpSha": "496333b27d21ddb9114ba9ae340bcb895870c9a7",
+  "edge": 256,
+  "fixtures": [
+    {
+      "id": "small-hwp",
+      "path": "third_party/rhwp/saved/blank2010.hwp",
+      "bytes": 13824,
+      "sha256": "43f472751fafefb8c66b0f831660ebed51e443a46bebe44c75bba918154ce4c9",
+      "reason": "작은 HWP의 등록·Shell 경로 대조. 공개 빈 문서이며 내용 시각 검증용이 아니다."
+    },
+    {
+      "id": "large-hwp",
+      "path": "third_party/rhwp/samples/exam_kor.hwp",
+      "bytes": 10418688,
+      "sha256": "0315576fb25dd29ad3b6b188ee2539d0e8d31c15b74847be801c2186a97aac69",
+      "reason": "공개 국어 시험 문서. 약 10 MiB의 큰 입력이며 제품 64 MiB 상한 이내다."
+    },
+    {
+      "id": "form-hwpx",
+      "path": "third_party/rhwp/samples/hwpx/form-002.hwpx",
+      "bytes": 131571,
+      "sha256": "5ab8f7c368e02538f75f1cd2bd82bbd8de2f925a54ba7b38ec9395b2cdb804d4",
+      "reason": "기존 GUI·thumbnail 회귀 검증에 쓰는 공개 HWPX 양식이다."
+    },
+    {
+      "id": "control-jpg",
+      "path": "third_party/rhwp/samples/images/moogung.jpg",
+      "bytes": 81040,
+      "sha256": "7af06b6410ea950341606e2ffe793f99e680030b39513b4bd835dc5c42822f76",
+      "reason": "공개 upstream 이미지. Alhangeul과 독립적인 Windows JPG thumbnail 대조군이다."
+    }
+  ]
+}

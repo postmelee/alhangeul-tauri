@@ -86,3 +86,4 @@ try {
 } finally { $stream.Dispose() }
 [Console]::Out.WriteLine(($result | ConvertTo-Json -Depth 16 -Compress))
 if ($result.status -notin @('ok', 'collected')) { exit 1 }
+exit 0

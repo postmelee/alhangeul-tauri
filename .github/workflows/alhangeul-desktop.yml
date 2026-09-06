@@ -16,6 +16,14 @@ on:
           - updater-native-negative-acceptance
           - updater-linux-window-probe
           - updater-linux-window-verify
+      artifact_platform:
+        description: Ordinary artifact build platforms; updater modes are unaffected.
+        required: false
+        default: all
+        type: choice
+        options:
+          - all
+          - windows-x64
       build_ref:
         description: Branch, tag, or commit to build. Empty uses the selected workflow commit.
         required: false
@@ -104,19 +112,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - name: windows-x64
-            os: windows-2025
-            target: x86_64-pc-windows-msvc
-            bundle_args: ""
-          - name: linux-x64
-            os: ubuntu-22.04
-            target: x86_64-unknown-linux-gnu
-            bundle_args: ""
-          - name: linux-arm64
-            os: ubuntu-22.04-arm
-            target: aarch64-unknown-linux-gnu
-            bundle_args: "--bundles deb"
+        include: ${{ fromJSON(inputs.artifact_platform == 'windows-x64' && '[{"name":"windows-x64","os":"windows-2025","target":"x86_64-pc-windows-msvc","bundle_args":""}]' || '[{"name":"windows-x64","os":"windows-2025","target":"x86_64-pc-windows-msvc","bundle_args":""},{"name":"linux-x64","os":"ubuntu-22.04","target":"x86_64-unknown-linux-gnu","bundle_args":""},{"name":"linux-arm64","os":"ubuntu-22.04-arm","target":"aarch64-unknown-linux-gnu","bundle_args":"--bundles deb"}]') }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 90
     steps:
@@ -633,9 +629,15 @@ jobs:
           retention-days: 14
 
   windows-installer-smoke:
-    name: Smoke Windows x64 installers
+    name: Smoke Windows x64 ${{ matrix.installer }}
     needs: build
     if: ${{ inputs.mode == 'artifact' && !cancelled() }}
+    strategy:
+      fail-fast: false
+      matrix:
+        installer: [nsis, msi]
+    env:
+      INSTALLER_KIND: ${{ matrix.installer }}
     runs-on: windows-2025
     timeout-minutes: 30
     steps:
@@ -651,6 +653,8 @@ jobs:
         shell: powershell
         env:
           REQUESTED_BUILD_REF: ${{ inputs.build_ref || github.sha }}
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
+          WORKFLOW_REF: ${{ github.workflow_ref }}
         run: |
           $output = Join-Path $env:GITHUB_WORKSPACE 'diagnostics\windows-installer-smoke'
           New-Item -ItemType Directory -Path $output -Force | Out-Null
@@ -658,6 +662,10 @@ jobs:
             runId = '${{ github.run_id }}'
             runAttempt = '${{ github.run_attempt }}'
             requestedBuildRef = $env:REQUESTED_BUILD_REF
+            installerKind = $env:INSTALLER_KIND
+            workflowSha = $env:WORKFLOW_SHA
+            workflowRef = $env:WORKFLOW_REF
+            imageVersion = $env:ImageVersion
           } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $output 'workflow-context.json') -Encoding UTF8
 
       - name: Verify installer smoke commit
@@ -703,7 +711,8 @@ jobs:
           & '.\scripts\windows-installer-smoke.ps1' `
             -ArtifactRoot 'artifacts\windows-x64' `
             -OutputDirectory 'diagnostics\windows-installer-smoke' `
-            -ExpectedVersion $expectedVersion
+            -ExpectedVersion $expectedVersion `
+            -InstallerKind $env:INSTALLER_KIND
 
       - name: Record installer smoke outcome
         if: ${{ always() }}
@@ -728,7 +737,7 @@ jobs:
         if: ${{ always() }}
         uses: actions/upload-artifact@v7
         with:
-          name: alhangeul-desktop-windows-x64-installer-smoke
+          name: alhangeul-desktop-windows-x64-${{ matrix.installer }}-installer-smoke
           path: diagnostics/windows-installer-smoke/**
           if-no-files-found: error
           retention-days: 14
