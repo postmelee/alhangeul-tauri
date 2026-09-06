@@ -10,6 +10,13 @@ GitHub Issue: [#19](https://github.com/postmelee/alhangeul-tauri/issues/19)
 
 ## 단계 개요
 
+### 2026-09-07 Stage 4.14 Open 제출 방식 비교 승인
+
+작업지시자가 Open 버튼 제출 방식을 동일 native BM_CLICK으로 고정한 비교 진단을 승인했다.
+Open mode의 ID1에만 native 경로를 우선하며 Save/overwrite의 기존 경로는 보존한다.
+입력·포커스·fixture·제품 artifact·workflow 조건은 유지한다. helper와 계약 테스트 및 내부
+plans/working만 수정한다. focused 계약·diff 검증 후 open-only 한 번을 실행하고 결과를 확인한다.
+
 ### 2026-09-06 Stage 4.13 Native 포커스 확인 승인
 
 작업지시자가 UIA 포커스 대신 앱 소유 HWND의 native 포커스 지정·검증과 open-only 재실행을

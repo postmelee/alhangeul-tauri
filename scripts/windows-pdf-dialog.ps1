@@ -56,6 +56,13 @@ function Find-Id($Root, $Id) {
 }
 
 function Invoke-Button($Dialog, $Button, $Id) {
+  # Keep Open submission identical regardless of UIA pattern availability.
+  if ($Mode -eq 'Open' -and $Id -eq '1') {
+    $script:buttonMethod = 'Win32-BM_CLICK'
+    $script:nativeFallbackUsed = $true
+    Invoke-NativeDialogButton $Dialog $Button $observedProcessId $Id
+    return
+  }
   $pattern = $null
   if ($Button.TryGetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern, [ref]$pattern)) {
     $script:buttonMethod = 'UIA-InvokePattern'

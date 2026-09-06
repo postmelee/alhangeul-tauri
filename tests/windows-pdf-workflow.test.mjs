@@ -126,6 +126,15 @@ test('Document identity rejects wrong fixture, dirty document, generic status an
   assert.ok(spec.indexOf('assertDocumentIdentity(openedTitle') < spec.indexOf('await insertMarker()'));
 });
 
+test('Open submission uses validated native click before optional UIA path', () => {
+  const invoke = dialog.split('function Invoke-Button')[1].split('\ntry {')[0];
+  const open = invoke.split('  $pattern = $null')[0];
+  assert.match(open, /\$Mode -eq 'Open' -and \$Id -eq '1'/);
+  assert.match(open, /Invoke-NativeDialogButton \$Dialog \$Button \$observedProcessId \$Id\s+return/);
+  assert.doesNotMatch(open, /\.Invoke\(/);
+  assert.match(native, /Validate\(dialog, button, pid, id, "Button"\)/);
+});
+
 test('Open probe is distinct from PDF acceptance and focuses filename before editing', () => {
   assert.match(dispatcher, /open_only: \$\{\{ inputs.mode == 'windows-pdf-open-probe' \}\}/);
   assert.match(workflow, /if: \$\{\{ !inputs.open_only \}\}/);
