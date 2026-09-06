@@ -13,6 +13,7 @@ const desktopPath = join(
 );
 const linuxGuiPath = join(workflowRoot, 'alhangeul-linux-gui.yml');
 const pagesPath = join(workflowRoot, 'pages.yml');
+const coreWorkflow = await readFile(join(workflowRoot, 'alhangeul-thumbnail-core.yml'), 'utf8');
 const [ciWorkflow, desktopWorkflow, linuxGuiWorkflow, pagesWorkflow] = await Promise.all([
   readFile(ciPath, 'utf8'),
   readFile(desktopPath, 'utf8'),
@@ -29,6 +30,7 @@ test('모든 workflow가 공통 또는 전용 contract test inventory에 등록�
     'alhangeul-desktop.yml',
     'alhangeul-installer-reuse.yml',
     'alhangeul-linux-gui.yml',
+    'alhangeul-thumbnail-core.yml',
     'alhangeul-updater-linux-window-probe.yml',
     'alhangeul-updater-native-acceptance.yml',
     'alhangeul-updater-native-linux.yml',
@@ -236,32 +238,31 @@ test('desktop workflow는 checkout 전에 Git LF byte를 command scope로 고정
 });
 
 test('Windows thumbnail core probe는 exact checkout에서 진단을 항상 보존한다', () => {
-  assertOrdered(desktopWorkflow, [
+  assertOrdered(coreWorkflow, [
     '- name: Prepare Windows thumbnail core diagnostics',
     '- name: Build Windows thumbnail core probe',
     '- name: Run Windows thumbnail core probe',
     '- name: Record Windows thumbnail core probe outcome',
     '- name: Upload Windows thumbnail core diagnostics',
     '- name: Require Windows thumbnail core probe success',
-    '- name: Install dependencies',
   ]);
 
   const buildStep = getStepContaining(
-    desktopWorkflow,
+    coreWorkflow,
     'cargo build --manifest-path third_party/rhwp/Cargo.toml',
   );
   const probeStep = getStepContaining(
-    desktopWorkflow,
+    coreWorkflow,
     'benchmark-thumbnail-core.ps1',
   );
-  const contextStep = getStepContaining(desktopWorkflow, 'workflow-context.json');
-  const outcomeStep = getStepContaining(desktopWorkflow, 'step-outcomes.json');
+  const contextStep = getStepContaining(coreWorkflow, 'workflow-context.json');
+  const outcomeStep = getStepContaining(coreWorkflow, 'step-outcomes.json');
   const uploadStep = getStepContaining(
-    desktopWorkflow,
+    coreWorkflow,
     'alhangeul-windows-x64-thumbnail-core',
   );
   const gateStep = getStepContaining(
-    desktopWorkflow,
+    coreWorkflow,
     'Windows thumbnail core probe gate failed',
   );
 
@@ -299,29 +300,28 @@ test('Windows thumbnail core probe는 exact checkout에서 진단을 항상 보�
 });
 
 test('Linux thumbnail core probe는 x64 arm64 resource 증거를 각각 보존한다', () => {
-  assertOrdered(desktopWorkflow, [
+  assertOrdered(coreWorkflow, [
     '- name: Prepare Linux thumbnail core diagnostics',
     '- name: Run Linux thumbnail core probe',
     '- name: Record Linux thumbnail core probe outcome',
     '- name: Upload Linux thumbnail core diagnostics',
     '- name: Require Linux thumbnail core probe success',
-    '- name: Install dependencies',
   ]);
-  const installStep = getStepContaining(desktopWorkflow, 'Install Linux dependencies');
+  const installStep = getStepContaining(coreWorkflow, 'Install Linux dependencies');
   const probeStep = getStepContaining(
-    desktopWorkflow,
+    coreWorkflow,
     './scripts/benchmark-linux-thumbnail-core.sh',
   );
   const outcomeStep = getStepContaining(
-    desktopWorkflow,
+    coreWorkflow,
     'Record Linux thumbnail core probe outcome',
   );
   const uploadStep = getStepContaining(
-    desktopWorkflow,
+    coreWorkflow,
     'alhangeul-${{ matrix.name }}-thumbnail-core',
   );
   const gateStep = getStepContaining(
-    desktopWorkflow,
+    coreWorkflow,
     'Require Linux thumbnail core probe success',
   );
   for (const dependency of ['time', 'zip']) {

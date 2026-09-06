@@ -164,7 +164,8 @@ test('desktop workflow는 Linux x64 arm64 helper를 build·보존·test·lint한
   assert.match(workflow, /alhangeul-\$\{\{ matrix\.name \}\}-thumbnailer/);
   assert.match(workflow, /id: build-linux-thumbnailer[\s\S]*?continue-on-error: true/);
   assert.match(workflow, /id: upload-linux-thumbnailer-evidence[\s\S]*?if: \$\{\{ always\(\)/);
-  assert.match(workflow, /repositorySha.*git rev-parse HEAD/);
+  const core = await readFile(join(repoRoot, '.github/workflows/alhangeul-thumbnail-core.yml'), 'utf8');
+  assert.match(core, /repositorySha.*git rev-parse HEAD/);
   assert.match(workflow, /CARGO_BUILD_TARGET: \$\{\{ matrix\.target \}\}/);
   assert.match(workflow, /pnpm run test:linux-thumbnailer/);
   assert.match(workflow, /pnpm run clippy:linux-thumbnailer/);

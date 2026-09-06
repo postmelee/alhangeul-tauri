@@ -103,16 +103,12 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Cache cargo
-        uses: actions/cache@v5
+      - name: Cache Cargo workload
+        uses: ./.github/actions/cargo-cache
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            apps/desktop/src-tauri/target
-          key: unit-tests-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            unit-tests-cargo-
+          scope: unit
+          target: x86_64-unknown-linux-gnu
+          paths: apps/desktop/src-tauri/target
 
       - name: Install Node dependencies
         run: pnpm install --frozen-lockfile

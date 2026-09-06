@@ -1,0 +1,46 @@
+name: Alhangeul scoped Cargo cache
+description: Compiler and lock scoped target cache, refreshed for each source commit.
+inputs:
+  scope:
+    description: Distinct workload (desktop, core, unit).
+    required: true
+  target:
+    description: Compilation target or host architecture identity.
+    required: true
+  paths:
+    description: Workload-specific target paths only.
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Identify compiler and source cache scope
+      id: identity
+      shell: bash
+      env:
+        CI_CACHE_SCOPE: ${{ inputs.scope }}
+        CI_CACHE_TARGET: ${{ inputs.target }}
+        CI_CACHE_LOCKS: ${{ hashFiles('**/Cargo.lock', '**/Cargo.toml', '**/.cargo/config.toml', 'rhwp-core.lock') }}
+      run: node scripts/ci/cache-key.mjs
+    - name: Cache Cargo source downloads
+      uses: actions/cache@v5
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+        key: cargo-source-v2-${{ runner.os }}-${{ runner.arch }}-${{ steps.identity.outputs.locks }}
+    - name: Cache workload target files
+      id: target
+      uses: actions/cache@v5
+      with:
+        path: ${{ inputs.paths }}
+        key: ${{ steps.identity.outputs.prefix }}-${{ steps.identity.outputs.source }}
+        restore-keys: |
+          ${{ steps.identity.outputs.prefix }}-
+    - name: Explain cache identity
+      shell: bash
+      env:
+        CACHE_PREFIX: ${{ steps.identity.outputs.prefix }}
+        CACHE_SOURCE: ${{ steps.identity.outputs.source }}
+        CACHE_HIT: ${{ steps.target.outputs.cache-hit }}
+      run: |
+        printf 'Cargo key: %s-%s\nExact hit: %s (not proof of zero compilation). Restored key and bytes are in the cache action log.\n' "$CACHE_PREFIX" "$CACHE_SOURCE" "$CACHE_HIT" >> "$GITHUB_STEP_SUMMARY"

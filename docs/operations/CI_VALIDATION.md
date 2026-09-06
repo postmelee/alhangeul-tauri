@@ -47,4 +47,10 @@ run ID·attempt·head SHA·workflow path와 job/step의 started_at/completed_at�
 
 비교 때 runner image/CPU 편차, toolchain, Cargo lock, feature/profile/target, cache restored key와 cold/warm 여부를 기록한다. core CLI host release와 desktop target release, debug test, protocol-only 조합을 근거 없이 하나로 합치지 않는다. 단계 누락으로 줄어든 시간과 동일 workload의 개선을 구분한다.
 
+### Cargo 경계
+
+source 다운로드 cache와 compiled target cache를 분리한다. target restore prefix는 OS/architecture/workload/target/rustc -vV/manifest·lock fingerprint를 포함하고 primary key는 실제 checkout SHA를 추가한다. 새 source의 성공 build는 새 cache를 저장하므로 오래된 lock-only exact hit에 계속 고정되지 않는다. 다른 compiler/lock/workload로 fallback하지 않는다. source 다운로드 cache에는 compiled target을 포함하지 않는다.
+
+ordinary desktop 검사는 `CARGO_BUILD_TARGET`을 해당 matrix target으로 고정하여 implicit host debug와 explicit target debug를 불필요하게 나누지 않는다. core는 별도 runner/cache에서 host release probe를 유지한다. protocol-only와 render, desktop/worker feature 조합에 필요한 컴파일은 제거하지 않는다. cache를 삭제하거나 기존 cache를 덮어쓰는 작업은 수행하지 않는다.
+
 GitHub의 [reusable workflow 계약](https://docs.github.com/en/actions/how-tos/reuse-automations/reuse-workflows)과 [cache 전략](https://github.com/actions/cache/blob/main/caching-strategies.md)을 따른다. 같은 저장소의 상대 workflow 호출은 caller commit의 정의를 사용하며 checkout source와 별도로 기록한다.
