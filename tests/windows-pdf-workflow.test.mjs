@@ -12,6 +12,9 @@ const spec = await readFile(new URL('./gui/specs/windows-pdf.e2e.ts', import.met
 const dialog = await readFile(new URL('../scripts/windows-pdf-dialog.ps1', import.meta.url), 'utf8');
 const native = await readFile(new URL('../scripts/windows-pdf-win32.ps1', import.meta.url), 'utf8');
 const dispatcher = await readFile(new URL('../.github/workflows/alhangeul-desktop.yml', import.meta.url), 'utf8');
+const observation = await readFile(new URL('../scripts/windows-pdf-dialog-observation.ps1', import.meta.url), 'utf8');
+const policy = await readFile(new URL('../scripts/windows-pdf-dialog-policy.ps1', import.meta.url), 'utf8');
+const dialogWorkflow = await readFile(new URL('../.github/workflows/alhangeul-windows-dialog.yml', import.meta.url), 'utf8');
 const buildRef = 'a'.repeat(40);
 const expected = { buildRef, fixture: 'biz-plan-hwp', phase: 'fresh' };
 const valid = {
@@ -135,17 +138,47 @@ test('Open submission uses validated native click before optional UIA path', () 
   assert.match(native, /Validate\(dialog, button, pid, id, "Button"\)/);
 });
 
-test('Native button lookup excludes colliding list item IDs and rejects ambiguous buttons', () => {
-  const finder = dialog.split('function Find-NativeButton')[1].split('function Invoke-Button')[0];
-  assert.match(finder, /AndCondition/);
-  assert.match(finder, /AutomationIdProperty, \$Id/);
-  assert.match(finder, /ClassNameProperty, 'Button'/);
-  assert.match(finder, /\$Root.FindAll\(\$scope, \$condition\)/);
-  assert.match(finder, /\$matches.Count -gt 1.*throw/);
-  assert.match(finder, /\$matches.Count -eq 0.*return \$null/);
-  assert.match(dialog, /\$button = Find-NativeButton \$dialog '1'/);
-  assert.match(dialog, /\$yes = Find-NativeButton \$dialog '6'/);
+test('Native helper wires the actual policy and live revalidation (static contract, not PS execution)', () => {
+  assert.match(dialog, /windows-pdf-dialog-observation.ps1/);
+  assert.match(observation, /windows-pdf-dialog-policy.ps1/);
+  assert.match(observation, /Select-PdfDialogButton \$candidates \$expected/);
+  assert.match(observation, /RawViewWalker.GetParent/);
+  assert.match(observation, /Automation\]::Compare\(\$current, \$Button\)/);
+  assert.match(observation, /\[PdfDialogNative\]::ValidateButton/);
+  assert.match(dialog, /Assert-PdfButtonCurrent \$Dialog \$Button \$observedProcessId \$Id/);
+  assert.match(dialog, /\$button = Find-PdfNativeButton \$dialog '1' \$observedProcessId/);
+  assert.match(dialog, /Get-PdfOverwriteDecision/);
+  assert.doesNotMatch(dialog, /Invoke-Button \$dialog \$yes/);
   assert.doesNotMatch(dialog, /Find-Id \$dialog '[16]'/);
+  assert.doesNotMatch(policy, /Get-Process|Test-Path|Add-Type|\.Invoke\(|PostMessage|FindAll|SendKeys/);
+});
+
+test('Small Windows job runs real PS5.1 assertions then controlled observation without product builds', async () => {
+  assert.match(dialogWorkflow, /workflow_call:/);
+  assert.match(dialogWorkflow, /contents: read/);
+  assert.match(dialogWorkflow, /runs-on: windows-2025/);
+  assert.match(dialogWorkflow, /timeout-minutes: 8/);
+  assert.match(dialogWorkflow, /shell: powershell/);
+  assert.match(dialogWorkflow, /Parser\]::ParseFile/);
+  assert.match(dialogWorkflow, /windows-pdf-dialog-policy.test.ps1 -EvidencePath/);
+  assert.match(dialogWorkflow, /probe.ps1 -EvidencePath/);
+  assert.match(dialogWorkflow, /Clean only owned fixture resources\n        if: \$\{\{ always\(\) \}\}/);
+  assert.match(dialogWorkflow, /Upload sanitized evidence\n        if: \$\{\{ always\(\) \}\}/);
+  assert.doesNotMatch(dialogWorkflow, /secrets\.|contents: write|submodules: true|cargo |pnpm install|retry|continue-on-error/);
+  const job = dispatcher.split('\n  windows-dialog-probe:\n')[1].split('\n  windows-pdf-acceptance:')[0];
+  assert.match(job, /inputs.mode == 'windows-dialog-probe'/);
+  assert.match(job, /uses: \.\/.github\/workflows\/alhangeul-windows-dialog.yml/);
+  const suite = await readFile(new URL('./windows-pdf-dialog-policy.test.ps1', import.meta.url), 'utf8');
+  assert.match(suite, /windows-pdf-dialog-policy.ps1/);
+  assert.match(suite, /Select-PdfDialogButton/);
+  assert.match(suite, /Get-PdfOverwriteDecision/);
+  assert.match(suite, /exit 1/);
+  assert.match(suite, /exit 0/);
+  const probe = await readFile(new URL('./gui/windows-dialog/probe.ps1', import.meta.url), 'utf8');
+  assert.match(probe, /Assert-PdfButtonCurrent/);
+  assert.match(probe, /Invoke-NativeDialogButton \$save \$parts.Button \$child.Id '1'/);
+  assert.doesNotMatch(probe, /Invoke-NativeDialogButton[^\n]*'6'|\.Invoke\(|SendKeys|TDM_CLICK_BUTTON/);
+  assert.match(probe, /fixtureUnchanged/);
 });
 
 test('Open probe is distinct from PDF acceptance and focuses filename before editing', () => {

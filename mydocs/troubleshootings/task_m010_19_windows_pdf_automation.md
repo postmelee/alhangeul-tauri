@@ -46,15 +46,20 @@ adapter를 구현하기 전에는 무조건 Yes 또는 숫자 ID 교체로 우�
 
 ## 해결
 
-- **열기: 검증됨.** `Find-NativeButton`에 ID AND class `Button`, 중복 거부를 적용했다.
+- **열기: 이전 harness 검증됨.** `903164b`에서 ID AND class `Button`, 중복 거부를 적용했다.
   focus·입력·native submit 뒤 spec이 clean title을 정확히 검사한다.
 - **최초 PDF 생성: 해당 시나리오 통과.** HWP 6쪽/HWPX 10쪽의 정확한 title,
   파일 생성, source hash·dirty 보존이 최신 전체 실행의 fresh 결과에 기록되었다.
   후속 PDF 내용/렌더 분석은 실행되지 않았으므로 PDF 품질 전체 통과로 쓰지 않는다.
 - **재실행 덮어쓰기: 미해결.** HWP의 첫 overwrite 확인창에서 안전하게 실패했다.
   HWPX restart와 전체 PDF 분석은 미실행이다. 제품 저장 결함이 확인된 것은 아니다.
-- **selector/message 동작 단위 테스트: 공백.** 현재 소스 문자열 계약은 있지만 실제
-  helper가 쓰는 판단 함수를 분리·재생하는 테스트는 아직 없다. 가이드 작성으로 해결했다고 하지 않는다.
+- **판단 분리: Stage 4.17 구현, Windows 결과 대기.** 실제 helper의 순수 함수와 PS5.1
+  실행 테스트를 연결했다. ID/class 충돌의 관측값을 재사용하고 PID/HWND는 합성한다.
+  클릭 직전 UIA 재조회와 native 재검증을 추가했으므로 이전 open-only 성공을 새 helper의
+  성공으로 그대로 옮기지 않는다. legacy ID6도 의미 adapter가 없으면 거부한다.
+- **작은 OS 관측: 실행 준비.** `windows-dialog-probe`는 제어된 저장창의 확인창까지
+  관측하고 Yes는 누르지 않는다. 제품 재빌드·설치·PDF 분석 없이 지원 pattern·소유 관계를
+  수집하며, 이 결과가 확인창 실행 adapter의 다음 승인 근거다.
 
 변경 경계는 [dialog helper](../../scripts/windows-pdf-dialog.ps1),
 [Win32 adapter](../../scripts/windows-pdf-win32.ps1),

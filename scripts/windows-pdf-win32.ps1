@@ -84,10 +84,14 @@ public static class PdfDialogNative {
       || readback.ToString() != text) throw new Exception("Filename readback mismatch");
   }
   public static void Click(IntPtr dialog, IntPtr button, uint pid, int id) {
-    if (id != 1 && id != 6) throw new Exception("Unexpected button ID");
-    Validate(dialog, button, pid, id, "Button");
+    ValidateButton(dialog, button, pid, id);
     // Asynchronous BM_CLICK avoids blocking this helper on the overwrite modal.
     if (!PostMessage(button, 0x00F5, IntPtr.Zero, IntPtr.Zero)) throw new Exception("BM_CLICK failed");
+  }
+  public static void ValidateButton(IntPtr dialog, IntPtr button, uint pid, int id) {
+    if (id != 1 && id != 6) throw new Exception("Unexpected button ID");
+    Validate(dialog, button, pid, id, "Button");
+    if (!IsWindowEnabled(dialog)) throw new Exception("Native dialog is disabled");
   }
 }
 '@

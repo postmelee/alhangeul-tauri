@@ -108,14 +108,23 @@ pnpm run typecheck:gui
 |---|---|---|
 | 문서 identity | [함수](../../tests/gui/support/document-identity.ts), [재현 테스트](../../tests/windows-pdf-regressions.test.mjs) | title 경계 검사이며 실제 클릭·본문 렌더링은 아님 |
 | PDF 결과 판정 | [분석기](../../tests/gui/windows-pdf/analyze.mjs), [기존 계약](../../tests/windows-pdf-workflow.test.mjs), [재현 데이터](../../tests/fixtures/windows-pdf-regressions.json) | mock PDF 분석을 쓰는 단위 테스트는 실제 PDF 품질 증거가 아님 |
-| Windows dialog / Win32 | [helper](../../scripts/windows-pdf-dialog.ps1), [메시지 adapter](../../scripts/windows-pdf-win32.ps1) | selector/message 관련 로컬 검사는 정적 계약; 분리된 selector 동작 테스트와 대화상자 단독 suite는 아직 없음 |
+| Windows dialog 판단 | [순수 정책](../../scripts/windows-pdf-dialog-policy.ps1), [실제 함수 테스트](../../tests/windows-pdf-dialog-policy.test.ps1), [UIA 관측](../../scripts/windows-pdf-dialog-observation.ps1) | 실제 helper가 같은 함수를 사용. 합성 PID/HWND·의미 입력은 native 성공 증거가 아님 |
+| Windows 작은 OS 관측 | [probe](../../tests/gui/windows-dialog/probe.ps1), [workflow](../../.github/workflows/alhangeul-windows-dialog.yml), [메시지 adapter](../../scripts/windows-pdf-win32.ps1) | 제어된 WinForms 저장창의 확인창까지 관측하며 Yes는 실행하지 않음. 실제 앱·PDF·overwrite 수용과 별개 |
 | Windows 실제 설치본 | [spec](../../tests/gui/specs/windows-pdf.e2e.ts), [workflow](../../.github/workflows/alhangeul-windows-pdf.yml) | open-only/full PDF 모드만 있음. 미지원 overwrite control은 안전하게 중단 |
 | Linux native UI | [AT-SPI adapter](../../tests/gui/linux/native-ui/atspi.mjs), [사후 조건](../../tests/gui/linux/native-ui/action-postcondition.mjs), [spec](../../tests/gui/specs/linux-native.e2e.ts) | Windows ID/class 가정을 Linux에 이식하지 않음; 각 테스트의 실행 환경을 확인 |
 
-후속 selector 분리는 실제 helper가 호출하는 함수에 회귀를 연결해야 한다. Windows의
-ID/class·메시지 조작을 Node 테스트에서 새로 흉내 낸 것만으로 완료 처리하지 않는다.
-Pester/PowerShell 정적 분석을 도입한다면 실행 환경과 비용을 먼저 계획하며, 현재 설치·실행되는
-검사인 것처럼 문서에 적지 않는다.
+Windows PowerShell 5.1의 순수 함수 테스트 진입점은 `pnpm run test:gui:windows:policy`다.
+로컬 결과 JSON은 `windows-dialog-policy-result.json`에 생성하며 검토 후 커밋하지 않는다.
+작은 OS 관측은 승인된 harness branch에서 Desktop dispatcher의 `windows-dialog-probe`로
+실행한다. 설치 artifact 입력·제품 build가 필요 없다. policy 실패 시 OS 관측은 건너뛴다.
+지원 pattern ID/name, HWND 소유 관계, 공개 fixture prompt의 정규화 결과만 artifact에 보존하며
+실제 경로가 든 cleanup state는 업로드하지 않는다. 항상 실행되는 cleanup은 PID/시작 시각과
+유일한 임시 디렉터리를 검증한 뒤 자기 자원만 정리한다.
+
+확인창의 의미·대상 adapter가 아직 미구현이므로 legacy IDYES도 자동 승인하지 않는다.
+새 overwrite 실행 API는 관측 검토 후 추가하고, 성공 여부를 별도 사후 조건으로 검증해야 한다.
+최신 실행 결과는 [사건 기록](../../mydocs/troubleshootings/task_m010_19_windows_pdf_automation.md)에 둔다.
+Pester/PSScriptAnalyzer는 설치하지 않는다. Node 소스 계약을 PS 실행으로 세지 않는다.
 
 ## 새 helper·Action 변경의 완료 기준
 

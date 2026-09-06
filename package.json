@@ -29,6 +29,7 @@
     "typecheck:gui": "tsc --noEmit -p tests/gui/tsconfig.json",
     "test:gui:contracts": "node --test tests/gui-contracts.test.mjs",
     "test:gui:windows:contracts": "node --test tests/windows-pdf-workflow.test.mjs tests/windows-pdf-regressions.test.mjs tests/gui-contracts.test.mjs",
+    "test:gui:windows:policy": "powershell.exe -NoProfile -File tests/windows-pdf-dialog-policy.test.ps1 -EvidencePath windows-dialog-policy-result.json",
     "test:gui:linux:contracts": "node --test tests/gui/linux/*.test.mjs tests/gui/linux/native-ui/*.test.mjs",
     "test:gui:linux:native-print": "node tests/gui/linux/native-print.mjs",
     "test:gui:linux": "wdio run tests/gui/wdio.linux.conf.ts",

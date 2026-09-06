@@ -10,6 +10,29 @@ GitHub Issue: [#19](https://github.com/postmelee/alhangeul-tauri/issues/19)
 
 ## 단계 개요
 
+### 2026-09-07 Stage 4.17 판단 분리·작은 Windows 관측 승인
+
+실제 helper가 사용하는 `windows-pdf-dialog-policy.ps1`와 UIA 관측 adapter를 분리한다.
+ID/class뿐 아니라 가장 가까운 dialog/PID, enabled, 후보 중복을 검사하며 클릭 직전에
+재조회와 native 검증을 한다. 확인창 의미 adapter는 아직 없으므로 legacy ID6도 ID만으로
+자동 승인하지 않는다. 순수 overwrite 정책은 합성 입력으로 검사하고 실제 helper는
+미확정 의미/대상을 거부한다. 이 제한은 4.18 관측 기반 adapter로만 해제한다.
+
+- 코드: policy/observation helper, 기존 dialog/Win32, 실제 함수를 dot-source하는
+  `tests/windows-pdf-dialog-policy.test.ps1`, 관측 ID/class 축약 fixture.
+- OS 관측: `tests/gui/windows-dialog/`의 자체 fixture host/probe. Windows PowerShell 5.1
+  STA에서 공개 임시 파일·WinForms SaveFileDialog만 사용한다. 실제 Win32 helper를 로드하고
+  새 경로가 아닌 기존 fixture target을 제출해 확인창까지 관측하되 Yes를 호출하지 않는다.
+  시험 process만 종료하고 hash 불변·정확한 임시 폴더 삭제 결과를 남긴다.
+- workflow: `windows-dialog-probe` dispatcher mode와 `alhangeul-windows-dialog.yml`.
+  windows-2025, contents read, 8분 job 상한, 자동 retry 없음, always 증거 업로드.
+  policy 테스트 실패 시 native 관측은 실행하지 않는다. 설치·build·submodule·서명 없음.
+- 검증: focused Node 계약, GUI typecheck, actionlint, 변경 범위·diff 검사 후 원격 한 번.
+  원격 실행에는 커밋된 harness가 필요하므로 구현 checkpoint를 먼저 게시하고, 실제 Windows
+  결과가 통과한 뒤 단계 완료 보고를 기록한다. 예상 밖 관측은 troubleshooting에 남기고 중단한다.
+- 문서: 수행계획서에서 승인된 기존 공식 가이드·사건 기록·orders/working만 갱신한다.
+  신규 외부 의존성 없음. PowerShell 동작·native 관측·제품 수용 결과를 구분한다.
+
 ### 2026-09-07 Stage 4.16 재발 방지 지식·동작 회귀 연결 승인
 
 공통 native UI 가이드와 사건 기록, 기존 실행 경로가 쓰는 문서 identity·PDF evidence

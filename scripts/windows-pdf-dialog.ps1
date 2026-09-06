@@ -8,6 +8,7 @@ Set-StrictMode -Version Latest
 Add-Type -AssemblyName UIAutomationClient
 Add-Type -AssemblyName UIAutomationTypes
 . (Join-Path $PSScriptRoot 'windows-pdf-win32.ps1')
+. (Join-Path $PSScriptRoot 'windows-pdf-dialog-observation.ps1')
 $scope = [System.Windows.Automation.TreeScope]::Descendants
 $deadline = [DateTime]::UtcNow.AddSeconds(90)
 $submitted = $false
@@ -24,6 +25,8 @@ $filenameMethod = 'not-used'
 $buttonMethod = 'not-used'
 $additionalDialog = 'none'
 $filenameFocused = $false
+$submittedPath = $null
+$overwriteDecision = 'not-observed'
 
 function Write-Evidence($Status, $ErrorText) {
   @{ mode = $Mode; status = $Status; error = $ErrorText; stage = $stage;
@@ -32,6 +35,7 @@ function Write-Evidence($Status, $ErrorText) {
      overwriteConfirmed = $overwriteConfirmed; nativeFallbackUsed = $nativeFallbackUsed;
      filenameMethod = $filenameMethod; buttonMethod = $buttonMethod; additionalDialog = $additionalDialog;
      filenameFocused = $filenameFocused;
+     overwriteDecision = $overwriteDecision;
      tree = $observedTree } |
     ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $EvidencePath -Encoding utf8
 }
@@ -55,21 +59,8 @@ function Find-Id($Root, $Id) {
   return $Root.FindFirst($scope, $condition)
 }
 
-function Find-NativeButton($Root, $Id) {
-  if ($Id -notin @('1', '6')) { throw 'Unexpected native button ID.' }
-  # AutomationId is not unique: file list UIItem nodes also use numeric IDs.
-  $condition = [System.Windows.Automation.AndCondition]::new(
-    [System.Windows.Automation.PropertyCondition]::new(
-      [System.Windows.Automation.AutomationElement]::AutomationIdProperty, $Id),
-    [System.Windows.Automation.PropertyCondition]::new(
-      [System.Windows.Automation.AutomationElement]::ClassNameProperty, 'Button'))
-  $matches = $Root.FindAll($scope, $condition)
-  if ($matches.Count -gt 1) { throw 'Ambiguous native dialog button.' }
-  if ($matches.Count -eq 0) { return $null }
-  return $matches[0]
-}
-
 function Invoke-Button($Dialog, $Button, $Id) {
+  Assert-PdfButtonCurrent $Dialog $Button $observedProcessId $Id
   # Keep Open submission identical regardless of UIA pattern availability.
   if ($Mode -eq 'Open' -and $Id -eq '1') {
     $script:buttonMethod = 'Win32-BM_CLICK'
@@ -116,7 +107,7 @@ try {
             [System.Windows.Automation.AutomationElement]::AutomationIdProperty, $fileNameId))
         $field = $dialog.FindFirst($scope, $editCondition)
         if ($null -eq $field) { continue }
-        $button = Find-NativeButton $dialog '1'
+        $button = Find-PdfNativeButton $dialog '1' $observedProcessId
         if ($null -eq $button) { continue }
         $stage = 'focusing-filename'
         Write-Evidence 'running' $null
@@ -131,13 +122,18 @@ try {
         Write-Evidence 'running' $null
         Invoke-Button $dialog $button '1'
         $submitted = $true
+        $submittedPath = $TargetPath
         $stage = 'waiting-dialog-close'
       } elseif ($allowOverwrite -and -not $overwriteConfirmed) {
-        # IDYES only, restricted to the app-owned dialog and an existing test target.
-        $yes = Find-NativeButton $dialog '6'
+        $yes = Find-PdfNativeButton $dialog '6' $observedProcessId
         if ($null -ne $yes) {
-          Invoke-Button $dialog $yes '6'
-          $overwriteConfirmed = $true
+          # No verified prompt/ownership adapter yet: even a legacy IDYES is not permission.
+          $overwriteDecision = Get-PdfOverwriteDecision @{
+            Mode = $Mode; TargetExists = $allowOverwrite; TargetPath = $TargetPath;
+            SubmittedPath = $submittedPath; Cancelled = $false; OwnedBySaveDialog = $false;
+            PromptKind = 'unknown'; PromptTarget = $null
+          }
+          throw "Unverified overwrite confirmation: $overwriteDecision; refusing confirmation."
         }
       }
     }

@@ -1,0 +1,15 @@
+{
+  "provenance": {
+    "collisionRun": "https://github.com/postmelee/alhangeul-tauri/actions/runs/34042086165",
+    "confirmationRun": "https://github.com/postmelee/alhangeul-tauri/actions/runs/34043594332",
+    "transformation": "관측된 ID/class/type/enabled만 발췌. PID/HWND/부모는 테스트에서 합성하며 실제 성공 증거가 아니다."
+  },
+  "collision": [
+    { "Id": "1", "Class": "UIItem", "Type": "ControlType.ListItem", "Enabled": true },
+    { "Id": "1", "Class": "Button", "Type": "ControlType.Pane", "Enabled": true }
+  ],
+  "confirmation": [
+    { "Id": "CommandButton_6", "Class": "CCPushButton", "Type": "ControlType.Pane", "Enabled": true },
+    { "Id": "CommandButton_7", "Class": "CCPushButton", "Type": "ControlType.Pane", "Enabled": true }
+  ]
+}
