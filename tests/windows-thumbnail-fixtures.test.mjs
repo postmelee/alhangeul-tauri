@@ -62,12 +62,14 @@ test('선택 installer만 실행하며 깨끗한 VM 관측 전에 sentinel을 �
 test('최초 Shell 뒤에만 재설치·앱 launch·제거·rollback을 실행한다', () => {
   const checks = entry.slice(entry.indexOf('function Invoke-InstalledChecks'), entry.indexOf('function Complete-BundleSmoke'));
   ordered(checks, ["Invoke-ThumbnailFixtureProbe $Result 'initial'", "'Reinstall'",
-    "Invoke-ThumbnailFixtureProbe $Result 'reinstalled'", 'Invoke-Launch', 'Set-ThirdPartyThumbnail']);
+    'Invoke-ReinstallChecks', 'Invoke-Launch', 'Set-ThirdPartyThumbnail']);
+  assert.match(checks, /Invoke-ThumbnailFixtureProbe \$Result \$phase/);
   const bundle = entry.slice(entry.indexOf('function Invoke-BundleSmoke'), entry.indexOf('# Main'));
   ordered(bundle, ['Invoke-Installer', 'Invoke-InstalledChecks', 'Complete-BundleSmoke', 'Invoke-PostUninstallRollback']);
-  assert.match(entry, /'REINSTALL=ALL', 'REINSTALLMODE=amus'/);
+  assert.match(entry, /'REINSTALL=ALL', \$mode/);
+  assert.match(entry, /'REINSTALLMODE=amus'.*'REINSTALLMODE=omus'/);
   assert.match(registration, /function Invoke-PostUninstallRollback/);
-  assert.ok(bundle.includes("$Kind -eq 'msi' -and $result.After.Clean -and $result.InitialShellSucceeded"));
+  assert.ok(bundle.includes("$Kind -eq 'msi' -and $result.After.Clean -and $result.InitialShellSucceeded -and $rollbackSafe"));
   assert.match(registration, /finally \{ if \(\$null -ne \$sentinels\) \{ Restore-ThumbnailSentinels/);
 });
 
@@ -102,9 +104,10 @@ test('cache-only API 실패는 관측으로 남기고 실제 추출 성공과 �
 });
 
 test('필수 probe 증거·원본 불변·worker 종료·설치 bytes를 gate로 검사한다', () => {
-  assert.match(fixtures, /\$Probes.Count -eq 38/);
-  assert.match(fixtures, /Select-Object -Unique\).Count -eq 38/);
-  assert.match(entry, /Assert-ThumbnailProbeEvidence \$Result.Probes/);
+  assert.match(fixtures, /\$Probes.Count -eq \$expected.Count/);
+  assert.match(fixtures, /Select-Object -Unique\).Count -eq \$expected.Count/);
+  assert.match(fixtures, /Assert-ThumbnailProbeEvidence \$Result/);
+  assert.match(fixtures, /Get-ThumbnailExpectedLabels/);
   assert.match(fixtures, /\$source.Size -eq \$Copy.Spec.bytes -and \$source.Sha256 -eq \$Copy.Spec.sha256/);
   assert.match(fixtures, /ConvertTo-Json \$Copy.Before -Compress/);
   assert.match(fixtures, /Get-Process -Name 'AlhangeulThumbnailWorker'/);

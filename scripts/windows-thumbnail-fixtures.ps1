@@ -106,13 +106,57 @@ function Invoke-ThumbnailFixtureProbe($Result, $Phase) {
   return [ordered]@{ Phase = $Phase; FixtureCount = $copies.Count; RequestEdge = 256 }
 }
 
-function Assert-ThumbnailProbeEvidence($Probes) {
-  Assert-Condition ($Probes.Count -eq 38) '필수 probe 38개가 모두 실행되지 않았습니다.'
-  Assert-Condition (@($Probes.Label | Select-Object -Unique).Count -eq 38) 'probe label이 중복되었습니다.'
+function Assert-ThumbnailProbeEvidence($Result) {
+  $Probes = $Result.Probes
+  $phases = @('initial')
+  if ($Result.ReinstallExitCode -eq 0 -or ($Result.Kind -eq 'msi' -and $Result.ReinstallExitCode -eq 3010)) {
+    Assert-Condition ($Result.RebootEvents.Count -ge 2) '재설치 상태 증거가 없습니다.'
+    $phases += if ($Result.RebootEvents[1].status -in @('no-reboot-observed', 'not-applicable')) { 'reinstalled' } else { 'pre-reboot-observation' }
+  }
+  Assert-Condition ((ConvertTo-Json @($Result.ExpectedPhases) -Compress) -eq (ConvertTo-Json $phases -Compress)) '종료 상태별 phase 계약이 다릅니다.'
+  $expected = @($phases | ForEach-Object { Get-ThumbnailExpectedLabels $_ })
+  foreach ($phase in $phases) {
+    $label = if ($phase -eq 'initial') { 'installed-state' } else { "$phase-state" }
+    $environment = Get-Content -LiteralPath (Join-Path $OutputDirectory "$label.json") -Raw -Encoding UTF8 | ConvertFrom-Json
+    $reported = if ($Result.PhaseEnvironments -is [Collections.IDictionary]) { $Result.PhaseEnvironments[$phase] } else { $Result.PhaseEnvironments.PSObject.Properties[$phase].Value }
+    Assert-Condition ((ConvertTo-Json $environment -Depth 16 -Compress) -ceq (ConvertTo-Json $reported -Depth 16 -Compress)) '환경 JSON과 summary가 다릅니다.'
+    [void](Assert-ThumbnailEnvironment $environment)
+  }
+  Assert-Condition ($Probes.Count -eq $expected.Count) '필수 probe가 모두 실행되지 않았습니다.'
+  Assert-Condition (@($Probes.Label | Select-Object -Unique).Count -eq $expected.Count) 'probe label이 중복되었습니다.'
   foreach ($probe in $Probes) {
-    Assert-Condition (Test-Path -LiteralPath (Join-Path $OutputDirectory "$($probe.Label).json") -PathType Leaf) '필수 probe JSON이 없습니다.'
+    Assert-Condition ($expected -contains $probe.Label) '예상하지 않은 probe label입니다.'
+    $path = Join-Path $OutputDirectory "$($probe.Label).json"
+    Assert-Condition (Test-Path -LiteralPath $path -PathType Leaf) '필수 probe JSON이 없습니다.'
+    $stored = Get-Content -LiteralPath $path -Raw -Encoding UTF8 | ConvertFrom-Json
+    Assert-Condition ((ConvertTo-Json $stored -Depth 16 -Compress) -ceq (ConvertTo-Json $probe.Result -Depth 16 -Compress)) 'probe JSON과 summary가 다릅니다.'
+    Assert-Condition (Test-ThumbnailProbeContract $stored $probe.Label) 'probe 내용 계약이 다릅니다.'
   }
   return $true
+}
+
+function Complete-ThumbnailAssessments($Result) {
+  Invoke-Check $Result 'thumbnail-diagnostics' 'ProbeEvidenceCheck' { Assert-ThumbnailProbeEvidence $Result }
+  $otherFailures = @($Result.Failures | Where-Object { $_.Category -ne 'thumbnail-render' })
+  $pending = @($Result.RebootEvents | Where-Object { $_.status -notin @('no-reboot-observed', 'not-applicable') })
+  $Result.LifecycleStatus = if ($pending.Count -gt 0) { $pending[0].status } elseif ($otherFailures.Count -gt 0) { 'failed' } else { 'passed' }
+  $Result.Assessments = @()
+  foreach ($phase in $Result.ExpectedPhases) {
+    $context = [ordered]@{
+      kind = $Result.Kind; inventory = $artifacts.Inventory; environment = $Result.PhaseEnvironments[$phase]
+      lifecycleStatus = $Result.LifecycleStatus
+      evidenceValid = $Result.ProbeEvidenceCheck -is [bool] -and $Result.ProbeEvidenceCheck -and @($Result.Failures | Where-Object { $_.Category -in @('fixture', 'thumbnail-diagnostics') }).Count -eq 0
+    }
+    $Result.Assessments += Get-ThumbnailPhaseAssessment $Result.Probes $context $phase
+  }
+  # This gate checks the diagnostic contract only, never rewrites product Status/Failures.
+  $Result.DiagnosticContract = @($Result.Assessments | Where-Object { $_.evidenceStatus -ne 'valid' -or $_.finding -notin @('thumbnail-api-ok', 'per-user-shell-activation-failed') }).Count -eq 0
+  if ($otherFailures.Count -gt 0 -or $pending.Count -gt 0) {
+    $allowed = @('reboot-required', 'reboot-pending')
+    $Result.DiagnosticContract = $Result.DiagnosticContract -and @($otherFailures | Where-Object { $_.Category -notin $allowed }).Count -eq 0 -and @($pending | Where-Object { $_.status -notin $allowed -or -not $_.observationComplete }).Count -eq 0
+  }
+  if ($pending.Count -gt 0 -and $otherFailures.Count -eq 0) { Add-Failure $Result $pending[0].status 'lifecycle has unresolved reboot evidence.' }
+  if (-not $Result.DiagnosticContract) { Add-Failure $Result 'diagnostic-contract' 'diagnostic evidence is invalid or not classified.' }
 }
 
 function Remove-ThumbnailFixtureCopies {

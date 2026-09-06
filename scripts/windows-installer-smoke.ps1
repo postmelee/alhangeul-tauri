@@ -3,7 +3,8 @@ param(
   [Parameter(Mandatory = $true)][string]$ArtifactRoot,
   [Parameter(Mandatory = $true)][string]$OutputDirectory,
   [Parameter(Mandatory = $true)][string]$ExpectedVersion,
-  [Parameter(Mandatory = $true)][ValidateSet('nsis', 'msi')][string]$InstallerKind
+  [Parameter(Mandatory = $true)][ValidateSet('nsis', 'msi')][string]$InstallerKind,
+  [ValidateSet('lifecycle', 'forced-reinstall')][string]$Scenario = 'lifecycle'
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -23,6 +24,8 @@ function Assert-Condition($Condition, $Message) { if (-not $Condition) { throw $
 . (Join-Path $PSScriptRoot 'windows-installer-smoke-support.ps1')
 . (Join-Path $PSScriptRoot 'windows-thumbnail-smoke.ps1')
 . (Join-Path $PSScriptRoot 'windows-thumbnail-fixtures.ps1')
+. (Join-Path $PSScriptRoot 'windows-thumbnail-assessment.ps1')
+. (Join-Path $PSScriptRoot 'windows-installer-reboot.ps1')
 . (Join-Path $PSScriptRoot 'windows-process-lifecycle.ps1')
 function Assert-InventoryRecord($Kind, $File, $Inventory, $Root) {
   $records = @($Inventory.files | Where-Object { $_.kind -eq $Kind })
@@ -95,7 +98,10 @@ function Assert-InstalledVersion($State) {
 function Assert-InstalledHandlers($State) { Assert-Condition (@($State.Handlers | Where-Object { -not $_.Valid }).Count -eq 0) 'canonical ProgID 또는 OpenWithProgids가 없습니다.'; return $true }
 function Invoke-Installer($Kind, $Path, $LogPath, $Update = $false) {
   $arguments = if ($Kind -eq 'msi') { @('/i', "`"$Path`"", '/qn', '/norestart', '/L*v', "`"$LogPath`"") } elseif ($Update) { @('/S', '/UPDATE') } else { @('/S') }
-  if ($Kind -eq 'msi' -and $Update) { $arguments += @('REINSTALL=ALL', 'REINSTALLMODE=amus') }
+  if ($Kind -eq 'msi' -and $Update) {
+    $mode = if ($Scenario -eq 'forced-reinstall') { 'REINSTALLMODE=amus' } else { 'REINSTALLMODE=omus' }
+    $arguments += @('REINSTALL=ALL', $mode)
+  }
   $filePath = if ($Kind -eq 'msi') { 'msiexec.exe' } else { $Path }
   return (Start-Process -FilePath $filePath -ArgumentList $arguments -Wait -PassThru).ExitCode
 }
@@ -117,19 +123,37 @@ function Invoke-InstalledChecks($Result, $Kind, $InstallDirectory, $BaselineDefa
   $Result.ThumbnailRegistrationState = Get-ThumbnailRegistrationState $InstallDirectory $ThumbnailSentinels
   Invoke-Check $Result 'thumbnail-registration' 'ThumbnailRegistration' { Assert-InstalledThumbnail $Kind $InstallDirectory $ThumbnailSentinels }
   $Result.EnvironmentInstalled = Invoke-ThumbnailDiagnostic 'installed-state' 'state'
+  $Result.PhaseEnvironments['initial'] = $Result.EnvironmentInstalled
   Invoke-Check $Result 'thumbnail-diagnostics' 'InstalledEnvironmentCheck' { Assert-ThumbnailEnvironment $Result.EnvironmentInstalled }
   Invoke-Check $Result 'thumbnail-render' 'ThumbnailFixtures' { Invoke-ThumbnailFixtureProbe $Result 'initial' }
   $firstShell = @($Result.Probes | Where-Object { $_.Label -match '^initial-.*-shell$' })
   $Result.InitialShellSucceeded = $firstShell.Count -eq 4 -and @($firstShell | Where-Object { $_.Result.status -ne 'ok' }).Count -eq 0
-  Invoke-Check $Result 'installer-rollback' 'Reinstall' { $code = Invoke-Installer $Kind $Result.Path (Join-Path $OutputDirectory "$Kind-reinstall.log") $true; Assert-Condition ($code -eq 0) "$Kind reinstall exit code: $code"; Assert-InstalledThumbnail $Kind $InstallDirectory $ThumbnailSentinels }
-  Invoke-Check $Result 'thumbnail-render' 'ReinstalledThumbnailFixtures' { Invoke-ThumbnailFixtureProbe $Result 'reinstalled' }
-  Invoke-Check $Result 'thumbnail-diagnostics' 'ProbeEvidenceCheck' { Assert-ThumbnailProbeEvidence $Result.Probes }
+  Invoke-Check $Result 'reinstall' 'Reinstall' { Invoke-ReinstallChecks $Result $Kind $InstallDirectory $ThumbnailSentinels }
   Invoke-Check $Result 'shortcut' 'ShortcutCheck' { Assert-Condition $state.Shortcuts.Valid 'shortcut target이 다릅니다.'; return $true }
   $Result.DefaultsAfterInstall = Get-DefaultState
   Invoke-Check $Result 'default-mutation' 'DefaultCheck' { Assert-Condition ((ConvertTo-Json $BaselineDefaults -Depth 12 -Compress) -eq (ConvertTo-Json $Result.DefaultsAfterInstall -Depth 12 -Compress)) '기본 연결 또는 UserChoice가 변경되었습니다.'; return $true }
-  Invoke-Check $Result 'launch' 'Launch' { Invoke-Launch $state.Executable }
+  if ($Scenario -eq 'lifecycle' -and $Result.ReinstallExitCode -eq 0 -and @($Result.RebootEvents | Where-Object { $_.status -notin @('no-reboot-observed', 'not-applicable') }).Count -eq 0) {
+    Invoke-Check $Result 'launch' 'Launch' { Invoke-Launch $state.Executable }
+  } else { $Result.Launch = 'not-run-scenario-or-incomplete-reinstall' }
   Set-ThirdPartyThumbnail $ThumbnailSentinels
   $Result.ThirdPartySet = $true
+}
+function Invoke-ReinstallChecks($Result, $Kind, $InstallDirectory, $ThumbnailSentinels) {
+  $log = Join-Path $OutputDirectory "$Kind-reinstall.log"
+  $Result.ReinstallExitCode = Invoke-Installer $Kind $Result.Path $log $true
+  $event = Measure-InstallerReboot $Kind $Result.ReinstallExitCode $script:installerRebootBaseline $log
+  $Result.RebootEvents += $event
+  if ($Result.ReinstallExitCode -ne 0 -or $event.status -notin @('no-reboot-observed', 'not-applicable')) {
+    Add-Failure $Result $event.status "reinstall exit code: $($Result.ReinstallExitCode); reboot state: $($event.status)"
+  }
+  if ($Result.ReinstallExitCode -eq 0 -or ($Kind -eq 'msi' -and $Result.ReinstallExitCode -eq 3010)) {
+    $phase = if ($event.status -in @('no-reboot-observed', 'not-applicable')) { 'reinstalled' } else { 'pre-reboot-observation' }
+    $Result.ExpectedPhases += $phase
+    Invoke-Check $Result 'thumbnail-registration' 'ReinstalledRegistration' { Assert-InstalledThumbnail $Kind $InstallDirectory $ThumbnailSentinels }
+    $Result.PhaseEnvironments[$phase] = Invoke-ThumbnailDiagnostic "$phase-state" 'state'
+    Invoke-Check $Result 'thumbnail-render' 'ReinstalledThumbnailFixtures' { Invoke-ThumbnailFixtureProbe $Result $phase }
+  } else { $Result.ReinstalledThumbnailFixtures = 'not-run-reinstall-incomplete' }
+  return $event.status -in @('no-reboot-observed', 'not-applicable')
 }
 function Complete-BundleSmoke($Result, $Kind, $State, $ThumbnailSentinels, $BaselineDefaults) {
   if ($null -eq $State) {
@@ -140,6 +164,7 @@ function Complete-BundleSmoke($Result, $Kind, $State, $ThumbnailSentinels, $Base
     try {
       if ($Kind -eq 'nsis') { Set-AssociationDefaultValues $canonicalProgIds; $Result.DefaultsBeforeUninstall = Get-DefaultState }
       $Result.UninstallExitCode = Invoke-Uninstaller $Kind $State (Join-Path $OutputDirectory "$Kind-uninstall.log")
+      $Result.RebootEvents += Measure-InstallerReboot $Kind $Result.UninstallExitCode $script:installerRebootBaseline (Join-Path $OutputDirectory "$Kind-uninstall.log")
       if ($Result.UninstallExitCode -ne 0) { Add-Failure $Result 'uninstall' "uninstaller exit code: $($Result.UninstallExitCode)" }
       if ($Kind -eq 'msi' -and $Result.UninstallExitCode -ne 0) { $Result.UninstallFailureContext = Write-MsiFailureContext (Join-Path $OutputDirectory "$Kind-uninstall.log") }
     } catch { Add-Failure $Result 'uninstall' $_.Exception.Message }
@@ -156,7 +181,7 @@ function Complete-BundleSmoke($Result, $Kind, $State, $ThumbnailSentinels, $Base
   if ((ConvertTo-Json $BaselineDefaults -Depth 12 -Compress) -ne (ConvertTo-Json $Result.DefaultsAfterUninstall -Depth 12 -Compress)) { Add-Failure $Result 'default-mutation' '제거 뒤 기본 연결 또는 UserChoice가 복원되지 않았습니다.' }
 }
 function Invoke-BundleSmoke($Kind, $Path, $InstallDirectory, $BaselineDefaults) {
-  $result = [ordered]@{ Kind = $Kind; Path = $Path; Status = 'failed'; Failures = @(); Probes = @(); ThirdPartySet = $false; InitialShellSucceeded = $false; RollbackProbe = 'not-run'; RegistrySentinels = 'Synthetic restoration inputs, not a Hancom installation' }
+  $result = [ordered]@{ Kind = $Kind; Path = $Path; Scenario = $Scenario; Status = 'failed'; Failures = @(); Probes = @(); ExpectedPhases = @('initial'); PhaseEnvironments = @{}; RebootEvents = @(); ReinstallExitCode = $null; ThirdPartySet = $false; InitialShellSucceeded = $false; RollbackProbe = 'not-run'; RegistrySentinels = 'Synthetic restoration inputs, not a Hancom installation' }
   $before = Get-CleanState
   $result.Before = $before
   if (-not $before.Clean) { Add-Failure $result 'clean-state' '설치 전 Alhangeul 소유 상태가 남아 있습니다.'; return $result }
@@ -165,9 +190,10 @@ function Invoke-BundleSmoke($Kind, $Path, $InstallDirectory, $BaselineDefaults) 
   try {
     $thumbnailSentinels = Set-ThumbnailSentinels $Kind
     $result.InstallExitCode = Invoke-Installer $Kind $Path $installLog
+    $result.RebootEvents += Measure-InstallerReboot $Kind $result.InstallExitCode $script:installerRebootBaseline $installLog
     if ($result.InstallExitCode -ne 0) {
-      $category = if ($result.InstallExitCode -eq 3010) { 'reboot-required' } else { 'install' }
-      $message = if ($result.InstallExitCode -eq 1602) { 'installer가 user-exit 1602를 반환했습니다.' } else { "installer exit code: $($result.InstallExitCode)" }
+      $category = if ($Kind -eq 'msi') { $result.RebootEvents[0].status } else { 'install' }
+      $message = "installer exit code: $($result.InstallExitCode)"
       Add-Failure $result $category $message
       if ($Kind -eq 'msi') { $result.InstallFailureContext = Write-MsiFailureContext $installLog }
     }
@@ -177,23 +203,29 @@ function Invoke-BundleSmoke($Kind, $Path, $InstallDirectory, $BaselineDefaults) 
   } catch { Add-Failure $result 'install' $_.Exception.Message } finally {
     Complete-BundleSmoke $result $Kind $state $thumbnailSentinels $BaselineDefaults
   }
-  if ($Kind -eq 'msi' -and $result.After.Clean -and $result.InitialShellSucceeded) { Invoke-Check $result 'installer-rollback' 'RollbackProbe' { Invoke-PostUninstallRollback $Path $InstallDirectory } }
+  $rollbackSafe = $Scenario -eq 'lifecycle' -and $result.ReinstallExitCode -eq 0 -and $result.RebootEvents.Count -eq 3 -and @($result.RebootEvents | Where-Object { -not $_.rollbackEligible }).Count -eq 0
+  if ($Kind -eq 'msi' -and $result.After.Clean -and $result.InitialShellSucceeded -and $rollbackSafe) {
+    Invoke-Check $result 'installer-rollback' 'RollbackProbe' { Invoke-PostUninstallRollback $Path $InstallDirectory }
+  } else { $result.RollbackProbe = 'not-run-scenario-reboot-or-prerequisite' }
   $result.EnvironmentAfter = Invoke-ThumbnailDiagnostic 'after-cleanup-state' 'state'
   Invoke-Check $result 'thumbnail-diagnostics' 'AfterEnvironmentCheck' { Assert-ThumbnailEnvironment $result.EnvironmentAfter }
   Invoke-Check $result 'cleanup' 'FinalCleanCheck' { Assert-Condition (Get-CleanState).Clean '최종 제품 상태가 clean이 아닙니다.'; return $true }
+  Complete-ThumbnailAssessments $result
   if ($result.Failures.Count -eq 0) { $result.Status = 'passed' }
   return $result
 }
 # Main
+Assert-Condition ($Scenario -ne 'forced-reinstall' -or $InstallerKind -eq 'msi') 'forced-reinstall은 MSI 전용입니다.'
 Assert-Condition ($ExpectedVersion -match '^\d+\.\d+\.\d+$') 'ExpectedVersion은 MSI ProductVersion 제약상 prerelease suffix 없는 3성분 version이어야 합니다.'
 New-Item -ItemType Directory -Path $OutputDirectory -Force | Out-Null; $summaryPath = Join-Path $OutputDirectory 'windows-installer-smoke-summary.json'
-$summary = [ordered]@{ SchemaVersion = 2; InstallerKind = $InstallerKind; ExpectedVersion = $ExpectedVersion; StartedAt = [DateTime]::UtcNow.ToString('o'); Status = 'failed'; Failures = @(); Installers = @() }
+$summary = [ordered]@{ SchemaVersion = 3; InstallerKind = $InstallerKind; Scenario = $Scenario; ExpectedVersion = $ExpectedVersion; StartedAt = [DateTime]::UtcNow.ToString('o'); Status = 'failed'; Failures = @(); Installers = @() }
 $sentinels = @()
 $script:thumbnailFixtureRoot = $null
 try {
   $artifacts = Resolve-BundleArtifacts $ArtifactRoot
   $summary.Artifacts = $artifacts
   $summary.Before = Get-CleanState
+  $script:installerRebootBaseline = @(Get-InstallerRebootSnapshot)
   $summary.EnvironmentBefore = Invoke-ThumbnailDiagnostic 'before-install-state' 'state'
   Assert-Condition $summary.Before.Clean '초기 VM에 Alhangeul 등록 또는 process가 남아 있습니다.'
   [void](Assert-ThumbnailEnvironment $summary.EnvironmentBefore)

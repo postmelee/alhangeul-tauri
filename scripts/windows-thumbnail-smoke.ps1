@@ -113,14 +113,16 @@ function Invoke-MsiThumbnailRollbackProbe($MsiPath, $InstallDirectory, $Sentinel
   $log = Join-Path $OutputDirectory 'msi-thumbnail-rollback.log'
   $arguments = @('/i', "`"$MsiPath`"", 'ALHANGEUL_FAIL_THUMBNAIL_INSTALL=1', '/qn', '/norestart', '/L*v', "`"$log`"")
   $exitCode = (Start-Process -FilePath 'msiexec.exe' -ArgumentList $arguments -Wait -PassThru).ExitCode
-  Assert-Condition ($exitCode -ne 0) 'MSI rollback probe가 예상과 달리 성공했습니다.'
+  $reboot = Measure-InstallerReboot 'msi' $exitCode $script:installerRebootBaseline $log
+  Assert-Condition ($exitCode -eq 1603) 'MSI rollback probe가 예상한 실패 주입 코드 1603과 다릅니다.'
+  Assert-Condition ($reboot.observationComplete -and -not $reboot.log.deferredOperation -and -not $reboot.log.restartRequired -and -not $reboot.log.msiSystemRebootPending -and @($reboot.markers | Where-Object { $_.present -or $_.baselinePresent -or $_.changed }).Count -eq 0) 'MSI rollback 뒤 재부팅 상태가 없음을 확인하지 못했습니다.'
   Assert-Condition (-not (Test-Path -LiteralPath $InstallDirectory)) 'MSI rollback 뒤 설치 디렉터리가 남았습니다.'
   foreach ($index in 0..($extensions.Count - 1)) {
     $value = Read-RegistryValue $Sentinels.Target (Get-ThumbnailAssociationPath $extensions[$index]) ''
     Assert-Condition ($value.Exists -and $value.Value -eq $Sentinels.Records[$index].Sentinel) 'MSI rollback이 원래 thumbnail sentinel을 복원하지 않았습니다.'
   }
   Assert-Condition ((Get-ThumbnailOwnedRegistryCount) -eq 0) 'MSI rollback 뒤 제품 등록이 남았습니다.'
-  return [ordered]@{ ExitCode = $exitCode; Log = $log; FailureContext = Write-MsiFailureContext $log }
+  return [ordered]@{ ExitCode = $exitCode; RebootObservation = $reboot; Log = $log; FailureContext = Write-MsiFailureContext $log }
 }
 function Get-ThumbnailFixtureState($Path) {
   $item = Get-Item -LiteralPath $Path

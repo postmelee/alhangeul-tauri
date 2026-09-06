@@ -3,13 +3,36 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: Stage 2.1 후보 구현·로컬 검증 완료, 원격 게시·Actions 실행 승인 대기
+상태: Stage 2.2 구현·로컬 검증 완료 — Windows 후보 실행 승인 대기, Stage 2 미완료
 
 승인 근거: 2026-09-06 같은 스레드의 구현계획 승인 요청에 작업지시자가
 “진행해줘”로 Stage 1 진행을 지시했다. Stage 2 원격 게시·실행은 별도 승인 대상으로 유지한다.
 
 Stage 2 승인: Stage 1 보고 뒤 작업지시자가 “진행해줘”로 Stage 2 구현을 승인했다.
 원격 후보 게시·Actions 실행은 후보 SHA를 제시한 후 별도 승인받는다.
+
+원격 실행 승인: 2026-09-07 작업지시자가 후보
+`32c903dd3d54f0388ccec81788cbdd3b2f9a68fe`의 게시와 Windows-only Actions 1회
+실행 요청에 “진행해줘”로 승인했다. `publish/task57`이 없음을 확인한 뒤 non-force
+push했고 원격 SHA가 후보와 일치함을 확인했다.
+[run 34042095817](https://github.com/postmelee/alhangeul-tauri/actions/runs/34042095817)의
+`headSha`도 동일하다. 입력은 `mode=artifact`, `artifact_platform=windows-x64`,
+`build_ref=32c903dd3d54f0388ccec81788cbdd3b2f9a68fe`, `run_tests=true`,
+`publish_release=false`이며 추가 실행은 승인받지 않았다.
+
+동일 run의 선행 core 진단은 통과했다. artifact `9992208828`
+(`alhangeul-windows-x64-thumbnail-core`)의 다운로드 archive SHA-256은
+`fbc04cce52cd2a1397f77b5d5cfece848374208f2770c4eae16e5063f44736c0`이며
+GitHub digest와 일치한다. 내부 `Status=passed`, fixture 11개,
+repository SHA `32c903dd3d54f0388ccec81788cbdd3b2f9a68fe`,
+rhwp SHA `496333b27d21ddb9114ba9ae340bcb895870c9a7`을 확인했다.
+이 결과는 installer/COM/Shell 검증 완료와 구분한다.
+
+보완 계획 작성 승인: 2026-09-07 실측 보고 후 작업지시자가 “진행해줘”로
+NSIS 제한 감지·MSI 안내와 MSI 재부팅 상태 처리의 계획 구체화를 승인했다.
+아래 Stage 2.2는 그 산출물이다. 이어 같은 스레드의 “진행해줘”로
+**수용 기준 분리·구현·로컬 검증·후보 커밋**을 승인받았다. 추가 원격 실행과 Stage 3는
+별도 승인 대상이며 이번 구현 승인으로 push/dispatch하지 않는다.
 
 ## 단계 개요
 
@@ -201,6 +224,231 @@ actionlint -shellcheck='' .github/workflows/alhangeul-desktop.yml
 cache/강제 추출의 의미는 [Microsoft WTS_FLAGS](https://learn.microsoft.com/en-us/windows/win32/api/thumbcache/ne-thumbcache-wts_flags)
 및 [GetThumbnail 반환 계약](https://learn.microsoft.com/en-us/windows/win32/api/thumbcache/nf-thumbcache-ithumbnailcache-getthumbnail)을 확인했다.
 
+### Stage 2.1 원격 관측 결과 — 2026-09-07
+
+- 승인된 [run 34042095817](https://github.com/postmelee/alhangeul-tauri/actions/runs/34042095817)
+  1회만 실행했다. 전체 결과는 **failure**다. 재실행·제품 보정·릴리즈는 하지 않았다.
+- build job `101510593274`는 성공했다(59분 16초). Windows core 11개 fixture,
+  desktop/preview/handler/worker test·Clippy와 NSIS/MSI bundle 생성이 통과했다.
+- 독립 MSI job `101518875502`는 2분 4초, NSIS job `101518875560`은 2분 12초 뒤
+  각각 실패했다. 두 job 모두 checkout·SHA 확인·bundle 다운로드·진단 업로드는 성공했다.
+- workflow SHA·요청 source SHA·각 checkout SHA는 모두
+  `32c903dd3d54f0388ccec81788cbdd3b2f9a68fe`다. Linux·updater·게시 job은 실행되지 않았다.
+
+#### 산출물 정합성
+
+| Artifact | ID | 내려받은 archive SHA-256 (GitHub digest와 일치) |
+|---|---|---|
+| Windows core | `9992208828` | `fbc04cce52cd2a1397f77b5d5cfece848374208f2770c4eae16e5063f44736c0` |
+| Windows bundle | `9992781946` | `df2174178fa0f8c58eef5184cca859fe20a6b9488b2101b1b922e7f92d88006b` |
+| NSIS smoke | `9992902911` | `bf24073d7b2510d9d64ad043476395d096847c811db3a468fcd8231ea1bc3b93` |
+| MSI smoke | `9992900327` | `db962c9b6641c3c1f45daa4696ee125e80fcbb08bb89d801126aa05c4f4e0907` |
+
+bundle inventory의 4개 파일 hash도 실제 bytes와 대조했다.
+
+| 구성요소 | Bytes | SHA-256 |
+|---|---|---|
+| MSI | 61652992 | `81ce0d5350cb488623fd7067cd36e1ab0ab0aee2bd83a3e7a1db53c3b439ca0b` |
+| NSIS EXE | 54848807 | `4bfae681ed1e50e48482d9acaea16f021cf2197272452860ee45a918d56b92b4` |
+| Handler DLL | 320512 | `18d8fe088887fea09b1270cfb723aa10e887b9453645c76d9b19b8a70c0143b6` |
+| Worker EXE | 17583104 | `7e8d1a17f00fbb0beddf5a1e4a1b7e368784d4a5cb9052dcd1fcc6b891877c3d` |
+
+각 smoke의 inventory는 bundle과 같고, 설치 후 수집한 DLL/worker hash도 일치한다.
+installer별 probe JSON 38개와 summary의 각 Result가 모두 일치했다. 환경 JSON 3개,
+fixture 불변 검사 32건(4파일 × 4요청 × 2phase), 기본 연결 원상 복원도 확인했다.
+최초 read-back 보조 명령은 불변 검사 수를 24로 잘못 예상해 중단됐으며, 실제 요청
+구조의 32건으로 바로잡아 양쪽 전체 대조를 통과했다. 원격 run을 반복한 것은 아니다.
+
+#### 환경과 API 결과
+
+양쪽 image version은 `20260824.214.3`, OS build/revision은 `26100.33296`,
+x64·STA·session 2, elevated=true·elevationType=1·integrityRid=12288이었다.
+**EnableLUA 실측값은 1**이며 IconsOnly=1, 네 DisableThumbnails 정책 값은 missing이다.
+PC방의 EnableLUA=0·IconsOnly=0과 같다고 취급하지 않는다. Explorer UI의 썸네일
+표시는 검사하지 않았으며 아래는 명시적인 thumbnail-only API 결과다.
+
+| 관측 (최초 설치와 재설치 후 동일 경향) | NSIS | MSI |
+|---|---|---|
+| 최초 설치 / 제거 exit code | 0 / 0 | 0 / 0 |
+| 제품 COM 등록 | HKCU Registry64, HKLM 없음 | HKLM Registry64, HKCU 없음 |
+| HWP/HWPX 연결 조회 | Alhangeul CLSID | Alhangeul CLSID |
+| 직접 COM 생성 | S_OK | S_OK |
+| 작은 HWP·큰 HWP·HWPX Shell | 모두 `0x80040154`, bitmap=false | 모두 S_OK, bitmap=true, 181×256 |
+| 위 세 문서 force-extract | 모두 `0x80040154` | 모두 S_OK, bitmap=true, 181×256 |
+| JPG Shell / force-extract | S_OK, 256×134 | S_OK, 256×134 |
+| 새 cache-only 복사본 | 네 파일 모두 `0x80030002` | 네 파일 모두 `0x80030002` |
+| force 후 동일 복사본 cache-only | 문서 실패, JPG 성공 | 네 파일 모두 성공 |
+| 같은 설치본 재설치 | exit 0 | exit 3010 |
+
+`0x80030002`는 원본 파일 부재나 임의의 추출 성공으로 재해석하지 않는다. 별도 cache
+복사본의 byte·mtime 불변과 강제 추출 후 동일 경로의 결과 전환을 함께 기록했다.
+성공한 cache API 결과는 `cacheFlags=2`였다. 이는 캐시 반환 관측이며 handler 실행 횟수나
+force 요청이 언제나 캐시와 완전히 무관했음을 증명하지는 않는다.
+
+NSIS failure 12건은 문서 3개 × Shell/force 2종 × 최초/재설치 2회다.
+직접 COM·연결은 성공하는데 Shell에서만 class-not-registered가 나오는 현장 패턴을
+한컴 프로그램이 없는 synthetic ProgID 환경에서도 관측했다. 등록 범위·실행 문맥
+가설을 지지하지만, 특정 surrogate의 registry 접근을 추적한 것은 아니다. 한글 버전,
+EnableLUA 값 또는 이전 MSI가 남긴 캐시만을 단독 원인으로 확정하지 않는다.
+
+#### MSI 재설치의 별도 미수용 상태
+
+MSI의 유일한 failure는 `msi reinstall exit code: 3010`이다. 기존 Shell bitmap은 모두
+성공했고, `REINSTALL=ALL REINSTALLMODE=amus`로 모든 파일을 덮어쓰는 단계에서 발생했다.
+`msi-reinstall.log` 451행에 강제 덮어쓰기, 457행에 handler DLL 사용 중, 573행에
+Config.Msi 백업 파일의 재부팅 시 삭제 예약, 713~718행에 재부팅 필요와 3010 반환이 있다.
+Microsoft의 [MSI 종료 코드](https://learn.microsoft.com/en-us/windows/win32/msi/error-codes)는
+3010을 성공 후 재부팅 필요 상태로 정의한다. 무재부팅 완료나 rollback 실패와 동일하지 않다.
+DLL 점유 process의 신원은 수집하지 않았으므로 dllhost/Explorer라고 단정하지 않는다.
+
+양쪽 앱 2회 실행·정상 종료, 제3자 thumbnail takeover 보존, 기본 연결 복원,
+제품 소유 registry/path/process clean 검사는 통과했다. MSI 실패 주입 rollback은 최초
+Shell 성공·제거 후 실행돼 예상 1603과 정리를 확인했다. 다만 재설치의 3010 이후
+재부팅하지 않았으므로 rollback을 완전한 무잔여 환경에서 검증했다고 일반화하지 않는다.
+현재 clean 검사는 Windows Installer의 지연 삭제 예약까지 포함하지 않는다.
+
+#### 단계 상태와 후속 승인안
+
+- native gate 실패를 유지한다. `task-stage-report` 규칙에 따라 Stage 2 완료 보고서와
+  완료 커밋은 보류한다. 이번 승인·실측은 계획서/오늘할일의 미커밋 기록으로 보존한다.
+- 다음 승인에서는 먼저 Stage 2 보완 계획과 수용 기준을 구체화한다. NSIS의 실패를
+  성공으로 완화하지 않고, 실제 Shell 실패를 기준으로 제한 진단·MSI 안내를 설계한다.
+  EnableLUA=0만 검사하는 단순 분기나 자동 HKLM 전환은 채택하지 않는다.
+- MSI는 3010을 재부팅 필요 상태로 별도 수집하고, 정상 재설치와 강제 파일 교체 시험의
+  목적을 분리한다. 지연 삭제·재부팅 후 확인을 포함한 수용 경계를 정하며 3010을
+  exit 0처럼 숨기거나 시스템 process 종료로 우회하지 않는다.
+- 이 계획 보완의 승인과 제품 대응(Stage 3) 승인은 구분한다. 수정 후보의 SHA·변경점·
+  실행 입력을 제시하기 전에는 추가 push/dispatch하지 않는다. client VM/VDI 검증,
+  #58·전체 사용자 NSIS·릴리즈는 계속 별도 승인 대상이다.
+
+### Stage 2.2 보완 구현 — 승인 반영, native 검증 대기
+
+이번 소단계는 진단·시험 코드만 보완한다. 제품의 HKCU/HKLM 등록, NSIS/WiX 설치
+코드, 앱 설정, 엔진은 변경하지 않는다. 사용자 안내 적용은 Stage 3의 별도 승인 대상이다.
+
+#### 1. 진단 판정과 제품 수용 분리
+
+기존 raw probe의 status/HRESULT/bitmap 및 smoke `Status=failed`를 보존한다.
+새 assessment에는 `evidenceStatus`, `thumbnailStatus`, `lifecycleStatus`, `finding`,
+`recommendedAction`, 근거 probe label을 별도 기록한다. 환경 값만으로 성공·제한을 판정하지 않는다.
+
+| 조건 | finding / 조치 | 제품 수용 |
+|---|---|---|
+| JSON 누락·손상, SHA/hash 불일치, timeout, 잘못된 bitmap 계약 | `diagnostic-invalid` / 진단 오류 확인 | 미수용 |
+| 등록 파일 없음·hash 불일치·잘못된 scope, 연결이 다른 CLSID | `registration-mismatch` / 설치·연결 상태 확인 | 미수용 |
+| JPG Shell/force도 실패 | `shell-control-failed` / 공통 Shell·환경 조사 | 미수용 |
+| HWP/HWPX 연결과 직접 COM 성공, HKCU 전용 등록, JPG 성공, 문서 Shell/force에 0x80040154 | `per-user-shell-activation-failed` / MSI 대안 검토 | 실패 유지 |
+| 문서 Shell/force 모두 유효 bitmap, JPG 성공 | `thumbnail-api-ok` / 이번 실행 문맥에서 API 정상 | thumbnail만 수용 |
+| 위 조건에 맞지 않는 오류·혼합 결과 | `unclassified-failure` / 원래 오류 보존·추가 조사 | 미수용 |
+
+- 위 표는 우선순위 순서다. 문서별 판정을 남기고 일부 성공을 전체 성공으로 합치지 않는다.
+  MSI에서도 0x80040154가 나면 HKCU 제한으로 오분류하지 않는다.
+- `EnableLUA`, token, IconsOnly, 정책 값은 설명용 관측값이다. 미설정·읽기 실패를
+  false/0으로 바꾸지 않고, UAC on/off 양쪽의 같은 API 패턴에 동일 판정을 내린다.
+- `recommendedAction=consider-msi`는 원인 확정이나 자동 설치 명령이 아니다.
+  JPG 대조군 부재·직접 COM 실패·캐시 성공만으로 이 권고를 확정하지 않는다.
+- 캐시 결과는 별도 관측 배열에 두고, fresh Shell·force 성공을 대신하지 않는다.
+
+**승인된 단계 수용 기준 변경:** Stage 2의 완료 대상을 “진단 도구·증거 수집 계약”으로
+한정하고 제품 기능 수용과 분리한다. 기존 run의 failure는 소급 변경하지 않는다.
+새 Windows 실행에서 분류 회귀 검사·필수 증거 확인이 통과해야 진단 단계 완료를 요청할 수 있다.
+제품 검증 실패 job과 원래 exit code는 계속 실패로 남기며 workflow 전체를 녹색으로 만들기
+위한 허용 목록이나 `continue-on-error` 확대는 하지 않는다. 미분류 실패·증거 누락·예상 밖
+기본 연결 변경이 있으면 진단 단계도 완료하지 않는다. 기준 분리는 승인받았으나
+새 Windows 검증 전에는 Stage 2 완료 보고서를 작성하지 않는다. Stage 3/4의 제품 수용·현장 확인은 별도로 남는다.
+
+#### 2. MSI 정상 재설치와 강제 교체 분리
+
+- 기본 lifecycle job은 MSI `REINSTALL=ALL REINSTALLMODE=omus`와 기존 `/qn /norestart`
+  조합을 사용한다. registry·shortcut·설치 파일 hash와 재설치 후 fresh Shell을 다시 검사한다.
+  이 시험을 손상 파일 복구·새 버전 업그레이드·잠긴 DLL 교체 수용이라고 표현하지 않는다.
+- `amus` 강제 교체 시험은 별도 `windows-2025` VM의 `msi-forced-reinstall` job으로
+  유지한다. 같은 bundle 설치 → 최초 Shell → 강제 재설치 → 재부팅 상태 기록 → 정리 순서다.
+  정상 lifecycle·rollback 증거와 섞지 않고 이 VM에서 후속 rollback을 실행하지 않는다.
+- installer entry에 다섯 번째 입력 `Scenario=lifecycle|forced-reinstall`을 추가한다.
+  `forced-reinstall`은 MSI만 허용한다. 기존 NSIS/MSI lifecycle artifact 이름을 보존하고
+  추가 증거는 `alhangeul-desktop-windows-x64-msi-forced-reinstall`에 둔다.
+- 재설치가 `0`이면 후속 검사를 계속한다. `3010`이면 `reboot-required`, `1641`이면
+  `reboot-initiated`로 기록하고 무재부팅 lifecycle 수용을 막는다. `/norestart` 조건의
+  1641은 예상 밖 결과다. `1602` 취소와 다른 실패 코드도 독립적으로 보존한다.
+- 3010 이후의 bitmap은 `pre-reboot-observation`일 뿐 재부팅 후 새 DLL 검증이 아니다.
+  3010/1641/실패/재부팅 상태 불명인 job에서는 rollback을 건너뛰고 사유를 기록한다.
+  NSIS 종료 코드에는 MSI의 코드 의미를 일괄 적용하지 않는다.
+- 제품 범위 `Get-CleanState`와 `rebootState`를 구분한다. 재부팅 요청 exit code,
+  MSI 로그의 지연 작업·MsiSystemRebootPending, 설치 전후 PendingFileRenameOperations·
+  CBS RebootPending·Windows Update RebootRequired의 존재/변화/읽기 실패를 수집하되
+  전체 registry 값·외부 파일 경로는 출력하지 않는다.
+  기존 표식은 baseline과 구분하며 표식이 없다는 사실만으로 재부팅 불필요를 단정하지 않는다.
+- 표식은 읽기 전용이며 삭제하거나 되돌리지 않는다. 제품 소유 파일·등록·기본 연결 정리는
+  기존 finally 경로를 유지한다. 점유 process 강제 종료·재부팅·전역 캐시 삭제는 하지 않는다.
+- 실제 재부팅 후 검증은 별도 승인된 Windows client VM에서 수행한다. 이전/이후 boot 식별,
+  installer·DLL/worker hash, 새 process의 Shell·기본 연결·지연 작업 상태를 확인해야 한다.
+  해당 환경을 확보하지 못하면 강제 교체 lifecycle은 미수용으로 남긴다.
+
+근거: [REINSTALLMODE](https://learn.microsoft.com/en-us/windows/win32/msi/reinstallmode),
+[MSI 종료 코드](https://learn.microsoft.com/en-us/windows/win32/msi/error-codes).
+
+#### 3. 구현 파일과 검증
+
+| 파일 | 변경 범위 |
+|---|---|
+| `scripts/windows-thumbnail-assessment.ps1` (신규) | 수집 결과를 읽는 공통 순수 분류 함수; 설치·COM 실행 없음 |
+| `scripts/windows-installer-reboot.ps1` (신규) | MSI exit code·재부팅 상태의 비식별 읽기 전용 수집 |
+| `scripts/windows-thumbnail-assessment-tests.ps1` (신규) | Windows PS 5.1에서 synthetic 입력의 분류·재부팅 계약 회귀 |
+| `scripts/windows-installer-smoke.ps1`, `windows-thumbnail-fixtures.ps1`, `windows-thumbnail-smoke.ps1` | assessment, scenario, 재설치 뒤 분기·증거 목록, rollback gate 연결 |
+| `.github/workflows/alhangeul-desktop.yml` | 분류 회귀·증거 계약 검사, 강제 교체 독립 job; 기존 기능 실패 gate 보존 |
+| `tests/windows-thumbnail-assessment.test.mjs` (신규), 기존 Windows/workflow 계약 검사, `package.json` | 신규 helper 경계·회귀 실행을 automation에 포함 |
+
+신규 파일은 300 LOC, 함수는 50 LOC, 입력은 5개 이내로 유지한다. 기존 대형 orchestration
+파일은 필요한 호출만 추가하고 판단 로직은 helper로 분리한다. 개인 자료·원본 MSI 로그를
+테스트 fixture로 커밋하지 않으며 알려진 값으로 만든 최소 synthetic JSON만 사용한다.
+
+로컬(지원 밖 호스트에서는 이 범위만 실행):
+
+```sh
+node --test tests/windows-thumbnail-assessment.test.mjs tests/windows-thumbnail-diagnostics.test.mjs tests/windows-thumbnail-fixtures.test.mjs tests/windows-installer-smoke.test.mjs tests/windows-packaging.test.mjs tests/actions-workflows.test.mjs
+pnpm run check:product-boundary
+pnpm run test:automation
+actionlint -shellcheck='' .github/workflows/alhangeul-desktop.yml
+git diff --check
+```
+
+Windows: `powershell.exe -NoProfile -NonInteractive -STA -File scripts/windows-thumbnail-assessment-tests.ps1`.
+UAC 0/1의 동일 실패, 성공 NSIS, HKLM 실패, JPG 실패, 부분 성공, cache-only 성공,
+누락/손상/권한 거부, MSI 0/3010/1641/1602/1603, 재부팅 표식 baseline·변화·읽기 실패를
+검사한다. classifier 검증 통과와 실제 제품 실패가 동시에 보존되는지도 검사한다.
+필수 probe 수는 scenario·종료 상태별 명세로 검증하고 임의 누락을 skip으로 바꾸지 않는다.
+
+원격 실행은 구현·로컬 검사 후 exact SHA를 제시해 **추가 1회**를 별도로 요청한다.
+기존 `mode=artifact`, `artifact_platform=windows-x64`, `run_tests=true`,
+`publish_release=false`를 유지하고 세 독립 Windows job이 같은 새 bundle을 사용한다.
+현재 승인으로 push/dispatch하지 않는다. 실패 원인이 남아도 동일 입력을 반복 실행하지 않는다.
+
+커밋안: `Task #57 [Stage 2.2]: 썸네일 진단 판정과 MSI 재부팅 시험 분리`.
+이 후보 커밋은 미검증 표시 후 원격 실행 승인을 요청하며, 진단 단계 보고는 위 새 수용
+계약의 명시 승인과 실제 검증 후에만 작성한다.
+
+#### 4. Stage 2.2 구현 결과와 로컬 검증
+
+- 순수 assessment는 19개/phase의 probe 계약, 등록 파일 hash/크기·scope, 연결·직접 COM,
+  JPG 대조군과 문서별 Shell/force를 검사한다. 원시 status/HRESULT/bitmap은 변경하지 않는다.
+- MSI 정상 `omus`와 강제 `amus`를 세 독립 installer job 중 두 scenario로 분리했다.
+  재부팅 상태 미확인·대기·필요 시 rollback을 건너뛰고, 3010 후 bitmap은
+  `pre-reboot-observation`으로만 남긴다. rollback 실행 시 예상 종료 코드 1603과
+  이후 재부팅 관측도 검사한다. 표식 원문은 메모리 안에서만 비교한다.
+- summary schema 3에 phase별 assessment와 lifecycle·진단 계약 판정을 추가했다.
+  별도 진단 gate는 원본 JSON·환경 JSON·inventory·checkout/workflow SHA를 대조하고
+  판정을 재계산한다. 진단 gate 통과가 기존 제품 실패 gate를 우회하지 않는다.
+- Windows synthetic 회귀에 UAC 0/1, 정상·실패·부분 성공·잘못된 증거와 재부팅 코드,
+  표식 변화·baseline·읽기 실패, JSON round-trip 및 원시 증거 불변 검사를 작성했다.
+  이 회귀의 Windows PowerShell 5.1 실행은 아직 하지 않았다.
+- 로컬 관련 Node 계약 검사 **82/82 통과**, `pnpm run test:automation` **532/532 통과**,
+  `pnpm run check:product-boundary`, `actionlint .github/workflows/alhangeul-desktop.yml`,
+  `git diff --check` 통과. Node 검사는 native PowerShell·COM 동작을 증명하지 않는다.
+- 제품 설치 코드·등록 범위·엔진·설정은 수정하지 않았다. Stage 3 안내·#58·PR·릴리즈,
+  원격 push/dispatch도 수행하지 않았다. 이번 커밋은 Windows 미검증 후보이며
+  실제 커밋 SHA와 추가 1회 실행 입력을 작업지시자에게 제시한다.
+
 ### 원격 실행과 승인 경계
 
 - Stage 2 진입 시 대상 SHA와 함께 원격 non-force push·비게시 dispatch 승인을 요청한다.
@@ -230,6 +478,25 @@ Task #57 Stage 2: 설치별 격리 관측 결과와 단계 보고
 ```
 
 ## Stage 3 — 관측에 따른 대응
+
+Stage 2.2 이후의 우선 제안은 **진단 결과 기반 안내**다. 다음 내용도 아직 구현 승인이 아니다.
+공통 assessment를 수동 진단 진입점에서 재사용하고, 사용자에게는 “현재 실행 환경에서
+사용자별 썸네일 처리기를 Shell이 활성화하지 못했습니다. MSI 설치를 대안으로 검토하세요”처럼
+관측과 대안을 구분해 안내한다. 설치 직후에는 “등록됨·동작 미검증”과 “실제 bitmap 성공”을
+구별한다. 설치 성공만으로 썸네일 사용 가능을 보장하지 않는다.
+
+사용자가 실행하는 진단은 요청한 HWP/HWPX와 JPG만 대상으로 하며, 원본 대신 task 소유
+임시 복사본을 사용하고 새 자식 process·timeout·민감 경로 비출력 계약을 유지한다.
+실제 API 실행과 캐시 변경 가능성을 안내하고 관리자 권한 실행을 필수로 요구하지 않는다.
+설치 중 자동 문서 탐색·진단 실행이나 앱 설정 UI 추가는 이번 우선안에 포함하지 않는다.
+배포할 진단 도구의 파일 목록·진입점·제공 경로는 Stage 3 진입 승인 때 확정한다.
+
+MSI 전환 안내는 문서 저장·앱 종료 → 기존 NSIS 제거 → 같은 버전/아키텍처 MSI 설치 →
+재부팅 요청이 있으면 재부팅 → 사용자의 일반 Explorer 세션에서 재확인 순서로 작성한다.
+두 설치본 중복 설치·기본 앱 강제 변경·설정/사용자 파일 삭제를 안내하지 않는다.
+보안 정책 변경·NSIS 전체 사용자화·권한 helper·#58 선택 설치 및 토글은 계속 제외한다.
+공식 문서는 기존 승인 위치인 README, `docs/architecture/WINDOWS_THUMBNAILS.md`,
+`docs/operations/DESKTOP_RELEASE.md`를 필요한 만큼 보완하며 신규 FAQ/문서 루트는 만들지 않는다.
 
 ### 산출물
 
@@ -341,6 +608,8 @@ CI 실행을 위한 후보 커밋과 결과 보고 커밋의 SHA 차이를 명�
 ## 단계 의존성
 
 - 구현계획 승인 후 Stage 1을 시작한다. Stage 1 보고 승인 후 Stage 2를 진행한다.
+- 현재는 Stage 2.1 실패 관측 후 Stage 2.2 구현·로컬 검증을 완료했다. 승인된 진단 단계
+  수용 기준은 새 후보에 적용하며 기존 실행의 실패 상태는 유지한다. Windows 검증은 미실행이다.
 - Stage 2 관측을 근거로 Stage 3의 제품 보정·client 시험 범위를 승인받는다.
 - Stage 3 결과 승인 후 Stage 4로 진행한다. #58은 확정된 등록·권한 경계를 인계받는다.
 
@@ -352,12 +621,16 @@ CI 실행을 위한 후보 커밋과 결과 보고 커밋의 SHA 차이를 명�
 - **원격 비용·영향**: Windows-only 비게시 2회 기본안을 제안하고 각 단계 진입 시 실행 승인을 받는다.
 - **UI 오해**: 설치 제한은 실제 관측과 한계를 설명하며 JPG/API 성공을 Explorer 전체 성공으로 표현하지 않는다.
 
-## 승인 요청 사항
+## 승인 상태와 다음 요청
 
-1. 4개 Stage와 위 산출물·진단 계약·명령·커밋 구조를 승인한다.
-2. Stage 2의 optional Windows-only artifact 선택과 NSIS/MSI 독립 VM 검증 방향을 승인한다.
-3. Stage 2 원격 후보 게시·dispatch 및 Stage 3 제품 보정/client 환경은 해당 단계에서 구체적으로 승인받는다.
-4. 이번 승인 뒤 Stage 1부터 시작하며 제품 배포·NSIS 전체 사용자 설치·#58 구현은 제외한다.
+1. Stage 2.2의 진단/제품 수용 분리와 새 진단 단계 완료 조건은 승인받았다.
+   기존 failed run·향후 제품 기능 실패를 성공으로 바꾸지 않는 조건이다.
+2. 공통 assessment, MSI 재부팅 상태 수집, 정상 lifecycle와 강제 교체의 독립 job,
+   지정된 회귀 검사의 **구현·로컬 검증·후보 커밋까지** 승인받았다.
+3. 후보 SHA 확정 후 Windows-only 추가 1회 실행을 다시 승인받는다. 이번 계획 승인만으로
+   원격 push/dispatch·재부팅·client VM 사용을 수행하지 않는다.
+4. Stage 3의 진단 진입점·사용자 안내 적용은 별도 승인받는다. 제품 등록 변경,
+   NSIS 전체 사용자 설치·#58·릴리즈는 이번 구현 승인 범위에도 포함하지 않는다.
 
 ## 기술 근거
 

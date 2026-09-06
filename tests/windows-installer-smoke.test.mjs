@@ -11,6 +11,8 @@ const helperPaths = [
   join(repoRoot, 'scripts/windows-installer-smoke-support.ps1'),
   join(repoRoot, 'scripts/windows-thumbnail-smoke.ps1'),
   join(repoRoot, 'scripts/windows-thumbnail-fixtures.ps1'),
+  join(repoRoot, 'scripts/windows-thumbnail-assessment.ps1'),
+  join(repoRoot, 'scripts/windows-installer-reboot.ps1'),
   join(repoRoot, 'scripts/windows-process-lifecycle.ps1'),
 ];
 const helperBytes = await Promise.all(helperPaths.map((path) => readFile(path)));
@@ -31,12 +33,12 @@ test('Windows PowerShell 5.1이 UTF-8 source를 인식하도록 BOM을 유지한
   }
 });
 
-test('entry parameter는 artifact, output, version, 선택 installer 네 개로 제한한다', () => {
+test('entry parameter는 artifact, output, version, installer, scenario 다섯 개로 제한한다', () => {
   const parameterBlock = entrySource.match(/param\(([\s\S]*?)\)\nSet-StrictMode/);
   assert.ok(parameterBlock, 'PowerShell parameter block이 필요합니다.');
   const names = [...parameterBlock[1].matchAll(/\[string\]\$(\w+)/g)]
     .map((match) => match[1]);
-  assert.deepEqual(names, ['ArtifactRoot', 'OutputDirectory', 'ExpectedVersion', 'InstallerKind']);
+  assert.deepEqual(names, ['ArtifactRoot', 'OutputDirectory', 'ExpectedVersion', 'InstallerKind', 'Scenario']);
   assert.match(entrySource, /ValidateSet\('nsis', 'msi'\)/);
   assert.match(entrySource, /Set-StrictMode -Version Latest/);
   assert.match(entrySource, /windows-process-lifecycle\.ps1/);

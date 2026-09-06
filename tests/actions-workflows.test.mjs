@@ -475,7 +475,8 @@ test('fresh Windows installer smoke job은 build 결과와 무관하게 artifact
   assert.match(job, /^    runs-on: windows-2025$/m);
   assert.match(job, /^    strategy:/m);
   assert.match(job, /^      fail-fast: false$/m);
-  assert.match(job, /^        installer: \[nsis, msi\]$/m);
+  assert.match(job, /^        include:$/m);
+  for (const name of ['nsis', 'msi', 'msi-forced-reinstall']) assert.ok(job.includes('- name: ' + name));
   assertOrdered(job, [
     '- name: Checkout installer smoke source',
     '- name: Prepare installer smoke diagnostics',
@@ -538,7 +539,7 @@ test('installer smoke 진단은 항상 보존되고 마지막 gate가 실패를 
   const recordStep = getStepContaining(job, 'step-outcomes.json');
   const uploadStep = getStepContaining(
     job,
-    'name: alhangeul-desktop-windows-x64-${{ matrix.installer }}-installer-smoke',
+    'name: alhangeul-desktop-windows-x64-${{ matrix.artifact }}',
   );
   const gateStep = getStepContaining(job, 'Windows installer smoke gate failed');
 
