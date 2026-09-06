@@ -9,6 +9,7 @@ import { analyzeWindowsPdfs, validateEvidence } from './gui/windows-pdf/analyze.
 const workflow = await readFile(new URL('../.github/workflows/alhangeul-windows-pdf.yml', import.meta.url), 'utf8');
 const spec = await readFile(new URL('./gui/specs/windows-pdf.e2e.ts', import.meta.url), 'utf8');
 const dialog = await readFile(new URL('../scripts/windows-pdf-dialog.ps1', import.meta.url), 'utf8');
+const native = await readFile(new URL('../scripts/windows-pdf-win32.ps1', import.meta.url), 'utf8');
 const dispatcher = await readFile(new URL('../.github/workflows/alhangeul-desktop.yml', import.meta.url), 'utf8');
 const buildRef = 'a'.repeat(40);
 const expected = { buildRef, fixture: 'biz-plan-hwp', phase: 'fresh' };
@@ -77,6 +78,21 @@ test('native helper budget begins after menu click and records bounded content-f
   assert.match(dialog, /Write-Evidence 'failed' \$_\.Exception.Message/);
   assert.match(dialog, /stage = \$stage/);
   assert.doesNotMatch(dialog, /\$info\.(Name|Value)/);
+});
+
+test('Win32 fallback restricts control identity and verifies bounded filename readback', () => {
+  assert.match(dialog, /ClassNameProperty, 'Edit'/);
+  assert.match(dialog, /AutomationIdProperty, '1148'/);
+  assert.match(dialog, /Set-NativeFileName \$dialog \$field \$observedProcessId \$TargetPath/);
+  assert.match(native, /dialogPid != expectedPid \|\| controlPid != expectedPid/);
+  assert.match(native, /!IsChild\(dialog, control\)/);
+  assert.match(native, /GetDlgCtrlID\(control\) != id/);
+  assert.match(native, /ClassName\(control\) != cls/);
+  assert.match(native, /Validate\(dialog, edit, pid, 1148, "Edit"\)/);
+  assert.match(native, /id != 1 && id != 6/);
+  assert.match(native, /readback.ToString\(\) != text/);
+  assert.match(native, /2, 2000, out result/);
+  assert.doesNotMatch(native, /SendKeys|SendInput|mouse_event|SetCursorPos/);
 });
 
 test('PDF evidence validator rejects missing, failed, wrong SHA and incomplete overwrite results', () => {

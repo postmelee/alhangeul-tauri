@@ -10,6 +10,15 @@ GitHub Issue: [#19](https://github.com/postmelee/alhangeul-tauri/issues/19)
 
 ## 단계 개요
 
+### 2026-09-06 Stage 4.8 Win32 대화상자 fallback 승인
+
+작업지시자가 Pane으로 노출되는 파일명 입력칸/버튼의 Win32 fallback과 재검증을 승인했다.
+`scripts/windows-pdf-win32.ps1`에 HWND·process·dialog 자식·class·control ID 검증과
+bounded WM_SETTEXT/readback, BM_CLICK을 분리한다. 기존 helper는 UIA pattern이 없을 때만
+fallback을 호출한다. 좌표 클릭·전역 키 입력·제품 수정은 제외한다.
+helper/전용 계약 테스트 및 plans/working 내부 기록만 수정한다. focused 계약·diff 검증 후
+동일 제품 artifact로 한 번 재실행하며 실제 수용 결과와 구현 검증을 구분한다.
+
 ### 2026-09-06 Stage 4.7 대화상자 대기 경계와 진단 보정 승인
 
 작업지시자가 첫 Windows PDF timeout의 최소 harness 보정 및 재실행을 승인했다.

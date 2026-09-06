@@ -7,6 +7,7 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 Add-Type -AssemblyName UIAutomationClient
 Add-Type -AssemblyName UIAutomationTypes
+. (Join-Path $PSScriptRoot 'windows-pdf-win32.ps1')
 $scope = [System.Windows.Automation.TreeScope]::Descendants
 $deadline = [DateTime]::UtcNow.AddSeconds(90)
 $submitted = $false
@@ -17,12 +18,14 @@ $stage = 'waiting-dialog'
 $observedTree = @()
 $observedProcessId = $null
 $dialogCount = 0
+$nativeFallbackUsed = $false
 
 function Write-Evidence($Status, $ErrorText) {
   @{ mode = $Mode; status = $Status; error = $ErrorText; stage = $stage;
      startedAt = $startedAt.ToString('o'); finishedAt = [DateTime]::UtcNow.ToString('o');
      processId = $observedProcessId; dialogCount = $dialogCount; submitted = $submitted;
-     overwriteConfirmed = $overwriteConfirmed; tree = $observedTree } |
+     overwriteConfirmed = $overwriteConfirmed; nativeFallbackUsed = $nativeFallbackUsed;
+     tree = $observedTree } |
     ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $EvidencePath -Encoding utf8
 }
 
@@ -45,9 +48,14 @@ function Find-Id($Root, $Id) {
   return $Root.FindFirst($scope, $condition)
 }
 
-function Invoke-Button($Button) {
-  $pattern = $Button.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern)
-  $pattern.Invoke()
+function Invoke-Button($Dialog, $Button, $Id) {
+  $pattern = $null
+  if ($Button.TryGetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern, [ref]$pattern)) {
+    $pattern.Invoke()
+  } else {
+    $script:nativeFallbackUsed = $true
+    Invoke-NativeDialogButton $Dialog $Button $observedProcessId $Id
+  }
 }
 
 try {
@@ -76,28 +84,35 @@ try {
         if ($null -eq $field) { continue }
         $value = $null
         if (-not $field.TryGetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern, [ref]$value)) {
-          $editCondition = [System.Windows.Automation.PropertyCondition]::new(
-            [System.Windows.Automation.AutomationElement]::ControlTypeProperty,
-            [System.Windows.Automation.ControlType]::Edit)
-          $field = $field.FindFirst($scope, $editCondition)
+          $editCondition = [System.Windows.Automation.AndCondition]::new(
+            [System.Windows.Automation.PropertyCondition]::new(
+              [System.Windows.Automation.AutomationElement]::ClassNameProperty, 'Edit'),
+            [System.Windows.Automation.PropertyCondition]::new(
+              [System.Windows.Automation.AutomationElement]::AutomationIdProperty, '1148'))
+          $field = $dialog.FindFirst($scope, $editCondition)
           if ($null -eq $field) { continue }
-          $value = $field.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern)
+          [void]$field.TryGetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern, [ref]$value)
         }
         $button = Find-Id $dialog '1'
         if ($null -eq $button) { continue }
         $stage = 'setting-filename'
         Write-Evidence 'running' $null
-        $value.SetValue($TargetPath)
+        if ($null -ne $value) {
+          $value.SetValue($TargetPath)
+        } else {
+          $nativeFallbackUsed = $true
+          Set-NativeFileName $dialog $field $observedProcessId $TargetPath
+        }
         $stage = 'invoking-submit'
         Write-Evidence 'running' $null
-        Invoke-Button $button
+        Invoke-Button $dialog $button '1'
         $submitted = $true
         $stage = 'waiting-dialog-close'
       } elseif ($allowOverwrite -and -not $overwriteConfirmed) {
         # IDYES only, restricted to the app-owned dialog and an existing test target.
         $yes = Find-Id $dialog '6'
         if ($null -ne $yes) {
-          Invoke-Button $yes
+          Invoke-Button $dialog $yes '6'
           $overwriteConfirmed = $true
         }
       }
