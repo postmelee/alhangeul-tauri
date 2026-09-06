@@ -200,6 +200,25 @@ test('Windows PDF cleanup 선택은 실제 junction test만 검증하며 제품�
   assert.doesNotMatch(focused, /build:desktop|build:thumbnail|test:gui|tauri build|secrets\./);
 });
 
+test('cleanup test의 resource 예외는 test step에만 한정하고 배포 resource를 보존한다', async () => {
+  const step = getStepContaining(ciWorkflow, 'Test actual Windows PDF cleanup');
+  const override = step.match(/^          TAURI_CONFIG: '([^']+)'$/m);
+  assert.ok(override, 'test step env의 명시적인 JSON override가 필요합니다');
+  assert.match(step, /^        env:$/m);
+  assert.deepEqual(JSON.parse(override[1]), { bundle: { resources: [] } });
+  assert.doesNotMatch(ciWorkflow.replace(step, ''), /TAURI_CONFIG/);
+  assert.doesNotMatch(step, /GITHUB_ENV|GITHUB_OUTPUT|continue-on-error/);
+  const focused = getJob(ciWorkflow, 'pdf-cleanup-windows');
+  assert.doesNotMatch(focused, /thumbnail-resources|AlhangeulThumbnail(?:Handler|Worker)/);
+  const config = JSON.parse(await readFile(
+    join(repoRoot, 'apps/desktop/src-tauri/tauri.windows.conf.json'), 'utf8',
+  ));
+  assert.deepEqual(config.bundle.resources, {
+    'windows/thumbnail-resources/AlhangeulThumbnailHandler.dll': 'AlhangeulThumbnailHandler.dll',
+    'windows/thumbnail-resources/AlhangeulThumbnailWorker.exe': 'AlhangeulThumbnailWorker.exe',
+  });
+});
+
 test('desktop workflow의 Windows/Linux matrix가 exact target을 유지한다', () => {
   const job = getJob(desktopWorkflow, 'build');
   const expectedEntries = [

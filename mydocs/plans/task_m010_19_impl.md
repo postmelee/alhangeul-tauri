@@ -12,6 +12,66 @@ GitHub Issue: [#19](https://github.com/postmelee/alhangeul-tauri/issues/19)
 
 ### 2026-09-07 Stage 4.22 — 수용 근거 보정과 최소 OS 회귀
 
+#### 후속 승인 — Windows cleanup test의 packaging resource 분리
+
+작업지시자의 `진행해줘`로 아래 보정을 같은 4.22에서 승인받았다. 아래 최초 실패 기록은
+보존한다. `ci.yml`의 `Test actual Windows PDF cleanup` step env에만
+`TAURI_CONFIG={"bundle":{"resources":[]}}`를 둔다. 고정된 tauri-build 2.5.6은 JSON merge
+patch를 읽으며 tauri-utils 2.8.3은 resources의 list/map을 허용한다. 빈 배열은 기존 resource
+map을 대체하지만 빈 object는 map을 지우지 않으므로 사용하지 않는다.
+
+실제 `tauri*.conf.json`/제품 경로/설치본은 수정하지 않는다. 정적 계약은 step-local JSON,
+step 외부 override 부재, 기존 DLL/EXE mapping 보존과 가짜 resource 생성 부재를 확인한다.
+공식 가이드는 승인된 기존 `DESKTOP_RELEASE.md` 위치에 테스트 전용 한계를 덧붙인다.
+로컬 `node --test tests/actions-workflows.test.mjs`, `actionlint .github/workflows/ci.yml`,
+`git diff --check` 후 실행 checkpoint를 commit/push하고 Windows 제한 scope만 한 번 실행한다.
+기존 Linux·GUI·Rust format 검사는 해당 소스가 바뀌지 않아 이전 통과를 재사용한다.
+Linux/PDF/전체 CI/패키지/썸네일/updater를 반복하지 않는다. 실패 시 다시 자동 재시도하지 않는다.
+통과 시 최초 실행 근거와 함께 4.22 보고서/계획/orders를 묶고 최종 보고/PR 승인을 요청한다.
+
+후속 보정의 로컬 workflow 계약 **55/55**, `actionlint .github/workflows/ci.yml`,
+`git diff --check`가 통과했다. apps/crates/assets/third_party/lockfile은 최초 checkpoint
+`0ab4745` 대비 차이가 없으며 실제 제품 설정도 변경하지 않았다. 아래 최초 실행 결과와
+이번 보정/승인을 실행 checkpoint에 보존한 뒤 승인된 Windows 검사를 진행한다.
+
+#### 실행 결과 — Linux 통과, Windows 테스트 준비 실패
+
+checkpoint `0ab47459d3bc7b6137722e40b15b288468301e8c`로 각각 한 번 실행했다.
+로컬 GUI 계약 19개, Linux 계약 62개, workflow 계약 65개, GUI typecheck·actionlint·Rust
+format·product boundary·diff 통과다. workflow 계약의 full 분기 순서 assertion은 제한 분기와
+구분하도록 로컬에서 보정한 뒤 모두 통과했다. Node 정적 계약을 실제 Rust 실행으로 세지 않는다.
+
+- [Linux run 34063977183](https://github.com/postmelee/alhangeul-tauri/actions/runs/34063977183):
+  **3분 13초 통과**. `pdf-hwpx` scope, native print와 thumbnail 7단계 skipped. 제품
+  `69b22650df96323a2c59e473d474ed3195cc9cc7`, native run `34021920074`, artifact `9986288884`
+  (546063293 bytes, `sha256:af6c78143a0095ffda0361b410089b3ea7d0295538f89b0982259796de41efdd`) 재사용.
+  HWPX 10쪽/A4/표제 검색/nonblank/쪽 가장자리, 정확한 title·쪽 수·원본 hash 보존을 확인했다.
+  text counts는 `[994,1252,1005,1029,1010,1184,971,1185,982,1132]`다.
+  PDF 763577 bytes, `5b7fea74f36666d8997b7df5bf01e2e415e1681094808922216c8adf174b2370`.
+  14개 결과 파일의 size/hash를 재검산하고 10쪽 PNG와 앱 최종 화면을 직접 확인했다.
+  기존 홀수 쪽 표의 긴 문구가 셀 경계에 밀착/잘리는 현상은 남는다. Linux 앱 첫 쪽의 같은
+  위치에서도 관측되므로 PDF만의 결함으로 단정하지 않는다. 조판 동등성은 통과로 표시하지 않는다.
+  evidence `9998392027`, 4835076 bytes,
+  `sha256:aa8f08b9a5c29a35ba0511b84476f8c29f0c506c2358b745c6b6f6020f4c75e1`.
+- [Windows run 34063975728](https://github.com/postmelee/alhangeul-tauri/actions/runs/34063975728):
+  **6분 7초 실패**, cleanup test는 **미실행**이다. 제한 job 구성 시 에이전트가
+  `tauri.windows.conf.json`의 thumbnail bundle resource 선행조건을 놓쳤다.
+  Tauri build script가 `windows/thumbnail-resources/AlhangeulThumbnailWorker.exe` 부재로
+  중단했다. Rust assertion·junction 생성 실패나 제품 cleanup 결함으로 기록하지 않는다.
+  full CI는 skipped, 실패 로그 업로드는 성공했다. evidence `9998431779`, 1141 bytes,
+  `sha256:200be0d85d5901d6379f1d5de3458386a1fdeb093713a56efb8e7bbb004cad3b`.
+
+증거는 `/private/tmp/alhangeul-task19-stage422.N6r0hl`에 보관한다. 기존 제품 대비 apps/crates/
+third_party/assets/lockfile의 차이는 `#[cfg(test)]`로 로드하는 cleanup test 파일뿐이다.
+제품·설치본 재빌드 및 Windows PDF/인쇄/thumbnail/updater 재실행은 하지 않았다.
+
+4.22는 미완료다. `task-stage-report`의 실패 gate에 따라 완료 보고서/PR을 만들지 않고
+이 결과 문서는 보정과 함께 묶도록 미커밋 상태로 남긴다. 자동 수정·재dispatch는 하지 않았다.
+다음 권고는 **이 cleanup test step에만** `TAURI_CONFIG`의 `bundle.resources=[]`를 적용해
+무관한 packaging resource 요구를 분리하는 것이다. 빈 DLL/EXE를 만들거나 실제 package
+설정을 바꾸지 않는다. 해당 설정이 test step 밖에 유출되지 않는 계약을 추가하고 Windows
+제한 검사만 한 번 재검증하도록 승인받는다. Linux 성공은 재사용하며 다시 실행하지 않는다.
+
 작업지시자가 남은 근거 검토의 권고를 승인했다. 기존 #19/M010/`local/task19`를 유지한다.
 수행계획서의 문서 위치 판단을 따르며 아래 실행 요구가 과거 Stage 4 GUI 전체 재현 요구보다 우선한다.
 

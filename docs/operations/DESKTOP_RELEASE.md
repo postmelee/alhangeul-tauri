@@ -210,6 +210,9 @@ GUI로 재현하지 않는다.
 
 - `ci.yml`, `scope=pdf-cleanup-windows`: Windows cleanup Rust 테스트만 실행하며 junction
   사례가 실제 실행됐는지 확인한다. 테스트 컴파일은 하지만 installer/thumbnail을 빌드하지 않는다.
+  해당 test step의 `TAURI_CONFIG={"bundle":{"resources":[]}}`만 packaging resource 복사를
+  제외한다. workflow/job 전체 환경이나 제품 설정으로 옮기지 않고 빈 DLL/EXE도 만들지 않는다.
+  이 테스트 성공은 bundle resource 포함·설치 검증을 대신하지 않는다.
 - `alhangeul-linux-gui.yml`, `scope=pdf-hwpx`: 검증된 `build_ref`/`native_run_id`의 DEB로
   HWPX direct PDF만 실행한다. 인쇄·thumbnail은 `skipped`로 기록하고 PDF/10쪽 증거가
   없으면 실패한다. `acceptance-scope.txt`와 phase/outcome을 함께 읽는다.

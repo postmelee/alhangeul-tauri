@@ -187,6 +187,9 @@ jobs:
           printf 'scope=pdf-cleanup-windows\nrunner=windows-2025\n' >> pdf-cleanup-context.txt
       - name: Test actual Windows PDF cleanup
         shell: bash
+        env:
+          # Only this filesystem test binary excludes packaging resources.
+          TAURI_CONFIG: '{"bundle":{"resources":[]}}'
         run: |
           set -euo pipefail
           cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml --locked \
