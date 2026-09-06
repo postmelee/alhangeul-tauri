@@ -25,6 +25,7 @@ test('모든 workflow가 공통 또는 전용 contract test inventory에 등록�
     .filter((name) => /\.ya?ml$/.test(name))
     .sort();
   assert.deepEqual(actual, [
+    'alhangeul-ci-fast.yml',
     'alhangeul-desktop.yml',
     'alhangeul-linux-gui.yml',
     'alhangeul-updater-linux-window-probe.yml',

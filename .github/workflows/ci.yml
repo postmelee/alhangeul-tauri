@@ -2,6 +2,12 @@ name: Alhangeul CI
 
 on:
   workflow_dispatch:
+    inputs:
+      profile:
+        description: Fast contracts only, or contracts plus Linux native unit tests.
+        type: choice
+        default: native
+        options: [fast, native]
 
 permissions:
   contents: read
@@ -16,8 +22,15 @@ env:
   NODE_VERSION: "24"
 
 jobs:
+  fast:
+    uses: ./.github/workflows/alhangeul-ci-fast.yml
+    with:
+      source_ref: ${{ github.sha }}
+
   unit-tests:
     name: Unit tests
+    needs: fast
+    if: ${{ inputs.profile == 'native' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:

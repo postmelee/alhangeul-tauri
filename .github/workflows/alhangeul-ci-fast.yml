@@ -1,0 +1,61 @@
+name: Alhangeul fast validation
+
+on:
+  workflow_call:
+    inputs:
+      source_ref:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  GIT_CONFIG_COUNT: "1"
+  GIT_CONFIG_KEY_0: core.autocrlf
+  GIT_CONFIG_VALUE_0: "false"
+
+jobs:
+  contracts:
+    name: Fast Node and Studio contracts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.source_ref }}
+          submodules: true
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          package-manager-cache: false
+      - run: corepack enable
+      - run: pnpm run fetch:rhwp-pin-tag
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run check:product-boundary
+      - run: pnpm run check:product-version
+      - run: pnpm run check:release-metadata
+      - run: pnpm run check:rhwp-pin
+      - run: pnpm run test:automation
+      - run: pnpm run typecheck:gui
+      - run: pnpm run test:upstream
+      - run: pnpm run test:studio
+      - run: pnpm run build:studio
+      - name: Record limited scope
+        run: echo 'Fast contracts passed; native/package/GUI/updater are unverified by this job.' >> "$GITHUB_STEP_SUMMARY"
+
+  windows-scripts:
+    name: Fast Windows PowerShell contracts
+    runs-on: windows-2025
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.source_ref }}
+          submodules: false
+      - name: Parse PowerShell and run isolated regressions
+        shell: powershell
+        run: .\scripts\ci\windows-tests.ps1
+      - name: Record limited scope
+        shell: powershell
+        run: Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Value 'Windows script contracts passed; installer and COM activation remain unverified.'
