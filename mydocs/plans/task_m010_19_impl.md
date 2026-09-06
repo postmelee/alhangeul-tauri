@@ -10,6 +10,15 @@ GitHub Issue: [#19](https://github.com/postmelee/alhangeul-tauri/issues/19)
 
 ## 단계 개요
 
+### 2026-09-07 최종 보고·Open PR 게시
+
+후속 지시로 `task-final-report` 절차를 승인받았다. 4.22 이후 소스 변경이 없으므로 이미
+통과한 통합 근거를 재사용하고 최종 보고/계획/orders/PR 본문의 형식·링크·diff를 검증한다.
+최신 devel `c93ac8c`는 현재 작업 브랜치에 포함되어 있고 기존 #19 PR은 없다.
+[최종 보고서](../report/task_m010_19_report.md)에 기본 4단계/보정 이력과 수용·한계를 정리한다.
+`publish/task19`에 최종 문서를 게시하고 `devel` 대상 non-draft PR만 생성한다.
+기존 보고서의 당시 실패/미완료 기록은 유지하며 merge·릴리즈·issue close는 별도 승인이다.
+
 ### 2026-09-07 Stage 4.22 — 수용 근거 보정과 최소 OS 회귀
 
 #### 완료 결과 — 승인된 최소 보완 통과
