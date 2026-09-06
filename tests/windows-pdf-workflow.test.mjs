@@ -135,6 +135,19 @@ test('Open submission uses validated native click before optional UIA path', () 
   assert.match(native, /Validate\(dialog, button, pid, id, "Button"\)/);
 });
 
+test('Native button lookup excludes colliding list item IDs and rejects ambiguous buttons', () => {
+  const finder = dialog.split('function Find-NativeButton')[1].split('function Invoke-Button')[0];
+  assert.match(finder, /AndCondition/);
+  assert.match(finder, /AutomationIdProperty, \$Id/);
+  assert.match(finder, /ClassNameProperty, 'Button'/);
+  assert.match(finder, /\$Root.FindAll\(\$scope, \$condition\)/);
+  assert.match(finder, /\$matches.Count -gt 1.*throw/);
+  assert.match(finder, /\$matches.Count -eq 0.*return \$null/);
+  assert.match(dialog, /\$button = Find-NativeButton \$dialog '1'/);
+  assert.match(dialog, /\$yes = Find-NativeButton \$dialog '6'/);
+  assert.doesNotMatch(dialog, /Find-Id \$dialog '[16]'/);
+});
+
 test('Open probe is distinct from PDF acceptance and focuses filename before editing', () => {
   assert.match(dispatcher, /open_only: \$\{\{ inputs.mode == 'windows-pdf-open-probe' \}\}/);
   assert.match(workflow, /if: \$\{\{ !inputs.open_only \}\}/);

@@ -55,6 +55,20 @@ function Find-Id($Root, $Id) {
   return $Root.FindFirst($scope, $condition)
 }
 
+function Find-NativeButton($Root, $Id) {
+  if ($Id -notin @('1', '6')) { throw 'Unexpected native button ID.' }
+  # AutomationId is not unique: file list UIItem nodes also use numeric IDs.
+  $condition = [System.Windows.Automation.AndCondition]::new(
+    [System.Windows.Automation.PropertyCondition]::new(
+      [System.Windows.Automation.AutomationElement]::AutomationIdProperty, $Id),
+    [System.Windows.Automation.PropertyCondition]::new(
+      [System.Windows.Automation.AutomationElement]::ClassNameProperty, 'Button'))
+  $matches = $Root.FindAll($scope, $condition)
+  if ($matches.Count -gt 1) { throw 'Ambiguous native dialog button.' }
+  if ($matches.Count -eq 0) { return $null }
+  return $matches[0]
+}
+
 function Invoke-Button($Dialog, $Button, $Id) {
   # Keep Open submission identical regardless of UIA pattern availability.
   if ($Mode -eq 'Open' -and $Id -eq '1') {
@@ -102,7 +116,7 @@ try {
             [System.Windows.Automation.AutomationElement]::AutomationIdProperty, $fileNameId))
         $field = $dialog.FindFirst($scope, $editCondition)
         if ($null -eq $field) { continue }
-        $button = Find-Id $dialog '1'
+        $button = Find-NativeButton $dialog '1'
         if ($null -eq $button) { continue }
         $stage = 'focusing-filename'
         Write-Evidence 'running' $null
@@ -120,7 +134,7 @@ try {
         $stage = 'waiting-dialog-close'
       } elseif ($allowOverwrite -and -not $overwriteConfirmed) {
         # IDYES only, restricted to the app-owned dialog and an existing test target.
-        $yes = Find-Id $dialog '6'
+        $yes = Find-NativeButton $dialog '6'
         if ($null -ne $yes) {
           Invoke-Button $dialog $yes '6'
           $overwriteConfirmed = $true

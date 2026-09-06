@@ -10,6 +10,13 @@ GitHub Issue: [#19](https://github.com/postmelee/alhangeul-tauri/issues/19)
 
 ## 단계 개요
 
+### 2026-09-07 Stage 4.15 버튼 ID/class 충돌 보정 승인
+
+작업지시자가 ID1 파일 목록 항목과 실제 버튼의 충돌 보정 및 open-only 재검증을 승인했다.
+공통 버튼 탐색을 ID AND class Button으로 제한하고 중복 버튼은 실패 처리한다. submit과
+기존 ID6 확인 버튼만 이 탐색을 사용하며 진단용 Find-Id는 유지한다. helper/계약 테스트 및
+내부 plans/working만 수정한다. focused 계약·diff 후 동일 제품으로 open-only 한 번을 실행한다.
+
 ### 2026-09-07 Stage 4.14 Open 제출 방식 비교 승인
 
 작업지시자가 Open 버튼 제출 방식을 동일 native BM_CLICK으로 고정한 비교 진단을 승인했다.
