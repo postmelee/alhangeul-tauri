@@ -3,7 +3,7 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: Stage 4 완료 — #57 지속 진행, 수행계획의 Stage 5 비교 실험안 승인 대기
+상태: Stage 5.1 비교 코드·로컬 회귀 완료 — Windows 후보 게시·1회 실행 승인 대기
 
 승인 근거: 2026-09-06 같은 스레드의 구현계획 승인 요청에 작업지시자가
 “진행해줘”로 Stage 1 진행을 지시했다. Stage 2 원격 게시·실행은 별도 승인 대상으로 유지한다.
@@ -897,6 +897,90 @@ Windows 10/11 일반 Explorer·실제 한컴/VDI 비교·NSIS→MSI 수동 전�
 모두 미실행이다. NSIS 전체 사용자 지원은 추가 검증·별도 설계 승인 필요로 남긴다.
 현재 완료는 승인된 문서·회귀·인계 범위이며 #57 전체 완료·최종 보고·PR 승인이 아니다.
 
+## Stage 5 — 원인 비교 실험 구현 정렬
+
+2026-09-07 비교 계획 `f2ac8c0` 뒤 작업지시자가 “진행해줘”로 비교 코드 구현·로컬 회귀·
+후보 커밋을 승인했다. 수행계획 Stage 5의 안전 경계와 기존 CI 후보/결과 보고 분리를 유지한다.
+실제 Windows 검증 전에는 Stage 5 전체 보고·수용을 하지 않는다.
+
+### Stage 5.1 파일과 실행 계약
+
+- CI 전용 `windows-thumbnail-context-*.ps1`을 entry, registry, files/fixtures, phase,
+  process context, tests 역할로 분리한다. C# interop은 별도 `windows-thumbnail-context.cs`에 둔다.
+  기존 사용자용 support 파일·manifest·제품 installer·등록/엔진을 변경하지 않는다.
+- `thumbnail_context_experiment=false`인 opt-in 입력과 별도 clean job 두 개를 기존 workflow에
+  추가한다. 기본 build/installer 제품 gate는 그대로이며 실험은 artifact/windows-x64/비게시/
+  run_tests=true/exact workflow SHA에서만 허용한다. matrix 두 VM에서 같은 A→B→A 비교를
+  반복해 독립 관측을 확보한다. MSI 대조는 같은 run의 기존 MSI 일반 job을 재사용한다.
+- 기존 workflow는 같은 SHA build를 전제로 하므로 이번에는 새 bundle/support를 생성하고
+  같은 run 다운로드·manifest source SHA·inventory·실제 파일 hash를 대조한다. 과거 installer
+  bytes를 재사용했다고 쓰지 않는다. 원격 총 job은 build 1+기존 smoke 3+비교 2, 실행 1회 제안이다.
+- 실행 전 hosted Windows/x64/elevated·명시적 실험 동의·빈 출력/설치 경로·양 hive 잔존 class를
+  확인한다. PowerShell 5.1에서 raw registry 값은 내부 복원에만 쓰고 artifact에 출력하지 않는다.
+- C0 최초 NSIS 설치 직후 실제 probe 실패 패턴을 확인한 뒤에만 개입한다. C1은 실제 linked
+  limited token과 같은 사용자/session의 정상 Explorer 관측이 있을 때만 시도하며 profile·권한
+  증거를 자식에서 확인한다. 다른 사용자 credential/계정 생성·UAC 전환·token integrity 조작은 없다.
+  지원 API 실패나 안전한 문맥 부재는 context-unavailable이며 원시 숫자 오류를 보존한다.
+- C2는 임의 GUID 이름의 Program Files 하위 보호 폴더에 DLL/worker 두 파일만 복사한다.
+  관리자/SYSTEM full, Users read/execute의 상속 차단 ACL·owner·reparse·hash를 확인한다.
+  HKCU InprocServer32 기본값만 변경/조건부 복원한다. C3는 그 동일 경로에서 제품과 같은
+  빈 HKLM class 부모와 InprocServer32 기본값·Apartment만 임시 추가한다. 확장자·기본 앱 등록은 바꾸지 않는다.
+- 순서는 C0 → 가능한 C1 → C0 복귀 → C2 → C3 → C2 복귀 → C0 최종 복귀다.
+  phase마다 새 공개 fixture 복사·기존 독립 STA probe를 사용하고 실제 Shell을 먼저 실행한다.
+  읽을 수 있는 Explorer/dllhost/worker의 token/module 관측은 참고이며 전체 surrogate 추적 완료로
+  주장하지 않는다. 캐시·기존 host 영향이 남으면 독립 job 결과까지 비교하고 인과 확정을 유보한다.
+- registry는 값 kind/content·존재를 함께 비교한다. class 오염·부분 쓰기·복원 충돌을 반례로
+  검사한다. 자신의 값만 되돌리고 예외 시도 finally 복원한다. 실패 시 원래 NSIS uninstaller가
+  제3자 class를 지우지 않도록 자동 제거를 중단하고 cleanup failure를 남긴다.
+- output JSON은 source/run/installer hash, phase 환경·probe·fixture 무결성, bounded 오류,
+  설치/제거·복원 상태를 분리한다. 시험 관측 완료 0은 제품 성공이 아니며 baseline 미재현/증거
+  누락/복원 실패는 nonzero다. actual native 결과는 별도 read-back 후 수용한다.
+
+### 검증과 승인 요청
+
+로컬: `pnpm run check:product-boundary`, `pnpm run test:automation`,
+`actionlint -shellcheck='' .github/workflows/alhangeul-desktop.yml`, `git diff --check`.
+Windows 전용 회귀는 AST/컴파일·실제 임시 registry의 부분 실패/소유권 복원·문맥 부재/권한
+거부·fixture/probe 증거 계약을 검사하며 승인 후 Windows job에서 실행한다.
+대형 기존 workflow와 package scripts의 제한된 추가는 기존 역할을 유지하는 예외다.
+실제 실행에 필요한 함수가 권장 길이를 넘으면 구현 결과에 이유를 기록한다.
+신규 파일은 모두 300 LOC 이내이며 함수도 역할별로 분리했다. P/Invoke 선언의 인자 수는
+`CreateProcessWithTokenW` 등 Windows ABI 원형을 그대로 유지하는 예외다.
+
+후보 커밋: `Task #57 [Stage 5.1]: CI 전용 NSIS 문맥·등록 비교 실험 추가`.
+완료 후 exact SHA·입력·새 bytes 기준·6개 job/1회 실행안을 제시하고 별도로 승인받는다.
+원격 전 native 성공·제품 해결·Stage 5 전체 완료를 선언하지 않는다.
+
+### Stage 5.1 로컬 결과와 원격 인계
+
+| 검사 | 결과 |
+|---|---|
+| 신규 source-contract | 9 passed; CI opt-in·복원·권한·공개 fixture·scope 계약 |
+| 전체 automation | 569 passed, 0 failed, 0 skipped |
+| product boundary | 414 files scanned, 통과 |
+| actionlint / diff | 통과 |
+| Windows PS 5.1 AST·C# 컴파일·registry unit·token/native·실제 NSIS | 미실행; 승인 후 Windows job에서 검증 |
+
+출력은 로컬 `/private/tmp/task57-stage5-boundary.log`, `task57-stage5-automation.log`에 보존했다.
+초기 신규 Node 테스트의 괄호 문법 오류를 수정한 뒤 대상·전체 검사를 재실행해 통과했다.
+기존 앱/installer/handler/worker·일반 진단·support manifest·기존 product gate는 변경하지 않았다.
+새 코드의 Windows 실행 성공은 아직 주장하지 않는다. 실제 API와 token/ACL 계약은 hosted 검증으로
+확인해야 하며, 캐시·DLL 잠금·정상 Explorer/linked token 부재는 원시 관측 또는 미검증으로 남긴다.
+
+원격 제안: `publish/task57`에 non-force 후보 게시 후 같은 exact SHA로 artifact/windows-x64,
+run_tests=true, publish_release=false, thumbnail_context_experiment=true 1회.
+build 1+기존 NSIS/MSI 일반/MSI 강제 교체 3+독립 비교 replica 2, 총 6개 job이다.
+비교 job은 최대 30분이며 phase 자식은 최대 10분, 개별 probe는 30초다. 개입 전 baseline을
+재현하지 못하면 조사를 멈추며 무작정 retry하지 않는다. 기존 MSI 일반은 C4 대조이고,
+NSIS 및 강제 교체의 기존 실패 gate를 예상 실험 성공으로 덮어쓰지 않는다.
+
+`experiment.json`의 observed/exit 0은 비교 증거와 복원 수집 완료일 뿐 제품 수용이 아니다.
+raw phase와 개별 probe의 재대조·기존 COM 계약 검사를 수행한다. 실제 Shell HRESULT 분류는
+`shell-class-not-registered`로 기록하고 hive는 환경 증거에서 별도로 읽는다. C3의 machine-visible
+상태를 잘못 per-user-only 실패라고 이름 붙이지 않는다. 두 replica의 A→B→A·host/cache 상태와
+MSI 대조를 함께 읽은 뒤 수정 후보를 판단한다. API bitmap 성공은 Explorer 시각 수용이 아니다.
+Windows run 뒤 Stage 5 보고서를 작성하며 지금 최종 보고·PR·close로 넘어가지 않는다.
+
 ## 검증
 
 - 이번 구현계획 작성은 문서 필수 섹션·경로·승인 경계·diff만 확인한다. 제품 검증 결과가 아니다.
@@ -917,8 +1001,8 @@ Windows 10/11 일반 Explorer·실제 한컴/VDI 비교·NSIS→MSI 수동 전�
 - 현재는 Stage 3 진단 검증과 승인된 Stage 4 문서·플랫폼 중립 회귀·#58 인계를 완료했다.
   NSIS·강제 교체의 제품 실패 및 현장 미검증은 유지한다.
 - Stage 4 뒤 작업지시자가 #57 지속 진행과 원인 비교 실험 계획 보완을 승인했다.
-  수행계획의 Stage 5 추가안을 먼저 승인받고 구현계획을 정렬한다.
-  실험·제품 수정·#58 구현·최종 보고·PR로 자동 진입하지 않는다.
+  이어 Stage 5 비교 코드 구현을 승인받아 구현계획 정렬·코드·로컬 회귀를 완료했다.
+  원격 실험·제품 수정·#58 구현·최종 보고·PR로 자동 진입하지 않는다.
 
 ## 위험과 대응
 
@@ -938,8 +1022,9 @@ Windows 10/11 일반 Explorer·실제 한컴/VDI 비교·NSIS→MSI 수동 전�
    승인받았다. 보고 시 재검증은 대상 104개·전체 560개·boundary·actionlint·diff 모두 통과했다.
 4. 이어 “진행해줘”로 Stage 4 문서 정합화·기존 근거 재사용·플랫폼 중립 회귀·인계를
    승인받아 완료했다. 추가 Actions·실제 client/VDI·재부팅은 실행하지 않았다.
-   이후 #57 지속 진행과 비교 계획 작성을 승인받았다. 현재 다음 요청은 수행계획의
-   Stage 5 원인 비교 실험안 승인이다. 세부 구현계획·실험 코드는 아직 작성하지 않았다.
+   이후 #57 지속 진행·비교 계획 작성과 코드 구현을 순서대로 승인받았다.
+   Stage 5.1 비교 코드·로컬 검사를 완료했으며 다음 요청은 후보 게시·Windows-only
+   opt-in 비교 1회 실행이다. 위의 exact SHA·6개 job·실험 전용 권한 경계를 따른다.
 5. 제품 등록 변경·NSIS 전체 사용자 설치·#58 구현·앱 UI·보안 정책 변경·최종 PR 게시·
    issue close·릴리즈는 별도 승인 대상이다.
 
@@ -948,4 +1033,6 @@ Windows 10/11 일반 Explorer·실제 한컴/VDI 비교·NSIS→MSI 수동 전�
 - [IThumbnailCache::GetThumbnail](https://learn.microsoft.com/en-us/windows/win32/api/thumbcache/nf-thumbcache-ithumbnailcache-getthumbnail)
 - [WTS_FLAGS](https://learn.microsoft.com/en-us/windows/win32/api/thumbcache/ne-thumbcache-wts_flags)
 - [IShellItemImageFactory::GetImage](https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shobjidl_core-ishellitemimagefactory-getimage)
+- [CreateProcessWithTokenW](https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-createprocesswithtokenw)
+- [TOKEN_LINKED_TOKEN](https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-token_linked_token)
 - 그 외 원인 가설·공식 등록 규칙·runner 환경 근거는 수행계획서와 #57을 따른다.

@@ -34,6 +34,11 @@ on:
         required: true
         default: true
         type: boolean
+      thumbnail_context_experiment:
+        description: CI-only disposable Windows NSIS context/registry experiment; requires separate approval.
+        required: false
+        default: false
+        type: boolean
       release_version:
         description: Stable semantic version for updater mode.
         required: false
@@ -644,6 +649,72 @@ jobs:
         with:
           name: alhangeul-desktop-${{ matrix.name }}
           path: apps/desktop/src-tauri/target/${{ matrix.target }}/release/bundle/**
+          if-no-files-found: error
+          retention-days: 14
+
+  windows-thumbnail-context:
+    name: Compare Windows thumbnail context ${{ matrix.replica }}
+    needs: build
+    if: ${{ inputs.thumbnail_context_experiment && inputs.mode == 'artifact' && inputs.artifact_platform == 'windows-x64' && inputs.run_tests && !inputs.publish_release && needs.build.result == 'success' }}
+    runs-on: windows-2025
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        replica: [1, 2]
+    env:
+      ALHANGEUL_CONTEXT_EXPERIMENT: approved
+    steps:
+      - name: Checkout context experiment source
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.build_ref || github.sha }}
+          submodules: true
+      - name: Require exact context source and workflow
+        shell: powershell
+        env:
+          REQUESTED_SHA: ${{ inputs.build_ref || github.sha }}
+        run: |
+          $sha = git rev-parse HEAD
+          if ($LASTEXITCODE -ne 0 -or $env:REQUESTED_SHA -cnotmatch '^[a-f0-9]{40}$' -or
+              $sha -cne $env:REQUESTED_SHA -or $sha -cne $env:GITHUB_SHA -or $sha -cne $env:GITHUB_WORKFLOW_SHA) {
+            throw 'Context experiment requires the same exact build and workflow SHA.'
+          }
+          New-Item -ItemType Directory -Path 'diagnostics' -Force | Out-Null
+      - name: Download context experiment bundle
+        uses: actions/download-artifact@v8
+        with:
+          name: alhangeul-desktop-windows-x64
+          path: artifacts/windows-x64
+      - name: Download matching context support reference
+        uses: actions/download-artifact@v8
+        with:
+          name: alhangeul-windows-x64-thumbnail-support
+          path: artifacts/thumbnail-support
+      - name: Test context experiment contracts on Windows
+        shell: powershell
+        run: .\scripts\windows-thumbnail-context-tests.ps1 -CIConsent
+      - name: Run disposable NSIS context comparison
+        id: comparison
+        shell: powershell
+        env:
+          EXPECTED_SOURCE_SHA: ${{ github.sha }}
+        run: |
+          & '.\scripts\windows-thumbnail-context-experiment.ps1' `
+            -ArtifactRoot 'artifacts\windows-x64' `
+            -SupportRoot 'artifacts\thumbnail-support' `
+            -OutputDirectory 'diagnostics\windows-thumbnail-context' `
+            -ExpectedSourceSha $env:EXPECTED_SOURCE_SHA -CIConsent
+      - name: Verify context experiment raw evidence
+        if: ${{ !cancelled() && steps.comparison.outcome == 'success' }}
+        shell: powershell
+        run: .\scripts\windows-thumbnail-context-tests.ps1 -CIConsent -EvidenceDirectory 'diagnostics\windows-thumbnail-context'
+      - name: Upload context experiment evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: alhangeul-windows-x64-thumbnail-context-${{ matrix.replica }}
+          path: diagnostics/windows-thumbnail-context/**
           if-no-files-found: error
           retention-days: 14
 
