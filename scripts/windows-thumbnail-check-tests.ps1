@@ -1,5 +1,5 @@
 ﻿[CmdletBinding()]
-param([string]$SupportRoot = 'artifacts\thumbnail-support', [string]$SummaryRoot = '')
+param([string]$SupportRoot = 'artifacts\thumbnail-support', [string]$SummaryRoot = '', [switch]$VerifyExitCode)
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 function Assert-Manual($Condition, $Message) { if (-not $Condition) { throw $Message } }
@@ -228,7 +228,40 @@ function Test-ManualChildFailures {
   Assert-Manual ($result.phase -eq 'child-timeout' -and $process.Killed) 'child timeout was not isolated'
 }
 
+function Invoke-ManualTestProcess($Root) {
+  $script = (Join-Path $PSScriptRoot 'windows-thumbnail-check-tests.ps1').Replace("'", "''")
+  $inputRoot = $Root.Replace("'", "''")
+  # Match Actions' built-in shell trailer, including a stale native exit code.
+  $command = "`$ErrorActionPreference = 'Stop'; & '$script' -SupportRoot '$inputRoot'; if (Test-Path -LiteralPath variable:\LASTEXITCODE) { exit `$LASTEXITCODE }"
+  $info = New-Object Diagnostics.ProcessStartInfo
+  $info.FileName = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
+  $info.Arguments = '-NoProfile -NonInteractive -STA -EncodedCommand ' + [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($command))
+  $info.UseShellExecute = $false; $info.CreateNoWindow = $true
+  $info.RedirectStandardOutput = $true; $info.RedirectStandardError = $true
+  $process = New-Object Diagnostics.Process; $process.StartInfo = $info
+  try {
+    Assert-Manual ($process.Start()) 'manual test child did not start'
+    $stdout = $process.StandardOutput.ReadToEndAsync(); $stderr = $process.StandardError.ReadToEndAsync()
+    Assert-Manual ($process.WaitForExit(60000)) 'manual test child timed out'
+    Assert-Manual ($stdout.Wait(1000) -and $stderr.Wait(1000)) 'manual test child output incomplete'
+    return @{ Code = $process.ExitCode; Stdout = $stdout.Result; Stderr = $stderr.Result }
+  } finally {
+    try { if (-not $process.HasExited) { $process.Kill(); [void]$process.WaitForExit(3000) } } catch { }
+    $process.Dispose()
+  }
+}
+
+function Test-ManualProcessExit {
+  $passed = Invoke-ManualTestProcess $SupportRoot
+  Assert-Manual ($passed.Code -eq 0 -and $passed.Stdout -match 'tests passed\.') "manual suite process failed: $($passed.Stderr)"
+  # A payload file cannot be a support directory: the real child must fail before success.
+  $failed = Invoke-ManualTestProcess (Join-Path $SupportRoot 'support-manifest.json')
+  Assert-Manual ($failed.Code -ne 0 -and $failed.Stdout -notmatch 'tests passed\.') 'invalid package exited successfully'
+  Write-Output 'Manual suite process exit contract passed (success=0, invalid package=nonzero).'
+}
+
 if ($SummaryRoot) { Assert-ManualEvidence $SummaryRoot; Write-Output 'Manual thumbnail evidence verified; product failures remain failures.'; exit 0 }
+if ($VerifyExitCode) { Test-ManualProcessExit; exit 0 }
 Test-ManualAssessment
 Test-ManualChildFailures
 $testRoot = Join-Path ([IO.Path]::GetTempPath()) ('alhangeul-check-tests-' + [Guid]::NewGuid().ToString('N'))
@@ -243,3 +276,6 @@ try {
   Remove-Item -LiteralPath $testRoot -Recurse -Force
 }
 Write-Output 'Manual thumbnail package, classification, input, integrity and cleanup tests passed.'
+# Expected child rejection codes must not become the suite's final process status.
+# This is reached only after every assertion and the finally cleanup succeeded.
+exit 0

@@ -68,3 +68,26 @@ test('automation includes manual and support contract suites', async () => {
   const pkg = JSON.parse(await read('package.json'));
   for (const name of ['windows-thumbnail-check', 'windows-thumbnail-support']) assert.ok(pkg.scripts['test:automation'].includes(`tests/${name}.test.mjs`));
 });
+test('manual suite exits zero only after assertions and cleanup, preserving expected rejection checks', () => {
+  const tail = native.slice(native.indexOf('\nTest-ManualAssessment\n'));
+  assert.match(tail, /Test-ManualEntry \$testRoot\s+} finally \{/);
+  assert.match(tail, /Assert-Manual .*'test cleanup scope'\s+Remove-Item -LiteralPath \$testRoot -Recurse -Force\s+}/);
+  assert.ok(tail.indexOf('exit 0') > tail.indexOf('Remove-Item -LiteralPath $testRoot'));
+  assert.match(tail, /tests passed\.'\s+(?:#[^\n]*\n)*exit 0\s*$/);
+  assert.equal((tail.match(/exit 0/g) ?? []).length, 1);
+  assert.doesNotMatch(tail, /catch\s*\{|LASTEXITCODE\s*=/);
+  assert.equal((native.match(/Assert-Manual \(\$LASTEXITCODE -eq 2/g) ?? []).length, 2);
+});
+test('Windows regression checks the actual suite process with Actions exit propagation', async () => {
+  const workflow = await read('.github/workflows/alhangeul-desktop.yml');
+  assert.match(workflow, /run: .*windows-thumbnail-check-tests.ps1 -SupportRoot 'artifacts\\thumbnail-support' -VerifyExitCode/);
+  assert.match(native, /\[switch\]\$VerifyExitCode/);
+  assert.match(native, /if \(\$VerifyExitCode\) \{ Test-ManualProcessExit; exit 0 }/);
+  assert.match(native, /variable:\\LASTEXITCODE\) \{ exit `\$LASTEXITCODE }/);
+  assert.match(native, /\$passed.Code -eq 0/);
+  assert.match(native, /\$failed.Code -ne 0/);
+  const child = native.slice(native.indexOf('function Invoke-ManualTestProcess'), native.indexOf('function Test-ManualProcessExit'));
+  assert.match(child, /windows-thumbnail-check-tests.ps1/);
+  assert.match(child, /-NoProfile -NonInteractive -STA -EncodedCommand/);
+  assert.doesNotMatch(child, /-VerifyExitCode/); // No recursive wrapper invocation.
+});

@@ -3,7 +3,7 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: Stage 3.1 구현 후보·로컬 검사 완료 — Windows 검증 게시·실행 승인 대기
+상태: Stage 3.2 종료 코드 보완 후보·로컬 검사 완료 — Windows 재실행 승인 대기
 
 승인 근거: 2026-09-06 같은 스레드의 구현계획 승인 요청에 작업지시자가
 “진행해줘”로 Stage 1 진행을 지시했다. Stage 2 원격 게시·실행은 별도 승인 대상으로 유지한다.
@@ -732,6 +732,63 @@ Task #57 Stage 3: 수동 진단 도구 검증과 제한 안내 결과 보고
 하지 않았다. 따라서 Stage 3 완료 보고서는 아직 작성하지 않는다. 후보 커밋의 exact SHA를
 제시해 Windows-only 비게시 추가 1회 실행을 별도 승인받고, 원격 패키지·native 증거를 확인한다.
 일반 Windows 10/11 Explorer·실제 한컴·VDI·재부팅 후의 현장 수용은 여전히 미검증이다.
+
+### Stage 3.2 — 테스트 종료 코드 보완
+
+Stage 3.1 후보 `b4fa125bccaad03e0aabf025fe861b488bde5105`의 원격 게시·Windows-only
+비게시 1회 실행은 같은 스레드의 “진행해줘”로 승인받았다.
+[run 34052696931](https://github.com/postmelee/alhangeul-tauri/actions/runs/34052696931)은
+동일 SHA, `mode=artifact`, `artifact_platform=windows-x64`, `run_tests=true`,
+`publish_release=false`로 완료됐다. Windows build·core·지원 묶음 생성은 통과했으나
+세 installer job 모두 수동 진단 테스트의 통과 메시지 직후 코드 1로 종료됐다.
+실제 설치·19-probe·수동 묶음 실사용 검사는 모두 skipped이며 새 Shell 증거는 없다.
+
+지원 묶음 artifact `9995540618`의 archive SHA-256은
+`59a4ecda36d9c5e229876790bb39cc590d4787a2308190e584662615061b89d6`이다.
+다운로드 digest, manifest의 source SHA, payload 12개 hash와 총 13개 파일을 확인했다.
+inventory를 제외한 11개 원본 파일도 checkout bytes와 같았다. core와 installer 진단
+archive 4개의 digest도 일치하며, installer 결과물은 실행 정보 3개 파일만 포함한다.
+
+원인은 테스트가 의도한 미동의/x86 자식 종료 코드 2를 검사한 뒤 전체 성공을 명시하지
+않은 종료 계약이다. 단순 통과 문구가 실제 process exit 성공을 보장하지 않았다.
+이 결과를 제품 썸네일의 실패·해결이나 Stage 3 수용으로 바꾸지 않는다.
+
+분석 보고 후 2026-09-07 “진행해줘” 지시로 수정·로컬 검증·후보 커밋을 승인받았다.
+변경은 아래 기존 파일로 한정한다. 새 helper 파일·제품 문서 위치 변경은 없다.
+
+- `scripts/windows-thumbnail-check-tests.ps1`: 모든 assertion과 finally 정리가 성공한
+  정상 끝에서만 `exit 0`을 명시한다. Windows 회귀는 별도 PS 5.1 process에서 실제
+  전체 테스트 스크립트의 종료 코드 0을 확인하고, 잘못된 지원 묶음 입력은 nonzero를
+  유지하는지 검사한다. Actions 방식의 종료 코드 전달도 함께 적용한다.
+- `.github/workflows/alhangeul-desktop.yml`: 기존 manual-tests 단계에서 위 process
+  종료 계약 검사를 활성화한다. 실패 무시·강제 성공·installer gate 완화는 하지 않는다.
+- `tests/windows-thumbnail-check.test.mjs`: 마지막 성공 종료가 정리 뒤에 있고,
+  expected negative 코드 2 검사와 Windows process 회귀 연결이 유지되는지 검사한다.
+- 수행/구현계획·오늘할일: 관측·승인·미검증 범위를 기록한다. Stage 3 완료 보고는 보류한다.
+
+로컬 검증은 Stage 3.1과 같은 Node 대상 8개 파일·전체 automation·product boundary·
+actionlint·diff 검사다. 비지원 호스트에서 PowerShell/native 실행은 하지 않는다.
+후보 커밋 뒤 exact SHA의 Windows-only 비게시 1회 실행은 다시 별도 승인받는다.
+
+구현 결과: 정상 suite의 마지막 문장에서만 `exit 0`을 반환하도록 보완했다.
+`-VerifyExitCode`는 같은 테스트 파일을 자식 PS 5.1에서 재귀 옵션 없이 실행하고
+Actions의 LASTEXITCODE 전달 조건을 적용한다. 실제 전체 suite는 코드 0·통과 문구,
+파일을 지원 디렉터리로 잘못 지정한 경우는 nonzero·통과 문구 없음이 요구된다.
+자식은 60초 timeout과 stdout/stderr 수집을 가지며 해당 자식만 종료한다.
+기존 미동의/x86 코드 2 assertion, finally 정리, 제품 실패 gate는 유지했다.
+전체 테스트 파일은 281 LOC이며 새 함수는 50 LOC·입력 5개 이내다.
+
+| Stage 3.2 로컬 검사 | 결과 |
+|---|---|
+| 기존 대상 8개 Node 계약 검사 파일 | 104/104 통과 |
+| `pnpm run test:automation` | 560/560 통과 |
+| `pnpm run check:product-boundary` | 통과, 405파일 검사 |
+| `actionlint -shellcheck='' .github/workflows/alhangeul-desktop.yml` | 통과 |
+| `git diff --check` | 통과 |
+
+이번 턴에서는 Windows PowerShell/native·패키징·원격 push/dispatch를 실행하지 않았다.
+추가한 실제 process 회귀 및 installer/Shell 검증은 Windows run 승인·실행 후에 수용한다.
+후보 커밋 메시지: `Task #57 [Stage 3.2]: 수동 진단 테스트 종료 코드와 회귀 검사 보완`.
 
 ## Stage 4 — 회귀 수용·문서·#58 인계
 

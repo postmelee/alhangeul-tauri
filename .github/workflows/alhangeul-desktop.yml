@@ -746,7 +746,7 @@ jobs:
       - name: Test Windows manual thumbnail contracts
         id: manual-tests
         shell: powershell
-        run: .\scripts\windows-thumbnail-check-tests.ps1 -SupportRoot 'artifacts\thumbnail-support'
+        run: .\scripts\windows-thumbnail-check-tests.ps1 -SupportRoot 'artifacts\thumbnail-support' -VerifyExitCode
 
       - name: Run Windows installer smoke
         id: run-installer-smoke
