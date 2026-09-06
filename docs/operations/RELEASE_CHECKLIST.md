@@ -95,6 +95,10 @@ dialog 미진입·빈 페이지·쪽 수/방향 오류는 중단한다. 알려�
 ### 썸네일·패키지를 확인할 때
 
 - [ ] Windows installed handler/worker가 반환한 실제 bitmap과 앱/renderer provenance 확인.
+- [ ] Windows NSIS/MSI별 HKCU/HKLM·연결 조회·직접 COM 생성과 실제 문서 Shell/강제 추출·JPG 대조 결과를 분리. 캐시 조회만으로 새 생성 성공을 판정하지 않음.
+- [ ] 지원 묶음 사용 시 같은 run·exact SHA·archive digest·manifest 파일 해시·설치된 DLL/worker hash 확인. 만료/다른 빌드 혼용 금지. 진단 종료 0/1/2와 원시 증거를 대조하고 도구 성공을 제품 gate 성공으로 바꾸지 않음.
+- [ ] Windows 설치/재설치/제거를 따로 확인. 3010·지연 작업은 재부팅 후 새 process·DLL hash·Shell·OS 표식으로 재검증. 제거 코드 0이나 재부팅 전 bitmap 성공을 재부팅 완료로 쓰지 않음.
+- [ ] 일반 로그인 Explorer 시각 결과·실제 한컴/VDI와 hosted CI를 구분. 수동 진단의 `lifecycleStatus=not-tested`와 미실행 환경을 명시.
 - [ ] Linux package 자체가 설치한 helper/MIME/thumbnailer만으로 동작하는지 확인.
 - [ ] Linux GUI artifact ID/digest·DEB hash·source/run과 설치 환경이 같은 증거 사슬인지 확인.
 - [ ] screenshot·native UI tree·helper 실행/cache·필수 upload 누락을 성공으로 처리하지 않음.

@@ -94,8 +94,9 @@ ID·digest·만료와 실제 파일의 크기·SHA-256을 구분한다. 만료�
 ### Windows 썸네일 지원 묶음
 
 일반 Windows artifact build는 installer bundle과 별도로
-`alhangeul-windows-x64-thumbnail-support`를 생성하도록 구성한다. 사용자 진단 도구의
-이번 변경은 Windows 실검증 전이며 공개 Release/웹사이트 다운로드 목록에는 추가하지 않는다.
+`alhangeul-windows-x64-thumbnail-support`를 생성한다. 사용자 진단 도구는
+[exact 후보의 Windows CI 실사용 검증](../releases/v0.1.0.md#windows-썸네일-진단-수용과-잔여-제한)을
+통과했지만 현장 실사용은 미검증이며 공개 Release/웹사이트 다운로드 목록에는 추가하지 않는다.
 지원 묶음은 실행 의존 파일 10개, 같은 빌드의 inventory, Windows thumbnail 문서 복사본과
 `support-manifest.json`이다. installer·DLL·worker·문서 fixture·진단 결과는 포함하지 않는다.
 
@@ -109,6 +110,13 @@ installer job은 제공된 묶음 그대로 공개 fixture를 검사하고 원�
 NSIS의 실제 실패를 진단 도구가 올바르게 분류하더라도 제품 실패는 유지한다.
 개인 사용자 문서/결과를 CI artifact로 업로드하지 않는다. 기존 5개 bundle 파일 계약과
 릴리즈 수용·서명·게시 승인 경계는 바꾸지 않는다.
+
+run `34056210236`의 진단 검증 성공은 전체 workflow failure를 대체하지 않는다.
+실패 run의 artifact는 출처·무결성을 검증한 제한적 진단 근거이며 공개 릴리즈 입력이 아니다.
+`continue-on-error` step의 표시만 보지 말고 `step-outcomes.json`의 실제 outcome과 최종
+제품 gate를 확인한다. 문서-only 정합화에서는 검증된 native SHA·같은 installer bytes를
+재사용하며 문서 보고 commit을 native 검증 SHA로 기재하지 않는다. 기존 archive 안의 문서는
+빌드 당시 복사본이다. 최신 안내는 저장소 문서를 읽고, manifest 검증 대상 파일을 고쳐 쓰지 않는다.
 
 ## 승인과 게시 순서
 

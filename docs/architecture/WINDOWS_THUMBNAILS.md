@@ -181,12 +181,22 @@ NSIS의 연결 조회·직접 COM 생성·JPG 썸네일이 성공하고 HWP/HWPX
 
 ### 시험용 진단 묶음 사용
 
-현재 사용자용 진단 도구는 구현 후보이며 이 변경의 Windows 패키지 실사용 검증 전이다.
+사용자용 진단 묶음은 exact source `f1cdd0711f747b443c723a750f868faa5c0349f1`의
+[run 34056210236](https://github.com/postmelee/alhangeul-tauri/actions/runs/34056210236)에서
+Windows CI 패키지 실사용 검증을 통과했다. NSIS·MSI 일반·MSI 강제 교체 job에서 각각
+작은 HWP·큰 HWP·HWPX의 수동 진단 결과와 원시 증거·실제 종료 코드를 대조했다.
+진단 도구가 NSIS 실패를 정확히 보고한 것이지 썸네일 문제를 해결한 것은 아니다.
+NSIS 제품 실패와 MSI 강제 교체의 재부팅 필요로 전체 run은 failure다.
+일반 Windows 10/11 로그인·실제 한컴·VDI 현장 및 재부팅 후 검증은 아직 하지 않았다.
+
 유지보수자가 검증한 Windows 일반 artifact run에서 **설치 파일과 같은 run**의
 `alhangeul-windows-x64-thumbnail-support`를 받아 별도 폴더에 푼다. 기존 run에는
 이 묶음이 없을 수 있다. 공식 Release asset이나 설치 구성요소가 아니다.
 출처 run·exact source SHA·GitHub artifact digest를 확인한다. 포함된 hash 목록은
 파일 손상·혼용 검사이며 코드 서명이나 신뢰할 수 있는 출처 확인을 대신하지 않는다.
+위 실패 run은 제한된 진단 근거로만 사용하며 공개 릴리즈 입력으로 사용하지 않는다.
+artifact 가용성과 해시는 [버전별 검증 기록](../releases/v0.1.0.md#windows-썸네일-진단-수용과-잔여-제한)을
+따른다. 보존 기간이 끝났다면 다른 run의 묶음과 설치 파일을 임의로 혼용하지 않는다.
 
 일반 사용자 권한의 Windows x64 PowerShell 5.1에서 압축을 푼 폴더로 이동해 실행한다.
 Node/Rust/Git 설치는 필요하지 않다. 입력은 저장·닫은 로컬 HWP/HWPX 한 개와 일반 JPG 한 개다.

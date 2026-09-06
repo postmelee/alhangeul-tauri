@@ -18,7 +18,7 @@ Alhangeul은 Windows와 Linux에서 HWP/HWPX 문서를 열고 편집하기 위�
 
 HWP/HWPX 저장·재열기, 직접 PDF와 시스템 인쇄는 `rhwp v0.8.4`의 Windows NSIS·Linux x64 DEB 대표 환경에서 확인했습니다. native 저장에는 외부 원본 변경 감지·덮어쓰기 확인이 있으며, upstream Studio의 브라우저 autosave/recovery와 별개로 native recovery 저장소는 제공하지 않습니다. 검증된 과거 후보와 새 공개 파일의 수용은 구분합니다.
 
-Windows 썸네일은 MSI·NSIS 등록·복원과 실제 Shell bitmap, VDI 대표 화면의 시각 수용 근거가 있습니다. 다만 이후 독립 Windows 검사에서는 NSIS의 사용자별 처리기 등록·직접 COM 생성이 성공해도 Shell 썸네일이 실패하고 MSI는 성공하는 조건이 재현됐습니다. 모든 Explorer 보기 크기·DPI·한컴 조합을 검증한 것은 아닙니다. [수동 진단과 MSI 대안 안내](docs/architecture/WINDOWS_THUMBNAILS.md#수동-진단과-msi-대안)를 확인하세요. 진단 도구는 별도 시험용 묶음이며 이번 변경의 Windows 실검증 전입니다.
+Windows 썸네일은 MSI·NSIS 등록·복원과 실제 Shell bitmap, VDI 대표 화면의 시각 수용 근거가 있습니다. 다만 이후 독립 Windows 검사에서는 NSIS의 사용자별 처리기 등록·직접 COM 생성이 성공해도 Shell 썸네일이 실패하고 MSI는 성공하는 조건이 재현됐습니다. 모든 Explorer 보기 크기·DPI·한컴 조합을 검증한 것은 아닙니다. [수동 진단과 MSI 대안 안내](docs/architecture/WINDOWS_THUMBNAILS.md#수동-진단과-msi-대안)를 확인하세요. 별도 시험용 진단 묶음의 Windows CI 검증은 통과했지만, 실제 사용자 PC의 실사용 검증은 아직 하지 않았습니다.
 
 Linux 썸네일은 x64 DEB/RPM·arm64 DEB의 package lifecycle과 x64 DEB의 Nautilus·Thunar/Tumbler를 확인했습니다. package가 설치한 system MIME만 사용한 실제 문서의 첫 페이지·cache 갱신·손상 문서 fallback도 확인했습니다. Fedora RPM GUI·arm64 GUI 수용과 AppImage 파일 관리자 등록은 이 결과에 포함되지 않습니다. 자세한 matrix는 [Linux thumbnail 아키텍처](docs/architecture/LINUX_THUMBNAILS.md)를 따릅니다.
 
