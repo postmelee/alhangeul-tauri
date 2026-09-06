@@ -39,6 +39,15 @@ GUI typecheck·actionlint·diff가 통과했다. 기본 세 사례 배열을 직
 Windows 설치 전 실행 예정이며 로컬 통과라고 기록하지 않는다. 기존 제품 artifact는 미만료이고
 SHA/digest/크기가 동일하다. 제품 파일과 클릭/안전 판정 helper는 checkpoint 이전 대비 변경 없다.
 
+checkpoint `b980e10355fe7f8fe5841de131951c14a0f4b909`, run `34055921568`의 Windows job은
+**8분 55초 통과**했다. 실제 PS 정책 62개·native 진단 50개·새 합성 예외 10개가 통과했다.
+Confirm 한 사례에서 `Win32-BM_CLICK-command`, dialog 0개, PDF 교체/저장 완료와 source/other
+보존·clean title을 확인했다. 앱 cleanup 뒤 세 hash 검사와 별도 다운로드 검사가 모두 통과했다.
+target은 349190 bytes, SHA-256 `07b891d3b5669825ad4585ac701cd6d274c4e938bef9117852ad3980c3ef9b52`다.
+최종 tree 상태는 available이며 같은 UI 전환 예외의 실제 재현·포착을 주장하지 않는다.
+Stage 4.21은 이전 두 거절과 이번 확인의 부분별 증거로 완료한다. [보고서](../working/task_m010_19_stage4.21.md)에
+두 harness 경계와 미실행 항목을 기록한다. HWPX/restart/전체 PDF와 #19 전체 완료는 별도다.
+
 작업지시자가 4.20의 후속 권고를 승인했다. clean `local/task19`와 열린 #19/M010을 유지하며
 신규 issue/branch 생성·devel 재통합은 하지 않는다. 기존 제품 SHA `69b22650df96323a2c59e473d474ed3195cc9cc7`,
 native run `34021920074`/Windows artifact `9986364323`을 유효성 재확인 후 재사용한다.
@@ -82,12 +91,13 @@ Cancel·앱 이전 상태 복구·source/target/other 보존을 확인했다. Co
 정리 후 검증 step은 전체 결과 미완료를 정상적으로 거부했고, 다운로드한 세 파일의 SHA-256이
 모두 최초 값과 일치함을 별도로 확인했다. 이를 해당 step 성공으로 소급하지 않는다.
 
-Stage 4.21은 미완료이며 단계 완료 보고/커밋·추가 원격 실행은 보류한다. 다음 승인 권고는
+첫 실행 당시 Stage 4.21은 미완료여서 단계 완료 보고/커밋·추가 실행을 보류했다. 당시 승인 권고는
 **보조 트리 진단의 좁은 탐색·ElementNotAvailable 예외 격리와 남은 Confirm 한 사례 검증**이다.
 필수 target/owner/identity/native guard와 호출 adapter는 그대로 유지하고 해당 오류를
 저장 성공으로 바꾸지 않는다. 진단 unavailable을 명시하며 일반 예외/필수 판정 오류는 삼키지
 않는다. 예외 분류 회귀와 같은 설치 bytes의 Confirm-only 실행만 추가하고 이미 통과한
-두 거절 사례·제품 재빌드·전체 PDF는 반복하지 않는 범위로 승인받는다. 상세는 사건 기록에 둔다.
+두 거절 사례·제품 재빌드·전체 PDF를 반복하지 않는 범위였다. 이후 위 후속 승인과 검증으로
+완료했으며 이 실패 run 자체는 실패 상태를 유지한다. 상세는 사건 기록에 둔다.
 
 ### 2026-09-07 Stage 4.20 실제 앱 확인창 최소 진단 승인
 

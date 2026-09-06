@@ -10,7 +10,8 @@ helper가 성공을 반환해도 다른 문서가 열리거나 요청과 다른 
 최신 전체 run `34049930142`도 실패다. 새 확인창 adapter는 실제 앱이 InvokePattern을
 제공하지 않아 호출 전에 중단했다. 아래 해결 상태는 경계별로 구분한다.
 후속 제한 run `34053001644`는 native 거절 경로를 통과했지만 Confirm 전 보조 UIA 트리
-수집 예외로 실패했다. 실제 Confirm의 새 경로 지원은 여전히 미검증이다.
+수집 예외로 실패했다. 보조 진단 격리 후 run `34055921568`의 Confirm-only는 PDF 교체·
+원본/다른 target 보존·cleanup까지 통과했다. 세 사례는 두 실행의 부분별 근거이며 전체 PDF는 미완료다.
 
 ## 재현 조건
 
@@ -34,7 +35,8 @@ pnpm run test:gui:windows:contracts
 `windows-pdf-open-probe`, 확인창만 관측하는 `windows-pdf-dialog-probe` 또는
 `windows-pdf-acceptance`를 사용하며, candidate SHA와
 성공한 native artifact run ID를 명시한다. artifact 만료 여부를 먼저 확인한다.
-현재 미지원 overwrite를 그대로 둔 전체 실행을 반복하지 않는다.
+호출만 확인하려면 `windows-pdf-dialog-verify`와 승인된 `confirmation_cases` 범위를 사용한다.
+제한 검증과 전체 PDF 수용은 분리하며 변경/승인 없이 전체 실행을 반복하지 않는다.
 
 ## 원인
 
@@ -74,8 +76,9 @@ adapter를 구현하기 전에는 무조건 Yes 또는 숫자 ID 교체로 우�
   잘못된 target 거부와 공개 fixture의 파일 사후 조건·cleanup이 모두 통과했다. 제품/PDF 성공은 아니다.
 - **실제 앱 확인창 관측: Stage 4.20 완료.** native `Button`/활성 상태와 13개 guard true,
   UIA Invoke 미지원·native ID 조회 0을 확인했다. 버튼 실행 지원은 여전히 미검증이다.
-- **실제 앱 native 거절: Stage 4.21 일부 통과.** No·저장창 복귀·Cancel·파일 보존과 잘못된
-  target의 호출 전 거부를 검증했다. Confirm은 보조 진단 예외 때문에 호출 전 중단했다.
+- **실제 앱 native 호출: Stage 4.21 완료.** 첫 run의 No·저장창 복귀·Cancel·파일 보존과
+  잘못된 target 거부, 후속 Confirm-only의 PDF 교체·원본 보존·cleanup을 부분별 근거로 확인했다.
+  첫 run의 Confirm 전 보조 진단 실패는 유지하며 전체 PDF 수용으로 승격하지 않는다.
 
 ### Stage 4.19 실제 설치본 — InvokePattern 미지원 확인
 
@@ -227,12 +230,12 @@ cleanup`은 전체 `status=failed`를 보고 hash 비교 전에 거부했다. cl
   digest `sha256:6f84a1583af73414c5541ffc0108e215b9dc3a8afa437811d2188396d3217ff1`.
   로컬 `/private/tmp/alhangeul-confirmation-stage421.osqT2f`에 보존하고 raw는 커밋하지 않는다.
 
-Stage 4.21은 미완료다. 완료 보고서와 추가 실행을 보류한다. 다음 승인 범위는 **보조 진단
+첫 실행 당시 Stage 4.21은 미완료로 보고서와 추가 실행을 보류했다. 당시 다음 승인 범위는 **보조 진단
 탐색 축소·ElementNotAvailable 예외 격리·Confirm-only 검증**이다. 진단 수집 불능은 명시하되
 원문 예외/문서 내용을 저장하지 않는다. 필수 의미/target/owner/identity·native guard의 오류는
 그대로 실패시키며 일반 catch-all·무조건 클릭·timeout 증가를 추가하지 않는다. 새 예외 분류를
 실제 PowerShell 함수 회귀로 확인하고, 같은 설치본에서 남은 Confirm만 한 번 검증한다.
-이미 통과한 두 거절 사례를 반복하거나 제품을 재빌드하지 않는 범위로 승인을 요청한다.
+이미 통과한 두 거절 사례를 반복하거나 제품을 재빌드하지 않는 범위로 승인을 요청했다.
 
 후속 `진행해줘`로 같은 4.21의 보정을 승인받았다. 보조 진단은 관측된 dialog 하위 최대 100개
 노드로 줄이고, typed `ElementNotAvailableException`만 제한된 inner chain에서 분류해
@@ -240,7 +243,38 @@ Stage 4.21은 미완료다. 완료 보고서와 추가 실행을 보류한다. �
 필수 dialog/정확한 target/owner/identity/native guard와 클릭 adapter는 그대로 유지한다.
 기존 verify mode의 `confirmation_cases=confirm-only`로 남은 Confirm만 실행하며 선택 범위를
 spec/cleanup 증거에 명시한다. PS 합성 예외 회귀는 실제 wrapper를 호출하고 설치 전에 실행한다.
-이전 실패 run 및 두 거절 결과는 그대로 유지한다. 원격 결과는 검증 뒤 별도로 기록한다.
+이전 실패 run 및 두 거절 결과는 그대로 유지한다. 후속 원격 결과는 아래와 같다.
+
+#### Stage 4.21 후속 — 보조 진단 격리·Confirm-only 통과
+
+[run 34055921568](https://github.com/postmelee/alhangeul-tauri/actions/runs/34055921568),
+harness `b980e10355fe7f8fe5841de131951c14a0f4b909`: Windows job **8분 55초 통과**.
+제품/native run/artifact는 첫 4.21과 동일하며 제품 재빌드가 없다. 실제 PS5.1 정책 **62/62**,
+native 진단 **50/50**, 새 tree 합성 예외 회귀 **10/10**이 설치 전에 통과했다.
+
+- `confirmation_cases=confirm-only`, `selectedCases=["Confirm"]`, 실제 cases도 Confirm 하나다.
+  Decline/WrongTarget helper 결과 파일은 없으며 두 사례는 반복하지 않았다.
+- helper는 `buttonMethod=Win32-BM_CLICK-command`, `overwriteConfirmed=true`, `dialogCount=0`,
+  `status=passed`다. 확인창 helper 자체는 약 2.8초이며 전체 job 시간과 구분한다.
+  `confirmationObservation.commandInvoked=false`는 **호출 전 관측 snapshot**의 값이다.
+  최종 helper/실제 파일 사후 조건을 읽어야 하며 이 중첩 값을 실제 미호출로 해석하지 않는다.
+- 앱의 저장 완료·정확한 clean title, target의 PDF header/EOF와 sentinel 교체를 확인했다.
+  source/other hash 불변, NSIS cleanup·WebView2 정책 복구, cleanup 뒤 선택 범위/세 hash 검사도 통과했다.
+- 내려받은 source 33792 bytes와 other 22 bytes의 hash는 위 최초 값과 같았다.
+  새 target은 **349190 bytes**, SHA-256
+  `07b891d3b5669825ad4585ac701cd6d274c4e938bef9117852ad3980c3ef9b52`로 바뀌었고
+  `confirmation-verify.json`의 final hash와 일치했다. 로컬에서도 선택 사례·세 hash·PDF envelope를 확인했다.
+- raw artifact `9996072906`, `windows-pdf-raw-34055921568`, 559437 bytes,
+  digest `sha256:5cf90fa371a3fe8e687d65d709fe21a80d34df37db125bca64b6d3443d7699bb`.
+  로컬 `/private/tmp/alhangeul-confirmation-stage421-followup.wvoqjG`에 보존하고 raw는 커밋하지 않는다.
+- 최종 tree 상태는 `available`이다. 합성 예외 분류 회귀는 통과했지만 실제 실행 중 같은
+  stale-element 전환이 발생·포착됐는지 증명한 것은 아니다. 모든 provider/언어/타이밍을 일반화하지 않는다.
+
+이전 `816edd5`의 두 거절과 이번 `b980e10`의 확인을 합친 **부분별 증거**로 4.21을 완료한다.
+두 harness 사이에서 필수 확인창/target/owner/identity/native guard와 클릭 adapter·제품 bytes는
+변경하지 않았다. 현재 harness의 세 사례 일괄 통과로 표현하지 않으며, 이전 실패 run도 유지한다.
+HWPX/restart/편집·IME/쪽 수·검색·시각 조판 및 Ubuntu analyze는 이번에 미실행이다.
+[4.21 보고서](../working/task_m010_19_stage4.21.md) 이후 기존 전체 PDF 검증은 별도 승인 대상이다.
 
 ### Stage 4.18 작은 통합 — class 비교 보정 후 완료
 
@@ -388,6 +422,7 @@ readback·재조회/native 검증·제출을 확인했다. 시험 파일 hash �
 | [34049930142](https://github.com/postmelee/alhangeul-tauri/actions/runs/34049930142), harness `23b631d` | fresh 두 문서 저장 통과; 실제 HWP restart 확인창의 Invoke 미지원으로 실패, HWPX restart/원격 analyze skipped; fresh PDF만 별도 로컬 분석 |
 | [34051827068](https://github.com/postmelee/alhangeul-tauri/actions/runs/34051827068), harness `f090ea0` | PS 정책 50개·native 진단 23개·실제 앱 확인창 관측·파일 보존·cleanup 통과; 확인 버튼 호출/PDF 미실행 |
 | [34053001644](https://github.com/postmelee/alhangeul-tauri/actions/runs/34053001644), harness `816edd5` | PS 정책 62개·native 진단 50개·Decline/WrongTarget 통과; Confirm 전 보조 UIA 열거 예외, 세 파일 보존 별도 확인; 전체 제한 검증은 실패 |
+| [34055921568](https://github.com/postmelee/alhangeul-tauri/actions/runs/34055921568), harness `b980e10` | PS 정책 62개·native 50개·tree 예외 10개, Confirm-only의 PDF 교체·원본/다른 target 보존·cleanup 통과; 이전 두 거절과 부분별 근거, 전체 PDF는 미실행 |
 
 2026-09-06 작업지시자는 실제 Windows NSIS에서 두 문서의 PDF 저장·검색·쪽 수·시각 확인,
 원본 보존과 재실행 덮어쓰기를 문제없이 완료했다고 보고했다. 해당 수동 근거는 유지한다.
@@ -396,7 +431,8 @@ readback·재조회/native 검증·제출을 확인했다. 시험 파일 hash �
 로컬 회귀와 이전 가이드 작업은 [Stage 4.16](../working/task_m010_19_stage4.16.md),
 작은 Windows 관측은 [Stage 4.17](../working/task_m010_19_stage4.17.md),
 작은 확인창 실행·통합은 [Stage 4.18](../working/task_m010_19_stage4.18.md),
-실제 앱 관측과 다음 승인 경계는 [Stage 4.20](../working/task_m010_19_stage4.20.md)에 둔다.
+실제 앱 관측은 [Stage 4.20](../working/task_m010_19_stage4.20.md),
+native 호출 제한 검증과 다음 승인 경계는 [Stage 4.21](../working/task_m010_19_stage4.21.md)에 둔다.
 
 ## 참고
 

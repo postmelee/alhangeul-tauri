@@ -131,7 +131,7 @@ pnpm run typecheck:gui
 | Windows dialog 판단 | [순수 정책](../../scripts/windows-pdf-dialog-policy.ps1), [실제 함수 테스트](../../tests/windows-pdf-dialog-policy.test.ps1), [UIA 관측](../../scripts/windows-pdf-dialog-observation.ps1) | 실제 helper가 같은 함수를 사용. 합성 PID/HWND·의미 입력은 native 성공 증거가 아님 |
 | Windows 작은 OS 관측 | [probe](../../tests/gui/windows-dialog/probe.ps1), [workflow](../../.github/workflows/alhangeul-windows-dialog.yml), [메시지 adapter](../../scripts/windows-pdf-win32.ps1) | 제어된 WinForms 저장창의 확인창까지 관측하며 Yes는 실행하지 않음. 실제 앱·PDF·overwrite 수용과 별개 |
 | Windows 작은 통합 | [확인창 adapter](../../scripts/windows-pdf-confirmation.ps1), [integration](../../tests/gui/windows-dialog/integration.ps1) | 실제 helper와 같은 확인창 처리를 사용. 공개 sentinel의 열기·새 저장·overwrite·거절/취소·잘못된 target 거부를 검사하며 제품/PDF 수용은 아님 |
-| Windows 실제 설치본 | [spec](../../tests/gui/specs/windows-pdf.e2e.ts), [workflow](../../.github/workflows/alhangeul-windows-pdf.yml) | 전체 PDF는 fresh 두 문서 저장 후 restart의 Invoke 미지원으로 중단한 상태. 후속 native 제한 검증의 No/잘못된 target 거부는 통과했으나 Confirm 전 보조 진단 예외; 전체 수용 미완료 |
+| Windows 실제 설치본 | [spec](../../tests/gui/specs/windows-pdf.e2e.ts), [workflow](../../.github/workflows/alhangeul-windows-pdf.yml) | 후속 native 제한 검증의 No/잘못된 target 거부와 Confirm/PDF 교체가 두 실행의 부분별 증거로 통과. HWPX/restart/전체 PDF 수용은 미완료 |
 | Linux native UI | [AT-SPI adapter](../../tests/gui/linux/native-ui/atspi.mjs), [사후 조건](../../tests/gui/linux/native-ui/action-postcondition.mjs), [spec](../../tests/gui/specs/linux-native.e2e.ts) | Windows ID/class 가정을 Linux에 이식하지 않음; 각 테스트의 실행 환경을 확인 |
 
 Windows PowerShell 5.1의 순수 함수 테스트 진입점은 `pnpm run test:gui:windows:policy`다.
@@ -208,8 +208,13 @@ sentinel의 PDF 교체·저장 완료·원본/다른 target 보존을 검사한�
 발생해 호출 전에 중단됐다. 이 예외는 더 이상 사용할 수 없는 UI 요소 접근을 뜻하며 정확히
 어느 요소인지까지 이번 자료가 식별하지는 않는다.
 ([예외 계약](https://learn.microsoft.com/en-us/dotnet/api/system.windows.automation.elementnotavailableexception))
-후속 승인으로 위 보조 진단 격리와 Confirm-only 선택을 구현했다. 실제 Windows 결과는 아직
-검증 전이며 실패한 전체 run을 통과로 소급하지 않는다. 필수 판정과 클릭 adapter는 변경하지 않았다.
+후속 승인으로 위 보조 진단 격리와 Confirm-only 선택을 구현했다. run `34055921568`은 실제
+Confirm·PDF 교체·source/다른 target 보존·cleanup을 통과했다. PS5.1의 합성 예외 회귀 10개도
+통과했다. 앞선 두 거절과 이번 확인은 서로 다른 harness 실행의 부분별 증거다. 두 harness 사이의
+필수 판정/클릭 adapter와 제품 bytes는 동일하지만 이번에 세 사례를 일괄 재검증한 것은 아니다.
+이번 최종 tree 진단은 available이며 실제 UI 전환에서 같은 예외가 발생·포착됐다는 증거는 아니다.
+[4.21 보고서](../../mydocs/working/task_m010_19_stage4.21.md)에 출처와 한계를 기록한다.
+기존 실패 run이나 미실행인 HWPX/restart/전체 PDF 수용을 통과로 소급하지 않는다.
 
 ## 새 helper·Action 변경의 완료 기준
 
