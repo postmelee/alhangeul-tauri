@@ -20,12 +20,16 @@ $observedProcessId = $null
 $dialogCount = 0
 $fileNameId = if ($Mode -eq 'Open') { '1148' } else { '1001' }
 $nativeFallbackUsed = $false
+$filenameMethod = 'not-used'
+$buttonMethod = 'not-used'
+$additionalDialog = 'none'
 
 function Write-Evidence($Status, $ErrorText) {
   @{ mode = $Mode; status = $Status; error = $ErrorText; stage = $stage;
      startedAt = $startedAt.ToString('o'); finishedAt = [DateTime]::UtcNow.ToString('o');
      processId = $observedProcessId; dialogCount = $dialogCount; submitted = $submitted;
      overwriteConfirmed = $overwriteConfirmed; nativeFallbackUsed = $nativeFallbackUsed;
+     filenameMethod = $filenameMethod; buttonMethod = $buttonMethod; additionalDialog = $additionalDialog;
      tree = $observedTree } |
     ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $EvidencePath -Encoding utf8
 }
@@ -52,8 +56,10 @@ function Find-Id($Root, $Id) {
 function Invoke-Button($Dialog, $Button, $Id) {
   $pattern = $null
   if ($Button.TryGetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern, [ref]$pattern)) {
+    $script:buttonMethod = 'UIA-InvokePattern'
     $pattern.Invoke()
   } else {
+    $script:buttonMethod = 'Win32-BM_CLICK'
     $script:nativeFallbackUsed = $true
     Invoke-NativeDialogButton $Dialog $Button $observedProcessId $Id
   }
@@ -80,29 +86,20 @@ try {
     foreach ($dialog in $dialogs) {
       if (-not $submitted) {
         $stage = 'finding-filename-field'
-        $field = Find-Id $dialog $fileNameId
+        $editCondition = [System.Windows.Automation.AndCondition]::new(
+          [System.Windows.Automation.PropertyCondition]::new(
+            [System.Windows.Automation.AutomationElement]::ClassNameProperty, 'Edit'),
+          [System.Windows.Automation.PropertyCondition]::new(
+            [System.Windows.Automation.AutomationElement]::AutomationIdProperty, $fileNameId))
+        $field = $dialog.FindFirst($scope, $editCondition)
         if ($null -eq $field) { continue }
-        $value = $null
-        if (-not $field.TryGetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern, [ref]$value)) {
-          $editCondition = [System.Windows.Automation.AndCondition]::new(
-            [System.Windows.Automation.PropertyCondition]::new(
-              [System.Windows.Automation.AutomationElement]::ClassNameProperty, 'Edit'),
-            [System.Windows.Automation.PropertyCondition]::new(
-              [System.Windows.Automation.AutomationElement]::AutomationIdProperty, $fileNameId))
-          $field = $dialog.FindFirst($scope, $editCondition)
-          if ($null -eq $field) { continue }
-          [void]$field.TryGetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern, [ref]$value)
-        }
         $button = Find-Id $dialog '1'
         if ($null -eq $button) { continue }
         $stage = 'setting-filename'
         Write-Evidence 'running' $null
-        if ($null -ne $value) {
-          $value.SetValue($TargetPath)
-        } else {
-          $nativeFallbackUsed = $true
-          Set-NativeFileName $dialog $field $observedProcessId $TargetPath $Mode
-        }
+        $filenameMethod = 'Win32-EditReplaceSelection'
+        $nativeFallbackUsed = $true
+        Set-NativeFileName $dialog $field $observedProcessId $TargetPath $Mode
         $stage = 'invoking-submit'
         Write-Evidence 'running' $null
         Invoke-Button $dialog $button '1'
@@ -115,6 +112,22 @@ try {
           Invoke-Button $dialog $yes '6'
           $overwriteConfirmed = $true
         }
+      }
+    }
+    if ($submitted -and $dialogs.Count -gt 1) {
+      $additionalDialog = 'unclassified-modal'
+      foreach ($extra in $dialogs) {
+        if ((Find-Id $extra 'CommandButton_6') -and (Find-Id $extra 'CommandButton_7')) {
+          # Button shape identifies Yes/No, not the meaning or target of the prompt.
+          $additionalDialog = 'yes-no-command-buttons'
+        }
+      }
+      Write-Evidence 'running' $null
+      if (-not $allowOverwrite) {
+        throw 'Unexpected additional dialog for a new PDF target; refusing confirmation.'
+      }
+      if (-not $overwriteConfirmed) {
+        throw 'Unsupported overwrite confirmation controls; refusing blind confirmation.'
       }
     }
     Start-Sleep -Milliseconds 200

@@ -10,6 +10,22 @@ GitHub Issue: [#19](https://github.com/postmelee/alhangeul-tauri/issues/19)
 
 ## 단계 개요
 
+### 2026-09-06 Stage 4.11 재사용 가능한 문서 identity 검증 승인
+
+작업지시자는 Windows NSIS 수동 HWP/HWPX PDF 저장·검색/쪽수/시각 확인·원본 보존·
+재실행 덮어쓰기를 문제없이 완료했다고 보고했다. 사용자 보고 증거이며 exact 설치 SHA와
+OS 상세 버전은 별도 제공되지 않았으므로 원격 exact-SHA 자동 통과로 치환하지 않는다.
+반복 수동 검증을 요구하지 않는다. 자동화 보정은 장기 회귀 검증의 신뢰성을 위한 승인 범위다.
+
+기존 local/task19에서 이어가며 브랜치/이슈를 새로 만들지 않는다. PDF spec에서 편집 전
+정확한 문서 title identity를 검증하고 증거·분석기에 반영한다. 재사용 pure helper와 실제
+실패 사례의 회귀 테스트를 추가한다. Win32 Edit 입력을 Open/Save 공통 편집 경로로 통일하고
+입력/버튼 방식별 진단 및 예상치 못한 추가 modal의 빠른 실패를 추가한다. 무조건 Yes 클릭,
+기대 경로 완화, timeout 증가, 제품 변경은 제외한다. helper/spec/analyzer/계약 테스트 및
+내부 plans/working/orders만 수정한다. 공식 제품 문서는 변경하지 않는다.
+검증은 GUI typecheck, Windows PDF·GUI 계약, diff check로 제한한다. 원격 재실행은 단계
+보고 후 진행하며 사용자 수동 통과와 자동화 미완료를 구분한다.
+
 ### 2026-09-06 Stage 4.10 저장 파일명 편집 반영 승인
 
 작업지시자가 입력 문자열과 실제 저장 파일명 불일치의 helper 보정 및 재검증을 승인했다.

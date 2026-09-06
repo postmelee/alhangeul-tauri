@@ -5,6 +5,7 @@ import { basename, join } from 'node:path';
 import { promisify } from 'node:util';
 import { browser, $, expect } from '@wdio/globals';
 import { resolveDocumentFixtures } from '../support/document-fixture.ts';
+import { assertDocumentIdentity } from '../support/document-identity.ts';
 import { readPageIndicator, waitForInitialDesktopReady, waitForLoadedDocument,
   waitForStudioStatus } from '../support/document-ux.ts';
 import { readPdfInputs } from '../wdio.windows-pdf.conf.ts';
@@ -46,7 +47,10 @@ describe('Windows installed app PDF smoke', () => {
         await nativeDialog('Open', source, 'file:open', fixture.id);
         await waitForLoadedDocument(browser, basename(source), fixture.expectedPageCount, timeout);
         evidence.initialPageCount = (await readPageIndicator(browser)).total;
-        expect((await browser.getTitle()).startsWith('• ')).toBe(false);
+        const openedTitle = await browser.getTitle();
+        Object.assign(evidence, { schemaVersion: 2, openedTitle, documentIdentityVerified: false });
+        assertDocumentIdentity(openedTitle, basename(source));
+        evidence.documentIdentityVerified = true;
         await insertMarker();
         await browser.waitUntil(async () => (await browser.getTitle()).startsWith('• '), { timeout });
         const beforeTitle = await browser.getTitle();

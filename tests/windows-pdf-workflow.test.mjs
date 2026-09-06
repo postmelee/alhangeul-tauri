@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 import { analyzeWindowsPdfs, validateEvidence } from './gui/windows-pdf/analyze.mjs';
+import { assertDocumentIdentity } from './gui/support/document-identity.ts';
 
 const workflow = await readFile(new URL('../.github/workflows/alhangeul-windows-pdf.yml', import.meta.url), 'utf8');
 const spec = await readFile(new URL('./gui/specs/windows-pdf.e2e.ts', import.meta.url), 'utf8');
@@ -14,6 +15,8 @@ const dispatcher = await readFile(new URL('../.github/workflows/alhangeul-deskto
 const buildRef = 'a'.repeat(40);
 const expected = { buildRef, fixture: 'biz-plan-hwp', phase: 'fresh' };
 const valid = {
+  schemaVersion: 2, documentIdentityVerified: true,
+  openedTitle: 'source-biz-plan-hwp.hwp - Alhangeul',
   ...expected, status: 'passed', sourceUnchanged: true, dirtyPreserved: true,
   nativeDialogs: true, marker: 'PDF검증', sourceHash: 'a'.repeat(64),
   pdfSha256: 'b'.repeat(64), pageCount: 6, overwriteVerified: false,
@@ -98,14 +101,29 @@ test('Win32 fallback restricts control identity and verifies bounded filename re
   assert.doesNotMatch(native, /SendKeys|SendInput|mouse_event|SetCursorPos/);
 });
 
-test('Save filename uses select-all and native edit replacement before verified readback', () => {
-  const save = native.split('if (mode == "Save") {')[1].split('} else {')[0];
+test('Both dialog modes use select-all and native edit replacement before verified readback', () => {
+  const save = native.split('public static void SetFileName')[1].split('public static void Click')[0];
   assert.match(save, /ControlMessage\(edit, 0x00B1, UIntPtr.Zero, new IntPtr\(-1\), 2, 2000, out result\)/);
   assert.match(save, /SetTextMessage\(edit, 0x00C2, UIntPtr.Zero, text, 2, 2000, out result\)/);
   assert.ok(save.indexOf('ControlMessage(') < save.indexOf('SetTextMessage('));
   assert.doesNotMatch(save, /result == UIntPtr.Zero|0x000C/);
-  assert.ok(native.indexOf('Validate(dialog, edit') < native.indexOf('if (mode == "Save")'));
+  assert.ok(native.indexOf('Validate(dialog, edit') < native.indexOf('if (ControlMessage'));
   assert.ok(native.indexOf('var readback') > native.indexOf('0x00C2'));
+  assert.doesNotMatch(dialog, /ValuePattern|\.SetValue\(/);
+  assert.match(dialog, /filenameMethod = 'Win32-EditReplaceSelection'/);
+  assert.match(dialog, /buttonMethod = 'UIA-InvokePattern'/);
+  assert.match(dialog, /buttonMethod = 'Win32-BM_CLICK'/);
+  assert.match(dialog, /if \(-not \$allowOverwrite\) \{\s+throw 'Unexpected additional dialog/);
+});
+
+test('Document identity rejects wrong fixture, dirty document, generic status and partial names', () => {
+  assertDocumentIdentity('source-form-hwpx.hwpx - Alhangeul', 'source-form-hwpx.hwpx');
+  for (const title of ['source-biz-plan-hwp.hwp - Alhangeul', '파일 열기 완료',
+    '• source-form-hwpx.hwpx - Alhangeul', 'source-form-hwpx.hwpx.bak - Alhangeul', '']) {
+    assert.throws(() => assertDocumentIdentity(title, 'source-form-hwpx.hwpx'), /identity mismatch/);
+  }
+  assert.throws(() => assertDocumentIdentity(' - Alhangeul', ''));
+  assert.ok(spec.indexOf('assertDocumentIdentity(openedTitle') < spec.indexOf('await insertMarker()'));
 });
 
 test('PDF evidence validator rejects missing, failed, wrong SHA and incomplete overwrite results', () => {
@@ -114,6 +132,8 @@ test('PDF evidence validator rejects missing, failed, wrong SHA and incomplete o
     { status: 'failed' }, { buildRef: 'b'.repeat(40) }, { sourceUnchanged: false },
     { dirtyPreserved: false }, { nativeDialogs: false }, { pageCount: 5 },
     { pageCount: 0 }, { pdfSha256: null }, { marker: '' }, { overwriteVerified: true },
+    { schemaVersion: undefined }, { documentIdentityVerified: false },
+    { openedTitle: 'source-form-hwpx.hwpx - Alhangeul' },
   ]) assert.throws(() => validateEvidence({ ...valid, ...mutation }, expected));
   assert.throws(() => validateEvidence({ ...valid, phase: 'restart' }, { ...expected, phase: 'restart' }));
 });
@@ -138,6 +158,7 @@ test('PDF analysis requires all four exact outputs and rejects tampered PDF byte
         const label = `${fixture}-${phase}`;
         await writeFile(join(root, `${label}.json`), JSON.stringify({
           ...valid, fixture, phase, pdfSha256: digest,
+          openedTitle: `source-${fixture}.${fixture === 'biz-plan-hwp' ? 'hwp' : 'hwpx'} - Alhangeul`,
           overwriteVerified: phase === 'restart',
         }));
         await writeFile(join(root, `${label}.pdf`), bytes);

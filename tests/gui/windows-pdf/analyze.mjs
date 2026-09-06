@@ -5,7 +5,10 @@ import { pathToFileURL } from 'node:url';
 import { analyzePdf } from '../linux/pdf-analysis.mjs';
 
 export function validateEvidence(evidence, expected) {
-  if (evidence.status !== 'passed' || evidence.buildRef !== expected.buildRef
+  const format = expected.fixture === 'biz-plan-hwp' ? 'hwp' : 'hwpx';
+  if (evidence.schemaVersion !== 2 || evidence.documentIdentityVerified !== true
+      || evidence.openedTitle !== `source-${expected.fixture}.${format} - Alhangeul`
+      || evidence.status !== 'passed' || evidence.buildRef !== expected.buildRef
       || evidence.fixture !== expected.fixture || evidence.phase !== expected.phase
       || evidence.sourceUnchanged !== true || evidence.dirtyPreserved !== true
       || evidence.nativeDialogs !== true || evidence.marker !== 'PDF검증'
