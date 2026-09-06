@@ -100,10 +100,37 @@ function Invoke-ThumbnailFixtureProbe($Result, $Phase) {
   $activation = Invoke-ThumbnailDiagnostic "$Phase-activate" 'activate'
   $Result.Probes += [ordered]@{ Label = "$Phase-activate"; Result = $activation }
   if ($activation.status -ne 'ok') { Add-Failure $Result 'thumbnail-diagnostics' "$Phase COM activation failed." }
+  if ($Phase -eq 'initial') { Invoke-Check $Result 'manual-diagnostics' 'ManualChecks' { Invoke-ManualFixtureChecks $Result } }
   $afterProcesses = @(Get-Process -Name 'Alhangeul', 'msedgewebview2' -ErrorAction SilentlyContinue | ForEach-Object { $_.Id })
   Assert-Condition (@($afterProcesses | Where-Object { $beforeProcesses -notcontains $_ }).Count -eq 0) 'thumbnail 요청이 Alhangeul 또는 WebView process를 시작했습니다.'
   Assert-Condition (@(Get-Process -Name 'AlhangeulThumbnailWorker' -ErrorAction SilentlyContinue).Count -eq 0) 'thumbnail worker가 남았습니다.'
   return [ordered]@{ Phase = $Phase; FixtureCount = $copies.Count; RequestEdge = 256 }
+}
+
+function Invoke-ManualFixtureChecks($Result) {
+  $root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\artifacts\thumbnail-support'))
+  $package = Get-Content -LiteralPath (Join-Path $root 'support-manifest.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+  $sha = git -C (Join-Path $PSScriptRoot '..') rev-parse HEAD
+  Assert-Condition ($LASTEXITCODE -eq 0 -and $package.sourceSha -eq $sha) '지원 묶음 source SHA가 다릅니다.'
+  $jpg = @($script:thumbnailFixtureManifest.fixtures | Where-Object { $_.id -eq 'control-jpg' })[0]
+  $results = @()
+  foreach ($fixture in @($script:thumbnailFixtureManifest.fixtures | Where-Object { $_.id -ne 'control-jpg' })) {
+    $document = New-ThumbnailFixtureCopy $fixture 'manual' 'input'
+    $control = New-ThumbnailFixtureCopy $jpg 'manual' 'input'
+    $output = [IO.Path]::GetFullPath((Join-Path $OutputDirectory "manual-check\$($fixture.id)"))
+    [void][IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($output))
+    & (Join-Path $root 'windows-thumbnail-check.ps1') -DocumentPath $document.Path -JpgPath $control.Path -OutputDirectory $output -Consent | Out-Null
+    $code = $LASTEXITCODE
+    $summary = Get-Content -LiteralPath (Join-Path $output 'thumbnail-check-summary.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+    $pair = @($Result.Probes | Where-Object { $_.Label -in @("initial-$($fixture.id)-shell", "initial-$($fixture.id)-force-extract") } | ForEach-Object { $_.Result })
+    $expected = Get-ThumbnailDocumentFinding $pair ($Result.Kind -eq 'nsis') $true
+    Assert-Condition ($summary.finding -eq $expected -and $expected -in @('thumbnail-api-ok', 'per-user-shell-activation-failed')) '사용자 진단과 최초 CI 관측이 다릅니다.'
+    $expectedCode = if ($expected -eq 'thumbnail-api-ok') { 0 } else { 1 }
+    Assert-Condition ($code -eq $expectedCode -and $summary.exitCode -eq $code -and $summary.integrity -and $summary.cleanup) '사용자 진단 종료·정리 계약이 다릅니다.'
+    [void](Assert-ThumbnailFixtureUnchanged $document); [void](Assert-ThumbnailFixtureUnchanged $control)
+    $results += [ordered]@{ fixtureId = $fixture.id; finding = $summary.finding; exitCode = $code }
+  }
+  return $results
 }
 
 function Assert-ThumbnailProbeEvidence($Result) {

@@ -620,6 +620,25 @@ jobs:
             --root "$BUNDLE_ROOT" \
             --write-inventory "$BUNDLE_ROOT/alhangeul-artifact-inventory.json"
 
+      - name: Build Windows thumbnail support package
+        if: matrix.name == 'windows-x64'
+        shell: bash
+        env:
+          BUNDLE_ROOT: apps/desktop/src-tauri/target/${{ matrix.target }}/release/bundle
+        run: |
+          node scripts/build-windows-thumbnail-support.mjs \
+            --inventory "$BUNDLE_ROOT/alhangeul-artifact-inventory.json" \
+            --output thumbnail-support-output
+
+      - name: Upload Windows thumbnail support package
+        if: matrix.name == 'windows-x64'
+        uses: actions/upload-artifact@v7
+        with:
+          name: alhangeul-windows-x64-thumbnail-support
+          path: thumbnail-support-output/*
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Upload bundle artifact
         uses: actions/upload-artifact@v7
         with:
@@ -717,6 +736,18 @@ jobs:
         shell: powershell
         run: .\scripts\windows-thumbnail-assessment-tests.ps1
 
+      - name: Download Windows thumbnail support package
+        id: download-thumbnail-support
+        uses: actions/download-artifact@v8
+        with:
+          name: alhangeul-windows-x64-thumbnail-support
+          path: artifacts/thumbnail-support
+
+      - name: Test Windows manual thumbnail contracts
+        id: manual-tests
+        shell: powershell
+        run: .\scripts\windows-thumbnail-check-tests.ps1 -SupportRoot 'artifacts\thumbnail-support'
+
       - name: Run Windows installer smoke
         id: run-installer-smoke
         continue-on-error: true
@@ -740,6 +771,12 @@ jobs:
         shell: powershell
         run: .\scripts\windows-thumbnail-assessment-tests.ps1 -SummaryPath 'diagnostics\windows-installer-smoke\windows-installer-smoke-summary.json'
 
+      - name: Verify manual thumbnail evidence
+        id: manual-evidence
+        if: ${{ always() && steps.run-installer-smoke.outcome != 'skipped' }}
+        shell: powershell
+        run: .\scripts\windows-thumbnail-check-tests.ps1 -SupportRoot 'artifacts\thumbnail-support' -SummaryRoot 'diagnostics\windows-installer-smoke'
+
       - name: Record installer smoke outcome
         if: ${{ always() }}
         shell: powershell
@@ -750,6 +787,9 @@ jobs:
           SMOKE_OUTCOME: ${{ steps.run-installer-smoke.outcome }}
           ASSESSMENT_OUTCOME: ${{ steps.assessment-tests.outcome }}
           DIAGNOSTIC_OUTCOME: ${{ steps.diagnostic-contract.outcome }}
+          SUPPORT_OUTCOME: ${{ steps.download-thumbnail-support.outcome }}
+          MANUAL_OUTCOME: ${{ steps.manual-tests.outcome }}
+          MANUAL_EVIDENCE_OUTCOME: ${{ steps.manual-evidence.outcome }}
         run: |
           $output = Join-Path $env:GITHUB_WORKSPACE 'diagnostics\windows-installer-smoke'
           New-Item -ItemType Directory -Path $output -Force | Out-Null
@@ -760,6 +800,9 @@ jobs:
             smoke = $env:SMOKE_OUTCOME
             assessmentTests = $env:ASSESSMENT_OUTCOME
             diagnosticContract = $env:DIAGNOSTIC_OUTCOME
+            supportDownload = $env:SUPPORT_OUTCOME
+            manualTests = $env:MANUAL_OUTCOME
+            manualEvidence = $env:MANUAL_EVIDENCE_OUTCOME
           } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $output 'step-outcomes.json') -Encoding UTF8
 
       - name: Upload installer smoke diagnostics
@@ -783,6 +826,9 @@ jobs:
           UPLOAD_OUTCOME: ${{ steps.upload-installer-smoke-diagnostics.outcome }}
           ASSESSMENT_OUTCOME: ${{ steps.assessment-tests.outcome }}
           DIAGNOSTIC_OUTCOME: ${{ steps.diagnostic-contract.outcome }}
+          SUPPORT_OUTCOME: ${{ steps.download-thumbnail-support.outcome }}
+          MANUAL_OUTCOME: ${{ steps.manual-tests.outcome }}
+          MANUAL_EVIDENCE_OUTCOME: ${{ steps.manual-evidence.outcome }}
         run: |
           $outcomes = [ordered]@{
             checkout = $env:CHECKOUT_OUTCOME
@@ -792,6 +838,9 @@ jobs:
             uploadDiagnostics = $env:UPLOAD_OUTCOME
             assessmentTests = $env:ASSESSMENT_OUTCOME
             diagnosticContract = $env:DIAGNOSTIC_OUTCOME
+            supportDownload = $env:SUPPORT_OUTCOME
+            manualTests = $env:MANUAL_OUTCOME
+            manualEvidence = $env:MANUAL_EVIDENCE_OUTCOME
           }
           $failed = @($outcomes.GetEnumerator() | Where-Object { $_.Value -ne 'success' })
           if ($failed.Count -gt 0) {

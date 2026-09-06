@@ -3,7 +3,7 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: Stage 3 세부계획 작성 완료 — 구현 승인 대기
+상태: Stage 3.1 구현 후보·로컬 검사 완료 — Windows 검증 게시·실행 승인 대기
 
 승인 근거: 2026-09-06 같은 스레드의 구현계획 승인 요청에 작업지시자가
 “진행해줘”로 Stage 1 진행을 지시했다. Stage 2 원격 게시·실행은 별도 승인 대상으로 유지한다.
@@ -45,6 +45,10 @@ MSI 강제 교체의 제품 gate 실패는 유지한다. 분석 후 “진행해
 Stage 2 보고 커밋 `343b5200009cd90aa23421d2402c5b4ac3b6a690` 제시 후 작업지시자가
 “진행해줘”로 Stage 3 세부계획 확정을 지시했다. 아래 제공 방식·파일·검증 범위는
 그 산출물이며 제품/진단 코드 수정이나 원격 실행까지 승인된 것은 아니다.
+
+Stage 3.1 구현 승인: 세부계획 커밋 `fd046ad` 제시 후 2026-09-07 같은 스레드에서
+작업지시자가 “진행해줘”로 **구현·로컬 검증·후보 커밋**을 승인했다.
+아래 Stage 3 세부안을 구현했으며 추가 Windows-only 게시·실행은 아직 승인받지 않았다.
 
 ## 단계 개요
 
@@ -693,6 +697,41 @@ git diff --check
 Task #57 [Stage 3.1]: 수동 썸네일 진단 묶음과 MSI 안내 구현 후보
 Task #57 Stage 3: 수동 진단 도구 검증과 제한 안내 결과 보고
 ```
+
+### Stage 3.1 구현 후보와 로컬 검증 기록 — 2026-09-07
+
+- 네 입력의 수동 진단 진입점과 입력 보호·임시 복사·정리 helper, 단일 문서/JPG 분류를
+  구현했다. 묶음 allowlist/manifest 검증은 의존 파일 실행 전 entry에서 수행한다.
+  설치된 처리기 reference·scope를 확인한 뒤 10개 probe와 state 2개를 수집한다.
+- 미동의는 출력 파일 없이 코드 2, 알려진 사용자별 Shell 실패는 코드 1과 MSI 검토 안내,
+  정리·원본 무결성·probe 실패는 불완전으로 남긴다. 캐시 성공으로 새 생성 실패를 가리지 않는다.
+- Windows 전용 builder와 별도 14일 support artifact를 추가했다. 기존 5파일 installer bundle,
+  최초 19개 fixture probe·NSIS 제품 실패 gate·MSI lifecycle 기준은 유지한다.
+  최초 관측 이후 재설치 전 제공 묶음 그대로 공개 문서 3종을 각각 검사하고, 새 검증 gate가
+  13개 결과 파일·원시 JSON·등록 scope/reference·판정·종료 코드·정리를 대조한다.
+  추가 진단 이후에도 앱/WebView/worker 잔류를 검사한다.
+- Windows PS 5.1용 회귀에는 manifest 변조, 입력 크기/공유 잠금/junction, 한글·따옴표 경로,
+  원본 불변·예상하지 않은 임시 파일 보존, consent/x86 차단, malformed child JSON·timeout,
+  비식별 출력·정리 실패 시 성공 취소·분류 반례를 넣었다. **작성만 했으며 native 미실행**이다.
+- 기존 공식 문서 3곳에 시험용 사용법·MSI 전환·검증 한계를 반영했다. 새로운 문서 루트,
+  앱 UI·선택 설치·등록 모델·엔진·release/updater 변경은 없다.
+
+| 실행한 플랫폼 중립 검사 | 결과 |
+|---|---|
+| 위 대상 Node 계약 검사 8개 파일 | 102/102 통과 |
+| `pnpm run test:automation` | 558/558 통과 |
+| `pnpm run check:product-boundary` | 통과, 405파일 검사 |
+| `actionlint -shellcheck='' .github/workflows/alhangeul-desktop.yml` | 통과 |
+| `git diff --check` | 통과 |
+
+초기 source privacy 검사 정규식이 사용법의 `-DocumentPath` 리터럴을 변수 출력으로 오인했다.
+실제 `$DocumentPath`/`$JpgPath` 출력 검출로 고친 뒤 대상/전체 검사를 다시 통과했다.
+이를 Windows 실행 오류나 제품 수정 결과로 해석하지 않는다.
+
+이 호스트에서는 PowerShell/C#·Rust/Tauri 실행, 실제 support 묶음 생성, 원격 push/dispatch를
+하지 않았다. 따라서 Stage 3 완료 보고서는 아직 작성하지 않는다. 후보 커밋의 exact SHA를
+제시해 Windows-only 비게시 추가 1회 실행을 별도 승인받고, 원격 패키지·native 증거를 확인한다.
+일반 Windows 10/11 Explorer·실제 한컴·VDI·재부팅 후의 현장 수용은 여전히 미검증이다.
 
 ## Stage 4 — 회귀 수용·문서·#58 인계
 

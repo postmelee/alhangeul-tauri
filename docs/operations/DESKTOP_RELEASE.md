@@ -91,6 +91,25 @@ Actions archive는 임시 검증물이다. 현재 desktop/updater artifact는 14
 ID·digest·만료와 실제 파일의 크기·SHA-256을 구분한다. 만료된 근거는 기록으로 남되 만료된 파일을
 게시하거나 재빌드 파일이 같은 bytes라고 간주하지 않는다.
 
+### Windows 썸네일 지원 묶음
+
+일반 Windows artifact build는 installer bundle과 별도로
+`alhangeul-windows-x64-thumbnail-support`를 생성하도록 구성한다. 사용자 진단 도구의
+이번 변경은 Windows 실검증 전이며 공개 Release/웹사이트 다운로드 목록에는 추가하지 않는다.
+지원 묶음은 실행 의존 파일 10개, 같은 빌드의 inventory, Windows thumbnail 문서 복사본과
+`support-manifest.json`이다. installer·DLL·worker·문서 fixture·진단 결과는 포함하지 않는다.
+
+같은 run의 설치 파일과 묶음만 짝지으며 manifest의 exact source SHA·파일 해시,
+원격 archive digest와 설치된 처리기 bytes/hash를 확인한다. 같은 version 문자열만으로
+빌드를 혼용하지 않는다. artifact는 14일 임시 자료이며 공개 asset이나 서명된 도구가 아니다.
+런타임 자동 다운로드·전송은 없고 사용법은 [수동 진단 안내](../architecture/WINDOWS_THUMBNAILS.md#수동-진단과-msi-대안)를 따른다.
+
+installer job은 제공된 묶음 그대로 공개 fixture를 검사하고 원본 JSON·판정·종료 코드를
+대조한다. `manualTests`·`manualEvidence`가 진단 도구 검증 결과이며 기존 제품 gate와 별개다.
+NSIS의 실제 실패를 진단 도구가 올바르게 분류하더라도 제품 실패는 유지한다.
+개인 사용자 문서/결과를 CI artifact로 업로드하지 않는다. 기존 5개 bundle 파일 계약과
+릴리즈 수용·서명·게시 승인 경계는 바꾸지 않는다.
+
 ## 승인과 게시 순서
 
 1. release owner가 변경 범위, 이전 버전, 후보 SHA·version·tag·채널, 서명 정책과 지원 matrix를
