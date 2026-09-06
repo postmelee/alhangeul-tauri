@@ -10,6 +10,28 @@ GitHub Issue: [#19](https://github.com/postmelee/alhangeul-tauri/issues/19)
 
 ## 단계 개요
 
+### 2026-09-07 Stage 4.19 기존 설치본 전체 PDF 검증 승인
+
+작업지시자가 Stage 4.18 결과 뒤 `진행해줘`로 기존 설치본의 실제 HWP/HWPX PDF 전체 검증을
+승인했다. #19/`local/task19`를 유지한다. 제품·helper·workflow는 변경하지 않고 4.18에서
+검증한 adapter를 그대로 사용한다. 변경 파일은 기존 plans/orders·사건 기록·공식 가이드의
+검증 상태와 성공 시 `working/task_m010_19_stage4.19.md`뿐이며 기존 승인 문서 위치를 유지한다.
+
+- 제품: `69b22650df96323a2c59e473d474ed3195cc9cc7`, 성공한 native run `34021920074`.
+- 사전 확인: Windows artifact `9986364323` / `alhangeul-desktop-windows-x64`,
+  123231295 bytes, 만료 아님(만료 예정 `2026-09-20T09:07:23Z`).
+  digest `sha256:02c13e35d515d08c7793d315905125932a33209b8e63b1f750998a62b1226bdc`.
+- 실행: 기존 Desktop dispatcher `windows-pdf-acceptance`, candidate SHA와 native run 지정,
+  `publish_release=false`, 한 번. 기존 Windows job이 artifact provenance/digest/inventory를
+  검증하고 NSIS 설치 후 HWP/HWPX fresh/restart를 수행한다. Ubuntu analyze job은 생성 PDF의
+  hash·한글 marker·쪽수/A4·쪽별 text·blank/clipping을 검사하고 모든 쪽 PNG를 만든다.
+- 검토: 네 PDF 결과·원본/dirty 보존·overwrite 증거와 cleanup을 확인한다. 생성된 PNG도
+  시각 검토하며 수치 검사만으로 시각 통과를 선언하지 않는다. 개인 문서 대신 기존 공개 fixture만 쓴다.
+- 로컬: 4.18 이후 scripts/tests/workflow 변경 없음 확인, 문서 링크·diff 검사.
+  변경 없는 로컬 suite와 작은 Windows 통합을 반복하지 않는다.
+- 제외: 제품 재빌드·MSI/썸네일/updater 반복·릴리즈/배포·Mac native 검증. 환경 준비용 기존
+  driver 설치는 Windows job에서 그대로 수행한다. 실패하면 증거를 분류하고 자동 보정/재시도하지 않는다.
+
 ### 2026-09-07 Stage 4.18 확인창 adapter·작은 통합 승인
 
 작업지시자가 4.17 결과와 미확정 제품 capability를 확인하고 다음 구현을 승인했다.
