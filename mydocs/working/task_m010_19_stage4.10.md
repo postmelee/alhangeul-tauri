@@ -42,3 +42,9 @@ PDF acceptance만 한 번 실행한다. 재빌드·서명·릴리스·updater �
 ## 승인 상태
 
 작업지시자가 본 보정과 동일 산출물 재검증을 승인했다. #19 전체 수용 완료는 아니다.
+
+## 원격 검증 실행
+
+harness `249cf1e`로 [run 34038288652](https://github.com/postmelee/alhangeul-tauri/actions/runs/34038288652)를
+실행했다. 기존 artifact handoff·inventory 검증, driver 및 NSIS 설치를 통과하고 실제 PDF
+smoke가 진행 중이다. 완료 결과 확인 전에는 저장 파일명 보정이나 전체 수용을 성공으로 간주하지 않는다.
