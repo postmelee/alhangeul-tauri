@@ -143,7 +143,8 @@ public static class PdfDialogNative {
     var buttonClass = ReadClassName(button);
     checks["buttonProcessMatches"] = buttonPid == pid;
     checks["buttonIsChild"] = IsChild(confirm, button);
-    checks["buttonClassMatches"] = buttonClass == "CCPushButton";
+    // UIA reports CCPushButton; the observed Win32 HWND class is Button (run 34048778670).
+    checks["buttonClassMatches"] = buttonClass == "Button";
     checks["buttonEnabled"] = IsWindowEnabled(button);
     checks["nativeButtonClass"] = buttonClass;
     RequireCommandChecks(checks);

@@ -37,9 +37,8 @@ Save/기존 파일/제출 경로와 관측된 영문 대체 질문의 파일명�
 Overwrite는 실제 Invoke 직전 native 재검증에서 실패했고 Decline/WrongTarget은 미실행이다.
 **Stage 4.18 미완료**이며 완료 보고서는 작성하지 않는다. 원인 후보와 증거 한계는
 [사건 기록](../troubleshootings/task_m010_19_windows_pdf_automation.md)에 둔다.
-UIA/native class를 동일시한 미확인 가정이 있으나 실패한 native 세부 조건은 로그에 없다.
-다음 제안은 guard별 안전한 진단을 추가하고 같은 작은 확인창에서 확인하는 것이며,
-새 승인 전 추가 원격 실행·guard 완화·4.19 전체 PDF 수용은 진행하지 않는다.
+첫 실행 로그에는 native 세부 조건이 없어 당시 UIA/native class 동일성 가정을 의심했다.
+이후 아래 후속 승인의 진단으로 class 조건이 원인임을 확인했다. 4.19 전체 PDF 수용은 진행하지 않는다.
 
 #### Stage 4.18 후속 승인 — native 실패 조건 진단
 
@@ -58,6 +57,26 @@ UIA/native class를 동일시한 미확인 가정이 있으나 실패한 native 
   기존 `windows-dialog-verify` 한 번. 실패 이유를 수집해도 통합 성공으로 바꾸지 않는다.
 - 문서 위치는 기존 승인된 공식 가이드·사건 기록·plans/orders다. 이전 미커밋 실패 기록을
   보존하며 같은 변경에 포함한다. guard 수정·다른 클릭 API·전체 PDF 실행은 이번 범위 밖이다.
+
+결과: run `34048778670`/harness `5096438`에서 PS 정책 50개·진단 22개·Open/Fresh·cleanup이
+통과했다. Overwrite의 13개 native guard 중 `buttonClassMatches`만 false였다.
+UIA `CCPushButton`과 달리 native class는 `Button`이다. 이 잘못된 동일성 가정을 확인했으며
+진단 목적은 달성했다. Stage 4.18 통합은 여전히 실패로, Invoke/Decline/WrongTarget은 미실행이다.
+다음 승인 요청은 UIA 조건·다른 guard·Invoke 방식을 유지한 native class 비교 보정과 작은
+통합 재검증 한 번이다. 현재 코드에는 비교 보정을 아직 적용하지 않았다.
+
+#### Stage 4.18 후속 승인 — 관측된 native class로 비교 보정
+
+작업지시자의 후속 `진행해줘`로 비교 보정과 작은 Windows 통합 한 번을 승인받았다.
+`scripts/windows-pdf-win32.ps1`의 native button class 기대값만 `Button`으로 바꾼다.
+UIA selector의 `CCPushButton`, 다른 12개 native guard, 의미/대상 검증, InvokePattern,
+실제 파일 사후 조건은 유지한다. 기존 PS 진단의 합성 class 값과 Node 계약도 이를 반영한다.
+새 helper·workflow·의존성·제품 변경은 없다. 이전 실패 기록을 같은 승인 범위에서 보존한다.
+
+focused Node 계약, GUI typecheck, actionlint, diff 검사 후 checkpoint commit/push하고
+기존 `windows-dialog-verify` 한 번을 실행한다. 정책/진단과 Open·Fresh·Overwrite·Decline·
+WrongTarget이 모두 통과해야 4.18 완료 보고를 작성한다. 실제 제품 PDF 수용은 4.19 별도 승인이다.
+문서는 기존 승인된 가이드·사건 기록·plans/orders와 `working/task_m010_19_stage4.18.md`를 쓴다.
 
 ### 2026-09-07 Stage 4.17 판단 분리·작은 Windows 관측 승인
 

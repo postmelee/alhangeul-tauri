@@ -130,7 +130,9 @@ Windows PowerShell 5.1의 순수 함수 테스트 진입점은 `pnpm run test:gu
 작은 통합은 같은 dispatcher의 `windows-dialog-verify`로 실행한다. policy 검사 후 위 다섯
 사례를 실행하며 관측-only probe는 중복 실행하지 않는다. host는 OK 및 선택 경로를 검증한
 경우에만 지정 sentinel을 쓴다. No 후 저장창 복귀·Cancel 결과와 세 파일의 보존을 별도 검사한다.
-현재 첫 통합은 Open/Fresh까지 통과했으나 overwrite의 native 재검증에서 실패했다.
+현재 작은 통합은 Open/Fresh까지 통과했으나 overwrite의 native 재검증에서 실패했다.
+후속 진단에서 UIA/native class를 동일시한 검사 오류를 확인했다. native 기대값을 관측된
+`Button`으로 보정했으며 현재 작은 통합 재검증을 대기 중이다. UIA `CCPushButton`은 유지한다.
 확인 버튼 호출·No/Cancel·잘못된 target 거부는 실제 통합 미검증이다. 다섯 사례가 구현돼
 있다는 사실과 전부 통과했다는 판정을 구분한다.
 

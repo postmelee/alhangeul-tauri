@@ -39,6 +39,7 @@ pnpm run test:gui:windows:contracts
 | 입력칸이 보이지만 UIA focus/pattern이 안 됨 | 관측된 control이 기대 pattern을 제공하지 않음; 표시된 ControlType만으로 조작 방식을 추정했음 | 관측 capability 기반 adapter와 focus/readback/실제 결과를 구분 |
 | 입력 문자열 readback 후에도 다른 파일명/문서 | readback은 텍스트 상태만 확인하며 실제 dialog 선택·처리 완료의 증거가 아님 | 실제 경로·title 사후 조건 추가; 문자열 확인만으로 성공 금지 |
 | 재시작 Save에서 `Unsupported overwrite confirmation controls` | helper는 ID `6`/class `Button` 실행만 지원하지만 실제 확인창은 `CommandButton_6/7`, class `CCPushButton`으로 관측 | 형태 인식과 의미/대상 확인 및 실제 승인 구현을 분리; 아직 미해결 |
+| 작은 확인창에서 native 재검증 실패 | UIA class `CCPushButton`을 native에도 요구했으나 실제 native class는 `Button`; 다른 12개 guard는 통과 | UIA/native 속성을 별도로 관측·검증하고 같은 판정 snapshot에서 실패 조건 기록 |
 
 관측한 ID/class는 이 runner의 사실이며 Windows 공통 API 계약으로 일반화하지 않는다.
 Yes/No 모양만으로 덮어쓰기라고 단정하지 않는다. 실제 확인창 대상·소유 관계를 검증하는
@@ -81,15 +82,15 @@ Windows image `20260824.214.3`, PS `5.1.26100.33296`이며 제품 설치·PDF �
 - Decline·WrongTarget은 앞선 실패 때문에 미실행이다. 실패한 Overwrite의 파일 사후 조건도
   수집되지 않았으므로 보존 검증 통과로 쓰지 않는다. 시험 process·임시 파일 cleanup은 통과했다.
 
-현재 진단의 한계: `ValidateCommand`는 native owner, button PID, `IsChild`,
+첫 실행 당시 진단의 한계: `ValidateCommand`는 native owner, button PID, `IsChild`,
 `GetClassName`, enabled를 한 조건으로 검사한다. artifact에는 UIA class `CCPushButton`과
 InvokePattern 및 native owner/직접 parent만 있고, 해당 버튼의 **native class와 각 guard 결과는 없다**.
-따라서 정확히 어느 native 조건이 실패했는지는 미확정이다.
+따라서 당시에는 정확히 어느 native 조건이 실패했는지 미확정이었다.
 
 이번 구현은 UIA에서 관측한 `CCPushButton`을 native `GetClassName`에도 그대로 요구했다.
 이는 관측으로 확인하지 않은 가정이었다. Microsoft는 UIA ClassName을 provider 구현에
 따른 이름으로 설명한다. UIA와 native class의 동일성을 가정하지 말아야 하지만, 이번 실패가
-실제로 class 차이 때문인지는 추가 관측 전까지 가설로 남긴다.
+실제로 class 차이 때문인지는 당시 가설로 남겼다. 아래 후속 진단에서 이를 확인했다.
 ([Microsoft ClassName 계약](https://learn.microsoft.com/en-us/windows/win32/winauto/uiauto-automation-element-propids))
 
 다음 승인 범위는 같은 확인창의 guard별 구조화 진단이다. UIA/native class를 분리하고
@@ -102,6 +103,31 @@ fallback은 하지 않는다. 이 보정과 작은 재검증 승인을 받은 �
 무효 HWND 거부를 실제 PS/C# 함수로 검사한다. 비교 조건과 클릭 방식은 바꾸지 않았으며
 작은 `windows-dialog-verify` 한 번으로 실패 이유를 확인한다. 실행 전 로컬 focused 계약 50개,
 workflow/handoff 계약 75개(중복 import 포함), GUI typecheck, actionlint와 diff 검사는 통과했다.
+
+#### 후속 진단 결과 — native class 불일치 확인
+
+[run 34048778670](https://github.com/postmelee/alhangeul-tauri/actions/runs/34048778670),
+harness `5096438a84654c0b4ac232067f99def3e5e892ab`의 작은 job은 36초에 종료했다.
+image `20260824.214.3`, PS `5.1.26100.33296`으로 앞선 실행과 같다.
+실제 PS 정책 50개와 native 진단 테스트 22개가 통과했다. 후자는 합성 guard와 무효 HWND를
+검사한 것이며 확인 버튼 클릭 22회를 뜻하지 않는다. Open/Fresh 및 세 파일 사후 조건·cleanup은
+다시 통과했다. Overwrite는 Invoke 전 거부됐고 Decline/WrongTarget은 미실행이다.
+
+같은 native 판정 snapshot에서 `failedChecks = ["buttonClassMatches"]`만 남았다.
+`nativeSaveClass = "#32770"`, `nativeConfirmationClass = "#32770"`,
+`nativeButtonClass = "Button"`이다. 나머지 12개 guard는 모두 true다. 별도 UIA 관측은
+`CommandButton_6`, class `CCPushButton`, ControlType.Button, InvokePattern(10000)이었다.
+즉 이번 작은 fixture의 차단 원인은 **UIA class를 native class에도 요구한 구현의 잘못된 가정**이다.
+특정 guard 실패를 구분하는 진단 목적은 달성했으나 통합 결과 자체는 여전히 실패다.
+
+권고 보정은 UIA `CCPushButton` 조건을 유지하면서 native class 조건만 관측된 `Button`으로
+고치는 것이다. PID·owner·자식 관계·enabled·의미/대상·capability 및 사후 조건은 그대로 둔다.
+이 비교 변경과 작은 통합 재실행은 다음 승인 범위이며 이번에는 적용하지 않았다.
+실제 Alhangeul에서의 InvokePattern 지원/덮어쓰기는 아직 검증하지 않았고 Stage 4.18은 미완료다.
+
+후속 승인으로 native class 비교만 `Button`으로 보정했다. UIA `CCPushButton`·다른 guard·
+Invoke 방식은 유지한다. 관련 합성 데이터/정적 계약을 정렬한 뒤 작은 통합 재검증 한 번으로
+실제 overwrite와 No/Cancel·잘못된 target 거부의 사후 조건을 확인한다. 현재 결과 대기다.
 
 ### Stage 4.17 관측과 당시 adapter 판단
 
@@ -157,6 +183,7 @@ readback·재조회/native 검증·제출을 확인했다. 시험 파일 hash �
 | [34043594332](https://github.com/postmelee/alhangeul-tauri/actions/runs/34043594332), harness `903164b` | fresh 두 문서 성공, HWP restart의 미지원 확인창 실패; Linux PDF 분석 skipped |
 | [34047467032](https://github.com/postmelee/alhangeul-tauri/actions/runs/34047467032), harness `cd77b57` | 작은 policy/WinForms 확인창 관측·cleanup 통과, 실제 제품/PDF/Yes 호출 없음 |
 | [34048114390](https://github.com/postmelee/alhangeul-tauri/actions/runs/34048114390), harness `f198449` | PS 50개·Open/Fresh·cleanup 통과; Overwrite native 재검증 실패, Invoke/Decline/WrongTarget 미실행 |
+| [34048778670](https://github.com/postmelee/alhangeul-tauri/actions/runs/34048778670), harness `5096438` | PS 정책 50개·진단 22개·Open/Fresh·cleanup 통과; native class만 불일치 확인, 통합은 실패 유지 |
 
 2026-09-06 작업지시자는 실제 Windows NSIS에서 두 문서의 PDF 저장·검색·쪽 수·시각 확인,
 원본 보존과 재실행 덮어쓰기를 문제없이 완료했다고 보고했다. 해당 수동 근거는 유지한다.

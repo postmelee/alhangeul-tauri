@@ -21,7 +21,7 @@ function New-Checks {
   foreach ($key in $guardKeys) { $snapshot[$key] = $true }
   $snapshot['nativeSaveClass'] = '#32770'
   $snapshot['nativeConfirmationClass'] = '#32770'
-  $snapshot['nativeButtonClass'] = 'CCPushButton'
+  $snapshot['nativeButtonClass'] = 'Button'
   return ,$snapshot
 }
 function Get-Rejection($Snapshot) {
@@ -53,13 +53,13 @@ Test-Case 'string true is not a boolean guard' {
   Assert-Equal ($result.failedChecks -join ',') 'buttonEnabled'
   Assert-Equal $result.checks.buttonEnabled $null
 }
-Test-Case 'multiple failures are retained with native class distinct from UIA' {
+Test-Case 'multiple failures retain an unexpected synthetic native class' {
   $snapshot = New-Checks
   $snapshot['buttonClassMatches'] = $false; $snapshot['buttonIsChild'] = $false
-  $snapshot['nativeButtonClass'] = 'Button'
+  $snapshot['nativeButtonClass'] = 'UnexpectedClass'
   $result = Get-PdfNativeFailure (Get-Rejection $snapshot)
   Assert-Equal ($result.failedChecks -join ',') 'buttonIsChild,buttonClassMatches'
-  Assert-Equal $result.classes.nativeButtonClass 'Button'
+  Assert-Equal $result.classes.nativeButtonClass 'UnexpectedClass'
 }
 Test-Case 'wrapped native exception retains typed diagnostics' {
   $snapshot = New-Checks; $snapshot['buttonEnabled'] = $false

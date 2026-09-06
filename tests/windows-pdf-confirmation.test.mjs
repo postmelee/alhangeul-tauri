@@ -34,7 +34,9 @@ test('Actual PDF helper and controlled integration share the guarded confirmatio
 test('Native diagnostics preserve the guard and share a filtered exception extractor', async () => {
   const diagnostics = await read('../scripts/windows-pdf-native-diagnostics.ps1');
   const suite = await read('./windows-pdf-native-diagnostics.test.ps1');
-  assert.match(native, /checks\["buttonClassMatches"\] = buttonClass == "CCPushButton"/);
+  const policy = await read('../scripts/windows-pdf-dialog-policy.ps1');
+  assert.match(native, /checks\["buttonClassMatches"\] = buttonClass == "Button";/);
+  assert.match(policy, /\$_\.Class -ceq 'CCPushButton'/);
   assert.match(native, /RequireCommandChecks\(checks\)/);
   assert.match(native, /ChecksPass\(ReadConfirmationChecks\(save, confirm, pid\), OwnerChecks\)/);
   assert.match(native, /ChecksPass\(checks, OwnerChecks\) && ChecksPass\(checks, ButtonChecks\)/);
