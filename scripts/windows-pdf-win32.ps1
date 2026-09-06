@@ -3,7 +3,19 @@ Add-Type -TypeDefinition @'
 using System;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Diagnostics;
+using System.Threading;
 public static class PdfDialogNative {
+  [StructLayout(LayoutKind.Sequential)]
+  struct NativeRect { public int left, top, right, bottom; }
+  [StructLayout(LayoutKind.Sequential)]
+  struct GuiThreadInfo {
+    public uint cbSize, flags;
+    public IntPtr hwndActive, hwndFocus, hwndCapture, hwndMenuOwner, hwndMoveSize, hwndCaret;
+    public NativeRect rcCaret;
+  }
+  [DllImport("user32.dll", SetLastError = true)]
+  static extern bool GetGUIThreadInfo(uint threadId, ref GuiThreadInfo info);
   [DllImport("user32.dll", CharSet = CharSet.Unicode)]
   static extern int GetClassName(IntPtr h, StringBuilder text, int count);
   [DllImport("user32.dll")] static extern uint GetWindowThreadProcessId(IntPtr h, out uint pid);
@@ -36,6 +48,25 @@ public static class PdfDialogNative {
       || GetDlgCtrlID(control) != id || ClassName(control) != cls || !IsWindowEnabled(control))
       throw new Exception("Native dialog control identity mismatch");
   }
+  public static void FocusFileName(IntPtr dialog, IntPtr edit, uint pid, string mode) {
+    if (mode != "Open" && mode != "Save") throw new Exception("Unexpected dialog mode");
+    Validate(dialog, edit, pid, mode == "Open" ? 1148 : 1001, "Edit");
+    uint observedPid;
+    uint threadId = GetWindowThreadProcessId(edit, out observedPid);
+    if (threadId == 0 || observedPid != pid) throw new Exception("Invalid edit thread");
+    // The dialog's owning thread performs the focus change; no cross-thread SetFocus.
+    if (!PostMessage(dialog, 0x0028, edit, new IntPtr(1)))
+      throw new Exception("WM_NEXTDLGCTL failed");
+    var deadline = Stopwatch.StartNew();
+    while (deadline.ElapsedMilliseconds < 2000) {
+      var info = new GuiThreadInfo();
+      info.cbSize = (uint)Marshal.SizeOf(typeof(GuiThreadInfo));
+      if (!GetGUIThreadInfo(threadId, ref info)) throw new Exception("GetGUIThreadInfo failed");
+      if (info.hwndFocus == edit) return;
+      Thread.Sleep(25);
+    }
+    throw new Exception("Native filename focus mismatch");
+  }
   public static void SetFileName(IntPtr dialog, IntPtr edit, uint pid, string text, string mode) {
     if (mode != "Open" && mode != "Save") throw new Exception("Unexpected dialog mode");
     int id = mode == "Open" ? 1148 : 1001;
@@ -64,6 +95,11 @@ public static class PdfDialogNative {
 function Set-NativeFileName($Dialog, $Field, $AppProcessId, $Text, $Mode) {
   [PdfDialogNative]::SetFileName([IntPtr]$Dialog.Current.NativeWindowHandle,
     [IntPtr]$Field.Current.NativeWindowHandle, [uint32]$AppProcessId, $Text, $Mode)
+}
+
+function Set-NativeFileNameFocus($Dialog, $Field, $AppProcessId, $Mode) {
+  [PdfDialogNative]::FocusFileName([IntPtr]$Dialog.Current.NativeWindowHandle,
+    [IntPtr]$Field.Current.NativeWindowHandle, [uint32]$AppProcessId, $Mode)
 }
 
 function Invoke-NativeDialogButton($Dialog, $Button, $AppProcessId, $Id) {

@@ -134,9 +134,15 @@ test('Open probe is distinct from PDF acceptance and focuses filename before edi
   const probe = spec.slice(spec.indexOf("if (inputs.scenario === 'open-only')"), spec.indexOf('await insertMarker()'));
   assert.match(probe, /continue;/);
   assert.match(spec, /evidence.status === 'passed' && inputs.scenario === 'pdf'/);
-  assert.match(dialog, /\$field.SetFocus\(\)/);
-  assert.match(dialog, /\$filenameFocused = \$field.Current.HasKeyboardFocus/);
-  assert.ok(dialog.indexOf('$field.SetFocus()') < dialog.indexOf('Set-NativeFileName $dialog'));
+  assert.match(dialog, /Set-NativeFileNameFocus \$dialog \$field \$observedProcessId \$Mode/);
+  assert.doesNotMatch(dialog, /\.SetFocus\(|HasKeyboardFocus/);
+  assert.ok(dialog.indexOf('Set-NativeFileNameFocus $dialog') < dialog.indexOf('Set-NativeFileName $dialog'));
+  assert.match(native, /PostMessage\(dialog, 0x0028, edit, new IntPtr\(1\)\)/);
+  assert.match(native, /info.cbSize = \(uint\)Marshal.SizeOf\(typeof\(GuiThreadInfo\)\)/);
+  assert.match(native, /GetGUIThreadInfo\(threadId, ref info\)/);
+  assert.match(native, /if \(info.hwndFocus == edit\) return/);
+  assert.match(native, /deadline.ElapsedMilliseconds < 2000/);
+  assert.doesNotMatch(native, /AttachThreadInput/);
 });
 
 test('PDF evidence validator rejects missing, failed, wrong SHA and incomplete overwrite results', () => {

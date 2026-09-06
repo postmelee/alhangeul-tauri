@@ -99,9 +99,8 @@ try {
         if ($null -eq $button) { continue }
         $stage = 'focusing-filename'
         Write-Evidence 'running' $null
-        $field.SetFocus()
-        $filenameFocused = $field.Current.HasKeyboardFocus
-        if (-not $filenameFocused) { throw 'Filename edit did not receive keyboard focus.' }
+        Set-NativeFileNameFocus $dialog $field $observedProcessId $Mode
+        $filenameFocused = $true
         $stage = 'setting-filename'
         Write-Evidence 'running' $null
         $filenameMethod = 'Win32-EditReplaceSelection'

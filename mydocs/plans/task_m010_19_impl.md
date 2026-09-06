@@ -10,6 +10,14 @@ GitHub Issue: [#19](https://github.com/postmelee/alhangeul-tauri/issues/19)
 
 ## 단계 개요
 
+### 2026-09-06 Stage 4.13 Native 포커스 확인 승인
+
+작업지시자가 UIA 포커스 대신 앱 소유 HWND의 native 포커스 지정·검증과 open-only 재실행을
+승인했다. helper의 PID/class/ID/자식 검증 뒤 WM_NEXTDLGCTL을 게시하고 GetGUIThreadInfo의
+hwndFocus가 해당 Edit인지 최대 2초 확인한다. 전역 키 입력·AttachThreadInput은 사용하지 않는다.
+두 helper·계약 테스트·내부 plans/working만 수정한다. focused 계약·GUI typecheck·diff 확인 후
+같은 제품 artifact로 open-only 한 번을 실행한다. 제품/릴리스 변경은 하지 않는다.
+
 ### 2026-09-06 Stage 4.12 Open 전용 진단 승인
 
 작업지시자가 파일 열기 경계를 좁혀 검증하도록 승인했다. 기존 #19 브랜치를 유지한다.
