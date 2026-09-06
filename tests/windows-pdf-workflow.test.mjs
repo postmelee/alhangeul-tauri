@@ -98,6 +98,16 @@ test('Win32 fallback restricts control identity and verifies bounded filename re
   assert.doesNotMatch(native, /SendKeys|SendInput|mouse_event|SetCursorPos/);
 });
 
+test('Save filename uses select-all and native edit replacement before verified readback', () => {
+  const save = native.split('if (mode == "Save") {')[1].split('} else {')[0];
+  assert.match(save, /ControlMessage\(edit, 0x00B1, UIntPtr.Zero, new IntPtr\(-1\), 2, 2000, out result\)/);
+  assert.match(save, /SetTextMessage\(edit, 0x00C2, UIntPtr.Zero, text, 2, 2000, out result\)/);
+  assert.ok(save.indexOf('ControlMessage(') < save.indexOf('SetTextMessage('));
+  assert.doesNotMatch(save, /result == UIntPtr.Zero|0x000C/);
+  assert.ok(native.indexOf('Validate(dialog, edit') < native.indexOf('if (mode == "Save")'));
+  assert.ok(native.indexOf('var readback') > native.indexOf('0x00C2'));
+});
+
 test('PDF evidence validator rejects missing, failed, wrong SHA and incomplete overwrite results', () => {
   validateEvidence(valid, expected);
   for (const mutation of [

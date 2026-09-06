@@ -16,6 +16,9 @@ public static class PdfDialogNative {
   [DllImport("user32.dll", CharSet = CharSet.Unicode, EntryPoint = "SendMessageTimeoutW")]
   static extern IntPtr ReadTextMessage(IntPtr h, uint msg, UIntPtr w, StringBuilder text,
     uint flags, uint timeout, out UIntPtr result);
+  [DllImport("user32.dll", EntryPoint = "SendMessageTimeoutW")]
+  static extern IntPtr ControlMessage(IntPtr h, uint msg, UIntPtr w, IntPtr l,
+    uint flags, uint timeout, out UIntPtr result);
   [DllImport("user32.dll", SetLastError = true)]
   static extern bool PostMessage(IntPtr h, uint msg, IntPtr w, IntPtr l);
 
@@ -39,8 +42,17 @@ public static class PdfDialogNative {
     Validate(dialog, edit, pid, id, "Edit");
     if (String.IsNullOrEmpty(text) || text.IndexOf('\0') >= 0) throw new Exception("Invalid filename");
     UIntPtr result;
-    if (SetTextMessage(edit, 0x000C, UIntPtr.Zero, text, 2, 2000, out result) == IntPtr.Zero
-      || result == UIntPtr.Zero) throw new Exception("WM_SETTEXT failed");
+    if (mode == "Save") {
+      // Use the edit operation so the common dialog observes a filename change.
+      // EM_SETSEL selects all; EM_REPLACESEL has no meaningful message return value.
+      if (ControlMessage(edit, 0x00B1, UIntPtr.Zero, new IntPtr(-1), 2, 2000, out result) == IntPtr.Zero)
+        throw new Exception("EM_SETSEL timed out or failed");
+      if (SetTextMessage(edit, 0x00C2, UIntPtr.Zero, text, 2, 2000, out result) == IntPtr.Zero)
+        throw new Exception("EM_REPLACESEL timed out or failed");
+    } else {
+      if (SetTextMessage(edit, 0x000C, UIntPtr.Zero, text, 2, 2000, out result) == IntPtr.Zero
+        || result == UIntPtr.Zero) throw new Exception("WM_SETTEXT failed");
+    }
     var readback = new StringBuilder(text.Length + 1);
     if (ReadTextMessage(edit, 0x000D, (UIntPtr)readback.Capacity, readback, 2, 2000, out result) == IntPtr.Zero
       || readback.ToString() != text) throw new Exception("Filename readback mismatch");

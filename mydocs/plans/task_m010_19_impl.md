@@ -10,6 +10,15 @@ GitHub Issue: [#19](https://github.com/postmelee/alhangeul-tauri/issues/19)
 
 ## 단계 개요
 
+### 2026-09-06 Stage 4.10 저장 파일명 편집 반영 승인
+
+작업지시자가 입력 문자열과 실제 저장 파일명 불일치의 helper 보정 및 재검증을 승인했다.
+Save fallback만 EM_SETSEL/EM_REPLACESEL의 실제 Edit 편집 경로로 바꾸고 readback 및
+최종 PDF 경로 검증은 유지한다. 이미 확인된 Open 경로는 변경하지 않는다.
+제품 코드·workflow·드라이버는 수정하지 않으며 helper/계약 테스트와 내부 plans/working
+기록만 수정한다. focused 계약·diff 검증 후 동일 제품 artifact로 PDF acceptance를 한 번 실행한다.
+로컬 계약 검증은 Windows 메시지 실행의 증거가 아니므로 원격 결과와 구분한다.
+
 ### 2026-09-06 Stage 4.9 열기/저장 입력칸 구분 승인
 
 작업지시자가 관측된 Open=1148, Save=1001 입력칸 구분 보정과 재검증을 승인했다.
