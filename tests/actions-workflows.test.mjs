@@ -186,6 +186,20 @@ test('CI workflow는 제품·release 계약과 automation을 native 검사 전�
   ]);
 });
 
+test('Windows PDF cleanup 선택은 실제 junction test만 검증하며 제품을 패키징하지 않는다', () => {
+  const full = getJob(ciWorkflow, 'unit-tests');
+  const focused = getJob(ciWorkflow, 'pdf-cleanup-windows');
+  assert.match(ciWorkflow, /default: full/);
+  assert.match(full, /inputs\.scope == 'full' \|\| inputs\.scope == ''/);
+  assert.match(focused, /inputs\.scope == 'pdf-cleanup-windows'/);
+  assert.match(focused, /runs-on: windows-2025/);
+  assert.match(focused, /--lib pdf_temp_cleanup::tests -- --nocapture/);
+  assert.match(focused, /grep -F 'windows_junctions_are_preserved_without_touching_target \.\.\. ok'/);
+  assert.match(focused, /git rev-parse HEAD > pdf-cleanup-context\.txt/);
+  assert.match(focused, /if: \$\{\{ always\(\) \}\}/);
+  assert.doesNotMatch(focused, /build:desktop|build:thumbnail|test:gui|tauri build|secrets\./);
+});
+
 test('desktop workflow의 Windows/Linux matrix가 exact target을 유지한다', () => {
   const job = getJob(desktopWorkflow, 'build');
   const expectedEntries = [

@@ -2,12 +2,20 @@ name: Alhangeul CI
 
 on:
   workflow_dispatch:
+    inputs:
+      scope:
+        description: Full CI or focused Windows PDF cleanup tests (no installer build).
+        type: choice
+        default: full
+        options:
+          - full
+          - pdf-cleanup-windows
 
 permissions:
   contents: read
 
 concurrency:
-  group: alhangeul-ci-${{ github.ref }}
+  group: alhangeul-ci-${{ github.ref }}-${{ inputs.scope }}
   cancel-in-progress: true
 
 env:
@@ -17,6 +25,7 @@ env:
 
 jobs:
   unit-tests:
+    if: ${{ inputs.scope == 'full' || inputs.scope == '' }}
     name: Unit tests
     runs-on: ubuntu-24.04
     timeout-minutes: 45
@@ -133,3 +142,63 @@ jobs:
 
       - name: Lint desktop Rust
         run: pnpm run clippy:desktop
+
+  pdf-cleanup-windows:
+    if: ${{ inputs.scope == 'pdf-cleanup-windows' }}
+    name: Windows PDF cleanup tests
+    runs-on: windows-2025
+    timeout-minutes: 45
+    env:
+      GIT_CONFIG_COUNT: "1"
+      GIT_CONFIG_KEY_0: core.autocrlf
+      GIT_CONFIG_VALUE_0: "false"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          submodules: true
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Cache Cargo
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            apps/desktop/src-tauri/target
+            third_party/rhwp/target
+          key: desktop-windows-x64-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            desktop-windows-x64-cargo-
+      - name: Prepare desktop test inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          corepack enable
+          pnpm install --frozen-lockfile
+          pnpm run build:studio
+          git rev-parse HEAD > pdf-cleanup-context.txt
+          rustc --version >> pdf-cleanup-context.txt
+          printf 'scope=pdf-cleanup-windows\nrunner=windows-2025\n' >> pdf-cleanup-context.txt
+      - name: Test actual Windows PDF cleanup
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml --locked \
+            --lib pdf_temp_cleanup::tests -- --nocapture 2>&1 | tee pdf-cleanup-tests.txt
+          grep -F 'windows_junctions_are_preserved_without_touching_target ... ok' pdf-cleanup-tests.txt
+      - name: Upload focused cleanup evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: windows-pdf-cleanup-${{ github.run_id }}
+          path: |
+            pdf-cleanup-context.txt
+            pdf-cleanup-tests.txt
+          if-no-files-found: error
+          retention-days: 14

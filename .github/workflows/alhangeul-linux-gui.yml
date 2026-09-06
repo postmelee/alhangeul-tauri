@@ -11,18 +11,26 @@ on:
         description: Successful Alhangeul Desktop Artifact Build run ID for build_ref.
         required: true
         type: string
+      scope:
+        description: Full acceptance or only HWPX direct PDF using the existing DEB.
+        type: choice
+        default: full
+        options:
+          - full
+          - pdf-hwpx
 
 permissions:
   actions: read
   contents: read
 concurrency:
-  group: alhangeul-linux-gui-${{ inputs.build_ref }}-${{ inputs.native_run_id }}
+  group: alhangeul-linux-gui-${{ inputs.build_ref }}-${{ inputs.native_run_id }}-${{ inputs.scope }}
   cancel-in-progress: true
 
 env:
   NODE_VERSION: "24"
   TAURI_DRIVER_VERSION: "2.0.6"
   GUI_TIMEOUT_MS: "120000"
+  GUI_SCOPE: ${{ inputs.scope || 'full' }}
 
 jobs:
   accept-linux-x64:
@@ -47,6 +55,7 @@ jobs:
           [[ "$ACCEPTANCE_REF" =~ ^[0-9a-f]{40}$ ]]
           [[ "$BUILD_REF" =~ ^[0-9a-f]{40}$ ]]
           [[ "$NATIVE_RUN_ID" =~ ^[1-9][0-9]*$ ]]
+          [[ "$GUI_SCOPE" == full || "$GUI_SCOPE" == pdf-hwpx ]]
 
       - name: Checkout exact acceptance source
         id: checkout
@@ -71,6 +80,7 @@ jobs:
             "$ACCEPTANCE_REF" "$WORKFLOW_REF" "$BUILD_REF" "$NATIVE_RUN_ID" \
             "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" \
             > "$EVIDENCE_ROOT/workflow-context.json"
+          printf '%s\n' "$GUI_SCOPE" > "$EVIDENCE_ROOT/acceptance-scope.txt"
 
       - name: Verify checked out exact SHA
         id: verify-source
@@ -121,6 +131,7 @@ jobs:
 
       - name: Verify exact Linux thumbnailer artifact handoff
         id: thumbnailer-handoff
+        if: env.GUI_SCOPE == 'full'
         shell: bash
         env:
           BUILD_REF: ${{ inputs.build_ref }}
@@ -139,6 +150,7 @@ jobs:
 
       - name: Download verified Linux thumbnailer artifact
         id: download-thumbnailer
+        if: env.GUI_SCOPE == 'full'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           artifact-ids: ${{ steps.thumbnailer-handoff.outputs.artifact_id }}
@@ -150,6 +162,7 @@ jobs:
 
       - name: Verify exact Linux thumbnailer binary
         id: verify-thumbnailer
+        if: env.GUI_SCOPE == 'full'
         shell: bash
         env:
           BUILD_REF: ${{ inputs.build_ref }}
@@ -229,6 +242,7 @@ jobs:
 
       - name: Record pre-install Linux MIME state
         id: record-preinstall-mime
+        if: env.GUI_SCOPE == 'full'
         continue-on-error: true
         shell: bash
         run: |
@@ -266,6 +280,7 @@ jobs:
 
       - name: Verify installed Linux thumbnail package
         id: verify-installed-thumbnail
+        if: env.GUI_SCOPE == 'full'
         shell: bash
         env:
           EXPECTED_HELPER: ${{ steps.verify-thumbnailer.outputs.helper_path }}
@@ -301,6 +316,7 @@ jobs:
 
       - name: Run Linux thumbnail manager contract probe
         id: thumbnail-manager-probe
+        if: env.GUI_SCOPE == 'full'
         continue-on-error: true
         timeout-minutes: 8
         shell: bash
@@ -318,6 +334,7 @@ jobs:
 
       - name: Configure CUPS-PDF
         id: configure-cups
+        if: env.GUI_SCOPE == 'full'
         shell: bash
         run: |
           set -euo pipefail
@@ -406,6 +423,17 @@ jobs:
                 "$@"
               ' bash "$phase" "$@"
           }
+          if [[ "$GUI_SCOPE" == pdf-hwpx ]]; then
+            webdriver_status=0
+            run_isolated_phase webdriver pnpm run test:gui:linux \
+              --spec tests/gui/specs/linux-native.e2e.ts --mochaOpts.grep 'HWPX 직접 PDF' \
+              || webdriver_status=$?
+            printf '{"scope":"pdf-hwpx","nativePrint":"skipped","webdriver":%s}\n' \
+              "$webdriver_status" > "$ALHANGEUL_GUI_OUTPUT_DIR/gui-phase-outcomes.json"
+            [[ "$webdriver_status" -eq 0 ]]
+            node tests/gui/linux/verify-pdf-scope.mjs "$ALHANGEUL_GUI_OUTPUT_DIR"
+            exit 0
+          fi
           native_print_status=0
           run_isolated_phase native-print pnpm run test:gui:linux:native-print \
             || native_print_status=$?
@@ -484,10 +512,13 @@ jobs:
         run: |
           set -euo pipefail
           for outcome in "$VALIDATE" "$CHECKOUT" "$PREPARE" "$SOURCE" "$NODE" "$HANDOFF" \
-            "$DOWNLOAD" "$THUMBNAILER_HANDOFF" "$THUMBNAILER_DOWNLOAD" \
-            "$THUMBNAILER_VERIFY" "$PNPM" "$INVENTORY" "$LINUX_DEPS" \
-            "$PREINSTALL_MIME" "$INSTALL" \
-            "$INSTALLED_THUMBNAIL" "$THUMBNAIL_MANAGER" "$DRIVER" "$CUPS" \
+            "$DOWNLOAD" "$PNPM" "$INVENTORY" "$LINUX_DEPS" "$INSTALL" "$DRIVER" \
             "$ENVIRONMENT" "$GUI" "$UPLOAD"; do
             [[ "$outcome" == success ]]
+          done
+          expected=success
+          if [[ "$GUI_SCOPE" == pdf-hwpx ]]; then expected=skipped; fi
+          for outcome in "$THUMBNAILER_HANDOFF" "$THUMBNAILER_DOWNLOAD" "$THUMBNAILER_VERIFY" \
+            "$PREINSTALL_MIME" "$INSTALLED_THUMBNAIL" "$THUMBNAIL_MANAGER" "$CUPS"; do
+            [[ "$outcome" == "$expected" ]]
           done

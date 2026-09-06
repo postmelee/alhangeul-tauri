@@ -10,6 +10,39 @@ GitHub Issue: [#19](https://github.com/postmelee/alhangeul-tauri/issues/19)
 
 ## 단계 개요
 
+### 2026-09-07 Stage 4.22 — 수용 근거 보정과 최소 OS 회귀
+
+작업지시자가 남은 근거 검토의 권고를 승인했다. 기존 #19/M010/`local/task19`를 유지한다.
+수행계획서의 문서 위치 판단을 따르며 아래 실행 요구가 과거 Stage 4 GUI 전체 재현 요구보다 우선한다.
+
+1. `DESKTOP_RELEASE.md`의 PDF 수용을 결정적 Studio/native 테스트, OS 파일시스템 검사,
+   설치본 PDF로 나눈다. 기존 수용 계약/수치 제한을 유지하고 실제 동시 편집/reload/장시간
+   대기/재시작 통합 미실행을 명시한다. 실패 기록·기존 보고서는 그대로 보존한다.
+2. `pdf_temp_cleanup_tests.rs`에 Windows junction 후보 및 후보 내부 junction 보존을 추가한다.
+   PowerShell `New-Item -ItemType Junction`은 새 임시 경로에만 사용한다. 원본 sentinel,
+   링크 reparse attribute, 정상 old 후보 삭제를 함께 확인해 검사 전체가 no-op인 통과를 막는다.
+   production 함수·의존성·lockfile을 변경하지 않는다. 파일 300 LOC/함수 50 LOC 이내를 유지한다.
+3. 기존 Linux native spec에 HWPX direct PDF를 추가한다. fixture hash/10쪽/A4/한글 표제/
+   쪽별 text floor/nonblank/가장자리/원본 hash와 문서 상태 보존을 확인한다. PDF 분석 helper는 재사용한다.
+4. 기존 CI에 `scope=pdf-cleanup-windows` 선택을 추가해 Windows Rust cleanup 테스트만 실행한다.
+   기존 Linux GUI에는 `scope=pdf-hwpx`를 추가한다. full 기본 동작은 유지하고 좁은 선택에서는
+   인쇄·thumbnail 검사를 명시적으로 skipped 처리하며 실제 실행한 항목만 success로 요구한다.
+   제품 SHA/검증 harness SHA·artifact identity·실행 범위를 증거에 남긴다. 새로운 workflow 파일은 없다.
+
+로컬 검증: `pnpm run typecheck:gui`, `pnpm run test:gui:contracts`,
+`pnpm run test:gui:linux:contracts`, `node --test tests/linux-gui-workflow.test.mjs tests/actions-workflows.test.mjs`,
+`pnpm run check:product-boundary`, 수정 Rust 파일 `rustfmt --check`, 수정 workflow `actionlint`, `git diff --check`.
+실제 Windows test가 실행되기 전 Rust 성공으로 세지 않는다. Node 정적 계약과 실제 OS/PDF 검증도 구분한다.
+
+로컬 통과 후 기존 원격 실행 checkpoint 예외로 소스/계획을 `publish/task19`에 게시한다.
+CI의 Windows 제한 scope와 Linux GUI의 HWPX 제한 scope를 각각 한 번 실행한다.
+Linux 제품은 `69b22650df96323a2c59e473d474ed3195cc9cc7`, native run `34021920074`의
+미만료·SHA/digest/inventory를 재확인해 재사용한다. 새 Rust 변경은 `#[cfg(test)]` 파일뿐이므로
+제품 실행 경로 동일성을 diff로 확인한다. Windows는 테스트 바이너리 컴파일만 하며 설치본을 만들지 않는다.
+실패 시 해당 근거를 기록하고 자동 재시도·guard 완화·다른 suite 실행을 하지 않는다.
+성공한 PDF의 생성 PNG는 PDF skill로 확인한다. 보고서/계획/orders는 결과 확인 뒤 묶는다.
+이 단계 종료 후 #19 최종 보고/PR 승인을 요청하며 merge·release·issue close는 하지 않는다.
+
 ### 2026-09-07 Stage 4.19 보조 수집 분리 보정 승인
 
 작업지시자의 후속 `진행해줘`로 정상 검증과 보조 tree 진단 분리를 승인받았다. 기존 #19/M010,

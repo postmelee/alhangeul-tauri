@@ -143,6 +143,66 @@ fn reaper_releases_expired_jobs_and_stops_after_state_drop() {
     assert!(!reap_once(&weak));
 }
 
+#[cfg(windows)]
+#[test]
+fn windows_junctions_are_preserved_without_touching_target() {
+    use std::os::windows::fs::MetadataExt;
+
+    for nested in [false, true] {
+        let root = tempfile::tempdir().unwrap();
+        let target = tempfile::tempdir().unwrap();
+        let sentinel = target.path().join("page-00000000.svg");
+        std::fs::write(&sentinel, b"keep-target").unwrap();
+        let candidate = product_dir(root.path(), "junction");
+        let link = if nested {
+            std::fs::create_dir(&candidate).unwrap();
+            std::fs::write(candidate.join("page-00000000.svg"), b"keep-local").unwrap();
+            candidate.join("page-00000001.svg")
+        } else {
+            candidate.clone()
+        };
+        create_windows_junction(&link, target.path());
+        let safe = product_dir(root.path(), "safe-control");
+        std::fs::create_dir(&safe).unwrap();
+        std::fs::write(safe.join("page-00000000.svg"), b"remove-control").unwrap();
+
+        let removed = cleanup_orphan_pdf_temp_dirs_at(
+            root.path(),
+            SystemTime::now() + Duration::from_secs(2 * 24 * 60 * 60),
+            OrphanCleanupPolicy::default(),
+        )
+        .unwrap();
+
+        assert_eq!(removed, 1);
+        assert!(!safe.exists());
+        let metadata = std::fs::symlink_metadata(&link).unwrap();
+        assert_ne!(metadata.file_attributes() & 0x400, 0);
+        assert!(is_link_or_reparse(&metadata));
+        assert_eq!(std::fs::read(&sentinel).unwrap(), b"keep-target");
+        if nested {
+            assert_eq!(
+                std::fs::read(candidate.join("page-00000000.svg")).unwrap(),
+                b"keep-local"
+            );
+        }
+        // Remove only the test junction, never recurse into its target.
+        std::fs::remove_dir(&link).unwrap();
+        assert_eq!(std::fs::read(&sentinel).unwrap(), b"keep-target");
+    }
+}
+
+#[cfg(windows)]
+fn create_windows_junction(link: &Path, target: &Path) {
+    let status = std::process::Command::new("powershell.exe")
+        .args(["-NoProfile", "-NonInteractive", "-Command",
+            "New-Item -ItemType Junction -Path $env:ALHANGEUL_TEST_LINK -Target $env:ALHANGEUL_TEST_TARGET -ErrorAction Stop | Out-Null"])
+        .env("ALHANGEUL_TEST_LINK", link)
+        .env("ALHANGEUL_TEST_TARGET", target)
+        .status()
+        .unwrap();
+    assert!(status.success(), "Windows junction fixture creation failed");
+}
+
 fn product_dir(root: &Path, suffix: &str) -> PathBuf {
     root.join(format!("{PDF_TEMP_PREFIX}{suffix}"))
 }
