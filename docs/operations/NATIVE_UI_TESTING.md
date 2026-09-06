@@ -116,7 +116,7 @@ pnpm run typecheck:gui
 | Windows dialog 판단 | [순수 정책](../../scripts/windows-pdf-dialog-policy.ps1), [실제 함수 테스트](../../tests/windows-pdf-dialog-policy.test.ps1), [UIA 관측](../../scripts/windows-pdf-dialog-observation.ps1) | 실제 helper가 같은 함수를 사용. 합성 PID/HWND·의미 입력은 native 성공 증거가 아님 |
 | Windows 작은 OS 관측 | [probe](../../tests/gui/windows-dialog/probe.ps1), [workflow](../../.github/workflows/alhangeul-windows-dialog.yml), [메시지 adapter](../../scripts/windows-pdf-win32.ps1) | 제어된 WinForms 저장창의 확인창까지 관측하며 Yes는 실행하지 않음. 실제 앱·PDF·overwrite 수용과 별개 |
 | Windows 작은 통합 | [확인창 adapter](../../scripts/windows-pdf-confirmation.ps1), [integration](../../tests/gui/windows-dialog/integration.ps1) | 실제 helper와 같은 확인창 처리를 사용. 공개 sentinel의 열기·새 저장·overwrite·거절/취소·잘못된 target 거부를 검사하며 제품/PDF 수용은 아님 |
-| Windows 실제 설치본 | [spec](../../tests/gui/specs/windows-pdf.e2e.ts), [workflow](../../.github/workflows/alhangeul-windows-pdf.yml) | open-only/full PDF 모드만 있음. 미지원 overwrite control은 안전하게 중단 |
+| Windows 실제 설치본 | [spec](../../tests/gui/specs/windows-pdf.e2e.ts), [workflow](../../.github/workflows/alhangeul-windows-pdf.yml) | open-only/full PDF 모드. 새 확인창 adapter의 설치본 검증은 아직 미실행; 미지원 capability는 안전하게 중단 |
 | Linux native UI | [AT-SPI adapter](../../tests/gui/linux/native-ui/atspi.mjs), [사후 조건](../../tests/gui/linux/native-ui/action-postcondition.mjs), [spec](../../tests/gui/specs/linux-native.e2e.ts) | Windows ID/class 가정을 Linux에 이식하지 않음; 각 테스트의 실행 환경을 확인 |
 
 Windows PowerShell 5.1의 순수 함수 테스트 진입점은 `pnpm run test:gui:windows:policy`다.
@@ -130,11 +130,10 @@ Windows PowerShell 5.1의 순수 함수 테스트 진입점은 `pnpm run test:gu
 작은 통합은 같은 dispatcher의 `windows-dialog-verify`로 실행한다. policy 검사 후 위 다섯
 사례를 실행하며 관측-only probe는 중복 실행하지 않는다. host는 OK 및 선택 경로를 검증한
 경우에만 지정 sentinel을 쓴다. No 후 저장창 복귀·Cancel 결과와 세 파일의 보존을 별도 검사한다.
-현재 작은 통합은 Open/Fresh까지 통과했으나 overwrite의 native 재검증에서 실패했다.
-후속 진단에서 UIA/native class를 동일시한 검사 오류를 확인했다. native 기대값을 관측된
-`Button`으로 보정했으며 현재 작은 통합 재검증을 대기 중이다. UIA `CCPushButton`은 유지한다.
-확인 버튼 호출·No/Cancel·잘못된 target 거부는 실제 통합 미검증이다. 다섯 사례가 구현돼
-있다는 사실과 전부 통과했다는 판정을 구분한다.
+현재 제어된 WinForms fixture의 다섯 사례와 cleanup은 모두 통과했다. UIA/native class를
+동일시한 검사 오류를 진단하고 native 기대값을 관측된 `Button`으로 보정한 결과다.
+UIA `CCPushButton` 조건과 다른 안전장치는 유지한다. 실제 Alhangeul 설치본에서의 확인창
+capability·PDF 저장은 별도 검증 대상이며 이 작은 통합 성공으로 대체하지 않는다.
 
 native 재검증 오류의 `nativeFailure`는 실제 승인 판정에 쓴 snapshot에서 나온다.
 `checks`/`failedChecks`와 `classes.nativeButtonClass`를 보고, UIA 관측의 `class`와 구분한다.
@@ -143,7 +142,7 @@ native 재검증 오류의 `nativeFailure`는 실제 승인 판정에 쓴 snapsh
 합성 조건·실패 추출과 HWND 0의 거부를 검사하며, 실제 버튼 호출 검증을 대체하지 않는다.
 
 확인창 adapter는 관측된 영문 대체 질문·정확한 파일명·저장창 owner·PID·enabled·유일한
-`CCPushButton`·실제 InvokePattern을 검사한다. 문구가 다른 언어나 pattern이 없는 경우에는
+UIA `CCPushButton`·native `Button`·실제 InvokePattern을 검사한다. 문구가 다른 언어나 pattern이 없는 경우에는
 명시적으로 실패한다. 파일명의 공백/구두점을 바꾸어 다른 파일과 일치시키지 않는다.
 legacy IDYES·다른 메시지 API로 fallback하지 않는다. 실제 제품의 capability는 작은 fixture와
 다를 수 있으며 설치본 통합에서 따로 확인해야 한다. Invoke 호출 성공 뒤에도 파일·창 상태를

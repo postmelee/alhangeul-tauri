@@ -38,7 +38,7 @@ pnpm run test:gui:windows:contracts
 | helper 성공인데 HWPX 대신 이전 HWP가 열림 | ID `1`이 `UIItem`과 `Button` 양쪽에 존재; ID-only `FindFirst`는 파일 항목을 고를 수 있었음 | ID/class·범위·중복 검사와 최종 문서 identity를 모두 유지 |
 | 입력칸이 보이지만 UIA focus/pattern이 안 됨 | 관측된 control이 기대 pattern을 제공하지 않음; 표시된 ControlType만으로 조작 방식을 추정했음 | 관측 capability 기반 adapter와 focus/readback/실제 결과를 구분 |
 | 입력 문자열 readback 후에도 다른 파일명/문서 | readback은 텍스트 상태만 확인하며 실제 dialog 선택·처리 완료의 증거가 아님 | 실제 경로·title 사후 조건 추가; 문자열 확인만으로 성공 금지 |
-| 재시작 Save에서 `Unsupported overwrite confirmation controls` | helper는 ID `6`/class `Button` 실행만 지원하지만 실제 확인창은 `CommandButton_6/7`, class `CCPushButton`으로 관측 | 형태 인식과 의미/대상 확인 및 실제 승인 구현을 분리; 아직 미해결 |
+| 재시작 Save에서 `Unsupported overwrite confirmation controls` | 당시 helper는 ID `6`/class `Button`만 실행했지만 실제 확인창은 `CommandButton_6/7`, UIA class `CCPushButton`으로 관측 | 새 adapter의 작은 통합은 통과; 실제 제품 capability/수용 검증은 별도 |
 | 작은 확인창에서 native 재검증 실패 | UIA class `CCPushButton`을 native에도 요구했으나 실제 native class는 `Button`; 다른 12개 guard는 통과 | UIA/native 속성을 별도로 관측·검증하고 같은 판정 snapshot에서 실패 조건 기록 |
 
 관측한 ID/class는 이 runner의 사실이며 Windows 공통 API 계약으로 일반화하지 않는다.
@@ -52,7 +52,7 @@ adapter를 구현하기 전에는 무조건 Yes 또는 숫자 ID 교체로 우�
 - **최초 PDF 생성: 해당 시나리오 통과.** HWP 6쪽/HWPX 10쪽의 정확한 title,
   파일 생성, source hash·dirty 보존이 최신 전체 실행의 fresh 결과에 기록되었다.
   후속 PDF 내용/렌더 분석은 실행되지 않았으므로 PDF 품질 전체 통과로 쓰지 않는다.
-- **재실행 덮어쓰기: 미해결.** HWP의 첫 overwrite 확인창에서 안전하게 실패했다.
+- **제품 재실행 덮어쓰기: 새 adapter 미검증.** 이전 전체 run은 HWP의 첫 확인창에서 실패했다.
   HWPX restart와 전체 PDF 분석은 미실행이다. 제품 저장 결함이 확인된 것은 아니다.
 - **판단 분리: Stage 4.17 Windows 검사 28개 통과.** 실제 helper의 순수 함수와 PS5.1
   실행 테스트를 연결했다. ID/class 충돌의 관측값을 재사용하고 PID/HWND는 합성한다.
@@ -61,8 +61,10 @@ adapter를 구현하기 전에는 무조건 Yes 또는 숫자 ID 교체로 우�
 - **작은 OS 관측: 첫 실행 통과.** `windows-dialog-probe`는 제어된 저장창의 확인창까지
   관측하고 Yes는 누르지 않는다. 제품 재빌드·설치·PDF 분석 없이 지원 pattern·소유 관계를
   수집하며, 이 결과가 확인창 실행 adapter의 다음 승인 근거다.
+- **작은 OS 통합: Stage 4.18 완료.** `d553f8e`에서 열기·새 저장·덮어쓰기·No/Cancel·
+  잘못된 target 거부와 공개 fixture의 파일 사후 조건·cleanup이 모두 통과했다. 제품/PDF 성공은 아니다.
 
-### Stage 4.18 작은 통합 — native 재검증에서 중단, 미완료
+### Stage 4.18 작은 통합 — class 비교 보정 후 완료
 
 4.17에서 관측한 InvokePattern만 사용하는 확인창 adapter를 실제 PDF helper와 작은 통합에
 연결했다. 저장창 owner/PID·Save 및 제출 경로·기존 target·영문 질문의 정확한 파일명·
@@ -122,12 +124,32 @@ image `20260824.214.3`, PS `5.1.26100.33296`으로 앞선 실행과 같다.
 
 권고 보정은 UIA `CCPushButton` 조건을 유지하면서 native class 조건만 관측된 `Button`으로
 고치는 것이다. PID·owner·자식 관계·enabled·의미/대상·capability 및 사후 조건은 그대로 둔다.
-이 비교 변경과 작은 통합 재실행은 다음 승인 범위이며 이번에는 적용하지 않았다.
-실제 Alhangeul에서의 InvokePattern 지원/덮어쓰기는 아직 검증하지 않았고 Stage 4.18은 미완료다.
+이 비교 변경과 작은 통합 재실행은 당시 다음 승인 범위로 남겼다.
+실제 Alhangeul에서의 InvokePattern 지원/덮어쓰기는 미검증이며 당시 Stage 4.18도 미완료였다.
 
 후속 승인으로 native class 비교만 `Button`으로 보정했다. UIA `CCPushButton`·다른 guard·
 Invoke 방식은 유지한다. 관련 합성 데이터/정적 계약을 정렬한 뒤 작은 통합 재검증 한 번으로
-실제 overwrite와 No/Cancel·잘못된 target 거부의 사후 조건을 확인한다. 현재 결과 대기다.
+실제 overwrite와 No/Cancel·잘못된 target 거부의 사후 조건을 확인했다.
+
+#### 비교 보정 결과 — 작은 통합 5개 통과
+
+[run 34049005561](https://github.com/postmelee/alhangeul-tauri/actions/runs/34049005561),
+harness `d553f8ef4e3711f19828d3d297a8f1355981e8be`: **43초 통과**.
+image `20260824.214.3`, OS `10.0.26100.0`, PS `5.1.26100.33296`이다.
+정책 50개와 native 진단 22개, 아래 실제 작은 통합 5개 및 cleanup이 통과했다.
+
+| 사례 | 실제 사후 조건 |
+|---|---|
+| Open | 정확한 선택 경로, target/source/다른 target 보존 |
+| Fresh | 정확한 선택 경로와 새 target 내용, source/다른 target 보존 |
+| Overwrite | `UIA-InvokePattern` Confirm, OK, 지정 target 갱신, source/다른 target 보존 |
+| Decline | `UIA-InvokePattern` No, enabled 저장창 복귀, ID2 Cancel, 세 파일 보존 |
+| WrongTarget | 잘못된 요청이 `unknown-prompt`로 거부됨, 이후 No/Cancel, 세 파일 보존 |
+
+`integration.json`의 `passed=true`, 모든 case의 `passed=true`, `cleanupPassed=true`,
+`productTested=false`를 확인했다. 취소 사례의 `selectedExpected=false`는 Cancel 결과에 맞다.
+실제 제품 설치·PDF 렌더링은 실행하지 않았다. 이전 실패와 수동 근거를 통과로 바꿔 쓰지 않는다.
+검증 후에는 문서/보고만 수정하므로 같은 작은 OS job을 반복하지 않는다.
 
 ### Stage 4.17 관측과 당시 adapter 판단
 
@@ -184,13 +206,15 @@ readback·재조회/native 검증·제출을 확인했다. 시험 파일 hash �
 | [34047467032](https://github.com/postmelee/alhangeul-tauri/actions/runs/34047467032), harness `cd77b57` | 작은 policy/WinForms 확인창 관측·cleanup 통과, 실제 제품/PDF/Yes 호출 없음 |
 | [34048114390](https://github.com/postmelee/alhangeul-tauri/actions/runs/34048114390), harness `f198449` | PS 50개·Open/Fresh·cleanup 통과; Overwrite native 재검증 실패, Invoke/Decline/WrongTarget 미실행 |
 | [34048778670](https://github.com/postmelee/alhangeul-tauri/actions/runs/34048778670), harness `5096438` | PS 정책 50개·진단 22개·Open/Fresh·cleanup 통과; native class만 불일치 확인, 통합은 실패 유지 |
+| [34049005561](https://github.com/postmelee/alhangeul-tauri/actions/runs/34049005561), harness `d553f8e` | PS 정책 50개·진단 22개·통합 5개·cleanup 통과; 실제 제품/PDF는 미실행 |
 
 2026-09-06 작업지시자는 실제 Windows NSIS에서 두 문서의 PDF 저장·검색·쪽 수·시각 확인,
 원본 보존과 재실행 덮어쓰기를 문제없이 완료했다고 보고했다. 해당 수동 근거는 유지한다.
 설치 SHA/OS 상세 버전은 별도 제공되지 않아 위 exact-SHA 자동 성공으로 바꾸어 기록하지 않는다.
 
 로컬 회귀와 이전 가이드 작업은 [Stage 4.16](../working/task_m010_19_stage4.16.md),
-작은 Windows 검증과 다음 승인 경계는 [Stage 4.17](../working/task_m010_19_stage4.17.md)에 둔다.
+작은 Windows 관측은 [Stage 4.17](../working/task_m010_19_stage4.17.md),
+확인창 실행·통합과 다음 승인 경계는 [Stage 4.18](../working/task_m010_19_stage4.18.md)에 둔다.
 
 ## 참고
 
