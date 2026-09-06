@@ -37,3 +37,20 @@ open-only 한 번을 실행한다. PDF 전체 검사나 제품 재빌드는 하�
 ## 승인 상태
 
 작업지시자가 보정과 열기 전용 비교 검증을 승인했다.
+
+## 원격 결과 — ID 충돌로 잘못된 요소 선택 확인
+
+[run 34042086165](https://github.com/postmelee/alhangeul-tauri/actions/runs/34042086165),
+harness `1021b8d`, open-only 실행은 failure다. 첫 HWP는 통과했지만 두 번째 HWPX Open은
+stage=invoking-submit, submitted=false, filenameFocused=true 상태에서 native identity 검증이
+`Native dialog control identity mismatch`로 거부했다.
+
+증거 tree에 `id=1,class=UIItem,type=ListItem`이 실제 `id=1,class=Button`보다 먼저 나온다.
+`Find-Id $dialog '1'`은 class 제한 없이 FindFirst를 사용하므로 파일 목록 항목을 선택한다.
+이전 UIA Invoke는 잘못 선택된 목록 항목을 실행할 수 있었고, native 검증은 이를 차단했다.
+이로써 단순 UIA/native 동작 차이가 아니라 ID만으로 submit 요소를 탐색한 구체적 결함을 확인했다.
+후속 최소 수정은 submit을 ID1 AND class Button으로 제한하는 것이며 PID/자식 HWND 검증은 유지한다.
+같은 잘못된 탐색은 Save에도 존재하므로 공통 버튼 탐색 경계에서 수정해야 한다.
+
+cleanup/정책 복원/업로드는 통과했고 PDF 분석은 제외됐다.
+로컬 증거: `/private/tmp/alhangeul-open-submit.f1h9jq`.
