@@ -53,3 +53,16 @@ GitHub Issue: [#59](https://github.com/postmelee/alhangeul-tauri/issues/59)
   확대하지 않는다. Windows는 첫 성공 archive의 exact ID/digest로 installer profile을 검증한다.
 - warm dispatch까지 원격 publish/task59의 후보 SHA를 유지한다. 그 후 문서 통합 commit을
   push해 product/harness SHA가 다른 installer 재사용을 확인한다. 최종 보고·PR은 이 결과 이후다.
+
+## 2026-09-07 통합 수용 결과
+
+- 전체 run 34063530307: success, 필수 11개 job 통과. 새 Windows MSI/NSIS와
+  Linux x64/arm64 package lifecycle을 포함한다.
+- 재사용 run 34065755394: success. 제품 2300984, harness 1d2bda6,
+  Windows archive ID 9998755524의 digest/inventory 검증 후 MSI/NSIS 통과.
+- 같은 후보 arm64 product 재실행 34065744901: success. native 1,259초,
+  첫 실행은 1,164초. 두 번 모두 Cargo miss여서 계획한 warm 비교는 성립하지 않았다.
+  cache 저장/동일 key와 실제 재컴파일 시간은 기록했고, restore·warm 성능은 미입증으로
+  최종 보고와 PR에 공개한다. 개별 cache 제거 사유는 확인하지 않았다.
+- #60–#64 Stage 3·최종 보고를 각 branch에서 commit한 후 부모에 fast-forward 통합했다.
+  위의 당시 진행 기록과 잘못된 SHA dispatch 취소 이력은 보존한다.
