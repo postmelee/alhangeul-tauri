@@ -11,9 +11,11 @@ helper가 성공을 반환해도 다른 문서가 열리거나 요청과 다른 
 제공하지 않아 호출 전에 중단했다. 아래 해결 상태는 경계별로 구분한다.
 후속 제한 run `34053001644`는 native 거절 경로를 통과했지만 Confirm 전 보조 UIA 트리
 수집 예외로 실패했다. 보조 진단 격리 후 run `34055921568`의 Confirm-only는 PDF 교체·
-원본/다른 target 보존·cleanup까지 통과했다. 세 사례는 두 실행의 부분별 근거이며 전체 PDF는 미완료다.
-최신 전체 run `34056914386`은 fresh 두 문서 저장을 통과했으나 HWP restart에서 보조 tree의
+원본/다른 target 보존·cleanup까지 통과했다. 세 사례는 두 실행의 부분별 근거이며 당시 전체 PDF는 미완료였다.
+직전 전체 run `34056914386`은 fresh 두 문서 저장을 통과했으나 HWP restart에서 보조 tree의
 `ProgrammaticName` 속성 접근 오류로 확인 버튼 호출 전에 중단했다. 제품 저장 결함으로 판정하지 않는다.
+보조 수집을 관측 mode로 분리한 최신 run `34058443345`는 HWP/HWPX fresh/restart와 원격 PDF
+분석을 모두 통과했다. 기존 HWPX 조판 관측과 #19의 별도 수용 경계는 이 자동화 성공과 구분한다.
 
 ## 재현 조건
 
@@ -25,7 +27,8 @@ helper가 성공을 반환해도 다른 문서가 열리거나 요청과 다른 
   기존 installer artifact run: `34021920074`.
 - 이전 열기 성공 harness: `903164b428a4d19265f7d078a85323596261a7c2`.
   이전 전체 실행 harness: `23b631d03ee84cce631c3e798ffb4875d39297bc`.
-  최신 전체 실행 harness: `910289e96ddc654e0da0f975afe15dab1edc598d`.
+  직전 전체 실행 harness: `910289e96ddc654e0da0f975afe15dab1edc598d`.
+  최신 전체 성공 harness: `fdbf481858a3853f107a990725bdf46cc9c607c6`.
 - 입력은 저장소의 공개 HWP/HWPX fixture 복사본이다. 개인 문서는 사용하지 않았다.
 
 현재 판정 함수의 빠른 재현:
@@ -63,12 +66,10 @@ adapter를 구현하기 전에는 무조건 Yes 또는 숫자 ID 교체로 우�
 
 - **열기: 이전 harness 검증됨.** `903164b`에서 ID AND class `Button`, 중복 거부를 적용했다.
   focus·입력·native submit 뒤 spec이 clean title을 정확히 검사한다.
-- **최초 PDF 생성: 해당 시나리오 통과.** 최신 전체 실행에서 HWP 6쪽/HWPX 10쪽의 정확한
-  title·파일 생성·source hash·dirty 보존을 확인했다. 두 PDF의 별도 분석/시각 관측은 아래
-  Stage 4.19에 둔다. 원격 전체 PDF 분석과 재실행 수용의 통과로 쓰지 않는다.
-- **제품 재실행 덮어쓰기: 미완료.** 이전 Invoke 미지원은 후속 native 제한 검증에서 보정됐으나
-  최신 전체 실행은 HWP restart의 보조 tree metadata 오류로 확인 전에 중단했다.
-  HWPX restart와 원격 전체 PDF 분석은 미실행이며 제품 저장 결함이 확인된 것은 아니다.
+- **최초 PDF 생성·재실행 덮어쓰기: 전체 자동 회귀 통과.** 최신 실행에서 HWP 6쪽/HWPX 10쪽
+  각각 fresh/restart의 정확한 title·파일 생성·source hash·dirty 보존과 실제 확인창·덮어쓰기를
+  확인했다. 네 PDF의 원격 분석도 통과했다. 아래 이전 실패와 부분 분석은 그대로 보존하며,
+  HWPX 조판 완전 동등성이나 동시 편집/TTL 수용으로 확대하지 않는다.
 - **판단 분리: Stage 4.17 Windows 검사 28개 통과.** 실제 helper의 순수 함수와 PS5.1
   실행 테스트를 연결했다. ID/class 충돌의 관측값을 재사용하고 PID/HWND는 합성한다.
   클릭 직전 UIA 재조회와 native 재검증을 추가했으므로 이전 open-only 성공을 새 helper의
@@ -165,7 +166,7 @@ HWPX `df8592475c369d90551da2088910f215854625d1dc5a0e76a7123cf3e1645bd6`이다.
 이는 앞선 관측과 동일하다. 동봉 미리보기는 현재 앱 렌더의 증거가 아니고 이번 앱 screenshot도
 2쪽 일부여서 PDF 변환·렌더러·폰트 중 원인을 확정하거나 조판 전체 정상으로 판정하지 않는다.
 
-4.19는 미완료다. 4.21의 제한 통과와 사용자의 수동 통과는 유지한다. 완료 보고서/커밋,
+당시 4.19는 미완료였다. 4.21의 제한 통과와 사용자의 수동 통과는 유지했다. 완료 보고서/커밋,
 소스 보정과 추가 실행은 보류했다. 권고는 예외 사례를 계속 늘리기보다 **정상 PDF 경로에서
 범용 보조 tree 수집을 빼고 명시적 진단 mode에서만 실행**하는 최소 보정이다. 필수 dialog
 탐색·의미/target/owner/identity/native guard와 확인 adapter는 그대로 둔다.
@@ -180,7 +181,32 @@ snapshot도 비워 이전 available을 재사용하지 않는다. 필수 탐색/
 확인 adapter는 변경하지 않았다. 실제 PS 테스트에 활성/비활성·누락/타입 직렬화 경계를 추가했고,
 기존 PDF workflow의 설치 전 PS 검사를 모든 mode로 연결했다. 새 mode/workflow는 없다.
 로컬 focused 계약 58개·workflow/handoff 83개(중복 import 포함), GUI typecheck·actionlint·diff가
-통과했다. PS 16개 회귀와 실제 전체 PDF는 같은 원격 한 번에서 검증 예정이며 아직 통과로 세지 않는다.
+통과했다. PS 16개 회귀와 실제 전체 PDF를 같은 원격 한 번에서 검증했다.
+
+#### 분리 보정 결과 — 전체 자동 회귀 통과
+
+[run 34058443345](https://github.com/postmelee/alhangeul-tauri/actions/runs/34058443345),
+harness `fdbf481858a3853f107a990725bdf46cc9c607c6`에서 Windows **14분 45초**, Ubuntu 분석
+**36초** 모두 통과했다. 같은 제품/artifact를 재사용했고 PS5.1 정책 62개/native 진단 50개/
+tree 16개가 설치 전에 통과했다. 각 검사 종류의 합성 조건과 실제 앱 결과는 구분한다.
+
+- HWP/HWPX 각각 fresh/restart가 passed이며 원본 hash·dirty·정확한 문서 identity가 보존됐다.
+  두 restart는 `overwriteConfirmed=true`, `Win32-BM_CLICK-command`, dialog 0개다.
+  최종 target hash는 각각 restart PDF와 같다. Open/Save evidence 8개의 tree는 모두 disabled/빈 배열이다.
+- 네 PDF의 hash 검증·6/10쪽 A4·marker 검색·쪽별 text/nonblank·페이지 가장자리 검사가 통과했다.
+  총 32쪽 PNG는 앞서 전 쪽을 시각 검토한 16쪽 fresh 렌더와 각각 byte-identical이다.
+  최신 HWP 2쪽/HWPX 1쪽을 재열람했으며 HWPX의 기존 우측 셀 경계 밀착/잘림 관측을 유지한다.
+  일반 PDF 실행 성공이지 원본 조판 전체 동등성 판정은 아니다.
+- NSIS cleanup과 WebView2 복구가 통과했다. source/네 PDF hash와 최종 target 일치는 다운로드
+  자료에서도 독립 확인했다. raw artifact `9996908674`, 5287211 bytes,
+  digest `sha256:1d28d117269f0601e1f9e260811188ee1a028d39870ea68cca23049c7d0fa426`.
+  analysis artifact `9996919041`, 15059077 bytes,
+  digest `sha256:2a2166f0311071e118e68d0d4aa287342994e32912a9e50aa2336b4dd80494a6`.
+  로컬 증거는 `/private/tmp/alhangeul-pdf-stage419-final.fMCLJe`에 두며 커밋하지 않는다.
+
+[4.19 보고서](../working/task_m010_19_stage4.19.md)에 자동 회귀 완료를 기록한다. 변경 없는
+동일 실행은 반복하지 않는다. 다음 검토 대상은 HWPX 조판 관측과 #19 고유 수용의 남은 근거다.
+이 run으로 동시 편집/WebView reload/TTL/physical IME 또는 릴리즈를 승인하지 않는다.
 
 ### Stage 4.20 실제 앱 확인창 — 관측 완료, 호출은 미검증
 
@@ -484,6 +510,7 @@ readback·재조회/native 검증·제출을 확인했다. 시험 파일 hash �
 | [34053001644](https://github.com/postmelee/alhangeul-tauri/actions/runs/34053001644), harness `816edd5` | PS 정책 62개·native 진단 50개·Decline/WrongTarget 통과; Confirm 전 보조 UIA 열거 예외, 세 파일 보존 별도 확인; 전체 제한 검증은 실패 |
 | [34055921568](https://github.com/postmelee/alhangeul-tauri/actions/runs/34055921568), harness `b980e10` | PS 정책 62개·native 50개·tree 예외 10개, Confirm-only의 PDF 교체·원본/다른 target 보존·cleanup 통과; 이전 두 거절과 부분별 근거, 전체 PDF는 미실행 |
 | [34056914386](https://github.com/postmelee/alhangeul-tauri/actions/runs/34056914386), harness `910289e` | fresh 두 문서 통과; HWP restart의 보조 tree `ProgrammaticName` 접근 오류로 확인 전 실패, HWPX restart/원격 analyze 미실행; 원본/target 보존·fresh 부분 분석 별도 확인 |
+| [34058443345](https://github.com/postmelee/alhangeul-tauri/actions/runs/34058443345), harness `fdbf481` | PS 정책 62/native 50/tree 16, HWP/HWPX fresh/restart·원본/dirty 보존·cleanup·네 PDF 분석 모두 통과; 32쪽 렌더는 이전 검토 결과와 동일, HWPX 조판 관측은 유지 |
 
 2026-09-06 작업지시자는 실제 Windows NSIS에서 두 문서의 PDF 저장·검색·쪽 수·시각 확인,
 원본 보존과 재실행 덮어쓰기를 문제없이 완료했다고 보고했다. 해당 수동 근거는 유지한다.

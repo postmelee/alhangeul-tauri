@@ -37,9 +37,19 @@ GitHub Issue: [#19](https://github.com/postmelee/alhangeul-tauri/issues/19)
   #19의 동시 편집/reload/TTL 수용은 구분한다.
 
 보정 후 로컬 focused 계약 **58/58**, workflow/handoff **83/83**(중복 import 포함), GUI
-typecheck·actionlint·diff가 통과했다. 실제 PS 검사 16개는 원격 설치 전 실행 예정이며 Mac에서
-실행했다고 기록하지 않는다. 필수 guard/클릭 adapter와 제품 경로는 이전 checkpoint 대비 변경 없다.
+typecheck·actionlint·diff가 통과했다. 실제 PS 검사는 아래 Windows 실행에서 확인했다.
+필수 guard/클릭 adapter와 제품 경로는 이전 checkpoint 대비 변경 없다.
 기존 Windows artifact의 미만료·SHA/digest/크기도 재확인했다.
+
+checkpoint `fdbf481858a3853f107a990725bdf46cc9c607c6`, run `34058443345`는 Windows **14분 45초**,
+Ubuntu 분석 **36초** 모두 통과했다. PS 정책 62개/native 50개/tree 16개, HWP/HWPX fresh/restart
+네 경로의 정확한 문서·원본/dirty 보존·PDF 저장·덮어쓰기와 cleanup을 확인했다.
+Open/Save evidence 8개의 보조 tree는 모두 disabled다. PDF 4개/32쪽의 hash·쪽 수·검색·분석이
+통과했고 fresh/restart 렌더는 앞서 시각 검토한 16쪽과 각각 byte-identical이다.
+HWPX 표의 기존 셀 경계 밀착/잘림 관측은 유지하며 원본 조판 동등성이나 #19 전체 완료를
+선언하지 않는다. [4.19 보고서](../working/task_m010_19_stage4.19.md)에 자동 회귀 검증 완료와
+시각 한계를 구분한다. 다음은 동일 workflow 반복이 아니라 HWPX 조판 관측과 #19 고유
+수용 경계의 남은 근거를 검토하는 단계이며 별도 승인받는다.
 
 ### 2026-09-07 Stage 4.19 전체 PDF 검증 재개 승인 — 4.21 adapter 사용
 
@@ -75,10 +85,10 @@ typecheck·actionlint·diff가 통과했다. 실제 PS 검사 16개는 원격 �
 앞서 시각 검토한 4.19 fresh 결과와 byte-identical이다. HWPX 동봉 미리보기와의 폰트/배치
 차이는 확인했지만 현재 앱의 같은 위치 대조가 없어 원인·조판 동등성을 확정하지 않는다.
 상세는 [사건 기록](../troubleshootings/task_m010_19_windows_pdf_automation.md)에 둔다.
-4.21의 제한 통과는 유지하고 4.19는 미완료로 남긴다. 소스 보정·추가 실행·완료 커밋은 하지 않았다.
-다음 승인 권고는 **정상 PDF 경로에서 보조 tree 수집을 제외하고 명시적 진단 mode에 한정**하는
+당시 4.21의 제한 통과는 유지하고 4.19는 미완료로 남겼다. 자동 보정·재시도는 하지 않았다.
+당시 다음 승인 권고는 **정상 PDF 경로에서 보조 tree 수집을 제외하고 명시적 진단 mode에 한정**하는
 최소 보정이다. 필수 탐색/의미/target/owner/identity/native guard와 확인 adapter는 유지한다.
-이는 미구현 권고이며 재검증 범위와 함께 별도 승인받는다.
+최상단 후속 승인과 보정 결과로 이어졌으며 이 실패 run 자체는 실패 상태를 유지한다.
 
 ### 2026-09-07 Stage 4.21 native 호출 보정·실제 앱 제한 검증 승인
 

@@ -137,7 +137,7 @@ pnpm run typecheck:gui
 | Windows dialog 판단 | [순수 정책](../../scripts/windows-pdf-dialog-policy.ps1), [실제 함수 테스트](../../tests/windows-pdf-dialog-policy.test.ps1), [UIA 관측](../../scripts/windows-pdf-dialog-observation.ps1) | 실제 helper가 같은 함수를 사용. 합성 PID/HWND·의미 입력은 native 성공 증거가 아님 |
 | Windows 작은 OS 관측 | [probe](../../tests/gui/windows-dialog/probe.ps1), [workflow](../../.github/workflows/alhangeul-windows-dialog.yml), [메시지 adapter](../../scripts/windows-pdf-win32.ps1) | 제어된 WinForms 저장창의 확인창까지 관측하며 Yes는 실행하지 않음. 실제 앱·PDF·overwrite 수용과 별개 |
 | Windows 작은 통합 | [확인창 adapter](../../scripts/windows-pdf-confirmation.ps1), [integration](../../tests/gui/windows-dialog/integration.ps1) | 실제 helper와 같은 확인창 처리를 사용. 공개 sentinel의 열기·새 저장·overwrite·거절/취소·잘못된 target 거부를 검사하며 제품/PDF 수용은 아님 |
-| Windows 실제 설치본 | [spec](../../tests/gui/specs/windows-pdf.e2e.ts), [workflow](../../.github/workflows/alhangeul-windows-pdf.yml) | 후속 native 제한 검증의 No/잘못된 target 거부와 Confirm/PDF 교체가 두 실행의 부분별 증거로 통과. HWPX/restart/전체 PDF 수용은 미완료 |
+| Windows 실제 설치본 | [spec](../../tests/gui/specs/windows-pdf.e2e.ts), [workflow](../../.github/workflows/alhangeul-windows-pdf.yml) | HWP/HWPX fresh/restart와 네 PDF 분석 통과. No/잘못된 target 거부는 이전 제한 실행 근거. 조판 전체 동등성·동시 편집/reload/TTL/physical IME 수용은 별도 |
 | Linux native UI | [AT-SPI adapter](../../tests/gui/linux/native-ui/atspi.mjs), [사후 조건](../../tests/gui/linux/native-ui/action-postcondition.mjs), [spec](../../tests/gui/specs/linux-native.e2e.ts) | Windows ID/class 가정을 Linux에 이식하지 않음; 각 테스트의 실행 환경을 확인 |
 
 Windows PowerShell 5.1의 순수 함수 테스트 진입점은 `pnpm run test:gui:windows:policy`다.
@@ -229,6 +229,12 @@ metadata 오류로 확인 adapter 호출 전에 실패했다. HWPX restart와 �
 함께 판독한다. 선택적 수집의 입력 계약을 검사할 때는 예외 wrapper뿐 아니라 실제 직렬화의
 속성 누락·타입 불일치를 포함한다. 후속 승인으로 위 비활성 기본값/직렬화/설치 전 검사를
 보정했으며 실제 Windows 결과는 사건 기록에서 확인한다. 이전 실패를 통과로 소급하지 않는다.
+
+후속 run `34058443345`는 PS 정책 62개/native 진단 50개/tree 16개와 HWP/HWPX fresh/restart,
+원본/dirty 보존·cleanup 및 네 PDF 원격 분석을 통과했다. Open/Save 8개 helper evidence는 모두
+`treeDiagnostic.status=disabled`/빈 tree이며 실제 확인·덮어쓰기는 필수 판정으로 수행됐다.
+32쪽 렌더는 이전 검토 결과와 동일하다. 기존 HWPX 셀 경계 관측과 #19의 별도 수용 공백은
+[4.19 보고서](../../mydocs/working/task_m010_19_stage4.19.md)에 남긴다. 같은 전체 실행을 재시도하지 않는다.
 
 ## 새 helper·Action 변경의 완료 기준
 
