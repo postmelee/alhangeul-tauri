@@ -10,6 +10,21 @@ GitHub Issue: [#19](https://github.com/postmelee/alhangeul-tauri/issues/19)
 
 ## 단계 개요
 
+### 2026-09-06 Stage 4 원격 수용 진행 결과
+
+작업지시자가 Stage 4.4 이후 원격 수용 진행을 승인했다. 제품 후보는
+`69b22650df96323a2c59e473d474ed3195cc9cc7`로 고정했다.
+최신 desktop workflow가 native test/Clippy와 플랫폼 중립 검사를 포함하므로 별도 CI는
+중복 실행하지 않았다. 기본 matrix의 arm64도 기존 workflow 범위대로 함께 검사했다.
+artifact mode·run_tests=true·publish_release=false만 사용하며 서명/게시 mode는 실행하지 않았다.
+
+최초 dispatch 34021826744는 에이전트가 짧은 SHA를 입력해 checkout 전에 실패했다.
+입력만 전체 SHA로 바로잡은 34021920074는 세 build와 Windows installer smoke 모두 성공했다.
+같은 artifact를 사용한 Linux GUI 34024320576도 성공했다. 제품 소스는 수정하지 않았다.
+상세 증거와 미완료 실제 실행 gate는 [Stage 4 진행 보고서](../working/task_m010_19_stage4.md)에 둔다.
+Windows 직접 PDF와 양 플랫폼의 #19 고유 실제 동작 수용이 남아 있어 Stage 4/Issue 완료는 아니다.
+이번 결과 기록은 문서만 변경하며 native 후보를 재빌드하지 않는다.
+
 ### 2026-09-06 Stage 4.4 재개 승인
 
 작업지시자가 재개 수행계획의 devel 통합 단계를 승인했다. 기존 Stage 1~4.3을 재작성하지
