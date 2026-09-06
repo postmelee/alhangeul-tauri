@@ -1,0 +1,163 @@
+name: Alhangeul Windows PDF Acceptance
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_ref:
+        description: Exact existing product commit SHA
+        required: true
+        type: string
+      native_run_id:
+        description: Successful Desktop Artifact Build run ID
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: windows-pdf-${{ inputs.build_ref }}-${{ inputs.native_run_id }}
+  cancel-in-progress: false
+
+jobs:
+  windows-pdf:
+    runs-on: windows-2025
+    timeout-minutes: 35
+    env:
+      ARTIFACT_ROOT: ${{ github.workspace }}\pdf-artifacts
+      EVIDENCE_ROOT: ${{ github.workspace }}\pdf-evidence
+      PDF_BUILD_REF: ${{ inputs.build_ref }}
+      NATIVE_RUN_ID: ${{ inputs.native_run_id }}
+      ACCEPTANCE_REF: ${{ github.workflow_sha }}
+    steps:
+      - name: Validate inputs
+        shell: pwsh
+        run: |
+          if ($env:PDF_BUILD_REF -cnotmatch '^[0-9a-f]{40}$') { throw 'Invalid build_ref' }
+          if ($env:NATIVE_RUN_ID -notmatch '^[1-9][0-9]*$') { throw 'Invalid native_run_id' }
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.workflow_sha }}
+          submodules: true
+      - name: Record exact context
+        shell: pwsh
+        run: |
+          if ((git rev-parse HEAD) -ne $env:ACCEPTANCE_REF) { throw 'Checkout mismatch' }
+          New-Item -ItemType Directory -Path $env:EVIDENCE_ROOT -Force | Out-Null
+          @{ acceptanceRef = $env:ACCEPTANCE_REF; buildRef = $env:PDF_BUILD_REF;
+             nativeRunId = $env:NATIVE_RUN_ID; runId = $env:GITHUB_RUN_ID } |
+            ConvertTo-Json | Set-Content "$env:EVIDENCE_ROOT/workflow-context.json"
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+          package-manager-cache: false
+      - name: Verify existing product artifact handoff
+        id: handoff
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          node scripts/verify-workflow-artifact.mjs --repository $env:GITHUB_REPOSITORY --build-ref $env:PDF_BUILD_REF --run-id $env:NATIVE_RUN_ID --workflow-path .github/workflows/alhangeul-desktop.yml --artifact-name alhangeul-desktop-windows-x64 --json-output "$env:EVIDENCE_ROOT/artifact-handoff.json" --github-output $env:GITHUB_OUTPUT
+          if ($LASTEXITCODE -ne 0) { throw 'Artifact handoff failed' }
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          artifact-ids: ${{ steps.handoff.outputs.artifact_id }}
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.native_run_id }}
+          path: ${{ env.ARTIFACT_ROOT }}
+          digest-mismatch: error
+      - name: Verify inventory and install dependencies
+        shell: pwsh
+        run: |
+          corepack enable
+          if ($LASTEXITCODE -ne 0) { throw 'Corepack failed' }
+          pnpm install --frozen-lockfile
+          if ($LASTEXITCODE -ne 0) { throw 'Dependencies failed' }
+          pnpm run check:desktop-artifacts -- --platform windows-x64 --root $env:ARTIFACT_ROOT --verify-inventory "$env:ARTIFACT_ROOT/alhangeul-artifact-inventory.json"
+          if ($LASTEXITCODE -ne 0) { throw 'Inventory failed' }
+      - name: Install exact driver
+        shell: pwsh
+        run: |
+          cargo install tauri-driver --version 2.0.6 --locked
+          if ($LASTEXITCODE -ne 0) { throw 'Driver install failed' }
+      - name: Setup WebView2 policy
+        id: policy
+        shell: pwsh
+        run: ./scripts/updater/windows-webview2-automation-policy.ps1 -Phase Setup -OutputDirectory $env:EVIDENCE_ROOT
+      - name: Install NSIS product
+        id: install
+        shell: pwsh
+        run: |
+          # Read the version from the product source, not the acceptance harness version.
+          git fetch --no-tags origin $env:PDF_BUILD_REF
+          if ($LASTEXITCODE -ne 0) { throw 'Product metadata fetch failed' }
+          $version = (git show "${env:PDF_BUILD_REF}:package.json" | ConvertFrom-Json).version
+          ./scripts/updater/windows-native-acceptance.ps1 -Phase Install -Kind nsis -ArtifactRoot $env:ARTIFACT_ROOT -OutputDirectory $env:EVIDENCE_ROOT -ExpectedVersion $version
+      - name: Run fresh and restarted app PDF smoke
+        shell: pwsh
+        env:
+          PDF_APP_PATH: ${{ steps.install.outputs.app_path }}
+          PDF_OUTPUT_DIR: ${{ env.EVIDENCE_ROOT }}
+          PDF_FIXTURE_ROOT: ${{ github.workspace }}
+        run: |
+          $env:PDF_DRIVER_PATH = Join-Path $env:USERPROFILE '.cargo\bin\tauri-driver.exe'
+          foreach ($phase in @('fresh', 'restart')) {
+            $env:PDF_PHASE = $phase
+            pnpm exec wdio run tests/gui/wdio.windows-pdf.conf.ts
+            if ($LASTEXITCODE -ne 0) { throw "PDF $phase failed" }
+            # Only the installed acceptance executable may be terminated on this disposable runner.
+            Get-Process -Name Alhangeul -ErrorAction SilentlyContinue | Where-Object {
+              $_.Path -eq $env:PDF_APP_PATH
+            } | Stop-Process -Force
+          }
+      - name: Cleanup installed app
+        if: ${{ always() && steps.install.outcome != 'skipped' }}
+        shell: pwsh
+        run: ./scripts/updater/windows-native-acceptance.ps1 -Phase Cleanup -Kind nsis -OutputDirectory $env:EVIDENCE_ROOT
+      - name: Restore WebView2 policy
+        if: ${{ always() && steps.policy.outcome != 'skipped' }}
+        shell: pwsh
+        run: ./scripts/updater/windows-webview2-automation-policy.ps1 -Phase Cleanup -OutputDirectory $env:EVIDENCE_ROOT
+      - name: Upload raw evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: windows-pdf-raw-${{ github.run_id }}
+          path: ${{ env.EVIDENCE_ROOT }}
+          if-no-files-found: error
+          retention-days: 7
+
+  analyze:
+    needs: windows-pdf
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.workflow_sha }}
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+          package-manager-cache: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: windows-pdf-raw-${{ github.run_id }}
+          path: pdf-evidence
+          digest-mismatch: error
+      - name: Analyze Windows generated PDFs
+        env:
+          BUILD_REF: ${{ inputs.build_ref }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils
+          node tests/gui/windows-pdf/analyze.mjs "$GITHUB_WORKSPACE/pdf-evidence" "$BUILD_REF"
+      - name: Upload PDF analysis and page images
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: windows-pdf-analysis-${{ github.run_id }}
+          path: pdf-evidence
+          if-no-files-found: error
+          retention-days: 7

@@ -1,3 +1,4 @@
+import './windows-pdf-workflow.test.mjs';
 import assert from 'node:assert/strict';
 import { readdir, readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
@@ -34,6 +35,7 @@ test('모든 workflow가 공통 또는 전용 contract test inventory에 등록�
     'alhangeul-updater-native-negative-linux.yml',
     'alhangeul-updater-native-negative-windows.yml',
     'alhangeul-updater-native-windows.yml',
+    'alhangeul-windows-pdf.yml',
     'ci.yml',
     'pages.yml',
     'rhwp-upstream-sync.yml',

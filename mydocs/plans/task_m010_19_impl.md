@@ -10,6 +10,29 @@ GitHub Issue: [#19](https://github.com/postmelee/alhangeul-tauri/issues/19)
 
 ## 단계 개요
 
+### 2026-09-06 Stage 4.5 Windows PDF 최소 자동화 승인
+
+작업지시자가 Windows 자동화 기반을 재사용하는 최소 PDF 검증 구현을 승인했다.
+과거 4.1~4.3의 Windows harness 부재 판단은 당시 상태로 보존하며, 이번 범위에는 적용하지 않는다.
+
+- `.github/workflows/alhangeul-windows-pdf.yml`, `tests/gui/wdio.windows-pdf.conf.ts`,
+  `tests/gui/windows-pdf/`, `tests/gui/specs/windows-pdf.e2e.ts`,
+  `scripts/windows-pdf-dialog.ps1`과 focused contract test를 추가한다.
+- 승인된 제품 SHA `69b22650df96323a2c59e473d474ed3195cc9cc7`의 기존 artifact를 검증해
+  NSIS만 설치한다. acceptanceRef와 buildRef를 구분하고 제품 재빌드·서명·배포는 하지 않는다.
+- 실제 파일 대화상자에서 HWP/HWPX를 열고 편집 입력, PDF 저장, source hash·dirty 보존을
+  검증한다. 별도 앱 프로세스 재실행 후 같은 target 덮어쓰기를 확인한다.
+- Windows에서 생성한 PDF를 Linux Poppler로 페이지 수·검색 text·nonblank 검사하고 PNG로 남긴다.
+  HWP는 고정 6쪽, HWPX는 편집 전후 앱 page count를 증거로 기록한다.
+- 동시 편집 snapshot, WebView reload, TTL 실제 회수와 시각적 조판 판정은 이 smoke의
+  완료 범위가 아니다. native/unit 증거와 혼동하지 않는다. #35 전체 GUI 범위는 확장하지 않는다.
+- 현재 호스트 검증: GUI typecheck, focused Windows PDF/handoff/PDF analysis contracts,
+  product boundary, workflow actionlint와 diff check. Windows 실행은 구현 단계 보고 후 승인받는다.
+- 테스트의 단일 fixture 흐름은 50 LOC를 초과한다. open→edit→export→source/dirty 확인을
+  하나의 try/finally 증적 경계로 읽을 수 있도록 유지하며 제품 함수에는 적용하지 않는다.
+- 문서 위치: 내부 작업자 대상 승인·결과 기록만 기존 `mydocs/plans`, `mydocs/working`,
+  `mydocs/orders`에 둔다. 공식 제품 문서·manual은 수정하지 않는다.
+
 ### 2026-09-06 Stage 4 원격 수용 진행 결과
 
 작업지시자가 Stage 4.4 이후 원격 수용 진행을 승인했다. 제품 후보는
