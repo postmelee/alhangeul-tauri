@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Diagnostics;
 using System.Threading;
+using System.Collections.Generic;
 public static class PdfDialogNative {
   [StructLayout(LayoutKind.Sequential)]
   struct NativeRect { public int left, top, right, bottom; }
@@ -36,9 +37,13 @@ public static class PdfDialogNative {
   static extern bool PostMessage(IntPtr h, uint msg, IntPtr w, IntPtr l);
 
   static string ClassName(IntPtr h) {
+    var value = ReadClassName(h);
+    if (value.Length == 0) throw new Exception("Invalid HWND");
+    return value;
+  }
+  static string ReadClassName(IntPtr h) {
     var value = new StringBuilder(128);
-    if (GetClassName(h, value, value.Capacity) == 0) throw new Exception("Invalid HWND");
-    return value.ToString();
+    return GetClassName(h, value, value.Capacity) == 0 ? "" : value.ToString();
   }
   static void Validate(IntPtr dialog, IntPtr control, uint expectedPid, int id, string cls) {
     uint dialogPid, controlPid;
@@ -94,20 +99,54 @@ public static class PdfDialogNative {
     Validate(dialog, button, pid, id, "Button");
     if (!IsWindowEnabled(dialog)) throw new Exception("Native dialog is disabled");
   }
-  public static bool OwnsConfirmation(IntPtr save, IntPtr confirm, uint pid) {
+  static readonly string[] OwnerChecks = { "expectedProcessValid", "saveProcessMatches",
+    "confirmationProcessMatches", "distinctDialogs", "saveClassMatches", "confirmationClassMatches",
+    "ownerMatches", "saveDisabled", "confirmationEnabled" };
+  static readonly string[] ButtonChecks = { "buttonProcessMatches", "buttonIsChild",
+    "buttonClassMatches", "buttonEnabled" };
+  static bool ChecksPass(Dictionary<string, object> checks, string[] keys) {
+    foreach (var key in keys) {
+      object value;
+      if (!checks.TryGetValue(key, out value) || !(value is bool) || !(bool)value) return false;
+    }
+    return true;
+  }
+  static Dictionary<string, object> ReadConfirmationChecks(IntPtr save, IntPtr confirm, uint pid) {
     uint savePid, confirmPid;
     GetWindowThreadProcessId(save, out savePid);
     GetWindowThreadProcessId(confirm, out confirmPid);
-    return pid != 0 && savePid == pid && confirmPid == pid && save != confirm
-      && ClassName(save) == "#32770" && ClassName(confirm) == "#32770"
-      && GetWindow(confirm, 4) == save && !IsWindowEnabled(save) && IsWindowEnabled(confirm);
+    var saveClass = ReadClassName(save);
+    var confirmClass = ReadClassName(confirm);
+    return new Dictionary<string, object> {
+      { "expectedProcessValid", pid != 0 }, { "saveProcessMatches", savePid == pid },
+      { "confirmationProcessMatches", confirmPid == pid }, { "distinctDialogs", save != confirm },
+      { "saveClassMatches", saveClass == "#32770" }, { "confirmationClassMatches", confirmClass == "#32770" },
+      { "ownerMatches", GetWindow(confirm, 4) == save }, { "saveDisabled", !IsWindowEnabled(save) },
+      { "confirmationEnabled", IsWindowEnabled(confirm) },
+      { "nativeSaveClass", saveClass }, { "nativeConfirmationClass", confirmClass }
+    };
+  }
+  public static bool OwnsConfirmation(IntPtr save, IntPtr confirm, uint pid) {
+    return ChecksPass(ReadConfirmationChecks(save, confirm, pid), OwnerChecks);
+  }
+  public static void RequireCommandChecks(Dictionary<string, object> checks) {
+    if (ChecksPass(checks, OwnerChecks) && ChecksPass(checks, ButtonChecks)) return;
+    var error = new Exception("Confirmation native identity mismatch");
+    // This exact snapshot gates invocation; do not perform a second diagnostic-only read.
+    error.Data["PdfConfirmationNative"] = checks;
+    throw error;
   }
   public static void ValidateCommand(IntPtr save, IntPtr confirm, IntPtr button, uint pid) {
+    var checks = ReadConfirmationChecks(save, confirm, pid);
     uint buttonPid;
     GetWindowThreadProcessId(button, out buttonPid);
-    if (!OwnsConfirmation(save, confirm, pid) || buttonPid != pid || !IsChild(confirm, button)
-      || ClassName(button) != "CCPushButton" || !IsWindowEnabled(button))
-      throw new Exception("Confirmation native identity mismatch");
+    var buttonClass = ReadClassName(button);
+    checks["buttonProcessMatches"] = buttonPid == pid;
+    checks["buttonIsChild"] = IsChild(confirm, button);
+    checks["buttonClassMatches"] = buttonClass == "CCPushButton";
+    checks["buttonEnabled"] = IsWindowEnabled(button);
+    checks["nativeButtonClass"] = buttonClass;
+    RequireCommandChecks(checks);
   }
 }
 '@

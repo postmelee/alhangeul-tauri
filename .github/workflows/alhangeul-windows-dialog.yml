@@ -40,7 +40,8 @@ jobs:
              powerShell = $PSVersionTable.PSVersion.ToString(); productTested = $false } |
             ConvertTo-Json | Set-Content "$env:EVIDENCE_ROOT/context.json" -Encoding UTF8
           $files = @(Get-ChildItem scripts/windows-pdf-*.ps1) +
-            @(Get-ChildItem tests/gui/windows-dialog/*.ps1) + @(Get-Item tests/windows-pdf-dialog-policy.test.ps1)
+            @(Get-ChildItem tests/gui/windows-dialog/*.ps1) + @(Get-Item tests/windows-pdf-dialog-policy.test.ps1) +
+            @(Get-Item tests/windows-pdf-native-diagnostics.test.ps1)
           foreach ($file in $files) {
             $tokens = $null; $parseErrors = $null
             $null = [System.Management.Automation.Language.Parser]::ParseFile($file.FullName, [ref]$tokens, [ref]$parseErrors)
@@ -50,6 +51,10 @@ jobs:
         run: |
           & ./tests/windows-pdf-dialog-policy.test.ps1 -EvidencePath "$env:EVIDENCE_ROOT/policy.json"
           if ($LASTEXITCODE -ne 0) { throw 'Policy tests failed' }
+      - name: Verify native guard diagnostics
+        run: |
+          & ./tests/windows-pdf-native-diagnostics.test.ps1 -EvidencePath "$env:EVIDENCE_ROOT/native-diagnostics.json"
+          if ($LASTEXITCODE -ne 0) { throw 'Native diagnostics tests failed' }
       - name: Compile native helper and observe controlled dialog
         if: ${{ !inputs.verify }}
         timeout-minutes: 3

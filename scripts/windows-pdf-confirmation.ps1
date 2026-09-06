@@ -1,4 +1,5 @@
 . (Join-Path $PSScriptRoot 'windows-pdf-dialog-observation.ps1')
+. (Join-Path $PSScriptRoot 'windows-pdf-native-diagnostics.ps1')
 
 function Get-PdfConfirmationSnapshot($Dialog, $Intent, $Action) {
   if ($Action -notin @('Confirm', 'Decline')) { throw 'Invalid confirmation action.' }

@@ -29,6 +29,7 @@ $filenameFocused = $false
 $submittedPath = $null
 $overwriteDecision = 'not-observed'
 $saveHandle = 0
+$nativeFailure = $null
 
 function Write-Evidence($Status, $ErrorText) {
   @{ mode = $Mode; status = $Status; error = $ErrorText; stage = $stage;
@@ -37,7 +38,7 @@ function Write-Evidence($Status, $ErrorText) {
      overwriteConfirmed = $overwriteConfirmed; nativeFallbackUsed = $nativeFallbackUsed;
      filenameMethod = $filenameMethod; buttonMethod = $buttonMethod; additionalDialog = $additionalDialog;
      filenameFocused = $filenameFocused;
-     overwriteDecision = $overwriteDecision;
+     overwriteDecision = $overwriteDecision; nativeFailure = $nativeFailure;
      tree = $observedTree } |
     ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $EvidencePath -Encoding utf8
 }
@@ -163,6 +164,7 @@ try {
   if ($allowOverwrite -and -not $overwriteConfirmed) { throw 'Native overwrite confirmation was not observed.' }
   Write-Evidence 'passed' $null
 } catch {
+  $nativeFailure = Get-PdfNativeFailure $_
   Write-Evidence 'failed' $_.Exception.Message
   throw
 }

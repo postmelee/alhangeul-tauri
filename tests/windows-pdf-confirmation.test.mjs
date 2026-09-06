@@ -26,8 +26,32 @@ test('Actual PDF helper and controlled integration share the guarded confirmatio
   const invoke = adapter.split('function Invoke-PdfConfirmation')[1].split('function Close-PdfFileDialog')[0];
   assert.doesNotMatch(invoke, /Invoke-NativeDialogButton/);
   assert.match(native, /GetWindow\(confirm, 4\) == save/);
-  assert.match(native, /!IsWindowEnabled\(save\) && IsWindowEnabled\(confirm\)/);
-  assert.match(native, /!IsChild\(confirm, button\)/);
+  assert.match(native, /"saveDisabled", !IsWindowEnabled\(save\)/);
+  assert.match(native, /"confirmationEnabled", IsWindowEnabled\(confirm\)/);
+  assert.match(native, /checks\["buttonIsChild"\] = IsChild\(confirm, button\)/);
+});
+
+test('Native diagnostics preserve the guard and share a filtered exception extractor', async () => {
+  const diagnostics = await read('../scripts/windows-pdf-native-diagnostics.ps1');
+  const suite = await read('./windows-pdf-native-diagnostics.test.ps1');
+  assert.match(native, /checks\["buttonClassMatches"\] = buttonClass == "CCPushButton"/);
+  assert.match(native, /RequireCommandChecks\(checks\)/);
+  assert.match(native, /ChecksPass\(ReadConfirmationChecks\(save, confirm, pid\), OwnerChecks\)/);
+  assert.match(native, /ChecksPass\(checks, OwnerChecks\) && ChecksPass\(checks, ButtonChecks\)/);
+  assert.match(native, /error.Data\["PdfConfirmationNative"\] = checks/);
+  assert.match(diagnostics, /Dictionary\[string, object\]/);
+  assert.match(diagnostics, /-is \[bool\]/);
+  assert.match(diagnostics, /failedChecks/);
+  assert.doesNotMatch(diagnostics, /\.Message|\.StackTrace|TargetPath/);
+  assert.match(adapter, /windows-pdf-native-diagnostics.ps1/);
+  for (const source of [helper, integration]) {
+    assert.match(source, /nativeFailure = Get-PdfNativeFailure \$_/);
+  }
+  assert.match(workflow, /windows-pdf-native-diagnostics.test.ps1 -EvidencePath/);
+  assert.ok(workflow.indexOf('name: Verify native guard diagnostics') < workflow.indexOf('name: Verify controlled dialog postconditions'));
+  assert.match(suite, /\[PdfDialogNative\]::RequireCommandChecks/);
+  assert.match(suite, /\[PdfDialogNative\]::ValidateCommand\(\[IntPtr\]::Zero/);
+  assert.doesNotMatch(suite, /::Click\(|\.Invoke\(|SendKeys|SendInput/);
 });
 
 test('Small verify mode is distinct from observation and checks actual file/cancel postconditions', () => {

@@ -66,6 +66,7 @@ try {
   $evidence.errorType = $_.Exception.GetType().Name
   $evidence.errorLine = $_.InvocationInfo.ScriptLineNumber
   $evidence.errorScript = [IO.Path]::GetFileName($_.InvocationInfo.ScriptName)
+  $evidence.nativeFailure = Get-PdfNativeFailure $_
   # Do not retain arbitrary exception text, document content or local paths.
 } finally {
   if ($null -ne $child) { $child.Dispose() }

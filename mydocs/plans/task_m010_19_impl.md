@@ -33,6 +33,32 @@ Save/기존 파일/제출 경로와 관측된 영문 대체 질문의 파일명�
 - 문서: 승인된 기존 공식 가이드·사건 기록·plans/orders/working만 갱신한다.
   새 의존성 없음. 새 파일 300 LOC/함수 50 LOC 이내로 역할을 분리한다.
 
+실행 결과: run `34048114390`/harness `f198449`의 PS 50개·Open·Fresh·cleanup은 통과했다.
+Overwrite는 실제 Invoke 직전 native 재검증에서 실패했고 Decline/WrongTarget은 미실행이다.
+**Stage 4.18 미완료**이며 완료 보고서는 작성하지 않는다. 원인 후보와 증거 한계는
+[사건 기록](../troubleshootings/task_m010_19_windows_pdf_automation.md)에 둔다.
+UIA/native class를 동일시한 미확인 가정이 있으나 실패한 native 세부 조건은 로그에 없다.
+다음 제안은 guard별 안전한 진단을 추가하고 같은 작은 확인창에서 확인하는 것이며,
+새 승인 전 추가 원격 실행·guard 완화·4.19 전체 PDF 수용은 진행하지 않는다.
+
+#### Stage 4.18 후속 승인 — native 실패 조건 진단
+
+작업지시자의 후속 `진행해줘`로 guard별 진단과 작은 Windows 재검증 한 번을 승인받았다.
+기존 비교 조건·Invoke 방식은 유지한다. native 관측과 검증은 같은 구조화 snapshot을 사용하고
+실패 예외에 알려진 guard의 boolean과 native class만 첨부한다. UIA class와 별도 필드로 저장한다.
+제품 helper와 integration catch가 같은 허용 목록 기반 추출 함수를 사용하며 원문 경로·본문·
+임의 예외 메시지는 새로 기록하지 않는다. 관측 불능도 명시적으로 거부한다.
+
+- 수정: Win32/helper, integration runner, 작은 workflow의 사전 진단 테스트 연결,
+  기존 Node 계약. 신규: `scripts/windows-pdf-native-diagnostics.ps1`,
+  `tests/windows-pdf-native-diagnostics.test.ps1` (각 파일 300 LOC/함수 50 LOC 이내).
+- 테스트: 실제 native 판정 함수를 합성 guard 데이터로 검사하고 실패 필드 누락·타입 오류·
+  exception unwrap/허용 목록을 PS5.1에서 확인한다. native HWND 0도 클릭 없이 거부한다.
+- 검증: focused Node 계약·workflow 계약·GUI typecheck·actionlint·diff 뒤 checkpoint 게시,
+  기존 `windows-dialog-verify` 한 번. 실패 이유를 수집해도 통합 성공으로 바꾸지 않는다.
+- 문서 위치는 기존 승인된 공식 가이드·사건 기록·plans/orders다. 이전 미커밋 실패 기록을
+  보존하며 같은 변경에 포함한다. guard 수정·다른 클릭 API·전체 PDF 실행은 이번 범위 밖이다.
+
 ### 2026-09-07 Stage 4.17 판단 분리·작은 Windows 관측 승인
 
 실제 helper가 사용하는 `windows-pdf-dialog-policy.ps1`와 UIA 관측 adapter를 분리한다.

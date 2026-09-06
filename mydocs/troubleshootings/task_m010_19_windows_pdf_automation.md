@@ -61,13 +61,47 @@ adapter를 구현하기 전에는 무조건 Yes 또는 숫자 ID 교체로 우�
   관측하고 Yes는 누르지 않는다. 제품 재빌드·설치·PDF 분석 없이 지원 pattern·소유 관계를
   수집하며, 이 결과가 확인창 실행 adapter의 다음 승인 근거다.
 
-### Stage 4.18 구현 — 작은 통합 실행 대기
+### Stage 4.18 작은 통합 — native 재검증에서 중단, 미완료
 
 4.17에서 관측한 InvokePattern만 사용하는 확인창 adapter를 실제 PDF helper와 작은 통합에
 연결했다. 저장창 owner/PID·Save 및 제출 경로·기존 target·영문 질문의 정확한 파일명·
 command 유일성/상태/pattern을 확인하고 호출 직전 재조회한다. No 후 저장창 복귀와 ID2 취소,
 다른 파일을 기대한 잘못된 요청의 거부를 제어된 Windows fixture에서 검사한다.
-아직 이번 adapter의 Windows 실행 결과와 실제 제품 PDF 결과는 미검증이다.
+
+[run 34048114390](https://github.com/postmelee/alhangeul-tauri/actions/runs/34048114390),
+harness `f1984497320945f7bf62d6504657393fc0973be7`에서 작은 통합을 한 번 실행했다.
+Windows image `20260824.214.3`, PS `5.1.26100.33296`이며 제품 설치·PDF 렌더링은 없다.
+
+- 실제 PS 정책 검사 50개(환경 확인 1개 포함)는 통과했다. 합성 정책 입력의 통과이지
+  확인 버튼의 실제 호출 성공을 뜻하지 않는다.
+- Open·Fresh는 실제 dialog와 host의 선택 경로, target 내용·source/다른 target 보존까지 통과했다.
+- Overwrite는 `windows-pdf-confirmation.ps1:45`의 `ValidateCommand` 호출에서
+  `MethodInvocationException`으로 중단했다. 실행 순서상 두 번의 소유·의미·target·UIA 후보/
+  pattern 검사와 후보 동일성 검사를 지났으나, native 재검증 뒤의 `Invoke()`에는 도달하지 않았다.
+- Decline·WrongTarget은 앞선 실패 때문에 미실행이다. 실패한 Overwrite의 파일 사후 조건도
+  수집되지 않았으므로 보존 검증 통과로 쓰지 않는다. 시험 process·임시 파일 cleanup은 통과했다.
+
+현재 진단의 한계: `ValidateCommand`는 native owner, button PID, `IsChild`,
+`GetClassName`, enabled를 한 조건으로 검사한다. artifact에는 UIA class `CCPushButton`과
+InvokePattern 및 native owner/직접 parent만 있고, 해당 버튼의 **native class와 각 guard 결과는 없다**.
+따라서 정확히 어느 native 조건이 실패했는지는 미확정이다.
+
+이번 구현은 UIA에서 관측한 `CCPushButton`을 native `GetClassName`에도 그대로 요구했다.
+이는 관측으로 확인하지 않은 가정이었다. Microsoft는 UIA ClassName을 provider 구현에
+따른 이름으로 설명한다. UIA와 native class의 동일성을 가정하지 말아야 하지만, 이번 실패가
+실제로 class 차이 때문인지는 추가 관측 전까지 가설로 남긴다.
+([Microsoft ClassName 계약](https://learn.microsoft.com/en-us/windows/win32/winauto/uiauto-automation-element-propids))
+
+다음 승인 범위는 같은 확인창의 guard별 구조화 진단이다. UIA/native class를 분리하고
+PID 일치·자식 관계·enabled·owner 검사 결과를 각각 남긴다. 원문 경로/본문/임의 예외 문자열은
+추가하지 않는다. 실제 native 실패 이유를 확인하기 전 guard 삭제·다른 class 추측·다른 클릭 API
+fallback은 하지 않는다. 이 보정과 작은 재검증 승인을 받은 뒤 진행하며 전체 PDF 재실행은 보류한다.
+
+후속 승인에 따라 같은 native 판정 snapshot의 13개 guard 결과와 별도 native class를
+허용 목록으로 추출하도록 보정했다. 실패 조건의 누락/타입 오류, 예외 중첩, class 필터와
+무효 HWND 거부를 실제 PS/C# 함수로 검사한다. 비교 조건과 클릭 방식은 바꾸지 않았으며
+작은 `windows-dialog-verify` 한 번으로 실패 이유를 확인한다. 실행 전 로컬 focused 계약 50개,
+workflow/handoff 계약 75개(중복 import 포함), GUI typecheck, actionlint와 diff 검사는 통과했다.
 
 ### Stage 4.17 관측과 당시 adapter 판단
 
@@ -108,6 +142,8 @@ readback·재조회/native 검증·제출을 확인했다. 시험 파일 hash �
   전체 summary가 생성되지 않는지 확인한다. 합성 변형은 관측 결과와 분리한다.
 - 버튼 선택/메시지 보정 시에는 작은 대상 OS 검증을 먼저 설계한다. 알려진 미지원 경로를
   남긴 채 전체 성공을 기대하거나 timeout만 늘리지 않는다.
+- UIA와 Win32에서 이름이 비슷한 속성도 관측 출처를 분리한다. 복합 guard 실패를 한 예외로
+  뭉개지 말고, 실패 조건을 구분할 수 있는 안전한 판정값을 남긴다.
 - 사실·명령·관련 테스트가 바뀌면 이 기록과 공통 가이드를 같은 변경에서 갱신한다.
   원격 artifact가 만료돼도 이 최소 데이터와 출처 링크는 남긴다.
 
@@ -120,6 +156,7 @@ readback·재조회/native 검증·제출을 확인했다. 시험 파일 hash �
 | [34042833704](https://github.com/postmelee/alhangeul-tauri/actions/runs/34042833704), harness `903164b` | HWP/HWPX open-only 성공; `pdfTested=false` |
 | [34043594332](https://github.com/postmelee/alhangeul-tauri/actions/runs/34043594332), harness `903164b` | fresh 두 문서 성공, HWP restart의 미지원 확인창 실패; Linux PDF 분석 skipped |
 | [34047467032](https://github.com/postmelee/alhangeul-tauri/actions/runs/34047467032), harness `cd77b57` | 작은 policy/WinForms 확인창 관측·cleanup 통과, 실제 제품/PDF/Yes 호출 없음 |
+| [34048114390](https://github.com/postmelee/alhangeul-tauri/actions/runs/34048114390), harness `f198449` | PS 50개·Open/Fresh·cleanup 통과; Overwrite native 재검증 실패, Invoke/Decline/WrongTarget 미실행 |
 
 2026-09-06 작업지시자는 실제 Windows NSIS에서 두 문서의 PDF 저장·검색·쪽 수·시각 확인,
 원본 보존과 재실행 덮어쓰기를 문제없이 완료했다고 보고했다. 해당 수동 근거는 유지한다.

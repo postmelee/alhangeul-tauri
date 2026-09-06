@@ -43,6 +43,9 @@ Windows/Linux의 대화상자·메시지·버튼 조작을 포함하는 테스�
   [Microsoft 설명](https://learn.microsoft.com/en-us/dotnet/framework/ui-automation/use-the-automationid-property)
 - 표시된 ControlType만 보고 지원 메서드를 가정하지 않는다. 실제 pattern/capability를 확인한다.
   지원 pattern은 상태에 따라 바뀔 수 있다. [Control Patterns](https://learn.microsoft.com/en-us/dotnet/framework/ui-automation/ui-automation-control-patterns-overview)
+- UIA `ClassName`과 native `GetClassName(HWND)`는 따로 관측한다. UIA class는 provider가
+  제공하는 값이므로 native class와 같다고 가정해 검사 조건으로 옮기지 않는다.
+  [ClassName 계약](https://learn.microsoft.com/en-us/windows/win32/winauto/uiauto-automation-element-propids)
 
 ### 실행: 안전한 경계 안에서만 조작한다
 
@@ -52,6 +55,8 @@ Windows/Linux의 대화상자·메시지·버튼 조작을 포함하는 테스�
 - 반환값의 의미는 API별로 확인한다. 전송 성공과 control의 처리 결과를 같은 것으로 취급하지 않는다.
 - 동기 호출이 후속 modal에 막히는지, 비동기 호출 후 무엇을 기다려야 하는지 구분한다.
 - 좌표·전역 키 입력·무조건 Enter/Yes를 실패 우회용으로 추가하지 않는다.
+- 여러 guard를 묶어 검사할 때도 실패한 조건은 식별 가능해야 한다. PID 일치·자식/owner 관계·
+  활성 상태·class 일치 여부를 구분하며 임의 예외 메시지나 개인 경로를 진단에 노출하지 않는다.
 
 ### 덮어쓰기와 취소
 
@@ -125,6 +130,15 @@ Windows PowerShell 5.1의 순수 함수 테스트 진입점은 `pnpm run test:gu
 작은 통합은 같은 dispatcher의 `windows-dialog-verify`로 실행한다. policy 검사 후 위 다섯
 사례를 실행하며 관측-only probe는 중복 실행하지 않는다. host는 OK 및 선택 경로를 검증한
 경우에만 지정 sentinel을 쓴다. No 후 저장창 복귀·Cancel 결과와 세 파일의 보존을 별도 검사한다.
+현재 첫 통합은 Open/Fresh까지 통과했으나 overwrite의 native 재검증에서 실패했다.
+확인 버튼 호출·No/Cancel·잘못된 target 거부는 실제 통합 미검증이다. 다섯 사례가 구현돼
+있다는 사실과 전부 통과했다는 판정을 구분한다.
+
+native 재검증 오류의 `nativeFailure`는 실제 승인 판정에 쓴 snapshot에서 나온다.
+`checks`/`failedChecks`와 `classes.nativeButtonClass`를 보고, UIA 관측의 `class`와 구분한다.
+미관측·타입 오류는 true로 보충하지 않는다. 추출기는 알려진 boolean과 제한된 class 문자열만
+보존한다. [진단 테스트](../../tests/windows-pdf-native-diagnostics.test.ps1)는 실제 native 판정 함수의
+합성 조건·실패 추출과 HWND 0의 거부를 검사하며, 실제 버튼 호출 검증을 대체하지 않는다.
 
 확인창 adapter는 관측된 영문 대체 질문·정확한 파일명·저장창 owner·PID·enabled·유일한
 `CCPushButton`·실제 InvokePattern을 검사한다. 문구가 다른 언어나 pattern이 없는 경우에는
