@@ -65,3 +65,24 @@ CommandButton_6/7 형태는 Yes/No 구조로만 분류하고 덮어쓰기 의미
 ## 승인 요청
 
 Stage 4.11 구현·로컬 검증 완료. 다음은 동일 제품 산출물로 Windows 자동화 재검증이다.
+
+## 승인된 원격 재검증 결과
+
+작업지시자의 실제 통과 확인 요청으로 harness `e52d0fa`를 게시하고
+[run 34039516394](https://github.com/postmelee/alhangeul-tauri/actions/runs/34039516394)를 실행했다.
+제품은 동일 SHA `69b22650df96323a2c59e473d474ed3195cc9cc7`/native run `34021920074`다.
+
+- 전체 결과 failure. 첫 HWP는 정확한 title identity, 지정 PDF 경로, source hash·dirty 보존 통과.
+- HWPX의 실제 openedTitle은 `source-biz-plan-hwp.hwp - Alhangeul`이었다.
+  documentIdentityVerified=false로 편집·PDF 저장 전에 실패했다.
+- Open helper는 Win32-EditReplaceSelection/readback 및 UIA-InvokePattern을 사용했고
+  processId=9020, submitted=true, dialogCount=0, additionalDialog=none, status=passed였다.
+  따라서 문자열 편집/readback 성공과 대화상자 닫힘만으로 선택된 문서를 보장할 수 없음이 재확인됐다.
+- 새 identity 검증의 잘못된 통과 차단은 실제 확인했지만, Open 입력 방식 보정은 해결하지 못했다.
+  재시작 덮어쓰기와 Linux PDF 분석은 실행되지 않았다. 자동화 전체 통과가 아니다.
+- 설치 앱 cleanup, WebView2 정책 복원, 증거 업로드는 통과했다.
+- 로컬 원격 증거: `/private/tmp/alhangeul-pdf-34039516394.Tpk3Lo`.
+
+후속은 Open 대화상자의 편집값과 실제 선택 항목/확정 동작, WebDriver 문서 연결 경계를
+좁혀 조사하는 것이다. 같은 전체 workflow를 변경 없이 반복하지 않는다. 사용자 수동 수용은
+앞 절의 통과 보고로 유지하며 이 자동화 실패로 번복하지 않는다.
