@@ -35,5 +35,8 @@ GitHub Issue: [#64](https://github.com/postmelee/alhangeul-tauri/issues/64)
 - run/job/step·cache·artifact ID/digest를 구분. 알려진 제품 환경 실패는 성공으로 우회하지 않는다.
 - `pnpm run check:product-boundary`, `check:product-version`, `check:release-metadata`, `test:upstream`, `test:studio`, `build:studio`.
 - timing summary와 canonical CI 가이드·관련 entry 링크 확인.
+- 기존 공식 운영 문서 `docs/operations/DESKTOP_RELEASE.md`와 `PUBLIC_RELEASE_RUNBOOK.md`의
+  ordinary artifact 입력·SHA 설명도 실제 계약에 맞춘다. 대상 독자는 운영자이며 기존
+  `docs/operations`의 정책/실행 명령 소유권을 유지한다. 새 위치나 릴리즈 권한은 추가하지 않는다.
 - 단계/최종 보고와 보드 완료 표시 후 parent PR 1개 생성. 미검증을 통과로 표시하지 않는다.
 - 커밋: `Task #64 Stage 3 + 최종 보고서: 통합 수용 근거`.

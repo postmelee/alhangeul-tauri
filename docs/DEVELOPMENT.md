@@ -90,6 +90,10 @@ exact SHA·실행 환경·미해결 위험은 [v0.1.0 기록](releases/v0.1.0.md
 
 ## 검증 명령
 
+반복 작업에서 CI의 `fast`·플랫폼별 package·기존 artifact 재사용을 선택하는 방법은
+[변경 범위 기반 CI 검증](operations/CI_VALIDATION.md)을 따른다. 공유 변경과 최종 후보는
+전체 경로로 검증하며 부분 profile 성공을 전체 제품 수용으로 쓰지 않는다.
+
 모든 호스트에서 실행 가능한 기본 검증:
 
 ```sh

@@ -22,7 +22,7 @@ on:
         default: ""
         type: string
       run_tests:
-        description: Run platform-neutral tests before the native build.
+        description: Run native Rust tests and lints; fast contracts always run for ordinary artifacts.
         required: true
         default: true
         type: boolean

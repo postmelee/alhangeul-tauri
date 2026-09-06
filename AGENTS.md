@@ -56,6 +56,7 @@
 - release tag 이동, force push, history rewrite는 작업지시자의 명시 승인 없이 수행하지 않음
 - release, 배포, 서명, 패키지 게시, updater 활성화는 작업지시자의 명시 지시가 있을 때만 수행
 - 변경 유형별 검증 범위와 Windows/Linux 실행 환경은 각 task 수행계획서에서 승인받음
+- 반복 CI는 [`CI_VALIDATION.md`](docs/operations/CI_VALIDATION.md)의 profile·exact artifact 재사용 기준을 따르며 부분 성공을 전체 수용으로 기록하지 않음
 - 모든 호스트에서 실행할 수 있는 기본 검증 명령은 `pnpm run check:product-boundary`, `pnpm run test:upstream`, `pnpm run test:studio`, `pnpm run build:studio`임. Rust desktop 검증과 Tauri build는 Windows/Linux 환경에서만 수행
 - 파일과 함수는 역할이 흐려지기 전에 분리하고, 권장 상한은 파일 300 LOC, 함수 50 LOC, 매개변수 5개, 순환 복잡도 10으로 둠. 초과가 필요하면 수행계획서에 이유를 기록
 
