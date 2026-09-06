@@ -38,3 +38,25 @@ driver의 plugin discovery 반복은 로그에서 관측되었으나 이 단계�
 ## 승인 상태
 
 작업지시자가 최소 보정과 재검증을 승인했다. 제품/릴리스 수용 완료를 의미하지 않는다.
+
+## 원격 재검증 결과 — UIAutomation 호환성 확인
+
+[run 34032961803](https://github.com/postmelee/alhangeul-tauri/actions/runs/34032961803)는
+harness `f0117e1`로 실행했다. 설치·환경 준비는 성공했으나 첫 Open 단계에서 실패했다.
+PDF 변환에는 도달하지 않았고 동일 조건 재시도는 하지 않았다.
+
+helper는 12:28:22~12:29:52 UTC의 온전한 90초를 사용했다. 증거에서 `dialogCount=1`,
+`submitted=false`, `stage=finding-filename-field`를 확인했다. 앱 소유 dialog 내부의
+AutomationId `1148`은 `ComboBoxEx32`, `ComboBox`, `Edit` Win32 class로 존재하지만 모두
+`ControlType.Pane`으로 노출된다. 확인 버튼 `1`도 Button class / Pane type이다.
+따라서 현재 ValuePattern→ControlType.Edit 탐색 fallback으로 파일명 입력을 진행하지 못한다.
+timeout 증가는 해결책이 아니며 제품 PDF 결함을 입증한 결과도 아니다.
+
+raw artifact `windows-pdf-raw-34032961803`, 로컬
+`/private/tmp/alhangeul-pdf-retry.Xr106t/biz-plan-hwp-fresh-Open.json`에 근거를 보존했다.
+WebView2 policy 복원은 `restored=true`다.
+
+후속 권고는 앱 소유 dialog의 정확한 Win32 handle·class·control ID를 검증한 뒤
+메시지 기반 입력/확인 fallback을 사용하는 작은 Windows helper 보정이다.
+UIA에서 확인된 입력칸/버튼만 대상으로 제한하며 좌표 클릭·전역 키 입력으로 대체하지 않는다.
+이 후속 구현과 재실행은 별도 승인을 받는다.
