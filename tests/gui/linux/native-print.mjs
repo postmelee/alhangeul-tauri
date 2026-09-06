@@ -5,6 +5,9 @@ import { posix } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { analyzePdf } from './pdf-analysis.mjs';
 import { LinuxNativeUiAdapter } from './native-ui/atspi.mjs';
+import { createEditorRestoreProbe } from './editor-restore.mjs';
+import { runProductionPrintSequence } from './native-print-sequence.mjs';
+export { runProductionPrintSequence } from './native-print-sequence.mjs';
 import {
   fixtureById,
   resolveDocumentFixtures,
@@ -19,32 +22,6 @@ import {
 import { readGuiHarnessInputs } from '../wdio.shared.conf.ts';
 
 const SYSTEM_PDF_MIN_TEXT_COUNTS = [20, 25, 200, 300, 200, 100];
-const BUTTON_ROLES = ['push button', 'button'];
-const LOCAL_FONT_BUTTON = Object.freeze({
-  roles: BUTTON_ROLES,
-  names: ['대체 글꼴로 보기'],
-});
-
-export async function runProductionPrintSequence(options) {
-  const document = documentSelector(options.displayName);
-  const focusedDocument = { ...document, focused: true };
-  await options.adapter.actionOptional(LOCAL_FONT_BUTTON, 10000);
-  await options.adapter.waitAbsent(LOCAL_FONT_BUTTON);
-  await options.adapter.wait(document);
-
-  const trigger = async () => {
-    await options.adapter.wait(focusedDocument);
-    await options.adapter.triggerSystemPrint();
-  };
-  await options.adapter.printToFile(options.gtkPdf, trigger);
-  await waitForEditorRestore(options.adapter, focusedDocument);
-  await options.waitForFile(options.gtkPdf);
-  await options.adapter.cancelPrint(trigger);
-  await waitForEditorRestore(options.adapter, focusedDocument);
-  await options.adapter.printWithVirtualPrinter(options.printerName, trigger);
-  await waitForEditorRestore(options.adapter, focusedDocument);
-  await options.waitForCupsPdf();
-}
 
 export async function runNativePrintAcceptance(env = process.env) {
   const inputs = readGuiHarnessInputs(env);
@@ -69,10 +46,14 @@ export async function runNativePrintAcceptance(env = process.env) {
     outputDir: inputs.outputDir,
     timeoutMs: Math.min(inputs.timeoutMs, 120000),
     applicationNames: ['Alhangeul'],
+    defaultPrinterName: cups.defaultPrinterName,
     captureScreenshot: screenshot,
     env,
   });
   try {
+    const editor = createEditorRestoreProbe({
+      outputDir: inputs.outputDir, pid: app.child.pid, captureScreenshot: screenshot, env,
+    });
     await runScenarioWithEvidence({
       inputs,
       scenario: 'linux-system-print',
@@ -86,6 +67,7 @@ export async function runNativePrintAcceptance(env = process.env) {
       app,
       gtkPdf,
       cups,
+      editor,
     }));
   } finally {
     await stopProcess(app.child);
@@ -95,13 +77,7 @@ export async function runNativePrintAcceptance(env = process.env) {
 async function runPrintScenario(options) {
   const modePath = posix.join(options.inputs.outputDir, 'native-print-mode.json');
   const logPath = posix.join(options.inputs.outputDir, 'native-print-app.log');
-  await writeFile(modePath, `${JSON.stringify({
-    schemaVersion: 1,
-    mode: 'production-native-print',
-    webdriverControlled: false,
-    app: posix.basename(options.inputs.appPath),
-    fixture: options.fixture.relativePath,
-  }, null, 2)}\n`, { mode: 0o600 });
+  await writeNativePrintMode(options, modePath);
 
   let error;
   let files = [];
@@ -110,6 +86,7 @@ async function runPrintScenario(options) {
     const cupsBaseline = await readRegularPdfSnapshot(cupsDirectory);
     await runProductionPrintSequence({
       adapter: options.adapter,
+      assertEditorBody: (label) => options.editor.check(label),
       displayName: posix.basename(options.fixture.absolutePath),
       gtkPdf: options.gtkPdf,
       cupsPdf: options.cups.outputPath,
@@ -125,6 +102,7 @@ async function runPrintScenario(options) {
     const gtk = await analyzeBizPlanPdf(options.inputs.outputDir, options.gtkPdf, 'gtk-print-to-file');
     const cups = await analyzeBizPlanPdf(options.inputs.outputDir, options.cups.outputPath, 'cups-pdf');
     files = [
+      ...await options.editor.describeFiles(),
       await describeEvidenceFile(options.inputs.outputDir, modePath, 'log'),
       await describeEvidenceFile(options.inputs.outputDir, options.gtkPdf, 'generated-document'),
       await describeEvidenceFile(options.inputs.outputDir, options.cups.outputPath, 'generated-document'),
@@ -145,6 +123,16 @@ async function runPrintScenario(options) {
   return files;
 }
 
+async function writeNativePrintMode(options, path) {
+  await writeFile(path, `${JSON.stringify({
+    schemaVersion: 1,
+    mode: 'production-native-print',
+    webdriverControlled: false,
+    app: posix.basename(options.inputs.appPath),
+    fixture: options.fixture.relativePath,
+  }, null, 2)}\n`, { mode: 0o600 });
+}
+
 async function analyzeBizPlanPdf(outputDir, pdfPath, label) {
   return analyzePdf({
     pdfPath,
@@ -158,10 +146,6 @@ async function analyzeBizPlanPdf(outputDir, pdfPath, label) {
 
 async function describeRenders(outputDir, paths) {
   return Promise.all(paths.map((path) => describeEvidenceFile(outputDir, path, 'screenshot')));
-}
-
-async function waitForEditorRestore(adapter, focusedDocument) {
-  await adapter.wait(focusedDocument);
 }
 
 async function waitForFile(path, timeoutMs) {
@@ -246,20 +230,20 @@ async function captureScreenshot(scrot, path, env) {
   }
 }
 
-function documentSelector(displayName) {
-  return { roles: ['document text'], names: [displayName] };
-}
-
 function readCupsInputs(outputDir, env) {
   const outputPath = env.ALHANGEUL_GUI_CUPS_PDF_OUTPUT ?? '';
   const printerName = env.ALHANGEUL_GUI_CUPS_PDF_PRINTER ?? 'PDF';
+  const defaultPrinterName = env.ALHANGEUL_GUI_CUPS_PDF_DEFAULT ?? '';
   if (!posix.isAbsolute(outputPath) || !outputPath.startsWith(`${outputDir}/`)) {
     throw new Error('ALHANGEUL_GUI_CUPS_PDF_OUTPUT은 output root 안의 절대 경로여야 합니다');
   }
   if (!/(pdf|print\s+to\s+file|파일)/i.test(printerName)) {
     throw new Error('native print phase는 virtual PDF printer만 허용합니다');
   }
-  return { outputPath, printerName };
+  if (defaultPrinterName !== printerName) {
+    throw new Error('검증된 기본 CUPS-PDF printer가 요청 printer와 일치해야 합니다');
+  }
+  return { outputPath, printerName, defaultPrinterName };
 }
 
 async function removeStale(path) {

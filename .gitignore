@@ -3,14 +3,30 @@
 /target-local/
 Cargo.lock
 !/apps/desktop/src-tauri/Cargo.lock
+!/apps/thumbnail-handler/Cargo.lock
+!/apps/thumbnail-worker/Cargo.lock
+!/apps/linux-thumbnailer/Cargo.lock
+!/crates/document-preview/Cargo.lock
 apps/desktop/src-tauri/target/
 apps/desktop/src-tauri/gen/
+apps/desktop/src-tauri/windows/thumbnail-resources/
+apps/desktop/src-tauri/linux/thumbnail-resources/
+apps/thumbnail-handler/target/
+apps/thumbnail-worker/target/
+crates/document-preview/target/
 
 # JavaScript
 node_modules/
 apps/*/node_modules/
 apps/studio-host/dist/
 .pnpm-store/
+/_site/
+/.updater-work/
+
+# Updater signing material (the public key is embedded only in the tracked release overlay)
+/.updater-keys/
+/apps/desktop/src-tauri/*.key
+/apps/desktop/src-tauri/*.key.pub
 
 *.wasm
 !apps/studio-host/vendor/rhwp-core/rhwp_bg.wasm

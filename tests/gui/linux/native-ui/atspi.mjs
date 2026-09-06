@@ -4,10 +4,10 @@ import { posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { runActionWithPostcondition } from './action-postcondition.mjs';
 import {
-  createPrintFileChooserRunner, createShortcutRunner,
+  createPrintFileChooserRunner, createPrintWindowRunner, createShortcutRunner,
   createWindowShortcutRunner, PRINT_FILE_CHOOSER_TITLES,
 } from './xdotool.mjs';
-
+import { printWithVerifiedVirtualPrinter } from './virtual-printer.mjs';
 const DRIVER_PATH = fileURLToPath(new URL('./atspi_driver.py', import.meta.url));
 const FILE_DIALOG = Object.freeze({
   roles: ['file chooser', 'dialog'],
@@ -62,7 +62,9 @@ export class LinuxNativeUiAdapter {
     this.runAtspi = options.runAtspi ?? createAtspiRunner(options);
     this.runShortcut = options.runShortcut ?? createShortcutRunner(options);
     this.runWindowShortcut = options.runWindowShortcut ?? createWindowShortcutRunner(options);
+    this.runPrintWindow = options.runPrintWindow ?? createPrintWindowRunner(options);
     this.runPrintFileChooser = options.runPrintFileChooser ?? createPrintFileChooserRunner(options);
+    this.defaultPrinterName = options.defaultPrinterName;
     this.captureScreenshot = options.captureScreenshot ?? (async () => {});
   }
 
@@ -154,17 +156,15 @@ export class LinuxNativeUiAdapter {
       throw new Error('physical printer는 GUI acceptance에서 선택할 수 없습니다');
     }
     return this.withFailureEvidence('virtual-printer', async () => {
-      await trigger();
-      await this.printCommand({ command: 'wait', selector: PRINT_DIALOG });
-      const printer = {
-        roles: ['radio button', 'table cell', 'list item', 'toggle button'],
-        names: [name],
-        within: PRINT_DIALOG,
-      };
-      await this.printCommand({ command: 'selectByFocus', selector: printer });
-      await this.printCommand({ command: 'wait', selector: { ...printer, selected: true } });
-      await this.clickPrintButton();
-      await this.printCommand({ command: 'waitAbsent', selector: PRINT_DIALOG });
+      await printWithVerifiedVirtualPrinter({
+        printerName: name,
+        defaultPrinterName: this.defaultPrinterName,
+        timeoutMs: this.timeoutMs,
+        trigger,
+        runAtspi: (request) => this.printCommand(request),
+        runPrintWindow: this.runPrintWindow,
+        runWindowShortcut: this.runWindowShortcut,
+      });
     }, { desktopScope: true });
   }
 

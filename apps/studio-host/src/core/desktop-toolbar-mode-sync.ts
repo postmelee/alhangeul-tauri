@@ -48,12 +48,14 @@ export function installToolbarModeSync(
     noteActive: false,
   };
   let renderPending = false;
+  let disposed = false;
 
   const requestRender = () => {
-    if (renderPending) return;
+    if (disposed || renderPending) return;
     renderPending = true;
     scheduleRender(() => {
       renderPending = false;
+      if (disposed) return;
       renderToolbarMode(elements, state);
     });
   };
@@ -78,6 +80,8 @@ export function installToolbarModeSync(
   renderToolbarMode(elements, state);
   elements.rootElement?.classList.add(DESKTOP_TOOLBAR_READY_CLASS);
   return () => {
+    if (disposed) return;
+    disposed = true;
     unsubscribers.forEach((unsubscribe) => unsubscribe());
     elements.rootElement?.classList.remove(DESKTOP_TOOLBAR_READY_CLASS);
     managedElements(elements).forEach((element) => {

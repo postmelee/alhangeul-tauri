@@ -5,8 +5,8 @@ Alhangeul의 유일한 지속 upstream은 [`edwardkim/rhwp`](https://github.com/
 ## 현재 고정 상태
 
 - upstream URL: `https://github.com/edwardkim/rhwp.git`
-- Stable release tag: `v0.8.2`
-- resolved commit: `9b16aa9e23f476e2b335d7c029fc9f24a199d63c`
+- Stable release tag: `v0.8.4`
+- resolved commit: `496333b27d21ddb9114ba9ae340bcb895870c9a7`
 - 읽기 전용 source submodule: `third_party/rhwp`
 - 기계 검증 가능한 출처 lock: `rhwp-core.lock`
 - bundled WASM: `apps/studio-host/vendor/rhwp-core`
@@ -39,9 +39,31 @@ studio host의 실제 Vite root와 entry는 각각 `third_party/rhwp/rhwp-studio
 
 `apps/studio-host/alhangeul-overrides.ts`가 adapter owner와 disposition의 진실 원천이다. `apps/studio-host/src/core/upstream-boundary.test.ts`는 12개 alias, `legacy-upstream-copy` 0개, 금지 entry와 제거된 shadow의 물리적 부재, adapter 300 LOC 상한을 검사한다. `tests/rhwp-baseline.test.mjs`는 exact entry, upstream 메뉴 command와 HWPX/PDF 실행 경계를 함께 고정한다. engine API나 renderer bug는 먼저 upstream에서 해결하고, 데스크톱 통합 차이는 이 경계 안의 leaf adapter에 둔다.
 
+## Windows thumbnail parse·render 경계
+
+Windows Explorer thumbnail은 현재 Stable pin의 native `rhwp`를 사용하지만 COM DLL에 engine을 직접 link하지 않는다.
+
+- `crates/document-preview`는 bytes-only 첫 페이지 render, embedded preview 검증, raster와 공통 resource/protocol bounds를 소유한다.
+- `apps/desktop`은 같은 crate의 direct SVG adapter를 사용해 기존 document preview command를 유지한다.
+- `apps/thumbnail-worker`는 crate의 render feature와 native `rhwp`를 사용해 별도 process에서 first-page BGRA를 만든다.
+- `apps/thumbnail-handler`는 render feature 없이 protocol과 bounds만 사용하며 Shell COM, process 격리와 `HBITMAP` 반환만 소유한다.
+
+Stable pin 갱신은 desktop preview와 worker render를 함께 바꾸므로 새 exact SHA에서 Windows native test, thumbnail binary·artifact inventory, installer 등록·rollback과 Explorer UI 수용을 반복한다. process와 installer의 전체 계약은 [WINDOWS_THUMBNAILS.md](WINDOWS_THUMBNAILS.md)를 따른다.
+
+## Linux thumbnail parse·render 경계
+
+Linux 파일 관리자 thumbnail도 같은 Stable pin과 `crates/document-preview`를 사용하지만 Tauri 앱이나 Windows worker를 호출하지 않는다.
+
+- `apps/linux-thumbnailer`의 public process는 Freedesktop `%i %o %s` CLI, Linux child supervision, deadline, `RLIMIT_AS`와 PNG 게시만 소유한다.
+- 같은 ELF의 private worker는 `document-preview`와 native `rhwp`로 첫 페이지를 직접 render하고 실패할 때만 제한된 embedded preview를 사용한다.
+- `apps/desktop/src-tauri/linux/alhangeul.thumbnailer`와 DEB/RPM custom files가 절대 helper 경로와 HWP/HWPX MIME registration을 연결한다.
+- persistent cache, cache invalidation과 icon fallback은 Nautilus·Thunar/Tumbler가 소유한다.
+
+Stable pin 갱신은 Linux helper의 direct render도 바꾸므로 새 exact SHA에서 x64·arm64 helper test/Clippy/build, DEB/RPM package lifecycle과 x64 Nautilus·Thunar의 공개 실사용 HWP/HWPX 첫 페이지를 다시 수용한다. 전체 CLI, resource, PNG, package와 cache 계약은 [LINUX_THUMBNAILS.md](LINUX_THUMBNAILS.md)를 따른다.
+
 ## 문서 저장, PDF와 실제 인쇄 경계
 
-upstream embed runtime을 상속하는 local leaf wrapper는 `getDesktopStudioHandlers()`로 `loadFile`, `pageCount`, `getPageSvg`, `exportHwp`, `exportHwpx`, `notifySaved`만 native host에 노출한다. HWP/HWPX source save는 현재 형식에 맞는 exporter bytes를 chunk staging하고 Rust에서 요청 형식·확장자·parser 결과가 일치한 뒤 원자적으로 교체한다. native commit 성공 뒤에만 `notifySaved`로 upstream dirty/recovery 상태를 정리한다.
+upstream embed runtime을 상속하는 local leaf wrapper는 active registration과 `waitForDesktopStudioHandlers()` 비동기 acquisition을 통해 `loadFile`, `pageCount`, `getPageSvg`, `exportHwp`, `exportHwpx`, `notifySaved`만 native host에 노출한다. registration 교체·종료는 자신이 소유한 미완료 waiter와 timer를 함께 회수하고 stale cleanup이 최신 handler를 제거하지 못하게 한다. Studio WebView의 Windows/Linux 판정은 navigator를 읽는 `detectDesktopPlatform()` leaf adapter가 소유하며 native IPC나 override cache를 두지 않는다. HWP/HWPX source save는 현재 형식에 맞는 exporter bytes를 chunk staging하고 Rust에서 요청 형식·확장자·parser 결과가 일치한 뒤 원자적으로 교체한다. native commit 성공 뒤에만 `notifySaved`로 upstream dirty/recovery 상태를 정리한다.
 
 PDF command는 upstream `file:print-to-pdf` 메뉴 위치와 활성 규칙을 유지하되 실행만 Alhangeul이 소유한다. save target을 확정한 뒤 active handler의 현재 HWP/HWPX exporter를 한 번 호출하고 별도 product `WasmBridge`에 다시 로드한 immutable snapshot의 page count와 SVG만 native PDF job에 전달한다. live `pageCount`·`getPageSvg`를 직접 읽거나 native session revision을 snapshot token으로 재사용하지 않으며, snapshot UUID를 begin·append·commit·abort 전체에 결속한다. capture 2분, 전체 pipeline 10분과 native page·byte·job·TTL 제한을 넘기면 fail-closed로 회수하고 startup에서는 안전성이 확인된 오래된 product temp만 제한적으로 정리한다. PDF 성공·실패·취소는 source path·format·revision·dirty·recent와 upstream recovery draft를 바꾸지 않고 `notifySaved`를 호출하지 않는다.
 
@@ -55,8 +77,8 @@ PDF command는 upstream `file:print-to-pdf` 메뉴 위치와 활성 규칙을 �
 
 ```sh
 scripts/update-upstream.sh \
-  --tag v0.8.2 \
-  --commit 9b16aa9e23f476e2b335d7c029fc9f24a199d63c \
+  --tag v0.8.4 \
+  --commit 496333b27d21ddb9114ba9ae340bcb895870c9a7 \
   --run-checks
 ```
 
@@ -82,7 +104,7 @@ candidate는 clean `devel` checkout에서 다음 순서를 지킨다.
 
 token은 `contents: write`와 `pull-requests: write`만 요청하며 auto approval·merge, release/tag, issue close, package publish와 Pages deploy에는 사용하지 않는다. 후보 본문은 old/new tag·commit, Stable release URL, 변경 경로와 자동 검증을 기록한다.
 
-자동 candidate는 Ubuntu에서 새 pin의 desktop Rust test와 Clippy를 통과한 갱신 제안일 뿐 native 수용 결과가 아니다. Windows native와 Linux Tauri build, GUI와 packaging은 target release를 명시한 별도 Hyper-Waterfall Issue에서 검토하고 candidate 본문은 이 검증이 미실행임을 유지한다. 최초 `v0.8.4` candidate의 현재 수용 작업은 [Issue #24](https://github.com/postmelee/alhangeul-tauri/issues/24)이며, 자동화는 특정 수용 Issue를 PR 본문에 하드코딩하거나 자동 종료·merge하지 않는다.
+자동 candidate는 Ubuntu에서 새 pin의 desktop Rust test와 Clippy를 통과한 갱신 제안일 뿐 native 수용 결과가 아니다. Windows native와 Linux Tauri build, GUI와 packaging은 target release를 명시한 별도 Hyper-Waterfall Issue에서 검토하고 candidate 본문은 이 검증이 미실행임을 유지한다. 최초 `v0.8.4` candidate의 수용은 [Issue #24](https://github.com/postmelee/alhangeul-tauri/issues/24)에서 수행하며, 자동화는 특정 수용 Issue를 PR 본문에 하드코딩하거나 자동 종료·merge하지 않는다.
 
 known issue 기록은 current pin 참조가 아니다. 자동 관리 참조 갱신은 승인된 marker와 경로만 바꾸고, 특정 release의 known issue 이름·원인·추적 링크를 새 release 정보로 치환하지 않는다. 새 release에서 같은 실패가 보여도 아래 분류 기준에 따라 재현 조건과 실패 지점을 다시 확인한다.
 
@@ -99,6 +121,21 @@ workflow를 default branch에 merge하면 read-only daily 판정은 시작되지
 - candidate Ubuntu runner에서 `pnpm run test:desktop`, `pnpm run clippy:desktop`이 통과한다.
 
 Windows native와 Linux Tauri build·GUI·packaging은 승인된 후속 플랫폼 작업에서 검증한다. Ubuntu Rust preflight와 플랫폼 중립 수용 결과만으로 native 배포 준비가 완료되었다고 판단하지 않는다.
+
+## `v0.8.4` native 수용 기준선
+
+Task #24는 `v0.8.4` / `496333b27d21ddb9114ba9ae340bcb895870c9a7`의 source,
+native Cargo lock, bundled WASM과 전체 Studio bundle을 exact Alhangeul commit
+`88baa5666ec55bf043844bae01ec4d422278851c`에서 함께 검증했다. 플랫폼 중립 CI와
+Windows x64·Linux x64·Linux arm64 native build, inventory, Windows installer smoke는
+같은 SHA에서 성공했다. Windows x64와 Linux x64에서는 대표 HWP/HWPX의 열기·저장·재열기,
+searchable PDF 직접 저장, system print dialog와 전체 페이지 출력까지 수동 수용했다.
+
+이 결과는 Alhangeul에서 현재 고정한 upstream release와 leaf adapter 경계의 native 수용
+기준선이다. Linux arm64는 hosted runner의 DEB build·inventory까지만 확인했고 실제 arm64
+GUI를 실행하지 않았다. GitHub Release, tag, 서명, package 게시, 고정 다운로드 URL과
+updater는 이 기준선에 포함되지 않는다. 상세 run, artifact와 플랫폼별 제한은
+[DESKTOP_RELEASE.md](../operations/DESKTOP_RELEASE.md)의 Task #24 절을 따른다.
 
 ## `v0.8.2` known issue 분류
 

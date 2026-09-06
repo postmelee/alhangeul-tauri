@@ -97,7 +97,9 @@ async function runDesktopAction<T>(
   try {
     setStatus(`${label} 중...`);
     const result = await action();
-    if (result !== null) {
+    if (result === null) {
+      setStatus(originalStatus);
+    } else {
       setStatus(completionStatus === 'restore' ? originalStatus : `${label} 완료`);
     }
     return result;

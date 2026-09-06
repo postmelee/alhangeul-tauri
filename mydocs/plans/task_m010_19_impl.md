@@ -10,6 +10,31 @@ GitHub Issue: [#19](https://github.com/postmelee/alhangeul-tauri/issues/19)
 
 ## 단계 개요
 
+### 2026-09-06 Stage 4.4 재개 승인
+
+작업지시자가 재개 수행계획의 devel 통합 단계를 승인했다. 기존 Stage 1~4.3을 재작성하지
+않고 devel `c93ac8c58a796a45227f764f37b7aaffaa81899e`를 merge한다.
+재개 계획에서 확인한 8개 충돌과 재개 보드의 add/add 충돌을 의미 단위로 해소한다.
+
+- 최신 source save·암호 보호와 PDF snapshot export를 함께 보존한다.
+- native registry·updater 초기화는 유지하고 PDF reaper·startup cleanup을 결합한다.
+- 최신 desktop workflow는 이미 Rust test/Clippy gate를 포함하므로 workflow와 그
+  contract test를 devel 그대로 채택한다. 구형 `native_checks` matrix 분기를 중복 추가하지 않는다.
+- baseline은 최신 pin/source export 검사를 유지하고 snapshot 사용·live SVG 미사용 검사를 결합한다.
+- 오늘할일은 양쪽 이력을 보존한다. pin·vendor·서명·Pages·release 데이터는 devel 기준을 유지한다.
+- 기존 300 LOC 초과 workflow·test·host 문서는 통합 과정에서 구조 분리하지 않는다.
+  최신 계약을 보존하는 병합 예외이며 새 기능/대규모 리팩터링의 근거로 사용하지 않는다.
+- 로컬 검증은 PDF focused, 전체 Studio, upstream, automation, product boundary,
+  Studio build, 두 workflow actionlint, Rust formatting과 diff 검사로 한정한다.
+  동일 Studio suite가 먼저 전부 실행되면 불필요하게 재실행하지 않는다.
+- 이번 단계는 원격 CI·artifact 생성·서명·배포를 실행하지 않는다.
+  최신 snapshot fixture 조판이 불일치하면 설계를 자동 변경하지 않고 승인 요청으로 돌아간다.
+
+산출물은 충돌 해소·필요한 통합 보정, 본 구현계획서, 오늘할일 및
+`mydocs/working/task_m010_19_stage4.4.md`다. 검증 성공 뒤 함께
+`Task #19 [Stage 4.4]: 최신 devel과 PDF snapshot 통합`으로 커밋한다.
+단계 보고 뒤 Windows/Linux 최종 후보 수용 승인을 요청한다.
+
 | Stage | 제목 | 주요 산출 | 검증 |
 |---|---|---|---|
 | 1 | immutable PDF snapshot 계약 | snapshot module·실제 HWP/HWPX round-trip test | 같은 page count·SVG, 격리 lifecycle, Studio gate |

@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import { EventEmitter } from 'node:events';
+import { readFile } from 'node:fs/promises';
 import { posix } from 'node:path';
 import test from 'node:test';
 import {
@@ -8,6 +10,7 @@ import {
 import {
   createBoundedCollector,
   resolveExecutable,
+  stopProcess,
 } from './gui/support/process.mjs';
 
 test('Linux production binary와 외부 driver prerequisite를 확정한다', async () => {
@@ -89,6 +92,23 @@ test('driver log는 chunk와 byte limit에서 UTF-8 문자를 쪼개지 않는�
   assert.doesNotMatch(collector.value(), /�/);
 });
 
+test('SIGKILL 동기 exit도 기존 listener로 회수해 stop race를 만들지 않는다', async () => {
+  const child = new EventEmitter();
+  child.exitCode = null;
+  child.signalCode = null;
+  const signals = [];
+  child.kill = (signal) => {
+    signals.push(signal);
+    if (signal === 'SIGKILL') {
+      child.signalCode = signal;
+      child.emit('exit', null, signal);
+    }
+    return true;
+  };
+  await stopProcess(child, { graceMs: 1 });
+  assert.deepEqual(signals, ['SIGTERM', 'SIGKILL']);
+});
+
 test('external tauri-driver가 title과 root DOM을 읽고 evidence를 남긴다', async () => {
   const writes = new Map();
   const requests = [];
@@ -118,7 +138,6 @@ test('external tauri-driver가 title과 root DOM을 읽고 evidence를 남긴다
   assert.deepEqual(requests[1][2], {
     capabilities: {
       alwaysMatch: {
-        browserName: 'tauri',
         'tauri:options': { application: '/usr/bin/Alhangeul' },
       },
     },
@@ -126,6 +145,12 @@ test('external tauri-driver가 title과 root DOM을 읽고 evidence를 남긴다
   assert.deepEqual(requests.at(-1).slice(0, 2), ['DELETE', '/session/session-1']);
   assert.equal(writes.get('/tmp/evidence/tauri-driver.stdout.log'), 'driver ready\n');
   assert.equal(JSON.parse(writes.get('/tmp/evidence/probe-summary.json')).rootTag, 'HTML');
+});
+
+test('status는 5초, session lifecycle 요청은 bounded 30초 timeout을 사용한다', async () => {
+  const source = await readFile(new URL('./gui/linux/probe.mjs', import.meta.url), 'utf8');
+  assert.match(source, /path === '\/status' \? 5000 : 30000/);
+  assert.match(source, /WebDriver 요청이 중단됐습니다: \$\{method\} \$\{path\}/);
 });
 
 test('session probe 실패도 cleanup과 bounded evidence를 수행한다', async () => {

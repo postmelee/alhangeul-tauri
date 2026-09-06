@@ -7,6 +7,7 @@ import {
 } from './desktop-persistence';
 import { createPdfExportSnapshot } from './pdf-export-snapshot';
 import type { ActiveDesktopSession } from './desktop-session';
+import type { DesktopSourceExport } from './desktop-source-export';
 
 vi.mock('./pdf-export-snapshot', () => ({
   createPdfExportSnapshot: vi.fn(),
@@ -37,14 +38,14 @@ describe('desktop persistence', () => {
     const persistence = new DesktopPersistence(fixture.dependencies);
     const active = activeSession();
 
-    const hwpx = await persistence.saveSource(active);
+    const hwpx = await persistence.saveSource(active, fixture.exportSource);
     expect(hwpx?.state).toMatchObject({
       format: 'hwpx', sourcePath: '/documents/source.hwpx', fileName: 'source.hwpx',
     });
-    expect(fixture.handlers.exportHwpx).toHaveBeenCalledOnce();
+    expect(fixture.exportSource).toHaveBeenCalledWith('hwpx');
     expect(fixture.dependencies.chooseDocumentSavePath).not.toHaveBeenCalled();
 
-    const hwp = await persistence.saveSource(active, 'hwp', true);
+    const hwp = await persistence.saveSource(active, fixture.exportSource, 'hwp', true);
     expect(fixture.dependencies.resolveSaveDefaultPath)
       .toHaveBeenCalledWith('source.hwp', '/documents/source.hwpx');
     expect(fixture.dependencies.chooseDocumentSavePath)
@@ -76,7 +77,7 @@ describe('desktop persistence', () => {
           },
         }],
       ]);
-    expect(fixture.handlers.exportHwp).toHaveBeenCalledOnce();
+    expect(fixture.exportSource.mock.calls.map(([format]) => format)).toEqual(['hwpx', 'hwp']);
     expect(fixture.handlers.notifySaved).not.toHaveBeenCalled();
   });
 
@@ -92,11 +93,28 @@ describe('desktop persistence', () => {
     const active = activeSession({ dirty: true });
     const snapshot = { ...active };
 
-    await expect(persistence.saveSource(active)).rejects.toThrow('commit failed');
+    await expect(persistence.saveSource(active, fixture.exportSource)).rejects.toThrow('commit failed');
 
     expect(active).toEqual(snapshot);
     expect(fixture.handlers.notifySaved).not.toHaveBeenCalled();
     expect(fixture.dependencies.removeFile).toHaveBeenCalledWith('/tmp/staged.hwpx');
+  });
+
+  it('removes staging without writing when source export is cancelled', async () => {
+    const fixture = createFixture();
+    fixture.exportSource.mockResolvedValueOnce(null);
+    fixture.invoke.mockImplementation(async (command) => {
+      if (command === 'check_external_modification') return { changed: false };
+      if (command === 'prepare_staged_document_save') return '/tmp/cancelled.hwpx';
+      throw new Error(`unexpected command: ${command}`);
+    });
+    const persistence = new DesktopPersistence(fixture.dependencies);
+
+    await expect(persistence.saveSource(activeSession(), fixture.exportSource))
+      .resolves.toBeNull();
+
+    expect(fixture.dependencies.writeDocument).not.toHaveBeenCalled();
+    expect(fixture.dependencies.removeFile).toHaveBeenCalledWith('/tmp/cancelled.hwpx');
   });
 
   it('streams one HWPX snapshot while live page handlers keep changing', async () => {
@@ -326,13 +344,28 @@ function createFixture() {
     chooseDocumentSavePath: vi.fn().mockResolvedValue(null),
     choosePdfSavePath: vi.fn().mockResolvedValue(null),
     resolveSaveDefaultPath: vi.fn(async (fileName) => `/documents/${fileName}`),
+    chooseDocumentSavePassword: vi.fn().mockResolvedValue(null),
     showMessage: vi.fn().mockResolvedValue(true),
     readDocument: vi.fn(),
     writeDocument: vi.fn().mockResolvedValue(undefined),
     removeFile: vi.fn().mockResolvedValue(undefined),
     handlers: vi.fn().mockResolvedValue(handlers),
   };
-  return { dependencies, handlers: handlers as MockedHandlers, invoke, snapshot };
+  const exportSource = vi.fn<(
+    format: 'hwp' | 'hwpx',
+  ) => Promise<DesktopSourceExport | null>>(async (format) => ({
+    artifact: {
+      bytes: format === 'hwpx' ? new Uint8Array([4, 5, 6]) : new Uint8Array([7, 8, 9]),
+      contentLoss: {
+        schemaVersion: 1 as const,
+        outputFormat: format,
+        count: 0,
+        losses: [],
+      },
+    },
+    passwordProtected: false,
+  }));
+  return { dependencies, handlers: handlers as MockedHandlers, invoke, exportSource, snapshot };
 }
 
 type MockedHandlers = {

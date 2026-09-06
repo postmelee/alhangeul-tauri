@@ -1,31 +1,35 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
   detectDesktopPlatform,
-  hydrateDesktopPlatform,
   isTauriRuntime,
-  resetDesktopPlatformOverride,
 } from './platform';
 
 describe('platform', () => {
-  afterEach(() => {
-    delete (globalThis as { navigator?: Navigator }).navigator;
-    resetDesktopPlatformOverride();
+  it('detects Windows from navigator.platform', () => {
+    expect(detectDesktopPlatform({
+      platform: 'Win32',
+      userAgent: 'Mozilla/5.0',
+    })).toBe('windows');
   });
 
-  it('hydrates and reuses a supported desktop platform', async () => {
-    await expect(hydrateDesktopPlatform(async () => 'linux')).resolves.toBe('linux');
-    expect(detectDesktopPlatform({ platform: 'Win32', userAgent: 'Windows NT 10.0' })).toBe('linux');
+  it('falls back to the Windows user agent', () => {
+    expect(detectDesktopPlatform({
+      platform: '',
+      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+    })).toBe('windows');
   });
 
-  it('falls back to navigator detection when hydration fails', async () => {
-    Object.defineProperty(globalThis, 'navigator', {
-      value: { platform: 'Win32', userAgent: 'Windows NT 10.0' },
-      configurable: true,
-    });
+  it('detects Linux and leaves unsupported platforms unknown', () => {
+    expect(detectDesktopPlatform({
+      platform: 'Linux x86_64',
+      userAgent: 'Mozilla/5.0 (X11; Linux x86_64)',
+    })).toBe('linux');
 
-    await expect(hydrateDesktopPlatform(async () => {
-      throw new Error('ipc unavailable');
-    })).resolves.toBe('windows');
+    expect(detectDesktopPlatform({
+      platform: 'MacIntel',
+      userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X)',
+    })).toBe('unknown');
+    expect(detectDesktopPlatform({ platform: '', userAgent: '' })).toBe('unknown');
   });
 
   it('detects both injected and protocol Tauri runtimes', () => {

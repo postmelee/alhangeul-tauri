@@ -31,20 +31,37 @@ test('production native print는 준비·Print to File·cancel·CUPS를 같은 �
     printerName: 'PDF',
     waitForFile: async (path) => { calls.push(['file', path]); },
     waitForCupsPdf: async () => { calls.push(['cupsPdf']); },
+    assertEditorBody: async (label) => { calls.push(['body', label]); },
   });
   assert.deepEqual(calls.map(([name]) => name), [
-    'actionOptional', 'waitAbsent', 'wait',
-    'printToFile', 'wait', 'trigger', 'wait', 'file',
-    'cancelPrint', 'wait', 'trigger', 'wait',
-    'virtualPrinter', 'wait', 'trigger', 'wait', 'cupsPdf',
+    'actionOptional', 'waitAbsent', 'wait', 'wait', 'body',
+    'printToFile', 'wait', 'trigger', 'wait', 'body', 'file',
+    'cancelPrint', 'wait', 'trigger', 'wait', 'body',
+    'virtualPrinter', 'wait', 'trigger', 'wait', 'body', 'cupsPdf',
   ]);
   assert.equal(calls[0][2], 10000);
   assert.deepEqual(calls[2][1], { roles: ['document text'], names: ['biz_plan.hwp'] });
+  assert.deepEqual(calls.filter(([name]) => name === 'body').map(([, label]) => label), [
+    'before-print', 'after-print-to-file', 'after-cancel', 'after-cups-pdf',
+  ]);
   for (const [, selector] of calls.filter(([name], index) => name === 'wait' && index !== 2)) {
     assert.deepEqual(selector, {
       roles: ['document text'], names: ['biz_plan.hwp'], focused: true,
     });
   }
+});
+
+test('production sequence는 본문 검증 없이 실행하거나 빈 baseline 뒤 인쇄할 수 없다', async () => {
+  await assert.rejects(runProductionPrintSequence({}), /본문 검증이 필요/);
+  let prints = 0;
+  await assert.rejects(runProductionPrintSequence({
+    adapter: {
+      actionOptional: async () => {}, waitAbsent: async () => {}, wait: async () => {},
+      printToFile: async () => { prints += 1; },
+    },
+    assertEditorBody: async () => { throw new Error('blank baseline'); },
+  }), /blank baseline/);
+  assert.equal(prints, 0);
 });
 
 test('CUPS-PDF는 신규 regular PDF 하나가 안정되면 canonical evidence path로 이동한다', async () => {

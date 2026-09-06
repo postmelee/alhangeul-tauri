@@ -102,8 +102,10 @@ test('print adapter는 Print to File만 고르고 save/cancel modal 종료를 �
 
 test('virtual printer는 semantic selection 후에만 Print를 실행한다', async () => {
   const calls = [];
+  const printWindows = [];
   const adapter = createAdapter({
     runAtspi: async (request) => { calls.push(request); return {}; },
+    runPrintWindow: async (request) => { printWindows.push(request); return {}; },
   });
   await adapter.printWithVirtualPrinter('PDF', async () => {});
   assert.deepEqual(calls.map(({ command }) => command), [
@@ -115,6 +117,7 @@ test('virtual printer는 semantic selection 후에만 Print를 실행한다', as
   assert.equal(calls[1].desktopScope, true);
   assert.deepEqual(calls[3].selector.exactNames, ['print', '인쇄']);
   assert.equal(calls[3].actionNames, undefined);
+  assert.deepEqual(printWindows.map(({ operation }) => operation), ['wait', 'waitAbsent']);
 });
 
 test('system print shortcut은 실제 ctrl+p만 허용하고 AT-SPI 탐색과 분리한다', async () => {
@@ -272,6 +275,7 @@ function createAdapter(override = {}) {
     applicationNames: ['Alhangeul'],
     runShortcut: async () => {},
     runWindowShortcut: async () => {},
+    runPrintWindow: async () => ({}),
     runPrintFileChooser: async () => ({}),
     captureScreenshot: async () => {},
     ...override,

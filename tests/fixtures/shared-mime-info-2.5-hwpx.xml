@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  HWPX block from shared-mime-info tag 2.5, data/freedesktop.org.xml.in.
+  Source: https://gitlab.freedesktop.org/xdg/shared-mime-info/-/blob/2.5/data/freedesktop.org.xml.in
+  Only the upstream application/x-hwpx definition is retained for this fixture.
+-->
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/x-hwpx">
+    <comment>Hancom HWPX document</comment>
+    <generic-icon name="x-office-document"/>
+    <glob pattern="*.hwpx"/>
+    <sub-class-of type="application/zip"/>
+    <alias type="application/hwp+zip"/>
+    <alias type="application/vnd.hancom.hwpx"/>
+    <alias type="application/x-hwp+zip"/>
+    <magic priority="70">
+      <match type="string" value="PK\003\004" offset="0">
+        <match type="string" value="mimetype" offset="30">
+          <match type="string" offset="38" value="application/hwp+zip"/>
+        </match>
+      </match>
+    </magic>
+  </mime-type>
+</mime-info>

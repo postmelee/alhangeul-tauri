@@ -256,13 +256,16 @@ test('system print는 WebDriver spec 밖의 production native phase에서만 실
   const nativePrint = await readFile(
     join(repoRoot, 'tests/gui/linux/native-print.mjs'), 'utf8',
   );
+  const sequence = await readFile(join(repoRoot, 'tests/gui/linux/native-print-sequence.mjs'), 'utf8');
   assert.doesNotMatch(webdriver, /linux-system-print|printToFile|cancelPrint|printWithVirtualPrinter/);
   assert.match(nativePrint, /scenario: 'linux-system-print'/);
   assert.match(nativePrint, /spawnLoggedProcess\(inputs\.appPath, \[fixture\.absolutePath\]/);
   assert.match(nativePrint, /cwd: generatedDir/);
   assert.match(nativePrint, /webdriverControlled: false/);
-  assert.match(nativePrint, /focusedDocument = \{ \.\.\.document, focused: true \}/);
-  assert.doesNotMatch(nativePrint, /adapter\.focus/);
+  assert.match(sequence, /focusedDocument = \{ \.\.\.document, focused: true \}/);
+  assert.match(nativePrint, /assertEditorBody: \(label\) => options\.editor\.check\(label\)/);
+  assert.match(nativePrint, /pid: app\.child\.pid/);
+  assert.doesNotMatch(nativePrint + sequence, /adapter\.focus/);
 });
 
 test('Linux runtime helper는 POSIX path API를 명시하고 분리된 path 조각 주입을 금지한다', async () => {

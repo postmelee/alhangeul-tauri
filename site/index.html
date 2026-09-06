@@ -3,84 +3,90 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Alhangeul — HWP/HWPX desktop editor</title>
-        <meta
-            name="description"
-            content="Alhangeul은 Windows와 Linux용 오픈소스 HWP/HWPX 데스크톱 editor입니다."
-        />
-        <meta property="og:title" content="Alhangeul" />
-        <meta
-            property="og:description"
-            content="Windows와 Linux에서 HWP/HWPX 문서를 여는 Tauri 기반 데스크톱 앱"
-        />
+        <title>알한글 — Windows와 Linux를 위한 HWP/HWPX 편집기</title>
+        <meta name="description" content="Windows와 Linux에서 HWP/HWPX 문서를 열고 편집하고 저장하는 오픈소스 데스크톱 앱 알한글입니다." />
+        <meta property="og:type" content="website" />
+        <meta property="og:locale" content="ko_KR" />
+        <meta property="og:title" content="알한글 — Windows와 Linux에서 한글 문서를 자연스럽게" />
+        <meta property="og:description" content="플랫폼과 설치 방식에 맞는 알한글 설치 안내를 확인하세요." />
+        <meta property="og:image" content="https://postmelee.github.io/alhangeul-tauri/assets/og-main.png" />
+        <meta property="og:image:width" content="1920" />
+        <meta property="og:image:height" content="1080" />
+        <meta property="og:image:alt" content="Windows와 Linux 알한글 앱 화면과 설치 안내" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <link rel="canonical" href="https://postmelee.github.io/alhangeul-tauri/" />
         <link rel="icon" href="../assets/logo/favicon.ico" />
-        <link rel="stylesheet" href="styles.css" />
+        <link rel="stylesheet" href="styles.css?v=45-3-17" />
+        <script src="script.js" defer></script>
     </head>
-    <body>
-        <main class="page-shell">
-            <section class="hero" aria-labelledby="product-title">
-                <div class="brand">
-                    <img
-                        class="logo"
-                        src="../assets/logo/logo-256.png"
-                        alt=""
-                        width="96"
-                        height="96"
-                    />
-                    <span>Alhangeul</span>
-                </div>
+    <body class="home-page" data-site-root="./">
+        <a class="skip-link" href="#main">본문으로 이동</a>
+        <header class="site-header" aria-label="주요 탐색">
+            <div class="site-header-inner">
+                <a class="brand-link" href="./" aria-label="알한글 홈">
+                    <img src="../assets/logo/logo-256.png" alt="" width="30" height="30" />
+                    <span>알한글</span>
+                </a>
+                <nav class="header-actions" aria-label="주요 링크">
+                    <a class="header-link" href="updates/" aria-label="업데이트 안내로 이동">업데이트</a>
+                    <a class="header-link" href="feedback/" aria-label="문의와 제보 안내로 이동">문의/제보</a>
+                    <a class="header-link" href="https://github.com/postmelee/alhangeul-tauri" aria-label="GitHub 저장소로 이동">GitHub</a>
+                </nav>
+            </div>
+        </header>
 
-                <div class="hero-grid">
-                    <div class="copy">
-                        <p class="eyebrow">Open HWP/HWPX desktop editor</p>
-                        <h1 id="product-title">한글 문서를 데스크톱에서</h1>
-                        <p class="summary">
-                            Alhangeul은 Windows와 Linux에서 HWP/HWPX 문서를
-                            열고 편집하기 위한 Tauri 기반 오픈소스 앱입니다.
-                            문서 engine과 renderer는 rhwp를 사용하고, 파일·창·인쇄
-                            같은 데스크톱 통합은 이 프로젝트가 소유합니다.
-                        </p>
-
-                        <div class="actions">
-                            <a
-                                class="button primary"
-                                href="https://github.com/postmelee/alhangeul-tauri"
-                                >GitHub 저장소</a
-                            >
-                            <a
-                                class="button secondary"
-                                href="https://github.com/edwardkim/rhwp"
-                                >rhwp 살펴보기</a
-                            >
+        <main class="home-main" id="main">
+            <section class="home-shell" aria-labelledby="home-title">
+                <div class="home-copy page-enter">
+                    <h1 id="home-title">
+                        <span class="headline-line">한글 파일은</span>
+                        <span class="headline-line">더 이상 <em>낯선 문서</em>가</span>
+                        <span class="headline-line">아닙니다.</span>
+                    </h1>
+                    <p class="home-summary">HWP/HWPX 문서를 열고, 편집하고, 저장하세요.</p>
+                    <section class="install-panel" aria-labelledby="install-title">
+                        <div class="install-heading">
+                            <h2 id="install-title">다운로드</h2>
+                            <p data-release-message>첫 공개 릴리스를 준비하고 있습니다.</p>
                         </div>
-                    </div>
-
-                    <aside class="status-card" aria-labelledby="status-title">
-                        <p class="status-label">Project status</p>
-                        <h2 id="status-title">현재 개발 중입니다</h2>
-                        <p>
-                            독립 제품 전환과 Windows/Linux native 검증 기반을
-                            준비하고 있습니다. 공식 설치 파일은 아직 제공하지
-                            않습니다.
-                        </p>
-                        <ul>
-                            <li>HWP/HWPX 열기</li>
-                            <li>HWP 저장과 PDF 내보내기</li>
-                            <li>인쇄, drag/drop과 다중 창</li>
-                        </ul>
-                        <p class="status-footnote">
-                            공개 배포와 자동 업데이트는 별도 검증과 승인 후
-                            제공할 예정입니다.
-                        </p>
-                    </aside>
+                        <fieldset class="download-platform-picker">
+                            <legend class="visually-hidden">다운로드 플랫폼 선택</legend>
+                            <input class="download-platform-radio" type="radio" name="download-platform" id="download-platform-windows" value="windows" checked />
+                            <input class="download-platform-radio" type="radio" name="download-platform" id="download-platform-linux" value="linux" />
+                            <div class="download-platform-switch">
+                                <label for="download-platform-windows">Windows</label>
+                                <label for="download-platform-linux">Linux</label>
+                            </div>
+                            <div class="download-platform-panels">
+                                <section class="download-platform-panel windows-panel" aria-labelledby="windows-package-title">
+                                    <h3 class="visually-hidden" id="windows-package-title">Windows 다운로드</h3>
+                                    <div class="download-package-list">
+                                        <div class="download-package-option"><span class="download-package-copy"><strong>NSIS</strong><span>Windows x64 · 일반 설치 권장</span></span><a class="download-package-action" href="updates/#latest-download" data-download-target="windows-x86_64-nsis"><span data-download-state="home">다운로드</span></a></div>
+                                        <div class="download-package-option"><span class="download-package-copy"><strong>MSI</strong><span>Windows x64 · 조직·관리 배포</span></span><a class="download-package-action" href="updates/#latest-download" data-download-target="windows-x86_64-msi"><span data-download-state="home">다운로드</span></a></div>
+                                    </div>
+                                </section>
+                                <section class="download-platform-panel linux-panel" aria-labelledby="linux-package-title">
+                                    <h3 class="visually-hidden" id="linux-package-title">Linux 다운로드</h3>
+                                    <div class="download-package-list">
+                                        <div class="download-package-option"><span class="download-package-copy"><strong>AppImage</strong><span>Linux x64 · 자동 업데이트 권장</span></span><a class="download-package-action" href="updates/#latest-download" data-download-target="linux-x86_64-appimage"><span data-download-state="home">다운로드</span></a></div>
+                                        <div class="download-package-option"><span class="download-package-copy"><strong>DEB/RPM</strong><span>Linux x64 · 배포판 패키지</span></span><a class="download-package-action" href="https://github.com/postmelee/alhangeul-tauri/releases" rel="noreferrer" aria-label="Linux x64 DEB/RPM 다운로드 — GitHub Releases에서 수동 설치"><span data-download-state="home">다운로드</span></a></div>
+                                        <div class="download-package-option"><span class="download-package-copy"><strong>DEB</strong><span>Linux arm64 · 수동 설치</span></span><a class="download-package-action" href="https://github.com/postmelee/alhangeul-tauri/releases" rel="noreferrer" aria-label="Linux arm64 DEB 다운로드 — GitHub Releases에서 수동 설치"><span data-download-state="home">다운로드</span></a></div>
+                                    </div>
+                                </section>
+                            </div>
+                        </fieldset>
+                        <p class="install-note">공개 전에는 설치 파일 대신 검증 범위와 준비 상태를 안내합니다.</p>
+                    </section>
                 </div>
 
-                <p class="credit">
-                    Alhangeul은
-                    <a href="https://github.com/edwardkim/rhwp">rhwp</a>를
-                    기반으로 하며 MIT 라이선스로 개발됩니다.
-                </p>
+                <figure class="home-product page-enter" aria-label="실제 알한글 편집 화면">
+                    <div class="product-glow" aria-hidden="true"></div>
+                    <div class="product-window">
+                        <img src="assets/linux-editor.png?v=45-3-9" alt="Linux 네이티브 창에서 HWP 문서를 연 실제 알한글 편집 화면" width="1282" height="924" />
+                    </div>
+                </figure>
             </section>
         </main>
+        <footer class="site-footer"><div class="site-footer-inner"><div class="footer-brand"><img src="../assets/logo/logo-256.png" alt="" width="24" height="24" /><span>알한글</span></div><p>Windows와 Linux용 HWP/HWPX 문서 편집기입니다.</p><nav aria-label="푸터 링크"><a href="https://github.com/postmelee/alhangeul-tauri/blob/devel/LICENSE" rel="noreferrer">MIT License</a></nav></div></footer>
     </body>
 </html>

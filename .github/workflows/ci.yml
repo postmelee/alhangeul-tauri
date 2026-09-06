@@ -119,6 +119,15 @@ jobs:
       - name: Build studio host
         run: pnpm run build:studio
 
+      - name: Test document preview Rust
+        run: pnpm run test:document-preview
+
+      - name: Lint document preview Rust
+        run: pnpm run clippy:document-preview
+
+      - name: Lint document preview protocol-only Rust
+        run: pnpm run clippy:document-preview:protocol
+
       - name: Test desktop Rust
         run: pnpm run test:desktop
 

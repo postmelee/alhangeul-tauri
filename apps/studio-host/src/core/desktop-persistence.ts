@@ -1,9 +1,11 @@
 import type { DesktopStudioHandlers } from '../embed/desktop-runtime';
+import type { ContentLossReport } from '@upstream/core/export-content-loss';
 import type { DesktopHostDependencies } from './desktop-host-dependencies';
 import {
   createPdfExportSnapshot,
   type PdfExportSnapshot,
 } from './pdf-export-snapshot';
+import type { DesktopSourceExport } from './desktop-source-export';
 import type {
   ActiveDesktopSession,
   DesktopDocumentFormat,
@@ -24,13 +26,20 @@ export interface PdfExportResult {
 interface SourceSaveResult {
   state: NativeDocumentState;
   handlers: DesktopStudioHandlers;
+  contentLoss: ContentLossReport | null;
+  passwordProtected: boolean;
 }
+
+export type DesktopSourceExporter = (
+  format: DesktopDocumentFormat,
+) => Promise<DesktopSourceExport | null>;
 
 export class DesktopPersistence {
   constructor(private readonly dependencies: DesktopHostDependencies) {}
 
   async saveSource(
     active: Readonly<ActiveDesktopSession>,
+    exportSource: DesktopSourceExporter,
     requestedFormat = active.format,
     forceSaveAs = false,
   ): Promise<SourceSaveResult | null> {
@@ -56,10 +65,9 @@ export class DesktopPersistence {
     });
     try {
       const handlers = await this.dependencies.handlers();
-      const bytes = requestedFormat === 'hwpx'
-        ? await handlers.exportHwpx()
-        : await handlers.exportHwp();
-      await this.dependencies.writeDocument(stagedPath, bytes);
+      const exported = await exportSource(requestedFormat);
+      if (!exported) return null;
+      await this.dependencies.writeDocument(stagedPath, exported.artifact.bytes);
       const result = await this.invoke<NativeSaveResult>('commit_staged_document_save', {
         request: {
           docId: active.docId,
@@ -73,6 +81,8 @@ export class DesktopPersistence {
       return {
         state: { ...result, fileName: fileNameFromPath(targetPath) },
         handlers,
+        contentLoss: exported.artifact.contentLoss,
+        passwordProtected: exported.passwordProtected,
       };
     } finally {
       await this.dependencies.removeFile(stagedPath).catch(() => undefined);
