@@ -34,9 +34,33 @@ test('Linux GUI workflow는 표준 Ubuntu x64와 exact candidate concurrency만 
   assert.doesNotMatch(workflow, /ubuntu-(?:[0-9]+\.)?[0-9]+-[0-9]+-core/i);
   assert.match(
     workflow,
-    /^  group: alhangeul-linux-gui-\$\{\{ inputs\.build_ref \}\}-\$\{\{ inputs\.native_run_id \}\}$/m,
+    /^  group: alhangeul-linux-gui-\$\{\{ inputs\.build_ref \}\}-\$\{\{ inputs\.native_run_id \}\}-\$\{\{ inputs\.scope \}\}$/m,
   );
   assert.match(workflow, /^  cancel-in-progress: true$/m);
+});
+
+test('HWPX 제한 선택은 full 기본값과 분리되고 무실행 성공을 허용하지 않는다', () => {
+  const scope = childBlock(workflow, 'inputs', 'scope', 6);
+  assert.match(scope, /default: full/);
+  assert.match(scope, /- pdf-hwpx/);
+  for (const name of [
+    'Verify exact Linux thumbnailer artifact handoff', 'Download verified Linux thumbnailer artifact',
+    'Verify exact Linux thumbnailer binary', 'Record pre-install Linux MIME state',
+    'Verify installed Linux thumbnail package', 'Run Linux thumbnail manager contract probe',
+    'Configure CUPS-PDF',
+  ]) assert.match(stepContaining(workflow, name), /if: env\.GUI_SCOPE == 'full'/);
+  const gui = stepContaining(workflow, 'Run Linux GUI acceptance');
+  const limited = gui.slice(gui.indexOf('if [[ "$GUI_SCOPE" == pdf-hwpx'), gui.indexOf('native_print_status=0'));
+  assert.match(limited, /--spec tests\/gui\/specs\/linux-native\.e2e\.ts --mochaOpts\.grep 'HWPX 직접 PDF'/);
+  assert.match(limited, /"nativePrint":"skipped"/);
+  assert.match(limited, /\[\[ "\$webdriver_status" -eq 0 \]\]/);
+  assert.match(limited, /node tests\/gui\/linux\/verify-pdf-scope\.mjs/);
+  assert.match(limited, /exit 0/);
+  assert.match(workflow, /acceptance-scope\.txt/);
+  const gate = stepContaining(workflow, 'Require Linux GUI acceptance success');
+  assert.match(gate, /expected=success/);
+  assert.match(gate, /if \[\[ "\$GUI_SCOPE" == pdf-hwpx \]\]; then expected=skipped; fi/);
+  assert.match(gate, /\[\[ "\$outcome" == "\$expected" \]\]/);
 });
 
 test('checkout, run metadata, artifact ID와 inventory를 앱 설치 전에 검증한다', () => {
@@ -235,9 +259,10 @@ test('Xvfb, DBus, AT-SPI와 CUPS-PDF는 repository fixture만 사용한다', () 
     gui,
     /run_isolated_phase webdriver pnpm run test:gui:linux[\s\\]+\|\| webdriver_status=\$\?/,
   );
+  const full = gui.slice(gui.indexOf('native_print_status=0'));
   assert.ok(
-    gui.indexOf('run_isolated_phase native-print')
-      < gui.indexOf('run_isolated_phase webdriver'),
+    full.indexOf('run_isolated_phase native-print')
+      < full.indexOf('run_isolated_phase webdriver'),
   );
   assert.match(gui, /gui-phase-outcomes\.json/);
   assert.match(gui, /\[\[ "\$native_print_status" -eq 0 && "\$webdriver_status" -eq 0 \]\]/);

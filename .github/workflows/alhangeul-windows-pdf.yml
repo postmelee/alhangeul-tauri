@@ -1,0 +1,257 @@
+name: Alhangeul Windows PDF Acceptance
+
+on:
+  workflow_call:
+    inputs:
+      open_only:
+        type: boolean
+        default: false
+      confirmation_probe:
+        type: boolean
+        default: false
+      confirmation_verify:
+        type: boolean
+        default: false
+      confirmation_cases:
+        type: string
+        default: all
+      build_ref:
+        required: true
+        type: string
+      native_run_id:
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      open_only:
+        description: Diagnose document opening only, without PDF export
+        type: boolean
+        default: false
+      confirmation_probe:
+        description: Observe one installed-app Save confirmation without invoking Yes or No
+        type: boolean
+        default: false
+      confirmation_verify:
+        description: Verify installed-app confirmation commands with one HWP, without full PDF acceptance
+        type: boolean
+        default: false
+      confirmation_cases:
+        description: Run all commands or only the remaining Confirm case
+        type: choice
+        default: all
+        options:
+          - all
+          - confirm-only
+      build_ref:
+        description: Exact existing product commit SHA
+        required: true
+        type: string
+      native_run_id:
+        description: Successful Desktop Artifact Build run ID
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: windows-pdf-${{ inputs.build_ref }}-${{ inputs.native_run_id }}
+  cancel-in-progress: false
+
+jobs:
+  windows-pdf:
+    runs-on: windows-2025
+    timeout-minutes: 35
+    env:
+      ARTIFACT_ROOT: ${{ github.workspace }}\pdf-artifacts
+      EVIDENCE_ROOT: ${{ github.workspace }}\pdf-evidence
+      PDF_BUILD_REF: ${{ inputs.build_ref }}
+      NATIVE_RUN_ID: ${{ inputs.native_run_id }}
+      ACCEPTANCE_REF: ${{ github.workflow_sha }}
+      PDF_SCENARIO: ${{ inputs.confirmation_verify && 'confirmation-verify' || inputs.confirmation_probe && 'confirmation-probe' || inputs.open_only && 'open-only' || 'pdf' }}
+      PDF_CONFIRMATION_CASES: ${{ inputs.confirmation_cases }}
+    steps:
+      - name: Validate inputs
+        shell: pwsh
+        env:
+          PROBE_CONFLICT: ${{ (inputs.open_only && inputs.confirmation_probe) || (inputs.confirmation_verify && (inputs.open_only || inputs.confirmation_probe)) }}
+        run: |
+          if ($env:PROBE_CONFLICT -eq 'true') { throw 'Probe modes are mutually exclusive' }
+          if ($env:PDF_CONFIRMATION_CASES -cnotin @('all', 'confirm-only')) { throw 'Invalid confirmation_cases' }
+          if ($env:PDF_CONFIRMATION_CASES -eq 'confirm-only' -and $env:PDF_SCENARIO -ne 'confirmation-verify') { throw 'Confirm-only requires confirmation-verify' }
+          if ($env:PDF_BUILD_REF -cnotmatch '^[0-9a-f]{40}$') { throw 'Invalid build_ref' }
+          if ($env:NATIVE_RUN_ID -notmatch '^[1-9][0-9]*$') { throw 'Invalid native_run_id' }
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.workflow_sha }}
+          submodules: true
+      - name: Record exact context
+        shell: pwsh
+        run: |
+          if ((git rev-parse HEAD) -ne $env:ACCEPTANCE_REF) { throw 'Checkout mismatch' }
+          New-Item -ItemType Directory -Path $env:EVIDENCE_ROOT -Force | Out-Null
+          @{ acceptanceRef = $env:ACCEPTANCE_REF; buildRef = $env:PDF_BUILD_REF;
+             nativeRunId = $env:NATIVE_RUN_ID; runId = $env:GITHUB_RUN_ID;
+             scenario = $env:PDF_SCENARIO; confirmationCases = $env:PDF_CONFIRMATION_CASES } |
+            ConvertTo-Json | Set-Content "$env:EVIDENCE_ROOT/workflow-context.json"
+      - name: Check dialog PowerShell before installation
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Get-ChildItem scripts/windows-pdf-*.ps1 | ForEach-Object {
+            $parseErrors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$null, [ref]$parseErrors) | Out-Null
+            if ($parseErrors.Count) { throw "PowerShell parse failure: $($_.Name)" }
+          }
+          & powershell.exe -NoProfile -File tests/windows-pdf-dialog-policy.test.ps1 -EvidencePath "$env:EVIDENCE_ROOT/policy.json"
+          if ($LASTEXITCODE -ne 0) { throw 'Policy tests failed' }
+          & powershell.exe -NoProfile -File tests/windows-pdf-native-diagnostics.test.ps1 -EvidencePath "$env:EVIDENCE_ROOT/native-diagnostics.json"
+          if ($LASTEXITCODE -ne 0) { throw 'Native diagnostics tests failed' }
+          & powershell.exe -NoProfile -File tests/windows-pdf-tree-diagnostics.test.ps1 -EvidencePath "$env:EVIDENCE_ROOT/tree-diagnostics.json"
+          if ($LASTEXITCODE -ne 0) { throw 'Tree diagnostics tests failed' }
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+          package-manager-cache: false
+      - name: Verify existing product artifact handoff
+        id: handoff
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          node scripts/verify-workflow-artifact.mjs --repository $env:GITHUB_REPOSITORY --build-ref $env:PDF_BUILD_REF --run-id $env:NATIVE_RUN_ID --workflow-path .github/workflows/alhangeul-desktop.yml --artifact-name alhangeul-desktop-windows-x64 --json-output "$env:EVIDENCE_ROOT/artifact-handoff.json" --github-output $env:GITHUB_OUTPUT
+          if ($LASTEXITCODE -ne 0) { throw 'Artifact handoff failed' }
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          artifact-ids: ${{ steps.handoff.outputs.artifact_id }}
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.native_run_id }}
+          path: ${{ env.ARTIFACT_ROOT }}
+          digest-mismatch: error
+      - name: Verify inventory and install dependencies
+        shell: pwsh
+        run: |
+          corepack enable
+          if ($LASTEXITCODE -ne 0) { throw 'Corepack failed' }
+          pnpm install --frozen-lockfile
+          if ($LASTEXITCODE -ne 0) { throw 'Dependencies failed' }
+          pnpm run check:desktop-artifacts -- --platform windows-x64 --root $env:ARTIFACT_ROOT --verify-inventory "$env:ARTIFACT_ROOT/alhangeul-artifact-inventory.json"
+          if ($LASTEXITCODE -ne 0) { throw 'Inventory failed' }
+      - name: Install exact driver
+        shell: pwsh
+        run: |
+          cargo install tauri-driver --version 2.0.6 --locked
+          if ($LASTEXITCODE -ne 0) { throw 'Driver install failed' }
+      - name: Setup WebView2 policy
+        id: policy
+        shell: pwsh
+        run: ./scripts/updater/windows-webview2-automation-policy.ps1 -Phase Setup -OutputDirectory $env:EVIDENCE_ROOT
+      - name: Install NSIS product
+        id: install
+        shell: pwsh
+        run: |
+          # Read the version from the product source, not the acceptance harness version.
+          git fetch --no-tags origin $env:PDF_BUILD_REF
+          if ($LASTEXITCODE -ne 0) { throw 'Product metadata fetch failed' }
+          $version = (git show "${env:PDF_BUILD_REF}:package.json" | ConvertFrom-Json).version
+          ./scripts/updater/windows-native-acceptance.ps1 -Phase Install -Kind nsis -ArtifactRoot $env:ARTIFACT_ROOT -OutputDirectory $env:EVIDENCE_ROOT -ExpectedVersion $version
+      - name: Run selected installed app scenario
+        shell: pwsh
+        env:
+          PDF_APP_PATH: ${{ steps.install.outputs.app_path }}
+          PDF_OUTPUT_DIR: ${{ env.EVIDENCE_ROOT }}
+          PDF_FIXTURE_ROOT: ${{ github.workspace }}
+        run: |
+          $env:PDF_DRIVER_PATH = Join-Path $env:USERPROFILE '.cargo\bin\tauri-driver.exe'
+          $phases = if ($env:PDF_SCENARIO -ne 'pdf') { @('fresh') } else { @('fresh', 'restart') }
+          foreach ($phase in $phases) {
+            $env:PDF_PHASE = $phase
+            pnpm exec wdio run tests/gui/wdio.windows-pdf.conf.ts
+            if ($LASTEXITCODE -ne 0) { throw "PDF $phase failed" }
+            # Only the installed acceptance executable may be terminated on this disposable runner.
+            Get-Process -Name Alhangeul -ErrorAction SilentlyContinue | Where-Object {
+              $_.Path -eq $env:PDF_APP_PATH
+            } | Stop-Process -Force
+          }
+      - name: Cleanup installed app
+        if: ${{ always() && steps.install.outcome != 'skipped' }}
+        shell: pwsh
+        run: ./scripts/updater/windows-native-acceptance.ps1 -Phase Cleanup -Kind nsis -OutputDirectory $env:EVIDENCE_ROOT
+      - name: Restore WebView2 policy
+        if: ${{ always() && steps.policy.outcome != 'skipped' }}
+        shell: pwsh
+        run: ./scripts/updater/windows-webview2-automation-policy.ps1 -Phase Cleanup -OutputDirectory $env:EVIDENCE_ROOT
+      - name: Verify probe files after app cleanup
+        if: ${{ always() && inputs.confirmation_probe && steps.install.outcome == 'success' }}
+        shell: pwsh
+        run: |
+          $evidence = Get-Content "$env:EVIDENCE_ROOT/confirmation-probe.json" -Raw | ConvertFrom-Json
+          if ($evidence.status -ne 'observed') { throw 'Confirmation probe incomplete' }
+          $source = (Get-FileHash "$env:EVIDENCE_ROOT/confirmation-probe-source.hwp" -Algorithm SHA256).Hash
+          $target = (Get-FileHash "$env:EVIDENCE_ROOT/confirmation-probe-target.pdf" -Algorithm SHA256).Hash
+          if ($source -ne $evidence.sourceHash -or $target -ne $evidence.targetHash) { throw 'Probe file changed' }
+          @{ status = 'passed'; sourceUnchanged = $true; targetUnchanged = $true; pdfTested = $false } |
+            ConvertTo-Json | Set-Content "$env:EVIDENCE_ROOT/confirmation-probe-cleanup.json"
+      - name: Verify confirmation files after app cleanup
+        if: ${{ always() && inputs.confirmation_verify && steps.install.outcome == 'success' }}
+        shell: pwsh
+        run: |
+          $evidence = Get-Content "$env:EVIDENCE_ROOT/confirmation-verify.json" -Raw | ConvertFrom-Json
+          if ($evidence.status -ne 'passed') { throw 'Confirmation verification incomplete' }
+          [string[]]$selected = if ($env:PDF_CONFIRMATION_CASES -eq 'confirm-only') { @('Confirm') } else { @('Decline', 'WrongTarget', 'Confirm') }
+          if ($evidence.confirmationCases -cne $env:PDF_CONFIRMATION_CASES -or
+              ($evidence.selectedCases -join ',') -cne ($selected -join ',') -or
+              ($evidence.cases.case -join ',') -cne ($selected -join ',') -or
+              @($evidence.cases | Where-Object { $_.status -cne 'passed' }).Count -ne 0) { throw 'Confirmation case evidence mismatch' }
+          $expected = @{ 'source.hwp' = $evidence.sourceHash; 'target.pdf' = $evidence.finalTargetHash; 'other.pdf' = $evidence.otherHash }
+          foreach ($file in $expected.Keys) {
+            $actual = (Get-FileHash "$env:EVIDENCE_ROOT/confirmation-verify-$file" -Algorithm SHA256).Hash
+            if (-not $expected[$file] -or $actual -ne $expected[$file]) { throw 'Confirmation file changed after cleanup' }
+          }
+          @{ status = 'passed'; confirmationCases = $env:PDF_CONFIRMATION_CASES; selectedCases = $selected;
+             sourceUnchanged = $true; targetMatchesConfirmed = $true; otherUnchanged = $true; fullPdfTested = $false } |
+            ConvertTo-Json | Set-Content "$env:EVIDENCE_ROOT/confirmation-verify-cleanup.json"
+      - name: Upload raw evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: windows-pdf-raw-${{ github.run_id }}
+          path: ${{ env.EVIDENCE_ROOT }}
+          if-no-files-found: error
+          retention-days: 7
+
+  analyze:
+    needs: windows-pdf
+    if: ${{ !inputs.open_only && !inputs.confirmation_probe && !inputs.confirmation_verify }}
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.workflow_sha }}
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+          package-manager-cache: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: windows-pdf-raw-${{ github.run_id }}
+          path: pdf-evidence
+          digest-mismatch: error
+      - name: Analyze Windows generated PDFs
+        env:
+          BUILD_REF: ${{ inputs.build_ref }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils
+          node tests/gui/windows-pdf/analyze.mjs "$GITHUB_WORKSPACE/pdf-evidence" "$BUILD_REF"
+      - name: Upload PDF analysis and page images
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: windows-pdf-analysis-${{ github.run_id }}
+          path: pdf-evidence
+          if-no-files-found: error
+          retention-days: 7

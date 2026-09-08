@@ -175,6 +175,48 @@ store의 암호를 보관한다. 복구본 존재와 공개 fingerprint만 확�
 - 실패한 check를 면제하려면 알려진 이름만 같다는 이유가 아니라 정확한 실패 지점·영향과
   owner 결정을 기록한다. 미실행 항목과 위험 수용을 '통과'로 쓰지 않는다.
 
+### PDF snapshot과 stale job 수용 gate
+
+현재 직접 PDF는 live page handler를 순회하지 않는다. save target 확정 뒤 현재 형식의 HWP/HWPX serializer를 한 번만 capture하고 격리 `WasmBridge`에 다시 로드한 immutable snapshot에서 모든 page SVG를 만든다. snapshot page count와 begin·append·commit·abort는 하나의 snapshot UUID에 결속하며 native session revision은 이 token을 대신하지 않는다.
+
+제품이 유지할 계약은 다음과 같다. 수용 근거는 아래 계층별 검증으로 나누며 모든 경계를 매번
+GUI로 재현하지 않는다.
+
+1. snapshot capture 뒤 live 편집을 계속해도 PDF의 page count와 모든 page가 시작 snapshot 한 세대로 완성되고 mixed revision이 없다.
+2. 성공·dialog 취소·snapshot/render/append/commit 실패와 timeout 뒤 source path·format·revision·dirty·recent·recovery가 기존 값이며 `notifySaved`가 호출되지 않는다.
+3. capture 2분, 전체 pipeline 10분, 4,096쪽, SVG 16 MiB/page, 누적 512 MiB와 process 4-job 제한을 넘긴 요청이 기존 target PDF를 바꾸지 않는다.
+4. WebView reload의 idle job은 최대 5분 30초, absolute job은 최대 15분 30초 안에 회수되어 같은 target으로 새 begin이 가능하고, window destroy는 자기 job만 정리하며 다른 window의 유효 lock은 유지한다.
+5. app 재시작 cleanup은 OS temp 바로 아래의 24시간보다 오래된 safe product directory만 최대 64개 삭제한다. recent·prefix 불일치·symlink/reparse point·nested directory·unknown content와 사용자 문서·target PDF는 보존한다.
+6. 같은 exact SHA에서 HWP/HWPX page count, searchable 한글 text, nonblank render와 atomic target replace를 Windows와 Linux 각각 확인한다.
+
+| 경계 | 주된 수용 근거 | 별도로 기록할 한계 |
+|---|---|---|
+| snapshot 세대·dispose·source state | 실제 HWP/HWPX serializer round-trip과 격리 SVG 비교, live handler를 바꾸는 결정적 pipeline 테스트 | 실제 앱에서 동시 편집하는 시나리오를 실행했는지 구분 |
+| limit·timeout·owner·target lock·실패 회수 | fake clock/작은 limit의 Studio 테스트와 Windows/Linux native job 테스트 | 실제 WebView reload와 5분/15분 대기는 미실행이면 그대로 표시 |
+| startup orphan 안전성 | 실제 OS 임시 파일을 쓰는 cleanup 테스트: old/recent/unknown/nested·Linux symlink·Windows junction과 대상 보존 | 함수에 주입한 시각은 실제 24시간 대기가 아님. 앱 재시작 통합 여부도 구분 |
+| 사용자 PDF 저장 | 동일 제품 후보의 Windows/Linux 설치본에서 HWP/HWPX 쪽 수·A4·한글 검색·nonblank, 원본 보존과 target 교체 증거 | 수치 성공은 조판 동등성/셀 내부 잘림 해결을 뜻하지 않음 |
+
+결정적 테스트는 snapshot·시간 제한·잠금의 주된 근거로 수용하지만 정적 문자열 검사만으로
+대체하지 않는다. 실제 동시 편집·reload·장시간 대기·앱 재시작 통합을 실행하지 않았다면
+릴리즈 기록의 검증 한계에 명시한다. 제품의 startup/window event/reaper 연결 코드가 바뀌거나
+회수 실패가 관측되면 해당 실제 수명주기 통합 검증을 다시 선정하고 승인받는다.
+
+제품 SHA, 검증 harness SHA, OS, 실행한 테스트와 재사용한 run을 구분한다. 테스트/문서만
+바뀌었고 runtime·의존성·설치 bytes가 그대로임을 diff/identity로 확인했다면 기존 설치본을
+재사용한다. 제한·실패 시험은 source/target 전후 상태·hash, temp sentinel과 주입 시각을 기록한다.
+미실행이나 일부 scope 성공을 전체 native/PDF/릴리즈 수용으로 승격하지 않는다.
+
+최소 보완 실행은 기존 workflow의 선택을 이용한다. 기본 `full`은 유지한다.
+
+- `ci.yml`, `scope=pdf-cleanup-windows`: Windows cleanup Rust 테스트만 실행하며 junction
+  사례가 실제 실행됐는지 확인한다. 테스트 컴파일은 하지만 installer/thumbnail을 빌드하지 않는다.
+  해당 test step의 `TAURI_CONFIG={"bundle":{"resources":[]}}`만 packaging resource 복사를
+  제외한다. workflow/job 전체 환경이나 제품 설정으로 옮기지 않고 빈 DLL/EXE도 만들지 않는다.
+  이 테스트 성공은 bundle resource 포함·설치 검증을 대신하지 않는다.
+- `alhangeul-linux-gui.yml`, `scope=pdf-hwpx`: 검증된 `build_ref`/`native_run_id`의 DEB로
+  HWPX direct PDF만 실행한다. 인쇄·thumbnail은 `skipped`로 기록하고 PDF/10쪽 증거가
+  없으면 실패한다. `acceptance-scope.txt`와 phase/outcome을 함께 읽는다.
+
 ### 실제 인쇄와 PDF 직접 저장의 분리 gate
 
 직접 PDF 성공은 system print 성공이 아니다. HWP/HWPX 열기·저장·재열기와 함께 다음을 확인한다.
