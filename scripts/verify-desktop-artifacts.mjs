@@ -112,7 +112,10 @@ export async function verifyDesktopArtifacts({
       );
     }
 
-    const recordedSha = JSON.parse(expected).sourceSha;
+    const recordedSha = parseRecordedInventory(expected, inventoryPath).sourceSha;
+    if (sourceSha && recordedSha === undefined) {
+      throw new Error('artifact inventory에 sourceSha provenance가 없습니다. 새 제품 artifact를 생성해야 합니다.');
+    }
     if (recordedSha !== undefined) {
       if (!/^[0-9a-f]{40}$/.test(recordedSha) || (sourceSha && recordedSha !== sourceSha)) {
         throw new Error('artifact inventory source SHA mismatch');
@@ -127,6 +130,16 @@ export async function verifyDesktopArtifacts({
     }
   }
 
+  return inventory;
+}
+
+function parseRecordedInventory(source, path) {
+  let inventory;
+  try { inventory = JSON.parse(source); }
+  catch { throw new Error(`artifact inventory JSON 형식이 잘못되었습니다: ${path}`); }
+  if (!inventory || typeof inventory !== 'object' || Array.isArray(inventory)) {
+    throw new Error(`artifact inventory JSON은 객체여야 합니다: ${path}`);
+  }
   return inventory;
 }
 

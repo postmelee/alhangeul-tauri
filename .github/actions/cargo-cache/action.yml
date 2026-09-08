@@ -28,6 +28,8 @@ runs:
           ~/.cargo/registry
           ~/.cargo/git
         key: cargo-source-v2-${{ runner.os }}-${{ runner.arch }}-${{ steps.identity.outputs.locks }}
+        restore-keys: |
+          cargo-source-v2-${{ runner.os }}-${{ runner.arch }}-
     - name: Cache workload target files
       id: target
       uses: actions/cache@v5

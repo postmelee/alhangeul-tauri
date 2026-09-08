@@ -2,13 +2,11 @@ import { appendFile, mkdir, writeFile } from 'node:fs/promises';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { verifyWorkflowArtifact, createGitHubApiClient } from '../verify-workflow-artifact.mjs';
+import { assertReuseInputs } from './reuse-inputs.mjs';
 
 export async function verifyProductHandoff(input, services = {}) {
-  for (const field of ['productSha', 'harnessSha']) {
-    if (!/^[0-9a-f]{40}$/.test(input[field] ?? '')) throw new Error(`Invalid ${field}`);
-  }
-  if (!/^[1-9]\d*$/.test(String(input.artifactId)) || !Number.isSafeInteger(Number(input.artifactId))) throw new Error('Invalid artifact ID');
-  if (!/^sha256:[0-9a-f]{64}$/.test(input.artifactDigest ?? '')) throw new Error('Invalid artifact digest');
+  assertReuseInputs(input);
+  if (!/^[0-9a-f]{40}$/.test(input.harnessSha ?? '')) throw new Error('Invalid harnessSha');
   if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(input.repository ?? '') || !/^[1-9]\d*$/.test(String(input.runId))) throw new Error('Invalid producer identity');
   const fetchJson = services.fetchJson ?? createGitHubApiClient({ token: process.env.GITHUB_TOKEN });
   const runPath = `/repos/${input.repository}/actions/runs/${input.runId}`;

@@ -1,3 +1,5 @@
+import { classifyPath, validationForScopes } from './path-scopes.mjs';
+
 export const PLATFORMS = Object.freeze([
   { name: 'windows-x64', os: 'windows-2025', target: 'x86_64-pc-windows-msvc', bundle_args: '' },
   { name: 'linux-x64', os: 'ubuntu-22.04', target: 'x86_64-unknown-linux-gnu', bundle_args: '' },
@@ -23,22 +25,9 @@ export function artifactPlan({ platform = 'all', profile = 'full', runTests = tr
 
 export function selectValidation(paths) {
   if (!Array.isArray(paths) || paths.length === 0) return { profile: 'full', reason: 'unknown-or-empty-diff' };
-  const scopes = new Set();
-  for (const path of paths) {
-    if (typeof path !== 'string' || !path || path.includes('..') || /[\r\n\\]/.test(path)) return { profile: 'full', reason: 'ambiguous-path' };
-    if (/^(?:docs|mydocs)\/.*\.md$/.test(path) || ['AGENTS.md', 'README.md', 'CONTRIBUTING.md'].includes(path)) continue;
-    if (/^(?:scripts\/ci\/|tests\/ci-|\.github\/|package\.json$|pnpm-lock\.yaml$)/.test(path)) scopes.add('shared');
-    else if (/^tests\/.*\.test\.mjs$/.test(path)) scopes.add('fast');
-    else if (/^scripts\/windows-(?:installer-smoke(?:-support)?|thumbnail-smoke|process-lifecycle)\.ps1$/.test(path) || /^tests\/.*\.test\.ps1$/.test(path)) scopes.add('installer');
-    else if (/^apps\/(?:thumbnail-handler|thumbnail-worker)\//.test(path) || path.startsWith('apps/desktop/src-tauri/windows/')) scopes.add('windows');
-    else if (path.startsWith('apps/linux-thumbnailer/') || path.startsWith('apps/desktop/src-tauri/linux/')) scopes.add('linux');
-    else scopes.add('shared');
-  }
-  if (scopes.has('shared') || (scopes.has('linux') && (scopes.has('windows') || scopes.has('installer')))) return { profile: 'full', reason: 'shared-or-mixed-native-change' };
-  if (scopes.has('windows')) return { profile: 'windows-package', reason: 'windows-product-change' };
-  if (scopes.has('linux')) return { profile: 'linux-package', reason: 'linux-product-change' };
-  if (scopes.has('installer')) return { profile: 'installer', reason: 'windows-harness-change-reuse-exact-product' };
-  return { profile: 'fast', reason: scopes.size ? 'contract-only' : 'documentation-only' };
+  const scopes = new Set(Array.from(paths, classifyPath));
+  scopes.delete('documentation');
+  return validationForScopes(scopes);
 }
 
 export function evaluateArtifactResults(plan, results) {

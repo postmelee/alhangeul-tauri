@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
 const script = fileURLToPath(new URL('../scripts/ci/select.mjs', import.meta.url));
+const reuse = { PRODUCT_SHA: 'a'.repeat(40), PRODUCT_RUN_ID: '12', PRODUCT_ARTIFACT_ID: '42', PRODUCT_ARTIFACT_DIGEST: `sha256:${'b'.repeat(64)}` };
 function fixture(t) {
   const cwd = mkdtempSync(join(tmpdir(), 'ci-selector-'));
   t.after(() => rmSync(cwd, { recursive: true, force: true }));
@@ -65,9 +66,23 @@ test('automatic harness reuse requires all exact product inputs, otherwise rebui
 test('explicit profiles stay explicit and unsupported profiles fail', (t) => {
   const f = fixture(t);
   for (const profile of ['fast', 'native', 'installer', 'windows-package', 'linux-package', 'full']) {
-    assert.equal(select(f, { VALIDATION_PROFILE: profile }).profile, profile);
+    assert.equal(select(f, { ...reuse, VALIDATION_PROFILE: profile }).profile, profile);
   }
   const invalid = select(f, { VALIDATION_PROFILE: 'invalid\nprofile=fast' });
   assert.equal(invalid.status, 1);
   assert.match(invalid.error, /Unknown CI profile/);
+});
+test('explicit installer rejects missing, malformed and unsafe inputs before profile output', (t) => {
+  const f = fixture(t);
+  for (const key of Object.keys(reuse)) {
+    for (const value of ['', 'invalid', '9007199254740992']) {
+      const result = select(f, { ...reuse, VALIDATION_PROFILE: 'installer', [key]: value });
+      assert.equal(result.status, 1);
+      assert.match(result.error, /Invalid installer reuse inputs/);
+    }
+  }
+});
+test('auto rejects complete but malformed reuse inputs instead of silently rebuilding', (t) => {
+  const f = fixture(t); f.put('scripts/windows-installer-smoke.ps1', '# changed\n'); commit(f);
+  assert.equal(select(f, { ...reuse, PRODUCT_SHA: 'main' }).status, 1);
 });

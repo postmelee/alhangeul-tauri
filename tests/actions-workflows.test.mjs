@@ -488,7 +488,7 @@ test('installer smoke job은 exact ref와 Windows x64 artifact를 고정한다',
   );
   assert.match(job, /\[string\]::IsNullOrWhiteSpace\(\$expectedSha\)/);
   assert.match(job, /\[string\]::IsNullOrWhiteSpace\(\$actualSha\)/);
-  assert.match(job, /uses: actions\/download-artifact@v8/);
+  assert.match(job, /uses: actions\/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c/);
   assert.match(job, /artifact-ids: \$\{\{ inputs.artifact_id \}\}/);
   assert.match(job, /digest-mismatch: error/);
   assert.match(job, /path: artifacts\/windows-x64$/m);

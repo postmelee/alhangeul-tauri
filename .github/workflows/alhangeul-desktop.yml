@@ -17,7 +17,7 @@ on:
           - updater-linux-window-probe
           - updater-linux-window-verify
       build_ref:
-        description: Branch, tag, or commit to build. Empty uses the selected workflow commit.
+        description: Artifact mode requires a ref resolving to the selected workflow commit; other modes accept branch/tag/commit. Empty uses the workflow commit.
         required: false
         default: ""
         type: string

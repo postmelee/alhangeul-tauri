@@ -19,6 +19,10 @@
 수동 `Alhangeul CI` (`ci.yml`)의 `profile`을 선택한다. 기본값 `native`는 기존 Linux Rust
 검사를 유지한다. 일상적인 script/계약 수정의 첫 피드백에는 `fast`를 사용한다.
 
+동일 ref의 실행은 요청 profile별로 분리한다. 명시 `fast`만 진행 중인 같은 profile 실행을
+취소하며, `auto`를 포함한 나머지 profile은 진행 중 실행을 취소하지 않는다. GitHub 기본
+concurrency 정책에 따라 같은 그룹의 오래된 pending 실행은 새 pending 실행으로 교체될 수 있다.
+
 | profile | 실행 범위 | 사용 시점 |
 |---|---|---|
 | `fast` | Linux Node/Studio와 Windows PowerShell parser·격리 회귀 | native 생성 전 빠른 피드백 |
@@ -47,6 +51,9 @@ gh workflow run ci.yml --ref publish/task59 -f profile=auto -f base_sha="$BASE_S
 공유 코드·CI·lock·알 수 없는 경로·플랫폼 혼합은 full이다. rename의 이전/새 경로와 삭제도
 포함한다. 기존 installer helper만 바뀌면 installer를 선택하지만 아래 재사용 입력이 하나라도
 없으면 windows-package로 확대한다. 새 이름의 script를 installer helper로 추측하지 않는다.
+명시 `installer`는 네 재사용 입력의 누락·형식 오류를 선택 단계에서 거부한다. `auto`도
+네 입력이 모두 있지만 형식이 잘못되면 거부한다. SHA는 40자리 소문자 hex, ID는 양의 안전한
+정수, digest는 `sha256:` 뒤 64자리 소문자 hex여야 한다.
 명시 profile은 작업자가 선택한 부분 검증이며 diff 전체 수용을 자동으로 보장하지 않는다.
 
 기존 `Alhangeul Desktop Artifact Build`의 `mode=artifact`는 같은 reusable 구현을 호출한다.
@@ -79,6 +86,8 @@ Windows 제품의 artifact ID만 받아 실행하고 Linux 완료를 기다리�
 재사용 입력은 `product_sha`, `product_run_id`, `artifact_id`, `artifact_digest` 네 개다.
 생산 run은 같은 저장소의 `alhangeul-desktop.yml` 또는 `ci.yml`이며 전체 run 성공이어야 한다.
 Linux/core 실패가 남은 run의 Windows archive만 골라 전체 생산 성공으로 취급하지 않는다.
+성공한 `windows-package` 등 부분 생산 run의 Windows artifact도 재사용할 수 있다.
+이는 선택한 생산 범위의 성공이며 모든 플랫폼 수용을 뜻하지 않는다.
 `artifact_digest`는 `sha256:` 접두사가 있는 archive digest로, installer 개별 파일 hash와 다르다.
 
 ```sh
@@ -90,6 +99,10 @@ gh workflow run ci.yml --ref publish/task59 -f profile=installer \
 다운로드 action의 digest 오류를 실패로 강제하고, 현재 harness가 inventory의 source SHA와
 모든 파일 hash를 재계산한 뒤 installer를 실행한다. 현재 harness SHA, 실제 제품 SHA,
 archive ID/digest/크기와 installer 결과는 `alhangeul-installer-reuse-evidence`에 남긴다.
+checkout과 Node 준비 이후 handoff 검사 전에 `workflow-context.json`을 생성한다. 여기의
+요청 식별자는 아직 `unverified`이며, 성공한 handoff의 검증 metadata와 구별한다. handoff,
+다운로드, inventory 또는 설치가 실패해도 `step-outcomes.json`에 실제 단계 상태를 기록하고
+진단 upload를 시도한다. checkout/Node 준비 자체의 실패에는 실행 로그로 원인을 확인한다.
 release 권한·secrets·제품 재빌드가 필요하지 않다.
 
 #19의 GUI/PDF handoff와 #57의 installer 진단은 별도 진행 중인 기능이다. 이 작업은 해당 branch의 미완료 제품 source를 가져오지 않는다. 후속 통합 때 공통 handoff와 빠른 Windows test 목록에 연결하되 기존 실제 진단과 gate 의미를 보존한다.
@@ -138,7 +151,7 @@ job/step을 JSON으로 출력한다. 필요한 경우 `GH_TOKEN` 또는 `GITHUB_
 
 ### Cargo 경계
 
-source 다운로드 cache와 compiled target cache를 분리한다. target restore prefix는 OS/architecture/workload/target/rustc -vV/manifest·lock fingerprint를 포함하고 primary key는 실제 checkout SHA를 추가한다. 새 source의 성공 build는 새 cache를 저장하므로 오래된 lock-only exact hit에 계속 고정되지 않는다. 다른 compiler/lock/workload로 fallback하지 않는다. source 다운로드 cache에는 compiled target을 포함하지 않는다.
+source 다운로드 cache와 compiled target cache를 분리한다. source cache는 lock 변경 시에도 같은 OS/architecture prefix에서 다운로드 자료를 복원한다. target restore prefix는 OS/architecture/workload/target/rustc -vV/manifest·lock fingerprint를 포함하고 primary key는 실제 checkout SHA를 추가한다. 새 source의 성공 build는 새 cache를 저장하므로 오래된 lock-only exact hit에 계속 고정되지 않는다. target은 다른 compiler/lock/workload로 fallback하지 않는다. source 다운로드 cache에는 compiled target을 포함하지 않는다. 기존 동일 SHA warm 측정은 lock 변경 fallback의 성능 측정이 아니다.
 
 ordinary desktop 검사는 `CARGO_BUILD_TARGET`을 해당 matrix target으로 고정하여 implicit host debug와 explicit target debug를 불필요하게 나누지 않는다. core는 별도 runner/cache에서 host release probe를 유지한다. protocol-only와 render, desktop/worker feature 조합에 필요한 컴파일은 제거하지 않는다. cache를 삭제하거나 기존 cache를 덮어쓰는 작업은 수행하지 않는다.
 

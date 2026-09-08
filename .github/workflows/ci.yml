@@ -28,8 +28,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: alhangeul-ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: alhangeul-ci-${{ github.ref }}-${{ inputs.profile }}
+  cancel-in-progress: ${{ inputs.profile == 'fast' }}
 
 env:
   CARGO_TERM_COLOR: always

@@ -1,6 +1,7 @@
 import { appendFile } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 import { selectValidation } from './profiles.mjs';
+import { assertReuseInputs, reuseInputsFromEnv } from './reuse-inputs.mjs';
 
 try {
   const supported = ['auto', 'fast', 'native', 'installer', 'windows-package', 'linux-package', 'full'];
@@ -22,6 +23,7 @@ try {
       profile = 'windows-package'; reason = 'no-exact-reuse-inputs-rebuild-windows';
     }
   }
+  if (profile === 'installer') assertReuseInputs(reuseInputsFromEnv());
   if (process.env.GITHUB_OUTPUT) await appendFile(process.env.GITHUB_OUTPUT, `profile=${profile}\n`);
   if (process.env.GITHUB_STEP_SUMMARY) await appendFile(process.env.GITHUB_STEP_SUMMARY, `Selected CI profile: ${profile}; reason: ${reason}.\n`);
   console.log(JSON.stringify({ profile, reason }));

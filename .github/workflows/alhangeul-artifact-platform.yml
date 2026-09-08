@@ -14,8 +14,6 @@ on:
     outputs:
       artifact_id:
         value: ${{ jobs.build.outputs.artifact_id }}
-      artifact_digest:
-        value: ${{ jobs.build.outputs.artifact_digest }}
 permissions:
   contents: read
 env:
@@ -37,7 +35,6 @@ jobs:
       CARGO_BUILD_TARGET: ${{ matrix.target }}
     outputs:
       artifact_id: ${{ steps.bundle-upload.outputs.artifact-id }}
-      artifact_digest: ${{ steps.bundle-upload.outputs.artifact-digest }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -200,7 +197,6 @@ jobs:
         if: inputs.run_tests && startsWith(matrix.name, 'linux-')
         shell: bash
         env:
-          CARGO_BUILD_TARGET: ${{ matrix.target }}
           OUTPUT_ROOT: diagnostics/linux-thumbnailer-tests-${{ matrix.name }}
         run: |
           set -euo pipefail
@@ -212,7 +208,6 @@ jobs:
         if: inputs.run_tests && startsWith(matrix.name, 'linux-')
         shell: bash
         env:
-          CARGO_BUILD_TARGET: ${{ matrix.target }}
           OUTPUT_ROOT: diagnostics/linux-thumbnailer-tests-${{ matrix.name }}
         run: |
           set -euo pipefail
