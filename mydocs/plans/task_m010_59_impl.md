@@ -80,3 +80,30 @@ GitHub Issue: [#59](https://github.com/postmelee/alhangeul-tauri/issues/59)
   git diff --check, 정확한 parent/head와 문서 고정 링크 확인.
 - #63 단계를 부모에 fast-forward 통합하고 Stage 4 보고·최종 보고를 commit한 뒤
   publish/task59를 push하고 기존 Open PR #66의 결과와 고정 문서 링크를 갱신한다.
+
+## Stage 5 — 승인된 PR 리뷰 보정
+
+작업지시자의 타당한 리뷰 항목 보정 및 PR 코멘트 게시 지시를 적용한다.
+
+- profile별 concurrency와 fast에만 적용하는 취소 정책, installer 입력의 조기 형식 검사,
+  handoff 전에 생성하는 실제 진단 JSON과 always 단계 결과 기록을 보완한다.
+- Cargo source cache의 OS/architecture prefix fallback을 추가하되 target 경계는 보존한다.
+- legacy provenance/JSON 오류를 구분하고 selectValidation의 경로 분류와 scope 결정을 분리한다.
+- build_ref 입력 설명, 부분 검증 재사용 설명, 두 신규 download action의 pin을 정렬하고
+  미사용 digest 출력과 중복 target env를 정리한다. 현재 결함이 아닌 matrix 확장·pwsh 지원이나
+  재현되지 않은 Windows core cache 경고는 변경하지 않는다.
+- 문서 위치는 기존 docs/operations/CI_VALIDATION.md와 mydocs 계획·working·report·orders다.
+  신규 helper는 300 LOC/함수 50 LOC/복잡도 10 이하로 유지한다.
+- 검증: CLI 누락·malformed 입력/진단 실패 fixture, legacy·손상 inventory 오류, 보수적 선택 회귀,
+  source/target cache 경계 및 concurrency 계약, pnpm run test:automation, actionlint, diff --check.
+
+## Stage 6 — 최신 devel 정합성과 원격 보정 검증
+
+- 이미 병합된 #19의 devel 변경 때문에 생긴 PR 충돌을 기존 결과를 보존하며 통합한다.
+  주 worktree와 미병합 작업 branch는 수정하지 않는다. history rewrite 없이 merge commit을 사용한다.
+- 분리된 fast/platform workflow에 최신 devel의 검사·제품 경계를 보존하고 통합 회귀를 실행한다.
+- 새 후보의 fast 및 Windows/Linux 전체 artifact 수용을 실행한다. 기존 exact Windows archive로
+  새 harness의 installer 성공과 의도한 handoff 실패를 검사하고, 실패 시에도 진단 artifact가 남는지 확인한다.
+- 서로 다른 profile 실행의 비취소를 확인한다. 의도한 negative run 실패를 성공 수용과 구분한다.
+- 단계·최종 보고, PR 본문과 고정 링크를 갱신하고 두 리뷰 코멘트에 대응하는 보정 결과를
+  PR #66의 코멘트로 게시한다. PR merge·issue close·release는 수행하지 않는다.
