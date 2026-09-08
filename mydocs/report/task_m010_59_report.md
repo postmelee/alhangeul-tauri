@@ -5,10 +5,10 @@ GitHub Issue: [#59](https://github.com/postmelee/alhangeul-tauri/issues/59)
 
 ## 작업 요약
 
-- 부모 #59와 하위 #60–#64의 3단계 작업 및 #63/#59의 후속 Stage 4 재측정을 통합했다. 빠른 계약, core, 플랫폼 제품 생성, 기존 artifact 검증, 전체 수용 집계를 분리했다.
+- 부모 #59와 하위 #60–#64, 후속 Stage 4 warm 재측정 및 Stage 5/6 리뷰 보정을 통합했다. 빠른 계약, core, 플랫폼 제품 생성, 기존 artifact 검증, 전체 수용 집계를 분리했다.
 - Windows/Linux의 기존 native·package·설치 검사를 유지하고, 필요한 검증만 명시적으로 선택할 수 있게 했다.
-- 전체 후보의 필수 11개 job과 다른 harness SHA에서의 Windows archive 재사용이 통과했다. 실제 Cargo exact hit에서 같은 arm64 native job은 20:59 → 13:15로 7:44(36.85%) 줄었다.
-- 독립 worktree와 `local/task59`에서 작업했고 `publish/task59 → devel` Open PR 하나로 게시한다. 주 worktree 및 #19/#57 미완료 branch는 통합하지 않았다.
+- 리뷰 보정 후보 `f0dfe59`의 필수 11개 job, 다른 제품 SHA의 Windows archive 재사용, 후발 fast의 비취소가 통과했다. 의도한 digest 실패에서도 진단 artifact를 보존했다. 과거 동일 arm64 후보의 Cargo warm job은 20:59 → 13:15로 7:44(36.85%) 줄었다.
+- 독립 worktree와 `local/task59`에서 작업했고 `publish/task59 → devel` Open PR 하나로 게시한다. Stage 6에서 #19가 병합된 devel `581d303`을 통합했다. 주 worktree와 #57 미완료 branch는 수정하지 않았다.
 
 ## 변경 파일 목록과 영향 범위
 
@@ -24,7 +24,7 @@ GitHub Issue: [#59](https://github.com/postmelee/alhangeul-tauri/issues/59)
 | `scripts/ci/`, `tests/ci-*`, 관련 기존 workflow 회귀, `package.json` | 선택·집계·측정·PowerShell 격리 회귀 | 자동화 계약 |
 | 공식 가이드·계획·단계·최종 보고·보드 | 소유 위치와 실측 근거 | 운영/작업 추적 |
 
-제품 구현과 rhwp pin을 변경하지 않았다. 기존 Desktop entry의 `build-updater:` 이후 job 본문은 devel과 byte 단위로 동일하다. native platform 파일 385 LOC는 기존 단계의 무손실 이동을 위한 [#64 구현계획서](../plans/task_m010_64_impl.md)의 예외를 적용했다.
+최신 devel 대비 제품 구현과 rhwp pin을 변경하지 않았다. 기존 Desktop entry의 `build-updater:` 이후 job 본문은 최신 devel과 byte 단위로 동일하다. native platform 파일은 기존 단계의 무손실 이동을 위한 [#64 구현계획서](../plans/task_m010_64_impl.md)의 385 LOC 예외 범위 안이다.
 
 ## 문서 위치 검증
 
@@ -37,6 +37,9 @@ GitHub Issue: [#59](https://github.com/postmelee/alhangeul-tauri/issues/59)
 | 오늘할일 | mydocs/orders/20260907.md, 20260908.md | 동일 | OK | 기존 통합 및 승인된 warm 재측정 상태·완료 시간 |
 
 ## 변경 전·후 정량 비교
+
+아래 초기 실행과 warm 표는 제품 SHA `2300984` 기준의 과거 측정이다. 리뷰 보정 이후 후보의
+검증 결과는 별도 Stage 6 기록과 구분한다.
 
 | 지표 | 변경 전 | 변경 후 |
 |---|---|---|
@@ -129,6 +132,27 @@ workspace/feature별 rhwp 컴파일 5회는 남았다. 상세 key·각 step 시�
 
 ## 검증 결과
 
+### 리뷰 보정 후보의 최종 수용
+
+제품/workflow 후보 SHA는 `f0dfe5909ceff95e7a2c54a703c82a1a2a775834`다. 이후 PR 보고
+커밋은 문서만 바뀌며 새 native 제품을 생성한 것으로 표시하지 않는다.
+
+| 검증 | 최종 결과 | 근거 |
+|---|---|---|
+| 새 후보 전체 artifact | 필수 11개 job success; Windows/Linux core·native/package·새 MSI/NSIS | [34209619872](https://github.com/postmelee/alhangeul-tauri/actions/runs/34209619872) |
+| 과거 제품 + 새 harness | success; 제품 2300984의 exact ID/digest/inventory 및 MSI/NSIS, 설치·제거 0 | [34209988793](https://github.com/postmelee/alhangeul-tauri/actions/runs/34209988793) |
+| 의도한 잘못된 digest | 예상 handoff failure; context·outcome·upload success, 후속 단계 skipped | [34209623502](https://github.com/postmelee/alhangeul-tauri/actions/runs/34209623502) |
+| 후발 fast와 installer | 모두 success, 진행 중 installer 취소 없음 | [34209992065](https://github.com/postmelee/alhangeul-tauri/actions/runs/34209992065) |
+
+진단 파일을 직접 다운로드해 성공·실패 상태를 대조했다. 새 제품 archive ID/digest,
+초기 EvidencePath 누락 실패와 최소 보정 후 재검증, cache 관측은
+[Stage 6](../working/task_m010_59_stage6.md)에 보존한다.
+
+### 초기 후보 수용 및 공통 계약
+
+이 표의 원격 수용은 초기 후보 `2300984`의 근거다. 리뷰 보정 후보는
+[Stage 6](../working/task_m010_59_stage6.md)에 별도로 기록하며 로컬 계약 개수는 최신 통합 결과다.
+
 | 수용 기준 | 결과 |
 |---|---|
 | 기존 전체 Windows/Linux 수용 보존 | OK — all/full/run_tests=true, 필수 11개 job success |
@@ -138,9 +162,9 @@ workspace/feature별 rhwp 컴파일 5회는 남았다. 상세 key·각 step 시�
 | conservative 변경 선택 | OK — 실제 Git rename/delete/누락 base/빈 diff 및 unknown fallback 회귀 |
 | 실패 상태 보존 | OK — 필수 failed/cancelled/skipped/missing을 성공으로 집계하지 않는 fixture |
 | cache 경계·source별 갱신 및 복원 | OK — 격리·갱신 회귀, 실제 save 및 같은 후보의 source/target exact hit; warm native 36.85% 감소 |
-| 로컬 계약·제품 경계 | OK — automation 554, CI 52, upstream 36, Studio 132 통과 |
+| 로컬 계약·제품 경계 | OK — automation 607, upstream 36, Studio 147 통과 |
 | Studio build/GUI typecheck/제품 버전·metadata | OK — local 및 원격 fast에서 통과 |
-| workflow/문서 정합성 | OK — actionlint, diff --check, 변경 문서 46개·상대 링크 163개와 필수 보고서 섹션 확인 |
+| workflow/문서 정합성 | OK — actionlint, diff --check, 변경 문서 48개·상대 링크 173개와 필수 보고서 섹션 확인 |
 
 기존 Vite chunk/dynamic import 경고는 남아 있다. 로컬에서는 중립 Node/Studio 검사만 실행했고 Rust/Tauri/PowerShell 및 실제 설치는 GitHub Windows/Linux runner에서 실행했다.
 
@@ -166,6 +190,8 @@ workspace/feature별 rhwp 컴파일 5회는 남았다. 상세 key·각 step 시�
 - [부모 Stage 2](../working/task_m010_59_stage2.md): 554개 통합 회귀와 문서 정합성.
 - [부모 Stage 3](../working/task_m010_59_stage3.md): 실제 전체·재사용·cache 근거.
 - [부모 Stage 4](../working/task_m010_59_stage4.md): #63의 실제 warm 결과 통합과 PR #66 갱신.
+- [부모 Stage 5](../working/task_m010_59_stage5.md): 리뷰 입력·취소·진단·cache 보정과 로컬 회귀.
+- [부모 Stage 6](../working/task_m010_59_stage6.md): 최신 devel 보존, 필수 EvidencePath 전달과 원격 정상·실패 검증.
 - [#60 최종 보고](task_m010_60_report.md): 계층 계약·시간 측정.
 - [#61 최종 보고](task_m010_61_report.md): 빠른 Node/Studio 및 Windows 검사.
 - [#62 최종 보고](task_m010_62_report.md): exact artifact 재사용.
@@ -174,21 +200,22 @@ workspace/feature별 rhwp 컴파일 5회는 남았다. 상세 key·각 step 시�
 
 첫 dispatch [34063510854](https://github.com/postmelee/alhangeul-tauri/actions/runs/34063510854)는 입력 SHA 오기로 취소했고 성공 근거에서 제외했다. 정확한 전체 후보로 대체했다. 기존 [fast 기준 run 34057952742](https://github.com/postmelee/alhangeul-tauri/actions/runs/34057952742)의 Windows 22초/Node 79초도 부분 검사 결과다.
 
-전체 native 후보 `2300984` 이후 최종 보고까지 실행 코드 diff는 없으며 Desktop workflow의 `run_tests` 설명 한 줄과 문서만 변경했다. 따라서 문서 커밋을 새 native 제품 SHA로 검증했다고 표시하지 않는다.
+Stage 4까지는 전체 native 후보 `2300984` 이후 실행 코드 diff가 없었다. Stage 5/6에서는
+리뷰 보정과 최신 devel 통합으로 실행 코드가 바뀌었으므로 새 후보를 별도로 검증한다.
 
 ## 잔여 위험과 후속 작업
 
 ### 잔여 위험
 
 - 전체 artifact 수용은 GUI/PDF handoff, updater, 서명, 공개 릴리즈 승인을 대신하지 않는다.
-- #19/#57 미완료 제품/진단 코드는 포함하지 않았다. 특히 #57의 NSIS-only/MSI-only 분리 수용은 이번 기존 smoke와 다르다.
+- #19의 병합된 결과는 devel 통합으로 포함했다. #57 미완료 진단 코드는 포함하지 않았으며 NSIS-only/MSI-only 분리 수용은 이번 기존 smoke와 다르다.
 - 자동 선택은 로컬 positive/negative·실제 Git fixture로 확인했고 실제 원격 full/installer 및 대표 arm64 product 경로를 실행했다. 모든 profile의 native 경로를 각각 반복하지 않았다.
 - cache는 보존이 보장되지 않으며 key 적중이 재컴파일 0회를 뜻하지 않는다. 36.85%는 같은 후보의 arm64 한 쌍에서 관측한 값이며 물리 CPU·부하와 반복 표본 분산은 통제하지 않았다. Windows/Linux x64, 다른 source SHA 또는 전체 CI의 같은 비율 개선을 의미하지 않는다.
 - 최종 문서 SHA와 실제 제품 SHA를 구분해야 한다. artifact가 만료되면 같은 ID로 재사용할 수 없다.
 
 ### 후속 작업 후보
 
-- #19/#57 통합 시 `CI_VALIDATION.md`의 workflow 소유 위치와 공통 handoff를 사용한다.
+- #57 등 후속 통합 시 `CI_VALIDATION.md`의 workflow 소유 위치와 공통 handoff를 사용한다.
 - cache의 장기 보존·용량 경쟁, 다른 source의 prefix restore와 남아 있는 workspace/feature별 재컴파일을 후속 검토한다. cache 삭제나 저장소 quota 변경은 이번 작업에서 수행하지 않았다.
 - #27 action pin과 #28 branch protection 정책은 별도 작업 범위를 유지한다.
 

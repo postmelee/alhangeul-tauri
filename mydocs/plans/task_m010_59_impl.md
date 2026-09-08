@@ -107,3 +107,12 @@ GitHub Issue: [#59](https://github.com/postmelee/alhangeul-tauri/issues/59)
 - 서로 다른 profile 실행의 비취소를 확인한다. 의도한 negative run 실패를 성공 수용과 구분한다.
 - 단계·최종 보고, PR 본문과 고정 링크를 갱신하고 두 리뷰 코멘트에 대응하는 보정 결과를
   PR #66의 코멘트로 게시한다. PR merge·issue close·release는 수행하지 않는다.
+
+### Stage 5/6 수행 결과
+
+- 리뷰 보정 df72005, devel 통합 598e899, Windows EvidencePath 전달 보정 f0dfe59.
+- f0dfe59 전체 run 34209619872 필수 11개 job success. 정상 재사용 34209988793과
+  후발 fast 34209992065 success, 의도한 digest 실패 34209623502에서 진단 upload success.
+- 초기 통합 실패와 보정, 제품/harness 및 artifact 식별자는
+  [Stage 6 보고](../working/task_m010_59_stage6.md)에 보존한다.
+- 로컬 automation 607, upstream 36, Studio 147, build/typecheck·경계·metadata 및 actionlint 통과.
