@@ -59,3 +59,11 @@ jobs:
       - name: Record limited scope
         shell: powershell
         run: Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Value 'Windows script contracts passed; installer and COM activation remain unverified.'
+      - name: Preserve Windows script regression evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: alhangeul-fast-windows-script-contracts
+          path: diagnostics/windows-script-contracts/**
+          if-no-files-found: warn
+          retention-days: 14

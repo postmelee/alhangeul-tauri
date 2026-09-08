@@ -14,5 +14,15 @@ Invoke-CiPowerShellTest -Path $fixture -Arguments @('-Code', '0')
 $result = [ordered]@{ Failures = @() }
 Invoke-Check $result 'fixture' 'NegativeCheck' { throw 'expected fixture error' }
 if ($result.Failures.Count -ne 1 -or $result.NegativeCheck.Passed) { throw 'Installer check lost a failure' }
-Write-Output 'Isolated native exit and installer failure collection passed.'
+$temporary = Join-Path ([System.IO.Path]::GetTempPath()) ('ci evidence ' + [guid]::NewGuid().ToString('N'))
+try {
+    New-Item -ItemType Directory -Path $temporary -Force | Out-Null
+    $parameterFixture = Join-Path $temporary 'requires evidence.ps1'
+    Set-Content -LiteralPath $parameterFixture -Value 'param([Parameter(Mandatory = $true)][string]$EvidencePath); Set-Content -LiteralPath $EvidencePath -Value "passed"; exit 0'
+    Invoke-CiPowerShellRegression -Path $parameterFixture -EvidenceDirectory $temporary
+    if ((Get-Content -LiteralPath ($parameterFixture + '.json') -Raw).Trim() -ne 'passed') {
+        throw 'Required evidence argument was not preserved through the isolated child'
+    }
+} finally { Remove-Item -LiteralPath $temporary -Recurse -Force }
+Write-Output 'Isolated native exit, evidence argument and installer failure collection passed.'
 exit 0

@@ -1,3 +1,4 @@
+param([string]$EvidenceDirectory = 'diagnostics/windows-script-contracts')
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 . (Join-Path $PSScriptRoot 'windows-test-process.ps1')
@@ -12,6 +13,8 @@ foreach ($relative in $files) {
 }
 $tests = @(Get-ChildItem -LiteralPath (Join-Path $root 'tests') -Recurse -Filter '*.test.ps1' -File)
 if ($tests.Count -eq 0) { throw 'No Windows regression tests found' }
-foreach ($file in $tests) { Invoke-CiPowerShellTest -Path $file.FullName }
+foreach ($file in $tests) {
+    Invoke-CiPowerShellRegression -Path $file.FullName -EvidenceDirectory $EvidenceDirectory
+}
 Write-Output "PowerShell contracts passed: $($files.Count) sources, $($tests.Count) isolated tests"
 exit 0
