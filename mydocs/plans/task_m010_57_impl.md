@@ -3,7 +3,85 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: Stage 5.2 후보 게시 완료 — fast run 34256381653 결과 대기
+상태: Stage 5.2 fast 회귀 통과 — Stage 5.3 full·비교 실험 실행 승인 대기
+
+## Stage 5.2 원격 결과 확정
+
+[run 34256381653](https://github.com/postmelee/alhangeul-tauri/actions/runs/34256381653)의
+attempt 1은 success이며 실제 head SHA는 `26ded313dad49dfd8cd21145aff7e57e3c51cb77`이다.
+`profile=fast, scope=full, thumbnail_context_experiment=false` 전송 기록과 대조했다.
+select·Windows PowerShell·Linux Node/Studio 3개 job이 성공했고 artifacts/installer는 skipped다.
+Windows에서 50개 소스 계약과 5개 격리 테스트가 통과했으며 context의 순수 분류·원시 증거
+회귀 성공 로그를 확인했다. Linux는 automation 681개·upstream 36개·Studio 147개·build와
+boundary 488파일 및 GUI typecheck 등을 통과했다.
+
+실제 token 전환·보호 registry/ACL·COM·설치·비교는 fast 범위가 아니므로 아직 미검증이다.
+상세 provenance와 재실행한 로컬 검사는 [Stage 5.2 보고서](../working/task_m010_57_stage5.2.md)를
+따른다. 보고 커밋은 실행 후보와 분리하며 문서 커밋까지 fast에서 검증했다고 표시하지 않는다.
+이하 과거 절의 결과 대기·미실행은 해당 시점의 이력으로 보존한다.
+
+## Stage 5.3 — full 통합·격리 비교 실행 승인안
+
+이번 승인은 계획 작성까지다. 다음 원격 게시·실행은 별도 승인 후 1회만 진행한다.
+
+### profile 선택과 출처
+
+[CI_VALIDATION.md](../../docs/operations/CI_VALIDATION.md)의 workflow 통합·최종 통합 기준에
+따라 `full`을 선택한다. 테스트 보정만의 빠른 회귀는 이미 fast에서 확인했다. 제품 bytes가
+그대로인 일반 installer 검사에는 exact 4개 입력의 `installer`가 원칙이지만 현재
+`alhangeul-installer-reuse.yml`에는 context opt-in 전달이 없다. 이번 비교를 위해 재사용
+workflow를 추가 수정하거나 일반 smoke 성공을 비교 실험 성공으로 대신하지 않는다.
+fast run에는 제품 bytes가 없으며, 이전 `34065777777`은 실패 run/구형 inventory로 부적격이다.
+이는 모든 외부 artifact가 부적격이라는 판단이 아니라 현재 알려진 후보에 대한 판단이다.
+
+1. 이번 보고·계획 커밋을 exact 후보로 삼고 clean 상태·원격 조상 관계·진행중 run을 확인한다.
+   `publish/task57`에 non-force push 후 원격 SHA가 후보와 같은지 재조회한다.
+2. `ci.yml`을 해당 ref에서 `profile=full`, `scope=full`,
+   `thumbnail_context_experiment=true`로 한 번 dispatch한다. workflow가 `github.sha`를
+   build_ref로 넘기므로 ordinary workflow SHA와 resolved source SHA가 같아야 한다.
+   ci 입력에 없는 build_ref나 과거 product artifact 입력을 임의로 추가하지 않는다.
+3. 실제 run head SHA·attempt·전송 입력·시각을 기록한다. 새 bundle/support의 ID·digest·
+   inventory sourceSha를 확인하고 같은 producer의 정확한 artifact ID로 검사한다.
+   다운로드 digest 검증을 유지하고 새 bytes를 과거 installer 수용의 연장으로 표시하지 않는다.
+
+### 실행 범위와 비용
+
+| 경로 | 실행 범위 |
+|---|---|
+| entry/plan/fast | 입력·exact SHA 확인, Linux Node/Studio와 Windows PowerShell 회귀 |
+| core/native/package | Windows x64, Linux x64·arm64의 선택된 full 검사와 새 bundle/support 생성 |
+| Windows installer | 독립 clean VM 3개: NSIS lifecycle, MSI lifecycle, MSI forced-reinstall |
+| Windows context | 독립 clean VM replica 2개; 비교 job당 최대 30분, phase 최대 10분, probe 30초 |
+| result | 선택된 전체 gate 집계; 일부 성공으로 full 수용을 대체하지 않음 |
+
+`alhangeul-artifact-platform.yml`과 `alhangeul-windows-smoke.yml`의 현재 책임을 유지한다.
+Desktop의 옮겨진 본문은 복원하지 않는다. full은 Windows만 빌드하는 실행보다 Linux 2종 등
+runner 비용이 늘며 fresh 제품 생성·설치 검사를 포함한다. updater/릴리즈 게시·서명 활성화는
+범위 밖이다. 추가 실행·자동 retry·self-hosted/유료 VM 구축은 이 1회 승인에 포함하지 않는다.
+
+### 안전·판정·중단 기준
+
+- 폐기 가능한 hosted Windows에서만 기존 C0→가능한 C1→C0→C2→C3→C2→C0를 관측한다.
+  C0의 문서 Shell `0x80040154`와 JPG/직접 COM/연결 대조가 맞지 않으면 개입을 시작하지 않는다.
+  실패 미재현은 `baseline-not-reproduced`, 정상 Explorer/linked token 부재는
+  `context-unavailable`로 기록하며 성공으로 바꾸지 않는다.
+- C2는 hash가 같은 DLL/worker를 관리자 쓰기 보호 task 전용 경로에 복사하고 해당 HKCU
+  InprocServer32 경로만 바꾼다. C3는 같은 보호 경로의 해당 Alhangeul HKLM COM 값만
+  임시 등록한다. 소유권 journal·사전 오염 검사·복원 비교를 유지한다.
+  registry 복원 충돌/실패는 invalid이며 안전하지 않은 제거로 덮어쓰지 않는다.
+- 사용자 PC·VDI·UAC·Explorer 정책·기본 앱·제3자 handler를 변경하지 않고 재부팅·
+  무관한 Shell host 종료를 하지 않는다. 제품 설치 정책을 바꾸는 실험도 아니다.
+- 두 replica의 phase JSON/원시 probe·A→B→A·정리 증거와 독립 MSI 대조를 함께 읽는다.
+  `observed`는 증거 수집 완료이지 제품 해결이 아니며 API bitmap은 Explorer 시각 수용이 아니다.
+- NSIS 제품 실패와 MSI 강제 재설치 3010은 기존 gate대로 실패를 유지한다. 비교 증거가
+  수집돼도 full이 failure일 수 있다. 실패/누락/미실행을 나눠 보고하고 원인 보정·재실행은
+  새 승인을 요청한다. 실제 한컴/Windows 10·11/VDI·재부팅 잔여 검증과 #58 경계는 유지한다.
+
+### 승인 요청
+
+Stage 5.2 보고와 이 실행안을 승인하면 exact 후보 게시 및 full+비교 1회를 진행한다.
+승인에는 위 hosted VM의 임시 HKCU/HKLM·보호 경로 실험을 포함하며 제품 수정·앱 UI·#58·
+PR 게시·이슈 close·배포는 포함하지 않는다. 현재 원격 push/dispatch는 수행하지 않았다.
 
 ## Stage 5.2 — 2026-09-09 승인된 테스트 보정
 
