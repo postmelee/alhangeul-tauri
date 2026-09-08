@@ -3,7 +3,7 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: Stage 5.2 테스트 보정·로컬 회귀 완료 — 후보 게시·fast 1회 실행 승인 대기
+상태: Stage 5.2 후보 게시 완료 — fast run 34256381653 결과 대기
 
 ## Stage 5.2 — 2026-09-09 승인된 테스트 보정
 
@@ -48,6 +48,28 @@ fast 의존성 검사에서 equality 함수 누락을 발견해 해당 순수 �
 fast는 select와 Linux Node/Studio·Windows PowerShell 회귀이며 제품 재빌드/설치·비교 개입은 없다.
 실행 직전 같은 profile의 진행중 run 유무도 확인해 의도하지 않은 취소를 피한다.
 새 producer/installer/full·릴리즈·PR·issue close는 승인 범위를 넓혀서 수행하지 않는다.
+
+### Stage 5.2 승인된 후보 게시·fast 실행
+
+2026-09-09 같은 스레드의 “진행해줘”로 후보 게시·fast 1회 실행을 승인받았다.
+작업 트리 clean, `local/task57` HEAD와 승인 후보가 일치함을 확인했다. 원격 이전 후보
+`1cb8b9f6ba9c7f26190600e496720b26d5754675`가 조상임을 확인한 뒤 non-force push했다.
+실행 전 `ci.yml`의 `publish/task57` run 조회는 빈 목록이어서 기존 fast 실행 취소는 없었다.
+
+| 항목 | 기록 |
+|---|---|
+| 후보 / 실제 run head SHA | `26ded313dad49dfd8cd21145aff7e57e3c51cb77` |
+| ref / workflow | `publish/task57` / `ci.yml` |
+| 실행 | [34256381653](https://github.com/postmelee/alhangeul-tauri/actions/runs/34256381653), workflow_dispatch |
+| 생성 시각 | 2026-09-09 02:19:21 KST (`2026-09-08T17:19:21Z`) |
+| 전송 입력 | `profile=fast`, `scope=full`, `thumbnail_context_experiment=false` |
+| 최초 API 확인 | head SHA·branch 일치; select 진행중, Windows PDF cleanup skipped |
+
+dispatch는 1회이며 입력은 성공한 전송 명령 기준이다. API에서 전체 입력 객체를 재조회했다고
+표현하지 않는다. 완료 후 Linux Node/Studio와 Windows PS 5.1 회귀의 실제 결과를 대조한다.
+`scope=full`은 CI entry의 일반 경로 선택이며 `profile=full` 전체 제품 검증이 아니다.
+현재 fast 성공·Stage 5 완료·NSIS 해결을 선언하지 않는다. 제품 빌드/설치/비교 개입/릴리즈·
+재실행은 수행하지 않았으며 이 실행 기록의 문서 커밋은 검증 후보 SHA와 분리한다.
 
 ## 2026-09-09 CI 통합 구현 정렬
 
