@@ -3,7 +3,49 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: Stage 5.3 full 실패·등록 범위 영향 관측 — Stage 5.4 진단 보완 구현 승인 대기
+상태: Stage 5.4 진단 보완·로컬 회귀 완료 — 후보 게시·fast 실행 승인 대기
+
+2026-09-09 같은 스레드의 “진행해줘”로 Stage 5.4의 CI 전용 진단 보완·회귀·로컬 검증·
+후보 커밋을 승인받았다. 기존 #57 worktree와 계획을 이어가며 원격 게시/실행과 제품 변경은 제외한다.
+
+### Stage 5.4 로컬 구현 결과와 원격 인계
+
+- 신규 cleanup helper에 기존 24개 필수 대상(경로 2·제품 process 2·hive/view별 key/제거 항목
+  20)의 읽기 전용 관측과 순수 판정을 분리했다. 빈 key도 present로 남기며 조회 실패·증거
+  누락/중복·미실행은 clean이 될 수 없다. 기존 정리 assertion을 이 helper로 옮겼다.
+- 초기 오염 검사·정리 직전·기존 제거 대기 후·실패 시점에 snapshot을 남긴다. 보호 복사본/
+  요청 디렉터리와 Shell host 관측은 보충 증거로만 두고 이들의 존재만으로 설치 정리 gate를
+  실패시키지 않는다. 별도 기존 보호 복사본 제거 gate는 유지한다. 파일 이름은 allowlist
+  개수/기타 개수로만 기록하며 최대 256개 비재귀 관측과 reparse 경계를 유지한다.
+- 오류의 고정 코드·수치 HRESULT·operation을 최초 실패 시 저장한 뒤 보충 관측을 수행한다.
+  snapshot 실패는 unreadable로 남기고 최초 오류를 바꾸지 않는다. 정리 6단계에 not-run/
+  running/passed/failed를 기록하며 additive cleanupDiagnostics/cleanupFailure의 version과
+  JSON 판정을 검증한다. 원래 experiment schema와 실패 exit 2·소유권 복원 순서는 유지한다.
+- Shell host는 이름/경로/명령행 대신 개수·handler 로드 수·동일 사용자/세션 수를 기록한다.
+  권한/모듈 조회 실패는 unreadable이며 실패를 성공이나 host 없음으로 바꾸지 않는다.
+- fast는 AST allowlist로 순수 함수/회귀만 읽는다. 실제 임시 파일·registry 검사는 기존
+  CIConsent context 테스트에서만 호출한다. 새 helper는 사용자 support 묶음에 넣지 않았다.
+  제품/installer/등록/worker·workflow·lock·기본 앱·#58에는 변경이 없다.
+- 신규 helper와 회귀 파일은 각각 300 LOC 이내, 신규 함수는 50 LOC 이내로 분리했다.
+  Windows 실행 전 후보인 만큼 Stage 5.4 전체 완료 보고서는 아직 만들지 않는다.
+
+| 로컬 검증 | 결과 |
+|---|---|
+| context/CI 통합/fast Node 대상 | 21 passed |
+| 전체 automation | 685 passed, 0 failed, 0 skipped |
+| product boundary | 490 files, 통과 |
+| 전체 workflow actionlint / diff | 통과 |
+| 실제 PS 5.1·registry·native·설치/제거 | 미실행; 로컬 source-contract로 대체하지 않음 |
+
+로그는 `/private/tmp/task57-stage54-automation.log`다. 회귀는 잔존 항목별 실패·빈 key·
+읽기 거부/조회 중 소멸·복수 잔존·JSON round-trip·개인정보 sentinel·원래 오류 보존·미도달
+단계 오판 방지·진단 판정과 raw 불일치를 포함한다. Windows 실행 성공은 아직 주장하지 않는다.
+
+다음 승인 요청: 후보를 `publish/task57`에 non-force 게시하고 같은 exact SHA로 `ci.yml`
+`profile=fast`, `scope=full`, `thumbnail_context_experiment=false` **1회** 실행한다.
+진행중 동일 ref/profile을 먼저 확인하고 source/head SHA를 대조한다. 제품 빌드/설치·
+임시 registry 비교는 이 fast 실행에 없다. 실제 비교 재실행은 fast 결과 뒤 별도로 승인받는다.
+NSIS 해결·Stage 5 전체 수용·full 성공·PR/close/배포로 자동 전환하지 않는다.
 
 ## Stage 5.3 완료 결과 분석 — 전체 수용 실패 유지
 

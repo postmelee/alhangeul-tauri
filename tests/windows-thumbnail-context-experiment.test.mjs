@@ -4,7 +4,7 @@ import test from 'node:test';
 import { executableNames } from '../scripts/build-windows-thumbnail-support.mjs';
 
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
-const files = ['experiment', 'registry', 'files', 'phase', 'process', 'evidence', 'tests'];
+const files = ['experiment', 'registry', 'files', 'phase', 'process', 'evidence', 'tests', 'cleanup', 'cleanup-tests'];
 const sources = Object.fromEntries(await Promise.all(files.map(async (name) => [name, await read(`scripts/windows-thumbnail-context-${name}.ps1`)])));
 const native = await read('scripts/windows-thumbnail-context.cs');
 const workflow = await read('.github/workflows/alhangeul-desktop.yml');
@@ -119,4 +119,45 @@ test('context code does not change security policy or kill unrelated Shell proce
   assert.doesNotMatch(all, /Write-(?:Host|Output).*Exception\.Message/);
   for (const [name, source] of Object.entries(sources)) assert.ok(source.split('\n').length <= 300, `${name} exceeds file size guideline`);
   assert.ok(native.split('\n').length <= 300);
+});
+
+test('cleanup observation retains every original target and distinguishes empty keys and read failures', () => {
+  const cleanup = sources.cleanup;
+  for (const marker of ['local-install', 'machine-install', 'app-process', 'worker-process', 'CurrentUser', 'LocalMachine', 'Registry32', 'Registry64', 'class', 'hwp', 'hwpx', 'product', 'uninstall']) assert.ok(cleanup.includes(marker));
+  for (const marker of ['emptyKey', 'valueCount', 'subkeyCount', 'cleanup-observation-unreadable', 'existing-product-registry', 'Get-ContextCleanupFinding', 'GetSubKeyNames', 'DisplayName']) assert.ok(cleanup.includes(marker));
+  assert.match(cleanup, /\$matches.Count -ne 1/);
+  assert.match(cleanup, /\$matches\[0\].status -cnotin @\('present', 'absent'\)/);
+  assert.doesNotMatch(sources.process, /function Assert-ContextEmptyInstall/);
+  assert.match(cleanup, /Assert-Context \(\$snapshot.finding -ceq 'clean'\) \$snapshot.finding/);
+});
+
+test('cleanup evidence cannot mutate state, enumerate recursively or expose arbitrary names', () => {
+  const cleanup = sources.cleanup;
+  assert.doesNotMatch(cleanup, /CreateSubKey|DeleteSubKey|SetValue\(|DeleteValue|Remove-Item|WriteAll|Set-Acl|SetAccess|\.Kill\(|-Recurse|Start-Sleep|Start-Process/);
+  assert.match(cleanup, /Assert-ContextLocalPath \$Path/);
+  assert.match(cleanup, /if \(\$reparse -or -not \$item.PSIsContainer\)/);
+  assert.match(cleanup, /\$seen -ge 256/);
+  assert.match(cleanup, /catch \[Management.Automation.ItemNotFoundException\]/);
+  assert.match(cleanup, /if \(\$null -eq \$child\) \{ throw 'cleanup-observation-unreadable' \}/);
+  assert.match(cleanup, /else \{ 'unknown' \}/);
+  assert.doesNotMatch(cleanup, /(?:path|message|stack|sid|commandLine)\s*=\s*\$(?:ErrorRecord|Data)/i);
+});
+
+test('cleanup diagnostic steps preserve failure and do not relax restoration or timeouts', () => {
+  const entry = sources.experiment;
+  for (const marker of ['cleanupDiagnostics', 'cleanupFailure', 'preflightFailure', 'before-cleanup', 'after-uninstall-wait', 'cleanup-failed', "'not-run'", "'failed'"]) assert.ok(entry.includes(marker));
+  assert.match(entry, /New-ContextCleanupFailure \$summary.cleanupOperation \$_/);
+  assert.match(entry, /\$i -lt 30 -and \(Test-Path -LiteralPath \$installRoot\)/);
+  assert.ok(entry.indexOf("$summary.cleanupFailure = New-ContextCleanupFailure") < entry.indexOf("Add-ContextCleanupSnapshot $summary.cleanupDiagnostics 'cleanup-failed'"));
+  assert.ok(entry.indexOf("'association-mutation'", entry.indexOf('} finally {')) < entry.indexOf("$summary.cleanupOperation = 'uninstall'"));
+  assert.match(entry, /if \(\$summary.status -ne 'observed' -or -not \$summary.cleanup\) \{ exit 2 \}/);
+});
+
+test('cleanup regression separates pure fast cases from consent-only Windows resource checks', async () => {
+  const fast = await read('tests/windows-thumbnail-fast.test.ps1');
+  assert.match(fast, /Test-ContextCleanupContracts\nTest-ContextCleanupFailures/);
+  assert.doesNotMatch(fast, /Test-ContextCleanupNative|Read-ContextCleanupPath|Read-ContextCleanupKey|Read-ContextCleanupHosts/);
+  assert.match(sources.tests, /Test-ContextCleanupNative/);
+  const checks = sources['cleanup-tests'];
+  for (const marker of ['cleanup-all-absent', 'cleanup-residual-must-fail', 'cleanup-unreadable-must-fail', 'cleanup-not-run-must-fail', 'empty-key-is-still-present', 'multiple-residuals-preserved', 'cleanup-json-roundtrip', 'snapshot-preserves-first-failure', 'denied-is-not-absent', 'disappeared-is-not-absent', 'cleanup-key-absent', 'cleanup-empty-key', 'cleanup-exception-privacy']) assert.ok(checks.includes(marker));
 });

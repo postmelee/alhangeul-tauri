@@ -58,31 +58,3 @@ function Invoke-ContextPhase($Name, $Dll, $Limited = $false) {
     return $phase
   } finally { [IO.File]::Delete($requestPath) }
 }
-
-function Assert-ContextEmptyInstall {
-  foreach ($root in @((Join-Path $env:LOCALAPPDATA 'Alhangeul'), (Join-Path $env:ProgramFiles 'Alhangeul'))) {
-    Assert-Context (-not (Test-Path -LiteralPath $root)) 'existing-install-path'
-  }
-  Assert-Context (@(Get-Process -Name 'Alhangeul', 'AlhangeulThumbnailWorker' -ErrorAction SilentlyContinue).Count -eq 0) 'existing-product-process'
-  foreach ($hive in @([Microsoft.Win32.RegistryHive]::CurrentUser, [Microsoft.Win32.RegistryHive]::LocalMachine)) {
-    foreach ($view in @([Microsoft.Win32.RegistryView]::Registry32, [Microsoft.Win32.RegistryView]::Registry64)) {
-      $base = [Microsoft.Win32.RegistryKey]::OpenBaseKey($hive, $view)
-      try {
-        foreach ($path in @($script:contextClassPath, 'Software\Classes\Alhangeul.hwp', 'Software\Classes\Alhangeul.hwpx', 'Software\Alhangeul')) {
-          $key = $base.OpenSubKey($path)
-          if ($null -ne $key) { $key.Dispose(); throw 'existing-product-registry' }
-        }
-        $uninstall = $base.OpenSubKey('Software\Microsoft\Windows\CurrentVersion\Uninstall')
-        if ($null -ne $uninstall) {
-          try {
-            foreach ($name in $uninstall.GetSubKeyNames()) {
-              $key = $uninstall.OpenSubKey($name)
-              try { Assert-Context ($name -ine 'Alhangeul' -and $key.GetValue('DisplayName') -ine 'Alhangeul') 'existing-uninstall-entry' }
-              finally { $key.Dispose() }
-            }
-          } finally { $uninstall.Dispose() }
-        }
-      } finally { $base.Dispose() }
-    }
-  }
-}

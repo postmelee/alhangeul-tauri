@@ -12,6 +12,7 @@ $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'windows-thumbnail-context-registry.ps1')
 . (Join-Path $PSScriptRoot 'windows-thumbnail-context-evidence.ps1')
 . (Join-Path $PSScriptRoot 'windows-thumbnail-context-process.ps1')
+. (Join-Path $PSScriptRoot 'windows-thumbnail-context-cleanup.ps1')
 # Defense in depth, not authentication: only an explicitly approved disposable hosted job may invoke this.
 Assert-Context ($CIConsent -and $env:GITHUB_ACTIONS -ceq 'true' -and $env:RUNNER_ENVIRONMENT -ceq 'github-hosted' -and $env:RUNNER_OS -ceq 'Windows' -and $env:ALHANGEUL_CONTEXT_EXPERIMENT -ceq 'approved') 'requires-disposable-ci-consent'
 Assert-Context ([Environment]::OSVersion.Platform -eq 'Win32NT' -and [Environment]::Is64BitProcess) 'requires-windows-x64'
@@ -26,13 +27,19 @@ Assert-Context (-not (Test-Path -LiteralPath $OutputDirectory)) 'output-exists'
 Assert-ContextLocalPath ([IO.Path]::GetDirectoryName($OutputDirectory))
 [void][IO.Directory]::CreateDirectory($OutputDirectory)
 $summary = [ordered]@{ schemaVersion = 1; experimentOnly = $true; productAcceptance = 'not-established'; status = 'invalid'; operation = 'preflight'; error = $null; errorCode = $null; cleanupError = $null; sourceSha = $sha; runId = $env:GITHUB_RUN_ID; runAttempt = $env:GITHUB_RUN_ATTEMPT; imageVersion = $env:ImageVersion; caller = $caller; installExit = $null; uninstallExit = $null; reference = $null; limited = $null; phases = @(); registryRestored = $false; associationsRestored = $false; cleanup = $false }
+$summary['cleanupFailure'] = $null
+$summary['preflightFailure'] = $null
+$summary['cleanupDiagnostics'] = [ordered]@{ schemaVersion = 1; snapshots = @(); steps = [ordered]@{
+  'restore-registry' = 'not-run'; uninstall = 'not-run'; 'verify-uninstall' = 'not-run';
+  'verify-associations' = 'not-run'; 'remove-protected-copy' = 'not-run'; 'remove-requests' = 'not-run'
+} }
 $bundle = $null; $protected = $null; $requestRoot = $null; $installed = $false; $installedClass = $null
 $pathJournal = New-ContextJournal; $machineJournal = New-ContextJournal
 $installRoot = Join-Path $env:LOCALAPPDATA 'Alhangeul'
 $originalDll = Join-Path $installRoot 'AlhangeulThumbnailHandler.dll'
 $baselineAssociations = $null; $installedAssociations = $null
 try {
-  Assert-ContextEmptyInstall
+  Assert-ContextEmptyInstall $summary.cleanupDiagnostics 'preflight'
   $baselineAssociations = Get-ContextAssociations
   $summary.operation = 'verify-bundle'
   $bundle = Read-ContextBundle $ArtifactRoot $SupportRoot $sha
@@ -78,12 +85,16 @@ try {
   $summary.status = 'observed'
   $summary.operation = 'comparison-complete'
 } catch {
+  if ($summary.operation -eq 'preflight') { $summary.preflightFailure = New-ContextCleanupFailure 'preflight' $_ }
   $allowed = @('baseline-not-reproduced', 'install-failed', 'registry-restore-conflict', 'association-mutation', 'phase-process-failed')
   $summary.error = if ($_.Exception.Message -in $allowed) { $_.Exception.Message } else { 'experiment-invalid' }
   $summary.errorCode = $_.Exception.HResult
 } finally {
+  $extraPaths = @{ 'protected-copy' = $protected; 'request-root' = $requestRoot }
+  Add-ContextCleanupSnapshot $summary.cleanupDiagnostics 'before-cleanup' $extraPaths
   $summary['cleanupOperation'] = 'restore-registry'
   try {
+    $summary.cleanupDiagnostics.steps['restore-registry'] = 'running'
     if (-not $machineJournal.restored) { Restore-ContextJournal $machineJournal }
     if (-not $pathJournal.restored) { Restore-ContextJournal $pathJournal }
     Assert-Context ($null -eq (Get-ContextClass 'LocalMachine')) 'machine-class-residual'
@@ -91,28 +102,44 @@ try {
     if ($installedClass) { Assert-Context (Test-ContextEqual $installedClass (Get-ContextClass 'CurrentUser')) 'user-class-restore-mismatch' }
     if ($installedAssociations) { Assert-Context (Test-ContextEqual $installedAssociations (Get-ContextAssociations)) 'association-mutation' }
     $summary.registryRestored = $true
+    $summary.cleanupDiagnostics.steps['restore-registry'] = 'passed'
     # Never run a product uninstaller over a detected third-party class/association change.
     if ($installed) {
       $summary.cleanupOperation = 'uninstall'
+      $summary.cleanupDiagnostics.steps['uninstall'] = 'running'
       $uninstaller = Join-Path $installRoot 'uninstall.exe'
       Assert-ContextLocalPath $uninstaller
       $summary.uninstallExit = Invoke-ContextProcess $uninstaller '/S' 300
       Assert-Context ($summary.uninstallExit -eq 0) 'uninstall-failed'
+      $summary.cleanupDiagnostics.steps['uninstall'] = 'passed'
       # NSIS may return before its self-copy has removed the directory; bounded observation only.
       for ($i = 0; $i -lt 30 -and (Test-Path -LiteralPath $installRoot); $i++) { Start-Sleep -Milliseconds 1000 }
       $summary.cleanupOperation = 'verify-uninstall'
-      Assert-ContextEmptyInstall
+      $summary.cleanupDiagnostics.steps['verify-uninstall'] = 'running'
+      Assert-ContextEmptyInstall $summary.cleanupDiagnostics 'after-uninstall-wait'
+      $summary.cleanupDiagnostics.steps['verify-uninstall'] = 'passed'
     }
     $summary.cleanupOperation = 'verify-associations'
+    $summary.cleanupDiagnostics.steps['verify-associations'] = 'running'
     if ($baselineAssociations) { Assert-Context (Test-ContextEqual $baselineAssociations (Get-ContextAssociations)) 'association-restore-mismatch' }
     $summary.associationsRestored = $true
+    $summary.cleanupDiagnostics.steps['verify-associations'] = 'passed'
     $summary.cleanupOperation = 'remove-protected-copy'
+    $summary.cleanupDiagnostics.steps['remove-protected-copy'] = 'running'
     if ($protected) { Remove-ContextPayload $protected $bundle }
+    $summary.cleanupDiagnostics.steps['remove-protected-copy'] = $(if ($protected) { 'passed' } else { 'not-run' })
     $summary.cleanupOperation = 'remove-requests'
+    $summary.cleanupDiagnostics.steps['remove-requests'] = 'running'
     if ($requestRoot) { [IO.Directory]::Delete($requestRoot, $false) }
+    $summary.cleanupDiagnostics.steps['remove-requests'] = $(if ($requestRoot) { 'passed' } else { 'not-run' })
     $summary.cleanup = $true
     $summary.cleanupOperation = 'complete'
-  } catch { $summary.status = 'invalid'; $summary.cleanupError = 'cleanup-failed'; $summary['cleanupErrorCode'] = $_.Exception.HResult }
+  } catch {
+    $summary.status = 'invalid'; $summary.cleanupError = 'cleanup-failed'; $summary['cleanupErrorCode'] = $_.Exception.HResult
+    $summary.cleanupFailure = New-ContextCleanupFailure $summary.cleanupOperation $_
+    $summary.cleanupDiagnostics.steps[$summary.cleanupOperation] = 'failed'
+    Add-ContextCleanupSnapshot $summary.cleanupDiagnostics 'cleanup-failed' $extraPaths
+  }
   Write-ContextJson (Join-Path $OutputDirectory 'experiment.json') $summary
 }
 if ($summary.status -ne 'observed' -or -not $summary.cleanup) { exit 2 }

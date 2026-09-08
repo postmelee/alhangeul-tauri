@@ -9,6 +9,8 @@ Invoke-CiPowerShellTest -Path (Join-Path $root 'scripts\windows-thumbnail-assess
 $sources = [ordered]@{
     'windows-thumbnail-context-registry.ps1' = @('Test-ContextEqual')
     'windows-thumbnail-context-tests.ps1' = @('Assert-ContextThrows', 'New-ContextTestPhase', 'Test-ContextFindingContracts', 'Test-ContextRawEvidence')
+    'windows-thumbnail-context-cleanup.ps1' = @('Get-ContextCleanupIds', 'ConvertTo-ContextCleanupRow', 'Get-ContextCleanupFinding', 'New-ContextCleanupFailure', 'Invoke-ContextCleanupRead', 'Add-ContextCleanupSnapshot', 'Test-ContextCleanupDiagnostics')
+    'windows-thumbnail-context-cleanup-tests.ps1' = @('New-ContextCleanupTestItems', 'Test-ContextCleanupContracts', 'Test-ContextCleanupFailures', 'Test-ContextCleanupDiagnosticContract')
 }
 foreach ($source in $sources.GetEnumerator()) {
     $tokens = $null; $errors = $null
@@ -25,5 +27,8 @@ foreach ($source in $sources.GetEnumerator()) {
 }
 Test-ContextFindingContracts
 Test-ContextRawEvidence
+Test-ContextCleanupContracts
+Test-ContextCleanupFailures
+Test-ContextCleanupDiagnosticContract
 Write-Output 'Pure thumbnail assessment/context regressions passed; no native or installer acceptance.'
 exit 0

@@ -5,6 +5,8 @@ $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'windows-thumbnail-context-files.ps1')
 . (Join-Path $PSScriptRoot 'windows-thumbnail-context-registry.ps1')
 . (Join-Path $PSScriptRoot 'windows-thumbnail-context-evidence.ps1')
+. (Join-Path $PSScriptRoot 'windows-thumbnail-context-cleanup.ps1')
+. (Join-Path $PSScriptRoot 'windows-thumbnail-context-cleanup-tests.ps1')
 Assert-Context ($CIConsent -and $env:GITHUB_ACTIONS -ceq 'true' -and $env:RUNNER_ENVIRONMENT -ceq 'github-hosted' -and $env:ALHANGEUL_CONTEXT_EXPERIMENT -ceq 'approved') 'requires-disposable-ci-consent'
 Assert-Context ([Environment]::OSVersion.Platform -eq 'Win32NT' -and [Environment]::Is64BitProcess) 'requires-windows-x64'
 
@@ -17,6 +19,7 @@ function Assert-ContextThrows($Action) {
 function Test-ContextStoredEvidence($Directory) {
   $report = Get-Content -LiteralPath (Join-Path $Directory 'experiment.json') -Raw -Encoding UTF8 | ConvertFrom-Json
   Assert-Context ($report.schemaVersion -eq 1 -and $report.experimentOnly -and $report.productAcceptance -ceq 'not-established') 'invalid-experiment-contract'
+  Assert-Context (Test-ContextCleanupDiagnostics $report) 'invalid-cleanup-diagnostics'
   Assert-Context ($report.status -ceq 'observed' -and $report.cleanup -and $report.registryRestored -and $report.associationsRestored -and $report.installExit -eq 0 -and $report.uninstallExit -eq 0) 'experiment-not-complete'
   Assert-Context ($report.sourceSha -ceq $env:GITHUB_SHA -and $report.runId -ceq $env:GITHUB_RUN_ID -and $report.runAttempt -ceq $env:GITHUB_RUN_ATTEMPT) 'experiment-source-mismatch'
   $names = @('c0-initial')
@@ -209,6 +212,10 @@ if ($EvidenceDirectory) {
   if ($limited.status -eq 'ok') { Assert-Context ($limited.sameUser -and -not $limited.elevated -and $limited.session -eq $self.session -and $limited.integrityRid -eq 8192) 'limited-context-mismatch' }
   Test-ContextFindingContracts
   Test-ContextRawEvidence
+  Test-ContextCleanupContracts
+  Test-ContextCleanupFailures
+  Test-ContextCleanupDiagnosticContract
+  Test-ContextCleanupNative
   Test-ContextRegistryTransactions
   Test-ContextProtectedTransactions
 }
