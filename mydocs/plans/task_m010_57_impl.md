@@ -3,7 +3,30 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: Stage 5.4 진단 보완·로컬 회귀 완료 — 후보 게시·fast 실행 승인 대기
+상태: Stage 5.4 후보 게시·fast 실행 시작 — run 34272745938 결과 대기
+
+### Stage 5.4 승인된 후보 게시·fast 실행
+
+2026-09-09 같은 스레드의 “진행해줘”로 후보 게시와 fast 1회 실행을 승인받았다.
+clean 작업 트리·승인 후보 HEAD와 원격 이전 후보 `7083ccf`의 조상 관계를 확인했다.
+실행 전 ci.yml의 이 ref에는 완료된 run만 있었으며 진행중 fast를 취소하지 않았다.
+`publish/task57`에 non-force push 후 exact 원격 SHA를 재조회하고 한 번 dispatch했다.
+
+| 항목 | 실행 기록 |
+|---|---|
+| 후보 / 실제 run head SHA | `6b3d9baa6b0129c9c0ba7a8ce0ca06caa59be88f` |
+| ref / workflow | `publish/task57` / `.github/workflows/ci.yml` |
+| Run | [34272745938](https://github.com/postmelee/alhangeul-tauri/actions/runs/34272745938), attempt 1, workflow_dispatch |
+| 생성 시각 | 2026-09-09 05:05:24 KST (`2026-09-08T20:05:24Z`) |
+| 전송 입력 | `profile=fast`, `scope=full`, `thumbnail_context_experiment=false` |
+| 최초 job 조회 | select `102218165017` success, Windows PS `102218226593` in_progress, Node/Studio `102218226770` queued |
+
+입력은 성공한 dispatch 명령의 전송값이며 API의 전체 입력 객체 재조회가 아니다.
+artifacts와 Windows PDF cleanup은 skipped다. `scope=full`은 일반 profile 경로 선택이며
+제품 전체 검증인 `profile=full`이 아니다. 실제 설치·임시 registry/COM 비교·릴리즈는
+실행하지 않았다. 완료 뒤 Windows PS 순수 회귀와 Node/Studio 결과를 대조한다.
+이 기록은 실행 후보와 별도 로컬 문서 커밋으로 보존하며 추가 push·dispatch는 하지 않는다.
+현재 fast 성공·Stage 5.4 전체 수용·NSIS 해결은 선언하지 않는다. 아래 대기 표현은 당시 이력이다.
 
 2026-09-09 같은 스레드의 “진행해줘”로 Stage 5.4의 CI 전용 진단 보완·회귀·로컬 검증·
 후보 커밋을 승인받았다. 기존 #57 worktree와 계획을 이어가며 원격 게시/실행과 제품 변경은 제외한다.
