@@ -1,4 +1,5 @@
-import { mkdir, stat, unlink } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { mkdir, readFile, stat, unlink, writeFile } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 import { browser, $, expect } from '@wdio/globals';
 import { analyzePdf } from '../linux/pdf-analysis.mjs';
@@ -91,6 +92,46 @@ describe('Alhangeul native Linux acceptance', () => {
       );
       return [
         await describeEvidenceFile(inputs.outputDir, pdfPath, 'generated-document'),
+        ...await describeRenderEvidence(analysis.renderPaths),
+      ];
+    });
+  });
+
+  it('HWPX 직접 PDF는 10쪽 A4, 한글 text와 원본을 보존한다', async () => {
+    const fixture = fixtureById(fixtures, 'form-hwpx');
+    await runScenario('linux-direct-pdf-hwpx', [fixture], async () => {
+      const pdfPath = join(generatedDir, 'form-direct.pdf');
+      await removeStale(pdfPath);
+      const adapter = nativeAdapter({});
+      await adapter.openDocument(fixture.absolutePath, () => triggerFileCommand('file:open'));
+      await waitForDocument(fixture.absolutePath, 10);
+      const before = await captureStableDocumentState(browser, inputs.timeoutMs);
+      await adapter.saveDocument(
+        'file:print-to-pdf', pdfPath,
+        () => triggerFileCommand('file:print-to-pdf'),
+      );
+      await waitForStudioStatus(browser, /PDF 저장 완료/, inputs.timeoutMs);
+      await waitForFile(pdfPath);
+      const after = await captureDocumentState(browser);
+      const sourceHash = createHash('sha256')
+        .update(await readFile(fixture.absolutePath)).digest('hex');
+      expect(sourceHash).toBe(fixture.sha256);
+      expect(after.title).toBe(before.title);
+      expect(after.page).toEqual(before.page);
+      const analysis = await analyzePdf({
+        pdfPath, outputDir: inputs.outputDir, label: 'direct-pdf-hwpx',
+        expectedPageCount: 10, expectedTitle: '암조직 저산소',
+        // 본문이 있는 고정 10쪽 fixture. 표제 한 줄만 남는 출력은 허용하지 않는다.
+        minTextCounts: Array(10).fill(100),
+      });
+      const statePath = join(generatedDir, 'form-direct-state.json');
+      await writeFile(statePath, JSON.stringify({
+        before, after, sourceSha256Before: fixture.sha256, sourceSha256After: sourceHash,
+      }, null, 2));
+      return [
+        await describeEvidenceFile(inputs.outputDir, pdfPath, 'generated-document'),
+        await describeEvidenceFile(inputs.outputDir, analysis.summaryPath, 'log'),
+        await describeEvidenceFile(inputs.outputDir, statePath, 'log'),
         ...await describeRenderEvidence(analysis.renderPaths),
       ];
     });

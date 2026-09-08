@@ -13,6 +13,11 @@ const desktopPath = join(
 );
 const linuxGuiPath = join(workflowRoot, 'alhangeul-linux-gui.yml');
 const pagesPath = join(workflowRoot, 'pages.yml');
+const platformWorkflow = await readFile(join(workflowRoot, 'alhangeul-artifact-platform.yml'), 'utf8');
+const smokeWorkflow = await readFile(join(workflowRoot, 'alhangeul-windows-smoke.yml'), 'utf8');
+const artifactWorkflow = await readFile(join(workflowRoot, 'alhangeul-artifacts.yml'), 'utf8');
+const fastWorkflow = await readFile(join(workflowRoot, 'alhangeul-ci-fast.yml'), 'utf8');
+const coreWorkflow = await readFile(join(workflowRoot, 'alhangeul-thumbnail-core.yml'), 'utf8');
 const [ciWorkflow, desktopWorkflow, linuxGuiWorkflow, pagesWorkflow] = await Promise.all([
   readFile(ciPath, 'utf8'),
   readFile(desktopPath, 'utf8'),
@@ -25,8 +30,13 @@ test('모든 workflow가 공통 또는 전용 contract test inventory에 등록�
     .filter((name) => /\.ya?ml$/.test(name))
     .sort();
   assert.deepEqual(actual, [
+    'alhangeul-artifact-platform.yml',
+    'alhangeul-artifacts.yml',
+    'alhangeul-ci-fast.yml',
     'alhangeul-desktop.yml',
+    'alhangeul-installer-reuse.yml',
     'alhangeul-linux-gui.yml',
+    'alhangeul-thumbnail-core.yml',
     'alhangeul-updater-linux-window-probe.yml',
     'alhangeul-updater-native-acceptance.yml',
     'alhangeul-updater-native-linux.yml',
@@ -34,6 +44,9 @@ test('모든 workflow가 공통 또는 전용 contract test inventory에 등록�
     'alhangeul-updater-native-negative-linux.yml',
     'alhangeul-updater-native-negative-windows.yml',
     'alhangeul-updater-native-windows.yml',
+    'alhangeul-windows-dialog.yml',
+    'alhangeul-windows-pdf.yml',
+    'alhangeul-windows-smoke.yml',
     'ci.yml',
     'pages.yml',
     'rhwp-upstream-sync.yml',
@@ -63,8 +76,8 @@ test('대상 workflow는 수동 trigger와 최소 권한만 사용한다', () =>
     }
   }
 
-  assert.doesNotMatch(getJob(desktopWorkflow, 'build'), /secrets\./i);
-  assert.doesNotMatch(getJob(desktopWorkflow, 'windows-installer-smoke'), /secrets\./i);
+  assert.doesNotMatch(getJob(platformWorkflow, 'build'), /secrets\./i);
+  assert.doesNotMatch(getJob(smokeWorkflow, 'windows-installer-smoke'), /secrets\./i);
 
   assert.deepEqual(
     getSectionChildKeys(linuxGuiWorkflow, 'on'),
@@ -183,60 +196,85 @@ test('CI workflow는 제품·release 계약과 automation을 native 검사 전�
   ]);
 });
 
-test('ordinary artifact matrix는 all 기본값과 Windows-only 선택을 분리한다', () => {
-  const job = getJob(desktopWorkflow, 'build');
-  const choices = [...job.matchAll(/'(\[[^\n]+?\])'/g)].map((match) => JSON.parse(match[1]));
-  const expected = [
-    { name: 'windows-x64', os: 'windows-2025', target: 'x86_64-pc-windows-msvc', bundle_args: '' },
-    { name: 'linux-x64', os: 'ubuntu-22.04', target: 'x86_64-unknown-linux-gnu', bundle_args: '' },
-    { name: 'linux-arm64', os: 'ubuntu-22.04-arm', target: 'aarch64-unknown-linux-gnu', bundle_args: '--bundles deb' },
-  ];
-  assert.deepEqual(choices, [[expected[0]], expected]);
-  assert.match(job, /fromJSON\(inputs.artifact_platform == 'windows-x64' &&/);
-  assert.match(desktopWorkflow, /artifact_platform:\n[\s\S]*?default: all\n\s+type: choice\n\s+options:\n\s+- all\n\s+- windows-x64/);
-  assert.doesNotMatch(getJob(desktopWorkflow, 'build-updater'), /artifact_platform/);
-  assert.doesNotMatch(getJob(desktopWorkflow, 'build-updater-acceptance'), /artifact_platform/);
+test('Windows PDF cleanup 선택은 실제 junction test만 검증하며 제품을 패키징하지 않는다', () => {
+  const full = getJob(ciWorkflow, 'unit-tests');
+  const focused = getJob(ciWorkflow, 'pdf-cleanup-windows');
+  assert.match(ciWorkflow, /default: full/);
+  assert.match(full, /needs\.select\.outputs\.profile == 'native'/);
+  assert.match(getJob(ciWorkflow, 'select'), /inputs\.scope != 'pdf-cleanup-windows'/);
+  assert.match(focused, /inputs\.scope == 'pdf-cleanup-windows'/);
+  assert.match(focused, /runs-on: windows-2025/);
+  assert.match(focused, /--lib pdf_temp_cleanup::tests -- --nocapture/);
+  assert.match(focused, /grep -F 'windows_junctions_are_preserved_without_touching_target \.\.\. ok'/);
+  assert.match(focused, /git rev-parse HEAD > pdf-cleanup-context\.txt/);
+  assert.match(focused, /if: \$\{\{ always\(\) \}\}/);
+  assert.doesNotMatch(focused, /build:desktop|build:thumbnail|test:gui|tauri build|secrets\./);
+});
+
+test('cleanup test의 resource 예외는 test step에만 한정하고 배포 resource를 보존한다', async () => {
+  const step = getStepContaining(ciWorkflow, 'Test actual Windows PDF cleanup');
+  const override = step.match(/^          TAURI_CONFIG: '([^']+)'$/m);
+  assert.ok(override, 'test step env의 명시적인 JSON override가 필요합니다');
+  assert.match(step, /^        env:$/m);
+  assert.deepEqual(JSON.parse(override[1]), { bundle: { resources: [] } });
+  assert.doesNotMatch(ciWorkflow.replace(step, ''), /TAURI_CONFIG/);
+  assert.doesNotMatch(step, /GITHUB_ENV|GITHUB_OUTPUT|continue-on-error/);
+  const focused = getJob(ciWorkflow, 'pdf-cleanup-windows');
+  assert.doesNotMatch(focused, /thumbnail-resources|AlhangeulThumbnail(?:Handler|Worker)/);
+  const config = JSON.parse(await readFile(
+    join(repoRoot, 'apps/desktop/src-tauri/tauri.windows.conf.json'), 'utf8',
+  ));
+  assert.deepEqual(config.bundle.resources, {
+    'windows/thumbnail-resources/AlhangeulThumbnailHandler.dll': 'AlhangeulThumbnailHandler.dll',
+    'windows/thumbnail-resources/AlhangeulThumbnailWorker.exe': 'AlhangeulThumbnailWorker.exe',
+  });
+});
+
+test('native matrix consumes the selector contract and keeps Windows independent', () => {
+  assert.match(platformWorkflow, /matrix: \$\{\{ fromJSON\(inputs.matrix\) \}\}/);
+  assert.match(artifactWorkflow, /matrix: \$\{\{ needs.plan.outputs.windows_matrix \}\}/);
+  assert.match(artifactWorkflow, /matrix: \$\{\{ needs.plan.outputs.linux_matrix \}\}/);
+  for (const job of ['windows', 'linux']) assert.match(getJob(artifactWorkflow, job), /needs: \[plan, fast\]/);
 });
 
 test('desktop workflow는 checkout 전에 Git LF byte를 command scope로 고정한다', () => {
-  const environment = getSectionAssignments(desktopWorkflow, 'env');
+  const environment = getSectionAssignments(platformWorkflow, 'env');
 
   assert.equal(environment.get('GIT_CONFIG_COUNT'), '"1"');
   assert.equal(environment.get('GIT_CONFIG_KEY_0'), 'core.autocrlf');
   assert.equal(environment.get('GIT_CONFIG_VALUE_0'), '"false"');
   assert.ok(
-    desktopWorkflow.indexOf('GIT_CONFIG_COUNT:') <
-      desktopWorkflow.indexOf('- name: Checkout'),
+    platformWorkflow.indexOf('GIT_CONFIG_COUNT:') <
+      platformWorkflow.indexOf('- name: Checkout'),
   );
 });
 
 test('Windows thumbnail core probe는 exact checkout에서 진단을 항상 보존한다', () => {
-  assertOrdered(desktopWorkflow, [
+  assertOrdered(coreWorkflow, [
     '- name: Prepare Windows thumbnail core diagnostics',
     '- name: Build Windows thumbnail core probe',
     '- name: Run Windows thumbnail core probe',
     '- name: Record Windows thumbnail core probe outcome',
     '- name: Upload Windows thumbnail core diagnostics',
     '- name: Require Windows thumbnail core probe success',
-    '- name: Install dependencies',
   ]);
 
   const buildStep = getStepContaining(
-    desktopWorkflow,
+    coreWorkflow,
     'cargo build --manifest-path third_party/rhwp/Cargo.toml',
   );
   const probeStep = getStepContaining(
-    desktopWorkflow,
+    coreWorkflow,
     'benchmark-thumbnail-core.ps1',
   );
-  const contextStep = getStepContaining(desktopWorkflow, 'workflow-context.json');
-  const outcomeStep = getStepContaining(desktopWorkflow, 'step-outcomes.json');
+  const contextStep = getStepContaining(coreWorkflow, 'workflow-context.json');
+  const outcomeStep = getStepContaining(coreWorkflow, 'step-outcomes.json');
   const uploadStep = getStepContaining(
-    desktopWorkflow,
+    coreWorkflow,
     'alhangeul-windows-x64-thumbnail-core',
   );
   const gateStep = getStepContaining(
-    desktopWorkflow,
+    coreWorkflow,
     'Windows thumbnail core probe gate failed',
   );
 
@@ -274,29 +312,28 @@ test('Windows thumbnail core probe는 exact checkout에서 진단을 항상 보�
 });
 
 test('Linux thumbnail core probe는 x64 arm64 resource 증거를 각각 보존한다', () => {
-  assertOrdered(desktopWorkflow, [
+  assertOrdered(coreWorkflow, [
     '- name: Prepare Linux thumbnail core diagnostics',
     '- name: Run Linux thumbnail core probe',
     '- name: Record Linux thumbnail core probe outcome',
     '- name: Upload Linux thumbnail core diagnostics',
     '- name: Require Linux thumbnail core probe success',
-    '- name: Install dependencies',
   ]);
-  const installStep = getStepContaining(desktopWorkflow, 'Install Linux dependencies');
+  const installStep = getStepContaining(coreWorkflow, 'Install Linux dependencies');
   const probeStep = getStepContaining(
-    desktopWorkflow,
+    coreWorkflow,
     './scripts/benchmark-linux-thumbnail-core.sh',
   );
   const outcomeStep = getStepContaining(
-    desktopWorkflow,
+    coreWorkflow,
     'Record Linux thumbnail core probe outcome',
   );
   const uploadStep = getStepContaining(
-    desktopWorkflow,
+    coreWorkflow,
     'alhangeul-${{ matrix.name }}-thumbnail-core',
   );
   const gateStep = getStepContaining(
-    desktopWorkflow,
+    coreWorkflow,
     'Require Linux thumbnail core probe success',
   );
   for (const dependency of ['time', 'zip']) {
@@ -326,14 +363,14 @@ test('Linux thumbnail core probe는 x64 arm64 resource 증거를 각각 보존�
 });
 
 test('Linux package lifecycle은 build 산출물을 검사하고 evidence를 always gate한다', () => {
-  const install = getStepContaining(desktopWorkflow, 'Install Linux dependencies');
+  const install = getStepContaining(platformWorkflow, 'Install Linux dependencies');
   for (const dependency of ['rpm', 'xdg-utils', 'shared-mime-info']) {
     assert.match(install, new RegExp(`^            ${dependency}(?: \\\\)?$`, 'm'));
   }
-  const smoke = getStepContaining(desktopWorkflow, 'Run Linux thumbnail package lifecycle');
-  const record = getStepContaining(desktopWorkflow, 'Record Linux thumbnail package outcome');
-  const upload = getStepContaining(desktopWorkflow, 'Upload Linux thumbnail package evidence');
-  const gate = getStepContaining(desktopWorkflow, 'Require Linux thumbnail package success');
+  const smoke = getStepContaining(platformWorkflow, 'Run Linux thumbnail package lifecycle');
+  const record = getStepContaining(platformWorkflow, 'Record Linux thumbnail package outcome');
+  const upload = getStepContaining(platformWorkflow, 'Upload Linux thumbnail package evidence');
+  const gate = getStepContaining(platformWorkflow, 'Require Linux thumbnail package success');
   assert.match(smoke, /^        id: linux-thumbnail-package-smoke$/m);
   assert.match(smoke, /^        continue-on-error: true$/m);
   assert.match(smoke, /^        timeout-minutes: 15$/m);
@@ -351,27 +388,27 @@ test('Linux package lifecycle은 build 산출물을 검사하고 evidence를 alw
 
 test('desktop workflow는 checkout commit을 검증하고 pretest를 순서대로 실행한다', () => {
   assert.match(
-    desktopWorkflow,
+    platformWorkflow,
     /ref: \$\{\{ inputs\.build_ref \|\| github\.sha \}\}/,
   );
   assert.match(
-    desktopWorkflow,
+    platformWorkflow,
     /EXPECTED_BUILD_REF: \$\{\{ inputs\.build_ref \|\| github\.sha \}\}/,
   );
   assert.match(
-    desktopWorkflow,
+    platformWorkflow,
     /expected_sha="\$\(git rev-parse "\$\{EXPECTED_BUILD_REF\}\^\{commit\}"\)"/,
   );
-  assert.match(desktopWorkflow, /actual_sha="\$\(git rev-parse HEAD\)"/);
+  assert.match(platformWorkflow, /actual_sha="\$\(git rev-parse HEAD\)"/);
 
-  assertOrdered(desktopWorkflow, [
-    'pnpm run check:product-boundary',
-    'pnpm run check:product-version',
-    'pnpm run check:release-metadata',
-    'pnpm run check:rhwp-pin',
-    'pnpm run test:automation',
-    'pnpm run test:upstream',
-    'pnpm run test:studio',
+  assertOrdered(fastWorkflow, [
+    'pnpm run check:product-boundary', 'pnpm run check:product-version',
+    'pnpm run check:release-metadata', 'pnpm run check:rhwp-pin',
+    'pnpm run test:automation', 'pnpm run test:upstream', 'pnpm run test:studio',
+  ]);
+  assert.match(getJob(artifactWorkflow, 'windows'), /needs: \[plan, fast\]/);
+  assert.match(getJob(artifactWorkflow, 'linux'), /needs: \[plan, fast\]/);
+  assertOrdered(platformWorkflow, [
     'pnpm run test:document-preview',
     'pnpm run clippy:document-preview',
     'pnpm run clippy:document-preview:protocol',
@@ -386,25 +423,18 @@ test('desktop workflow는 checkout commit을 검증하고 pretest를 순서대�
   ]);
 
   for (const command of [
-    'pnpm run check:product-boundary',
-    'pnpm run check:product-version',
-    'pnpm run check:release-metadata',
-    'pnpm run check:rhwp-pin',
-    'pnpm run test:automation',
-    'pnpm run test:upstream',
-    'pnpm run test:studio',
     'pnpm run test:document-preview',
     'pnpm run clippy:document-preview',
     'pnpm run clippy:document-preview:protocol',
     'pnpm run test:desktop',
     'pnpm run clippy:desktop',
   ]) {
-    const step = getStepContaining(desktopWorkflow, command);
+    const step = getStepContaining(platformWorkflow, command);
     assert.match(step, /^\s{8}if: inputs\.run_tests$/m);
   }
 
   const thumbnailBuild = getStepContaining(
-    desktopWorkflow,
+    platformWorkflow,
     'pnpm run build:thumbnail-binaries',
   );
   assert.match(thumbnailBuild, /^\s{8}if: matrix\.name == 'windows-x64'$/m);
@@ -415,7 +445,7 @@ test('desktop workflow는 checkout commit을 검증하고 pretest를 순서대�
     'pnpm run clippy:thumbnail-worker:windows',
     'pnpm run clippy:thumbnail-handler:windows',
   ]) {
-    const step = getStepContaining(desktopWorkflow, command);
+    const step = getStepContaining(platformWorkflow, command);
     assert.match(
       step,
       /^\s{8}if: inputs\.run_tests && matrix\.name == 'windows-x64'$/m,
@@ -424,73 +454,57 @@ test('desktop workflow는 checkout commit을 검증하고 pretest를 순서대�
 });
 
 test('desktop workflow는 build 뒤 bundle을 검증하고 inventory와 함께 올린다', () => {
-  assertOrdered(desktopWorkflow, [
+  assertOrdered(platformWorkflow, [
     '- name: Build Tauri bundles',
     '- name: Stage Windows thumbnail verification copies',
     '- name: Verify bundle artifact',
     '- name: Upload bundle artifact',
   ]);
   assert.match(
-    desktopWorkflow,
+    platformWorkflow,
     /run: pnpm tauri build --verbose --target "\$\{\{ matrix\.target \}\}" \$\{\{ matrix\.bundle_args \}\}/,
   );
   assert.match(
-    desktopWorkflow,
+    platformWorkflow,
     /BUNDLE_ROOT: apps\/desktop\/src-tauri\/target\/\$\{\{ matrix\.target \}\}\/release\/bundle/,
   );
   const thumbnailCopies = getStepContaining(
-    desktopWorkflow,
+    platformWorkflow,
     'Stage Windows thumbnail verification copies',
   );
   assert.match(thumbnailCopies, /^\s{8}if: matrix\.name == 'windows-x64'$/m);
   assert.match(thumbnailCopies, /verification\/AlhangeulThumbnailHandler\.dll/);
   assert.match(thumbnailCopies, /verification\/AlhangeulThumbnailWorker\.exe/);
   assert.match(
-    desktopWorkflow,
+    platformWorkflow,
     /--platform "\$\{\{ matrix\.name \}\}"/,
   );
-  assert.match(desktopWorkflow, /--root "\$BUNDLE_ROOT"/);
+  assert.match(platformWorkflow, /--root "\$BUNDLE_ROOT"/);
   assert.match(
-    desktopWorkflow,
+    platformWorkflow,
     /--write-inventory "\$BUNDLE_ROOT\/alhangeul-artifact-inventory\.json"/,
   );
   assert.match(
-    desktopWorkflow,
+    platformWorkflow,
     /path: apps\/desktop\/src-tauri\/target\/\$\{\{ matrix\.target \}\}\/release\/bundle\/\*\*/,
   );
-  assert.match(desktopWorkflow, /^\s{10}if-no-files-found: error$/m);
-  assert.match(desktopWorkflow, /^\s{10}retention-days: 14$/m);
+  assert.match(platformWorkflow, /^\s{10}if-no-files-found: error$/m);
+  assert.match(platformWorkflow, /^\s{10}retention-days: 14$/m);
 });
 
-test('fresh Windows installer smoke job은 build 결과와 무관하게 artifact를 소비한다', () => {
-  const job = getJob(desktopWorkflow, 'windows-installer-smoke');
-
-  assert.match(job, /^    needs: build$/m);
-  assert.match(job, /^    if: \$\{\{ inputs\.mode == 'artifact' && !cancelled\(\) \}\}$/m);
-  assert.doesNotMatch(
-    job,
-    /^    if: \$\{\{ always\(\) \}\}$/m,
-    'job 조건은 취소된 workflow까지 계속 실행하지 않아야 합니다.',
-  );
-  assert.match(job, /^    runs-on: windows-2025$/m);
-  assert.match(job, /^    strategy:/m);
-  assert.match(job, /^      fail-fast: false$/m);
-  assert.match(job, /^        include:$/m);
-  for (const name of ['nsis', 'msi', 'msi-forced-reinstall']) assert.ok(job.includes('- name: ' + name));
-  assertOrdered(job, [
-    '- name: Checkout installer smoke source',
-    '- name: Prepare installer smoke diagnostics',
-    '- name: Verify installer smoke commit',
-    '- name: Download Windows x64 bundle',
-    '- name: Run Windows installer smoke',
-    '- name: Record installer smoke outcome',
-    '- name: Upload installer smoke diagnostics',
-    '- name: Require Windows installer smoke success',
-  ]);
+test('fresh Windows smoke consumes only its successful Windows producer', () => {
+  const caller = getJob(artifactWorkflow, 'smoke');
+  assert.match(caller, /needs: \[plan, windows\]/);
+  assert.doesNotMatch(caller, /needs:.*linux|needs:.*core/);
+  assert.match(caller, /artifact_id: \$\{\{ needs.windows.outputs.artifact_id \}\}/);
+  const job = getJob(smokeWorkflow, 'windows-installer-smoke');
+  assert.match(job, /runs-on: windows-2025/);
+  assert.match(job, /artifact-ids: \$\{\{ inputs.artifact_id \}\}/);
+  assert.doesNotMatch(job, /cargo |tauri build/);
 });
 
 test('installer smoke job은 exact ref와 Windows x64 artifact를 고정한다', () => {
-  const job = getJob(desktopWorkflow, 'windows-installer-smoke');
+  const job = getJob(smokeWorkflow, 'windows-installer-smoke');
 
   assert.match(
     job,
@@ -510,13 +524,14 @@ test('installer smoke job은 exact ref와 Windows x64 artifact를 고정한다',
   );
   assert.match(job, /\[string\]::IsNullOrWhiteSpace\(\$expectedSha\)/);
   assert.match(job, /\[string\]::IsNullOrWhiteSpace\(\$actualSha\)/);
-  assert.match(job, /uses: actions\/download-artifact@v8/);
-  assert.match(job, /name: alhangeul-desktop-windows-x64$/m);
+  assert.match(job, /uses: actions\/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c/);
+  assert.match(job, /artifact-ids: \$\{\{ inputs.artifact_id \}\}/);
+  assert.match(job, /digest-mismatch: error/);
   assert.match(job, /path: artifacts\/windows-x64$/m);
 });
 
-test('installer smoke는 root version과 installer를 PowerShell script에 전달한다', () => {
-  const job = getJob(desktopWorkflow, 'windows-installer-smoke');
+test('installer smoke는 root version과 세 입력을 PowerShell script에 전달한다', () => {
+  const job = getJob(smokeWorkflow, 'windows-installer-smoke');
   const step = getStepContaining(job, 'windows-installer-smoke.ps1');
 
   assert.match(step, /^\s{8}id: run-installer-smoke$/m);
@@ -534,7 +549,7 @@ test('installer smoke는 root version과 installer를 PowerShell script에 전�
 });
 
 test('installer smoke 진단은 항상 보존되고 마지막 gate가 실패를 전달한다', () => {
-  const job = getJob(desktopWorkflow, 'windows-installer-smoke');
+  const job = getJob(smokeWorkflow, 'windows-installer-smoke');
   const prepareStep = getStepContaining(job, 'workflow-context.json');
   const recordStep = getStepContaining(job, 'step-outcomes.json');
   const uploadStep = getStepContaining(
@@ -590,8 +605,8 @@ test('일반 build와 CI에는 release, Pages, deploy action이 없다', () => {
 
   for (const [name, source] of [
     ['ci.yml', ciWorkflow],
-    ['alhangeul-desktop.yml build', getJob(desktopWorkflow, 'build')],
-    ['alhangeul-desktop.yml smoke', getJob(desktopWorkflow, 'windows-installer-smoke')],
+    ['alhangeul-desktop.yml build', getJob(platformWorkflow, 'build')],
+    ['alhangeul-desktop.yml smoke', getJob(smokeWorkflow, 'windows-installer-smoke')],
     ['alhangeul-desktop.yml updater build', getJob(desktopWorkflow, 'build-updater')],
     ['alhangeul-desktop.yml acceptance build', getJob(desktopWorkflow, 'build-updater-acceptance')],
     ['alhangeul-desktop.yml acceptance verify', getJob(desktopWorkflow, 'verify-updater-acceptance')],
@@ -631,7 +646,7 @@ test('updater build는 Windows/Linux x64와 tracked config·서명 inventory만 
   assert.match(job, /name: linux-x64[\s\S]*target: x86_64-unknown-linux-gnu[\s\S]*bundles: appimage/);
   assert.doesNotMatch(job, /linux-arm64|aarch64|--bundles deb/);
   assert.match(job, /^    environment: release$/m);
-  assert.doesNotMatch(getJob(desktopWorkflow, 'build'), /^    environment: release$/m);
+  assert.doesNotMatch(getJob(platformWorkflow, 'build'), /^    environment: release$/m);
   assertOrdered(job, [
     '- name: Validate exact updater inputs',
     '- name: Checkout exact updater source',

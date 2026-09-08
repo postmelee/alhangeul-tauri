@@ -6,7 +6,7 @@ const read = (path) => readFile(new URL('../' + path, import.meta.url), 'utf8');
 const [assessment, reboot, nativeTests, smoke, fixtures, workflow, packageText] = await Promise.all([
   'scripts/windows-thumbnail-assessment.ps1', 'scripts/windows-installer-reboot.ps1',
   'scripts/windows-thumbnail-assessment-tests.ps1', 'scripts/windows-installer-smoke.ps1',
-  'scripts/windows-thumbnail-fixtures.ps1', '.github/workflows/alhangeul-desktop.yml', 'package.json',
+  'scripts/windows-thumbnail-fixtures.ps1', '.github/workflows/alhangeul-windows-smoke.yml', 'package.json',
 ].map(read));
 
 test('새 helper는 BOM·파일 300줄·함수 50줄·입력 5개 경계를 지킨다', () => {
@@ -74,14 +74,14 @@ test('일반 재설치와 강제 교체는 명시적인 scenario와 별도 VM이
   assert.match(smoke, /\$Scenario -ne 'forced-reinstall' -or \$InstallerKind -eq 'msi'/);
   assert.match(smoke, /'REINSTALLMODE=amus'.*'REINSTALLMODE=omus'/);
   assert.match(smoke, /pre-reboot-observation/);
-  const job = workflow.slice(workflow.indexOf('  windows-installer-smoke:'), workflow.indexOf('  build-updater:'));
+  const job = workflow.slice(workflow.indexOf('  windows-installer-smoke:'), workflow.length);
   for (const artifact of ['nsis-installer-smoke', 'msi-installer-smoke', 'msi-forced-reinstall']) assert.ok(job.includes('artifact: ' + artifact));
   assert.equal((job.match(/            scenario:/g) ?? []).length, 3);
   assert.match(job, /-Scenario \$env:INSTALLER_SCENARIO/);
 });
 
 test('진단 gate 성공으로 제품 실패 gate를 무시하지 않는다', () => {
-  const job = workflow.slice(workflow.indexOf('  windows-installer-smoke:'), workflow.indexOf('  build-updater:'));
+  const job = workflow.slice(workflow.indexOf('  windows-installer-smoke:'), workflow.length);
   assert.equal((job.match(/continue-on-error: true/g) ?? []).length, 1);
   assert.match(job, /id: diagnostic-contract/);
   assert.match(job, /smoke = \$env:SMOKE_OUTCOME/);

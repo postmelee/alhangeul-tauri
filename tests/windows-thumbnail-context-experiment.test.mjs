@@ -8,7 +8,8 @@ const files = ['experiment', 'registry', 'files', 'phase', 'process', 'evidence'
 const sources = Object.fromEntries(await Promise.all(files.map(async (name) => [name, await read(`scripts/windows-thumbnail-context-${name}.ps1`)])));
 const native = await read('scripts/windows-thumbnail-context.cs');
 const workflow = await read('.github/workflows/alhangeul-desktop.yml');
-const job = workflow.split('  windows-thumbnail-context:\n')[1].split('  windows-installer-smoke:\n')[0];
+const smokeWorkflow = await read('.github/workflows/alhangeul-windows-smoke.yml');
+const job = smokeWorkflow.split('  windows-thumbnail-context:\n')[1].split('  windows-installer-smoke:\n')[0];
 
 test('context experiment is an explicit disposable hosted-only opt-in, never user support', () => {
   for (const required of ['CIConsent', 'github-hosted', 'ALHANGEUL_CONTEXT_EXPERIMENT', 'requires-elevated-ci', 'source-workflow-mismatch']) assert.ok(sources.experiment.includes(required));
@@ -19,7 +20,10 @@ test('context experiment is an explicit disposable hosted-only opt-in, never use
 
 test('opt-in job requires Windows artifact tests and prohibits release publishing', () => {
   assert.match(workflow, /thumbnail_context_experiment:\s+description:[^\n]+\s+required: false\s+default: false\s+type: boolean/);
-  for (const required of ["inputs.mode == 'artifact'", "inputs.artifact_platform == 'windows-x64'", 'inputs.run_tests', '!inputs.publish_release', "needs.build.result == 'success'", 'replica: [1, 2]', 'timeout-minutes: 30']) assert.ok(job.includes(required));
+  for (const required of ['inputs.thumbnail_context_experiment', 'replica: [1, 2]', 'timeout-minutes: 30']) assert.ok(job.includes(required));
+  for (const guard of ["inputs.artifact_platform == 'windows-x64'", "inputs.validation_profile == 'full'", 'inputs.run_tests', '!inputs.publish_release']) assert.ok(workflow.includes(guard));
+  assert.match(job, /artifact-ids: \$\{\{ inputs.artifact_id \}\}/);
+  assert.match(job, /digest-mismatch: error/);
   assert.match(job, /GITHUB_WORKFLOW_SHA/);
   assert.match(job, /windows-thumbnail-context-tests.ps1 -CIConsent/);
   assert.match(job, /actions\/upload-artifact@v7/);

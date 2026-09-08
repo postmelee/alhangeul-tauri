@@ -2,13 +2,46 @@ name: Alhangeul CI
 
 on:
   workflow_dispatch:
+    inputs:
+      scope:
+        description: Full CI or focused Windows PDF cleanup tests (no installer build).
+        type: choice
+        default: full
+        options:
+          - full
+          - pdf-cleanup-windows
+
+      profile:
+        description: Select validation scope; auto uses an exact base SHA and falls back to full.
+        type: choice
+        default: native
+        options: [auto, fast, native, installer, windows-package, linux-package, full]
+      thumbnail_context_experiment:
+        description: Separately approved disposable Windows context experiment (package/full only).
+        type: boolean
+        default: false
+      base_sha:
+        description: Auto profile only - exact comparison SHA; missing/unavailable means full.
+        type: string
+      product_sha:
+        description: Installer profile only - exact product commit.
+        type: string
+      product_run_id:
+        description: Installer profile only - successful producer run.
+        type: string
+      artifact_id:
+        description: Installer profile only - exact approved archive ID.
+        type: string
+      artifact_digest:
+        description: Installer profile only - sha256-prefixed approved archive digest.
+        type: string
 
 permissions:
   contents: read
 
 concurrency:
-  group: alhangeul-ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: alhangeul-ci-${{ github.ref }}-${{ inputs.profile }}-${{ inputs.scope }}
+  cancel-in-progress: ${{ inputs.profile == 'fast' && inputs.scope != 'pdf-cleanup-windows' }}
 
 env:
   CARGO_TERM_COLOR: always
@@ -16,8 +49,51 @@ env:
   NODE_VERSION: "24"
 
 jobs:
+  select:
+    if: ${{ inputs.scope != 'pdf-cleanup-windows' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      profile: ${{ steps.select.outputs.profile }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          submodules: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          package-manager-cache: false
+      - name: Fetch only the requested comparison commit
+        if: ${{ inputs.profile == 'auto' }}
+        shell: bash
+        env:
+          BASE_SHA: ${{ inputs.base_sha }}
+        run: |
+          if [[ "$BASE_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            git fetch --no-tags --depth=1 origin "$BASE_SHA" || echo 'Comparison unavailable; selector will use full.'
+          fi
+      - id: select
+        env:
+          VALIDATION_PROFILE: ${{ inputs.profile }}
+          BASE_SHA: ${{ inputs.base_sha }}
+          PRODUCT_SHA: ${{ inputs.product_sha }}
+          PRODUCT_RUN_ID: ${{ inputs.product_run_id }}
+          PRODUCT_ARTIFACT_ID: ${{ inputs.artifact_id }}
+          PRODUCT_ARTIFACT_DIGEST: ${{ inputs.artifact_digest }}
+        run: node scripts/ci/select.mjs
+  fast:
+    needs: select
+    if: ${{ contains(fromJSON('["fast","native","installer"]'), needs.select.outputs.profile) }}
+    uses: ./.github/workflows/alhangeul-ci-fast.yml
+    with:
+      source_ref: ${{ github.sha }}
+
   unit-tests:
     name: Unit tests
+    needs: [select, fast]
+    if: ${{ needs.select.outputs.profile == 'native' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
@@ -78,16 +154,12 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Cache cargo
-        uses: actions/cache@v5
+      - name: Cache Cargo workload
+        uses: ./.github/actions/cargo-cache
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            apps/desktop/src-tauri/target
-          key: unit-tests-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            unit-tests-cargo-
+          scope: unit
+          target: x86_64-unknown-linux-gnu
+          paths: apps/desktop/src-tauri/target
 
       - name: Install Node dependencies
         run: pnpm install --frozen-lockfile
@@ -133,3 +205,90 @@ jobs:
 
       - name: Lint desktop Rust
         run: pnpm run clippy:desktop
+
+  installer:
+    needs: [select, fast]
+    if: ${{ needs.select.outputs.profile == 'installer' }}
+    permissions:
+      actions: read
+      contents: read
+    uses: ./.github/workflows/alhangeul-installer-reuse.yml
+    with:
+      product_sha: ${{ inputs.product_sha }}
+      product_run_id: ${{ inputs.product_run_id }}
+      artifact_id: ${{ inputs.artifact_id }}
+      artifact_digest: ${{ inputs.artifact_digest }}
+
+  artifacts:
+    needs: select
+    if: ${{ contains(fromJSON('["windows-package","linux-package","full"]'), needs.select.outputs.profile) }}
+    uses: ./.github/workflows/alhangeul-artifacts.yml
+    with:
+      build_ref: ${{ github.sha }}
+      platform: ${{ needs.select.outputs.profile == 'windows-package' && 'windows-x64' || needs.select.outputs.profile == 'linux-package' && 'linux' || 'all' }}
+      profile: full
+      run_tests: true
+      thumbnail_context_experiment: ${{ inputs.thumbnail_context_experiment }}
+
+  pdf-cleanup-windows:
+    if: ${{ inputs.scope == 'pdf-cleanup-windows' }}
+    name: Windows PDF cleanup tests
+    runs-on: windows-2025
+    timeout-minutes: 45
+    env:
+      GIT_CONFIG_COUNT: "1"
+      GIT_CONFIG_KEY_0: core.autocrlf
+      GIT_CONFIG_VALUE_0: "false"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          submodules: true
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Cache Cargo
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            apps/desktop/src-tauri/target
+            third_party/rhwp/target
+          key: desktop-windows-x64-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            desktop-windows-x64-cargo-
+      - name: Prepare desktop test inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          corepack enable
+          pnpm install --frozen-lockfile
+          pnpm run build:studio
+          git rev-parse HEAD > pdf-cleanup-context.txt
+          rustc --version >> pdf-cleanup-context.txt
+          printf 'scope=pdf-cleanup-windows\nrunner=windows-2025\n' >> pdf-cleanup-context.txt
+      - name: Test actual Windows PDF cleanup
+        shell: bash
+        env:
+          # Only this filesystem test binary excludes packaging resources.
+          TAURI_CONFIG: '{"bundle":{"resources":[]}}'
+        run: |
+          set -euo pipefail
+          cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml --locked \
+            --lib pdf_temp_cleanup::tests -- --nocapture 2>&1 | tee pdf-cleanup-tests.txt
+          grep -F 'windows_junctions_are_preserved_without_touching_target ... ok' pdf-cleanup-tests.txt
+      - name: Upload focused cleanup evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: windows-pdf-cleanup-${{ github.run_id }}
+          path: |
+            pdf-cleanup-context.txt
+            pdf-cleanup-tests.txt
+          if-no-files-found: error
+          retention-days: 14

@@ -1,0 +1,196 @@
+name: Alhangeul isolated thumbnail core probes
+
+on:
+  workflow_call:
+    inputs:
+      build_ref:
+        type: string
+        required: true
+      matrix:
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+  GIT_CONFIG_COUNT: "1"
+  GIT_CONFIG_KEY_0: core.autocrlf
+  GIT_CONFIG_VALUE_0: "false"
+
+jobs:
+  core:
+    name: Core ${{ matrix.name }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(inputs.matrix) }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.build_ref }}
+          submodules: true
+      - name: Verify core source
+        shell: bash
+        env:
+          SOURCE_REF: ${{ inputs.build_ref }}
+        run: test "$(git rev-parse HEAD)" = "$SOURCE_REF"
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libssl-dev \
+            pkg-config \
+            time \
+            zip
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          package-manager-cache: false
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Cache isolated core compilation
+        uses: ./.github/actions/cargo-cache
+        with:
+          scope: core
+          target: ${{ matrix.target }}
+          paths: |
+            third_party/rhwp/target
+            apps/desktop/src-tauri/target
+      - name: Prepare Windows thumbnail core diagnostics
+        if: matrix.name == 'windows-x64'
+        shell: powershell
+        run: |
+          $output = Join-Path $env:GITHUB_WORKSPACE 'diagnostics\thumbnail-core'
+          New-Item -ItemType Directory -Path $output -Force | Out-Null
+          [ordered]@{
+            runId = '${{ github.run_id }}'
+            runAttempt = '${{ github.run_attempt }}'
+            repositorySha = (git rev-parse HEAD).Trim()
+          } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $output 'workflow-context.json') -Encoding UTF8
+
+      - name: Build Windows thumbnail core probe
+        id: build-thumbnail-core-probe
+        if: matrix.name == 'windows-x64'
+        continue-on-error: true
+        shell: powershell
+        run: cargo build --manifest-path third_party/rhwp/Cargo.toml --locked --bin rhwp --release
+
+      - name: Run Windows thumbnail core probe
+        id: run-thumbnail-core-probe
+        if: matrix.name == 'windows-x64' && steps.build-thumbnail-core-probe.outcome == 'success'
+        continue-on-error: true
+        shell: powershell
+        run: |
+          & '.\scripts\benchmark-thumbnail-core.ps1' `
+            -RhwpBinary 'third_party\rhwp\target\release\rhwp.exe' `
+            -FixtureRoot 'third_party\rhwp\saved' `
+            -OutputDirectory 'diagnostics\thumbnail-core'
+
+      - name: Record Windows thumbnail core probe outcome
+        if: ${{ always() && matrix.name == 'windows-x64' }}
+        shell: powershell
+        env:
+          BUILD_OUTCOME: ${{ steps.build-thumbnail-core-probe.outcome }}
+          PROBE_OUTCOME: ${{ steps.run-thumbnail-core-probe.outcome }}
+        run: |
+          $output = Join-Path $env:GITHUB_WORKSPACE 'diagnostics\thumbnail-core'
+          New-Item -ItemType Directory -Path $output -Force | Out-Null
+          [ordered]@{
+            build = $env:BUILD_OUTCOME
+            probe = $env:PROBE_OUTCOME
+            repositorySha = (git rev-parse HEAD).Trim()
+          } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $output 'step-outcomes.json') -Encoding UTF8
+
+      - name: Upload Windows thumbnail core diagnostics
+        id: upload-thumbnail-core-diagnostics
+        if: ${{ always() && matrix.name == 'windows-x64' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: alhangeul-windows-x64-thumbnail-core
+          path: diagnostics/thumbnail-core/**
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Require Windows thumbnail core probe success
+        if: ${{ always() && matrix.name == 'windows-x64' }}
+        shell: powershell
+        env:
+          BUILD_OUTCOME: ${{ steps.build-thumbnail-core-probe.outcome }}
+          PROBE_OUTCOME: ${{ steps.run-thumbnail-core-probe.outcome }}
+          UPLOAD_OUTCOME: ${{ steps.upload-thumbnail-core-diagnostics.outcome }}
+        run: |
+          $outcomes = [ordered]@{
+            build = $env:BUILD_OUTCOME
+            probe = $env:PROBE_OUTCOME
+            uploadDiagnostics = $env:UPLOAD_OUTCOME
+          }
+          $failed = @($outcomes.GetEnumerator() | Where-Object { $_.Value -ne 'success' })
+          if ($failed.Count -gt 0) {
+            throw "Windows thumbnail core probe gate failed: $($failed | ConvertTo-Json -Compress)"
+          }
+
+      - name: Prepare Linux thumbnail core diagnostics
+        if: startsWith(matrix.name, 'linux-')
+        shell: bash
+        env:
+          OUTPUT_ROOT: diagnostics/thumbnail-core-${{ matrix.name }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$OUTPUT_ROOT"
+          printf '{"runId":"%s","runAttempt":"%s","repositorySha":"%s","runner":"%s"}\n' \
+            "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$(git rev-parse HEAD)" "${{ matrix.name }}" \
+            > "$OUTPUT_ROOT/workflow-context.json"
+
+      - name: Run Linux thumbnail core probe
+        id: run-linux-thumbnail-core-probe
+        if: startsWith(matrix.name, 'linux-')
+        continue-on-error: true
+        shell: bash
+        env:
+          OUTPUT_ROOT: diagnostics/thumbnail-core-${{ matrix.name }}
+        run: |
+          ./scripts/benchmark-linux-thumbnail-core.sh \
+            "$GITHUB_WORKSPACE" \
+            "$GITHUB_WORKSPACE/third_party/rhwp/saved" \
+            "$OUTPUT_ROOT"
+
+      - name: Record Linux thumbnail core probe outcome
+        if: ${{ always() && startsWith(matrix.name, 'linux-') }}
+        shell: bash
+        env:
+          OUTPUT_ROOT: diagnostics/thumbnail-core-${{ matrix.name }}
+          PROBE_OUTCOME: ${{ steps.run-linux-thumbnail-core-probe.outcome }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$OUTPUT_ROOT"
+          printf '{"probe":"%s","repositorySha":"%s","runner":"%s"}\n' \
+            "$PROBE_OUTCOME" "$(git rev-parse HEAD)" "${{ matrix.name }}" \
+            > "$OUTPUT_ROOT/step-outcomes.json"
+
+      - name: Upload Linux thumbnail core diagnostics
+        id: upload-linux-thumbnail-core-diagnostics
+        if: ${{ always() && startsWith(matrix.name, 'linux-') }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: alhangeul-${{ matrix.name }}-thumbnail-core
+          path: diagnostics/thumbnail-core-${{ matrix.name }}/**
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Require Linux thumbnail core probe success
+        if: ${{ always() && startsWith(matrix.name, 'linux-') }}
+        shell: bash
+        env:
+          PROBE_OUTCOME: ${{ steps.run-linux-thumbnail-core-probe.outcome }}
+          UPLOAD_OUTCOME: ${{ steps.upload-linux-thumbnail-core-diagnostics.outcome }}
+        run: |
+          set -euo pipefail
+          [[ "$PROBE_OUTCOME" == success ]]
+          [[ "$UPLOAD_OUTCOME" == success ]]
+
+

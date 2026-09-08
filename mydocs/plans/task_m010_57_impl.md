@@ -3,7 +3,57 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: Stage 5.1 후보 게시 완료 — Windows 비교 run 34065777777 결과 대기
+상태: PR #66 CI 구조 통합·로컬 검증 완료 — 비교 테스트 결함 보정 승인 대기
+
+## 2026-09-09 CI 통합 구현 정렬
+
+수행계획의 이번 승인 범위에 따라 `origin/devel`을 non-rewrite merge한다. 충돌은
+Desktop entry·package automation 목록·workflow 계약·과거 보드에서 양쪽 책임을 보존한다.
+제품/설치/진단 코드의 기존 #57 변경과 #19/#59 통합분을 유지한다.
+support artifact ID는 platform → artifacts → Windows smoke로 전달하고 다운로드 digest를
+강제한다. 비교 실험 입력은 기본 false이며 실제 registry/native 검사는 fast에 넣지 않는다.
+installer reuse는 세 clean VM에 exact archive를 각각 검증한 뒤 현재 harness로 실행한다.
+재사용용 지원 묶음의 sourceSha는 harness이며 inventory sourceSha는 product로 구분한다.
+기존 manual evidence 계약 및 실제 제품 실패 gate도 보존한다.
+
+이전 run `34065777777`의 비교 job 두 개는 `negative-classification`에서 실패했고
+실제 비교/복원 검사는 skipped다. NSIS 12개 문서 Shell/force 요청 실패, MSI 일반 성공,
+MSI 강제 교체 3010은 기존 분석대로 유지한다. 이 오류를 이번 merge에서 숨기거나 수정하지 않는다.
+fast로 순수 회귀가 먼저 실행되므로 같은 결함은 제품 빌드 전에 드러나야 한다.
+이번 통합 후 fast → (적격 exact artifact가 있을 때 installer) → full 순서의 승인안을 제시한다.
+적격 producer가 없으면 승인된 새 제품 생성이 필요하며, 실패한 생산 run을 재사용 허용으로 바꾸지 않는다.
+
+### 통합 결과와 후속 검증 계획
+
+- `f154b4d638d0b81565907829690fd9c28ee68fa9`의 CI/제품 변경을 보존했다.
+  이번 추가 작업은 앱·lock·rhwp를 수정하지 않았고, 기존 #57 installer/분류기/context
+  테스트 데이터도 그대로다. 새 `tests/windows-thumbnail-fast.test.ps1`은 순수 함수 4개만
+  AST allowlist로 읽어 격리 회귀에서 호출한다. 실제 registry/token 동작은 호출하지 않는다.
+- 두 설치 경로에서 NSIS, MSI 일반, MSI 강제 교체를 fail-fast=false의 독립 runner matrix로
+  보존했다. support는 별도 artifact ID와 digest 검증으로 전달한다. 재사용 시 현재 harness로
+  지원 묶음만 생성하고 product version은 검증된 handoff에서 받으며 원래 inventory를 바꾸지 않는다.
+  이 CI용 묶음을 과거 생산 run의 공식 지원 묶음이라고 부르거나 공개 배포하지 않는다.
+- 새 source-contract 4개는 matrix/책임 분리/support ID 전달/product-harness 구분/fast의
+  native 개입 금지를 검사한다. reuse 결과 집계는 support·manual·진단 검증 실패도 포함한다.
+- 로컬 automation **679 passed, 0 failed, 0 skipped**, upstream **36 passed**,
+  Studio **147 passed**, Studio build·GUI typecheck·boundary **488 files**·전체 actionlint·diff 통과.
+  Studio build의 기존 dynamic import/chunk 크기 경고는 남아 있다.
+  automation 로그는 `/private/tmp/task57-ci-merge-automation.log`에 보존했다.
+- merge 전체를 옛 HEAD와 비교한 staged diff 검사에는 devel에서 유입된 기존 16개 파일의
+  EOF 빈 줄 경고가 있었다. 해당 파일들이 origin/devel과 byte 동일함을 확인하고 임의로
+  정리하지 않았다. 이번 통합 추가분의 `git diff --cached --check origin/devel`은 통과했다.
+- Windows PS 5.1 실행·native/package·full 원격 수용은 **미실행**이다. 알려진
+  `negative-classification` 보정은 별도 승인 후 수행하고 먼저 `ci.yml profile=fast`로 확인한다.
+  이 부분 성공만으로 이번 workflow 통합의 full 수용을 선언하지 않는다.
+- installer 실행 승인 시 exact `product_sha`, `product_run_id`, `artifact_id`,
+  `artifact_digest`를 실제 성공 producer에서 조회·검증해 고정한다. 이전 후보
+  `1cb8b9f6ba9c7f26190600e496720b26d5754675` / run `34065777777` /
+  artifact `9999637150` / `sha256:f91031a1a594053be807a900f556d848abcd8e48032eae8fecb67e7233d7dd8a`는
+  식별 가능한 과거 근거일 뿐, 전체 run failure와 구형 inventory 때문에 재사용 승인 입력이 아니다.
+  latest 대체·실패 gate 완화는 하지 않는다. 적격 producer 확보와 full 실행도 별도로 승인받는다.
+
+이번 merge 기록은 CI 구조 통합의 기록이며 Stage 5 성공 보고/최종 PR/issue close가 아니다.
+아래 과거 실행 절의 Windows-only Desktop 6-job 실행안은 이후 반복 실행에 사용하지 않는다.
 
 승인 근거: 2026-09-06 같은 스레드의 구현계획 승인 요청에 작업지시자가
 “진행해줘”로 Stage 1 진행을 지시했다. Stage 2 원격 게시·실행은 별도 승인 대상으로 유지한다.

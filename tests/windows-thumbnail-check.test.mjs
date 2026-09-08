@@ -79,7 +79,7 @@ test('manual suite exits zero only after assertions and cleanup, preserving expe
   assert.equal((native.match(/Assert-Manual \(\$LASTEXITCODE -eq 2/g) ?? []).length, 2);
 });
 test('Windows regression checks the actual suite process with Actions exit propagation', async () => {
-  const workflow = await read('.github/workflows/alhangeul-desktop.yml');
+  const workflow = await read('.github/workflows/alhangeul-windows-smoke.yml');
   assert.match(workflow, /run: .*windows-thumbnail-check-tests.ps1 -SupportRoot 'artifacts\\thumbnail-support' -VerifyExitCode/);
   assert.match(native, /\[switch\]\$VerifyExitCode/);
   assert.match(native, /if \(\$VerifyExitCode\) \{ Test-ManualProcessExit; exit 0 }/);

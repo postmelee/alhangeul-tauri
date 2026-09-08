@@ -5,6 +5,7 @@
 ## 시작 위치
 
 - 개발·기여: [개발 안내](DEVELOPMENT.md), [upstream 경계](architecture/UPSTREAM.md)
+- native UI·Actions 테스트 작성/진단: [Native UI 테스트 가이드](operations/NATIVE_UI_TESTING.md)
 - 릴리즈 준비: [정책](operations/DESKTOP_RELEASE.md) → [실행 가이드](operations/PUBLIC_RELEASE_RUNBOOK.md) → [최소 체크리스트](operations/RELEASE_CHECKLIST.md)
 - 실제 공개 상태·근거: [릴리즈 기록 인덱스](releases/README.md), [v0.1.0 준비와 인계](releases/v0.1.0.md)
 - 다음 버전 기록 작성: [중앙 기록 템플릿](../mydocs/_templates/release_record.md)
@@ -25,6 +26,7 @@ docs/
     WINDOWS_THUMBNAILS.md    Windows Explorer thumbnail 처리와 등록 경계
   operations/
     DESKTOP_RELEASE.md       지원·서명·승인·검증·복구 정책
+    NATIVE_UI_TESTING.md     대화상자 자동화의 작성·실패 축소·회귀 연결
     PUBLIC_RELEASE_RUNBOOK.md 입력·실행·중단·재개 순서
     RELEASE_CHECKLIST.md     변경 영향별 최소 검증 선택
   releases/

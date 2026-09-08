@@ -49,7 +49,7 @@ test('builder does not overwrite destinations or run packaging on unsupported ho
 });
 
 test('Windows workflow packages support separately after inventory validation', async () => {
-  const src = await readFile(new URL('../.github/workflows/alhangeul-desktop.yml', import.meta.url), 'utf8');
+  const src = await readFile(new URL('../.github/workflows/alhangeul-artifact-platform.yml', import.meta.url), 'utf8') + await readFile(new URL('../.github/workflows/alhangeul-windows-smoke.yml', import.meta.url), 'utf8');
   assert.ok(src.indexOf('name: Verify bundle artifact') < src.indexOf('name: Build Windows thumbnail support package'));
   assert.match(src, /--output thumbnail-support-output/);
   assert.match(src, /name: alhangeul-windows-x64-thumbnail-support/);

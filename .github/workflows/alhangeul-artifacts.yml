@@ -1,0 +1,107 @@
+name: Alhangeul selected artifact validation
+on:
+  workflow_call:
+    inputs:
+      build_ref:
+        type: string
+        required: true
+      platform:
+        type: string
+        default: all
+      profile:
+        type: string
+        default: full
+      run_tests:
+        type: boolean
+        default: true
+      thumbnail_context_experiment:
+        type: boolean
+        default: false
+permissions:
+  contents: read
+jobs:
+  plan:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      source: ${{ steps.plan.outputs.source }}
+      plan: ${{ steps.plan.outputs.plan }}
+      core: ${{ steps.plan.outputs.core }}
+      windows: ${{ steps.plan.outputs.windows }}
+      linux: ${{ steps.plan.outputs.linux }}
+      smoke: ${{ steps.plan.outputs.smoke }}
+      core_matrix: ${{ steps.plan.outputs.coreMatrix }}
+      windows_matrix: ${{ steps.plan.outputs.windowsMatrix }}
+      linux_matrix: ${{ steps.plan.outputs.linuxMatrix }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.build_ref }}
+          submodules: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          package-manager-cache: false
+      - id: plan
+        env:
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
+          ARTIFACT_PLATFORM: ${{ inputs.platform }}
+          VALIDATION_PROFILE: ${{ inputs.profile }}
+          RUN_TESTS: ${{ inputs.run_tests }}
+        run: node scripts/ci/plan-artifacts.mjs
+  fast:
+    needs: plan
+    uses: ./.github/workflows/alhangeul-ci-fast.yml
+    with:
+      source_ref: ${{ needs.plan.outputs.source }}
+  core:
+    needs: [plan, fast]
+    if: ${{ needs.plan.outputs.core == 'true' }}
+    uses: ./.github/workflows/alhangeul-thumbnail-core.yml
+    with:
+      build_ref: ${{ needs.plan.outputs.source }}
+      matrix: ${{ needs.plan.outputs.core_matrix }}
+  windows:
+    needs: [plan, fast]
+    if: ${{ needs.plan.outputs.windows == 'true' }}
+    uses: ./.github/workflows/alhangeul-artifact-platform.yml
+    with:
+      build_ref: ${{ needs.plan.outputs.source }}
+      matrix: ${{ needs.plan.outputs.windows_matrix }}
+      run_tests: ${{ inputs.run_tests }}
+  linux:
+    needs: [plan, fast]
+    if: ${{ needs.plan.outputs.linux == 'true' }}
+    uses: ./.github/workflows/alhangeul-artifact-platform.yml
+    with:
+      build_ref: ${{ needs.plan.outputs.source }}
+      matrix: ${{ needs.plan.outputs.linux_matrix }}
+      run_tests: ${{ inputs.run_tests }}
+  smoke:
+    needs: [plan, windows]
+    if: ${{ needs.plan.outputs.smoke == 'true' }}
+    uses: ./.github/workflows/alhangeul-windows-smoke.yml
+    with:
+      build_ref: ${{ needs.plan.outputs.source }}
+      artifact_id: ${{ needs.windows.outputs.artifact_id }}
+      support_artifact_id: ${{ needs.windows.outputs.support_artifact_id }}
+      thumbnail_context_experiment: ${{ inputs.thumbnail_context_experiment && inputs.run_tests && inputs.profile == 'full' }}
+  result:
+    needs: [plan, fast, core, windows, linux, smoke]
+    if: ${{ always() }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.workflow_sha }}
+          submodules: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          package-manager-cache: false
+      - name: Require every selected gate, never skipped-as-passed
+        env:
+          ARTIFACT_PLAN: ${{ needs.plan.outputs.plan }}
+          JOB_RESULTS: ${{ toJSON(needs) }}
+        run: node scripts/ci/artifact-result.mjs

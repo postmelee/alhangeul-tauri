@@ -64,7 +64,7 @@ async function verifyDirectory(root) {
   validateInventory(JSON.parse(await readFile(join(root, 'alhangeul-artifact-inventory.json'), 'utf8')));
 }
 
-async function buildSupport(inventoryPath, output) {
+async function buildSupport(inventoryPath, output, productVersion) {
   assert(process.platform === 'win32', 'Support packaging requires Windows');
   const inventory = JSON.parse(await readFile(inventoryPath, 'utf8'));
   validateInventory(inventory);
@@ -81,7 +81,7 @@ async function buildSupport(inventoryPath, output) {
     files.push({ path: name, bytes: bytes.length, sha256: digest(bytes) });
     await copyFile(source, join(output, name), 1); // COPYFILE_EXCL
   }
-  const manifest = createManifest(sourceSha, version, files);
+  const manifest = createManifest(sourceSha, productVersion ?? version, files);
   await writeFile(join(output, 'support-manifest.json'), JSON.stringify(manifest, null, 2) + '\n', { flag: 'wx' });
   await verifyDirectory(output);
   console.log(`Windows thumbnail support verified: ${sourceSha}, ${files.length} payload files.`);
@@ -89,8 +89,8 @@ async function buildSupport(inventoryPath, output) {
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   try {
-    const { values } = parseArgs({ options: { inventory: { type: 'string' }, output: { type: 'string' } } });
+    const { values } = parseArgs({ options: { inventory: { type: 'string' }, output: { type: 'string' }, 'product-version': { type: 'string' } } });
     assert(values.inventory && values.output, '--inventory and --output are required');
-    await buildSupport(resolve(values.inventory), resolve(values.output));
+    await buildSupport(resolve(values.inventory), resolve(values.output), values['product-version']);
   } catch (error) { console.error(error.message); process.exitCode = 1; }
 }
