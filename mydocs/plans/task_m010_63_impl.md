@@ -36,3 +36,21 @@ GitHub Issue: [#63](https://github.com/postmelee/alhangeul-tauri/issues/63)
 - 단계/최종 보고와 보드 완료 표시 후 parent PR 1개 생성. 미검증을 통과로 표시하지 않는다.
 - 커밋: `Task #63 Stage 3 + 최종 보고서: 통합 수용 근거`.
 
+## Stage 4 — PR #66의 Cargo warm 재측정
+
+2026-09-08 작업지시자의 원인 조사·실제 cache hit 재측정·이번 PR 반영 지시를 적용한다.
+
+- 저장소 cache 사용량·설정 한도·key/크기/생성/접근 시각을 조회하고 제거 원인의 근거와 추론을 구분한다.
+- 현재 보존된 arm64 target/source cache를 확인한 뒤 기존 run 34065744901을 재실행한다.
+  동일 SHA 230098401df7d893a26b54b62b780081d3553dda와 workflow/플랫폼/product/tests=true를 유지한다.
+- exact attempt API metadata와 실제 cache action 로그에서 restore key·bytes·hit,
+  compiler/image, native test/build/lifecycle 및 post-save 시간을 대조한다.
+- cache 보존·용량 정책 변경은 이 단계에서 수행하지 않는다. 구현 결함이 발견되면 #63에
+  필요한 최소 보완과 관련 회귀를 적용하고 실제 측정을 다시 정렬한다.
+- 검증: 원격 선택 필수 job success, exact target/source key 복원 확인,
+  `git diff --check`, 변경 문서 상대 링크와 필수 보고서 섹션 확인.
+- 문서 위치: 실행 결과는 기존 mydocs/working/task_m010_63_stage4.md 및 #63/#59
+  최종 보고서에 반영한다. 운영상 측정 지침은 이미 승인된 docs/operations/CI_VALIDATION.md를
+  필요한 범위에서 보완한다. 과거 miss 기록을 보존하고 새 결과와 구분한다.
+- 완료 후 #63 단계 커밋을 부모 local/task59에 fast-forward 통합하고 publish/task59와
+  PR #66의 본문·고정 문서 링크를 갱신한다. 사용자 지시로 추가 단계 승인 없이 진행한다.
