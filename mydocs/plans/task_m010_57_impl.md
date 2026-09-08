@@ -3,7 +3,152 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: Stage 5.3 후보 게시·full 비교 실행 시작 — run 34259185689 결과 대기
+상태: Stage 5.3 full 실패·등록 범위 영향 관측 — Stage 5.4 진단 보완 구현 승인 대기
+
+## Stage 5.3 완료 결과 분석 — 전체 수용 실패 유지
+
+실행은 [34259185689](https://github.com/postmelee/alhangeul-tauri/actions/runs/34259185689),
+attempt 1, head `7083ccfb05b39516294d698de2ca124a3bfd6820`, full/비교 opt-in이며 failure다.
+Windows x64·Linux x64/arm64 build 및 core, Windows/Linux fast가 모두 성공했다.
+MSI 일반 job `102185264138`은 성공, NSIS `102185264148`은 처음/재설치의 문서 요청 12개가
+`0x80040154`로 실패했다. 일반 NSIS lifecycle과 제거 상태 검사는 통과했다.
+MSI 강제 재설치 `102185264290`은 썸네일 성공과 별개로 재설치 3010·재부팅 필요를 기록했다.
+최종 result `102186431796`은 smoke 실패를 그대로 반영했다.
+
+### 비교 원시 증거
+
+| 단계 | 두 replica 공통 관측 |
+|---|---|
+| C0 initial: NSIS 기본 경로·HKCU | 작은 HWP·큰 HWP·HWPX의 Shell/force-extract 6개 실패 |
+| C2: 같은 bytes·보호 경로·HKCU | 6개 실패; 경로 변경만으로 해소되지 않음 |
+| C3: C2에 제품 CLSID의 HKLM COM 등록만 추가 | 6개 모두 HRESULT 0·실제 bitmap/양수 크기 성공 |
+| C2 after machine restore | HKLM 제거 후 6개 다시 실패 |
+| C0 final | 원래 HKCU 경로 복원 후 6개 실패 |
+
+실패 코드는 모두 `0x80040154`이며 JPG/association/직접 COM 대조는 성공했다.
+10개 phase의 각 16개 probe와 저장된 원시 JSON·종료 코드를 대조했다. phase별 status=observed,
+cleanup=true, integrityChecks=12였다. Shell 실패의 bitmap=false와 force-extract 실패의
+bitmap=null은 모두 실패 계약상 허용하며 성공으로 세지 않았다. C3 뒤 dllhost의 handler
+로드도 관측했다. 동일 handler/worker hash, EnableLUA=1, elevated=true, integrityRid=12288,
+image `20260824.214.3`이다. linked token/정상 Explorer 부재로 C1은 context-unavailable이다.
+
+| 진단 artifact ID | archive SHA-256 (`sha256:` 접두사 생략) |
+|---|---|
+| `10070724915` — context 1 | `3ce13e836db8c99c245c0b2678a52e075708dce3bcd9abe9a75ea448283862e1` |
+| `10070713028` — context 2 | `48ce27fefc725f4f8a3e66b3d026e62212db7023864bf55f84c6e6366f70a911` |
+| `10070736285` — NSIS | `e2b0d36cae9da1e2dadeac04238d9f3d373880313202471ab6e79dd634e457b5` |
+| `10070738144` — MSI 일반 | `0fd7a9404227631bc5d00b36a6fd719626622cfca6ac5737ab53447506cb8528` |
+| `10070755726` — MSI 강제 재설치 | `f5f6d0aa85b4e47a5bf2310f444ae2c24ff73ef3729eae4af6cb193658f0b620` |
+
+위 5개 archive를 다운로드해 hash를 GitHub metadata와 대조했다. 로컬 분석 자료는
+`/private/tmp/task57-full-analysis.nS2dBB`, 실패 로그는
+`/private/tmp/task57-full-34259185689-failed.log`다. Windows 제품 artifact `10070352612`의
+API digest는 `sha256:5b14639ad57ed6ea0491ba8d36c7e2a615ebc8fb67cd47422f13d377b1f13184`이며
+진단 archive 5개와 달리 제품 archive bytes를 이번 분석 호스트에서 재계산하지 않았다.
+생산 run 전체가 failure이므로 이 제품을 성공 producer 조건의 installer 재사용 입력으로 쓰지 않는다.
+
+### 관측의 한계와 정리 실패
+
+context job `102185264185`/`102185264053` 모두 Windows context 계약 회귀는 성공했고 실제
+비교에 도달했다. 이후 experiment.json은 operation=comparison-complete, error=null이지만
+status=invalid, cleanupOperation=verify-uninstall, cleanupError=cleanup-failed,
+cleanupErrorCode=-2146233087, installExit=0, uninstallExit=0이었다.
+registryRestored=true는 임시 COM 변경의 복원 확인이다. associationsRestored=false와
+cleanup=false는 뒤 검증에 도달하지 못한 결과이며 연결이 실제 훼손됐다는 증거는 아니다.
+보호 복사본·요청 디렉터리 제거 단계도 도달하지 못했으므로 완료로 기록하지 않는다.
+workflow의 후속 raw-evidence 검사는 비교 실패 때문에 skipped다. 위 로컬 JSON 대조는 그
+Windows gate를 소급 성공으로 바꾸지 않는다.
+
+`Assert-ContextEmptyInstall`은 경로·프로세스·32/64비트 HKCU/HKLM 제품 key·제거 항목을
+순차 검사하고 첫 오류를 던진다. catch가 세부 코드를 버려 실제 잔존물과 읽기 오류를 구분할
+수 없다. 일반 smoke는 일부 소유 value를 세지만 비교는 key 존재도 검사하므로 같은 계약이 아니다.
+빈 key 차이·지연 제거·파일 잠금·조회 예외는 후보일 뿐 이번 실패 원인으로 확정하지 않는다.
+HKLM 조건의 반복적인 성공/실패 전환은 이번 hosted 문맥에서 등록 범위 영향의 강한 근거지만,
+정리까지 수용된 실험·정상 로그인 사용자 수용·실제 한컴 환경의 단일 원인 확정은 아니다.
+
+## Stage 5.4 — 제거 실패 진단 보완 구현 승인안
+
+분석 후 “진행해줘”로 아래 계획 작성만 승인받았다. 이번 산출물은 기존 두 계획서와
+오늘할일이며 제품/공식 문서의 위치 변경이나 완료 보고서 추가는 없다.
+다음 승인 단위는 **CI 전용 진단 코드·회귀 보완, 로컬 검증, 후보 커밋**이다.
+
+### 코드 변경 범위와 증거 계약
+
+1. `scripts/windows-thumbnail-context-cleanup.ps1`을 CI 전용 읽기 전용 수집/순수 판정 helper로
+   분리한다. 기존 process helper의 정리 대상 allowlist와 동일한 경로·제품 프로세스·
+   hive/view/key 역할·제거 항목을 관측한다. 각 항목을 absent/present/unreadable로 구분하고,
+   읽기 오류·조회 도중 사라진 항목을 무조건 absent로 간주하지 않는다.
+2. path는 local-install/machine-install/protected-copy/request-root 역할, 파일은 제품 파일
+   allowlist·기타 개수, registry는 고정된 key 역할·hive/view·value/subkey 개수와 빈 key 여부만
+   기록한다. 프로세스는 제품/host 역할·조회 가능 범위의 동일 사용자/세션·handler 로드 여부만
+   기록한다. 실제 개인 경로·SID·전체 프로세스 명령행·임의 파일명·제3자 registry 내용은 출력하지 않는다.
+   관측 대상 밖의 process/파일을 검사하기 위해 권한을 높이거나 재귀 탐색하지 않는다.
+3. experiment의 정리 직전/제거 후 기존 제한 시간 내 관측 종료/실패 시점에 읽기 전용 snapshot을
+   남긴다. `cleanupFailure`에 allowlist 코드·operation·수치 오류 코드와 snapshot 수집 상태를
+   추가한다. 알려지지 않은 예외는 고정 unknown 코드로 보존하고 원문 Message/stack은 내보내지 않는다.
+   관측 자체가 실패해도 최초 실패 원인을 덮어쓰거나 기존 experiment.json 생성을 막지 않는다.
+4. `Assert-ContextEmptyInstall`의 gate는 현재 기준을 유지하고 helper의 판정 결과를 사용한다.
+   기존 `status`, `cleanup`, `registryRestored`, `associationsRestored` 의미는 바꾸지 않는다.
+   미도달 항목은 별도 not-run으로 구분한다. additive 진단 필드에 schemaVersion을 둬 검증한다.
+   초기 오염 검사의 실패도 허용된 진단만 남기고 설치·비교 개입 전에 중단한다.
+5. registry journal 충돌 시 제거를 시작하지 않는 기존 순서를 유지한다. 실패 후에는 읽기 전용
+   관측만 허용하고 강제 삭제·잠긴 DLL의 host 종료·재부팅·권한/ACL 변경·timeout 연장은 하지 않는다.
+   빈 key 잔존을 허용하거나 비교 cleanup을 expected-negative로 바꾸지 않는다.
+6. 기존 `context-tests.ps1` 및 Node source-contract에 연결하고 별도 순수 cleanup 회귀 파일을
+   추가한다. `tests/windows-thumbnail-fast.test.ps1`에는 순수 데이터 테스트만 연결한다.
+   실제 registry/filesystem 수집 검사는 기존 CIConsent Windows context 계약 진입에 연결한다.
+   실험 helper는 일반 사용자 support manifest에 넣지 않는다. workflow/제품/lock은 변경하지 않는다.
+
+예정 파일: 신규 `scripts/windows-thumbnail-context-cleanup.ps1`,
+`scripts/windows-thumbnail-context-cleanup-tests.ps1`; 기존 `context-process.ps1`,
+`context-experiment.ps1`, `context-tests.ps1`, `tests/windows-thumbnail-fast.test.ps1`,
+`tests/windows-thumbnail-context-experiment.test.mjs` 및 작업 기록.
+파일 300 LOC/함수 50 LOC를 목표로 수집·정규화·판정을 분리하고 초과가 필요하면 먼저 계획을 조정한다.
+
+### 회귀와 수용 기준
+
+- 순수 회귀: 모두 absent, 경로/파일/프로세스/key/제거 항목 각각 present, 빈 key, unreadable,
+  복수 잔존, 조회 중 소멸, 미도달 단계, unknown 예외, snapshot 실패 시 최초 오류 보존,
+  개인정보 sentinel 제거, JSON round-trip. 하나라도 잔존/읽기 불명확하면 clean=true 금지.
+- Windows 격리 검사: 임시 파일·task 소유 임시 key의 absent/present/empty 및 접근 실패 주입을
+  확인한다. 실제 권한 정책을 바꾸어 접근 거부를 만들지 않는다. 기존 registry 충돌/복원·실패
+  fixture·160개 원시 probe 재대조 계약도 유지한다. 일반 사용자 토큰을 임의로 합성하지 않는다.
+- 로컬: `node --test tests/windows-thumbnail-context-experiment.test.mjs tests/ci-task57-integration.test.mjs tests/ci-fast.test.mjs`,
+  `pnpm run test:automation`, `pnpm run check:product-boundary`, 전체 workflow actionlint,
+  `git diff --check`. Windows PS/native는 이 호스트에서 실행하지 않는다.
+- 원격 첫 피드백은 별도 승인 후 `ci.yml profile=fast`다. 실제 비교 재실행은 다시 승인받는다.
+  bytes 불변 일반 설치 검사는 적격 producer의 exact product_sha/product_run_id/artifact_id/
+  artifact_digest로 installer를 쓴다. 이번 failed producer는 부적격이며 현재 재사용 경로는
+  비교 opt-in을 지원하지 않는다. 이번 보완만을 위한 재실험은 workflow 변경 없이
+  `windows-package`+비교 opt-in의 새 exact SHA/bytes 실행안을 제시할 수 있다. 비용과 신규
+  bytes임을 명시하고 부분 검증으로 기록한다. workflow/공유 코드 변경이나 최종 통합은 full이다.
+- 진단 보완의 성공은 실패 항목·읽기 불가·미도달이 안전하게 구분된다는 뜻이다. cleanup가
+  계속 실패하면 원인 분류만 완료이며 실험 전체 성공/NSIS 제품 해결로 올리지 않는다.
+
+### NSIS 설치 범위 대응 방향 — 제품 변경 승인 아님
+
+현재 tauri.conf의 NSIS는 currentUser이고 hook은 `/i:user` 등록/해제를 사용한다.
+이번 임시 HKLM 성공을 제품 설치 정책으로 그대로 옮기지 않는다.
+
+| 선택 | 판단 / 선행 조건 |
+|---|---|
+| 사용자별 NSIS 유지 + MSI 대안 | 당장의 기본 방향. 기존 진단/안내 근거를 유지하고 일반 사용자 문맥까지 일괄 실패라고 표시하지 않음 |
+| 명시적 전체 사용자 NSIS | 후속 설계 후보. Program Files 보호 경로·HKLM·권한 동의·기본 앱 보존·업데이트/제거·기존 사용자별 설치 전환과 MSI 충돌을 함께 검증해야 함 |
+| 사용자별 NSIS에서 조용히 HKLM 추가 | 채택하지 않음. 설치 범위/권한/소유권 계약을 바꾸고 사용자 쓰기 가능 경로를 시스템 COM으로 노출할 위험 |
+| 한글 버전 분기·엔진 교체 | 현재 근거로 우선하지 않음. 같은 제품 bytes가 등록 조건 변경으로 성공했으므로 해당 경계를 먼저 검증 |
+
+다음 제품 결정 전 제거 실패를 구분하고, 승인된 정상 로그인 Windows 10/11 환경에서 같은
+NSIS의 비승격/승격 비교와 Explorer 시각 검증을 보완한다. UAC 값을 바꾸거나 실제 PC방/VDI를
+임의 조작하지 않는다. 전체 사용자 NSIS가 필요하면 별도 이슈 생성·설계 승인을 요청한다.
+#57은 진단·재현/원인 증거와 수용 한계를, #58은 선택 설치·앱 토글을 계속 소유한다.
+앱 UI·설치 기본값·제품 등록·실제 안내 문구·새 이슈·PR·배포는 이번 Stage 5.4에 포함하지 않는다.
+
+### 현재 승인 요청
+
+위 CI 전용 진단 보완과 회귀·로컬 검증·후보 커밋을 승인받는다. 원격 게시/fast/실제 비교는
+각 후보 결과 제시 뒤 별도 승인한다. 이번 계획 작성에서 코드 변경이나 CI 재실행은 하지 않았다.
+이번 문서 검증은 로컬 링크·오늘할일 진행중 상태·`git diff --check`를 통과했다.
+제품/테스트 변경이 없어 실행 회귀는 재수행하지 않았으며 기존 실패를 통과로 바꾸지 않았다.
 
 ## Stage 5.3 승인된 후보 게시·full 실행 기록
 
