@@ -4,6 +4,9 @@ GitHub Issue: [#63](https://github.com/postmelee/alhangeul-tauri/issues/63)
 구현계획서: [task_m010_63_impl.md](../plans/task_m010_63_impl.md)
 Stage: 3
 
+이 보고서는 2026-09-07의 cold 실행 결과를 보존한다. 이후 실제 cache hit와 warm 시간은
+[Stage 4 재측정](task_m010_63_stage4.md)에서 확인했다.
+
 ## 단계 목적
 
 core 의존 분리와 cache key 경계를 실제 Windows/Linux 실행에 대조하고 hit와 컴파일 성능을 구분한다.

@@ -5,9 +5,9 @@ GitHub Issue: [#63](https://github.com/postmelee/alhangeul-tauri/issues/63)
 
 ## 작업 요약
 
-- 대상 이슈 #63, 부모 #59, 마일스톤 M010, 총 3단계.
+- 대상 이슈 #63, 부모 #59, 마일스톤 M010, 후속 재측정을 포함해 총 4단계.
 - core 진단을 제품 생성과 병렬로 실행하고 compiler/lock/target/workload별 Cargo cache 경계와 source별 갱신 구조를 도입했다.
-- 전체 native/core 수용과 동일 후보 재실행은 통과했다. cache 보존 실패로 Cargo warm 성능 개선은 입증하지 못했다.
+- 전체 native/core 수용과 동일 후보 재실행은 통과했다. 9월 8일 실제 Cargo cache hit 재측정에서 arm64 native가 20:59 → 13:15로 7:44(36.85%) 줄었다.
 
 ## 변경 파일 목록과 영향 범위
 
@@ -33,10 +33,11 @@ GitHub Issue: [#63](https://github.com/postmelee/alhangeul-tauri/issues/63)
 |---|---|---|
 | core 의존 | 제품 job 내부 직렬 | Windows 883초/Linux x64 264초/arm64 245초를 병렬 실행 |
 | target primary key | 오래된 lock 기반 cache에 고정 가능 | compiler/lock/workload prefix + 실제 source SHA |
-| 동일 후보 arm64 native | 첫 실행 1,164초 | 재실행 1,259초, 둘 다 Cargo miss |
-| Cargo warm 성능 | 통제된 근거 없음 | cache 미보존으로 여전히 미입증 |
+| 동일 후보 arm64 native | 최초 전체 run 1,164초, product attempt 1은 1,259초; 모두 Cargo miss | 같은 product attempt 2는 exact hit로 795초 |
+| Cargo warm 성능 | cache 미보존으로 미입증 | 같은 source/image/compiler/검증 범위에서 job wall 36.85% 감소 |
+| 복원/저장 비용 | Cargo restore 2초, post-save 84초 | restore 109초, primary hit로 post-save 0초 |
 
-같은 SHA, image, toolchain의 job/step 비교는 [부모 최종 보고서](task_m010_59_report.md)에 있다. 두 cold 실행을 warm 개선으로 표시하지 않는다.
+같은 SHA, image, toolchain의 실제 cold/warm job·step 및 exact cache key는 [Stage 4](../working/task_m010_63_stage4.md)에 있다. 최초 두 cold 실행은 과거 기록으로 보존한다. 36.85%는 동일 product profile의 attempt 1과 2의 job wall 비교다.
 
 ## 검증 결과
 
@@ -45,27 +46,28 @@ GitHub Issue: [#63](https://github.com/postmelee/alhangeul-tauri/issues/63)
 | core/native 병렬 및 전체 gate 보존 | OK — 전체 run의 세 core와 세 native success |
 | compiler/lock/target/workload 격리 | OK — key 회귀 및 실제 key 대조 |
 | source별 primary key 갱신 | OK — 회귀, 실제 checkout SHA 포함 및 target save 로그 |
-| 동일 후보 실제 측정 | OK — exact attempt별 시간·cache miss/save 수집 |
-| Cargo restore 및 warm 속도 효과 | 미입증 — 저장됐던 cache가 재실행 때 없었음 |
+| 동일 후보 실제 측정 | OK — exact attempt별 시간과 동일 성공 step 목록 대조 |
+| Cargo restore 및 warm 속도 효과 | OK — source/target exact hit, 복원 비용을 포함해 1,259초 → 795초 |
 
-[전체 run](https://github.com/postmelee/alhangeul-tauri/actions/runs/34063530307)과 [재실행](https://github.com/postmelee/alhangeul-tauri/actions/runs/34065744901)은 success다. 재실행은 linux-arm64/product/tests=true의 부분 검증이다.
+[전체 run](https://github.com/postmelee/alhangeul-tauri/actions/runs/34063530307)과 [warm 재측정 job](https://github.com/postmelee/alhangeul-tauri/actions/runs/34065744901/job/101985711683)은 success다. 재측정은 linux-arm64/product/tests=true의 부분 검증이다. 로그의 Compiling 행은 1,252개에서 15개로 줄었지만 rhwp 컴파일 5회는 남았다.
 
 ### 단계별 검증 결과
 
 - [Stage 1](../working/task_m010_63_stage1.md): core 분리와 cache identity.
 - [Stage 2](../working/task_m010_63_stage2.md): 격리·갱신·필수 gate 회귀.
 - [Stage 3](../working/task_m010_63_stage3.md): 실제 native/core 및 cache 보존 한계.
+- [Stage 4](../working/task_m010_63_stage4.md): 보존 원인 조사와 실제 exact hit의 warm 효과.
 
 ## 잔여 위험과 후속 작업
 
 ### 잔여 위험
 
-여러 GB target cache의 보존이 보장되지 않는다. 첫 arm64 target 저장 후 같은 key를 찾지 못한 사실은 확인했으나 GitHub의 제거 사유는 확인하지 않았다. cache hit와 실제 재컴파일 감소도 별도 검증 대상이다.
+여러 GB target cache의 보존이 보장되지 않는다. 관측한 10.27GB 중 세 target이 97.27%를 차지하며 용량 압박에 따른 제거가 유력하나, 실제 한도 조회는 HTTP 402로 제한됐고 개별 제거 사유는 미확인이다. warm 결과는 arm64 동일 후보 한 쌍의 관측치이며 다른 OS/source 또는 장기 보존 효과로 확대하지 않는다.
 
 ### 후속 작업 후보
 
-cache 용량·보존과 feature/profile별 재컴파일 비용을 측정해 warm 효과를 확인한다. cache 삭제·quota 변경은 이번 범위에서 수행하지 않았다.
+cache 용량·보존, 다른 source의 prefix restore와 남아 있는 workspace/feature별 재컴파일 비용을 후속 검토한다. cache 삭제·quota 변경은 이번 범위에서 수행하지 않았다.
 
 ## 작업지시자 승인 요청
 
-기존 구현·검증·PR 생성 지시에 따라 #59 통합 PR에 포함한다. warm 성능 미입증을 명시하여 리뷰 대상으로 남긴다. merge·이슈 close는 수행하지 않는다.
+2026-09-08의 이번 PR 포함 지시에 따라 #59 통합 PR을 갱신한다. 실제 warm 결과와 보존 한계를 함께 리뷰 대상으로 남긴다. merge·이슈 close는 수행하지 않는다.

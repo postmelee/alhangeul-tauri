@@ -142,4 +142,18 @@ source 다운로드 cache와 compiled target cache를 분리한다. target resto
 
 ordinary desktop 검사는 `CARGO_BUILD_TARGET`을 해당 matrix target으로 고정하여 implicit host debug와 explicit target debug를 불필요하게 나누지 않는다. core는 별도 runner/cache에서 host release probe를 유지한다. protocol-only와 render, desktop/worker feature 조합에 필요한 컴파일은 제거하지 않는다. cache를 삭제하거나 기존 cache를 덮어쓰는 작업은 수행하지 않는다.
 
+warm 측정 전에는 해당 branch의 exact target key와 source cache가 실제로 남아 있는지,
+크기·생성/마지막 접근 시각과 저장소 총 사용량을 확인한다. GitHub의
+[보존·용량 정책](https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching)에
+따르면 설정된 한도에 도달할 때 오래 접근하지 않은 cache부터 제거될 수 있다. 서로 다른
+branch와 source SHA의 큰 target cache가 같은 저장소 용량을 사용하므로 key를 정확히
+구성해도 보존이 보장되지는 않는다. 개별 삭제 이력이 없으면 원인을 확정하지 않는다.
+
+동일 SHA/workflow/플랫폼/검증 범위의 성공 run을 재실행하고 실제 restore key·bytes·hit,
+compiler/image, 복원·컴파일·package lifecycle·post-save 및 job wall 시간을 따로 기록한다.
+cache miss 재실행은 cold 결과로 분류한다. hit여도 필요한 workspace/feature 재컴파일이
+남을 수 있으므로 시간을 실측한다. 부분 profile의 native job 비교를 전체 run 단축으로 확대하지 않는다.
+재실행 전에 이전 attempt metadata를 보존하거나 API의 `attempts/{attempt}/jobs`를 사용한다.
+보고서에는 attempt 번호와 해당 job URL을 고정해 다음 재실행이 과거 근거를 혼동시키지 않게 한다.
+
 GitHub의 [reusable workflow 계약](https://docs.github.com/en/actions/how-tos/reuse-automations/reuse-workflows)과 [cache 전략](https://github.com/actions/cache/blob/main/caching-strategies.md)을 따른다. 같은 저장소의 상대 workflow 호출은 caller commit의 정의를 사용하며 checkout source와 별도로 기록한다.
