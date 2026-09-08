@@ -113,6 +113,7 @@ test('Both dialog modes use select-all and native edit replacement before verifi
   assert.match(save, /ControlMessage\(edit, 0x00B1, UIntPtr.Zero, new IntPtr\(-1\), 2, 2000, out result\)/);
   assert.match(save, /SetTextMessage\(edit, 0x00C2, UIntPtr.Zero, text, 2, 2000, out result\)/);
   assert.ok(save.indexOf('ControlMessage(') < save.indexOf('SetTextMessage('));
+  assert.ok(save.indexOf('SetTextMessage(') < save.indexOf('VerifyFileName(edit, text)'));
   assert.doesNotMatch(save, /result == UIntPtr.Zero|0x000C/);
   assert.ok(native.indexOf('Validate(dialog, edit') < native.indexOf('if (ControlMessage'));
   assert.ok(native.indexOf('var readback') > native.indexOf('0x00C2'));
@@ -121,6 +122,30 @@ test('Both dialog modes use select-all and native edit replacement before verifi
   assert.match(dialog, /buttonMethod = 'UIA-InvokePattern'/);
   assert.match(dialog, /buttonMethod = 'Win32-BM_CLICK'/);
   assert.match(dialog, /if \(-not \$allowOverwrite\) \{\s+throw 'Unexpected additional dialog/);
+});
+
+test('Filename readback has suffix room and actual Windows negative coverage (static wiring)', async () => {
+  assert.match(native, /static void VerifyFileName\(IntPtr edit, string text\)/);
+  assert.match(native, /new StringBuilder\(text.Length \+ 2\)/);
+  const suite = await readFile(new URL('./windows-pdf-native-diagnostics.test.ps1', import.meta.url), 'utf8');
+  const fixture = await readFile(new URL('./gui/windows-dialog/filename-readback.ps1', import.meta.url), 'utf8');
+  assert.match(suite, /gui\/windows-dialog\/filename-readback.ps1/);
+  assert.match(suite, /\$readbackCaseCount -ne 9/);
+  assert.match(dialogWorkflow, /windows-pdf-native-diagnostics.test.ps1 -EvidencePath/);
+  assert.match(fixture, /CreateWindowEx\(0, "Edit"/);
+  assert.match(fixture, /\[PdfDialogNative\]::SetFileName/);
+  assert.match(fixture, /GetMethod\('VerifyFileName'/);
+  for (const name of ['one extra character', 'long suffix', 'Korean suffix', 'shorter value', 'same-length mismatch']) {
+    assert.ok(fixture.includes(name));
+  }
+  assert.match(fixture, /Assert-Equal \$rejection 'Filename readback mismatch'/);
+  assert.match(fixture, /finally \{ \$fixture.Dispose\(\) \}/);
+});
+
+test('PDF requests avoid SVG Debug output and policy avoids the automatic Matches variable', async () => {
+  const commands = await readFile(new URL('../apps/desktop/src-tauri/src/commands.rs', import.meta.url), 'utf8');
+  assert.match(commands, /#\[derive\(Deserialize\)\]\s+#\[serde\(rename_all = "camelCase"\)\]\s+pub struct AppendPdfPageRequest/);
+  assert.doesNotMatch(policy, /\$matches\b/i);
 });
 
 test('Document identity rejects wrong fixture, dirty document, generic status and partial names', () => {

@@ -3,6 +3,14 @@
 GitHub Issue: [#19](https://github.com/postmelee/alhangeul-tauri/issues/19)
 마일스톤: M010
 
+## 2026-09-08 PR 리뷰 보정 진행 상태
+
+PR #65 리뷰 후 Stage 4.23의 파일명 readback false-positive 보정, 실제 Windows Edit 회귀,
+SVG 요청 Debug 제거와 policy 변수명 정리를 승인받았다. 관련 로컬 검사는 통과했으며
+Windows 제한 검증 전 checkpoint 상태다. 아래 최종 보고 당시의 수용 근거는 보존하지만
+새 보정의 Windows 통과로 간주하지 않는다. 현재 앱 diff는 Debug 파생 제거뿐이며 저장/
+snapshot/reaper 동작과 workflow는 그대로다. 실행 결과 확인 전 보정 완료·merge를 선언하지 않는다.
+
 ## 작업 요약
 
 - 대상 이슈: #19. Windows/Linux PDF export의 문서 세대 혼합과 중단된 job 누적을 방지한다.

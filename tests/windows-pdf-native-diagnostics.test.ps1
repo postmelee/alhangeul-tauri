@@ -147,9 +147,15 @@ Test-Case 'real native pair rejects invalid HWNDs without posting' {
   Assert-Equal (Get-PdfNativeFailure $rejection).checks.buttonsDistinct $false
 }
 
+$readbackCaseStart = $cases.Count
+. (Join-Path $PSScriptRoot 'gui/windows-dialog/filename-readback.ps1')
+$readbackCaseCount = $cases.Count - $readbackCaseStart
+if ($readbackCaseCount -ne 9) { throw 'Expected nine actual filename readback cases.' }
+
 $failed = @($cases | Where-Object { -not $_.passed })
 @{ schemaVersion = 1; kind = 'native-guard-diagnostics'; passed = $failed.Count -eq 0;
-   cases = @($cases.ToArray()); nativeUiTested = $false; invalidHandlesTested = $true } |
+   cases = @($cases.ToArray()); nativeUiTested = $true; invalidHandlesTested = $true;
+   nativeEditReadbackCases = $readbackCaseCount; productTested = $false; commonDialogsTested = $false } |
   ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $EvidencePath -Encoding UTF8
 $cases | ForEach-Object { Write-Output "$(if ($_.passed) { 'PASS' } else { 'FAIL' }): $($_.name)" }
 if ($failed.Count -gt 0) { exit 1 }

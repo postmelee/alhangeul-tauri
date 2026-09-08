@@ -85,7 +85,13 @@ public static class PdfDialogNative {
       throw new Exception("EM_SETSEL timed out or failed");
     if (SetTextMessage(edit, 0x00C2, UIntPtr.Zero, text, 2, 2000, out result) == IntPtr.Zero)
       throw new Exception("EM_REPLACESEL timed out or failed");
-    var readback = new StringBuilder(text.Length + 1);
+    VerifyFileName(edit, text);
+  }
+  static void VerifyFileName(IntPtr edit, string text) {
+    UIntPtr result;
+    // WM_GETTEXT includes NUL in the capacity. Read one extra character so a
+    // longer value cannot be truncated to the expected filename and pass.
+    var readback = new StringBuilder(text.Length + 2);
     if (ReadTextMessage(edit, 0x000D, (UIntPtr)readback.Capacity, readback, 2, 2000, out result) == IntPtr.Zero
       || readback.ToString() != text) throw new Exception("Filename readback mismatch");
   }

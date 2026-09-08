@@ -30,7 +30,7 @@ pub struct BeginPdfExportRequest {
     page_count: u32,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppendPdfPageRequest {
     job_id: String,

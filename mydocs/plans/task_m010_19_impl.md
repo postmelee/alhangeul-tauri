@@ -10,6 +10,32 @@ GitHub Issue: [#19](https://github.com/postmelee/alhangeul-tauri/issues/19)
 
 ## 단계 개요
 
+### 2026-09-08 Stage 4.23 — PR #65 readback 및 예방적 보정
+
+실행 checkpoint: 로컬 Windows 계약 **60/60**, confirmation/workflow 계약 **61/61**, product
+boundary(445 files), `git diff --check` 통과. import된 중복 검사는 합산하지 않는다. 실제 Windows
+검증은 아직 미실행이며 이 기록은 완료 보고서가 아니다. 새 fixture는 87 LOC다. workflow와
+의존성/lockfile은 변경하지 않았고 앱 변경은 SVG 요청의 `Debug` 파생 제거 한 줄뿐이다.
+
+- `windows-pdf-win32.ps1`의 readback을 private `VerifyFileName`으로 분리하고 버퍼를
+  `text.Length + 2`로 둔다. WM_GETTEXT의 NUL 자리 외에 추가 한 글자를 관측하며 timeout과
+  문자열 정확 일치 조건을 유지한다. SetFileName의 mode/PID/child/class/ID 검증은 그대로다.
+- `tests/gui/windows-dialog/filename-readback.ps1`에 격리된 Win32 `#32770`/`Edit` fixture를 둔다.
+  기존 native diagnostics suite에서 실행하며 새 workflow/패키지를 만들지 않는다. 실제 setter의
+  Open/Save ASCII·한글 경로 성공, 같은 readback 함수의 단일/긴/한글 접미사·짧은/다른 문자열
+  거부를 검사한다. 실패 원문/입력값은 출력하지 않으며 생성한 HWND만 finally에서 파괴한다.
+- `AppendPdfPageRequest`의 Debug 파생만 제거하고 두 policy selector의 `$matches`를 `$found`로
+  바꾼다. Node 계약으로 helper 연결/버퍼/민감 요청 Debug 금지/자동 변수 이름 회귀를 확인한다.
+- 로컬: `pnpm run test:gui:windows:contracts`, 관련 confirmation/workflow Node 계약,
+  `pnpm run check:product-boundary`, `git diff --check`. 기존 대형 command/계약 파일은 작은
+  변경만 하며 권장 LOC 예외를 유지한다. 새 fixture 파일/함수는 300/50 LOC 이내로 둔다.
+- 로컬 통과 뒤 실행 checkpoint를 기존 `publish/task19`에 non-force push한다. 기존
+  `alhangeul-desktop.yml mode=windows-dialog-verify`와 `ci.yml scope=pdf-cleanup-windows`를
+  각각 한 번 실행한다. 실제 PS5.1·readback·작은 대화상자 postcondition, Rust command 컴파일을
+  확인하고 context/정확 SHA/결과를 read-back한다. macOS에서 native 코드를 실행하지 않는다.
+- 검증 실패 시 같은 workflow를 자동 반복하지 않고 근거를 기록한다. 성공하면 stage-report/todo
+  절차로 4.23 결과와 기존 최종 보고/PR 본문을 갱신한다. 별도 리뷰 답글·merge·릴리즈는 하지 않는다.
+
 ### 2026-09-07 최종 보고·Open PR 게시
 
 후속 지시로 `task-final-report` 절차를 승인받았다. 4.22 이후 소스 변경이 없으므로 이미

@@ -2,12 +2,12 @@
 function Select-PdfDialogButton($Candidates, $Expected) {
   if ($Expected.Id -notin @('1', '2', '6') -or $Expected.ProcessId -le 0 -or
       $Expected.DialogHandle -eq 0) { throw 'Invalid button expectation.' }
-  $matches = @($Candidates | Where-Object {
+  $found = @($Candidates | Where-Object {
     $_.Id -ceq $Expected.Id -and $_.Class -ceq 'Button'
   })
-  if ($matches.Count -eq 0) { return $null }
-  if ($matches.Count -ne 1) { throw 'Ambiguous native dialog button.' }
-  $candidate = $matches[0]
+  if ($found.Count -eq 0) { return $null }
+  if ($found.Count -ne 1) { throw 'Ambiguous native dialog button.' }
+  $candidate = $found[0]
   Assert-PdfCandidateIdentity $candidate $Expected
   return $candidate
 }
@@ -23,9 +23,9 @@ function Assert-PdfCandidateIdentity($candidate, $Expected) {
 function Select-PdfConfirmationCandidate($Candidates, $Expected) {
   if ($Expected.Id -notin @('CommandButton_6', 'CommandButton_7') -or
       $Expected.ProcessId -le 0 -or $Expected.DialogHandle -eq 0) { throw 'Invalid command expectation.' }
-  $matches = @($Candidates | Where-Object { $_.Id -ceq $Expected.Id -and $_.Class -ceq 'CCPushButton' })
-  if ($matches.Count -ne 1) { throw 'Expected unique confirmation command.' }
-  $candidate = $matches[0]
+  $found = @($Candidates | Where-Object { $_.Id -ceq $Expected.Id -and $_.Class -ceq 'CCPushButton' })
+  if ($found.Count -ne 1) { throw 'Expected unique confirmation command.' }
+  $candidate = $found[0]
   Assert-PdfCandidateIdentity $candidate $Expected
   return $candidate
 }
