@@ -5,9 +5,9 @@ GitHub Issue: [#59](https://github.com/postmelee/alhangeul-tauri/issues/59)
 
 ## 작업 요약
 
-- 부모 #59와 하위 #60–#64의 3단계 작업을 통합했다. 빠른 계약, core, 플랫폼 제품 생성, 기존 artifact 검증, 전체 수용 집계를 분리했다.
+- 부모 #59와 하위 #60–#64의 3단계 작업 및 #63/#59의 후속 Stage 4 재측정을 통합했다. 빠른 계약, core, 플랫폼 제품 생성, 기존 artifact 검증, 전체 수용 집계를 분리했다.
 - Windows/Linux의 기존 native·package·설치 검사를 유지하고, 필요한 검증만 명시적으로 선택할 수 있게 했다.
-- 전체 후보의 필수 11개 job과 다른 harness SHA에서의 Windows archive 재사용이 통과했다. cache 실측은 아래 별도 표로 기록한다.
+- 전체 후보의 필수 11개 job과 다른 harness SHA에서의 Windows archive 재사용이 통과했다. 실제 Cargo exact hit에서 같은 arm64 native job은 20:59 → 13:15로 7:44(36.85%) 줄었다.
 - 독립 worktree와 `local/task59`에서 작업했고 `publish/task59 → devel` Open PR 하나로 게시한다. 주 worktree 및 #19/#57 미완료 branch는 통합하지 않았다.
 
 ## 변경 파일 목록과 영향 범위
@@ -34,7 +34,7 @@ GitHub Issue: [#59](https://github.com/postmelee/alhangeul-tauri/issues/59)
 | AGENTS.md, DEVELOPMENT.md, RELEASE_CHECKLIST.md | 기존 파일의 진입 링크 | 동일 | OK | 동일 계획의 문서 위치 판단 |
 | DESKTOP_RELEASE.md, PUBLIC_RELEASE_RUNBOOK.md | 기존 docs/operations | 동일 | OK | #64 구현계획 Stage 3의 ordinary artifact 입력 정합성 |
 | 계획·단계·최종 보고 | mydocs/plans, working, report | 동일 | OK | 개별 실행 기록, 제품 문서와 분리 |
-| 오늘할일 | mydocs/orders/20260907.md | 동일 | OK | #59–#64 상태와 완료 시간 |
+| 오늘할일 | mydocs/orders/20260907.md, 20260908.md | 동일 | OK | 기존 통합 및 승인된 warm 재측정 상태·완료 시간 |
 
 ## 변경 전·후 정량 비교
 
@@ -97,7 +97,35 @@ cargo-target-v2-Linux-ARM64-desktop-aarch64-unknown-linux-gnu-eab8ee6e77a5c1774f
 
 첫 실행은 22:37:03 UTC에 해당 key 저장을 기록했으며 당시 artifact cache metadata의 target 크기는 3,378,217,868 bytes였다. 재실행은 23:06:18 UTC에 같은 key와 restore prefix 모두 `Cache not found`였고, 진행 중 cache 목록에서도 첫 arm64 target 항목은 없었다. 재실행 종료 시 23:25:16 UTC에 같은 target key와 23:25:23 UTC에 source cache를 저장했다.
 
-따라서 warm canary 목적으로 시작한 재실행은 실제로 두 번째 cold Cargo 실행이다. **Cargo restore 성공과 warm 컴파일 성능 개선은 이번 실측에서 입증되지 않았다.** 동일 key 생성·저장 및 cache가 없어도 모든 native 검사가 실행되는 동작은 확인했다. 여러 GB의 target cache가 함께 생성되어 용량·보존 압력은 후속 조사 대상이지만, GitHub의 개별 제거 사유를 확인하지 않았으므로 quota eviction으로 단정하지 않는다. cache 삭제·quota 변경은 하지 않았다.
+따라서 9월 7일 warm canary 목적으로 시작한 재실행은 실제로 두 번째 cold Cargo 실행이다. **당시 두 실행에서는 Cargo restore 성공과 warm 컴파일 성능 개선을 입증하지 못했다.** 동일 key 생성·저장 및 cache가 없어도 모든 native 검사가 실행되는 동작은 확인했다. 이 과거 기록을 보존하고 9월 8일의 실제 hit 결과를 아래에 구분한다.
+
+### 2026-09-08 실제 Cargo warm 재측정
+
+기존 run 34065744901의 attempt 2를 실행했다. 동일 SHA `230098401df7d893a26b54b62b780081d3553dda`,
+linux-arm64/product/tests=true, runner image `ubuntu-22.04-arm 20260831.119.1`, Rust 1.98.1이며,
+성공한 실행 step 목록도 attempt 1과 같다. [warm job 101985711683](https://github.com/postmelee/alhangeul-tauri/actions/runs/34065744901/job/101985711683)과 선택한 필수 job은 모두 success다.
+
+| 동일 product profile의 arm64 지표 | attempt 1: cold | attempt 2: warm |
+|---|---:|---:|
+| native job wall | 1,259초 (20:59) | 795초 (13:15) |
+| Cargo source/target | miss/miss, 복원 단계 2초 | exact hit/hit, 복원 109초 |
+| native build/test/lint 아홉 step 합계 | 1,019초 | 518초 |
+| Tauri bundle | 373초 | 161초 |
+| Cargo post-save | 84초 | 0초, primary hit로 생략 |
+| 로그의 Compiling 행 수 / 그중 rhwp | 1,252 / 5 | 15 / 5 |
+
+복원 비용까지 포함한 job wall 감소는 **464초(7:44), 36.85%**다. source 93,272,881 bytes와
+target 3,378,218,594 bytes의 exact key 복원 및 primary hit를 로그로 확인했다.
+Compiling은 중복 profile 실행을 포함한 로그 행 수이며 고유 crate 수가 아니다.
+workspace/feature별 rhwp 컴파일 5회는 남았다. 상세 key·각 step 시간·방법은
+[#63 Stage 4](../working/task_m010_63_stage4.md)에 보존한다.
+
+조사 시 cache 7개, 합계 10,274,246,039 bytes 중 세 큰 target이 97.27%를 차지했다.
+같은 key가 짧은 시간 안에 사라진 관측과 이 용량 집중은 GitHub의
+[용량에 따른 cache 제거 정책](https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching)과
+부합한다. 다만 실제 한도 조회는 HTTP 402로 제한됐고 개별 삭제 사유는 확인하지 못해
+용량 압박은 유력한 추론으로 기록한다. cache 삭제·quota 변경은 수행하지 않았다.
+실행 코드 보완은 필요하지 않았으며 운영 가이드에 cache 보존 사전 확인과 attempt별 근거 고정을 보완했다.
 
 ## 검증 결과
 
@@ -109,10 +137,10 @@ cargo-target-v2-Linux-ARM64-desktop-aarch64-unknown-linux-gnu-eab8ee6e77a5c1774f
 | exact archive 재사용 | OK — 다른 harness SHA, 정확한 archive bytes/inventory, MSI/NSIS 실검사 |
 | conservative 변경 선택 | OK — 실제 Git rename/delete/누락 base/빈 diff 및 unknown fallback 회귀 |
 | 실패 상태 보존 | OK — 필수 failed/cancelled/skipped/missing을 성공으로 집계하지 않는 fixture |
-| cache 경계·source별 갱신 | OK — compiler/lock/target/workload 격리, source primary 갱신 회귀 및 실제 save; restore 실측은 위 표 |
+| cache 경계·source별 갱신 및 복원 | OK — 격리·갱신 회귀, 실제 save 및 같은 후보의 source/target exact hit; warm native 36.85% 감소 |
 | 로컬 계약·제품 경계 | OK — automation 554, CI 52, upstream 36, Studio 132 통과 |
 | Studio build/GUI typecheck/제품 버전·metadata | OK — local 및 원격 fast에서 통과 |
-| workflow/문서 정합성 | OK — actionlint, diff --check, 변경 문서 43개·상대 링크 153개와 필수 보고서 섹션 확인 |
+| workflow/문서 정합성 | OK — actionlint, diff --check, 변경 문서 46개·상대 링크 163개와 필수 보고서 섹션 확인 |
 
 기존 Vite chunk/dynamic import 경고는 남아 있다. 로컬에서는 중립 Node/Studio 검사만 실행했고 Rust/Tauri/PowerShell 및 실제 설치는 GitHub Windows/Linux runner에서 실행했다.
 
@@ -137,6 +165,7 @@ cargo-target-v2-Linux-ARM64-desktop-aarch64-unknown-linux-gnu-eab8ee6e77a5c1774f
 - [부모 Stage 1](../working/task_m010_59_stage1.md): 자식 구현 통합과 운영 가이드 연결.
 - [부모 Stage 2](../working/task_m010_59_stage2.md): 554개 통합 회귀와 문서 정합성.
 - [부모 Stage 3](../working/task_m010_59_stage3.md): 실제 전체·재사용·cache 근거.
+- [부모 Stage 4](../working/task_m010_59_stage4.md): #63의 실제 warm 결과 통합과 PR #66 갱신.
 - [#60 최종 보고](task_m010_60_report.md): 계층 계약·시간 측정.
 - [#61 최종 보고](task_m010_61_report.md): 빠른 Node/Studio 및 Windows 검사.
 - [#62 최종 보고](task_m010_62_report.md): exact artifact 재사용.
@@ -154,15 +183,15 @@ cargo-target-v2-Linux-ARM64-desktop-aarch64-unknown-linux-gnu-eab8ee6e77a5c1774f
 - 전체 artifact 수용은 GUI/PDF handoff, updater, 서명, 공개 릴리즈 승인을 대신하지 않는다.
 - #19/#57 미완료 제품/진단 코드는 포함하지 않았다. 특히 #57의 NSIS-only/MSI-only 분리 수용은 이번 기존 smoke와 다르다.
 - 자동 선택은 로컬 positive/negative·실제 Git fixture로 확인했고 실제 원격 full/installer 및 대표 arm64 product 경로를 실행했다. 모든 profile의 native 경로를 각각 반복하지 않았다.
-- cache는 보존이 보장되지 않으며 key 적중이 재컴파일 0회를 뜻하지 않는다. 자세한 실제 hit/miss와 성능 한계는 위 측정 기록을 따른다.
+- cache는 보존이 보장되지 않으며 key 적중이 재컴파일 0회를 뜻하지 않는다. 36.85%는 같은 후보의 arm64 한 쌍에서 관측한 값이며 물리 CPU·부하와 반복 표본 분산은 통제하지 않았다. Windows/Linux x64, 다른 source SHA 또는 전체 CI의 같은 비율 개선을 의미하지 않는다.
 - 최종 문서 SHA와 실제 제품 SHA를 구분해야 한다. artifact가 만료되면 같은 ID로 재사용할 수 없다.
 
 ### 후속 작업 후보
 
 - #19/#57 통합 시 `CI_VALIDATION.md`의 workflow 소유 위치와 공통 handoff를 사용한다.
-- cache 용량·보존·기능/profile별 실제 재컴파일 비용을 후속 측정한다. cache 삭제나 저장소 quota 변경은 이번 작업에서 수행하지 않았다.
+- cache의 장기 보존·용량 경쟁, 다른 source의 prefix restore와 남아 있는 workspace/feature별 재컴파일을 후속 검토한다. cache 삭제나 저장소 quota 변경은 이번 작업에서 수행하지 않았다.
 - #27 action pin과 #28 branch protection 정책은 별도 작업 범위를 유지한다.
 
 ## 작업지시자 승인 요청
 
-기존 추가 승인 없는 구현·검증·PR 생성 지시를 적용해 Open PR을 게시한다. 리뷰와 merge 판단은 작업지시자에게 남긴다. 이슈 close, merge, release/배포/서명은 수행하지 않았다.
+기존 구현·검증 지시와 2026-09-08의 이번 PR 포함 지시에 따라 Open PR #66을 갱신한다. 리뷰와 merge 판단은 작업지시자에게 남긴다. 이슈 close, merge, release/배포/서명은 수행하지 않았다.

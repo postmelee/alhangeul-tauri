@@ -66,3 +66,17 @@ GitHub Issue: [#59](https://github.com/postmelee/alhangeul-tauri/issues/59)
   최종 보고와 PR에 공개한다. 개별 cache 제거 사유는 확인하지 않았다.
 - #60–#64 Stage 3·최종 보고를 각 branch에서 commit한 후 부모에 fast-forward 통합했다.
   위의 당시 진행 기록과 잘못된 SHA dispatch 취소 이력은 보존한다.
+
+## Stage 4 — 승인된 warm 재측정의 PR 통합
+
+2026-09-08 작업지시자의 이번 PR 포함 지시를 적용한다. [#63 Stage 4 계획](task_m010_63_impl.md)에
+따라 기존 후보를 재측정하고 부모 보고서와 PR #66을 갱신한다.
+
+- run 34065744901 attempt 2: success. 같은 SHA/image/compiler/검증 범위에서 source/target
+  exact hit를 확인했고 arm64 native 1,259초 → 795초, 464초(36.85%) 감소를 기록한다.
+- 과거 miss 이력과 cache 보존 한계를 유지한다. 다른 플랫폼·source 및 전체 CI 개선율로 확대하지 않는다.
+- 문서 위치는 기존 mydocs/working·report, 오늘할일 20260908.md와 이미 승인한 CI 운영 가이드를 유지한다.
+- 검증: 이전 PR head 이후 실행 코드 diff 없음, 문서 상대 링크·필수 보고서 섹션 및
+  git diff --check, 정확한 parent/head와 문서 고정 링크 확인.
+- #63 단계를 부모에 fast-forward 통합하고 Stage 4 보고·최종 보고를 commit한 뒤
+  publish/task59를 push하고 기존 Open PR #66의 결과와 고정 문서 링크를 갱신한다.

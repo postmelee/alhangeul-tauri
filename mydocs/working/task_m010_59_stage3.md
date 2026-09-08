@@ -4,6 +4,9 @@ GitHub Issue: [#59](https://github.com/postmelee/alhangeul-tauri/issues/59)
 구현계획서: [task_m010_59_impl.md](../plans/task_m010_59_impl.md)
 Stage: 3
 
+이 보고서는 2026-09-07의 통합 수용 기록이다. 9월 8일 실제 cache hit 재측정 결과는
+[Stage 4](task_m010_59_stage4.md)에 통합했다.
+
 ## 단계 목적
 
 분리된 CI를 실제 Windows/Linux에서 통합 수용하고 부분 검증·재사용·cache 한계를 구분한다.
