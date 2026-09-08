@@ -3,7 +3,37 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: Stage 5.2 fast 회귀 통과 — Stage 5.3 full·비교 실험 실행 승인 대기
+상태: Stage 5.3 후보 게시·full 비교 실행 시작 — run 34259185689 결과 대기
+
+## Stage 5.3 승인된 후보 게시·full 실행 기록
+
+2026-09-09 작업지시자가 같은 스레드의 “진행해줘”로 후보 게시 및 full+비교 1회 실행을
+승인했다. clean `local/task57`의 HEAD가 승인 후보와 일치했고, 원격 이전 후보
+`26ded313dad49dfd8cd21145aff7e57e3c51cb77`이 그 조상임을 확인했다. 실행 전 이 ref의
+ci.yml 조회에는 완료된 fast run만 있었으며 진행중/pending 실행과 충돌하지 않았다.
+non-force push 후 원격 ref의 exact SHA를 재조회한 뒤 dispatch를 한 번만 수행했다.
+
+| 항목 | 기록 |
+|---|---|
+| 후보 / 실제 run head SHA | `7083ccfb05b39516294d698de2ca124a3bfd6820` |
+| ref / workflow | `publish/task57` / `.github/workflows/ci.yml` |
+| Run | [34259185689](https://github.com/postmelee/alhangeul-tauri/actions/runs/34259185689), attempt 1, workflow_dispatch |
+| 생성 시각 | 2026-09-09 02:47:18 KST (`2026-09-08T17:47:18Z`) |
+| 전송 입력 | `profile=full`, `scope=full`, `thumbnail_context_experiment=true` |
+| 최초 job 조회 | select `102172564657`·artifacts/plan `102172628770` success |
+| 빠른 검사 | artifacts/fast Windows `102172685323`·Linux `102172685325` in_progress |
+
+입력은 성공한 dispatch 명령의 전송값이며 run API의 전체 입력 객체 read-back이 아니다.
+entry의 standalone fast/installer/Unit tests·Windows PDF cleanup은 선택 밖이므로 skipped다.
+실제 full의 fast는 artifacts 내부에서 실행된다. workflow가 같은 `github.sha`를 build_ref로
+전달하고 plan의 exact source 검사가 성공했다. 생성물 inventory·새 bundle/support ID/digest와
+다운로드 bytes 검증, 실제 제품/비교/복원 결과는 후속 완료 분석에서 확인한다.
+
+승인은 아래 계획의 Windows/Linux 생성·독립 installer 3개·비교 replica 2개와 폐기 가능한
+hosted Windows의 제한된 임시 HKCU/HKLM·보호 경로 개입까지다. 사용자 PC·UAC/정책·기본 앱·
+#58·제품 보정·재부팅·릴리즈는 변경하지 않는다. 현재 full 수용·NSIS 해결·Stage 5 완료는
+선언하지 않는다. 이 로컬 기록 커밋을 실행된 후보 SHA로 표시하지 않으며 추가 push/dispatch는
+수행하지 않는다. 아래 승인 대기 절은 실행 전 이력으로 유지한다.
 
 ## Stage 5.2 원격 결과 확정
 
