@@ -12,9 +12,14 @@ GitHub Issue: [#19](https://github.com/postmelee/alhangeul-tauri/issues/19)
 
 ### 2026-09-08 Stage 4.23 — PR #65 readback 및 예방적 보정
 
-실행 checkpoint: 로컬 Windows 계약 **60/60**, confirmation/workflow 계약 **61/61**, product
-boundary(445 files), `git diff --check` 통과. import된 중복 검사는 합산하지 않는다. 실제 Windows
-검증은 아직 미실행이며 이 기록은 완료 보고서가 아니다. 새 fixture는 87 LOC다. workflow와
+완료 결과: checkpoint `6c599633bc5dbe0c16d29351ae382cf7de36393b`의 dialog run `34205938455`는
+PS5.1 policy 62/native 59(실제 readback 9개 포함)/작은 통합 5개와 cleanup을 통과했다.
+CI run `34205941583`은 Windows desktop command 컴파일과 cleanup 6개 통과, full CI skipped다.
+각각 한 번만 실행했다. [4.23 보고서](../working/task_m010_19_stage4.23.md)에 SHA/증거/한계를 기록한다.
+
+실행 checkpoint 당시 로컬 Windows 계약 **60/60**, confirmation/workflow 계약 **61/61**, product
+boundary(445 files), `git diff --check` 통과. import된 중복 검사는 합산하지 않는다. 당시 Windows
+검증은 미실행이었고 완료 보고서가 아닌 checkpoint였다. 새 fixture는 87 LOC다. workflow와
 의존성/lockfile은 변경하지 않았고 앱 변경은 SVG 요청의 `Debug` 파생 제거 한 줄뿐이다.
 
 - `windows-pdf-win32.ps1`의 readback을 private `VerifyFileName`으로 분리하고 버퍼를
@@ -29,6 +34,7 @@ boundary(445 files), `git diff --check` 통과. import된 중복 검사는 합�
 - 로컬: `pnpm run test:gui:windows:contracts`, 관련 confirmation/workflow Node 계약,
   `pnpm run check:product-boundary`, `git diff --check`. 기존 대형 command/계약 파일은 작은
   변경만 하며 권장 LOC 예외를 유지한다. 새 fixture 파일/함수는 300/50 LOC 이내로 둔다.
+  fixture의 `CreateWindowEx` P/Invoke 선언은 Win32 ABI의 12개 인자를 그대로 유지하는 예외다.
 - 로컬 통과 뒤 실행 checkpoint를 기존 `publish/task19`에 non-force push한다. 기존
   `alhangeul-desktop.yml mode=windows-dialog-verify`와 `ci.yml scope=pdf-cleanup-windows`를
   각각 한 번 실행한다. 실제 PS5.1·readback·작은 대화상자 postcondition, Rust command 컴파일을

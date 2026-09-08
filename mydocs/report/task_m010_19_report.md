@@ -3,18 +3,21 @@
 GitHub Issue: [#19](https://github.com/postmelee/alhangeul-tauri/issues/19)
 마일스톤: M010
 
-## 2026-09-08 PR 리뷰 보정 진행 상태
+## 2026-09-08 PR 리뷰 보정 결과
 
 PR #65 리뷰 후 Stage 4.23의 파일명 readback false-positive 보정, 실제 Windows Edit 회귀,
-SVG 요청 Debug 제거와 policy 변수명 정리를 승인받았다. 관련 로컬 검사는 통과했으며
-Windows 제한 검증 전 checkpoint 상태다. 아래 최종 보고 당시의 수용 근거는 보존하지만
-새 보정의 Windows 통과로 간주하지 않는다. 현재 앱 diff는 Debug 파생 제거뿐이며 저장/
-snapshot/reaper 동작과 workflow는 그대로다. 실행 결과 확인 전 보정 완료·merge를 선언하지 않는다.
+SVG 요청 Debug 제거와 policy 변수명 정리를 승인받아 완료했다. [4.23 보고서](../working/task_m010_19_stage4.23.md)의
+checkpoint `6c59963`에서 실제 readback 9개/native 59개/policy 62개/작은 통합 5개와
+Windows command 컴파일·cleanup 6개가 통과했다. 관련 로컬 검사는 60/60·61/61 통과이며
+중복 import 수를 합산하지 않는다. 기존 두 workflow를 한 번씩만 사용했고 새 workflow는 없다.
+이번 앱 diff는 Debug 파생 제거뿐이며 저장/snapshot/reaper 동작과 배포 설정은 그대로다.
+아래 기존 설치본 PDF 근거는 재사용하되 새 checkpoint로 제품을 재빌드했다고 주장하지 않는다.
+보정된 기존 PR의 리뷰/merge 판단을 요청하며 별도 리뷰 답글·merge·issue close·릴리즈는 하지 않는다.
 
 ## 작업 요약
 
 - 대상 이슈: #19. Windows/Linux PDF export의 문서 세대 혼합과 중단된 job 누적을 방지한다.
-- 단계 수: 기본 4단계와 Stage 4.1–4.22 보정·검증. 과거 실패/부분 결과를 포함한 단계 기록 26개를 보존한다.
+- 단계 수: 기본 4단계와 Stage 4.1–4.23 보정·검증. 과거 실패/부분 결과를 포함한 단계 기록 27개를 보존한다.
 - 현재 형식의 HWP/HWPX를 한 번 직렬화해 격리 snapshot에서 PDF를 만들고 native job을
   snapshot UUID·owner·순서·용량·수명에 결속한다. stale job과 안전한 오래된 temp만 회수한다.
 - 승인된 계층별 수용 근거를 Stage 4.22에서 정리했다. 후속 `진행해줘`로 최종 보고와
@@ -37,7 +40,8 @@ snapshot/reaper 동작과 workflow는 그대로다. 실행 결과 확인 전 보
 제품 renderer·font·upstream pin·HWP/HWPX 원본 저장·인쇄 구현은 바꾸지 않았다.
 Stage 4.4에서 선행 #20/#34가 반영된 devel과 통합했다. 그 이후 runtime은 동일하고, 검증
 SHA `69b22650df96323a2c59e473d474ed3195cc9cc7` 대비 apps/crates/assets/third_party/lockfile의
-차이는 `#[cfg(test)]` cleanup 테스트 60줄뿐이다. 최종 보고 단계에는 코드/workflow를 수정하지 않았다.
+차이는 최초 최종 보고 당시 `#[cfg(test)]` cleanup 테스트 60줄뿐이었다. 이후 4.23에서
+SVG 요청 Debug 파생 제거 한 줄만 앱에 추가 반영했다. workflow는 이번에도 수정하지 않았다.
 
 리뷰는 snapshot/persistence → native jobs/cleanup → 자동화/가이드 순서를 권장한다.
 helper 진단 실패를 제품 실패로 세거나, 보조 진단을 필수 UI 조작보다 앞세우지 않는지 확인한다.
@@ -54,7 +58,8 @@ helper 진단 실패를 제품 실패로 세거나, 보조 진단을 필수 UI �
 
 제품 문서를 `mydocs/manual`에 넣거나 새로운 공식 문서 루트를 선택하지 않았다.
 과거 단계 보고서의 당시 미완료/실패 문구를 일괄 성공으로 바꾸지 않았다. 최신 판단은
-[Stage 4.22](../working/task_m010_19_stage4.22.md)와 이 보고서가 설명한다.
+[Stage 4.22](../working/task_m010_19_stage4.22.md)의 수용 근거와
+[Stage 4.23](../working/task_m010_19_stage4.23.md)의 PR 리뷰 보정 및 이 보고서가 설명한다.
 
 ## 변경 전·후 정량 비교
 
@@ -108,13 +113,15 @@ helper 진단 실패를 제품 실패로 세거나, 보조 진단을 필수 UI �
 | Windows PDF 전체 | [run 34058443345](https://github.com/postmelee/alhangeul-tauri/actions/runs/34058443345), harness `fdbf481`·제품 `69b2265`: HWP/HWPX fresh/restart 4PDF·32쪽 분석·원본/dirty 보존. PS 정책 62/native 50/tree 16 |
 | Linux HWPX 제한 | [run 34063977183](https://github.com/postmelee/alhangeul-tauri/actions/runs/34063977183), harness `0ab4745`·제품 `69b2265`: 10쪽/A4/한글 검색·nonblank·원본 hash/문서 상태 보존, 14파일 검산 |
 | Windows cleanup 제한 | [run 34064903014](https://github.com/postmelee/alhangeul-tauri/actions/runs/34064903014), harness `e401863`: 실제 junction 포함 6/6, 0 ignored, 92 filtered out. test 전용 resource 예외, full CI skipped |
-| 최종 소스 계약 | [Stage 4.22](../working/task_m010_19_stage4.22.md): workflow 55/55, 앞선 GUI 19/19·Linux 62/62·workflow 65/65, typecheck/actionlint/format/boundary/diff 통과. 중복 import 수는 합산하지 않음 |
+| PR 리뷰 보정 | [dialog run 34205938455](https://github.com/postmelee/alhangeul-tauri/actions/runs/34205938455): 실제 readback 9개 포함 native 59/59, policy 62/62, 통합 5/5·cleanup; [CI run 34205941583](https://github.com/postmelee/alhangeul-tauri/actions/runs/34205941583): command 컴파일·cleanup 6/6. 둘 다 `6c59963`, 설치본 미생성 |
+| 소스 계약 | [Stage 4.22](../working/task_m010_19_stage4.22.md): workflow 55/55, 앞선 GUI 19/19·Linux 62/62·workflow 65/65, typecheck/actionlint/format/boundary/diff 통과. 4.23 관련 계약 60/60·61/61 및 boundary/diff 통과. 중복 import 수는 합산하지 않음 |
 
 제품과 harness SHA 및 artifact digest/개별 파일 hash는 [4.19 보고서](../working/task_m010_19_stage4.19.md),
 [4.22 보고서](../working/task_m010_19_stage4.22.md)에 있다. 같은 제품 설치 bytes를 확인한 뒤
 재사용했으며 최신 문서 commit을 해당 native binary의 build SHA라고 쓰지 않는다.
-최종 보고 시 5개 주요 run의 completed/success와 SHA를 GitHub에서 재확인했다.
-통과 이후 문서만 변경했으므로 새 workflow/제품 빌드·전체 suite를 반복하지 않았다.
+최초 최종 보고 시 5개 주요 run의 completed/success와 SHA를 GitHub에서 재확인했다.
+당시에는 통과 이후 문서만 변경했으므로 새 workflow/제품 빌드·전체 suite를 반복하지 않았다.
+이번 PR 보정은 위 두 Windows 제한 검증으로 따로 확인했다.
 
 시각 검토는 기존 HWP 6쪽, Windows 32쪽 렌더의 이전 검토본과 동일 hash 확인 및 대표 화면
 재확인, Linux HWPX 10쪽/앱 화면 검토를 근거로 한다. 빈 페이지·전면적 문자 깨짐은 없으나
@@ -151,13 +158,15 @@ HWPX 긴 표 문구의 셀 경계 잘림은 남는다. 사용자의 실제 Windo
 | 4.20 | [실제 앱 확인창 관측](../working/task_m010_19_stage4.20.md): 호출 전 관측 |
 | 4.21 | [거절/확인 및 보존](../working/task_m010_19_stage4.21.md): 이전 거절과 후속 Confirm을 부분별로 결합 |
 | 4.22 | [계층별 수용/최소 OS 보완](../working/task_m010_19_stage4.22.md): 승인된 수용 근거 정리 완료 |
+| 4.23 | [PR 리뷰 readback 보정](../working/task_m010_19_stage4.23.md): 실제 Edit 9개·작은 통합·Windows command 컴파일 통과 |
 
 중간 단계의 성공은 그 단계의 구현/검증 범위만 의미한다. Windows PDF 실패를 포함한
 시행착오와 보정 근거는 [사건 기록](../troubleshootings/task_m010_19_windows_pdf_automation.md)에
 남아 있으며, 과거 기록을 모두 최종 PDF 성공으로 해석하지 않는다.
 
-최종 문서 검사: 변경 문서 4개/로컬 링크 53개, 템플릿 필수 섹션 7개, 커밋된 단계 기록
-26개와 diff 검사가 통과했다. 통과 harness `e401863` 이후 소스/workflow 차이가 없음을 확인했다.
+최초 최종 문서 검사에서는 변경 문서 4개/로컬 링크 53개, 템플릿 필수 섹션 7개, 커밋된 단계 기록
+26개와 diff 검사가 통과했다. 당시 harness `e401863` 이후 소스/workflow 차이가 없음을 확인했다.
+후속 4.23의 변경/검증은 위 별도 결과로 구분한다.
 
 ## 잔여 위험과 후속 작업
 
