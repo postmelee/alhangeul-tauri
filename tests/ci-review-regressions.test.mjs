@@ -10,8 +10,8 @@ import { selectValidation } from '../scripts/ci/profiles.mjs';
 const read = path => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
 test('only fast cancels its own profile; source fallback does not weaken target identity', () => {
   const workflow = read('.github/workflows/ci.yml');
-  assert.ok(workflow.includes('group: alhangeul-ci-${{ github.ref }}-${{ inputs.profile }}'));
-  assert.ok(workflow.includes("cancel-in-progress: ${{ inputs.profile == 'fast' }}"));
+  assert.ok(workflow.includes('group: alhangeul-ci-${{ github.ref }}-${{ inputs.profile }}-${{ inputs.scope }}'));
+  assert.ok(workflow.includes("cancel-in-progress: ${{ inputs.profile == 'fast' && inputs.scope != 'pdf-cleanup-windows' }}"));
   const cache = read('.github/actions/cargo-cache/action.yml');
   assert.ok(cache.includes('restore-keys: |\n          cargo-source-v2-${{ runner.os }}-${{ runner.arch }}-'));
   assert.ok(cache.includes('restore-keys: |\n          ${{ steps.identity.outputs.prefix }}-'));

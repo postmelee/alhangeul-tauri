@@ -22,6 +22,9 @@
 동일 ref의 실행은 요청 profile별로 분리한다. 명시 `fast`만 진행 중인 같은 profile 실행을
 취소하며, `auto`를 포함한 나머지 profile은 진행 중 실행을 취소하지 않는다. GitHub 기본
 concurrency 정책에 따라 같은 그룹의 오래된 pending 실행은 새 pending 실행으로 교체될 수 있다.
+#19의 기존 `scope=pdf-cleanup-windows` 선택은 별도 Windows Rust cleanup 검사로 보존한다.
+이 선택은 profile 실행을 생략하며 같은 scope의 진행 중 실행을 취소하지 않는다.
+일반 profile은 `scope=full`(기본값)에서 선택한다. concurrency 그룹은 ref/profile/scope 조합이다.
 
 | profile | 실행 범위 | 사용 시점 |
 |---|---|---|
@@ -105,7 +108,9 @@ checkout과 Node 준비 이후 handoff 검사 전에 `workflow-context.json`을 
 진단 upload를 시도한다. checkout/Node 준비 자체의 실패에는 실행 로그로 원인을 확인한다.
 release 권한·secrets·제품 재빌드가 필요하지 않다.
 
-#19의 GUI/PDF handoff와 #57의 installer 진단은 별도 진행 중인 기능이다. 이 작업은 해당 branch의 미완료 제품 source를 가져오지 않는다. 후속 통합 때 공통 handoff와 빠른 Windows test 목록에 연결하되 기존 실제 진단과 gate 의미를 보존한다.
+#19의 GUI/PDF handoff는 PR #65로 devel에 병합되어 이번 통합 후보에 포함됐다. 기존 PDF/dialog
+dispatch와 Windows cleanup scope를 보존하고, 새 Node/PowerShell 회귀를 공통 빠른 검사에서
+실행한다. #57의 미완료 installer 진단 branch는 가져오지 않는다.
 
 현재 Windows smoke는 기존 MSI→제거→NSIS 순서를 같은 새 runner에서 실행한다. #57의
 NSIS-only/MSI-only 분리 수용을 대신하지 않는다. 후속 workflow 수정은 다음 소유 파일에

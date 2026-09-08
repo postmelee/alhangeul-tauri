@@ -6,6 +6,7 @@ mod linux_runtime;
 mod pdf_export;
 mod pdf_font_fallbacks;
 mod pdf_jobs;
+mod pdf_temp_cleanup;
 mod pdf_text_audit;
 mod pending_open;
 mod recent_documents;
@@ -55,6 +56,11 @@ pub fn run() {
             });
         }))
         .setup(|app| {
+            if let Err(error) = pdf_temp_cleanup::cleanup_orphan_pdf_temp_dirs() {
+                eprintln!("[pdf] 오래된 임시 디렉터리 정리를 건너뜁니다: {error}");
+            }
+            let pdf_jobs = app.state::<AppState>().pdf_jobs.clone();
+            pdf_temp_cleanup::spawn_pdf_job_reaper(std::sync::Arc::downgrade(&pdf_jobs))?;
             app.set_menu(tauri::menu::Menu::new(app)?)?;
             updater::commands::setup(app)?;
             queue_open_paths(app.handle(), startup_document_paths());

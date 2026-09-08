@@ -44,6 +44,8 @@ test('모든 workflow가 공통 또는 전용 contract test inventory에 등록�
     'alhangeul-updater-native-negative-linux.yml',
     'alhangeul-updater-native-negative-windows.yml',
     'alhangeul-updater-native-windows.yml',
+    'alhangeul-windows-dialog.yml',
+    'alhangeul-windows-pdf.yml',
     'alhangeul-windows-smoke.yml',
     'ci.yml',
     'pages.yml',
@@ -192,6 +194,40 @@ test('CI workflow는 제품·release 계약과 automation을 native 검사 전�
     'pnpm run test:desktop',
     'pnpm run clippy:desktop',
   ]);
+});
+
+test('Windows PDF cleanup 선택은 실제 junction test만 검증하며 제품을 패키징하지 않는다', () => {
+  const full = getJob(ciWorkflow, 'unit-tests');
+  const focused = getJob(ciWorkflow, 'pdf-cleanup-windows');
+  assert.match(ciWorkflow, /default: full/);
+  assert.match(full, /needs\.select\.outputs\.profile == 'native'/);
+  assert.match(getJob(ciWorkflow, 'select'), /inputs\.scope != 'pdf-cleanup-windows'/);
+  assert.match(focused, /inputs\.scope == 'pdf-cleanup-windows'/);
+  assert.match(focused, /runs-on: windows-2025/);
+  assert.match(focused, /--lib pdf_temp_cleanup::tests -- --nocapture/);
+  assert.match(focused, /grep -F 'windows_junctions_are_preserved_without_touching_target \.\.\. ok'/);
+  assert.match(focused, /git rev-parse HEAD > pdf-cleanup-context\.txt/);
+  assert.match(focused, /if: \$\{\{ always\(\) \}\}/);
+  assert.doesNotMatch(focused, /build:desktop|build:thumbnail|test:gui|tauri build|secrets\./);
+});
+
+test('cleanup test의 resource 예외는 test step에만 한정하고 배포 resource를 보존한다', async () => {
+  const step = getStepContaining(ciWorkflow, 'Test actual Windows PDF cleanup');
+  const override = step.match(/^          TAURI_CONFIG: '([^']+)'$/m);
+  assert.ok(override, 'test step env의 명시적인 JSON override가 필요합니다');
+  assert.match(step, /^        env:$/m);
+  assert.deepEqual(JSON.parse(override[1]), { bundle: { resources: [] } });
+  assert.doesNotMatch(ciWorkflow.replace(step, ''), /TAURI_CONFIG/);
+  assert.doesNotMatch(step, /GITHUB_ENV|GITHUB_OUTPUT|continue-on-error/);
+  const focused = getJob(ciWorkflow, 'pdf-cleanup-windows');
+  assert.doesNotMatch(focused, /thumbnail-resources|AlhangeulThumbnail(?:Handler|Worker)/);
+  const config = JSON.parse(await readFile(
+    join(repoRoot, 'apps/desktop/src-tauri/tauri.windows.conf.json'), 'utf8',
+  ));
+  assert.deepEqual(config.bundle.resources, {
+    'windows/thumbnail-resources/AlhangeulThumbnailHandler.dll': 'AlhangeulThumbnailHandler.dll',
+    'windows/thumbnail-resources/AlhangeulThumbnailWorker.exe': 'AlhangeulThumbnailWorker.exe',
+  });
 });
 
 test('native matrix consumes the selector contract and keeps Windows independent', () => {

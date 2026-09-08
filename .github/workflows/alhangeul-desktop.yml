@@ -16,11 +16,25 @@ on:
           - updater-native-negative-acceptance
           - updater-linux-window-probe
           - updater-linux-window-verify
+          - windows-pdf-acceptance
+          - windows-pdf-open-probe
+          - windows-pdf-dialog-probe
+          - windows-pdf-dialog-verify
+          - windows-dialog-probe
+          - windows-dialog-verify
       build_ref:
         description: Artifact mode requires a ref resolving to the selected workflow commit; other modes accept branch/tag/commit. Empty uses the workflow commit.
         required: false
         default: ""
         type: string
+      confirmation_cases:
+        description: Cases for windows-pdf-dialog-verify only; confirm-only reuses prior decline evidence.
+        required: false
+        default: all
+        type: choice
+        options:
+          - all
+          - confirm-only
       run_tests:
         description: Run native Rust tests and lints; fast contracts always run for ordinary artifacts.
         required: true
@@ -753,6 +767,30 @@ jobs:
             --target "$SOURCE_SHA" \
             --title "Alhangeul $RELEASE_VERSION" \
             --notes "$RELEASE_NOTES"
+
+  windows-dialog-probe:
+    name: Test dialog policy and observe controlled confirmation
+    if: ${{ inputs.mode == 'windows-dialog-probe' || inputs.mode == 'windows-dialog-verify' }}
+    permissions:
+      contents: read
+    uses: ./.github/workflows/alhangeul-windows-dialog.yml
+    with:
+      verify: ${{ inputs.mode == 'windows-dialog-verify' }}
+
+  windows-pdf-acceptance:
+    name: Verify existing Windows product PDF export
+    if: ${{ inputs.mode == 'windows-pdf-acceptance' || inputs.mode == 'windows-pdf-open-probe' || inputs.mode == 'windows-pdf-dialog-probe' || inputs.mode == 'windows-pdf-dialog-verify' }}
+    permissions:
+      actions: read
+      contents: read
+    uses: ./.github/workflows/alhangeul-windows-pdf.yml
+    with:
+      open_only: ${{ inputs.mode == 'windows-pdf-open-probe' }}
+      confirmation_probe: ${{ inputs.mode == 'windows-pdf-dialog-probe' }}
+      confirmation_verify: ${{ inputs.mode == 'windows-pdf-dialog-verify' }}
+      confirmation_cases: ${{ inputs.confirmation_cases || 'all' }}
+      build_ref: ${{ inputs.acceptance_candidate_sha }}
+      native_run_id: ${{ inputs.acceptance_d1_run_id }}
 
   updater-linux-window-probe:
     name: Diagnose Linux window automation only

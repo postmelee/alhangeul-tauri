@@ -94,6 +94,10 @@ exact SHA·실행 환경·미해결 위험은 [v0.1.0 기록](releases/v0.1.0.md
 [변경 범위 기반 CI 검증](operations/CI_VALIDATION.md)을 따른다. 공유 변경과 최종 후보는
 전체 경로로 검증하며 부분 profile 성공을 전체 제품 수용으로 쓰지 않는다.
 
+native 대화상자·버튼·메시지 관련 회귀 테스트나 Actions를 작성/수정하기 전에는
+[Native UI 테스트 가이드](operations/NATIVE_UI_TESTING.md)를 읽는다. 정적 계약,
+순수 판단 함수의 회귀, 대상 OS 실행의 보장 범위와 실패 축소 순서를 구분한다.
+
 모든 호스트에서 실행 가능한 기본 검증:
 
 ```sh
