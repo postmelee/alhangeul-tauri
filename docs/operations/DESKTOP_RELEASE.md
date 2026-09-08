@@ -68,6 +68,10 @@
 | Linux GUI acceptance | 지정 native run의 exact DEB와 GUI·인쇄·thumbnail 증거 | 비게시 수용 |
 | Pages | 검증된 `site/`를 `_site/`로 빌드·배포 | 별도 배포 승인; 앱 installer를 만들지 않음 |
 
+일반 `artifact`의 기본 범위는 all/full/tests=true다. 플랫폼·core·제품 생성만 선택한 부분
+profile과 기존 bytes 재사용은 [CI 검증 가이드](CI_VALIDATION.md)를 따른다. 일반 artifact도
+workflow SHA와 실제 제품 checkout SHA가 같아야 한다.
+
 일반 native build와 updater build를 혼용하지 않는다. 기본 build의 성공은 production endpoint와
 서명이 포함된 파일의 검증이 아니다. updater build는 일반 build의 전체 test·package smoke를
 자동으로 반복하는 경로가 아니므로 변경 영향과 실제 job 결과를 따로 확인한다.

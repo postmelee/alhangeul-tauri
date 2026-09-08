@@ -49,7 +49,7 @@ test('등록된 dispatcher는 PDF 전용 reusable workflow에 기존 artifact id
   assert.match(job, /build_ref: \$\{\{ inputs.acceptance_candidate_sha \}\}/);
   assert.match(job, /native_run_id: \$\{\{ inputs.acceptance_d1_run_id \}\}/);
   assert.doesNotMatch(job, /write|secrets|publish_release/);
-  for (const name of ['build', 'windows-installer-smoke', 'build-updater', 'build-updater-acceptance', 'publish-updater']) {
+  for (const name of ['artifact', 'build-updater', 'build-updater-acceptance', 'publish-updater']) {
     const block = dispatcher.split(`\n  ${name}:\n`)[1].split(/\n  [a-z][\w-]*:\n/)[0];
     assert.doesNotMatch(block.split('steps:')[0], /windows-pdf-acceptance/);
     assert.match(block, /if: \$\{\{ inputs.mode == '(artifact|updater|updater-acceptance)'/);

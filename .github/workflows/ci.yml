@@ -11,12 +11,33 @@ on:
           - full
           - pdf-cleanup-windows
 
+      profile:
+        description: Select validation scope; auto uses an exact base SHA and falls back to full.
+        type: choice
+        default: native
+        options: [auto, fast, native, installer, windows-package, linux-package, full]
+      base_sha:
+        description: Auto profile only - exact comparison SHA; missing/unavailable means full.
+        type: string
+      product_sha:
+        description: Installer profile only - exact product commit.
+        type: string
+      product_run_id:
+        description: Installer profile only - successful producer run.
+        type: string
+      artifact_id:
+        description: Installer profile only - exact approved archive ID.
+        type: string
+      artifact_digest:
+        description: Installer profile only - sha256-prefixed approved archive digest.
+        type: string
+
 permissions:
   contents: read
 
 concurrency:
-  group: alhangeul-ci-${{ github.ref }}-${{ inputs.scope }}
-  cancel-in-progress: true
+  group: alhangeul-ci-${{ github.ref }}-${{ inputs.profile }}-${{ inputs.scope }}
+  cancel-in-progress: ${{ inputs.profile == 'fast' && inputs.scope != 'pdf-cleanup-windows' }}
 
 env:
   CARGO_TERM_COLOR: always
@@ -24,9 +45,51 @@ env:
   NODE_VERSION: "24"
 
 jobs:
+  select:
+    if: ${{ inputs.scope != 'pdf-cleanup-windows' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      profile: ${{ steps.select.outputs.profile }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          submodules: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          package-manager-cache: false
+      - name: Fetch only the requested comparison commit
+        if: ${{ inputs.profile == 'auto' }}
+        shell: bash
+        env:
+          BASE_SHA: ${{ inputs.base_sha }}
+        run: |
+          if [[ "$BASE_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            git fetch --no-tags --depth=1 origin "$BASE_SHA" || echo 'Comparison unavailable; selector will use full.'
+          fi
+      - id: select
+        env:
+          VALIDATION_PROFILE: ${{ inputs.profile }}
+          BASE_SHA: ${{ inputs.base_sha }}
+          PRODUCT_SHA: ${{ inputs.product_sha }}
+          PRODUCT_RUN_ID: ${{ inputs.product_run_id }}
+          PRODUCT_ARTIFACT_ID: ${{ inputs.artifact_id }}
+          PRODUCT_ARTIFACT_DIGEST: ${{ inputs.artifact_digest }}
+        run: node scripts/ci/select.mjs
+  fast:
+    needs: select
+    if: ${{ contains(fromJSON('["fast","native","installer"]'), needs.select.outputs.profile) }}
+    uses: ./.github/workflows/alhangeul-ci-fast.yml
+    with:
+      source_ref: ${{ github.sha }}
+
   unit-tests:
-    if: ${{ inputs.scope == 'full' || inputs.scope == '' }}
     name: Unit tests
+    needs: [select, fast]
+    if: ${{ needs.select.outputs.profile == 'native' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
@@ -87,16 +150,12 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Cache cargo
-        uses: actions/cache@v5
+      - name: Cache Cargo workload
+        uses: ./.github/actions/cargo-cache
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            apps/desktop/src-tauri/target
-          key: unit-tests-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            unit-tests-cargo-
+          scope: unit
+          target: x86_64-unknown-linux-gnu
+          paths: apps/desktop/src-tauri/target
 
       - name: Install Node dependencies
         run: pnpm install --frozen-lockfile
@@ -142,6 +201,29 @@ jobs:
 
       - name: Lint desktop Rust
         run: pnpm run clippy:desktop
+
+  installer:
+    needs: [select, fast]
+    if: ${{ needs.select.outputs.profile == 'installer' }}
+    permissions:
+      actions: read
+      contents: read
+    uses: ./.github/workflows/alhangeul-installer-reuse.yml
+    with:
+      product_sha: ${{ inputs.product_sha }}
+      product_run_id: ${{ inputs.product_run_id }}
+      artifact_id: ${{ inputs.artifact_id }}
+      artifact_digest: ${{ inputs.artifact_digest }}
+
+  artifacts:
+    needs: select
+    if: ${{ contains(fromJSON('["windows-package","linux-package","full"]'), needs.select.outputs.profile) }}
+    uses: ./.github/workflows/alhangeul-artifacts.yml
+    with:
+      build_ref: ${{ github.sha }}
+      platform: ${{ needs.select.outputs.profile == 'windows-package' && 'windows-x64' || needs.select.outputs.profile == 'linux-package' && 'linux' || 'all' }}
+      profile: full
+      run_tests: true
 
   pdf-cleanup-windows:
     if: ${{ inputs.scope == 'pdf-cleanup-windows' }}

@@ -9,7 +9,7 @@ import { assertArchivePaths, ownersFromInventory } from '../scripts/linux-thumbn
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const [configSource, workflow, wrapper, smoke, fixtures, contract, verifier] = await Promise.all([
   readFile(join(repoRoot, 'apps/desktop/src-tauri/tauri.conf.json'), 'utf8'),
-  readFile(join(repoRoot, '.github/workflows/alhangeul-desktop.yml'), 'utf8'),
+  readFile(join(repoRoot, '.github/workflows/alhangeul-artifact-platform.yml'), 'utf8'),
   readFile(join(repoRoot, 'scripts/linux-thumbnail-package-smoke.sh'), 'utf8'),
   readFile(join(repoRoot, 'scripts/linux-thumbnail-package-smoke.mjs'), 'utf8'),
   readFile(join(repoRoot, 'scripts/linux-thumbnail-package-fixtures.mjs'), 'utf8'),

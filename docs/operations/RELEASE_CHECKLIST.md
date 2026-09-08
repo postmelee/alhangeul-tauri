@@ -15,6 +15,9 @@
 문서-only 변경은 문서 검증만으로 마칠 수 있다. 별도 앱 릴리즈가 없다면 서명 build나
 N→N+1을 만들 필요도 없다. 릴리즈를 실제 게시한다면 아래 공개 항목은 생략하지 않는다.
 
+작업 중 빠른 계약·플랫폼별 package·기존 제품 bytes의 installer 검증 선택은
+[CI 검증 가이드](CI_VALIDATION.md)를 따른다. CI의 full도 GUI·updater·공개 승인 전체를 뜻하지 않는다.
+
 ## 매 공개 기본 확인
 
 ### 후보·판단 — runbook Gate 0~1

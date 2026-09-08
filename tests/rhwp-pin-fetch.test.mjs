@@ -88,16 +88,16 @@ test('CI는 pinned tag fetch 뒤 기존 provenance gate를 실행한다', () => 
   assertMinimalCheckout(ciWorkflow, 'ci.yml');
 });
 
-test('desktop matrix는 pretest에서만 pinned tag를 fetch하고 provenance를 검증한다', () => {
-  assert.match(
-    desktopWorkflow,
-    /- name: Fetch rhwp pinned release tag\n        if: inputs\.run_tests\n        run: pnpm run fetch:rhwp-pin-tag/,
-  );
-  assertOrdered(desktopWorkflow, [
+test('artifact fast gate fetches the pinned tag once before native matrix work', async () => {
+  const fast = await readFile(join(projectRoot, '.github/workflows/alhangeul-ci-fast.yml'), 'utf8');
+  const artifacts = await readFile(join(projectRoot, '.github/workflows/alhangeul-artifacts.yml'), 'utf8');
+  assert.match(artifacts, /needs: \[plan, fast\]/);
+  assertOrdered(fast, [
     'pnpm run fetch:rhwp-pin-tag',
     'pnpm run check:rhwp-pin',
   ]);
   assertMinimalCheckout(desktopWorkflow, 'alhangeul-desktop.yml');
+  assertMinimalCheckout(fast, 'alhangeul-ci-fast.yml');
 });
 
 function createGitRunner(

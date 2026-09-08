@@ -67,14 +67,15 @@ pnpm run check:rhwp-pin
 입력: release PR merge 뒤 승인한 main exact SHA와 이를 가리키는 `ALH_WORKFLOW_REF`,
 version/tag/notes, 선택 검증 범위. 준비 Task에서 merge 전 전체 후보를 반복 빌드하지 않는다.
 `--ref`는 workflow가 있는 branch/tag이고 `build_ref`는 exact SHA다. dispatch 직전 remote ref의
-resolved commit을 확인한다. updater는 workflow SHA = build_ref = checkout SHA가 필수다.
+resolved commit을 확인한다. 일반 artifact와 updater 모두 workflow SHA = build_ref = checkout SHA가 필수다.
 
 원격 실행 — 필요한 경우에만 일반 package/native 증거 확보:
 
 ```bash
 : "${ALH_WORKFLOW_REF:?승인 ref}" "${ALH_SOURCE_SHA:?승인 SHA}"
 gh workflow run alhangeul-desktop.yml -R "$ALH_REPO" --ref "$ALH_WORKFLOW_REF" \
-  -f mode=artifact -f build_ref="$ALH_SOURCE_SHA" -f run_tests=true
+  -f mode=artifact -f build_ref="$ALH_SOURCE_SHA" -f run_tests=true \
+  -f artifact_platform=all -f validation_profile=full -f publish_release=false
 ```
 
 일반 mode는 6종 package·thumbnail 근거를 만든다. 공개에는 DEB x64·RPM x64·DEB arm64만
