@@ -3,7 +3,51 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: PR #66 CI 구조 통합·로컬 검증 완료 — 비교 테스트 결함 보정 승인 대기
+상태: Stage 5.2 테스트 보정·로컬 회귀 완료 — 후보 게시·fast 1회 실행 승인 대기
+
+## Stage 5.2 — 2026-09-09 승인된 테스트 보정
+
+run `34065777777`은 failed 문서 force-extract의 phase가 성공의
+`ISharedBitmap.GetSharedBitmap`으로 남아 중단됐다. 같은 fixture에 width/height도
+남아 있었으므로 phase 한 필드만 고치지 않고 실제 probe 실패의 필드 조합을 만든다.
+`New-ContextTestPhase -FailedDocuments`로 기존 성공 factory를 확장하고 다음을 검증한다.
+
+1. 문서 3개 × Shell/force-extract 2개가 실제 실패 단계·`0x80040154`·exit 1·빈 이미지
+   필드를 가지며 기존 `Test-ThumbnailProbeContract`를 통과한다.
+2. JPG·association·activation 대조는 성공으로 유지하고 기존 분류기가 실패 패턴을 구분한다.
+   force-extract를 성공 단계로 되돌린 반례는 mixed로 남으며 성공 크기 잔존도 계약에서 거부한다.
+3. 성공/실패 데이터 모두 JSON round-trip과 저장된 원시 증거 대조를 통과해야 한다.
+   기존 8개 증거 변조 반례는 성공 baseline 파일을 복원한 뒤 수행해 다른 실패로 가려지지 않는다.
+4. fast의 AST allowlist에 누락돼 있던 순수 `Test-ContextEqual`만 추가해 원시 증거 검사의
+   의존성을 충족한다. registry 파일의 top-level/다른 함수는 실행하지 않는다.
+   create-only 증거 writer는 그대로 두고 실패 case의 알려진 임시 파일만 지운 후 성공 case를 쓴다.
+   신규 native/registry 실행은 없다. 이는 fast 회귀 검증이 실제로 도달하기 위한 테스트 경계 보정이다.
+
+로컬 source-contract는 실제 PowerShell 실행 결과가 아니다. Stage 5 전체 보고서는 보류하고
+미검증 후보 커밋을 만든 뒤 fast 1회 게시·실행 승인을 요청한다. 이전 통합 기록은 당시 상태로 유지한다.
+
+### Stage 5.2 로컬 결과와 인계
+
+| 검사 | 결과 |
+|---|---|
+| context/CI 통합/fast Node 대상 | 17 passed |
+| 전체 automation | 681 passed, 0 failed, 0 skipped |
+| product boundary | 488 files, 통과 |
+| 전체 workflow actionlint / diff | 통과 |
+| 실제 PS 5.1 분류·원시 증거 회귀 | 미실행; 승인 후 fast에서 확인 |
+| native/installer/COM/registry·full 수용 | 미실행 |
+
+로그: `/private/tmp/task57-stage52-automation.log`. 실제 설치/분류기/context 증거 판정·registry
+코드와 앱/workflow를 수정하지 않았음을 diff로 확인했다. 변경은 테스트 3개와 작업 기록 3개다.
+기존 CreateNew writer를 overwrite로 완화하지 않았고, 자기 테스트의 알려진 임시 파일만 정리한다.
+fast 의존성 검사에서 equality 함수 누락을 발견해 해당 순수 함수만 AST로 가져오도록 보완했다.
+이는 이전 Windows run에서 관측한 실패는 아니며 이번 로컬 코드 점검에서 발견한 누락이다.
+
+다음 승인 요청은 이 후보를 `publish/task57`에 non-force 게시하고 `ci.yml`에
+`profile=fast`, `scope=full`, `thumbnail_context_experiment=false`로 **1회** 실행하는 것이다.
+fast는 select와 Linux Node/Studio·Windows PowerShell 회귀이며 제품 재빌드/설치·비교 개입은 없다.
+실행 직전 같은 profile의 진행중 run 유무도 확인해 의도하지 않은 취소를 피한다.
+새 producer/installer/full·릴리즈·PR·issue close는 승인 범위를 넓혀서 수행하지 않는다.
 
 ## 2026-09-09 CI 통합 구현 정렬
 

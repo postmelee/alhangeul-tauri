@@ -6,18 +6,23 @@ Invoke-CiPowerShellTest -Path (Join-Path $root 'scripts\windows-thumbnail-assess
 # Load only pure context test functions. Never execute the CI registry/token entry point.
 . (Join-Path $root 'scripts\windows-thumbnail-context-files.ps1')
 . (Join-Path $root 'scripts\windows-thumbnail-context-evidence.ps1')
-$tokens = $null; $errors = $null
-$ast = [Management.Automation.Language.Parser]::ParseFile((Join-Path $root 'scripts\windows-thumbnail-context-tests.ps1'), [ref]$tokens, [ref]$errors)
-if ($errors.Count -gt 0) { throw 'Context test source parse failed' }
-$allowed = @('Assert-ContextThrows', 'New-ContextTestPhase', 'Test-ContextFindingContracts', 'Test-ContextRawEvidence')
-$loaded = @()
-foreach ($node in $ast.EndBlock.Statements) {
-    if ($node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -in $allowed) {
-        . ([scriptblock]::Create($node.Extent.Text))
-        $loaded += $node.Name
-    }
+$sources = [ordered]@{
+    'windows-thumbnail-context-registry.ps1' = @('Test-ContextEqual')
+    'windows-thumbnail-context-tests.ps1' = @('Assert-ContextThrows', 'New-ContextTestPhase', 'Test-ContextFindingContracts', 'Test-ContextRawEvidence')
 }
-if ($loaded.Count -ne $allowed.Count) { throw 'Missing pure context test function' }
+foreach ($source in $sources.GetEnumerator()) {
+    $tokens = $null; $errors = $null
+    $ast = [Management.Automation.Language.Parser]::ParseFile((Join-Path $root "scripts\$($source.Key)"), [ref]$tokens, [ref]$errors)
+    if ($errors.Count -gt 0) { throw 'Context test source parse failed' }
+    $allowed = $source.Value; $loaded = @()
+    foreach ($node in $ast.EndBlock.Statements) {
+        if ($node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -in $allowed) {
+            . ([scriptblock]::Create($node.Extent.Text))
+            $loaded += $node.Name
+        }
+    }
+    if ($loaded.Count -ne $allowed.Count) { throw 'Missing pure context test function' }
+}
 Test-ContextFindingContracts
 Test-ContextRawEvidence
 Write-Output 'Pure thumbnail assessment/context regressions passed; no native or installer acceptance.'

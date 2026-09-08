@@ -90,6 +90,29 @@ test('Windows tests include partial writes, later-owner conflict and machine cle
   assert.match(sources.tests, /exit 0\s*$/);
 });
 
+test('negative fixtures model the failing API and clear successful bitmap dimensions', () => {
+  const factory = sources.tests.split('function New-ContextTestPhase {')[1].split('function Test-ContextFindingContracts')[0];
+  assert.match(factory, /param\(\[switch\]\$FailedDocuments\)/);
+  assert.ok(factory.includes("$FailedDocuments -and $label -match '^(small-hwp|large-hwp|form-hwpx)-(shell|force-extract)$'"));
+  assert.match(factory, /\$result.status = 'failed'; \$result.hresult = '0x80040154'; \$exitCode = 1/);
+  for (const field of ['bitmapPresent', 'width', 'height']) assert.ok(factory.includes(`$result.${field} = $null`));
+  assert.ok(factory.includes("$result.phase = if ($mode -eq 'shell') { 'IShellItemImageFactory.GetImage' } else { 'IThumbnailCache.GetThumbnail' }"));
+  for (const marker of ['failed-fixture-count', 'invalid-negative-fixture', 'negative-fixture-exit', 'negative-roundtrip-classification', 'success-phase-not-class-not-registered', 'failed-dimension-rejected', 'negative-fixture-restored']) assert.ok(sources.tests.includes(marker));
+  assert.match(sources.tests, /foreach \(\$failedDocuments in @\(\$true, \$false\)\)/);
+  assert.match(sources.tests, /Assert-ContextPhaseEvidence \$roundTrip \$root/);
+  assert.match(sources.tests, /if \(\$failedDocuments\) \{\s+foreach \(\$label in \(Get-ContextExpectedLabels\)\)/);
+  assert.match(sources.files, /\[IO.FileMode\]::CreateNew/);
+});
+
+test('fast raw-evidence tests load their pure equality dependency without registry entry points', async () => {
+  const fast = await read('tests/windows-thumbnail-fast.test.ps1');
+  assert.match(fast, /'windows-thumbnail-context-registry.ps1' = @\('Test-ContextEqual'\)/);
+  assert.match(fast, /\$loaded.Count -ne \$allowed.Count/);
+  assert.match(fast, /\$node.Name -in \$allowed/);
+  assert.doesNotMatch(fast, /\. \(Join-Path[^\n]*context-registry|Open-ContextHive|Get-ContextClass|Set-ContextValue|New-ContextJournal|CIConsent/);
+  assert.match(sources.registry, /function Test-ContextEqual\(\$Left, \$Right\) \{\s+return \(ConvertTo-Json/);
+});
+
 test('context code does not change security policy or kill unrelated Shell processes', () => {
   const all = Object.values(sources).join('\n');
   assert.doesNotMatch(all, /DisableProcessIsolation\s*=|Set-ExecutionPolicy|ExecutionPolicy Bypass|Stop-Process|taskkill|New-LocalUser|Set-LocalUser|regsvr32/i);

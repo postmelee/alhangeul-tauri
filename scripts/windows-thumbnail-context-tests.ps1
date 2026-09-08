@@ -36,6 +36,7 @@ function Test-ContextStoredEvidence($Directory) {
 }
 
 function New-ContextTestPhase {
+  param([switch]$FailedDocuments)
   $probes = @()
   foreach ($label in (Get-ContextExpectedLabels)) {
     $mode = if ($label -eq 'environment') { 'state' } elseif ($label -eq 'activation') { 'activate' } elseif ($label -like 'association-*') { 'association' } elseif ($label.EndsWith('-cache-only')) { 'cache-only' } elseif ($label.EndsWith('-force-extract')) { 'force-extract' } else { 'shell' }
@@ -46,7 +47,13 @@ function New-ContextTestPhase {
       $result.status = 'collected'
       $result['environment'] = @{ token = @{ status = 'ok'; elevated = $true; integrityRid = 12288 }; is64BitProcess = $true; apartment = 'STA'; sessionId = 2 }
     }
-    $probes += [ordered]@{ label = $label; result = $result; exitCode = 0 }
+    $exitCode = 0
+    if ($FailedDocuments -and $label -match '^(small-hwp|large-hwp|form-hwpx)-(shell|force-extract)$') {
+      $result.status = 'failed'; $result.hresult = '0x80040154'; $exitCode = 1
+      $result.bitmapPresent = $null; $result.width = $null; $result.height = $null
+      $result.phase = if ($mode -eq 'shell') { 'IShellItemImageFactory.GetImage' } else { 'IThumbnailCache.GetThumbnail' }
+    }
+    $probes += [ordered]@{ label = $label; result = $result; exitCode = $exitCode }
   }
   return [ordered]@{ schemaVersion = 1; status = 'observed'; cleanup = $true; integrityChecks = 12; context = @{ status = 'ok'; sameUser = $true; session = 2; elevated = $true; integrityRid = 12288 }; probes = $probes }
 }
@@ -54,15 +61,33 @@ function New-ContextTestPhase {
 function Test-ContextFindingContracts {
   $phase = New-ContextTestPhase
   Assert-Context ((Get-ContextFinding $phase) -ceq 'thumbnail-api-ok') 'positive-classification'
+  $phase = New-ContextTestPhase -FailedDocuments
+  $failed = @($phase.probes | Where-Object { $_.result.status -eq 'failed' })
+  Assert-Context ($failed.Count -eq 6) 'failed-fixture-count'
   foreach ($record in $phase.probes) {
-    if ($record.label -match '^(small-hwp|large-hwp|form-hwpx)-(shell|force-extract)$') {
-      $record.result.status = 'failed'; $record.result.hresult = '0x80040154'; $record.result.bitmapPresent = $false; $record.exitCode = 1
+    if ($record.result.status -eq 'failed') {
+      Assert-Context (Test-ThumbnailProbeContract $record.result "context-$($record.label)") 'invalid-negative-fixture'
+      Assert-Context ($record.exitCode -eq 1) 'negative-fixture-exit'
     }
   }
   Assert-Context ((Get-ContextFinding $phase) -ceq 'shell-class-not-registered') 'negative-classification'
+  $roundTrip = $phase | ConvertTo-Json -Depth 20 | ConvertFrom-Json
+  Assert-Context ((Get-ContextFinding $roundTrip) -ceq 'shell-class-not-registered') 'negative-roundtrip-classification'
+  $force = @($phase.probes | Where-Object { $_.label -eq 'small-hwp-force-extract' })[0]
+  $force.result.phase = 'ISharedBitmap.GetSharedBitmap'
+  Assert-Context ((Get-ContextFinding $phase) -ceq 'mixed-or-unclassified') 'success-phase-not-class-not-registered'
+  $force.result.phase = 'IThumbnailCache.GetThumbnail'
+  foreach ($dimension in @('width', 'height')) {
+    $force.result[$dimension] = 256
+    Assert-Context (-not (Test-ThumbnailProbeContract $force.result 'context-small-hwp-force-extract')) 'failed-dimension-rejected'
+    $force.result[$dimension] = $null
+  }
+  Assert-Context ((Get-ContextFinding $phase) -ceq 'shell-class-not-registered') 'negative-fixture-restored'
   $phase.probes[1].result.hresult = '0x80070005'
   Assert-Context ((Get-ContextFinding $phase) -ceq 'mixed-or-unclassified') 'denied-is-not-class-not-registered'
   $phase.probes[4].result.status = 'failed'
+  $phase.probes[4].result.hresult = '0x80070005'; $phase.probes[4].exitCode = 1
+  $phase.probes[4].result.bitmapPresent = $null; $phase.probes[4].result.width = $null; $phase.probes[4].result.height = $null
   Assert-Context ((Get-ContextFinding $phase) -ceq 'control-failed') 'jpg-failure-preserved'
   $phase.probes = @($phase.probes | Where-Object { $_.label -ne 'activation' })
   Assert-Context ((Get-ContextFinding $phase) -ceq 'invalid') 'missing-probe-preserved'
@@ -72,9 +97,18 @@ function Test-ContextRawEvidence {
   $root = Join-Path ([IO.Path]::GetTempPath()) ('alhangeul-context-test-' + [Guid]::NewGuid().ToString('N'))
   [void][IO.Directory]::CreateDirectory($root)
   try {
-    $valid = New-ContextTestPhase
-    foreach ($record in $valid.probes) { Write-ContextJson (Join-Path $root "$($record.label).json") $record.result }
-    Assert-ContextPhaseEvidence $valid $root
+    # End with the success baseline so every mutation below has its intended control files.
+    foreach ($failedDocuments in @($true, $false)) {
+      $valid = New-ContextTestPhase -FailedDocuments:$failedDocuments
+      foreach ($record in $valid.probes) { Write-ContextJson (Join-Path $root "$($record.label).json") $record.result }
+      Assert-ContextPhaseEvidence $valid $root
+      $roundTrip = $valid | ConvertTo-Json -Depth 20 | ConvertFrom-Json
+      Assert-ContextPhaseEvidence $roundTrip $root
+      # The evidence writer is create-only; remove only this case's known temporary files.
+      if ($failedDocuments) {
+        foreach ($label in (Get-ContextExpectedLabels)) { [IO.File]::Delete((Join-Path $root "$label.json")) }
+      }
+    }
     foreach ($mutation in @('missing', 'duplicate', 'order', 'context', 'cleanup', 'flags', 'raw', 'exit')) {
       $invalid = New-ContextTestPhase
       switch ($mutation) {
