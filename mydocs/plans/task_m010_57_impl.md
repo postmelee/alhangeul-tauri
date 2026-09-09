@@ -3,7 +3,74 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: Stage 5.4 후보 게시·fast 실행 시작 — run 34272745938 결과 대기
+상태: Stage 5.4 fast 성공 — Windows 실제 비교 재실행 승인 대기
+
+### Stage 5.4 fast 결과 확정과 실제 비교 실행안
+
+작업지시자가 fast 결과 분석 뒤 “진행해줘”로 결과 기록·재실행 계획 정리를 승인했다.
+이번 작업은 기존 두 계획서와 오늘할일만 갱신한다. 코드/공식 문서 위치는 변경하지 않고
+Stage 5.4 전체 완료 보고서는 실제 Windows 진단 검증 전까지 보류한다.
+
+[run 34272745938](https://github.com/postmelee/alhangeul-tauri/actions/runs/34272745938),
+attempt 1은 success다. 실행 SHA는 `6b3d9baa6b0129c9c0ba7a8ce0ca06caa59be88f`이며
+`profile=fast`, `scope=full`, `thumbnail_context_experiment=false` 전송 기록과 일치한다.
+
+| 실제 실행 근거 | 결과 |
+|---|---|
+| select `102218165017` | success |
+| Windows PS `102218226593` | success; 52 sources, 5 isolated tests |
+| Node/Studio `102218226770` | success; automation 685개, Studio 147개·build, boundary 490파일 |
+| artifacts / installer | skipped; 제품 생성·실제 설치/registry 관측 없음 |
+
+로그의 `Pure thumbnail assessment/context regressions passed; no native or installer acceptance.`와
+`PowerShell contracts passed: 52 sources, 5 isolated tests`를 대조했다. 새 정리 진단의
+순수 실패 분류·개인정보/원래 오류 보존·JSON 계약은 Windows PS에서 통과했다. 로그는
+`/private/tmp/task57-fast-34272745938.log`다. 실제 파일·registry 수집과 NSIS 제거 원인은
+아직 검증하지 않았다. 아래 실행 대기 표현은 당시 이력으로 유지한다.
+
+#### 다음 원격 실행 — 별도 승인 후 1회
+
+- 후보는 이번 결과·계획 문서 커밋의 exact SHA다. 구현 코드는 검증된 `6b3d9ba`와 같지만
+  새 workflow/source identity이므로 이전 run이 이 문서 후보까지 검증했다고 표현하지 않는다.
+  clean 상태·원격 조상 관계·진행중 실행을 확인해 `publish/task57`에 non-force 게시하고,
+  원격 SHA를 재조회한 후 `ci.yml`을 아래 입력으로 한 번 dispatch한다.
+- 입력: `profile=windows-package`, `scope=full`, `thumbnail_context_experiment=true`.
+  entry가 같은 `github.sha`를 build_ref로 넘기며 내부 artifacts profile=full/run_tests=true,
+  platform=windows-x64로 실행한다. workflow/checkout/resolved source SHA 일치를 확인한다.
+- fast Windows/Linux 계약 검사, Windows x64 core·native/package 생성, 독립 NSIS lifecycle/
+  MSI lifecycle/MSI forced-reinstall 3개, 비교 replica 2개와 집계를 실행한다. Linux 제품 빌드는
+  생략한다. 비교 job 최대 30분·기존 phase/probe 제한을 유지하고 비용을 수반하는 새 빌드임을 명시한다.
+- 이번 변경은 Windows CI 진단 helper/회귀에 한정됐고 workflow/공유 제품·lock은 변경하지 않았다.
+  Windows 부분 재실험으로 기록하며 이전 full 실패를 해소하거나 최종 통합 수용으로 대신하지 않는다.
+  workflow/공유 코드 변경 또는 최종 통합 시에는 CI_VALIDATION.md에 따라 full이 다시 필요하다.
+- 제품 bytes 불변 일반 설치 검사는 적격 producer의 exact 4개 입력으로 installer를 사용한다.
+  그러나 이번 fast에는 제품 artifact가 없고 이전 `34259185689`는 전체 failure로 재사용 부적격이다.
+  현 installer 재사용 경로에는 비교 opt-in도 없다. 이 때문에 현재 fresh Windows 경로를 선택하며,
+  실패 producer 허용이나 workflow 우회로 비용을 줄이지 않는다. 새 bundle/support ID·digest·
+  inventory sourceSha를 기록하고 같은 producer의 exact ID와 다운로드 digest 검증을 유지한다.
+
+#### 관측·안전·판정 기준
+
+1. Windows context 계약에서 실제 임시 파일/key 수집 회귀를 먼저 확인한다. 실패하면 실험은
+   선행 실패로 구분하고 코드 보정·재실행을 자동 진행하지 않는다.
+2. 기존 C0 → 가능한 C1 → C2 → C3 → 복원 비교를 두 clean hosted VM에서 유지한다.
+   baseline 미재현·정상 사용자 문맥 부재는 각각 baseline-not-reproduced/context-unavailable로
+   기록한다. HKCU 경로·HKLM 제품 COM 임시 개입은 기존 보호 경로/동일 bytes/소유권 journal
+   조건에서만 수행한다. 사용자 PC·UAC/정책·기본 앱·제3자 handler를 바꾸지 않는다.
+3. cleanupDiagnostics의 preflight/before-cleanup/after-uninstall-wait/실패 snapshot과
+   cleanupFailure를 읽어 경로·프로세스·hive/view/key/제거 항목 잔존, 빈 key, unreadable을
+   구분한다. not-run은 성공이 아니며 associationsRestored=false만으로 연결 훼손을 단정하지 않는다.
+   원시 phase/probe·두 replica·MSI 대조와 함께 판단한다.
+4. 진단 성공은 실패 항목이 구분됐다는 뜻이다. status=invalid 또는 cleanup=false이면 실험
+   전체 성공으로 표시하지 않는다. 비교 실패 시 workflow의 후속 raw gate는 skipped일 수 있어
+   수집 artifact의 별도 읽기 전용 분석과 구분한다. 부분 증거로 skipped gate를 성공 처리하지 않는다.
+5. NSIS 썸네일 실패와 MSI 강제 재설치 3010은 기존 제품 gate에서 그대로 실패한다.
+   제거 실패 항목이 밝혀져도 빈 key 허용·강제 삭제·host 종료·timeout 연장·재부팅은 하지 않는다.
+   원인에 따른 수정은 새 계획/승인으로 진행하며 제품 전체 사용자 NSIS·#58·앱 UI로 확대하지 않는다.
+
+현재 승인 요청은 이 exact 후보 게시와 Windows 부분 비교 **1회**다. 제한된 hosted VM의
+임시 HKCU/HKLM·보호 경로 실험을 포함한다. 추가 실행·릴리즈·PR·이슈 close는 제외한다.
+이번 문서 작업에서는 원격 게시/dispatch를 수행하지 않았으며 링크·상태·diff만 검증한다.
 
 ### Stage 5.4 승인된 후보 게시·fast 실행
 
