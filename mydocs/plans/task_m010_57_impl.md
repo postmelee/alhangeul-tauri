@@ -3,7 +3,33 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: Stage 5.4 fast 성공 — Windows 실제 비교 재실행 승인 대기
+상태: Stage 5.4 Windows 비교 실행 시작 — run 34328534574 결과 대기
+
+### Stage 5.4 승인된 Windows 부분 비교 실행
+
+2026-09-09 같은 스레드의 “진행해줘”로 아래 후보 게시·Windows 부분 비교 1회를 승인받았다.
+clean HEAD와 승인 후보, 원격 이전 후보 `6b3d9ba`의 조상 관계를 확인했다. 실행 전 이 ref의
+ci.yml에는 완료된 run만 있었다. non-force push 후 원격 exact SHA를 확인하고 1회 dispatch했다.
+
+| 항목 | 기록 |
+|---|---|
+| 후보 / 실제 run head SHA | `1dcac31504434b487b80d82398ebb8c6389d91c9` |
+| ref / workflow | `publish/task57` / `.github/workflows/ci.yml` |
+| Run | [34328534574](https://github.com/postmelee/alhangeul-tauri/actions/runs/34328534574), attempt 1, workflow_dispatch |
+| 생성 시각 | 2026-09-09 17:20:04 KST (`2026-09-09T08:20:04Z`) |
+| 전송 입력 | `profile=windows-package`, `scope=full`, `thumbnail_context_experiment=true` |
+| 최초 job 조회 | select `102391399398`·artifacts/plan `102391454263` success |
+| 빠른 계약 | Node/Studio `102391506795`·Windows PS `102391506844` in_progress |
+
+입력은 성공한 dispatch 명령의 전송 기록이며 API의 전체 입력 객체 read-back이 아니다.
+entry의 standalone fast/installer/Unit tests·PDF cleanup은 선택 밖으로 skipped다.
+실제 fast는 artifacts 내부에서 실행한다. 이후 Windows core·제품 생성, 독립 설치 검사 3개와
+비교 replica 2개를 수행하는 실행안이다. Linux 제품 빌드와 릴리즈는 선택하지 않았다.
+완료 후 새 bundle/support ID·digest·source provenance, 원시 비교와 cleanupDiagnostics를 확인한다.
+현재 부분 수용·NSIS 해결·정리 성공은 주장하지 않는다. 임시 HKCU/HKLM·보호 경로 실험은
+아래 승인된 hosted VM 범위만 유지하며 추가 실행·제품 수정·사용자 PC 조작은 하지 않는다.
+이 실행 기록은 후보와 별도 로컬 문서 커밋으로 보존하고 추가 push/dispatch는 하지 않는다.
+아래 승인 대기 표현은 당시 이력이다.
 
 ### Stage 5.4 fast 결과 확정과 실제 비교 실행안
 
