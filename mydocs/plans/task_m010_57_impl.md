@@ -3,12 +3,301 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: Stage 5 비교 실험 중단 — run 34328534574 failure, Stage 6 수행계획 보정 승인 대기
+상태: Stage 6 수행계획 승인 — 진단·안내 UI 구현계획 승인 대기
 
 2026-09-10 작업지시자 결정으로 추가 등록 범위·보호 경로 실험을 중단하고 현재 NSIS/MSI
 설치 방식을 유지한다. 최신 VDI 관측·완료 CI 결과와 진단·안내 UI 범위는
 [수행계획서 상단의 보정안](task_m010_57.md)을 따른다. 아래 결과 대기·재실행 요청은
-과거 이력이다. 이번에는 상태만 정정하며 Stage 6 구현계획은 수행계획 승인 뒤 작성한다.
+과거 이력이다. 수행계획 보정 커밋 `851b93f`에 대한 같은 스레드의 “진행해줘”를 승인으로
+받아 아래 구현계획을 작성한다. 이번에는 두 계획서·오늘할일만 변경하고 제품 구현·원격
+게시·CI 실행은 하지 않는다. 아래 Stage 6이 현재 구현 기준이며 Stage 5 실험을 재개하지 않는다.
+
+## Stage 6 단계 개요
+
+| Stage | 제목 | 주요 산출 | 검증 |
+|---|---|---|---|
+| 6.1 | Windows 네이티브 진단 기반 | 순수 판정·상태 수집·격리 child·자체 fixture·빌드 참조 | 판정 대조, Windows Rust, headless 실행·정리, package 정합성 |
+| 6.2 | 제품 정보의 진단·안내 UI | 얇은 bridge·동의·진행/취소·결과·MSI 안내·요약 복사 | Studio controller/DOM, native command 소유권, Windows/Linux 회귀 |
+| 6.3 | 패키지·현장 수용과 문서 | 기존 설치 검사에 진단 대조, VDI 확인, 제한/안내 문서 | fast 후 full, exact bytes, 현장 UI·Explorer 관측 분리 |
+
+각 하위 단계의 구현·검증·보고 뒤 다음 단계 승인을 받는다. 이 단계는 기존 설치 정책을
+유지한 지원 기능이며 NSIS 제한 해결·릴리즈 수용을 목표로 바꾸지 않는다. known-negative의
+정확한 분류 성공과 기존 제품 gate 실패를 함께 기록하고, 같은 실패 때문에 추가 등록 실험을
+자동 재개하지 않는다. 새 검증 자체가 실패하면 해당 단계에서 원인과 수정 범위를 보고한다.
+
+## 문서 위치 확인
+
+| 파일 | 수행계획상 위치 / Stage 산출물 | 일치 여부 | 용도 |
+|---|---|---|---|
+| `mydocs/plans/task_m010_57.md`, `task_m010_57_impl.md` | 기존 계획 / 승인·현재 구현 기준 | OK | 내부 작업 계획; 과거 실패를 지우지 않음 |
+| `mydocs/orders/20260910.md` | 기존 오늘할일 | OK | 현재 단계 한 줄 |
+| `docs/architecture/WINDOWS_THUMBNAILS.md` | Stage 6.3 기존 절 보완 | OK | 사용자·유지보수자에게 진단 계약과 오프라인 안내 설명 |
+| `docs/releases/v0.1.0.md` | Stage 6.3 기존 근거·제한 절 | OK | 후보별 자동/현장 결과와 미검증 범위 |
+| `docs/operations/RELEASE_CHECKLIST.md`, `README.md` | Stage 6.3 필요한 항목·링크만 수정 | OK | 수용 책임자와 사용자 진입점; 새 runbook 생성 없음 |
+| `mydocs/working/task_m010_57_stage6.1.md`부터 `_stage6.3.md` | 기존 단계 보고 절차의 `working/` | OK | 각 단계 산출·검증·한계; 실제 단계 종료 시에만 작성 |
+
+공식 문서는 각 수정 직전에 기존 내용을 읽는다. 공식 설명을 `mydocs/manual`로 옮기거나
+별도 제품 문서 루트를 만들지 않는다. 이번 커밋에는 위 내부 계획·오늘할일 3개만 들어간다.
+
+## Stage 6.1 — Windows 네이티브 진단 기반
+
+### 산출물
+
+신규는 `apps/desktop/src-tauri/src/thumbnail_diagnostics/` 아래 역할별 모듈로 나눈다.
+
+- `model.rs`, `assessment.rs`, `assessment_tests.rs`: 상태·증거·판정과 기존 PS 판정 대조.
+- `environment.rs`, `registration.rs`, `install_identity.rs`, `reference.rs`: x64 token/정책,
+  읽기 전용 Registry64 관측, 실행 앱과 설치 근거·처리기 bytes 일치 검사.
+- `child.rs`, `process.rs`, `protocol.rs`, `service.rs`: headless 진입·제한된 pipe 프로토콜,
+  프로세스/요청 소유권·시간 제한·취소·정리와 판정 순서.
+- `probe.rs`, `com.rs`, `fixtures.rs`, `scratch.rs` 및 각 테스트: Shell/COM 호출,
+  자체 공개 테스트 문서 생성과 임시 파일 안전성. 파일 300 LOC·함수 50 LOC 이내로 역할 분리.
+- `scripts/windows-thumbnail-diagnostic-reference.mjs`, 관련 `tests/windows-thumbnail-app-diagnostics.test.mjs`
+  및 `tests/fixtures/windows-thumbnail-app-assessments.json`: 빌드 참조 생성·순수 판정 공통 사례.
+
+수정은 desktop의 `src/main.rs`, `src/lib.rs`, `build.rs`, `Cargo.toml`, `Cargo.lock`,
+`scripts/build-thumbnail-binaries.mjs`, 관련 build/automation 테스트와 `package.json`의
+테스트 목록이다. child는 **기존 `Alhangeul.exe` 재실행**으로 구현하며 별도 EXE·Cargo package·
+installer 형식·공개 asset 종류를 늘리지 않는다. `tauri.conf.json`과 NSIS/WiX 등록 정책은
+변경하지 않는다. Windows native 의존성은 lock에 이미 있는 `windows` 0.61.3과 SHA-256
+구현의 기존 version을 명시적으로 재사용하고 필요한 feature만 추가한다. lock 변경은
+Windows/Linux에서만 수행·검증하고 upstream/다른 crate의 version을 갱신하지 않는다.
+
+### 변경 내용 — 실행과 배포 경계
+
+1. `main.rs`에서 정확한 내부 인자 `--alhangeul-thumbnail-diagnostic-child`를 먼저 분기한다.
+   해당 모드는 Tauri Builder·single-instance·updater·WebView·문서 열기·앱 로그 초기화에
+   진입하지 않는다. 잘못된 내부 인자는 오류로 종료하며 일반 문서 열기로 fallback하지 않는다.
+   기존 일반 실행/파일 연결 인자는 그대로 유지한다. Linux에는 child 기능을 넣지 않는다.
+2. 부모는 canonical 현재 EXE를 shell 없이 실행하고 표준 pipe로만 요청한다. 내부 schema 1,
+   request ID, 고정 operation enum, fixture ID만 사용한다. 임의 URL·COM CLSID·문서 경로·
+   실행 파일·출력 경로를 UI 입력으로 받지 않는다. 상태/fixture 준비/개별 probe와 CI용 suite는
+   분리된 operation이며 suite가 자기 자신을 다시 호출하는 재귀는 거부한다.
+3. 상태 확인은 15초, 개별 probe는 30초, 실제 검사 전체는 180초, 종료·정리는 추가 최대
+   5초로 제한한다. pipe 입력 16 KiB·결과 256 KiB 상한을 두고 출력 초과/깨진 JSON/중복 ID/
+   child crash/종료 코드 불일치를 `diagnostic-invalid`로 분류한다. 무기한 wait/join을 두지 않는다.
+   시험용 한계 축소·가짜 backend는 test cfg에만 둔다.
+4. child handle과 Job Object는 자기 실행만 소유한다. 취소·부모 종료 때 진단 child를
+   종료/회수하되 Explorer·공유 dllhost·다른 앱·동명 프로세스를 검색해 종료하지 않는다.
+   OS COM 서비스가 별도로 시작한 프로세스까지 Job Object로 정리된다고 보장하지 않는다.
+   잠긴 임시 파일은 한계 안에서만 정리하고 잔여 상태를 결과에 표시한다.
+5. build-thumbnail-binaries가 검증한 실제 staged DLL/worker의 SHA-256·크기와 source SHA,
+   버전을 담은 참조를 생성한다. desktop `build.rs`는 Windows용 참조를 재검증해 `OUT_DIR`에
+   넣고 실행 파일에 포함한다. 입력 변경은 `rerun-if-changed`로 추적한다. 릴리즈 package에서
+   참조 누락/불일치는 build 실패다. 개발·순수 테스트에서 참조가 없으면 명시적 unverified이며
+   제품 정상/known limitation 판정을 만들지 않는다. 빈 DLL이나 가짜 reference로 build를 통과시키지 않는다.
+6. 참조는 app EXE 안에 포함하므로 기존 네 payload + inventory의 Windows bundle 계약과
+   지원 묶음 13파일 계약을 유지한다. archive inventory와 app 참조의 handler/worker SHA·크기·
+   source SHA가 같은지 패키지 검증에서 대조한다. 앱은 외부 지원 묶음을 내려받거나 신뢰하지 않는다.
+
+### 변경 내용 — 상태·fixture·판정
+
+- 상태 수집값은 OS build, x64/STA, **진단 호출 토큰**의 elevation/integrity, `EnableLUA`,
+  `IconsOnly`, 기존 네 Explorer 정책 위치, HKCU/HKLM Registry64 Alhangeul CLSID·확장자
+  등록이다. absent/unreadable/known 값을 구분한다. Explorer 토큰을 측정했다고 표현하지 않는다.
+- `install_identity.rs`는 실제 실행 경로, 제품 기록, uninstall record를 교차 확인한다.
+  기존 updater의 판별 계약을 참고하되 그 코드의 조회 실패→누락 축약을 그대로 재사용하지
+  않는다. 진단 전용 collector에서 읽기 실패를 보존하고 updater 자격/설치 로직은 수정하지 않는다.
+  MSI/NSIS/unknown 구분과 COM user-only/machine-only/ambiguous 구분은 서로 다른 필드다.
+- 등록 경로와 실제 DLL/worker를 읽기 전용으로 비교한다. 비로컬/재분석 지점·누락·예상
+  실행 경로 불일치·양쪽 hive 공존·reference 불일치가 있으면 문서 COM 실행을 생략한다.
+  실행 직전·직후 등록과 bytes를 재검사하며 변동은 `diagnostic-invalid`다.
+- 개인정보와 외부 sample 재배포 문제를 피하기 위해 자체 고정 텍스트 ‘Alhangeul 썸네일 검사’의
+  한 페이지 HWP/HWPX와 자체 작은 색상 패턴 JPG를 쓴다. HWP/HWPX는 현재 rhwp의
+  `Document`/`Section`/`Paragraph`와 `serialize_hwp`/`serialize_hwpx`를 사용해 격리된
+  fixture 준비 단계에서 생성한다. JPG는 자체 고정 bytes로 포함한다. 사용자 파일·한컴 파일·
+  upstream의 시험지/사진을 제품에 복사하지 않는다. 생성 실패는 fixture 실패이지 설치 제한이 아니다.
+- fixture schema/생성 source와 실행 시 bytes/hash를 묶고 각 복사본의 검사 전후 무결성을
+  확인한다. 파일당 최대 1 MiB, 새 전용 임시 디렉터리·고정 파일 목록·비재귀 삭제를 사용한다.
+  알 수 없는 파일·junction은 따라가거나 삭제하지 않는다. 앱 시작 때 다른 실행의 임시 폴더를
+  일괄 정리하지 않는다. 강제 종료 잔여 가능성과 정상 종료 정리 결과를 구분한다.
+- 형식별 `AssocQueryStringW`가 Alhangeul을 선택하고 reference/등록이 준비된 뒤에만 실행한다.
+  **최초 Shell → cache-only → force-extract → force 후 cache-only → 직접 COM 활성화** 순서다.
+  Shell·cache·force는 각기 새 파일을 쓰고 force 후 cache만 같은 파일을 쓴다. 각 형식은 문서와
+  JPG 대조군, association, activate의 기존 10개 label 계약으로 판정한다. 직접 COM 성공이
+  최초 Shell을 미리 활성화해 관측을 바꾸지 않게 한다.
+- x64 STA child에서 `IShellItemImageFactory.GetImage(SIIGBF_THUMBNAILONLY)`와
+  `IThumbnailCache.GetThumbnail(WTS_FORCEEXTRACTION)`를 분리한다. HRESULT, API 단계,
+  bitmap 유무·크기·flags를 수집하며 null/0 크기/요청 계약 위반은 성공이 아니다. bitmap bytes는
+  IPC/로그에 넣지 않고 owned HBITMAP과 borrowed shared bitmap의 해제를 구분한다.
+  [GetImage 공식 계약](https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shobjidl_core-ishellitemimagefactory-getimage)과
+  [GetThumbnail 공식 계약](https://learn.microsoft.com/en-us/windows/win32/api/thumbcache/nf-thumbcache-ithumbnailcache-getthumbnail)을 따른다.
+- 판정의 기준은 기존 `windows-thumbnail-check-assessment.ps1`이며 위 공개 공통 JSON의
+  모든 사례를 Rust와 PS 양쪽에서 검사한다. 성공/known failure만 비교하는 문자열 검사는 부족하다.
+  진단 suite는 테스트 fixture의 API 수용이지 lifecycle·대형 문서·Explorer 화면 수용이 아니다.
+
+| 판정 조건 | 결과·사용자 행동 |
+|---|---|
+| 상태만 확인했거나 권한/UAC 조합이 의심됨 | ‘제한 가능성’/미검사; 실제 실패·MSI 해결 확정 아님 |
+| 다른 처리기, 모호한 등록, 참조 불일치, 정책에 의한 표시 제한 | 해당 상태 설명; 자동 등록 변경 없음, 실제 검사 생략 이유 표시 |
+| JPG의 Shell 또는 force 검사 실패 | `shell-control-failed`; Windows 공통 환경 확인 |
+| user-only·참조 일치·직접 COM 성공·문서 Shell/force 모두 `0x80040154`이고 JPG 대조 성공 | `per-user-shell-activation-failed`; NSIS 설치 형식까지 확인된 경우에만 구체 NSIS→MSI 절차 제시 |
+| 위 패턴이나 성공 조건에 맞지 않는 실제 실패 | `unclassified-failure`; 진단 요약 확인, MSI로 해결된다고 단정하지 않음 |
+| 문서 Shell/force bitmap 정상과 직접 COM 성공, 증거 완전·무결성 정상 | 형식별 `thumbnail-api-ok`; 다른 형식/다른 문서/Explorer는 별도 |
+| 취소·시간 초과·불완전 증거·실행 중 등록 변경·정리 실패 | 해당 완료 불가 상태; 앞선 부분 성공으로 전체 정상 판정 금지 |
+
+설치 형식 unknown이면 known pattern을 관측했더라도 NSIS 제거를 지시하지 않고 설치 이력
+확인을 안내한다. 형식별 결과를 보존하고 둘 중 하나만 성공하면 ‘전체 정상’으로 합치지 않는다.
+캐시 조회 실패는 진단 행위가 API까지 정상 도달한 경우 관측값일 뿐 추출 실패와 혼동하지 않는다.
+
+### 검증
+
+Windows/Linux의 기존 native 검사 환경에서 실행한다. 이 Mac에서는 Node/문서 검사만 한다.
+
+```sh
+node --test tests/windows-thumbnail-app-diagnostics.test.mjs tests/thumbnail-build.test.mjs tests/desktop-artifacts.test.mjs tests/windows-thumbnail-support.test.mjs
+pnpm run test:automation
+pnpm run check:product-boundary
+git diff --check
+```
+
+Windows에서는 `pnpm run build:thumbnail-binaries -- --target x86_64-pc-windows-msvc` 뒤
+`pnpm run test:desktop`, `pnpm run clippy:desktop`와 desktop `cargo fmt -- --check`를 실행한다.
+Rust는 판정 전 사례·실패/누락 구분·fixture parse/render·선택 처리기 차이·동시 등록 변경·
+비정상 pipe·timeout/cancel·경로/handle 정리와 실제 child의 WebView 미시작을 검사한다.
+build.rs 참조 stale/누락·binary 변조는 합성 build 입력으로 검사하고 설치 제품은 변조하지 않는다.
+Rust 의존성/lock·빌드 스크립트를 변경하므로 remote 최종 범위는 `full`이며 먼저 `fast`를
+선택할 수 있다. Windows 부분 실행은 부분 근거로만 남긴다. remote 실행 전 exact 후보와
+한 번의 실행 범위를 따로 승인받는다.
+
+### 커밋
+
+`Task #57 [Stage 6.1]: Windows 네이티브 썸네일 진단 기반과 회귀`
+
+## Stage 6.2 — 제품 정보의 진단·안내 UI
+
+### 산출물
+
+- 신규 `apps/studio-host/src/core/desktop-thumbnail-diagnostics.ts`,
+  `desktop-thumbnail-diagnostics-model.ts`, 대응 테스트, `src/ui/thumbnail-diagnostics-dialog.ts`
+  와 테스트. UI가 크면 상태별 rendering helper로 분리한다.
+- 수정 `apps/studio-host/src/ui/about-dialog.ts`, `src/style.css`.
+- 신규 native `thumbnail_diagnostics/commands.rs`, command 테스트; 수정 desktop `src/lib.rs`와
+  `src/windows.rs`의 window destroy hook. 기존 문서/PDF/window 정리를 대체하지 않고 병행한다.
+
+### 변경 내용
+
+1. `isTauriRuntime()`와 `detectDesktopPlatform()==windows`일 때만 진입점을 표시한다.
+   native도 Windows x64를 다시 확인한다. Linux/browser에서는 동적 native import·조회조차
+   실행하지 않는다. 관리자 재실행이나 앱 시작 시 자동 검사를 추가하지 않는다.
+2. command는 `thumbnail_diagnostics_inspect`, `thumbnail_diagnostics_start`,
+   `thumbnail_diagnostics_get_state`, `thumbnail_diagnostics_cancel`로 제한한다. get_state는
+   기존 메모리 snapshot만 읽으며 I/O를 재실행하지 않는다. 상태/실제 검사는 background service가
+   수행하고 Tauri 호출을 즉시 돌려준다. start는 명시적 `consent=true`를 요구한다.
+3. 앱 전체 active operation은 1개다. 서버가 request ID와 호출 window label을 연결하고
+   다른 window의 취소·결과 가져오기를 거부한다. owner 창 닫힘은 취소, WebView reload는
+   기존 operation을 복구하거나 닫기 동작으로 취소한다. 연결이 끊겨도 180초 상한으로 종료한다.
+   controller는 active 동안 500ms 간격으로 snapshot을 조회하고 hide/dispose 뒤 타이머·listener를
+   해제한다. 늦게 도착한 ID/sequence의 응답은 표시하지 않는다. 무제한 polling은 없다.
+4. 화면 상태는 `상태 확인 중 → 검사 준비 → 검사 중 → 완료/취소/시간 초과/오류`다.
+   검사 전 ‘공개 테스트 문서만 사용·임시 파일/캐시 생성·자동 전송 없음’을 설명하고 사용자가
+   ‘동의하고 검사’를 눌러 시작한다. 진행 중 단계·취소/닫기를 제공하고 중복 시작은 막는다.
+   닫기는 취소 요청을 보내며 네이티브 수명 관리가 최종 회수를 책임진다.
+5. 결과는 HWP/HWPX별로 표시하고 환경 경고·실제 API 결과·정리 결과를 분리한다. 정상은
+   ‘테스트 문서의 썸네일 검사 통과’라고 표현한다. 실패시 위 판정 표의 다음 행동을 안내한다.
+   텍스트는 `textContent`로 삽입하고 backend 예외 원문을 UI/콘솔/복사 요약에 내보내지 않는다.
+6. MSI 대안 문구는 ‘현재 실행 문맥에서 사용자별 처리기의 Shell 활성화가 실패했습니다.
+   저장·종료 후 NSIS를 정상 제거하고 같은 버전/빌드의 MSI 설치를 대안으로 검토하세요.
+   관리자 권한이나 IT 담당자의 도움이 필요할 수 있으며 모든 환경에서 해결을 보장하지 않습니다.’다.
+   재부팅 요청 시 따르고 새 문서로 재확인한다는 후속 설명을 제공한다. 실제 파일의 존재·동일
+   빌드를 앱이 원격 확인하지 않았다는 점을 표시한다.
+7. ‘공식 설치 안내 열기’는 기존 `updater_open_manual_downloads`의 고정 업데이트 페이지
+   열기만 재사용한다. updater check/apply/restart는 호출하지 않는다. 다운로드 버튼이나
+   같은 빌드 MSI가 준비됐다는 문구는 제공하지 않는다. 미공개/오프라인이면 로컬 안내를
+   읽고 신뢰 가능한 배포본 또는 IT 담당자를 통해 확인하도록 한다. 제품은 파일을 자동 받지 않는다.
+8. 요약은 schema/version/source·진단 토큰의 제한된 속성·설치 형식·등록 범위·형식별 finding·
+   enum/오류 코드·무결성/정리 결과만 allowlist로 생성한다. 경로·SID·사용자명·문서 내용·
+   bitmap·예외 문자열은 제외한다. ‘진단 요약 복사’를 누를 때만 Clipboard API를 쓰고,
+   실패하면 같은 정제된 텍스트를 선택해 수동 복사할 수 있게 한다. 업로드·저장 이력은 만들지 않는다.
+9. 키보드 focus, Escape/닫기, 상태 알림, 긴 한국어 설명과 작은 창에서의 스크롤을 확인한다.
+   썸네일 on/off 설정이나 설치 구성 선택은 추가하지 않는다.
+
+### 검증
+
+```sh
+pnpm run test:studio
+pnpm run build:studio
+pnpm run test:upstream
+pnpm run check:product-boundary
+git diff --check
+```
+
+controller는 lazy import·동의 누락·중복 클릭·취소 경쟁·늦은 응답·다중 창 소유권·전체/부분
+성공·offline/clipboard 실패를 검증한다. DOM 테스트는 실제 버튼 연결/노출/안내/닫기 동작을
+검증하며 controller mock만으로 UI 수용했다고 하지 않는다. 기존 테스트 환경에 DOM이 없으면
+현재 브라우저 테스트 도구의 가벼운 harness로 실행하고 새 JS 의존성은 별도 필요성을 보고한다.
+Windows native command test와 실제 app UI 검증, Linux 숨김/기존 제품 정보 회귀는 별도로
+수행한다. 공유 UI 변경의 CI 범위는 `full`, 빠른 피드백은 `fast`다.
+
+### 커밋
+
+`Task #57 [Stage 6.2]: 제품 정보에 썸네일 진단과 MSI 안내 연결`
+
+## Stage 6.3 — 패키지·현장 수용과 문서
+
+### 산출물과 변경 내용
+
+- `scripts/windows-thumbnail-app-smoke.ps1`와 대응 Node/PS 회귀를 추가하고 기존
+  `windows-thumbnail-fixtures.ps1`/installer smoke에 연결한다. 제품의 자체 fixture suite를
+  **기존 최초 Shell 요청 이후** 실행해 초기 NSIS 관측을 오염시키지 않는다. 이 CI용 PS는
+  제품 실행 의존성이 아니다. 앱의 headless suite와 UI는 같은 native service/판정을 사용한다.
+- schema·sourceSha·실제 참조 bytes·종료 코드·bitmap/API 원시값·정리 결과를 대조하고
+  `appDiagnosticStatus`와 기존 `thumbnailStatus`/lifecycle를 별도로 기록한다. 기존 공개 대형
+  문서 검사는 그대로 둔다. 자체 fixture와 기존 sample은 다른 bytes이므로 결과 불일치를
+  숨기거나 같은 문서 수용이라고 표시하지 않는다. 불일치는 분석/수용 판단 대상이다.
+- `.github/workflows/alhangeul-windows-smoke.yml`에서 NSIS-only/MSI-only/강제 재설치를
+  유지하고 `alhangeul-artifact-platform.yml`의 native/build 검사와 결과를 연결한다.
+  제품 bytes 불변 재검사 연결이 필요한 경우에만 `alhangeul-installer-reuse.yml`를 수정한다.
+  빠른 PS 계약 등록은 `scripts/ci/windows-tests.ps1`와 관련 `tests/ci-*.test.mjs`에 둔다.
+  Desktop job 복제·추가 실험·gate 완화·숨은 재부팅·자동 repair는 하지 않는다.
+- 승인된 공식 문서 위치에 실제 UI 사용법·개인정보/권한·판정 한계와 VDI/CI 근거를 반영한다.
+  과거 지원 묶음과 신규 native 진단을 구분하고, 이전 artifact의 복사 문서를 수정하지 않는다.
+
+### 검증과 수용 기준
+
+`pnpm run test:automation`, `pnpm run test:studio`, `pnpm run build:studio`,
+`pnpm run check:product-boundary`, `git diff --check`와 기존 Windows PS 격리 회귀를 실행한다.
+원격은 승인한 exact 후보를 non-force 게시한 뒤 `ci.yml profile=fast`의 빠른 피드백과
+최종 `profile=full, scope=full, thumbnail_context_experiment=false`를 선정한다. 동일 변경에서
+이미 받은 적격 근거는 영향 diff로 재사용하고 변경 없는 반복 실행을 하지 않는다.
+
+| 계층 | 수용 조건 | 대신하지 못하는 것 |
+|---|---|---|
+| 순수 계약 | PS/Rust 판정 공통 사례, 상태/요약 schema, UI 회귀 성공 | COM/Shell 실제 실행 |
+| 실제 native/installed suite | 정확한 제품 참조·HWP/HWPX/JPG API·시간 제한·정리, 설치 전후 보존 계약 확인 | 앱 dialog와 Explorer 시각 결과 |
+| VDI 일반 사용자 UI | exact 새 후보 NSIS로 진단 버튼/동의/결과/복사와 새 문서 표시를 사용자 확인 | PC방·모든 한컴/Windows 조합 |
+| 진단 기능 수용 | 실제 실패를 실패로 분류, 미확인 상태에 MSI 해결을 단정하지 않음 | 기존 NSIS 제품 gate 성공 |
+| 최종 통합 | 각 필수 job 실제 outcome과 실패/미검증 제한을 보고 | 릴리즈 위험 수용·게시 승인 |
+
+VDI 재확인은 사용자 동의를 받아 새 후보 설치 파일 hash/출처, 앱 진단의 정제된 결과와
+Explorer 표시를 수집한다. UAC/실행 정책/등록 범위는 변경하지 않고 개인 문서는 올리지 않는다.
+MSI 전환 실설치나 PC방 재방문은 자동 요구하지 않으며 실행하지 않으면 안내 동작만 검증했다고
+기록한다. UI 안내가 MSI 설치 성공을 재현한 것처럼 표현하지 않는다.
+
+`installer` 재사용에는 성공 producer의 `product_sha`/`product_run_id`/`artifact_id`/
+`artifact_digest` 네 값을 정확히 지정한다. 새 앱·native·fixture bytes는 반드시 새 제품으로
+검증하고 ordinary workflow commit과 resolved build commit을 일치시킨다. 최신 failed run을
+재사용 적격으로 만들거나 full 실패를 진단 테스트 성공으로 덮지 않는다.
+
+### 커밋
+
+`Task #57 [Stage 6.3]: 앱 썸네일 진단 수용과 설치 안내 문서 정합화`
+
+## 단계 의존성·위험과 승인 요청
+
+6.1 보고·승인 뒤 6.2, 6.2 보고·승인 뒤 6.3을 진행한다. 각 단계 소스와 실제 단계 보고서를
+같은 커밋에 묶고 미실행 Windows/현장 검증을 남긴다. Stage 5의 invalid 정리와 MSI 3010은
+이 구현으로 해결됐다고 기록하지 않는다. 최종 보고·PR·릴리즈는 기존 별도 승인 절차를 따른다.
+
+주요 위험은 headless 진입점이 일반 앱 실행에 미치는 영향, COM/child hang·취소와 임시 잔여,
+자체 fixture의 생성/렌더 적합성, 진단 문맥과 Explorer의 차이, AppLocker 등 외부 실행 제한이다.
+자체 fixture의 실제 생성/렌더가 현재 pin에서 실패하면 사용자 sample을 몰래 대체하지 않고
+동일 단계 안에서 원인을 보고한다. 별도 EXE/새 패키지/추가 JS 의존성/설치 정책 수정이 필요하면
+이 구현계획을 다시 승인받는다. 구현 전에 Windows 지원 밖의 빌드나 검증을 추가하지 않는다.
+
+이번 승인 요청은 위 **6.1–6.3의 구현 분할·정확한 변경 경계·검증·커밋 계획**이다.
+승인 후에는 먼저 6.1만 구현한다. 원격 실행 입력과 후보 게시, 다음 하위 단계로의 진입은
+각 시점에 별도 승인을 받는다.
 
 ### Stage 5.4 승인된 Windows 부분 비교 실행
 
