@@ -46,6 +46,7 @@ dependencies = [
  "alhangeul-document-preview",
  "futures-channel",
  "gtk",
+ "image",
  "open",
  "pdf-writer",
  "rhwp",
@@ -54,6 +55,7 @@ dependencies = [
  "semver",
  "serde",
  "serde_json",
+ "sha2 0.10.9",
  "svg2pdf",
  "tauri",
  "tauri-build",
@@ -68,6 +70,7 @@ dependencies = [
  "usvg",
  "uuid",
  "webkit2gtk",
+ "windows",
  "winreg",
 ]
 

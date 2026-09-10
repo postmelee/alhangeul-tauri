@@ -3,7 +3,78 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: Stage 6 수행계획 승인 — 진단·안내 UI 구현계획 승인 대기
+상태: Stage 6.1 로컬 검증 후보 확정 — 원격 CI 승인 대기, native 실행·수용 미완료
+
+2026-09-10 구현계획 커밋 `3d1e24e` 뒤 같은 스레드의 “진행해줘”로 승인받아 6.1을 시작했다.
+이번 6.1 검증 후보의 구현은 순수 판정·요청/수명 계약, Windows token/정책·Registry64·설치 형식
+수집, 로컬 파일/재분석 지점·등록 사전 검사, STA Shell/COM probe, 자체 HWP/HWPX/JPG
+fixture와 staged binary/build.rs 참조 검증, bounded process/pipe 실행기, scratch 소유권/정리,
+headless 진입점과 형식별 suite 실행 흐름이다. 실행기는 재개 전 Job Object 할당, 제한된 pipe, 취소/시간 제한과
+자기 프로세스 회수를 구현했다. scratch는 내부 scope UUID·고정 slot·hash로 12개 복사본과
+소유권 manifest를 묶고, Windows에서 디렉터리 및 삭제 대상 핸들을 확보해 비재귀 정리한다.
+알 수 없는 파일·링크·변조·잠금은 정리 실패로 남긴다. 준비 도중 실패해 manifest가 없는
+잔여 디렉터리도 무조건 삭제하지 않는다. Shell/cache/force는 별도 복사본을 쓰며 force 뒤
+cache 확인만 같은 복사본을 재사용한다. 이는 임의 경로를 받는 공개 API가 아닌 내부 계약이다.
+`main.rs`에서 Windows 진단 전용 인자를 Tauri·plugin·single-instance 초기화 전에 분기하며,
+잘못된 내부 인자는 일반 앱으로 fallback하지 않는다. Windows 제품 모듈에 child dispatch와
+OUT_DIR 참조 포함을 연결했고, inspection 응답에 빌드 참조를 포함해 후속 inventory 대조가
+가능하게 했다. suite는 상태 확인·fixture 준비·형식별 10개 probe·재확인·정리를 연결한다.
+등록/환경/선택 처리기의 내부 hash 토큰과 fixture 무결성으로 실행 중 변동을 거부하며,
+raw 경로·SID·오류 문자열·bitmap bytes는 출력하지 않는다. 내부 토큰은 향후 UI 요약에서 제외한다.
+취소/시간 초과·비정상 종료 후 프로세스 회수와 scratch 정리는 하나의 추가 5초 deadline을
+공유한다. 명확히 존재하지 않는 자기 scope만 이미 정리된 것으로 처리하고 부분 디렉터리는
+남긴다. 창 소유권 API는 6.2의 Tauri caller 연결 전이며 사용자 UI·설치 정책은 바꾸지 않았다.
+**Windows에서 실제 실행한 근거는 아직 없으며, 코드 연결·교차 타입 검사를 실행 수용으로
+간주하지 않는다.**
+
+Node 대상 64개·전체 automation 694개, product boundary 538파일·diff 검사를 통과했다.
+Linux의 별도 harness에서 제품 lock을 기초로 Rust 45개 테스트가 통과했다. 공통 판정 44사례,
+환경/등록 사전 조건, build.rs 참조의 source/version/bytes·중복 필드·symlink 거부, 자체 문서의
+한 페이지 파싱·텍스트 및 비어 있지 않은 bitmap 렌더링, JPG 16×8 두 색조 디코딩,
+응답 크기/identity/종료 상태, scratch 변조·링크·미소유 파일 보존, 인자·입력 라우팅,
+고정 검사 순서·부분 형식 성공·등록 변동·정리 실패·공유 cleanup deadline을 포함한다.
+build.rs 테스트는 같은 reference 모듈을 재사용해 중복 모듈/중복 테스트 적재를 제거했다.
+fixture 첫 검사는 upstream 모듈 경로와 SVG 글자별 출력에 대한 테스트 가정을 수정한 뒤
+재실행했다. upstream source/버전이나 실제 판정 조건을 완화하지 않았다.
+
+Windows 교차 검사를 기존 최소 harness에서 실제 진단 모듈 전체·rhwp/fixture renderer·
+scratch/child 통합 테스트까지 확장했다. 첫 시도는 blake3의 `ml64.exe` 부재로 실패했다.
+검증용 harness에서만 기존 blake3 1.8.5의 `pure` feature를 사용한 뒤
+`cargo clippy --tests --offline --target x86_64-pc-windows-msvc -- -D warnings`가 통과했다.
+제품의 의존 버전·blake3 feature는 변경하지 않았다. harness는 OUT_DIR 참조를 `null`의
+명시적 unverified로 두고 EXE 테스트 경로도 타입 검사 전용으로 지정했으며 실행하지 않았다.
+**Tauri 전체 제품 컴파일·실제 EXE/Windows 테스트 실행·COM ABI/Shell 수용은 아니다**.
+`tests/thumbnail_headless.rs`에는 실제 Cargo 제품 EXE를 사용하는 잘못된 인자/IPC 오류 종료,
+상태 응답·WebView 자식 미생성, 입력 EOF 시간 제한, Job 소멸 시 자기 프로세스 회수 검사를
+추가했다. Windows의 `pnpm run test:desktop`에서 실행되며 별도 workflow는 만들지 않았다.
+Linux scratch 테스트도 Windows 파일 공유/잠금 동작의 근거가 아니다. PowerShell 공통 사례,
+실제 Windows child/headless/lifecycle·잠금 정리, 제품 빌드·설치·inventory 대조는 남아 있다.
+
+사용자가 Colima 실행을 요청해 기존 default 프로필(4 CPU·8 GiB)을 시작했다.
+Linux aarch64 Docker의 기존 `rust:1.94-bookworm` 이미지에서 `rustc 1.94.1`로 위 검사를
+실행했다. 일회성 컨테이너에 공식 rustfmt·clippy와 Windows 표준 라이브러리를 추가해 포맷/타입을
+검사했다. Cargo lock은 Linux에서 갱신했으며 기존 패키지 버전 변경 없이 desktop의 직접
+의존 연결 `image`, `sha2 0.10.9`, `windows` 3개만 추가됐다. image는 fixture 테스트용이다.
+전역 Docker context는 default로 유지하며 명령별 `docker --context colima`를 사용한다.
+Mac 호스트에서 Rust 제품 검증을 실행하지 않았으며 Windows COM 실행은 CI가 필요하다.
+추가 실험/원격 CI/게시·6.2 진입은 하지 않았고 6.1 단계 완료 보고서·단계 완료 커밋도 아직 없다.
+2026-09-10의 후속 “진행해줘”에 따라 변경을 점검하고 로컬 검증 후보 커밋을 준비했다.
+`check:product-boundary`(538파일), `test:upstream`(36개), `test:studio`, `build:studio`,
+`test:automation`(694개), `git diff --check`를 다시 통과했다. 제품 소스의 추가 변경은 없다.
+PR #66 merge `f154b4d638d0b81565907829690fd9c28ee68fa9`와 원격 `publish/task57`의
+`1dcac31504434b487b80d82398ebb8c6389d91c9`가 모두 현재 HEAD의 조상임을 확인했다.
+현재 `origin/devel`도 위 PR #66 merge여서 추가 통합·rebase·force push가 필요하지 않다.
+
+다음 승인 요청 범위는 이 기록과 6.1 소스를 묶은 후보를 `publish/task57`에 fast-forward
+push하고 `ci.yml`의 `scope=full`, `profile=fast`, `thumbnail_context_experiment=false`를
+**한 번** 실행하는 것이다. 실행 직전 원격 ref와 후보 exact SHA를 대조하고 실행 후 run의
+head SHA·workflow·입력을 확인한다. 기존 fast 실행이 진행 중이면 자동 취소를 피하도록
+먼저 확인한다. fast는 Windows PowerShell 공통 사례까지의 부분 검증이며 native 수용이 아니다.
+이후 새 제품의 `full` 실행은 fast 결과와 exact 후보를 다시 제시해 승인받는다. 기존 bytes의
+installer 재사용, 등록 범위 실험, 릴리즈·updater 게시, PR/이슈 종료는 이번 범위에 없다.
+검증 후보 커밋은 단계 완료 보고서·완료 커밋을 대신하지 않으며 Windows native·패키지·
+inventory 대조가 남은 상태를 그대로 유지한다.
+아래 구현 승인 대기 표현은 계획 작성 당시 이력이다.
 
 2026-09-10 작업지시자 결정으로 추가 등록 범위·보호 경로 실험을 중단하고 현재 NSIS/MSI
 설치 방식을 유지한다. 최신 VDI 관측·완료 CI 결과와 진단·안내 UI 범위는

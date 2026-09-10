@@ -12,6 +12,8 @@ mod pending_open;
 mod recent_documents;
 mod state;
 mod system_print;
+#[cfg(any(windows, test))]
+mod thumbnail_diagnostics;
 mod updater;
 mod window_geometry;
 mod windows;
@@ -33,6 +35,12 @@ use state::AppState;
 use updater::commands::{
     updater_apply, updater_check, updater_get_state, updater_open_manual_downloads, updater_restart,
 };
+
+/// Called by main before any Tauri/plugin/single-instance initialization.
+#[cfg(windows)]
+pub fn thumbnail_diagnostic_entry() -> Option<i32> {
+    thumbnail_diagnostics::child::entry()
+}
 
 pub fn run() {
     #[cfg(target_os = "linux")]

@@ -1,0 +1,244 @@
+{
+  "schemaVersion": 1,
+  "base": {
+    "extension": ".hwp",
+    "registration": {
+      "ready": true,
+      "referenceMatched": true,
+      "scope": "user-only",
+      "finding": "ready"
+    },
+    "installKind": "nsis",
+    "integrity": true,
+    "cleanup": true,
+    "registrationStable": true,
+    "probes": [
+      {
+        "Label": "manual-association-hwp",
+        "Result": {
+          "schemaVersion": 1,
+          "mode": "association",
+          "phase": "AssocQueryStringW",
+          "status": "ok",
+          "hresult": "0x00000000",
+          "apartment": "STA",
+          "elapsedMs": 1,
+          "bitmapPresent": null,
+          "width": null,
+          "height": null,
+          "requestFlags": null,
+          "cacheFlags": null,
+          "resolvedHandler": "{C1DCF316-0771-49DD-BFEA-C85F69B1674B}"
+        }
+      },
+      {
+        "Label": "manual-activate",
+        "Result": {
+          "schemaVersion": 1,
+          "mode": "activate",
+          "phase": "CoCreateInstance.handler",
+          "status": "ok",
+          "hresult": "0x00000000",
+          "apartment": "STA",
+          "elapsedMs": 1,
+          "bitmapPresent": null,
+          "width": null,
+          "height": null,
+          "requestFlags": null,
+          "cacheFlags": null,
+          "resolvedHandler": null
+        }
+      },
+      {
+        "Label": "manual-document-shell",
+        "Result": {
+          "schemaVersion": 1,
+          "mode": "shell",
+          "phase": "IShellItemImageFactory.GetImage",
+          "status": "ok",
+          "hresult": "0x00000000",
+          "apartment": "STA",
+          "elapsedMs": 1,
+          "bitmapPresent": true,
+          "width": 256,
+          "height": 256,
+          "requestFlags": 8,
+          "cacheFlags": null,
+          "resolvedHandler": null
+        }
+      },
+      {
+        "Label": "manual-document-cache-only",
+        "Result": {
+          "schemaVersion": 1,
+          "mode": "cache-only",
+          "phase": "ISharedBitmap.GetSharedBitmap",
+          "status": "ok",
+          "hresult": "0x00000000",
+          "apartment": "STA",
+          "elapsedMs": 1,
+          "bitmapPresent": true,
+          "width": 256,
+          "height": 256,
+          "requestFlags": 1,
+          "cacheFlags": null,
+          "resolvedHandler": null
+        }
+      },
+      {
+        "Label": "manual-document-force-extract",
+        "Result": {
+          "schemaVersion": 1,
+          "mode": "force-extract",
+          "phase": "ISharedBitmap.GetSharedBitmap",
+          "status": "ok",
+          "hresult": "0x00000000",
+          "apartment": "STA",
+          "elapsedMs": 1,
+          "bitmapPresent": true,
+          "width": 256,
+          "height": 256,
+          "requestFlags": 4,
+          "cacheFlags": null,
+          "resolvedHandler": null
+        }
+      },
+      {
+        "Label": "manual-after-force-document-cache-only",
+        "Result": {
+          "schemaVersion": 1,
+          "mode": "cache-only",
+          "phase": "ISharedBitmap.GetSharedBitmap",
+          "status": "ok",
+          "hresult": "0x00000000",
+          "apartment": "STA",
+          "elapsedMs": 1,
+          "bitmapPresent": true,
+          "width": 256,
+          "height": 256,
+          "requestFlags": 1,
+          "cacheFlags": null,
+          "resolvedHandler": null
+        }
+      },
+      {
+        "Label": "manual-control-jpg-shell",
+        "Result": {
+          "schemaVersion": 1,
+          "mode": "shell",
+          "phase": "IShellItemImageFactory.GetImage",
+          "status": "ok",
+          "hresult": "0x00000000",
+          "apartment": "STA",
+          "elapsedMs": 1,
+          "bitmapPresent": true,
+          "width": 256,
+          "height": 256,
+          "requestFlags": 8,
+          "cacheFlags": null,
+          "resolvedHandler": null
+        }
+      },
+      {
+        "Label": "manual-control-jpg-cache-only",
+        "Result": {
+          "schemaVersion": 1,
+          "mode": "cache-only",
+          "phase": "ISharedBitmap.GetSharedBitmap",
+          "status": "ok",
+          "hresult": "0x00000000",
+          "apartment": "STA",
+          "elapsedMs": 1,
+          "bitmapPresent": true,
+          "width": 256,
+          "height": 256,
+          "requestFlags": 1,
+          "cacheFlags": null,
+          "resolvedHandler": null
+        }
+      },
+      {
+        "Label": "manual-control-jpg-force-extract",
+        "Result": {
+          "schemaVersion": 1,
+          "mode": "force-extract",
+          "phase": "ISharedBitmap.GetSharedBitmap",
+          "status": "ok",
+          "hresult": "0x00000000",
+          "apartment": "STA",
+          "elapsedMs": 1,
+          "bitmapPresent": true,
+          "width": 256,
+          "height": 256,
+          "requestFlags": 4,
+          "cacheFlags": null,
+          "resolvedHandler": null
+        }
+      },
+      {
+        "Label": "manual-after-force-control-jpg-cache-only",
+        "Result": {
+          "schemaVersion": 1,
+          "mode": "cache-only",
+          "phase": "ISharedBitmap.GetSharedBitmap",
+          "status": "ok",
+          "hresult": "0x00000000",
+          "apartment": "STA",
+          "elapsedMs": 1,
+          "bitmapPresent": true,
+          "width": 256,
+          "height": 256,
+          "requestFlags": 1,
+          "cacheFlags": null,
+          "resolvedHandler": null
+        }
+      }
+    ]
+  },
+  "cases": [
+    {"id":"hwp-success","mutations":[],"expected":{"finding":"thumbnail-api-ok","recommendedAction":"none","evidenceValid":true,"thumbnailPassed":true}},
+    {"id":"hwpx-success","mutations":[{"pointer":"/extension","value":".hwpx"},{"pointer":"/probes/0/Label","value":"manual-association-hwpx"}],"expected":{"finding":"thumbnail-api-ok","recommendedAction":"none","evidenceValid":true,"thumbnailPassed":true}},
+    {"id":"machine-success","mutations":[{"pointer":"/registration/scope","value":"machine-only"},{"pointer":"/installKind","value":"msi"}],"expected":{"finding":"thumbnail-api-ok","recommendedAction":"none","evidenceValid":true,"thumbnailPassed":true}},
+    {"id":"known-per-user-failure","mutations":[{"pointer":"/probes/2/Result/status","value":"failed"},{"pointer":"/probes/2/Result/hresult","value":"0x80040154"},{"pointer":"/probes/2/Result/phase","value":"IShellItemImageFactory.GetImage"},{"pointer":"/probes/2/Result/bitmapPresent","value":false},{"pointer":"/probes/2/Result/width","value":null},{"pointer":"/probes/2/Result/height","value":null},{"pointer":"/probes/4/Result/status","value":"failed"},{"pointer":"/probes/4/Result/hresult","value":"0x80040154"},{"pointer":"/probes/4/Result/phase","value":"IThumbnailCache.GetThumbnail"},{"pointer":"/probes/4/Result/bitmapPresent","value":false},{"pointer":"/probes/4/Result/width","value":null},{"pointer":"/probes/4/Result/height","value":null}],"expected":{"finding":"per-user-shell-activation-failed","recommendedAction":"consider-msi","evidenceValid":true,"thumbnailPassed":false}},
+    {"id":"known-unknown-install","mutations":[{"pointer":"/probes/2/Result/status","value":"failed"},{"pointer":"/probes/2/Result/hresult","value":"0x80040154"},{"pointer":"/probes/2/Result/phase","value":"IShellItemImageFactory.GetImage"},{"pointer":"/probes/2/Result/bitmapPresent","value":false},{"pointer":"/probes/2/Result/width","value":null},{"pointer":"/probes/2/Result/height","value":null},{"pointer":"/probes/4/Result/status","value":"failed"},{"pointer":"/probes/4/Result/hresult","value":"0x80040154"},{"pointer":"/probes/4/Result/phase","value":"IThumbnailCache.GetThumbnail"},{"pointer":"/probes/4/Result/bitmapPresent","value":false},{"pointer":"/probes/4/Result/width","value":null},{"pointer":"/probes/4/Result/height","value":null},{"pointer":"/installKind","value":"unknown"}],"expected":{"finding":"per-user-shell-activation-failed","recommendedAction":"check-install-history","evidenceValid":true,"thumbnailPassed":false}},
+    {"id":"known-conflicting-msi-install","mutations":[{"pointer":"/probes/2/Result/status","value":"failed"},{"pointer":"/probes/2/Result/hresult","value":"0x80040154"},{"pointer":"/probes/2/Result/phase","value":"IShellItemImageFactory.GetImage"},{"pointer":"/probes/2/Result/bitmapPresent","value":false},{"pointer":"/probes/2/Result/width","value":null},{"pointer":"/probes/2/Result/height","value":null},{"pointer":"/probes/4/Result/status","value":"failed"},{"pointer":"/probes/4/Result/hresult","value":"0x80040154"},{"pointer":"/probes/4/Result/phase","value":"IThumbnailCache.GetThumbnail"},{"pointer":"/probes/4/Result/bitmapPresent","value":false},{"pointer":"/probes/4/Result/width","value":null},{"pointer":"/probes/4/Result/height","value":null},{"pointer":"/installKind","value":"msi"}],"expected":{"finding":"per-user-shell-activation-failed","recommendedAction":"check-install-history","evidenceValid":true,"thumbnailPassed":false}},
+    {"id":"machine-class-not-registered","mutations":[{"pointer":"/probes/2/Result/status","value":"failed"},{"pointer":"/probes/2/Result/hresult","value":"0x80040154"},{"pointer":"/probes/2/Result/phase","value":"IShellItemImageFactory.GetImage"},{"pointer":"/probes/2/Result/bitmapPresent","value":false},{"pointer":"/probes/2/Result/width","value":null},{"pointer":"/probes/2/Result/height","value":null},{"pointer":"/probes/4/Result/status","value":"failed"},{"pointer":"/probes/4/Result/hresult","value":"0x80040154"},{"pointer":"/probes/4/Result/phase","value":"IThumbnailCache.GetThumbnail"},{"pointer":"/probes/4/Result/bitmapPresent","value":false},{"pointer":"/probes/4/Result/width","value":null},{"pointer":"/probes/4/Result/height","value":null},{"pointer":"/registration/scope","value":"machine-only"},{"pointer":"/installKind","value":"msi"}],"expected":{"finding":"unclassified-failure","recommendedAction":"investigate","evidenceValid":true,"thumbnailPassed":false}},
+    {"id":"activation-failed","mutations":[{"pointer":"/probes/1/Result/status","value":"failed"},{"pointer":"/probes/1/Result/hresult","value":"0x80040154"},{"pointer":"/probes/1/Result/phase","value":"CoCreateInstance.handler"},{"pointer":"/probes/1/Result/bitmapPresent","value":false},{"pointer":"/probes/1/Result/width","value":null},{"pointer":"/probes/1/Result/height","value":null}],"expected":{"finding":"unclassified-failure","recommendedAction":"investigate","evidenceValid":true,"thumbnailPassed":false}},
+    {"id":"known-but-activation-failed","mutations":[{"pointer":"/probes/2/Result/status","value":"failed"},{"pointer":"/probes/2/Result/hresult","value":"0x80040154"},{"pointer":"/probes/2/Result/phase","value":"IShellItemImageFactory.GetImage"},{"pointer":"/probes/2/Result/bitmapPresent","value":false},{"pointer":"/probes/2/Result/width","value":null},{"pointer":"/probes/2/Result/height","value":null},{"pointer":"/probes/4/Result/status","value":"failed"},{"pointer":"/probes/4/Result/hresult","value":"0x80040154"},{"pointer":"/probes/4/Result/phase","value":"IThumbnailCache.GetThumbnail"},{"pointer":"/probes/4/Result/bitmapPresent","value":false},{"pointer":"/probes/4/Result/width","value":null},{"pointer":"/probes/4/Result/height","value":null},{"pointer":"/probes/1/Result/status","value":"failed"},{"pointer":"/probes/1/Result/hresult","value":"0x80040154"},{"pointer":"/probes/1/Result/phase","value":"CoCreateInstance.handler"},{"pointer":"/probes/1/Result/bitmapPresent","value":false},{"pointer":"/probes/1/Result/width","value":null},{"pointer":"/probes/1/Result/height","value":null}],"expected":{"finding":"unclassified-failure","recommendedAction":"investigate","evidenceValid":true,"thumbnailPassed":false}},
+    {"id":"jpg-shell-failed","mutations":[{"pointer":"/probes/6/Result/status","value":"failed"},{"pointer":"/probes/6/Result/hresult","value":"0x80040154"},{"pointer":"/probes/6/Result/phase","value":"IShellItemImageFactory.GetImage"},{"pointer":"/probes/6/Result/bitmapPresent","value":false},{"pointer":"/probes/6/Result/width","value":null},{"pointer":"/probes/6/Result/height","value":null}],"expected":{"finding":"shell-control-failed","recommendedAction":"check-shell-environment","evidenceValid":true,"thumbnailPassed":false}},
+    {"id":"jpg-force-failed","mutations":[{"pointer":"/probes/8/Result/status","value":"failed"},{"pointer":"/probes/8/Result/hresult","value":"0x80040154"},{"pointer":"/probes/8/Result/phase","value":"IThumbnailCache.GetThumbnail"},{"pointer":"/probes/8/Result/bitmapPresent","value":false},{"pointer":"/probes/8/Result/width","value":null},{"pointer":"/probes/8/Result/height","value":null}],"expected":{"finding":"shell-control-failed","recommendedAction":"check-shell-environment","evidenceValid":true,"thumbnailPassed":false}},
+    {"id":"wrong-failure-phase","mutations":[{"pointer":"/probes/2/Result/status","value":"failed"},{"pointer":"/probes/2/Result/hresult","value":"0x80040154"},{"pointer":"/probes/2/Result/phase","value":"IShellItemImageFactory.GetImage"},{"pointer":"/probes/2/Result/bitmapPresent","value":false},{"pointer":"/probes/2/Result/width","value":null},{"pointer":"/probes/2/Result/height","value":null},{"pointer":"/probes/4/Result/status","value":"failed"},{"pointer":"/probes/4/Result/hresult","value":"0x80040154"},{"pointer":"/probes/4/Result/phase","value":"IThumbnailCache.GetThumbnail"},{"pointer":"/probes/4/Result/bitmapPresent","value":false},{"pointer":"/probes/4/Result/width","value":null},{"pointer":"/probes/4/Result/height","value":null},{"pointer":"/probes/2/Result/phase","value":"SHCreateItemFromParsingName.imageFactory"}],"expected":{"finding":"unclassified-failure","recommendedAction":"investigate","evidenceValid":true,"thumbnailPassed":false}},
+    {"id":"different-document-error","mutations":[{"pointer":"/probes/2/Result/status","value":"failed"},{"pointer":"/probes/2/Result/hresult","value":"0x80040154"},{"pointer":"/probes/2/Result/phase","value":"IShellItemImageFactory.GetImage"},{"pointer":"/probes/2/Result/bitmapPresent","value":false},{"pointer":"/probes/2/Result/width","value":null},{"pointer":"/probes/2/Result/height","value":null},{"pointer":"/probes/4/Result/status","value":"failed"},{"pointer":"/probes/4/Result/hresult","value":"0x80040154"},{"pointer":"/probes/4/Result/phase","value":"IThumbnailCache.GetThumbnail"},{"pointer":"/probes/4/Result/bitmapPresent","value":false},{"pointer":"/probes/4/Result/width","value":null},{"pointer":"/probes/4/Result/height","value":null},{"pointer":"/probes/4/Result/hresult","value":"0x80070005"}],"expected":{"finding":"unclassified-failure","recommendedAction":"investigate","evidenceValid":true,"thumbnailPassed":false}},
+    {"id":"mixed-success-failure","mutations":[{"pointer":"/probes/2/Result/status","value":"failed"},{"pointer":"/probes/2/Result/hresult","value":"0x80040154"},{"pointer":"/probes/2/Result/phase","value":"IShellItemImageFactory.GetImage"},{"pointer":"/probes/2/Result/bitmapPresent","value":false},{"pointer":"/probes/2/Result/width","value":null},{"pointer":"/probes/2/Result/height","value":null}],"expected":{"finding":"unclassified-failure","recommendedAction":"investigate","evidenceValid":true,"thumbnailPassed":false}},
+    {"id":"cache-miss-is-observation","mutations":[{"pointer":"/probes/3/Result/status","value":"failed"},{"pointer":"/probes/3/Result/hresult","value":"0x8004B200"},{"pointer":"/probes/3/Result/phase","value":"IThumbnailCache.GetThumbnail"},{"pointer":"/probes/3/Result/bitmapPresent","value":false},{"pointer":"/probes/3/Result/width","value":null},{"pointer":"/probes/3/Result/height","value":null}],"expected":{"finding":"thumbnail-api-ok","recommendedAction":"none","evidenceValid":true,"thumbnailPassed":true}},
+    {"id":"integrity","mutations":[{"pointer":"/integrity","value":false}],"expected":{"finding":"diagnostic-invalid","recommendedAction":"check-diagnostics","evidenceValid":false,"thumbnailPassed":false}},
+    {"id":"cleanup","mutations":[{"pointer":"/cleanup","value":false}],"expected":{"finding":"diagnostic-invalid","recommendedAction":"check-diagnostics","evidenceValid":false,"thumbnailPassed":false}},
+    {"id":"registration-changed","mutations":[{"pointer":"/registrationStable","value":false}],"expected":{"finding":"diagnostic-invalid","recommendedAction":"check-diagnostics","evidenceValid":false,"thumbnailPassed":false}},
+    {"id":"empty-evidence","mutations":[{"pointer":"/probes","value":[]}],"expected":{"finding":"diagnostic-invalid","recommendedAction":"check-diagnostics","evidenceValid":false,"thumbnailPassed":false}},
+    {"id":"duplicate-label","mutations":[{"pointer":"/probes/1/Label","value":"manual-association-hwp"}],"expected":{"finding":"diagnostic-invalid","recommendedAction":"check-diagnostics","evidenceValid":false,"thumbnailPassed":false}},
+    {"id":"unexpected-label","mutations":[{"pointer":"/probes/2/Label","value":"private-file-shell"}],"expected":{"finding":"diagnostic-invalid","recommendedAction":"check-diagnostics","evidenceValid":false,"thumbnailPassed":false}},
+    {"id":"wrong-mode","mutations":[{"pointer":"/probes/2/Result/mode","value":"cache-only"}],"expected":{"finding":"diagnostic-invalid","recommendedAction":"check-diagnostics","evidenceValid":false,"thumbnailPassed":false}},
+    {"id":"wrong-schema","mutations":[{"pointer":"/probes/2/Result/schemaVersion","value":2}],"expected":{"finding":"diagnostic-invalid","recommendedAction":"check-diagnostics","evidenceValid":false,"thumbnailPassed":false}},
+    {"id":"wrong-apartment","mutations":[{"pointer":"/probes/2/Result/apartment","value":"MTA"}],"expected":{"finding":"diagnostic-invalid","recommendedAction":"check-diagnostics","evidenceValid":false,"thumbnailPassed":false}},
+    {"id":"negative-elapsed","mutations":[{"pointer":"/probes/2/Result/elapsedMs","value":-1}],"expected":{"finding":"diagnostic-invalid","recommendedAction":"check-diagnostics","evidenceValid":false,"thumbnailPassed":false}},
+    {"id":"lowercase-hr","mutations":[{"pointer":"/probes/2/Result/hresult","value":"0x8004b200"}],"expected":{"finding":"diagnostic-invalid","recommendedAction":"check-diagnostics","evidenceValid":false,"thumbnailPassed":false}},
+    {"id":"null-bitmap","mutations":[{"pointer":"/probes/2/Result/bitmapPresent","value":false}],"expected":{"finding":"diagnostic-invalid","recommendedAction":"check-diagnostics","evidenceValid":false,"thumbnailPassed":false}},
+    {"id":"zero-width","mutations":[{"pointer":"/probes/2/Result/width","value":0}],"expected":{"finding":"diagnostic-invalid","recommendedAction":"check-diagnostics","evidenceValid":false,"thumbnailPassed":false}},
+    {"id":"large-height","mutations":[{"pointer":"/probes/2/Result/height","value":1025}],"expected":{"finding":"diagnostic-invalid","recommendedAction":"check-diagnostics","evidenceValid":false,"thumbnailPassed":false}},
+    {"id":"icon-fallback","mutations":[{"pointer":"/probes/2/Result/requestFlags","value":0}],"expected":{"finding":"diagnostic-invalid","recommendedAction":"check-diagnostics","evidenceValid":false,"thumbnailPassed":false}},
+    {"id":"missing-force-flag","mutations":[{"pointer":"/probes/4/Result/requestFlags","value":null}],"expected":{"finding":"diagnostic-invalid","recommendedAction":"check-diagnostics","evidenceValid":false,"thumbnailPassed":false}},
+    {"id":"other-resolved-handler","mutations":[{"pointer":"/probes/0/Result/resolvedHandler","value":"{00000000-0000-0000-0000-000000000000}"}],"expected":{"finding":"diagnostic-invalid","recommendedAction":"check-diagnostics","evidenceValid":false,"thumbnailPassed":false}},
+    {"id":"reference-not-matched","mutations":[{"pointer":"/registration/referenceMatched","value":false}],"expected":{"finding":"diagnostic-invalid","recommendedAction":"check-diagnostics","evidenceValid":false,"thumbnailPassed":false}},
+    {"id":"ready-ambiguous","mutations":[{"pointer":"/registration/scope","value":"ambiguous"}],"expected":{"finding":"diagnostic-invalid","recommendedAction":"check-diagnostics","evidenceValid":false,"thumbnailPassed":false}},
+    {"id":"ready-unknown","mutations":[{"pointer":"/registration/scope","value":"unknown"}],"expected":{"finding":"diagnostic-invalid","recommendedAction":"check-diagnostics","evidenceValid":false,"thumbnailPassed":false}},
+    {"id":"contradictory-ready","mutations":[{"pointer":"/registration/finding","value":"registration-mismatch"}],"expected":{"finding":"diagnostic-invalid","recommendedAction":"check-diagnostics","evidenceValid":false,"thumbnailPassed":false}},
+    {"id":"cache-harness-failure","mutations":[{"pointer":"/probes/3/Result/status","value":"failed"},{"pointer":"/probes/3/Result/hresult","value":"0x80040154"},{"pointer":"/probes/3/Result/phase","value":"CoCreateInstance.thumbnailCache"},{"pointer":"/probes/3/Result/bitmapPresent","value":false},{"pointer":"/probes/3/Result/width","value":null},{"pointer":"/probes/3/Result/height","value":null}],"expected":{"finding":"diagnostic-invalid","recommendedAction":"check-diagnostics","evidenceValid":false,"thumbnailPassed":false}},
+    {"id":"failed-bitmap-contradiction","mutations":[{"pointer":"/probes/2/Result/status","value":"failed"},{"pointer":"/probes/2/Result/hresult","value":"0x80040154"},{"pointer":"/probes/2/Result/phase","value":"IShellItemImageFactory.GetImage"},{"pointer":"/probes/2/Result/bitmapPresent","value":false},{"pointer":"/probes/2/Result/width","value":null},{"pointer":"/probes/2/Result/height","value":null},{"pointer":"/probes/4/Result/status","value":"failed"},{"pointer":"/probes/4/Result/hresult","value":"0x80040154"},{"pointer":"/probes/4/Result/phase","value":"IThumbnailCache.GetThumbnail"},{"pointer":"/probes/4/Result/bitmapPresent","value":false},{"pointer":"/probes/4/Result/width","value":null},{"pointer":"/probes/4/Result/height","value":null},{"pointer":"/probes/2/Result/bitmapPresent","value":true}],"expected":{"finding":"diagnostic-invalid","recommendedAction":"check-diagnostics","evidenceValid":false,"thumbnailPassed":false}},
+    {"id":"preflight-other-handler-selected","mutations":[{"pointer":"/registration/ready","value":false},{"pointer":"/registration/finding","value":"other-handler-selected"},{"pointer":"/probes","value":[]}],"expected":{"finding":"other-handler-selected","recommendedAction":"check-diagnostics","evidenceValid":false,"thumbnailPassed":false}},
+    {"id":"preflight-registration-ambiguous","mutations":[{"pointer":"/registration/ready","value":false},{"pointer":"/registration/finding","value":"registration-ambiguous"},{"pointer":"/probes","value":[]}],"expected":{"finding":"registration-ambiguous","recommendedAction":"check-diagnostics","evidenceValid":false,"thumbnailPassed":false}},
+    {"id":"preflight-registration-mismatch","mutations":[{"pointer":"/registration/ready","value":false},{"pointer":"/registration/finding","value":"registration-mismatch"},{"pointer":"/probes","value":[]}],"expected":{"finding":"registration-mismatch","recommendedAction":"check-diagnostics","evidenceValid":false,"thumbnailPassed":false}},
+    {"id":"preflight-reference-mismatch","mutations":[{"pointer":"/registration/ready","value":false},{"pointer":"/registration/finding","value":"reference-mismatch"},{"pointer":"/probes","value":[]}],"expected":{"finding":"reference-mismatch","recommendedAction":"check-diagnostics","evidenceValid":false,"thumbnailPassed":false}},
+    {"id":"preflight-display-policy-restricted","mutations":[{"pointer":"/registration/ready","value":false},{"pointer":"/registration/finding","value":"display-policy-restricted"},{"pointer":"/probes","value":[]}],"expected":{"finding":"display-policy-restricted","recommendedAction":"check-diagnostics","evidenceValid":false,"thumbnailPassed":false}},
+    {"id":"forged-preflight-success","mutations":[{"pointer":"/registration/ready","value":false},{"pointer":"/registration/finding","value":"thumbnail-api-ok"}],"expected":{"finding":"diagnostic-invalid","recommendedAction":"check-diagnostics","evidenceValid":false,"thumbnailPassed":false}}
+  ]
+}
