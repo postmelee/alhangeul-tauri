@@ -3,7 +3,12 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: Stage 5.4 Windows 비교 실행 시작 — run 34328534574 결과 대기
+상태: Stage 5 비교 실험 중단 — run 34328534574 failure, Stage 6 수행계획 보정 승인 대기
+
+2026-09-10 작업지시자 결정으로 추가 등록 범위·보호 경로 실험을 중단하고 현재 NSIS/MSI
+설치 방식을 유지한다. 최신 VDI 관측·완료 CI 결과와 진단·안내 UI 범위는
+[수행계획서 상단의 보정안](task_m010_57.md)을 따른다. 아래 결과 대기·재실행 요청은
+과거 이력이다. 이번에는 상태만 정정하며 Stage 6 구현계획은 수행계획 승인 뒤 작성한다.
 
 ### Stage 5.4 승인된 Windows 부분 비교 실행
 
