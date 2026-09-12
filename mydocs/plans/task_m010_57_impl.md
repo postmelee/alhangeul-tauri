@@ -3,7 +3,43 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: Stage 6.1 Windows headless 관측 후보 — windows-package CI 실행 승인
+상태: Stage 6.1 Windows headless 테스트 보정 — 후보 커밋·Windows CI 실행 승인
+
+후속 windows-package run 34699221583은 fast·Windows core·단위 145개가 통과했으나,
+headless 11개 중 3개는 누적 개수 2 대 1로 다시 실패했다. 세 실패 모두 Application과
+ConsoleHost가 관측됐고 조회 실패는 0이었다. basename 관측이므로 시스템 이미지 신원까지
+증명한 것은 아니다. 패키지·설치 smoke와 응답 본문 수용은 여전히 미완료다.
+같은 스레드의 “진행해줘”로 테스트 보정을 승인받았다. 아래 기존 1개 고정 정책은 과거 이력이다.
+
+이번 보정은 기존 headless/support 테스트에 앱 PID·실제 이미지 경로 대조를 넣고,
+시스템 API의 System directory 아래 conhost.exe와 일치하는 콘솔 호스트만 디버그에서 허용한다.
+이름만 일치·다른 경로·WebView·worker·unknown·조회 실패·관측 누락·누적 개수 불일치는 거부한다.
+경로는 로컬/non-reparse 검사 후 비교하며 로그에는 노출하지 않는다. 이는 CI 소유 프로세스의
+경로 검증이지 Authenticode 서명 검증이나 임의의 관리자 변조 방어를 주장하는 기능이 아니다.
+시작 EXE의 핸들로 앱을 먼저 식별하고 종료 후 Job 누적 개수와 고유 PID 관측 수를 대조한다.
+새 `tests/thumbnail_process_policy.rs`에 순수 수용 판정·반례를 분리하여 Linux에서도 실행한다.
+기존 종료 코드·JSON 응답·watchdog·자기 Job 회수 검사는 유지한다. 제품 소스·lock·workflow·
+설치 정책은 바꾸지 않고, 내부 계획·기존 오늘할일에만 기록한다. Linux Docker의 순수 Rust
+실행·Windows 교차 clippy와 Node 계약을 검증한 뒤 후보 커밋·원격 CI 승인을 별도로 요청한다.
+
+보정 구현 후 Node 대상 31개·automation 695개, product boundary 541파일, diff 검사가 통과했다.
+기존 Linux harness의 Rust 계약 45개와 새 순수 수용 판정 3개가 통과했다. 후자는 의존성 없는
+Linux `rustc --test`로도 재확인했다. Windows 대상 `cargo clippy --tests --offline --target
+x86_64-pc-windows-msvc -- -D warnings`는 최종 소스에서 통과했다. 실제 System directory 경로
+판별·동명 위장 경로 거부·headless 실행은 아직 Windows에서 실행하지 않았다.
+관측 수가 누적 수보다 적으면 짧게 실행된 프로세스를 놓쳤을 가능성을 포함하여 실패한다.
+기존 정상 종료/오류 종료/JSON 검사 순서·시간 제한·자기 Job 회수를 그대로 유지하며,
+운영 제품이나 설치 정책이 바뀐 것은 아니다. 다음은 후보 커밋·fast-forward push 후
+`windows-package` 1회(내부 fast 포함, `thumbnail_context_experiment=false`) 승인 요청이다.
+이번 턴에는 커밋·push·원격 실행·Stage 6.2 진입을 하지 않았다.
+
+2026-09-13 같은 스레드의 “진행해줘”로 위 보정 후보 커밋·push와 windows-package 1회
+실행을 승인받았다. 원격 `publish/task57`은 `12346db1a2e9155cff64bb6db9069720b45c00af`,
+devel은 이미 통합된 `f154b4d638d0b81565907829690fd9c28ee68fa9`이고 최근 CI가 모두
+완료됐음을 확인했다. Node 대상 31개·diff 검사를 재확인했다. 오늘 상태는 기존 보드 형식의
+`mydocs/orders/20260913.md`에 기록한다. 후보의 workflow/source SHA를 동일하게 고정하고
+`scope=full`, `profile=windows-package`, `thumbnail_context_experiment=false`로 실행한다.
+실행 후 run 링크·SHA는 로컬 문서에만 기록하며 추가 push·자동 재시도·단계 종료는 하지 않는다.
 
 2026-09-12 full run 34456219424의 실패를 확인했다. fast·세 플랫폼 core·Linux x64/arm64
 제품 검사는 성공했고 Windows 단위 145개도 통과했다. headless 통합 9개 중 3개는 모두
@@ -39,6 +75,13 @@ Linux Rust 계약 45개도 통과했다. 새 Windows 관측·ABI/이름 분류 �
 `devel`은 이미 통합된 `f154b4d638d0b81565907829690fd9c28ee68fa9`이며 최근 CI는 모두
 완료된 상태임을 확인했다. 관측 보완과 기존 로컬 검증 기록만 후보로 묶으며 단계 완료로
 간주하지 않는다. dispatch 이후 exact SHA·run 링크는 로컬 기록에 추가하고 추가 push하지 않는다.
+
+후보 `12346db1a2e9155cff64bb6db9069720b45c00af`를 커밋·fast-forward push하고 원격 SHA를
+대조했다. 승인 입력 그대로 [windows-package run 34699221583](https://github.com/postmelee/alhangeul-tauri/actions/runs/34699221583)을
+1회 dispatch했다. run의 head SHA·workflow_dispatch와 select 성공·artifacts / plan 진행 중을
+확인했다. candidate workflow는 `build_ref=github.sha`, Windows x64, `run_tests=true`를 전달한다.
+내부 fast와 Windows core/native/package·설치 gate를 요청한 부분 검증이며 아직 결과는 미완료다.
+Linux 제품 재빌드·추가 환경 실험·재사용·릴리즈 게시는 하지 않았다. 실행 후 기록만 로컬에 남긴다.
 
 2026-09-10 구현계획 커밋 `3d1e24e` 뒤 같은 스레드의 “진행해줘”로 승인받아 6.1을 시작했다.
 이번 6.1 검증 후보의 구현은 순수 판정·요청/수명 계약, Windows token/정책·Registry64·설치 형식

@@ -136,13 +136,22 @@ test('headless routing precedes application initialization and keeps native entr
   assert.match(child, /Route::Invalid => Some\(2\)/);
 });
 
-test('headless process observations stay job-scoped and do not relax acceptance', async () => {
-  const [headless, observer, spawn] = await Promise.all([
+test('headless acceptance requires complete job evidence and an exact system console image', async () => {
+  const [headless, observer, spawn, policy, images] = await Promise.all([
     read('apps/desktop/src-tauri/tests/thumbnail_headless.rs'),
     read('apps/desktop/src-tauri/tests/support/thumbnail_processes.rs'),
     read('apps/desktop/src-tauri/src/thumbnail_diagnostics/process_spawn.rs'),
+    read('apps/desktop/src-tauri/tests/thumbnail_process_policy.rs'),
+    read('apps/desktop/src-tauri/tests/support/thumbnail_process_images.rs'),
   ]);
-  assert.match(headless, /assert_eq!\(\s*output\.processes, 1,/);
+  assert.match(headless, /\.accepts\(output\.processes, cfg!\(debug_assertions\)\)/);
+  assert.match(policy, /self\.seen\.len\(\) != lifetime_count as usize/);
+  assert.match(policy, /Role::Application if pid == self\.root_pid/);
+  assert.match(policy, /Role::SystemConsoleHost if debug && pid != self\.root_pid/);
+  assert.match(policy, /self\.failed_samples != 0/);
+  assert.match(images, /GetSystemDirectoryW\(buffer\.as_mut_ptr\(\)/);
+  assert.match(images, /local_file::local_path/);
+  assert.doesNotMatch(images, /std::env::var|derive\(Debug/);
   assert.match(headless, /observations\.sample\(child\)/);
   assert.match(observer, /JobObjectBasicProcessIdList/);
   assert.match(observer, /IsProcessInJob\(process\.0, Some\(job\)/);
@@ -150,4 +159,5 @@ test('headless process observations stay job-scoped and do not relax acceptance'
   assert.doesNotMatch(observer, /println!|eprintln!|Command::|CreateToolhelp32Snapshot|PROCESS_ALL_ACCESS/);
   assert.match(spawn, /#\[cfg\(test\)\]\s*#\[allow\(dead_code\)\][^\n]*\n\s*pub fn test_job_handle/);
   assert.ok(observer.split('\n').length <= 300);
+  assert.ok(policy.split('\n').length <= 300);
 });

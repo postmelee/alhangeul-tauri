@@ -1,6 +1,10 @@
 //! Best-effort live sampling of this test's job, not a process creation audit.
 //! Never print executable paths, command lines, or arbitrary executable names.
+use crate::thumbnail_process_policy::{Evidence, Role};
 use crate::{handle::OwnedHandle, process_spawn::Child};
+use std::{ffi::OsString, fmt, os::windows::ffi::OsStringExt, path::Path};
+#[path = "thumbnail_process_images.rs"]
+mod images;
 use windows::{
     core::{BOOL, PWSTR},
     Win32::{
@@ -19,44 +23,58 @@ struct ProcessIds {
     ids: [usize; MAX_PROCESSES],
 }
 
-#[derive(Debug, Default)]
 pub struct Observations {
-    seen: Vec<(u32, Role)>,
-    failed_samples: u32,
-    capacity_reached: bool,
+    evidence: Evidence,
+    images: images::Images,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum Role {
-    Application,
-    ConsoleHost,
-    OpenConsole,
-    WebView,
-    ThumbnailWorker,
-    Other,
-    Unavailable,
+impl fmt::Debug for Observations {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.evidence.fmt(formatter)
+    }
 }
 
 impl Observations {
+    pub fn new(child: &Child, executable: &Path) -> Self {
+        let images = images::Images::new(executable);
+        let root_pid = unsafe { GetProcessId(child.process.0) };
+        // The retained root handle remains queryable even if an invalid flag exits quickly.
+        let role = image_role(child.process.0, &images);
+        Self {
+            evidence: Evidence {
+                root_pid,
+                seen: vec![(root_pid, role)],
+                ..Default::default()
+            },
+            images,
+        }
+    }
+
+    pub fn accepts(&self, total: u32, debug: bool) -> bool {
+        self.evidence.accepts(total, debug)
+    }
+
     pub fn sample(&mut self, child: &Child) {
         let job = child.test_job_handle();
         let Some(ids) = process_ids(job) else {
-            self.failed_samples = self.failed_samples.saturating_add(1);
+            self.evidence.failed_samples = self.evidence.failed_samples.saturating_add(1);
             return;
         };
         for raw in ids.ids.into_iter().take(ids.count as usize) {
             let Ok(pid) = u32::try_from(raw) else {
-                self.failed_samples = self.failed_samples.saturating_add(1);
+                self.evidence.failed_samples = self.evidence.failed_samples.saturating_add(1);
                 continue;
             };
-            if let Some((_, role)) = self.seen.iter_mut().find(|(seen, _)| *seen == pid) {
+            if let Some((_, role)) = self.evidence.seen.iter_mut().find(|(seen, _)| *seen == pid) {
                 if *role == Role::Unavailable {
-                    *role = process_role(pid, job);
+                    *role = process_role(pid, job, &self.images);
                 }
-            } else if self.seen.len() < MAX_PROCESSES {
-                self.seen.push((pid, process_role(pid, job)));
+            } else if self.evidence.seen.len() < MAX_PROCESSES {
+                self.evidence
+                    .seen
+                    .push((pid, process_role(pid, job, &self.images)));
             } else {
-                self.capacity_reached = true;
+                self.evidence.capacity_reached = true;
             }
         }
     }
@@ -81,7 +99,7 @@ fn process_ids(job: HANDLE) -> Option<ProcessIds> {
     (ids.count as usize <= MAX_PROCESSES && ids.assigned == ids.count).then_some(ids)
 }
 
-fn process_role(pid: u32, job: HANDLE) -> Role {
+fn process_role(pid: u32, job: HANDLE, images: &images::Images) -> Role {
     let Ok(handle) = (unsafe { OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid) }) else {
         return Role::Unavailable;
     };
@@ -92,11 +110,15 @@ fn process_role(pid: u32, job: HANDLE) -> Role {
     {
         return Role::Unavailable;
     }
+    image_role(process.0, images)
+}
+
+fn image_role(process: HANDLE, images: &images::Images) -> Role {
     let mut path = [0u16; 32768];
     let mut length = path.len() as u32;
     if unsafe {
         QueryFullProcessImageNameW(
-            process.0,
+            process,
             PROCESS_NAME_WIN32,
             PWSTR(path.as_mut_ptr()),
             &mut length,
@@ -106,7 +128,18 @@ fn process_role(pid: u32, job: HANDLE) -> Role {
     {
         return Role::Unavailable;
     }
-    classify(&String::from_utf16_lossy(&path[..length as usize]))
+    let path = OsString::from_wide(&path[..length as usize]);
+    let (application, console) = images.identify(Path::new(&path));
+    if application {
+        return Role::Application;
+    }
+    if console {
+        return Role::SystemConsoleHost;
+    }
+    match classify(&path.to_string_lossy()) {
+        Role::Application => Role::Other,
+        role => role,
+    }
 }
 
 fn classify(path: &str) -> Role {
@@ -148,7 +181,7 @@ fn process_labels_do_not_expose_paths_or_unknown_names() {
     ] {
         assert_eq!(classify(&format!("C:\\private\\{name}")), role);
     }
-    let summary = Observations {
+    let summary = Evidence {
         seen: vec![(123, classify("C:\\private\\private-name.exe"))],
         ..Default::default()
     };
