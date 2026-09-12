@@ -135,3 +135,19 @@ test('headless routing precedes application initialization and keeps native entr
   assert.match(dispatch, /include_bytes!\(concat!\(\s*env!\("OUT_DIR"\)/);
   assert.match(child, /Route::Invalid => Some\(2\)/);
 });
+
+test('headless process observations stay job-scoped and do not relax acceptance', async () => {
+  const [headless, observer, spawn] = await Promise.all([
+    read('apps/desktop/src-tauri/tests/thumbnail_headless.rs'),
+    read('apps/desktop/src-tauri/tests/support/thumbnail_processes.rs'),
+    read('apps/desktop/src-tauri/src/thumbnail_diagnostics/process_spawn.rs'),
+  ]);
+  assert.match(headless, /assert_eq!\(\s*output\.processes, 1,/);
+  assert.match(headless, /observations\.sample\(child\)/);
+  assert.match(observer, /JobObjectBasicProcessIdList/);
+  assert.match(observer, /IsProcessInJob\(process\.0, Some\(job\)/);
+  assert.match(observer, /MAX_PROCESSES: usize = 64/);
+  assert.doesNotMatch(observer, /println!|eprintln!|Command::|CreateToolhelp32Snapshot|PROCESS_ALL_ACCESS/);
+  assert.match(spawn, /#\[cfg\(test\)\]\s*#\[allow\(dead_code\)\][^\n]*\n\s*pub fn test_job_handle/);
+  assert.ok(observer.split('\n').length <= 300);
+});

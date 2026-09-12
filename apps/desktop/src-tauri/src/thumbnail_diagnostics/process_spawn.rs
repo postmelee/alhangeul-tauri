@@ -91,6 +91,12 @@ impl Child {
         Some(accounting.TotalProcesses)
     }
 
+    #[cfg(test)]
+    #[allow(dead_code)] // Read-only observation by the real-EXE integration test.
+    pub fn test_job_handle(&self) -> HANDLE {
+        self.job.0
+    }
+
     pub fn exited(&self) -> Result<Option<u32>, TransportError> {
         match unsafe { WaitForSingleObject(self.process.0, 0) } {
             WAIT_OBJECT_0 => {

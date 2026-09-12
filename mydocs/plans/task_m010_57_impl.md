@@ -3,7 +3,42 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: Stage 6.1 로컬 검증 후보 확정 — 원격 CI 승인 대기, native 실행·수용 미완료
+상태: Stage 6.1 Windows headless 관측 후보 — windows-package CI 실행 승인
+
+2026-09-12 full run 34456219424의 실패를 확인했다. fast·세 플랫폼 core·Linux x64/arm64
+제품 검사는 성공했고 Windows 단위 145개도 통과했다. headless 통합 9개 중 3개는 모두
+Job Object의 누적 프로세스 수가 예상 1 대신 2여서 실패했다. Windows 패키지와 설치 smoke는
+미검증이며, 상태 응답 본문 검사도 앞선 개수 assertion에서 중단되어 통과로 기록하지 않는다.
+이번 실패는 피시방 NSIS 제한의 재현이 아니다. 추가 프로세스 정체는 아직 확인되지 않았다.
+
+같은 날짜의 “진행해줘”로 다음 보완을 승인받았다. 기존 `thumbnail_headless.rs`와 test cfg
+접근자에 자기 Job 소속 PID 관측을 연결하고, `tests/support/thumbnail_processes.rs`로 분리한다.
+실행 중 제한된 개수의 PID·허용 목록 기반 역할만 수집하며 경로·명령줄·문서 내용은 출력하지 않는다.
+단명 프로세스나 조회 실패는 미관측/식별 불가로 남기고 시스템 전체 프로세스를 조사하지 않는다.
+기존 `TotalProcesses == 1`과 종료/응답 검사는 유지한다. 관측만으로 콘솔/WebView를 확정하지 않는다.
+문서는 기존 내부 구현계획에 결과를 기록하고 `mydocs/orders/20260912.md`에 오늘 상태만 둔다.
+제품 설명·공식 문서·설치 정책·workflow는 변경하지 않는다. 로컬 검증은 Linux Docker의 Windows
+교차 타입 검사와 기존 Node 계약으로 제한하며 Windows 실행을 대신하지 않는다. 검증 후보와
+결과를 보고한 뒤 원격 CI 실행 승인을 별도로 요청한다. Stage 6.2는 시작하지 않는다.
+
+보완 후 자기 Job의 PID 목록을 최대 64개로 제한해 10ms polling 흐름에서 관측한다.
+OpenProcess 뒤 Job 소속을 재확인하고 이미지 basename은 고정 역할로만 분류한다. 누적 개수
+판정과 관측 목록은 분리되며 조회 실패·목록 용량·미식별 상태를 실패 메시지에 보존한다.
+새 접근자는 `cfg(test)`이고 실제 제품 실행 플래그·설치·lock·workflow는 그대로다.
+Node 대상 31개·automation 전체 695개, product boundary 539파일, diff 검사가 통과했다.
+기존 Colima Linux harness의 Windows 교차 clippy는 BOOL import 위치 수정 후 통과했고,
+Linux Rust 계약 45개도 통과했다. 새 Windows 관측·ABI/이름 분류 테스트는 타입 검사만 했으며
+실행 수용이 아니다. 아직 추가 프로세스의 정체를 확정하거나 원인 수정 완료로 기록하지 않는다.
+다음 승인 요청은 관측 후보 커밋·fast-forward push 후 `ci.yml / profile=windows-package`
+1회(`scope=full`, `thumbnail_context_experiment=false`)다. 내부 fast gate와 Windows native
+검사를 실행하고 같은 실패가 나면 관측 로그로 후속 수정 범위를 결정한다. 자동 재시도·Linux
+전체 재빌드·설치 artifact 재사용은 하지 않으며 최종 통합 full 수용은 별도로 남긴다.
+
+2026-09-12 위 후보 커밋·push와 windows-package 1회 실행을 같은 스레드의 “진행해줘”로
+승인받았다. 원격 `publish/task57`은 기존 후보 `44eccd38fe2ed437b6cbfd20694dd818b60138b9`,
+`devel`은 이미 통합된 `f154b4d638d0b81565907829690fd9c28ee68fa9`이며 최근 CI는 모두
+완료된 상태임을 확인했다. 관측 보완과 기존 로컬 검증 기록만 후보로 묶으며 단계 완료로
+간주하지 않는다. dispatch 이후 exact SHA·run 링크는 로컬 기록에 추가하고 추가 push하지 않는다.
 
 2026-09-10 구현계획 커밋 `3d1e24e` 뒤 같은 스레드의 “진행해줘”로 승인받아 6.1을 시작했다.
 이번 6.1 검증 후보의 구현은 순수 판정·요청/수명 계약, Windows token/정책·Registry64·설치 형식
@@ -48,7 +83,7 @@ scratch/child 통합 테스트까지 확장했다. 첫 시도는 blake3의 `ml64
 상태 응답·WebView 자식 미생성, 입력 EOF 시간 제한, Job 소멸 시 자기 프로세스 회수 검사를
 추가했다. Windows의 `pnpm run test:desktop`에서 실행되며 별도 workflow는 만들지 않았다.
 Linux scratch 테스트도 Windows 파일 공유/잠금 동작의 근거가 아니다. PowerShell 공통 사례,
-실제 Windows child/headless/lifecycle·잠금 정리, 제품 빌드·설치·inventory 대조는 남아 있다.
+실제 Windows child/headless/lifecycle·잠금 정리, 제품 빌드·설치·inventory 대조는 당시 남아 있었다.
 
 사용자가 Colima 실행을 요청해 기존 default 프로필(4 CPU·8 GiB)을 시작했다.
 Linux aarch64 Docker의 기존 `rust:1.94-bookworm` 이미지에서 `rustc 1.94.1`로 위 검사를
@@ -57,7 +92,7 @@ Linux aarch64 Docker의 기존 `rust:1.94-bookworm` 이미지에서 `rustc 1.94.
 의존 연결 `image`, `sha2 0.10.9`, `windows` 3개만 추가됐다. image는 fixture 테스트용이다.
 전역 Docker context는 default로 유지하며 명령별 `docker --context colima`를 사용한다.
 Mac 호스트에서 Rust 제품 검증을 실행하지 않았으며 Windows COM 실행은 CI가 필요하다.
-추가 실험/원격 CI/게시·6.2 진입은 하지 않았고 6.1 단계 완료 보고서·단계 완료 커밋도 아직 없다.
+후보 작성 시점에는 추가 실험/원격 CI/게시·6.2 진입을 하지 않았고, 6.1 단계 완료 보고서·완료 커밋도 없다.
 2026-09-10의 후속 “진행해줘”에 따라 변경을 점검하고 로컬 검증 후보 커밋을 준비했다.
 `check:product-boundary`(538파일), `test:upstream`(36개), `test:studio`, `build:studio`,
 `test:automation`(694개), `git diff --check`를 다시 통과했다. 제품 소스의 추가 변경은 없다.
@@ -74,6 +109,25 @@ head SHA·workflow·입력을 확인한다. 기존 fast 실행이 진행 중이�
 installer 재사용, 등록 범위 실험, 릴리즈·updater 게시, PR/이슈 종료는 이번 범위에 없다.
 검증 후보 커밋은 단계 완료 보고서·완료 커밋을 대신하지 않으며 Windows native·패키지·
 inventory 대조가 남은 상태를 그대로 유지한다.
+
+2026-09-10 위 exact 후보와 fast 1회 실행 요청에 대한 “진행해줘”로 원격 실행을 승인받았다.
+`44eccd38fe2ed437b6cbfd20694dd818b60138b9`를 `publish/task57`에 fast-forward push하고,
+위 입력 그대로 [fast run 34455688513, attempt 1](https://github.com/postmelee/alhangeul-tauri/actions/runs/34455688513)을
+1회 dispatch했다. 실행 전 해당 브랜치의 기존 CI가 모두 완료된 상태였고, 실행 후
+head SHA·`.github/workflows/ci.yml`·`workflow_dispatch`와 실제 fast job 구성을 확인했다.
+Windows PowerShell job은 통과했으며 로그에서 **공통 판정 44사례, PowerShell 53소스 파싱·
+격리 회귀 6개** 통과를 확인했다. 이후 Node/Studio job과 전체 run도 completed/success로
+확인했다. fast 범위에서 artifacts·installer 등의 skipped는 의도된 제외이며 native 수용 근거는 아니다.
+실행 기록은 로컬 문서에만 갱신하며 후보 SHA를 바꾸는 추가 push는 하지 않는다.
+
+2026-09-10 fast 결과 보고 후 같은 후보의 full 1회 실행을 “진행해줘”로 승인받았다.
+원격 `publish/task57`이 위 exact SHA이고 앞선 fast가 완료됐음을 확인한 뒤 `ci.yml`에
+`scope=full`, `profile=full`, `thumbnail_context_experiment=false`로
+[full run 34456219424, attempt 1](https://github.com/postmelee/alhangeul-tauri/actions/runs/34456219424)을
+1회 dispatch했다. run의 head SHA와 참조 workflow SHA가 모두 후보와 일치하며,
+`build_ref=github.sha`로 Windows/Linux 제품을 새로 검증하는 실행이다. 기존 artifact 재사용이 아니다.
+조회 시 select는 성공, artifacts / plan은 진행 중이며 전체 결과는 아직 수용하지 않는다.
+추가 환경 실험·릴리즈 게시·Stage 6.2 진입은 하지 않는다.
 아래 구현 승인 대기 표현은 계획 작성 당시 이력이다.
 
 2026-09-10 작업지시자 결정으로 추가 등록 범위·보호 경로 실험을 중단하고 현재 NSIS/MSI
