@@ -3,7 +3,44 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: Stage 6.1 Windows headless 테스트 보정 — 후보 커밋·Windows CI 실행 승인
+상태: Stage 6.1 headless Windows 통과 — Rust 1.98.1 보정 후보 게시·CI 승인, 실행 준비
+
+2026-09-13 run 34705048797에서 Windows headless 16개·별도 순수 수용 판정 3개·단위
+145개가 모두 통과했다. 상태 응답 JSON·오류 입력·watchdog·Job 회수 및 시스템 콘솔 호스트
+구분이 실제 Windows에서 검증됐다. 이후 `clippy:desktop`이 registry.rs의 `chunks_exact(2)`
+표현에서 실패하여 패키지·설치 smoke는 여전히 미검증이다. CI Rust는 1.98.1이고 기존 로컬
+harness는 1.94.1이었다. 이 오류는 피시방 NSIS 제한이나 headless 동작 실패가 아니다.
+
+같은 스레드의 “진행해줘”로 레지스트리 변환의 동일 동작 수정과 CI 버전의 로컬 검증을
+승인받았다. `registry.rs`는 짝수 바이트 검사·UTF-16LE·종료 NUL·빈 문자열 거부를 유지하고
+`as_chunks::<2>().0.iter()`로 바꾼다. #57 모듈/테스트에서 같은 버전 검사로 확인된 추가
+지적도 동작 유지 범위에서 보완하며 lint 허용·설치 정책·lock·workflow 변경은 하지 않는다.
+기존 Colima Linux 컨테이너에 Rust 1.98.1과 Windows target을 설치해 버전을 확인한 뒤
+교차 clippy·순수 계약 테스트를 실행한다. 이 검증은 Tauri 전체 제품·Windows 실행을 대신하지
+않는다. 기록은 기존 내부 구현계획과 오늘할일만 갱신한다. 후보 게시·원격 CI는 별도 승인이다.
+
+동일 버전의 첫 교차 검사에서 `fixtures_tests.rs`의 `chunks_exact(4)`도 지적되어
+`as_chunks::<4>().0.iter()`로 보완했다. 최종 변경은 이 두 표현뿐이며 기존 바이트 조건,
+UTF-16 검증 및 bitmap 유효성 assertion은 그대로다. Rust 1.98.1의 compiler commit
+`48a229ceaefd4985c50990b14116b6d856af0985`와 LLVM 22.1.8이 CI 로그와 일치했다.
+최종 `cargo +1.98.1 clippy --tests --offline --target x86_64-pc-windows-msvc -- -D warnings`,
+수정 파일 rustfmt check, Linux harness 계약 45개·별도 순수 판정 3개, Node automation
+695개·product boundary 541파일·diff 검사가 통과했다. 일회성 Linux 컨테이너에서 toolchain을
+명시 선택했으며 Mac native Rust 검증이나 전역 toolchain 변경은 하지 않았다. 이후 이 후보의
+로컬 Rust 검증도 `+1.98.1`을 명시하고 CI 버전 변경 시 다시 대조한다.
+이 결과는 진단 모듈 harness의 교차 검사이며 전체 Tauri 제품 Clippy/Windows 실행·설치 수용은
+아니다. 다음 승인 요청은 후보 커밋·fast-forward push 후 windows-package 1회(내부 fast 포함,
+추가 환경 실험 false)다. 새 source이므로 이전 installer 재사용으로 대체하지 않는다.
+최종 full 통합 검증은 별도로 남기며 이번 턴에는 커밋·push·원격 CI를 실행하지 않았다.
+
+2026-09-13 후속 “진행해줘”로 위 두 표현의 Clippy 보정 후보 커밋·fast-forward push와
+`ci.yml / scope=full / profile=windows-package` 1회를 승인받았다. 추가 환경 실험은
+`thumbnail_context_experiment=false`로 유지한다. 게시 전 원격 `publish/task57`은
+`ab66d1e9f536fb085e65aadae6e829e6944162cc`, devel은 이미 통합된
+`f154b4d638d0b81565907829690fd9c28ee68fa9`이며 최근 5개 실행은 모두 종료 상태다.
+이번 후보는 Windows 제품 source 검증이며 installer 재사용을 하지 않는다. 내부 fast와
+Windows core·제품 생성·설치 smoke의 실제 결과를 구분해 기록하고, Stage 6.1 완료·6.2 진입·
+최종 full·릴리즈는 이번 승인 범위에 포함하지 않는다.
 
 후속 windows-package run 34699221583은 fast·Windows core·단위 145개가 통과했으나,
 headless 11개 중 3개는 누적 개수 2 대 1로 다시 실패했다. 세 실패 모두 Application과
@@ -40,6 +77,12 @@ devel은 이미 통합된 `f154b4d638d0b81565907829690fd9c28ee68fa9`이고 최�
 `mydocs/orders/20260913.md`에 기록한다. 후보의 workflow/source SHA를 동일하게 고정하고
 `scope=full`, `profile=windows-package`, `thumbnail_context_experiment=false`로 실행한다.
 실행 후 run 링크·SHA는 로컬 문서에만 기록하며 추가 push·자동 재시도·단계 종료는 하지 않는다.
+
+검증 후보 `ab66d1e9f536fb085e65aadae6e829e6944162cc`를 커밋·fast-forward push하고
+원격 SHA를 대조했다. 승인 입력 그대로 [windows-package run 34705048797](https://github.com/postmelee/alhangeul-tauri/actions/runs/34705048797)을
+1회 dispatch했다. run의 head SHA·workflow_dispatch가 일치하며 조회 시 select와 전체 run은
+진행 중이다. Windows 실행·패키지·설치 수용은 아직 결과 대기다. Linux 제품 재빌드,
+등록 환경 실험, artifact 재사용, 릴리즈 게시 없이 실행 기록만 로컬 문서에 반영했다.
 
 2026-09-12 full run 34456219424의 실패를 확인했다. fast·세 플랫폼 core·Linux x64/arm64
 제품 검사는 성공했고 Windows 단위 145개도 통과했다. headless 통합 9개 중 3개는 모두

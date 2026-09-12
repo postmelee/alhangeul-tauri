@@ -54,7 +54,9 @@ pub fn string(hive: Hive, path: &str, name: &str) -> Observation<String> {
         Observation::Known(value) if value.vtype == REG_SZ && value.bytes.len() % 2 == 0 => {
             let mut units: Vec<_> = value
                 .bytes
-                .chunks_exact(2)
+                .as_chunks::<2>()
+                .0
+                .iter()
                 .map(|pair| u16::from_le_bytes([pair[0], pair[1]]))
                 .collect();
             if units.pop() != Some(0) || units.contains(&0) {

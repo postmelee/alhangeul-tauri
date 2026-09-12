@@ -30,7 +30,9 @@ fn public_documents_parse_and_render_without_external_samples() {
         assert_eq!(bitmap.width.max(bitmap.height), 256);
         assert!(bitmap
             .bgra
-            .chunks_exact(4)
+            .as_chunks::<4>()
+            .0
+            .iter()
             .any(|pixel| pixel[3] > 0 && pixel[..3] != [255; 3]));
         assert!(bytes.len() <= MAX_FIXTURE_BYTES);
     }
