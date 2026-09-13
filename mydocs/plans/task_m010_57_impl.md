@@ -191,6 +191,34 @@ JSON 경계는 PowerShell의 대소문자 비구분 속성 접근까지 고려�
   재사용 handoff 사전 gate 및 실제 Windows IO 회귀다. 기존 workflow gate는 아직 변경하지
   않았다. 원격 실행·설치 수용·단계 완료 보고는 아직 하지 않는다.
 
+### 구현 경과 — PowerShell IO·원시 종료 코드 연결, Windows 검증 대기
+
+`2c7ea77` 이후 “다음을 진행해줘”로 승인된 후속 구현이다. 파일 IO bridge는
+`scripts/ci/installer-evaluation.mjs`, 판정 실행은 `installer-acceptance.ps1`, 실제 종료
+코드 보존은 `installer-process.ps1`·`installer-smoke.ps1`로 분리했다. 모두 300 LOC
+미만이며, 기존 원시 smoke·순수 판정·등록/설치 제품 코드 자체는 변경하지 않았다.
+
+- fresh/reuse workflow의 smoke 호출을 고정 wrapper로 연결했다. 별도 Windows PowerShell
+  프로세스의 실제 종료 코드를 `smoke-process.json`에 기록하고 그대로 반환한다. 시작 실패는
+  `not-started`/null이며, 코드 누락을 0으로 바꾸지 않는다. 기존 최종 실패 gate는 유지한다.
+- prepared input의 고정 계약·정체성·중복 키·종료 코드를 검증한 후 기존 순수 판정을
+  실행한다. `installer-evaluation.json`은 hash와 verdict를 담되 항상
+  `requires-io-verification`이다. 아직 최종 `installer-acceptance.json`으로 승격하지 않는다.
+- Node→PowerShell 입력은 ASCII JSON escape로 전달해 Windows 콘솔 code page에 따라
+  한글/서로게이트 문자열이 손상되지 않도록 했다. 기존 결과를 읽기 전에 실패 상태로
+  초기화하고, 원시 입력은 수정하지 않는다. GitHub summary/output에 제한을 별도 기록한다.
+- `tests/windows-installer-io.test.ps1`은 임시 폴더에서 실제 entry·자식 프로세스를 실행해
+  정상/NSIS 제한/3010, 잘못된 JSON·원시 실패·미지 종료 코드, 실제 0/1/23/3010 코드 보존,
+  시작 실패·공백 경로·이전 성공 무효화·summary 개인정보 비노출을 검증하도록 추가했다.
+  실제 installer/COM은 실행하지 않는다. fast의 Windows job에 Node 24 준비를 추가했다.
+- 로컬 Node automation 797개, 변경 workflow 3개의 actionlint, product boundary,
+  diff 검사가 통과했다. 첫 전체 회귀의 옛 호출 경로 탐색 실패는 테스트를 새 wrapper
+  연결로 보정했으며 최종 실패 gate 검사는 유지했다.
+- **Windows PowerShell 실행은 아직 하지 않았다.** 새 exact 후보를 `publish/task57`에
+  push하고 `ci.yml profile=fast` 1회 실행하는 것을 다음 승인 대상으로 둔다. 이 성공도
+  실제 설치·full 수용은 아니다. Windows 확인 뒤 같은 run/attempt 증거 수집·집계,
+  최종 gate 교체와 producer 재사용 차단을 연결하며, 최종 통합 full은 별도 승인받는다.
+
 ### 산출물
 
 - 신규 `scripts/ci/installer-acceptance.ps1`(파일 IO/고정 계약 선택/결과 출력),

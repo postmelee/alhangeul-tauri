@@ -532,7 +532,7 @@ test('installer smoke job은 exact ref와 Windows x64 artifact를 고정한다',
 
 test('installer smoke는 root version과 세 입력을 PowerShell script에 전달한다', () => {
   const job = getJob(smokeWorkflow, 'windows-installer-smoke');
-  const step = getStepContaining(job, 'windows-installer-smoke.ps1');
+  const step = getStepContaining(job, 'installer-smoke.ps1');
 
   assert.match(step, /^\s{8}id: run-installer-smoke$/m);
   assert.match(step, /^\s{8}continue-on-error: true$/m);

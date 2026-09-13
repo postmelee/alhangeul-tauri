@@ -129,7 +129,7 @@ jobs:
         env:
           PRODUCT_VERSION: ${{ steps.handoff.outputs.product_version }}
         run: |
-          & '.\scripts\windows-installer-smoke.ps1' `
+          & '.\scripts\ci\installer-smoke.ps1' `
             -ArtifactRoot 'artifacts\windows-x64' `
             -OutputDirectory 'diagnostics\installer-reuse\smoke' `
             -ExpectedVersion $env:PRODUCT_VERSION `

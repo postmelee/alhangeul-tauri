@@ -54,7 +54,7 @@ for (const [name, mutate] of [
 });
 test('installer workflow verifies digest and inventory before executing either installer', () => {
   const source = readFileSync(new URL('../.github/workflows/alhangeul-installer-reuse.yml', import.meta.url), 'utf8');
-  const markers = ['scripts/ci/artifact-handoff.mjs', 'digest-mismatch: error', '--source-sha', 'windows-installer-smoke.ps1'];
+  const markers = ['scripts/ci/artifact-handoff.mjs', 'digest-mismatch: error', '--source-sha', 'installer-smoke.ps1'];
   const offsets = markers.map((marker) => source.indexOf(marker));
   assert.ok(offsets.every((offset) => offset >= 0));
   assert.deepEqual(offsets, [...offsets].sort((a, b) => a - b));

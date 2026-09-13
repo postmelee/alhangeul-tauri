@@ -199,7 +199,7 @@ jobs:
           if ($expectedVersion -notmatch '^\d+\.\d+\.\d+$') {
             throw "MSI ProductVersion requires three components with no prerelease suffix: $expectedVersion"
           }
-          & '.\scripts\windows-installer-smoke.ps1' `
+          & '.\scripts\ci\installer-smoke.ps1' `
             -ArtifactRoot 'artifacts\windows-x64' `
             -OutputDirectory 'diagnostics\windows-installer-smoke' `
             -ExpectedVersion $expectedVersion `

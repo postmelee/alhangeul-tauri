@@ -53,6 +53,10 @@ jobs:
         with:
           ref: ${{ inputs.source_ref }}
           submodules: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          package-manager-cache: false
       - name: Parse PowerShell and run isolated regressions
         shell: powershell
         run: .\scripts\ci\windows-tests.ps1
