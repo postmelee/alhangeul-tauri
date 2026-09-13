@@ -3,7 +3,7 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: Stage 6.1.1 구현·Windows fast 검증 완료 — 단계 보고 검토 및 6.1.2 진입 승인 대기
+상태: Stage 6.1.2 진행중 — 단계 진입 승인, workflow/producer 연결 구현
 
 최신 완료 근거: [Stage 6.1.1 보고서](../working/task_m010_57_stage6.1.1.md).
 후보 `24fdf323d83cd57c286fe129cc9932b4f86c0dab`의 fast run `34775083252` attempt 1이
@@ -167,6 +167,29 @@ bitmap 판정의 Int32 조건 차이로 round-trip에서 중단됐다. 기존 bi
   완료 보고·제품 수용·6.1.2 진입은 Windows 결과 확인 전 보류한다.
 
 ## Stage 6.1.2 — workflow 집계·producer 경계 연결
+
+`706bfdd` 완료 보고 이후 같은 스레드의 “진행해줘”로 이 단계의 구현을 승인받았다.
+JSON 경계는 PowerShell의 대소문자 비구분 속성 접근까지 고려해 중복 키를 거부하는
+`scripts/ci/acceptance-json.mjs`로 분리한다. schema/집계와 파일 파싱의 책임을 나누며
+새 외부 의존성 없이 크기·깊이 제한과 원시 bytes hash를 검증한다.
+
+### 구현 경과 — 증거 검증 기반, 단계 미완료
+
+- `acceptance-json.mjs`: UTF-8/BOM 읽기, 8 MiB·64단계 깊이 제한, 대소문자/escape를
+  포함한 중복 키 거부, 원문 bytes hash, 경로를 노출하지 않는 읽기 오류를 구현했다.
+- `acceptance-evidence.mjs`: 고정 3시나리오, exact identity/정책/hash/step/실제 exit/
+  별도 재계산 결과와의 일치, 진단 upload 성공 전제를 검증한다. 정상 3시나리오가 모두
+  있는 ordinary producer만 재사용 자격을 얻고, 제한 수용·3010은 원시 실패를 보존한다.
+- `producer-acceptance.mjs`: 검증된 handoff와 다운로드 결과를 별도 입력받아 producer
+  JSON을 검증한다. metadata만 확인한 입력·혼합 attempt·제한을 감춘 최상위 성공 선언·
+  필수 시나리오 누락·새 제품/릴리즈 수용 주장을 거부한다. 실제 API 호출·다운로드는
+  아직 연결하지 않았으므로 이 모듈의 합성 검사만으로 provenance 검증 완료를 주장하지 않는다.
+- 합성 데이터는 `tests/fixtures/ci-acceptance.mjs`로 분리했다. 지정 Node 회귀 125개와
+  전체 `pnpm run test:automation` 783개가 통과했다. 각 신규 파일은 300 LOC 미만이다.
+- 남은 구현: PowerShell IO entry와 실제 재계산, workflow의 raw exit 보존·진단 수용
+  gate, 같은 run/attempt artifact metadata resolve·다운로드·집계 job, result 연결,
+  재사용 handoff 사전 gate 및 실제 Windows IO 회귀다. 기존 workflow gate는 아직 변경하지
+  않았다. 원격 실행·설치 수용·단계 완료 보고는 아직 하지 않는다.
 
 ### 산출물
 
