@@ -3,12 +3,12 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: CI 수용 보정 수행계획 승인 — Stage 6.1.1–6.1.3 상세 구현계획 승인 대기
+상태: Stage 6.1.1 순수 판정 구현·로컬 검증 통과 — Windows fast 후보 게시·실행 승인 대기
 
 ## 2026-09-14 승인된 CI 수용 보정 구현계획
 
 수행계획 보정 커밋 `9c0a6d9`를 같은 스레드의 “진행해줘”로 승인받았다. 아래 설계는
-그 승인을 구체화한 **구현 승인 요청안**이다. 기존 native 기반을 재작성하지 않으며
+그 승인을 구체화한 계획이며 `f9c7d44` 이후 “진행해줘”로 6.1.1 구현을 승인받았다. 기존 native 기반을 재작성하지 않으며
 6.1.1–6.1.3을 UI 전의 회복 하위 단계로 삽입한다. 이전 gate 금지 표현은 원시 실패 은폐·
 무조건 허용 금지로 유지하고, 승인된 계약별 수용만 분리한다. 과거 run은 재분류하지 않는다.
 
@@ -21,7 +21,7 @@ GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 
 ### 문서 위치·공통 계약
 
-이번 변경은 기존 `mydocs/plans/` 두 문서와 `mydocs/orders/20260914.md`만이다.
+계획·상태 기록은 기존 `mydocs/plans/` 두 문서와 `mydocs/orders/20260914.md`에 둔다.
 후속 공식 문서는 승인된 `docs/operations/CI_VALIDATION.md`, `RELEASE_CHECKLIST.md`,
 `docs/releases/v0.1.0.md`의 관련 절에 둔다. 내부 매뉴얼이나 새 문서 루트로 옮기지 않는다.
 단계 보고서는 `mydocs/working/task_m010_57_stage6.1.1.md`부터 `stage6.1.3.md`로 두며
@@ -40,6 +40,11 @@ contract status(`passed|failed|unverified`), 실제 thumbnail/lifecycle 상태, 
 ## Stage 6.1.1 — 순수 계약 수용 판정
 
 ### 산출물·변경 내용
+
+구현 세부 분리: 합성 입력 생성은 `windows-installer-acceptance-test-fixtures.ps1`로
+분리해 테스트 실행 파일의 300 LOC 경계를 지킨다. 설치 실행/파일 IO 없이 정의만 제공한다.
+입력의 trusted context와 별도 read-back identity를 대조하되, 순수 함수만으로 artifact
+출처 검증을 완료했다고 주장하지 않는다. 재사용은 6.1.2의 외부 검증·집계 전까지 부적격이다.
 
 - 신규 `scripts/windows-installer-acceptance.ps1`(순수 entry),
   `windows-installer-acceptance-evidence.ps1`(schema/공통 전제),
@@ -96,6 +101,26 @@ Windows fast에서 `scripts/ci/windows-tests.ps1`의 기존 자동 발견 방식
 원격 fast 1회는 exact 후보 게시 전에 별도 승인받으며 기존 제품/설치 CI를 재실행하지 않는다.
 
 단계 완료 커밋: `Task #57 [Stage 6.1.1]: CI 계약 수용 판정과 반례 회귀`
+
+### 2026-09-14 구현·로컬 검증 기록 (단계 수용 전)
+
+순수 entry·공통 증거 검사·계약 정책, 합성 입력/반례, 기존 Windows runner 진입 및
+Node 소스 계약을 추가했다. NSIS는 두 phase의 알려진 12건 실패를 정확한 집합으로 비교하며,
+MSI는 reboot evidence를 재계산한다. 원시 입력 전체는 변경하지 않고 반환에는 상태·종료 코드·
+실패 수와 고정 reason만 남긴다. 경로/원시 실패 메시지는 출력하지 않는다. JSON 왕복·입력
+불변, stale assessment에만 의존하지 않는 재계산 반례도 Windows 실행 대상으로 준비했다.
+
+- 집중 Node 검사: **28/28 통과**. 첫 실행의 테스트 자체 인자 수 탐지 정규식 오류는
+  함수 선언 첫 줄만 읽도록 수정 후 통과했다. PowerShell 실행 결과가 아니다.
+- `pnpm run test:automation`: **701/701 통과**.
+- `pnpm run check:product-boundary`: **통과** (548 files scanned).
+- `git diff --check` 및 신규 파일 whitespace 검사: **통과**.
+- Windows PowerShell 5.1 parser/합성 실행: **미실행**. exact 후보 commit/push와
+  `ci.yml profile=fast` 1회를 별도 승인받아 진행한다. 결과 전에는 단계 완료 보고/커밋을 하지 않는다.
+
+기존 smoke·workflow gate·제품 bytes·사용자 UI는 변경하지 않았다. 역사적 실패 run은
+재분류하지 않았다. 파일 IO/중복 JSON key/실제 provenance·upload·matrix 집계·재사용 자격은
+6.1.2의 책임이며 이번 순수 결과의 `reuseEligible=false`를 유지한다. 6.1.2에 진입하지 않았다.
 
 ## Stage 6.1.2 — workflow 집계·producer 경계 연결
 
@@ -199,8 +224,8 @@ NSIS/3010 실패 해결 또는 전체 릴리즈 수용을 주장하지 않는다
 push/dispatch는 각 시점에 별도 승인이다. 고정 계약이 너무 넓거나 raw evidence가 부족하면
 성공 조건을 약화하지 않고 필요한 증거와 계획 수정 범위를 보고한다. 현재 원시 summary의
 충분성이 실제 회귀에서 확인되지 않은 항목은 구현 중 추측으로 채우지 않는다.
-이번 턴은 구현계획·승인 상태·오늘할일 문서만 변경하며 CI/제품 코드·공식 문서·원격 상태는
-바꾸지 않는다. 승인된 수행계획과 충돌하는 범위 확장은 작업지시자 확인 전 진행하지 않는다.
+계획 작성 턴에는 문서만 변경했다. 후속 승인으로 6.1.1 순수 판정·합성 테스트를 구현하며
+workflow/제품 코드·공식 문서·원격 상태는 바꾸지 않는다. 범위 확장은 확인 전 진행하지 않는다.
 
 ## 이전 구현·검증 이력
 
