@@ -9,9 +9,36 @@ function Assert-AcceptanceTest($Condition, $Message) {
   if (-not $Condition) { throw $Message }
 }
 
+function Get-AcceptanceTestFailureSite($Case) {
+  # Synthetic inputs only. Do not print exception text, values or absolute paths.
+  try {
+    Assert-AcceptanceIdentity $Case
+    Assert-AcceptanceCommon $Case
+    $lifecycle = Get-AcceptanceLifecycle $Case
+    Assert-AcceptanceLaunchRollback $Case.summary.Installers[0]
+    $phases = @('initial', $(if ($lifecycle -ceq 'reboot-required') { 'pre-reboot-observation' } else { 'reinstalled' }))
+    $findings = @(Get-AcceptanceFindings $Case $phases $lifecycle)
+    $policy = Get-AcceptancePolicy $Case $findings $lifecycle
+    Assert-AcceptanceSteps $Case $policy.failureCount
+  } catch {
+    $sites = @()
+    foreach ($line in ($_.ScriptStackTrace -split '\r?\n')) {
+      if ($line -match '^at ([A-Za-z0-9-]+), .*windows-installer-acceptance[^:]*\.ps1: line ([0-9]+)$') {
+        $sites += "$($Matches[1]):$($Matches[2])"
+      }
+    }
+    return $sites -join ' > '
+  }
+  return 'no-validation-exception'
+}
+
 function Assert-AcceptanceCase($Case, $Expected, $Name) {
   $before = ConvertTo-Json -InputObject $Case -Depth 40 -Compress
   $result = Get-InstallerAcceptance $Case
+  if ($Expected -ceq 'passed' -and $result.contractStatus -cne $Expected) {
+    $site = Get-AcceptanceTestFailureSite $Case
+    throw "$Name : expected passed, got $($result.contractStatus) / $($result.reasonCodes -join ','); site=$site"
+  }
   Assert-AcceptanceTest ($result.contractStatus -ceq $Expected) "$Name : expected $Expected, got $($result.contractStatus) / $($result.reasonCodes -join ',')"
   Assert-AcceptanceTest ($before -ceq (ConvertTo-Json -InputObject $Case -Depth 40 -Compress)) "$Name : acceptance mutated raw evidence"
   $roundTrip = $before | ConvertFrom-Json
@@ -222,6 +249,26 @@ function Test-AcceptanceCoherentCounterexamples {
   $null = Assert-AcceptanceCase $case 'failed' 'identity-number-string-coercion'
 }
 
+function Test-AcceptanceWrappedScalarEquality {
+  $text = 'small-hwp' | ForEach-Object { $_ }
+  Assert-AcceptanceTest (Test-AcceptanceEqual $text 'small-hwp') 'pipeline-wrapped string rejected'
+  Assert-AcceptanceTest (Test-AcceptanceEqual 'small-hwp' $text) 'wrapped scalar comparison is asymmetric'
+  $left = @{ fixtures = @(@{ id = $text; bytes = 100; sha256 = ('e' * 64) }) }
+  $right = Copy-AcceptanceTestValue $left
+  Assert-AcceptanceTest (Test-AcceptanceEqual $left $right) 'pipeline fixture JSON comparison rejected'
+  Assert-AcceptanceTest (Test-AcceptanceEqual $right $left) 'object comparison is asymmetric'
+  foreach ($different in @('SMALL-HWP', 100, $true, @{ value = $text }, [pscustomobject]@{ value = $text }, @($text), $null)) {
+    Assert-AcceptanceTest (-not (Test-AcceptanceEqual $text $different)) 'scalar type/value distinction lost'
+    Assert-AcceptanceTest (-not (Test-AcceptanceEqual $different $text)) 'reverse type/value distinction lost'
+  }
+  Assert-AcceptanceTest (-not (Test-AcceptanceEqual @() $null)) 'empty array became null'
+  $case = New-AcceptanceTestCase; $case.summary.FatalError = 'private-source'
+  $site = Get-AcceptanceTestFailureSite $case
+  Assert-AcceptanceTest ($site -match 'Assert-AcceptanceCommon:[0-9]+') 'synthetic failure site missing'
+  Assert-AcceptanceTest ($site -notmatch 'private-source|[/\\]') 'failure site leaked values or paths'
+}
+
+Test-AcceptanceWrappedScalarEquality
 Test-AcceptancePositive
 Test-AcceptanceIdentityCases
 Test-AcceptanceCommonCases

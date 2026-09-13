@@ -13,7 +13,7 @@ function Assert-AcceptanceTrue($Value) {
 
 function Get-AcceptanceKeys($Value) {
   if ($Value -is [Collections.IDictionary]) { return @($Value.Keys) }
-  Assert-Acceptance ($Value -is [pscustomobject])
+  Assert-Acceptance ($Value -is [System.Management.Automation.PSCustomObject])
   return @($Value.PSObject.Properties.Name)
 }
 
@@ -24,7 +24,11 @@ function Test-AcceptanceEqual($Left, $Right) {
     for ($i = 0; $i -lt $Left.Count; $i++) { if (-not (Test-AcceptanceEqual $Left[$i] $Right[$i])) { return $false } }
     return $true
   }
-  if ($Left -is [Collections.IDictionary] -or $Left -is [pscustomobject]) {
+  # [pscustomobject] is a PSObject accelerator: pipeline-wrapped scalars can match it.
+  $leftObject = $Left -is [Collections.IDictionary] -or $Left -is [System.Management.Automation.PSCustomObject]
+  $rightObject = $Right -is [Collections.IDictionary] -or $Right -is [System.Management.Automation.PSCustomObject]
+  if ($leftObject -or $rightObject) {
+    if (-not $leftObject -or -not $rightObject) { return $false }
     $keys = @(Get-AcceptanceKeys $Left); $other = @(Get-AcceptanceKeys $Right)
     if ($keys.Count -ne $other.Count) { return $false }
     foreach ($key in $keys) {

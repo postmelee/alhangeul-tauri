@@ -3,7 +3,7 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: Stage 6.1.1 순수 판정 구현·로컬 검증 통과 — Windows fast 후보 게시·실행 승인 대기
+상태: Stage 6.1.1 wrapper 타입 오인 보정·Linux 보조 회귀 통과 — Windows fast 재검증 후보
 
 ## 2026-09-14 승인된 CI 수용 보정 구현계획
 
@@ -121,6 +121,45 @@ MSI는 reboot evidence를 재계산한다. 원시 입력 전체는 변경하지 
 기존 smoke·workflow gate·제품 bytes·사용자 UI는 변경하지 않았다. 역사적 실패 run은
 재분류하지 않았다. 파일 IO/중복 JSON key/실제 provenance·upload·matrix 집계·재사용 자격은
 6.1.2의 책임이며 이번 순수 결과의 `reuseEligible=false`를 유지한다. 6.1.2에 진입하지 않았다.
+
+### 2026-09-14 fast 실행 결과와 보정 승인
+
+후보 `16eee2e8d8b84835c5434dbf19f6dafbda925f8e`의
+[fast run 34773600774](https://github.com/postmelee/alhangeul-tauri/actions/runs/34773600774)은
+완료/failure다. Node/Studio는 통과했고 Windows parser 이후 최초 `strict-msi` 정상 합성
+사례가 `invalid-common-evidence`로 거부됐다. 의도된 negative 결과가 아니며 이후 회귀는
+미실행이다. 설치/native 제품 문제의 재현으로 해석하지 않는다.
+
+후속 “진행해줘”로 원인 보정·합성 테스트의 실패 위치 진단 보완·로컬 검증·후보 게시와
+`profile=fast` 1회 재검증을 승인받았다. 합성 테스트에서만 순수 helper를 직접 호출해
+실패 함수/줄 번호를 확인하며 예외 원문·환경 값·절대 경로는 출력하지 않는다. 수용 계약은
+완화하지 않고 6.1.2에는 진입하지 않는다.
+
+추가 “진행해줘”로 Colima 일회성 Linux 컨테이너의 순수 함수 보조 재현을 승인받았다.
+Ubuntu 24.04 arm64에 공식 PowerShell 7.4.13 archive를 게시된 SHA-256으로 확인해
+설치하고 `scripts/`만 읽기 전용 연결한다. 보조 재현은 Windows 5.1 수용이 아니며 제품
+설치·레지스트리 변경·native 빌드 없이 원인 확인에 한정한다. 완료 후 컨테이너를 정리한다.
+
+Linux 원형 실행에서 `Assert-AcceptanceCommon`의 manifest 비교 실패를 재현했다.
+fixture ID의 실제 기반 타입은 `System.String`인데 파이프라인 wrapper 때문에
+`-is [pscustomobject]`가 true가 되어 객체 키 비교로 진입했다. `Get-AcceptanceKeys`와
+깊은 비교를 실제 `System.Management.Automation.PSCustomObject` 타입으로 구분하고,
+양쪽 중 하나만 객체이면 대칭적으로 false를 반환하도록 수정했다. wrapper 문자열·JSON
+fixture·대소문자/타입/배열 구분·진단 함수/줄 번호만 출력하는 회귀를 추가했다.
+
+수정 후 원형 Linux 실행은 첫 정상 사례를 통과했으나 PS 7 JSON의 Int64와 기존 Windows
+bitmap 판정의 Int32 조건 차이로 round-trip에서 중단됐다. 기존 bitmap 판정은 변경하지
+않았다. 별도 임시 Linux driver에서만 JSON의 Int32 범위 정수를 Int32로 변환한 뒤
+합성 회귀 전체가 통과했다. **이 보조 결과는 Windows 5.1 실행 통과가 아니다.** driver는
+저장소/CI에 추가하지 않으며 Windows fast는 원래 JSON 변환과 타입 조건으로 실행한다.
+
+- 공식 [PowerShell 7.4.13](https://github.com/PowerShell/PowerShell/releases/tag/v7.4.13)
+  arm64 archive: `bd48076333a08d210e87cb96215cfe49316ce09dd8c92f2cd79eef0f5112959c`;
+  공식 UTF-16LE 해시 목록을 변환해 일치 확인 후 실행했다.
+- 보정 후 집중 Node **29/29**, automation **702/702**, product boundary **548파일 통과**,
+  `git diff --check` 통과. Linux 보조 회귀 exit 0.
+- 승인된 후속 실행은 `publish/task57`의 새 exact 후보로 `profile=fast` 1회다.
+  완료 보고·제품 수용·6.1.2 진입은 Windows 결과 확인 전 보류한다.
 
 ## Stage 6.1.2 — workflow 집계·producer 경계 연결
 

@@ -79,3 +79,14 @@ test('기존 Windows fast 자동 발견과 Node automation glob에 포함된다'
   assert.match(runner, /-Recurse -Filter '\*\.test\.ps1'/);
   assert.ok(JSON.parse(packageText).scripts['test:automation'].includes('tests/ci-*.test.mjs'));
 });
+
+test('PSObject로 감싼 scalar를 객체로 오인하지 않고 합성 실패 위치만 출력한다', () => {
+  assert.match(evidence, /\$leftObject = .*System\.Management\.Automation\.PSCustomObject/);
+  assert.match(evidence, /\$rightObject = .*System\.Management\.Automation\.PSCustomObject/);
+  assert.doesNotMatch(evidence, /-is \[pscustomobject\]/i);
+  for (const marker of ['pipeline-wrapped string rejected', 'pipeline fixture JSON comparison rejected',
+    'scalar type/value distinction lost', 'synthetic failure site missing', 'failure site leaked values or paths']) assert.ok(regressions.includes(marker));
+  assert.match(regressions, /Get-AcceptanceTestFailureSite \$Case/);
+  assert.match(regressions, /\$sites \+= "\$\(\$Matches\[1\]\):\$\(\$Matches\[2\]\)"/);
+  assert.doesNotMatch(regressions, /Write-Output \$_|Write-Output .*ScriptStackTrace|Exception\.Message/);
+});
