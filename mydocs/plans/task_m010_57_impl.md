@@ -3,7 +3,12 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: Stage 6.1.1 wrapper 타입 오인 보정·Linux 보조 회귀 통과 — Windows fast 재검증 후보
+상태: Stage 6.1.1 구현·Windows fast 검증 완료 — 단계 보고 검토 및 6.1.2 진입 승인 대기
+
+최신 완료 근거: [Stage 6.1.1 보고서](../working/task_m010_57_stage6.1.1.md).
+후보 `24fdf323d83cd57c286fe129cc9932b4f86c0dab`의 fast run `34775083252` attempt 1이
+통과했다. 아래 후보/미실행/보류 표현은 당시 이력이며, 현재는 순수 판정 단계 검증까지
+완료했다. 실제 workflow 연결·제품 설치 수용은 아직 하지 않았다.
 
 ## 2026-09-14 승인된 CI 수용 보정 구현계획
 
