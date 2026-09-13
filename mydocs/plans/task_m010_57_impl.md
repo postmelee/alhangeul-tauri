@@ -3,7 +3,206 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: Stage 6.1 native full 검증 통과·기존 설치 제한 유지 — CI 수용 보정 수행계획 승인 대기
+상태: CI 수용 보정 수행계획 승인 — Stage 6.1.1–6.1.3 상세 구현계획 승인 대기
+
+## 2026-09-14 승인된 CI 수용 보정 구현계획
+
+수행계획 보정 커밋 `9c0a6d9`를 같은 스레드의 “진행해줘”로 승인받았다. 아래 설계는
+그 승인을 구체화한 **구현 승인 요청안**이다. 기존 native 기반을 재작성하지 않으며
+6.1.1–6.1.3을 UI 전의 회복 하위 단계로 삽입한다. 이전 gate 금지 표현은 원시 실패 은폐·
+무조건 허용 금지로 유지하고, 승인된 계약별 수용만 분리한다. 과거 run은 재분류하지 않는다.
+
+| Stage | 산출 / 책임 | 다음 단계 조건 |
+|---|---|---|
+| 6.1.1 | 원시 증거를 변경하지 않는 순수 CI 수용 판정·PS/Node 반례 | 로컬 Node 및 Windows fast PS 검증·단계 보고 승인 |
+| 6.1.2 | smoke·전체 집계·artifact 재사용 경계에 판정 연결 | exact 후보 fast/full·원시/수용 결과 대조·단계 보고 승인 |
+| 6.1.3 | 공식 CI/릴리즈 문서 정합화·6.1 근거 종합 | 변경 범위 검증·6.1 수용 승인; 기존 제한과 최신 VDI 미검증 유지 |
+| 6.2 / 6.3 | 기존 앱 UI / 설치된 새 native suite·VDI | 기존 단계 계획 유지, 각각 별도 진입 승인 |
+
+### 문서 위치·공통 계약
+
+이번 변경은 기존 `mydocs/plans/` 두 문서와 `mydocs/orders/20260914.md`만이다.
+후속 공식 문서는 승인된 `docs/operations/CI_VALIDATION.md`, `RELEASE_CHECKLIST.md`,
+`docs/releases/v0.1.0.md`의 관련 절에 둔다. 내부 매뉴얼이나 새 문서 루트로 옮기지 않는다.
+단계 보고서는 `mydocs/working/task_m010_57_stage6.1.1.md`부터 `stage6.1.3.md`로 두며
+실제 단계 검사 통과 후에만 작성한다. stage6.1의 최종 native 기반 수용과 기존 설치 지원
+제한은 종합 보고에서 구분한다. 앞선 실패가 있던 후보 커밋은 완료 커밋으로 소급하지 않는다.
+
+새 수용 evidence는 기존 raw summary/step-outcomes 옆의 `installer-acceptance.json`에
+분리한다. schema/policy version, repository/run ID/attempt, workflow/harness/product SHA,
+archive ID/digest, installer/scenario/contract, raw smoke outcome·raw summary SHA-256,
+contract status(`passed|failed|unverified`), 실제 thumbnail/lifecycle 상태, 제한 reason
+코드, 제품 수용 범위, 재사용 자격을 기록한다. ID·SHA는 workflow와 검증 inventory에서
+받아 대조하며 summary의 자가 선언만 신뢰하지 않는다. source와 harness를 구분한다.
+경로·개인 환경 원문·예외 문자열은 새 summary에 복사하지 않고 고정 enum·수치만 출력한다.
+릴리즈 수용은 이 검사에서 항상 별도/미검증이며 성공 boolean을 제공하지 않는다.
+
+## Stage 6.1.1 — 순수 계약 수용 판정
+
+### 산출물·변경 내용
+
+- 신규 `scripts/windows-installer-acceptance.ps1`(순수 entry),
+  `windows-installer-acceptance-evidence.ps1`(schema/공통 전제),
+  `windows-installer-acceptance-policy.ps1`(시나리오 판정),
+  `windows-installer-acceptance-tests.ps1`(합성 사례),
+  `tests/windows-installer-acceptance.test.ps1`(기존 Windows 격리 runner 진입),
+  `tests/ci-installer-acceptance.test.mjs`(소스 경계/정적 계약; 기존 automation glob에 포함).
+- 기존 `windows-thumbnail-assessment.ps1`와 `windows-installer-reboot.ps1`의 순수 함수를
+  dot-source해 재계산한다. 기존 테스트 script의 main 실행을 라이브러리로 재사용하지 않는다.
+  앱 Rust 판정·UI API·원시 collector·설치 실행/등록/제거 코드는 변경하지 않는다.
+- 입력은 summary/context/step evidence를 묶은 1개 객체, 출력은 side-effect 없는 수용
+  객체다. JSON 읽기·쓰기/GitHub 환경 연결은 6.1.2의 별도 entry가 담당한다. 함수는 5개
+  이하 인자·50 LOC, 파일은 300 LOC를 기준으로 역할별 분리하며 필요 초과는 먼저 보고한다.
+- `strict-product`, `hosted-nsis-diagnostic`, `msi-forced-reinstall-reboot`의 고정 계약만 둔다.
+  모르는 계약/버전/시나리오 조합은 실패다. summary가 스스로 계약을 선택하게 하지 않는다.
+  합성 검증은 결과 JSON 왕복과 깊은 비교로 입력 불변을 확인한다.
+
+### 판정 순서와 실패 조건
+
+1. schema/type/유일성 및 source·archive·scenario 일치, top-level fatal/Failures 부재,
+   정확히 1개 Installer, 필수 원시 probe·phase·check의 존재를 확인한다. 성공 flag만 읽지
+   않고 phase별 원시 probe로 기존 assessment를 재계산해 저장된 finding과 대조한다.
+2. 초기 clean·실제 설치/재설치/제거·버전/등록/path/bytes 검증·기본 연결/제3자 처리기
+   보존·fixture hash·정리 증거를 확인한다. check 누락은 true로 기본 처리하지 않는다.
+   `Failures=[]`인데 필수 probe 실패가 존재하는 등 원시 목록과 결과의 모순도 거부한다.
+3. `strict-product`는 정상 API·필수 lifecycle/rollback만 통과한다. hosted NSIS 계약은
+   전체 정상 또는 전체 known-negative 중 하나만 허용한다. initial/reinstalled 각 19개
+   label과 정확한 fixture 집합을 확인하며 최초 Shell/force 12건의 실패 목록을 원시값으로
+   재구성해 집합 대조한다. 일반 오류를 `thumbnail-render`로 이름만 바꿔 넣어도 거부한다.
+   stage별 무결성·HKCU only·직접 COM·JPG·선택 CLSID/동일 bytes 전제는 모두 필요하다.
+   부분 성공/다른 오류 혼합은 실패다. 완전 정상으로 바뀌면 성공과 제한 미재현을 알린다.
+4. 강제 MSI는 정상 완료 또는 재설치 단계만 3010인 결과를 구분한다. 3010 경로는
+   설치/제거 0, 초기 API 성공, 정확한 reboot event 순서/개수·readability·로그/표식,
+   기존 순수 재부팅 판정 일치, `pre-reboot-observation` 성공, rollback 생략과 최종 정리
+   증거를 요구한다. 코드 3010은 신호지만 나머지 증거가 불완전하면 수용하지 않는다.
+   정상 forced 시나리오도 전용 rollback 생략 정책을 따른다. 일반 MSI에는 예외를 적용하지 않는다.
+5. 필수 step 실패/skip/cancel/누락·예상 밖 프로세스 exit는 거부한다. 허용 가능한 raw smoke
+   failure도 증거와 계약을 모두 충족한 경우뿐이다. 실패 목록/exit/status는 그대로 반환·보존한다.
+
+### 검증·커밋
+
+```sh
+node --test tests/ci-installer-acceptance.test.mjs tests/windows-installer-smoke.test.mjs tests/windows-thumbnail-assessment.test.mjs
+pnpm run test:automation
+pnpm run check:product-boundary
+git diff --check
+```
+
+Windows fast에서 `scripts/ci/windows-tests.ps1`의 기존 자동 발견 방식으로 새
+`tests/windows-installer-acceptance.test.ps1`를 실행한다. Node 검사는 PS 실행을 대신하지
+않는다. 합성 fixture만 사용하며 PowerShell 5.1 JSON 타입·대소문자·배열/단일 항목 차이도
+검사한다. 필수 반례는 수행계획의 목록 전부와 입력 변조/중복 key·누락 check, stdout과
+종료 결과 불일치다. malformed/duplicate-key JSON은 IO 경계에서 거부하는 테스트도 6.1.2에 둔다.
+원격 fast 1회는 exact 후보 게시 전에 별도 승인받으며 기존 제품/설치 CI를 재실행하지 않는다.
+
+단계 완료 커밋: `Task #57 [Stage 6.1.1]: CI 계약 수용 판정과 반례 회귀`
+
+## Stage 6.1.2 — workflow 집계·producer 경계 연결
+
+### 산출물
+
+- 신규 `scripts/ci/installer-acceptance.ps1`(파일 IO/고정 계약 선택/결과 출력),
+  `scripts/ci/acceptance-evidence.mjs`(JSON schema/정체성/집계),
+  `scripts/ci/producer-acceptance.mjs`(이전 run의 수용 증거 검증),
+  `tests/ci-acceptance.test.mjs`, `tests/ci-producer-acceptance.test.mjs`.
+- 수정 `.github/workflows/alhangeul-windows-smoke.yml`, `alhangeul-artifacts.yml`,
+  `alhangeul-installer-reuse.yml`, `scripts/ci/artifact-result.mjs`, `profiles.mjs`,
+  `artifact-handoff.mjs`, `installer-evidence.mjs`, 관련 `tests/ci-*.test.mjs`.
+- 결과 소비자 조사 범위에 `scripts/verify-workflow-artifact.mjs` 및 호출부를 포함한다.
+  Windows 수용 의미를 사용하는 경계만 연결하고 다른 플랫폼/일반 metadata 검증을 일괄
+  제한하지 않는다. 추가 배포 코드 변경이 필요하면 영향 파일과 범위를 먼저 승인받는다.
+
+### workflow 및 aggregate
+
+1. raw smoke는 기존 exit 0/1·원시 summary를 유지한다. 기존 `continue-on-error`는 증거
+   보존을 위한 해당 step에만 유지하며 job/aggregate에 추가하지 않는다. 기존 diagnostic/
+   manual evidence 재검증 후 새 수용 entry를 실행한다. 입력 JSON은 크기 제한·duplicate
+   key 거부·정해진 파일/필드·단일 summary를 검증하고 어떤 오류도 허용 계약으로 변환하지 않는다.
+2. fresh NSIS/MSI/forced-reinstall matrix를 유지하고 각 시나리오에 고정 계약을 연결한다.
+   job 이름은 실제 목적(예: NSIS hosted 진단 수용)을 드러낸다. 임의 dispatch 입력은 추가하지
+   않는다. 환경 전제 불일치는 실패이며 OS image 변경 시 자동 예외 확대하지 않는다.
+3. 원시 step-outcomes 기록 뒤 새 acceptance 증거를 기존 진단 artifact에 함께 upload한다.
+   최종 gate는 raw smoke만 계약 판정으로 대체해 읽고 checkout/download/digest/inventory/
+   contract/manual/acceptance/upload의 실제 성공을 여전히 요구한다. upload 실패도 실패다.
+4. summary 첫 줄에 `검사 계약: 통과 / 제품 관측: 제한`처럼 둘을 병기하고 NSIS 코드·MSI
+   재부팅 후 미검증·최신 VDI 양성 근거 미검증을 고정 문구로 표시한다. 생략은 통과가 아니다.
+5. matrix output의 마지막 값에 의존하지 않는다. reusable 안의 별도 집계 job이 같은 run의
+   시나리오별 artifact를 정확히 하나씩 받아 ID/digest와 run/attempt/source/expected matrix를
+   검증한다. 각 row의 원시 summary hash·step evidence와 acceptance를 대조한다. 단계 실패
+   또는 누락 시 집계도 실패하며, Linux/core-only처럼 smoke 비선택인 경우는 not-selected다.
+6. `alhangeul-artifacts.yml` result는 검증된 smoke 집계를 전달받아 전체 required job 성공을
+   확인한다. `complete-artifact`는 `full 검증 범위`로 의미를 명확히 하고, green과 지원/릴리즈
+   수용을 섞지 않는다. 기존 plan.profile/run_tests/플랫폼 선택은 그대로 유지한다.
+
+### artifact 재사용의 안전한 기본값
+
+- 집계는 별도 비제품 artifact `alhangeul-ci-acceptance`에 정책 버전·producer run/attempt·
+  product/workflow SHA·Windows archive ID/digest·세 시나리오 결과·제한·재사용 자격을 남긴다.
+  archive/inventory 제품 payload나 앱의 지원 묶음 계약은 변경하지 않는다.
+- `artifact-handoff.mjs`는 기존 producer completed/success·네 식별자 검증에 더해 같은
+  run의 수용 artifact metadata를 resolve한다. download action으로 digest를 확인한 뒤
+  `producer-acceptance.mjs`가 내용을 대조하는 **두 단계 검증**을 설치 실행보다 앞에 둔다.
+  metadata 확인만으로 handoff 전체 verified로 표시하지 않는다. 외부 URL/임의 zip 경로를
+  입력으로 받지 않고 새 zip/HTTP 의존성도 추가하지 않는다.
+- 제한 수용·재부팅 후 미검증·필수 시나리오 미실행·수용 evidence 누락/만료/중복/다른 attempt/
+  SHA·digest 불일치는 자동 재사용 부적격이다. 과거 green producer라도 새 의미를 검증할
+  수 있는 증거가 없으면 자동 legacy fallback하지 않고 미확인으로 거부한다. 이는 보수적인
+  호환성 축소이며 별도 승인된 구 producer 허용 목록은 이번에 만들지 않는다.
+- 재사용 검사는 같은 수용 판정 모듈을 쓰되 product SHA와 harness SHA를 별도로 대조하고
+  raw/contract 상태를 모두 기록한다. 원래 failed producer를 새 harness로 적격화하지 않는다.
+  릴리즈/updater 코드가 run green만 제품 수용으로 해석하는 경로가 있으면 기존 엄격한 자격
+  확인을 유지할 수 있도록 차단하며, 문서 경고만으로 실행 가능한 우회를 남기지 않는다.
+
+### 검증·커밋
+
+```sh
+node --test tests/ci-acceptance.test.mjs tests/ci-producer-acceptance.test.mjs tests/ci-handoff.test.mjs tests/ci-profiles.test.mjs tests/ci-task57-integration.test.mjs
+pnpm run test:automation
+pnpm run check:product-boundary
+git diff --check
+```
+
+기존 actionlint 도구로 변경 workflow를 확인하고 fast PS에서 새 IO entry를 합성 데이터로
+실행한다. `GITHUB_STEP_SUMMARY`/output/artifact round-trip은 실제 entry를 임시 폴더에서
+실행해 검사한다. 누락/중복 시나리오·잘못된 attempt·정책·raw hash·원시 실패 삭제·성공을
+자가 선언한 JSON·집계 upload 실패·재사용 순서 역전을 반례로 둔다. node 모듈 mock만으로
+실제 artifact 전달 수용을 선언하지 않는다. exact 후보 `profile=full` 1회를 별도 승인받아
+신규 bytes를 만들고 read-back한다. 현재 과거 실패 artifact는 설치 재실행 입력이 아니다.
+
+단계 완료 커밋: `Task #57 [Stage 6.1.2]: CI 수용 집계와 artifact 재사용 경계 연결`
+
+## Stage 6.1.3 — 공식 문서·단계 수용 정합화
+
+### 산출물·검증·커밋
+
+승인된 `docs/operations/CI_VALIDATION.md`의 상태/범위/재사용 계약,
+`RELEASE_CHECKLIST.md`의 NSIS 양성 환경·재부팅/미검증 구분,
+`docs/releases/v0.1.0.md`의 exact CI 결과/제한을 기존 절에서 보완한다. 각 파일은 수정
+직전에 읽는다. 새 UI가 이미 존재하거나 MSI로 모든 환경이 해결된다는 설명은 넣지 않는다.
+
+```sh
+pnpm run check:product-boundary
+pnpm run test:automation
+git diff --check
+```
+
+추가 문서 변경만으로 제품 full을 반복하지 않는다. 6.1.2 exact 근거와 이후 diff 범위를
+대조하며 소스가 달라지면 CI_VALIDATION의 profile 규칙을 다시 적용한다. 6.1.3 보고서에는
+native 기반·계약 수용/원시 실패·새 앱 suite 미실행·VDI/UI 남은 항목을 나누고, 기존
+NSIS/3010 실패 해결 또는 전체 릴리즈 수용을 주장하지 않는다. 승인 후 6.2로 진행한다.
+
+단계 완료 커밋: `Task #57 [Stage 6.1.3]: CI 의미와 썸네일 제한 문서 정합화`
+
+### 승인 요청·위험
+
+위 파일 분리·검증·단계 커밋과 6.1.1부터 시작하는 순서를 승인받는다. 원격 exact 후보의
+push/dispatch는 각 시점에 별도 승인이다. 고정 계약이 너무 넓거나 raw evidence가 부족하면
+성공 조건을 약화하지 않고 필요한 증거와 계획 수정 범위를 보고한다. 현재 원시 summary의
+충분성이 실제 회귀에서 확인되지 않은 항목은 구현 중 추측으로 채우지 않는다.
+이번 턴은 구현계획·승인 상태·오늘할일 문서만 변경하며 CI/제품 코드·공식 문서·원격 상태는
+바꾸지 않는다. 승인된 수행계획과 충돌하는 범위 확장은 작업지시자 확인 전 진행하지 않는다.
+
+## 이전 구현·검증 이력
 
 2026-09-14 [full run 34769475034](https://github.com/postmelee/alhangeul-tauri/actions/runs/34769475034)은
 후보 `7b2800808f08b0173ebd366cc16e991e78e429ca`에서 완료/failure다. fast·세 core·
