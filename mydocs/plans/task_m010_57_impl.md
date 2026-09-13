@@ -3,7 +3,100 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: Stage 6.1 headless Windows 통과 — Rust 1.98.1 보정 후보 게시·CI 승인, 실행 준비
+상태: Stage 6.1 native full 검증 통과·기존 설치 제한 유지 — CI 수용 보정 수행계획 승인 대기
+
+2026-09-14 [full run 34769475034](https://github.com/postmelee/alhangeul-tauri/actions/runs/34769475034)은
+후보 `7b2800808f08b0173ebd366cc16e991e78e429ca`에서 완료/failure다. fast·세 core·
+Windows/Linux x64·arm64 native/Clippy/package·일반 MSI가 통과했고 NSIS `0x80040154`
+12건과 MSI 강제 재설치 3010만 남았다. 전체 green·기존 설치 문제 해결로 표현하지 않는다.
+후속 사용자 질문과 “진행해줘”에 따라 [수행계획 보정안](task_m010_57.md#2026-09-14-ci-수용-기준-분리-보정안)을
+작성했다. 원시 제품 결과와 CI 계약 수용을 분리하는 제안이며 아직 코드/gate 변경 승인은
+아니다. 이 보정안 승인 후 상세 구현계획을 정렬한다. 기존 UI 이전 단계 경계와 gate 관련
+절은 현재 적용 기준을 유지하고, 아래 실행 중 표기는 과거 이력이다.
+
+## 2026-09-14 현재 결과와 단계 경계
+
+같은 스레드의 “진행해줘”로 완료된 CI 결과·잔여 범위 기록을 승인받았다. 이 절이 현재
+상태이며 아래 실행 중·미검증 표현은 각 후보 당시 이력이다. 기존 내부 계획과 날짜별
+오늘할일만 갱신한다. 제품 코드·공식 문서·설치 정책·workflow는 변경하지 않는다.
+
+검증 후보는 `7b2800808f08b0173ebd366cc16e991e78e429ca`, workflow는 `ci.yml`,
+입력은 `scope=full / profile=windows-package / thumbnail_context_experiment=false`다.
+[run 34709846838](https://github.com/postmelee/alhangeul-tauri/actions/runs/34709846838)은
+완료/failure다. workflow head SHA는 후보와 일치하고 Windows build의 checkout 검증도
+통과했다. `scope=full`은 `profile=full`을 뜻하지 않으며 Linux 제품은 이 실행에서 제외됐다.
+
+| 계층 / 근거 | 실제 결과 | 수용 경계 |
+|---|---|---|
+| fast Node·Studio / Windows PS | success | 기존 PS 판정·지원 묶음 계약 포함; 설치된 새 앱 진단 실행은 아님 |
+| Windows core | success | 공개 fixture core 검사 |
+| [Windows 제품 job 103596736536](https://github.com/postmelee/alhangeul-tauri/actions/runs/34709846838/job/103596736536) | success | 단위 145개·headless 16개·별도 순수 판정 3개, desktop Clippy, worker/handler 검사·Tauri bundle·inventory 검증 통과 |
+| [일반 MSI job 103602592585](https://github.com/postmelee/alhangeul-tauri/actions/runs/34709846838/job/103602592585) | success | 설치/재설치/제거 모두 0, 작은/큰 HWP·HWPX Shell/force bitmap 성공, 최종 정리 확인 |
+| [NSIS job 103602592599](https://github.com/postmelee/alhangeul-tauri/actions/runs/34709846838/job/103602592599) | failure | lifecycle 통과, 문서 썸네일 12건 실패; 기존 실패를 유지 |
+| [MSI 강제 재설치 job 103602592617](https://github.com/postmelee/alhangeul-tauri/actions/runs/34709846838/job/103602592617) | failure | 유일한 failure는 재설치 3010 / reboot-required; 재부팅 후 수용은 미검증 |
+
+별도 순수 판정 3개는 headless에도 포함되므로 서로 다른 headless 테스트 19개로 합산하지 않는다.
+일반 MSI의 rollback 시험은 의도한 1603 및 정리를 확인했고 전체 job은 성공했다.
+강제 재설치는 최초·재부팅 전 관측에서 썸네일 bitmap이 성공했지만 완료 수용으로 바꾸지
+않는다. 제거 0·최종 정리는 확인했으며 rollback은 재부팅/시나리오 조건으로 생략됐다.
+
+NSIS의 12건은 문서 3개 × Shell/force 2종 × 최초/재설치 2회 모두 `0x80040154`다.
+직접 COM·선택 처리기 조회·JPG 대조군은 성공했고 설치/재설치/제거는 모두 0, 최종 정리도
+통과했다. 기존 PS 진단은 두 phase에서 `evidenceStatus=valid`,
+`finding=per-user-shell-activation-failed`, `recommendedAction=consider-msi`로 분류했다.
+이 결과는 **기존 PS 진단의 분류 근거**이지 설치된 새 Rust suite나 앱 UI 안내의 수용이 아니다.
+CI 호출 문맥은 EnableLUA=1·elevated=true·IconsOnly=1이며 PC방과 완전히 같은 환경이
+아니다. UAC 하나를 원인으로 확정하거나 NSIS의 일반 사용자 지원 실패로 확대하지 않는다.
+
+Windows bundle artifact는 `10303875235`, archive digest는
+`sha256:38578e4716749630188a7f21d781db5ee9ed6c7e1a706f9fdd8c3ea03f355656`다.
+성공한 build job의 산출물이라는 사실과 생산 run 전체 실패를 구분한다. 이 artifact를
+`installer` 재사용 적격으로 취급하지 않는다. 진단 증거는 run의 MSI/NSIS/강제 재설치
+artifact 안 `windows-installer-smoke-summary.json`과 `step-outcomes.json`에서 대조했다.
+개인 경로·원시 환경 덤프를 계획서에 복사하지 않는다.
+
+### 잔여 항목과 다음 승인 범위
+
+| 항목 | 현재 상태 / 다음 처리 |
+|---|---|
+| Stage 6.1 Windows 테스트·Clippy·제품 빌드 | 현재 후보에서 통과; 같은 수정의 windows-package를 다시 실행할 필요 없음 |
+| Stage 6.1 desktop 전체 fmt | 2026-09-14 Colima Linux / Rust 1.98.1에서 desktop manifest 전체 check 통과; 소스 수정 없음 |
+| Stage 6.1 최신 후보 통합 | `7b28008`의 full `34769475034` 완료: 세 플랫폼 native/package 통과, 전체는 기존 NSIS/3010 때문에 failure |
+| Stage 6.2 | 제품 정보 진입점·동의/검사/취소·형식별 결과·MSI 안내·정제 요약 복사; 단계 보고/진입 승인 전 구현하지 않음 |
+| Stage 6.3 | 설치된 새 앱 inspection 참조와 inventory 대조, 자체 suite/PS 결과 비교, VDI UI 확인, 공식 문서; 기존 PS 결과로 대체하지 않음 |
+| 기존 NSIS 실패·MSI 3010 | 기존 gate와 미검증 상태 보존; 추가 등록 실험·숨은 재부팅·성공으로의 재분류 없음 |
+
+다음 승인 요청은 지원 환경의 desktop 전체 fmt 확인과 최신 exact 후보의 `full` 1회다.
+이는 Windows 실패 재시도가 아니라 lock/build를 포함한 최신 후보의 Windows/Linux 통합
+검증이며 추가 환경 실험은 false로 둔다. 같은 NSIS/3010 실패가 남으면 이를 별도로 기록하고
+새 진단 기반의 단계 수용 범위를 작업지시자에게 요청한다. 반복 실행으로 전체 green을
+기다리거나 gate를 완화하지 않는다. 단계 완료 보고서는 아직 작성하지 않으며 이번 기록만으로
+6.2 진입·최종 수용·릴리즈를 승인받은 것으로 처리하지 않는다. 이번 턴에는 커밋·push·CI
+dispatch 없이 문서 및 잔여 검증 범위만 정리한다.
+
+### 2026-09-14 후속 승인·전체 포맷 확인·full 실행
+
+후속 “진행해줘”로 위 전체 포맷 검사와 full CI 1회를 승인받았다. Colima Linux의 일회성
+`rust:1.94-bookworm` 컨테이너에 Rust 1.98.1/rustfmt를 설치하고 worktree를 읽기 전용으로
+연결했다. `cargo +1.98.1 fmt --manifest-path apps/desktop/src-tauri/Cargo.toml -- --check`가
+exit 0으로 통과했다. compiler commit은 `48a229ceaefd4985c50990b14116b6d856af0985`,
+host는 `aarch64-unknown-linux-gnu`, LLVM은 22.1.8이다. 개별 파일만이 아닌 desktop
+manifest 대상 포맷 검사이며 native test·COM 실행을 대신하지 않는다. 제품 소스·lock은
+수정하지 않았고 Mac native Rust 실행이나 전역 Docker context 변경도 하지 않았다.
+
+원격 `publish/task57`과 로컬 HEAD 모두 `7b2800808f08b0173ebd366cc16e991e78e429ca`,
+devel은 이미 통합된 `f154b4d638d0b81565907829690fd9c28ee68fa9`임을 확인했다.
+최근 5개 CI가 모두 종료돼 중복 실행은 없었다. 로컬 변경은 내부 결과 기록 문서뿐이므로
+커밋·push 없이 기존 후보 SHA를 고정하고 `ci.yml / scope=full / profile=full /
+thumbnail_context_experiment=false`로 [run 34769475034](https://github.com/postmelee/alhangeul-tauri/actions/runs/34769475034)을
+정확히 1회 dispatch했다. 최초 조회에서 event=`workflow_dispatch`, head SHA가 후보와
+일치했고 select 성공·artifacts/plan 진행 중이었다. Windows/Linux 제품·core·설치 결과는
+아직 대기이며 build checkout SHA와 inventory provenance는 완료 후 확인한다.
+기존 failed artifact 재사용·추가 환경 실험·자동 재시도·Stage 6.2 진입은 하지 않았다.
+이번 실행은 최신 후보 통합 범위의 최초 full이며 같은 Windows 실패를 없애기 위한 재시도가
+아니다. 전체 실패가 남으면 그대로 기록하고 새 진단 기반의 수용과 릴리즈 수용을 구분한다.
+
+## 이전 후보 검증 이력
 
 2026-09-13 run 34705048797에서 Windows headless 16개·별도 순수 수용 판정 3개·단위
 145개가 모두 통과했다. 상태 응답 JSON·오류 입력·watchdog·Job 회수 및 시스템 콘솔 호스트
@@ -41,6 +134,13 @@ UTF-16 검증 및 bitmap 유효성 assertion은 그대로다. Rust 1.98.1의 com
 이번 후보는 Windows 제품 source 검증이며 installer 재사용을 하지 않는다. 내부 fast와
 Windows core·제품 생성·설치 smoke의 실제 결과를 구분해 기록하고, Stage 6.1 완료·6.2 진입·
 최종 full·릴리즈는 이번 승인 범위에 포함하지 않는다.
+
+후보 `7b2800808f08b0173ebd366cc16e991e78e429ca`를 커밋·fast-forward push한 뒤 원격
+SHA 일치를 확인하고 [run 34709846838](https://github.com/postmelee/alhangeul-tauri/actions/runs/34709846838)을
+위 입력으로 정확히 1회 dispatch했다. 최초 조회에서 event는 `workflow_dispatch`, head SHA는
+후보와 일치했고 select 성공·artifacts/plan queued 상태였다. 제품 빌드와 설치 결과는 아직
+미검증이며, 이 실행 기록은 후보 SHA를 유지하도록 로컬 문서에만 남긴다. 추가 dispatch·
+재실행·다음 단계 진입은 하지 않았다.
 
 후속 windows-package run 34699221583은 fast·Windows core·단위 145개가 통과했으나,
 headless 11개 중 3개는 누적 개수 2 대 1로 다시 실패했다. 세 실패 모두 Application과
