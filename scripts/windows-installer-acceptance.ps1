@@ -34,9 +34,10 @@ function Get-InstallerAcceptance($InputEvidence) {
     $answer.contractStatus = 'passed'; $answer.lifecycleStatus = $lifecycle
     $answer.thumbnailStatus = if ($policy.limited) { 'not-accepted' } else { 'passed' }
     $answer.productAcceptance = if ($policy.limited -or $policy.reboot) { 'limited-observation' } else { 'scenario-only' }
-    $answer.reasonCodes = if ($policy.limited) { @('nsis-per-user-shell-activation-failed') }
-      elseif ($policy.reboot) { @('msi-reboot-required', 'post-reboot-unverified') }
-      elseif ($contract -ceq 'hosted-nsis-diagnostic') { @('known-limitation-not-reproduced') } else { @('scenario-observed') }
+    # Wrap the whole conditional: an inner single-item array is pipeline-unrolled.
+    $answer.reasonCodes = @(if ($policy.limited) { 'nsis-per-user-shell-activation-failed' }
+      elseif ($policy.reboot) { 'msi-reboot-required'; 'post-reboot-unverified' }
+      elseif ($contract -ceq 'hosted-nsis-diagnostic') { 'known-limitation-not-reproduced' } else { 'scenario-observed' })
     $answer.rawSmoke = [ordered]@{ status = $InputEvidence.summary.Status; outcome = $InputEvidence.steps.smoke; exitCode = $InputEvidence.smokeExitCode; failureCount = $policy.failureCount }
   } catch { <# Deliberately omit untrusted exception text, raw paths and failure messages. #> }
   return $answer

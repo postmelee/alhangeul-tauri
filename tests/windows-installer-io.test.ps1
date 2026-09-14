@@ -1,4 +1,4 @@
-param([string]$EvidencePath)
+param([string]$EvidencePath, [ValidateSet('normal', 'failure-evidence')][string]$TestMode = 'normal')
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
@@ -14,13 +14,17 @@ $entry = Join-Path $root 'scripts\ci\installer-acceptance.ps1'
 $inputPath = Join-Path $temporary 'prepared input.json'
 $resultDirectory = Join-Path $temporary 'result with spaces'
 $completed = @()
+$testStatus = 'failed'
+$script:lastCase = [ordered]@{ ordinal = 0; expectedExit = $null; actualExit = $null }
 
 function Invoke-EvaluationCase($Case, $ExpectedExit) {
+  $script:lastCase.ordinal++; $script:lastCase.expectedExit = $ExpectedExit; $script:lastCase.actualExit = $null
   $Case | ConvertTo-Json -Depth 40 | Set-Content -LiteralPath $inputPath -Encoding UTF8
   $before = (Get-FileHash -LiteralPath $inputPath -Algorithm SHA256).Hash
   $actual = Invoke-CiInstallerProcess @{
     ScriptPath = $entry; Parameters = [ordered]@{ InputPath = $inputPath; OutputDirectory = $resultDirectory }
   }
+  $script:lastCase.actualExit = $actual
   if ($actual -ne $ExpectedExit) { throw 'evaluation-child-exit-mismatch' }
   if ((Get-FileHash -LiteralPath $inputPath -Algorithm SHA256).Hash -cne $before) { throw 'evaluation-mutated-input' }
   $result = Get-Content -LiteralPath (Join-Path $resultDirectory 'installer-evaluation.json') -Raw -Encoding UTF8 | ConvertFrom-Json
@@ -31,6 +35,10 @@ function Invoke-EvaluationCase($Case, $ExpectedExit) {
 }
 
 try {
+  if ($TestMode -ceq 'failure-evidence') {
+    $null = Invoke-EvaluationCase (New-AcceptanceTestCase) 0
+    throw 'synthetic-preservation-check'
+  }
   foreach ($spec in @(
     @{ Kind = 'msi'; Contract = 'strict-product'; Limited = $false; Reboot = $false },
     @{ Kind = 'nsis'; Contract = 'hosted-nsis-diagnostic'; Limited = $true; Reboot = $false },
@@ -77,13 +85,31 @@ try {
   }
   if (-not $summary.Contains('0x80040154') -or -not $summary.Contains('3010')) { throw 'missing-limitation-summary' }
   if ($summary.Contains('PRIVATE-SENTINEL') -or $summary.Contains($temporary)) { throw 'summary-leaked-private-input' }
-  if ($EvidencePath) {
-    [ordered]@{ schemaVersion = 1; status = 'passed'; contracts = $completed; processExitCodes = @(0, 1, 23, 3010); installedProductAcceptance = 'unverified' } |
-      ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $EvidencePath -Encoding UTF8
+  $failureEvidence = Join-Path $temporary 'expected-failure.json'
+  Write-Output 'Expected negative: child exits 1 after evaluation to verify failure evidence preservation.'
+  $actual = Invoke-CiInstallerProcess @{ ScriptPath = $PSCommandPath; Parameters = [ordered]@{ EvidencePath = $failureEvidence; TestMode = 'failure-evidence' } }
+  if ($actual -ne 1) { throw 'failure-evidence-probe-did-not-fail' }
+  $preserved = Get-Content -LiteralPath $failureEvidence -Raw | ConvertFrom-Json
+  if ($preserved.status -cne 'failed' -or $preserved.lastCase.actualExit -ne 0) { throw 'failure-evidence-was-lost' }
+  foreach ($name in @('installer-evaluation.json', 'installer-evaluation-io.json', 'installer-evaluation-driver.json')) {
+    if (-not (Test-Path -LiteralPath "$failureEvidence.$name" -PathType Leaf)) { throw 'failure-detail-was-lost' }
   }
+  $testStatus = 'passed'
   Write-Output 'Installer evaluation IO regressions passed; no installed product or artifact provenance acceptance.'
 } finally {
-  $env:GITHUB_STEP_SUMMARY = $oldSummary; $env:GITHUB_OUTPUT = $oldOutput
-  Remove-Item -LiteralPath $temporary -Recurse -Force
+  try {
+    if ($EvidencePath) {
+      [ordered]@{ schemaVersion = 1; status = $testStatus; contracts = $completed; lastCase = $script:lastCase; installedProductAcceptance = 'unverified' } |
+        ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $EvidencePath -Encoding UTF8
+      # Only controlled evaluator records; no raw input, private paths or exception text.
+      foreach ($name in @('installer-evaluation.json', 'installer-evaluation-io.json', 'installer-evaluation-driver.json')) {
+        $source = Join-Path $resultDirectory $name
+        if (Test-Path -LiteralPath $source -PathType Leaf) { Copy-Item -LiteralPath $source -Destination "$EvidencePath.$name" }
+      }
+    }
+  } finally {
+    $env:GITHUB_STEP_SUMMARY = $oldSummary; $env:GITHUB_OUTPUT = $oldOutput
+    Remove-Item -LiteralPath $temporary -Recurse -Force
+  }
 }
 exit 0

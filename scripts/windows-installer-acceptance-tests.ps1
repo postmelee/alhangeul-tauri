@@ -35,6 +35,9 @@ function Get-AcceptanceTestFailureSite($Case) {
 function Assert-AcceptanceCase($Case, $Expected, $Name) {
   $before = ConvertTo-Json -InputObject $Case -Depth 40 -Compress
   $result = Get-InstallerAcceptance $Case
+  Assert-AcceptanceTest ($result.reasonCodes -is [array]) "$Name : reasonCodes must remain an array"
+  $serializedResult = ConvertTo-Json -InputObject $result -Depth 8 -Compress | ConvertFrom-Json
+  Assert-AcceptanceTest ($serializedResult.reasonCodes -is [array]) "$Name : JSON reasonCodes became scalar"
   if ($Expected -ceq 'passed' -and $result.contractStatus -cne $Expected) {
     $site = Get-AcceptanceTestFailureSite $Case
     throw "$Name : expected passed, got $($result.contractStatus) / $($result.reasonCodes -join ','); site=$site"

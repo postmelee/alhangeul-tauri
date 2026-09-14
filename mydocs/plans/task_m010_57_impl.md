@@ -219,6 +219,34 @@ JSON 경계는 PowerShell의 대소문자 비구분 속성 접근까지 고려�
   실제 설치·full 수용은 아니다. Windows 확인 뒤 같은 run/attempt 증거 수집·집계,
   최종 gate 교체와 producer 재사용 차단을 연결하며, 최종 통합 full은 별도 승인받는다.
 
+### 2026-09-14 IO fast 실패 보정 — Windows 재확인 전
+
+fast [34780317234](https://github.com/postmelee/alhangeul-tauri/actions/runs/34780317234),
+attempt 1, 후보 `4e8bc2129e479d22d772f6fa41d1def68a6b6b07`는 실패했다.
+Node/Studio와 기존 순수 판정 회귀는 통과했으나 Windows IO 회귀가
+`installer-evaluation-io-failed` / `evaluation-child-exit-mismatch`로 중단됐다.
+실패 시 임시 폴더를 지우고 성공 시에만 evidence를 쓰던 테스트 때문에 업로드할 파일도
+남지 않았다. 알려진 NSIS 제한을 관측한 run이 아니며 제품 설치는 실행하지 않았다.
+
+후속 “진행해줘”로 원인 분석·실행부 수정·실패 증거 보존 보강을 승인받았다.
+
+- 순수 판정의 `reasonCodes = if (...) { @('one') }`는 조건식 결과의 단일 원소가
+  풀리므로 문자열이 될 수 있다. 조건식 전체를 `@(...)`로 감싸 항상 배열을 반환하도록
+  수정했다. 기존 입력 round-trip 비교와 달리 출력 JSON의 배열 타입도 직접 검사한다.
+- 단일 사유 문자열을 실제 Node report CLI에 넣으면 `invalid-reason-codes`/exit 1,
+  배열로 바꾸면 exit 0임을 로컬 회귀로 재현했다. 이 결함은 기존 로그와 일치하지만,
+  과거 Windows 실행의 구체적인 report 오류는 유실되어 이번 수정의 Windows 확인은 남았다.
+- Node IO는 읽기/보고 단계와 허용 목록의 고정 오류 코드만 별도 JSON에 남긴다.
+  PowerShell driver는 읽기/디코드/판정/보고 단계와 실제로 얻은 종료 코드를 남긴다.
+  시작 전 이전 진단을 무효화하며 입력과 세 출력 파일의 경로 충돌을 거부한다.
+- Windows 회귀는 `finally`에서 status·사례 번호·기대/실제 exit와 통제된 결과 JSON
+  3개를 보존한 뒤 임시 파일을 정리한다. 원시 입력·예외 문자열·개인 경로는 복사하지 않는다.
+  별도 합성 자식의 의도된 실패를 명시하고 실패 evidence 보존 자체도 검사한다.
+- 로컬 집중 Node 25개 및 전체 automation 801개, product boundary와 diff 검사 통과.
+  새 PowerShell 실행·Windows IO 전체 통과·설치 수용은 아직 주장하지 않는다.
+  새 후보의 원격 push 및 `ci.yml profile=fast` 1회는 별도 승인 후 수행한다.
+  제품 source·정책 허용 범위·기존 CI gate·workflow 파일은 이번 보정에서 변경하지 않았다.
+
 ### 산출물
 
 - 신규 `scripts/ci/installer-acceptance.ps1`(파일 IO/고정 계약 선택/결과 출력),

@@ -1,4 +1,4 @@
-import { appendFile } from 'node:fs/promises';
+import { appendFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readEvidenceJson } from './acceptance-json.mjs';
@@ -65,11 +65,39 @@ export async function reportEvaluation(path, env = process.env) {
   return result.status === 'passed' ? 0 : 1;
 }
 
+export function evaluationErrorCode(error) {
+  const allowed = ['invalid-reason-codes', 'invalid-raw-smoke', 'unexpected-evidence-fields',
+    'invalid-evidence-object', 'invalid-evidence-size', 'invalid-evidence-encoding', 'invalid-evidence-json',
+    'invalid-evidence-depth', 'invalid-evidence-number', 'duplicate-evidence-key', 'evidence-read-failed',
+    'evidence-close-failed', 'evidence-changed-during-read', 'invalid-evaluation-command',
+    'unsupported-evaluation-policy', 'evaluation-contract-mismatch', 'evaluation-identity-mismatch',
+    'invalid-smoke-exit-code', 'missing-evaluation-hash', 'invalid-evaluation-provenance'];
+  return allowed.includes(error?.message) ? error.message : 'unexpected-evaluation-error';
+}
+
+async function writeIoDiagnostic(phase, status, code) {
+  const path = process.env.ALHANGEUL_EVALUATION_DIAGNOSTIC;
+  if (path) await writeFile(path, JSON.stringify({ schemaVersion: 1, phase, status, code }) + '\n');
+}
+
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const phase = ['read', 'report'].includes(process.argv[2]) ? process.argv[2] : 'command';
   try {
     requireEvidence(process.argv.length === 4, 'invalid-evaluation-command');
-    if (process.argv[2] === 'read') console.log(encodeEvaluationInput(await readEvaluationInput(process.argv[3])));
-    else if (process.argv[2] === 'report') process.exitCode = await reportEvaluation(process.argv[3]);
+    if (phase === 'read') {
+      const record = await readEvaluationInput(process.argv[3]);
+      await writeIoDiagnostic(phase, 'passed', 'none');
+      console.log(encodeEvaluationInput(record));
+    }
+    else if (phase === 'report') {
+      process.exitCode = await reportEvaluation(process.argv[3]);
+      await writeIoDiagnostic(phase, process.exitCode === 0 ? 'passed' : 'failed', process.exitCode === 0 ? 'none' : 'evaluation-rejected');
+    }
     else throw new Error('invalid-evaluation-command');
-  } catch { console.error('installer-evaluation-io-failed'); process.exitCode = 1; }
+  } catch (error) {
+    const code = evaluationErrorCode(error);
+    await writeIoDiagnostic(phase, 'failed', code).catch(() => console.error('evaluation-diagnostic-write-failed'));
+    console.error(`installer-evaluation-io-failed: phase=${phase}; code=${code}`);
+    process.exitCode = 1;
+  }
 }

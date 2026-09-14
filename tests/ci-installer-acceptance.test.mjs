@@ -10,6 +10,13 @@ const sources = await Promise.all(names.map((name) => read('scripts/' + name)));
 const [entry, evidence, policy, regressions, fixtures] = sources;
 const implementation = [entry, evidence, policy].join('\n');
 
+test('단일 판정 사유도 조건식 전체를 배열로 감싸 JSON 배열로 유지한다', () => {
+  assert.match(entry, /\$answer.reasonCodes = @\(if/);
+  assert.doesNotMatch(entry, /\$answer.reasonCodes = if/);
+  assert.match(regressions, /\$result.reasonCodes -is \[array\]/);
+  assert.match(regressions, /\$serializedResult.reasonCodes -is \[array\]/);
+});
+
 test('순수 수용 판정은 작은 역할별 파일·함수로 분리된다', () => {
   for (let i = 0; i < sources.length; i++) {
     const source = sources[i];

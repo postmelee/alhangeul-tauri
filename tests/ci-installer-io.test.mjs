@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { validateEvaluationInput, readEvaluationInput, encodeEvaluationInput, evaluationSummary, reportEvaluation } from '../scripts/ci/installer-evaluation.mjs';
+import { validateEvaluationInput, readEvaluationInput, encodeEvaluationInput, evaluationSummary, reportEvaluation, evaluationErrorCode } from '../scripts/ci/installer-evaluation.mjs';
 import { identity, scenarioRow } from './fixtures/ci-acceptance.mjs';
 import { evidenceHash } from '../scripts/ci/acceptance-json.mjs';
 
@@ -52,10 +52,47 @@ test('actual Node IO CLI hashes original bytes and rejects duplicate keys', asyn
     await writeFile(path, '{"status":1,"STATUS":2}');
     assert.throws(() => execFileSync(process.execPath, [script, 'read', path], { stdio: 'pipe' }), error => {
       assert.equal(error.status, 1);
-      assert.equal(error.stderr.toString().trim(), 'installer-evaluation-io-failed');
+      assert.equal(error.stderr.toString().trim(), 'installer-evaluation-io-failed: phase=read; code=duplicate-evidence-key');
       return true;
     });
   } finally { await rm(dir, { recursive: true, force: true }); }
+});
+test('single reason scalar fails the real report CLI with a preserved safe diagnostic', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'alhangeul-evaluation-scalar-'));
+  try {
+    const path = join(dir, 'evaluation.json');
+    const diagnostic = join(dir, 'diagnostic.json');
+    const script = fileURLToPath(new URL('../scripts/ci/installer-evaluation.mjs', import.meta.url));
+    const value = evaluation(); value.verdict.reasonCodes = 'scenario-observed';
+    await writeFile(path, JSON.stringify(value));
+    const env = { ...process.env, GITHUB_OUTPUT: '', GITHUB_STEP_SUMMARY: '', ALHANGEUL_EVALUATION_DIAGNOSTIC: diagnostic };
+    assert.throws(() => execFileSync(process.execPath, [script, 'report', path], { env, stdio: 'pipe' }), error => {
+      assert.equal(error.status, 1);
+      assert.equal(error.stderr.toString().trim(), 'installer-evaluation-io-failed: phase=report; code=invalid-reason-codes');
+      return true;
+    });
+    assert.deepEqual(JSON.parse(await readFile(diagnostic, 'utf8')),
+      { schemaVersion: 1, phase: 'report', status: 'failed', code: 'invalid-reason-codes' });
+    value.verdict.reasonCodes = ['scenario-observed'];
+    await writeFile(path, JSON.stringify(value));
+    execFileSync(process.execPath, [script, 'report', path], { env, stdio: 'pipe' });
+    assert.equal(JSON.parse(await readFile(diagnostic, 'utf8')).status, 'passed');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+test('diagnostic reason codes never echo arbitrary exception text', () => {
+  for (const message of ['private/file', 'invalid-reason-codes: PRIVATE', '', undefined]) {
+    assert.equal(evaluationErrorCode({ message }), 'unexpected-evaluation-error');
+  }
+  assert.equal(evaluationErrorCode(new Error('invalid-reason-codes')), 'invalid-reason-codes');
+});
+test('Windows regression preserves failure records before cleanup and tests this on an isolated child', async () => {
+  const source = await read('tests/windows-installer-io.test.ps1');
+  assert.match(source, /\$testStatus = 'failed'/);
+  assert.match(source, /TestMode = 'failure-evidence'/);
+  assert.match(source, /status = \$testStatus/);
+  assert.match(source, /lastCase = \$script:lastCase/);
+  assert.ok(source.indexOf('Copy-Item -LiteralPath $source') < source.indexOf('Remove-Item -LiteralPath $temporary'));
+  assert.doesNotMatch(source, /Exception.Message|Copy-Item.*\$inputPath/);
 });
 test('summary/output IO records both contract success and product limitation without reuse claims', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'alhangeul-installer-report-'));
