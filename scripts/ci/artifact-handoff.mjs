@@ -20,11 +20,8 @@ export async function verifyProductHandoff(input, services = {}) {
   if (verified.artifactId !== Number(input.artifactId) || verified.artifactDigest !== input.artifactDigest) {
     throw new Error('Approved artifact ID/digest mismatch');
   }
-  const packageResponse = await fetchJson(`/repos/${input.repository}/contents/package.json?ref=${input.productSha}`);
-  if (packageResponse.encoding !== 'base64') throw new Error('Invalid product package metadata');
-  const product = JSON.parse(Buffer.from(packageResponse.content, 'base64').toString('utf8'));
-  if (!/^\d+\.\d+\.\d+$/.test(product.version ?? '')) throw new Error('Invalid product version');
-  return { ...verified, productSha: input.productSha, harnessSha: input.harnessSha, productVersion: product.version, mode: 'reused' };
+  return { ...verified, productSha: input.productSha, harnessSha: input.harnessSha,
+    productVersion: verified.acceptanceHandoff.identity.expectedVersion, mode: 'reused' };
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
@@ -37,8 +34,8 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     const output = resolve('diagnostics/installer-reuse/handoff.json');
     await mkdir(dirname(output), { recursive: true });
     await writeFile(output, `${JSON.stringify(result, null, 2)}\n`);
-    await appendFile(process.env.GITHUB_OUTPUT, `artifact_id=${result.artifactId}\nproduct_version=${result.productVersion}\n`);
-    console.log(`Reusing product ${result.productSha} with harness ${result.harnessSha}; archive ${result.artifactId}`);
+    await appendFile(process.env.GITHUB_OUTPUT, `artifact_id=${result.artifactId}\nproduct_version=${result.productVersion}\nacceptance_artifact_id=${result.acceptanceHandoff.acceptanceArtifact.id}\n`);
+    console.log(`Product metadata matched: ${result.productSha}, harness ${result.harnessSha}, archive ${result.artifactId}; acceptance content still unverified.`);
   } catch (error) {
     console.error(error.message);
     process.exitCode = 1;

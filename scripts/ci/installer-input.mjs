@@ -18,7 +18,7 @@ export function buildInstallerInput(records, metadata, selected) {
   requireEvidence(smoke.value.schemaVersion === 1 && smoke.value.status === 'completed', 'smoke-process-not-completed');
   const id = metadata.identity;
   for (const [key, value] of Object.entries({ runId: id.runId, runAttempt: id.runAttempt,
-    requestedBuildRef: id.productSha, workflowSha: id.workflowSha,
+    requestedBuildRef: id.sourceMode === 'reuse' ? id.harnessSha : id.productSha, workflowSha: id.workflowSha,
     installerKind: selected.installerKind, scenario: selected.scenario })) {
     requireEvidence(workflow.value[key] === value, 'workflow-readback-mismatch');
   }

@@ -137,7 +137,7 @@ test('Windows process wrapper is fixed to original smoke and preserves every raw
     assert.ok(source.split('\n').length <= 300);
   }
 });
-test('both installer workflows use the recorded process entry while retaining strict failure gates', async () => {
+test('both installer workflows preserve raw process evidence and fail-closed gates', async () => {
   const [fresh, reused, fast] = await Promise.all(['alhangeul-windows-smoke', 'alhangeul-installer-reuse', 'alhangeul-ci-fast']
     .map(name => read(`.github/workflows/${name}.yml`)));
   for (const workflow of [fresh, reused]) assert.match(workflow, /\.\\scripts\\ci\\installer-smoke.ps1/);

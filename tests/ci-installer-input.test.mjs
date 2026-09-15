@@ -96,13 +96,15 @@ test('collector default inventory verifier refuses synthetic files without produ
   delete services.verifyInventory;
   await assert.rejects(prepareInstallerInput(options, services));
 }));
-test('fresh workflow evaluates after raw collection but preserves the strict gate until aggregate wiring', async () => {
+test('fresh workflow evaluates after raw collection and requires contract plus every non-smoke step', async () => {
   const workflow = await readFile(new URL('../.github/workflows/alhangeul-windows-smoke.yml', import.meta.url), 'utf8');
   assert.ok(workflow.indexOf('Record installer smoke outcome') < workflow.indexOf('node scripts/ci/installer-input.mjs'));
   assert.ok(workflow.indexOf('node scripts/ci/installer-input.mjs') < workflow.indexOf('id: installer-evaluation'));
   assert.ok(workflow.indexOf('id: installer-evaluation') < workflow.indexOf('id: upload-installer-smoke-diagnostics'));
-  const gate = workflow.slice(workflow.indexOf('- name: Require Windows installer smoke success'));
-  assert.match(gate, /smoke = \$env:SMOKE_OUTCOME/);
+  const gate = workflow.slice(workflow.indexOf('- name: Require Windows installer contract success'), workflow.indexOf('\n  aggregate:'));
+  assert.doesNotMatch(gate, /smoke = \$env:SMOKE_OUTCOME/);
+  assert.match(gate, /CONTRACT_STATUS -cne 'passed'/);
+  assert.match(gate, /SMOKE_OUTCOME -cnotin @\('success', 'failure'\)/);
   assert.match(gate, /preparedInput = \$env:INPUT_OUTCOME/);
   assert.match(gate, /evaluation = \$env:EVALUATION_OUTCOME/);
   assert.match(gate, /Where-Object \{ \$_.Value -ne 'success' \}/);

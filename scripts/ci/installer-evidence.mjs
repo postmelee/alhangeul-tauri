@@ -2,7 +2,7 @@ import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { invalidReuseFields, reuseInputsFromEnv } from './reuse-inputs.mjs';
 
 const directory = 'diagnostics/installer-reuse';
-const requiredSteps = ['harness', 'handoff', 'download', 'inventory', 'support', 'manual-tests', 'smoke-context', 'regressions', 'smoke', 'diagnostic-contract', 'manual-evidence'];
+const requiredSteps = ['harness', 'handoff', 'acceptance-download', 'producer-guard', 'download', 'inventory', 'support', 'manual-tests', 'smoke-context', 'regressions', 'smoke', 'diagnostic-contract', 'manual-evidence'];
 const statuses = new Set(['success', 'failure', 'cancelled', 'skipped']);
 function write(name, value) {
   mkdirSync(directory, { recursive: true });

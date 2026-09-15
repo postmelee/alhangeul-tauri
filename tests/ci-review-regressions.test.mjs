@@ -43,7 +43,7 @@ test('handoff failure preserves context and outcomes without exposing raw inputs
   assert.equal(JSON.parse(outcomes).steps.smoke.outcome, 'unverified');
   assert.equal(JSON.parse(outcomes).result, 'failed-or-unverified');
   assert.doesNotMatch(context + outcomes, /secret-token|invalid-secret/);
-  const success = Object.fromEntries(['harness', 'handoff', 'download', 'inventory', 'support', 'manual-tests', 'smoke-context', 'regressions', 'smoke', 'diagnostic-contract', 'manual-evidence']
+  const success = Object.fromEntries(['harness', 'handoff', 'acceptance-download', 'producer-guard', 'download', 'inventory', 'support', 'manual-tests', 'smoke-context', 'regressions', 'smoke', 'diagnostic-contract', 'manual-evidence']
     .map(name => [name, { outcome: 'success', conclusion: 'success' }]));
   env.STEP_RESULTS_JSON = JSON.stringify(success);
   assert.equal(run('installer-evidence', ['record']).status, 0);

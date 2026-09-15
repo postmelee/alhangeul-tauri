@@ -8,8 +8,9 @@ GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 최신 완료 근거: [Stage 6.1.1 보고서](../working/task_m010_57_stage6.1.1.md).
 후보 `24fdf323d83cd57c286fe129cc9932b4f86c0dab`의 fast run `34775083252` attempt 1이
 통과했다. 아래 후보/미실행/보류 표현은 당시 이력이며, 현재는 순수 판정 단계 검증까지
-완료했다. 현재는 fresh workflow 입력 수집·판정 호출까지 연결했으며, 시나리오 간 집계·
-최종 gate 전환·제품 설치 수용은 아직 남아 있다. 최신 중간 검증은 아래 2026-09-15 기록을 따른다.
+완료했다. 현재는 fresh 입력·독립 재검산 집계·최종 gate·producer 재사용 guard를 연결했고
+로컬 회귀를 통과했다. 새 Windows fast 및 full 전달/설치 수용은 아직 남아 있다.
+최신 중간 검증은 아래 2026-09-15 기록을 따른다.
 
 ## 2026-09-14 승인된 CI 수용 보정 구현계획
 
@@ -287,6 +288,63 @@ raw/수용 최종 gate 전환, result 및 producer 재사용의 metadata/content
 이 연결 전까지 strict gate를 유지하며 Stage 6.1.2 완료 보고는 작성하지 않는다.
 원격 push/CI dispatch는 수행하지 않았다. workflow 변경을 포함한 최종 통합은 승인된
 exact 후보의 `profile=full`로 검증하며, fast만으로 이번 전달 경계를 수용하지 않는다.
+
+### 2026-09-15 독립 집계·producer 차단 연결 — 원격 검증 전
+
+`97182fa` 후 같은 스레드의 “진행해줘”로 승인된 연결 작업이다. API/파일 IO/Windows
+재계산/생산자 검증은 역할별 작은 모듈로 분리했다. 새 코드 파일은 300 LOC, 함수는
+50 LOC 이내를 유지한다. 기존 대형 `alhangeul-windows-smoke.yml`은 승인된 동일 reusable
+내 별도 집계 job·입출력 배선을 보존하기 위해 417행으로 늘어나며, 실제 판정 로직은
+helper가 소유한다. Desktop entry로 옮겨진 job을 복제하거나 실험을 활성화하지 않는다.
+
+- `acceptance-delivery.mjs`: 같은 run/attempt의 세 job·필수 step 완료를 API로 확인하고,
+  각 고정 이름의 진단 artifact를 유일한 ID/digest로 resolve한다. 이전 attempt, 중복,
+  누락, 다른 source, 실패/skip/upload 실패를 거부한다. API의 smoke step conclusion은
+  continue-on-error 영향을 받으므로 실제 outcome/exit의 대체 증거로 쓰지 않는다.
+- `installer-replay.mjs`·`installer-aggregate.mjs`: digest 오류를 실패로 처리하는 별도
+  다운로드 뒤 metadata를 다시 대조한다. 제품 inventory bytes를 재검증하고 각 원시
+  summary/steps/process/workflow와 prepared input/hash를 독립적으로 재구성한다.
+  전달된 JSON 전체에 중복 키/크기 제한을 적용하고 symlink·과도한 파일 수를 거부한다.
+  Windows 5.1의 기존 diagnostic/manual read-back과 순수 판정 entry를 별도 process로
+  실행해 원시 파일 및 저장된 verdict와 대조한다. 재계산 자식에는 GitHub 출력 경로와
+  API token을 전달하지 않는다. 실패 시 고정 phase·scenario·status를 보존한다.
+- fresh matrix는 raw smoke step·원시 summary·exit 파일을 그대로 유지한다. 최종 gate는
+  그 step만 검증된 계약 결과로 대체하며 나머지 필수 step/input/evaluation/upload 성공을
+  모두 요구한다. 별도 집계 job에서도 모든 row와 upload 성공을 요구하고 matrix의 마지막
+  output에 의존하지 않는다. 정상·NSIS 0x80040154 제한·MSI 3010 이후 미검증을 구분한다.
+- `profiles.mjs`/`artifact-result.mjs`는 성공한 reusable의 검증된 집계 output, acceptance
+  artifact ID/digest·관측/재사용 값의 일관성을 요구한다. `full-validation`은 전체 검사
+  범위이지 모든 환경의 제품 지원 또는 릴리즈 수용이 아니다. 미선택 smoke는 미검증이다.
+- `producer-metadata.mjs`·`producer-guard.mjs`는 completed/success producer의 같은
+  attempt 집계 job·upload·acceptance artifact를 검사하고, 별도 digest-checked 다운로드
+  후 metadata를 다시 확인해 실제 JSON을 검증한다. 제한·재부팅 후 미검증·구 evidence
+  누락에는 재사용을 허용하지 않는다. metadata만 맞은 시점은 content unverified로 남긴다.
+- Windows 제품 artifact 소비자는 installer reuse와 Windows PDF workflow임을 확인해
+  두 경로 모두 설치 전에 동일 content guard를 실행하도록 했다. 공통 verifier의 강화는
+  `alhangeul-desktop-windows-x64`에만 적용하며 Linux/updater 전용 artifact는 변경하지 않는다.
+  과거 green producer도 새 acceptance evidence가 없으면 자동 fallback 없이 거부한다.
+- reuse는 `installer-reuse-input.mjs`로 원 제품 SHA/버전과 현 harness/run을 구분해 같은
+  순수 판정기를 호출한다. **기존 raw 설치 실패 job은 여전히 실패**이며 continue-on-error를
+  새로 추가하지 않았다. 재사용 검사가 새 제품이나 새 producer 자격을 생성하지 않는다.
+- 합성 API·실제 임시 파일 읽기/변조·metadata/content 분리·원시 hash·재계산 실패·digest
+  변경·누락 job/step·자가 성공 선언 등에 대한 신규 Node 회귀와 기존 계약 보정을 추가했다.
+  전체 automation **912/912**, product boundary **580파일**, 변경 workflow 3개 actionlint,
+  diff 검사 통과다. 초기 기존 테스트 5건의 실패는 새 필수 입력/guard를 반영한 fixture와
+  gate 기대값으로 보정했다. 새 producer 조건을 제거해 기존 테스트를 통과시키지 않았다.
+- Windows metadata CLI의 동적 import가 실행 중인 entry를 다시 의존하는 순환 경로를
+  피하도록 기존 API client를 `scripts/github-api.mjs`로 분리하고 기존 public export를
+  유지했다. 실제 metadata CLI와 content guard CLI를 test-only fetch transport로 연속
+  실행하는 회귀가 통과했다. 이 회귀는 외부 통신·Windows 설치를 수행하지 않는다.
+- `windows-installer-replay.test.ps1`은 실제 Node→Windows PowerShell 호출·공백 경로·
+  부모 output 격리·원시 실패 거부를 fast에서 검사하도록 추가했다. **아직 Windows에서
+  실행하지 않았다.** Node의 집계 회귀에서는 PowerShell/PE 실행을 대체했으므로 그 통과를
+  실제 installer/전달/native 수용으로 주장하지 않는다.
+
+원격 push/dispatch는 아직 하지 않았다. 다음은 exact 후보 push와 `profile=fast` 1회
+승인이다. 이후 별도 승인한 같은 source/workflow의 `profile=full`에서 새 bytes·세 실제
+설치·raw read-back·집계 artifact를 확인한다. 실제 정상/제한 출력, producer 거부, 최종
+수용을 확인하기 전까지 Stage 6.1.2 완료 보고나 6.1.3 공식 문서/UI 단계로 넘어가지 않는다.
+피시방 NSIS 썸네일 자체를 해결한 작업으로 표시하지 않는다.
 
 ### 산출물
 

@@ -1,4 +1,4 @@
-import { createGitHubApiClient } from '../verify-workflow-artifact.mjs';
+import { createGitHubApiClient } from '../github-api.mjs';
 import { assertIdentity, requireEvidence } from './acceptance-evidence.mjs';
 
 const workflows = ['.github/workflows/ci.yml', '.github/workflows/alhangeul-desktop.yml'];
@@ -19,20 +19,22 @@ export function assertCurrentAttempt(run, request) {
   requireEvidence(run.head_sha === request.workflowSha, 'run-source-mismatch');
   requireEvidence(workflows.includes(run.path?.split('@')[0]), 'unsupported-installer-workflow');
   requireEvidence(['in_progress', 'completed'].includes(run.status), 'run-not-started');
-  requireEvidence(Number.isFinite(Date.parse(run.run_started_at)), 'missing-attempt-start');
+  requireEvidence(typeof run.run_started_at === 'string' && Number.isFinite(Date.parse(run.run_started_at)), 'missing-attempt-start');
 }
 
 export function assertCurrentArtifact(artifact, run, expected) {
   requireEvidence(artifact?.id === Number(expected.id) && artifact.name === expected.name, 'artifact-identity-mismatch');
   requireEvidence(Number.isSafeInteger(artifact.id) && artifact.id > 0
     && Number.isSafeInteger(artifact.size_in_bytes) && artifact.size_in_bytes > 0, 'invalid-artifact-size-or-id');
-  requireEvidence(artifact.expired === false && /^sha256:[0-9a-f]{64}$/.test(artifact.digest ?? ''), 'invalid-artifact-digest-or-expiry');
+  requireEvidence(artifact.expired === false && typeof artifact.digest === 'string'
+    && /^sha256:[0-9a-f]{64}$/.test(artifact.digest), 'invalid-artifact-digest-or-expiry');
   const owner = artifact.workflow_run;
   requireEvidence(owner?.id === run.id && owner.repository_id === run.repository.id
     && owner.head_repository_id === run.head_repository.id && owner.head_sha === run.head_sha, 'artifact-run-mismatch');
   // Artifacts survive reruns. IDs alone do not bind them to the current attempt.
   const created = Date.parse(artifact.created_at);
-  requireEvidence(Number.isFinite(created) && created >= Date.parse(run.run_started_at), 'stale-attempt-artifact');
+  requireEvidence(typeof artifact.created_at === 'string' && Number.isFinite(created)
+    && created >= Date.parse(run.run_started_at), 'stale-attempt-artifact');
   return { id: String(artifact.id), digest: artifact.digest, size: artifact.size_in_bytes };
 }
 

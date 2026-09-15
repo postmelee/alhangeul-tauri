@@ -2,21 +2,18 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
 import { verifyProductHandoff } from '../scripts/ci/artifact-handoff.mjs';
+import { deliveryFixture } from './fixtures/ci-delivery.mjs';
 
 const productSha = 'a'.repeat(40);
-const input = { repository: 'a/b', productSha, harnessSha: 'b'.repeat(40), runId: '12', artifactId: '42', artifactDigest: `sha256:${'c'.repeat(64)}` };
+const input = { repository: 'postmelee/alhangeul-tauri', productSha, harnessSha: 'b'.repeat(40), runId: '100', artifactId: '200', artifactDigest: `sha256:${'b'.repeat(64)}` };
 function fixtures() {
-  return {
-    run: { id: 12, repository: { id: 1, full_name: 'a/b' }, head_repository: { id: 1, full_name: 'a/b' }, head_sha: productSha, event: 'workflow_dispatch', status: 'completed', conclusion: 'success', path: '.github/workflows/alhangeul-desktop.yml' },
-    artifact: { id: 42, name: 'alhangeul-desktop-windows-x64', size_in_bytes: 10, expired: false, digest: input.artifactDigest, workflow_run: { id: 12, repository_id: 1, head_repository_id: 1, head_sha: productSha } },
-  };
+  const f = deliveryFixture();
+  f.run.status = 'completed'; f.run.conclusion = 'success';
+  f.run.path = '.github/workflows/alhangeul-desktop.yml';
+  return f;
 }
 function service(fixture = fixtures()) {
-  return { fetchJson: async (path) => {
-    if (path.includes('/contents/')) return { encoding: 'base64', content: Buffer.from('{"version":"0.1.0"}').toString('base64') };
-    if (path.includes('/artifacts?')) return { total_count: 1, artifacts: [fixture.artifact] };
-    return fixture.run;
-  } };
+  return { fetchJson: fixture.fetchJson };
 }
 test('handoff separates product/harness SHA and pins approved archive', async () => {
   const result = await verifyProductHandoff(input, service());
@@ -24,6 +21,8 @@ test('handoff separates product/harness SHA and pins approved archive', async ()
   assert.equal(result.harnessSha, 'b'.repeat(40));
   assert.equal(result.productVersion, '0.1.0');
   assert.equal(result.mode, 'reused');
+  assert.equal(result.acceptanceHandoff.downloadStatus, 'unverified');
+  assert.equal(result.acceptanceHandoff.acceptanceArtifact.id, '400');
 });
 test('selected CI package producer is reusable with the same strict provenance', async () => {
   const f = fixtures();

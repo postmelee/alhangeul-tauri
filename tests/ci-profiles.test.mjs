@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { artifactPlan, selectValidation, evaluateArtifactResults, PLATFORMS } from '../scripts/ci/profiles.mjs';
+import { aggregateOutputs } from './fixtures/ci-delivery.mjs';
 
 test('platform catalog contains only supported runner and native target combinations', () => {
   assert.deepEqual(PLATFORMS, [
@@ -48,6 +49,7 @@ test('every selected gate must actually succeed, including diagnostics/core/smok
   const plan = artifactPlan({});
   const names = ['plan', 'fast', 'core', 'windows', 'linux', 'smoke'];
   const passed = Object.fromEntries(names.map((name) => [name, { result: 'success' }]));
+  passed.smoke.outputs = aggregateOutputs();
   assert.equal(evaluateArtifactResults(plan, passed).status, 'passed');
   for (const name of names) for (const result of ['skipped', 'cancelled', 'failure', undefined]) {
     assert.equal(evaluateArtifactResults(plan, { ...passed, [name]: { result } }).status, 'failed');

@@ -34,5 +34,18 @@ export function evaluateArtifactResults(plan, results) {
   const required = ['plan', 'fast'];
   for (const name of ['core', 'windows', 'linux', 'smoke']) if (plan[name]) required.push(name);
   const missing = required.filter((name) => results[name]?.result !== 'success');
-  return { status: missing.length ? 'failed' : 'passed', scope: plan.complete ? 'complete-artifact' : 'partial', required, missing };
+  const acceptance = results.smoke?.outputs;
+  if (plan.smoke && !validInstallerAggregateOutput(acceptance)) missing.push('installer-aggregate');
+  return { status: missing.length ? 'failed' : 'passed', scope: plan.complete ? 'full-validation' : 'partial', required, missing,
+    productObservation: plan.smoke && validInstallerAggregateOutput(acceptance) ? acceptance.product_observation : 'unverified',
+    releaseAcceptance: 'unverified' };
+}
+
+function validInstallerAggregateOutput(value) {
+  if (value?.acceptance_contract !== 'passed') return false;
+  if (typeof value.acceptance_artifact_id !== 'string' || typeof value.acceptance_artifact_digest !== 'string') return false;
+  if (!/^[1-9]\d*$/.test(value.acceptance_artifact_id ?? '') || !Number.isSafeInteger(Number(value.acceptance_artifact_id))) return false;
+  if (!/^sha256:[0-9a-f]{64}$/.test(value.acceptance_artifact_digest ?? '')) return false;
+  return (value.product_observation === 'limited-observation' && value.reuse_eligible === 'false')
+    || (value.product_observation === 'windows-installer-scenarios-only' && value.reuse_eligible === 'true');
 }
