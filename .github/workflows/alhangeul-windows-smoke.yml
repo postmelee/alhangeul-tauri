@@ -90,6 +90,9 @@ jobs:
 
   windows-installer-smoke:
     name: Smoke Windows x64 ${{ matrix.name }}
+    permissions:
+      contents: read
+      actions: read
     strategy:
       fail-fast: false
       matrix:
@@ -139,6 +142,13 @@ jobs:
             workflowRef = $env:WORKFLOW_REF
             imageVersion = $env:ImageVersion
           } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $output 'workflow-context.json') -Encoding UTF8
+
+      - name: Prepare Node for installer evidence
+        id: evidence-node
+        uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          package-manager-cache: false
 
       - name: Verify installer smoke commit
         id: verify-smoke-commit
@@ -246,6 +256,24 @@ jobs:
             manualEvidence = $env:MANUAL_EVIDENCE_OUTCOME
           } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $output 'step-outcomes.json') -Encoding UTF8
 
+      - name: Collect independently bound installer input
+        id: installer-input
+        if: ${{ !cancelled() && steps.evidence-node.outcome == 'success' && steps.run-installer-smoke.outcome != 'skipped' }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          EXPECTED_SOURCE_SHA: ${{ inputs.build_ref }}
+          PRODUCT_ARTIFACT_ID: ${{ inputs.artifact_id }}
+        run: node scripts/ci/installer-input.mjs
+
+      - name: Evaluate installer contract without replacing raw gate
+        id: installer-evaluation
+        if: ${{ !cancelled() && steps.installer-input.outcome == 'success' }}
+        shell: powershell
+        run: |
+          & '.\scripts\ci\installer-acceptance.ps1' `
+            -InputPath 'diagnostics\windows-installer-smoke\installer-input.json' `
+            -OutputDirectory 'diagnostics\windows-installer-smoke'
+
       - name: Upload installer smoke diagnostics
         id: upload-installer-smoke-diagnostics
         if: ${{ always() }}
@@ -270,6 +298,8 @@ jobs:
           SUPPORT_OUTCOME: ${{ steps.download-thumbnail-support.outcome }}
           MANUAL_OUTCOME: ${{ steps.manual-tests.outcome }}
           MANUAL_EVIDENCE_OUTCOME: ${{ steps.manual-evidence.outcome }}
+          INPUT_OUTCOME: ${{ steps.installer-input.outcome }}
+          EVALUATION_OUTCOME: ${{ steps.installer-evaluation.outcome }}
         run: |
           $outcomes = [ordered]@{
             checkout = $env:CHECKOUT_OUTCOME
@@ -282,6 +312,8 @@ jobs:
             supportDownload = $env:SUPPORT_OUTCOME
             manualTests = $env:MANUAL_OUTCOME
             manualEvidence = $env:MANUAL_EVIDENCE_OUTCOME
+            preparedInput = $env:INPUT_OUTCOME
+            evaluation = $env:EVALUATION_OUTCOME
           }
           $failed = @($outcomes.GetEnumerator() | Where-Object { $_.Value -ne 'success' })
           if ($failed.Count -gt 0) {

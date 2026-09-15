@@ -8,7 +8,8 @@ GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 최신 완료 근거: [Stage 6.1.1 보고서](../working/task_m010_57_stage6.1.1.md).
 후보 `24fdf323d83cd57c286fe129cc9932b4f86c0dab`의 fast run `34775083252` attempt 1이
 통과했다. 아래 후보/미실행/보류 표현은 당시 이력이며, 현재는 순수 판정 단계 검증까지
-완료했다. 실제 workflow 연결·제품 설치 수용은 아직 하지 않았다.
+완료했다. 현재는 fresh workflow 입력 수집·판정 호출까지 연결했으며, 시나리오 간 집계·
+최종 gate 전환·제품 설치 수용은 아직 남아 있다. 최신 중간 검증은 아래 2026-09-15 기록을 따른다.
 
 ## 2026-09-14 승인된 CI 수용 보정 구현계획
 
@@ -246,6 +247,46 @@ Node/Studio와 기존 순수 판정 회귀는 통과했으나 Windows IO 회귀�
   새 PowerShell 실행·Windows IO 전체 통과·설치 수용은 아직 주장하지 않는다.
   새 후보의 원격 push 및 `ci.yml profile=fast` 1회는 별도 승인 후 수행한다.
   제품 source·정책 허용 범위·기존 CI gate·workflow 파일은 이번 보정에서 변경하지 않았다.
+
+### 2026-09-15 fresh 입력 수집 연결 — 집계 전 중간 후보
+
+fast [34848251261](https://github.com/postmelee/alhangeul-tauri/actions/runs/34848251261),
+attempt 1, `1b4d45dd91bf3a6c7d029374a662ba2904337204`는 성공했다. Windows는
+63개 source·8개 격리 테스트를 통과했고, 실제 IO 및 의도된 실패의 증거 보존을 확인했다.
+진단 artifact `10348349404`의 전체 테스트 status는 passed다. 마지막 duplicate-key
+반례의 개별 failed/exit 1 기록은 예상값과 일치한다. 설치 제품 검증은 아니다.
+
+후속 “진행해줘”에 따라 fresh 시나리오의 실제 입력 수집·판정 호출을 연결했다.
+
+- `installer-metadata.mjs`는 fixed repository/workflow와 exact run/attempt/source,
+  제품 artifact ID/name/digest/size/expiry를 GitHub API에서 확인한다. attempt 시작 전
+  생성된 artifact를 거부한다. 현재 실행 중인 생산 run의 관측이지 producer 재사용 승인
+  검사가 아니며, 기존 completed/success producer 검증을 이 함수로 대체하지 않는다.
+- `installer-input.mjs`는 원시 summary·steps·child exit·workflow context·checkout SHA,
+  별도 제품 inventory와 harness fixture manifest를 읽는다. 기존 desktop verifier로
+  실제 bundle 파일·hash·PE 계약을 재검증하고 summary의 사본과 대조한다. malformed/
+  duplicate JSON·source/attempt/manifest 불일치·누락/미지 exit를 거부한다.
+- 원시 파일은 수정하지 않는다. prepared input과 별도 binding hash를 저장하되
+  `requires-io-verification`을 유지한다. 수집 시작 때 이전 prepared 성공을 무효화한다.
+  새 CLI는 임의 경로·URL을 입력받지 않으며 실패 시 개인 경로나 API 오류 본문을 출력하지 않는다.
+  수집 실패에도 metadata/checkout/inventory/raw-evidence/readback/write의 고정 phase와
+  status만 별도 진단 파일에 보존한다.
+- fresh workflow에 Node 준비·raw outcome 이후 수집·PowerShell 판정을 연결했다.
+  결과는 기존 diagnostic artifact에 함께 보존한다. 새 수집/판정 실패도 최종 gate에서
+  거부하며 **기존 raw smoke success 조건을 아직 제거하지 않았다**. 즉 known NSIS
+  실패를 이 중간 후보가 green으로 바꾸거나 producer 재사용을 허용하지 않는다.
+- API 조회를 위해 `ci.yml`/Desktop의 artifact 호출 job → artifacts의 smoke 호출 →
+  Windows smoke job에만 `actions: read`를 전달했다. 기존 이동된 job을 복제하지 않았고
+  release/updater 쓰기 권한이나 새 dispatch 입력은 추가하지 않았다.
+- Node 신규 38개·전체 automation **839/839**, product boundary **565파일**, 변경
+  workflow 4개 actionlint 및 diff 검사 통과. 기존 PowerShell 판정 entry를 재사용하며 실제 GitHub
+  전달/설치 실행은 아직 하지 않았다. Windows 실행을 이 로컬 결과로 대체하지 않는다.
+
+남은 범위는 같은 run/attempt 시나리오 artifact의 유일성·다운로드·독립 재검산 집계,
+raw/수용 최종 gate 전환, result 및 producer 재사용의 metadata/content 차단 연결이다.
+이 연결 전까지 strict gate를 유지하며 Stage 6.1.2 완료 보고는 작성하지 않는다.
+원격 push/CI dispatch는 수행하지 않았다. workflow 변경을 포함한 최종 통합은 승인된
+exact 후보의 `profile=full`로 검증하며, fast만으로 이번 전달 경계를 수용하지 않는다.
 
 ### 산출물
 

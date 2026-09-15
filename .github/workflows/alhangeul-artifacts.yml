@@ -79,6 +79,9 @@ jobs:
       run_tests: ${{ inputs.run_tests }}
   smoke:
     needs: [plan, windows]
+    permissions:
+      contents: read
+      actions: read
     if: ${{ needs.plan.outputs.smoke == 'true' }}
     uses: ./.github/workflows/alhangeul-windows-smoke.yml
     with:

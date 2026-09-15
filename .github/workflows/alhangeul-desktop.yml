@@ -129,6 +129,9 @@ env:
 jobs:
   artifact:
     if: ${{ inputs.mode == 'artifact' }}
+    permissions:
+      contents: read
+      actions: read
     uses: ./.github/workflows/alhangeul-artifacts.yml
     with:
       build_ref: ${{ inputs.build_ref || github.sha }}
