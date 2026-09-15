@@ -43,3 +43,15 @@ test('manual wrapper retains existing verifier and nonzero failure without loggi
   assert.match(source, /exit 1/);
   assert.doesNotMatch(source, /Write-(?:Output|Error).*Exception|Restart-Computer|Start-Process/);
 });
+
+test('Windows replay preserves safe diagnostics in finally, including an intentional late failure', async () => {
+  const helper = await readFile(new URL('./fixtures/windows-installer-replay.mjs', import.meta.url), 'utf8');
+  const wrapper = await readFile(new URL('./windows-installer-replay.test.ps1', import.meta.url), 'utf8');
+  assert.match(helper, /finally \{[\s\S]*writeFile\(evidencePath/);
+  assert.match(helper, /site.file === 'windows-thumbnail-check-tests.ps1'/);
+  assert.doesNotMatch(helper, /site.file === 'windows-thumbnail-check.ps1'/);
+  assert.match(helper, /expected-evidence-preservation-failure/);
+  assert.match(wrapper, /\$negative.status -cne 'failed'/);
+  assert.match(wrapper, /Copy-Item -LiteralPath \$childEvidence/);
+  assert.match(wrapper, /Copy-Item -LiteralPath \$negativePath/);
+});

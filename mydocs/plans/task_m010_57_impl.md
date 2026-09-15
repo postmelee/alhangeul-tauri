@@ -3,7 +3,7 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: Stage 6.1.2 진행중 — manual-readback 자식 실패 진단 보완
+상태: Stage 6.1.2 진행중 — Windows 회귀의 진단 보존·위치 기대값 보정
 
 최신 완료 근거: [Stage 6.1.1 보고서](../working/task_m010_57_stage6.1.1.md).
 후보 `24fdf323d83cd57c286fe129cc9932b4f86c0dab`의 fast run `34775083252` attempt 1이
@@ -416,6 +416,29 @@ installer-acceptance unverified를 확인했다. 다운로드한 NSIS 세 문서
 - 로컬 대상 23개·전체 automation 923개, product boundary 584파일, diff 검사 통과.
   Windows 새 래퍼 실행과 실제 full 실패 위치는 미검증이다. 다음 승인 요청은 후보 게시와
   fast 1회이며 full 재실행·기존 실패 producer 재사용 우회·릴리즈는 자동 진행하지 않는다.
+
+### 2026-09-15 진단 래퍼 fast 실패와 회귀 보정
+
+후보 `3429828e7148a5b7ec8d6c2e71013f8b108b2385`의 fast
+[34939793404](https://github.com/postmelee/alhangeul-tauri/actions/runs/34939793404)는
+Node/Studio 성공, Windows 회귀 실패였다. 순수 평가·IO 검사는 성공했지만 새 replay
+테스트가 `windows-thumbnail-check.ps1` 위치를 요구한 assertion에서 실패했다.
+앞선 exit 1·진단 객체 검사는 통과했으며, artifact `10383754687`
+(`sha256:7f9d561e200e3e622c62cb484d4955af3d38608f86a1870d9ee13d7858a19dd3`)에는
+전체 failed만 남고 실제 child 객체는 없었다. 원본 함수는 AST의 텍스트로부터 동적으로
+생성되므로 원본 파일명을 stack에 요구한 전제가 부정확할 가능성이 있다.
+
+같은 스레드의 “진행해줘”로 회귀 진단 보존과 위치 기대값 보정을 승인받았다.
+수정은 기존 테스트 helper/PS wrapper/Node 소스 계약 및 이 계획·오늘할일로 한정한다.
+동적 함수의 원본 파일명 대신 실제 검사 호출 파일의 허용된 이름·양수 줄 번호를 요구한다.
+Node finally에서 단계·상태·이미 정제된 child만 기록하고 PS finally에서 임시 정리 전에
+sidecar를 artifact 경로로 복사한다. 성공한 회귀 뒤 의도적으로 실패시키는 별도 child로
+실패 status·마지막 진단 보존도 검사한다. 원시 예외/경로는 저장하지 않는다.
+
+로컬 대상 Node 24개·전체 automation 924개, product boundary 584파일 및 diff 통과.
+Windows 실행은 미검증이며 기존 full의 manual-readback 원인은 아직 미확정이다.
+제품·평가기·집계 성공 조건·workflow는 변경하지 않는다. 기존 #57 Stage 6.1.2를 유지하고
+다음은 후보 게시와 fast 1회 승인이다. 추가 full·실험·릴리즈는 자동 실행하지 않는다.
 
 ### 산출물
 
