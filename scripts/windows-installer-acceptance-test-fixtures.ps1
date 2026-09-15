@@ -56,6 +56,8 @@ function Add-AcceptanceTestPhase($Result, $Phase, $Manifest, $Limited) {
       # Cold-cache misses are observations, not product extraction failures.
       if ($mode -eq 'cache-only' -or $failed) {
         $probe.status = 'failed'; $probe.bitmapPresent = $false; $probe.width = $null; $probe.height = $null; $probe.cacheFlags = $null
+        # Cache() returns before bitmap inspection on a failed HRESULT.
+        if ($mode -ne 'shell') { $probe.bitmapPresent = $null }
         $probe.hresult = if ($failed) { '0x80040154' } else { '0x80030002' }
         if ($mode -ne 'shell') { $probe.phase = 'IThumbnailCache.GetThumbnail' }
       }

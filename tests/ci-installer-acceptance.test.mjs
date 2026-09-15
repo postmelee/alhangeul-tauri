@@ -5,10 +5,21 @@ import test from 'node:test';
 const read = (path) => readFile(new URL('../' + path, import.meta.url), 'utf8');
 const names = ['windows-installer-acceptance.ps1', 'windows-installer-acceptance-evidence.ps1',
   'windows-installer-acceptance-policy.ps1', 'windows-installer-acceptance-tests.ps1',
-  'windows-installer-acceptance-test-fixtures.ps1'];
+  'windows-installer-acceptance-test-fixtures.ps1', 'windows-installer-acceptance-bitmap-tests.ps1'];
 const sources = await Promise.all(names.map((name) => read('scripts/' + name)));
 const [entry, evidence, policy, regressions, fixtures] = sources;
 const implementation = [entry, evidence, policy].join('\n');
+
+test('실패한 native bitmap의 명시 null과 boolean을 구분하고 회귀를 연결한다', () => {
+  assert.match(evidence, /'bitmapPresent' -cin @\(Get-AcceptanceKeys \$p\)/);
+  assert.match(evidence, /\$p.bitmapPresent -is \[bool\] -or \(\$p.status -ceq 'failed' -and \$null -eq \$p.bitmapPresent\)/);
+  assert.match(fixtures, /if \(\$mode -ne 'shell'\) \{ \$probe.bitmapPresent = \$null \}/);
+  assert.match(regressions, /windows-installer-acceptance-bitmap-tests\.ps1/);
+  assert.match(regressions, /^Test-AcceptanceBitmapCases$/m);
+  for (const marker of ['bitmap-type-', 'bitmap-missing-', 'nullable-bitmap-counterexample']) {
+    assert.ok(sources[5].includes(marker));
+  }
+});
 
 test('단일 판정 사유도 조건식 전체를 배열로 감싸 JSON 배열로 유지한다', () => {
   assert.match(entry, /\$answer.reasonCodes = @\(if/);

@@ -3,13 +3,14 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: Stage 6.1.2 진행중 — 단계 진입 승인, workflow/producer 연결 구현
+상태: Stage 6.1.2 진행중 — full 관측의 nullable bitmap 평가 보정
 
 최신 완료 근거: [Stage 6.1.1 보고서](../working/task_m010_57_stage6.1.1.md).
 후보 `24fdf323d83cd57c286fe129cc9932b4f86c0dab`의 fast run `34775083252` attempt 1이
 통과했다. 아래 후보/미실행/보류 표현은 당시 이력이며, 현재는 순수 판정 단계 검증까지
 완료했다. 현재는 fresh 입력·독립 재검산 집계·최종 gate·producer 재사용 guard를 연결했고
-로컬 회귀를 통과했다. 새 Windows fast 및 full 전달/설치 수용은 아직 남아 있다.
+로컬 회귀와 fast를 통과했으나 full에서 nullable bitmap 평가 오류가 발견되어 보정 중이다.
+full 전달/설치 수용은 아직 완료하지 않았다.
 최신 중간 검증은 아래 2026-09-15 기록을 따른다.
 
 ## 2026-09-14 승인된 CI 수용 보정 구현계획
@@ -345,6 +346,42 @@ helper가 소유한다. Desktop entry로 옮겨진 job을 복제하거나 실험
 설치·raw read-back·집계 artifact를 확인한다. 실제 정상/제한 출력, producer 거부, 최종
 수용을 확인하기 전까지 Stage 6.1.2 완료 보고나 6.1.3 공식 문서/UI 단계로 넘어가지 않는다.
 피시방 NSIS 썸네일 자체를 해결한 작업으로 표시하지 않는다.
+
+### 2026-09-15 fast/full read-back 및 nullable bitmap 보정
+
+후보 `6b47ea0eb22c767e2082b2cdf493962ac0dd2156`의 승인된 fast
+[34929124196](https://github.com/postmelee/alhangeul-tauri/actions/runs/34929124196)는 성공했다.
+Node 912개, Studio 147개, Windows PS 64개 소스/9개 격리 검사를 통과했고 새
+Node→Windows PowerShell 재검산 증거도 `passed`/installedProductAcceptance `unverified`였다.
+Windows 증거 artifact는 `10380374697`, digest
+`sha256:8288ba60b70863485fda48753bb404edeb2dccc7121bdbc2b535dcc70d0285c9`이다.
+
+같은 후보의 승인된 full [34929777748](https://github.com/postmelee/alhangeul-tauri/actions/runs/34929777748)은
+실패했다. Windows/Linux x64/arm64 build와 core는 성공했고 실험은 skipped였다.
+세 설치 원시 summary/프로세스 exit와 별도 평가 JSON을 다운로드해 대조했다.
+일반 MSI raw smoke는 passed/exit 0, NSIS는 0x80040154 12건/exit 1,
+강제 MSI는 재설치 3010/exit 1이었다. 세 평가기는 모두 `invalid-thumbnail-evidence`로
+실패했고 집계는 선행 job 실패를 거부해 metadata 단계에서 멈췄다. 전체 수용은 미완료다.
+
+원인은 `Assert-AcceptanceProbe`가 실패 관측에도 bitmapPresent의 boolean을 강제한 것이다.
+실제 cache API 실패는 bitmap 검사 전 반환해 명시적 null을 남긴다. 합성 fixture는 false만
+만들어 차이를 놓쳤다. 이번 “진행해줘”는 다음 로컬 보정과 회귀를 승인한 것으로 기록한다.
+
+- evaluator는 필드 존재를 요구하고 실패 시에만 null 또는 boolean을 허용한다. 기존 probe
+  계약의 성공 true/양수 크기, 실패 true 금지/크기 null/HRESULT·phase 검사는 유지한다.
+- 합성 cache 실패를 native처럼 null로 만들고, 작은 definition-only bitmap 테스트 파일을
+  기존 Windows 순수 회귀 entry에 연결한다. null/false/true/문자열/숫자/객체/배열/필드 누락,
+  모순된 크기·HRESULT·phase를 구분한다. JSON 왕복과 원시 실패/미검증 보존도 검사한다.
+- 문서는 기존 승인 위치인 이 구현계획과 오늘할일만 갱신한다. 공식 문서·제품 코드·원시
+  collector·workflow·producer 재사용 guard를 바꾸거나 과거 run을 성공으로 재분류하지 않는다.
+- 로컬 Node automation·product boundary·diff를 실행한다. Windows PS 회귀는 Windows
+  fast에서 별도 승인 후 검증하며, 실제 증거 재계산/full 수용까지 통과했다고 주장하지 않는다.
+  원격 게시/dispatch/제품 재설치/릴리즈는 이번 로컬 수정 승인에 포함하지 않는다.
+
+로컬 결과: 대상 Node 39/39, 전체 automation 913/913, product boundary 581파일,
+diff 검사 통과. 새 PowerShell 동작은 미실행이며 Node의 소스 계약 검사 통과와 구분한다.
+다음 승인 요청은 보정 후보의 non-force 게시 및 `profile=fast` 1회다. 실패한 full run의
+제품 artifact를 성공 producer로 바꾸거나 installer reuse guard를 우회하지 않는다.
 
 ### 산출물
 

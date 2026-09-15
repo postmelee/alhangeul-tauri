@@ -132,7 +132,9 @@ function Assert-AcceptanceProbe($Record, $Result, $Manifest) {
   if ($p.mode -in @('shell', 'cache-only', 'force-extract')) {
     $flag = switch -CaseSensitive ($p.mode) { 'shell' { 8 } 'cache-only' { 1 } 'force-extract' { 4 } }
     Assert-Acceptance ((Test-AcceptanceInteger $p.requestFlags) -and $p.requestFlags -eq $flag)
-    Assert-Acceptance ($p.bitmapPresent -is [bool])
+    # Failed native calls can return before inspecting a bitmap (explicit null).
+    Assert-Acceptance ('bitmapPresent' -cin @(Get-AcceptanceKeys $p))
+    Assert-Acceptance ($p.bitmapPresent -is [bool] -or ($p.status -ceq 'failed' -and $null -eq $p.bitmapPresent))
     $specs = @($Manifest.fixtures | Where-Object { $_.id -ceq $Record.FixtureId }); Assert-AcceptanceArray $specs 1
     $integrity = $Result.("$($Record.Label)-integrity"); $spec = $specs[0]
     Assert-Acceptance ($Record.Label -clike "*-$($spec.id)-$($p.mode)" -and $integrity.id -ceq $spec.id)

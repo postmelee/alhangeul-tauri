@@ -4,6 +4,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'windows-installer-acceptance.ps1')
 . (Join-Path $PSScriptRoot 'windows-installer-acceptance-test-fixtures.ps1')
+. (Join-Path $PSScriptRoot 'windows-installer-acceptance-bitmap-tests.ps1')
 
 function Assert-AcceptanceTest($Condition, $Message) {
   if (-not $Condition) { throw $Message }
@@ -273,6 +274,7 @@ function Test-AcceptanceWrappedScalarEquality {
 
 Test-AcceptanceWrappedScalarEquality
 Test-AcceptancePositive
+Test-AcceptanceBitmapCases
 Test-AcceptanceIdentityCases
 Test-AcceptanceCommonCases
 Test-AcceptanceProbeCases
