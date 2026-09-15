@@ -3,7 +3,122 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: Stage 6.1.2 미완료 — 범위 재조정에 따른 최소 연결 구현계획 보정 대기
+상태: Stage 6.1.2 미완료 — 최소 연결 구현계획 작성, 구현 승인 대기
+
+## 2026-09-15 최소 검증 연결 구현계획
+
+작업지시자는 범위 재조정 커밋 `21d15fe` 보고 뒤 “진행해줘”로 수행계획을 승인하고
+구현계획 구체화를 지시했다. 이 절이 아래 독립 재검산 연결 설계보다 우선한다.
+이번 산출물은 계획뿐이며 구현·원격 실행은 아직 하지 않는다. 기존 #57/M010와
+`local/task57` 분리 worktree를 유지하고 #67은 착수하지 않는다.
+
+### 단계 개요
+
+| Stage | 산출물 | 완료 조건 |
+|---|---|---|
+| 6.1.2 보정 | 개별 검사 유지, 경량 상태 집계, 테스트 전용 handoff, 소비자 회귀 | fast·full 및 적격 bytes 재검증의 실제 결과 확인; 미검증을 완료로 처리하지 않음 |
+| 6.1.3 | 기존 CI·릴리즈 문서의 판정/재사용 의미 정합화 | 문서 계약 검사와 6.1 보고 승인 |
+| 6.2 | 기존 계획의 진단 UI·동의·MSI 안내·요약 복사 | UI/bridge 회귀, Linux 비노출 및 안전한 오류 처리 |
+| 6.3 | exact 설치본/VDI 확인·최종 통합·제한 기록 | 최신 NSIS 일반 사용자 양성 근거와 MSI·lifecycle 회귀, 최종 full |
+
+6.2·6.3의 기존 제품 설계를 확장하지 않는다. 각 단계 결과 보고·다음 단계 승인은 유지한다.
+
+### 6.1.2 변경 지도
+
+| 대상 | 결정 | 구현 내용 |
+|---|---|---|
+| `alhangeul-windows-smoke.yml` 세 matrix job | 유지 | NSIS/MSI clean 분리, 원시 smoke, 같은 job의 진단/수동 read-back, 입력 binding, 순수 평가, upload·마지막 gate 유지 |
+| 같은 파일의 독립 aggregate job | 교체 | 원본/제품/support 재다운로드·PowerShell replay 대신 현재 run/attempt의 세 job과 필수 step 상태만 확인하는 경량 종료 gate |
+| `scripts/ci/profiles.mjs`, `artifact-result.mjs`, `alhangeul-artifacts.yml` | 교체 | 독립 acceptance archive ID/digest 요구 제거; 필수 job 및 경량 계약 상태를 요구하고 전체 제품/릴리즈 성공은 주장하지 않음 |
+| `verify-workflow-artifact.mjs`, `ci/producer-metadata.mjs`, `ci/artifact-handoff.mjs` | 보정 | 성공한 producer·현재 attempt·exact artifact·source/version 확인을 유지하고 독립 acceptance archive 필수 조건만 제거 |
+| `alhangeul-installer-reuse.yml`, `ci/installer-reuse-input.mjs`, `ci/installer-evidence.mjs` | 보정 | 테스트 전용 handoff·다운로드 digest·inventory 검사 뒤 현재 harness로 동일 계약 평가; raw 실패와 계약 결과를 분리 |
+| `alhangeul-windows-pdf.yml` | 보정 | 독립 producer acceptance 다운로드/guard 제거; 기존 exact handoff·digest·inventory·실제 PDF 검사 유지, inventory의 product SHA 대조 명시 |
+| `ci/installer-aggregate.mjs`, `installer-replay.mjs`, `producer-guard.mjs`, `producer-acceptance.mjs` | 필수 실행 경로에서 분리 | 후속 #67 참고 구현으로 보존하되 자동 dispatch/호출하지 않음; 새 진단/기능을 추가하지 않음 |
+
+위 workflow 파일은 모두 `.github/workflows/`, script는 `scripts/` 아래 기존 소유 위치다.
+경량 gate는 `scripts/ci/installer-status.mjs`와 `tests/ci-installer-status.test.mjs`로 한정한다.
+기존 API 페이지 조회·현재 attempt 확인 등 검증된 helper를 재사용한다. 새 증거 전달 포맷이나
+독립 verifier 프레임워크를 만들지 않는다. 파일 300 LOC/함수 50 LOC 권장을 준수한다.
+기존 고도화 모듈의 결정적 회귀는 보존하되 그 성공을 #67 수용이나 제품 검증으로 보고하지 않는다.
+
+### 경량 종료 gate의 정확한 의미
+
+- checkout SHA = workflow SHA = 요청 build SHA를 확인한다. matrix 결과만 보고 통과시키지 않고
+  GitHub API의 현재 run/attempt에서 NSIS·MSI·MSI forced-reinstall 세 job을 각각 정확히 하나 찾는다.
+- 각 job 완료/성공과 입력 수집·평가·증거 upload·최종 gate 등 필수 step의 성공을 확인한다.
+  checkout/무결성/진단 필수 검사의 누락·skipped·cancel·실패·중복 및 다른 attempt 증거는 거부한다.
+  raw smoke 실패의 허용 판단은 개별 job의 기존 엄격한 evaluator가 소유하며 API의 conclusion으로 대체하지 않는다.
+- 종료 gate는 세 job URL·상태와 고정된 검사 계약을 요약한다. 원시/평가 JSON은 각 job의 기존
+  diagnostics artifact에 남기고, 최종 집계에서 재다운로드·재계산하지 않는다.
+- 출력은 `contract_status=passed`와 `product_observation=see-scenario-evidence`로 한정한다.
+  `io-verified`·독립 재검산 완료·`reuse_eligible=true`를 출력하지 않는다. `releaseAcceptance`는
+  `unverified`다. final summary는 개별 제한과 원시 결과의 위치, 최신 VDI 미검증을 명시한다.
+- 필수 gate 성공은 사전 정의한 검사 계약 통과다. 실제 생성/제한/재부팅 후 미검증은 개별 결과를
+  읽어 판단한다. 전부 정상 생성되는 경우도 기존 evaluator로 통과하며 실패를 주입하지 않는다.
+
+### 추가 테스트용 artifact 정책 — 명시 승인 대상
+
+기존의 “독립 재검산 완료·모든 제품 시나리오 무제한 성공” 선행 조건을 다음 조건으로 바꾼다.
+이 정책은 installer 재검증 및 Windows PDF의 **추가 검사 입력**에만 적용한다.
+
+1. 같은 저장소·허용 workflow·workflow_dispatch·승인 exact SHA의 producer 전체 run이
+   completed/success여야 한다. 현재 attempt와 artifact 생성 시점/소속을 확인한다. 실패 run의
+   Windows 부분 성공, 만료·중복·누락·불일치 artifact는 계속 거부한다.
+2. ordinary workflow/source SHA 일치, exact archive ID/digest, product SHA의 package version,
+   다운로드 digest 강제 검사, inventory sourceSha 및 모든 파일 hash를 설치 전에 검증한다.
+   metadata 확인만으로 bytes 검증을 완료했다고 기록하지 않는다.
+3. 성공한 producer가 알려진 NSIS 제한을 기록했어도 추가 검사는 허용한다. 앞선 제한의 해결이나
+   최신 harness source의 제품 검증을 뜻하지 않는다. handoff에 `purpose=additional-validation-only`,
+   `productAcceptance=unverified`, `releaseAcceptance=unverified`를 명시하고 소비자도 이 목적을 확인한다.
+4. producer의 독립 acceptance archive·무제한 성공 기록은 더 이상 요구하지 않는다. producer의
+   이전 실패/제한 근거는 원 run 링크에 보존하며 “성공한 run”을 전체 기능 지원으로 해석하지 않는다.
+5. installer reuse는 같은 공개 fixture·세 계약을 현재 harness에서 새로 평가한다. raw smoke step의
+   continue-on-error가 필요하면 명시한 계약 평가와 upload 뒤 최종 gate를 반드시 함께 적용한다.
+   생 raw 종료 코드/오류/step outcome은 유지하고, evidence 기록의 raw 결과와 contract 결과를
+   별도로 표기한다. 새 실패·불완전 입력을 known-negative로 자동 허용하지 않는다.
+6. PDF는 실제 설치·선택 PDF 시나리오·cleanup 성공을 별도로 요구한다. 썸네일 제한을 PDF 성공으로
+   바꾸거나 PDF 검사를 생략하지 않는다. 기존 #35 시나리오·dispatch 범위는 확장하지 않는다.
+7. 공용 verifier의 Linux/updater 소비자 계약은 변경하지 않는다. 실제 release/updater 게시 경로에
+   테스트용 handoff가 사용되지 않는지 호출 경로와 회귀로 확인한다. 새 게시 자동화는 만들지 않는다.
+
+### 검증·종료 기준
+
+- 로컬: `pnpm run test:automation`, `pnpm run check:product-boundary`, `git diff --check`.
+  변경 workflow는 actionlint로 검사한다. Mac에서는 Windows PS/Rust/Tauri를 실행하지 않는다.
+- 회귀 대상: `ci-profiles`, `ci-task57-integration`, `ci-handoff`, `workflow-artifact-handoff`,
+  `ci-reuse-input`, `windows-pdf-workflow`, `ci-installer-status` 및 영향받은 기존 테스트.
+  세 job 중 하나 누락/실패/skip, stale attempt, upload 실패, 잘못된 SHA/digest/inventory,
+  제한 producer의 테스트 전용 허용, 실패 producer 거부, 제품/릴리즈 성공 오표시를 검사한다.
+- 원격: 구현·로컬 회귀 완료 후 exact 후보의 fast를 먼저 승인받고, 통과하면 workflow 변경의
+  full을 승인받는다. 새 성공 producer를 확보한 뒤 네 입력을 고정한 installer 재검증을 확인한다.
+  실패 run을 재사용하거나 변화 없이 full을 반복하지 않는다. Windows PDF 연결의 native 확인은
+  기존 시나리오 중 최소 범위로 별도 승인받고, 미실행이면 소비자 검증 미완료로 남긴다.
+- full에서는 Windows/Linux x64·arm64 필수 검사, 세 설치 job과 종료 gate, 원시/계약 결과의
+  의미를 확인한다. 경량 gate 성공을 일반 사용자 NSIS 양성 근거로 쓰지 않는다.
+- 실패 시 새 검사 기능을 추가하기 전에 변경한 최소 연결의 결함인지 판별한다. 그 밖의 고도화
+  요구는 #67로 넘기며, #57 코드의 필수 검사 실패는 해결 또는 명시적 범위 재승인 없이 완료하지 않는다.
+
+### 6.1.3 문서 위치와 후속 단계
+
+공식 문서 위치는 승인된 수행계획과 일치한다. CI 운영자는 기존
+`docs/operations/CI_VALIDATION.md`, 릴리즈 담당자는 `PUBLIC_RELEASE_RUNBOOK.md`·
+`DESKTOP_RELEASE.md`·`RELEASE_CHECKLIST.md`, 후보 근거는 `docs/releases/v0.1.0.md`를 사용한다.
+사용자 안내는 `docs/architecture/WINDOWS_THUMBNAILS.md`다. 새 공식 루트나 manual은 만들지 않는다.
+변경된 판정·테스트용 재사용·게시 exact bytes 수용의 구분만 필요한 절에 반영한다.
+문서 검증은 `pnpm run check:release-metadata`, 관련 문서 계약 회귀와 `git diff --check`다.
+문서-only 후에는 검증된 코드 SHA/bytes 근거를 구분하고 불필요한 제품 재빌드를 반복하지 않는다.
+
+단계 커밋은 각각 `Task #57 [Stage 6.1.2]: 최소 설치 검증 연결과 테스트 전용 handoff`,
+`Task #57 [Stage 6.1.3]: CI·릴리즈 판정 문서 정합화`로 해당 단계 보고서와 묶는다.
+6.2·6.3은 기존 계획/검증 범위를 이어가며 별도 진입 승인을 받는다.
+
+### 승인 요청
+
+위 경량 gate, 제한 관측 producer의 추가 테스트 전용 허용, 기존 소비자 동시 보정,
+문서 위치·검증 범위를 승인받은 뒤 6.1.2 코드를 변경한다. 이번 계획 승인이 #67 착수나
+원격 실행·공개 게시·#57 완료를 허용하지 않는다.
+
+## 이전 계획·진행 이력
 
 2026-09-15 작업지시자 승인으로 독립 재검산·재사용 고도화를
 [#67](https://github.com/postmelee/alhangeul-tauri/issues/67) 후속 백로그로 분리했다.
