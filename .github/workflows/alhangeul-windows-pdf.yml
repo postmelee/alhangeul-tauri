@@ -122,25 +122,6 @@ jobs:
         run: |
           node scripts/verify-workflow-artifact.mjs --repository $env:GITHUB_REPOSITORY --build-ref $env:PDF_BUILD_REF --run-id $env:NATIVE_RUN_ID --workflow-path .github/workflows/alhangeul-desktop.yml --artifact-name alhangeul-desktop-windows-x64 --json-output "$env:EVIDENCE_ROOT/artifact-handoff.json" --github-output $env:GITHUB_OUTPUT
           if ($LASTEXITCODE -ne 0) { throw 'Artifact handoff failed' }
-      - name: Download producer installer acceptance
-        id: producer-acceptance
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          artifact-ids: ${{ steps.handoff.outputs.acceptance_artifact_id }}
-          github-token: ${{ github.token }}
-          repository: ${{ github.repository }}
-          run-id: ${{ inputs.native_run_id }}
-          path: artifacts/producer-acceptance
-          digest-mismatch: error
-      - name: Require unrestricted producer acceptance before PDF installation
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          PRODUCT_SHA: ${{ env.PDF_BUILD_REF }}
-          PRODUCT_RUN_ID: ${{ env.NATIVE_RUN_ID }}
-          HANDOFF_PATH: ${{ env.EVIDENCE_ROOT }}/artifact-handoff.json
-          PRODUCER_GUARD_OUTPUT: ${{ env.EVIDENCE_ROOT }}/producer-guard.json
-          ACCEPTANCE_DOWNLOAD_STATUS: ${{ steps.producer-acceptance.outcome }}
-        run: node scripts/ci/producer-guard.mjs
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           artifact-ids: ${{ steps.handoff.outputs.artifact_id }}
@@ -152,11 +133,12 @@ jobs:
       - name: Verify inventory and install dependencies
         shell: pwsh
         run: |
+          if ('${{ steps.handoff.outputs.validation_purpose }}' -cne 'additional-validation-only') { throw 'Unexpected artifact purpose' }
           corepack enable
           if ($LASTEXITCODE -ne 0) { throw 'Corepack failed' }
           pnpm install --frozen-lockfile
           if ($LASTEXITCODE -ne 0) { throw 'Dependencies failed' }
-          pnpm run check:desktop-artifacts -- --platform windows-x64 --root $env:ARTIFACT_ROOT --verify-inventory "$env:ARTIFACT_ROOT/alhangeul-artifact-inventory.json"
+          pnpm run check:desktop-artifacts -- --platform windows-x64 --root $env:ARTIFACT_ROOT --source-sha $env:PDF_BUILD_REF --verify-inventory "$env:ARTIFACT_ROOT/alhangeul-artifact-inventory.json"
           if ($LASTEXITCODE -ne 0) { throw 'Inventory failed' }
       - name: Install exact driver
         shell: pwsh

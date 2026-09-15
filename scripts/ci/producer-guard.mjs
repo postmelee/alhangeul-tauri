@@ -3,16 +3,27 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isDeepStrictEqual } from 'node:util';
 import { verifyWorkflowArtifact } from '../verify-workflow-artifact.mjs';
+import { createGitHubApiClient } from '../github-api.mjs';
+import { resolveProducerMetadata } from './producer-metadata.mjs';
 import { readEvidenceJson } from './acceptance-json.mjs';
 import { requireEvidence } from './acceptance-evidence.mjs';
 import { verifyProducerAcceptance } from './producer-acceptance.mjs';
+
+// #67 reference path only; ordinary workflows use the test-only metadata handoff.
+export async function verifyIndependentHandoff(query, services = {}) {
+  const fetchJson = services.fetchJson ?? createGitHubApiClient({ token: process.env.GITHUB_TOKEN });
+  const verified = await verifyWorkflowArtifact(query, { fetchJson });
+  const run = await fetchJson(`/repos/${query.repository}/actions/runs/${query.runId}`);
+  const acceptanceHandoff = await resolveProducerMetadata(verified, run, fetchJson);
+  return { ...verified, acceptanceHandoff };
+}
 
 export async function verifyDownloadedProducer(options, services = {}) {
   requireEvidence(options.downloadStatus === 'success', 'acceptance-download-not-passed');
   const saved = (await readEvidenceJson(options.handoffPath)).value;
   requireEvidence(saved.repository === options.repository && saved.buildRef === options.productSha
     && saved.nativeRunId === Number(options.runId), 'producer-request-mismatch');
-  const current = await verifyWorkflowArtifact({ repository: options.repository, buildRef: options.productSha,
+  const current = await verifyIndependentHandoff({ repository: options.repository, buildRef: options.productSha,
     runId: options.runId, artifactName: 'alhangeul-desktop-windows-x64', workflowPath: saved.workflowPath }, services);
   requireEvidence(current.artifactId === saved.artifactId && current.artifactDigest === saved.artifactDigest
     && isDeepStrictEqual(current.acceptanceHandoff, saved.acceptanceHandoff), 'producer-metadata-changed');

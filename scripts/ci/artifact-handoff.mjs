@@ -21,7 +21,7 @@ export async function verifyProductHandoff(input, services = {}) {
     throw new Error('Approved artifact ID/digest mismatch');
   }
   return { ...verified, productSha: input.productSha, harnessSha: input.harnessSha,
-    productVersion: verified.acceptanceHandoff.identity.expectedVersion, mode: 'reused' };
+    productVersion: verified.validationHandoff.identity.expectedVersion, mode: 'reused' };
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
@@ -34,8 +34,8 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     const output = resolve('diagnostics/installer-reuse/handoff.json');
     await mkdir(dirname(output), { recursive: true });
     await writeFile(output, `${JSON.stringify(result, null, 2)}\n`);
-    await appendFile(process.env.GITHUB_OUTPUT, `artifact_id=${result.artifactId}\nproduct_version=${result.productVersion}\nacceptance_artifact_id=${result.acceptanceHandoff.acceptanceArtifact.id}\n`);
-    console.log(`Product metadata matched: ${result.productSha}, harness ${result.harnessSha}, archive ${result.artifactId}; acceptance content still unverified.`);
+    await appendFile(process.env.GITHUB_OUTPUT, `artifact_id=${result.artifactId}\nproduct_version=${result.productVersion}\nvalidation_purpose=${result.validationHandoff.purpose}\n`);
+    console.log(`Product metadata matched: ${result.productSha}, harness ${result.harnessSha}, archive ${result.artifactId}; additional testing only, bytes/product/release acceptance unverified.`);
   } catch (error) {
     console.error(error.message);
     process.exitCode = 1;

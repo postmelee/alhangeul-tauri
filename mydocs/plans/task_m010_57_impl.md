@@ -3,13 +3,44 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: Stage 6.1.2 미완료 — 최소 연결 구현계획 작성, 구현 승인 대기
+상태: Stage 6.1.2 진행중 — 최소 연결 구현·로컬 회귀 통과, 원격 fast 승인 대기
+
+### 2026-09-15 최소 연결 구현 중간 기록
+
+작업지시자가 `4a130e3` 구현계획 보고 뒤 “진행해줘”로 코드 수정을 승인했다.
+개별 설치 job의 원시 collector·실제 진단·순수 evaluator는 유지했다. 독립 재검산 job을
+`installer-status.mjs`의 현재 run/attempt·세 job·필수 step 확인으로 교체했다. 전체 결과는
+`see-scenario-evidence`로 표시하며 독립 재검산·제품/릴리즈 수용을 주장하지 않는다.
+`alhangeul-artifacts.yml`은 이미 `toJSON(needs)`로 결과를 전달하므로 본문 변경 없이
+소비 모듈 `profiles.mjs`·`artifact-result.mjs`를 새 출력 계약으로 정합화했다.
+
+Windows ordinary handoff는 성공 producer/현재 attempt·exact archive·product version 확인을
+유지하고 `additional-validation-only` 목적을 표시한다. installer reuse와 PDF 모두 목적·digest·
+inventory를 설치 전에 확인하며 PDF에는 명시적 product source SHA 대조를 추가했다.
+reuse의 원시 실패는 그대로 기록하고 기존 엄격한 evaluator·증거 upload·필수 step이 모두
+통과한 경우만 최종 계약 gate를 통과한다. 새 실패를 무조건 허용하지 않는다.
+
+#67의 기존 재검산/guard 구현과 결정적 회귀는 보존했다. 독립 guard의 명시적 참고 진입점을
+분리해 새 일반 handoff와 구별했으며 활성 workflow에서는 호출하지 않는다. 새 고도화는 하지 않았다.
+Linux/updater 전용 artifact 이름의 공용 verifier 계약은 변경하지 않았다.
+
+로컬 검증: `pnpm run test:automation` **947 passed / 0 failed / 0 skipped**,
+`pnpm run check:product-boundary` **586 files**, 변경 workflow 3개와 기존 artifacts controller의
+actionlint, `git diff --check` 모두 통과했다. 최초 실행의 유일한 실패는 reuse에
+continue-on-error가 없어야 한다는 기존 정적 기대였으며, 승인된 새 계약에 맞춰 raw smoke 한 곳에만
+존재하고 evaluator·upload·최종 gate가 필수인지 검사하도록 보정한 뒤 전체 회귀를 재실행했다.
+누락/실패/취소/stale job·step, 잘못된 source, 만료 artifact, producer attempt 불일치,
+테스트 전용 수용 및 릴리즈 오표시 거부를 검사했다.
+
+다음 승인 대상은 이 구현의 exact 후보를 non-force 게시하고 `ci.yml profile=fast`로 검증하는
+것이다. 아직 push·CI 실행은 하지 않았다. fast 뒤 승인된 full, 적격 bytes의 installer 재검증,
+기존 최소 PDF 시나리오 확인이 남아 있다. Windows 실제 설치·최신 VDI·#57 완료로 해석하지 않는다.
 
 ## 2026-09-15 최소 검증 연결 구현계획
 
 작업지시자는 범위 재조정 커밋 `21d15fe` 보고 뒤 “진행해줘”로 수행계획을 승인하고
 구현계획 구체화를 지시했다. 이 절이 아래 독립 재검산 연결 설계보다 우선한다.
-이번 산출물은 계획뿐이며 구현·원격 실행은 아직 하지 않는다. 기존 #57/M010와
+아래는 구현 전 승인받은 계획이며, 현재 구현·검증 상태는 위 중간 기록을 따른다. 기존 #57/M010와
 `local/task57` 분리 worktree를 유지하고 #67은 착수하지 않는다.
 
 ### 단계 개요

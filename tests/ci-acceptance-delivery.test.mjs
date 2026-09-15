@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { DELIVERY, DELIVERY_STEPS, resolveInstallerDelivery, listEvidencePages } from '../scripts/ci/acceptance-delivery.mjs';
-import { deliveryFixture, aggregateOutputs } from './fixtures/ci-delivery.mjs';
+import { deliveryFixture, statusOutputs } from './fixtures/ci-delivery.mjs';
 import { evaluateArtifactResults, artifactPlan } from '../scripts/ci/profiles.mjs';
 
 test('delivery resolves all three unique same-attempt artifacts and successful jobs', async () => {
@@ -36,14 +36,14 @@ test('pagination fails on duplicate, missing or unstable pages', async () => {
   let page = 0;
   await assert.rejects(listEvidencePages(async () => ({ total_count: ++page === 1 ? 2 : 3, jobs: [{}] }), '/jobs', 'jobs'), /unstable/);
 });
-test('full result requires delivered aggregate and distinguishes limited observation from product support', () => {
+test('full result requires status gate without promoting scenario observations to product support', () => {
   const plan = artifactPlan({});
   const jobs = Object.fromEntries(['plan', 'fast', 'core', 'windows', 'linux', 'smoke'].map(key => [key, { result: 'success' }]));
   assert.equal(evaluateArtifactResults(plan, jobs).status, 'failed');
-  jobs.smoke.outputs = aggregateOutputs('limited-observation');
+  jobs.smoke.outputs = statusOutputs();
   const result = evaluateArtifactResults(plan, jobs);
   assert.equal(result.status, 'passed'); assert.equal(result.scope, 'full-validation');
-  assert.equal(result.productObservation, 'limited-observation'); assert.equal(result.releaseAcceptance, 'unverified');
+  assert.equal(result.productObservation, 'see-scenario-evidence'); assert.equal(result.releaseAcceptance, 'unverified');
   for (const key of Object.keys(jobs.smoke.outputs)) {
     const broken = structuredClone(jobs); delete broken.smoke.outputs[key];
     assert.equal(evaluateArtifactResults(plan, broken).status, 'failed');

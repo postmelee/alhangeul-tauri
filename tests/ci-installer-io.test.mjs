@@ -143,7 +143,12 @@ test('both installer workflows preserve raw process evidence and fail-closed gat
   for (const workflow of [fresh, reused]) assert.match(workflow, /\.\\scripts\\ci\\installer-smoke.ps1/);
   assert.match(fresh, /smoke = \$env:SMOKE_OUTCOME/);
   assert.match(fresh, /Where-Object \{ \$_.Value -ne 'success' \}/);
-  assert.doesNotMatch(reused, /continue-on-error/);
+  assert.match(reused, /id: smoke\n\s+continue-on-error: true/);
+  assert.equal((reused.match(/continue-on-error:/g) ?? []).length, 1);
+  assert.match(reused, /id: evaluation/);
+  assert.match(reused, /id: upload/);
+  assert.match(reused, /Require reused installer contract and evidence\n\s+if: \$\{\{ always\(\) \}\}/);
+  assert.match(reused, /installer-evidence.mjs gate/);
   const windows = fast.slice(fast.indexOf('  windows-scripts:'));
   assert.ok(windows.indexOf('actions/setup-node@v5') < windows.indexOf('windows-tests.ps1'));
   assert.match(windows, /node-version: "24"/);

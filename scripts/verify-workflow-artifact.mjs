@@ -36,11 +36,11 @@ export async function verifyWorkflowArtifact(options, services = {}) {
     artifactSize: artifact.size_in_bytes,
     artifactDigest: artifact.digest,
   };
-  // Windows consumers must additionally download and verify the acceptance
-  // content before installation. Linux and updater-specific artifacts are unchanged.
+  // Windows handoffs grant additional testing only. Consumers must still verify
+  // downloaded bytes and source inventory. Linux/updater contracts are unchanged.
   if (input.artifactName === 'alhangeul-desktop-windows-x64') {
-    const { resolveProducerMetadata } = await import('./ci/producer-metadata.mjs');
-    result.acceptanceHandoff = await resolveProducerMetadata(result, run, api);
+    const { resolveTestProducerMetadata } = await import('./ci/producer-metadata.mjs');
+    result.validationHandoff = await resolveTestProducerMetadata(result, run, api);
   }
   return Object.freeze(result);
 }
@@ -101,7 +101,7 @@ export async function writeWorkflowArtifactOutputs(result, options = {}) {
     artifact_name: result.artifactName,
     artifact_size: String(result.artifactSize),
     artifact_digest: result.artifactDigest,
-    ...(result.acceptanceHandoff ? { acceptance_artifact_id: result.acceptanceHandoff.acceptanceArtifact.id } : {}),
+    ...(result.validationHandoff ? { validation_purpose: result.validationHandoff.purpose } : {}),
   });
   for (const [name, value] of entries) assertSingleLine(value, name);
   await (options.appendFile ?? appendFile)(
@@ -236,7 +236,7 @@ if (isMain) {
       const result = await verifyWorkflowArtifact(options);
       await writeWorkflowArtifactOutputs(result, options);
       console.log(`workflow artifact verified: run ${result.nativeRunId}, artifact ${result.artifactId}`
-        + (result.acceptanceHandoff ? '; metadata only, Windows acceptance content still unverified' : ''));
+        + (result.validationHandoff ? '; metadata only, additional-validation-only; product/release acceptance unverified' : ''));
     }
   } catch (error) {
     console.error(`workflow artifact verification failed: ${error.message}`);

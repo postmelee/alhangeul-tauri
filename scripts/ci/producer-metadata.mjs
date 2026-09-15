@@ -3,7 +3,7 @@ import { assertCurrentArtifact, assertCurrentAttempt } from './installer-metadat
 import { listEvidencePages, resolveNamedEvidence } from './acceptance-delivery.mjs';
 import { parseEvidenceJson } from './acceptance-json.mjs';
 
-export async function resolveProducerMetadata(verified, run, api) {
+export async function resolveTestProducerMetadata(verified, run, api) {
   requireEvidence(run?.status === 'completed' && run.conclusion === 'success', 'producer-not-successful');
   const response = await api(`/repos/${verified.repository}/contents/package.json?ref=${verified.buildRef}`);
   requireEvidence(response.encoding === 'base64' && typeof response.content === 'string', 'invalid-producer-package');
@@ -21,6 +21,18 @@ export async function resolveProducerMetadata(verified, run, api) {
   const productArtifact = await api(`/repos/${verified.repository}/actions/artifacts/${identity.artifactId}`);
   const productMetadata = assertCurrentArtifact(productArtifact, attempt, { id: identity.artifactId, name: 'alhangeul-desktop-windows-x64' });
   requireEvidence(productMetadata.digest === identity.artifactDigest, 'producer-product-digest-mismatch');
+  return { identity, metadataStatus: 'verified', downloadStatus: 'unverified', producerStatus: run.status,
+    producerConclusion: run.conclusion, purpose: 'additional-validation-only',
+    productAcceptance: 'unverified', releaseAcceptance: 'unverified' };
+}
+
+// #67 reference implementation, not a prerequisite for ordinary test handoffs.
+export async function resolveProducerMetadata(verified, run, api) {
+  const checked = await resolveTestProducerMetadata(verified, run, api);
+  const { identity } = checked;
+  const base = `/repos/${verified.repository}/actions/runs/${identity.runId}`;
+  const attempt = await api(`${base}/attempts/${identity.runAttempt}`);
+  assertCurrentAttempt(attempt, identity);
   const acceptance = await resolveNamedEvidence(api, attempt, 'alhangeul-ci-acceptance');
   const jobs = await listEvidencePages(api, `${base}/attempts/${identity.runAttempt}/jobs`, 'jobs');
   assertAggregateProducer(jobs, identity);

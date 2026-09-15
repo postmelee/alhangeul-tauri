@@ -5,7 +5,7 @@ import { buildInstallerInput } from '../scripts/ci/installer-input.mjs';
 import { fixedScenario } from '../scripts/ci/acceptance-evidence.mjs';
 import { ordinaryFixture } from './fixtures/ci-installer-input.mjs';
 
-const names = ['harness', 'handoff', 'acceptance-download', 'producer-guard', 'download', 'inventory', 'support', 'manual-tests',
+const names = ['harness', 'handoff', 'download', 'inventory', 'support', 'manual-tests',
   'smoke-context', 'regressions', 'diagnostic-contract', 'manual-evidence', 'smoke'];
 function record() { return { steps: Object.fromEntries(names.map(name => [name, { outcome: 'success', conclusion: 'success' }])) }; }
 test('reuse input preserves failed raw smoke outcome while requiring all other evidence steps', () => {

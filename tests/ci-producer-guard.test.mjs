@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { verifyWorkflowArtifact } from '../scripts/verify-workflow-artifact.mjs';
-import { verifyDownloadedProducer } from '../scripts/ci/producer-guard.mjs';
+import { verifyDownloadedProducer, verifyIndependentHandoff } from '../scripts/ci/producer-guard.mjs';
 import { deliveryFixture } from './fixtures/ci-delivery.mjs';
 import { producerFixture } from './fixtures/ci-acceptance.mjs';
 
@@ -25,16 +25,16 @@ for (const [label, change] of [
   ['upload failed', f => { f.jobs.at(-1).steps[1].conclusion = 'failure'; }],
   ['aggregate failed', f => { f.jobs.at(-1).conclusion = 'failure'; }],
   ['old aggregate', f => { f.jobs.at(-1).run_attempt--; }],
-]) test(`Windows producer metadata refuses ${label}`, async () => {
+]) test(`#67 reference metadata refuses ${label}`, async () => {
   const { f, query } = fixture(); change(f);
-  await assert.rejects(verifyWorkflowArtifact(query, f));
+  await assert.rejects(verifyIndependentHandoff(query, f));
 });
 
 async function withProducer(run) {
   const directory = await mkdtemp(join(tmpdir(), 'alhangeul-producer-guard-'));
   try {
     const { f, query } = fixture();
-    const handoff = await verifyWorkflowArtifact(query, f);
+    const handoff = await verifyIndependentHandoff(query, f);
     const handoffPath = join(directory, 'handoff.json');
     await writeFile(handoffPath, JSON.stringify(handoff));
     const document = producerFixture().document;
@@ -65,18 +65,17 @@ for (const name of ['download', 'identity', 'metadata', 'limited', 'missing-cont
     await assert.rejects(verifyDownloadedProducer(options, f));
   }));
 }
-test('every Windows product consumer guards downloaded acceptance before installation', async () => {
+test('Windows test consumers require purpose, digest and inventory without independent acceptance', async () => {
   for (const name of ['alhangeul-installer-reuse', 'alhangeul-windows-pdf']) {
     const source = await readFile(new URL(`../.github/workflows/${name}.yml`, import.meta.url), 'utf8');
-    const guard = source.indexOf('node scripts/ci/producer-guard.mjs');
     const installer = source.indexOf(name.includes('reuse') ? 'installer-smoke.ps1' : '-Phase Install -Kind nsis');
-    assert.ok(guard > source.indexOf('acceptance_artifact_id'));
-    assert.ok(guard < installer);
-    assert.match(source.slice(0, guard), /ACCEPTANCE_DOWNLOAD_STATUS:/);
-    assert.match(source.slice(0, guard), /digest-mismatch: error/);
+    assert.match(source.slice(0, installer), /additional-validation-only/);
+    assert.match(source.slice(0, installer), /digest-mismatch: error/);
+    assert.match(source.slice(0, installer), /--source-sha/);
+    assert.doesNotMatch(source, /producer-guard.mjs|acceptance_artifact_id|ACCEPTANCE_DOWNLOAD_STATUS/);
   }
 });
-test('actual Windows artifact metadata CLI completes without circular-import deadlock, then content guard runs', () => withProducer(async ({ options, directory }) => {
+test('actual Windows metadata CLI completes without circular imports and grants testing only', () => withProducer(async ({ options, directory }) => {
   const preload = fileURLToPath(new URL('./fixtures/ci-github-preload.mjs', import.meta.url));
   const verifier = fileURLToPath(new URL('../scripts/verify-workflow-artifact.mjs', import.meta.url));
   const path = join(directory, 'cli-handoff.json');
@@ -84,11 +83,35 @@ test('actual Windows artifact metadata CLI completes without circular-import dea
     '--build-ref', options.productSha, '--run-id', options.runId, '--workflow-path', '.github/workflows/ci.yml',
     '--artifact-name', 'alhangeul-desktop-windows-x64', '--json-output', path], { timeout: 10_000, encoding: 'utf8' });
   assert.match(stdout, /metadata only/);
-  assert.equal(JSON.parse(await readFile(path)).acceptanceHandoff.downloadStatus, 'unverified');
-  const guard = fileURLToPath(new URL('../scripts/ci/producer-guard.mjs', import.meta.url));
-  const output = join(directory, 'cli-guard.json');
-  execFileSync(process.execPath, ['--import', preload, guard], { timeout: 10_000, stdio: 'pipe', env: { ...process.env,
-    GITHUB_REPOSITORY: options.repository, PRODUCT_SHA: options.productSha, PRODUCT_RUN_ID: options.runId,
-    HANDOFF_PATH: path, ACCEPTANCE_ROOT: directory, ACCEPTANCE_DOWNLOAD_STATUS: 'success', PRODUCER_GUARD_OUTPUT: output } });
-  assert.equal(JSON.parse(await readFile(output)).status, 'verified');
+  const result = JSON.parse(await readFile(path));
+  assert.equal(result.validationHandoff.downloadStatus, 'unverified');
+  assert.equal(result.validationHandoff.purpose, 'additional-validation-only');
+  assert.equal(result.validationHandoff.releaseAcceptance, 'unverified');
+  assert.equal(result.acceptanceHandoff, undefined);
 }));
+
+test('limited or absent independent evidence does not block additional tests on a successful exact producer', async () => {
+  const { f, query } = fixture(); f.jobs = []; f.artifacts = [f.artifact];
+  const result = await verifyWorkflowArtifact(query, f);
+  assert.equal(result.validationHandoff.purpose, 'additional-validation-only');
+  assert.equal(result.validationHandoff.productAcceptance, 'unverified');
+});
+test('test-only metadata rejects a changed or unsuccessful producer attempt', async () => {
+  for (const patch of [{ conclusion: 'failure' }, { run_attempt: 99 }, { run_started_at: '2026-09-14T00:00:00Z' }]) {
+    const { f, query } = fixture();
+    const fetchJson = async path => {
+      const value = await f.fetchJson(path);
+      return path.includes('/attempts/') ? { ...value, ...patch } : value;
+    };
+    await assert.rejects(verifyWorkflowArtifact(query, { fetchJson }));
+  }
+});
+for (const [label, change] of [
+  ['failed run', f => { f.run.conclusion = 'failure'; }],
+  ['stale artifact', f => { f.artifact.created_at = '2026-09-01T00:00:00Z'; }],
+  ['expired artifact', f => { f.artifact.expired = true; }],
+  ['wrong source', f => { f.run.head_sha = 'e'.repeat(40); }],
+]) test(`test-only metadata still refuses ${label}`, async () => {
+  const { f, query } = fixture(); change(f);
+  await assert.rejects(verifyWorkflowArtifact(query, f));
+});

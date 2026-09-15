@@ -21,8 +21,11 @@ test('handoff separates product/harness SHA and pins approved archive', async ()
   assert.equal(result.harnessSha, 'b'.repeat(40));
   assert.equal(result.productVersion, '0.1.0');
   assert.equal(result.mode, 'reused');
-  assert.equal(result.acceptanceHandoff.downloadStatus, 'unverified');
-  assert.equal(result.acceptanceHandoff.acceptanceArtifact.id, '400');
+  assert.equal(result.validationHandoff.downloadStatus, 'unverified');
+  assert.equal(result.validationHandoff.purpose, 'additional-validation-only');
+  assert.equal(result.validationHandoff.productAcceptance, 'unverified');
+  assert.equal(result.validationHandoff.releaseAcceptance, 'unverified');
+  assert.equal(result.acceptanceHandoff, undefined);
 });
 test('selected CI package producer is reusable with the same strict provenance', async () => {
   const f = fixtures();

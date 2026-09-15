@@ -52,8 +52,8 @@ export function verifyScenarioJob(jobs, selected, identity) {
     requireEvidence(steps.length === 1 && steps[0].status === 'completed'
       && steps[0].conclusion === 'success', 'scenario-step-not-passed');
   }
-  // API step conclusion includes continue-on-error. The raw smoke outcome/exit
-  // must STILL be checked from the separate raw files during independent replay.
+  // API step conclusion includes continue-on-error: it is only job status.
+  // Raw outcome/exit belongs to the in-job evaluator; #67 additionally replays it.
   return { acceptanceStep: 'success', uploadStep: 'success' };
 }
 

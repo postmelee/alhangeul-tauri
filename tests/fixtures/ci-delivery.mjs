@@ -8,7 +8,7 @@ export function deliveryFixture() {
     { ...structuredClone(f.artifact), id: 350, name: 'alhangeul-windows-x64-thumbnail-support' },
     { ...structuredClone(f.artifact), id: 400, name: 'alhangeul-ci-acceptance' }];
   const job = { run_id: f.run.id, run_attempt: f.run.run_attempt, head_sha: f.run.head_sha, status: 'completed', conclusion: 'success' };
-  f.jobs = DELIVERY.map(row => ({ ...job, name: `artifacts / smoke / ${row.jobName}`,
+  f.jobs = DELIVERY.map((row, index) => ({ ...job, id: 500 + index, name: `artifacts / smoke / ${row.jobName}`,
     steps: DELIVERY_STEPS.map(name => ({ name, status: 'completed', conclusion: 'success' })) }));
   f.jobs.push({ ...job, name: 'artifacts / smoke / Aggregate Windows installer evidence',
     steps: ['Replay and aggregate independent installer evidence', 'Upload installer acceptance', 'Require aggregate and upload success']
@@ -32,4 +32,8 @@ export function deliveryFixture() {
 export function aggregateOutputs(observation = 'windows-installer-scenarios-only') {
   return { acceptance_contract: 'passed', acceptance_artifact_id: '400', acceptance_artifact_digest: `sha256:${'b'.repeat(64)}`,
     product_observation: observation, reuse_eligible: observation === 'limited-observation' ? 'false' : 'true' };
+}
+
+export function statusOutputs() {
+  return { contract_status: 'passed', product_observation: 'see-scenario-evidence' };
 }
