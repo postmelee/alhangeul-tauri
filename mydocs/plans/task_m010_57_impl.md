@@ -3,14 +3,14 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: Stage 6.1.2 진행중 — full 관측의 nullable bitmap 평가 보정
+상태: Stage 6.1.2 진행중 — manual-readback 자식 실패 진단 보완
 
 최신 완료 근거: [Stage 6.1.1 보고서](../working/task_m010_57_stage6.1.1.md).
 후보 `24fdf323d83cd57c286fe129cc9932b4f86c0dab`의 fast run `34775083252` attempt 1이
 통과했다. 아래 후보/미실행/보류 표현은 당시 이력이며, 현재는 순수 판정 단계 검증까지
 완료했다. 현재는 fresh 입력·독립 재검산 집계·최종 gate·producer 재사용 guard를 연결했고
-로컬 회귀와 fast를 통과했으나 full에서 nullable bitmap 평가 오류가 발견되어 보정 중이다.
-full 전달/설치 수용은 아직 완료하지 않았다.
+nullable bitmap 보정은 full의 세 개별 설치 평가에서 통과했다. 현재는 독립 집계의
+manual-readback 실패 진단을 보완하며 full 전달/설치 수용은 아직 완료하지 않았다.
 최신 중간 검증은 아래 2026-09-15 기록을 따른다.
 
 ## 2026-09-14 승인된 CI 수용 보정 구현계획
@@ -382,6 +382,40 @@ Windows 증거 artifact는 `10380374697`, digest
 diff 검사 통과. 새 PowerShell 동작은 미실행이며 Node의 소스 계약 검사 통과와 구분한다.
 다음 승인 요청은 보정 후보의 non-force 게시 및 `profile=fast` 1회다. 실패한 full run의
 제품 artifact를 성공 producer로 바꾸거나 installer reuse guard를 우회하지 않는다.
+
+### 2026-09-15 manual-readback 실패 진단 보완
+
+후보 `97e2fabea2d0a4ccfe28735068284566814bbd1d`의 fast
+[34935859079](https://github.com/postmelee/alhangeul-tauri/actions/runs/34935859079)는
+Node 913개/Studio 147개/Windows PS 65개 소스·9개 격리 검사 성공이다.
+동일 후보 full [34936425142](https://github.com/postmelee/alhangeul-tauri/actions/runs/34936425142)는
+세 플랫폼 build/core와 세 installer 계약 평가가 성공했으나 집계에서 실패했다.
+일반 MSI 성공, NSIS 원시 실패 12건·limited-observation, 강제 MSI 3010·post-reboot-unverified가
+각 평가에 보존됐다. nullable bitmap 오류는 해소됐지만 전체 수용으로 확대하지 않는다.
+
+집계 artifact `10384740230`의 digest는
+`sha256:ba19028fa665425909d1fc564e909a05075bb7fcc80f5d9b5dee01ac3bfc4c95`이며,
+metadata passed / replay phase manual-readback, scenario nsis, status failed /
+installer-acceptance unverified를 확인했다. 다운로드한 NSIS 세 문서의 13개 파일,
+10개 probe, 원시/summary 일치와 cleanup/integrity는 확인했으나 자식 예외는 미보존이었다.
+따라서 특정 경로·환경·제품 문제로 아직 확정하지 않는다.
+
+같은 스레드의 “진행해줘”로 자식 실패의 안전한 세부 코드 보존과 로컬 회귀를 승인받았다.
+기존 Stage 6.1.2·local/task57을 유지하고 새 브랜치/devel 통합은 하지 않는다.
+문서는 기존 구현계획/오늘할일에만 기록하며 공식 문서·UI·제품/설치 정책은 변경하지 않는다.
+
+- `scripts/ci/manual-readback.ps1`은 기존 검사기를 동일 SupportRoot/SummaryRoot로
+  호출한다. 오류 메시지는 정확한 허용 목록의 코드로만 변환하고 stack은 허용된 저장소
+  파일명·정수 줄 번호 최대 8개만 보존한다. 나머지는 고정 generic 오류로 남긴다.
+- `replay-diagnostic.mjs`는 child exit/timeout/output-limit과 엄격히 선별한 diagnostic만
+  투영한다. stdout/stderr/예외/절대 경로/추가 key를 보고서에 복사하지 않는다.
+  `installer-replay.mjs`가 집계 diagnostic에 child 정보를 넘기며 실패는 계속 throw한다.
+- Node는 malformed/중복 marker/과대 출력/미허용 코드·파일·줄/민감정보 제거와 기존 집계를
+  검사한다. 기존 Windows Node→PS 회귀에는 인자 누락 및 실제 검사기의 없는 support 경로
+  실패를 추가했다. 파일 수/원시 대조/등록 판정/producer guard의 성공 조건은 완화하지 않는다.
+- 로컬 대상 23개·전체 automation 923개, product boundary 584파일, diff 검사 통과.
+  Windows 새 래퍼 실행과 실제 full 실패 위치는 미검증이다. 다음 승인 요청은 후보 게시와
+  fast 1회이며 full 재실행·기존 실패 producer 재사용 우회·릴리즈는 자동 진행하지 않는다.
 
 ### 산출물
 

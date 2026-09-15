@@ -6,6 +6,7 @@ import { readEvidenceJson, evidenceHash } from './acceptance-json.mjs';
 import { buildInstallerInput } from './installer-input.mjs';
 import { fixedScenario, assertVerdict, requireEvidence } from './acceptance-evidence.mjs';
 import { evaluationSummary } from './installer-evaluation.mjs';
+import { replayFailureDiagnostic } from './replay-diagnostic.mjs';
 
 export async function checkEvidenceTree(root) {
   const pending = [root];
@@ -23,14 +24,18 @@ export async function checkEvidenceTree(root) {
   }
 }
 
-export function runReplayPowerShell(script, args) {
+export function runReplayPowerShell(script, args, diagnostic) {
+  if (diagnostic) delete diagnostic.child;
   requireEvidence(process.platform === 'win32', 'windows-replay-required');
   const executable = join(process.env.SystemRoot, 'System32/WindowsPowerShell/v1.0/powershell.exe');
   try {
     execFileSync(executable, ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File',
       resolve(script), ...args], { timeout: 120_000, stdio: 'pipe', windowsHide: true,
       env: { ...process.env, GITHUB_OUTPUT: '', GITHUB_STEP_SUMMARY: '', GITHUB_TOKEN: '', GH_TOKEN: '' } });
-  } catch { throw new Error('independent-powershell-replay-failed'); }
+  } catch (error) {
+    if (diagnostic) diagnostic.child = replayFailureDiagnostic(error);
+    throw new Error('independent-powershell-replay-failed');
+  }
 }
 
 export async function replayInstallerScenario(options, services = {}) {
@@ -56,15 +61,15 @@ export async function replayInstallerScenario(options, services = {}) {
   requireEvidence(original.status === 'passed' && original.inputSha256 === input.sha256, 'original-evaluation-not-passed');
   const replay = services.runPowerShell ?? runReplayPowerShell;
   diagnostic.phase = 'diagnostic-readback';
-  await replay('scripts/windows-thumbnail-assessment-tests.ps1', ['-SummaryPath', join(root, 'windows-installer-smoke-summary.json')]);
+  await replay('scripts/windows-thumbnail-assessment-tests.ps1', ['-SummaryPath', join(root, 'windows-installer-smoke-summary.json')], diagnostic);
   diagnostic.phase = 'manual-readback';
-  await replay('scripts/windows-thumbnail-check-tests.ps1', ['-SupportRoot', options.supportRoot, '-SummaryRoot', root]);
+  await replay('scripts/ci/manual-readback.ps1', ['-SupportRoot', options.supportRoot, '-SummaryRoot', root], diagnostic);
   await mkdir(replayRoot, { recursive: true });
   const replayInput = join(replayRoot, 'installer-input.json');
   await writeFile(replayInput, rebuilt.bytes);
   await writeFile(join(replayRoot, 'installer-evaluation.json'), '{"status":"unverified"}\n');
   diagnostic.phase = 'pure-replay';
-  await replay('scripts/ci/installer-acceptance.ps1', ['-InputPath', replayInput, '-OutputDirectory', replayRoot]);
+  await replay('scripts/ci/installer-acceptance.ps1', ['-InputPath', replayInput, '-OutputDirectory', replayRoot], diagnostic);
   const computed = (await readEvidenceJson(join(replayRoot, 'installer-evaluation.json'))).value;
   requireEvidence(isDeepStrictEqual(computed, original), 'independent-evaluation-mismatch');
   assertVerdict(computed.verdict, selected);

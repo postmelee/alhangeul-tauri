@@ -17,4 +17,16 @@ await writeFile(inputPath, '{"status":1,"STATUS":2}');
 assert.throws(() => runReplayPowerShell('scripts/ci/installer-acceptance.ps1', ['-InputPath', inputPath, '-OutputDirectory', output]),
   /independent-powershell-replay-failed/);
 assert.equal((await readEvidenceJson(join(output, 'installer-evaluation.json'))).value.status, 'failed');
+const diagnostic = { child: { stale: true } };
+assert.throws(() => runReplayPowerShell('scripts/ci/manual-readback.ps1', [], diagnostic), /independent-powershell-replay-failed/);
+assert.equal(diagnostic.child.exitCode, 1);
+assert.equal(diagnostic.child.detail.code, 'missing-readback-input');
+assert.equal(diagnostic.child.stale, undefined);
+// Run the actual verifier: a nonexistent support directory must fail safely.
+assert.throws(() => runReplayPowerShell('scripts/ci/manual-readback.ps1',
+  ['-SupportRoot', join(output, 'PRIVATE-missing-support'), '-SummaryRoot', output], diagnostic), /independent-powershell-replay-failed/);
+assert.equal(diagnostic.child.exitCode, 1);
+assert.ok(diagnostic.child.detail.sites.some(site => site.file === 'windows-thumbnail-check.ps1'));
+assert.doesNotMatch(JSON.stringify(diagnostic), /PRIVATE|[A-Z]:\\/);
+if (envOutput) assert.deepEqual(await readFile(envOutput), before);
 console.log('Windows Node-to-PowerShell replay isolation passed; installed product acceptance unverified.');

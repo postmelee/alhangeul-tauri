@@ -63,7 +63,7 @@ test('real file aggregate rebuilds all input bindings and requests independent d
   assert.equal(options.diagnostic.phase, 'aggregate');
   assert.equal(options.diagnostic.scenario, null);
   assert.equal(calls.length, 9);
-  for (const script of ['scripts/windows-thumbnail-assessment-tests.ps1', 'scripts/windows-thumbnail-check-tests.ps1', 'scripts/ci/installer-acceptance.ps1']) {
+  for (const script of ['scripts/windows-thumbnail-assessment-tests.ps1', 'scripts/ci/manual-readback.ps1', 'scripts/ci/installer-acceptance.ps1']) {
     assert.equal(calls.filter(value => value === script).length, 3);
   }
   assert.equal(result.contractStatus, 'passed'); assert.equal(result.reuseEligible, false);
