@@ -47,7 +47,7 @@ on:
         required: true
         type: string
       native_run_id:
-        description: Successful Desktop Artifact Build run ID
+        description: Successful Desktop Artifact Build or Alhangeul CI product run ID
         required: true
         type: string
 
@@ -120,7 +120,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
-          node scripts/verify-workflow-artifact.mjs --repository $env:GITHUB_REPOSITORY --build-ref $env:PDF_BUILD_REF --run-id $env:NATIVE_RUN_ID --workflow-path .github/workflows/alhangeul-desktop.yml --artifact-name alhangeul-desktop-windows-x64 --json-output "$env:EVIDENCE_ROOT/artifact-handoff.json" --github-output $env:GITHUB_OUTPUT
+          $producer = Invoke-RestMethod -Uri "$env:GITHUB_API_URL/repos/$env:GITHUB_REPOSITORY/actions/runs/$env:NATIVE_RUN_ID" -Headers @{ Authorization = "Bearer $env:GITHUB_TOKEN" } -ErrorAction Stop
+          $workflowPath = ([string]$producer.path -split '@', 2)[0]
+          if ($workflowPath -cnotin @('.github/workflows/alhangeul-desktop.yml', '.github/workflows/ci.yml')) { throw 'Unsupported product producer workflow' }
+          node scripts/verify-workflow-artifact.mjs --repository $env:GITHUB_REPOSITORY --build-ref $env:PDF_BUILD_REF --run-id $env:NATIVE_RUN_ID --workflow-path $workflowPath --artifact-name alhangeul-desktop-windows-x64 --json-output "$env:EVIDENCE_ROOT/artifact-handoff.json" --github-output $env:GITHUB_OUTPUT
           if ($LASTEXITCODE -ne 0) { throw 'Artifact handoff failed' }
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:

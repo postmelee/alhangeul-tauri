@@ -56,6 +56,19 @@ test('등록된 dispatcher는 PDF 전용 reusable workflow에 기존 artifact id
   }
 });
 
+test('PDF handoff는 두 ordinary producer만 허용하고 설치 전 source와 bytes 검사를 유지한다', () => {
+  const block = workflow.split('name: Verify existing product artifact handoff')[1].split('- uses: actions/download-artifact')[0];
+  assert.match(block, /Invoke-RestMethod -Uri "\$env:GITHUB_API_URL\/repos\/\$env:GITHUB_REPOSITORY\/actions\/runs\/\$env:NATIVE_RUN_ID"/);
+  assert.match(block, /\$workflowPath = \(\[string\]\$producer.path -split '@', 2\)\[0\]/);
+  assert.match(block, /if \(\$workflowPath -cnotin @\('\.github\/workflows\/alhangeul-desktop.yml', '\.github\/workflows\/ci.yml'\)\) \{ throw 'Unsupported product producer workflow' \}/);
+  assert.match(block, /--workflow-path \$workflowPath/);
+  assert.ok(block.indexOf('Unsupported product producer workflow') < block.indexOf('node scripts/verify-workflow-artifact.mjs'));
+  const markers = ['--workflow-path $workflowPath', 'digest-mismatch: error', 'additional-validation-only', '--source-sha $env:PDF_BUILD_REF', 'name: Install NSIS product'];
+  const offsets = markers.map(marker => workflow.indexOf(marker));
+  assert.ok(offsets.every(offset => offset >= 0));
+  assert.deepEqual(offsets, [...offsets].sort((a, b) => a - b));
+});
+
 test('Windows PDF workflow는 두 실제 앱 실행과 실패 증거 및 cleanup을 유지한다', () => {
   assert.match(workflow, /runs-on: windows-2025/);
   assert.match(workflow, /@\('fresh', 'restart'\)/);

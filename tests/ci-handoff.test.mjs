@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
 import { verifyProductHandoff } from '../scripts/ci/artifact-handoff.mjs';
+import { verifyWorkflowArtifact } from '../scripts/verify-workflow-artifact.mjs';
 import { deliveryFixture } from './fixtures/ci-delivery.mjs';
 
 const productSha = 'a'.repeat(40);
@@ -39,6 +40,23 @@ test('other producer workflows cannot supply approved product bytes', async () =
   f.run.path = '.github/workflows/arbitrary.yml';
   await assert.rejects(verifyProductHandoff(input, service(f)), /Unsupported product producer/);
 });
+for (const workflowPath of ['.github/workflows/alhangeul-desktop.yml', '.github/workflows/ci.yml']) {
+  test(`PDF shared verifier accepts exact ${workflowPath} metadata, not failed or mismatched producers`, async () => {
+    const f = fixtures();
+    f.run.path = `${workflowPath}@refs/heads/publish/task57`;
+    const request = { repository: input.repository, buildRef: productSha, runId: input.runId,
+      workflowPath, artifactName: 'alhangeul-desktop-windows-x64' };
+    const result = await verifyWorkflowArtifact(request, service(f));
+    assert.equal(result.workflowPath, workflowPath);
+    assert.equal(result.validationHandoff.purpose, 'additional-validation-only');
+    assert.equal(result.validationHandoff.releaseAcceptance, 'unverified');
+    f.run.conclusion = 'failure';
+    await assert.rejects(verifyWorkflowArtifact(request, service(f)), /workflow conclusion/);
+    f.run.conclusion = 'success';
+    f.run.head_sha = 'c'.repeat(40);
+    await assert.rejects(verifyWorkflowArtifact(request, service(f)), /workflow head SHA/);
+  });
+}
 for (const [name, change] of [
   ['ID', { artifactId: '43' }], ['digest', { artifactDigest: `sha256:${'d'.repeat(64)}` }],
   ['harness SHA', { harnessSha: 'main' }], ['product SHA', { productSha: 'main' }],

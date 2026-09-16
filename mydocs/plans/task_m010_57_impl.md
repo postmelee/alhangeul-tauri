@@ -3,7 +3,48 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: Stage 6.1.2 진행중 — 최소 연결 구현·로컬 회귀 통과, 원격 fast 승인 대기
+상태: Stage 6.1.2 진행중 — PDF 연결 보정·로컬 회귀 통과, 새 harness 원격 fast 승인 대기
+
+### 2026-09-17 원격 결과와 PDF 소비자 최소 보정
+
+작업지시자가 각 실행과 NSIS-only 재시도를 승인했으며 결과 확인 뒤 “진행해줘”로
+남은 PDF 연결 확인을 지시했다. 아래는 후보 `6f5c939f8d2befc673904bc9c5d0ab3e2b159364`의
+실측이다. 이전 실패와 아래 9월 15일 승인 대기 기록은 당시 이력으로 보존한다.
+
+| 검증 | 실행 / attempt | 결과와 한계 |
+|---|---|---|
+| fast | [34950480289](https://github.com/postmelee/alhangeul-tauri/actions/runs/34950480289/attempts/1) / 1 | 성공; Node automation 947개, Windows PS 66 source·9 격리 회귀 |
+| full | [34951330430](https://github.com/postmelee/alhangeul-tauri/actions/runs/34951330430/attempts/1) / 1 | 성공; 세 target·설치 계약·경량 gate 통과. 일반 사용자 NSIS 성공이나 릴리즈 수용 아님 |
+| installer reuse | [34958764635](https://github.com/postmelee/alhangeul-tauri/actions/runs/34958764635/attempts/1) / 1 | MSI·강제 재설치 계약 성공. NSIS 평가 성공 뒤 artifact FinalizeArtifact HTTP 403, upload·최종 gate 실패 |
+| NSIS-only 재시도 | [34958764635](https://github.com/postmelee/alhangeul-tauri/actions/runs/34958764635/attempts/2) / 2 | NSIS job `104833593149`의 upload·최종 gate 성공. MSI 두 결과는 attempt 1이며 재실행하지 않음 |
+
+실제 관측: MSI는 thumbnail/lifecycle passed, NSIS는 raw exit 1·12개 실패와
+`nsis-per-user-shell-activation-failed`/thumbnail not-accepted, lifecycle passed다.
+MSI forced-reinstall은 thumbnail passed, reboot-required이며 재부팅 후 미검증이다.
+재시도의 성공은 업로드/검사 계약 회복이지 NSIS 제품 결함 해결이 아니다.
+
+재사용 exact 입력: product SHA `6f5c939f8d2befc673904bc9c5d0ab3e2b159364`,
+producer run `34951330430` attempt 1 (`ci.yml`), artifact `10390178917`,
+digest `sha256:1ee2ade7a0b6278c9d4a4b27f393dc88c350c170247fff1a8de581ce39fdca6c`.
+NSIS attempt 2 증거 artifact는 `10451431950`, digest
+`sha256:cff1dd03a7939335f098fef6d764580ffb9f0099df7730a0673526eae25ab083`다.
+
+PDF 소비자는 기존 `--workflow-path alhangeul-desktop.yml` 고정 때문에 이 적격 `ci.yml`
+producer를 거부한다. 기존 PDF workflow의 metadata 조회로 두 ordinary workflow만 허용하고,
+선택한 경로를 기존 verifier에 넘긴다. CLI의 source/run/성공/현재 attempt 검증과 다운로드
+digest·inventory sourceSha/hash·실제 설치/cleanup은 유지한다. 새 dispatch 입력·공용 verifier
+동작·PDF 기능·#67 독립 재검산은 추가하지 않는다. 기존 tests 두 파일에서 wiring 및 두
+producer의 정상/실패/source 불일치를 검사한다. 기록 위치는 기존 계획 두 파일과 오늘할일이다.
+
+로컬 검증은 관련 회귀 44개, 전체 automation **950 passed / 0 failed / 0 skipped**,
+product boundary **586 files**, 변경 workflow actionlint 및 diff 검사 모두 통과했다.
+Mac에서 Windows PowerShell/native를 실행하지 않았고, 새 harness의 원격 CI도 아직 미실행이다.
+다음 승인 대상은 이 중간 보정을 non-force 게시하고 exact harness의 fast를 확인하는 것이다.
+Windows native 소비자 검증은
+위 제품 bytes를 재사용하는 기존 `open_only=true` 시나리오(설치·문서 열기·cleanup)로 제안한다.
+이 부분 검증은 PDF 내보내기 전체나 새 source 제품 수용을 대체하지 않는다. workflow 변경의
+최종 full은 여전히 필요하며 기존 `6f5c939` full 성공을 새 harness 검증으로 소급하지 않는다.
+원격 실행은 별도 승인 뒤 수행하며, PDF 확인 전에는 6.1.2 완료 보고서를 작성하지 않는다.
 
 ### 2026-09-15 최소 연결 구현 중간 기록
 
