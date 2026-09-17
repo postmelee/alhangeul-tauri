@@ -3,7 +3,37 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: Stage 6.2 구현·로컬 검증 완료 — Windows native/full·실제 앱 수용 대기
+상태: Stage 6.2 사용자 경험 보정 후보 — 로컬 검증 통과, 원격 full·실제 앱 수용 대기
+
+### 2026-09-17 사용자 경험 보정
+
+사용자는 `5f8842f` 테스트 화면 검토 후 full CI 전에 사용자 경험을 개선하도록 승인했다.
+현재 단계의 UI/helper·CSS·테스트만 보정한다. 진단 엔진, 판정, 설치 범위, CI는 변경하지 않는다.
+참고는 [알한글 사이트](https://postmelee.github.io/alhangeul-macos/)의 흰 배경, 짙은 본문,
+회색 보조 정보, 파란 강조색(#0066cc)이다. 해당 제품의 기능·지원 플랫폼을 가져오지 않는다.
+검사 전 동의와 검사 후 결과를 분리하고 형식별 결과·권장 행동을 먼저 표시한다.
+설치/등록/API/정리 근거는 상세 보기로 이동하되 정리 실패 등 필요한 경고는 숨기지 않는다.
+완료 후 불필요한 검사/취소 버튼은 숨기며 작은 창의 스크롤, focus, 키보드, 색상 외 상태 표시를
+검증한다. 신규 presentation helper는 기존 `apps/studio-host/src/ui/`에 두고 테스트 harness를
+보강한다. 문서 위치는 기존 계획·오늘할일만 유지하며 공식 문서 신설은 하지 않는다.
+보정 후 Studio/DOM/build/upstream/boundary/automation을 재검증하고 원격 후보를 확정한다.
+
+보정 결과: 동의 화면과 결과 화면을 분리하고 HWP/HWPX 카드, 다음 행동, 접힌 설치 절차·
+기술 상세로 재구성했다. 완료 후 검사/취소 버튼은 숨기고 현재 가능한 동작으로 focus를
+이동한다. 하단 버튼 영역과 본문 스크롤을 분리했다. 정리 실패는 접지 않은 경고로 유지하고
+취소·시간 초과·실패·유효하지 않은 결과를 성공으로 표시하지 않는다. MSI 판정 조건과
+요약 allowlist, native/CI 코드는 그대로다.
+
+- Studio 27파일 165개, automation 950개, upstream 36개, boundary 602파일 통과.
+- Studio build와 브라우저 harness 포함 타입 검사 통과. 기존 번들 경고는 유지된다.
+- 실제 DOM 회귀 35항목 통과(synthetic bridge). 부분/전체 성공, 취소·초과·실패,
+  동의/중복 클릭, 불필요 버튼 숨김, 상세 접힘, focus, 조건부 MSI, 오프라인, 수동 복사를 확인했다.
+- 브라우저에서 검사 전/후 화면을 시각 확인하고 400×600에서 가로 넘침 없이 본문 스크롤과
+  하단 버튼 노출을 확인했다. Tab·Shift+Tab·Enter·Escape 및 이전 focus 복귀를 확인했다.
+- 초기 harness 타입 검사에서 DOM focus의 과도한 타입 narrowing을 수정한 후 재검증했다.
+  기존 7717 서버가 실행 중이므로 새 서버 실행은 포트 충돌로 종료되었고 기존 서버는 보존했다.
+- 이는 휴대 가능한 UI 검증이며 Windows WebView/native/실제 썸네일 생성 근거는 아니다.
+  다음은 보정된 후보의 non-force 게시와 full 1회이며 Stage 6.2 완료 선언은 보류한다.
 
 ### 2026-09-17 사용자 진단 UI 연결
 
