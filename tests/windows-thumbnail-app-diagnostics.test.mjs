@@ -25,6 +25,19 @@ test('installed native suite runs after initial observations and cannot be waive
   assert.doesNotMatch(runner, /Set-ExecutionPolicy|regsvr32|Set-ItemProperty/);
 });
 
+test('app diagnostic harness confines display setup to disposable CI and preserves failure metadata', async () => {
+  const display = await read('scripts/windows-thumbnail-app-display.ps1');
+  const runner = await read('scripts/windows-thumbnail-app-smoke.ps1');
+  for (const marker of ['GITHUB_ACTIONS', 'RUNNER_ENVIRONMENT', 'github-hosted', 'RUNNER_OS', 'Registry64', 'CurrentUser']) assert.ok(display.includes(marker));
+  assert.match(display, /finally/);
+  assert.match(display, /DeleteValue\('IconsOnly', \$false\)/);
+  assert.doesNotMatch(display, /LocalMachine|EnableLUA|DisableThumbnails|CreateSubKey/);
+  for (const field of ['failureStage', 'exitCode', 'stdoutChars', 'stderrChars', 'processReaped']) assert.ok(runner.includes(field));
+  assert.match(runner, /cleanup = \$null/);
+  assert.match(runner, /display\.restored -eq \$true/);
+  assert.doesNotMatch(runner, /Exception\.Message|Write-Output.*(?:stdout|stderr)/);
+});
+
 async function temporary(t) {
   const directory = await mkdtemp(join(tmpdir(), 'alhangeul-reference-test-'));
   // Only this freshly-created test directory is owned by this test.

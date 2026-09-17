@@ -3,7 +3,46 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: Stage 6.2 VDI 진단 중단 보정 후보 — 로컬 검증 후 Windows fast/full·VDI 확인 대기
+상태: Stage 6.2 설치 앱 진단 harness 보정 후보 — 로컬 회귀 통과, Windows fast·설치 재검증 대기
+
+### 2026-09-17 설치 앱 진단 harness 보정
+
+`eece852` fast `35200955245`는 성공했으나 full `35201597133`은 세 설치 계약에서 실패했다.
+Windows 공개 JPG canonical 경로/Shell/cache 회귀와 Windows/Linux 제품·core는 통과했다.
+기존 MSI의 실제 썸네일 생성은 성공, NSIS의 기존 `0x80040154` 관측은 유지되었다.
+새 앱 진단 report는 실패 단계·exit code 없이 초기값만 남아 중단 원인은 확정하지 않는다.
+CI의 `IconsOnly=1`과 앱의 표시 제한 시 검사 생략 조건도 별도로 확인했다.
+
+작업지시자가 다음 두 가지 보정을 승인했다. 기존 #57 브랜치와 문서 위치를 유지한다.
+
+- 설치 앱 호출/입력/대기/응답 파싱/판정 단계와 종료 코드·출력 길이만 고정 필드로 기록한다.
+  예외 원문, stdout/stderr 원문, 사용자 경로는 남기지 않는다. 미확인 cleanup은 null이다.
+  호출 실패/비정상 종료/잘못된 응답도 report를 남기며 실패 허용 조건을 완화하지 않는다.
+- GitHub-hosted Windows에서만 기존 HKCU Explorer Advanced의 `IconsOnly` DWORD를
+  앱 진단 동안 0으로 준비한다. 원래 값/값 부재를 보존하고 성공·실패 모두 finally에서
+  복원·readback한다. 키 부재/예상 밖 타입은 변경 전 거부한다. 복원 실패도 CI 실패다.
+  UAC·DisableThumbnails 정책·COM 등록·제품 UI/엔진은 변경하지 않는다.
+- 새 helper는 기존 `scripts/`, 회귀는 `tests/`, 문서는 기존 계획·오늘할일만 수정한다.
+  경계 회귀는 실제 레지스트리 대신 key/process 대역으로 실행하며 Windows fast가
+  5.1 실행 기준이다. 순수 Node·Linux PowerShell 가능한 검사를 먼저 수행한다.
+  호출/정리 orchestration은 단일 try/finally를 보존하기 위해 함수 50줄 권장의 예외로 둔다.
+- 제품 bytes는 변경하지 않지만 이전 생산 run 전체가 실패했으므로 해당 artifact를
+  성공한 producer로 재사용하지 않는다. 우선 fast 후 새 Windows 제품/설치 검증을 선택하고
+  최종 full·VDI 수용은 별도로 확인한다. 이번 승인으로 원격 실행/단계 완료를 선언하지 않는다.
+
+보정 결과: transport와 결과 평가를 분리하고 고정 단계, numeric HRESULT, exit code,
+stdout/stderr 길이, own process 회수 상태를 기록한다. suite 미수신 cleanup은 null이며
+예외/pipe 원문은 보고서에 넣지 않는다. CI 표시 준비 helper는 HKCU Registry64의 기존
+단일 키/값만 다루고 타입·준비 readback·복원 readback을 확인한다. self-hosted/일반 로컬
+환경에서는 key를 열기 전에 거부한다. 복원 실패나 process 회수 실패는 통과하지 않는다.
+
+- Colima Linux ARM64 PowerShell 7.4.6 경계 회귀 22건 통과. 실제 key/process 대신
+  대역을 써 성공·미설정 복원·입력/응답/시간 초과·비정상 종료·복원/정리 실패·원문 비노출을
+  확인했다. 기존 판정기의 JSON 숫자 타입 계약은 변경하지 않았다.
+- Node automation 952건, product boundary 609파일, diff 검사 통과.
+- 제품 Rust/TS·lock·workflow는 변경하지 않았다. 기존 installer smoke 연결을 유지하며
+  Windows PowerShell 5.1과 실제 설치 앱/레지스트리 동작은 아직 재검증하지 않았다.
+  로컬 회귀 통과를 앞선 full 실패 해결 또는 VDI 수용으로 기록하지 않는다.
 
 ### 2026-09-17 VDI 실제 앱 진단 중단 보정
 
