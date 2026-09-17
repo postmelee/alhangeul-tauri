@@ -3,7 +3,17 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: Stage 6.1.2 진행중 — PDF 연결 보정·로컬 회귀 통과, 새 harness 원격 fast 승인 대기
+상태: Stage 6.1.2 구현·검증 완료 — 단계 보고 검토 및 6.1.3 진입 승인 대기
+
+### 2026-09-17 단계 마감
+
+작업지시자가 최신 후보의 full 통합 검증과 단계 보고 진행을 승인했다.
+`6ffb3afce47608bf512f4145ec741d9ce8137eb4`의 fast `35113599791`, 기존 제품을 재사용한
+Windows open-only `35114102129`, full `35115949615`가 모두 attempt 1에서 성공했다.
+단계 종료 로컬 회귀는 950개, boundary 586파일, actionlint·diff 검사 통과다.
+설치별 실제 관측은 NSIS 제한·MSI 성공·forced MSI 재부팅 후 미검증을 그대로 보존한다.
+최신 기준은 [Stage 6.1.2 보고서](../working/task_m010_57_stage6.1.2.md)이며, 아래 미실행·승인
+대기 표현은 당시 이력이다. 6.1.3 문서, 6.2 UI, 6.3 최신 VDI·최종 수용은 아직 미완료다.
 
 ### 2026-09-17 원격 결과와 PDF 소비자 최소 보정
 
