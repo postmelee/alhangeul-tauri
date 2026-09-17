@@ -38,6 +38,22 @@ test('app diagnostic harness confines display setup to disposable CI and preserv
   assert.doesNotMatch(runner, /Exception\.Message|Write-Output.*(?:stdout|stderr)/);
 });
 
+test('Windows pipe regression uses the same BOM-less process start as installed diagnostics', async () => {
+  const helper = await read('scripts/windows-thumbnail-app-process.ps1');
+  const runner = await read('scripts/windows-thumbnail-app-smoke.ps1');
+  const regression = await read('tests/windows-thumbnail-app-pipe.test.ps1');
+  const child = await read('tests/fixtures/windows-thumbnail-ipc-child.cs');
+  assert.ok(helper.indexOf('[Text.UTF8Encoding]::new($false, $true)') < helper.indexOf('$Process.Start()'));
+  assert.match(helper, /finally\s*\{\s*\[Console\]::InputEncoding = \$previous/);
+  assert.match(runner, /windows-thumbnail-app-process\.ps1/);
+  assert.ok(runner.indexOf('Start-AppDiagnosticProcess $process $Report') < runner.indexOf('$process.StandardInput.Write'));
+  assert.match(runner, /if \(\$Report\.processStarted\)/);
+  for (const marker of ['WindowsApplication', 'Invoke-AppDiagnosticTransport', 'legacy-strict-rejection', 'defaultPreambleBytes', 'Assert-EncodingRestored']) assert.ok(regression.includes(marker));
+  assert.match(child, /Console.OpenStandardInput\(\)/);
+  assert.match(child, /new UTF8Encoding\(false, true\)/);
+  assert.doesNotMatch(regression, /Set-ExecutionPolicy|regsvr32|Set-ItemProperty/);
+});
+
 async function temporary(t) {
   const directory = await mkdtemp(join(tmpdir(), 'alhangeul-reference-test-'));
   // Only this freshly-created test directory is owned by this test.

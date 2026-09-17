@@ -54,6 +54,7 @@ function Reset-Fakes($Present, $Value) {
   $writer | Add-Member ScriptMethod Close {}
   $script:process = [pscustomobject]@{ StartInfo = $null; StandardOutput = $reader; StandardError = $errorReader; StandardInput = $writer; HasExited = $false; ExitCode = 0; Killed = $false; Disposed = $false }
   $script:process | Add-Member ScriptMethod Start {
+    Assert-Condition ([Console]::InputEncoding.CodePage -eq 65001 -and [Console]::InputEncoding.GetPreamble().Length -eq 0) 'Process started without BOM-less UTF-8.'
     if ($script:mode -eq 'start') { throw 'private executable path' }
     return $true
   }
@@ -71,6 +72,7 @@ function Reset-Fakes($Present, $Value) {
   $script:process | Add-Member ScriptMethod Dispose { $this.Disposed = $true }
 }
 $savedEnvironment = @($env:GITHUB_ACTIONS, $env:RUNNER_ENVIRONMENT, $env:RUNNER_OS)
+$savedEncoding = [Console]::InputEncoding
 $OutputDirectory = Join-Path ([IO.Path]::GetTempPath()) ('alhangeul-app-runner-test-' + [Guid]::NewGuid())
 [void](New-Item -ItemType Directory -Path $OutputDirectory)
 $reportPath = Join-Path $OutputDirectory 'app-diagnostic.json'
@@ -91,12 +93,14 @@ $cases = @(
 )
 try {
   foreach ($case in $cases) {
+    [Console]::InputEncoding = [Text.UTF8Encoding]::new($true)
     $script:mode = $case[0]; Reset-Fakes $case[1] $case[2]
     $env:GITHUB_ACTIONS = 'true'; $env:RUNNER_ENVIRONMENT = 'github-hosted'; $env:RUNNER_OS = 'Windows'
     if ($script:mode -eq 'guard') { $env:RUNNER_ENVIRONMENT = 'self-hosted' }
     if ($script:mode -eq 'type') { $script:key.Kind = [Microsoft.Win32.RegistryValueKind]::String }
     $failed = $false
     try { [void](Invoke-InstalledAppDiagnostic $result $inventory '0.1.0') } catch { $failed = $true }
+    Assert-Condition ([Console]::InputEncoding.CodePage -eq 65001 -and [Console]::InputEncoding.GetPreamble().Length -eq 3) 'Original input encoding not restored.'
     $text = Get-Content -LiteralPath $reportPath -Raw
     $report = $text | ConvertFrom-Json
     Assert-Condition ($failed -eq ($null -ne $case[3]) -and $report.failureStage -ceq $case[3]) "Wrong failure stage: $($case[0]) / $($report.failureStage)"
@@ -113,6 +117,7 @@ try {
   }
   Write-Output "App runner boundaries: $($cases.Count) cases passed; mocked process/registry, no Windows Shell acceptance."
 } finally {
+  [Console]::InputEncoding = $savedEncoding
   $env:GITHUB_ACTIONS = $savedEnvironment[0]; $env:RUNNER_ENVIRONMENT = $savedEnvironment[1]; $env:RUNNER_OS = $savedEnvironment[2]
   if (Test-Path -LiteralPath $reportPath) { Remove-Item -LiteralPath $reportPath }
   Remove-Item -LiteralPath $OutputDirectory

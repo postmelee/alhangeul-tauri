@@ -3,7 +3,39 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: Stage 6.2 설치 앱 진단 harness 보정 후보 — 로컬 회귀 통과, Windows fast·설치 재검증 대기
+상태: Stage 6.2 실제 Windows IPC 회귀·인코딩 보정 진행 중
+
+### 2026-09-17 실제 프로세스 입력 바이트 회귀
+
+`0f526fa` fast `35209856244`는 통과했고 windows-package `35210590058`은 설치 검사에서
+실패했다. 세 시나리오 모두 process 시작/회수와 표시값 1→0→1 복원은 성공했으나 exit 1,
+stdout/stderr 길이 0, `transport-check` 실패였다. suite cleanup은 미확인(null)이다.
+이 결과만으로 BOM을 실제 중단 원인으로 확정하지 않는다.
+
+작업지시자는 Windows fast의 실제 프로세스/파이프 회귀와 전송 보정을 승인했다.
+기존 #57에서 `scripts/`의 시작 helper, `tests/`의 PS 회귀·작은 C# 수신 fixture만 추가한다.
+Windows .NET Framework의 StandardInput writer가 Console.InputEncoding을 사용하는 점을
+고려하여 Start 때만 BOM 없는 UTF-8을 선택하고 즉시 원래 인코딩을 복원한다. 설정 복원 중
+실패해도 시작된 own process를 회수한다. 제품 parser/판정, 레지스트리, installer는 바꾸지 않는다.
+실제 Windows 자식은 raw stdin의 BOM/UTF-8/길이와 고정 JSON envelope를 확인하고 EOF까지
+수신한다. 기존 방식(BOM 있는 Console.InputEncoding)의 전송과 보정 방식을 비교하며,
+회귀 증거에는 합성 입력의 바이트 통계·결과만 저장한다. 입력 내용이나 경로는 기록하지 않는다.
+기존 fast의 PS 자동 발견/증거 수집을 재사용한다. 로컬 Linux 순수 회귀 후 원격 fast로
+Windows 실제 파이프를 검증하고, 통과 전 새 제품/설치 재빌드를 반복하지 않는다.
+문서는 기존 계획·오늘할일에만 기록하며 Windows fixture는 Tauri/Shell 성공 증거가 아니다.
+
+구현: 공통 Start helper가 입력 인코딩을 일시 선택·복원하며, 출력/오류 인코딩도 UTF-8로
+고정한다. Windows 5.1 실제 GUI-subsystem 수신 fixture가 기본 환경과 강제 BOM 입력을
+비교하고, strict 수신 거부·보정 후 합성 한글 입력 hash·EOF/envelope·시작 실패 시 복원을
+확인한다. 시험용 실행 파일은 임시 디렉터리에서 생성·제거하며 설치/COM을 호출하지 않는다.
+기본 CI 입력 code page와 preamble 길이도 증거에 기록한다. 실제 생산 앱 실패 원인 확정은
+이 회귀와 후속 설치 결과를 구분해서 판단한다.
+
+- 로컬 Node automation 953건, product boundary 612파일, diff 검사 통과.
+- Colima Linux ARM64 PowerShell 7.4.6 대역 회귀 22건 통과(인코딩 복원 확인 포함).
+- 같은 Linux 환경에서 변경 PS 4파일 구문 검사 통과. Windows 전용 실프로세스 검사는 실행하지 않았다.
+- Windows 실제 프로세스 회귀는 원격 `fast`에서 실행한다. 제품 코드·workflow·lock 변경 없음.
+- 이전 실패 producer를 재사용하지 않으며 새 설치 빌드와 최종 full/VDI 수용은 아직 미완료다.
 
 ### 2026-09-17 설치 앱 진단 harness 보정
 

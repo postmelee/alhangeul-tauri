@@ -1,10 +1,11 @@
 # Sourced only by the disposable installer smoke, after initial Shell observations.
 . (Join-Path $PSScriptRoot 'windows-thumbnail-app-assessment.ps1')
 . (Join-Path $PSScriptRoot 'windows-thumbnail-app-display.ps1')
+. (Join-Path $PSScriptRoot 'windows-thumbnail-app-process.ps1')
 function New-AppDiagnosticProcess { return [Diagnostics.Process]::new() }
 
 function Invoke-AppDiagnosticTransport($Executable, $Report) {
-  $process = $null; $started = $false; $output = $null; $errors = $null
+  $process = $null; $output = $null; $errors = $null
   try {
     $Report.stage = 'process-configure'
     $process = New-AppDiagnosticProcess
@@ -15,10 +16,12 @@ function Invoke-AppDiagnosticTransport($Executable, $Report) {
       Arguments = '--alhangeul-thumbnail-diagnostic-child'
       UseShellExecute = $false; CreateNoWindow = $true
       RedirectStandardInput = $true; RedirectStandardOutput = $true; RedirectStandardError = $true
+      StandardOutputEncoding = [Text.UTF8Encoding]::new($false, $true)
+      StandardErrorEncoding = [Text.UTF8Encoding]::new($false, $true)
     }
     $Report.stage = 'process-start'
-    $started = $process.Start(); $Report.processStarted = $started
-    Assert-Condition $started 'App diagnostic process did not start.'
+    Start-AppDiagnosticProcess $process $Report
+    Assert-Condition $Report.processStarted 'App diagnostic process did not start.'
     $Report.stage = 'pipe-open'
     $output = $process.StandardOutput.ReadToEndAsync()
     $errors = $process.StandardError.ReadToEndAsync()
@@ -43,7 +46,7 @@ function Invoke-AppDiagnosticTransport($Executable, $Report) {
     throw
   } finally {
     try {
-      if ($started) {
+      if ($Report.processStarted) {
         $Report.processReaped = $false
         if (-not $process.HasExited) { $process.Kill(); [void]$process.WaitForExit(5000) }
         $Report.processReaped = $process.HasExited
