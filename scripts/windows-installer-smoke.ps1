@@ -25,6 +25,7 @@ function Assert-Condition($Condition, $Message) { if (-not $Condition) { throw $
 . (Join-Path $PSScriptRoot 'windows-thumbnail-smoke.ps1')
 . (Join-Path $PSScriptRoot 'windows-thumbnail-fixtures.ps1')
 . (Join-Path $PSScriptRoot 'windows-thumbnail-assessment.ps1')
+. (Join-Path $PSScriptRoot 'windows-thumbnail-app-smoke.ps1')
 . (Join-Path $PSScriptRoot 'windows-installer-reboot.ps1')
 . (Join-Path $PSScriptRoot 'windows-process-lifecycle.ps1')
 function Assert-InventoryRecord($Kind, $File, $Inventory, $Root) {
@@ -128,6 +129,7 @@ function Invoke-InstalledChecks($Result, $Kind, $InstallDirectory, $BaselineDefa
   Invoke-Check $Result 'thumbnail-render' 'ThumbnailFixtures' { Invoke-ThumbnailFixtureProbe $Result 'initial' }
   $firstShell = @($Result.Probes | Where-Object { $_.Label -match '^initial-.*-shell$' })
   $Result.InitialShellSucceeded = $firstShell.Count -eq 4 -and @($firstShell | Where-Object { $_.Result.status -ne 'ok' }).Count -eq 0
+  Invoke-Check $Result 'app-diagnostics' 'AppDiagnostic' { Invoke-InstalledAppDiagnostic $Result $artifacts.Inventory $ExpectedVersion }
   Invoke-Check $Result 'reinstall' 'Reinstall' { Invoke-ReinstallChecks $Result $Kind $InstallDirectory $ThumbnailSentinels }
   Invoke-Check $Result 'shortcut' 'ShortcutCheck' { Assert-Condition $state.Shortcuts.Valid 'shortcut target이 다릅니다.'; return $true }
   $Result.DefaultsAfterInstall = Get-DefaultState

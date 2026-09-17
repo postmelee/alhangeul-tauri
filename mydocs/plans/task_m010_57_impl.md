@@ -3,7 +3,51 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: Stage 6.2 사용자 경험 보정 후보 — 로컬 검증 통과, 원격 full·실제 앱 수용 대기
+상태: Stage 6.2 VDI 진단 중단 보정 후보 — 로컬 검증 후 Windows fast/full·VDI 확인 대기
+
+### 2026-09-17 VDI 실제 앱 진단 중단 보정
+
+`3b5804d` full run `35170760770`은 계약상 성공했으나 VDI 실제 앱 suite는
+HWP/JPG `0x80070057`, HWP cache-only까지 4건 수집 후 중단됐고 HWPX는 미실행이었다.
+사용자가 경로 안전성 유지·진단 중단 표시·설치된 앱 회귀의 세 가지 보정을 승인했다.
+기존 #57 worktree/단계에서 진행하며 전체 6.3 완료나 새로운 환경 실험으로 확대하지 않는다.
+
+- `local_file`의 canonical 경로·handle·reparse 검사는 유지한다. Shell 경계에만 검증된
+  로컬 drive 경로를 전달하는 helper를 추가한다. 모호한 이름·장치/UNC·과도한 길이는 거부하고
+  UTF-16을 손실 없이 보존한다. Windows 공개 JPG 실호출과 경로 단위 회귀를 추가한다.
+- 미실행/중단/유효 결과를 UI에서 구분한다. 요약에 allowlist 기반 오류 phase를 추가하고
+  미완료 시 integrity/등록 안정성 false를 실제 변조로 오해하지 않도록 미확인으로 표시한다.
+  native 판정 완화나 MSI 조건 변경은 하지 않는다.
+- 기존 최초 Shell 관측 뒤에 설치된 앱의 headless suite를 실행한다. bounded process,
+  exact source/version/reference bytes, 형식별 전체 probe/판정/정리와 기존 관측을 대조한다.
+  전용 PS helper·테스트를 기존 scripts/tests에 두고 기존 installer smoke에 연결한다.
+  앱 검사 실패는 기존 NSIS 제한 허용으로 상쇄하지 않는다. 기존 ordinary/reuse 소유 경계 유지.
+- 문서는 기존 계획·오늘할일에만 기록하고 공식 문서 위치를 추가하지 않는다.
+  휴대 가능한 TS/Node, Colima Linux Rust/PS 가능한 범위와 Windows 전용 회귀를 구분한다.
+  원격은 먼저 fast, 제품·공유 UI·설치 검사 변경의 최종 검증은 새 exact 후보 full이다.
+  VDI 재현 해결은 새 Windows bytes의 관측 전에는 확정하지 않는다.
+
+구현 결과: Shell API 인수에만 일반 로컬 drive parsing name을 전달하고 기존 파일 identity
+검사는 유지했다. 미완료/미검사 카드와 정제된 오류 phase, 미확인 integrity/등록 안정성의
+`null` 요약을 추가했다. 기존 설치 smoke의 최초 Shell 관측 뒤 설치 앱의 headless suite를
+연결했으며 별도 workflow/job은 만들지 않았다. 원시 10개 probe를 기존 PS 판정기로 대조하고
+앱 진단 실패는 `app-diagnostics` 실패로 기록한다. UI bridge 자체의 Windows 수용은 별도다.
+
+- Studio 166개, automation 951개, upstream 36개, boundary 608파일 통과.
+- Studio build·브라우저 harness 타입 검사·diff 검사 통과. 기존 번들 경고 유지.
+- 실제 DOM 41항목 통과(synthetic bridge). 중단된 HWP/미실행 HWPX, 오류 phase,
+  MSI 권고 없음, 미확인 값 요약 복사를 추가 확인했다. 검증용 탭만 닫고 기존 서버는 보존했다.
+- Colima Linux 경로 helper Rust 단위 테스트 2개와 변경 Rust 파일 rustfmt 통과.
+  Windows 공개 JPG Shell/cache 실호출 테스트는 추가했으나 아직 실행하지 않았다.
+- Linux ARM64 PowerShell 7.4.6 구문 검사 4파일 통과. 순수 앱 회귀 실행은 기존 bitmap
+  계약의 `[int]`와 PowerShell 7 JSON의 `Int64` 차이로 실패했다. 계약을 완화하지 않았으며,
+  실제 workflow의 Windows PowerShell 5.1 `fast`에서 실행 검증해야 한다. 통과로 기록하지 않는다.
+- 첫 Linux amd64 PowerShell 시도는 QEMU/.NET 런타임 오류로 종료했다. 해당 컨테이너만
+  정리하고 생성된 core 파일은 저장소 밖 `/private/tmp/task57-pwsh-20260917-031312.core`로
+  이동해 보존했다. 제품·로컬 시스템 정책은 변경하지 않았다.
+- 이 후보의 원격 게시/CI는 아직 실행하지 않았다. 다음 승인 범위는 non-force 후보 게시와
+  `fast`이며, 통과 후 같은 제품 후보의 최종 `full`과 VDI 재확인이다. 새 Windows bytes에서
+  진단 완료와 실제 썸네일을 확인하기 전에는 원인 확정·해결·Stage 6.2 완료를 선언하지 않는다.
 
 ### 2026-09-17 사용자 경험 보정
 

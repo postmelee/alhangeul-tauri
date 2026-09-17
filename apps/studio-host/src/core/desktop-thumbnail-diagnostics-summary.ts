@@ -1,4 +1,4 @@
-import { findingMessages, inspectionOf, safeProbeLabel, type DiagnosticSnapshot, type Observation } from './desktop-thumbnail-diagnostics-model';
+import { findingMessages, inspectionOf, safeProbeLabel, safeProbePhase, type DiagnosticSnapshot, type Observation } from './desktop-thumbnail-diagnostics-model';
 
 function choice(value: string, allowed: readonly string[]): string {
   return allowed.includes(value) ? value : 'unknown';
@@ -41,11 +41,12 @@ export function diagnosticSummary(snapshot: DiagnosticSnapshot): string {
       finding: choice(assessment.finding, Object.keys(findingMessages)),
       recommendedAction: choice(assessment.recommendedAction, ['none', 'check-diagnostics', 'check-shell-environment', 'investigate', 'consider-msi', 'check-install-history']),
       evidenceValid: assessment.evidenceValid === true, thumbnailPassed: assessment.thumbnailPassed === true,
-      integrity: input.integrity === true, cleanup: input.cleanup === true,
-      registrationStable: input.registrationStable === true,
+      integrity: suite?.status === 'completed' ? input.integrity === true : null, cleanup: input.cleanup === true,
+      registrationStable: suite?.status === 'completed' ? input.registrationStable === true : null,
       probes: input.probes.slice(0, 10).map(({ Label, Result: probe }) => ({
         label: safeProbeLabel(Label),
         mode: choice(probe.mode, ['association', 'activate', 'shell', 'cache-only', 'force-extract']),
+        phase: safeProbePhase(probe.phase),
         hresult: /^0x[0-9a-fA-F]{8}$/.test(probe.hresult) ? probe.hresult : null,
         bitmapPresent: typeof probe.bitmapPresent === 'boolean' ? probe.bitmapPresent : null,
       })),

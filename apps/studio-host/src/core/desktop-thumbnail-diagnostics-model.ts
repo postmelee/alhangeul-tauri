@@ -89,3 +89,10 @@ export function safeProbeLabel(label: string): string {
   return /^manual-(association-(hwp|hwpx)|activate|(after-force-)?(document|control-jpg)-(shell|cache-only|force-extract))$/.test(label)
     ? label : 'unknown';
 }
+
+export function safeProbePhase(phase: string): string {
+  return ['input.shellPath', 'AssocQueryStringW', 'CoCreateInstance.handler',
+    'SHCreateItemFromParsingName.imageFactory', 'IShellItemImageFactory.GetImage',
+    'SHCreateItemFromParsingName.shellItem', 'CoCreateInstance.thumbnailCache',
+    'IThumbnailCache.GetThumbnail', 'ISharedBitmap.GetSharedBitmap'].includes(phase) ? phase : 'unknown';
+}

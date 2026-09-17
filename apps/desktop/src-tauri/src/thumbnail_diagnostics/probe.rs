@@ -110,11 +110,12 @@ pub fn image(_sta: &Sta, path: &Path, mode: ImageMode) -> Probe {
         ImageMode::CacheOnly => "cache-only",
         ImageMode::ForceExtract => "force-extract",
     });
-    let mut path: Vec<u16> = path.as_os_str().encode_wide().collect();
-    if path.contains(&0) || path.len() > 32766 {
+    let units: Vec<u16> = path.as_os_str().encode_wide().collect();
+    let Ok(path) = super::shell_path::parsing_name(&units) else {
+        probe.phase = "input.shellPath".into();
+        checked(&mut probe, HRESULT(0x80070057u32 as i32));
         return probe;
-    }
-    path.push(0);
+    };
     // SAFETY: caller supplies only owned, preflighted fixture paths. Storage
     // remains alive for the whole synchronous call in this bounded child.
     let result = unsafe {

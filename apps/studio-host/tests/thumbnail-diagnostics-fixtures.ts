@@ -15,7 +15,7 @@ export const inspection: Inspection = {
 export function formatResult(extension: '.hwp' | '.hwpx', passed = true): FormatResult {
   return {
     input: { extension, registration: inspection.registration[0], integrity: true, cleanup: true,
-      registrationStable: true, probes: [{ Label: 'manual-document-shell', Result: { mode: 'shell', phase: 'shell', status: passed ? 'ok' : 'failed', hresult: passed ? '0x00000000' : '0x80040154', bitmapPresent: passed } }] },
+      registrationStable: true, probes: [{ Label: 'manual-document-shell', Result: { mode: 'shell', phase: 'IShellItemImageFactory.GetImage', status: passed ? 'ok' : 'failed', hresult: passed ? '0x00000000' : '0x80040154', bitmapPresent: passed } }] },
     assessment: { finding: passed ? 'thumbnail-api-ok' : 'per-user-shell-activation-failed',
       recommendedAction: passed ? 'none' : 'consider-msi', evidenceValid: true, thumbnailPassed: passed },
   };

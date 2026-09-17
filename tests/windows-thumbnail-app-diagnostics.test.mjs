@@ -12,6 +12,19 @@ const identity = { sourceSha: 'a'.repeat(40), productVersion: '0.1.0' };
 const binaries = [Buffer.from('synthetic handler'), Buffer.from('synthetic worker')];
 const read = (file) => readFile(new URL(`../${file}`, import.meta.url), 'utf8');
 
+test('installed native suite runs after initial observations and cannot be waived as NSIS failure', async () => {
+  const smoke = await read('scripts/windows-installer-smoke.ps1');
+  const runner = await read('scripts/windows-thumbnail-app-smoke.ps1');
+  assert.ok(smoke.includes("'app-diagnostics' 'AppDiagnostic'"));
+  assert.ok(smoke.indexOf('Invoke-InstalledAppDiagnostic $Result') > smoke.indexOf("Invoke-ThumbnailFixtureProbe $Result 'initial'"));
+  assert.ok(smoke.indexOf('Invoke-InstalledAppDiagnostic $Result') < smoke.indexOf('Invoke-ReinstallChecks $Result'));
+  assert.match(runner, /--alhangeul-thumbnail-diagnostic-child/);
+  assert.match(runner, /WaitForExit\(210000\)/);
+  assert.match(runner, /Assert-AppDiagnostic/);
+  assert.match(runner, /Get-AppDiagnosticEvidence/);
+  assert.doesNotMatch(runner, /Set-ExecutionPolicy|regsvr32|Set-ItemProperty/);
+});
+
 async function temporary(t) {
   const directory = await mkdtemp(join(tmpdir(), 'alhangeul-reference-test-'));
   // Only this freshly-created test directory is owned by this test.

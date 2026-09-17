@@ -18,6 +18,8 @@ mod scratch_delete;
 #[cfg(any(windows, test))]
 mod scratch_io;
 mod scratch_manifest;
+#[cfg(any(windows, test))]
+mod shell_path;
 pub(crate) mod ui_service;
 // Pure ownership/deadline contract shared by the headless and UI services.
 #[cfg_attr(not(test), allow(dead_code))]
@@ -61,6 +63,8 @@ mod token;
 mod assessment_tests;
 #[cfg(all(test, windows))]
 mod process_tests;
+#[cfg(all(test, windows))]
+mod probe_tests;
 #[cfg(test)]
 mod protocol_tests;
 #[cfg(test)]

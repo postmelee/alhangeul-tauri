@@ -1,8 +1,8 @@
 import {
-  findingMessage, inspectionOf, offerMsi, safeProbeLabel,
+  findingMessage, inspectionOf, offerMsi, safeProbeLabel, safeProbePhase,
   type DiagnosticSnapshot, type DiagnosticView, type FormatResult,
 } from '../core/desktop-thumbnail-diagnostics-model';
-import { completion, formatPassed } from './thumbnail-diagnostics-presentation';
+import { completion, formatPresentation } from './thumbnail-diagnostics-presentation';
 
 export function paragraph(parent: HTMLElement, text: string): HTMLParagraphElement {
   const node = document.createElement('p');
@@ -25,15 +25,15 @@ function formatCards(parent: HTMLElement, snapshot: DiagnosticSnapshot): void {
   for (const extension of ['.hwp', '.hwpx']) {
     const matches = snapshot.result.value.formats.filter((format) => format.input.extension === extension);
     const format = matches.length === 1 ? matches[0] : null;
-    const passed = format && formatPassed(snapshot, format);
+    const presentation = formatPresentation(snapshot, format);
     const card = document.createElement('section');
     card.className = 'thumbnail-format-card';
-    card.dataset.tone = passed ? 'success' : 'warning';
+    card.dataset.tone = presentation.tone;
     const title = document.createElement('h3');
     title.textContent = extension.slice(1).toUpperCase();
     card.append(title);
-    paragraph(card, passed ? '✓ 검사 통과' : '！확인 필요').className = 'thumbnail-format-status';
-    paragraph(card, passed ? '테스트 문서의 썸네일을 생성했습니다.' : '썸네일 생성 성공을 확인하지 못했습니다.');
+    paragraph(card, presentation.status).className = 'thumbnail-format-status';
+    paragraph(card, presentation.description);
     cards.append(card);
   }
   parent.append(cards);
@@ -64,7 +64,7 @@ function probeDetails(parent: HTMLElement, { input, assessment }: FormatResult):
   for (const { Label, Result: probe } of input.probes) {
     const code = /^0x[0-9a-fA-F]{8}$/.test(probe.hresult) ? probe.hresult : '확인 불가';
     const bitmap = probe.bitmapPresent === true ? '있음' : probe.bitmapPresent === false ? '없음' : '해당 없음';
-    paragraph(node, `${safeProbeLabel(Label)}: ${code}, 비트맵 ${bitmap}`);
+    paragraph(node, `${safeProbeLabel(Label)}: ${code}, 비트맵 ${bitmap} — 단계: ${safeProbePhase(probe.phase)}`);
   }
 }
 function technicalDetails(parent: HTMLElement, snapshot: DiagnosticSnapshot): void {

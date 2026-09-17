@@ -77,6 +77,32 @@ async function cancellation() {
   document.querySelector('dialog')!.dispatchEvent(new Event('cancel', { cancelable: true }));
   assert(!document.querySelector('dialog'), 'Escape cancel 이벤트로 닫기');
 }
+async function interruptedDiagnostics() {
+  const result = completed(); result.status = 'failed';
+  if (result.result?.kind !== 'suite') throw new Error('suite fixture missing');
+  result.result.value.status = 'failed';
+  for (const format of result.result.value.formats) {
+    format.input.integrity = false; format.input.registrationStable = false;
+    format.assessment = { finding: 'diagnostic-invalid', recommendedAction: 'check-diagnostics', evidenceValid: false, thumbnailPassed: false };
+  }
+  result.result.value.formats[0].input.probes[0].Result = {
+    mode: 'shell', phase: 'SHCreateItemFromParsingName.imageFactory', status: 'failed', hresult: '0x80070057', bitmapPresent: null,
+  };
+  result.result.value.formats[1].input.probes = [];
+  const sample = setup(result);
+  try {
+    await settle(); button('동의하고 검사').click(); await settle();
+    const cards = document.querySelectorAll('.thumbnail-format-card');
+    assert(cards[0]?.textContent?.includes('진단 미완료'), '중단된 HWP 진단을 썸네일 실패와 구분');
+    assert(cards[1]?.textContent?.includes('미검사'), '시작하지 않은 HWPX는 미검사 표시');
+    assert(document.querySelector('dialog')!.textContent!.includes('진단을 완료하지 못했어요'), '중단된 진단의 제목을 기능 실패와 구분');
+    assert(document.querySelector('dialog')!.textContent!.includes('SHCreateItemFromParsingName.imageFactory'), '정제한 API 실패 단계 표시');
+    assert(button('공식 설치 안내 열기').hidden, '진단 중단에는 MSI 전환 권고 없음');
+    button('진단 요약 복사').click(); await settle();
+    const summary = JSON.parse((document.querySelector('dialog textarea') as HTMLTextAreaElement).value);
+    assert(summary.formats[0].integrity === null && summary.formats[1].registrationStable === null, '중단 후 미확인 상태를 무결성 실패로 복사하지 않음');
+  } finally { sample.dialog.hide(); }
+}
 function aboutExposure() {
   const platform = Object.getOwnPropertyDescriptor(navigator, 'platform');
   const userAgent = Object.getOwnPropertyDescriptor(navigator, 'userAgent');
@@ -103,7 +129,7 @@ document.querySelector('#tests')!.addEventListener('click', () => {
     const clipboard = Object.getOwnPropertyDescriptor(navigator, 'clipboard');
     Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async () => { throw new Error('denied'); } } });
     try {
-      aboutExposure(); await resultsAndCopy(); await cancellation();
+      aboutExposure(); await resultsAndCopy(); await cancellation(); await interruptedDiagnostics();
       const { dialog } = setup(completed()); await settle(); button('동의하고 검사').click(); await settle();
       assert(button('공식 설치 안내 열기').hidden, '전체 성공이면 MSI 안내 없음'); dialog.hide();
       for (const status of ['cancelled', 'timed-out', 'failed'] as const) {
