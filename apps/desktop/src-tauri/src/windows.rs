@@ -90,6 +90,7 @@ pub fn attach_window_cleanup(app: &AppHandle, window: &WebviewWindow) {
     let label = window.label().to_string();
     window.on_window_event(move |event| {
         if matches!(event, WindowEvent::Destroyed) {
+            crate::thumbnail_diagnostic_commands::close_owner(&app, &label);
             app.state::<crate::state::AppState>()
                 .pending_open_paths
                 .discard_for_window(&label);

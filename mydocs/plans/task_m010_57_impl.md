@@ -3,7 +3,58 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: Stage 6.1.3 문서 정합화·검증 완료 — 단계 보고 검토 및 6.2 진입 승인 대기
+상태: Stage 6.2 구현·로컬 검증 완료 — Windows native/full·실제 앱 수용 대기
+
+### 2026-09-17 사용자 진단 UI 연결
+
+`dbb337a` 보고 뒤 “진행해줘”로 아래 Stage 6.2 구현을 승인받았다. 기존 worktree에서
+진행하며 순수 command 상태/소유권 helper와 UI rendering/요약 helper를 역할별로 분리한다.
+공식 문서 위치는 변경하지 않는다. native command는 비지원 플랫폼에서 즉시 거부하고,
+Windows backend만 조건부 컴파일한다. Mac에서는 휴대 가능한 TS/Node 검증만 실행한다.
+새 의존성 없이 기존 브라우저 harness를 우선 검토하며 Windows native·실제 UI 수용은
+별도 근거로 남긴다. 공유 UI의 최종 CI는 full이고 fast만으로 제품 수용을 선언하지 않는다.
+
+#### 구현 후보와 검증 결과
+
+- 제품 정보의 Windows 전용 진입점과 동의·취소·닫기·형식별 결과·조건부 MSI 안내를 연결했다.
+  상세 API 근거는 접을 수 있게 분리했다. 기존 updater의 고정 안내 페이지 command만 재사용한다.
+- `ui_service.rs`는 앱 전체 단일 작업·서버가 정한 창 소유권·reload 복구·늦은 결과 차단을
+  담당한다. Tauri adapter는 `thumbnail_diagnostics/commands.rs`를 별도 루트 모듈로 적재해
+  Linux에서는 즉시 unsupported를 반환하고 Windows에서만 엔진에 연결한다. 창 종료 hook을
+  기존 문서/PDF 정리와 병행한다. 기존 suite의 제한 시간과 cleanup을 그대로 사용한다.
+- 요약은 명시적인 allowlist로 만들며 clipboard는 버튼을 누를 때만 호출한다. 경로·SID·
+  사용자명·state token·예외 문자열·bitmap bytes를 내보내지 않는다. 실패 시 같은 정제 요약을
+  수동 복사 입력으로 제공한다. 설치 범위 변경·자동 수리·새 CI 실험·#67 구현은 없다.
+- `apps/studio-host/tests/`의 Vite 실제 DOM harness를 추가했다. 신규 JS 의존성·제품 entry·
+  lock 변경 없이 실제 dialog/controller를 synthetic bridge로 실행한다. 기존 upstream modal의
+  Tab 차단을 피하기 위해 이 진단 창만 HTML dialog의 modal focus/Escape를 사용한다.
+
+| 검증 | 결과 / 한계 |
+|---|---|
+| `pnpm run test:studio` | 26파일, 159개 통과 |
+| `pnpm run build:studio` | 통과; 기존 chunk 크기·static/dynamic import 경고 유지 |
+| `pnpm run test:automation` | 950개 통과, `/private/tmp/task57-stage62-automation.log` |
+| `pnpm run test:upstream` | 36개 통과 |
+| `pnpm run check:product-boundary` | 600파일 통과 |
+| `pnpm --filter @postmelee/alhangeul-studio-host exec tsc -p tests/tsconfig.json` | 브라우저 harness까지 타입 검사 통과 |
+| 실제 DOM harness | 노출 3조건, 동의/중복 클릭, 부분/전체 결과, 오프라인, 복사 실패, 취소/닫기 등 21항목 통과 |
+| 브라우저 수동 키보드/작은 창 | Tab·Enter·Escape와 원래 focus 복귀, 480×600에서 가로 넘침 없이 세로 스크롤 확인 |
+| Colima Linux 순수 Rust harness | 실제 `ui_service`/service 및 연결된 순수 모듈 테스트 7개 통과; 전체 제품 lock/Tauri/Windows COM 검증 아님 |
+| Linux rustfmt / `git diff --check` | 변경 Rust 파일 포맷 및 diff 검사 통과 |
+
+DOM 재현: `apps/studio-host`에서
+`pnpm exec vite --config tests/thumbnail-diagnostics.vite.config.ts` 실행 후
+`http://127.0.0.1:7717/thumbnail-diagnostics.html`의 ‘DOM 회귀 실행’을 누른다.
+합성 결과는 실제 썸네일 생성 성공 근거가 아니며 clipboard 실패 테스트는 테스트 페이지에서만
+의도적으로 제한한다. 검증용 브라우저 viewport는 원복하고 임시 서버/탭은 종료한다.
+
+초기 Linux 포맷 명령은 login shell의 PATH 때문에 rustup을 찾지 못해 non-login shell로
+수정했다. 임시 harness 경로는 Colima에 공유되지 않아 tar stdin으로 전달해 실행했다.
+Mac용 Rust 실행·제품 dependency 변경은 없으며 native 전체 검증은 여전히 남아 있다.
+다음 승인 대상은 이 후보의 non-force 게시와 `ci.yml profile=full, scope=full` 1회다.
+full에 빠른 계약 검사가 포함되므로 변경 없는 별도 fast/full 반복을 만들지 않는다.
+기존 artifact는 변경된 제품을 검증하지 못한다. 새 full·Windows command 실행·실제 앱 UI
+수용 전에는 Stage 6.2 완료 보고나 #57 전체 완료를 선언하지 않는다.
 
 ### 2026-09-17 공식 문서 정합화
 

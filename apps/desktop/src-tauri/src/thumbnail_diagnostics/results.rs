@@ -14,7 +14,7 @@ pub struct Inspection {
     pub state_token: String,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ProbeResult {
     pub probe: Probe,
@@ -23,14 +23,14 @@ pub struct ProbeResult {
     pub state_token: String,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct FormatResult {
     pub input: CheckInput,
     pub assessment: Assessment,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct SuiteResult {
     pub status: Status,
@@ -39,7 +39,7 @@ pub struct SuiteResult {
     pub formats: Vec<FormatResult>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(
     tag = "kind",
     content = "value",

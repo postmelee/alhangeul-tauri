@@ -12,6 +12,8 @@ mod pending_open;
 mod recent_documents;
 mod state;
 mod system_print;
+#[path = "thumbnail_diagnostics/commands.rs"]
+mod thumbnail_diagnostic_commands;
 #[cfg(any(windows, test))]
 mod thumbnail_diagnostics;
 mod updater;
@@ -32,6 +34,10 @@ use commands::{
     render_page_svg, reveal_in_folder, take_pending_open_paths,
 };
 use state::AppState;
+use thumbnail_diagnostic_commands::{
+    thumbnail_diagnostics_cancel, thumbnail_diagnostics_get_state, thumbnail_diagnostics_inspect,
+    thumbnail_diagnostics_start,
+};
 use updater::commands::{
     updater_apply, updater_check, updater_get_state, updater_open_manual_downloads, updater_restart,
 };
@@ -64,6 +70,7 @@ pub fn run() {
             });
         }))
         .setup(|app| {
+            thumbnail_diagnostic_commands::setup(app.handle());
             if let Err(error) = pdf_temp_cleanup::cleanup_orphan_pdf_temp_dirs() {
                 eprintln!("[pdf] 오래된 임시 디렉터리 정리를 건너뜁니다: {error}");
             }
@@ -112,6 +119,10 @@ pub fn run() {
             updater_apply,
             updater_open_manual_downloads,
             updater_restart,
+            thumbnail_diagnostics_inspect,
+            thumbnail_diagnostics_start,
+            thumbnail_diagnostics_get_state,
+            thumbnail_diagnostics_cancel,
         ])
         .build(tauri::generate_context!())
         .expect("failed to build Alhangeul desktop app");

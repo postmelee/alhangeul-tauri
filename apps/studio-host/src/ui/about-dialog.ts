@@ -1,6 +1,7 @@
 import { AboutDialog as UpstreamAboutDialog } from '@upstream/ui/about-dialog';
 import { isTauriRuntime } from '../core/platform';
 import { showUpdateDialog } from './update-dialog';
+import { thumbnailDiagnosticsAvailable } from '../core/desktop-thumbnail-diagnostics';
 
 export class AboutDialog extends UpstreamAboutDialog {
   protected override createBody(): HTMLElement {
@@ -29,6 +30,21 @@ export class AboutDialog extends UpstreamAboutDialog {
       alhangeulVersion.insertAdjacentElement('afterend', updateButton);
     }
 
+    if (thumbnailDiagnosticsAvailable()) {
+      const button = document.createElement('button');
+      button.className = 'dialog-btn about-thumbnail-diagnostics-button';
+      button.textContent = 'Windows 썸네일 진단…';
+      button.addEventListener('click', () => {
+        this.hide();
+        void import('./thumbnail-diagnostics-dialog')
+          .then(({ showThumbnailDiagnosticsDialog }) => showThumbnailDiagnosticsDialog())
+          .catch(() => {
+            const status = document.getElementById('sb-message');
+            if (status) status.textContent = '썸네일 진단 창을 열지 못했습니다. 다시 시도하세요.';
+          });
+      });
+      body.appendChild(button);
+    }
     return body;
   }
 }

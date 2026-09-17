@@ -1,4 +1,4 @@
-//! Windows headless diagnostics and pure contracts. No Tauri commands yet.
+//! Windows diagnostics and pure contracts; UI commands use the same suite.
 
 pub(crate) mod assessment;
 mod child_input;
@@ -10,7 +10,7 @@ pub(crate) mod model;
 pub(crate) mod protocol;
 pub(crate) mod reference;
 pub(crate) mod registration;
-mod results;
+pub(crate) mod results;
 #[cfg(any(windows, test))]
 mod scratch;
 #[cfg(any(windows, test))]
@@ -18,10 +18,11 @@ mod scratch_delete;
 #[cfg(any(windows, test))]
 mod scratch_io;
 mod scratch_manifest;
-// Window ownership APIs are compiled/tested now; their Tauri caller is Stage 6.2.
+pub(crate) mod ui_service;
+// Pure ownership/deadline contract shared by the headless and UI services.
 #[cfg_attr(not(test), allow(dead_code))]
 pub(crate) mod service;
-mod suite;
+pub(crate) mod suite;
 pub(crate) mod suite_plan;
 pub(crate) mod transport;
 
@@ -30,7 +31,7 @@ pub(crate) mod child;
 #[cfg(windows)]
 mod com;
 #[cfg(windows)]
-mod dispatch;
+pub(crate) mod dispatch;
 #[cfg(windows)]
 mod environment_native;
 #[cfg(windows)]
