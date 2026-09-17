@@ -2,7 +2,7 @@
 
 Alhangeul은 Windows Explorer가 `.hwp`와 `.hwpx` 파일의 첫 페이지 thumbnail을 요청할 때 작은 COM handler DLL과 제한된 별도 worker를 사용한다. 문서 parse와 raster는 Shell process 안에서 실행하지 않는다.
 
-Stage 6 VDI 수동 UI에서 일부 문서의 직접 bitmap에 text가 빠지는 결함을 확인해 Stage 6.1에서 font-aware raster와 representative visual gate를 보정했다. 일회성 Windows worker는 system font directory를 스캔하지 않고 pinned NotoSansKR 두 파일만 process-local database에 등록한다. exact SHA `2a1a9c556fdb844ecea4fddb0a6336d9d9481078`의 CI, Windows/Linux native build, fresh-install MSI·NSIS 실제 Shell bitmap smoke와 Windows VDI Explorer 재수용이 모두 통과했다. 이는 공개 installer, release, 서명이나 updater 승인을 뜻하지 않는다.
+Task #14의 Stage 6 VDI 수동 UI에서 일부 문서의 직접 bitmap에 text가 빠지는 결함을 확인해 Stage 6.1에서 font-aware raster와 representative visual gate를 보정했다. 일회성 Windows worker는 system font directory를 스캔하지 않고 pinned NotoSansKR 두 파일만 process-local database에 등록한다. 당시 exact SHA `2a1a9c556fdb844ecea4fddb0a6336d9d9481078`의 CI, Windows/Linux native build, fresh-install MSI·NSIS 실제 Shell bitmap smoke와 Windows VDI Explorer 재수용이 통과했다. 이 역사적 수용은 이후 모든 설치 환경이나 최신 후보의 성공을 보장하지 않으며 공개 installer, release, 서명이나 updater 승인도 아니다. 최신 제한은 아래 수동 진단 절을 따른다.
 
 ## 고정 계약
 
@@ -153,6 +153,12 @@ build script는 DLL과 worker를 고정 filename으로 stage하고 PE x64 machin
 
 다른 host의 platform-neutral test는 protocol, bounds와 source 계약을 고정하지만 PE, COM host, installer transaction과 실제 Shell 호출을 대신하지 않는다.
 
+현재 CI는 NSIS-only·MSI-only·MSI 강제 재설치를 별도 runner에서 검사한다. 개별 진단 계약이
+통과해도 NSIS의 실제 bitmap 실패나 forced MSI의 재부팅 후 미검증은 남을 수 있다.
+경량 집계는 필수 검사·upload·최종 gate 상태를 확인할 뿐 독립 증거 재검산이 아니다.
+`contract_status=passed`만으로 썸네일 지원을 판단하지 말고
+[실제 관측 판독 기준](../operations/CI_VALIDATION.md#windows-설치-계약과-실제-관측)을 따른다.
+
 ## 수동 Explorer gate와 한계
 
 Stage 6과 시각 보정 Stage 6.1에서는 source와 hosted 자동 gate를 통과한 같은 exact SHA의 installer를 Windows VDI에 설치해 다음을 확인한다.
@@ -178,6 +184,14 @@ NSIS의 연결 조회·직접 COM 생성·JPG 썸네일이 성공하고 HWP/HWPX
 `0x80040154`로 실패했다. MSI 일반 설치·재설치·제거는 통과했다. 이 환경은
 `EnableLUA=1`이었다. 한글 버전이나 UAC 값만으로 원인을 확정하지 않는다.
 실제 한컴 설치 대신 synthetic 등록값을 사용한 CI이며 일반 Windows 10/11 Explorer UI의 보장은 아니다.
+
+이후 [최신 CI 관측](../releases/v0.1.0.md#windows-썸네일-진단-수용과-잔여-제한)에서도
+NSIS의 같은 실패와 MSI 성공이 확인됐다. 전체 CI가 성공한 것은 제한을 보존하는 검사 계약을
+통과했기 때문이지 NSIS 문제가 해결됐기 때문이 아니다. 사용자별 NSIS와 MSI 배포 방식을
+유지하며 전체 사용자 NSIS·UAC/HKLM 변경 실험은 중단했다. UAC 값·관리자 여부·한컴 버전만으로
+실패를 단정하거나 MSI 설치를 일괄 권유하지 않는다. 아래의 실제 진단 패턴에 해당할 때 대안을 검토한다.
+이 절의 지원 수단은 수동 진단 묶음이다. 앱 내 진단·동의·MSI 안내 UI와 최신 VDI 후보 검증은
+#57 후속 단계이며 아직 제공·검증 완료로 안내하지 않는다.
 
 ### 시험용 진단 묶음 사용
 

@@ -12,7 +12,7 @@
 | 기존 artifact 검증 | product SHA + harness SHA + run/ID/digest | 같은 bytes의 installer/회귀 검사 | 변경된 제품 source 검증 |
 | 전체 artifact 수용 | 모든 지원 platform 및 tests/core | 필수 job 상태 집계 | GUI·updater·공개 릴리즈 승인 |
 
-빠른 계약 → 플랫폼별 제품 생성 → 해당 플랫폼 설치 검증 순서다. core 진단은 제품 생성과 병렬이며 전체 수용에서 합류한다. Windows 검증은 Linux 빌드 결과에 의존하지 않는다. 단계 자체가 실패하면 후속 gate는 실패·미검증 상태를 보존한다.
+빠른 계약 → 플랫폼별 제품 생성 → 해당 플랫폼 설치 검증 순서다. core 진단은 제품 생성과 병렬이며 전체 수용에서 합류한다. Windows 검증은 Linux 빌드 결과에 의존하지 않는다. 필수 검사 실패·미검증은 후속 gate로 전달한다. 설치의 원시 실패와 사전 정의한 진단 계약의 성공은 아래 상태 해석에 따라 별도로 기록한다.
 
 ## 작업별 실행 방법
 
@@ -93,6 +93,13 @@ Linux/core 실패가 남은 run의 Windows archive만 골라 전체 생산 성�
 이는 선택한 생산 범위의 성공이며 모든 플랫폼 수용을 뜻하지 않는다.
 `artifact_digest`는 `sha256:` 접두사가 있는 archive digest로, installer 개별 파일 hash와 다르다.
 
+Windows ordinary artifact의 전달 목적은 `additional-validation-only`다. 성공한 producer에
+알려진 NSIS 제한이 기록되어 있어도 추가 검사는 가능하지만, 제한 해결·새 source 제품 수용·
+릴리즈 승인을 의미하지 않는다. handoff의 `productAcceptance`와 `releaseAcceptance`는
+`unverified`이며, metadata 확인만으로 다운로드 bytes 검증이 끝난 것도 아니다. 현재 attempt와
+artifact 소속·생성 시점을 함께 확인한다. 독립 acceptance archive/replay는 필수 조건이 아니며
+[#67](https://github.com/postmelee/alhangeul-tauri/issues/67)의 후속 고도화다. 첫 릴리즈 선행 조건으로 삼지 않는다.
+
 ```sh
 gh workflow run ci.yml --ref publish/task59 -f profile=installer \
   -f product_sha="$PRODUCT_SHA" -f product_run_id="$PRODUCT_RUN_ID" \
@@ -101,20 +108,23 @@ gh workflow run ci.yml --ref publish/task59 -f profile=installer \
 
 다운로드 action의 digest 오류를 실패로 강제하고, 현재 harness가 inventory의 source SHA와
 모든 파일 hash를 재계산한 뒤 installer를 실행한다. 현재 harness SHA, 실제 제품 SHA,
-archive ID/digest/크기와 installer 결과는 `alhangeul-installer-reuse-evidence`에 남긴다.
+archive ID/digest/크기와 installer 결과는 `alhangeul-installer-reuse-evidence-{nsis,msi,msi-forced-reinstall}`에 남긴다.
 checkout과 Node 준비 이후 handoff 검사 전에 `workflow-context.json`을 생성한다. 여기의
 요청 식별자는 아직 `unverified`이며, 성공한 handoff의 검증 metadata와 구별한다. handoff,
 다운로드, inventory 또는 설치가 실패해도 `step-outcomes.json`에 실제 단계 상태를 기록하고
 진단 upload를 시도한다. checkout/Node 준비 자체의 실패에는 실행 로그로 원인을 확인한다.
 release 권한·secrets·제품 재빌드가 필요하지 않다.
 
-#19의 GUI/PDF handoff는 PR #65로 devel에 병합되어 이번 통합 후보에 포함됐다. 기존 PDF/dialog
-dispatch와 Windows cleanup scope를 보존하고, 새 Node/PowerShell 회귀를 공통 빠른 검사에서
-실행한다. #57의 미완료 installer 진단 branch는 가져오지 않는다.
+Windows PDF 소비자도 `alhangeul-desktop.yml` 또는 `ci.yml`의 성공한 exact producer만 받는다.
+기존 `build_ref`·`native_run_id`로 검증한 단일 artifact의 ID/digest를 기록하고, 다운로드 digest와
+inventory source SHA/hash 확인 뒤 설치·선택 시나리오·cleanup을 실행한다. `open_only=true`는
+문서 열기만 확인하며 PDF 내보내기 수용이 아니다. 기존 PDF/dialog dispatch와 Windows cleanup
+scope를 유지한다. installer profile의 네 입력과 PDF의 기존 입력을 혼동하지 않는다.
 
-현재 Windows smoke는 기존 MSI→제거→NSIS 순서를 같은 새 runner에서 실행한다. #57의
-NSIS-only/MSI-only 분리 수용을 대신하지 않는다. 후속 workflow 수정은 다음 소유 파일에
-반영하고, Desktop entry에 옮긴 job 본문을 다시 복제하지 않는다.
+Windows smoke와 installer reuse는 NSIS-only, MSI-only, MSI 강제 재설치를 각각 별도 runner에서
+실행한다. 같은 run의 `installer-status`는 현재 attempt의 세 job과 필수 step·upload·최종 gate
+성공을 확인하는 경량 집계다. 원시 증거를 재다운로드·독립 재계산하지 않는다. 후속 수정은 아래
+소유 파일에 반영하고, Desktop entry에 옮긴 job 본문을 다시 복제하지 않는다.
 
 | 변경할 책임 | 소유 파일 (`.github/workflows/`) |
 |---|---|
@@ -123,17 +133,35 @@ NSIS-only/MSI-only 분리 수용을 대신하지 않는다. 후속 workflow 수�
 | native build·Rust 검사·Linux package lifecycle | `alhangeul-artifact-platform.yml` |
 | 같은 run의 Windows 설치 검사 | `alhangeul-windows-smoke.yml` |
 | 이전 run의 exact Windows bytes 재검증 | `alhangeul-installer-reuse.yml` |
+| 기존 Windows 제품의 PDF·문서 열기 검사 | `alhangeul-windows-pdf.yml` |
 | 플랫폼 의존관계·최종 gate | `alhangeul-artifacts.yml` |
 
 ## 상태 해석
 
-- `passed`: 명시한 계층의 실제 검사 통과.
+- `passed`: 명시한 계층의 검사 계약 통과. 실제 기능 성공 범위는 개별 결과로 확인.
 - `failed`: 실행 또는 필수 증거 검증 실패. 진단 upload 성공으로 상쇄하지 않는다.
 - `skipped`: 선택하지 않았거나 선행 실패로 건너뜀. 통과가 아니다.
 - `reused`: 고정된 기존 bytes 사용. 새 제품 빌드 통과가 아니다.
 - `unverified`: 필요한 검사를 수행하지 않았거나 근거가 부족함.
 
 부분 profile 성공에는 전체 artifact 수용이라는 표현을 사용하지 않는다. `run_tests=false`, 단일 platform, core 생략, 기존 artifact만의 검증은 부분 검증이다. 릴리즈에는 [최소 체크리스트](RELEASE_CHECKLIST.md)가 별도로 적용된다.
+
+### Windows 설치 계약과 실제 관측
+
+| 계약 | 통과 조건의 의미 | 별도로 읽을 실제 결과 |
+|---|---|---|
+| `strict-product` | 지정한 설치·썸네일·lifecycle 증거 모두 통과 | 해당 시나리오만 수용, 모든 환경 보장 아님 |
+| `hosted-nsis-diagnostic` | 정상 생성 또는 엄격히 정의한 사용자별 Shell 활성화 실패 패턴의 진단·정리 통과 | 제한 재현 시 raw exit 1·실패 12건, `thumbnailStatus=not-accepted` 유지 |
+| `msi-forced-reinstall-reboot` | 정상 완료 또는 재설치 3010과 필수 관측·정리가 계약에 일치 | 3010이면 `reboot-required`·`post-reboot-unverified`, 재부팅 후 성공 아님 |
+
+`installer-evaluation.json`과 `smoke-process.json`, `step-outcomes.json`, 원시 summary를 함께
+읽는다. 새 오류·혼합 실패·증거 누락·정리 실패를 알려진 제한으로 자동 허용하지 않는다.
+reuse는 `contract-result.json`에도 raw outcome과 계약 결과를 구분한다. raw smoke의
+`continue-on-error` 표시만으로 통과하지 않으며 필수 평가·증거 upload·최종 gate가 모두 필요하다.
+upload 실패도 최종 실패다. 종료 집계의 `contract_status=passed`와
+`product_observation=see-scenario-evidence`는 전체 썸네일 지원·최신 VDI·릴리즈 수용이 아니다.
+과거 실패 run을 새 계약으로 소급 통과시키지 않는다. 실제 후보별 관측은
+[버전별 기록](../releases/v0.1.0.md#windows-썸네일-진단-수용과-잔여-제한)에 둔다.
 
 ## 측정 기준
 

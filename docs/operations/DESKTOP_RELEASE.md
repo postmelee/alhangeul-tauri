@@ -55,7 +55,7 @@
 
 ## workflow와 산출물 계층
 
-진실 원천은 [desktop workflow](../../.github/workflows/alhangeul-desktop.yml),
+진실 원천은 [CI 진입점](../../.github/workflows/ci.yml)과 [desktop workflow](../../.github/workflows/alhangeul-desktop.yml),
 [Linux GUI workflow](../../.github/workflows/alhangeul-linux-gui.yml),
 [Pages workflow](../../.github/workflows/pages.yml)다. 수동 dispatch 승인은 제품 공개 승인과 다르다.
 
@@ -71,6 +71,12 @@
 일반 `artifact`의 기본 범위는 all/full/tests=true다. 플랫폼·core·제품 생성만 선택한 부분
 profile과 기존 bytes 재사용은 [CI 검증 가이드](CI_VALIDATION.md)를 따른다. 일반 artifact도
 workflow SHA와 실제 제품 checkout SHA가 같아야 한다.
+
+Windows 설치 검사는 NSIS-only·MSI-only·강제 재설치의 개별 계약과 경량 상태 집계를 사용한다.
+CI 전체 성공도 모든 썸네일 환경의 성공을 뜻하지 않는다. 원시 실패와 `thumbnailStatus`·
+`lifecycleStatus`를 [CI 상태 해석](CI_VALIDATION.md#windows-설치-계약과-실제-관측)에 따라 읽는다.
+성공 producer의 Windows bytes는 `additional-validation-only`로 추가 검사에 사용할 수 있으나
+제품/릴리즈 수용은 별도다. 독립 재검산 자동화는 #67 후속이며 첫 공개 선행 조건이 아니다.
 
 일반 native build와 updater build를 혼용하지 않는다. 기본 build의 성공은 production endpoint와
 서명이 포함된 파일의 검증이 아니다. updater build는 일반 build의 전체 test·package smoke를
@@ -115,10 +121,11 @@ NSIS의 실제 실패를 진단 도구가 올바르게 분류하더라도 제품
 개인 사용자 문서/결과를 CI artifact로 업로드하지 않는다. 기존 5개 bundle 파일 계약과
 릴리즈 수용·서명·게시 승인 경계는 바꾸지 않는다.
 
-run `34056210236`의 진단 검증 성공은 전체 workflow failure를 대체하지 않는다.
-실패 run의 artifact는 출처·무결성을 검증한 제한적 진단 근거이며 공개 릴리즈 입력이 아니다.
-`continue-on-error` step의 표시만 보지 말고 `step-outcomes.json`의 실제 outcome과 최종
-제품 gate를 확인한다. 문서-only 정합화에서는 검증된 native SHA·같은 installer bytes를
+과거 run `34056210236`의 진단 성공과 전체 workflow failure는 당시 결과로 보존한다.
+실패 run의 artifact는 제한적 진단 근거일 뿐 현재 추가 테스트용 재사용이나 공개 릴리즈 입력이 아니다.
+현재 계약은 엄격히 일치한 알려진 제한을 별도로 판정하지만 원시 제품 실패를 지우지 않는다.
+`continue-on-error` step의 표시만 보지 말고 `step-outcomes.json`의 실제 outcome,
+`installer-evaluation.json` 및 upload·최종 계약 gate를 확인한다. 문서-only 정합화에서는 검증된 native SHA·같은 installer bytes를
 재사용하며 문서 보고 commit을 native 검증 SHA로 기재하지 않는다. 기존 archive 안의 문서는
 빌드 당시 복사본이다. 최신 안내는 저장소 문서를 읽고, manifest 검증 대상 파일을 고쳐 쓰지 않는다.
 

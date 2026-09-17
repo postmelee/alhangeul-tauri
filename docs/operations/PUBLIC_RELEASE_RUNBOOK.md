@@ -105,6 +105,10 @@ gh api --paginate "repos/$ALH_REPO/actions/runs/$ALH_RUN_ID/artifacts" \
 
 기대: 필수 job/step·upload 성공, checkout/workflow SHA·입력·archive ID/digest/만료일을 기록한다.
 updater 두 build·complete inventory verifier 성공과 publish skipped가 필수다. 일반 mode의 updater skipped는 오류도 수용도 아니다.
+일반 Windows의 `contract_status=passed`는 [설치 검사 계약](CI_VALIDATION.md#windows-설치-계약과-실제-관측)
+통과다. NSIS·MSI·강제 재설치의 원시 결과와 평가 JSON을 읽어 썸네일 실패·재부팅 후 미검증을
+별도로 기록한다. `additional-validation-only` handoff나 경량 집계 성공을 Gate 3의 파일 수용으로
+대체하지 않는다. #67 독립 재검산 고도화 없이도 아래 exact bytes·승인·read-back 절차는 유지한다.
 **중단/재개:** 실패·증거 누락·ref 이동은 원인과 변경 입력 확인 후 승인된 재실행만 한다.
 
 ## Gate 3 — 실제 게시할 파일 검증과 Go/No-Go
@@ -119,7 +123,8 @@ ALH_ARTIFACT_DIR=$(mktemp -d)
 gh run download "$ALH_RUN_ID" -R "$ALH_REPO" \
   -n "alhangeul-desktop-$ALH_PLATFORM" -D "$ALH_ARTIFACT_DIR"
 pnpm run check:desktop-artifacts -- --platform "$ALH_PLATFORM" \
-  --root "$ALH_ARTIFACT_DIR" --verify-inventory "$ALH_ARTIFACT_DIR/alhangeul-artifact-inventory.json"
+  --root "$ALH_ARTIFACT_DIR" --source-sha "$ALH_SOURCE_SHA" \
+  --verify-inventory "$ALH_ARTIFACT_DIR/alhangeul-artifact-inventory.json"
 ```
 
 updater의 `alhangeul-updater-windows-x64`·`alhangeul-updater-linux-x64`는 `gh run download`로 같은 새 root에 받는다.
@@ -143,6 +148,9 @@ pnpm run check:updater-artifacts -- --root "$ALH_UPDATER_DIR" \
 수동 3종도 해당 배포판·architecture의 실제 설치·실행이 필요하며 환경은 버전 기록에 고정한다.
 Linux launcher 변경 시 DEB/RPM 및 AppImage 내부 `.desktop`의 `%F`, 실제 argv와 열린 문서를
 확인한다. 추가 GUI·인쇄·thumbnail은 영향표를 적용하고 미검증 환경을 통과로 쓰지 않는다.
+알려진 NSIS 제한이 남으면 대상 환경·관측·MSI 대안·지원 범위와 owner 판단을 명시한다.
+진단 계약 성공이나 안내 문구로 필수 기능 검증을 면제하지 않으며, 지원 범위·위험 처리가
+미결정이면 공개하지 않는다. 재부팅 요구는 재부팅 후 검증 전까지 미검증으로 남긴다.
 **중단/재개:** 미통과 파일은 게시하지 않는다. `publish_release=true`는 재빌드하며 수동 설치
 대기를 보장하지 않는다. 아래 CLI 경로도 승인되지 않았다면 멈춘다.
 

@@ -35,6 +35,7 @@ N→N+1을 만들 필요도 없다. 릴리즈를 실제 게시한다면 아래 �
 ### 파일·설치 — runbook Gate 2~3
 
 - [ ] 실제 mode/입력/checkout SHA/workflow SHA/run ID·필수 job/step/upload 결과 연결.
+- [ ] Windows 설치 계약의 통과와 실제 기능 결과 분리. NSIS 제한·MSI 재부팅 후 미검증·최신 VDI 여부를 기록하고, `additional-validation-only`를 공개 파일 수용으로 쓰지 않음.
 - [ ] archive ID/digest·만료 여부와 installer 파일명/target/크기/SHA-256 구분.
 - [ ] updater 대상 MSI·NSIS·AppImage 각각의 `.sig`를 production 공개키로 실제 검증.
 - [ ] complete inventory의 version/tag/sourceSha/keyFingerprint와 target별 파일·URL·hash·서명 대조.
@@ -103,6 +104,7 @@ dialog 미진입·빈 페이지·쪽 수/방향 오류는 중단한다. 알려�
 
 - [ ] Windows installed handler/worker가 반환한 실제 bitmap과 앱/renderer provenance 확인.
 - [ ] Windows NSIS/MSI별 HKCU/HKLM·연결 조회·직접 COM 생성과 실제 문서 Shell/강제 추출·JPG 대조 결과를 분리. 캐시 조회만으로 새 생성 성공을 판정하지 않음.
+- [ ] 세 격리 설치 job의 raw summary·process/step outcome·evaluation과 upload·최종 gate 확인. `contract_status=passed`라도 `thumbnailStatus=not-accepted`이면 제한 유지, 새 오류·증거 누락은 실패.
 - [ ] 지원 묶음 사용 시 같은 run·exact SHA·archive digest·manifest 파일 해시·설치된 DLL/worker hash 확인. 만료/다른 빌드 혼용 금지. 진단 종료 0/1/2와 원시 증거를 대조하고 도구 성공을 제품 gate 성공으로 바꾸지 않음.
 - [ ] Windows 설치/재설치/제거를 따로 확인. 3010·지연 작업은 재부팅 후 새 process·DLL hash·Shell·OS 표식으로 재검증. 제거 코드 0이나 재부팅 전 bitmap 성공을 재부팅 완료로 쓰지 않음.
 - [ ] 일반 로그인 Explorer 시각 결과·실제 한컴/VDI와 hosted CI를 구분. 수동 진단의 `lifecycleStatus=not-tested`와 미실행 환경을 명시.
@@ -114,6 +116,8 @@ dialog 미진입·빈 페이지·쪽 수/방향 오류는 중단한다. 알려�
 
 상세 환경·과거 예외는 [정책의 수용 한계](DESKTOP_RELEASE.md#검증-선택과-수용-한계)와
 해당 버전 기록에 둔다. probe나 `rpm --nodeps` 성공을 실사용 배포판 GUI 수용으로 쓰지 않는다.
+#67 독립 재검산·재사용 고도화는 첫 릴리즈의 필수 선행이 아니다. 그렇더라도 위 원시 증거 확인,
+게시할 exact bytes·서명·설치·지원 한계 승인·게시 후 대조는 생략하지 않는다.
 
 ## 첫 공개와 다음 공개의 updater 확인
 
