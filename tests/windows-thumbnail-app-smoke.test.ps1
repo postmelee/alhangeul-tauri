@@ -42,3 +42,7 @@ $privateError.Data['AlhangeulAssessmentCode'] = 'format-integrity'
 try { throw [InvalidOperationException]::new('private-wrapper', $privateError) } catch { $safe = Get-AppAssessmentFailure $_ }
 Assert-Condition ($safe.code -ceq 'format-integrity' -and $null -eq $safe.extension) 'Wrapped code or extension sanitization failed.'
 Write-Output 'Assessment failure projection: unknown/wrapped exceptions sanitized.'
+$missing = Get-AppInstallationEvidence ([pscustomobject]@{}) 'private-kind'
+Assert-Condition ($null -eq $missing.expectedKind -and $null -eq $missing.observedKind -and $null -eq $missing.recordsReadable) 'Missing identity claimed as known.'
+$malformed = Get-AppInstallationEvidence ([pscustomobject]@{ inspection = [pscustomobject]@{ installKind = 'private-kind'; installRecordsReadable = 'true' } }) 'msi'
+Assert-Condition ($malformed.expectedKind -ceq 'msi' -and $null -eq $malformed.observedKind -and $null -eq $malformed.recordsReadable) 'Malformed identity was coerced or leaked.'

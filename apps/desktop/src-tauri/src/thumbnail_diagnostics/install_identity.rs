@@ -65,7 +65,7 @@ fn uninstall_kinds(root: &Path) -> Result<Vec<InstallKind>, ()> {
             }
             let name = name.map_err(|_| ())?;
             let path = format!(r"{UNINSTALL}\{name}");
-            let display = registry::string(hive, &path, "DisplayName");
+            let display = registry::display_name(hive, &path);
             if matches!(display, Observation::Unreadable) {
                 return Err(());
             }
@@ -155,5 +155,38 @@ fn command_executable(command: &str) -> Option<&str> {
         quoted.split_once('"').map(|pair| pair.0)
     } else {
         command.split_whitespace().next()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn installed_nsis_command_shape_matches_only_its_root() {
+        let root = Path::new(r"\\?\C:\Users\fixture\AppData\Local\Alhangeul");
+        let command = r#""C:\Users\fixture\AppData\Local\Alhangeul\uninstall.exe""#;
+        assert!(nsis_in_root(command_executable(command).unwrap(), root));
+        assert!(!nsis_in_root(r"C:\Other\uninstall.exe", root));
+        assert!(!nsis_in_root(
+            r"C:\Users\fixture\AppData\Local\Alhangeul\other.exe",
+            root
+        ));
+    }
+
+    #[test]
+    fn installed_msi_command_and_trailing_separator_are_recognized() {
+        let id = "{77C4273A-7040-4B1C-A575-51ACDCB27935}";
+        let command = format!("MsiExec.exe /X{id}");
+        assert!(msi_command_matches(id, command_executable(&command)));
+        assert!(matches_root(
+            r"C:\Program Files\Alhangeul\",
+            Path::new(r"\\?\C:\Program Files\Alhangeul")
+        ));
+        assert!(!msi_command_matches(
+            "not-a-product-code",
+            command_executable(&command)
+        ));
+        assert!(!msi_command_matches(id, Some("other.exe")));
     }
 }

@@ -69,12 +69,13 @@ function Invoke-InstalledAppDiagnostic($Result, $Inventory, $Version) {
     stage = 'created'; failureStage = $null; errorHresult = $null; assessmentFailure = $null
     processStarted = $false; processReaped = $null; exitCode = $null; stdoutChars = $null; stderrChars = $null
     display = [ordered]@{ originalExists = $null; originalValue = $null; prepared = $false; restored = $null }
-    formats = @(); probes = @()
+    installation = $null; formats = @(); probes = @()
   }
   try {
     Invoke-AppDiagnosticDisplay $report {
       $suite = Invoke-AppDiagnosticTransport $Result.InstalledState.Executable $report
       $report.stage = 'suite-evidence'
+      $report.installation = Get-AppInstallationEvidence $suite $Result.Kind
       $report.cleanup = $suite.cleanup -eq $true
       $report.probes = @(Get-AppDiagnosticEvidence $suite)
       $report.stage = 'suite-assessment'

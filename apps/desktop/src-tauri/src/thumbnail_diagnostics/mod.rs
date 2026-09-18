@@ -56,6 +56,8 @@ mod process_spawn;
 mod registration_native;
 #[cfg(windows)]
 mod registry;
+#[cfg(any(windows, test))]
+mod registry_text;
 #[cfg(windows)]
 mod token;
 

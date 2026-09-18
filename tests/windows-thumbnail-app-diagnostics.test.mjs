@@ -67,6 +67,19 @@ test('assessment rejection exposes only bounded codes and exercises the full res
   assert.doesNotMatch(response, /function (?:Invoke-AppDiagnosticTransport|Assert-AppDiagnostic|Get-AppDiagnosticEvidence)/);
 });
 
+test('empty display-name handling is isolated from strict registry fields and identity acceptance', async () => {
+  const registry = await read('apps/desktop/src-tauri/src/thumbnail_diagnostics/registry.rs');
+  const identity = await read('apps/desktop/src-tauri/src/thumbnail_diagnostics/install_identity.rs');
+  const assessment = await read('scripts/windows-thumbnail-app-assessment.ps1');
+  assert.match(registry, /string_value\(hive, path, name, false\)/);
+  assert.match(registry, /string_value\(hive, path, "DisplayName", true\)/);
+  assert.match(registry, /value\.vtype == REG_SZ/);
+  assert.match(identity, /registry::display_name\(hive, &path\)/);
+  assert.match(identity, /Observation::Unreadable\)\s*\{\s*return Err\(\(\)\)/);
+  assert.match(assessment, /\$inspection\.installKind -ceq \$Kind -and \$inspection\.installRecordsReadable -eq \$true/);
+  assert.match(assessment, /\$readable -is \[bool\]/);
+});
+
 async function temporary(t) {
   const directory = await mkdtemp(join(tmpdir(), 'alhangeul-reference-test-'));
   // Only this freshly-created test directory is owned by this test.

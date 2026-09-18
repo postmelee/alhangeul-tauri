@@ -50,24 +50,72 @@ pub fn dword(hive: Hive, path: &str, name: &str) -> Observation<u32> {
 }
 
 pub fn string(hive: Hive, path: &str, name: &str) -> Observation<String> {
-    match raw(hive, path, name) {
-        Observation::Known(value) if value.vtype == REG_SZ && value.bytes.len() % 2 == 0 => {
-            let mut units: Vec<_> = value
-                .bytes
-                .as_chunks::<2>()
-                .0
-                .iter()
-                .map(|pair| u16::from_le_bytes([pair[0], pair[1]]))
-                .collect();
-            if units.pop() != Some(0) || units.contains(&0) {
-                return Observation::Unreadable;
-            }
-            match String::from_utf16(&units) {
-                Ok(value) if !value.is_empty() => Observation::Known(value),
+    string_value(hive, path, name, false)
+}
+
+// A present empty DisplayName is readable and cannot match Alhangeul. Keep
+// strict nonempty reads for product paths, COM values and installer fields.
+pub fn display_name(hive: Hive, path: &str) -> Observation<String> {
+    string_value(hive, path, "DisplayName", true)
+}
+
+fn string_value(hive: Hive, path: &str, name: &str, allow_empty: bool) -> Observation<String> {
+    decode_string(raw(hive, path, name), allow_empty)
+}
+
+fn decode_string(value: Observation<RegValue>, allow_empty: bool) -> Observation<String> {
+    match value {
+        Observation::Known(value) if value.vtype == REG_SZ => {
+            match super::registry_text::decode_sz(&value.bytes, allow_empty) {
+                Some(value) => Observation::Known(value),
                 _ => Observation::Unreadable,
             }
         }
         Observation::Missing => Observation::Missing,
         _ => Observation::Unreadable,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn display_empty_is_known_without_relaxing_other_values() {
+        let empty = || {
+            Observation::Known(RegValue {
+                bytes: vec![0, 0],
+                vtype: REG_SZ,
+            })
+        };
+        assert_eq!(
+            decode_string(empty(), true),
+            Observation::Known(String::new())
+        );
+        assert_eq!(decode_string(empty(), false), Observation::Unreadable);
+        assert_eq!(
+            decode_string(Observation::Missing, true),
+            Observation::Missing
+        );
+        assert_eq!(
+            decode_string(Observation::Unreadable, true),
+            Observation::Unreadable
+        );
+    }
+
+    #[test]
+    fn wrong_types_are_not_accepted_as_empty_display_names() {
+        for vtype in [REG_EXPAND_SZ, REG_MULTI_SZ, REG_BINARY, REG_DWORD] {
+            assert_eq!(
+                decode_string(
+                    Observation::Known(RegValue {
+                        bytes: vec![0, 0],
+                        vtype
+                    }),
+                    true
+                ),
+                Observation::Unreadable
+            );
+        }
     }
 }

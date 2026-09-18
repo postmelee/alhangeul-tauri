@@ -3,7 +3,41 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: Stage 6.2 설치 앱 suite 판정 원인 코드·전체 응답 회귀 보완 중
+상태: Stage 6.2 설치 형식 식별·읽기 상태 보정 및 회귀 중
+
+### 2026-09-18 설치 형식 식별 경계
+
+`56c1849` fast `35336624479`는 전체 응답 20건 포함 통과했다. windows-package
+`35337106761`의 세 설치 시나리오는 모두 `installation-identity`에서 실패했다.
+suite 완료/source-version 검증을 지난 뒤의 실패이며 MSI bitmap 성공, NSIS 기존 제한,
+정리/표시 복원은 유지된다. 예상·실제 kind 및 recordsReadable을 아직 저장하지 않아
+실제 실패 조건은 두 값 중 어느 쪽인지 확정하지 않는다.
+
+승인된 이번 범위는 설치 식별과 그 회귀다. CI report에 예상/관측 kind(allowlist)와
+읽기 상태(bool/null)를 추가한다. 코드상 빈 REG_SZ DisplayName이 Unreadable로 취급되어
+관련 없는 제거 항목 하나가 전체 설치 식별을 막을 수 있는 결함을 재현·보정한다.
+빈 문자열 허용은 제거 목록 DisplayName 읽기에만 한정하고 잘못된 타입/UTF-16/종료문자,
+접근 실패는 계속 거부한다. 다른 설치 필드, COM, updater, 썸네일 엔진의 기준은 유지한다.
+순수 UTF-16 decoder와 단위 회귀는 기존 native 진단 폴더에 두고 Linux 컨테이너에서도
+검증한다. Windows fast의 읽기 전용 제거 목록 확인은 원문/프로그램 이름/경로 없이
+타입·빈 값·읽기 실패 개수만 기록하여 실제 hosted 환경과 가설을 대조한다.
+이번 run의 원인으로 빈 문자열을 미리 확정하지 않는다. 문서 위치는 기존 계획·오늘할일이다.
+로컬 Node/PS/Rust 가능한 범위 후 fast, Windows native 제품 검증은 후속 windows-package,
+최종 full/VDI는 별도이며 실패 producer 재사용·새 환경 실험·릴리즈 게시를 하지 않는다.
+
+구현 결과: CI 보고서에 `installation.expectedKind`, `observedKind`, `recordsReadable`을
+허용된 문자열/bool/null로만 투영했다. 기존 설치 식별 수용 조건은 유지한다. 전체 JSON
+응답 회귀는 unknown/읽기 실패/허용 밖 kind를 포함한 23건으로 확장했다. REG_SZ decoder를
+분리하고 빈 DisplayName만 허용한다. Windows 전용 회귀에는 관측한 NSIS 인용부호 및
+MSI 제거 명령/경로 형태와 엄격한 레지스트리 타입 검사를 추가했다.
+
+- Node automation 955건, product boundary 616파일, diff 검사 통과.
+- Colima Linux ARM64 Rust 1.94의 독립 decoder 단위 검사 3건 및 변경 Rust 파일 rustfmt 통과.
+- 같은 Linux 환경 PowerShell 7.4.6의 기존 대역 경계 22건과 변경 PS 5파일 구문 검사 통과.
+- Windows 전체 JSON 회귀 23건·제거 목록 읽기 전용 관측은 다음 `fast`에서 확인한다.
+  .NET 정규화 후 집계이며 raw UTF-16 검증 또는 제품 설치 식별 성공 증거가 아니다.
+- Windows native 추가 단위 검사 4건과 실제 설치 앱은 아직 실행하지 않았다.
+  빈 문자열 결함의 로컬 재현을 이전 CI 원인 확정이나 설치 gate 해결로 기록하지 않는다.
 
 ### 2026-09-18 설치 앱 suite 판정 실패 식별
 

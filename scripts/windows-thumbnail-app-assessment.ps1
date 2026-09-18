@@ -80,6 +80,21 @@ function Get-AppAssessmentFailure($ErrorRecord) {
   return $result
 }
 
+function Get-AppInstallationEvidence($Suite, $ExpectedKind) {
+  $result = [ordered]@{ expectedKind = $null; observedKind = $null; recordsReadable = $null }
+  if ($ExpectedKind -is [string] -and $ExpectedKind -cin @('nsis', 'msi')) { $result.expectedKind = $ExpectedKind }
+  # Missing/malformed properties remain unknown; never coerce a string to bool.
+  try {
+    $kind = $Suite.inspection.installKind
+    if ($kind -is [string] -and $kind -cin @('nsis', 'msi', 'unknown')) { $result.observedKind = $kind }
+  } catch {}
+  try {
+    $readable = $Suite.inspection.installRecordsReadable
+    if ($readable -is [bool]) { $result.recordsReadable = $readable }
+  } catch {}
+  return $result
+}
+
 function Get-AppDiagnosticEvidence($Suite) {
   # Deliberate projection: no native stateToken, paths, exception or bitmap bytes.
   $output = @()

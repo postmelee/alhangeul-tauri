@@ -51,6 +51,9 @@ $cases = @(
   @('source', 'msi', $false, 'reference-identity', { param($c) $c.suite.inspection.buildReference.sourceSha = 'private-source' }),
   @('missing-reference', 'msi', $false, 'reference-identity', { param($c) $c.suite.inspection.PSObject.Properties.Remove('buildReference') }),
   @('install', 'msi', $false, 'installation-identity', { param($c) $c.suite.inspection.installKind = 'nsis' }),
+  @('unknown-install', 'msi', $false, 'installation-identity', { param($c) $c.suite.inspection.installKind = 'unknown' }),
+  @('unreadable-install', 'msi', $false, 'installation-identity', { param($c) $c.suite.inspection.installRecordsReadable = $false }),
+  @('private-install', 'msi', $false, 'installation-identity', { param($c) $c.suite.inspection.installKind = 'private-kind' }),
   @('shape', 'msi', $false, 'reference-registration-shape', { param($c) $c.suite.inspection.buildReference.files = @() }),
   @('binary', 'msi', $false, 'binary-reference', { param($c) $c.suite.inspection.buildReference.files[0].sha256 = ('d' * 64) }),
   @('preflight', 'msi', $false, 'registration-preflight', { param($c) $c.suite.inspection.registration[0].ready = $false }),
@@ -87,6 +90,9 @@ try {
     Assert-Condition ($failed -eq ($null -ne $entry[3]) -and $actual -ceq $entry[3]) "Full response mismatch: $($entry[0]) / $actual"
     Assert-Condition ($report.processReaped -eq $true -and $report.exitCode -eq 0 -and $report.display.restored -eq $true -and $script:key.Value -eq 1 -and $script:key.Disposed) 'Response path did not preserve cleanup.'
     Assert-Condition ($text -notmatch 'private|stateToken|Exception') 'Raw response leaked into report.'
+    Assert-Condition ($report.installation.expectedKind -ceq $entry[1]) 'Expected installer identity lost.'
+    $expectedKind = if ($entry[0] -ceq 'private-install') { $null } else { $case.suite.inspection.installKind }
+    Assert-Condition ($report.installation.observedKind -ceq $expectedKind -and $report.installation.recordsReadable -eq $case.suite.inspection.installRecordsReadable) 'Observed installer identity lost or coerced.'
     if ($entry[3]) { Assert-Condition ($report.failureStage -ceq 'suite-assessment') 'Wrong rejection stage.' }
     else { Assert-Condition ($report.status -ceq 'passed' -and $report.formats.Count -eq 2 -and $report.probes.Count -eq 2 -and $report.probes[0].probes.Count -eq 10) 'Full positive report incomplete.' }
     if ($entry[0] -ceq 'hwpx') { Assert-Condition ($report.assessmentFailure.extension -ceq '.hwpx') 'Failed format identity lost.' }
