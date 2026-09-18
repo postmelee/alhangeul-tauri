@@ -53,20 +53,30 @@ pub fn string(hive: Hive, path: &str, name: &str) -> Observation<String> {
     string_value(hive, path, name, false)
 }
 
-// A present empty DisplayName is readable and cannot match Alhangeul. Keep
-// strict nonempty reads for product paths, COM values and installer fields.
+// Discovery accepts empty names and literal REG_EXPAND_SZ DisplayNames.
+// Product paths, COM values and installer fields stay strict nonempty REG_SZ.
 pub fn display_name(hive: Hive, path: &str) -> Observation<String> {
     string_value(hive, path, "DisplayName", true)
 }
 
-fn string_value(hive: Hive, path: &str, name: &str, allow_empty: bool) -> Observation<String> {
-    decode_string(raw(hive, path, name), allow_empty)
+fn string_value(hive: Hive, path: &str, name: &str, display_name: bool) -> Observation<String> {
+    decode_string(raw(hive, path, name), display_name)
 }
 
-fn decode_string(value: Observation<RegValue>, allow_empty: bool) -> Observation<String> {
+fn decode_string(value: Observation<RegValue>, display_name: bool) -> Observation<String> {
     match value {
-        Observation::Known(value) if value.vtype == REG_SZ => {
-            match super::registry_text::decode_sz(&value.bytes, allow_empty) {
+        Observation::Known(value)
+            if value.vtype == REG_SZ || (display_name && value.vtype == REG_EXPAND_SZ) =>
+        {
+            let decoded = if display_name {
+                super::registry_text::decode_display_name(
+                    &value.bytes,
+                    value.vtype == REG_EXPAND_SZ,
+                )
+            } else {
+                super::registry_text::decode_sz(&value.bytes, false)
+            };
+            match decoded {
                 Some(value) => Observation::Known(value),
                 _ => Observation::Unreadable,
             }
@@ -104,8 +114,31 @@ mod tests {
     }
 
     #[test]
+    fn expandable_type_is_limited_to_literal_display_names() {
+        for name in ["Other application", "Alhangeul", "%PRODUCT%"] {
+            let value = || {
+                Observation::Known(RegValue {
+                    bytes: name
+                        .encode_utf16()
+                        .chain([0])
+                        .flat_map(u16::to_le_bytes)
+                        .collect(),
+                    vtype: REG_EXPAND_SZ,
+                })
+            };
+            let expected = if name.contains('%') {
+                Observation::Unreadable
+            } else {
+                Observation::Known(name.to_string())
+            };
+            assert_eq!(decode_string(value(), true), expected);
+            assert_eq!(decode_string(value(), false), Observation::Unreadable);
+        }
+    }
+
+    #[test]
     fn wrong_types_are_not_accepted_as_empty_display_names() {
-        for vtype in [REG_EXPAND_SZ, REG_MULTI_SZ, REG_BINARY, REG_DWORD] {
+        for vtype in [REG_MULTI_SZ, REG_BINARY, REG_DWORD, REG_QWORD, REG_NONE] {
             assert_eq!(
                 decode_string(
                     Observation::Known(RegValue {

@@ -18,10 +18,11 @@ foreach ($pair in @(@(1, 'REG_SZ'), @(2, 'REG_EXPAND_SZ'), @(3, 'REG_BINARY'), @
   if ((Get-DisplayType $pair[0]) -cne $pair[1]) { throw 'Display-name type projection failed.' }
 }
 function Get-DisplayCategory($Kind, $Value) {
-  if ($Kind -ne [Microsoft.Win32.RegistryValueKind]::String) { return 'unsupportedTypes' }
+  if ($Kind -notin @([Microsoft.Win32.RegistryValueKind]::String, [Microsoft.Win32.RegistryValueKind]::ExpandString)) { return 'unsupportedTypes' }
   if ($Value -isnot [string]) { return 'unreadableValues' }
   if ($Value.Length -gt 16383) { return 'oversizedStrings' }
   if ($Value.Contains([string][char]0)) { return 'embeddedNullStrings' }
+  if ($Kind -eq [Microsoft.Win32.RegistryValueKind]::ExpandString -and $Value.Contains('%')) { return 'unresolvedExpansions' }
   if ($Value.Length -eq 0) { return 'emptyStrings' }
   return 'nonEmptyStrings'
 }
@@ -30,7 +31,8 @@ $cases = @(
   @([Microsoft.Win32.RegistryValueKind]::String, 'Alhangeul', 'nonEmptyStrings'),
   @([Microsoft.Win32.RegistryValueKind]::String, 'Other application', 'nonEmptyStrings'),
   @([Microsoft.Win32.RegistryValueKind]::DWord, 1, 'unsupportedTypes'),
-  @([Microsoft.Win32.RegistryValueKind]::ExpandString, '%NAME%', 'unsupportedTypes'),
+  @([Microsoft.Win32.RegistryValueKind]::ExpandString, '%NAME%', 'unresolvedExpansions'),
+  @([Microsoft.Win32.RegistryValueKind]::ExpandString, 'Other application', 'nonEmptyStrings'),
   @([Microsoft.Win32.RegistryValueKind]::String, $null, 'unreadableValues'),
   @([Microsoft.Win32.RegistryValueKind]::String, ('a' * 16384), 'oversizedStrings'),
   @([Microsoft.Win32.RegistryValueKind]::String, ('a' + [char]0 + 'b'), 'embeddedNullStrings')
@@ -41,11 +43,11 @@ foreach ($case in $cases) {
 if ($env:GITHUB_ACTIONS -cne 'true' -or $env:RUNNER_ENVIRONMENT -cne 'github-hosted' -or $env:RUNNER_OS -cne 'Windows') {
   throw 'Live observation requires disposable hosted Windows CI.'
 }
-$evidence = [ordered]@{ schemaVersion = 2; normalizedValues = $true; rawDecodeVerified = $false; rows = @() }
+$evidence = [ordered]@{ schemaVersion = 3; normalizedValues = $true; rawDecodeVerified = $false; rows = @() }
 foreach ($hive in @([Microsoft.Win32.RegistryHive]::CurrentUser, [Microsoft.Win32.RegistryHive]::LocalMachine)) {
   $row = [ordered]@{ hive = $hive.ToString(); status = 'observed'; entries = 0; missingDisplayNames = 0
     emptyStrings = 0; nonEmptyStrings = 0; unsupportedTypes = 0; unreadableValues = 0
-    oversizedStrings = 0; embeddedNullStrings = 0; unreadableKeys = 0; limitExceeded = $false
+    oversizedStrings = 0; embeddedNullStrings = 0; unresolvedExpansions = 0; unreadableKeys = 0; limitExceeded = $false
     displayTypes = [ordered]@{ REG_SZ = 0; REG_EXPAND_SZ = 0; REG_BINARY = 0; REG_DWORD = 0; REG_MULTI_SZ = 0; REG_QWORD = 0; OTHER = 0 } }
   $base = $null; $root = $null
   try {
@@ -62,7 +64,7 @@ foreach ($hive in @([Microsoft.Win32.RegistryHive]::CurrentUser, [Microsoft.Win3
         if ($entry.GetValueNames() -notcontains 'DisplayName') { $row.missingDisplayNames++; continue }
         $kind = $entry.GetValueKind('DisplayName')
         $row.displayTypes[(Get-DisplayType $kind)]++
-        if ($kind -ne [Microsoft.Win32.RegistryValueKind]::String) { $row.unsupportedTypes++; continue }
+        if ($kind -notin @([Microsoft.Win32.RegistryValueKind]::String, [Microsoft.Win32.RegistryValueKind]::ExpandString)) { $row.unsupportedTypes++; continue }
         $value = $entry.GetValue('DisplayName', $null, [Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames)
         $row[(Get-DisplayCategory $kind $value)]++
       } catch { $row.unreadableKeys++ }
@@ -77,4 +79,4 @@ foreach ($hive in @([Microsoft.Win32.RegistryHive]::CurrentUser, [Microsoft.Win3
   }
 }
 if ($EvidencePath) { $evidence | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $EvidencePath -Encoding UTF8 }
-Write-Output 'Install record shapes: 8 synthetic shapes and 8 type projections passed; hosted registry counts observed read-only, no product identity acceptance.'
+Write-Output 'Install record shapes: 9 synthetic shapes and 8 type projections passed; hosted registry counts observed read-only, no product identity acceptance.'

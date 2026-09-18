@@ -35,6 +35,22 @@ Rust 수용을 대신하지 않는다. 독립 crate/feature 및 CI wiring·lock 
 기존 fast→windows-package→full 계층과 exact artifact 재사용 기준을 유지하며,
 실패 producer 재사용 허용이나 전체 workflow 교체로 우회하지 않는다.
 
+`d09e145` fast `35343810385`는 성공했고 HKLM 타입은 REG_SZ 246건/REG_EXPAND_SZ 1건으로
+확인됐다. REG_EXPAND_SZ는 Windows가 정의한 문자열 타입이지만 현재 decoder가 일괄 거부하여
+설치 식별을 막는다. [Microsoft 타입 정의](https://learn.microsoft.com/en-us/windows/win32/sysinfo/registry-value-types)와
+[RegQueryValueExW 계약](https://learn.microsoft.com/en-us/windows/win32/api/winreg/nf-winreg-regqueryvalueexw)을
+참고해 DisplayName에서만 literal REG_EXPAND_SZ를 허용한다. 환경변수 치환을 실행하지 않으며
+`%`를 포함한 모호한 이름, malformed UTF-16/종료문자, 비문자열, 접근 실패는 여전히 거부한다.
+REG_EXPAND_SZ의 literal Alhangeul은 관련 항목으로 검증하며 무조건 다른 프로그램으로 넘기지
+않는다. 다른 경로/COM/제품 필드는 기존 REG_SZ·nonempty 계약을 유지한다. readonly 관측에도
+literal/환경변수 해석 필요 상태를 개수로 구분한다. 이는 raw payload 검증을 대신하지 않는다.
+
+보정 로컬 검증: Node automation 956건/product boundary 616파일, Linux Rust 1.94의
+실제 제품 decoder 소스 단독 test 5건 및 rustfmt, Linux PowerShell 구문/합성 shape 9건/
+type projection 8건이 통과했다. Windows 전용 registry mapping 단위 검사와 실제 설치 앱
+수용은 아직 미검증이다. 우선 기존 fast에서 문자열 형태 관측과 PS 회귀를 확인하며,
+후속 Windows 제품 검증 전까지 기존 설치 실패 해결을 선언하지 않는다.
+
 ### 2026-09-18 설치 형식 식별 경계
 
 `56c1849` fast `35336624479`는 전체 응답 20건 포함 통과했다. windows-package

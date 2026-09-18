@@ -14,9 +14,20 @@ pub fn decode_sz(bytes: &[u8], allow_empty: bool) -> Option<String> {
     (allow_empty || !value.is_empty()).then_some(value)
 }
 
+// DisplayName discovery may encounter literal REG_EXPAND_SZ names in other
+// products. Never expand environment variables or assume unresolved names are
+// unrelated: keep those ambiguous records unreadable instead of skipping them.
+pub fn decode_display_name(bytes: &[u8], expandable: bool) -> Option<String> {
+    let value = decode_sz(bytes, true)?;
+    if expandable && value.contains('%') {
+        return None;
+    }
+    Some(value)
+}
+
 #[cfg(test)]
 mod tests {
-    use super::decode_sz;
+    use super::{decode_display_name, decode_sz};
 
     fn encoded(text: &str) -> Vec<u8> {
         text.encode_utf16()
@@ -44,6 +55,28 @@ mod tests {
     }
 
     #[test]
+    fn literal_expandable_display_names_are_readable() {
+        for name in ["", "Other application", "Alhangeul", "한글 📄"] {
+            assert_eq!(
+                decode_display_name(&encoded(name), true).as_deref(),
+                Some(name)
+            );
+        }
+    }
+
+    #[test]
+    fn unresolved_expandable_names_are_not_silently_skipped() {
+        for name in ["%PRODUCT%", "%PRODUCT", "Product 100%"] {
+            assert_eq!(decode_display_name(&encoded(name), true), None);
+            // REG_SZ is literal, so '%' does not require expansion there.
+            assert_eq!(
+                decode_display_name(&encoded(name), false).as_deref(),
+                Some(name)
+            );
+        }
+    }
+
+    #[test]
     fn malformed_payloads_remain_unreadable_in_both_modes() {
         for bytes in [
             vec![],
@@ -56,6 +89,8 @@ mod tests {
         ] {
             assert_eq!(decode_sz(&bytes, false), None);
             assert_eq!(decode_sz(&bytes, true), None);
+            assert_eq!(decode_display_name(&bytes, false), None);
+            assert_eq!(decode_display_name(&bytes, true), None);
         }
     }
 }
