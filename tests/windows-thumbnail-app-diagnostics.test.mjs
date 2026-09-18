@@ -54,6 +54,19 @@ test('Windows pipe regression uses the same BOM-less process start as installed 
   assert.doesNotMatch(regression, /Set-ExecutionPolicy|regsvr32|Set-ItemProperty/);
 });
 
+test('assessment rejection exposes only bounded codes and exercises the full response path', async () => {
+  const assessment = await read('scripts/windows-thumbnail-app-assessment.ps1');
+  const runner = await read('scripts/windows-thumbnail-app-smoke.ps1');
+  const response = await read('tests/windows-thumbnail-app-response.test.ps1');
+  assert.match(assessment, /AlhangeulAssessmentCode/);
+  assert.match(assessment, /\$code -cin \$allowed/);
+  assert.match(assessment, /\$depth -lt 8/);
+  assert.doesNotMatch(assessment, /Exception\.Message|Exception\.ToString/);
+  assert.match(runner, /assessmentFailure = Get-AppAssessmentFailure \$_/);
+  for (const marker of ['Invoke-InstalledAppDiagnostic', 'ConvertTo-Json -Depth 32', 'suite-completion', 'fixture-parity', 'display.restored']) assert.ok(response.includes(marker));
+  assert.doesNotMatch(response, /function (?:Invoke-AppDiagnosticTransport|Assert-AppDiagnostic|Get-AppDiagnosticEvidence)/);
+});
+
 async function temporary(t) {
   const directory = await mkdtemp(join(tmpdir(), 'alhangeul-reference-test-'));
   // Only this freshly-created test directory is owned by this test.

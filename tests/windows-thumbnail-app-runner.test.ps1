@@ -111,6 +111,7 @@ try {
     else { Assert-Condition ($script:key.Present -eq $case[1] -and $script:key.Value -eq $case[2] -and $script:key.Disposed) 'Original display state not restored.' }
     if ($script:mode -eq 'type') { Assert-Condition ($script:key.Writes -eq 0) 'Unexpected type was modified.' }
     if ($script:mode -eq 'exit') { Assert-Condition ($report.exitCode -eq 23) 'Exit code lost.' }
+    if ($script:mode -eq 'assessment') { Assert-Condition ($report.assessmentFailure.code -ceq 'unclassified' -and $null -eq $report.assessmentFailure.extension) 'Unknown assessment exception was not sanitized.' }
     if ($script:mode -eq 'start') { Assert-Condition ($null -eq $report.cleanup -and $null -eq $report.exitCode) 'Unknown cleanup/exit claimed.' }
     if ($script:mode -eq 'timeout') { Assert-Condition ($script:process.Killed -and $report.processReaped) 'Owned timeout process not reclaimed.' }
     if ($script:mode -eq 'reap') { Assert-Condition ($report.processReaped -eq $false -and $report.display.restored -eq $true) 'Process cleanup failure hid display restoration.' }

@@ -66,7 +66,7 @@ function Invoke-AppDiagnosticTransport($Executable, $Report) {
 function Invoke-InstalledAppDiagnostic($Result, $Inventory, $Version) {
   $report = [ordered]@{
     schemaVersion = 1; sourceSha = $Inventory.sourceSha; status = 'failed'; cleanup = $null
-    stage = 'created'; failureStage = $null; errorHresult = $null
+    stage = 'created'; failureStage = $null; errorHresult = $null; assessmentFailure = $null
     processStarted = $false; processReaped = $null; exitCode = $null; stdoutChars = $null; stderrChars = $null
     display = [ordered]@{ originalExists = $null; originalValue = $null; prepared = $false; restored = $null }
     formats = @(); probes = @()
@@ -84,6 +84,7 @@ function Invoke-InstalledAppDiagnostic($Result, $Inventory, $Version) {
     $report.stage = 'completed'; $report.status = 'passed'
   } catch {
     if ($null -eq $report.failureStage) { $report.failureStage = $report.stage }
+    if ($report.failureStage -ceq 'suite-assessment') { $report.assessmentFailure = Get-AppAssessmentFailure $_ }
     $report.status = 'failed'
   } finally {
     $report | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath (Join-Path $OutputDirectory 'app-diagnostic.json') -Encoding UTF8

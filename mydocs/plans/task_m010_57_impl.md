@@ -3,7 +3,41 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: Stage 6.2 실제 Windows IPC 회귀·인코딩 보정 진행 중
+상태: Stage 6.2 설치 앱 suite 판정 원인 코드·전체 응답 회귀 보완 중
+
+### 2026-09-18 설치 앱 suite 판정 실패 식별
+
+`cdfa873` fast `35225540787`은 실제 Windows BOM 전송/거부 및 보정 후 응답 검증까지
+성공했다. windows-package `35227721464`는 제품/core/fast가 성공했지만 세 설치 gate가
+실패했다. 앱은 모두 exit 0, 응답 수신, 형식별 10개 probe 수집과 cleanup/표시값 복원에
+성공했다. MSI 두 시나리오는 HWP/HWPX Shell/force bitmap 성공이고 NSIS는 기존
+`0x80040154` 제한이다. 실패 위치는 `suite-assessment`이며 현재 artifact로 세부 조건은
+확정할 수 없다. 전체 suite 완료·판정 수용과 VDI UI 성공을 아직 선언하지 않는다.
+
+작업지시자가 판정 원인 식별 및 전체 응답 회귀 보완을 승인했다. 기존 `scripts/` 판정과
+runner에 고정 allowlist 원인 코드 및 형식 식별만 기록하고 원시 예외/응답/stateToken은
+노출하지 않는다. 기존 조건은 유지한다. `tests/`의 합성 전체 suite 응답으로 JSON 파싱,
+실제 판정 함수, report 저장, 실패 처리와 표시 복원을 함께 검증한다. 단독 판정 테스트에서
+누락된 호출 경계를 확인하며 재현된 결함만 보정한다. 네이티브 엔진·UI·COM·정책·workflow는
+변경하지 않는다. 판정 함수는 기존 조건/고정 코드의 일대일 대응과 단일 catch 유지를 위해
+50줄 권장 예외를 둔다. 기존 구현계획서와 날짜별 오늘할일 외 공식 문서를 추가하지 않는다.
+로컬 Node/순수 PS·구문 검사 후 `fast`로 Windows 5.1을 확인한다. 새 설치/full/VDI 검증은
+다음 단계이며 실패 producer의 artifact를 성공한 재사용 입력으로 넘기지 않는다.
+
+구현 결과: 14개 기존 Assert 조건은 내용/순서를 유지하고 각 조건 및 인접 속성 접근에
+고정 코드를 부여했다. 예외 원문을 버리고 허용된 코드·`.hwp`/`.hwpx`만
+`assessmentFailure`에 남긴다. 알 수 없는 예외는 `unclassified`다. 공유 합성 fixture를
+추출하고, 프로세스/레지스트리 IO만 대체한 전체 JSON 응답 경로 20건을 추가했다.
+정상 MSI/NSIS, 알려진 NSIS 제한과 14개 판정 지점, 누락 속성, HWPX 실패를 포함한다.
+Windows 5.1에서 실제 transport 파싱·판정·보고서·복원을 검증하며 실제 앱 응답 자체를
+재현한 것으로 간주하지 않는다. 원본 native suite를 artifact가 보존하지 않으므로 이전
+설치 실패 조건은 아직 확정하지 못했다.
+
+- Node automation 954건, product boundary 614파일, diff 검사 통과.
+- Colima Linux ARM64 PowerShell 7.4.6 대역 경계 22건·변경 PS 6파일 구문 검사 통과.
+- 기존 14개 Assert 조건의 텍스트/순서가 HEAD와 동일함을 별도 비교했다.
+- 전체 JSON 회귀와 예외 코드 전파의 기준 검증은 다음 Windows `fast` 실행이다.
+  이번 후보로 제품 빌드·설치·full·릴리즈를 실행하지 않는다.
 
 ### 2026-09-17 실제 프로세스 입력 바이트 회귀
 
