@@ -3,7 +3,136 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: Stage 6.2 설치 형식 식별·읽기 상태 보정 및 회귀 중
+상태: Stage 6.2 묶음 보정 후보 게시·Windows fast 실행 승인 — 원격 검증 진행
+
+### 2026-09-18 묶음 보정 후보 게시·fast 승인
+
+후속 "진행해줘"로 묶음 보정 후보의 커밋, `publish/task57` fast-forward 게시와
+`ci.yml / scope=full / profile=fast / thumbnail_context_experiment=false` 1회 실행을
+승인받았다. 원격 publish는 로컬 기준 `e601978`과 같고 devel은 이미 통합된 `f154b4d`다.
+조회한 최근 CI 5건이 모두 종료돼 중복 실행은 없었다. 코드와 기존 검토 기록을 함께
+커밋하며 새 PR/merge/릴리즈/제품 CI는 요청하지 않는다. fast가 검증하는 Windows
+PowerShell 회귀와 이후 Windows native 테스트·설치 수용의 범위를 계속 구분한다.
+
+### 2026-09-18 묶음 보정 승인·구현 범위
+
+작업지시자의 "진행해줘"로 아래 사전 검토의 구현 묶음을 승인받았다. 기존 #57 worktree와
+미커밋 검토 기록을 보존한다. 변경 대상은 app assessment/evidence/smoke helper, 합성 응답
+fixture와 회귀, 제품 install_identity의 읽기 경계와 조합 테스트다. 실제 Registry64 읽기는
+유지하고 reader 주입으로 같은 수집·판정 함수를 테스트한다. 새 crate/profile/workflow나
+설치 정책 변경은 하지 않는다. helper는 역할별로 분리하며 판정 항목을 나열하는 함수의
+50 LOC 초과는 조건 순서·의존 관계를 한곳에서 검토하기 위한 예외로 둔다.
+기록 위치는 승인된 기존 계획서와 오늘할일이며 새 제품 문서는 생성하지 않는다.
+Node/Studio와 Linux PowerShell 합성 회귀를 먼저 수행하고 Windows 5.1 fast와 Windows
+native/설치 수용을 구분한다. Windows 전용 registry 조합 테스트는 Windows native 검증에서
+실행하며 Linux/합성 통과로 대신하지 않는다. 제품 코드 경계가 바뀌므로 installer 재사용을
+새 source 검증으로 삼지 않으며 이후 windows-package, 최종 full·VDI 수용은 별도로 남긴다.
+
+구현 결과:
+
+- 이미 수집한 suite에 대해 23개 조건(공통 7개 + 형식별 8개)을 모두 평가한다.
+  각 조건은 `passed/failed/not-evaluable`이며 필수 조건 전부 통과해야 최종 gate가 통과한다.
+  `checks` 전체를 실패 전 보고서에 저장하고 기존 `assessmentFailure`는 첫 오류 호환 필드로
+  유지한다. 실제 검사 전 safety preflight나 native 실행 순서는 바꾸지 않았다.
+- evidence helper를 분리해 mode/status/크기/flags/apartment 등 typed probe, 형식의 무결성·
+  등록·설치 형식 및 native assessment를 남긴다. enum/정수/bool/GUID 이외 임의 원문은
+  저장하지 않는다. 원본 probe 계약 유효성을 함께 기록해 sanitization으로 null이 된 값을
+  원래의 유효한 null로 오인하지 않게 한다. 전체 raw 응답·경로·stateToken 저장이나 범용
+  artifact replay 시스템을 추가한 것은 아니다. 개별 조건 결과와 probe 재판정에 범위를 한정한다.
+- MSI fixture의 형식별 installKind를 실제 suite와 일치시키고 일치 guard를 추가했다.
+  전체 응답 회귀 26건 및 별도 묶음 회귀에서 동시 오류 3개 노출, 의존 데이터 누락,
+  문자열 bool 거부, 정상/제한 probe의 투영 후 재판정, 개인정보 제외를 확인한다.
+- install_identity에 원시 값·키 목록 reader를 주입하는 작은 경계를 두고, 같은 제품 collector를
+  직접 호출하는 Windows 단위 테스트 6개를 추가했다. NSIS/MSI, 빈/literal/누락 DisplayName,
+  malformed/읽기 실패, marker 혼재·누락, 잘못된 경로/타입, 기록 중복·누락을 포함한다.
+  실제 reader의 Registry64·4096개 제한과 보수적인 식별 기준은 유지한다.
+- 사전 Windows 교차 Clippy에서 기존 `registry_text.rs`의 `chunks_exact(2)` 지적도 발견해
+  `as_chunks::<2>().0.iter()`로 동일 동작 보정했다. lint 억제·의존/lock 변경은 없다.
+
+검증 결과와 한계:
+
+- Node automation 956건, Studio 27파일/166건, upstream 36건, Studio build 및 diff 검사 통과.
+- Linux Rust 1.94.1에서 순수 registry_text 테스트 5건 통과.
+- Linux Rust 1.98.1에서 제품 원본 모듈·새 Windows 테스트를 포함한 임시 경계 harness의
+  `clippy --tests --target x86_64-pc-windows-msvc -- -D warnings` 통과. 제품 lock을 기준으로
+  의존을 구성했으며 전체 Tauri 컴파일 또는 Windows 테스트 실행은 아니다.
+- 공식 SHA256 확인한 Linux ARM64 PowerShell 7.6.6에서 별도 묶음 회귀, 전체 응답 26건,
+  기존 평가 3양성/8음성/개인정보·예외 투영 회귀가 정상 종료했다. PS7의 JSON 정수는 Int64여서
+  기존 Windows 5.1 전용 bitmap 조건(Int32)과 다르다. 로컬 임시 harness에서만 범위 내 정수를
+  Int32로 변환해 논리를 검사했고 제품/CI 조건은 완화하지 않았다. **실제 Windows fast 수용이
+  아니며 새 native 설치 식별 테스트 6건도 실행이 아닌 교차 컴파일까지만 확인했다.**
+- 기존 x64 PowerShell Linux 이미지의 에뮬레이션 실행은 무출력 지연으로 이번 컨테이너만
+  중지했다. 실패/중단된 실행을 회귀 성공으로 세지 않는다. 임시 ARM64 도구·교차 검사
+  컨테이너와 harness는 정리하며 사용자 기존 컨테이너는 건드리지 않는다.
+
+이 턴에는 커밋/push/원격 CI를 실행하지 않았다. 다음 승인은 현재 후보 게시 후 `fast` 1회다.
+그 결과를 확인한 뒤 새 Windows 제품/설치 검증을 진행하며 실패하면 `checks` 전체를 우선
+분석한다. Windows 설치 형식·GUI 실제 성공과 릴리즈 수용은 아직 미검증이며 Stage 6.2를
+완료 처리하지 않는다.
+
+### 2026-09-18 반복 실패 경로 사전 검토
+
+작업지시자의 목적은 CI 실행 시간 단축이 아니라 오류를 한 건씩 뒤늦게 발견하는 반복의
+감소다. 최신 지시에 따라 아래 이전 항목의 "다음 windows-package" 실행을 보류했다.
+이번 범위는 실제 코드와 기존 증거의 전 경로 검토·기존 회귀 재실행이며 제품 소스나
+workflow를 수정하지 않고 새 CI도 요청하지 않았다. 기록은 기존 계획서·오늘할일만 갱신한다.
+
+검토 기준은 로컬 HEAD `e601978`(제품 보정 `699b4cd`), 실제 설치 run `35337106761`,
+타입 관측 fast `35343810385` 및 `35344446059`다. 과거 설치 실행을 새 후보의 성공으로
+환산하지 않는다. 원래 목표는 정상 환경의 유효한 진단과 실제 제한 패턴에서의 조건부 MSI
+안내이지, 모든 환경의 NSIS 지원이나 새로운 CI 시스템 구축이 아니다.
+
+| 경계 | 확인한 근거 | 남은 검증/판정 |
+|---|---|---|
+| 진입·요청·응답 | `entry/child_input/protocol/transport`, CI `Invoke-AppDiagnosticTransport`; 과거 세 설치 앱 exit 0, 응답 수신, source/version guard 통과 | 현재 후보의 Windows 실행은 아직 없음. PS→suite-child와 UI→native suite 경로는 외부 호출부가 다름 |
+| 설치 식별 | `install_identity/registry/registry_text`; 현재 literal REG_EXPAND_SZ 보정, fast 정규화 값 관측 | 원시 Registry64 payload→marker/제거 목록→kind/readability 전체 조합의 회귀가 없음. 타입 보정이 유일한 원인이라는 증거는 아님 |
+| 등록·바이너리·환경 | `registration_native/inspection_native/environment`; 과거 suite가 형식별 probe 10개 수집 | 최종 CI의 reference shape/hash/registration 조건은 앞선 설치 식별 실패 때문에 실행되지 않음. native preflight 근거와 CI 통과를 구분 |
+| 임시 문서·Shell | `suite_plan/dispatch/probe/shell_path`; 과거 MSI 두 시나리오 HWP/HWPX Shell/force bitmap true, NSIS는 두 API 0x80040154 | 현재 bytes·VDI UI 재검증 필요. 캐시 miss는 곧바로 썸네일 실패가 아님 |
+| 무결성·정리 | `suite/process/scratch`, 과거 cleanup/processReaped/display.restored true | 새 후보/다른 환경으로 일반화하지 않음. 변경·취소·시간 초과에서는 기존 실패 기준 유지 |
+| 최종 판정 | native `assessment` 및 PS `Assert-AppDiagnostic` 14개 코드 그룹 비교 | report가 첫 실패만 기록. 후속 독립 조건 상태를 알 수 없어 다시 빌드해야 하는 구조 |
+| 사용자 표시 | commands/UI service/controller/presentation/offerMsi/summary | 정상 bitmap 판정은 installKind 자체를 요구하지 않음. MSI 안내는 NSIS 식별·유효한 제한 패턴 요구. headless CI 성공만으로 실제 UI 수용을 대체하지 않음 |
+
+확정한 검증 공백:
+
+1. `scripts/windows-thumbnail-app-assessment.ps1`의 단일 try/catch가 첫 Assert에서 반환한다.
+   Linux PowerShell에서 기존 함수·합성 fixture에 installation identity/binary reference/
+   integrity 오류를 동시에 넣고 앞 오류만 복구하면 세 코드가 순서대로 드러나는 것을 재현했다.
+   이는 CI 통과 기준을 낮출 이유가 아니라, 이미 받은 응답의 독립 조건들을 일괄 보고할 이유다.
+   실제 검사/COM 실행의 안전 사전 조건은 계속 중단시켜야 한다.
+2. 과거 `app-diagnostic.json`의 probe에는 label/phase/hresult/bitmapPresent만 남는다.
+   width/height/requestFlags/status/apartment 등 판정 필드 및 native reported assessment가
+   없어 이후 조건 전체를 오프라인 재평가할 수 없다. 누락값을 추정해서 채우거나 수동 check
+   스크립트의 별도 probe를 앱 응답으로 바꿔 쓰지 않았다. 현재 installation 투영만 추가해도
+   이 후속 판정 자료의 공백은 남는다.
+3. 전체 JSON 회귀는 실제 native 응답 생성기가 아니라 합성 process/registry를 쓴다.
+   `tests/fixtures/windows-thumbnail-app-suite.ps1`는 MSI에서도 base의 `input.installKind=nsis`를
+   유지한다(inspection은 msi). 실제 `suite::formats`는 inspection의 kind를 복사한다.
+   로컬 fixture 출력으로 `nsis,nsis`를 확인했다. 이것은 테스트 결함이며 설치 실패의 새 원인으로
+   단정하지 않는다. Rust/PS 공통 assessment 44건은 존재하지만 registry collector는 호출하지 않는다.
+4. 현재 install_identity unit test는 NSIS/MSI 명령·경로 helper 2건이고, registry decoder 테스트와
+   별개다. 실제 제품 collector가 marker/typed value/제거 목록을 묶어 판정하는 회귀가 없다.
+   Windows headless 통합 테스트도 설치 전 inspect/비정상 입력·프로세스 정리 중심이며 설치
+   식별 성공을 보장하지 않는다.
+
+다음 구현 묶음 제안(본 검토에서 구현하지 않음):
+
+- 기존 CI 판정 helper에서 독립 조건을 pass/fail/not-evaluable로 일괄 보고한다. 의존 데이터가
+  없으면 후속 조건을 성공으로 처리하지 않는다. 최종 gate는 필수 조건 전부 통과할 때만 성공.
+  별도 판정식을 복제하지 않고 실제 gate와 보고가 같은 평가 결과를 사용하게 한다.
+- 기존 privacy 투영을 필요한 enum/bool/수치·검증된 빌드 식별자로 보강하여 재평가 가능한
+  범위를 남긴다. 원시 JSON/stateToken/경로/프로그램명/예외 원문 저장은 하지 않는다.
+- 같은 묶음에서 MSI fixture 관계를 바로잡고 다중 오류/의존 누락 회귀를 추가한다.
+  제품의 설치 식별 함수를 직접 호출하는 기록 조합 회귀도 보강한다(NSIS/MSI 정상,
+  literal/빈 이름, 잘못된 타입, marker 혼재·누락, 잘못된 경로/중복 기록). 새 profile나
+  독립 crate 도입 없이 가능한 가장 작은 테스트 경계부터 선택하고 source 검증과 구분한다.
+- 로컬 및 Windows fast에서 이 묶음을 확인한 뒤 제품·설치 CI를 한 번 실행한다. 다시 실패하면
+  수집된 조건별 결과를 먼저 분석하고, 새 증거 없이 재시도하거나 한 필드씩 패치하지 않는다.
+  최종 full과 실제 VDI 앱 UI 수용은 별도이며 성공을 미리 보장하지 않는다.
+
+검토 중 회귀: Node automation 956건, Studio 27파일/166건 통과. Linux PowerShell의 다중 실패
+재현은 합성 사례이며 Windows 5.1/설치 앱 수용으로 세지 않는다. 새 제품 결함을 추가로 확정하지
+못했으므로 엔진/설치 정책을 추측 수정하지 않았다. 기존 CI 구조 전면 개편과 경량 crate 분리는
+후속 고도화로 남기고 위 판정·회귀 공백의 묶음 보정을 다음 승인 대상으로 정리한다.
 
 ### 2026-09-18 DisplayName 타입 확인 및 빠른 native 경계 검토
 

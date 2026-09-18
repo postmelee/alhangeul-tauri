@@ -1,69 +1,116 @@
-# Pure validation of installed native suite replies; never accepts diagnostic-invalid.
+# Pure validation of collected replies. No additional native operations on failure.
 . (Join-Path $PSScriptRoot 'windows-thumbnail-check-assessment.ps1')
-function Assert-AppDiagnostic($Suite, $Inventory, $Kind, $Version, $LegacyProbes) {
-  $check = 'suite-completion'; $extension = $null
-  try {
-    Assert-Condition ($Suite.status -ceq 'completed' -and $Suite.cleanup -eq $true) 'App suite incomplete or cleanup unverified.'
-    $check = 'reference-identity'
-    $inspection = $Suite.inspection
-    $reference = $inspection.buildReference
-    Assert-Condition ($reference.schemaVersion -eq 1 -and $Inventory.sourceSha -cmatch '^[a-f0-9]{40}$' -and $reference.sourceSha -ceq $Inventory.sourceSha -and $reference.productVersion -ceq $Version) 'App reference does not match product source/version.'
-    $check = 'installation-identity'
-    Assert-Condition ($inspection.installKind -ceq $Kind -and $inspection.installRecordsReadable -eq $true) 'App installation identity mismatch.'
-    $check = 'reference-registration-shape'
-    Assert-Condition ($reference.files.Count -eq 2 -and $inspection.registration.Count -eq 2) 'App reference or registration incomplete.'
-    $check = 'binary-reference'
+. (Join-Path $PSScriptRoot 'windows-thumbnail-app-evidence.ps1')
+
+function Test-AppDiagnosticCondition($Code, $Extension, $Predicate, $Available = $true) {
+  $status = 'not-evaluable'
+  if ($Available) {
+    try {
+      $value = & $Predicate
+      $status = if ($value -is [bool] -and $value) { 'passed' } else { 'failed' }
+    } catch { $status = 'not-evaluable' }
+  }
+  # Fixed call-site identifiers only; never retain an exception or native text.
+  return [pscustomobject]@{ code = $Code; extension = $Extension; status = $status }
+}
+
+function Get-AppFormatAssessment($Suite, $Extension, $Kind, $LegacyProbes) {
+  $checks = @(); $format = $null; $assessment = $null; $pair = @()
+  $scope = if ($Kind -ceq 'nsis') { 'user-only' } else { 'machine-only' }
+  $checks += Test-AppDiagnosticCondition 'format-identity' $Extension {
+    $rows = @($Suite.formats | Where-Object { $_.input.extension -ceq $Extension })
+    $rows.Count -eq 1
+  }
+  $available = $checks[-1].status -ceq 'passed'
+  if ($available) { $format = @($Suite.formats | Where-Object { $_.input.extension -ceq $Extension })[0] }
+  $checks += Test-AppDiagnosticCondition 'format-installation' $Extension {
+    $format.input.installKind -ceq $Suite.inspection.installKind -and $format.input.installKind -ceq $Kind
+  } $available
+  $checks += Test-AppDiagnosticCondition 'format-integrity' $Extension {
+    (Test-AppEvidenceTrue $format.input.integrity) -and (Test-AppEvidenceTrue $format.input.cleanup) -and (Test-AppEvidenceTrue $format.input.registrationStable)
+  } $available
+  $checks += Test-AppDiagnosticCondition 'format-registration' $Extension {
+    (Test-AppEvidenceTrue $format.input.registration.ready) -and (Test-AppEvidenceTrue $format.input.registration.referenceMatched) -and $format.input.registration.scope -ceq $scope
+  } $available
+  # Probe-only classification does not waive the separate registration/integrity gates.
+  if ($available) {
+    try { $assessment = Get-CheckAssessment $format.input.probes ([pscustomobject]@{ ready = $true; registrationScope = $scope }) $Extension $true } catch {}
+  }
+  $checks += Test-AppDiagnosticCondition 'independent-assessment' $Extension {
+    $assessment.evidenceStatus -ceq 'valid' -and $assessment.finding -cin @('thumbnail-api-ok', 'per-user-shell-activation-failed')
+  } ($null -ne $assessment)
+  $assessed = $checks[-1].status -ceq 'passed'
+  $checks += Test-AppDiagnosticCondition 'reported-assessment' $Extension {
+    (Test-AppEvidenceTrue $format.assessment.evidenceValid) -and $format.assessment.finding -ceq $assessment.finding -and $format.assessment.recommendedAction -ceq $assessment.recommendedAction -and $format.assessment.thumbnailPassed -is [bool] -and $format.assessment.thumbnailPassed -eq ($assessment.finding -ceq 'thumbnail-api-ok')
+  } $assessed
+  $fixture = if ($Extension -ceq '.hwp') { 'small-hwp' } else { 'form-hwpx' }
+  try { $pair = @($LegacyProbes | Where-Object { $_.Label -cin @("initial-$fixture-shell", "initial-$fixture-force-extract") } | ForEach-Object { $_.Result }) } catch {}
+  $checks += Test-AppDiagnosticCondition 'initial-observation' $Extension { $pair.Count -eq 2 }
+  $checks += Test-AppDiagnosticCondition 'fixture-parity' $Extension {
+    $assessment.finding -ceq (Get-ThumbnailDocumentFinding $pair ($Kind -ceq 'nsis') $true)
+  } ($assessed -and $checks[-1].status -ceq 'passed')
+  $accepted = @($checks | Where-Object { $_.status -cne 'passed' }).Count -eq 0
+  $finding = $null
+  if ($accepted) { $finding = [ordered]@{ extension = $Extension; finding = $assessment.finding; thumbnailPassed = $assessment.finding -ceq 'thumbnail-api-ok' } }
+  return [pscustomobject]@{ checks = $checks; finding = $finding }
+}
+
+function Get-AppDiagnosticAssessment($Suite, $Inventory, $Kind, $Version, $LegacyProbes) {
+  $checks = @(); $findings = @()
+  $inspection = Get-AppEvidenceProperty $Suite 'inspection'
+  $reference = Get-AppEvidenceProperty $inspection 'buildReference'
+  $checks += Test-AppDiagnosticCondition 'suite-completion' $null { $Suite.status -ceq 'completed' -and (Test-AppEvidenceTrue $Suite.cleanup) }
+  $checks += Test-AppDiagnosticCondition 'reference-identity' $null {
+    $reference.schemaVersion -eq 1 -and $Inventory.sourceSha -cmatch '^[a-f0-9]{40}$' -and $reference.sourceSha -ceq $Inventory.sourceSha -and $reference.productVersion -ceq $Version
+  }
+  $checks += Test-AppDiagnosticCondition 'installation-identity' $null {
+    $Kind -cin @('nsis', 'msi') -and $inspection.installKind -ceq $Kind -and (Test-AppEvidenceTrue $inspection.installRecordsReadable)
+  }
+  $checks += Test-AppDiagnosticCondition 'reference-registration-shape' $null { $reference.files.Count -eq 2 -and $inspection.registration.Count -eq 2 }
+  $checks += Test-AppDiagnosticCondition 'binary-reference' $null {
     foreach ($pair in @(@('AlhangeulThumbnailHandler.dll', 'thumbnail-handler'), @('AlhangeulThumbnailWorker.exe', 'thumbnail-worker'))) {
       $actual = @($reference.files | Where-Object { $_.name -ceq $pair[0] })
       $expected = @($Inventory.files | Where-Object { $_.kind -ceq $pair[1] })
-      Assert-Condition ($actual.Count -eq 1 -and $expected.Count -eq 1 -and $actual[0].sha256 -ceq $expected[0].sha256 -and $actual[0].bytes -eq $expected[0].size) 'App embedded binary reference mismatch.'
+      if (-not ($actual.Count -eq 1 -and $expected.Count -eq 1 -and $actual[0].sha256 -ceq $expected[0].sha256 -and $actual[0].bytes -eq $expected[0].size)) { return $false }
     }
-    $check = 'registration-preflight'
-    $scope = if ($Kind -eq 'nsis') { 'user-only' } else { 'machine-only' }
+    return $true
+  } ($null -ne $reference)
+  $checks += Test-AppDiagnosticCondition 'registration-preflight' $null {
+    $scope = if ($Kind -ceq 'nsis') { 'user-only' } else { 'machine-only' }
+    if ($inspection.registration.Count -ne 2) { return $false }
     foreach ($registration in $inspection.registration) {
-      Assert-Condition ($registration.ready -eq $true -and $registration.referenceMatched -eq $true -and $registration.scope -ceq $scope) 'App registration preflight failed.'
+      if (-not ((Test-AppEvidenceTrue $registration.ready) -and (Test-AppEvidenceTrue $registration.referenceMatched) -and $registration.scope -ceq $scope)) { return $false }
     }
-    $check = 'format-count'
-    Assert-Condition ($Suite.formats.Count -eq 2) 'App suite formats missing.'
-    $findings = @()
-    foreach ($extension in @('.hwp', '.hwpx')) {
-      $check = 'format-identity'
-      $rows = @($Suite.formats | Where-Object { $_.input.extension -ceq $extension })
-      Assert-Condition ($rows.Count -eq 1) 'App format missing or duplicated.'
-      $check = 'format-integrity'
-      $format = $rows[0]; $inputValue = $format.input
-      Assert-Condition ($inputValue.integrity -eq $true -and $inputValue.cleanup -eq $true -and $inputValue.registrationStable -eq $true) 'App format evidence incomplete.'
-      $check = 'format-registration'
-      Assert-Condition ($inputValue.registration.ready -eq $true -and $inputValue.registration.referenceMatched -eq $true -and $inputValue.registration.scope -ceq $scope) 'App format registration mismatch.'
-      $check = 'independent-assessment'
-      $registration = [pscustomobject]@{ ready = $true; registrationScope = $scope }
-      $assessment = Get-CheckAssessment $inputValue.probes $registration $extension $true
-      Assert-Condition ($assessment.evidenceStatus -ceq 'valid' -and $assessment.finding -cin @('thumbnail-api-ok', 'per-user-shell-activation-failed')) 'App probes failed independent assessment.'
-      $check = 'reported-assessment'
-      $passed = $assessment.finding -ceq 'thumbnail-api-ok'
-      Assert-Condition ($format.assessment.evidenceValid -eq $true -and $format.assessment.finding -ceq $assessment.finding -and $format.assessment.recommendedAction -ceq $assessment.recommendedAction -and $format.assessment.thumbnailPassed -eq $passed) 'App reported assessment differs from raw probes.'
-      $check = 'initial-observation'
-      $fixture = if ($extension -eq '.hwp') { 'small-hwp' } else { 'form-hwpx' }
-      $pair = @($LegacyProbes | Where-Object { $_.Label -cin @("initial-$fixture-shell", "initial-$fixture-force-extract") } | ForEach-Object { $_.Result })
-      Assert-Condition ($pair.Count -eq 2) 'Initial Shell observation missing.'
-      $check = 'fixture-parity'
-      $expected = Get-ThumbnailDocumentFinding $pair ($Kind -eq 'nsis') $true
-      Assert-Condition ($assessment.finding -ceq $expected) 'App generated fixture and initial public fixture disagree; investigate, do not waive.'
-      $findings += [ordered]@{ extension = $extension; finding = $assessment.finding; thumbnailPassed = $passed }
-    }
-    return $findings
-  } catch {
-    # Replace rather than retain the original exception, which may contain paths.
+    return $true
+  }
+  $checks += Test-AppDiagnosticCondition 'format-count' $null { $Suite.formats.Count -eq 2 }
+  foreach ($extension in @('.hwp', '.hwpx')) {
+    $format = Get-AppFormatAssessment $Suite $extension $Kind $LegacyProbes
+    $checks += $format.checks
+    if ($null -ne $format.finding) { $findings += $format.finding }
+  }
+  return [pscustomobject]@{ passed = @($checks | Where-Object { $_.status -cne 'passed' }).Count -eq 0; checks = $checks; formats = $findings }
+}
+
+function Assert-AppDiagnosticEvaluation($Evaluation) {
+  if (-not $Evaluation.passed) {
+    $first = @($Evaluation.checks | Where-Object { $_.status -cne 'passed' })[0]
     $failure = [InvalidOperationException]::new('App diagnostic assessment rejected.')
-    $failure.Data['AlhangeulAssessmentCode'] = $check
-    $failure.Data['AlhangeulAssessmentExtension'] = $extension
+    $failure.Data['AlhangeulAssessmentCode'] = $first.code
+    $failure.Data['AlhangeulAssessmentExtension'] = $first.extension
     throw $failure
   }
 }
 
+function Assert-AppDiagnostic($Suite, $Inventory, $Kind, $Version, $LegacyProbes) {
+  $evaluation = Get-AppDiagnosticAssessment $Suite $Inventory $Kind $Version $LegacyProbes
+  Assert-AppDiagnosticEvaluation $evaluation
+  return $evaluation.formats
+}
+
 function Get-AppAssessmentFailure($ErrorRecord) {
   $allowed = @('suite-completion', 'reference-identity', 'installation-identity', 'reference-registration-shape',
-    'binary-reference', 'registration-preflight', 'format-count', 'format-identity', 'format-integrity',
+    'binary-reference', 'registration-preflight', 'format-count', 'format-identity', 'format-installation', 'format-integrity',
     'format-registration', 'independent-assessment', 'reported-assessment', 'initial-observation', 'fixture-parity')
   $result = [ordered]@{ code = 'unclassified'; extension = $null }
   $exception = $ErrorRecord.Exception
@@ -78,39 +125,4 @@ function Get-AppAssessmentFailure($ErrorRecord) {
     $exception = $exception.InnerException
   }
   return $result
-}
-
-function Get-AppInstallationEvidence($Suite, $ExpectedKind) {
-  $result = [ordered]@{ expectedKind = $null; observedKind = $null; recordsReadable = $null }
-  if ($ExpectedKind -is [string] -and $ExpectedKind -cin @('nsis', 'msi')) { $result.expectedKind = $ExpectedKind }
-  # Missing/malformed properties remain unknown; never coerce a string to bool.
-  try {
-    $kind = $Suite.inspection.installKind
-    if ($kind -is [string] -and $kind -cin @('nsis', 'msi', 'unknown')) { $result.observedKind = $kind }
-  } catch {}
-  try {
-    $readable = $Suite.inspection.installRecordsReadable
-    if ($readable -is [bool]) { $result.recordsReadable = $readable }
-  } catch {}
-  return $result
-}
-
-function Get-AppDiagnosticEvidence($Suite) {
-  # Deliberate projection: no native stateToken, paths, exception or bitmap bytes.
-  $output = @()
-  if ($null -eq $Suite) { return $output }
-  foreach ($format in $Suite.formats) {
-    if ($format.input.extension -cnotin @('.hwp', '.hwpx')) { continue }
-    $probes = @()
-    foreach ($record in $format.input.probes) {
-      if ($record.Label -cnotin @(Get-CheckLabels $format.input.extension)) { continue }
-      $probe = $record.Result
-      $phase = if ($probe.phase -cin @('input.shellPath', 'AssocQueryStringW', 'CoCreateInstance.handler', 'SHCreateItemFromParsingName.imageFactory', 'SHCreateItemFromParsingName.shellItem', 'IShellItemImageFactory.GetImage', 'CoCreateInstance.thumbnailCache', 'IThumbnailCache.GetThumbnail', 'ISharedBitmap.GetSharedBitmap')) { $probe.phase } else { 'unknown' }
-      $code = if ($probe.hresult -cmatch '^0x[0-9A-F]{8}$') { $probe.hresult } else { $null }
-      $bitmap = if ($probe.bitmapPresent -is [bool]) { $probe.bitmapPresent } else { $null }
-      $probes += [ordered]@{ label = $record.Label; phase = $phase; hresult = $code; bitmapPresent = $bitmap }
-    }
-    $output += [ordered]@{ extension = $format.input.extension; probes = $probes }
-  }
-  return $output
 }

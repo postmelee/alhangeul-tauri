@@ -4,7 +4,9 @@ pub fn decode_sz(bytes: &[u8], allow_empty: bool) -> Option<String> {
         return None;
     }
     let mut units: Vec<_> = bytes
-        .chunks_exact(2)
+        .as_chunks::<2>()
+        .0
+        .iter()
         .map(|pair| u16::from_le_bytes([pair[0], pair[1]]))
         .collect();
     if units.pop() != Some(0) || units.contains(&0) {

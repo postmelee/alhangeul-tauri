@@ -1,8 +1,9 @@
 //! Conservative diagnosis-only identity. This does not change updater eligibility.
 use super::{
+    install_registry::{Native, Reader},
     local_file,
     model::{InstallKind, Observation},
-    registry::{self, Hive},
+    registry::Hive,
 };
 use std::path::Path;
 
@@ -16,8 +17,12 @@ pub struct InstallIdentity {
 }
 
 pub fn collect(root: &Path) -> InstallIdentity {
-    let nsis = registry::string(Hive::User, PRODUCT, "");
-    let msi = registry::string(Hive::User, PRODUCT, "InstallDir");
+    collect_from(root, &Native)
+}
+
+fn collect_from(root: &Path, reader: &impl Reader) -> InstallIdentity {
+    let nsis = reader.string(Hive::User, PRODUCT, "");
+    let msi = reader.string(Hive::User, PRODUCT, "InstallDir");
     let expected = match (&nsis, &msi) {
         (Observation::Known(path), Observation::Missing) if matches_root(path, root) => {
             InstallKind::Nsis
@@ -33,7 +38,7 @@ pub fn collect(root: &Path) -> InstallIdentity {
             }
         }
     };
-    let records = uninstall_kinds(root);
+    let records = uninstall_kinds(root, reader);
     InstallIdentity {
         kind: if records
             .as_ref()
@@ -51,39 +56,36 @@ fn matches_root(value: &str, root: &Path) -> bool {
     local_file::same_path(Path::new(value), root)
 }
 
-fn uninstall_kinds(root: &Path) -> Result<Vec<InstallKind>, ()> {
+fn uninstall_kinds(root: &Path, reader: &impl Reader) -> Result<Vec<InstallKind>, ()> {
     let mut result = Vec::new();
     for hive in [Hive::User, Hive::Machine] {
-        let key = match registry::open(hive, UNINSTALL) {
-            Ok(key) => key,
-            Err(error) if error.kind() == std::io::ErrorKind::NotFound => continue,
-            Err(_) => return Err(()),
-        };
-        for (index, name) in key.enum_keys().enumerate() {
-            if index >= 4096 {
-                return Err(());
-            }
-            let name = name.map_err(|_| ())?;
+        for name in reader.keys(hive, UNINSTALL)? {
             let path = format!(r"{UNINSTALL}\{name}");
-            let display = registry::display_name(hive, &path);
+            let display = reader.string(hive, &path, "DisplayName");
             if matches!(display, Observation::Unreadable) {
                 return Err(());
             }
             if !equals(&display, "Alhangeul") {
                 continue;
             }
-            result.push(entry(hive, &path, &name, root)?);
+            result.push(entry(reader, hive, &path, &name, root)?);
         }
     }
     Ok(result)
 }
 
-fn entry(hive: Hive, path: &str, name: &str, root: &Path) -> Result<InstallKind, ()> {
-    let publisher = registry::string(hive, path, "Publisher");
-    let location = registry::string(hive, path, "InstallLocation");
-    let command = registry::string(hive, path, "UninstallString");
-    let binary = registry::string(hive, path, "MainBinaryName");
-    let installer = registry::dword(hive, path, "WindowsInstaller");
+fn entry(
+    reader: &impl Reader,
+    hive: Hive,
+    path: &str,
+    name: &str,
+    root: &Path,
+) -> Result<InstallKind, ()> {
+    let publisher = reader.string(hive, path, "Publisher");
+    let location = reader.string(hive, path, "InstallLocation");
+    let command = reader.string(hive, path, "UninstallString");
+    let binary = reader.string(hive, path, "MainBinaryName");
+    let installer = reader.dword(hive, path, "WindowsInstaller");
     if [&publisher, &location, &command, &binary]
         .into_iter()
         .any(|value| matches!(value, Observation::Unreadable))
@@ -157,6 +159,10 @@ fn command_executable(command: &str) -> Option<&str> {
         command.split_whitespace().next()
     }
 }
+
+#[cfg(test)]
+#[path = "install_identity_tests.rs"]
+mod record_tests;
 
 #[cfg(test)]
 mod tests {

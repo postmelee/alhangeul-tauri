@@ -9,7 +9,7 @@ function New-AppSuiteCase($Kind, $Limited = $false) {
   $formats = @(); $legacy = @()
   foreach ($extension in @('.hwp', '.hwpx')) {
     $inputValue = Copy-Case $base
-    $inputValue.extension = $extension; $inputValue.registration.scope = $scope
+    $inputValue.extension = $extension; $inputValue.registration.scope = $scope; $inputValue.installKind = $Kind
     $inputValue.probes[0].Label = "manual-association-$($extension.TrimStart('.'))"
     if ($Limited) {
       foreach ($record in $inputValue.probes) {

@@ -40,7 +40,11 @@ pub fn raw(hive: Hive, path: &str, name: &str) -> Observation<RegValue> {
 }
 
 pub fn dword(hive: Hive, path: &str, name: &str) -> Observation<u32> {
-    match raw(hive, path, name) {
+    decode_dword(raw(hive, path, name))
+}
+
+pub(super) fn decode_dword(value: Observation<RegValue>) -> Observation<u32> {
+    match value {
         Observation::Known(value) if value.vtype == REG_DWORD && value.bytes.len() == 4 => {
             Observation::Known(u32::from_le_bytes(value.bytes.try_into().unwrap()))
         }
@@ -63,7 +67,10 @@ fn string_value(hive: Hive, path: &str, name: &str, display_name: bool) -> Obser
     decode_string(raw(hive, path, name), display_name)
 }
 
-fn decode_string(value: Observation<RegValue>, display_name: bool) -> Observation<String> {
+pub(super) fn decode_string(
+    value: Observation<RegValue>,
+    display_name: bool,
+) -> Observation<String> {
     match value {
         Observation::Known(value)
             if value.vtype == REG_SZ || (display_name && value.vtype == REG_EXPAND_SZ) =>

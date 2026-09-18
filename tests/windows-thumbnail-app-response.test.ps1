@@ -61,6 +61,9 @@ $cases = @(
   @('duplicate', 'msi', $false, 'format-identity', { param($c) $c.suite.formats[1].input.extension = '.hwp' }),
   @('integrity', 'msi', $false, 'format-integrity', { param($c) $c.suite.formats[0].input.integrity = $false }),
   @('format-registration', 'msi', $false, 'format-registration', { param($c) $c.suite.formats[0].input.registration.scope = 'unknown' }),
+  @('format-installation', 'msi', $false, 'format-installation', { param($c) $c.suite.formats[0].input.installKind = 'nsis' }),
+  @('multiple', 'msi', $false, 'installation-identity', { param($c) $c.suite.inspection.installKind = 'unknown'; $c.suite.inspection.buildReference.files[0].sha256 = ('d' * 64); $c.suite.formats[0].input.integrity = $false }),
+  @('missing-inspection', 'msi', $false, 'reference-identity', { param($c) $c.suite.inspection = $null }),
   @('probes', 'msi', $false, 'independent-assessment', { param($c) $c.suite.formats[0].input.probes = @() }),
   @('reported', 'msi', $false, 'reported-assessment', { param($c) $c.suite.formats[0].assessment.thumbnailPassed = $false }),
   @('initial', 'msi', $false, 'initial-observation', { param($c) $c.legacy = @() }),
@@ -79,7 +82,7 @@ try {
     $case = Copy-Case (New-AppSuiteCase $entry[1] $entry[2])
     & $entry[4] $case
     $script:suite = $case.suite
-    $suite.inspection | Add-Member stateToken 'private-state-token'
+    if ($null -ne $suite.inspection) { $suite.inspection | Add-Member stateToken 'private-state-token' }
     $result = @{ InstalledState = @{ Executable = 'private-executable' }; Kind = $entry[1]; Probes = $case.legacy }
     $failed = $false
     try { [void](Invoke-InstalledAppDiagnostic $result $inventory '0.1.0') } catch { $failed = $true }
@@ -91,8 +94,16 @@ try {
     Assert-Condition ($report.processReaped -eq $true -and $report.exitCode -eq 0 -and $report.display.restored -eq $true -and $script:key.Value -eq 1 -and $script:key.Disposed) 'Response path did not preserve cleanup.'
     Assert-Condition ($text -notmatch 'private|stateToken|Exception') 'Raw response leaked into report.'
     Assert-Condition ($report.installation.expectedKind -ceq $entry[1]) 'Expected installer identity lost.'
-    $expectedKind = if ($entry[0] -ceq 'private-install') { $null } else { $case.suite.inspection.installKind }
-    Assert-Condition ($report.installation.observedKind -ceq $expectedKind -and $report.installation.recordsReadable -eq $case.suite.inspection.installRecordsReadable) 'Observed installer identity lost or coerced.'
+    $expectedKind = if ($entry[0] -cin @('private-install', 'missing-inspection')) { $null } else { $case.suite.inspection.installKind }
+    $readable = if ($null -eq $case.suite.inspection) { $null } else { $case.suite.inspection.installRecordsReadable }
+    Assert-Condition ($report.installation.observedKind -ceq $expectedKind -and $report.installation.recordsReadable -eq $readable) 'Observed installer identity lost or coerced.'
+    Assert-Condition ($report.checks.Count -eq 23) 'Independent conditions were lost after a failure.'
+    if ($entry[0] -ceq 'multiple') {
+      $codes = @($report.checks | Where-Object { $_.status -ceq 'failed' } | ForEach-Object { $_.code })
+      foreach ($code in @('installation-identity', 'binary-reference', 'format-integrity')) {
+        Assert-Condition ($code -cin $codes) 'A simultaneous failure was hidden.'
+      }
+    }
     if ($entry[3]) { Assert-Condition ($report.failureStage -ceq 'suite-assessment') 'Wrong rejection stage.' }
     else { Assert-Condition ($report.status -ceq 'passed' -and $report.formats.Count -eq 2 -and $report.probes.Count -eq 2 -and $report.probes[0].probes.Count -eq 10) 'Full positive report incomplete.' }
     if ($entry[0] -ceq 'hwpx') { Assert-Condition ($report.assessmentFailure.extension -ceq '.hwpx') 'Failed format identity lost.' }

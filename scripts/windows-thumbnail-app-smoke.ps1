@@ -69,17 +69,20 @@ function Invoke-InstalledAppDiagnostic($Result, $Inventory, $Version) {
     stage = 'created'; failureStage = $null; errorHresult = $null; assessmentFailure = $null
     processStarted = $false; processReaped = $null; exitCode = $null; stdoutChars = $null; stderrChars = $null
     display = [ordered]@{ originalExists = $null; originalValue = $null; prepared = $false; restored = $null }
-    installation = $null; formats = @(); probes = @()
+    installation = $null; checks = @(); formats = @(); probes = @()
   }
   try {
     Invoke-AppDiagnosticDisplay $report {
       $suite = Invoke-AppDiagnosticTransport $Result.InstalledState.Executable $report
       $report.stage = 'suite-evidence'
       $report.installation = Get-AppInstallationEvidence $suite $Result.Kind
-      $report.cleanup = $suite.cleanup -eq $true
+      $report.cleanup = Get-AppEvidenceBool (Get-AppEvidenceProperty $suite 'cleanup')
       $report.probes = @(Get-AppDiagnosticEvidence $suite)
       $report.stage = 'suite-assessment'
-      $report.formats = @(Assert-AppDiagnostic $suite $Inventory $Result.Kind $Version $Result.Probes)
+      $evaluation = Get-AppDiagnosticAssessment $suite $Inventory $Result.Kind $Version $Result.Probes
+      $report.checks = $evaluation.checks
+      $report.formats = $evaluation.formats
+      Assert-AppDiagnosticEvaluation $evaluation
     }
     Assert-Condition ($report.display.restored -eq $true -and $report.processReaped -eq $true) 'App diagnostic cleanup unverified.'
     $report.stage = 'completed'; $report.status = 'passed'

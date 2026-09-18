@@ -70,17 +70,20 @@ test('assessment rejection exposes only bounded codes and exercises the full res
 test('empty display-name handling is isolated from strict registry fields and identity acceptance', async () => {
   const registry = await read('apps/desktop/src-tauri/src/thumbnail_diagnostics/registry.rs');
   const identity = await read('apps/desktop/src-tauri/src/thumbnail_diagnostics/install_identity.rs');
+  const reader = await read('apps/desktop/src-tauri/src/thumbnail_diagnostics/install_registry.rs');
   const assessment = await read('scripts/windows-thumbnail-app-assessment.ps1');
+  const evidence = await read('scripts/windows-thumbnail-app-evidence.ps1');
   assert.match(registry, /string_value\(hive, path, name, false\)/);
   assert.match(registry, /string_value\(hive, path, "DisplayName", true\)/);
   assert.match(registry, /value\.vtype == REG_SZ/);
   assert.match(registry, /display_name && value\.vtype == REG_EXPAND_SZ/);
   assert.match(registry, /registry_text::decode_display_name/);
   assert.match(registry, /registry_text::decode_sz\(&value\.bytes, false\)/);
-  assert.match(identity, /registry::display_name\(hive, &path\)/);
+  assert.match(reader, /registry::display_name\(hive, path\)/);
+  assert.match(identity, /reader\.string\(hive, &path, "DisplayName"\)/);
   assert.match(identity, /Observation::Unreadable\)\s*\{\s*return Err\(\(\)\)/);
-  assert.match(assessment, /\$inspection\.installKind -ceq \$Kind -and \$inspection\.installRecordsReadable -eq \$true/);
-  assert.match(assessment, /\$readable -is \[bool\]/);
+  assert.match(assessment, /\$inspection\.installKind -ceq \$Kind -and \(Test-AppEvidenceTrue \$inspection\.installRecordsReadable\)/);
+  assert.match(evidence, /\$Value -is \[bool\]/);
 });
 
 test('expandable display-name discovery remains bounded and does not resolve environment variables', async () => {

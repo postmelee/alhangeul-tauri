@@ -43,6 +43,8 @@ mod inspection_native;
 #[cfg(windows)]
 mod install_identity;
 #[cfg(windows)]
+mod install_registry;
+#[cfg(windows)]
 mod local_file;
 #[cfg(windows)]
 mod probe;
