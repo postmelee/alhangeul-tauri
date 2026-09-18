@@ -51,6 +51,15 @@ type projection 8건이 통과했다. Windows 전용 registry mapping 단위 검
 수용은 아직 미검증이다. 우선 기존 fast에서 문자열 형태 관측과 PS 회귀를 확인하며,
 후속 Windows 제품 검증 전까지 기존 설치 실패 해결을 선언하지 않는다.
 
+`699b4cd3fc65a69e7f1392db828ac61744cb8d94` fast
+[`35344446059`](https://github.com/postmelee/alhangeul-tauri/actions/runs/35344446059)는 성공했다.
+Windows PS job 2분 24초, Node/Studio job 1분 23초(병렬)다. HKLM 관측은 같은 263건 중
+REG_SZ 246건/REG_EXPAND_SZ 1건이며, 정규화된 문자열 247건, 미지원 타입/미해결 환경변수/
+읽기 실패는 0건이다. HKCU 제거 목록은 없었다. 관측된 REG_EXPAND_SZ는 literal 보정 범위에
+해당한다. rawDecodeVerified=false이며 Windows native 앱의 설치 식별 성공은 아직 확인하지
+않았다. 다음 검증은 새 제품 `windows-package`; 최종 full/VDI는 별도다. 경량 Windows native
+검사 도입은 반복 비용을 줄일 후속 권고이며 이번 task/첫 릴리즈의 추가 완료 조건으로 두지 않는다.
+
 ### 2026-09-18 설치 형식 식별 경계
 
 `56c1849` fast `35336624479`는 전체 응답 20건 포함 통과했다. windows-package
