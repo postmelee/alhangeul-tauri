@@ -5,6 +5,36 @@ GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
 상태: Stage 6.2 설치 형식 식별·읽기 상태 보정 및 회귀 중
 
+### 2026-09-18 DisplayName 타입 확인 및 빠른 native 경계 검토
+
+`7a1721a` fast `35342164623`은 성공했다. Windows PowerShell 76 sources/14 isolated tests,
+전체 JSON 응답 23건이 통과했다. hosted runner HKLM 제거 목록 263건에는 빈 DisplayName이
+없고 REG_SZ 이외 타입이 1건 있다(246 REG_SZ, 16 DisplayName 없음). HKCU 목록은 없었다.
+빈 문자열 보정으로 이전 설치 실패가 해결됐다고 판단하지 않는다. 현재 collector는 다른
+타입 하나로도 중단하므로 정확한 타입을 먼저 확인한다. 이전 installer runner와 동일한
+항목인지 또는 유일한 실패 원인인지는 아직 확정하지 않는다.
+
+작업지시자는 해당 경계 보정과 반복 CI 구조의 개선 필요성 판단을 승인했다. 기존 테스트의
+읽기 전용 관측에 고정 레지스트리 타입별 개수만 추가하고 fast로 확인한다. 원문/프로그램명/
+경로는 저장하지 않는다. 확인 전 모든 타입을 허용하거나 무조건 건너뛰지 않는다. 확인된
+정상 문자열 타입의 처리와 순수 회귀만 보정하며 COM/설치 경로/updater/수용 guard는 유지한다.
+문서는 기존 계획·오늘할일 위치에 기록한다. CI workflow/새 profile/공유 crate 분리는 이번에
+구현하지 않고 검토안으로 구분한다. fast 결과는 Windows 제품 빌드·설치·VDI 수용이 아니다.
+
+타입별 집계 변경은 Node 955건, Linux PowerShell 구문 및 합성 shape 8건/type projection 8건을
+통과했다. 실제 관측은 다음 Windows fast에서 수행한다.
+
+CI 검토: `35337106761`은 run wall 약 37분(10:55:41–11:32:41 UTC), Windows build job
+29분 2초, 설치 job 최대 3분 24초였다. `35342164623` fast는 select 시작–Windows 완료
+약 3분 16초다. queue/step 시간과 병렬 job 합계를 wall time으로 혼동하지 않는다.
+현재 fast는 PowerShell/JS이며 설치 식별 Rust는 Tauri/rhwp/render 의존의 desktop crate에
+묶였다. 권고는 실제 제품 설치 식별 코드를 재사용하는 작은 Windows native 경계 검사다.
+레지스트리 타입/빈 값/인용 경로/혼합·누락 설치 기록을 격리 fixture로 먼저 검사하고,
+hosted 환경 읽기 전용 관측은 별도로 남긴다. 모사한 C#/PS 판정만 추가하는 것으로
+Rust 수용을 대신하지 않는다. 독립 crate/feature 및 CI wiring·lock 영향은 후속 승인 대상이다.
+기존 fast→windows-package→full 계층과 exact artifact 재사용 기준을 유지하며,
+실패 producer 재사용 허용이나 전체 workflow 교체로 우회하지 않는다.
+
 ### 2026-09-18 설치 형식 식별 경계
 
 `56c1849` fast `35336624479`는 전체 응답 20건 포함 통과했다. windows-package
