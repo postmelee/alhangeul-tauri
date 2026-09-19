@@ -6,9 +6,15 @@ function Assert-Condition($Condition, $Message) { if (-not $Condition) { throw $
 function Open-AppDiagnosticDisplayKey { $script:opened++; if ($script:mode -eq 'missing-key') { return $null }; return $script:key }
 function New-AppDiagnosticProcess { return $script:process }
 function Get-AppDiagnosticEvidence($Suite) { return @() }
-function Assert-AppDiagnostic($Suite, $Inventory, $Kind, $Version, $LegacyProbes) {
+function Get-AppDiagnosticAssessment($Suite, $Inventory, $Kind, $Version, $LegacyProbes) {
+  $script:assessmentCalls++
   if ($script:mode -eq 'assessment') { throw 'private assessment exception' }
-  return @([ordered]@{ extension = '.hwp'; finding = 'thumbnail-api-ok' })
+  $passed = $script:mode -ne 'rejected-assessment'
+  return [pscustomobject]@{
+    passed = $passed
+    checks = @([pscustomobject]@{ code = 'format-integrity'; extension = '.hwp'; status = $(if ($passed) { 'passed' } else { 'failed' }) })
+    formats = @([ordered]@{ extension = '.hwp'; finding = 'thumbnail-api-ok' })
+  }
 }
 function New-FakeTask {
   $task = [pscustomobject]@{ Result = ''; Status = 'RanToCompletion' }
@@ -17,6 +23,7 @@ function New-FakeTask {
 }
 function Reset-Fakes($Present, $Value) {
   $script:opened = 0
+  $script:assessmentCalls = 0
   $script:key = [pscustomobject]@{ Present = $Present; Value = $Value; Writes = 0; Disposed = $false; Kind = [Microsoft.Win32.RegistryValueKind]::DWord }
   $script:key | Add-Member ScriptMethod GetValueNames { if ($this.Present) { return @('IconsOnly') }; return @() }
   $script:key | Add-Member ScriptMethod GetValueKind { param($Name) return $this.Kind }
@@ -85,6 +92,7 @@ $cases = @(
   @('exit', $true, 1, 'transport-check'), @('empty', $true, 1, 'transport-check'),
   @('stderr', $true, 1, 'transport-check'), @('parse', $true, 1, 'reply-parse'),
   @('identity', $true, 1, 'reply-identity'), @('assessment', $true, 1, 'suite-assessment'),
+  @('rejected-assessment', $true, 1, 'suite-assessment'),
   @('prepare', $true, 1, 'display-prepare'), @('readback', $true, 1, 'display-prepare'),
   @('restore', $true, 1, 'display-restore'), @('guard', $true, 1, 'display-guard'),
   @('type', $true, 1, 'display-read'), @('start', $false, $null, 'process-start'),
@@ -103,6 +111,8 @@ try {
     Assert-Condition ([Console]::InputEncoding.CodePage -eq 65001 -and [Console]::InputEncoding.GetPreamble().Length -eq 3) 'Original input encoding not restored.'
     $text = Get-Content -LiteralPath $reportPath -Raw
     $report = $text | ConvertFrom-Json
+    $expectedCalls = if ($script:mode -in @('ok', 'assessment', 'rejected-assessment', 'restore')) { 1 } else { 0 }
+    Assert-Condition ($script:assessmentCalls -eq $expectedCalls) 'Runner did not use the expected assessment boundary.'
     Assert-Condition ($failed -eq ($null -ne $case[3]) -and $report.failureStage -ceq $case[3]) "Wrong failure stage: $($case[0]) / $($report.failureStage)"
     Assert-Condition ($text -notmatch 'private|fake.exe|stateToken') 'Raw private data leaked.'
     if ($script:mode -eq 'guard') { Assert-Condition ($script:opened -eq 0) 'Guard touched registry.' }
@@ -112,6 +122,10 @@ try {
     if ($script:mode -eq 'type') { Assert-Condition ($script:key.Writes -eq 0) 'Unexpected type was modified.' }
     if ($script:mode -eq 'exit') { Assert-Condition ($report.exitCode -eq 23) 'Exit code lost.' }
     if ($script:mode -eq 'assessment') { Assert-Condition ($report.assessmentFailure.code -ceq 'unclassified' -and $null -eq $report.assessmentFailure.extension) 'Unknown assessment exception was not sanitized.' }
+    if ($script:mode -eq 'rejected-assessment') {
+      Assert-Condition ($report.assessmentFailure.code -ceq 'format-integrity' -and $report.assessmentFailure.extension -ceq '.hwp') 'Real assessment gate did not preserve rejection identity.'
+      Assert-Condition ($report.checks.Count -eq 1 -and $report.checks[0].status -ceq 'failed') 'Rejected evaluation was lost before report write.'
+    }
     if ($script:mode -eq 'start') { Assert-Condition ($null -eq $report.cleanup -and $null -eq $report.exitCode) 'Unknown cleanup/exit claimed.' }
     if ($script:mode -eq 'timeout') { Assert-Condition ($script:process.Killed -and $report.processReaped) 'Owned timeout process not reclaimed.' }
     if ($script:mode -eq 'reap') { Assert-Condition ($report.processReaped -eq $false -and $report.display.restored -eq $true) 'Process cleanup failure hid display restoration.' }

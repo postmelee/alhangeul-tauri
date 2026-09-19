@@ -67,6 +67,15 @@ test('assessment rejection exposes only bounded codes and exercises the full res
   assert.doesNotMatch(response, /function (?:Invoke-AppDiagnosticTransport|Assert-AppDiagnostic|Get-AppDiagnosticEvidence)/);
 });
 
+test('runner boundary mock follows the evaluator while keeping the real rejection gate', async () => {
+  const runner = await read('scripts/windows-thumbnail-app-smoke.ps1');
+  const regression = await read('tests/windows-thumbnail-app-runner.test.ps1');
+  assert.match(runner, /\$evaluation = Get-AppDiagnosticAssessment/);
+  assert.match(regression, /function Get-AppDiagnosticAssessment\(/);
+  assert.doesNotMatch(regression, /function Assert-AppDiagnostic(?:Evaluation)?\(/);
+  for (const marker of ['assessmentCalls', 'expectedCalls', 'rejected-assessment', 'report.checks', 'report.assessmentFailure']) assert.ok(regression.includes(marker));
+});
+
 test('empty display-name handling is isolated from strict registry fields and identity acceptance', async () => {
   const registry = await read('apps/desktop/src-tauri/src/thumbnail_diagnostics/registry.rs');
   const identity = await read('apps/desktop/src-tauri/src/thumbnail_diagnostics/install_identity.rs');

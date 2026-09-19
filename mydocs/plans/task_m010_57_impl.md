@@ -3,7 +3,30 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: Stage 6.2 묶음 보정 후보 게시·Windows fast 실행 승인 — 원격 검증 진행
+상태: Stage 6.2 실행기 회귀 mock 보정·fast 재검증 진행
+
+### 2026-09-20 실행기 테스트 경계 보정
+
+`673b59b`의 fast `35352362909`는 Windows 실행기 회귀에서 실패했다. 새 묶음 회귀,
+공통 판정 44건, 실제 Windows IPC와 전체 응답 26건은 통과했지만 기존 runner 테스트가
+옛 `Assert-AppDiagnostic`만 모사해 새 evaluator가 불완전한 가짜 응답을 판정했다.
+`ok / suite-assessment` 실패는 이 연결 누락이며 제품 Shell 실행 결과가 아니다.
+이후 테스트는 runner에서 중단돼 전체 Windows fast 통과로 기록하지 않는다.
+
+후속 "진행해줘"로 기존 runner mock을 `Get-AppDiagnosticAssessment` 반환 계약에 맞추고
+실제 `Assert-AppDiagnosticEvaluation` gate는 유지하는 보정을 승인받았다. evaluator 호출
+횟수와 명시적 판정 거부의 코드·조건 보존 회귀, mock 경로의 Node 계약을 함께 추가한다.
+제품 코드·workflow·통과 기준은 변경하지 않는다. 기존 계획서와 오늘할일 위치를 사용한다.
+로컬 관련 회귀 후 후보 커밋·fast-forward 게시와 `profile=fast` 1회만 실행한다.
+Windows native/설치·최종 full은 별도이며 이번 범위에 포함하지 않는다.
+
+로컬 검증: Node automation 957건, product boundary 622파일, diff 검사 통과.
+공식 SHA256 확인한 Linux ARM64 PowerShell 7.6.6에서 runner 23건을 변환 없이 실행해
+통과했다. 별도 프로세스의 batch/response 26건/smoke/parity 44건도 통과했으며 이 네
+스크립트의 JSON 정수는 임시 harness에서 Windows 5.1 크기로 모사했다. 실제 Windows
+실행으로 세지 않는다. 이번 임시 harness와 컨테이너는 검증 후 제거하고 기존 컨테이너는
+보존했다. 원격 publish는 `673b59b`로 로컬 기준과 일치하고 최근 CI가 모두 종료된 것을
+확인했다. 이번 후보는 테스트 2파일·기존 계획·오늘할일만 포함하며 제품 bytes 변경은 없다.
 
 ### 2026-09-18 묶음 보정 후보 게시·fast 승인
 
