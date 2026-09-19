@@ -3,7 +3,54 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: Stage 6.2 MSI UninstallString 자료형 처리 보정
+상태: Stage 6.2 VDI 진단 확인 후 모달 중앙 배치 보정
+
+### 2026-09-20 중앙 배치 후보 게시·full 승인
+
+사용자가 미리보기 결과를 승인하고 적용 및 VDI 최종 확인을 요청했다. 로컬 검증된 UI/CSS와
+DOM 회귀·기존 내부 기록을 커밋하여 `publish/task57`에 fast-forward 게시하고, 새 SHA의
+`ci.yml / scope=full / profile=full / thumbnail_context_experiment=false`를 한 번 실행한다.
+full에 빠른 계약 검사가 포함되므로 별도 fast 실행을 중복 추가하지 않는다.
+게시 전 원격 publish는 `3e3934b`, devel은 `f154b4d`이며 이전 full `35474558562`는
+진행 중이다. 이전 실행을 취소하지 않고 기존 concurrency 정책에 따라 새 후보를 대기시킨다.
+VDI 최종 확인에는 중앙 배치를 포함한 새 run의 NSIS를 사용한다. 기존 설치본의 진단 성공과
+새 UI의 Windows 배치 수용을 구분하며 이번 단계에서 PR/merge/릴리즈는 수행하지 않는다.
+
+### 2026-09-20 진단 모달 중앙 배치 보정 승인
+
+`3e3934b`의 windows-package `35466769270`은 성공했다. Windows desktop Rust 179건과
+MSI 설치 식별·HWP/HWPX 생성·앱 진단이 통과했다. NSIS는 알려진 사용자별 Shell 제한을
+정확히 분류했고, 강제 MSI 재설치는 3010/재부팅 후 미검증 경계를 유지했다.
+사용자가 같은 sourceSha의 VDI NSIS에서 실제 썸네일과 진단 모두 성공한 JSON/화면을
+제공했다. 일반 권한·EnableLUA=1·사용자별 등록이고 HWP/HWPX 모두 thumbnail-api-ok다.
+full `35474558562`는 해당 후보 검증이며 아래 새 UI 변경을 검증한 실행으로 간주하지 않는다.
+
+사용자가 중앙 배치 보정과 여러 화면 조건의 스크린샷을 명시 승인했다. 현재 공통 base.css의
+전체 margin 초기화와 모달의 정렬 규칙 누락을 대상으로, 제품 style.css에 위치·자동 여백을
+명시한다. 별도 native 창/진단 로직/설치 정책은 변경하지 않는다. DOM 테스트에는 읽기 전용
+upstream base.css를 로드하고 중심·화면 경계·하단 버튼·긴 본문 스크롤을 검증한다.
+준비/성공/부분 성공·상세 펼침, 일반/작은/좁은 viewport를 브라우저에서 캡처한다.
+이는 웹 UI 검증이며 Windows WebView2·DPI 실검증으로 확대하지 않는다.
+
+문서 위치는 기존 내부 계획서와 오늘할일을 재사용한다. 테스트 미리보기는 기존 tests에 두고
+스크린샷은 저장소 밖 임시 산출물로 제공한다. 로컬 Node/Studio·빌드·경계 검증 후 결과를
+보고한다. 게시·새 CI는 별도 승인하며, shared UI 변경 후 최종 수용은 새 후보 full이 필요하다.
+
+구현·검증 결과:
+
+- 공통 base.css를 포함한 실제 브라우저에서 수정 전 1280×800 viewport의 모달 좌표가
+  (0, 0), margin=0임을 재현했다. 제품 CSS의 `position: fixed; inset: 0; margin: auto;`
+  세 속성으로 정렬을 명시했다. upstream/진단 로직/native 창 코드는 변경하지 않았다.
+- 준비·부분 성공·전체 성공·상세 펼침의 중심 오차 1px 이내, 화면 여백, 가로 넘침 없음,
+  하단 버튼 유지와 긴 본문 스크롤을 검사하는 실 DOM 회귀를 추가했다. 1280×800,
+  900×600, 480×640에서 기존 동작 회귀를 포함해 모두 통과했고 실제 Escape 닫기도 확인했다.
+- Node automation 959건, Studio 27파일/166건, upstream 36건, Studio build,
+  product boundary 625파일 및 diff 검사 통과. 브라우저 회귀는 수동 실행이며 native Windows
+  검사나 CI 자동 실행으로 기록하지 않는다. Studio build의 기존 큰 chunk/혼합 import 경고는 남는다.
+- 저장소 밖 `/private/tmp/task57-modal-centering.Yu2OWd/`에 수정 전·준비·성공·작은 창
+  부분 성공/상세·좁은 창 스크린샷을 저장했다. 모두 합성 진단 데이터와 실제 제품 UI/CSS의
+  브라우저 캡처이며 WebView2·Windows DPI 캡처는 아니다. viewport override는 복원했다.
+  변경은 미커밋이며 원격 게시나 새 CI는 실행하지 않았다.
 
 ### 2026-09-20 MSI 음성 회귀 보정 후보 게시·fast 승인
 

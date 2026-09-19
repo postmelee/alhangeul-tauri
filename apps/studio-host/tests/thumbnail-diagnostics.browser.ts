@@ -1,9 +1,11 @@
+import '@upstream/styles/base.css';
 import '../src/style.css';
 import { AboutDialog } from '../src/ui/about-dialog';
 import { ThumbnailDiagnosticsDialog } from '../src/ui/thumbnail-diagnostics-dialog';
 import { ThumbnailDiagnosticsController } from '../src/core/desktop-thumbnail-diagnostics';
 import { completed, ready, running } from './thumbnail-diagnostics-fixtures';
 import type { DiagnosticSnapshot } from '../src/core/desktop-thumbnail-diagnostics-model';
+import { assertDialogLayout } from './thumbnail-diagnostics-layout';
 
 const report = document.querySelector('#report')!;
 function assert(condition: unknown, message: string): asserts condition {
@@ -34,6 +36,7 @@ async function resultsAndCopy() {
   const { dialog, calls } = setup();
   try {
     await settle();
+    assertDialogLayout(assert, '검사 준비');
     assert(calls.join() === 'inspect', '동의 전에 실제 검사를 시작하지 않음');
     assert(!button('동의하고 검사').disabled, '검사 준비 버튼 연결');
     assert(button('공식 설치 안내 열기').hidden, '검사 전 MSI 안내 없음');
@@ -45,6 +48,7 @@ async function resultsAndCopy() {
     assert(cards[0]?.textContent?.includes('HWP✓ 검사 통과'), 'HWP 성공 표시');
     assert(cards[1]?.textContent?.includes('HWPX！확인 필요'), 'HWPX 제한 별도 표시');
     assert(text.includes('일부 형식에서 확인이 필요해요'), '부분 성공 제목');
+    assertDialogLayout(assert, '부분 성공');
     assert(button('동의하고 검사').hidden && button('검사 취소').hidden, '완료 후 불필요한 동작 숨김');
     assert((document.querySelector('.thumbnail-privacy') as HTMLElement).hidden, '완료 후 동의 안내 숨김');
     assert([...document.querySelectorAll('dialog details')].every((node) => !(node as HTMLDetailsElement).open), '기술 정보와 상세 설치 절차는 기본 접힘');
@@ -131,7 +135,11 @@ document.querySelector('#tests')!.addEventListener('click', () => {
     try {
       aboutExposure(); await resultsAndCopy(); await cancellation(); await interruptedDiagnostics();
       const { dialog } = setup(completed()); await settle(); button('동의하고 검사').click(); await settle();
-      assert(button('공식 설치 안내 열기').hidden, '전체 성공이면 MSI 안내 없음'); dialog.hide();
+      assert(button('공식 설치 안내 열기').hidden, '전체 성공이면 MSI 안내 없음');
+      assertDialogLayout(assert, '전체 성공');
+      for (const details of document.querySelectorAll('dialog details')) (details as HTMLDetailsElement).open = true;
+      assertDialogLayout(assert, '상세 펼침');
+      dialog.hide();
       for (const status of ['cancelled', 'timed-out', 'failed'] as const) {
         const result = completed(); result.status = status;
         if (result.result?.kind === 'suite') { result.result.value.status = status; result.result.value.cleanup = false; }
@@ -149,3 +157,4 @@ document.querySelector('#tests')!.addEventListener('click', () => {
   })();
 });
 document.querySelector('#sample')!.addEventListener('click', () => { setup(); });
+document.querySelector('#success')!.addEventListener('click', () => { setup(completed()); });
