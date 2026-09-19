@@ -5,6 +5,42 @@ GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
 상태: Stage 6.2 MSI UninstallString 자료형 처리 보정
 
+### 2026-09-20 MSI 음성 회귀 보정 후보 게시·fast 승인
+
+후속 "진행해줘"로 로컬 검증된 테스트 보정의 커밋·`publish/task57` fast-forward 게시와
+`ci.yml / scope=full / profile=fast / thumbnail_context_experiment=false` 1회 실행을
+승인받았다. 게시 전 원격 publish는 `162fb46`, devel은 통합된 `f154b4d`이며 진행 중인
+CI는 없다. 테스트 2파일과 기존 내부 계획서·오늘할일만 게시한다. fast는 Windows Rust
+assertion을 실행하지 않으므로 보정의 실제 실행 확인·MSI 설치 수용으로 기록하지 않는다.
+후속 windows-package와 최종 full은 결과 확인 후 별도 승인으로 진행한다.
+
+### 2026-09-20 MSI 음성 회귀 기대값 보정 승인
+
+`162fb46`의 fast `35464177108`은 성공했지만 windows-package `35464478376`은
+Windows native 178건 통과·1건 실패로 설치 검사에 도달하지 못했다. 새 MSI 회귀는
+통과했고, 기존 `identifies_marker_discovery_and_product_decode_failures`의 오류 개수
+기대값이 실제 두 오류를 한 오류로 가정했다. 기본 MSI fixture를 REG_EXPAND_SZ로 바꾼 뒤
+손상된 WindowsInstaller의 invalid-dword와 generic 제거 명령 reader의 wrong-type이
+함께 발생하는 것을 테스트에 반영하지 못했다. 이전 교차 컴파일은 이 assertion을 실행하지 않았다.
+
+작업지시자의 "진행해줘"로 테스트만 보정한다. 손상된 표식 사례를 MSI 전용 회귀로 옮겨
+두 오류의 전체 필드·자료형·길이·순서를 정확히 비교하고 누락/읽기 실패/0 표식도 확인한다.
+제품 판정·decoder·workflow·UI는 변경하지 않는다. 기존 내부 계획서와 오늘할일을 재사용한다.
+Node 계약과 Linux 컨테이너의 Windows 교차 컴파일로 로컬 확인하고, 실제 Windows 실행은
+후속 CI로 남긴다. 후보 게시·CI 실행은 별도 단계이며 Stage 6.2를 완료 처리하지 않는다.
+
+보정·로컬 검증 결과:
+
+- 기존 단일 오류 표에서 손상된 DWORD 사례를 MSI 전용 회귀로 이동했다. 네 표식 상태에서
+  실패 배열 전체를 비교하며 손상 DWORD는 `WindowsInstaller / invalid-dword / 4 / 1`과
+  `UninstallString / wrong-type / 2 / 106` 두 건을 순서대로 요구한다. 모든 항목의 area,
+  hive, Win32 오류 없음과 직렬화 왕복도 검사한다. 다른 단일 오류 기대값은 해당 입력에서
+  유효하며 제품 소스 변경은 없다.
+- Node automation 959건과 product boundary 624파일, diff 검사 통과. Linux 임시 컨테이너의
+  제품 원본 모듈·제품 lock 기반 Windows target `clippy --tests -- -D warnings` 통과.
+  Windows assertion 실행·MSI 설치 검증은 수행하지 않았으며 후속 CI로 확인해야 한다.
+  이번 변경은 미커밋이고 CI를 새로 실행하지 않았다.
+
 ### 2026-09-20 MSI 자료형 보정 후보 게시·fast 승인
 
 후속 "진행해줘"로 보정 후보 커밋·`publish/task57` fast-forward 게시와

@@ -34,18 +34,6 @@ fn identifies_marker_discovery_and_product_decode_failures() {
             ReadReason::InvalidString,
         ),
         (
-            Hive::Machine,
-            format!(r"{UNINSTALL}\{MSI_ID}"),
-            "WindowsInstaller",
-            Observation::Known(RegValue {
-                bytes: vec![1],
-                vtype: REG_DWORD,
-            }),
-            ReadArea::UninstallProduct,
-            ReadField::WindowsInstaller,
-            ReadReason::InvalidDword,
-        ),
-        (
             Hive::User,
             PRODUCT.to_string(),
             "InstallDir",

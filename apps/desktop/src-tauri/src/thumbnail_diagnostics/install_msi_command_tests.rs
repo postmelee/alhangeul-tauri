@@ -1,6 +1,6 @@
 //! MSI fixture mirrors the observed REG_EXPAND_SZ; NSIS and generic fields stay strict.
 use super::*;
-use crate::thumbnail_diagnostics::install_failure::{ReadField, ReadReason};
+use crate::thumbnail_diagnostics::install_failure::*;
 
 fn msi_path() -> String {
     format!(r"{UNINSTALL}\{MSI_ID}")
@@ -69,22 +69,81 @@ fn expanded_or_malformed_msi_command_remains_unreadable_with_correct_reason() {
 
 #[test]
 fn msi_marker_is_required_before_expand_string_reader_is_used() {
-    for value in [
-        Observation::Missing,
-        Observation::Unreadable,
-        Observation::Known(RegValue {
-            bytes: 0_u32.to_le_bytes().to_vec(),
-            vtype: REG_DWORD,
-        }),
+    for (value, flag_error) in [
+        (Observation::Missing, None),
+        (
+            Observation::Unreadable,
+            Some((ReadReason::ReadFailed, None, None)),
+        ),
+        (
+            Observation::Known(RegValue {
+                bytes: 0_u32.to_le_bytes().to_vec(),
+                vtype: REG_DWORD,
+            }),
+            None,
+        ),
+        (
+            Observation::Known(RegValue {
+                bytes: vec![1],
+                vtype: REG_DWORD,
+            }),
+            Some((ReadReason::InvalidDword, Some(4), Some(1))),
+        ),
     ] {
-        let mut records = installed(InstallKind::Msi);
-        records.put(Hive::Machine, &msi_path(), "WindowsInstaller", value);
-        let result = records.collected();
-        assert_eq!(result.kind, InstallKind::Unknown);
-        assert!(result
-            .read_failures
-            .iter()
-            .any(|f| f.field == ReadField::UninstallString && f.reason == ReadReason::WrongType));
+        assert_rejected_msi_flag(value, flag_error);
+    }
+}
+
+fn assert_rejected_msi_flag(
+    value: Observation<RegValue>,
+    flag_error: Option<(ReadReason, Option<u32>, Option<u32>)>,
+) {
+    let mut records = installed(InstallKind::Msi);
+    records.put(Hive::Machine, &msi_path(), "WindowsInstaller", value);
+    let result = records.collected();
+    assert_eq!(result.kind, InstallKind::Unknown);
+    assert!(!result.records_readable);
+    let mut expected = Vec::new();
+    if let Some((reason, value_type, byte_length)) = flag_error {
+        expected.push(product_failure(
+            ReadField::WindowsInstaller,
+            reason,
+            value_type,
+            byte_length,
+        ));
+    }
+    // Without a valid MSI marker the generic reader must reject REG_EXPAND_SZ.
+    expected.push(product_failure(
+        ReadField::UninstallString,
+        ReadReason::WrongType,
+        Some(2),
+        Some(106),
+    ));
+    assert_eq!(result.read_failures, expected);
+    for failure in result.read_failures {
+        let json = serde_json::to_string(&failure).unwrap();
+        assert!(!json.contains("Program Files") && !json.contains(MSI_ID));
+        assert_eq!(
+            serde_json::from_str::<InstallReadFailure>(&json).unwrap(),
+            failure
+        );
+    }
+}
+
+fn product_failure(
+    field: ReadField,
+    reason: ReadReason,
+    value_type: Option<u32>,
+    byte_length: Option<u32>,
+) -> InstallReadFailure {
+    InstallReadFailure {
+        area: ReadArea::UninstallProduct,
+        hive: ReadHive::Machine,
+        field,
+        reason,
+        value_type,
+        byte_length,
+        win32_error: None,
     }
 }
 
