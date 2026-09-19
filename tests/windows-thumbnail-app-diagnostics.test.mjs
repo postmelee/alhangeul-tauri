@@ -111,6 +111,23 @@ test('install read failures reach CI via closed typed projection without retryin
   assert.doesNotMatch(trace, /eprintln!|println!|format!|to_string\(/);
 });
 
+test('MSI uninstall expand-string support stays behind machine WindowsInstaller identity', async () => {
+  const identity = await read('apps/desktop/src-tauri/src/thumbnail_diagnostics/install_identity.rs');
+  const reader = await read('apps/desktop/src-tauri/src/thumbnail_diagnostics/install_registry.rs');
+  const trace = await read('apps/desktop/src-tauri/src/thumbnail_diagnostics/install_trace.rs');
+  const text = await read('apps/desktop/src-tauri/src/thumbnail_diagnostics/registry_text.rs');
+  const tests = await read('apps/desktop/src-tauri/src/thumbnail_diagnostics/install_msi_command_tests.rs');
+  assert.match(identity, /matches!\(hive, Hive::Machine\) && installer == Observation::Known\(1\)/);
+  assert.match(identity, /reader\.msi_uninstall_string\(path\)/);
+  assert.match(reader, /decode_msi_uninstall_string/);
+  assert.match(trace, /super::install_registry::decode_msi_uninstall_string/);
+  assert.match(text, /decode_literal_msi_command/);
+  assert.match(text, /!value\.contains\('%'\)/);
+  assert.match(tests, /value\.bytes\.len\(\), 106/);
+  assert.match(tests, /REG_EXPAND_SZ/);
+  assert.doesNotMatch(reader + text, /ExpandEnvironmentStrings|std::env::|Command::new/);
+});
+
 test('expandable display-name discovery remains bounded and does not resolve environment variables', async () => {
   const text = await read('apps/desktop/src-tauri/src/thumbnail_diagnostics/registry_text.rs');
   const registry = await read('apps/desktop/src-tauri/src/thumbnail_diagnostics/registry.rs');

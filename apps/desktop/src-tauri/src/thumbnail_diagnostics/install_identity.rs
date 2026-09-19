@@ -110,9 +110,13 @@ fn entry(
 ) -> Result<InstallKind, ()> {
     let publisher = reader.string(hive, path, "Publisher");
     let location = reader.string(hive, path, "InstallLocation");
-    let command = reader.string(hive, path, "UninstallString");
-    let binary = reader.string(hive, path, "MainBinaryName");
     let installer = reader.dword(hive, path, "WindowsInstaller");
+    let command = if matches!(hive, Hive::Machine) && installer == Observation::Known(1) {
+        reader.msi_uninstall_string(path)
+    } else {
+        reader.string(hive, path, "UninstallString")
+    };
+    let binary = reader.string(hive, path, "MainBinaryName");
     if [&publisher, &location, &command, &binary]
         .into_iter()
         .any(|value| matches!(value, Observation::Unreadable))

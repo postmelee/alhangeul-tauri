@@ -27,9 +27,15 @@ pub fn decode_display_name(bytes: &[u8], expandable: bool) -> Option<String> {
     Some(value)
 }
 
+// REG_EXPAND_SZ MSI command: require literal text, never expand or execute it.
+pub fn decode_literal_msi_command(bytes: &[u8]) -> Option<String> {
+    let value = decode_sz(bytes, false)?;
+    (!value.contains('%')).then_some(value)
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{decode_display_name, decode_sz};
+    use super::{decode_display_name, decode_literal_msi_command, decode_sz};
 
     fn encoded(text: &str) -> Vec<u8> {
         text.encode_utf16()
@@ -93,6 +99,37 @@ mod tests {
             assert_eq!(decode_sz(&bytes, true), None);
             assert_eq!(decode_display_name(&bytes, false), None);
             assert_eq!(decode_display_name(&bytes, true), None);
+        }
+    }
+
+    #[test]
+    fn observed_msi_command_is_literal_106_byte_utf16() {
+        let command = "MsiExec.exe /X{77C4273A-7040-4B1C-A575-51ACDCB27935}";
+        let bytes = encoded(command);
+        assert_eq!(bytes.len(), 106);
+        assert_eq!(decode_literal_msi_command(&bytes).as_deref(), Some(command));
+    }
+
+    #[test]
+    fn msi_command_keeps_empty_expansion_and_malformed_payloads_rejected() {
+        for text in [
+            "",
+            "%SYSTEMROOT%\\System32\\msiexec.exe /X{id}",
+            "MsiExec.exe /X%ID%",
+            "MsiExec.exe %",
+            "A\0B",
+        ] {
+            assert_eq!(decode_literal_msi_command(&encoded(text)), None);
+        }
+        for bytes in [
+            vec![],
+            vec![0],
+            vec![65, 0],
+            vec![0, 0, 0, 0],
+            vec![0, 216, 0, 0],
+            vec![0; 32770],
+        ] {
+            assert_eq!(decode_literal_msi_command(&bytes), None);
         }
     }
 }

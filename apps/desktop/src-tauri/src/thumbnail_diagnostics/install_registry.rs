@@ -3,7 +3,20 @@ use super::{
     model::Observation,
     registry::{self, Hive},
 };
-use winreg::RegValue;
+use winreg::{enums::REG_EXPAND_SZ, RegValue};
+
+// Only the MSI collector calls this. Never expand or execute registry commands.
+pub(super) fn decode_msi_uninstall_string(value: Observation<RegValue>) -> Observation<String> {
+    match value {
+        Observation::Known(value) if value.vtype == REG_EXPAND_SZ => {
+            match super::registry_text::decode_literal_msi_command(&value.bytes) {
+                Some(text) => Observation::Known(text),
+                _ => Observation::Unreadable,
+            }
+        }
+        value => registry::decode_string(value, false),
+    }
+}
 
 pub(super) trait Reader {
     fn raw(&self, hive: Hive, path: &str, name: &str) -> Observation<RegValue>;
@@ -28,6 +41,10 @@ pub(super) trait Reader {
 
     fn dword(&self, hive: Hive, path: &str, name: &str) -> Observation<u32> {
         registry::decode_dword(self.raw(hive, path, name))
+    }
+
+    fn msi_uninstall_string(&self, path: &str) -> Observation<String> {
+        decode_msi_uninstall_string(self.raw(Hive::Machine, path, "UninstallString"))
     }
 }
 

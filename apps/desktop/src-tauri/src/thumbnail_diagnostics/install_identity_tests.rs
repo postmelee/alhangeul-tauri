@@ -5,6 +5,8 @@ use winreg::{enums::*, RegValue};
 
 #[path = "install_failure_tests.rs"]
 mod failure_tests;
+#[path = "install_msi_command_tests.rs"]
+mod msi_command_tests;
 
 const ROOT: &str = r"C:\Program Files\Alhangeul";
 const MSI_ID: &str = "{77C4273A-7040-4B1C-A575-51ACDCB27935}";
@@ -94,11 +96,11 @@ fn installed(kind: InstallKind) -> Records {
         );
         records.text(hive, &path, "MainBinaryName", "Alhangeul.exe");
     } else {
-        records.text(
+        records.put(
             hive,
             &path,
             "UninstallString",
-            &format!("MsiExec.exe /X{MSI_ID}"),
+            raw_text(&format!("MsiExec.exe /X{MSI_ID}"), REG_EXPAND_SZ),
         );
         records.put(
             hive,

@@ -36,16 +36,17 @@ impl<'a, R: Reader> Trace<'a, R> {
         &self,
         hive: Hive,
         path: &str,
-        name: &str,
+        field: (&str, bool),
         decode: impl FnOnce(Observation<RegValue>) -> Observation<T>,
     ) -> Observation<T> {
+        let (name, msi_command) = field;
         let (raw, error) = self.reader.raw_detailed(hive, path, name);
         let mut failure = location(hive, name);
         failure.win32_error = error;
         if let Observation::Known(value) = &raw {
             failure.value_type = Some(value.vtype.clone() as u32);
             failure.byte_length = u32::try_from(value.bytes.len()).ok();
-            failure.reason = reason(value, name);
+            failure.reason = reason(value, name, msi_command);
         }
         let result = match raw {
             Observation::Known(value) if value.bytes.len() > 32768 => Observation::Unreadable,
@@ -64,13 +65,22 @@ impl<R: Reader> Reader for Trace<'_, R> {
     }
 
     fn string(&self, hive: Hive, path: &str, name: &str) -> Observation<String> {
-        self.read(hive, path, name, |value| {
+        self.read(hive, path, (name, false), |value| {
             registry::decode_string(value, name == "DisplayName")
         })
     }
 
     fn dword(&self, hive: Hive, path: &str, name: &str) -> Observation<u32> {
-        self.read(hive, path, name, registry::decode_dword)
+        self.read(hive, path, (name, false), registry::decode_dword)
+    }
+
+    fn msi_uninstall_string(&self, path: &str) -> Observation<String> {
+        self.read(
+            Hive::Machine,
+            path,
+            ("UninstallString", true),
+            super::install_registry::decode_msi_uninstall_string,
+        )
     }
 
     fn keys(&self, hive: Hive, path: &str) -> Result<Vec<String>, ()> {
@@ -85,7 +95,7 @@ impl<R: Reader> Reader for Trace<'_, R> {
     }
 }
 
-fn reason(value: &RegValue, name: &str) -> ReadReason {
+fn reason(value: &RegValue, name: &str, msi_command: bool) -> ReadReason {
     if value.bytes.len() > 32768 {
         return ReadReason::TooLarge;
     }
@@ -96,7 +106,9 @@ fn reason(value: &RegValue, name: &str) -> ReadReason {
             ReadReason::WrongType
         };
     }
-    if value.vtype == REG_SZ || (name == "DisplayName" && value.vtype == REG_EXPAND_SZ) {
+    if value.vtype == REG_SZ
+        || ((name == "DisplayName" || msi_command) && value.vtype == REG_EXPAND_SZ)
+    {
         ReadReason::InvalidString
     } else {
         ReadReason::WrongType

@@ -3,7 +3,52 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: Stage 6.2 MSI 설치 식별 읽기 실패 위치 관측 보완
+상태: Stage 6.2 MSI UninstallString 자료형 처리 보정
+
+### 2026-09-20 MSI 자료형 보정 후보 게시·fast 승인
+
+후속 "진행해줘"로 보정 후보 커밋·`publish/task57` fast-forward 게시와
+`ci.yml / scope=full / profile=fast / thumbnail_context_experiment=false` 1회 실행을
+승인받았다. 원격 publish는 로컬 기준 `cf38e94`와 같고 devel은 통합된 `f154b4d`이며,
+최근 CI는 모두 종료됐다. 이번은 빠른 계약 검증이며 실제 MSI 설치 수용은 아니다.
+새 bytes의 windows-package 및 최종 full은 결과 확인 후 별도 승인으로 진행한다.
+
+### 2026-09-20 관측된 MSI 제거 명령 자료형 보정 승인
+
+`cf38e94`의 fast `35457543349`는 성공했고 windows-package `35458210455`는 MSI
+일반/강제 재설치 모두 `uninstall-product / machine / uninstall-string / wrong-type /
+valueType=2 / byteLength=106 / win32Error=null`을 보고했다. 실제 HWP/HWPX 생성은
+성공했고 23개 조건 중 설치 식별 관련 3개만 실패했다. 설치 기록의 제거 명령은
+`MsiExec.exe /X{product-code}`이며 REG_EXPAND_SZ를 REG_SZ 전용 reader가 거부한 것이다.
+이전 synthetic MSI fixture가 REG_SZ여서 실제 자료형 차이를 놓쳤다.
+
+작업지시자의 "진행해줘"로 이 원인의 최소 보정을 승인받았다. HKLM의 WindowsInstaller=1
+제품 항목에서만 전용 제거 명령 reader를 사용한다. REG_SZ 및 환경 변수 참조가 없는
+REG_EXPAND_SZ를 읽되 확장/실행하지 않고, 원래의 publisher/경로/MSI 표시/제품 코드 조건을
+유지한다. 다른 제품 필드·COM·사용자별 NSIS reader는 그대로 둔다. trace도 같은 decoder를
+호출하고 유효 자료형의 잘못된 문자열은 wrong-type이 아닌 invalid-string으로 기록한다.
+
+실제 자료형·길이의 MSI fixture와 REG_SZ 호환, 환경 변수/빈 값/손상/잘못된 타입,
+NSIS 및 비-MSI/다른 필드의 거부 회귀를 추가한다. 기록은 승인된 기존 내부 계획서와
+오늘할일만 갱신한다. workflow/UI/설치 정책/공식 문서는 변경하지 않는다.
+Node 및 Linux 순수/Windows 교차 검사를 먼저 하고, 실제 Windows native/설치 확인은
+후속 windows-package에서 수행한다. 이번은 로컬 보정 단계이며 후보 게시·CI는 별도 승인한다.
+
+보정 결과:
+
+- 실제 자료형·106바이트 형태를 기본 MSI fixture로 고정했다. 같은 값이 기존 generic
+  decoder에서 거부되는지와 전용 reader가 REG_SZ/REG_EXPAND_SZ를 모두 처리하는지 검사한다.
+- Windows collector 회귀 5개와 순수 문자열 회귀 2개를 추가했다. 전용 reader를 허용할
+  때에만 trace가 REG_EXPAND_SZ 문자열 오류를 invalid-string으로 보고한다. 판정 gate와
+  다른 필드의 디코딩은 그대로다. 기존 `entry`의 50 LOC 초과는 제거 명령을 읽는 조건과
+  MSI 식별 조건을 같은 곳에서 확인하기 위한 최소 변경 예외다.
+- Node automation 959건, Studio 27파일/166건, upstream 36건, Studio build, product boundary
+  624파일, diff 검사 통과. Linux Rust 1.94.1에서 제품 원본 모듈·제품 lock 기반 임시 harness의
+  Windows target `clippy --tests -- -D warnings` 통과. 새로운 Windows 회귀는 교차 컴파일이며
+  실행하지 않았다. Linux 순수 registry_text/reference 테스트는 9건 실행·통과했다.
+- PowerShell/IPC/workflow는 변경하지 않았다. 실제 MSI 설치 후 식별 성공 여부는 아직
+  검증하지 않았으며, 현재 후보는 미커밋이다. 다음은 후보 게시·fast 및 새 windows-package
+  검증이다. Stage 6.2/전체 타스크를 완료 처리하지 않는다.
 
 ### 2026-09-20 관측 보완 후보 게시·fast 승인
 
