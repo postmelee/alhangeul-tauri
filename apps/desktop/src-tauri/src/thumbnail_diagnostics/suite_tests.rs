@@ -55,6 +55,7 @@ fn inspection() -> Inspection {
         environment,
         install_kind: InstallKind::Nsis,
         install_records_readable: true,
+        install_read_failures: vec![],
         registration: [check.clone(), check],
         state_token: "a".repeat(64),
     }

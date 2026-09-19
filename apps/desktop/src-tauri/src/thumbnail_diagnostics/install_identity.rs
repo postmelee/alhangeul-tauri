@@ -10,10 +10,28 @@ use std::path::Path;
 const PRODUCT: &str = r"Software\postmelee\Alhangeul";
 const UNINSTALL: &str = r"Software\Microsoft\Windows\CurrentVersion\Uninstall";
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone)]
 pub struct InstallIdentity {
     pub kind: InstallKind,
     pub records_readable: bool,
+    pub read_failures: Vec<super::install_failure::InstallReadFailure>,
+}
+
+// Observability must not change registration stability or its Debug-based token.
+impl PartialEq for InstallIdentity {
+    fn eq(&self, other: &Self) -> bool {
+        self.kind == other.kind && self.records_readable == other.records_readable
+    }
+}
+impl Eq for InstallIdentity {}
+
+impl std::fmt::Debug for InstallIdentity {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("InstallIdentity")
+            .field("kind", &self.kind)
+            .field("records_readable", &self.records_readable)
+            .finish()
+    }
 }
 
 pub fn collect(root: &Path) -> InstallIdentity {
@@ -21,6 +39,13 @@ pub fn collect(root: &Path) -> InstallIdentity {
 }
 
 fn collect_from(root: &Path, reader: &impl Reader) -> InstallIdentity {
+    let trace = super::install_trace::Trace::new(reader);
+    let mut identity = classify(root, &trace);
+    identity.read_failures = trace.finish();
+    identity
+}
+
+fn classify(root: &Path, reader: &impl Reader) -> InstallIdentity {
     let nsis = reader.string(Hive::User, PRODUCT, "");
     let msi = reader.string(Hive::User, PRODUCT, "InstallDir");
     let expected = match (&nsis, &msi) {
@@ -33,6 +58,7 @@ fn collect_from(root: &Path, reader: &impl Reader) -> InstallIdentity {
         _ => {
             return InstallIdentity {
                 kind: InstallKind::Unknown,
+                read_failures: vec![],
                 records_readable: !matches!(nsis, Observation::Unreadable)
                     && !matches!(msi, Observation::Unreadable),
             }
@@ -49,6 +75,7 @@ fn collect_from(root: &Path, reader: &impl Reader) -> InstallIdentity {
             InstallKind::Unknown
         },
         records_readable: records.is_ok(),
+        read_failures: vec![],
     }
 }
 

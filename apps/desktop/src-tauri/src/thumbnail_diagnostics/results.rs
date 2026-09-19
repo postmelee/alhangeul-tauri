@@ -9,6 +9,8 @@ pub struct Inspection {
     pub environment: Environment,
     pub install_kind: InstallKind,
     pub install_records_readable: bool,
+    #[serde(default)]
+    pub install_read_failures: Vec<super::install_failure::InstallReadFailure>,
     pub registration: [RegistrationCheck; 2],
     /// Internal SHA-256 equality token, not a user-facing registry summary.
     pub state_token: String,

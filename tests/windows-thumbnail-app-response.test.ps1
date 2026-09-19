@@ -53,6 +53,13 @@ $cases = @(
   @('install', 'msi', $false, 'installation-identity', { param($c) $c.suite.inspection.installKind = 'nsis' }),
   @('unknown-install', 'msi', $false, 'installation-identity', { param($c) $c.suite.inspection.installKind = 'unknown' }),
   @('unreadable-install', 'msi', $false, 'installation-identity', { param($c) $c.suite.inspection.installRecordsReadable = $false }),
+  @('install-read-detail', 'msi', $false, 'installation-identity', { param($c)
+    $c.suite.inspection.installRecordsReadable = $false; $c.suite.inspection.installKind = 'unknown'
+    $c.suite.inspection.installReadFailures = @([pscustomobject]@{
+      area = 'uninstall-discovery'; hive = 'machine'; field = 'display-name'; reason = 'invalid-string'
+      valueType = 2; byteLength = 22; win32Error = $null; path = 'private-path'; rawValue = 'private-value'
+    })
+  }),
   @('private-install', 'msi', $false, 'installation-identity', { param($c) $c.suite.inspection.installKind = 'private-kind' }),
   @('shape', 'msi', $false, 'reference-registration-shape', { param($c) $c.suite.inspection.buildReference.files = @() }),
   @('binary', 'msi', $false, 'binary-reference', { param($c) $c.suite.inspection.buildReference.files[0].sha256 = ('d' * 64) }),
@@ -98,6 +105,10 @@ try {
     $readable = if ($null -eq $case.suite.inspection) { $null } else { $case.suite.inspection.installRecordsReadable }
     Assert-Condition ($report.installation.observedKind -ceq $expectedKind -and $report.installation.recordsReadable -eq $readable) 'Observed installer identity lost or coerced.'
     Assert-Condition ($report.checks.Count -eq 23) 'Independent conditions were lost after a failure.'
+    if ($entry[0] -ceq 'install-read-detail') {
+      $detail = $report.installation.readFailures
+      Assert-Condition ($detail.Count -eq 1 -and $detail[0].reason -ceq 'invalid-string' -and $detail[0].field -ceq 'display-name' -and $detail[0].valueType -eq 2 -and $detail[0].byteLength -eq 22 -and $null -eq $detail[0].win32Error) 'Native read detail did not survive the JSON/report path.'
+    }
     if ($entry[0] -ceq 'multiple') {
       $codes = @($report.checks | Where-Object { $_.status -ceq 'failed' } | ForEach-Object { $_.code })
       foreach ($code in @('installation-identity', 'binary-reference', 'format-integrity')) {

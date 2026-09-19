@@ -95,6 +95,22 @@ test('empty display-name handling is isolated from strict registry fields and id
   assert.match(evidence, /\$Value -is \[bool\]/);
 });
 
+test('install read failures reach CI via closed typed projection without retrying reads', async () => {
+  const trace = await read('apps/desktop/src-tauri/src/thumbnail_diagnostics/install_trace.rs');
+  const identity = await read('apps/desktop/src-tauri/src/thumbnail_diagnostics/install_identity.rs');
+  const inspection = await read('apps/desktop/src-tauri/src/thumbnail_diagnostics/inspection_native.rs');
+  const evidence = await read('scripts/windows-thumbnail-app-evidence.ps1');
+  const response = await read('tests/windows-thumbnail-app-response.test.ps1');
+  assert.match(identity, /classify\(root, &trace\)/);
+  assert.match(identity, /identity\.read_failures = trace\.finish\(\)/);
+  assert.match(trace, /self\.reader\.raw_detailed\(hive, path, name\)/);
+  assert.match(trace, /failures\.len\(\) < 8/);
+  assert.match(inspection, /install_read_failures: self\.snapshot\.install\.read_failures\.clone\(\)/);
+  assert.match(evidence, /readFailures = @\(Get-AppInstallReadFailures/);
+  assert.match(response, /install-read-detail/);
+  assert.doesNotMatch(trace, /eprintln!|println!|format!|to_string\(/);
+});
+
 test('expandable display-name discovery remains bounded and does not resolve environment variables', async () => {
   const text = await read('apps/desktop/src-tauri/src/thumbnail_diagnostics/registry_text.rs');
   const registry = await read('apps/desktop/src-tauri/src/thumbnail_diagnostics/registry.rs');

@@ -30,13 +30,22 @@ pub fn exists(hive: Hive, path: &str) -> Observation<bool> {
 }
 
 pub fn raw(hive: Hive, path: &str, name: &str) -> Observation<RegValue> {
-    observed(open(hive, path).and_then(|key| {
-        let value = key.get_raw_value(name)?;
-        if value.bytes.len() > 32768 {
-            return Err(io::ErrorKind::InvalidData.into());
-        }
-        Ok(value)
-    }))
+    match raw_detailed(hive, path, name).0 {
+        Observation::Known(value) if value.bytes.len() > 32768 => Observation::Unreadable,
+        value => value,
+    }
+}
+
+// Same single read, preserving the numeric OS error before Observation erases it.
+// The caller must apply the existing size bound before decoding any raw value.
+pub(super) fn raw_detailed(
+    hive: Hive,
+    path: &str,
+    name: &str,
+) -> (Observation<RegValue>, Option<i32>) {
+    let result = open(hive, path).and_then(|key| key.get_raw_value(name));
+    let code = result.as_ref().err().and_then(io::Error::raw_os_error);
+    (observed(result), code)
 }
 
 pub fn dword(hive: Hive, path: &str, name: &str) -> Observation<u32> {

@@ -33,6 +33,6 @@ function New-AppSuiteCase($Kind, $Limited = $false) {
     [pscustomobject]@{ name = 'AlhangeulThumbnailWorker.exe'; bytes = 30; sha256 = ('c' * 64) }
   ) }
   return [pscustomobject]@{ legacy = $legacy; suite = [pscustomobject]@{ status = 'completed'; cleanup = $true; formats = $formats; inspection = [pscustomobject]@{
-    buildReference = $reference; installKind = $Kind; installRecordsReadable = $true; registration = @($formats | ForEach-Object { $_.input.registration })
+    buildReference = $reference; installKind = $Kind; installRecordsReadable = $true; installReadFailures = @(); registration = @($formats | ForEach-Object { $_.input.registration })
   } } }
 }

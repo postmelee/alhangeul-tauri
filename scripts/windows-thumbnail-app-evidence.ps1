@@ -17,6 +17,22 @@ function Get-AppInstallationEvidence($Suite, $ExpectedKind) {
     expectedKind = Get-AppEvidenceEnum $ExpectedKind @('nsis', 'msi')
     observedKind = Get-AppEvidenceEnum (Get-AppEvidenceProperty $inspection 'installKind') @('nsis', 'msi', 'unknown')
     recordsReadable = Get-AppEvidenceBool (Get-AppEvidenceProperty $inspection 'installRecordsReadable')
+    readFailures = @(Get-AppInstallReadFailures (Get-AppEvidenceProperty $inspection 'installReadFailures'))
+  }
+}
+
+function Get-AppInstallReadFailures($Failures) {
+  foreach ($failure in @($Failures) | Select-Object -First 8) {
+    if ($null -eq $failure) { continue }
+    [ordered]@{
+      area = Get-AppEvidenceEnum (Get-AppEvidenceProperty $failure 'area') @('marker', 'uninstall-enumeration', 'uninstall-discovery', 'uninstall-product')
+      hive = Get-AppEvidenceEnum (Get-AppEvidenceProperty $failure 'hive') @('user', 'machine')
+      field = Get-AppEvidenceEnum (Get-AppEvidenceProperty $failure 'field') @('default-value', 'install-dir', 'keys', 'display-name', 'publisher', 'install-location', 'uninstall-string', 'main-binary-name', 'windows-installer', 'unknown')
+      reason = Get-AppEvidenceEnum (Get-AppEvidenceProperty $failure 'reason') @('read-failed', 'enumeration-failed', 'too-large', 'wrong-type', 'invalid-string', 'invalid-dword')
+      valueType = Get-AppEvidenceNumber (Get-AppEvidenceProperty $failure 'valueType') 0 ([uint32]::MaxValue)
+      byteLength = Get-AppEvidenceNumber (Get-AppEvidenceProperty $failure 'byteLength') 0 ([uint32]::MaxValue)
+      win32Error = Get-AppEvidenceNumber (Get-AppEvidenceProperty $failure 'win32Error') ([int]::MinValue) ([int]::MaxValue)
+    }
   }
 }
 

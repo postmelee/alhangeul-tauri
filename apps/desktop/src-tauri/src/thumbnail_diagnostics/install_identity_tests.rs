@@ -3,6 +3,9 @@ use super::*;
 use std::collections::BTreeMap;
 use winreg::{enums::*, RegValue};
 
+#[path = "install_failure_tests.rs"]
+mod failure_tests;
+
 const ROOT: &str = r"C:\Program Files\Alhangeul";
 const MSI_ID: &str = "{77C4273A-7040-4B1C-A575-51ACDCB27935}";
 
@@ -111,13 +114,10 @@ fn installed(kind: InstallKind) -> Records {
 }
 
 fn assert_identity(records: &Records, kind: InstallKind, records_readable: bool) {
-    assert_eq!(
-        records.collected(),
-        InstallIdentity {
-            kind,
-            records_readable
-        }
-    );
+    let result = records.collected();
+    assert_eq!(result.kind, kind);
+    assert_eq!(result.records_readable, records_readable);
+    assert_eq!(result.read_failures.is_empty(), records_readable);
 }
 
 #[test]

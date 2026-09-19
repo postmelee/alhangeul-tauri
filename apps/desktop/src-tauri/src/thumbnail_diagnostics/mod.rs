@@ -3,6 +3,7 @@
 pub(crate) mod assessment;
 mod child_input;
 mod entry;
+mod install_failure;
 pub(crate) mod environment;
 #[cfg(any(windows, test))]
 mod fixtures;
@@ -44,6 +45,8 @@ mod inspection_native;
 mod install_identity;
 #[cfg(windows)]
 mod install_registry;
+#[cfg(windows)]
+mod install_trace;
 #[cfg(windows)]
 mod local_file;
 #[cfg(windows)]

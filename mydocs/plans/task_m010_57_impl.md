@@ -3,7 +3,62 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: Stage 6.2 실행기 회귀 mock 보정·fast 재검증 진행
+상태: Stage 6.2 MSI 설치 식별 읽기 실패 위치 관측 보완
+
+### 2026-09-20 관측 보완 후보 게시·fast 승인
+
+후속 "진행해줘"로 검증한 관측 보완 후보의 커밋·`publish/task57` fast-forward 게시와
+`ci.yml / scope=full / profile=fast / thumbnail_context_experiment=false` 1회 실행을
+승인받았다. 원격 publish는 로컬 기준 `4d64ff1`과 같고 devel은 통합된 `f154b4d`이며,
+최근 CI 5건은 모두 종료됐다. 이번 실행은 Windows PowerShell 회귀와 Node/Studio 계약을
+검증하며 실제 MSI 읽기·Shell bitmap은 검증하지 않는다. Windows 제품 생성과 설치 검사는
+fast 결과 확인 후 별도 단계로 진행한다. PR/merge/릴리즈 및 실험 workflow는 실행하지 않는다.
+
+### 2026-09-20 MSI 설치 식별 오류 관측 승인
+
+`4d64ff1`의 fast `35453114659`는 성공했지만 windows-package `35453696212`는
+MSI 설치 식별에서 실패했다. 설치 앱의 HWP/HWPX bitmap은 성공했고 23개 조건 중
+설치 식별에 연결된 3개만 실패했다. `recordsReadable=false`의 정확한 원인은 기존
+artifact만으로 확정할 수 없다. VDI는 관리자 권한이 없어 MSI 검증에 사용하지 않는다.
+
+작업지시자의 "진행해줘"로 동일 #57에서 실패 위치·자료형·오류 코드 관측의 최소 보완을
+승인받았다. 같은 Registry64 읽기의 결과에서 제한된 enum/숫자만 추출하며 재조회하지 않는다.
+marker, 제거 목록 열거, DisplayName 탐색, 제품 필드 해석을 구분한다. 경로·제품 목록·
+레지스트리 원문·예외 문자열은 IPC/CI 보고에 넣지 않는다. 기존 판정과 실패 gate를 유지한다.
+Rust 수집/IPC와 PowerShell 보고 projection 및 관련 회귀만 변경한다. 원인 확정 전
+해석 조건 완화, 썸네일 엔진, 설치 정책, 새 workflow/profile 추가는 하지 않는다.
+
+문서 위치는 기존 내부 계획서와 오늘할일을 재사용하며 공식 제품 문서는 변경하지 않는다.
+Node/Studio 계약과 Linux 컨테이너의 가능한 순수/교차 검사를 먼저 수행한다. Windows
+실제 읽기·설치는 Windows CI에서만 검증한다. 제품 bytes가 달라져 기존 artifact 재사용을
+새 source 검증으로 삼지 않는다. 후보 게시·fast, 이후 windows-package의 단계 승인을
+구분하며 최종 full/전체 수용은 별도로 남긴다.
+
+구현·로컬 검증 결과:
+
+- 기존 collector를 관측 reader로 감싸 같은 한 번의 읽기에서 OS 오류 번호와 값의
+  자료형·길이를 얻는다. marker/제거 목록 열거/DisplayName/제품 필드 및 읽기·열거·크기·
+  자료형·문자열·DWORD 오류를 구분하고, enum과 숫자만 최대 8건 기록한다.
+- `Inspection.installReadFailures`에서 CI `installation.readFailures`까지 whitelist 투영을
+  연결했다. 경로·원문·임의 오류 문자열은 제외한다. 기존 형식 판정, 23개 gate, 등록 비교와
+  Debug 기반 상태 토큰은 유지한다. UI와 설치 정책은 변경하지 않았다.
+- Windows collector 회귀 5개를 추가했다. 읽기 재시도 없음, 누락을 실패로 기록하지 않음,
+  여러 제품 필드 오류, 개인정보/enum 직렬화, 기존 상태 비교 불변을 검사한다.
+  오류 사례 표를 포함한 첫 테스트의 50 LOC 초과는 데이터 기반 사례를 함께 검토하기 위한
+  예외이며 새 파일은 모두 300 LOC 미만이다.
+- Node automation 958건, Studio 27파일/166건, upstream 36건, Studio build와 product boundary,
+  diff 검사 통과. Linux Rust 1.94.1 임시 harness에서 제품 lock 버전을 사용한 Windows target
+  `clippy --tests -- -D warnings`가 통과했다. 제품 원본 모듈을 사용하되 부분 harness의
+  미사용 entry point만 허용했다. Windows 테스트의 **실행**이나 전체 Tauri 빌드는 아니다.
+  Linux에서 순수 registry_text/reference 테스트 7건도 통과했다.
+- 공식 SHA256 확인한 Linux ARM64 PowerShell 7.6.6에서 실행기 23건은 원본 그대로 통과했다.
+  smoke/개인정보·형식·상한, 전체 JSON 응답 27건, batch 회귀는 임시 harness에서 JSON 숫자를
+  Windows 5.1 크기로 모사해 통과했다. 제품/CI 코드의 타입 기준은 바꾸지 않았으며 실제
+  Windows PowerShell 5.1 검증으로 세지 않는다.
+
+현재는 실패 관측 구현까지이며 MSI 원인은 미확정이다. 소스 수정 후 원격 CI는 아직
+실행하지 않았다. 다음은 후보 게시·fast 검증, 이후 새 bytes의 windows-package에서
+실제 MSI 읽기 실패 근거를 수집하는 것이다. Stage 6.2는 완료 처리하지 않는다.
 
 ### 2026-09-20 실행기 테스트 경계 보정
 

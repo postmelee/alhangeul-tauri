@@ -9,6 +9,19 @@ pub(super) trait Reader {
     fn raw(&self, hive: Hive, path: &str, name: &str) -> Observation<RegValue>;
     fn keys(&self, hive: Hive, path: &str) -> Result<Vec<String>, ()>;
 
+    fn raw_detailed(
+        &self,
+        hive: Hive,
+        path: &str,
+        name: &str,
+    ) -> (Observation<RegValue>, Option<i32>) {
+        (self.raw(hive, path, name), None)
+    }
+
+    fn keys_detailed(&self, hive: Hive, path: &str) -> (Result<Vec<String>, ()>, Option<i32>) {
+        (self.keys(hive, path), None)
+    }
+
     fn string(&self, hive: Hive, path: &str, name: &str) -> Observation<String> {
         registry::decode_string(self.raw(hive, path, name), name == "DisplayName")
     }
@@ -29,23 +42,41 @@ impl Reader for Native {
         }
     }
 
+    fn raw_detailed(
+        &self,
+        hive: Hive,
+        path: &str,
+        name: &str,
+    ) -> (Observation<RegValue>, Option<i32>) {
+        registry::raw_detailed(hive, path, name)
+    }
+
     fn raw(&self, hive: Hive, path: &str, name: &str) -> Observation<RegValue> {
         registry::raw(hive, path, name)
     }
 
     fn keys(&self, hive: Hive, path: &str) -> Result<Vec<String>, ()> {
+        self.keys_detailed(hive, path).0
+    }
+
+    fn keys_detailed(&self, hive: Hive, path: &str) -> (Result<Vec<String>, ()>, Option<i32>) {
         let key = match registry::open(hive, path) {
             Ok(key) => key,
-            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(vec![]),
-            Err(_) => return Err(()),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                return (Ok(vec![]), None)
+            }
+            Err(error) => return (Err(()), error.raw_os_error()),
         };
         let mut result = Vec::new();
         for (index, name) in key.enum_keys().enumerate() {
             if index >= 4096 {
-                return Err(());
+                return (Err(()), None);
             }
-            result.push(name.map_err(|_| ())?);
+            match name {
+                Ok(name) => result.push(name),
+                Err(error) => return (Err(()), error.raw_os_error()),
+            }
         }
-        Ok(result)
+        (Ok(result), None)
     }
 }

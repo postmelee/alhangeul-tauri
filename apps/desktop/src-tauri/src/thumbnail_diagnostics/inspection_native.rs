@@ -62,6 +62,7 @@ impl Context {
             environment: self.environment.clone(),
             install_kind: self.snapshot.install.kind,
             install_records_readable: self.snapshot.install.records_readable,
+            install_read_failures: self.snapshot.install.read_failures.clone(),
             registration: self
                 .checks
                 .each_ref()

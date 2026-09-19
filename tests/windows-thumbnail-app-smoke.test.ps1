@@ -46,3 +46,21 @@ $missing = Get-AppInstallationEvidence ([pscustomobject]@{}) 'private-kind'
 Assert-Condition ($null -eq $missing.expectedKind -and $null -eq $missing.observedKind -and $null -eq $missing.recordsReadable) 'Missing identity claimed as known.'
 $malformed = Get-AppInstallationEvidence ([pscustomobject]@{ inspection = [pscustomobject]@{ installKind = 'private-kind'; installRecordsReadable = 'true' } }) 'msi'
 Assert-Condition ($malformed.expectedKind -ceq 'msi' -and $null -eq $malformed.observedKind -and $null -eq $malformed.recordsReadable) 'Malformed identity was coerced or leaked.'
+Assert-Condition ($missing.readFailures.Count -eq 0) 'Absent failures were invented.'
+$readFailure = [pscustomobject]@{
+  area = 'uninstall-product'; hive = 'machine'; field = 'publisher'; reason = 'wrong-type'
+  valueType = 2; byteLength = 20; win32Error = $null; path = 'private-path'; rawValue = 'private-value'
+}
+$readInspection = [pscustomobject]@{
+  installKind = 'unknown'; installRecordsReadable = $false; installReadFailures = @($readFailure)
+}
+$readEvidence = Get-AppInstallationEvidence ([pscustomobject]@{ inspection = $readInspection }) 'msi'
+Assert-Condition ($readEvidence.readFailures.Count -eq 1 -and $readEvidence.readFailures[0].field -ceq 'publisher' -and $readEvidence.readFailures[0].valueType -eq 2) 'Read failure lost typed evidence.'
+Assert-Condition (($readEvidence | ConvertTo-Json -Depth 8) -notmatch 'private|rawValue') 'Registry contents leaked.'
+$readFailure.area = 'private-area'; $readFailure.field = 'private-field'; $readFailure.reason = 'private-reason'
+$readFailure.valueType = '2'; $readFailure.byteLength = -1; $readFailure.win32Error = 'private-error'
+$readInspection.installReadFailures = @($readFailure) * 12
+$sanitized = Get-AppInstallationEvidence ([pscustomobject]@{ inspection = $readInspection }) 'msi'
+Assert-Condition ($sanitized.readFailures.Count -eq 8 -and $null -eq $sanitized.readFailures[0].valueType -and $null -eq $sanitized.readFailures[0].byteLength) 'Read failure bounds or strict numeric types changed.'
+Assert-Condition (($sanitized | ConvertTo-Json -Depth 8) -notmatch 'private') 'Unknown read failure code leaked.'
+Write-Output 'Install read failures: typed evidence, absence, privacy, malformed input and bound passed.'
