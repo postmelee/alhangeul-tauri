@@ -6,6 +6,7 @@ import { ThumbnailDiagnosticsController } from '../src/core/desktop-thumbnail-di
 import { completed, ready, running } from './thumbnail-diagnostics-fixtures';
 import type { DiagnosticSnapshot } from '../src/core/desktop-thumbnail-diagnostics-model';
 import { assertDialogLayout } from './thumbnail-diagnostics-layout';
+import { checkCopyFeedback, mockClipboard } from './thumbnail-diagnostics-copy';
 
 const report = document.querySelector('#report')!;
 function assert(condition: unknown, message: string): asserts condition {
@@ -134,6 +135,7 @@ document.querySelector('#tests')!.addEventListener('click', () => {
     Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async () => { throw new Error('denied'); } } });
     try {
       aboutExposure(); await resultsAndCopy(); await cancellation(); await interruptedDiagnostics();
+      await checkCopyFeedback(() => setup(completed()), assert);
       const { dialog } = setup(completed()); await settle(); button('동의하고 검사').click(); await settle();
       assert(button('공식 설치 안내 열기').hidden, '전체 성공이면 MSI 안내 없음');
       assertDialogLayout(assert, '전체 성공');
@@ -158,3 +160,10 @@ document.querySelector('#tests')!.addEventListener('click', () => {
 });
 document.querySelector('#sample')!.addEventListener('click', () => { setup(); });
 document.querySelector('#success')!.addEventListener('click', () => { setup(completed()); });
+for (const failed of [false, true]) {
+  document.querySelector(failed ? '#copy-failure' : '#copy-success')!.addEventListener('click', () => {
+    const restore = mockClipboard(async () => { if (failed) throw new Error('test-only denial'); });
+    const { dialog } = setup(completed());
+    dialog.afterClose = restore;
+  });
+}

@@ -28,6 +28,7 @@ export class ThumbnailDiagnosticsDialog {
   private privacy = document.createElement('section');
   private results = document.createElement('div');
   private notice = document.createElement('p');
+  private copyStatus = document.createElement('span');
   private fallback = document.createElement('textarea');
   private start = this.button('동의하고 검사', () => { void this.controller.start(true); });
   private cancel = this.button('검사 취소', () => { void this.controller.cancel(); });
@@ -38,6 +39,8 @@ export class ThumbnailDiagnosticsDialog {
   private previousFocus: HTMLElement | null = null;
   private closed = false;
   private renderKey = '';
+  private copying = false;
+  private copyTimer: number | undefined;
 
   constructor(private readonly controller: ThumbnailDiagnosticsController) {
     this.dialog.className = 'thumbnail-diagnostics-dialog';
@@ -49,6 +52,11 @@ export class ThumbnailDiagnosticsDialog {
     this.status.setAttribute('role', 'status');
     this.status.setAttribute('aria-live', 'polite');
     this.notice.setAttribute('role', 'status');
+    this.copyStatus.className = 'thumbnail-copy-status';
+    this.copyStatus.setAttribute('role', 'status');
+    this.copyStatus.setAttribute('aria-live', 'polite');
+    this.copyStatus.setAttribute('aria-atomic', 'true');
+    this.copy.classList.add('thumbnail-copy-button');
     this.fallback.readOnly = true;
     this.fallback.hidden = true;
     this.fallback.setAttribute('aria-label', '수동 복사용 정제된 진단 요약');
@@ -63,7 +71,10 @@ export class ThumbnailDiagnosticsDialog {
     body.append(this.status, this.privacy, this.results, this.notice, this.fallback);
     const actions = document.createElement('div');
     actions.className = 'thumbnail-diagnostics-actions';
-    actions.append(this.copy, this.cancel, this.close, this.start, this.instructions);
+    const buttons = document.createElement('div');
+    buttons.className = 'thumbnail-diagnostics-buttons';
+    buttons.append(this.copy, this.cancel, this.close, this.start, this.instructions);
+    actions.append(this.copyStatus, buttons);
     this.dialog.append(header, body, actions);
     this.dialog.addEventListener('cancel', (event) => { event.preventDefault(); this.hide(); });
     this.dialog.addEventListener('close', () => this.hide());
@@ -78,6 +89,7 @@ export class ThumbnailDiagnosticsDialog {
   hide(): void {
     if (this.closed) return;
     this.closed = true;
+    window.clearTimeout(this.copyTimer);
     this.unsubscribe?.();
     this.unsubscribe = null;
     this.controller.dispose();
@@ -103,7 +115,7 @@ export class ThumbnailDiagnosticsDialog {
     this.cancel.hidden = !['running', 'cancelling'].includes(view.phase);
     this.cancel.disabled = view.phase !== 'running';
     this.copy.hidden = ['connecting', 'ready', 'running', 'cancelling'].includes(view.phase);
-    this.copy.disabled = !view.snapshot?.result || active(view.snapshot);
+    this.copy.disabled = this.copying || !view.snapshot?.result || active(view.snapshot);
     this.instructions.hidden = !offerMsi(view.snapshot) || view.phase !== 'completed';
     this.start.dataset.primary = 'true';
     this.instructions.dataset.primary = 'true';
@@ -124,21 +136,42 @@ export class ThumbnailDiagnosticsDialog {
   }
   private async copySummary(): Promise<void> {
     const snapshot = this.controller.current().snapshot;
-    if (!snapshot?.result || active(snapshot)) return;
+    if (this.closed || this.copying || !snapshot?.result || active(snapshot)) return;
     const text = diagnosticSummary(snapshot);
+    this.copying = true;
+    this.copy.disabled = true;
+    window.clearTimeout(this.copyTimer);
+    this.copy.textContent = '진단 요약 복사';
+    this.copyStatus.textContent = '복사 중…';
+    this.copyStatus.dataset.tone = 'pending';
     try {
       await navigator.clipboard.writeText(text);
       if (!this.closed) {
-        this.notice.textContent = '개인 경로·문서 내용을 제외한 진단 요약을 복사했습니다.';
-        this.notice.scrollIntoView({ block: 'nearest' });
+        this.copyStatus.textContent = '✓ 진단 요약을 복사했어요';
+        this.copyStatus.dataset.tone = 'success';
+        this.copy.textContent = '✓ 복사됨';
+        if (!this.fallback.hidden) {
+          this.fallback.hidden = true;
+          this.fallback.value = '';
+          this.notice.textContent = '';
+        }
+        this.copyTimer = window.setTimeout(() => {
+          this.copy.textContent = '진단 요약 복사';
+          this.copyTimer = undefined;
+        }, 3000);
       }
     } catch {
       if (this.closed) return;
+      this.copyStatus.textContent = '복사하지 못했어요';
+      this.copyStatus.dataset.tone = 'warning';
       this.notice.textContent = '자동 복사를 사용할 수 없습니다. 아래 요약을 선택해 직접 복사하세요.';
       this.fallback.value = text;
       this.fallback.hidden = false;
       this.fallback.focus();
       this.fallback.select();
+    } finally {
+      this.copying = false;
+      if (!this.closed) this.copy.disabled = false;
     }
   }
   private async openInstructions(): Promise<void> {
