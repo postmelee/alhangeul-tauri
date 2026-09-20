@@ -3,7 +3,17 @@
 수행계획서: [task_m010_57.md](task_m010_57.md)
 GitHub Issue: [#57](https://github.com/postmelee/alhangeul-tauri/issues/57)
 마일스톤: M010
-상태: Stage 6.2 full·VDI 수용 후 복사 피드백 가시성 보정 로컬 검증 완료
+상태: Stage 6.2·6.3 수용 완료 — 최종 보고·PR 리뷰 단계
+
+### 2026-09-20 최종 보고·PR 정리 승인
+
+`d36294a`의 full `35482436949` attempt 1 성공을 확인한 뒤 작업지시자가 최종 보고·PR
+정리를 승인했다. NSIS raw 실패 12건과 MSI 강제 재설치의 재부팅 후 미검증은 그대로 기록한다.
+MSI 일반의 실제 썸네일·앱 진단은 통과했다. VDI는 `29a25c4`, 복사 피드백 브라우저 수용과
+최종 CI는 `d36294a`로 구분한다. 수행계획 상단의 문서 위치 판단대로 관련 공식 안내 두 곳과
+단계/최종 보고·오늘할일만 정합화한다. 제품/CI 코드는 변경하지 않고 새 full도 실행하지 않는다.
+관련 Node 계약·release metadata·문서 링크·diff 검증 후 보고서 커밋을 게시하고 Open PR을 만든다.
+새 PR head와 검증된 제품 SHA가 문서-only 차이라는 점을 명시한다. merge·이슈 close·배포는 하지 않는다.
 
 ### 2026-09-20 복사 피드백 후보 게시·full 승인
 
