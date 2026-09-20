@@ -14,6 +14,8 @@ on:
     outputs:
       artifact_id:
         value: ${{ jobs.build.outputs.artifact_id }}
+      support_artifact_id:
+        value: ${{ jobs.build.outputs.support_artifact_id }}
 permissions:
   contents: read
 env:
@@ -35,6 +37,7 @@ jobs:
       CARGO_BUILD_TARGET: ${{ matrix.target }}
     outputs:
       artifact_id: ${{ steps.bundle-upload.outputs.artifact-id }}
+      support_artifact_id: ${{ steps.support-upload.outputs.artifact-id }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -369,6 +372,26 @@ jobs:
             --root "$BUNDLE_ROOT" \
             --source-sha "$(git rev-parse HEAD)" \
             --write-inventory "$BUNDLE_ROOT/alhangeul-artifact-inventory.json"
+
+      - name: Build Windows thumbnail support package
+        if: matrix.name == 'windows-x64'
+        shell: bash
+        env:
+          BUNDLE_ROOT: apps/desktop/src-tauri/target/${{ matrix.target }}/release/bundle
+        run: |
+          node scripts/build-windows-thumbnail-support.mjs \
+            --inventory "$BUNDLE_ROOT/alhangeul-artifact-inventory.json" \
+            --output thumbnail-support-output
+
+      - name: Upload Windows thumbnail support package
+        id: support-upload
+        if: matrix.name == 'windows-x64'
+        uses: actions/upload-artifact@v7
+        with:
+          name: alhangeul-windows-x64-thumbnail-support
+          path: thumbnail-support-output/*
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Upload bundle artifact
         id: bundle-upload

@@ -532,7 +532,7 @@ test('installer smoke job은 exact ref와 Windows x64 artifact를 고정한다',
 
 test('installer smoke는 root version과 세 입력을 PowerShell script에 전달한다', () => {
   const job = getJob(smokeWorkflow, 'windows-installer-smoke');
-  const step = getStepContaining(job, 'windows-installer-smoke.ps1');
+  const step = getStepContaining(job, 'installer-smoke.ps1');
 
   assert.match(step, /^\s{8}id: run-installer-smoke$/m);
   assert.match(step, /^\s{8}continue-on-error: true$/m);
@@ -544,6 +544,8 @@ test('installer smoke는 root version과 세 입력을 PowerShell script에 전�
     /-OutputDirectory 'diagnostics\\windows-installer-smoke'/,
   );
   assert.match(step, /-ExpectedVersion \$expectedVersion/);
+  assert.match(step, /-InstallerKind \$env:INSTALLER_KIND/);
+  assert.match(job, /INSTALLER_KIND: \$\{\{ matrix\.installer \}\}/);
 });
 
 test('installer smoke 진단은 항상 보존되고 마지막 gate가 실패를 전달한다', () => {
@@ -552,7 +554,7 @@ test('installer smoke 진단은 항상 보존되고 마지막 gate가 실패를 
   const recordStep = getStepContaining(job, 'step-outcomes.json');
   const uploadStep = getStepContaining(
     job,
-    'alhangeul-desktop-windows-x64-installer-smoke',
+    'name: alhangeul-desktop-windows-x64-${{ matrix.artifact }}',
   );
   const gateStep = getStepContaining(job, 'Windows installer smoke gate failed');
 

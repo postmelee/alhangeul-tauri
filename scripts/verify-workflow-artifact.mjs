@@ -3,8 +3,9 @@
 import { appendFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createGitHubApiClient } from './github-api.mjs';
+export { createGitHubApiClient } from './github-api.mjs';
 
-const API_VERSION = '2026-03-10';
 const DEFAULT_WORKFLOW = '.github/workflows/alhangeul-desktop.yml';
 const DEFAULT_ARTIFACT = 'alhangeul-desktop-linux-x64';
 const SHA_PATTERN = /^[0-9a-f]{40}$/;
@@ -25,7 +26,7 @@ export async function verifyWorkflowArtifact(options, services = {}) {
   assertWorkflowRun(run, input);
   const artifacts = await readAllArtifacts(api, input);
   const artifact = selectArtifact(artifacts, run, input);
-  return Object.freeze({
+  const result = {
     repository: input.repository,
     buildRef: input.buildRef,
     nativeRunId: input.runId,
@@ -34,7 +35,14 @@ export async function verifyWorkflowArtifact(options, services = {}) {
     artifactName: artifact.name,
     artifactSize: artifact.size_in_bytes,
     artifactDigest: artifact.digest,
-  });
+  };
+  // Windows handoffs grant additional testing only. Consumers must still verify
+  // downloaded bytes and source inventory. Linux/updater contracts are unchanged.
+  if (input.artifactName === 'alhangeul-desktop-windows-x64') {
+    const { resolveTestProducerMetadata } = await import('./ci/producer-metadata.mjs');
+    result.validationHandoff = await resolveTestProducerMetadata(result, run, api);
+  }
+  return Object.freeze(result);
 }
 
 export function assertWorkflowRun(run, input) {
@@ -93,6 +101,7 @@ export async function writeWorkflowArtifactOutputs(result, options = {}) {
     artifact_name: result.artifactName,
     artifact_size: String(result.artifactSize),
     artifact_digest: result.artifactDigest,
+    ...(result.validationHandoff ? { validation_purpose: result.validationHandoff.purpose } : {}),
   });
   for (const [name, value] of entries) assertSingleLine(value, name);
   await (options.appendFile ?? appendFile)(
@@ -147,22 +156,6 @@ async function readAllArtifacts(api, input) {
   }
 }
 
-export function createGitHubApiClient(options = {}) {
-  const fetchImpl = options.fetchImpl ?? fetch;
-  const baseUrl = normalizeApiUrl(options.apiUrl ?? 'https://api.github.com');
-  return async (path) => {
-    const headers = {
-      Accept: 'application/vnd.github+json',
-      'X-GitHub-Api-Version': API_VERSION,
-      'User-Agent': 'alhangeul-exact-sha-acceptance',
-    };
-    if (options.token) headers.Authorization = `Bearer ${options.token}`;
-    const response = await fetchImpl(`${baseUrl}${path}`, { headers });
-    if (!response.ok) throw new Error(`GitHub Actions metadata 요청이 실패했습니다: HTTP ${response.status}`);
-    return response.json();
-  };
-}
-
 function runPath(input) {
   return `/repos/${encodeRepository(input.repository)}/actions/runs/${input.runId}`;
 }
@@ -179,14 +172,6 @@ function encodeRepository(repository) {
 function workflowPath(value) {
   if (typeof value !== 'string') return value;
   return value.split('@', 1)[0];
-}
-
-function normalizeApiUrl(value) {
-  const url = new URL(value);
-  if (url.protocol !== 'https:' || url.username || url.password) {
-    throw new Error('GitHub API URL이 올바르지 않습니다.');
-  }
-  return url.href.replace(/\/$/, '');
 }
 
 function assertEqualText(actual, expected, name) {
@@ -250,7 +235,8 @@ if (isMain) {
     else {
       const result = await verifyWorkflowArtifact(options);
       await writeWorkflowArtifactOutputs(result, options);
-      console.log(`workflow artifact verified: run ${result.nativeRunId}, artifact ${result.artifactId}`);
+      console.log(`workflow artifact verified: run ${result.nativeRunId}, artifact ${result.artifactId}`
+        + (result.validationHandoff ? '; metadata only, additional-validation-only; product/release acceptance unverified' : ''));
     }
   } catch (error) {
     console.error(`workflow artifact verification failed: ${error.message}`);

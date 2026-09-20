@@ -4,6 +4,7 @@ import { copyFile, mkdir, readFile, rename } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
+import { repositoryIdentity, stageDiagnosticReference } from './windows-thumbnail-diagnostic-reference.mjs';
 
 export const WINDOWS_X64_TARGET = 'x86_64-pc-windows-msvc';
 export const PE_MACHINE_X64 = 0x8664;
@@ -159,6 +160,7 @@ async function main() {
   const plan = createBuildPlan(repositoryRoot, mode.target);
   for (const command of plan.commands) runCargo(repositoryRoot, command);
   const inspected = await stageThumbnailBinaries(plan);
+  await stageDiagnosticReference(plan.stagingDirectory, await repositoryIdentity(repositoryRoot));
   console.log(`Windows thumbnail binaries staged: ${JSON.stringify(inspected)}`);
 }
 

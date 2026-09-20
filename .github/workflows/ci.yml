@@ -16,6 +16,10 @@ on:
         type: choice
         default: native
         options: [auto, fast, native, installer, windows-package, linux-package, full]
+      thumbnail_context_experiment:
+        description: Separately approved disposable Windows context experiment (package/full only).
+        type: boolean
+        default: false
       base_sha:
         description: Auto profile only - exact comparison SHA; missing/unavailable means full.
         type: string
@@ -216,6 +220,9 @@ jobs:
       artifact_digest: ${{ inputs.artifact_digest }}
 
   artifacts:
+    permissions:
+      contents: read
+      actions: read
     needs: select
     if: ${{ contains(fromJSON('["windows-package","linux-package","full"]'), needs.select.outputs.profile) }}
     uses: ./.github/workflows/alhangeul-artifacts.yml
@@ -224,6 +231,7 @@ jobs:
       platform: ${{ needs.select.outputs.profile == 'windows-package' && 'windows-x64' || needs.select.outputs.profile == 'linux-package' && 'linux' || 'all' }}
       profile: full
       run_tests: true
+      thumbnail_context_experiment: ${{ inputs.thumbnail_context_experiment }}
 
   pdf-cleanup-windows:
     if: ${{ inputs.scope == 'pdf-cleanup-windows' }}

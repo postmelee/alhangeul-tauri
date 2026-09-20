@@ -2,35 +2,6 @@
 $thumbnailCategory = '{E357FCCD-A995-4576-B01F-234630154E96}'
 $thumbnailBackupRoot = 'Software\Alhangeul\ThumbnailHandlerBackup'
 $thumbnailThirdParty = '{4A64F47A-2B10-4E74-AFA0-6B7D59B76155}'
-$thumbnailInterop = @'
-using System;
-using System.Runtime.InteropServices;
-[StructLayout(LayoutKind.Sequential)] public struct NativeSize { public int cx; public int cy; }
-[ComImport, Guid("BCC18B79-BA16-442F-80C4-8A59C30C463B"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-interface IShellItemImageFactory {
-  [PreserveSig] int GetImage(NativeSize size, uint flags, out IntPtr bitmap);
-}
-public static class ThumbnailSmokeInterop {
-  [DllImport("shell32.dll", CharSet = CharSet.Unicode, PreserveSig = true)]
-  static extern int SHCreateItemFromParsingName(string path, IntPtr bind, ref Guid iid, [MarshalAs(UnmanagedType.Interface)] out IShellItemImageFactory factory);
-  [DllImport("gdi32.dll")] static extern bool DeleteObject(IntPtr handle);
-  public static int Request(string path, int size) {
-    Guid iid = new Guid("BCC18B79-BA16-442F-80C4-8A59C30C463B");
-    IShellItemImageFactory factory;
-    int result = SHCreateItemFromParsingName(path, IntPtr.Zero, ref iid, out factory);
-    if (result != 0) return result;
-    IntPtr bitmap = IntPtr.Zero;
-    try {
-      result = factory.GetImage(new NativeSize { cx = size, cy = size }, 0x8, out bitmap);
-      return result;
-    } finally {
-      if (bitmap != IntPtr.Zero) DeleteObject(bitmap);
-      Marshal.ReleaseComObject(factory);
-    }
-  }
-}
-'@
-if ($null -eq ('ThumbnailSmokeInterop' -as [type])) { Add-Type -TypeDefinition $thumbnailInterop }
 
 function Get-ThumbnailTarget($Kind) {
   if ($Kind -eq 'msi') {
@@ -108,6 +79,8 @@ function Assert-InstalledThumbnail($Kind, $InstallDirectory, $Sentinels) {
   $target = $Sentinels.Target; $handler = Join-Path $InstallDirectory 'AlhangeulThumbnailHandler.dll'; $worker = Join-Path $InstallDirectory 'AlhangeulThumbnailWorker.exe'
   Assert-Condition (Test-Path -LiteralPath $handler -PathType Leaf) '설치된 thumbnail handler가 없습니다.'
   Assert-Condition (Test-Path -LiteralPath $worker -PathType Leaf) '설치된 thumbnail worker가 없습니다.'
+  Assert-Condition ((Get-FileHash -LiteralPath $handler -Algorithm SHA256).Hash -eq (Get-FileHash -LiteralPath $artifacts.Handler -Algorithm SHA256).Hash) '설치된 handler hash가 bundle과 다릅니다.'
+  Assert-Condition ((Get-FileHash -LiteralPath $worker -Algorithm SHA256).Hash -eq (Get-FileHash -LiteralPath $artifacts.Worker -Algorithm SHA256).Hash) '설치된 worker hash가 bundle과 다릅니다.'
   $inproc = Read-RegistryValue $target (Get-ThumbnailClassPath) ''
   $threading = Read-RegistryValue $target (Get-ThumbnailClassPath) 'ThreadingModel'
   Assert-Condition ($inproc.Exists -and (Test-SamePath $inproc.Value $handler)) 'InprocServer32 절대경로가 다릅니다.'
@@ -140,31 +113,29 @@ function Invoke-MsiThumbnailRollbackProbe($MsiPath, $InstallDirectory, $Sentinel
   $log = Join-Path $OutputDirectory 'msi-thumbnail-rollback.log'
   $arguments = @('/i', "`"$MsiPath`"", 'ALHANGEUL_FAIL_THUMBNAIL_INSTALL=1', '/qn', '/norestart', '/L*v', "`"$log`"")
   $exitCode = (Start-Process -FilePath 'msiexec.exe' -ArgumentList $arguments -Wait -PassThru).ExitCode
-  Assert-Condition ($exitCode -ne 0) 'MSI rollback probe가 예상과 달리 성공했습니다.'
+  $reboot = Measure-InstallerReboot 'msi' $exitCode $script:installerRebootBaseline $log
+  Assert-Condition ($exitCode -eq 1603) 'MSI rollback probe가 예상한 실패 주입 코드 1603과 다릅니다.'
+  Assert-Condition ($reboot.observationComplete -and -not $reboot.log.deferredOperation -and -not $reboot.log.restartRequired -and -not $reboot.log.msiSystemRebootPending -and @($reboot.markers | Where-Object { $_.present -or $_.baselinePresent -or $_.changed }).Count -eq 0) 'MSI rollback 뒤 재부팅 상태가 없음을 확인하지 못했습니다.'
   Assert-Condition (-not (Test-Path -LiteralPath $InstallDirectory)) 'MSI rollback 뒤 설치 디렉터리가 남았습니다.'
   foreach ($index in 0..($extensions.Count - 1)) {
     $value = Read-RegistryValue $Sentinels.Target (Get-ThumbnailAssociationPath $extensions[$index]) ''
     Assert-Condition ($value.Exists -and $value.Value -eq $Sentinels.Records[$index].Sentinel) 'MSI rollback이 원래 thumbnail sentinel을 복원하지 않았습니다.'
   }
   Assert-Condition ((Get-ThumbnailOwnedRegistryCount) -eq 0) 'MSI rollback 뒤 제품 등록이 남았습니다.'
-  return [ordered]@{ ExitCode = $exitCode; Log = $log; FailureContext = Write-MsiFailureContext $log }
+  return [ordered]@{ ExitCode = $exitCode; RebootObservation = $reboot; Log = $log; FailureContext = Write-MsiFailureContext $log }
 }
 function Get-ThumbnailFixtureState($Path) {
   $item = Get-Item -LiteralPath $Path
   return [ordered]@{ Name = $item.Name; Size = $item.Length; Mtime = $item.LastWriteTimeUtc.Ticks; Sha256 = (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash }
 }
-function Invoke-ThumbnailFixtureProbe {
-  $root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\third_party\rhwp\saved')); $results = @()
-  $beforeProcesses = @(Get-Process -Name 'Alhangeul', 'msedgewebview2' -ErrorAction SilentlyContinue | ForEach-Object { $_.Id })
-  foreach ($extension in $extensions) {
-    $fixture = Get-ChildItem -LiteralPath $root -Recurse -File | Where-Object { $_.Extension -ieq $extension } | Select-Object -First 1
-    Assert-Condition ($null -ne $fixture) "$extension thumbnail fixture가 없습니다."
-    $before = Get-ThumbnailFixtureState $fixture.FullName; $hresult = [ThumbnailSmokeInterop]::Request($fixture.FullName, 256); $after = Get-ThumbnailFixtureState $fixture.FullName
-    Assert-Condition ($hresult -eq 0) "$extension IShellItemImageFactory 실패: 0x$('{0:x8}' -f $hresult)"
-    Assert-Condition ((ConvertTo-Json $before -Compress) -eq (ConvertTo-Json $after -Compress)) "$extension 원본 fixture가 변경되었습니다."
-    $results += [ordered]@{ Fixture = $before; HResult = $hresult; Size = 256 }
-  }
-  $afterProcesses = @(Get-Process -Name 'Alhangeul', 'msedgewebview2' -ErrorAction SilentlyContinue | ForEach-Object { $_.Id })
-  Assert-Condition (@($afterProcesses | Where-Object { $beforeProcesses -notcontains $_ }).Count -eq 0) 'thumbnail 요청이 Alhangeul 또는 WebView process를 시작했습니다.'
-  return $results
+function Invoke-PostUninstallRollback($Path, $InstallDirectory) {
+  $sentinels = $null
+  try {
+    Assert-Condition (Get-CleanState).Clean 'rollback 전 제품 소유 상태가 남았습니다.'
+    $defaults = Get-DefaultState
+    $sentinels = Set-ThumbnailSentinels 'msi'
+    $result = Invoke-MsiThumbnailRollbackProbe $Path $InstallDirectory $sentinels
+    Assert-Condition ((ConvertTo-Json $defaults -Depth 12 -Compress) -eq (ConvertTo-Json (Get-DefaultState) -Depth 12 -Compress)) 'MSI rollback이 기본 연결을 변경했습니다.'
+    return $result
+  } finally { if ($null -ne $sentinels) { Restore-ThumbnailSentinels $sentinels } }
 }

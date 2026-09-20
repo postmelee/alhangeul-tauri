@@ -14,6 +14,9 @@ on:
       run_tests:
         type: boolean
         default: true
+      thumbnail_context_experiment:
+        type: boolean
+        default: false
 permissions:
   contents: read
 jobs:
@@ -76,11 +79,16 @@ jobs:
       run_tests: ${{ inputs.run_tests }}
   smoke:
     needs: [plan, windows]
+    permissions:
+      contents: read
+      actions: read
     if: ${{ needs.plan.outputs.smoke == 'true' }}
     uses: ./.github/workflows/alhangeul-windows-smoke.yml
     with:
       build_ref: ${{ needs.plan.outputs.source }}
       artifact_id: ${{ needs.windows.outputs.artifact_id }}
+      support_artifact_id: ${{ needs.windows.outputs.support_artifact_id }}
+      thumbnail_context_experiment: ${{ inputs.thumbnail_context_experiment && inputs.run_tests && inputs.profile == 'full' }}
   result:
     needs: [plan, fast, core, windows, linux, smoke]
     if: ${{ always() }}

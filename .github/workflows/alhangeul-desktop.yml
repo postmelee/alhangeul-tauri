@@ -50,6 +50,11 @@ on:
         type: choice
         default: full
         options: [full, product, core]
+      thumbnail_context_experiment:
+        description: CI-only disposable Windows NSIS context/registry experiment; requires separate approval.
+        required: false
+        default: false
+        type: boolean
       release_version:
         description: Stable semantic version for updater mode.
         required: false
@@ -124,12 +129,16 @@ env:
 jobs:
   artifact:
     if: ${{ inputs.mode == 'artifact' }}
+    permissions:
+      contents: read
+      actions: read
     uses: ./.github/workflows/alhangeul-artifacts.yml
     with:
       build_ref: ${{ inputs.build_ref || github.sha }}
       platform: ${{ inputs.artifact_platform }}
       profile: ${{ inputs.validation_profile }}
       run_tests: ${{ inputs.run_tests }}
+      thumbnail_context_experiment: ${{ inputs.thumbnail_context_experiment && inputs.artifact_platform == 'windows-x64' && inputs.validation_profile == 'full' && inputs.run_tests && !inputs.publish_release }}
 
   build-updater:
     name: Build updater ${{ matrix.name }}

@@ -34,5 +34,15 @@ export function evaluateArtifactResults(plan, results) {
   const required = ['plan', 'fast'];
   for (const name of ['core', 'windows', 'linux', 'smoke']) if (plan[name]) required.push(name);
   const missing = required.filter((name) => results[name]?.result !== 'success');
-  return { status: missing.length ? 'failed' : 'passed', scope: plan.complete ? 'complete-artifact' : 'partial', required, missing };
+  const acceptance = results.smoke?.outputs;
+  if (plan.smoke && !validInstallerStatusOutput(acceptance)) missing.push('installer-status');
+  return { status: missing.length ? 'failed' : 'passed', scope: plan.complete ? 'full-validation' : 'partial', required, missing,
+    productObservation: plan.smoke && validInstallerStatusOutput(acceptance) ? acceptance.product_observation : 'unverified',
+    releaseAcceptance: 'unverified' };
+}
+
+function validInstallerStatusOutput(value) {
+  return value?.contract_status === 'passed' && value.product_observation === 'see-scenario-evidence'
+    && value.reuse_eligible === undefined && value.acceptance_artifact_id === undefined
+    && value.acceptance_artifact_digest === undefined;
 }

@@ -2,7 +2,7 @@
 
 Alhangeul은 Windows Explorer가 `.hwp`와 `.hwpx` 파일의 첫 페이지 thumbnail을 요청할 때 작은 COM handler DLL과 제한된 별도 worker를 사용한다. 문서 parse와 raster는 Shell process 안에서 실행하지 않는다.
 
-Stage 6 VDI 수동 UI에서 일부 문서의 직접 bitmap에 text가 빠지는 결함을 확인해 Stage 6.1에서 font-aware raster와 representative visual gate를 보정했다. 일회성 Windows worker는 system font directory를 스캔하지 않고 pinned NotoSansKR 두 파일만 process-local database에 등록한다. exact SHA `2a1a9c556fdb844ecea4fddb0a6336d9d9481078`의 CI, Windows/Linux native build, fresh-install MSI·NSIS 실제 Shell bitmap smoke와 Windows VDI Explorer 재수용이 모두 통과했다. 이는 공개 installer, release, 서명이나 updater 승인을 뜻하지 않는다.
+Task #14의 Stage 6 VDI 수동 UI에서 일부 문서의 직접 bitmap에 text가 빠지는 결함을 확인해 Stage 6.1에서 font-aware raster와 representative visual gate를 보정했다. 일회성 Windows worker는 system font directory를 스캔하지 않고 pinned NotoSansKR 두 파일만 process-local database에 등록한다. 당시 exact SHA `2a1a9c556fdb844ecea4fddb0a6336d9d9481078`의 CI, Windows/Linux native build, fresh-install MSI·NSIS 실제 Shell bitmap smoke와 Windows VDI Explorer 재수용이 통과했다. 이 역사적 수용은 이후 모든 설치 환경이나 최신 후보의 성공을 보장하지 않으며 공개 installer, release, 서명이나 updater 승인도 아니다. 최신 제한은 아래 수동 진단 절을 따른다.
 
 ## 고정 계약
 
@@ -153,6 +153,12 @@ build script는 DLL과 worker를 고정 filename으로 stage하고 PE x64 machin
 
 다른 host의 platform-neutral test는 protocol, bounds와 source 계약을 고정하지만 PE, COM host, installer transaction과 실제 Shell 호출을 대신하지 않는다.
 
+현재 CI는 NSIS-only·MSI-only·MSI 강제 재설치를 별도 runner에서 검사한다. 개별 진단 계약이
+통과해도 NSIS의 실제 bitmap 실패나 forced MSI의 재부팅 후 미검증은 남을 수 있다.
+경량 집계는 필수 검사·upload·최종 gate 상태를 확인할 뿐 독립 증거 재검산이 아니다.
+`contract_status=passed`만으로 썸네일 지원을 판단하지 말고
+[실제 관측 판독 기준](../operations/CI_VALIDATION.md#windows-설치-계약과-실제-관측)을 따른다.
+
 ## 수동 Explorer gate와 한계
 
 Stage 6과 시각 보정 Stage 6.1에서는 source와 hosted 자동 gate를 통과한 같은 exact SHA의 installer를 Windows VDI에 설치해 다음을 확인한다.
@@ -169,6 +175,119 @@ Stage 6.1 수용본은 exact SHA `2a1a9c556fdb844ecea4fddb0a6336d9d9481078`이�
 Windows Shell은 active ProgID의 thumbnail handler를 extension ShellEx보다 먼저 선택할 수 있다. 따라서 한컴 등 제3자 ProgID에 별도 handler가 연결된 환경에서는 Alhangeul handler가 정상 등록돼도 Explorer가 제3자 thumbnail 또는 icon을 표시할 수 있다. VDI에 한컴 2024가 설치돼 있었다는 사실만으로 해당 active ProgID handler의 존재·우선 적용을 증명하지는 않으며, 이 제품은 공존을 위해 active ProgID와 `UserChoice`를 강제로 바꾸지 않는다.
 
 unsigned test installer는 Windows SmartScreen이나 보안 정책에 의해 차단될 수 있다. 이는 코드 서명이나 공개 배포를 승인한 것이 아니며, VDI에서는 검증용 exact artifact와 SHA를 확인한 뒤 조직 정책 안에서만 실행한다. 자동 gate와 수동 UI gate가 모두 Go여도 release tag, GitHub Release, 서명, package 게시와 updater는 별도 승인 작업이다.
+
+## 수동 진단과 MSI 대안
+
+등록 성공은 실제 썸네일 성공을 보장하지 않는다. 기존 VDI 성공과 별개로, exact SHA
+`001cc3adeab003260fb7b830f6f757b53c65d489`의 [격리 검사](https://github.com/postmelee/alhangeul-tauri/actions/runs/34047889263)에서는
+NSIS의 연결 조회·직접 COM 생성·JPG 썸네일이 성공하고 HWP/HWPX의 Shell/강제 추출이
+`0x80040154`로 실패했다. MSI 일반 설치·재설치·제거는 통과했다. 이 환경은
+`EnableLUA=1`이었다. 한글 버전이나 UAC 값만으로 원인을 확정하지 않는다.
+실제 한컴 설치 대신 synthetic 등록값을 사용한 CI이며 일반 Windows 10/11 Explorer UI의 보장은 아니다.
+
+이후 [최신 CI 관측](../releases/v0.1.0.md#windows-썸네일-진단-수용과-잔여-제한)에서도
+NSIS의 같은 실패와 MSI 성공이 확인됐다. 전체 CI가 성공한 것은 제한을 보존하는 검사 계약을
+통과했기 때문이지 NSIS 문제가 해결됐기 때문이 아니다. 사용자별 NSIS와 MSI 배포 방식을
+유지하며 전체 사용자 NSIS·UAC/HKLM 변경 실험은 중단했다. UAC 값·관리자 여부·한컴 버전만으로
+실패를 단정하거나 MSI 설치를 일괄 권유하지 않는다. 아래의 실제 진단 패턴에 해당할 때 대안을 검토한다.
+앱 내 진단과 별도 수동 진단 묶음을 제공한다. 앱 진단은 공개 테스트 문서를 사용하고,
+수동 묶음은 사용자가 지정한 문서의 증상을 조사한다. 두 검사 대상과 결과를 혼동하지 않는다.
+
+### 앱에서 진단하기
+
+Windows x64 앱의 제품 정보에서 **Windows 썸네일 진단…**을 열고 안내를 읽은 뒤
+**동의하고 검사**를 누른다. 개인 문서를 선택할 필요가 없으며 별도 PowerShell 실행도 필요 없다.
+공개 HWP/HWPX와 JPG 대조 자료로 현재 앱 실행 환경에서 검사한다. 검사 중 임시 파일과
+Windows 썸네일 캐시가 생성될 수 있으며 최대 3분 후 종료한다. 취소·닫기를 제공하고
+결과나 문서를 자동 전송하지 않는다. 관리자 재실행·UAC·등록·기본 앱 변경은 하지 않는다.
+
+- HWP/HWPX 결과를 별도로 표시한다. 테스트 문서 성공은 Explorer의 모든 문서·캐시 상태를 보장하지 않는다.
+- 진단 중단·미검사는 썸네일 실패와 구분한다. 미확인·다른 처리기·일반 오류에 MSI 전환을 일괄 권하지 않는다.
+- 사용자별 처리기의 알려진 Shell 활성화 실패 패턴과 NSIS 설치 식별이 확인될 때만 MSI 대안을 안내한다.
+  같은 빌드 MSI의 원격 존재를 확인하거나 자동 다운로드·설치하지 않는다. 관리자/IT 담당자의 도움이 필요할 수 있다.
+- **진단 요약 복사**는 개인 경로·문서 내용·SID·예외 원문을 제외한 요약만 복사한다.
+  성공하면 하단 안내와 `✓ 복사됨` 버튼으로 알린다. 버튼은 3초 후 복원되고 안내는 남는다.
+  자동 복사가 차단되면 같은 요약을 선택해 수동 복사할 수 있다. 공유 전 환경 정보를 검토한다.
+
+2026-09-20 일반 사용자 VDI에서 `29a25c4` NSIS의 실제 썸네일·앱 진단·중앙 배치를 확인했다.
+후속 복사 피드백 변경 `d36294a`는 브라우저 DOM과 full CI로 검증했고 사용자 결정으로 추가
+VDI 재설치를 생략했다. 이는 PC방 환경의 NSIS 제한 해결이나 모든 Windows/한컴 조합 수용이 아니다.
+정확한 source/run·잔여 제한은 [버전별 기록](../releases/v0.1.0.md#windows-썸네일-진단-수용과-잔여-제한)을 따른다.
+
+### 시험용 진단 묶음 사용
+
+사용자용 진단 묶음은 exact source `f1cdd0711f747b443c723a750f868faa5c0349f1`의
+[run 34056210236](https://github.com/postmelee/alhangeul-tauri/actions/runs/34056210236)에서
+Windows CI 패키지 실사용 검증을 통과했다. NSIS·MSI 일반·MSI 강제 교체 job에서 각각
+작은 HWP·큰 HWP·HWPX의 수동 진단 결과와 원시 증거·실제 종료 코드를 대조했다.
+진단 도구가 NSIS 실패를 정확히 보고한 것이지 썸네일 문제를 해결한 것은 아니다.
+NSIS 제품 실패와 MSI 강제 교체의 재부팅 필요로 전체 run은 failure다.
+일반 Windows 10/11 로그인·실제 한컴·VDI 현장 및 재부팅 후 검증은 아직 하지 않았다.
+
+유지보수자가 검증한 Windows 일반 artifact run에서 **설치 파일과 같은 run**의
+`alhangeul-windows-x64-thumbnail-support`를 받아 별도 폴더에 푼다. 기존 run에는
+이 묶음이 없을 수 있다. 공식 Release asset이나 설치 구성요소가 아니다.
+출처 run·exact source SHA·GitHub artifact digest를 확인한다. 포함된 hash 목록은
+파일 손상·혼용 검사이며 코드 서명이나 신뢰할 수 있는 출처 확인을 대신하지 않는다.
+위 실패 run은 제한된 진단 근거로만 사용하며 공개 릴리즈 입력으로 사용하지 않는다.
+artifact 가용성과 해시는 [버전별 검증 기록](../releases/v0.1.0.md#windows-썸네일-진단-수용과-잔여-제한)을
+따른다. 보존 기간이 끝났다면 다른 run의 묶음과 설치 파일을 임의로 혼용하지 않는다.
+
+일반 사용자 권한의 Windows x64 PowerShell 5.1에서 압축을 푼 폴더로 이동해 실행한다.
+Node/Rust/Git 설치는 필요하지 않다. 입력은 저장·닫은 로컬 HWP/HWPX 한 개와 일반 JPG 한 개다.
+각 파일은 0 초과 64 MiB 이하이며 네트워크 드라이브·링크 경유 경로는 지원하지 않는다.
+출력 부모 폴더는 있어야 하고, 지정한 결과 폴더는 아직 없어야 한다. 결과를 지원 묶음
+폴더 내부에 저장하지 않는다. 다른 문서나 HWPX도 확인하려면 새 결과 폴더로 별도 실행한다.
+
+```powershell
+.\windows-thumbnail-check.ps1 `
+  -DocumentPath 'C:\Samples\document.hwp' `
+  -JpgPath 'C:\Samples\control.jpg' `
+  -OutputDirectory 'C:\Samples\thumbnail-check-new' `
+  -Consent
+```
+
+`-Consent`가 없으면 안내만 출력하고 실행하지 않는다. 동의 시 임시 복사본을 처리하며
+설치된 문서 처리기·JPG 처리기가 실행되고 Windows 썸네일 캐시에 내용이 남을 수 있다.
+민감 문서보다는 같은 증상이 나는 비민감 샘플을 권한다. 전역 캐시는 지우지 않는다.
+입력 원본을 변경하지 않으며 자신이 만든 임시 복사본만 정리한다. 자동 승격·등록 변경·설치·
+다운로드·업로드는 하지 않는다. 보안 정책으로 차단되면 조직 관리자에게 문의하고
+실행 정책 우회나 보안 기능 해제를 해결 방법으로 삼지 않는다.
+
+출력은 `thumbnail-check-summary.json`, 원시 probe와 비식별 환경 JSON이다.
+원본 파일명·경로·문서 hash·문서 내용·bitmap은 출력하지 않는다. 콘솔에 입력한 명령은
+로컬 셸 기록에 남을 수 있다. 결과에는 OS·권한·등록 정보가 있으므로 공유 전에 검토한다.
+지원 묶음과 설치된 DLL/worker 해시가 다르면 문서 실행을 멈춘다. 같은 버전 이름만으로
+같은 빌드라고 판단하지 않는다. 결과는 선택한 문서와 실행 문맥에만 적용된다.
+
+| 결과 | 의미 / 다음 행동 |
+|---|---|
+| `thumbnail-api-ok` / 코드 0 | 문서·JPG의 실제 Shell/강제 추출 bitmap 성공. Explorer 화면·모든 문서·설치 완료는 별도 확인 |
+| `per-user-shell-activation-failed` / 코드 1 | 검증된 HKCU-only 처리기·직접 COM·JPG는 정상이나 문서 Shell/강제 추출이 0x80040154. MSI 대안 검토 |
+| `shell-control-failed`, `unclassified-failure` / 코드 1 | JPG 실패 또는 알려진 패턴과 다른 실패. 원시 오류 보존, 추가 조사 |
+| `reference-mismatch` / 코드 2 | 다른 빌드의 묶음 또는 설치 파일 불일치. 맞는 묶음을 확인 |
+| `other-handler-selected`, `registration-ambiguous`, `registration-mismatch` / 코드 2 | 다른 처리기·중복·불완전 등록. 실행 생략, 자동 변경 없음 |
+| `diagnostic-invalid` / 코드 2 | 입력·보안 정책·timeout·손상 증거·정리 등 진단 불완전. 성공으로 취급하지 않음 |
+
+캐시 조회 성공만으로 새 썸네일 생성 성공을 판정하지 않는다. 등록 scope는 관측값이지
+설치 프로그램 종류의 확정 증거가 아니다. 도구는 설치·재부팅을 시험하지 않으므로
+`lifecycleStatus=not-tested`다. 코드 2가 발생해 결과 파일 자체가 없을 수도 있다.
+
+### MSI로 전환할 때
+
+1. 문서를 저장하고 Alhangeul을 종료한다.
+2. Windows의 앱 제거 기능으로 기존 NSIS 설치본을 제거한다. 파일/설정 폴더를 수동 삭제하지 않는다.
+3. 출처·해시를 확인한 같은 빌드의 Windows x64 MSI를 설치한다. 두 설치본을 중복 설치하거나 교차 updater를 사용하지 않는다.
+4. 설치가 재부팅을 요구하면 다른 작업을 저장한 뒤 사용자가 재부팅한다.
+5. 일반 로그인 세션의 Explorer에서 HWP/HWPX를 다시 확인한다. 필요하면 같은 빌드의 진단 묶음으로 재검사한다.
+
+MSI는 확인된 대안이지 모든 환경의 보장은 아니다. 회사/PC방 설치 정책을 우회하지 않는다.
+개인 설정·기본 앱 상태를 무조건 보장하지 않으며 필요하면 Windows 설정에서 확인한다.
+이 안내는 기본 앱/UserChoice를 강제 변경하지 않는다.
+
+MSI 강제 재설치에서는 사용 중인 handler DLL 교체가 종료 코드 3010(재부팅 필요)을
+반환할 수 있다. 위 격리 검사의 강제 교체 job에서도 이를 관측했다. 재부팅 전 bitmap 성공이나
+제거 코드 0만으로 지연 작업까지 완료됐다고 판단하지 않는다. 실제 재부팅 후 검증은 별도다.
 
 ## 관련 문서
 

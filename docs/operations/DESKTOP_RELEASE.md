@@ -55,7 +55,7 @@
 
 ## workflow와 산출물 계층
 
-진실 원천은 [desktop workflow](../../.github/workflows/alhangeul-desktop.yml),
+진실 원천은 [CI 진입점](../../.github/workflows/ci.yml)과 [desktop workflow](../../.github/workflows/alhangeul-desktop.yml),
 [Linux GUI workflow](../../.github/workflows/alhangeul-linux-gui.yml),
 [Pages workflow](../../.github/workflows/pages.yml)다. 수동 dispatch 승인은 제품 공개 승인과 다르다.
 
@@ -71,6 +71,12 @@
 일반 `artifact`의 기본 범위는 all/full/tests=true다. 플랫폼·core·제품 생성만 선택한 부분
 profile과 기존 bytes 재사용은 [CI 검증 가이드](CI_VALIDATION.md)를 따른다. 일반 artifact도
 workflow SHA와 실제 제품 checkout SHA가 같아야 한다.
+
+Windows 설치 검사는 NSIS-only·MSI-only·강제 재설치의 개별 계약과 경량 상태 집계를 사용한다.
+CI 전체 성공도 모든 썸네일 환경의 성공을 뜻하지 않는다. 원시 실패와 `thumbnailStatus`·
+`lifecycleStatus`를 [CI 상태 해석](CI_VALIDATION.md#windows-설치-계약과-실제-관측)에 따라 읽는다.
+성공 producer의 Windows bytes는 `additional-validation-only`로 추가 검사에 사용할 수 있으나
+제품/릴리즈 수용은 별도다. 독립 재검산 자동화는 #67 후속이며 첫 공개 선행 조건이 아니다.
 
 일반 native build와 updater build를 혼용하지 않는다. 기본 build의 성공은 production endpoint와
 서명이 포함된 파일의 검증이 아니다. updater build는 일반 build의 전체 test·package smoke를
@@ -94,6 +100,34 @@ Actions archive는 임시 검증물이다. 현재 desktop/updater artifact는 14
 7일 retention이며 run 성공만으로 파일이 아직 내려받아지는 것은 아니다. 버전 기록에는 archive
 ID·digest·만료와 실제 파일의 크기·SHA-256을 구분한다. 만료된 근거는 기록으로 남되 만료된 파일을
 게시하거나 재빌드 파일이 같은 bytes라고 간주하지 않는다.
+
+### Windows 썸네일 지원 묶음
+
+일반 Windows artifact build는 installer bundle과 별도로
+`alhangeul-windows-x64-thumbnail-support`를 생성한다. 사용자 진단 도구는
+[exact 후보의 Windows CI 실사용 검증](../releases/v0.1.0.md#windows-썸네일-진단-수용과-잔여-제한)을
+통과했지만 현장 실사용은 미검증이며 공개 Release/웹사이트 다운로드 목록에는 추가하지 않는다.
+지원 묶음은 실행 의존 파일 10개, 같은 빌드의 inventory, Windows thumbnail 문서 복사본과
+`support-manifest.json`이다. installer·DLL·worker·문서 fixture·진단 결과는 포함하지 않는다.
+
+같은 run의 설치 파일과 묶음만 짝지으며 manifest의 exact source SHA·파일 해시,
+원격 archive digest와 설치된 처리기 bytes/hash를 확인한다. 같은 version 문자열만으로
+빌드를 혼용하지 않는다. artifact는 14일 임시 자료이며 공개 asset이나 서명된 도구가 아니다.
+런타임 자동 다운로드·전송은 없고 사용법은 [수동 진단 안내](../architecture/WINDOWS_THUMBNAILS.md#수동-진단과-msi-대안)를 따른다.
+
+installer job은 제공된 묶음 그대로 공개 fixture를 검사하고 원본 JSON·판정·종료 코드를
+대조한다. `manualTests`·`manualEvidence`가 진단 도구 검증 결과이며 기존 제품 gate와 별개다.
+NSIS의 실제 실패를 진단 도구가 올바르게 분류하더라도 제품 실패는 유지한다.
+개인 사용자 문서/결과를 CI artifact로 업로드하지 않는다. 기존 5개 bundle 파일 계약과
+릴리즈 수용·서명·게시 승인 경계는 바꾸지 않는다.
+
+과거 run `34056210236`의 진단 성공과 전체 workflow failure는 당시 결과로 보존한다.
+실패 run의 artifact는 제한적 진단 근거일 뿐 현재 추가 테스트용 재사용이나 공개 릴리즈 입력이 아니다.
+현재 계약은 엄격히 일치한 알려진 제한을 별도로 판정하지만 원시 제품 실패를 지우지 않는다.
+`continue-on-error` step의 표시만 보지 말고 `step-outcomes.json`의 실제 outcome,
+`installer-evaluation.json` 및 upload·최종 계약 gate를 확인한다. 문서-only 정합화에서는 검증된 native SHA·같은 installer bytes를
+재사용하며 문서 보고 commit을 native 검증 SHA로 기재하지 않는다. 기존 archive 안의 문서는
+빌드 당시 복사본이다. 최신 안내는 저장소 문서를 읽고, manifest 검증 대상 파일을 고쳐 쓰지 않는다.
 
 ## 승인과 게시 순서
 
