@@ -4,7 +4,7 @@
 GitHub Issue: [#70](https://github.com/postmelee/alhangeul-tauri/issues/70)
 마일스톤: M010
 
-작성일: 2026-09-20. 상태: 수행계획 승인, 구현계획 승인 대기.
+작성일: 2026-09-20. 상태: Stage 1 준비 완료, Stage 2 생성·복구 실행 승인 대기.
 기준 source: `cf0aac9de32451e55a686aa09677d1d00bd4648b`.
 이 문서는 실행 계획이며 키 생성·Secret 변경·원격 서명 실행 기록이 아니다.
 
@@ -44,6 +44,58 @@ GitHub Issue: [#70](https://github.com/postmelee/alhangeul-tauri/issues/70)
 
 ## Stage 1 — 보관·실행 준비
 
+### 준비 조사 현황 (2026-09-20)
+
+- 사용자는 비밀번호 보관 수단으로 Apple 암호 앱을 선택했으며, 이후 새 암호화 키를 iCloud에
+  백업하는 방향으로 진행 승인했다. 원본은 저장소 밖 접근 제한 위치에 둔다. 암호 앱에 키와
+  암호를 함께 넣지 않는다. 같은 Apple 계정 의존 위험은 남으며 클라우드 동기화·복구를 확인해야 한다.
+- 사용자가 기존 백업 후보를 찾았다. 형식 검사는 Tauri/Minisign 암호 보호 표식을 확인했으나,
+  별도 승인한 빈 암호 1회 시험에서 checksum이 불일치했다. 암호 불일치와 파일 손상은 구분하지
+  못하며 현재 제품과 같은 키인지도 미확인이다. 후보는 그대로 보존하고 새 키 전환을 계속한다.
+- GitHub 공개/초안 Release 0개, `v0.1.0*` tag 없음. 저장소의 in_progress/queued/waiting
+  run 조회는 각각 0개였다. 실행 직전에 다시 확인해야 하는 일시적 관측이다.
+- release 환경의 두 Secret 이름과 기존 갱신 시각을 확인했다(값 미조회). required reviewer는
+  postmelee이며 deployment branch policy는 null이었다. 보호 규칙은 변경하지 않았다.
+- lock에 고정된 Tauri CLI는 2.10.1이다. 해당 [generate 소스](https://github.com/tauri-apps/tauri/blob/tauri-cli-v2.10.1/crates/tauri-cli/src/signer/generate.rs)는
+  write-keys 생략 시 개인키를 출력하며, CI 모드에서 암호를 생략하면 빈 암호를 사용한다.
+  따라서 두 경로를 금지하고 사용자 직접 암호 입력·파일 저장·출력 격리를 준비해야 한다.
+- [key helper 소스](https://github.com/tauri-apps/tauri/blob/tauri-cli-v2.10.1/crates/tauri-cli/src/helpers/updater_signature.rs)에서
+  암호 미지정 시 interactive prompt, 파일 생성은 기본 파일 권한에 의존함을 확인했다.
+  `umask 077`, 원본과 public 파일 모두 없는 새 위치, 비밀 argv 금지 등의 실행 검토가 필요하다.
+- Colima는 실행 중이고 Docker server는 linux/arm64 29.2.1이다. 하지만 image 목록 조회가
+  containerd blob의 input/output error로 실패했다. 사용 가능한 생성 환경으로 아직 수용하지 않는다.
+  restart/prune/reset/삭제·새 container 실행은 하지 않았다. 환경 복구나 대안은 별도 제안한다.
+- 후속 읽기 전용 확인에서 Mac 여유 약 31 GiB, Linux VM root 약 18 GiB,
+  containerd volume 약 42 GiB였다. 단순 디스크 포화로 단정할 근거는 없다.
+  VM 직접 Linux shell은 동작하나 Node/pnpm/minisign은 없었다. 기존 컨테이너는 변경하지 않았다.
+- **계획 변경 승인**: Docker 복구/추가 Linux 런타임 설치 대신 기존 Mac의 고정
+  Tauri CLI 2.10.1을 키 생성·복구 관리에만 사용한다. 이는 Rust/Tauri 제품 build·native 검증이나
+  Mac 배포 지원이 아니며 제품 검증은 기존 Windows/Linux CI에 유지한다. 사용자 `진행해줘`로
+  변경을 승인받은 뒤 실제 `--version`, `signer generate --help`, `signer sign --help`를 확인했다.
+- 현재 fingerprint는 `docs/architecture/UPDATER.md`에도 있다. Stage 3의 정합성 대상에 이 문서를
+  추가할 위치 판단 승인이 필요하다(기존 architecture 루트, 기여자용 현재 신뢰 계약의 단일 값 보정).
+  #16 계획·보고서의 과거 fingerprint는 그대로 보존한다.
+- 키 생성·복구는 아래 사용자 직접 입력 절차로 준비 완료했다. Stage 2 승인 전 키 생성은 하지 않는다.
+
+### 사용자 직접 입력 절차
+
+1. 사용자가 Apple 암호 앱에 이 작업 전용의 충분히 긴 무작위 암호를 저장한다. 암호 값은
+   에이전트 도구·채팅·스크린샷·명령 인자로 전달하지 않으며 저장 완료 여부만 확인한다.
+2. 생성은 사용자의 별도 로컬 터미널에서 수행한다. 화면/터미널 내용을 에이전트가 캡처하지 않는다.
+   저장소·동기화 폴더 밖 새 원본 디렉터리를 선택하고 기존 키와 `.pub` 모두 없는지 확인한다.
+3. `umask 077`, core dump 금지, tracing 금지, `CI`와 signing 관련 상속 변수를 제거한 환경에서
+   고정 CLI의 `signer generate --write-keys`를 사용한다. `--password`, `--ci`, `--force`는 쓰지 않는다.
+   암호 앱의 암호를 숨김 프롬프트에 직접 입력한다. 빈 암호는 허용하지 않는다.
+4. CLI stdout은 표시하지 않아 실제 보관 경로가 수집되지 않게 한다. 오류 발생 시 원문 출력을
+   붙여넣지 않고 에이전트가 비밀을 제외한 확인 절차를 안내한다. 자동 private-key 출력 경로는 금지한다.
+5. 생성 후 암호화 파일과 public 파일을 새 iCloud 백업 항목으로 복사한다. 이전 백업은 덮어쓰지 않는다.
+   클라우드 동기화 완료 및 별도 내려받기를 확인하기 전 로컬 복사 성공을 원격 백업 완료로 기록하지 않는다.
+6. 실제 내려받은 백업에서 별도 임시 위치로 복구하여 동일 CLI의 `signer sign` 숨김 입력으로
+   공개 테스트 자료에 서명한다. 서명 검증에는 저장소의 기존 공개키 검증 도구를 사용한다.
+   변조 자료 거부, 공개 fingerprint 일치, 파일 권한을 확인한 뒤 정확한 임시 대상만 정리한다.
+7. 암호 앱 저장·iCloud 복구는 사용자 확인이 필요하다. 완료되지 않으면 Stage 2를 완료하지 않고
+   Secret도 유지한다. 양쪽 보관이 같은 Apple 계정에 의존한다는 위험을 인계한다.
+
 ### 산출물
 
 - `mydocs/working/task_m010_70_stage1.md`, 필요 시 본 구현계획의 실행 입력 보정.
@@ -54,8 +106,7 @@ GitHub Issue: [#70](https://github.com/postmelee/alhangeul-tauri/issues/70)
 1. 사용자에게 보관 수단 종류와 책임 확인만 요청한다. 실제 경로·암호·키를 채팅에 요구하지 않는다.
    원본 저장소 밖 접근 제한, 독립 암호화 복구본, 별도 암호 관리의 세 조건을 확인한다.
    동일 디스크의 복사본이나 Docker volume만으로 독립 백업을 충족했다고 보지 않는다.
-2. Linux 실행 환경과 저장소의 고정 Tauri CLI 버전을 확인한다. 기존 컨테이너를 임의로
-   재사용/중지하지 않는다. 새 격리 환경이 필요하면 mount·권한·정리 범위를 제시한다.
+2. 승인된 키 관리 실행 환경과 고정 CLI 버전을 확인한다. 기존 컨테이너는 재사용/중지하지 않는다.
 3. 고정 CLI의 생성·서명 동작을 공식 문서/소스로 확인한다. private material 자동 출력,
    암호 argv 노출, env dump, tracing, container inspect/log, 임시 파일 잔류 위험을 점검한다.
    안전성이 불분명하면 실행하지 않고 도구/입력 방식을 보정해 승인받는다.
@@ -70,7 +121,7 @@ GitHub Issue: [#70](https://github.com/postmelee/alhangeul-tauri/issues/70)
 ### 검증
 
 - 보관 책임·독립 백업·암호 관리 수단 확인. 미확정이면 Stage 1은 완료하지 않는다.
-- 안전한 생성/복구/정리 절차와 도구 버전, Linux 실행 가능성을 확인한다.
+- 안전한 생성/복구/정리 절차와 고정 CLI 버전, 승인된 키 관리 환경의 실행 가능성을 확인한다.
 - `git diff --check`; #69 원래 worktree 변경 보존 확인.
 
 ### 커밋
