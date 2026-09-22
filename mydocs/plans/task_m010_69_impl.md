@@ -5,7 +5,7 @@ GitHub Issue: [#69](https://github.com/postmelee/alhangeul-tauri/issues/69)
 마일스톤: M010
 
 2026-09-20 수행계획 승인 후 작성. 같은 스레드의 작업지시자 `진행해줘`로 구현계획 승인.
-현재 상태: Stage 1 재개, #70 키 준비 완료·devel 통합, 최소 검증 환경·증거표 확정 대기. Stage 2 미착수.
+현재 상태: Stage 1 완료 보고, 최소 검증안·비게시 후보 진입 조건 조정 승인. 준비 PR 생성 승인 대기.
 아래 명령은 실행 계획이며, 이 문서 작성 중 제품 검증·CI·서명·게시를 실행한 것이 아니다.
 
 ## 단계 개요
@@ -69,15 +69,15 @@ GitHub Issue: [#69](https://github.com/postmelee/alhangeul-tauri/issues/69)
 - 사용자 직접 설치는 최종 후보에서 한 번으로 모은다. 현재 추가 환경 제공이 어렵다는 답변을 보존하고
   같은 환경 제공 요청을 반복하지 않는다. 기존 CI로 가능한 항목/미검증을 구분한 제안이 다음 작업이다.
 - MSI 관리자 환경과 Linux 배포판/architecture GUI 확인을 NSIS VDI 또는 서명 성공으로 대체하지 않는다.
-  미확보 범위가 남으면 단계 조건·공개 범위/위험 수용을 승인받기 전 Stage 2에 진입하지 않는다.
+  아래 추가 승인으로 비게시 후보 준비는 허용하되 미확보 범위의 공개 판단은 Stage 3에 남긴다.
 - 통합 후 `check:product-version`, `check:release-metadata`, `check:rhwp-pin` 및
   release-metadata/product-version/pages 회귀 65개가 통과했다. `git diff --check`도 통과했으며
   `origin/devel` 대비 제품 앱·스크립트·테스트·workflow 변경은 없다. 새 CI·서명·게시 실행은 하지 않았다.
 
-### 2026-09-22 최소 검증 제안 — 승인 대기
+### 2026-09-22 최소 검증안 — 승인 완료
 
-현재 승인된 Stage 1 조건은 환경 확보 전 Stage 2 미착수다. 아래는 그 조건의 **변경 제안**이며
-아직 적용되지 않았다. 새 CI 구현 없이 비게시 후보 준비까지 진행하되, 게시할 파일의 필수 검증
+사용자가 최소 검증안 설명 뒤 `진행해줘`로 조건 조정을 승인했다.
+종전의 환경 확보 전 Stage 2 미착수 조건을 변경한다. 새 CI 구현 없이 비게시 후보 준비까지 진행하되, 게시할 파일의 필수 검증
 미실행은 Stage 3 공개 판단 전에 추가 확인 또는 명시적인 범위/위험 승인으로 처리한다.
 후보 빌드 승인과 미검증 파일 공개 승인을 구분하고, 미실행을 통과로 기록하지 않는다.
 
@@ -113,13 +113,13 @@ GitHub Issue: [#69](https://github.com/postmelee/alhangeul-tauri/issues/69)
 1. 최종 main SHA 승인 후 일반 `all/full/run_tests=true`와 비게시 서명 후보를 각 1회 생성한다.
    같은 후보의 `ci.yml full`을 중복 실행하지 않는다. 필수 실패는 원인을 분류한 뒤 필요한 부분만 보정한다.
 2. 일반 run 성공 후 같은 x64 DEB로 `alhangeul-linux-gui.yml`, `scope=full`을 1회 실행한다.
-   별도 제품 빌드는 없다. Ubuntu 22.04를 이번 hosted 검증 환경으로 제안하며 지원 범위를 확대하지 않는다.
+   별도 제품 빌드는 없다. Ubuntu 22.04를 이번 hosted 검증 환경으로 사용하며 지원 범위를 확대하지 않는다.
 3. 담당 에이전트는 6파일 hash·3서명·inventory와 raw CI/GUI 증거를 대조한다.
    사용자는 그 최종 서명 NSIS를 VDI에서 한 번 설치 확인한다. 개인 문서 원문은 수집하지 않는다.
    manifest 공개 후 같은 설치본에서 같은 버전 조회를 확인하며 재설치를 요구하지 않는다.
 4. MSI/AppImage 자체 설치, RPM/arm64 GUI 및 launcher 등 남은 항목은 미실행 목록으로 유지한다.
    Stage 3에서 추가 검증 경로의 좁은 보완, 공개 범위 변경 또는 구체적 위험 수용을 승인받는다.
-   이 제안 승인만으로 해당 파일의 공개나 검증 면제가 승인되는 것은 아니다.
+   이번 계획 승인만으로 해당 파일의 공개나 검증 면제가 승인되는 것은 아니다.
 
 6종 유지 여부도 최종 판단 대상이다. 단순히 NSIS·DEB만 공개하는 대안은 현재 세 updater target을
 필수로 하는 inventory/Pages 계약과 충돌하므로 파일만 누락하는 방식으로 진행하지 않는다.
@@ -134,7 +134,7 @@ GitHub Issue: [#69](https://github.com/postmelee/alhangeul-tauri/issues/69)
   최종 후보/분석 시작 SHA·포함 PR·사용자 notes 초안과 Windows/Linux 환경표를 승인 요청한다.
 - 관리자 없는 VDI는 NSIS 경로에만 배정한다. MSI와 Linux 배포판/architecture 환경은
   확보 여부·담당·실행 방법을 명시한다. hosted CI로 가능한 범위와 일반 로그인 GUI를 구분한다.
-  환경 부족이면 필요한 선택을 한 번에 요청하고, 미확보 상태로 Stage 2를 시작하지 않는다.
+  미확보 항목은 위 승인된 표로 보존하고 비게시 후보 준비와 Stage 3 공개 판단을 분리한다.
 - 서명 환경·Pages 환경·원격 release/tag·key fingerprint를 읽기 전용으로 확인한다.
   지원 범위·서명 정책·필수 설치 미검증을 미정으로 둔 채 공개 Go를 만들지 않는다.
 
@@ -316,7 +316,7 @@ git status --short
 
 - 각 단계의 실제 검증 뒤 `task-stage-report`로 산출물과 해당 단계 보고를 함께 커밋한다.
   실패한 단계를 성공 완료로 기록하지 않는다. 계획 변경은 먼저 보고하고 승인받는다.
-- Stage 2는 범위/환경 확정, Stage 3은 후보 bytes 확보, Stage 4는 파일 수용과 공개 승인,
+- Stage 2는 최소 검증안·미확보 범위의 처리 경계 승인, Stage 3은 후보 bytes 확보, Stage 4는 파일 수용과 공개 승인,
   Stage 5는 Release 원격 대조, Stage 6은 사이트/production 확인 이후 진행한다.
 - 원시 증거 누락·필수 실패는 해당 gate를 중단한다. 승인 입력이 같다는 이유로 무의미하게 CI만 반복하지 않는다.
 - 검사 코드 수정이 필요하면 빠른 계약/PowerShell은 fast, 제품 bytes 동일 설치 검사는 적격
