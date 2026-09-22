@@ -85,7 +85,7 @@ network, download와 install 오류는 편집 session을 유지한 채 `error`�
 
 production public key는 tracked release overlay에 포함되며 private key와 암호는 repository, workflow
 source, log와 artifact에 들어가지 않는다. release inventory의 canonical public-key fingerprint는
-`100c8f3183b25de3366574c46a1a2a66950a1d5f24862f3461c27b095713ffdd`다.
+`9f86f804067eff359cd32707137dfaaea8710450985dda86b0392da5db63b8f8`다.
 
 신뢰 사슬은 다음 순서로만 전진한다.
 

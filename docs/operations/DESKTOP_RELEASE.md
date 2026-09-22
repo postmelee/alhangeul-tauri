@@ -178,7 +178,7 @@ NSIS의 실제 실패를 진단 도구가 올바르게 분류하더라도 제품
 
 [tracked release overlay](../../apps/desktop/src-tauri/tauri.updater.conf.json)에는 public key만 둔다.
 [release metadata 계약](../../scripts/check-release-metadata.mjs)의 공개 fingerprint는
-`100c8f3183b25de3366574c46a1a2a66950a1d5f24862f3461c27b095713ffdd`다.
+`9f86f804067eff359cd32707137dfaaea8710450985dda86b0392da5db63b8f8`다.
 updater Minisign 서명은 Windows Authenticode 인증서 서명과 별개이며 서로의 성공을 대신하지 않는다.
 
 릴리즈 책임자는 repository 밖의 접근 제한된 primary key, 독립적인 암호화 복구본과 별도 credential
