@@ -74,6 +74,57 @@ GitHub Issue: [#69](https://github.com/postmelee/alhangeul-tauri/issues/69)
   release-metadata/product-version/pages 회귀 65개가 통과했다. `git diff --check`도 통과했으며
   `origin/devel` 대비 제품 앱·스크립트·테스트·workflow 변경은 없다. 새 CI·서명·게시 실행은 하지 않았다.
 
+### 2026-09-22 최소 검증 제안 — 승인 대기
+
+현재 승인된 Stage 1 조건은 환경 확보 전 Stage 2 미착수다. 아래는 그 조건의 **변경 제안**이며
+아직 적용되지 않았다. 새 CI 구현 없이 비게시 후보 준비까지 진행하되, 게시할 파일의 필수 검증
+미실행은 Stage 3 공개 판단 전에 추가 확인 또는 명시적인 범위/위험 승인으로 처리한다.
+후보 빌드 승인과 미검증 파일 공개 승인을 구분하고, 미실행을 통과로 기록하지 않는다.
+
+#### 6종 파일별 실행·미검증 구분
+
+아래는 실행 계획이지 새 후보의 성공 결과가 아니다. exact source/run/attempt/archive ID·digest와
+개별 파일 hash는 후보 생성 후 채운다. #70 결과는 키 준비 근거이며 새 파일 설치 결과가 아니다.
+
+| 게시 파일·출처 | 기존 경로로 수행할 최소 확인 | 기존 경로로 남는 공백 |
+|---|---|---|
+| NSIS x64·서명 run | 서명/hash/inventory 확인 후 사용자 VDI에 최종 파일 한 번 설치, 버전·HWP/HWPX 저장/재열기·새 문서 썸네일·앱 진단·대표 PDF/인쇄 확인 | hosted ordinary NSIS 계약은 이 서명 파일 설치 근거 아님. 다른 UAC/권한·한컴 조합 및 제거/재설치는 별도 범위 |
+| MSI x64·서명 run | 서명/hash/inventory. 같은 source 일반 full의 MSI 설치·제거·강제 재설치 원시 결과를 참고 | 서명 MSI 자체 설치·GUI·production 조회 미확보. 일반 MSI 성공과 3010 관측은 대체 근거 아님 |
+| AppImage x64·서명 run | 서명/hash/inventory 및 production 설정 정합성 | 최종 AppImage의 실행·문서 저장/재열기·실효 쓰기 자격·production 조회 미확보. DEB GUI로 대체 불가 |
+| DEB x64·일반 run | full의 package lifecycle + 같은 DEB를 소비하는 기존 Linux GUI workflow로 설치·문서 저장/재열기·PDF/인쇄·썸네일 확인 | 실제 환경은 Ubuntu 22.04 x64/Xvfb. 24.04·Wayland·다른 데스크톱 수용 아님. launcher 파일 인자·taskbar 그룹핑은 별도 증거 없으면 미검증 |
+| RPM x64·일반 run | full의 해당 파일 package/helper/MIME lifecycle와 hash 확인 | Ubuntu의 `rpm --nodeps`는 Fedora 의존성 해결·GUI 실행·문서 저장/재열기 확인이 아님 |
+| DEB arm64·일반 run | arm64 runner에서 해당 파일 package/helper/MIME lifecycle와 hash 확인 | arm64 앱 GUI 실행·문서 저장/재열기 미확보. x64 GUI 및 로컬 Docker 가동으로 대체 불가 |
+
+코드 근거:
+
+- [Windows artifact handoff](../../scripts/ci/artifact-handoff.mjs)는
+  `alhangeul-desktop-windows-x64`를 고정한다. `profile=installer`에 서명 archive ID를 넣거나
+  archive 이름/inventory를 바꿔 서명 MSI 수용 경로로 사용하는 것은 허용하지 않는다.
+- [Linux GUI workflow](../../.github/workflows/alhangeul-linux-gui.yml)는 Ubuntu 22.04에서
+  일반 x64 DEB를 설치한다. [native 문서 시나리오](../../tests/gui/specs/linux-native.e2e.ts)에
+  HWP/HWPX Save As·current save·reopen이 있다. runner 변경이나 새 시나리오 추가는 제안에 없다.
+- [package 검사](../../scripts/linux-thumbnail-package-smoke.mjs)의 RPM transaction은
+  `--nodeps`를 사용한다. package 통과를 Fedora 실사용 성공으로 쓰지 않는다.
+- 기존 updater native acceptance는 시험용 N/N+1 artifact를 소비한다.
+  production MSI/AppImage 단독 설치 검사를 대신하도록 시험 build를 추가하지 않는다.
+
+#### 실행량과 담당
+
+1. 최종 main SHA 승인 후 일반 `all/full/run_tests=true`와 비게시 서명 후보를 각 1회 생성한다.
+   같은 후보의 `ci.yml full`을 중복 실행하지 않는다. 필수 실패는 원인을 분류한 뒤 필요한 부분만 보정한다.
+2. 일반 run 성공 후 같은 x64 DEB로 `alhangeul-linux-gui.yml`, `scope=full`을 1회 실행한다.
+   별도 제품 빌드는 없다. Ubuntu 22.04를 이번 hosted 검증 환경으로 제안하며 지원 범위를 확대하지 않는다.
+3. 담당 에이전트는 6파일 hash·3서명·inventory와 raw CI/GUI 증거를 대조한다.
+   사용자는 그 최종 서명 NSIS를 VDI에서 한 번 설치 확인한다. 개인 문서 원문은 수집하지 않는다.
+   manifest 공개 후 같은 설치본에서 같은 버전 조회를 확인하며 재설치를 요구하지 않는다.
+4. MSI/AppImage 자체 설치, RPM/arm64 GUI 및 launcher 등 남은 항목은 미실행 목록으로 유지한다.
+   Stage 3에서 추가 검증 경로의 좁은 보완, 공개 범위 변경 또는 구체적 위험 수용을 승인받는다.
+   이 제안 승인만으로 해당 파일의 공개나 검증 면제가 승인되는 것은 아니다.
+
+6종 유지 여부도 최종 판단 대상이다. 단순히 NSIS·DEB만 공개하는 대안은 현재 세 updater target을
+필수로 하는 inventory/Pages 계약과 충돌하므로 파일만 누락하는 방식으로 진행하지 않는다.
+그 대안은 별도 제품·배포 계약 변경 승인이 필요하다. 신규 CI 고도화·#58·#67은 계속 제외한다.
+
 ### 산출물·변경 내용
 
 - `docs/releases/v0.1.0.md`의 현재 gate와 `mydocs/working/task_m010_69_stage1.md`.
