@@ -8,7 +8,7 @@
       "endpoints": [
         "https://postmelee.github.io/alhangeul-tauri/updater/stable.json"
       ],
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEE4NkNBRkU2QjI2NzQ3QjYKUldTMlIyZXk1cTlzcUhaMFdQNXBRVlYvR1I3bmtsUkFhMkQxdGZqdGNKdk1qMWVLeUVsTWZiZDcK",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDIxQzM5Q0E1RTNDODAwRTEKUldUaEFNampwWnpESWFvVlIwaU1sTFR2a0V6V1k1K3JPemc1V2V6WTZ1WFFZWjljdS9BdWtJYWEK",
       "windows": {
         "installMode": "passive"
       }

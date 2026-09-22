@@ -30,7 +30,7 @@ test('현재 HWP/HWPX release metadata를 읽기 전용으로 승인한다', asy
   assert.equal(result.productName, 'Alhangeul');
   assert.equal(result.version, '0.1.0');
   assert.deepEqual(result.fileAssociations, ['hwp', 'hwpx']);
-  assert.equal(result.updaterKeyFingerprint, '100c8f3183b25de3366574c46a1a2a66950a1d5f24862f3461c27b095713ffdd');
+  assert.equal(result.updaterKeyFingerprint, '9f86f804067eff359cd32707137dfaaea8710450985dda86b0392da5db63b8f8');
   assert.deepEqual(after, before);
 });
 
@@ -59,6 +59,9 @@ for (const [name, mutate, expected] of [
 for (const [name, mutate, expected] of [
   ['updater endpoint drift', (config) => { config.plugins.updater.endpoints[0] = 'http://example.com/stable.json'; }, /endpoints/],
   ['updater public key drift', (config) => { config.plugins.updater.pubkey = 'placeholder-key'; }, /pubkey/],
+  ['교체 전 유효한 updater public key', (config) => {
+    config.plugins.updater.pubkey = 'dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEE4NkNBRkU2QjI2NzQ3QjYKUldTMlIyZXk1cTlzcUhaMFdQNXBRVlYvR1I3bmtsUkFhMkQxdGZqdGNKdk1qMWVLeUVsTWZiZDcK';
+  }, /pubkey fingerprint/],
   ['updater artifact 비활성화', (config) => { config.bundle.createUpdaterArtifacts = false; }, /createUpdaterArtifacts/],
   ['Windows updater install mode drift', (config) => { config.plugins.updater.windows.installMode = 'basicUi'; }, /installMode/],
 ]) {

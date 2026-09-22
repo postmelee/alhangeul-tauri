@@ -4,7 +4,7 @@
 GitHub Issue: [#70](https://github.com/postmelee/alhangeul-tauri/issues/70)
 마일스톤: M010
 
-작성일: 2026-09-20. 상태: Stage 2 복구 검증 및 사용자 임시본 정리 확인 완료, Stage 3 승인 대기.
+작성일: 2026-09-20. 상태: Stage 3 로컬 공개키·계약 전환 및 회귀 통과, 원격 fast 실행 승인 대기.
 기준 source: `cf0aac9de32451e55a686aa09677d1d00bd4648b`.
 이 문서는 실행 계획이며 키 생성·Secret 변경·원격 서명 실행 기록이 아니다.
 
@@ -166,6 +166,20 @@ Stage 2 검증은 완료했고 Secret은 변경하지 않았다.
 `Task #70 Stage 2: 새 updater 키의 독립 백업과 복구 검증 기록`
 
 ## Stage 3 — 신뢰 키 전환·CI 검증
+
+### 로컬 후보 진행 결과 (2026-09-22)
+
+- Stage 2 보고 후 사용자의 `진행해줘`로 공개키·검증 기준 교체와 로컬 회귀를 승인받았다.
+- tracked overlay, metadata 계약·회귀, 운영·아키텍처 문서의 현재 fingerprint를 새 값으로 교체했다.
+  과거 #16 기록은 보존하고 정상 형식의 이전 공개키도 거부하는 회귀를 추가했다.
+- `pnpm run check:product-version`, `pnpm run check:release-metadata` 통과.
+- `node --test tests/release-metadata.test.mjs tests/updater-release.test.mjs tests/pages.test.mjs`:
+  69 tests, 69 pass, 0 fail, 0 skipped.
+- 새 tracked 공개키와 복구 공개키의 일치, 해당 키로 복구 시험 서명 성공·변조 거부를 재검증했다.
+- `git diff --check` 통과. #69 원래 worktree diff hash 불변을 확인했다.
+- version·endpoint·native·installer·lock·workflow는 변경하지 않았다. Secret과 원격은 미변경이다.
+- 이 결과는 로컬 후보 검증이며 Stage 3 전체 완료나 실제 installer 서명 수용이 아니다.
+  후보 커밋의 exact SHA를 제시하고 `publish/task70` push 및 `ci.yml profile=fast` 승인을 받는다.
 
 ### 산출물
 

@@ -27,7 +27,7 @@ export const RELEASE_METADATA_CONTRACT = Object.freeze({
   linuxDesktopTemplate: 'linux/main.desktop',
   updaterConfigPath: 'apps/desktop/src-tauri/tauri.updater.conf.json',
   updaterEndpoint: UPDATER_ENDPOINT,
-  updaterPublicKeyFingerprint: '100c8f3183b25de3366574c46a1a2a66950a1d5f24862f3461c27b095713ffdd',
+  updaterPublicKeyFingerprint: '9f86f804067eff359cd32707137dfaaea8710450985dda86b0392da5db63b8f8',
   fileAssociations: Object.freeze([
     Object.freeze({
       ext: Object.freeze(['hwp']),
