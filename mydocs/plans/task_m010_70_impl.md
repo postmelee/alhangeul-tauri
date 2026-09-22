@@ -4,7 +4,7 @@
 GitHub Issue: [#70](https://github.com/postmelee/alhangeul-tauri/issues/70)
 마일스톤: M010
 
-작성일: 2026-09-20. 상태: Stage 1 준비 완료, Stage 2 생성·복구 실행 승인 대기.
+작성일: 2026-09-20. 상태: Stage 2 복구 검증 및 사용자 임시본 정리 확인 완료, Stage 3 승인 대기.
 기준 source: `cf0aac9de32451e55a686aa09677d1d00bd4648b`.
 이 문서는 실행 계획이며 키 생성·Secret 변경·원격 서명 실행 기록이 아니다.
 
@@ -22,6 +22,7 @@ GitHub Issue: [#70](https://github.com/postmelee/alhangeul-tauri/issues/70)
 | 파일 | 수행계획서상 선택 위치 | Stage 산출물 경로 | 일치 여부 | 비고 |
 |---|---|---|---|---|
 | 운영 정책 | `docs/operations/` | `docs/operations/DESKTOP_RELEASE.md` | OK | 현재 fingerprint·복구 책임 최소 수정 |
+| 현재 신뢰 계약 | `docs/architecture/` | `docs/architecture/UPDATER.md` | OK | Stage 1 보고 후 승인된 현재 fingerprint 정합화 |
 | 필요 시 현재 버전 기록 | `docs/releases/` | `docs/releases/v0.1.0.md` | OK | 과거 키 증거는 보존, #69 작업과 통합 시 대조 |
 | 계획 | `mydocs/plans/` | `task_m010_70.md`, `task_m010_70_impl.md` | OK | 승인 상태와 실행 경계 |
 | 단계 보고 | `mydocs/working/` | `task_m010_70_stage{N}.md` | OK | 비밀·실제 보관 경로 제외 |
@@ -72,8 +73,8 @@ GitHub Issue: [#70](https://github.com/postmelee/alhangeul-tauri/issues/70)
   Tauri CLI 2.10.1을 키 생성·복구 관리에만 사용한다. 이는 Rust/Tauri 제품 build·native 검증이나
   Mac 배포 지원이 아니며 제품 검증은 기존 Windows/Linux CI에 유지한다. 사용자 `진행해줘`로
   변경을 승인받은 뒤 실제 `--version`, `signer generate --help`, `signer sign --help`를 확인했다.
-- 현재 fingerprint는 `docs/architecture/UPDATER.md`에도 있다. Stage 3의 정합성 대상에 이 문서를
-  추가할 위치 판단 승인이 필요하다(기존 architecture 루트, 기여자용 현재 신뢰 계약의 단일 값 보정).
+- 현재 fingerprint는 `docs/architecture/UPDATER.md`에도 있다. Stage 1 보고 후 Stage 2 진행
+  승인과 함께 정합성 대상 추가를 승인받았다(기존 architecture 루트, 현재 신뢰 계약의 단일 값 보정).
   #16 계획·보고서의 과거 fingerprint는 그대로 보존한다.
 - 키 생성·복구는 아래 사용자 직접 입력 절차로 준비 완료했다. Stage 2 승인 전 키 생성은 하지 않는다.
 
@@ -129,6 +130,14 @@ GitHub Issue: [#70](https://github.com/postmelee/alhangeul-tauri/issues/70)
 `Task #70 Stage 1: 키 보관 책임과 안전한 생성·복구 절차 확정`
 
 ## Stage 2 — 생성·백업·복구
+
+진행 상태(2026-09-22): 승인 A에 따라 사용자가 생성·암호 앱 저장·iCloud 백업 및
+별도 내려받은 복구본 서명 절차의 완료를 보고했다. 에이전트는 공개 자료만으로 서명 성공,
+변조 거부와 백업 공개키 일치를 검증했다. 실제 클라우드 내려받기는 사용자 확인에 근거한다.
+사용자가 원본·iCloud 백업을 보존하고 시험용 복구 파일 두 개의 정리를 완료했다고 확인했다.
+복구 당시 권한은 독립 확인하지 못했으며, 정리 확인으로 임시본 보유 종료를 기록한다.
+Stage 2 검증은 완료했고 Secret은 변경하지 않았다.
+상세 근거는 [Stage 2 보고](../working/task_m010_70_stage2.md)에 기록한다.
 
 ### 산출물
 
