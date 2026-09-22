@@ -4,7 +4,7 @@
 GitHub Issue: [#70](https://github.com/postmelee/alhangeul-tauri/issues/70)
 마일스톤: M010
 
-작성일: 2026-09-20. 상태: Stage 3 full·서명 attempt 2·산출물 독립 검증 완료, Stage 4 승인 대기.
+작성일: 2026-09-20. 상태: Stage 4 최종 보고·#69 인계 준비 완료, PR 게시 승인 대기.
 기준 source: `cf0aac9de32451e55a686aa09677d1d00bd4648b`.
 실행 계획과 진행 기록을 함께 관리한다. 최종 Stage 3 수용 근거는
 [Stage 3 보고서](../working/task_m010_70_stage3.md)에 고정한다.
