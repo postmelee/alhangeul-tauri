@@ -4,9 +4,10 @@
 GitHub Issue: [#70](https://github.com/postmelee/alhangeul-tauri/issues/70)
 마일스톤: M010
 
-작성일: 2026-09-20. 상태: Stage 3 로컬 공개키·계약 전환 및 회귀 통과, 원격 fast 실행 승인 대기.
+작성일: 2026-09-20. 상태: Stage 3 full·서명 attempt 2·산출물 독립 검증 완료, Stage 4 승인 대기.
 기준 source: `cf0aac9de32451e55a686aa09677d1d00bd4648b`.
-이 문서는 실행 계획이며 키 생성·Secret 변경·원격 서명 실행 기록이 아니다.
+실행 계획과 진행 기록을 함께 관리한다. 최종 Stage 3 수용 근거는
+[Stage 3 보고서](../working/task_m010_70_stage3.md)에 고정한다.
 
 ## 단계 개요
 
@@ -179,7 +180,84 @@ Stage 2 검증은 완료했고 Secret은 변경하지 않았다.
 - `git diff --check` 통과. #69 원래 worktree diff hash 불변을 확인했다.
 - version·endpoint·native·installer·lock·workflow는 변경하지 않았다. Secret과 원격은 미변경이다.
 - 이 결과는 로컬 후보 검증이며 Stage 3 전체 완료나 실제 installer 서명 수용이 아니다.
-  후보 커밋의 exact SHA를 제시하고 `publish/task70` push 및 `ci.yml profile=fast` 승인을 받는다.
+  후보 커밋의 exact SHA를 제시하고 `publish/task70` push 및 `ci.yml profile=fast` 승인을 받았다.
+
+### 원격 fast 결과 (2026-09-22)
+
+- 승인한 `70fa1dd407ec4abcbe3cf496f7ec01aee884377c`를 `publish/task70`에 push했다.
+- [run 35681649719](https://github.com/postmelee/alhangeul-tauri/actions/runs/35681649719),
+  attempt 1, `.github/workflows/ci.yml`, `workflow_dispatch`, head SHA는 위 후보와 일치한다.
+- 입력: `profile=fast`, `scope=full`, `thumbnail_context_experiment=false`.
+- 전체 conclusion `success`: select, Windows PowerShell contracts, Node and Studio contracts 성공.
+  artifacts, installer, native Unit tests 및 Windows PDF cleanup은 범위 밖으로 skipped다.
+- fast 성공은 제품 빌드·설치·새 키 installer 서명 성공이 아니다. full/signed 검증은 미실행이다.
+- release 환경의 required reviewer postmelee, branch policy null을 재확인했다. Secret 두 이름은
+  존재하며 갱신 시각은 기존 2026-08-29로 유지됐다. 원문은 읽지 않았고 값을 변경하지 않았다.
+- 최근 100개 run 조회에서 미완료 실행은 없었다. 전환 직전에는 활성/대기 상태를 다시 확인한다.
+- 다음은 승인 B로 두 signing Secret을 함께 전환하는 절차다. 부분 실패 시 서명을 실행하지 않고
+  새 키·암호 쌍 정합화를 완료한다. 기존 키로 rollback 가능하다고 가정하지 않는다.
+- 이 결과 기록은 로컬 문서에만 남긴다. 검증 후보 SHA를 바꾸는 추가 push는 하지 않았다.
+
+### Secret 전환 확인 (2026-09-22)
+
+- 사용자가 승인 B로 전환을 지시하고 로컬 터미널의 두 Secret 등록 완료를 확인했다.
+  입력 절차는 복구 검증 공개키와 원본의 공개키를 비교하고, 암호는 숨김 입력·stdin으로 전달했다.
+- 전환 전 in_progress/queued/waiting/pending을 각각 조회해 실행이 없음을 확인했다.
+- 두 Secret의 갱신 시각이 모두 `2026-09-22T03:22:13Z`로 바뀌었다. 값은 조회하지 않았다.
+  사용자 완료 확인과 metadata 변경은 등록 근거이며 키·암호 쌍의 암호학적 정합성 증거가 아니다.
+- 원격 `publish/task70`은 `70fa1dd407ec4abcbe3cf496f7ec01aee884377c`를 유지한다.
+- 승인 C 요청: 같은 후보에서 `ci.yml profile=full scope=full` 및
+  `alhangeul-desktop.yml mode=updater`, exact `build_ref`, `run_tests=true`,
+  `release_version=0.1.0`, `release_tag=v0.1.0`,
+  `release_notes=Task 70 signing verification only; no publication`, `publish_release=false`.
+  썸네일 환경 실험은 false로 유지한다. 아직 두 workflow를 실행하지 않았다.
+- 서명 build에는 release 환경 수동 승인이 필요하다. full 성공과 별도로 생성된 세 installer의
+  실제 bytes·서명을 새 공개키로 검증한다. Release/tag/Pages 게시와 updater 활성화는 제외한다.
+
+### 원격 통합·서명 검증 실행 (2026-09-22)
+
+- 사용자 `진행해줘`로 승인 C를 받은 뒤 원격 후보 SHA와 중복 실행 부재를 확인했다.
+- [full run 35683014919](https://github.com/postmelee/alhangeul-tauri/actions/runs/35683014919):
+  `ci.yml`, `profile=full`, `scope=full`, `thumbnail_context_experiment=false`.
+- [서명 run 35683016977](https://github.com/postmelee/alhangeul-tauri/actions/runs/35683016977):
+  `alhangeul-desktop.yml`, `mode=updater`, `run_tests=true`, `artifact_platform=all`,
+  `validation_profile=full`, `thumbnail_context_experiment=false`, `release_version=0.1.0`,
+  `release_tag=v0.1.0`, `release_notes=Task 70 signing verification only; no publication`,
+  `publish_release=false`.
+- 두 실행의 head SHA와 서명 build_ref는 모두 `70fa1dd407ec4abcbe3cf496f7ec01aee884377c`다.
+- 초기 관측: full queued, 서명 waiting 및 release 환경 승인 대기. 사용자에게 승인을 요청한다.
+  보호 규칙을 변경하거나 환경 승인을 대신 수행하지 않았다. 완료·서명 성공은 아직 미확인이다.
+
+### 서명 실행 실패 관측 (2026-09-22)
+
+- run 35683016977은 failure다. 두 플랫폼 모두 `Build signed updater bundles`에서
+  `incorrect updater private key password: Wrong password for that key`로 실패했다.
+- Windows는 MSI·NSIS bundle 경로 출력 후 키 복호화가 실패했다. 업로드 artifact는 0개이며
+  inventory 검증과 publish job은 skipped다. 생성 중인 파일을 수용된 서명 산출물로 간주하지 않는다.
+- workflow는 release 환경의 두 signing Secret을 Tauri 환경변수에 직접 매핑한다.
+  source에서 별도 암호 변환은 확인되지 않았다. 로컬 복구 서명 성공과 달리 CI에 전달된 조합은
+  복호화되지 않았다. 잘못된 암호 입력·다른 개인키 선택·전달 문제 중 세부 원인은 아직 미확정이다.
+- 별도 full run 35683014919는 조회 시 Windows 제품 build 진행 중이었다. fast, 세 core 및
+  Linux 두 target build는 성공했으나 전체 full 성공으로 기록하지 않는다.
+- Secret을 다시 바꾸거나 실패 run을 재실행하지 않았다. 다음 조치는 사용자 로컬에서 실제
+  등록할 개인키와 암호의 조합을 먼저 검증한 뒤 승인된 Secret 재등록을 수행하는 것이다.
+  새 키 생성·제품 코드 변경이 필요하다는 근거는 현재 없다.
+
+### 암호 불일치 보정과 재등록 (2026-09-22)
+
+- 사용자 승인으로 원본·iCloud 백업 개인키의 바이트 동일 여부만 비교해 일치를 확인했다.
+  파일 내용·hash는 출력하지 않았으며 키 파일을 변경하지 않았다.
+- 사용자가 키 생성 때 입력한 암호와 암호 앱에 저장했던 자동 생성 암호가 달랐음을 확인했다.
+  실제 생성 암호로 Tauri 직접 입력 서명이 성공했고 암호 앱 항목을 수정했다고 보고했다.
+- 이후 사용자가 수정한 암호를 한 번 입력해 로컬 서명·tracked 공개키 검증을 수행하고,
+  검증된 동일 메모리 값으로 두 Secret을 등록하는 절차의 완료를 확인했다.
+- 두 Secret 갱신 시각은 모두 `2026-09-22T04:20:59Z`다. 원문 read-back은 하지 않았다.
+  실제 CI에서 같은 키로 서명되는지는 아직 재검증 전이다.
+- full run 35683014919는 최종 success이며 source는 `70fa1dd407ec4abcbe3cf496f7ec01aee884377c`다.
+  원격 후보도 동일 SHA를 유지한다. full 성공은 모든 사용자 환경의 썸네일 성공 보장이 아니다.
+- 기존 서명 run 35683016977 attempt 1의 실패는 보존한다. full을 반복하지 않고
+  같은 후보·미게시 입력의 서명 workflow만 재실행하도록 승인을 요청한다.
+- 새 키 생성·제품 변경·원격 추가 push·CI 재실행·릴리즈 게시를 수행하지 않았다.
 
 ### 산출물
 
