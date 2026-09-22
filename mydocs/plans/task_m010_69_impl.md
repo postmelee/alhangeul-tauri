@@ -5,7 +5,7 @@ GitHub Issue: [#69](https://github.com/postmelee/alhangeul-tauri/issues/69)
 마일스톤: M010
 
 2026-09-20 수행계획 승인 후 작성. 같은 스레드의 작업지시자 `진행해줘`로 구현계획 승인.
-현재 상태: Stage 1 조사·로컬 계약 검사 수행, 검증 환경·키 보관 확인 대기. Stage 2 미착수.
+현재 상태: Stage 1 재개, #70 키 준비 완료·devel 통합, 최소 검증 환경·증거표 확정 대기. Stage 2 미착수.
 아래 명령은 실행 계획이며, 이 문서 작성 중 제품 검증·CI·서명·게시를 실행한 것이 아니다.
 
 ## 단계 개요
@@ -59,6 +59,20 @@ GitHub Issue: [#69](https://github.com/postmelee/alhangeul-tauri/issues/69)
    전체 완료 확인 후에만 #69 close·브랜치/worktree 정리를 한다.
 
 ## Stage 1 — 범위·차단 조건 확정
+
+### 2026-09-22 재개
+
+- 사용자 승인으로 #69 미커밋 변경을 `40aa0ec`에 보존하고 최신 devel을 `1cf5589`로 통합했다.
+  오늘할일 행 충돌은 #69/#70 양쪽 기록을 유지해 해결했다. stash·강제 덮어쓰기·다른 task 삭제는 하지 않았다.
+- [#70 최종 보고](../report/task_m010_70_report.md)의 새 키 복구·full·미게시 서명/bytes 검증을 인계받았다.
+  키 준비 미확정은 해소됐지만 최종 main SHA·6종 공개 bytes·설치 수용은 아직 미확정이다.
+- 사용자 직접 설치는 최종 후보에서 한 번으로 모은다. 현재 추가 환경 제공이 어렵다는 답변을 보존하고
+  같은 환경 제공 요청을 반복하지 않는다. 기존 CI로 가능한 항목/미검증을 구분한 제안이 다음 작업이다.
+- MSI 관리자 환경과 Linux 배포판/architecture GUI 확인을 NSIS VDI 또는 서명 성공으로 대체하지 않는다.
+  미확보 범위가 남으면 단계 조건·공개 범위/위험 수용을 승인받기 전 Stage 2에 진입하지 않는다.
+- 통합 후 `check:product-version`, `check:release-metadata`, `check:rhwp-pin` 및
+  release-metadata/product-version/pages 회귀 65개가 통과했다. `git diff --check`도 통과했으며
+  `origin/devel` 대비 제품 앱·스크립트·테스트·workflow 변경은 없다. 새 CI·서명·게시 실행은 하지 않았다.
 
 ### 산출물·변경 내용
 
