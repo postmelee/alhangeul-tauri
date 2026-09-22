@@ -4,7 +4,8 @@
 GitHub Issue: [#69](https://github.com/postmelee/alhangeul-tauri/issues/69)
 마일스톤: M010
 
-2026-09-20 수행계획 승인 후 작성. 상태: 구현계획 승인 대기, Stage 1 미착수.
+2026-09-20 수행계획 승인 후 작성. 같은 스레드의 작업지시자 `진행해줘`로 구현계획 승인.
+현재 상태: Stage 1 조사·로컬 계약 검사 수행, 검증 환경·키 보관 확인 대기. Stage 2 미착수.
 아래 명령은 실행 계획이며, 이 문서 작성 중 제품 검증·CI·서명·게시를 실행한 것이 아니다.
 
 ## 단계 개요
@@ -26,6 +27,9 @@ GitHub Issue: [#69](https://github.com/postmelee/alhangeul-tauri/issues/69)
 | 기존 운영 안내 | `docs/operations/` | `PUBLIC_RELEASE_RUNBOOK.md`, `RELEASE_CHECKLIST.md`, `DESKTOP_RELEASE.md` | OK | 불일치가 확인된 부분만 최소 수정 |
 | 공개 데이터·notes | `site/`·GitHub Release | `site/release.json`·Release 본문 | OK | 공개 원격 확인 및 별도 승인 후 반영 |
 | 계획·단계·최종 보고 | `mydocs/` 역할별 폴더 | #69 plans/working/report·일별 orders | OK | 실행 기록과 공식 사용자 안내 분리 |
+
+기존 `docs/releases/v0.1.0.md`는 이미 권장 300행을 넘는다. 이번 단계는 승인된 기존 위치에서
+과거 증거를 보존하고 현재 판단만 보완한다. 별도 문서 분할·링크 이동으로 범위를 확대하지 않는다.
 
 ## 실행·승인 공통 규칙
 
