@@ -109,6 +109,65 @@ describe('local fonts', () => {
 
     expect(getLocalFonts()).toEqual([]);
   });
+
+  it('exposes the v0.8.2 local-font record, state, and byte-loading contract', async () => {
+    (globalThis as { window?: unknown }).window = { __TAURI_INTERNALS__: {} };
+    invokeMock.mockImplementation(async (command: string, args?: { path?: string }) => {
+      if (command === 'list_local_fonts') {
+        return [
+          {
+            family: '새 파일폰트',
+            postScriptName: 'NewFont-Regular',
+            style: 'normal',
+            weight: 400,
+            sourceKind: 'file-backed',
+            path: '/vendor/NewFont-Regular.ttf',
+          },
+        ];
+      }
+      if (command === 'read_local_font') {
+        expect(args?.path).toBe('/vendor/NewFont-Regular.ttf');
+        return [10, 20, 30];
+      }
+      throw new Error(`unexpected command: ${command}`);
+    });
+
+    const {
+      clearStoredLocalFonts,
+      detectLocalFonts,
+      getLocalFontState,
+      loadLocalFontBytesFor,
+      localFontFaceKey,
+      resolveLocalFont,
+    } = await import('./local-fonts');
+
+    await expect(detectLocalFonts({ force: true })).resolves.toEqual(['새 파일폰트']);
+    expect(getLocalFontState()).toMatchObject({
+      supported: true,
+      loaded: true,
+      stored: true,
+      count: 1,
+    });
+
+    const record = resolveLocalFont('NewFont-Regular');
+    expect(record).toMatchObject({
+      family: '새 파일폰트',
+      postscriptName: 'NewFont-Regular',
+    });
+
+    const loadedBytes = await loadLocalFontBytesFor(['NewFont-Regular']);
+    expect(record).not.toBeNull();
+    const fontBytes = loadedBytes.get(localFontFaceKey(record!));
+    expect(fontBytes).toBeDefined();
+    expect(Array.from(new Uint8Array(fontBytes!))).toEqual([10, 20, 30]);
+
+    await clearStoredLocalFonts();
+    expect(getLocalFontState()).toMatchObject({
+      loaded: false,
+      stored: false,
+      count: 0,
+    });
+  });
 });
 
 function installBinaryFontEnvironment(addedFamilies: string[]) {

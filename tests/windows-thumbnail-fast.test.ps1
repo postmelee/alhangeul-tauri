@@ -1,0 +1,34 @@
+$ErrorActionPreference = 'Stop'
+Set-StrictMode -Version Latest
+$root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
+. (Join-Path $root 'scripts\ci\windows-test-process.ps1')
+Invoke-CiPowerShellTest -Path (Join-Path $root 'scripts\windows-thumbnail-assessment-tests.ps1')
+# Load only pure context test functions. Never execute the CI registry/token entry point.
+. (Join-Path $root 'scripts\windows-thumbnail-context-files.ps1')
+. (Join-Path $root 'scripts\windows-thumbnail-context-evidence.ps1')
+$sources = [ordered]@{
+    'windows-thumbnail-context-registry.ps1' = @('Test-ContextEqual')
+    'windows-thumbnail-context-tests.ps1' = @('Assert-ContextThrows', 'New-ContextTestPhase', 'Test-ContextFindingContracts', 'Test-ContextRawEvidence')
+    'windows-thumbnail-context-cleanup.ps1' = @('Get-ContextCleanupIds', 'ConvertTo-ContextCleanupRow', 'Get-ContextCleanupFinding', 'New-ContextCleanupFailure', 'Invoke-ContextCleanupRead', 'Add-ContextCleanupSnapshot', 'Test-ContextCleanupDiagnostics')
+    'windows-thumbnail-context-cleanup-tests.ps1' = @('New-ContextCleanupTestItems', 'Test-ContextCleanupContracts', 'Test-ContextCleanupFailures', 'Test-ContextCleanupDiagnosticContract')
+}
+foreach ($source in $sources.GetEnumerator()) {
+    $tokens = $null; $errors = $null
+    $ast = [Management.Automation.Language.Parser]::ParseFile((Join-Path $root "scripts\$($source.Key)"), [ref]$tokens, [ref]$errors)
+    if ($errors.Count -gt 0) { throw 'Context test source parse failed' }
+    $allowed = $source.Value; $loaded = @()
+    foreach ($node in $ast.EndBlock.Statements) {
+        if ($node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -in $allowed) {
+            . ([scriptblock]::Create($node.Extent.Text))
+            $loaded += $node.Name
+        }
+    }
+    if ($loaded.Count -ne $allowed.Count) { throw 'Missing pure context test function' }
+}
+Test-ContextFindingContracts
+Test-ContextRawEvidence
+Test-ContextCleanupContracts
+Test-ContextCleanupFailures
+Test-ContextCleanupDiagnosticContract
+Write-Output 'Pure thumbnail assessment/context regressions passed; no native or installer acceptance.'
+exit 0

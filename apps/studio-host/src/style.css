@@ -1,28 +1,219 @@
-@import '@/styles/base.css';
-@import '@/styles/menu-bar.css';
-@import '@/styles/toolbar.css';
-@import '@/styles/style-bar.css';
-@import '@/styles/editor.css';
-@import '@/styles/status-bar.css';
-@import '@/styles/dialogs.css';
-@import '@/styles/char-shape-dialog.css';
-@import '@/styles/table-selection.css';
-@import '@/styles/para-shape-dialog.css';
-@import '@/styles/picture-props.css';
-@import '@/styles/numbering-dialog.css';
-@import '@/styles/style-dialog.css';
-@import '@/styles/options-dialog.css';
-@import '@/styles/font-set-dialog.css';
-@import '@/styles/table-cell-props.css';
-@import '@/styles/form-overlay.css';
-@import '@/styles/find-dialog.css';
-@import '@/styles/symbols-dialog.css';
-@import '@/styles/bookmark-dialog.css';
-@import '@/styles/shape-picker.css';
-@import '@/styles/command-palette.css';
-@import '@/styles/about-dialog.css';
-@import '@/styles/custom-select.css';
-@import '@/styles/home-screen.css';
-@import '@/styles/update-notice.css';
-@import '@/styles/recent-documents-dialog.css';
-@import '@/styles/responsive.css';
+@font-face {
+  font-family: 'Alhangeul UI Fallback';
+  src: url('./fonts/NotoSansKR-Regular.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+:root {
+  --alhangeul-font-family-ui: '맑은 고딕', 'Malgun Gothic', 'Segoe UI',
+    'Alhangeul UI Fallback', sans-serif;
+  --font-family-ui: var(--alhangeul-font-family-ui) !important;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+.style-bar,
+.status-bar {
+  font-family: var(--alhangeul-font-family-ui) !important;
+}
+
+/* Tauri production CSP의 nonce/hash는 upstream inline display:none을 차단할 수 있다. */
+html:not(.alhangeul-toolbar-ready) .tb-rotate-group,
+html:not(.alhangeul-toolbar-ready) .tb-headerfooter-group,
+html:not(.alhangeul-toolbar-ready) .tb-note-group,
+.alhangeul-toolbar-hidden,
+#file-input,
+#sb-field:empty {
+  display: none !important;
+}
+
+/* Tauri CSP가 upstream의 동적 iframe inline style을 무시해도 인쇄 surface는 숨긴다. */
+#rhwp-print-surface {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  border: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  z-index: -1 !important;
+}
+
+#alhangeul-direct-print-surface {
+  display: block !important;
+  position: fixed !important;
+  inset: 0 !important;
+  pointer-events: none !important;
+  z-index: -1 !important;
+}
+
+@media print {
+  html.alhangeul-print-active body > :not(#alhangeul-direct-print-surface) {
+    display: none !important;
+  }
+
+  html.alhangeul-print-active #alhangeul-direct-print-surface {
+    display: block !important;
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    overflow: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    z-index: auto !important;
+    background: #fff !important;
+  }
+
+  #alhangeul-direct-print-surface,
+  #alhangeul-direct-print-surface * {
+    margin: 0;
+    padding: 0;
+  }
+
+  #alhangeul-direct-print-surface .page {
+    overflow: hidden;
+    break-after: page;
+    page-break-after: always;
+  }
+
+  #alhangeul-direct-print-surface .page:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  #alhangeul-direct-print-surface .page svg {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+.about-alhangeul-version {
+  margin-top: 2px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.about-update-button {
+  display: block;
+  margin: 10px auto 2px;
+}
+
+.thumbnail-diagnostics-dialog {
+  /* Restore centering after the shared editor reset removes dialog UA margins. */
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: min(640px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  box-sizing: border-box;
+  overflow: hidden;
+  border: 1px solid #e2e2e7;
+  border-radius: 18px;
+  padding: 0;
+  color: #1d1d1f;
+  background: #fff;
+  font: 14px system-ui, sans-serif;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.thumbnail-diagnostics-dialog[open] { display: flex; flex-direction: column; }
+.thumbnail-diagnostics-dialog [hidden] { display: none !important; }
+.thumbnail-diagnostics-dialog::backdrop { background: rgb(0 0 0 / 35%); }
+.thumbnail-diagnostics-header { flex-shrink: 0; padding: 20px 28px 0; color: #6e6e73; font-size: 12px; font-weight: 600; }
+.thumbnail-diagnostics-dialog p { margin: 8px 0 0; }
+.thumbnail-diagnostics-header p { margin: 0; }
+.thumbnail-diagnostics-body { overflow-y: auto; min-height: 0; padding: 16px 28px 24px; }
+.thumbnail-diagnostics-dialog h2 { margin: 0; font-size: 24px; line-height: 1.35; letter-spacing: -.5px; }
+.thumbnail-diagnostics-dialog h3 { margin: 0; font-size: 14px; }
+.thumbnail-diagnostics-status { margin-bottom: 22px; }
+.thumbnail-diagnostics-status > p, .thumbnail-muted { color: #6e6e73; }
+.thumbnail-privacy, .thumbnail-next-step { background: #f7f7f9; border: 1px solid #e2e2e7; border-radius: 12px; padding: 18px; }
+.thumbnail-format-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; }
+.thumbnail-format-card { border: 1px solid #e2e2e7; border-radius: 12px; padding: 16px; }
+.thumbnail-format-card p { font-size: 13px; }
+.thumbnail-format-status { font-weight: 650; }
+.thumbnail-format-card[data-tone="success"] .thumbnail-format-status { color: #21613e; }
+.thumbnail-format-card[data-tone="warning"] .thumbnail-format-status { color: #8a5100; }
+.thumbnail-diagnostics-dialog details { margin-top: 16px; font-size: 13px; }
+.thumbnail-diagnostics-dialog summary { cursor: pointer; font-weight: 600; padding: 4px 0; }
+.thumbnail-diagnostics-dialog details details { padding-left: 12px; }
+.thumbnail-diagnostics-dialog ol { padding-left: 20px; }
+.thumbnail-diagnostics-dialog li + li { margin-top: 6px; }
+.thumbnail-cleanup-warning { padding: 12px; border: 1px solid #b67517; border-radius: 8px; background: #fff8eb; }
+.thumbnail-diagnostics-actions { flex-shrink: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 16px 28px; border-top: 1px solid #e2e2e7; background: #fff; }
+.thumbnail-diagnostics-buttons { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.thumbnail-copy-status { min-width: 0; min-height: 3.2em; display: flex; align-items: center; font-size: 13px; line-height: 1.6; color: #6e6e73; }
+.thumbnail-copy-status[data-tone="success"] { color: #21613e; }
+.thumbnail-copy-status[data-tone="warning"] { color: #8a5100; }
+.thumbnail-diagnostics-dialog .thumbnail-copy-button { width: 132px; }
+.thumbnail-diagnostics-dialog button { min-height: 40px; padding: 8px 14px; border: 1px solid #d2d2d7; border-radius: 8px; background: #fff; color: #1d1d1f; font: inherit; font-weight: 500; cursor: pointer; }
+.thumbnail-diagnostics-dialog button:hover:not(:disabled) { background: #f5f5f7; }
+.thumbnail-diagnostics-dialog button[data-primary="true"] { background: #0066cc; border-color: #0066cc; color: #fff; }
+.thumbnail-diagnostics-dialog button[data-primary="true"]:hover:not(:disabled) { background: #005bb8; }
+.thumbnail-diagnostics-dialog button:disabled { opacity: .5; cursor: default; }
+.thumbnail-diagnostics-dialog textarea { width: 100%; min-height: 180px; box-sizing: border-box; margin-top: 12px; font: 12px monospace; }
+.thumbnail-diagnostics-dialog :is(button, summary, textarea):focus-visible { outline: 2px solid #0066cc; outline-offset: 3px; }
+@media (max-width: 600px) {
+  .thumbnail-diagnostics-actions { grid-template-columns: minmax(0, 1fr); }
+  .thumbnail-copy-status { min-height: 1.6em; }
+}
+@media (max-width: 480px) {
+  .thumbnail-diagnostics-dialog { width: calc(100vw - 16px); max-height: calc(100dvh - 16px); border-radius: 12px; }
+  .thumbnail-diagnostics-header { padding: 16px 18px 0; }
+  .thumbnail-diagnostics-body { padding: 16px 18px 20px; }
+  .thumbnail-diagnostics-dialog h2 { font-size: 21px; }
+  .thumbnail-diagnostics-actions { padding: 12px 18px; }
+  .thumbnail-format-cards { grid-template-columns: 1fr; }
+}
+.about-thumbnail-diagnostics-button { margin-top: 12px; }
+
+.updater-dialog-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 18px 20px;
+  line-height: 1.55;
+}
+
+.updater-dialog-status,
+.updater-dialog-notes,
+.updater-dialog-error {
+  margin: 0;
+}
+
+.updater-dialog-status {
+  color: var(--color-text);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.updater-dialog-notes {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  white-space: pre-line;
+}
+
+.updater-dialog-error {
+  color: var(--color-error, #b42318);
+  font-size: 13px;
+}
+
+.updater-dialog-progress {
+  width: 100%;
+  accent-color: var(--color-primary);
+}
+
+.updater-dialog-action,
+.updater-dialog-downloads-link {
+  align-self: flex-end;
+  box-sizing: border-box;
+  text-decoration: none;
+}

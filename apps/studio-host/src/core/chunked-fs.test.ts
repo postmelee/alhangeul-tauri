@@ -47,9 +47,9 @@ describe('chunked fs helpers', () => {
     const handle = writeHandle({ maxBytesPerWrite: 2 });
     fsOpenMock.mockResolvedValue(handle);
 
-    await writeFileInChunks('/tmp/staged.hwp', new Uint8Array([1, 2, 3, 4, 5]));
+    await writeFileInChunks('/tmp/staged.hwpx', new Uint8Array([1, 2, 3, 4, 5]));
 
-    expect(fsOpenMock).toHaveBeenCalledWith('/tmp/staged.hwp', {
+    expect(fsOpenMock).toHaveBeenCalledWith('/tmp/staged.hwpx', {
       write: true,
       create: true,
       truncate: true,
@@ -61,7 +61,7 @@ describe('chunked fs helpers', () => {
       [5],
     ]);
     expect(handle.close).toHaveBeenCalled();
-    expect(statMock).toHaveBeenCalledWith('/tmp/staged.hwp');
+    expect(statMock).toHaveBeenCalledWith('/tmp/staged.hwpx');
   });
 
   it('closes the file and rejects zero-byte writes', async () => {

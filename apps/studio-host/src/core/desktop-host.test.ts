@@ -1,0 +1,281 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { DocumentExportArtifact } from '@upstream/core/export-content-loss';
+import { DesktopHost, type DesktopHostDependencies } from './desktop-host';
+import type { DesktopStudioHandlers } from '../embed/desktop-runtime';
+import { DesktopPersistence, type PdfExportResult } from './desktop-persistence';
+
+describe('desktop host', () => {
+  beforeEach(() => {
+    (globalThis as { document?: unknown }).document = { title: '' };
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('loads native bytes through the upstream handler before committing the session', async () => {
+    const fixture = createFixture();
+    fixture.invoke.mockImplementation(async (command) => {
+      if (command === 'prepare_document_open') return undefined;
+      if (command === 'open_document_tracking') return nativeOpen({ docId: 'opened' });
+      if (command === 'record_recent_document') return undefined;
+      throw new Error(`unexpected command: ${command}`);
+    });
+    const host = new DesktopHost(fixture.dependencies);
+    host.bindCommandServices(fixture.services as never);
+
+    await expect(host.openDocumentByPath('/documents/opened.hwp')).resolves.toEqual({
+      fileName: 'opened.hwp',
+      pageCount: 2,
+    });
+
+    expect(fixture.handlers.loadFile).toHaveBeenCalledWith(
+      new Uint8Array([1, 2, 3]),
+      'opened.hwp',
+      false,
+      false,
+    );
+    expect(host.activeSession).toMatchObject({ docId: 'opened', sourcePath: '/documents/opened.hwp' });
+    expect(fixture.invoke).toHaveBeenCalledWith('record_recent_document', {
+      path: '/documents/opened.hwp',
+    });
+    expect(document.title).toBe('opened.hwp - Alhangeul');
+  });
+
+  it('closes a native tracking session when the Studio load fails', async () => {
+    const fixture = createFixture();
+    fixture.handlers.loadFile.mockRejectedValue(new Error('parse failed'));
+    fixture.invoke.mockImplementation(async (command) => {
+      if (command === 'prepare_document_open') return undefined;
+      if (command === 'open_document_tracking') return nativeOpen({ docId: 'failed' });
+      if (command === 'close_document') return undefined;
+      throw new Error(`unexpected command: ${command}`);
+    });
+    const host = new DesktopHost(fixture.dependencies);
+    host.bindCommandServices(fixture.services as never);
+
+    await expect(host.openDocumentByPath('/documents/failed.hwp')).rejects.toThrow('parse failed');
+
+    expect(host.activeSession).toBeNull();
+    expect(fixture.invoke).toHaveBeenCalledWith('close_document', { docId: 'failed' });
+  });
+
+  it('coalesces concurrent event and pending opens for the same path', async () => {
+    const fixture = createFixture();
+    let releaseLoad!: () => void;
+    fixture.handlers.loadFile.mockImplementation(() => new Promise((resolve) => {
+      releaseLoad = () => resolve({ pageCount: 2 });
+    }));
+    fixture.invoke.mockImplementation(async (command) => {
+      if (command === 'prepare_document_open') return undefined;
+      if (command === 'open_document_tracking') return nativeOpen({ docId: 'single' });
+      if (command === 'record_recent_document') return undefined;
+      throw new Error(`unexpected command: ${command}`);
+    });
+    const host = new DesktopHost(fixture.dependencies);
+    host.bindCommandServices(fixture.services as never);
+
+    const first = host.openDocumentByPath('/documents/once.hwp');
+    const second = host.openDocumentByPath('/documents/once.hwp');
+    await vi.waitFor(() => expect(fixture.handlers.loadFile).toHaveBeenCalledOnce());
+    releaseLoad();
+    await Promise.all([first, second]);
+
+    expect(first).toBe(second);
+    expect(fixture.handlers.loadFile).toHaveBeenCalledOnce();
+  });
+
+  it('syncs dirty state and saves the active HWP format through native staging', async () => {
+    const fixture = createFixture();
+    fixture.invoke.mockImplementation(async (command) => {
+      if (command === 'prepare_document_open') return undefined;
+      if (command === 'open_document_tracking') return nativeOpen({ docId: 'saved' });
+      if (command === 'record_recent_document') return undefined;
+      if (command === 'mark_document_dirty') return undefined;
+      if (command === 'check_external_modification') return { changed: false };
+      if (command === 'prepare_staged_document_save') return '/tmp/staged.hwp';
+      if (command === 'commit_staged_document_save') {
+        return nativeSave({ docId: 'saved', sourcePath: '/documents/opened.hwp', revision: 2 });
+      }
+      throw new Error(`unexpected command: ${command}`);
+    });
+    const host = new DesktopHost(fixture.dependencies);
+    host.bindCommandServices(fixture.services as never);
+    await host.openDocumentByPath('/documents/opened.hwp');
+
+    host.markDocumentDirty();
+    host.markDocumentDirty();
+    const result = await host.saveCurrent();
+
+    expect(fixture.invoke).toHaveBeenCalledTimes(7);
+    expect(fixture.invoke).toHaveBeenCalledWith('mark_document_dirty', { docId: 'saved' });
+    expect(fixture.writeDocument).toHaveBeenCalledWith(
+      '/tmp/staged.hwp',
+      new Uint8Array([7, 8, 9]),
+    );
+    expect(fixture.invoke).toHaveBeenCalledWith('prepare_staged_document_save', {
+      targetPath: '/documents/opened.hwp',
+      format: 'hwp',
+    });
+    expect(fixture.wasm.exportHwpxWithReport).not.toHaveBeenCalled();
+    expect(fixture.handlers.notifySaved).toHaveBeenCalledWith('opened.hwp');
+    expect(result).toMatchObject({ revision: 2, dirty: false });
+    expect(host.activeSession).toMatchObject({ revision: 2, dirty: false });
+  });
+
+  it('commits a pending native blank session only after upstream initialization', async () => {
+    const fixture = createFixture();
+    fixture.invoke.mockImplementation(async (command) => {
+      if (command === 'create_document') {
+        return nativeOpen({ docId: 'new-doc', fileName: '새 문서.hwp', sourcePath: null });
+      }
+      throw new Error(`unexpected command: ${command}`);
+    });
+    const host = new DesktopHost(fixture.dependencies);
+    const eventBus = { emit: vi.fn() };
+    const services = commandServices({ eventBus });
+
+    await expect(host.beginNewDocument(services as never)).resolves.toBe(true);
+    expect(host.activeSession).toBeNull();
+    expect(eventBus.emit).toHaveBeenCalledWith('create-new-document', { skipUnsavedGuard: true });
+
+    host.completePendingDocumentInitialization();
+    expect(host.activeSession).toMatchObject({ docId: 'new-doc', sourcePath: null });
+  });
+
+  it('coalesces concurrent PDF export requests in one WebView', async () => {
+    const fixture = createFixture();
+    fixture.invoke.mockImplementation(async (command) => {
+      if (command === 'prepare_document_open') return undefined;
+      if (command === 'open_document_tracking') {
+        return nativeOpen({
+          docId: 'pdf-doc',
+          fileName: 'source.hwpx',
+          sourcePath: '/documents/source.hwpx',
+          format: 'hwpx',
+          dirty: true,
+        });
+      }
+      if (command === 'record_recent_document') return undefined;
+      throw new Error(`unexpected command: ${command}`);
+    });
+    const host = new DesktopHost(fixture.dependencies);
+    await host.openDocumentByPath('/documents/source.hwpx');
+    const active = host.activeSession;
+    if (!active) throw new Error('active session fixture missing');
+    const activeBefore = { ...active, warnings: [...active.warnings] };
+    let finishExport!: (result: PdfExportResult) => void;
+    const exportResult = new Promise<PdfExportResult>((resolve) => {
+      finishExport = resolve;
+    });
+    const exportPdf = vi.spyOn(DesktopPersistence.prototype, 'exportPdf')
+      .mockReturnValue(exportResult);
+
+    const first = host.exportCurrentPdf();
+    const second = host.exportCurrentPdf();
+    expect(exportPdf).toHaveBeenCalledOnce();
+    expect(exportPdf).toHaveBeenCalledWith(
+      'source.hwpx',
+      '/documents/source.hwpx',
+      'hwpx',
+    );
+    finishExport({
+      path: '/documents/source.pdf',
+      pageCount: 2,
+      textMode: 'searchable',
+    });
+    await Promise.all([first, second]);
+
+    expect(first).toBe(second);
+    expect(host.activeSession).toEqual(activeBefore);
+    expect(fixture.handlers.notifySaved).not.toHaveBeenCalled();
+  });
+});
+
+function createFixture() {
+  const invoke = vi.fn();
+  const writeDocument = vi.fn().mockResolvedValue(undefined);
+  const handlers: DesktopStudioHandlers = {
+    loadFile: vi.fn().mockResolvedValue({ pageCount: 2 }),
+    pageCount: vi.fn().mockResolvedValue(2),
+    getPageSvg: vi.fn().mockResolvedValue('<svg/>'),
+    exportHwp: vi.fn().mockResolvedValue(new Uint8Array([7, 8, 9])),
+    exportHwpx: vi.fn().mockResolvedValue(new Uint8Array([4, 5, 6])),
+    notifySaved: vi.fn().mockResolvedValue({ ok: true, wasDirty: true }),
+  };
+  const dependencies: DesktopHostDependencies = {
+    invoke,
+    chooseOpenPath: vi.fn().mockResolvedValue(null),
+    chooseDocumentSavePath: vi.fn().mockResolvedValue(null),
+    choosePdfSavePath: vi.fn().mockResolvedValue(null),
+    resolveSaveDefaultPath: vi.fn(async (fileName) => `/documents/${fileName}`),
+    chooseDocumentSavePassword: vi.fn().mockResolvedValue(null),
+    showMessage: vi.fn().mockResolvedValue('취소'),
+    readDocument: vi.fn().mockResolvedValue({ bytes: new Uint8Array([1, 2, 3]) }),
+    writeDocument,
+    removeFile: vi.fn().mockResolvedValue(undefined),
+    handlers: vi.fn().mockResolvedValue(handlers),
+  };
+  const wasm = {
+    fileName: 'document.hwp',
+    requiresPasswordForSave: false,
+    getDocumentInfo: vi.fn(() => ({ encrypted: false })),
+    exportHwpWithReport: vi.fn(() => exportArtifact('hwp', [7, 8, 9])),
+    exportHwpxWithReport: vi.fn(() => exportArtifact('hwpx', [4, 5, 6])),
+  };
+  const services = {
+    eventBus: { emit: vi.fn() },
+    wasm,
+    getContext: () => ({ hasDocument: true, isDirty: false }),
+    getInputHandler: () => null,
+  };
+  return {
+    dependencies,
+    handlers: handlers as MockedHandlers,
+    invoke,
+    writeDocument,
+    services,
+    wasm,
+  };
+}
+
+function exportArtifact(
+  outputFormat: 'hwp' | 'hwpx',
+  bytes: number[],
+): DocumentExportArtifact {
+  return {
+    bytes: new Uint8Array(bytes),
+    contentLoss: { schemaVersion: 1 as const, outputFormat, count: 0, losses: [] },
+  };
+}
+
+type MockedHandlers = {
+  [Key in keyof DesktopStudioHandlers]: ReturnType<typeof vi.fn>;
+};
+
+function nativeOpen(overrides: Record<string, unknown> = {}) {
+  return {
+    docId: 'doc',
+    fileName: 'opened.hwp',
+    sourcePath: '/documents/opened.hwp',
+    format: 'hwp',
+    pageCount: 2,
+    revision: 1,
+    dirty: false,
+    warnings: [],
+    ...overrides,
+  };
+}
+
+function nativeSave(overrides: Record<string, unknown> = {}) {
+  const { fileName: _fileName, pageCount: _pageCount, ...result } = nativeOpen(overrides);
+  return result;
+}
+
+function commandServices({ eventBus }: { eventBus: { emit: ReturnType<typeof vi.fn> } }) {
+  return {
+    eventBus,
+    wasm: { fileName: 'document.hwp' },
+    getContext: () => ({ hasDocument: false, isDirty: false }),
+  };
+}

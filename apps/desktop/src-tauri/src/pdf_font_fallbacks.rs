@@ -16,8 +16,8 @@ const RESTRICTED_SANS_FONTS: &[&str] = &[
     "HYGraphic-Medium",
     "HY중고딕",
 ];
-const SERIF_FALLBACK: &str = "함초롬바탕, 바탕, AppleMyungjo, serif";
-const SANS_FALLBACK: &str = "함초롬돋움, 맑은 고딕, Apple SD Gothic Neo, sans-serif";
+const SERIF_FALLBACK: &str = "함초롬바탕, 바탕, serif";
+const SANS_FALLBACK: &str = "함초롬돋움, 맑은 고딕, sans-serif";
 
 pub(crate) fn add_font_fallbacks(svg: &str) -> String {
     rewrite_font_family_attrs(svg)
@@ -71,13 +71,10 @@ fn sanitize_svg_font_family(value: &str) -> String {
     };
 
     if font_family_eq(first_safe_family, "바탕체") && safe_families.len() > 1 {
-        return prepend_font_fallbacks(&safe_families, &["바탕", "AppleMyungjo"]);
+        return prepend_font_fallbacks(&safe_families, &["바탕"]);
     }
     if font_family_eq(first_safe_family, "굴림체") && safe_families.len() > 1 {
-        return prepend_font_fallbacks(
-            &safe_families,
-            &["굴림", "맑은 고딕", "Apple SD Gothic Neo"],
-        );
+        return prepend_font_fallbacks(&safe_families, &["굴림", "맑은 고딕"]);
     }
     if removed_restricted_families {
         return safe_families.join(", ");
@@ -148,9 +145,8 @@ mod tests {
 
         let result = add_font_fallbacks(svg);
 
-        assert!(result.contains(r#"font-family="함초롬바탕, 바탕, AppleMyungjo, serif""#));
-        assert!(result
-            .contains(r#"font-family="함초롬돋움, 맑은 고딕, Apple SD Gothic Neo, sans-serif""#));
+        assert!(result.contains(r#"font-family="함초롬바탕, 바탕, serif""#));
+        assert!(result.contains(r#"font-family="함초롬돋움, 맑은 고딕, sans-serif""#));
         assert!(!result.contains(r#"font-family="휴먼명조""#));
         assert!(!result.contains(r#"font-family="HY헤드라인M"#));
     }
@@ -161,9 +157,8 @@ mod tests {
 
         let result = add_font_fallbacks(svg);
 
-        assert!(result.contains(r#"font-family="바탕체, AppleMyungjo, 바탕, serif""#));
-        assert!(result
-            .contains(r#"font-family="함초롬돋움, 맑은 고딕, Apple SD Gothic Neo, sans-serif""#));
+        assert!(result.contains(r#"font-family="바탕체, 바탕, serif""#));
+        assert!(result.contains(r#"font-family="함초롬돋움, 맑은 고딕, sans-serif""#));
         assert!(!result.contains("HY신명조"));
         assert!(!result.contains("HCI Poppy"));
     }

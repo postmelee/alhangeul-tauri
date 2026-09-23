@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <!-- Same canonical type and ZIP mimetype signature as shared-mime-info 2.5+. -->
+  <mime-type type="application/x-hwpx">
+    <comment>Hancom HWPX document</comment>
+    <generic-icon name="x-office-document"/>
+    <glob pattern="*.hwpx"/>
+    <sub-class-of type="application/zip"/>
+    <alias type="application/hwp+zip"/>
+    <alias type="application/vnd.hancom.hwpx"/>
+    <alias type="application/x-hwp+zip"/>
+    <magic priority="70">
+      <match type="string" value="PK\003\004" offset="0">
+        <match type="string" value="mimetype" offset="30">
+          <match type="string" value="application/hwp+zip" offset="38"/>
+        </match>
+      </match>
+    </magic>
+  </mime-type>
+</mime-info>

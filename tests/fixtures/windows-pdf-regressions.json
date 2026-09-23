@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 1,
+  "description": "실제 실행 결과에서 판정 필드만 추출. 원본 PDF·화면·경로·오류 본문은 포함하지 않으며 UI 조작 재현이 아니다.",
+  "cases": [
+    {
+      "id": "wrong-document",
+      "origin": {
+        "runId": "34039516394",
+        "harnessSha": "e52d0fa241a20313fb563b4062e5883fc7a77275",
+        "nativeRunId": "34021920074",
+        "artifactFile": "form-hwpx-fresh.json"
+      },
+      "evidence": {
+        "buildRef": "69b22650df96323a2c59e473d474ed3195cc9cc7",
+        "phase": "fresh",
+        "fixture": "form-hwpx",
+        "nativeDialogs": true,
+        "schemaVersion": 2,
+        "openedTitle": "source-biz-plan-hwp.hwp - Alhangeul",
+        "documentIdentityVerified": false,
+        "status": "failed"
+      }
+    },
+    {
+      "id": "open-only",
+      "origin": {
+        "runId": "34042833704",
+        "harnessSha": "903164b428a4d19265f7d078a85323596261a7c2",
+        "nativeRunId": "34021920074",
+        "artifactFile": "form-hwpx-open-only.json"
+      },
+      "evidence": {
+        "buildRef": "69b22650df96323a2c59e473d474ed3195cc9cc7",
+        "phase": "fresh",
+        "fixture": "form-hwpx",
+        "scenario": "open-only",
+        "nativeDialogs": true,
+        "schemaVersion": 2,
+        "openedTitle": "source-form-hwpx.hwpx - Alhangeul",
+        "documentIdentityVerified": true,
+        "status": "passed",
+        "sourceHash": "5ab8f7c368e02538f75f1cd2bd82bbd8de2f925a54ba7b38ec9395b2cdb804d4",
+        "pdfTested": false
+      }
+    },
+    {
+      "id": "fresh-hwp",
+      "origin": {
+        "runId": "34043594332",
+        "harnessSha": "903164b428a4d19265f7d078a85323596261a7c2",
+        "nativeRunId": "34021920074",
+        "artifactFile": "biz-plan-hwp-fresh.json"
+      },
+      "evidence": {
+        "buildRef": "69b22650df96323a2c59e473d474ed3195cc9cc7",
+        "phase": "fresh",
+        "fixture": "biz-plan-hwp",
+        "scenario": "pdf",
+        "nativeDialogs": true,
+        "schemaVersion": 2,
+        "openedTitle": "source-biz-plan-hwp.hwp - Alhangeul",
+        "documentIdentityVerified": true,
+        "status": "passed",
+        "sourceHash": "8b786d6824622afae2220b203beeef6e5592157e1896fea055ebc602817113c1",
+        "sourceUnchanged": true,
+        "dirtyPreserved": true,
+        "pdfSha256": "5695c9e631856d73f0c2a47371a1b3dcb8756a1af17abfca8894089de1d72d53",
+        "pageCount": 6,
+        "marker": "PDF검증",
+        "overwriteVerified": false
+      }
+    },
+    {
+      "id": "fresh-hwpx",
+      "origin": {
+        "runId": "34043594332",
+        "harnessSha": "903164b428a4d19265f7d078a85323596261a7c2",
+        "nativeRunId": "34021920074",
+        "artifactFile": "form-hwpx-fresh.json"
+      },
+      "evidence": {
+        "buildRef": "69b22650df96323a2c59e473d474ed3195cc9cc7",
+        "phase": "fresh",
+        "fixture": "form-hwpx",
+        "scenario": "pdf",
+        "nativeDialogs": true,
+        "schemaVersion": 2,
+        "openedTitle": "source-form-hwpx.hwpx - Alhangeul",
+        "documentIdentityVerified": true,
+        "status": "passed",
+        "sourceHash": "5ab8f7c368e02538f75f1cd2bd82bbd8de2f925a54ba7b38ec9395b2cdb804d4",
+        "sourceUnchanged": true,
+        "dirtyPreserved": true,
+        "pdfSha256": "1872659816d293014654d516344cd4cc0bde3ba91b1569f6b7fb1f2dc08f8c8e",
+        "pageCount": 10,
+        "marker": "PDF검증",
+        "overwriteVerified": false
+      }
+    },
+    {
+      "id": "unsupported-overwrite",
+      "origin": {
+        "runId": "34043594332",
+        "harnessSha": "903164b428a4d19265f7d078a85323596261a7c2",
+        "nativeRunId": "34021920074",
+        "artifactFile": "biz-plan-hwp-restart.json"
+      },
+      "evidence": {
+        "buildRef": "69b22650df96323a2c59e473d474ed3195cc9cc7",
+        "phase": "restart",
+        "fixture": "biz-plan-hwp",
+        "scenario": "pdf",
+        "nativeDialogs": true,
+        "schemaVersion": 2,
+        "openedTitle": "source-biz-plan-hwp.hwp - Alhangeul",
+        "documentIdentityVerified": true,
+        "status": "failed"
+      }
+    }
+  ]
+}

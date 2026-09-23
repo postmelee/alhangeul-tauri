@@ -1,114 +1,70 @@
-# Keyboard Shortcuts
+# 키보드 단축키
 
-Shortcuts use **Cmd** on macOS and **Ctrl** on Windows/Linux. For shortcuts
-that use **Alt**, macOS users should use **Option (⌥)**.
+Alhangeul의 Windows/Linux 단축키는 **Ctrl**과 **Alt**를 기준으로 한다.
 
-## File
+## 파일
 
-| Shortcut | Action |
+| 단축키 | 동작 |
 |---|---|
-| Cmd/Ctrl+N | New Document |
-| Alt+N | New Document |
-| Cmd/Ctrl+Shift+N | New Window |
-| Cmd/Ctrl+O | Open |
-| Cmd/Ctrl+S | Save |
-| Cmd/Ctrl+Shift+S | Save As |
-| Cmd/Ctrl+P | Print |
-| F7 | Page Setup |
-| Cmd/Ctrl+Q | Quit HOP |
+| Ctrl+N / Alt+N | 새 문서 |
+| Ctrl+Shift+N | 새 창 |
+| Ctrl+O | 열기 |
+| Ctrl+S | 저장 |
+| Ctrl+Shift+S | 다른 이름으로 저장 |
+| Ctrl+P | 인쇄 |
+| F7 | 편집 용지 |
+| Ctrl+Q | Alhangeul 종료 |
 
-## Edit
+## 편집
 
-| Shortcut | Action |
+| 단축키 | 동작 |
 |---|---|
-| Cmd/Ctrl+Z | Undo |
-| Cmd/Ctrl+Shift+Z | Redo |
-| Cmd/Ctrl+Y | Redo |
-| Cmd/Ctrl+X | Cut |
-| Cmd/Ctrl+C | Copy |
-| Cmd/Ctrl+V | Paste |
-| Cmd/Ctrl+A | Select All |
-| Cmd/Ctrl+E | Delete |
-| Cmd/Ctrl+F | Find |
-| Cmd/Ctrl+F2 | Find and Replace |
-| Cmd/Ctrl+L | Find Again |
-| Alt+G | Go To |
+| Ctrl+Z | 실행 취소 |
+| Ctrl+Shift+Z / Ctrl+Y | 다시 실행 |
+| Ctrl+X | 잘라내기 |
+| Ctrl+C | 복사 |
+| Ctrl+V | 붙여넣기 |
+| Ctrl+A | 모두 선택 |
+| Ctrl+E | 지우기 |
+| Ctrl+F | 찾기 |
+| Ctrl+F2 | 찾아 바꾸기 |
+| Ctrl+L | 다시 찾기 |
+| Alt+G | 찾아가기 |
 
-## Format
+## 서식
 
-| Shortcut | Action |
+| 단축키 | 동작 |
 |---|---|
-| Cmd/Ctrl+B | Bold |
-| Cmd/Ctrl+I | Italic |
-| Cmd/Ctrl+U | Underline |
-| Alt+L | Character Shape |
-| Alt+T | Paragraph Shape |
-| F6 | Style Dialog |
+| Ctrl+B | 진하게 |
+| Ctrl+I | 기울임 |
+| Ctrl+U | 밑줄 |
+| Alt+L | 글자 모양 |
+| Alt+T | 문단 모양 |
+| F6 | 스타일 대화상자 |
+| Ctrl+] / Alt+Shift+E | 글자 크기 확대 |
+| Ctrl+[ / Alt+Shift+R | 글자 크기 축소 |
+| Alt+Shift+Z | 줄 간격 확대 |
+| Alt+Shift+A | 줄 간격 축소 |
+| Ctrl+Shift+L | 왼쪽 정렬 |
+| Ctrl+Shift+M | 양쪽 정렬 |
+| Alt+Shift+H | 오른쪽 정렬 |
+| Alt+Shift+C | 가운데 정렬 |
+| Alt+Shift+D | 배분 정렬 |
 
-### Font Size
+## 표·보기·쪽·입력
 
-| Shortcut | Action |
+| 단축키 | 동작 |
 |---|---|
-| Cmd/Ctrl+] | Increase Font Size |
-| Cmd/Ctrl+[ | Decrease Font Size |
-| Alt+Shift+E | Increase Font Size |
-| Alt+Shift+R | Decrease Font Size |
+| Ctrl+Alt+T | 표 셀 선택 |
+| Alt+Insert | 왼쪽 열 삽입 |
+| Alt+Delete | 열 삭제 |
+| Ctrl+= | 확대 |
+| Ctrl+- | 축소 |
+| Ctrl+0 | 실제 크기 |
+| Ctrl+Enter | 쪽 나누기 |
+| Ctrl+Shift+Enter | 단 나누기 |
+| Alt+F10 | 문자표 |
 
-### Line Spacing
+## 참고
 
-| Shortcut | Action |
-|---|---|
-| Alt+Shift+Z | Increase Line Spacing |
-| Alt+Shift+A | Decrease Line Spacing |
-
-### Paragraph Alignment
-
-| Shortcut | Action |
-|---|---|
-| Cmd/Ctrl+Shift+L | Align Left |
-| Cmd/Ctrl+Shift+M | Justify |
-| Alt+Shift+H | Align Right |
-| Alt+Shift+C | Align Center |
-| Alt+Shift+D | Distribute |
-
-## Table
-
-| Shortcut | Action |
-|---|---|
-| Cmd/Ctrl+Alt+T | Select Cells |
-| Alt+Insert | Insert Column Left |
-| Alt+Delete | Delete Column |
-
-## View
-
-| Shortcut | Action |
-|---|---|
-| Cmd/Ctrl+= | Zoom In |
-| Cmd/Ctrl+- | Zoom Out |
-| Cmd/Ctrl+0 | Actual Size (100%) |
-
-## Page
-
-| Shortcut | Action |
-|---|---|
-| Cmd/Ctrl+Enter | Page Break |
-| Cmd/Ctrl+Shift+Enter | Column Break |
-
-## Insert
-
-| Shortcut | Action |
-|---|---|
-| Alt+F10 | Insert Symbols |
-
-## Notes
-
-Some shortcuts are remapped from the original Hancom 한글 defaults to avoid
-browser/webview conflicts:
-
-- **Align Right**: Ctrl+Shift+R (browser hard-refresh) → Alt+Shift+H
-- **Align Center**: Ctrl+Shift+C (browser dev tools) → Alt+Shift+C
-- **Distribute**: Ctrl+Shift+T (browser tab restore) → Alt+Shift+D
-
-Korean IME key equivalents (ㅜ, ㄹ, ㅅ, ㅎ, ㅁ, ㅋ, ㄷ, ㄱ) are also
-registered for Alt-based shortcuts so they work regardless of the active
-input method.
+브라우저/webview 기본 단축키와 충돌하는 오른쪽 정렬, 가운데 정렬과 배분 정렬은 `Alt+Shift` 조합으로 배치했다. Alt 기반 단축키는 한글 입력 상태에서도 동작하도록 대응하는 한글 키 값을 함께 등록한다.

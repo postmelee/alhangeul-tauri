@@ -29,8 +29,8 @@
                  SummaryCodepage="!(loc.TauriCodepage)"/>
 
         <!-- https://docs.microsoft.com/en-us/windows/win32/msi/reinstallmode -->
-        <!-- reinstall all files and rewrite registry entries, but do not recreate user-deleted shortcuts on update -->
-        <Property Id="REINSTALLMODE" Value="amu" />
+        <!-- reinstall all files, rewrite registry entries, and process shortcuts during normal install or reinstall -->
+        <Property Id="REINSTALLMODE" Value="amus" />
 
         <!-- Auto launch app after installation, useful for passive mode which usually used in updates -->
         <Property Id="AUTOLAUNCHAPP" Secure="yes" />
@@ -59,8 +59,8 @@
         <WixVariable Id="WixUILicenseRtf" Value="{{license}}" />
         {{/if}}
 
-        <Icon Id="ProductIcon" SourceFile="{{icon_path}}"/>
-        <Property Id="ARPPRODUCTICON" Value="ProductIcon" />
+        <Icon Id="ProductIcon.exe" SourceFile="{{icon_path}}"/>
+        <Property Id="ARPPRODUCTICON" Value="ProductIcon.exe" />
         <Property Id="ARPNOREPAIR" Value="yes" Secure="yes" />      <!-- Remove repair -->
         <SetProperty Id="ARPNOMODIFY" Value="1" After="InstallValidate" Sequence="execute"/>
 
@@ -86,6 +86,31 @@
         <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="!(loc.LaunchApp)" />
         <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1"/>
         <CustomAction Id="LaunchApplication" Impersonate="yes" FileKey="Path" ExeCommand="[LAUNCHAPPARGS]" Return="asyncNoWait" />
+        <Property Id="ALHANGEUL_FAIL_THUMBNAIL_INSTALL" Secure="yes" />
+        <CustomAction
+            Id="RollbackThumbnailRegistration"
+            Directory="INSTALLDIR"
+            ExeCommand="&quot;[System64Folder]regsvr32.exe&quot; /s /u &quot;[INSTALLDIR]AlhangeulThumbnailHandler.dll&quot;"
+            Execute="rollback"
+            Impersonate="no"
+            Return="ignore" />
+        <CustomAction
+            Id="InstallThumbnailRegistration"
+            Directory="INSTALLDIR"
+            ExeCommand="&quot;[System64Folder]regsvr32.exe&quot; /s &quot;[INSTALLDIR]AlhangeulThumbnailHandler.dll&quot;"
+            Execute="deferred"
+            Impersonate="no"
+            Return="check" />
+        <CustomAction
+            Id="UninstallThumbnailRegistration"
+            Directory="INSTALLDIR"
+            ExeCommand="&quot;[System64Folder]regsvr32.exe&quot; /s /u &quot;[INSTALLDIR]AlhangeulThumbnailHandler.dll&quot;"
+            Execute="deferred"
+            Impersonate="no"
+            Return="ignore" />
+        <CustomAction
+            Id="FailThumbnailRegistrationProbe"
+            Error="Alhangeul thumbnail registration rollback probe." />
 
         <UI>
             <!-- launch app checkbox -->
@@ -111,13 +136,7 @@
         <UIRef Id="WixUI_InstallDir" />
 
         <Directory Id="TARGETDIR" Name="SourceDir">
-            <Directory Id="DesktopFolder" Name="Desktop">
-                <Component Id="ApplicationShortcutDesktop" Guid="*">
-                    <Shortcut Id="ApplicationDesktopShortcut" Name="{{product_name}}" Description="Runs {{product_name}}" Target="[!Path]" WorkingDirectory="INSTALLDIR" />
-                    <RemoveFolder Id="DesktopFolder" On="uninstall" />
-                    <RegistryValue Root="HKCU" Key="Software\\{{manufacturer}}\\{{product_name}}" Name="Desktop Shortcut" Type="integer" Value="1" KeyPath="yes" />
-                </Component>
-            </Directory>
+            <Directory Id="DesktopFolder" Name="Desktop"/>
             <Directory Id="$(var.PlatformProgramFilesFolder)" Name="PFiles">
                 <Directory Id="INSTALLDIR" Name="{{product_name}}"/>
             </Directory>
@@ -133,14 +152,16 @@
                 </RegistryKey>
                 <!-- Change the Root to HKCU for perUser installations -->
                 {{#each deep_link_protocols as |protocol| ~}}
-                <RegistryKey Root="HKLM" Key="Software\Classes\\{{protocol}}">
-                    <RegistryValue Type="string" Name="URL Protocol" Value=""/>
-                    <RegistryValue Type="string" Value="URL:{{bundle_id}} protocol"/>
-                    <RegistryKey Key="DefaultIcon">
-                        <RegistryValue Type="string" Value="&quot;[!Path]&quot;,0" />
-                    </RegistryKey>
-                    <RegistryKey Key="shell\open\command">
-                        <RegistryValue Type="string" Value="&quot;[!Path]&quot; &quot;%1&quot;" />
+                <RegistryKey Root="HKLM" Key="Software\Classes">
+                    <RegistryKey Key="{{protocol}}">
+                        <RegistryValue Type="string" Name="URL Protocol" Value=""/>
+                        <RegistryValue Type="string" Value="URL:{{bundle_id}} protocol"/>
+                        <RegistryKey Key="DefaultIcon">
+                            <RegistryValue Type="string" Value="&quot;[#Path]&quot;,0" />
+                        </RegistryKey>
+                        <RegistryKey Key="shell\open\command">
+                            <RegistryValue Type="string" Value="&quot;[#Path]&quot; &quot;%1&quot;" />
+                        </RegistryKey>
                     </RegistryKey>
                 </RegistryKey>
                 {{/each~}}
@@ -149,11 +170,26 @@
                 <File Id="Path" Source="{{main_binary_path}}" KeyPath="yes" Checksum="yes"/>
                 {{#each file_associations as |association| ~}}
                 {{#each association.ext as |ext| ~}}
-                <ProgId Id="{{../../product_name}}.{{ext}}" Advertise="yes" Description="{{association.description}}">
-                    <Extension Id="{{ext}}" Advertise="yes">
-                        <Verb Id="open" Command="Open with {{../../product_name}}" Argument="&quot;%1&quot;" />
-                    </Extension>
-                </ProgId>
+                <RegistryKey Root="HKLM" Key="Software\Classes">
+                    <RegistryKey Key="{{../../product_name}}.{{ext}}">
+                        <RegistryValue Type="string" Value="{{association.description}}"/>
+                        <RegistryKey Key="DefaultIcon">
+                            <RegistryValue Type="string" Value="&quot;[#Path]&quot;,0"/>
+                        </RegistryKey>
+                        <RegistryKey Key="shell">
+                            <RegistryValue Type="string" Value="open"/>
+                            <RegistryKey Key="open">
+                                <RegistryValue Type="string" Value="Open with {{../../product_name}}"/>
+                                <RegistryKey Key="command">
+                                    <RegistryValue Type="string" Value="&quot;[#Path]&quot; &quot;%1&quot;"/>
+                                </RegistryKey>
+                            </RegistryKey>
+                        </RegistryKey>
+                    </RegistryKey>
+                    <RegistryKey Key=".{{ext}}\OpenWithProgids">
+                        <RegistryValue Name="{{../../product_name}}.{{ext}}" Type="string" Value=""/>
+                    </RegistryKey>
+                </RegistryKey>
                 {{/each~}}
                 {{/each~}}
             </Component>
@@ -194,19 +230,35 @@
             </Component>
         </DirectoryRef>
 
-        <DirectoryRef Id="ApplicationProgramsFolder">
-            <Component Id="ApplicationShortcut" Guid="*">
-                <Shortcut Id="ApplicationStartMenuShortcut"
+        <DirectoryRef Id="DesktopFolder">
+            <Component Id="ApplicationShortcutDesktop" Guid="*" Win64="$(var.Win64)">
+                <Shortcut Id="ApplicationDesktopShortcut"
                     Name="{{product_name}}"
                     Description="Runs {{product_name}}"
-                    Target="[!Path]"
-                    Icon="ProductIcon"
+                    Target="[INSTALLDIR]Alhangeul.exe"
+                    Advertise="no"
+                    Icon="ProductIcon.exe"
                     WorkingDirectory="INSTALLDIR">
                     <ShortcutProperty Key="System.AppUserModel.ID" Value="{{bundle_id}}"/>
                 </Shortcut>
-                <RemoveFolder Id="ApplicationProgramsFolder" On="uninstall"/>
+                <RegistryValue Root="HKCU" Key="Software\\{{manufacturer}}\\{{product_name}}" Name="Desktop Shortcut" Type="integer" Value="1" KeyPath="yes"/>
+            </Component>
+        </DirectoryRef>
+
+        <DirectoryRef Id="ApplicationProgramsFolder">
+            <Component Id="ApplicationShortcut" Guid="*" Win64="$(var.Win64)">
+                <Shortcut Id="ApplicationStartMenuShortcut"
+                    Name="{{product_name}}"
+                    Description="Runs {{product_name}}"
+                    Target="[INSTALLDIR]Alhangeul.exe"
+                    Advertise="no"
+                    Icon="ProductIcon.exe"
+                    WorkingDirectory="INSTALLDIR">
+                    <ShortcutProperty Key="System.AppUserModel.ID" Value="{{bundle_id}}"/>
+                </Shortcut>
+                <RemoveFolder Id="RemoveApplicationProgramsFolder" Directory="ApplicationProgramsFolder" On="uninstall"/>
                 <RegistryValue Root="HKCU" Key="Software\\{{manufacturer}}\\{{product_name}}" Name="Start Menu Shortcut" Type="integer" Value="1" KeyPath="yes"/>
-           </Component>
+            </Component>
         </DirectoryRef>
 
         {{#each merge_modules as |msm| ~}}
@@ -371,6 +423,21 @@
             </Custom>
         </InstallExecuteSequence>
         {{/if}}
+
+        <InstallExecuteSequence>
+            <Custom Action="RollbackThumbnailRegistration" After="InstallFiles">
+                (NOT Installed) OR REINSTALL
+            </Custom>
+            <Custom Action="InstallThumbnailRegistration" After="RollbackThumbnailRegistration">
+                (NOT Installed) OR REINSTALL
+            </Custom>
+            <Custom Action="FailThumbnailRegistrationProbe" After="InstallThumbnailRegistration">
+                (ALHANGEUL_FAIL_THUMBNAIL_INSTALL = "1") AND ((NOT Installed) OR REINSTALL)
+            </Custom>
+            <Custom Action="UninstallThumbnailRegistration" Before="RemoveFiles">
+                (REMOVE = "ALL") AND NOT UPGRADINGPRODUCTCODE
+            </Custom>
+        </InstallExecuteSequence>
 
         <InstallExecuteSequence>
           <Custom Action="LaunchApplication" After="InstallFinalize">AUTOLAUNCHAPP AND NOT Installed</Custom>
