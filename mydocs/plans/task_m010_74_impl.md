@@ -4,7 +4,7 @@
 GitHub Issue: [#74](https://github.com/postmelee/alhangeul-tauri/issues/74)
 마일스톤: M010 / bug
 작성일: 2026-09-24
-상태: 2026-09-24 구현계획과 Stage 1 승인·완료 보고 뒤 “진행해줘.”로 Stage 2 착수 승인. Stage 2 구현·플랫폼 중립 검증 통과. 후보 `ebe5729`의 push·native CI 1회 실행을 “진행해줘.”로 승인받았으며 run 35969672923이 성공했다. Stage 2 보고 뒤 “진행해줘.”로 Stage 3 착수 승인. Stage 3 구현·플랫폼 중립 검증 완료, Stage 4 및 추가 원격 검증 승인 대기다.
+상태: 2026-09-24 구현계획과 Stage 1 승인·완료 보고 뒤 “진행해줘.”로 Stage 2 착수 승인. Stage 2 구현·플랫폼 중립 검증 통과. 후보 `ebe5729`의 push·native CI 1회 실행을 “진행해줘.”로 승인받았으며 run 35969672923이 성공했다. Stage 2 보고 뒤 “진행해줘.”로 Stage 3 착수 승인. Stage 3 완료보고 뒤 “진행해줘.”로 Stage 4 진입과 `8e7d26e` push·full CI 1회를 승인받았다. run 35972535353 full 성공, 사용자 설치본 GUI 검증 결과 대기다.
 
 ## 단계 개요
 
@@ -15,7 +15,7 @@ GitHub Issue: [#74](https://github.com/postmelee/alhangeul-tauri/issues/74)
 | 3 | 실제 공급·캐시·적용 | 필요 bytes/FontFace 공급, renderer 갱신, 실패 상태 | 실제 소비자·공개 글꼴·무효화·문서 상태 회귀 |
 | 4 | 지원 환경 수용·문서 | exact 후보 full, Windows/Linux 설치 검증, 공식 문서·보고 | 설치본 시나리오와 renderer별 증거·한계 |
 
-각 Stage의 소스와 완료보고서를 묶어 커밋하고 다음 Stage 진입 승인을 받는다. 현재 승인된 범위는 Stage 3 구현·검증까지다. 후보 `ebe5729`의 native CI 1회는 완료했으며 추가 CI 실행과 Stage 4는 별도 승인한다.
+각 Stage의 소스와 완료보고서를 묶어 커밋하고 다음 Stage 진입 승인을 받는다. 현재 승인된 범위는 Stage 4와 후보 `8e7d26e`의 push·full CI 1회다. 추가 CI 실행과 최종 PR·릴리즈는 별도 승인한다.
 
 ## 문서 위치 확인
 
@@ -273,6 +273,66 @@ Windows/Linux GUI 환경이나 사용자 설치 확인이 없으면 해당 항�
 ```text
 Task #74 Stage 4: Windows/Linux 로컬 글꼴 수용과 지원 경계 문서화
 ```
+
+### Stage 4 설치본 검증 인계
+
+2026-09-24 작업지시자가 “설치본을 받아 직접 검증하겠습니다”로 응답했다.
+에이전트는 승인된 full CI의 결과와 exact artifact를 확인해 전달하고, 실제 설치본 관측은
+작업지시자의 결과를 기다린다. 이 대기는 실행 승인 부족이 아니라 실제 수용 증거가 필요한 상태다.
+
+후보는 `8e7d26e44c09406d3203bb9140b2dbd8576d2375`,
+[run 35972535353](https://github.com/postmelee/alhangeul-tauri/actions/runs/35972535353), attempt 1이다.
+설치 전 artifact 이름·ID·digest와 선택한 installer hash를 아래 확정 결과에 대조한다.
+
+검증은 Windows x64와 Linux x64 각각에서 기록한다. 기존 개인 문서/폰트 대신
+`tests/gui/local-fonts/`의 Abel·HWP/HWPX 또는 별도의 공개 문서를 사용한다.
+Abel fixture는 Latin 대비용이며 한글 지원 전체를 판단하지 않는다.
+
+1. 설치한 OS·설치 파일·후보 SHA와 활성 renderer를 기록한다.
+2. 로컬 글꼴 사용을 선택한 뒤 같은/다른 HWP/HWPX를 반복 열어 안내 반복 여부와 화면을 확인한다.
+3. 새 창과 앱 완전 종료 후 재실행을 각각 검사한다. 미사용 선택도 같은 방식으로 유지되는지 확인한다.
+4. 설정 메뉴에서 다시 감지·사용/미사용을 전환한다. 격리된 사용자 font root의 공개 fixture 추가·제거 후 열린 문서의 반영을 확인한다.
+5. 같은 공개 문서의 local/fallback 화면과 구별 가능한 metric을 renderer별로 기록한다. 목록·등록 수만으로 적용 완료를 판정하지 않는다.
+6. 원본 글꼴명·내용과 dirty 상태를 확인하고 HWP/HWPX 저장·재열기, PDF·인쇄 dialog·썸네일의 대표 회귀를 기록한다.
+
+결과에는 **OS / 설치 파일 / 시나리오 / 정상·실패·미실행 / 실제 관측**을 적는다.
+실패 시 공개 문서의 재현 순서와 화면을 남긴다. 개인 문서 내용·proprietary font bytes/path는
+증거에 포함하지 않는다. 확인되지 않은 renderer·플랫폼·시나리오는 미검증으로 유지한다.
+
+### Stage 4 full CI 확정 결과와 설치 파일
+
+- run 35972535353 / attempt 1 / `scope=full`, `profile=full`: completed/success.
+- workflow/source SHA: `8e7d26e44c09406d3203bb9140b2dbd8576d2375`.
+- fast 2개, core 3개, Windows·Linux x64/arm64 제품 3개, Windows 설치 계약 3개,
+  설치 계약 집계와 전체 result가 모두 success다. 별도 PDF cleanup·context experiment 등
+  선택하지 않은 job은 skipped다.
+- Linux x64 DEB/RPM 및 arm64 DEB package lifecycle 통과. core는 예상된 음성 사례를 포함한
+  진단 계약 통과이며 GUI 표시 수용을 뜻하지 않는다.
+- Windows MSI 일반 lifecycle raw passed. NSIS는 thumbnail-render `0x80040154`,
+  MSI forced-reinstall은 reboot-required `3010`으로 raw failed, diagnosticContract는 success다.
+  NSIS raw 실패를 일반 설치 성공으로 바꾸어 보고하지 않는다. 사용자 검증에는 MSI를 우선 안내했다.
+- Windows·Linux x64 archive를 내려받아 GitHub digest를 대조했고 내부 inventory의 source SHA와
+  모든 파일 hash도 일치했다. arm64 archive digest는 API 기록이며 별도 로컬 다운로드 검증은 하지 않았다.
+
+| 설치 대상 | artifact ID | GitHub archive digest |
+|---|---|---|
+| [Windows x64](https://github.com/postmelee/alhangeul-tauri/actions/runs/35972535353/artifacts/10797838038) | 10797838038 | `sha256:d9663c9395f6028c13e3bd5f4cb52abe7634e5e932ab6620604bb8872b4e0e31` |
+| [Linux x64](https://github.com/postmelee/alhangeul-tauri/actions/runs/35972535353/artifacts/10797564590) | 10797564590 | `sha256:0c7b8f4e0563b5cb0ca96d62bba45495d2493edbb81e12f6ddc195e989fe2d6e` |
+| Linux arm64 | 10797209552 | `sha256:18d189411c06437fbd5dc37ec8dee5b1467d1d336db100a768ff8f1809bbf184` |
+
+| 사용자 검증 파일 | SHA-256 |
+|---|---|
+| `msi/Alhangeul_0.1.0_x64_en-US.msi` | `176df9b0bb3534976d2d67c30ee9c94b30ce30ba9447075fd7fe6fd124ed883b` |
+| `deb/Alhangeul_0.1.0_amd64.deb` | `2b1440bcba2f63263bae522d3fc21921a47f6efc611fe9e7c8a7cf6482f8fca3` |
+| `appimage/Alhangeul_0.1.0_amd64.AppImage` | `8c84a94e511e604f8369dc1953fefc59be87cd547a2e686d51f97798834c833b` |
+
+전체 artifact 식별자·설치 파일 hash·job/원시 상태와 GUI 미검증은
+`tests/gui/local-fonts/acceptance.json`에 보존했다. CI 원문은 `/tmp/task74-full-ci.log`,
+진단 원문은 `/tmp/task74-full-diagnostics`, `/tmp/task74-installer-evidence`에 있다.
+
+현재 제품·workflow는 검증 후보와 동일하며 로컬 변경은 문서와 수용 metadata뿐이다.
+사용자 GUI 결과 전까지 Stage 4 완료보고서·최종 PR은 작성하지 않는다. 이번 인계는
+계획의 중간 검증 기록으로 커밋하고 추가 push/CI는 실행하지 않는다.
 
 ## 검증
 

@@ -1,0 +1,216 @@
+{
+  "schemaVersion": 1,
+  "stage4Status": "awaiting-user-gui-validation",
+  "runId": 35972535353,
+  "attempt": 1,
+  "profile": "full",
+  "scope": "full",
+  "workflowSha": "8e7d26e44c09406d3203bb9140b2dbd8576d2375",
+  "sourceSha": "8e7d26e44c09406d3203bb9140b2dbd8576d2375",
+  "ciStatus": "completed",
+  "ciConclusion": "success",
+  "jobs": [
+    {
+      "name": "select",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Windows PDF cleanup tests",
+      "status": "completed",
+      "conclusion": "skipped"
+    },
+    {
+      "name": "artifacts / plan",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "fast",
+      "status": "completed",
+      "conclusion": "skipped"
+    },
+    {
+      "name": "installer",
+      "status": "completed",
+      "conclusion": "skipped"
+    },
+    {
+      "name": "Unit tests",
+      "status": "completed",
+      "conclusion": "skipped"
+    },
+    {
+      "name": "artifacts / fast / Fast Node and Studio contracts",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "artifacts / fast / Fast Windows PowerShell contracts",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "artifacts / windows / Build windows-x64",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "artifacts / core / Core windows-x64",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "artifacts / core / Core linux-x64",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "artifacts / core / Core linux-arm64",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "artifacts / linux / Build linux-arm64",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "artifacts / linux / Build linux-x64",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "artifacts / smoke / Installer contract msi",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "artifacts / smoke / Installer contract msi-forced-reinstall",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "artifacts / smoke / Installer contract nsis",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "artifacts / smoke / Compare Windows thumbnail context ${{ matrix.replica }}",
+      "status": "completed",
+      "conclusion": "skipped"
+    },
+    {
+      "name": "artifacts / smoke / Verify Windows installer contract status",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "artifacts / result",
+      "status": "completed",
+      "conclusion": "success"
+    }
+  ],
+  "artifacts": [
+    {
+      "digest": "sha256:d9663c9395f6028c13e3bd5f4cb52abe7634e5e932ab6620604bb8872b4e0e31",
+      "id": 10797838038,
+      "name": "alhangeul-desktop-windows-x64",
+      "size_in_bytes": 124114070,
+      "url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/35972535353/artifacts/10797838038",
+      "archiveDigestVerifiedLocally": true,
+      "installers": [
+        {
+          "path": "msi/Alhangeul_0.1.0_x64_en-US.msi",
+          "kind": "msi",
+          "size": 62197760,
+          "sha256": "176df9b0bb3534976d2d67c30ee9c94b30ce30ba9447075fd7fe6fd124ed883b"
+        },
+        {
+          "path": "nsis/Alhangeul_0.1.0_x64-setup.exe",
+          "kind": "nsis",
+          "size": 55243160,
+          "sha256": "0205379f712bc51435c3d2e5f8053dc80aeec6de7fc202e1773afeff233d4978"
+        }
+      ],
+      "inventoryVerifiedLocally": true
+    },
+    {
+      "digest": "sha256:0c7b8f4e0563b5cb0ca96d62bba45495d2493edbb81e12f6ddc195e989fe2d6e",
+      "id": 10797564590,
+      "name": "alhangeul-desktop-linux-x64",
+      "size_in_bytes": 547618524,
+      "url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/35972535353/artifacts/10797564590",
+      "archiveDigestVerifiedLocally": true,
+      "installers": [
+        {
+          "path": "appimage/Alhangeul_0.1.0_amd64.AppImage",
+          "kind": "appimage",
+          "size": 134015480,
+          "sha256": "8c84a94e511e604f8369dc1953fefc59be87cd547a2e686d51f97798834c833b"
+        },
+        {
+          "path": "deb/Alhangeul_0.1.0_amd64.deb",
+          "kind": "deb",
+          "size": 64833074,
+          "sha256": "2b1440bcba2f63263bae522d3fc21921a47f6efc611fe9e7c8a7cf6482f8fca3"
+        },
+        {
+          "path": "rpm/Alhangeul-0.1.0-1.x86_64.rpm",
+          "kind": "rpm",
+          "size": 64833104,
+          "sha256": "77e061a0bb6c0ea2dcb46d6bda2962fea591c4c6eaccd10138e160c856123bb4"
+        }
+      ],
+      "inventoryVerifiedLocally": true
+    },
+    {
+      "digest": "sha256:18d189411c06437fbd5dc37ec8dee5b1467d1d336db100a768ff8f1809bbf184",
+      "id": 10797209552,
+      "name": "alhangeul-desktop-linux-arm64",
+      "size_in_bytes": 194103842,
+      "url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/35972535353/artifacts/10797209552",
+      "archiveDigestVerifiedLocally": false
+    }
+  ],
+  "windowsInstallerRawResults": [
+    {
+      "installer": "nsis",
+      "scenario": "lifecycle",
+      "rawStatus": "failed",
+      "rawSmoke": "failure",
+      "diagnosticContract": "success",
+      "failureCategories": [
+        "thumbnail-render"
+      ]
+    },
+    {
+      "installer": "msi",
+      "scenario": "forced-reinstall",
+      "rawStatus": "failed",
+      "rawSmoke": "failure",
+      "diagnosticContract": "success",
+      "failureCategories": [
+        "reboot-required"
+      ]
+    },
+    {
+      "installer": "msi",
+      "scenario": "lifecycle",
+      "rawStatus": "passed",
+      "rawSmoke": "success",
+      "diagnosticContract": "success",
+      "failureCategories": []
+    }
+  ],
+  "rawLimitations": [
+    "NSIS Shell thumbnail HRESULT 0x80040154",
+    "MSI forced reinstall exit 3010 (reboot required)"
+  ],
+  "gui": {
+    "windows-x64": "unverified; user will test installer",
+    "linux-x64": "unverified; user will test installer",
+    "linux-arm64": "not in GUI acceptance scope"
+  },
+  "observations": []
+}

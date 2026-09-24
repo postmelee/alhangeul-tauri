@@ -59,6 +59,12 @@ studio host의 실제 Vite root와 entry는 각각 `third_party/rhwp/rhwp-studio
 기존 renderer session 무효화·CanvasView 재준비 callback을 사용한다. 문서의 dirty와 원본
 글꼴 데이터는 변경하지 않으며 실제 renderer별 공급·표시 수용은 별도로 검증한다.
 
+제품 font provider는 자신이 등록한 FontFace와 bytes·실패 cache를 세대별로 회수한다.
+문서 전환에서는 필요한 bytes를 다시 확인하고, 재감지·미사용 전환에서는 기존 공개
+`RendererSession.invalidateDocument()`가 CanvasKit의 `resetDocumentResources()`를
+호출하게 한다. private renderer map이나 추가 renderer transform은 사용하지 않는다.
+자세한 선택·공급 한계와 실제 수용 범위는 [LOCAL_FONTS.md](LOCAL_FONTS.md)를 따른다.
+
 ## Windows thumbnail parse·render 경계
 
 Windows Explorer thumbnail은 현재 Stable pin의 native `rhwp`를 사용하지만 COM DLL에 engine을 직접 link하지 않는다.
