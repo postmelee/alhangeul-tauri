@@ -521,3 +521,40 @@ page 캡처는 WebKit element screenshot의 crop 오류를 피하도록 실제 c
 `alhangeul-linux-gui.yml`, `scope=local-fonts` 1회로 검증한다. 두 실행 중 실패하면
 원시 결과를 기록하고 승인 없는 추가 재실행은 하지 않는다. 새 Windows MSI도 같은
 full run에서 확인해 작업지시자에게 제공한다. 릴리즈/PR 게시는 이 승인에 포함하지 않는다.
+
+
+### Stage 4 보정 후보 원격 검증 승인 — 2026-09-24
+
+작업지시자가 “진행해줘.”로 후보 `c4e9714123cdce801ec876ea9908f428d36b7df7`의
+non-force push, full CI 1회와 성공 시 같은 후보의 Linux GUI 1회를 승인했다.
+`publish/task74`에 push했으며 [full run 35981563185](https://github.com/postmelee/alhangeul-tauri/actions/runs/35981563185),
+attempt 1, workflow/source SHA 동일, `profile=full`, `scope=full`로 실행했다.
+
+### Stage 4 보정 후보 원격 검증 결과 — 2026-09-24
+
+후보 `c4e9714123cdce801ec876ea9908f428d36b7df7`의 full run `35981563185`와
+[Linux GUI run 35984829169](https://github.com/postmelee/alhangeul-tauri/actions/runs/35984829169)는
+각각 attempt 1에서 success다. 승인한 두 실행만 수행했다. source/workflow/harness SHA는
+동일하며 GUI는 full run의 Linux x64 artifact `10801835084`를 재사용했다.
+
+- full CI: Windows x64·Linux x64/arm64 core/product/package와 필수 집계 통과.
+- Windows 설치 원시 결과: MSI 일반 lifecycle passed. NSIS는 썸네일 `0x80040154`로
+  failed, MSI 강제 재설치는 `3010` 재부팅 필요로 failed이며 두 진단 계약만 passed다.
+- Linux GUI: Ubuntu 22.04 x64, WebKitGTK 2.50.4, tauri-driver 2.0.6에서 두 시나리오 통과.
+  Canvas2D·CanvasKit HWP/HWPX 적용, 재감지, 파일 삭제·복구, 사용/미사용 재실행을
+  20개 화면 관찰과 6회 PID 변경으로 확인했다. CanvasKit 재감지·복구의 Typeface=1,
+  unregistered fallback=0과 enabled 픽셀 보존을 검증했다.
+- 실제 canvas PNG를 시각 확인했고 내려받은 HWP/HWPX 내보내기 파일을 WASM으로
+  다시 열어 Abel 글꼴명과 공개 fixture 본문 보존을 확인했다.
+- Windows artifact `10801646330`의 archive digest와 inventory source/file hash를 로컬에서
+  검증했다. MSI는 `msi/Alhangeul_0.1.0_x64_en-US.msi`, SHA-256
+  `9303bf8a856a0382f81ac868864f286ca6c148cc23f21ebc22e92cc5d9dca008`이다.
+- Linux GUI에서 producer archive digest·inventory·설치를 검증한 DEB SHA-256은
+  `05154576a1a35a065d0706cc75937a1aed20c087dac20f6a2f50538bb7ef2e17`이다.
+- GUI evidence artifact `10801892314`와 exact artifact 목록, 이전 실패 이력은
+  `tests/gui/local-fonts/acceptance.json`에 기록했다. recorder의 unverified 값은
+  그대로 두고 실제 검토한 범위의 결과를 별도로 기록했다.
+
+Windows 사용자 검증과 새 창 시나리오는 미완료다. 공개 Latin Abel 검증을 한글 전체,
+모든 문서, 물리 인쇄/PDF GUI 수용으로 확대하지 않는다. Stage 4 완료 보고·최종 PR은
+작성하지 않으며 이번 결과 기록 커밋은 제품 bytes를 변경하지 않는다.

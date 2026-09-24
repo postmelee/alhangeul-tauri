@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "stage4Status": "linux-canvaskit-refresh-defect-confirmed",
-  "runId": 35972535353,
+  "stage4Status": "linux-local-fonts-passed-windows-and-new-window-pending",
+  "runId": 35981563185,
   "attempt": 1,
   "profile": "full",
   "scope": "full",
-  "workflowSha": "8e7d26e44c09406d3203bb9140b2dbd8576d2375",
-  "sourceSha": "8e7d26e44c09406d3203bb9140b2dbd8576d2375",
+  "workflowSha": "c4e9714123cdce801ec876ea9908f428d36b7df7",
+  "sourceSha": "c4e9714123cdce801ec876ea9908f428d36b7df7",
   "ciStatus": "completed",
   "ciConclusion": "success",
   "jobs": [
@@ -26,17 +26,17 @@
       "conclusion": "success"
     },
     {
-      "name": "fast",
-      "status": "completed",
-      "conclusion": "skipped"
-    },
-    {
       "name": "installer",
       "status": "completed",
       "conclusion": "skipped"
     },
     {
       "name": "Unit tests",
+      "status": "completed",
+      "conclusion": "skipped"
+    },
+    {
+      "name": "fast",
       "status": "completed",
       "conclusion": "skipped"
     },
@@ -56,7 +56,7 @@
       "conclusion": "success"
     },
     {
-      "name": "artifacts / core / Core windows-x64",
+      "name": "artifacts / linux / Build linux-x64",
       "status": "completed",
       "conclusion": "success"
     },
@@ -66,7 +66,7 @@
       "conclusion": "success"
     },
     {
-      "name": "artifacts / core / Core linux-arm64",
+      "name": "artifacts / core / Core windows-x64",
       "status": "completed",
       "conclusion": "success"
     },
@@ -76,7 +76,12 @@
       "conclusion": "success"
     },
     {
-      "name": "artifacts / linux / Build linux-x64",
+      "name": "artifacts / core / Core linux-arm64",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "artifacts / smoke / Installer contract nsis",
       "status": "completed",
       "conclusion": "success"
     },
@@ -87,11 +92,6 @@
     },
     {
       "name": "artifacts / smoke / Installer contract msi-forced-reinstall",
-      "status": "completed",
-      "conclusion": "success"
-    },
-    {
-      "name": "artifacts / smoke / Installer contract nsis",
       "status": "completed",
       "conclusion": "success"
     },
@@ -113,63 +113,67 @@
   ],
   "artifacts": [
     {
-      "digest": "sha256:d9663c9395f6028c13e3bd5f4cb52abe7634e5e932ab6620604bb8872b4e0e31",
-      "id": 10797838038,
+      "digest": "sha256:b5b0f692f3da9fdb773946078c78b9f7e86b1d31a30bd91e8b5ad33a854fd4da",
+      "expired": false,
+      "id": 10801835084,
+      "name": "alhangeul-desktop-linux-x64",
+      "size_in_bytes": 547617791,
+      "url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/35981563185/artifacts/10801835084",
+      "archiveDigestVerifiedLocally": false,
+      "installers": [
+        {
+          "path": "appimage/Alhangeul_0.1.0_amd64.AppImage",
+          "kind": "appimage",
+          "size": 134011384,
+          "sha256": "443603d1fd93109e0b7d6e56496c2facaf800e79b1f01acada8b5058ddc906dd"
+        },
+        {
+          "path": "deb/Alhangeul_0.1.0_amd64.deb",
+          "kind": "deb",
+          "size": 64833542,
+          "sha256": "05154576a1a35a065d0706cc75937a1aed20c087dac20f6a2f50538bb7ef2e17"
+        },
+        {
+          "path": "rpm/Alhangeul-0.1.0-1.x86_64.rpm",
+          "kind": "rpm",
+          "size": 64833317,
+          "sha256": "2a7441f0b79788abc11f4dd71e895c051c6d45540d8e33fdc11b695cbdc43925"
+        }
+      ],
+      "inventoryVerifiedLocally": false,
+      "archiveAndInventoryVerifiedByGuiRun": 35984829169
+    },
+    {
+      "digest": "sha256:895f8ae7a4c4d0b384383e0d08b6890899991c9fb057ff6bd8ef8428230aeb3c",
+      "expired": false,
+      "id": 10801646330,
       "name": "alhangeul-desktop-windows-x64",
-      "size_in_bytes": 124114070,
-      "url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/35972535353/artifacts/10797838038",
+      "size_in_bytes": 124114611,
+      "url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/35981563185/artifacts/10801646330",
       "archiveDigestVerifiedLocally": true,
       "installers": [
         {
           "path": "msi/Alhangeul_0.1.0_x64_en-US.msi",
           "kind": "msi",
-          "size": 62197760,
-          "sha256": "176df9b0bb3534976d2d67c30ee9c94b30ce30ba9447075fd7fe6fd124ed883b"
+          "size": 62193664,
+          "sha256": "9303bf8a856a0382f81ac868864f286ca6c148cc23f21ebc22e92cc5d9dca008"
         },
         {
           "path": "nsis/Alhangeul_0.1.0_x64-setup.exe",
           "kind": "nsis",
-          "size": 55243160,
-          "sha256": "0205379f712bc51435c3d2e5f8053dc80aeec6de7fc202e1773afeff233d4978"
+          "size": 55245951,
+          "sha256": "b8563d5894e55a1f9f9817ec106c23639d4fd42ef71c7ef07808343021f12a5f"
         }
       ],
       "inventoryVerifiedLocally": true
     },
     {
-      "digest": "sha256:0c7b8f4e0563b5cb0ca96d62bba45495d2493edbb81e12f6ddc195e989fe2d6e",
-      "id": 10797564590,
-      "name": "alhangeul-desktop-linux-x64",
-      "size_in_bytes": 547618524,
-      "url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/35972535353/artifacts/10797564590",
-      "archiveDigestVerifiedLocally": true,
-      "installers": [
-        {
-          "path": "appimage/Alhangeul_0.1.0_amd64.AppImage",
-          "kind": "appimage",
-          "size": 134015480,
-          "sha256": "8c84a94e511e604f8369dc1953fefc59be87cd547a2e686d51f97798834c833b"
-        },
-        {
-          "path": "deb/Alhangeul_0.1.0_amd64.deb",
-          "kind": "deb",
-          "size": 64833074,
-          "sha256": "2b1440bcba2f63263bae522d3fc21921a47f6efc611fe9e7c8a7cf6482f8fca3"
-        },
-        {
-          "path": "rpm/Alhangeul-0.1.0-1.x86_64.rpm",
-          "kind": "rpm",
-          "size": 64833104,
-          "sha256": "77e061a0bb6c0ea2dcb46d6bda2962fea591c4c6eaccd10138e160c856123bb4"
-        }
-      ],
-      "inventoryVerifiedLocally": true
-    },
-    {
-      "digest": "sha256:18d189411c06437fbd5dc37ec8dee5b1467d1d336db100a768ff8f1809bbf184",
-      "id": 10797209552,
+      "digest": "sha256:74c73bbad186faf053d495da4e60ad1ee484c40e752c6d3491c8ee566d739177",
+      "expired": false,
+      "id": 10800353809,
       "name": "alhangeul-desktop-linux-arm64",
-      "size_in_bytes": 194103842,
-      "url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/35972535353/artifacts/10797209552",
+      "size_in_bytes": 194106115,
+      "url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/35981563185/artifacts/10800353809",
       "archiveDigestVerifiedLocally": false
     }
   ],
@@ -209,7 +213,7 @@
   ],
   "gui": {
     "windows-x64": "unverified; user will test installer",
-    "linux-x64": "partial: Canvas2D scenario passed; CanvasKit refresh loses local typeface; overall failure",
+    "linux-x64": "passed: Canvas2D and CanvasKit local-fonts scenarios; new-window unverified",
     "linux-arm64": "not in GUI acceptance scope"
   },
   "observations": [
@@ -220,7 +224,8 @@
       "backend": "canvas2d",
       "abelFontFaces": 0,
       "localTypefaceCount": null,
-      "unregisteredFontFallbacks": null
+      "unregisteredFontFallbacks": null,
+      "sourceSha": "8e7d26e44c09406d3203bb9140b2dbd8576d2375"
     },
     {
       "runId": 35979852070,
@@ -229,7 +234,8 @@
       "backend": "canvas2d",
       "abelFontFaces": 0,
       "localTypefaceCount": null,
-      "unregisteredFontFallbacks": null
+      "unregisteredFontFallbacks": null,
+      "sourceSha": "8e7d26e44c09406d3203bb9140b2dbd8576d2375"
     },
     {
       "runId": 35979852070,
@@ -238,7 +244,8 @@
       "backend": "canvas2d",
       "abelFontFaces": 1,
       "localTypefaceCount": null,
-      "unregisteredFontFallbacks": null
+      "unregisteredFontFallbacks": null,
+      "sourceSha": "8e7d26e44c09406d3203bb9140b2dbd8576d2375"
     },
     {
       "runId": 35979852070,
@@ -247,7 +254,8 @@
       "backend": "canvas2d",
       "abelFontFaces": 1,
       "localTypefaceCount": null,
-      "unregisteredFontFallbacks": null
+      "unregisteredFontFallbacks": null,
+      "sourceSha": "8e7d26e44c09406d3203bb9140b2dbd8576d2375"
     },
     {
       "runId": 35979852070,
@@ -256,7 +264,8 @@
       "backend": "canvas2d",
       "abelFontFaces": 1,
       "localTypefaceCount": null,
-      "unregisteredFontFallbacks": null
+      "unregisteredFontFallbacks": null,
+      "sourceSha": "8e7d26e44c09406d3203bb9140b2dbd8576d2375"
     },
     {
       "runId": 35979852070,
@@ -265,7 +274,8 @@
       "backend": "canvas2d",
       "abelFontFaces": 0,
       "localTypefaceCount": null,
-      "unregisteredFontFallbacks": null
+      "unregisteredFontFallbacks": null,
+      "sourceSha": "8e7d26e44c09406d3203bb9140b2dbd8576d2375"
     },
     {
       "runId": 35979852070,
@@ -274,7 +284,8 @@
       "backend": "canvas2d",
       "abelFontFaces": 1,
       "localTypefaceCount": null,
-      "unregisteredFontFallbacks": null
+      "unregisteredFontFallbacks": null,
+      "sourceSha": "8e7d26e44c09406d3203bb9140b2dbd8576d2375"
     },
     {
       "runId": 35979852070,
@@ -283,7 +294,8 @@
       "backend": "canvas2d",
       "abelFontFaces": 1,
       "localTypefaceCount": null,
-      "unregisteredFontFallbacks": null
+      "unregisteredFontFallbacks": null,
+      "sourceSha": "8e7d26e44c09406d3203bb9140b2dbd8576d2375"
     },
     {
       "runId": 35979852070,
@@ -292,7 +304,8 @@
       "backend": "canvas2d",
       "abelFontFaces": 0,
       "localTypefaceCount": null,
-      "unregisteredFontFallbacks": null
+      "unregisteredFontFallbacks": null,
+      "sourceSha": "8e7d26e44c09406d3203bb9140b2dbd8576d2375"
     },
     {
       "runId": 35979852070,
@@ -301,7 +314,8 @@
       "backend": "canvas2d",
       "abelFontFaces": 0,
       "localTypefaceCount": null,
-      "unregisteredFontFallbacks": null
+      "unregisteredFontFallbacks": null,
+      "sourceSha": "8e7d26e44c09406d3203bb9140b2dbd8576d2375"
     },
     {
       "runId": 35979852070,
@@ -310,7 +324,8 @@
       "backend": "canvaskit",
       "abelFontFaces": 0,
       "localTypefaceCount": 0,
-      "unregisteredFontFallbacks": 1
+      "unregisteredFontFallbacks": 1,
+      "sourceSha": "8e7d26e44c09406d3203bb9140b2dbd8576d2375"
     },
     {
       "runId": 35979852070,
@@ -319,7 +334,8 @@
       "backend": "canvaskit",
       "abelFontFaces": 0,
       "localTypefaceCount": 0,
-      "unregisteredFontFallbacks": 1
+      "unregisteredFontFallbacks": 1,
+      "sourceSha": "8e7d26e44c09406d3203bb9140b2dbd8576d2375"
     },
     {
       "runId": 35979852070,
@@ -328,7 +344,8 @@
       "backend": "canvaskit",
       "abelFontFaces": 1,
       "localTypefaceCount": 1,
-      "unregisteredFontFallbacks": 0
+      "unregisteredFontFallbacks": 0,
+      "sourceSha": "8e7d26e44c09406d3203bb9140b2dbd8576d2375"
     },
     {
       "runId": 35979852070,
@@ -337,7 +354,8 @@
       "backend": "canvaskit",
       "abelFontFaces": 1,
       "localTypefaceCount": 1,
-      "unregisteredFontFallbacks": 0
+      "unregisteredFontFallbacks": 0,
+      "sourceSha": "8e7d26e44c09406d3203bb9140b2dbd8576d2375"
     },
     {
       "runId": 35979852070,
@@ -346,7 +364,8 @@
       "backend": "canvaskit",
       "abelFontFaces": 1,
       "localTypefaceCount": 0,
-      "unregisteredFontFallbacks": 1
+      "unregisteredFontFallbacks": 1,
+      "sourceSha": "8e7d26e44c09406d3203bb9140b2dbd8576d2375"
     },
     {
       "runId": 35979852070,
@@ -355,7 +374,8 @@
       "backend": "canvaskit",
       "abelFontFaces": 0,
       "localTypefaceCount": 0,
-      "unregisteredFontFallbacks": 1
+      "unregisteredFontFallbacks": 1,
+      "sourceSha": "8e7d26e44c09406d3203bb9140b2dbd8576d2375"
     },
     {
       "runId": 35979852070,
@@ -364,7 +384,8 @@
       "backend": "canvaskit",
       "abelFontFaces": 1,
       "localTypefaceCount": 0,
-      "unregisteredFontFallbacks": 1
+      "unregisteredFontFallbacks": 1,
+      "sourceSha": "8e7d26e44c09406d3203bb9140b2dbd8576d2375"
     },
     {
       "runId": 35979852070,
@@ -373,7 +394,208 @@
       "backend": "canvaskit",
       "abelFontFaces": 1,
       "localTypefaceCount": 1,
+      "unregisteredFontFallbacks": 0,
+      "sourceSha": "8e7d26e44c09406d3203bb9140b2dbd8576d2375"
+    },
+    {
+      "runId": 35984829169,
+      "sourceSha": "c4e9714123cdce801ec876ea9908f428d36b7df7",
+      "name": "canvas2d-hwp-absent",
+      "pixelHash": "20147c9f350a86c8aa05b9ce5d55b4bdc0451c26fe5a85adff89e38aef50af88",
+      "backend": "canvas2d",
+      "abelFontFaces": 0,
+      "localTypefaceCount": null,
+      "unregisteredFontFallbacks": null
+    },
+    {
+      "runId": 35984829169,
+      "sourceSha": "c4e9714123cdce801ec876ea9908f428d36b7df7",
+      "name": "canvas2d-hwpx-absent",
+      "pixelHash": "20147c9f350a86c8aa05b9ce5d55b4bdc0451c26fe5a85adff89e38aef50af88",
+      "backend": "canvas2d",
+      "abelFontFaces": 0,
+      "localTypefaceCount": null,
+      "unregisteredFontFallbacks": null
+    },
+    {
+      "runId": 35984829169,
+      "sourceSha": "c4e9714123cdce801ec876ea9908f428d36b7df7",
+      "name": "canvas2d-hwp-enabled",
+      "pixelHash": "a74c84fc7c3bdc708c3477c8b4f1b2e31d42f9e39a2fb927e69154271862004f",
+      "backend": "canvas2d",
+      "abelFontFaces": 1,
+      "localTypefaceCount": null,
+      "unregisteredFontFallbacks": null
+    },
+    {
+      "runId": 35984829169,
+      "sourceSha": "c4e9714123cdce801ec876ea9908f428d36b7df7",
+      "name": "canvas2d-hwpx-enabled",
+      "pixelHash": "a74c84fc7c3bdc708c3477c8b4f1b2e31d42f9e39a2fb927e69154271862004f",
+      "backend": "canvas2d",
+      "abelFontFaces": 1,
+      "localTypefaceCount": null,
+      "unregisteredFontFallbacks": null
+    },
+    {
+      "runId": 35984829169,
+      "sourceSha": "c4e9714123cdce801ec876ea9908f428d36b7df7",
+      "name": "canvas2d-refreshed",
+      "pixelHash": "a74c84fc7c3bdc708c3477c8b4f1b2e31d42f9e39a2fb927e69154271862004f",
+      "backend": "canvas2d",
+      "abelFontFaces": 1,
+      "localTypefaceCount": null,
+      "unregisteredFontFallbacks": null
+    },
+    {
+      "runId": 35984829169,
+      "sourceSha": "c4e9714123cdce801ec876ea9908f428d36b7df7",
+      "name": "canvas2d-font-deleted-refreshed",
+      "pixelHash": "20147c9f350a86c8aa05b9ce5d55b4bdc0451c26fe5a85adff89e38aef50af88",
+      "backend": "canvas2d",
+      "abelFontFaces": 0,
+      "localTypefaceCount": null,
+      "unregisteredFontFallbacks": null
+    },
+    {
+      "runId": 35984829169,
+      "sourceSha": "c4e9714123cdce801ec876ea9908f428d36b7df7",
+      "name": "canvas2d-font-restored-refreshed",
+      "pixelHash": "a74c84fc7c3bdc708c3477c8b4f1b2e31d42f9e39a2fb927e69154271862004f",
+      "backend": "canvas2d",
+      "abelFontFaces": 1,
+      "localTypefaceCount": null,
+      "unregisteredFontFallbacks": null
+    },
+    {
+      "runId": 35984829169,
+      "sourceSha": "c4e9714123cdce801ec876ea9908f428d36b7df7",
+      "name": "canvas2d-enabled-restarted",
+      "pixelHash": "a74c84fc7c3bdc708c3477c8b4f1b2e31d42f9e39a2fb927e69154271862004f",
+      "backend": "canvas2d",
+      "abelFontFaces": 1,
+      "localTypefaceCount": null,
+      "unregisteredFontFallbacks": null
+    },
+    {
+      "runId": 35984829169,
+      "sourceSha": "c4e9714123cdce801ec876ea9908f428d36b7df7",
+      "name": "canvas2d-disabled",
+      "pixelHash": "20147c9f350a86c8aa05b9ce5d55b4bdc0451c26fe5a85adff89e38aef50af88",
+      "backend": "canvas2d",
+      "abelFontFaces": 0,
+      "localTypefaceCount": null,
+      "unregisteredFontFallbacks": null
+    },
+    {
+      "runId": 35984829169,
+      "sourceSha": "c4e9714123cdce801ec876ea9908f428d36b7df7",
+      "name": "canvas2d-disabled-restarted",
+      "pixelHash": "20147c9f350a86c8aa05b9ce5d55b4bdc0451c26fe5a85adff89e38aef50af88",
+      "backend": "canvas2d",
+      "abelFontFaces": 0,
+      "localTypefaceCount": null,
+      "unregisteredFontFallbacks": null
+    },
+    {
+      "runId": 35984829169,
+      "sourceSha": "c4e9714123cdce801ec876ea9908f428d36b7df7",
+      "name": "canvaskit-hwp-absent",
+      "pixelHash": "514cf38c99b18030ad62fca58b538428dd08eddd5ca909ee336330e63bdeaab5",
+      "backend": "canvaskit",
+      "abelFontFaces": 0,
+      "localTypefaceCount": 0,
+      "unregisteredFontFallbacks": 1
+    },
+    {
+      "runId": 35984829169,
+      "sourceSha": "c4e9714123cdce801ec876ea9908f428d36b7df7",
+      "name": "canvaskit-hwpx-absent",
+      "pixelHash": "514cf38c99b18030ad62fca58b538428dd08eddd5ca909ee336330e63bdeaab5",
+      "backend": "canvaskit",
+      "abelFontFaces": 0,
+      "localTypefaceCount": 0,
+      "unregisteredFontFallbacks": 1
+    },
+    {
+      "runId": 35984829169,
+      "sourceSha": "c4e9714123cdce801ec876ea9908f428d36b7df7",
+      "name": "canvaskit-hwp-enabled",
+      "pixelHash": "01eea1f1bb61e3cedb5a5b96f42fd15cab473731fd0686181c7860fb57438a0b",
+      "backend": "canvaskit",
+      "abelFontFaces": 1,
+      "localTypefaceCount": 1,
       "unregisteredFontFallbacks": 0
+    },
+    {
+      "runId": 35984829169,
+      "sourceSha": "c4e9714123cdce801ec876ea9908f428d36b7df7",
+      "name": "canvaskit-hwpx-enabled",
+      "pixelHash": "01eea1f1bb61e3cedb5a5b96f42fd15cab473731fd0686181c7860fb57438a0b",
+      "backend": "canvaskit",
+      "abelFontFaces": 1,
+      "localTypefaceCount": 1,
+      "unregisteredFontFallbacks": 0
+    },
+    {
+      "runId": 35984829169,
+      "sourceSha": "c4e9714123cdce801ec876ea9908f428d36b7df7",
+      "name": "canvaskit-refreshed",
+      "pixelHash": "01eea1f1bb61e3cedb5a5b96f42fd15cab473731fd0686181c7860fb57438a0b",
+      "backend": "canvaskit",
+      "abelFontFaces": 1,
+      "localTypefaceCount": 1,
+      "unregisteredFontFallbacks": 0
+    },
+    {
+      "runId": 35984829169,
+      "sourceSha": "c4e9714123cdce801ec876ea9908f428d36b7df7",
+      "name": "canvaskit-font-deleted-refreshed",
+      "pixelHash": "514cf38c99b18030ad62fca58b538428dd08eddd5ca909ee336330e63bdeaab5",
+      "backend": "canvaskit",
+      "abelFontFaces": 0,
+      "localTypefaceCount": 0,
+      "unregisteredFontFallbacks": 1
+    },
+    {
+      "runId": 35984829169,
+      "sourceSha": "c4e9714123cdce801ec876ea9908f428d36b7df7",
+      "name": "canvaskit-font-restored-refreshed",
+      "pixelHash": "01eea1f1bb61e3cedb5a5b96f42fd15cab473731fd0686181c7860fb57438a0b",
+      "backend": "canvaskit",
+      "abelFontFaces": 1,
+      "localTypefaceCount": 1,
+      "unregisteredFontFallbacks": 0
+    },
+    {
+      "runId": 35984829169,
+      "sourceSha": "c4e9714123cdce801ec876ea9908f428d36b7df7",
+      "name": "canvaskit-enabled-restarted",
+      "pixelHash": "01eea1f1bb61e3cedb5a5b96f42fd15cab473731fd0686181c7860fb57438a0b",
+      "backend": "canvaskit",
+      "abelFontFaces": 1,
+      "localTypefaceCount": 1,
+      "unregisteredFontFallbacks": 0
+    },
+    {
+      "runId": 35984829169,
+      "sourceSha": "c4e9714123cdce801ec876ea9908f428d36b7df7",
+      "name": "canvaskit-disabled",
+      "pixelHash": "514cf38c99b18030ad62fca58b538428dd08eddd5ca909ee336330e63bdeaab5",
+      "backend": "canvaskit",
+      "abelFontFaces": 0,
+      "localTypefaceCount": 0,
+      "unregisteredFontFallbacks": 1
+    },
+    {
+      "runId": 35984829169,
+      "sourceSha": "c4e9714123cdce801ec876ea9908f428d36b7df7",
+      "name": "canvaskit-disabled-restarted",
+      "pixelHash": "514cf38c99b18030ad62fca58b538428dd08eddd5ca909ee336330e63bdeaab5",
+      "backend": "canvaskit",
+      "abelFontFaces": 0,
+      "localTypefaceCount": 0,
+      "unregisteredFontFallbacks": 1
     }
   ],
   "linuxGuiRuns": [
@@ -436,6 +658,307 @@
         "Windows user result pending"
       ],
       "exportReadback": "HWP/HWPX exports retain Abel font name and fixture text"
+    },
+    {
+      "runId": 35984829169,
+      "attempt": 1,
+      "scope": "local-fonts",
+      "harnessSha": "c4e9714123cdce801ec876ea9908f428d36b7df7",
+      "sourceSha": "c4e9714123cdce801ec876ea9908f428d36b7df7",
+      "producerRunId": 35981563185,
+      "producerArtifactId": 10801835084,
+      "status": "completed",
+      "conclusion": "success",
+      "artifact": {
+        "digest": "sha256:5a7cec0651e6a61a6d5b97417c32482ce2d3ea21bcfe41c2be8e5284bd9b355f",
+        "expired": false,
+        "id": 10801892314,
+        "name": "alhangeul-linux-gui-35984829169",
+        "size_in_bytes": 1752027,
+        "url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/35984829169/artifacts/10801892314"
+      },
+      "rawWebdriverExit": 0,
+      "scenarioResults": {
+        "canvas2d": "passed",
+        "canvaskit": "passed"
+      },
+      "guiObservationCount": 20,
+      "processRestartCount": 6,
+      "processRestarts": [
+        {
+          "scenario": "process-restart",
+          "before": [
+            "7825"
+          ],
+          "after": [
+            "7990"
+          ]
+        },
+        {
+          "scenario": "process-restart",
+          "before": [
+            "7990"
+          ],
+          "after": [
+            "8101"
+          ]
+        },
+        {
+          "scenario": "process-restart",
+          "before": [
+            "8101"
+          ],
+          "after": [
+            "8201"
+          ]
+        },
+        {
+          "scenario": "process-restart",
+          "before": [
+            "8201"
+          ],
+          "after": [
+            "8306"
+          ]
+        },
+        {
+          "scenario": "process-restart",
+          "before": [
+            "8306"
+          ],
+          "after": [
+            "8413"
+          ]
+        },
+        {
+          "scenario": "process-restart",
+          "before": [
+            "8413"
+          ],
+          "after": [
+            "8515"
+          ]
+        }
+      ],
+      "reviewedAcceptance": "passed within local-fonts scope; recorder acceptance remains unverified",
+      "scopeLimits": [
+        "new-window not tested",
+        "Latin Abel fixture only",
+        "Windows user result pending",
+        "physical printing and PDF GUI outside this run"
+      ],
+      "exportReadback": "Downloaded HWP/HWPX exports retain Abel font name and fixture text",
+      "visualReview": "Actual page PNGs confirm CanvasKit refresh and enabled restart retain Abel; disabled restart uses fallback"
+    }
+  ],
+  "previousFullRuns": [
+    {
+      "runId": 35972535353,
+      "attempt": 1,
+      "profile": "full",
+      "scope": "full",
+      "workflowSha": "8e7d26e44c09406d3203bb9140b2dbd8576d2375",
+      "sourceSha": "8e7d26e44c09406d3203bb9140b2dbd8576d2375",
+      "ciStatus": "completed",
+      "ciConclusion": "success",
+      "jobs": [
+        {
+          "name": "select",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Windows PDF cleanup tests",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "artifacts / plan",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "fast",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "installer",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Unit tests",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "artifacts / fast / Fast Node and Studio contracts",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "artifacts / fast / Fast Windows PowerShell contracts",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "artifacts / windows / Build windows-x64",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "artifacts / core / Core windows-x64",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "artifacts / core / Core linux-x64",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "artifacts / core / Core linux-arm64",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "artifacts / linux / Build linux-arm64",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "artifacts / linux / Build linux-x64",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "artifacts / smoke / Installer contract msi",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "artifacts / smoke / Installer contract msi-forced-reinstall",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "artifacts / smoke / Installer contract nsis",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "artifacts / smoke / Compare Windows thumbnail context ${{ matrix.replica }}",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "artifacts / smoke / Verify Windows installer contract status",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "artifacts / result",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "artifacts": [
+        {
+          "digest": "sha256:d9663c9395f6028c13e3bd5f4cb52abe7634e5e932ab6620604bb8872b4e0e31",
+          "id": 10797838038,
+          "name": "alhangeul-desktop-windows-x64",
+          "size_in_bytes": 124114070,
+          "url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/35972535353/artifacts/10797838038",
+          "archiveDigestVerifiedLocally": true,
+          "installers": [
+            {
+              "path": "msi/Alhangeul_0.1.0_x64_en-US.msi",
+              "kind": "msi",
+              "size": 62197760,
+              "sha256": "176df9b0bb3534976d2d67c30ee9c94b30ce30ba9447075fd7fe6fd124ed883b"
+            },
+            {
+              "path": "nsis/Alhangeul_0.1.0_x64-setup.exe",
+              "kind": "nsis",
+              "size": 55243160,
+              "sha256": "0205379f712bc51435c3d2e5f8053dc80aeec6de7fc202e1773afeff233d4978"
+            }
+          ],
+          "inventoryVerifiedLocally": true
+        },
+        {
+          "digest": "sha256:0c7b8f4e0563b5cb0ca96d62bba45495d2493edbb81e12f6ddc195e989fe2d6e",
+          "id": 10797564590,
+          "name": "alhangeul-desktop-linux-x64",
+          "size_in_bytes": 547618524,
+          "url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/35972535353/artifacts/10797564590",
+          "archiveDigestVerifiedLocally": true,
+          "installers": [
+            {
+              "path": "appimage/Alhangeul_0.1.0_amd64.AppImage",
+              "kind": "appimage",
+              "size": 134015480,
+              "sha256": "8c84a94e511e604f8369dc1953fefc59be87cd547a2e686d51f97798834c833b"
+            },
+            {
+              "path": "deb/Alhangeul_0.1.0_amd64.deb",
+              "kind": "deb",
+              "size": 64833074,
+              "sha256": "2b1440bcba2f63263bae522d3fc21921a47f6efc611fe9e7c8a7cf6482f8fca3"
+            },
+            {
+              "path": "rpm/Alhangeul-0.1.0-1.x86_64.rpm",
+              "kind": "rpm",
+              "size": 64833104,
+              "sha256": "77e061a0bb6c0ea2dcb46d6bda2962fea591c4c6eaccd10138e160c856123bb4"
+            }
+          ],
+          "inventoryVerifiedLocally": true
+        },
+        {
+          "digest": "sha256:18d189411c06437fbd5dc37ec8dee5b1467d1d336db100a768ff8f1809bbf184",
+          "id": 10797209552,
+          "name": "alhangeul-desktop-linux-arm64",
+          "size_in_bytes": 194103842,
+          "url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/35972535353/artifacts/10797209552",
+          "archiveDigestVerifiedLocally": false
+        }
+      ],
+      "windowsInstallerRawResults": [
+        {
+          "installer": "nsis",
+          "scenario": "lifecycle",
+          "rawStatus": "failed",
+          "rawSmoke": "failure",
+          "diagnosticContract": "success",
+          "failureCategories": [
+            "thumbnail-render"
+          ]
+        },
+        {
+          "installer": "msi",
+          "scenario": "forced-reinstall",
+          "rawStatus": "failed",
+          "rawSmoke": "failure",
+          "diagnosticContract": "success",
+          "failureCategories": [
+            "reboot-required"
+          ]
+        },
+        {
+          "installer": "msi",
+          "scenario": "lifecycle",
+          "rawStatus": "passed",
+          "rawSmoke": "success",
+          "diagnosticContract": "success",
+          "failureCategories": []
+        }
+      ],
+      "rawLimitations": [
+        "NSIS Shell thumbnail HRESULT 0x80040154",
+        "MSI forced reinstall exit 3010 (reboot required)"
+      ]
     }
   ]
 }

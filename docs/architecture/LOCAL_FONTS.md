@@ -128,6 +128,14 @@ Windows x64 직접 검증 결과는 기다린다. 공개 Latin fixture 결과를
 모든 문서·OS의 글꼴 수용으로 확대하지 않는다.
 exact artifact와 raw 결과는 `tests/gui/local-fonts/acceptance.json`에 기록했다.
 
-위 GUI에서 발견한 재감지 결함은 제품 callback의 자원 초기화 후 재공급 순서를 보정하고
-플랫폼 중립 회귀에서 재현·해소를 확인했다. 보정된 제품의 새 설치본 GUI 검증은 아직
-수행하지 않았으며, 기존 후보의 실패 기록을 소급하여 통과로 바꾸지 않는다.
+위 결함을 보정한 후보 `c4e9714`는 [full CI](https://github.com/postmelee/alhangeul-tauri/actions/runs/35981563185)와
+같은 SHA의 [Linux GUI](https://github.com/postmelee/alhangeul-tauri/actions/runs/35984829169)를 통과했다.
+full CI의 Linux x64 exact DEB를 설치하여 Canvas2D·CanvasKit의 HWP/HWPX 적용,
+재감지, 글꼴 파일 삭제·복구, 사용/미사용 설정의 프로세스 재실행 복원을 확인했다.
+20개 화면 관찰과 6회 프로세스 재시작을 기록했으며 CanvasKit 재감지·복구 후에도
+localTypefaceCount=1, unregisteredFontFallbacks=0과 활성화 화면 픽셀을 유지한다.
+실제 page PNG를 확인했고 내려받은 HWP/HWPX 내보내기 파일의 Abel 이름과 본문도 재검증했다.
+
+Windows MSI 일반 lifecycle은 raw passed이며 NSIS `0x80040154`와 강제 재설치 `3010`의
+raw 실패·진단 계약 통과는 새 full run에서도 유지된다. Windows 사용자 검증과 새 창
+시나리오는 남아 있어 Stage 4 전체는 미완료다. 기존 후보의 실패 기록은 보존한다.
