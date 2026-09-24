@@ -372,3 +372,28 @@ Abel fixture는 Latin 대비용이며 한글 지원 전체를 판단하지 않�
 4. 기존 renderer 공개 lifecycle로 자원을 갱신하고 dirty·문서 데이터는 보존하는 방식.
 
 승인 후 Stage 1만 구현·검증·보고한다. 다음 Stage, 비게시 원격 push/CI와 최종 PR은 해당 경계에서 별도 승인받는다.
+
+### Stage 4 Linux GUI 추가 승인 — 2026-09-24
+
+Windows는 작업지시자가 직접 설치 검증한다. Linux는 에이전트가 기존 GUI workflow를
+보완하고 기존 x64 설치본으로 추가 CI 1회를 실행하는 제안을 “진행해줘.”로 승인받았다.
+제품 source `8e7d26e44c09406d3203bb9140b2dbd8576d2375`, 생산 run `35972535353`,
+artifact `10797564590`와 archive digest를 유지하고 검증 harness SHA만 분리한다.
+
+기존 `alhangeul-linux-gui.yml`에 `local-fonts` scope를 추가하고 성공한 `ci.yml` 또는
+`alhangeul-desktop.yml`의 exact artifact 전달을 검사한다. inventory sourceSha와 파일
+hash 검사는 설치 전에 수행한다. 새 workflow·제품 재빌드·릴리즈는 수행하지 않는다.
+`tests/gui/local-fonts/` helper와 `tests/gui/specs/local-fonts.e2e.ts`에서 공개 fixture의
+설치 전후 canvas, 실제 backend diagnostics, 설정 미사용/사용/재탐색과 앱 재실행을
+검사한다. Canvas2D와 CanvasKit 결과를 분리하고 fallback을 CanvasKit 성공으로
+기록하지 않는다. SVG는 별도 interactive renderer 선택지가 없어 수용하지 않는다.
+fixture hash와 문서 font 이름 보존, 화면 변화 및 공급 상태는 서로 구분한다.
+
+문서는 기존 승인 위치에 실행·결과만 추가하며 Stage 4 완료 처리는 Windows 결과와
+Linux 실제 관측 검토 뒤 결정한다. 검증 후보의 non-force push와 위 GUI 1회만 실행한다.
+
+Linux GUI 검증 후보는 GUI typecheck, automation 966개, fixture 3개, Studio 222개,
+upstream 36개, product-boundary 658 files, Studio build, actionlint와 diff whitespace를
+통과했다. 기존 full CI가 확인한 제품 bytes를 재사용하며 이 검사는 Linux 글꼴 GUI
+범위만 수용한다. 테스트의 renderer별 단일 시나리오는 설치 전후·재탐색·재실행 순서를
+한 흐름으로 유지하기 위해 권장 함수 50 LOC를 초과하고, 공통 UI/캡처는 별도 helper에 둔다.

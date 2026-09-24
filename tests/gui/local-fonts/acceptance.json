@@ -209,7 +209,7 @@
   ],
   "gui": {
     "windows-x64": "unverified; user will test installer",
-    "linux-x64": "unverified; user will test installer",
+    "linux-x64": "unverified; agent GUI run approved (one run)",
     "linux-arm64": "not in GUI acceptance scope"
   },
   "observations": []

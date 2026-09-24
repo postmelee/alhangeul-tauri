@@ -91,8 +91,9 @@ test('checkout, run metadata, artifact ID와 inventory를 앱 설치 전에 검�
   assert.match(context, /"buildRef":"%s"/);
   assert.match(context, /ACCEPTANCE_REF: \$\{\{ github\.workflow_sha \}\}/);
   assert.match(context, /WORKFLOW_REF: \$\{\{ github\.workflow_ref \}\}/);
-  const handoff = stepContaining(workflow, 'verify-workflow-artifact.mjs');
-  assert.match(handoff, /--workflow-path \.github\/workflows\/alhangeul-desktop\.yml/);
+  const handoff = stepContaining(workflow, 'verify-linux-gui-artifact.mjs');
+  assert.match(handoff, /verify-linux-gui-artifact\.mjs/);
+  assert.match(workflow, /inventory.sourceSha !== process.env.BUILD_REF/);
   assert.match(handoff, /--artifact-name alhangeul-desktop-linux-x64/);
   assert.match(handoff, /--github-output "\$GITHUB_OUTPUT"/);
 });
@@ -369,3 +370,15 @@ function assertOrdered(source, markers) {
 function escapeRegex(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
+
+
+test('local-fonts scope는 설치본 GUI를 실행하고 실패 exit를 유지한다', () => {
+  assert.match(childBlock(workflow, 'inputs', 'scope', 6), /- local-fonts/);
+  const gui = stepContaining(workflow, 'Run Linux GUI acceptance');
+  const fonts = gui.slice(gui.indexOf('if [[ "$GUI_SCOPE" == local-fonts'), gui.indexOf('if [[ "$GUI_SCOPE" == pdf-hwpx'));
+  assert.match(fonts, /--spec tests\/gui\/specs\/local-fonts\.e2e\.ts/);
+  assert.match(fonts, /\[\[ "\$webdriver_status" -eq 0 \]\]/);
+  assert.match(fonts, /exit 0/);
+  assert.match(stepContaining(workflow, 'Require Linux GUI acceptance success'),
+    /if \[\[ "\$GUI_SCOPE" == local-fonts \]\]; then expected=skipped; fi/);
+});
