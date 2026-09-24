@@ -212,7 +212,7 @@
     "MSI forced reinstall exit 3010 (reboot required)"
   ],
   "gui": {
-    "windows-x64": "unverified; user will test installer",
+    "windows-x64": "previous candidate 8e7d26e: user confirmed no repeated modal on document reopen/change and app restart using NSIS on VDI; current candidate and actual font rendering pending",
     "linux-x64": "passed: Canvas2D and CanvasKit local-fonts scenarios; new-window unverified",
     "linux-arm64": "not in GUI acceptance scope"
   },
@@ -959,6 +959,28 @@
         "NSIS Shell thumbnail HRESULT 0x80040154",
         "MSI forced reinstall exit 3010 (reboot required)"
       ]
+    }
+  ],
+  "windowsUserReports": [
+    {
+      "reportedOn": "2026-09-24",
+      "environment": "Windows VDI; OS version unspecified",
+      "producerRunId": 35972535353,
+      "artifactId": 10797838038,
+      "sourceSha": "8e7d26e44c09406d3203bb9140b2dbd8576d2375",
+      "installer": "nsis",
+      "evidence": "User report and attached screenshot",
+      "passed": [
+        "Settings modal does not reappear on reopening a document",
+        "Settings modal does not reappear on opening another document",
+        "Settings modal does not reappear after application restart"
+      ],
+      "unverified": [
+        "Actual local-font rendering",
+        "New-window scenario",
+        "Corrected candidate c4e9714123cdce801ec876ea9908f428d36b7df7"
+      ],
+      "scope": "Application modal persistence only; does not supersede CI NSIS thumbnail failure"
     }
   ]
 }
