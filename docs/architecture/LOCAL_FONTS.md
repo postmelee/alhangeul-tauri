@@ -115,6 +115,12 @@ Windows MSI 일반 lifecycle은 raw passed지만 NSIS 썸네일 조회는 `0x800
 MSI 강제 재설치는 재부팅 필요 `3010`으로 raw failed이며 진단 계약만 통과했다.
 이는 모든 설치 시나리오·썸네일 화면이 정상이라는 뜻이 아니다.
 
-Windows x64·Linux x64 설치본의 선택/재실행·renderer별 화면 수용은 작업지시자의 직접
-검증 결과를 기다린다. 실제 화면·metric 증거가 없는 항목은 미검증으로 유지한다.
+Linux x64 설치본은 [GUI run 35979852070](https://github.com/postmelee/alhangeul-tauri/actions/runs/35979852070)에서
+Canvas2D의 Abel HWP/HWPX 적용, 재감지, 파일 삭제·복구, 사용/미사용의 새 프로세스 복원을
+확인했다. CanvasKit은 최초 적용과 재실행에서는 로컬 Typeface 1개를 사용하지만,
+수동 재감지 후에는 0개로 줄어 Abel을 기본 글꼴로 대체하는 결함이 확인됐다.
+같은 renderer에서도 FontFace 등록·CSS metric 정상만으로 실제 Typeface 공급을 판단할 수 없다.
+이 run의 전체 결과는 failure이며 CanvasKit 미사용 복원과 새 창 수용은 미검증이다.
+Windows x64 직접 검증 결과는 기다린다. 공개 Latin fixture 결과를 한글 coverage나
+모든 문서·OS의 글꼴 수용으로 확대하지 않는다.
 exact artifact와 raw 결과는 `tests/gui/local-fonts/acceptance.json`에 기록했다.

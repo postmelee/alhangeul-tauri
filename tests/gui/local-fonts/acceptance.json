@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "stage4Status": "awaiting-windows-user-validation-and-linux-gui-retry",
+  "stage4Status": "linux-canvaskit-refresh-defect-confirmed",
   "runId": 35972535353,
   "attempt": 1,
   "profile": "full",
@@ -209,10 +209,173 @@
   ],
   "gui": {
     "windows-x64": "unverified; user will test installer",
-    "linux-x64": "unverified; GUI harness status-text read timed out before document checks",
+    "linux-x64": "partial: Canvas2D scenario passed; CanvasKit refresh loses local typeface; overall failure",
     "linux-arm64": "not in GUI acceptance scope"
   },
-  "observations": [],
+  "observations": [
+    {
+      "runId": 35979852070,
+      "name": "canvas2d-hwp-absent",
+      "pixelHash": "20147c9f350a86c8aa05b9ce5d55b4bdc0451c26fe5a85adff89e38aef50af88",
+      "backend": "canvas2d",
+      "abelFontFaces": 0,
+      "localTypefaceCount": null,
+      "unregisteredFontFallbacks": null
+    },
+    {
+      "runId": 35979852070,
+      "name": "canvas2d-hwpx-absent",
+      "pixelHash": "20147c9f350a86c8aa05b9ce5d55b4bdc0451c26fe5a85adff89e38aef50af88",
+      "backend": "canvas2d",
+      "abelFontFaces": 0,
+      "localTypefaceCount": null,
+      "unregisteredFontFallbacks": null
+    },
+    {
+      "runId": 35979852070,
+      "name": "canvas2d-hwp-enabled",
+      "pixelHash": "a74c84fc7c3bdc708c3477c8b4f1b2e31d42f9e39a2fb927e69154271862004f",
+      "backend": "canvas2d",
+      "abelFontFaces": 1,
+      "localTypefaceCount": null,
+      "unregisteredFontFallbacks": null
+    },
+    {
+      "runId": 35979852070,
+      "name": "canvas2d-hwpx-enabled",
+      "pixelHash": "a74c84fc7c3bdc708c3477c8b4f1b2e31d42f9e39a2fb927e69154271862004f",
+      "backend": "canvas2d",
+      "abelFontFaces": 1,
+      "localTypefaceCount": null,
+      "unregisteredFontFallbacks": null
+    },
+    {
+      "runId": 35979852070,
+      "name": "canvas2d-refreshed",
+      "pixelHash": "a74c84fc7c3bdc708c3477c8b4f1b2e31d42f9e39a2fb927e69154271862004f",
+      "backend": "canvas2d",
+      "abelFontFaces": 1,
+      "localTypefaceCount": null,
+      "unregisteredFontFallbacks": null
+    },
+    {
+      "runId": 35979852070,
+      "name": "canvas2d-font-deleted-refreshed",
+      "pixelHash": "20147c9f350a86c8aa05b9ce5d55b4bdc0451c26fe5a85adff89e38aef50af88",
+      "backend": "canvas2d",
+      "abelFontFaces": 0,
+      "localTypefaceCount": null,
+      "unregisteredFontFallbacks": null
+    },
+    {
+      "runId": 35979852070,
+      "name": "canvas2d-font-restored-refreshed",
+      "pixelHash": "a74c84fc7c3bdc708c3477c8b4f1b2e31d42f9e39a2fb927e69154271862004f",
+      "backend": "canvas2d",
+      "abelFontFaces": 1,
+      "localTypefaceCount": null,
+      "unregisteredFontFallbacks": null
+    },
+    {
+      "runId": 35979852070,
+      "name": "canvas2d-enabled-restarted",
+      "pixelHash": "a74c84fc7c3bdc708c3477c8b4f1b2e31d42f9e39a2fb927e69154271862004f",
+      "backend": "canvas2d",
+      "abelFontFaces": 1,
+      "localTypefaceCount": null,
+      "unregisteredFontFallbacks": null
+    },
+    {
+      "runId": 35979852070,
+      "name": "canvas2d-disabled",
+      "pixelHash": "20147c9f350a86c8aa05b9ce5d55b4bdc0451c26fe5a85adff89e38aef50af88",
+      "backend": "canvas2d",
+      "abelFontFaces": 0,
+      "localTypefaceCount": null,
+      "unregisteredFontFallbacks": null
+    },
+    {
+      "runId": 35979852070,
+      "name": "canvas2d-disabled-restarted",
+      "pixelHash": "20147c9f350a86c8aa05b9ce5d55b4bdc0451c26fe5a85adff89e38aef50af88",
+      "backend": "canvas2d",
+      "abelFontFaces": 0,
+      "localTypefaceCount": null,
+      "unregisteredFontFallbacks": null
+    },
+    {
+      "runId": 35979852070,
+      "name": "canvaskit-hwp-absent",
+      "pixelHash": "514cf38c99b18030ad62fca58b538428dd08eddd5ca909ee336330e63bdeaab5",
+      "backend": "canvaskit",
+      "abelFontFaces": 0,
+      "localTypefaceCount": 0,
+      "unregisteredFontFallbacks": 1
+    },
+    {
+      "runId": 35979852070,
+      "name": "canvaskit-hwpx-absent",
+      "pixelHash": "514cf38c99b18030ad62fca58b538428dd08eddd5ca909ee336330e63bdeaab5",
+      "backend": "canvaskit",
+      "abelFontFaces": 0,
+      "localTypefaceCount": 0,
+      "unregisteredFontFallbacks": 1
+    },
+    {
+      "runId": 35979852070,
+      "name": "canvaskit-hwp-enabled",
+      "pixelHash": "01eea1f1bb61e3cedb5a5b96f42fd15cab473731fd0686181c7860fb57438a0b",
+      "backend": "canvaskit",
+      "abelFontFaces": 1,
+      "localTypefaceCount": 1,
+      "unregisteredFontFallbacks": 0
+    },
+    {
+      "runId": 35979852070,
+      "name": "canvaskit-hwpx-enabled",
+      "pixelHash": "01eea1f1bb61e3cedb5a5b96f42fd15cab473731fd0686181c7860fb57438a0b",
+      "backend": "canvaskit",
+      "abelFontFaces": 1,
+      "localTypefaceCount": 1,
+      "unregisteredFontFallbacks": 0
+    },
+    {
+      "runId": 35979852070,
+      "name": "canvaskit-refreshed",
+      "pixelHash": "514cf38c99b18030ad62fca58b538428dd08eddd5ca909ee336330e63bdeaab5",
+      "backend": "canvaskit",
+      "abelFontFaces": 1,
+      "localTypefaceCount": 0,
+      "unregisteredFontFallbacks": 1
+    },
+    {
+      "runId": 35979852070,
+      "name": "canvaskit-font-deleted-refreshed",
+      "pixelHash": "514cf38c99b18030ad62fca58b538428dd08eddd5ca909ee336330e63bdeaab5",
+      "backend": "canvaskit",
+      "abelFontFaces": 0,
+      "localTypefaceCount": 0,
+      "unregisteredFontFallbacks": 1
+    },
+    {
+      "runId": 35979852070,
+      "name": "canvaskit-font-restored-refreshed",
+      "pixelHash": "514cf38c99b18030ad62fca58b538428dd08eddd5ca909ee336330e63bdeaab5",
+      "backend": "canvaskit",
+      "abelFontFaces": 1,
+      "localTypefaceCount": 0,
+      "unregisteredFontFallbacks": 1
+    },
+    {
+      "runId": 35979852070,
+      "name": "canvaskit-enabled-restarted",
+      "pixelHash": "01eea1f1bb61e3cedb5a5b96f42fd15cab473731fd0686181c7860fb57438a0b",
+      "backend": "canvaskit",
+      "abelFontFaces": 1,
+      "localTypefaceCount": 1,
+      "unregisteredFontFallbacks": 0
+    }
+  ],
   "linuxGuiRuns": [
     {
       "runId": 35978518579,
@@ -241,7 +404,38 @@
       "rawWebdriverExit": 1,
       "failure": "getElementText(#sb-message) returned empty while screenshot showed disabled status; both renderer scenarios timed out before document load",
       "correction": "reuse readStudioStatus (DOM textContent), retain per-renderer failure screenshot and DOM diagnostics",
-      "correctionGuiValidation": "not run; additional execution approval required"
+      "correctionGuiValidation": "status-text correction verified by run 35979852070; original run remains failed"
+    },
+    {
+      "runId": 35979852070,
+      "attempt": 1,
+      "scope": "local-fonts",
+      "harnessSha": "664d493e7bf79741daec0ed97c776491c3ae3dcf",
+      "sourceSha": "8e7d26e44c09406d3203bb9140b2dbd8576d2375",
+      "status": "completed",
+      "conclusion": "failure",
+      "artifact": {
+        "digest": "sha256:4a96d92ed189d4628d8f45e64b88487c6b12863e1bdcc5e82c8f3e2452ce6189",
+        "expired": false,
+        "id": 10800100959,
+        "name": "alhangeul-linux-gui-35979852070",
+        "size_in_bytes": 1554326
+      },
+      "rawWebdriverExit": 1,
+      "scenarioResults": {
+        "canvas2d": "passed",
+        "canvaskit": "failed"
+      },
+      "guiObservationCount": 18,
+      "processRestartCount": 4,
+      "failure": "CanvasKit manual refresh resets local typeface resources without preparing Abel again; restart restores localTypefaceCount=1",
+      "scopeLimits": [
+        "new-window not tested",
+        "CanvasKit disabled/restart steps not reached",
+        "Latin Abel fixture only",
+        "Windows user result pending"
+      ],
+      "exportReadback": "HWP/HWPX exports retain Abel font name and fixture text"
     }
   ]
 }

@@ -425,3 +425,58 @@ attempt 1, harness `a99dced3581532c7027d0b5d37b22ce4e6ab9a59`, `scope=local-font
 Windows 직접 검증과 Linux 문서 글꼴 GUI 수용은 계속 미검증이다. Stage 4 완료보고서는
 작성하지 않는다. 보정한 harness를 non-force push하고 동일 `8e7d26e` 설치본에 대해
 `alhangeul-linux-gui.yml`, `scope=local-fonts` 1회를 추가 실행하는 승인을 요청한다.
+
+### Stage 4 Linux GUI 보정본 추가 실행 승인 — 2026-09-24
+
+보정본 `664d493e7bf79741daec0ed97c776491c3ae3dcf`의 non-force push와 동일 설치본의
+GUI 추가 1회 실행 요청에 작업지시자가 “진행해줘.”로 승인했다.
+`publish/task74`에 push하고 [run 35979852070](https://github.com/postmelee/alhangeul-tauri/actions/runs/35979852070),
+attempt 1, `scope=local-fonts`를 실행했다. 제품 SHA와 생산 run/artifact는 기존과 동일하다.
+
+### Stage 4 Linux GUI 보정본 결과·제품 결함 — 2026-09-24
+
+run `35979852070`, attempt 1은 4분 3초 뒤 failure로 종료됐다. GUI 시나리오 자체는
+55.4초, 1 passed/1 failed다. 상태표시줄 읽기 보정은 통과했고 설치·artifact 검증도
+통과했다. 증거 artifact는 `10800100959`, digest
+`sha256:4a96d92ed189d4628d8f45e64b88487c6b12863e1bdcc5e82c8f3e2452ce6189`다.
+18개 화면/diagnostics 관측과 4회의 PID 변경이 수집됐다.
+
+| 항목 | 실제 관측 |
+|---|---|
+| Canvas2D HWP/HWPX | Abel 공급 전후 픽셀 변화, FontFace loaded, 글꼴명 보존 통과 |
+| Canvas2D 재감지·삭제·복구 | 재감지 유지, 삭제 시 fallback, 복구 시 원래 픽셀 복원 |
+| Canvas2D 사용/미사용 재실행 | 각각 새 PID 확인과 동일 픽셀 복원 통과 |
+| CanvasKit 최초 HWP/HWPX | effectiveBackend=canvaskit, localTypefaceCount=1, fontSubstitutions=[] |
+| CanvasKit 수동 재감지 | effectiveBackend는 유지하나 localTypefaceCount=0, Abel → Noto Sans KR Thin unregisteredFallback |
+| CanvasKit 파일 복구 후 재감지 | FontFace는 loaded지만 CanvasKit localTypefaceCount=0과 fallback 지속 |
+| CanvasKit 재실행 | 새 PID에서 localTypefaceCount=1, fallback 없음, 원래 Abel 픽셀로 복원 |
+| HWP/HWPX export readback | 설치본의 공개 export API 결과에서 Abel과 fixture 본문 보존 확인 |
+| 새 창·Windows 직접 수용 | 미검증/사용자 결과 대기 |
+
+CanvasKit 재감지 전후는 단순 픽셀 노이즈가 아니다. enabled의 픽셀 hash는
+`01eea1f1bb61e3cedb5a5b96f42fd15cab473731fd0686181c7860fb57438a0b`,
+재감지 후는 absent와 동일한
+`514cf38c99b18030ad62fca58b538428dd08eddd5ca909ee336330e63bdeaab5`다.
+재실행하면 다시 enabled hash가 된다. 전체 창 캡처에서도 글자 형태 변화가 확인된다.
+개별 element screenshot은 WebKit의 잘못된 crop을 포함하므로 전체 창 캡처와 실제 canvas
+`toDataURL` 기반 hash·renderer diagnostics를 판정 근거로 사용했다.
+
+원인은 제품 `local-font-entry-hooks.ts`의 refreshView 경계다. session 무효화와
+`canvasView.loadDocument()`가 글꼴 자원을 초기화하며, 후자는 내부적으로
+`prepareDocumentLoad()` → `rendererSession.beginDocument()`도 실행한다. 최초 문서
+초기화는 loadDocument 뒤 `prepareCanvasKitLocalFonts()`를 호출하지만 제품의 설정
+갱신 callback에는 그 재공급 단계가 없다. CSS FontFace 정상 여부로 이를 가릴 수 없다.
+
+**승인 요청 범위**: 제품 adapter의 현재 두 entry hook 안에서 loadDocument가 끝난 뒤
+현재 CanvasKit renderer에 문서의 로컬 글꼴을 다시 공급하고 완료를 기다린 후 보기만
+갱신한다. 문서 전환 중 stale renderer와 cache 재초기화를 피하는 조건을 둔다.
+upstream/submodule, native 허용 root, serializer는 수정하지 않는다. 실제 session의
+beginDocument 자원 초기화까지 포함하는 회귀를 추가하고, GUI는 재감지 직후
+Typeface count/fallback과 enabled 픽셀 유지도 직접 검사하도록 보강한다.
+
+변경 대상은 `apps/studio-host/local-font-entry-hooks.ts`와 기존 controller 경계가 필요한
+최소 adapter, 해당 회귀, `tests/gui/local-fonts/`·GUI spec이다. 문서는 기존 승인 위치만
+갱신한다. 승인 후 플랫폼 중립 집중 회귀, 전체 Studio/upstream test/build와 boundary,
+GUI typecheck/관련 계약을 실행하고 새 제품 후보 SHA를 제시한다. 제품 bytes가 달라지므로
+기존 설치본의 성공을 새 후보에 이전하지 않으며 새 설치본 생성·원격 CI는 별도 승인한다.
+현재 턴에서는 제품 소스를 수정하지 않았으며 Stage 4도 완료 처리하지 않는다.
