@@ -1,11 +1,12 @@
 import { analyzeDocumentFonts } from '@upstream/core/document-font-status';
 import { showToast } from '@upstream/ui/toast';
 import {
-  detectLocalFonts, getLocalFonts, getLocalFontState, loadStoredLocalFonts,
+  detectLocalFonts, ensureLocalFontsAvailable, getLocalFonts, getLocalFontState, loadStoredLocalFonts,
 } from './local-fonts';
 import {
   getFontPreferences, refreshFontPreferences, saveFontPreference,
 } from './local-font-preferences';
+import { resetDesktopFontProvider, desktopFontSupplyState } from './local-font-provider';
 import { isTauriRuntime } from './platform';
 import {
   closeDesktopLocalFontSettings, fontSettingsMessage, showDesktopLocalFontSettings,
@@ -26,7 +27,9 @@ let viewError: string | null = null;
 
 function setMessage(toast = false): void {
   const state = getLocalFontState();
-  const message = viewError ?? fontSettingsMessage(getFontPreferences(), state.count, state.lastError);
+  const supply = desktopFontSupplyState();
+  const message = viewError ?? (fontSettingsMessage(getFontPreferences(), state.count, state.lastError)
+    + (supply.failed ? ` 직접 공급 실패 ${supply.failed}개는 대체 글꼴로 표시합니다.` : ''));
   const target = document.getElementById('sb-message');
   if (target) target.textContent = message;
   if (toast) showToast({ message, durationMs: 8000 });
@@ -38,8 +41,11 @@ export async function prepareDesktopDocumentFonts(document: FontDocument): Promi
   activeDocument = null;
   viewError = null;
   closeDesktopLocalFontSettings();
+  resetDesktopFontProvider();
   await refreshFontPreferences();
   await loadStoredLocalFonts();
+  if (started !== generation) return;
+  try { await ensureLocalFontsAvailable(document.fonts); } catch { /* Catalog state carries retry guidance. */ }
   if (started === generation) activeDocument = document;
 }
 
@@ -53,6 +59,8 @@ export function refreshDesktopLocalFontView(force = false): Promise<void> {
       else await loadStoredLocalFonts();
     } catch { /* Continue with the empty catalog so the view can fall back. */ }
     try {
+      if (started !== generation || document !== activeDocument) return;
+      try { await ensureLocalFontsAvailable(document?.fonts ?? []); } catch { /* Continue to fallback view. */ }
       if (started !== generation || document !== activeDocument) return;
       document?.onFontsChanged(getLocalFonts());
       await document?.refreshView();
@@ -72,7 +80,8 @@ async function showSettings(manual: boolean): Promise<void> {
   if (started !== generation) return;
   const preferences = getFontPreferences();
   if (!manual) {
-    const warning = getLocalFontState().lastError;
+    const warning = getLocalFontState().lastError
+      ?? (desktopFontSupplyState().failed ? 'font-supply-failed' : null);
     if (warning && warning !== lastWarning) setMessage(true);
     lastWarning = warning;
     if (preferences.choice !== 'unset' || preferences.promptDismissed || preferences.error) return;
@@ -110,5 +119,6 @@ export async function promptDesktopLocalFonts(): Promise<boolean> {
 export function disposeDesktopLocalFonts(): void {
   generation += 1;
   activeDocument = null;
+  resetDesktopFontProvider();
   closeDesktopLocalFontSettings();
 }

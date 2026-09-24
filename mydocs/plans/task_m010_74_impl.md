@@ -4,7 +4,7 @@
 GitHub Issue: [#74](https://github.com/postmelee/alhangeul-tauri/issues/74)
 마일스톤: M010 / bug
 작성일: 2026-09-24
-상태: 2026-09-24 구현계획과 Stage 1 승인·완료 보고 뒤 “진행해줘.”로 Stage 2 착수 승인. Stage 2 구현·플랫폼 중립 검증 통과. 후보 `ebe5729`의 push·native CI 1회 실행을 “진행해줘.”로 승인받았으며 run 35969672923이 성공했다. Stage 2 검증·보고 완료, Stage 3 진입 승인 대기다.
+상태: 2026-09-24 구현계획과 Stage 1 승인·완료 보고 뒤 “진행해줘.”로 Stage 2 착수 승인. Stage 2 구현·플랫폼 중립 검증 통과. 후보 `ebe5729`의 push·native CI 1회 실행을 “진행해줘.”로 승인받았으며 run 35969672923이 성공했다. Stage 2 보고 뒤 “진행해줘.”로 Stage 3 착수 승인. Stage 3 구현·플랫폼 중립 검증 완료, Stage 4 및 추가 원격 검증 승인 대기다.
 
 ## 단계 개요
 
@@ -15,7 +15,7 @@ GitHub Issue: [#74](https://github.com/postmelee/alhangeul-tauri/issues/74)
 | 3 | 실제 공급·캐시·적용 | 필요 bytes/FontFace 공급, renderer 갱신, 실패 상태 | 실제 소비자·공개 글꼴·무효화·문서 상태 회귀 |
 | 4 | 지원 환경 수용·문서 | exact 후보 full, Windows/Linux 설치 검증, 공식 문서·보고 | 설치본 시나리오와 renderer별 증거·한계 |
 
-각 Stage의 소스와 완료보고서를 묶어 커밋하고 다음 Stage 진입 승인을 받는다. 현재 승인된 범위는 Stage 2 구현·검증과 후보 `ebe5729`의 원격 push·native CI 1회 실행이다. Stage 3 및 추가 CI 실행은 별도 승인한다.
+각 Stage의 소스와 완료보고서를 묶어 커밋하고 다음 Stage 진입 승인을 받는다. 현재 승인된 범위는 Stage 3 구현·검증까지다. 후보 `ebe5729`의 native CI 1회는 완료했으며 추가 CI 실행과 Stage 4는 별도 승인한다.
 
 ## 문서 위치 확인
 
@@ -183,7 +183,7 @@ workflow/source SHA는 모두 `ebe57297e84cab8426b44558200093e05936df5a`이고 �
 
 위 중간 후보 절의 미실행·승인 대기는 후보 준비 당시 기록이다. 현재 확정 결과와 잔여 범위는
 [Stage 2 완료보고](../working/task_m010_74_stage2.md)를 따른다. 검증된 중간 커밋을 재작성하지 않고
-동일 제품 소스 위에 보고 문서만 후속 커밋한다. 추가 push/CI와 Stage 3은 수행하지 않는다.
+동일 제품 소스 위에 보고 문서만 후속 커밋한다. Stage 2 보고 시점에는 추가 push/CI와 Stage 3을 수행하지 않았다.
 
 ## Stage 3 — 실제 공급·캐시·적용
 
@@ -225,6 +225,15 @@ git diff --check
 ```text
 Task #74 Stage 3: 필요한 로컬 글꼴 공급과 실패 캐시 무효화 보정
 ```
+
+### Stage 3 구현 세부 확정
+
+- native root·catalog 구현은 수정하지 않는다. provider에서 읽은 standalone static sfnt(TTF/OTF)만 직접 공급한다. collection index·variation coordinate가 없는 TTC/OTC·가변 face와 기타 미확인 container는 fallback으로 둔다.
+- product provider의 소유 FontFace·등록 promise·bytes·실패는 문서/선택 세대로 관리한다. 문서 진입에서 catalog는 재사용하되 provider를 비워 필요한 파일을 다시 검증한다.
+- file-backed 실패는 local resolve에서 제외하고 system-installed의 OS 해석과 bytes 공급 실패는 분리한다. 모호한 동명 face는 family 추측으로 선택하지 않는다.
+- `tests/gui/local-fonts/`에 Google Fonts exact commit의 unmodified Abel Regular TTF·OFL과 bundled WASM으로 생성한 HWP/HWPX를 고정한다. Abel은 bundled 대체와 구별되는 Latin fixture이며 한글 coverage 수용은 아니다.
+- `manifest.json`에 출처·라이선스·hash·engine pin을 기록한다. `generate.mjs`, `fixture.mjs`, `fixture.test.mjs`는 생성·무결성·격리 root 설치/회수·관측 기록 및 저장/재열기 계약을 담당한다. 실제 화면 수용은 하지 않는다.
+- 단계 기본 명령에 `node --test tests/gui/local-fonts/fixture.test.mjs`를 추가한다. 신규 workflow나 package script는 추가하지 않는다.
 
 ## Stage 4 — Windows/Linux 통합 수용·문서
 

@@ -26,7 +26,8 @@ export function normalizeFontEntries(entries: LocalFontEntry[]): LocalFontEntry[
   const normalized: LocalFontEntry[] = [];
   for (const entry of entries) {
     const family = entry.family.trim();
-    if (!family) continue;
+    if (!family || isAuthoringBlockedFontFamily(family)
+      || isAuthoringBlockedFontFamily(entry.postScriptName ?? family)) continue;
     const postScriptName = entry.postScriptName?.trim() || family;
     const style = entry.style?.trim() || 'normal';
     const sourceKind = entry.sourceKind ?? 'system-installed';
@@ -70,7 +71,7 @@ export function uniqueAuthoringFamilies(entries: LocalFontEntry[]): string[] {
 export function toLocalFontRecord(entry: LocalFontEntry): LocalFontRecord {
   return {
     family: entry.family,
-    fullName: entry.family,
+    fullName: entry.postScriptName,
     postscriptName: entry.postScriptName,
     style: entry.style,
     displayName: entry.family,
