@@ -397,3 +397,31 @@ upstream 36개, product-boundary 658 files, Studio build, actionlint와 diff whi
 통과했다. 기존 full CI가 확인한 제품 bytes를 재사용하며 이 검사는 Linux 글꼴 GUI
 범위만 수용한다. 테스트의 renderer별 단일 시나리오는 설치 전후·재탐색·재실행 순서를
 한 흐름으로 유지하기 위해 권장 함수 50 LOC를 초과하고, 공통 UI/캡처는 별도 helper에 둔다.
+
+### Stage 4 Linux GUI 1회 결과와 보정 — 2026-09-24
+
+[run 35978518579](https://github.com/postmelee/alhangeul-tauri/actions/runs/35978518579),
+attempt 1, harness `a99dced3581532c7027d0b5d37b22ce4e6ab9a59`, `scope=local-fonts`는
+7분 32초 뒤 failure로 종료됐다. 승인된 추가 1회를 사용했으며 재실행하지 않았다.
+
+- exact producer/artifact handoff, 다운로드 digest, inventory sourceSha·파일 hash,
+  DEB 설치, 앱 시작과 설정 UI 조작까지 통과했다. 설치한 DEB SHA-256은
+  `2b1440bcba2f63263bae522d3fc21921a47f6efc611fe9e7c8a7cf6482f8fca3`다.
+- Canvas2D/CanvasKit 두 시나리오는 문서를 열기 전 첫 미사용 설정 대기에서 각각
+  120초 timeout됐다. 원시 WebDriver exit는 1이며 `continue-on-error`와 별개로
+  `step-outcomes.json`의 gui=failure, 최종 gate=failure를 유지한다.
+- 실패 캡처의 상태표시줄에는 “로컬 글꼴 감지·직접 공급을 사용하지 않습니다.”가
+  실제 표시됐고 status DOM mutation도 관측됐다. 그러나 WebKitWebDriver의
+  `getElementText(#sb-message)`가 빈 문자열을 반환했다. 제품 글꼴 표시 실패라는
+  판정은 하지 않으며, 실제 문서·설치 글꼴 비교 관측은 0건이다.
+- 검증 helper를 기존 `readStudioStatus`의 DOM `textContent` 조회로 보정했다.
+  모달 본문도 같은 방식으로 읽고 renderer별 실패 캡처·DOM 상태를 분리 보존한다.
+  보정 후 GUI typecheck와 관련 계약 69개, diff whitespace가 통과했다.
+- 환경: Ubuntu 22.04 x64, WebKitGTK/WebKitWebDriver 2.50.4, tauri-driver 2.0.6.
+  증거 artifact `10799363182`, digest
+  `sha256:2d97445c5208499fe02a00c86a6772587b882524e650ca1c1a158bb761ed6841`.
+  로컬 자료는 `/tmp/task74-linux-gui-evidence`와 `/tmp/task74-linux-gui-run.log`다.
+
+Windows 직접 검증과 Linux 문서 글꼴 GUI 수용은 계속 미검증이다. Stage 4 완료보고서는
+작성하지 않는다. 보정한 harness를 non-force push하고 동일 `8e7d26e` 설치본에 대해
+`alhangeul-linux-gui.yml`, `scope=local-fonts` 1회를 추가 실행하는 승인을 요청한다.

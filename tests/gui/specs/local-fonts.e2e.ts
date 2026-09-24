@@ -39,9 +39,15 @@ describe('Linux installed local fonts', () => {
 
   afterEach(async function () {
     if (this.currentTest?.state === 'failed') {
-      await browser.saveScreenshot(join(output, 'failure.png')).catch(() => {});
-      await writeFile(join(output, 'failure.json'), JSON.stringify({
-        title: this.currentTest.title, error: this.currentTest.err?.message,
+      const name = this.currentTest.title.split(':')[0];
+      await browser.saveScreenshot(join(output, `${name}-failure.png`)).catch(() => {});
+      const ui = await browser.execute(() => ({
+        status: document.getElementById('sb-message')?.textContent,
+        modal: document.querySelector('.modal-overlay')?.textContent,
+        url: location.href,
+      })).catch(() => null);
+      await writeFile(join(output, `${name}-failure.json`), JSON.stringify({
+        title: this.currentTest.title, error: this.currentTest.err?.message, ui,
       }, null, 2));
     }
   });

@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { browser, $, $$ } from '@wdio/globals';
+import { readStudioStatus } from '../support/document-ux.ts';
 import { readGuiHarnessInputs } from '../wdio.shared.conf.ts';
 
 const inputs = readGuiHarnessInputs();
@@ -37,7 +38,7 @@ export async function menu(command: string, title: string): Promise<void> {
 export async function settings(): Promise<string> {
   await menu('tool:local-font-settings', '도구');
   await $('.modal-overlay .dialog-body').waitForDisplayed();
-  return $('.modal-overlay .dialog-body').getText();
+  return browser.execute(() => document.querySelector('.modal-overlay .dialog-body')?.textContent ?? '');
 }
 
 export async function choose(choice: 'enabled' | 'disabled' | 'refresh'): Promise<void> {
@@ -62,7 +63,7 @@ export async function choose(choice: 'enabled' | 'disabled' | 'refresh'): Promis
   await $('.modal-overlay').waitForExist({ reverse: true });
   await browser.waitUntil(async () => {
     if (!await browser.execute(() => (window as Window & { __fontAcceptanceUpdated?: boolean }).__fontAcceptanceUpdated === true)) return false;
-    const status = await $('#sb-message').getText();
+    const status = await readStudioStatus(browser);
     return choice === 'disabled' ? status.includes('직접 공급을 사용하지 않습니다')
       : status.includes('감지 목록');
   }, { timeout: inputs.timeoutMs, timeoutMsg: `font setting ${choice} did not finish` });

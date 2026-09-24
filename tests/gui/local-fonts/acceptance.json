@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "stage4Status": "awaiting-user-gui-validation",
+  "stage4Status": "awaiting-windows-user-validation-and-linux-gui-retry",
   "runId": 35972535353,
   "attempt": 1,
   "profile": "full",
@@ -209,8 +209,39 @@
   ],
   "gui": {
     "windows-x64": "unverified; user will test installer",
-    "linux-x64": "unverified; agent GUI run approved (one run)",
+    "linux-x64": "unverified; GUI harness status-text read timed out before document checks",
     "linux-arm64": "not in GUI acceptance scope"
   },
-  "observations": []
+  "observations": [],
+  "linuxGuiRuns": [
+    {
+      "runId": 35978518579,
+      "attempt": 1,
+      "scope": "local-fonts",
+      "harnessSha": "a99dced3581532c7027d0b5d37b22ce4e6ab9a59",
+      "sourceSha": "8e7d26e44c09406d3203bb9140b2dbd8576d2375",
+      "status": "completed",
+      "conclusion": "failure",
+      "artifact": {
+        "digest": "sha256:2d97445c5208499fe02a00c86a6772587b882524e650ca1c1a158bb761ed6841",
+        "expired": false,
+        "id": 10799363182,
+        "name": "alhangeul-linux-gui-35978518579",
+        "size_in_bytes": 241596
+      },
+      "verifiedSteps": [
+        "producer-handoff",
+        "archive-download-digest",
+        "inventory-source-and-file-hashes",
+        "deb-install",
+        "app-launch",
+        "settings-disabled-ui"
+      ],
+      "guiObservationCount": 0,
+      "rawWebdriverExit": 1,
+      "failure": "getElementText(#sb-message) returned empty while screenshot showed disabled status; both renderer scenarios timed out before document load",
+      "correction": "reuse readStudioStatus (DOM textContent), retain per-renderer failure screenshot and DOM diagnostics",
+      "correctionGuiValidation": "not run; additional execution approval required"
+    }
+  ]
 }
