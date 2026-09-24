@@ -77,6 +77,10 @@ export function isLocalFontAccessSupported(): boolean {
   return isLocalFontSupported();
 }
 
+export function getLocalFontDetectionMethod(): LocalFontDetectionSource | null {
+  return isLocalFontSupported() ? 'local-font-access' : null;
+}
+
 export async function detectLocalFontEntries(force = false): Promise<LocalFontEntry[]> {
   if (force) {
     cachedFontEntries = null;
@@ -177,7 +181,7 @@ export function getLocalFontState(): LocalFontState {
   const snapshot = currentSnapshot();
   return {
     supported: isLocalFontSupported(),
-    method: isLocalFontSupported() ? 'local-font-access' : null,
+    method: getLocalFontDetectionMethod(),
     loaded: cachedFontEntries !== null,
     stored: snapshot !== null,
     source: snapshot?.source ?? null,

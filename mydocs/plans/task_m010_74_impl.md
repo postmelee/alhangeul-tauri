@@ -4,7 +4,7 @@
 GitHub Issue: [#74](https://github.com/postmelee/alhangeul-tauri/issues/74)
 마일스톤: M010 / bug
 작성일: 2026-09-24
-상태: 구현계획 승인 대기. 같은 task의 “진행해줘.”를 수행계획 승인으로 기록한다.
+상태: 2026-09-24 구현계획 보고 뒤 “진행해줘.”로 구현계획과 Stage 1 착수 승인. Stage 1 검증 완료, Stage 2 진입 승인 대기. 원격 push/CI 실행은 미승인이다.
 
 ## 단계 개요
 
@@ -15,7 +15,7 @@ GitHub Issue: [#74](https://github.com/postmelee/alhangeul-tauri/issues/74)
 | 3 | 실제 공급·캐시·적용 | 필요 bytes/FontFace 공급, renderer 갱신, 실패 상태 | 실제 소비자·공개 글꼴·무효화·문서 상태 회귀 |
 | 4 | 지원 환경 수용·문서 | exact 후보 full, Windows/Linux 설치 검증, 공식 문서·보고 | 설치본 시나리오와 renderer별 증거·한계 |
 
-각 Stage의 소스와 완료보고서를 묶어 커밋하고 다음 Stage 진입 승인을 받는다. 현재 승인 요청은 이 구현계획과 Stage 1 착수이며 원격 push/CI 실행 승인은 포함하지 않는다.
+각 Stage의 소스와 완료보고서를 묶어 커밋하고 다음 Stage 진입 승인을 받는다. 승인된 범위는 이 구현계획과 Stage 1 착수이며 원격 push/CI 실행 승인은 포함하지 않는다.
 
 ## 문서 위치 확인
 
@@ -50,7 +50,7 @@ GitHub Issue: [#74](https://github.com/postmelee/alhangeul-tauri/issues/74)
 ### 변경 내용
 
 1. 이 worktree의 읽기 전용 submodule을 gitlink `496333b27d21ddb9114ba9ae340bcb895870c9a7`로 초기화하고 `pnpm install --frozen-lockfile`로 의존성을 준비한다. pin/lock 변경과 다른 checkout의 의존성 변경은 금지한다.
-2. 실패 회귀를 먼저 고정한다. 실제 `@upstream/core/document-font-status`의 `analyzeDocumentFonts`와 `@upstream/core/font-substitution`의 `resolveFont`를 실행하며 native catalog/환경 경계만 대체한다. 누락 글꼴을 포함해 기존 분리 캐시의 반복 안내 조건을 드러낸다.
+2. 실패 회귀를 먼저 고정한다. 실제 `@upstream/core/document-font-status`의 `analyzeDocumentFonts`와 `@upstream/core/font-substitution`의 `fontFamilyChainForDisplay`를 실행하며 native catalog/환경 경계만 대체한다. 후자가 `resolveLocalFont`를 소비하고 내부에서 `resolveFont`를 호출하므로 실제 표시 체인 진입점으로 검증한다. 누락 글꼴을 포함해 기존 분리 캐시의 반복 안내 조건을 드러낸다.
 3. `local-font-overrides.ts`의 pre resolver는 pinned upstream `core/document-font-status.ts`와 `core/font-substitution.ts`에서 오는 `./local-fonts.ts`만 Alhangeul `src/core/local-fonts.ts`로 연결한다. 경로 separator/query 정규화와 importer 검사를 수행하고 다른 상대 모듈은 그대로 둔다.
 4. 기존 `@/core/local-fonts` alias와 위 상대 경로가 같은 canonical module ID를 사용한다. 기존 12개 alias 목록과 owner는 유지하고 resolver를 별도 명시적 경계로 검사한다. UI/renderer shadow를 추가하지 않는다.
 5. upstream 소비자에 필요한 detection method export와 반환 타입을 맞춘다. 이 단계는 캐시 소유권만 통합하며 설정 영속성 수용은 Stage 2에 남긴다. `stored` 의미를 억지로 참으로 만들어 실패를 숨기지 않는다.

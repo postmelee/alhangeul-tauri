@@ -88,6 +88,14 @@ const removedStageTwoPaths = [
 ] as const;
 
 describe('upstream Studio override boundary', () => {
+  it('connects the relative local-font consumers in both production and test configs', () => {
+    for (const config of ['vite.config.ts', 'vitest.config.ts']) {
+      const source = readFileSync(resolve(repositoryRoot, 'apps/studio-host', config), 'utf8');
+      expect(source).toContain("from './local-font-overrides'");
+      expect(source).toContain('createAlhangeulLocalFontPlugin({ upstreamSrc, alhangeulSrc })');
+    }
+  });
+
   it('classifies the 12 remaining leaf aliases', () => {
     const ids = alhangeulOverrideSpecs.map((spec) => spec.id);
     expect(ids).toHaveLength(12);

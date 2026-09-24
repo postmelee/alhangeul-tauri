@@ -39,6 +39,13 @@ studio host의 실제 Vite root와 entry는 각각 `third_party/rhwp/rhwp-studio
 
 `apps/studio-host/alhangeul-overrides.ts`가 adapter owner와 disposition의 진실 원천이다. `apps/studio-host/src/core/upstream-boundary.test.ts`는 12개 alias, `legacy-upstream-copy` 0개, 금지 entry와 제거된 shadow의 물리적 부재, adapter 300 LOC 상한을 검사한다. `tests/rhwp-baseline.test.mjs`는 exact entry, upstream 메뉴 command와 HWPX/PDF 실행 경계를 함께 고정한다. engine API나 renderer bug는 먼저 upstream에서 해결하고, 데스크톱 통합 차이는 이 경계 안의 leaf adapter에 둔다.
 
+`apps/studio-host/local-font-overrides.ts`는 위 alias를 우회하는 상대 import 두 곳을 같은
+`core/local-fonts` adapter로 연결한다. 대상은 pinned Studio의 `core/document-font-status.ts`와
+`core/font-substitution.ts`가 읽는 `./local-fonts.ts`뿐이다. Vite와 Vitest는 동일 resolver를
+사용하며 12개 alias 목록, upstream source와 renderer는 유지한다. 실제 상태 분석·표시 글꼴
+체인 회귀와 dev/build module 검증으로 별도 upstream 글꼴 캐시가 섞이지 않는지 확인한다.
+이 연결의 성공은 사용 선택의 영속 저장이나 모든 renderer의 글꼴 적용 성공을 뜻하지 않는다.
+
 ## Windows thumbnail parse·render 경계
 
 Windows Explorer thumbnail은 현재 Stable pin의 native `rhwp`를 사용하지만 COM DLL에 engine을 직접 link하지 않는다.
