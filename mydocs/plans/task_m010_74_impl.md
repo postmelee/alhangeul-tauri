@@ -4,7 +4,7 @@
 GitHub Issue: [#74](https://github.com/postmelee/alhangeul-tauri/issues/74)
 마일스톤: M010 / bug
 작성일: 2026-09-24
-상태: 2026-09-24 구현계획과 Stage 1 승인·완료 보고 뒤 “진행해줘.”로 Stage 2 착수 승인. Stage 2 구현·플랫폼 중립 검증 통과, native 검증 미실행. 원격 push/CI 실행은 미승인이다.
+상태: 2026-09-24 구현계획과 Stage 1 승인·완료 보고 뒤 “진행해줘.”로 Stage 2 착수 승인. Stage 2 구현·플랫폼 중립 검증 통과. 후보 `ebe5729`의 push·native CI 1회 실행을 “진행해줘.”로 승인받았으며 run 35969672923이 성공했다. Stage 2 검증·보고 완료, Stage 3 진입 승인 대기다.
 
 ## 단계 개요
 
@@ -15,7 +15,7 @@ GitHub Issue: [#74](https://github.com/postmelee/alhangeul-tauri/issues/74)
 | 3 | 실제 공급·캐시·적용 | 필요 bytes/FontFace 공급, renderer 갱신, 실패 상태 | 실제 소비자·공개 글꼴·무효화·문서 상태 회귀 |
 | 4 | 지원 환경 수용·문서 | exact 후보 full, Windows/Linux 설치 검증, 공식 문서·보고 | 설치본 시나리오와 renderer별 증거·한계 |
 
-각 Stage의 소스와 완료보고서를 묶어 커밋하고 다음 Stage 진입 승인을 받는다. 현재 승인된 범위는 Stage 2 구현·검증까지이며 원격 push/CI 실행 승인은 포함하지 않는다.
+각 Stage의 소스와 완료보고서를 묶어 커밋하고 다음 Stage 진입 승인을 받는다. 현재 승인된 범위는 Stage 2 구현·검증과 후보 `ebe5729`의 원격 push·native CI 1회 실행이다. Stage 3 및 추가 CI 실행은 별도 승인한다.
 
 ## 문서 위치 확인
 
@@ -171,6 +171,19 @@ Linux 엔진은 응답했으나 이미지 조회가 containerd blob I/O 오류�
   profile의 fast 선행 검사 뒤 Linux desktop/document-preview Rust test·Clippy를 수행한다.
   native profile의 성공은 최종 full·설치본 GUI 수용을 대신하지 않는다.
 - run 결과를 확인한 뒤 Stage 2 완료 여부를 보고한다. Stage 3 진입은 그 보고 후 별도 승인이다.
+
+### Stage 2 native 검증 확정 — 2026-09-24
+
+중간 후보 보고 뒤 “진행해줘.”를 exact 후보의 push와 native CI 1회 실행 승인으로 적용했다.
+`publish/task74`에 non-force push했으며 [run 35969672923](https://github.com/postmelee/alhangeul-tauri/actions/runs/35969672923), attempt 1이 completed/success다.
+workflow/source SHA는 모두 `ebe57297e84cab8426b44558200093e05936df5a`이고 실제 Linux checkout 로그에서도 확인했다.
+빠른 Node/Studio·Windows PowerShell 계약과 Linux native job 모두 통과했다.
+새 설정 6개를 포함한 desktop 테스트 183+21+3개, document-preview 11+4개 및 모든 해당 Clippy가 통과했다.
+설치본 artifact/installer job은 native profile에서 의도적으로 생략되며 full/GUI 수용으로 계산하지 않는다.
+
+위 중간 후보 절의 미실행·승인 대기는 후보 준비 당시 기록이다. 현재 확정 결과와 잔여 범위는
+[Stage 2 완료보고](../working/task_m010_74_stage2.md)를 따른다. 검증된 중간 커밋을 재작성하지 않고
+동일 제품 소스 위에 보고 문서만 후속 커밋한다. 추가 push/CI와 Stage 3은 수행하지 않는다.
 
 ## Stage 3 — 실제 공급·캐시·적용
 
