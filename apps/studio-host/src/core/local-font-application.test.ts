@@ -1,5 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import ts from 'typescript';
+import { transformLocalFontEntry } from '../../local-font-entry-hooks';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const invoke = vi.hoisted(() => vi.fn());
@@ -178,4 +180,92 @@ describe('local font supply lifecycle', () => {
     expect(await renderer.prepareLocalFonts(['Abel-Regular'])).toBe(1);
     session.dispose();
   });
+
+  it('re-supplies the real CanvasKit typeface after the view begins a new resource generation', async () => {
+    const { fonts, prefs } = await setup();
+    const { CanvasKitLayerRenderer } = await import('@upstream/view/canvaskit-renderer');
+    const { RendererSession } = await import('@upstream/view/renderer-session');
+    const renderer = await CanvasKitLayerRenderer.create();
+    const session = new RendererSession(
+      { backend: 'canvaskit', source: 'url', requested: 'canvaskit' },
+      { mode: 'default', source: 'default' }, { preference: 'software', requested: 'software' },
+      'screen', async () => renderer,
+    );
+    await session.resolve({} as never);
+    await renderer.prepareLocalFonts(['Abel']);
+    const repaint = vi.fn(() => session.invalidateDocument({ resetResources: false }));
+    const view = {
+      getRenderBackend: () => 'canvaskit',
+      loadDocument: async () => {
+        // CanvasView.prepareDocumentLoad's real session boundary clears typefaces.
+        session.beginDocument('fixture');
+        await session.resolve({} as never);
+        expect(renderer.diagnostics().localTypefaceCount).toBe(0);
+      },
+    };
+    const refresh = refreshHook(session, view, repaint);
+    await refresh(() => true);
+    expect(renderer.diagnostics().localTypefaceCount).toBe(1);
+    expect(repaint).toHaveBeenCalledWith('document-view-changed');
+    prefs.acceptFontPreferences({ ...enabled, choice: 'disabled', revision: 2 });
+    await refresh(() => true);
+    expect(renderer.diagnostics().localTypefaceCount).toBe(0);
+    prefs.acceptFontPreferences({ ...enabled, revision: 3 });
+    await fonts.detectLocalFonts({ force: true });
+    await refresh(() => true);
+    expect(renderer.diagnostics().localTypefaceCount).toBe(1);
+    session.dispose();
+  });
+
+  it('does not supply or repaint a superseded document during async view reload', async () => {
+    let current = true;
+    const prepareLocalFonts = vi.fn();
+    const session = { invalidateDocument: vi.fn(), getCanvasKitRenderer: () => ({ prepareLocalFonts }) };
+    const repaint = vi.fn();
+    const view = { getRenderBackend: () => 'canvaskit', loadDocument: async () => { current = false; } };
+    await refreshHook(session, view, repaint)(() => current);
+    expect(prepareLocalFonts).not.toHaveBeenCalled();
+    expect(repaint).not.toHaveBeenCalled();
+  });
+
+
+  it.each(['document', 'decision'])('does not repaint when the %s changes during typeface preparation', async (change) => {
+    let current = true;
+    let decisionKey = 'before';
+    let finish!: () => void;
+    const renderer = { prepareLocalFonts: vi.fn(() => new Promise<void>(resolve => { finish = resolve; })) };
+    const session = {
+      invalidateDocument: vi.fn(), getCanvasKitRenderer: () => renderer,
+      diagnostics: () => ({ decisionKey }),
+    };
+    const repaint = vi.fn();
+    const view = { getRenderBackend: () => 'canvaskit', loadDocument: async () => {} };
+    const pending = refreshHook(session, view, repaint)(() => current);
+    await vi.waitFor(() => expect(finish).toBeTypeOf('function'));
+    if (change === 'document') current = false;
+    else decisionKey = 'after';
+    finish();
+    await pending;
+    expect(repaint).not.toHaveBeenCalled();
+  });
+
 });
+
+
+function refreshHook(rendererSession: unknown, canvasView: unknown, emit: unknown) {
+  const main = readFileSync(resolve(__dirname, '../../../../third_party/rhwp/rhwp-studio/src/main.ts'), 'utf8');
+  const source = ts.createSourceFile('hook.ts', transformLocalFontEntry(main, '/controller.ts'), ts.ScriptTarget.Latest, true);
+  let callback: ts.Expression | undefined;
+  function visit(node: ts.Node) {
+    if (ts.isPropertyAssignment(node) && node.name.getText(source) === 'refreshView') callback = node.initializer;
+    ts.forEachChild(node, visit);
+  }
+  visit(source);
+  if (!callback) throw new Error('refresh hook not found');
+  const js = ts.transpileModule(`const refresh = ${callback.getText(source)};`, {
+    compilerOptions: { target: ts.ScriptTarget.ES2022 },
+  }).outputText;
+  return new Function('rendererSession', 'canvasView', 'eventBus', 'docInfo', `${js}; return refresh;`)(
+    rendererSession, canvasView, { emit }, { fontsUsed: ['Abel'] },
+  ) as (isCurrent: () => boolean) => Promise<void>;
+}

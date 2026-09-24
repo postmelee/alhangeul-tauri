@@ -65,11 +65,12 @@ describe('Linux installed local fonts', () => {
       installed = await installFixtureFont({ platform: 'linux', home: homedir() });
       await settings();
       await choose('enabled');
+      let enabledHash = '';
       for (const format of ['hwp', 'hwpx']) {
         await open(format);
         const local = await capture(`${renderer}-${format}-enabled`);
-        expect(local.diagnostics.effectiveBackend).toBe(renderer);
-        expect(local.fonts.faces.some(face => face.status === 'loaded')).toBe(true);
+        assertLocalApplied(local, renderer);
+        enabledHash = local.pixelHash;
         expect(local.pixelHash).not.toBe(fallback.get(format)!.pixelHash);
         expect(local.title).not.toContain('*');
         await assertExportPreservesFont(format);
@@ -77,12 +78,14 @@ describe('Linux installed local fonts', () => {
       await settings();
       await choose('refresh');
       const refreshed = await capture(`${renderer}-refreshed`);
-      expect(refreshed.diagnostics.effectiveBackend).toBe(renderer);
+      assertLocalApplied(refreshed, renderer);
+      expect(refreshed.pixelHash).toBe(enabledHash);
       await checkRemovedFont(renderer);
       await restart(renderer);
       await open('hwpx');
       const restored = await capture(`${renderer}-enabled-restarted`);
-      expect(restored.pixelHash).toBe(refreshed.pixelHash);
+      assertLocalApplied(restored, renderer);
+      expect(restored.pixelHash).toBe(enabledHash);
       expect(await settings()).toContain('사용 설정이 저장되었습니다');
       await choose('disabled');
       await capture(`${renderer}-disabled`);
@@ -152,5 +155,14 @@ async function checkRemovedFont(renderer: string) {
   await settings();
   await choose('refresh');
   const recovered = await capture(`${renderer}-font-restored-refreshed`);
-  expect(recovered.fonts.faces.some(face => face.status === 'loaded')).toBe(true);
+  assertLocalApplied(recovered, renderer);
+}
+
+function assertLocalApplied(observation: Awaited<ReturnType<typeof snapshot>>, renderer: string) {
+  expect(observation.diagnostics.effectiveBackend).toBe(renderer);
+  expect(observation.fonts.faces.some(face => face.status === 'loaded')).toBe(true);
+  if (renderer === 'canvaskit') {
+    expect(observation.diagnostics.page.canvaskit?.localTypefaceCount).toBeGreaterThan(0);
+    expect(observation.diagnostics.page.canvaskit?.unregisteredFontFallbacks).toBe(0);
+  }
 }

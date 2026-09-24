@@ -480,3 +480,44 @@ Typeface count/fallback과 enabled 픽셀 유지도 직접 검사하도록 보�
 GUI typecheck/관련 계약을 실행하고 새 제품 후보 SHA를 제시한다. 제품 bytes가 달라지므로
 기존 설치본의 성공을 새 후보에 이전하지 않으며 새 설치본 생성·원격 CI는 별도 승인한다.
 현재 턴에서는 제품 소스를 수정하지 않았으며 Stage 4도 완료 처리하지 않는다.
+
+### Stage 4 CanvasKit 재감지 제품 보정 승인 — 2026-09-24
+
+작업지시자가 “진행해줘.”로 위 제품 수정·로컬 회귀 검증을 승인했다. 원격 CI와 새 설치본
+생성은 아직 실행하지 않는다. 기존 두 entry hook 중 refreshView callback에서
+loadDocument 완료 후 현재 CanvasKit의 `prepareLocalFonts`를 await하고 보기 변경만
+게시한다. controller는 문서 generation/identity 확인 함수를 전달하고 callback은
+await 전후 view/session/renderer와 decisionKey가 여전히 같은지도 확인한다.
+
+GUI에서 확인한 `beginDocument`의 실제 자원 초기화를 포함하는 회귀를 먼저 추가했다.
+보정 전 Typeface count=0으로 실패함을 확인했으며 보정 후 사용/미사용/재활성 공급과
+문서 또는 renderer decision 변경 중 오래된 갱신 억제를 검사한다. GUI에서는 재감지
+직후부터 Typeface count>0, unregistered fallback=0, enabled 픽셀 보존을 검사한다.
+page 캡처는 WebKit element screenshot의 crop 오류를 피하도록 실제 canvas PNG를
+저장하며 전체 창 캡처도 유지한다. upstream/native/문서 직렬화는 변경하지 않는다.
+
+### Stage 4 제품 보정 로컬 검증 결과 — 2026-09-24
+
+| 검증 | 결과 |
+|---|---|
+| 보정 전 새 회귀 | 예상 실패: 실제 session beginDocument 후 localTypefaceCount 0 (기대 1) |
+| 집중 회귀 | 3 files, 26 passed; 사용/미사용·문서 전환·decision 변경 포함 |
+| 전체 Studio | 36 files, 227 passed |
+| upstream | 36 passed |
+| GUI typecheck | 통과 |
+| 관련 GUI/fixture/artifact 계약 | 69 passed |
+| product-boundary | 658 files, 통과 |
+| Studio build | 통과, 기존 externalization/dynamic-import/chunk 경고 유지 |
+| diff whitespace / upstream 상태 | 통과 / clean, release pin 불변 |
+
+로그는 `/tmp/task74-refresh-{red,focused,studio,upstream,contracts,boundary,build,gui-types}.log`다.
+실제 CanvasKit parser/native 실행은 로컬 회귀에서 대체된 경계이므로 새 설치본에서의
+해결을 아직 선언하지 않는다. 이전 run의 Canvas2D 성공 역시 새 제품 후보의 수용으로
+자동 이전하지 않는다. Stage 4와 Windows 사용자 검증은 미완료로 유지한다.
+
+**다음 실행 승인 요청**: 최종 고정한 보정 후보를 `publish/task74`로 non-force push하고
+동일 source/workflow SHA로 `ci.yml`, `profile=full`, `scope=full` 1회를 실행한다.
+성공하면 그 run의 Linux x64 exact artifact를 새 후보와 동일한 GUI harness에서
+`alhangeul-linux-gui.yml`, `scope=local-fonts` 1회로 검증한다. 두 실행 중 실패하면
+원시 결과를 기록하고 승인 없는 추가 재실행은 하지 않는다. 새 Windows MSI도 같은
+full run에서 확인해 작업지시자에게 제공한다. 릴리즈/PR 게시는 이 승인에 포함하지 않는다.

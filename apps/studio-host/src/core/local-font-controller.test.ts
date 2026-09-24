@@ -129,4 +129,23 @@ describe('desktop local-font controller', () => {
     await controller.refreshDesktopLocalFontView();
     expect(status.textContent).toContain('목록을 읽지 못했습니다');
   });
+
+  it('invalidates an in-flight view callback when a different document starts', async () => {
+    const controller = await import('./local-font-controller');
+    let isCurrent!: () => boolean;
+    let finish!: () => void;
+    const first = { ...document(), refreshView: (check: () => boolean) => {
+      isCurrent = check;
+      return new Promise<void>(resolve => { finish = resolve; });
+    } };
+    await controller.prepareDesktopDocumentFonts(first);
+    const refreshing = controller.refreshDesktopLocalFontView();
+    await vi.waitFor(() => expect(isCurrent).toBeTypeOf('function'));
+    expect(isCurrent()).toBe(true);
+    await controller.prepareDesktopDocumentFonts(document());
+    expect(isCurrent()).toBe(false);
+    finish();
+    await refreshing;
+  });
+
 });

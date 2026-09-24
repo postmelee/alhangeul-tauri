@@ -13,8 +13,8 @@ describe('pinned local-font entry hooks', () => {
     expect(result.indexOf('await __alhangeulPrepareFonts({')).toBeLessThan(
       result.indexOf("console.log('[initDoc] 1. 폰트 로딩 시작')"),
     );
-    expect(result).toContain('rendererSession?.invalidateDocument();');
-    expect(result).toContain('await canvasView?.loadDocument();');
+    expect(result).toContain('session?.invalidateDocument();');
+    expect(result).toContain('await view?.loadDocument();');
     const code = ts.transpileModule(result, { reportDiagnostics: true, compilerOptions: {
       target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext,
     } });

@@ -47,6 +47,9 @@ native service는 디스크 설정을 읽으므로 새 프로세스에서도 같
 catalog까지 새로 읽는다. 등록·읽기 요청은 세대별로 합치며, 이전 문서나 선택의 늦은 결과를
 새 상태에 등록하지 않는다. 제품이 추가한 FontFace만 회수하고 다른 소유자의 객체는 유지한다.
 실패한 file-backed face는 표시용 resolve에서 제외해 fallback으로 진행한다.
+설정 변경·재감지의 뷰 재준비가 CanvasKit 자원을 초기화하므로, 완료 후 필요한 로컬
+Typeface를 다시 공급하고 보기 갱신을 요청한다. 공급 중 문서나 renderer 결정이 바뀌면
+이전 요청의 화면 갱신은 버린다.
 
 | 경로 | 구현 경계 | 성공으로 해석하면 안 되는 근거 |
 |---|---|---|
@@ -124,3 +127,7 @@ Canvas2D의 Abel HWP/HWPX 적용, 재감지, 파일 삭제·복구, 사용/미�
 Windows x64 직접 검증 결과는 기다린다. 공개 Latin fixture 결과를 한글 coverage나
 모든 문서·OS의 글꼴 수용으로 확대하지 않는다.
 exact artifact와 raw 결과는 `tests/gui/local-fonts/acceptance.json`에 기록했다.
+
+위 GUI에서 발견한 재감지 결함은 제품 callback의 자원 초기화 후 재공급 순서를 보정하고
+플랫폼 중립 회귀에서 재현·해소를 확인했다. 보정된 제품의 새 설치본 GUI 검증은 아직
+수행하지 않았으며, 기존 후보의 실패 기록을 소급하여 통과로 바꾸지 않는다.

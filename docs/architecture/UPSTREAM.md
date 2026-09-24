@@ -56,8 +56,11 @@ studio host의 실제 Vite root와 entry는 각각 `third_party/rhwp/rhwp-studio
 문서 진입·focus snapshot으로 상태를 맞추며 저장 실패는 해당 창의 임시 선택으로 안내한다.
 `stored`/`native-preference`는 사용 선택이 저장되었다는 뜻이며 글꼴 목록·bytes 저장이나
 화면 적용의 증거가 아니다. 제품 설정 화면은 upstream `ModalDialog`를 상속하고, 변경 시
-기존 renderer session 무효화·CanvasView 재준비 callback을 사용한다. 문서의 dirty와 원본
-글꼴 데이터는 변경하지 않으며 실제 renderer별 공급·표시 수용은 별도로 검증한다.
+기존 renderer session 무효화·CanvasView 재준비 callback을 사용한다. 재준비가 끝난 뒤
+현재 CanvasKit renderer에 필요한 로컬 글꼴을 다시 공급하고 완료 후 보기만 갱신한다.
+문서 generation과 view/session/renderer·decisionKey가 바뀐 경우 오래된 작업은 화면을
+갱신하지 않는다. 문서의 dirty와 원본 글꼴 데이터는 변경하지 않으며 실제 renderer별
+공급·표시 수용은 별도로 검증한다.
 
 제품 font provider는 자신이 등록한 FontFace와 bytes·실패 cache를 세대별로 회수한다.
 문서 전환에서는 필요한 bytes를 다시 확인하고, 재감지·미사용 전환에서는 기존 공개

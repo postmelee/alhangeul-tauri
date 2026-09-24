@@ -81,8 +81,10 @@ export async function snapshot(name: string) {
     return stable >= 2;
   }, { timeout: inputs.timeoutMs, interval: 500, timeoutMsg: 'document pixels did not settle' });
   const pixels = await pagePixels();
-  const diagnostics = await rpc('getRendererDiagnostics') as { effectiveBackend: string; backendFallbackReason: string | null };
-  await $(canvas).saveScreenshot(join(output, `${name}-page.png`));
+  const diagnostics = await rpc('getRendererDiagnostics') as { effectiveBackend: string; backendFallbackReason: string | null;
+    page: { canvaskit: { localTypefaceCount: number; unregisteredFontFallbacks: number } | null } };
+  const pageData = await browser.execute((selector) => document.querySelector<HTMLCanvasElement>(selector)!.toDataURL('image/png'), canvas);
+  await writeFile(join(output, `${name}-page.png`), Buffer.from(pageData.split(',')[1], 'base64'));
   await browser.saveScreenshot(join(output, `${name}-window.png`));
   const fonts = await browser.execute(() => {
     const faces: { family: string; status: string }[] = [];

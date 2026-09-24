@@ -19,9 +19,23 @@ export function transformLocalFontEntry(source: string, controllerPath: string):
   const withDocument = replaceOnce(source, documentEntry, `${documentEntry}
   await __alhangeulPrepareFonts({
     fonts: docInfo.fontsUsed ?? [],
-    refreshView: async () => {
-      rendererSession?.invalidateDocument();
-      await canvasView?.loadDocument();
+    refreshView: async (isCurrent) => {
+      const session = rendererSession;
+      const view = canvasView;
+      session?.invalidateDocument();
+      await view?.loadDocument();
+      if (!isCurrent() || view !== canvasView || session !== rendererSession
+        || view?.getRenderBackend() !== 'canvaskit') return;
+      const renderer = session?.getCanvasKitRenderer();
+      if (!renderer) return;
+      const decisionKey = session?.diagnostics()?.decisionKey;
+      await renderer.prepareLocalFonts(docInfo.fontsUsed ?? []);
+      if (isCurrent() && view === canvasView && session === rendererSession
+        && renderer === session?.getCanvasKitRenderer()
+        && decisionKey === session?.diagnostics()?.decisionKey
+        && view?.getRenderBackend() === 'canvaskit') {
+        eventBus.emit('document-view-changed');
+      }
     },
     onFontsChanged: (fonts) => eventBus.emit('local-fonts-changed', {
       fonts, report: analyzeDocumentFonts(docInfo.fontsUsed),

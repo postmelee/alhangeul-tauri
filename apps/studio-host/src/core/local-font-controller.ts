@@ -14,7 +14,7 @@ import {
 
 interface FontDocument {
   fonts: readonly string[];
-  refreshView(): Promise<void>;
+  refreshView(isCurrent: () => boolean): Promise<void>;
   onFontsChanged(fonts: string[]): void;
 }
 
@@ -63,7 +63,7 @@ export function refreshDesktopLocalFontView(force = false): Promise<void> {
       try { await ensureLocalFontsAvailable(document?.fonts ?? []); } catch { /* Continue to fallback view. */ }
       if (started !== generation || document !== activeDocument) return;
       document?.onFontsChanged(getLocalFonts());
-      await document?.refreshView();
+      await document?.refreshView(() => started === generation && document === activeDocument);
       if (started === generation) viewError = null;
     } catch {
       if (started === generation) viewError = '글꼴 설정은 처리했지만 화면을 갱신하지 못했습니다. 설정 메뉴에서 다시 감지하세요.';
