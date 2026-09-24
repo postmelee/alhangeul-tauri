@@ -7,12 +7,14 @@ vi.mock('@tauri-apps/api/core', () => ({
 }));
 
 describe('local fonts', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.resetModules();
     vi.clearAllMocks();
     delete (globalThis as { window?: unknown }).window;
     delete (globalThis as { document?: unknown }).document;
     delete (globalThis as { FontFace?: unknown }).FontFace;
+    const { acceptFontPreferences } = await import('./local-font-preferences');
+    acceptFontPreferences({ choice: 'enabled', persisted: true, revision: 1, promptDismissed: false, error: null });
   });
 
   it('hydrates desktop font families from the native catalog while filtering blocked authoring names', async () => {
@@ -164,7 +166,7 @@ describe('local fonts', () => {
     await clearStoredLocalFonts();
     expect(getLocalFontState()).toMatchObject({
       loaded: false,
-      stored: false,
+      stored: true,
       count: 0,
     });
   });

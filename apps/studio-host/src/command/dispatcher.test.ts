@@ -3,6 +3,7 @@ import { CommandDispatcher } from './dispatcher';
 
 const setupDesktopEvents = vi.hoisted(() => vi.fn());
 const installDesktopToolbarModeSync = vi.hoisted(() => vi.fn());
+const installDesktopLocalFonts = vi.hoisted(() => vi.fn(() => vi.fn()));
 const host = vi.hoisted(() => ({ bindCommandServices: vi.fn() }));
 
 vi.mock('@upstream/command/dispatcher', () => ({
@@ -13,6 +14,7 @@ vi.mock('@upstream/command/dispatcher', () => ({
 vi.mock('../core/desktop-host', () => ({ getDesktopHost: () => host }));
 vi.mock('../core/desktop-events', () => ({ setupDesktopEvents }));
 vi.mock('../core/desktop-toolbar-mode-sync', () => ({ installDesktopToolbarModeSync }));
+vi.mock('../core/local-font-lifecycle', () => ({ installDesktopLocalFonts }));
 
 const dispatchers: CommandDispatcher[] = [];
 

@@ -4,7 +4,7 @@
 GitHub Issue: [#74](https://github.com/postmelee/alhangeul-tauri/issues/74)
 마일스톤: M010 / bug
 작성일: 2026-09-24
-상태: 2026-09-24 구현계획 보고 뒤 “진행해줘.”로 구현계획과 Stage 1 착수 승인. Stage 1 검증 완료, Stage 2 진입 승인 대기. 원격 push/CI 실행은 미승인이다.
+상태: 2026-09-24 구현계획과 Stage 1 승인·완료 보고 뒤 “진행해줘.”로 Stage 2 착수 승인. Stage 2 구현·플랫폼 중립 검증 통과, native 검증 미실행. 원격 push/CI 실행은 미승인이다.
 
 ## 단계 개요
 
@@ -15,7 +15,7 @@ GitHub Issue: [#74](https://github.com/postmelee/alhangeul-tauri/issues/74)
 | 3 | 실제 공급·캐시·적용 | 필요 bytes/FontFace 공급, renderer 갱신, 실패 상태 | 실제 소비자·공개 글꼴·무효화·문서 상태 회귀 |
 | 4 | 지원 환경 수용·문서 | exact 후보 full, Windows/Linux 설치 검증, 공식 문서·보고 | 설치본 시나리오와 renderer별 증거·한계 |
 
-각 Stage의 소스와 완료보고서를 묶어 커밋하고 다음 Stage 진입 승인을 받는다. 승인된 범위는 이 구현계획과 Stage 1 착수이며 원격 push/CI 실행 승인은 포함하지 않는다.
+각 Stage의 소스와 완료보고서를 묶어 커밋하고 다음 Stage 진입 승인을 받는다. 현재 승인된 범위는 Stage 2 구현·검증까지이며 원격 push/CI 실행 승인은 포함하지 않는다.
 
 ## 문서 위치 확인
 
@@ -135,6 +135,43 @@ pnpm run clippy:desktop
 Task #74 Stage 2: 로컬 글꼴 사용 선택 지속과 자동 복원 연결
 ```
 
+### Stage 2 중간 검증 후보 — 2026-09-24
+
+구현은 native 설정 service/command, frontend 선택·catalog 상태, 두 entry hook,
+설정 modal·menu와 창 lifecycle로 분리했다. `dismiss`는 같은 설정 command의 action으로
+처리하되 native 메모리에만 유지한다. catalog 실패 시 빈 목록으로 뷰를 갱신하고,
+뷰 갱신 실패도 저장 상태와 구분해 안내한다. 기존 alias 12개와 upstream pin은 그대로다.
+
+| 검증 | 결과 |
+|---|---|
+| `pnpm run check:product-boundary` | 통과, 644 files scanned |
+| `pnpm run test:upstream` | 36 passed, 0 failed |
+| `pnpm run test:studio` | 35 files, 212 passed |
+| `pnpm run build:studio` | 통과, 241 modules; 기존 externalization/chunk/dynamic-import 경고 유지 |
+| `git diff --check` | 통과 |
+| upstream source/pin | clean, `496333b27d21ddb9114ba9ae340bcb895870c9a7` 불변 |
+| native 설정 test·desktop Clippy | 미실행; Windows/Linux 검증 필요 |
+| Windows/Linux 설치본·실제 글꼴 표시 | 미실행; Stage 4 수용에 유지 |
+
+Studio 회귀는 저장 실패의 임시 선택, 취소, 두 창 revision과 오래된 응답, 문서 전환,
+감지 실패 및 UI 선택·닫기·재감지를 포함한다. UI 테스트는 제품 body/action을 실행하며
+upstream modal shell을 대체하므로 실제 keyboard/focus·설치본 UI 수용을 뜻하지 않는다.
+native에는 새 service에서 디스크 복원, 손상·실패와 동시 쓰기 회귀 6개를 준비했지만 아직
+실행하지 않았으므로 Stage 2 완료보고서는 작성하지 않는다.
+
+플랫폼 중립 출력은 `/tmp/task74-stage2-{boundary,upstream,studio,build}.log`에 보관했다.
+현재 호스트에서 Rust desktop 검증은 수행하지 않았다. 읽기 전용 Docker 확인에서
+Linux 엔진은 응답했으나 이미지 조회가 containerd blob I/O 오류로 실패했다.
+기존 컨테이너나 엔진을 변경하지 않았다.
+
+검증용 중간 커밋 `Task #74: Stage 2 native 검증 후보 준비`를 고정한 뒤 다음 승인을 요청한다.
+
+- 원격 `publish/task74`로 non-force push. 사전 조회에서 같은 원격 branch는 없었다.
+- 같은 후보를 workflow/source SHA로 `ci.yml`, `scope=full`, `profile=native` 1회 실행.
+  profile의 fast 선행 검사 뒤 Linux desktop/document-preview Rust test·Clippy를 수행한다.
+  native profile의 성공은 최종 full·설치본 GUI 수용을 대신하지 않는다.
+- run 결과를 확인한 뒤 Stage 2 완료 여부를 보고한다. Stage 3 진입은 그 보고 후 별도 승인이다.
+
 ## Stage 3 — 실제 공급·캐시·적용
 
 ### 산출물
@@ -221,7 +258,7 @@ Task #74 Stage 4: Windows/Linux 로컬 글꼴 수용과 지원 경계 문서화
 - platform-neutral test/build는 현재 호스트에서 실행 가능하나 Rust desktop·Tauri·제품 GUI는 Windows/Linux에서만 실행한다.
 - 새 코드 파일 300 LOC, 함수 50 LOC, 매개변수 5개, 복잡도 10을 기준으로 역할을 나눈다. native command 등록은 별도 모듈을 사용해 기존 큰 `commands.rs`에 설정 구현을 쌓지 않는다.
 - 새 renderer patch, 추가 alias, 보안 root/제한 정책 변경, 신규 의존성이 필요하면 구현 전에 범위 보정 승인을 요청한다.
-- 문서 작업인 현재 턴은 diff/템플릿/변경 범위만 확인한다. 제품 테스트·설치·CI는 실행하지 않는다.
+- 구현계획 작성 시점에는 문서 검증만 수행했으며, 승인된 Stage에서는 해당 단계 검증 범위를 적용한다.
 
 ## 커밋
 

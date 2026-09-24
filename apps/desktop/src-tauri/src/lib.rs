@@ -3,6 +3,8 @@ mod commands;
 mod font_catalog;
 #[cfg(target_os = "linux")]
 mod linux_runtime;
+mod local_font_commands;
+mod local_font_preferences;
 mod pdf_export;
 mod pdf_font_fallbacks;
 mod pdf_jobs;
@@ -33,6 +35,7 @@ use commands::{
     read_local_font, record_recent_document, remove_recent_document, render_document_preview,
     render_page_svg, reveal_in_folder, take_pending_open_paths,
 };
+use local_font_commands::{get_local_font_preferences, set_local_font_preferences};
 use state::AppState;
 use thumbnail_diagnostic_commands::{
     thumbnail_diagnostics_cancel, thumbnail_diagnostics_get_state, thumbnail_diagnostics_inspect,
@@ -54,6 +57,7 @@ pub fn run() {
 
     let app = tauri::Builder::default()
         .manage(AppState::default())
+        .manage(local_font_preferences::LocalFontPreferences::default())
         .plugin(tauri_plugin_log::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
@@ -102,6 +106,8 @@ pub fn run() {
             destroy_current_window,
             list_local_fonts,
             read_local_font,
+            get_local_font_preferences,
+            set_local_font_preferences,
             prepare_document_open,
             open_document_tracking,
             prepare_staged_document_save,

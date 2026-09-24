@@ -4,6 +4,7 @@ import { copyFileSync, createReadStream, existsSync, mkdirSync, readdirSync, rea
 import type { Plugin } from 'vite';
 import { createAlhangeulOverrides } from './alhangeul-overrides';
 import { createAlhangeulLocalFontPlugin } from './local-font-overrides';
+import { createLocalFontEntryHooks } from './local-font-entry-hooks';
 
 const desktopConfig = JSON.parse(
   readFileSync(resolve(__dirname, '../desktop/src-tauri/tauri.conf.json'), 'utf-8'),
@@ -128,6 +129,7 @@ export default defineConfig({
   cacheDir: resolve(__dirname, 'node_modules/.vite'),
   plugins: [
     createAlhangeulLocalFontPlugin({ upstreamSrc, alhangeulSrc }),
+    createLocalFontEntryHooks(upstreamSrc, alhangeulSrc),
     alhangeulDesktopShell(),
     alhangeulFontAssets(),
   ],

@@ -3,10 +3,8 @@ import {
   ensureDesktopFontFace,
   listDesktopFontEntries,
   readDesktopFontBytes,
-  resetDesktopFontProvider,
 } from './local-font-provider';
 import {
-  normalizeFontEntries,
   normalizeFontName,
   resolveRequestedFamilies,
   toLocalFontRecord,
@@ -15,6 +13,8 @@ import {
   type LocalFontRecord,
 } from './local-font-records';
 import { isTauriRuntime } from './platform';
+import { ensureFontPreferences, getFontPreferences } from './local-font-preferences';
+import { getFontCatalog, invalidateFontCatalog, loadFontCatalog } from './local-font-state';
 
 export type { LocalFontEntry, LocalFontRecord } from './local-font-records';
 
@@ -42,7 +42,7 @@ export interface LocalFontState {
   stored: boolean;
   source: LocalFontDetectionSource | null;
   complete: boolean;
-  storage: 'none';
+  storage: 'none' | 'native-preference';
   count: number;
   checkedFamilies: string[];
   detectedAt: string | null;
@@ -65,9 +65,6 @@ declare global {
   }
 }
 
-let cachedFontEntries: LocalFontEntry[] | null = null;
-let cachedDetectedAt: string | null = null;
-
 export function isLocalFontSupported(): boolean {
   return isTauriRuntime()
     || (typeof window !== 'undefined' && typeof window.queryLocalFonts === 'function');
@@ -82,22 +79,8 @@ export function getLocalFontDetectionMethod(): LocalFontDetectionSource | null {
 }
 
 export async function detectLocalFontEntries(force = false): Promise<LocalFontEntry[]> {
-  if (force) {
-    cachedFontEntries = null;
-    cachedDetectedAt = null;
-    resetDesktopFontProvider();
-  }
-  if (cachedFontEntries) {
-    return cachedFontEntries;
-  }
-
-  const entries = isTauriRuntime()
-    ? await listDesktopFontEntries()
-    : await detectBrowserFontEntries();
-
-  cachedFontEntries = normalizeFontEntries(entries);
-  cachedDetectedAt = new Date().toISOString();
-  return cachedFontEntries;
+  if (isTauriRuntime() && (await ensureFontPreferences()).choice !== 'enabled') return [];
+  return loadFontCatalog(isTauriRuntime() ? listDesktopFontEntries : detectBrowserFontEntries, force);
 }
 
 export async function detectLocalFonts(
@@ -108,7 +91,7 @@ export async function detectLocalFonts(
 }
 
 export function getLocalFonts(_options: GetLocalFontsOptions = {}): string[] {
-  return uniqueAuthoringFamilies(cachedFontEntries ?? []);
+  return uniqueAuthoringFamilies(getFontCatalog().entries ?? []);
 }
 
 export function getDetectedLocalFonts(): string[] {
@@ -118,7 +101,7 @@ export function getDetectedLocalFonts(): string[] {
 export function getLocalFontRecords(
   _options: GetLocalFontsOptions = {},
 ): LocalFontRecord[] {
-  return (cachedFontEntries ?? []).map(toLocalFontRecord);
+  return (getFontCatalog().entries ?? []).map(toLocalFontRecord);
 }
 
 export function resolveLocalFont(fontName: string): LocalFontRecord | null {
@@ -144,7 +127,7 @@ export async function loadLocalFontBytesFor(
   for (const fontName of fontNames) {
     const record = resolveLocalFont(fontName);
     if (!record) continue;
-    const entry = (cachedFontEntries ?? []).find(
+    const entry = (getFontCatalog().entries ?? []).find(
       (candidate) => candidate.postScriptName === record.postscriptName,
     );
     if (!entry?.path) continue;
@@ -168,36 +151,37 @@ export async function loadLocalFontBytes(fontName: string): Promise<ArrayBuffer 
 }
 
 export async function loadStoredLocalFonts(): Promise<LocalFontSnapshot | null> {
+  if (isTauriRuntime()) {
+    try { await detectLocalFontEntries(); } catch { /* State carries a safe retry message. */ }
+  }
   return currentSnapshot();
 }
 
 export async function clearStoredLocalFonts(): Promise<void> {
-  cachedFontEntries = null;
-  cachedDetectedAt = null;
-  resetDesktopFontProvider();
+  invalidateFontCatalog();
 }
 
 export function getLocalFontState(): LocalFontState {
   const snapshot = currentSnapshot();
+  const preference = getFontPreferences();
+  const native = isTauriRuntime();
   return {
     supported: isLocalFontSupported(),
     method: getLocalFontDetectionMethod(),
-    loaded: cachedFontEntries !== null,
-    stored: snapshot !== null,
+    loaded: snapshot !== null,
+    stored: native ? preference.persisted : snapshot !== null,
     source: snapshot?.source ?? null,
     complete: snapshot !== null,
-    storage: 'none',
+    storage: native && preference.persisted ? 'native-preference' : 'none',
     count: snapshot?.families.length ?? 0,
     checkedFamilies: snapshot?.families ?? [],
     detectedAt: snapshot?.detectedAt ?? null,
-    lastError: null,
+    lastError: preference.error || getFontCatalog().error,
   };
 }
 
 export function resetLocalFontsForTests(): void {
-  cachedFontEntries = null;
-  cachedDetectedAt = null;
-  resetDesktopFontProvider();
+  invalidateFontCatalog();
 }
 
 export async function ensureLocalFontsAvailable(targetFamilies?: Iterable<string>): Promise<Set<string>> {
@@ -246,12 +230,13 @@ async function detectBrowserFontEntries(): Promise<LocalFontEntry[]> {
 }
 
 function currentSnapshot(): LocalFontSnapshot | null {
-  if (!cachedFontEntries) return null;
+  const { entries, detectedAt } = getFontCatalog();
+  if (!entries) return null;
   const fontRecords = getLocalFontRecords({ includeRegistered: true });
   return {
     version: 2,
-    detectedAt: cachedDetectedAt ?? new Date().toISOString(),
-    families: uniqueAuthoringFamilies(cachedFontEntries),
+    detectedAt: detectedAt ?? new Date().toISOString(),
+    families: uniqueAuthoringFamilies(entries),
     fontRecords,
     source: 'local-font-access',
   };

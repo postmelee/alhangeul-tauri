@@ -20,7 +20,7 @@ async function consumers() {
 }
 
 describe('pinned upstream local-font consumers', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.resetModules();
     invoke.mockReset();
     invoke.mockResolvedValue([entry]);
@@ -28,6 +28,8 @@ describe('pinned upstream local-font consumers', () => {
     // than letting an unsupported browser short-circuit the prompt regression.
     vi.stubGlobal('window', { __TAURI_INTERNALS__: {}, queryLocalFonts: vi.fn() });
     vi.stubGlobal('queryLocalFonts', vi.fn());
+    const { acceptFontPreferences } = await import('./local-font-preferences');
+    acceptFontPreferences({ choice: 'enabled', persisted: true, revision: 1, promptDismissed: false, error: null });
   });
 
   afterEach(() => vi.unstubAllGlobals());
@@ -107,7 +109,7 @@ describe('pinned upstream local-font consumers', () => {
     await local.clearStoredLocalFonts();
     expect(analyzeDocumentFonts([family])).toMatchObject({
       localSnapshotLoaded: false,
-      localSnapshotStored: false,
+      localSnapshotStored: true,
       shouldPromptLocalAccess: true,
     });
   });
@@ -116,10 +118,10 @@ describe('pinned upstream local-font consumers', () => {
     const { local, analyzeDocumentFonts, fontFamilyChainForDisplay } = await consumers();
     await local.detectLocalFonts();
     invoke.mockRejectedValue(new Error('catalog unavailable'));
-    await expect(local.detectLocalFonts({ force: true })).rejects.toThrow('catalog unavailable');
+    await expect(local.detectLocalFonts({ force: true })).rejects.toThrow('로컬 글꼴 목록을 읽지 못했습니다');
     expect(analyzeDocumentFonts([family])).toMatchObject({
       localSnapshotLoaded: false,
-      localSnapshotStored: false,
+      localSnapshotStored: true,
       summary: { available: 0, needsLocalCheck: 1 },
     });
     expect(fontFamilyChainForDisplay(postscriptName)).not.toContain(family);
