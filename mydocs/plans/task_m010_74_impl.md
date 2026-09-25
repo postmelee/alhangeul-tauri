@@ -672,3 +672,27 @@ raw root와 prefix 비교가 맞지 않는다. Linux에서는 두 표현이 같�
 요청된 새 설치본을 완성하기 위해 테스트 정합화 후보를 고정해 full CI를 다시 실행한다.
 앞선 Studio 233개·upstream 36개 성공은 같은 제품 소스에 대한 로컬 결과이며 새 run의
 native/installer 결과와 분리한다. 이 수정 전후 production 소스 diff는 없다.
+
+첫 run `36078615608`은 최종 failure이며 Linux x64/arm64 product/package와 세 core는
+success다. Windows 설치본 생성은 desktop 검사 실패로 도달하지 않았다.
+테스트 정합화 후보 `639563ad7221d451cd5277c28c3c9b87566d4dec`로
+[full CI 36080570543](https://github.com/postmelee/alhangeul-tauri/actions/runs/36080570543),
+attempt 1, source/workflow 동일, `profile=full`, `scope=full`을 실행했다.
+
+### Stage 4 Windows 동일 파일의 경로 표현 중복 보정 — 2026-09-25
+
+최종 점검에서 fontdb 0.23의 Windows system scan도 USERPROFILE/AppData/Local의
+사용자 글꼴을 읽는 것을 확인했다. 제품 extra scan은 canonical root로 같은 파일을 다시
+읽으므로 일반 경로와 Windows 확장 경로 prefix가 각각 source_path에 남을 수 있다.
+이를 서로 다른 파일로 취급하면 별칭을 보존해도 매칭이 모호해진다. 승인된 동일 파일/face
+통합 범위 안에서 native source_path도 canonical 파일 경로로 통일한다. 허용 root는 확대하지
+않고 실제 다른 파일은 계속 구분한다. 두 경로로 같은 fixture를 스캔하는 native 회귀를 추가한다.
+
+중간 후보 `639563a`의 run `36080570543`은 이 추가 보정을 포함하지 않아 인계 후보에서
+제외하고 취소를 요청했다. GitHub 인증 401로 취소되지 않았으며 현재 결과는 미확인이다.
+결과를 성공으로 간주하지 않으며 경로 보정까지 포함한 최종 후보로
+full CI를 실행한다. 제품 검증 성공 없이 설치본을 인계하지 않는다.
+
+GitHub CLI의 postmelee 인증 토큰이 invalid 상태임을 `gh auth status`로 확인했다.
+작업지시자에게 `gh auth login -h github.com` 재로그인을 요청했다. 인증 복구 전에는
+최종 후보 push·새 full CI 실행·설치본 인계를 완료했다고 기록하지 않는다.

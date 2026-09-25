@@ -1043,5 +1043,141 @@
       "Font-name defect independent of upstream Abel paragraph-fitting behavior"
     ],
     "scope": "Investigation only; no product source changes or additional CI"
+  },
+  "failedFullRuns": [
+    {
+      "runId": 36078615608,
+      "attempt": 1,
+      "profile": "full",
+      "scope": "full",
+      "sourceSha": "8d7c19e9c9013b0715ac73066af0c893e59ab11d",
+      "workflowSha": "8d7c19e9c9013b0715ac73066af0c893e59ab11d",
+      "ciStatus": "completed",
+      "ciConclusion": "failure",
+      "jobs": [
+        {
+          "name": "select",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Windows PDF cleanup tests",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "artifacts / plan",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "fast",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Unit tests",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "installer",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "artifacts / fast / Fast Node and Studio contracts",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "artifacts / fast / Fast Windows PowerShell contracts",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "artifacts / windows / Build windows-x64",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "name": "artifacts / core / Core linux-x64",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "artifacts / linux / Build linux-arm64",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "artifacts / linux / Build linux-x64",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "artifacts / core / Core linux-arm64",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "artifacts / core / Core windows-x64",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "artifacts / smoke",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "artifacts / result",
+          "status": "completed",
+          "conclusion": "failure"
+        }
+      ],
+      "artifacts": [
+        {
+          "digest": "sha256:24e229e03e023fc11b189b85a3350267403d3f7a06f7d9cbb79d078e6e61779a",
+          "expired": false,
+          "id": 10841767132,
+          "name": "alhangeul-desktop-linux-arm64",
+          "size_in_bytes": 194145886
+        },
+        {
+          "digest": "sha256:38c6fb620a0f0349d0ac0a99d2b968a5e067a80ed6a8169acd23c4afb41b4a8d",
+          "expired": false,
+          "id": 10841313834,
+          "name": "alhangeul-desktop-linux-x64",
+          "size_in_bytes": 547712364
+        }
+      ],
+      "windowsFailure": "187 desktop Rust tests passed; catalog fixture sourceKind expected file-backed but got system-installed because test used a non-canonical root on Windows. Actual font_names extraction passed.",
+      "correctionSha": "639563ad7221d451cd5277c28c3c9b87566d4dec",
+      "correctionScope": "Test setup now canonicalizes its root like the production caller; no production source changes after 8d7c19e."
+    }
+  ],
+  "supersededCandidates": [
+    {
+      "sourceSha": "639563ad7221d451cd5277c28c3c9b87566d4dec",
+      "runId": 36080570543,
+      "profile": "full",
+      "scope": "full",
+      "windowsGui": "user will verify new installer",
+      "linuxGui": "not executed for this candidate",
+      "handoffStatus": "superseded-before-handoff",
+      "reason": "Additional correction needed for ordinary and canonical paths identifying the same Windows font file",
+      "ciStatus": "unknown: GitHub authentication failed on resume",
+      "cancelRequested": true,
+      "cancelConfirmed": false
+    }
+  ],
+  "pendingCandidate": {
+    "sourceStatus": "local canonical source-path correction awaiting commit and CI",
+    "profile": "full",
+    "scope": "full",
+    "ciStatus": "not dispatched: GitHub CLI authentication invalid",
+    "windowsGui": "user will verify final new installer",
+    "linuxGui": "not executed for final candidate"
   }
 }

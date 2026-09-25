@@ -164,9 +164,12 @@ pub fn collect_local_font_entries(extra_font_dirs: &[PathBuf]) -> Vec<LocalFontE
 
 fn source_path(source: &Source) -> Option<String> {
     match source {
-        Source::File(path) | Source::SharedFile(path, _) => {
-            Some(path.to_string_lossy().to_string())
-        }
+        Source::File(path) | Source::SharedFile(path, _) => Some(
+            normalize_existing_path(path)
+                .unwrap_or_else(|| path.to_path_buf())
+                .to_string_lossy()
+                .to_string(),
+        ),
         Source::Binary(_) => None,
     }
 }

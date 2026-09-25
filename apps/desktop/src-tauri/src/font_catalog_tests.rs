@@ -133,3 +133,31 @@ fn catalog_preserves_real_full_names_and_supported_path() {
         assert_eq!(face.source_kind, "file-backed");
     }
 }
+
+#[test]
+fn repeated_scans_of_one_physical_font_keep_one_row_per_localized_family() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = fs::canonicalize(temp.path()).unwrap();
+    let path = root.join("NanumSquareB.ttf");
+    fs::write(
+        &path,
+        include_bytes!("../../../../tests/gui/local-fonts/nanumsquare/NanumSquareB.ttf"),
+    )
+    .unwrap();
+    // Emulate the system scan's ordinary path plus the product's canonical root.
+    let entries = collect_local_font_entries(&[temp.path().join("."), root]);
+    let faces: Vec<_> = entries
+        .iter()
+        .filter(|entry| {
+            entry.post_script_name == "NanumSquareB"
+                && entry.path.as_deref().is_some_and(|value| {
+                    normalize_existing_path(Path::new(value)).as_deref() == Some(path.as_path())
+                })
+        })
+        .collect();
+    assert_eq!(faces.len(), 2);
+    assert!(faces
+        .iter()
+        .all(|entry| entry.path.as_deref() == path.to_str()));
+    assert!(faces.iter().all(|entry| entry.source_kind == "file-backed"));
+}
