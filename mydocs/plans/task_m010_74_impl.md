@@ -569,3 +569,51 @@ NSIS로 설치한 Windows VDI에서 문서 다시 열기·다른 파일 열기·
 기존 후보의 모달 지속성 성공은 유효하며 새 후보에서는 재감지·설정 변경 후 실제 표시와
 간단한 재실행 확인을 중심으로 검증한다. NSIS 앱 실행 보고를 Shell 썸네일 CI 실패의
 해소로 해석하지 않는다.
+
+### Stage 4 Windows 나눔스퀘어 이름 연결 조사 — 2026-09-25
+
+작업지시자가 EML 본문과 8개 캡처로 나눔스퀘어 적용 이상을 보고하고 조사를 지시했다.
+Abel `iii`의 굵기는 작업지시자가 upstream 문단 폭 처리 문제로 설명했으므로 본 제품
+조사의 근거와 수정 범위에서 제외한다. 이메일 원문·개인 정보·전체 화면은 저장소에 넣지 않는다.
+기존 모달 반복 표시 해결 결과와 Linux Abel 성공은 보존하되 Windows 글꼴 수용은 불합격이다.
+
+공식 배포 `https://hangeul.naver.com/hangeul_static/webfont/zips/nanum-square.zip`의
+`NanumSquareB.ttf`를 설치 없이 분석했다. SHA-256은
+`f737d58294faec9c632189af3a2a3e48e49c03c0256de09db61e879e2857bfbf`이며 weight=700이다.
+name ID 1/4는 `NanumSquare Bold`·`나눔스퀘어 Bold`, ID 16은
+`NanumSquare`·`나눔스퀘어`, ID 6은 `NanumSquareB`다.
+
+현재 고정된 fontdb 0.23은 ID 16을 우선하고 없을 때만 ID 1을 읽는다. 제품
+`font_catalog.rs`는 그 family와 PostScript만 전달하고, `local-font-records.ts`도
+family와 PostScript만 별칭에 넣는다. 따라서 샘플 문서가 요청하는 `나눔스퀘어 Bold`가
+목록에서 빠진다. 샘플의 제목과 별표 본문 모두 해당 face를 참조하며 symbol/latin/hangul
+참조도 동일하다. 별표만 다른 글꼴로 지정된 문서라는 설명은 이 파일에 해당하지 않는다.
+
+별도의 결함도 확인했다. 같은 파일의 한글/영문 family를 각각 record로 만들기 때문에
+`resolveLocalFont('NanumSquareB')`가 동일 face를 후보 2개로 세어 null을 반환한다.
+CanvasKit은 prepareLocalFonts에서 fullName(현재 제품은 PostScript명)을 다시 조회하므로
+최초 family 매칭만 고쳐서는 이 경로가 해결되지 않는다. upstream 브라우저 구현은 실제
+fullName·sfnt 별칭을 보존하지만 제품 desktop adapter는 이를 충분히 보존하지 않는다.
+
+현재 제품 TypeScript를 임시 폴더에 transpile하고 공식 TTF의 실제 이름을 fontdb 규칙에
+맞춰 catalog 입력으로 공급했다. native IPC와 브라우저 FontFace만 대체한 조사다.
+Bold 단독 및 R/B/EB/L 동시 설치 모델에서 문서 이름 매칭=null, 글꼴 파일 읽기=0,
+CSS 등록=0, CanvasKit byte map=0을 재현했다. 같은 코드의 영문 family 단일 대조군은
+정확한 이름으로 요청하면 실제 TTF를 1회 읽고 등록/byte map 각 1개로 통과했다.
+원본 제품 소스·submodule은 변경하지 않았고 macOS에서 Rust desktop/네이티브 앱은
+실행하지 않았다. 임시 재현 스크립트·출력은 `/tmp/task74-font-investigation/`에 있다.
+
+이는 제품 이름 연결 결함의 재현이며 VDI의 실제 설치 파일·경로·renderer까지 확정한
+것은 아니다. 작업지시자에게 파일명·설치 방식·경로를 질의했다. 감지 목록 152개는
+개별 face의 실제 공급 성공을 뜻하지 않으므로 이 알림으로 수용하지 않는다.
+
+**후속 수정 제안(아직 소스 수정 미승인)**: 현재 native catalog/desktop record 경계에서
+실제 legacy/full/typographic 이름을 보존하고 동일 파일·face의 다국어 별칭을 통합한다.
+PostScript명만 같은 별도 파일이나 다른 굵기는 임의 통합하지 않는다. 문서의 명시된
+Bold 이름을 정확한 face로 연결하고 CSS 등록 이름과 CanvasKit의 재조회까지 검증한다.
+기존 `font_catalog.rs`, `local-font-records.ts`, `local-fonts.ts` 및 필요 최소 provider 경계,
+해당 테스트와 기존 승인 문서 위치에서 수행한다. upstream/core의 문단 폭 처리와
+native 허용 root 확장은 제외한다. 공식 나눔스퀘어 이름·굵기 조합, 다국어 중복,
+다른 파일 충돌, 잘못된 face fallback을 집중 회귀로 검사하고 Studio/upstream/build/boundary를
+실행한다. Rust Windows/Linux 검증·새 exact artifact GUI 재실행은 후보 고정 후 별도 승인한다.
+Stage 4와 최종 보고/PR은 계속 미완료로 유지한다.

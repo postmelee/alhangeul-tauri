@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "stage4Status": "linux-local-fonts-passed-windows-and-new-window-pending",
+  "stage4Status": "nanumsquare-name-resolution-defect-confirmed-windows-not-accepted",
   "runId": 35981563185,
   "attempt": 1,
   "profile": "full",
@@ -212,7 +212,7 @@
     "MSI forced reinstall exit 3010 (reboot required)"
   ],
   "gui": {
-    "windows-x64": "previous candidate 8e7d26e: user confirmed no repeated modal on document reopen/change and app restart using NSIS on VDI; current candidate and actual font rendering pending",
+    "windows-x64": "user screenshots show NanumSquare mismatch; desktop font-name resolution defect reproduced from official font metadata; exact VDI installer/font metadata not independently verified",
     "linux-x64": "passed: Canvas2D and CanvasKit local-fonts scenarios; new-window unverified",
     "linux-arm64": "not in GUI acceptance scope"
   },
@@ -981,6 +981,67 @@
         "Corrected candidate c4e9714123cdce801ec876ea9908f428d36b7df7"
       ],
       "scope": "Application modal persistence only; does not supersede CI NSIS thumbnail failure"
+    },
+    {
+      "reportedOn": "2026-09-25",
+      "environment": "Windows VDI; version unspecified",
+      "evidence": "User-provided EML body and eight inline screenshots; original email retained outside repository",
+      "candidate": "Guide references c4e9714123cdce801ec876ea9908f428d36b7df7; installed binary not independently identified",
+      "result": "not accepted",
+      "observed": [
+        "Catalog notification reports 152 families",
+        "NanumSquare asterisk shape and stroke weight differ from Hancom",
+        "No clear visual change in installation before/after screenshots"
+      ],
+      "excluded": [
+        "Abel iii stroke difference: user identifies upstream paragraph-fitting behavior; excluded from this investigation"
+      ],
+      "unverified": [
+        "Actual installed NanumSquare file/hash/location",
+        "Actual renderer backend in VDI",
+        "Latest candidate new-window/settings lifecycle results"
+      ]
     }
-  ]
+  ],
+  "fontNameInvestigation": {
+    "date": "2026-09-25",
+    "source": "https://hangeul.naver.com/hangeul_static/webfont/zips/nanum-square.zip",
+    "fontFile": "NanumSquareB.ttf",
+    "sha256": "f737d58294faec9c632189af3a2a3e48e49c03c0256de09db61e879e2857bfbf",
+    "weight": 700,
+    "fontNames": {
+      "legacyFamilyAndFullNames": [
+        "NanumSquare Bold",
+        "나눔스퀘어 Bold"
+      ],
+      "typographicFamilies": [
+        "NanumSquare",
+        "나눔스퀘어"
+      ],
+      "postscriptName": "NanumSquareB"
+    },
+    "confirmedDefects": [
+      "fontdb 0.23 prefers typographic family; desktop catalog omits legacy/full face names needed by document",
+      "Localized rows for one file become separate records and cause PostScript-name ambiguity"
+    ],
+    "reproduction": {
+      "method": "Transpile current product TS modules to temporary directory; catalog inputs derived from official SFNT metadata and inspected fontdb source; mock native IPC and browser FontFace only",
+      "documentRequest": "나눔스퀘어 Bold",
+      "matchingRecord": null,
+      "fontReadCalls": 0,
+      "registeredFontFaces": 0,
+      "canvasKitByteMapSize": 0,
+      "cases": [
+        "Bold alone with localized names",
+        "Regular/Bold/ExtraBold/Light with localized names"
+      ],
+      "positiveControl": "English family only and matching family/PostScript request registers one face and returns one byte entry"
+    },
+    "limits": [
+      "No Windows runtime or Rust desktop execution on macOS",
+      "Actual VDI font metadata pending",
+      "Font-name defect independent of upstream Abel paragraph-fitting behavior"
+    ],
+    "scope": "Investigation only; no product source changes or additional CI"
+  }
 }
