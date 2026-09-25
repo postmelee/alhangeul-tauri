@@ -1,6 +1,7 @@
 mod bundled_pdf_fonts;
 mod commands;
 mod font_catalog;
+mod font_names;
 #[cfg(target_os = "linux")]
 mod linux_runtime;
 mod local_font_commands;

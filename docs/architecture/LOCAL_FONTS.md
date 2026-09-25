@@ -20,6 +20,17 @@ system·file-backed font 뒤에 `assets/fonts/pdf/`의 Noto Sans/Serif KR Regula
 `local-fonts.ts`와 분리된 provider·record adapter만 native catalog를 읽어 webview에 필요한
 file-backed 폰트를 `FontFace`로 등록한다.
 
+native catalog는 `font_names.rs`에서 실제 name table의 legacy family·full name·typographic
+family를 함께 보존한다. `나눔스퀘어 Bold`처럼 문서에 저장된 face 이름을 묶음 family와
+구분한다. 같은 파일·PostScript·style·weight의 다국어 행은 하나의 record로 합치지만
+다른 파일이나 굵기는 통합하지 않는다. 정확한 PostScript/full name을 우선하며 여전히
+모호한 family 요청에는 임의의 face를 선택하지 않는다.
+
+file-backed CSS 등록은 선택된 full face 이름과 요청 별칭을 사용해 Regular/Bold 충돌을
+피한다. 직접 등록하지 않는 system-installed 경로는 OS의 CSS family를 유지한다.
+CanvasKit의 fullName 재조회와 byte cache는 선택된 파일·face의 식별자를 유지한다.
+이 이름 보정은 native read 허용 root나 PDF·인쇄 경로의 지원 범위를 확대하지 않는다.
+
 ## 사용 선택과 복원
 
 처음 로컬 글꼴 사용 안내에서 사용/미사용을 선택하면 앱 데이터 폴더의
@@ -139,3 +150,9 @@ localTypefaceCount=1, unregisteredFontFallbacks=0과 활성화 화면 픽셀을 
 Windows MSI 일반 lifecycle은 raw passed이며 NSIS `0x80040154`와 강제 재설치 `3010`의
 raw 실패·진단 계약 통과는 새 full run에서도 유지된다. Windows 사용자 검증과 새 창
 시나리오는 남아 있어 Stage 4 전체는 미완료다. 기존 후보의 실패 기록은 보존한다.
+
+Windows 사용자 캡처에서 나눔스퀘어 표시 차이가 보고되어 제품의 이름 손실·다국어
+record 중복을 별도로 보정했다. 공식 NanumSquareB.ttf를 읽는 native 회귀와 다중 굵기·
+다른 파일 충돌·CSS 등록·CanvasKit 재조회 회귀를 추가했다. 해당 후보의 실제 Windows
+표시는 새 설치본 사용자 검증으로 확인하며, 이전 Linux Abel 성공을 이 결과로 이전하지 않는다.
+Abel의 문단 폭 맞춤에 따른 `iii` 굵기 차이는 이 보정의 대상이 아니다.

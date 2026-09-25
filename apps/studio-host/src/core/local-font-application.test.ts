@@ -46,7 +46,9 @@ describe('local font supply lifecycle', () => {
     const foreign = {}; registered.add(foreign);
     const { fonts, prefs } = await setup();
     await Promise.all([fonts.ensureLocalFontsAvailable(['Abel-Regular']), fonts.ensureLocalFontsAvailable(['Abel'])]);
-    expect(registered.size).toBe(2);
+    expect(registered.size).toBe(3);
+    expect([...registered].filter(face => face !== foreign).map(face => (face as { family: string }).family).sort())
+      .toEqual(['Abel', 'Abel-Regular']);
     expect(invoke.mock.calls.filter(([cmd]) => cmd === 'read_local_font')).toHaveLength(1);
     const { fontFamilyChainForDisplay } = await import('@upstream/core/font-substitution');
     expect(fontFamilyChainForDisplay('Abel-Regular').split(',')[0]).toBe('"Abel"');

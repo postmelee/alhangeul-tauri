@@ -617,3 +617,36 @@ native 허용 root 확장은 제외한다. 공식 나눔스퀘어 이름·굵기
 다른 파일 충돌, 잘못된 face fallback을 집중 회귀로 검사하고 Studio/upstream/build/boundary를
 실행한다. Rust Windows/Linux 검증·새 exact artifact GUI 재실행은 후보 고정 후 별도 승인한다.
 Stage 4와 최종 보고/PR은 계속 미완료로 유지한다.
+
+### Stage 4 이름·별칭 보정 및 새 설치본 승인 — 2026-09-25
+
+작업지시자가 “진행해줘. 새 설치본으로 windows 환경에서 내가 직접 다시 테스트할게”로
+위 보정과 새 설치본 생성을 승인했다. 기존 Task #74/분리 worktree에서 구현하고 후보를
+non-force push한 뒤 공유 native/Studio 변경에 필요한 full CI를 실행한다. 새 Windows
+artifact를 확인해 인계하며 실제 Windows GUI 수용은 작업지시자가 수행한다.
+
+native 이름 추출은 기존 전이 의존성과 같은 ttf-parser 0.25를 직접 사용하고 별도 작은
+모듈로 분리한다. native catalog의 fullName/aliases를 확장하며 폰트 bytes의 name table에서
+실제 이름을 읽는다. 동일 face 통합 및 요청별 CSS 별칭 등록은 desktop leaf adapter 안에 둔다.
+공식 NanumSquareB.ttf·라이선스·출처/hash를 기존 tests/gui/local-fonts 하위에 고정하고
+실제 이름을 읽는 native 회귀와 다국어/다중 굵기/충돌/byte 공급 Studio 회귀에 사용한다.
+기존 승인 문서 위치를 갱신하며 upstream/submodule·허용 root는 유지한다.
+
+### Stage 4 이름·별칭 보정 구현·로컬 검증 — 2026-09-25
+
+native `font_names.rs`가 name ID 1/4/6/16을 보존하며 fontdb의 family 목록과 함께
+전달한다. 기존 catalog 테스트는 별도 파일로 옮겨 production 파일 250 LOC를 유지했다.
+Studio는 같은 path/PostScript/style/weight/source의 다국어 행을 통합하며 실제 fullName을
+CSS face 이름으로 사용한다. 직접 등록하지 않는 system-installed 경로는 기존 CSS family를
+유지한다. 정확한 PostScript/fullName 우선 선택 뒤 모호한 family는 fallback한다.
+byte 조회와 CanvasKit cache key도 선택한 entry를 유지하여 같은 PostScript명의 다른 파일을
+잘못 읽지 않는다. CSS의 원래 요청 별칭도 등록하고 bytes 읽기는 경로별 1회로 합친다.
+
+보정 전 새 집중 회귀는 이름 연결·잘못된 파일 조회 2건이 실패했고 보정 후 통과했다.
+최종 Studio는 37 files/233 passed(새 회귀 6개), upstream 36 passed, 기존 fixture 계약
+3 passed, Studio typecheck/build 및 product-boundary가 통과했다.
+Rust 변경 파일 rustfmt 및 `cargo metadata --no-deps --locked --offline` 정합도 통과했다.
+Rust desktop 실행·Clippy는 Windows/Linux CI에서 수행한다. 실제 Windows GUI 수용은 미완료다.
+기존 조사 metadata의 지원 범위 밖 OS 식별자 문구를 플랫폼 중립 조사 표현으로 바꿔
+boundary 검사를 정합화했다. upstream/submodule pin은 변경하지 않았다.
+로그는 `/tmp/task74-names-{red,studio,upstream,build,boundary,fixture}.log`다.

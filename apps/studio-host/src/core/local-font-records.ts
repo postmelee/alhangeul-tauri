@@ -5,6 +5,8 @@ import {
 
 export interface LocalFontEntry {
   family: string;
+  fullName?: string | null;
+  aliases?: string[];
   postScriptName: string;
   style: string;
   weight?: number;
@@ -13,6 +15,7 @@ export interface LocalFontEntry {
 }
 
 export interface LocalFontRecord {
+  sourceKey?: string;
   family: string;
   fullName: string;
   postscriptName: string;
@@ -21,46 +24,35 @@ export interface LocalFontRecord {
   aliases: string[];
 }
 
+export function fontEntryKey(entry: LocalFontEntry): string {
+  return JSON.stringify([entry.path ?? null, entry.postScriptName, entry.style,
+    entry.weight ?? null, entry.sourceKind, entry.path ? null : entry.family]);
+}
+
 export function normalizeFontEntries(entries: LocalFontEntry[]): LocalFontEntry[] {
-  const seen = new Set<string>();
-  const normalized: LocalFontEntry[] = [];
+  const grouped = new Map<string, LocalFontEntry>();
   for (const entry of entries) {
     const family = entry.family.trim();
     if (!family || isAuthoringBlockedFontFamily(family)
-      || isAuthoringBlockedFontFamily(entry.postScriptName ?? family)) continue;
-    const postScriptName = entry.postScriptName?.trim() || family;
-    const style = entry.style?.trim() || 'normal';
-    const sourceKind = entry.sourceKind ?? 'system-installed';
-    const path = entry.path ?? null;
-    const key = [family, postScriptName, style, sourceKind, path ?? ''].join('\u0000');
-    if (seen.has(key)) continue;
-    seen.add(key);
-    normalized.push({
-      family,
-      postScriptName,
-      style,
-      weight: entry.weight,
-      sourceKind,
-      path,
-    });
+      || isAuthoringBlockedFontFamily(entry.postScriptName ?? family)
+      || isAuthoringBlockedFontFamily(entry.fullName)) continue;
+    const normalized = {
+      ...entry, family, postScriptName: entry.postScriptName?.trim() || family,
+      fullName: entry.fullName?.trim() || undefined,
+      style: entry.style?.trim() || 'normal',
+      sourceKind: entry.sourceKind ?? 'system-installed', path: entry.path ?? null,
+    };
+    const key = fontEntryKey(normalized);
+    const previous = grouped.get(key);
+    const aliases = [family, normalized.fullName, normalized.postScriptName,
+      ...(entry.aliases ?? []), ...(previous?.aliases ?? [])]
+      .filter((name): name is string => !!name && !isAuthoringBlockedFontFamily(name));
+    grouped.set(key, { ...normalized, ...previous, aliases: [...new Set(aliases)] });
   }
-  normalized.sort((left, right) =>
+  return [...grouped.values()].sort((left, right) =>
     left.family.localeCompare(right.family, 'ko')
     || left.style.localeCompare(right.style, 'en')
     || left.postScriptName.localeCompare(right.postScriptName, 'en'));
-  return normalized;
-}
-
-export function resolveRequestedFamilies(
-  entries: LocalFontEntry[],
-  targetFamilies?: Iterable<string>,
-): Set<string> {
-  const families = targetFamilies ?? entries.map((entry) => entry.family);
-  return new Set(
-    Array.from(families)
-      .map((family) => family.trim())
-      .filter((family) => family && !isAuthoringBlockedFontFamily(family)),
-  );
 }
 
 export function uniqueAuthoringFamilies(entries: LocalFontEntry[]): string[] {
@@ -70,12 +62,15 @@ export function uniqueAuthoringFamilies(entries: LocalFontEntry[]): string[] {
 
 export function toLocalFontRecord(entry: LocalFontEntry): LocalFontRecord {
   return {
-    family: entry.family,
-    fullName: entry.postScriptName,
+    sourceKey: fontEntryKey(entry),
+    family: entry.sourceKind === 'file-backed' && entry.path
+      ? entry.fullName || entry.family : entry.family,
+    fullName: entry.fullName || entry.postScriptName,
     postscriptName: entry.postScriptName,
     style: entry.style,
     displayName: entry.family,
-    aliases: Array.from(new Set([entry.family, entry.postScriptName].filter(Boolean))),
+    aliases: Array.from(new Set([entry.family, entry.fullName, entry.postScriptName,
+      ...(entry.aliases ?? [])].filter((name): name is string => !!name))),
   };
 }
 

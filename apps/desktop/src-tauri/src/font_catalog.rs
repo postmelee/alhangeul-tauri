@@ -9,6 +9,8 @@ use usvg::fontdb::{self, Source};
 #[serde(rename_all = "camelCase")]
 pub struct LocalFontEntry {
     pub family: String,
+    pub full_name: Option<String>,
+    pub aliases: Vec<String>,
     pub post_script_name: String,
     pub style: String,
     pub weight: u16,
@@ -113,6 +115,9 @@ pub fn collect_local_font_entries(extra_font_dirs: &[PathBuf]) -> Vec<LocalFontE
         let source_kind = classify_source(path.as_deref(), &file_backed_dirs);
         let style = style_name(face.style);
 
+        let names = fontdb
+            .with_face_data(face.id, crate::font_names::read_face_names)
+            .unwrap_or_default();
         let mut families = BTreeSet::new();
         for (family, _) in &face.families {
             let family = family.trim();
@@ -136,6 +141,8 @@ pub fn collect_local_font_entries(extra_font_dirs: &[PathBuf]) -> Vec<LocalFontE
 
             entries.push(LocalFontEntry {
                 family,
+                full_name: names.full_name.clone(),
+                aliases: names.aliases.clone(),
                 post_script_name: face.post_script_name.clone(),
                 style: style.to_string(),
                 weight: face.weight.0,
@@ -239,114 +246,5 @@ fn has_supported_font_extension(path: &Path) -> bool {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use usvg::fontdb::{FaceInfo, Stretch, Weight, ID};
-
-    #[test]
-    fn collect_local_font_entries_keeps_localized_family_aliases() {
-        let faces = vec![FaceInfo {
-            id: ID::dummy(),
-            source: Source::File(PathBuf::from("/usr/share/fonts/truetype/Test.ttf")),
-            index: 0,
-            families: vec![
-                (
-                    "Malgun Gothic".to_string(),
-                    fontdb::Language::English_UnitedStates,
-                ),
-                (
-                    "맑은 고딕".to_string(),
-                    fontdb::Language::English_UnitedStates,
-                ),
-            ],
-            post_script_name: "MalgunGothicRegular".to_string(),
-            style: fontdb::Style::Normal,
-            weight: Weight::NORMAL,
-            stretch: Stretch::Normal,
-            monospaced: false,
-        }];
-
-        let mut seen = BTreeSet::new();
-        let mut entries = Vec::new();
-        for face in &faces {
-            let path = source_path(&face.source);
-            for (family, _) in &face.families {
-                let key = (
-                    family.clone(),
-                    face.post_script_name.clone(),
-                    style_name(face.style),
-                    face.weight.0,
-                    "system-installed",
-                    path.clone(),
-                );
-                if seen.insert(key) {
-                    entries.push(LocalFontEntry {
-                        family: family.clone(),
-                        post_script_name: face.post_script_name.clone(),
-                        style: style_name(face.style).to_string(),
-                        weight: face.weight.0,
-                        source_kind: "system-installed".to_string(),
-                        path: path.clone(),
-                    });
-                }
-            }
-        }
-
-        let families = entries
-            .into_iter()
-            .map(|entry| entry.family)
-            .collect::<Vec<_>>();
-        assert_eq!(
-            families,
-            vec!["Malgun Gothic".to_string(), "맑은 고딕".to_string()]
-        );
-    }
-
-    #[test]
-    fn classify_source_marks_extra_dirs_as_file_backed() {
-        let extra_dir = PathBuf::from("/opt/hancom/Shared/TTF");
-        assert_eq!(
-            classify_source(Some("/opt/hancom/Shared/TTF/HYHeadLine.ttf"), &[extra_dir]),
-            "file-backed"
-        );
-        assert_eq!(
-            classify_source(
-                Some("/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf"),
-                &[]
-            ),
-            "system-installed"
-        );
-    }
-
-    #[test]
-    fn windows_user_font_dirs_use_local_app_data_root() {
-        let root = PathBuf::from("C:/Users/test/AppData/Local");
-        assert_eq!(
-            windows_user_font_dirs(&root),
-            vec![PathBuf::from(
-                "C:/Users/test/AppData/Local/Microsoft/Windows/Fonts"
-            )]
-        );
-    }
-
-    #[test]
-    fn path_is_within_root_rejects_escape_paths() {
-        let temp = tempfile::tempdir().unwrap();
-        let fonts_root = temp.path().join("fonts");
-        let outside_root = temp.path().join("outside");
-        fs::create_dir_all(&fonts_root).unwrap();
-        fs::create_dir_all(&outside_root).unwrap();
-
-        let allowed_font = fonts_root.join("test.ttf");
-        let outside_font = outside_root.join("test.ttf");
-        fs::write(&allowed_font, b"font").unwrap();
-        fs::write(&outside_font, b"font").unwrap();
-
-        assert!(path_is_within_root(&allowed_font, &fonts_root));
-        assert!(!path_is_within_root(&outside_font, &fonts_root));
-        assert!(has_supported_font_extension(&allowed_font));
-        assert!(!has_supported_font_extension(
-            &outside_root.join("notes.txt")
-        ));
-    }
-}
+#[path = "font_catalog_tests.rs"]
+mod tests;

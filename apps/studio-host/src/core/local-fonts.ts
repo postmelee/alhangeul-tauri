@@ -7,7 +7,7 @@ import {
 } from './local-font-provider';
 import {
   normalizeFontName,
-  resolveRequestedFamilies,
+  fontEntryKey,
   toLocalFontRecord,
   uniqueAuthoringFamilies,
   type LocalFontEntry,
@@ -115,13 +115,15 @@ export function resolveLocalFont(fontName: string): LocalFontRecord | null {
     record.aliases.some((alias) => normalizeFontName(alias) === key));
   if (records.length === 1) return records[0];
   const exact = records.filter((record) => normalizeFontName(record.postscriptName) === key);
-  return exact.length === 1 ? exact[0] : null;
+  if (exact.length === 1) return exact[0];
+  const full = records.filter(record => normalizeFontName(record.fullName) === key);
+  return full.length === 1 ? full[0] : null;
 }
 
 export function localFontFaceKey(
-  record: Pick<LocalFontRecord, 'family' | 'fullName' | 'postscriptName'>,
+  record: Pick<LocalFontRecord, 'family' | 'fullName' | 'postscriptName' | 'sourceKey'>,
 ): string {
-  return normalizeFontName(record.postscriptName || record.fullName || record.family);
+  return record.sourceKey ?? normalizeFontName(record.postscriptName || record.fullName || record.family);
 }
 
 export async function loadLocalFontBytesFor(
@@ -134,7 +136,7 @@ export async function loadLocalFontBytesFor(
     const record = resolveLocalFont(fontName);
     if (!record) continue;
     const entry = (getFontCatalog().entries ?? []).find(
-      (candidate) => candidate.postScriptName === record.postscriptName,
+      (candidate) => fontEntryKey(candidate) === record.sourceKey,
     );
     if (!entry?.path) continue;
     try {
@@ -201,27 +203,19 @@ export async function ensureLocalFontsAvailable(targetFamilies?: Iterable<string
       .filter((entry) => !isAuthoringBlockedFontFamily(entry.family))
       .map((entry) => entry.family),
   );
-  const requestedFamilies = resolveRequestedFamilies(entries, targetFamilies);
-  for (const requested of targetFamilies ?? []) {
+  if (!isTauriRuntime() || !supportsBinaryFontLoading()) return available;
+  const requestedNames = targetFamilies ?? getLocalFontRecords().map(record => record.fullName);
+  for (const requested of requestedNames) {
     const record = resolveLocalFont(requested);
-    if (record) requestedFamilies.add(record.family);
-  }
-
-  if (!isTauriRuntime() || !supportsBinaryFontLoading()) {
-    return available;
-  }
-
-  const fileBackedEntries = entries.filter((entry) =>
-    entry.sourceKind === 'file-backed'
-    && Boolean(entry.path)
-    && requestedFamilies.has(entry.family)
-    && resolveLocalFont(entry.family) !== null,
-  );
-  for (const entry of fileBackedEntries) {
+    if (!record) continue;
+    const entry = entries.find(candidate => fontEntryKey(candidate) === record.sourceKey);
+    if (entry?.sourceKind !== 'file-backed' || !entry.path) continue;
     try {
-      await ensureDesktopFontFace(entry);
-      if (started !== desktopFontGeneration()) return new Set();
-      if (!desktopFontUnavailable(entry.path!)) available.add(entry.family);
+      for (const family of new Set([record.family, requested])) {
+        await ensureDesktopFontFace({ ...entry, family });
+        if (started !== desktopFontGeneration()) return new Set();
+      }
+      if (!desktopFontUnavailable(entry.path)) available.add(record.family);
     } catch {
       // File-backed fonts are best-effort; substitute fallback remains available.
     }
@@ -238,6 +232,8 @@ async function detectBrowserFontEntries(): Promise<LocalFontEntry[]> {
   const fontDataList = await window.queryLocalFonts();
   return fontDataList.map((font) => ({
     family: font.family,
+    fullName: font.fullName,
+    aliases: [font.family, font.fullName, font.postscriptName],
     postScriptName: font.postscriptName,
     style: font.style || 'normal',
     sourceKind: 'system-installed',

@@ -67,6 +67,7 @@ dependencies = [
  "tauri-plugin-updater",
  "tauri-plugin-window-state",
  "tempfile",
+ "ttf-parser",
  "usvg",
  "uuid",
  "webkit2gtk",

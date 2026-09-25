@@ -1038,7 +1038,7 @@
       "positiveControl": "English family only and matching family/PostScript request registers one face and returns one byte entry"
     },
     "limits": [
-      "No Windows runtime or Rust desktop execution on macOS",
+      "No Windows runtime or Rust desktop execution in this platform-neutral investigation",
       "Actual VDI font metadata pending",
       "Font-name defect independent of upstream Abel paragraph-fitting behavior"
     ],
