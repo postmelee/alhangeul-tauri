@@ -1167,17 +1167,20 @@
       "linuxGui": "not executed for this candidate",
       "handoffStatus": "superseded-before-handoff",
       "reason": "Additional correction needed for ordinary and canonical paths identifying the same Windows font file",
-      "ciStatus": "unknown: GitHub authentication failed on resume",
+      "ciStatus": "completed",
       "cancelRequested": true,
-      "cancelConfirmed": false
+      "cancelConfirmed": false,
+      "ciConclusion": "success",
+      "evidenceSource": "Connected GitHub API: all 20 latest-attempt jobs checked, including final result success"
     }
   ],
   "pendingCandidate": {
-    "sourceStatus": "local canonical source-path correction awaiting commit and CI",
+    "sourceStatus": "committed locally; not yet pushed",
     "profile": "full",
     "scope": "full",
-    "ciStatus": "not dispatched: GitHub CLI authentication invalid",
+    "ciStatus": "not dispatched: CLI cannot read its stored credential; token expiry not established",
     "windowsGui": "user will verify final new installer",
-    "linuxGui": "not executed for final candidate"
+    "linuxGui": "not executed for final candidate",
+    "sourceSha": "00dbe6b88a6a54c4768351a148b80a883b9185ca"
   }
 }

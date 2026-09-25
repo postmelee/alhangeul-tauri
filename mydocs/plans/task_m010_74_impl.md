@@ -693,6 +693,11 @@ attempt 1, source/workflow 동일, `profile=full`, `scope=full`을 실행했다.
 결과를 성공으로 간주하지 않으며 경로 보정까지 포함한 최종 후보로
 full CI를 실행한다. 제품 검증 성공 없이 설치본을 인계하지 않는다.
 
-GitHub CLI의 postmelee 인증 토큰이 invalid 상태임을 `gh auth status`로 확인했다.
-작업지시자에게 `gh auth login -h github.com` 재로그인을 요청했다. 인증 복구 전에는
+`gh auth status`는 invalid를 보고했으나 추가 조사에서 `gh auth token`이 인증 값을
+반환하지 못했고, GitHub CLI 전용 키체인 항목은 존재하지만 값 읽기는 실패했다.
+토큰 만료는 확인되지 않았다. 샌드박스 밖·일반/로그인 셸·PTY에서도 동일했다.
+연결된 GitHub 도구로 run `36080570543`의 20개 job과 최종 result success를 확인했다.
+중간 후보의 full gate는 통과했지만 추가 경로 보정은 포함하지 않아 인계하지 않는다.
+최종 소스 후보는 `00dbe6b88a6a54c4768351a148b80a883b9185ca`다. 작업지시자에게
+일반 터미널의 `gh api user --jq .login` 결과를 요청했다. 인증 접근 복구 전에는
 최종 후보 push·새 full CI 실행·설치본 인계를 완료했다고 기록하지 않는다.
