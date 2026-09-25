@@ -156,3 +156,11 @@ record 중복을 별도로 보정했다. 공식 NanumSquareB.ttf를 읽는 nativ
 다른 파일 충돌·CSS 등록·CanvasKit 재조회 회귀를 추가했다. 해당 후보의 실제 Windows
 표시는 새 설치본 사용자 검증으로 확인하며, 이전 Linux Abel 성공을 이 결과로 이전하지 않는다.
 Abel의 문단 폭 맞춤에 따른 `iii` 굵기 차이는 이 보정의 대상이 아니다.
+
+
+이름·별칭과 Windows 일반/확장 경로 중복을 보정한 후보 `a2f48b5`는
+[full CI 36104289925](https://github.com/postmelee/alhangeul-tauri/actions/runs/36104289925)를 통과했다.
+Windows desktop 189개에 실제 NanumSquareB의 한글/영문 이름과 중복 스캔 회귀가 포함된다.
+Windows archive digest와 내부 inventory/source SHA도 검증했다. MSI 일반 설치는 raw passed,
+NSIS 썸네일 실패·MSI 강제 재설치의 재부팅 요구는 기존 진단 계약만 통과했다.
+실제 Windows 나눔스퀘어 표시와 새 후보의 GUI 수용은 사용자 검증 대기다.

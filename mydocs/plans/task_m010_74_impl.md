@@ -701,3 +701,43 @@ full CI를 실행한다. 제품 검증 성공 없이 설치본을 인계하지 �
 최종 소스 후보는 `00dbe6b88a6a54c4768351a148b80a883b9185ca`다. 작업지시자에게
 일반 터미널의 `gh api user --jq .login` 결과를 요청했다. 인증 접근 복구 전에는
 최종 후보 push·새 full CI 실행·설치본 인계를 완료했다고 기록하지 않는다.
+
+### Stage 4 최종 이름·경로 보정 후보 검증 — 2026-09-25
+
+작업지시자가 GitHub CLI 재로그인을 완료했고 `gh api user --jq .login`으로 postmelee
+인증 성공을 확인했다. 최종 source/workflow 후보 `a2f48b5013e86f9d21b67f4f36c79895f6a61297`를
+non-force push하고 [full CI 36104289925](https://github.com/postmelee/alhangeul-tauri/actions/runs/36104289925)
+(attempt 1, profile=full, scope=full)을 실행했다. 중복 경로 native 회귀의 실행 결과와
+새 Windows artifact를 확인한 뒤 인계한다. 실제 Windows 표시 수용은 사용자 검증 대기다.
+
+
+### Stage 4 최종 설치본 인계 — 2026-09-25
+
+full CI `36104289925` attempt 1은 최종 success다. source/workflow SHA는
+`a2f48b5013e86f9d21b67f4f36c79895f6a61297`이며 Windows x64·Linux x64/arm64
+core/product/package와 필수 설치 계약·집계가 모두 통과했다. Windows desktop 189개,
+Linux arm64 desktop 187개가 통과했고 실제 NanumSquareB 이름·한글 별칭과 같은 파일의
+중복 경로 회귀 성공을 개별 native 로그에서 확인했다.
+
+[Windows x64 설치본](https://github.com/postmelee/alhangeul-tauri/actions/runs/36104289925/artifacts/10850898849)
+archive `10850898849`의 SHA-256은
+`f141646409c524d0a208a8fc69e2776ed042049238d5ae4062f06f565067a69c`다.
+로컬 다운로드 bytes와 GitHub digest를 대조했으며 기존 desktop verifier로 내부 inventory의
+source SHA·모든 파일 크기/hash·PE 계약을 확인했다.
+NSIS `nsis/Alhangeul_0.1.0_x64-setup.exe` SHA-256은
+`5f8e8940c3f325abff75de65b30d61385e9b627d0c6e5044a118c521d9e57770`,
+MSI `msi/Alhangeul_0.1.0_x64_en-US.msi`는
+`8ade5d4e51ae6604b923f71b7c6a5e0cc7c28f9d99303ed3e8d78c71bae0ff8c`다.
+
+원시 설치 증거를 내려받아 확인했다. MSI 일반 lifecycle은 passed/exit 0이다.
+NSIS는 기존 Shell thumbnail `0x80040154`로 12건 raw failed/exit 1이며 진단 계약만
+passed다. MSI 강제 재설치는 3010 재부팅 요구로 1건 raw failed/exit 1이며 진단 계약만
+passed다. 재부팅 후 수용·모든 썸네일 성공으로 확대하지 않는다.
+
+작업지시자는 이전과 같은 NSIS 방식으로 새 설치본을 설치하고 기존 나눔스퀘어/문서를
+유지하여 사용·다시 감지 후 별표와 한글 본문을 한컴과 같은 배율에서 비교한다.
+문서 재열기·앱 재실행 후 표시 유지와 모달 재등장 여부도 확인한다. 글꼴 파일의 사용자용
+설치 경로가 확인되지 않았으므로 실제 적용이 계속 다르면 설치 위치/파일명과 비교 화면을
+추가 확인한다. Abel `iii`의 문단 폭 맞춤 차이는 upstream 범위로 유지한다.
+현재 후보의 Windows GUI·Linux GUI·새 창 수용은 미완료이며 이전 후보의 Linux Abel
+성공을 새 후보로 이전하지 않는다. Stage 4 완료 보고·최종 PR은 아직 작성하지 않는다.
