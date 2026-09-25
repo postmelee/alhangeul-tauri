@@ -113,13 +113,14 @@ fn path_is_within_root_rejects_escape_paths() {
 #[test]
 fn catalog_preserves_real_full_names_and_supported_path() {
     let temp = tempfile::tempdir().unwrap();
-    let path = temp.path().join("NanumSquareB.ttf");
+    let root = fs::canonicalize(temp.path()).unwrap();
+    let path = root.join("NanumSquareB.ttf");
     fs::write(
         &path,
         include_bytes!("../../../../tests/gui/local-fonts/nanumsquare/NanumSquareB.ttf"),
     )
     .unwrap();
-    let entries = collect_local_font_entries(&[temp.path().to_path_buf()]);
+    let entries = collect_local_font_entries(&[root]);
     let faces: Vec<_> = entries
         .iter()
         .filter(|entry| entry.path.as_deref() == path.to_str())

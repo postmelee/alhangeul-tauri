@@ -650,3 +650,25 @@ Rust desktop 실행·Clippy는 Windows/Linux CI에서 수행한다. 실제 Windo
 기존 조사 metadata의 지원 범위 밖 OS 식별자 문구를 플랫폼 중립 조사 표현으로 바꿔
 boundary 검사를 정합화했다. upstream/submodule pin은 변경하지 않았다.
 로그는 `/tmp/task74-names-{red,studio,upstream,build,boundary,fixture}.log`다.
+
+### Stage 4 이름·별칭 보정 full CI 실행 — 2026-09-25
+
+후보 `8d7c19e9c9013b0715ac73066af0c893e59ab11d`를 `publish/task74`에 non-force push하고
+[full CI 36078615608](https://github.com/postmelee/alhangeul-tauri/actions/runs/36078615608),
+attempt 1, source/workflow 동일 SHA, `profile=full`, `scope=full`을 실행했다.
+이 run의 새 Windows 설치본으로 작업지시자가 직접 GUI를 재검증한다.
+
+### Stage 4 Windows 회귀 fixture 경로 정합화 — 2026-09-25
+
+full run `36078615608`에서 Windows desktop 검사 188개 중 187개가 통과하고 새 catalog
+회귀 1개가 실패했다. 실제 이름 추출(`font_names`)은 Windows에서도 통과했다. 실패는
+`source_kind` 기대 file-backed/실제 system-installed이며 원인은 테스트의 임시 root다.
+제품 진입점 `desktop_extra_font_dirs()`는 canonical root를 전달하지만 새 테스트는 raw
+임시 root를 직접 전달했다. Windows에서는 canonical 파일 경로에 확장 경로 prefix가 붙어
+raw root와 prefix 비교가 맞지 않는다. Linux에서는 두 표현이 같아 이 설정 오류가 드러나지 않았다.
+
+테스트 root를 실제 제품 호출처럼 `fs::canonicalize`한 뒤 fixture를 만들고 전달하도록
+수정한다. 제품의 경로 정책이나 production 코드는 변경하지 않는다. 실패 run은 보존하고,
+요청된 새 설치본을 완성하기 위해 테스트 정합화 후보를 고정해 full CI를 다시 실행한다.
+앞선 Studio 233개·upstream 36개 성공은 같은 제품 소스에 대한 로컬 결과이며 새 run의
+native/installer 결과와 분리한다. 이 수정 전후 production 소스 diff는 없다.
