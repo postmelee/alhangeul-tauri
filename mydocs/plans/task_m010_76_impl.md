@@ -104,3 +104,9 @@ GitHub Issue: [#76](https://github.com/postmelee/alhangeul-tauri/issues/76)
 ## 승인 근거
 
 수행계획서에 기록한 2026-09-26 사용자 순차 진행 지시를 적용한다. 운영 gate는 계속 활성화하며 자동 merge는 수행하지 않는다.
+
+## Stage 1 조사 보완
+
+- 기존 갱신기/검증기/allowlist는 desktop Cargo.lock만 관리하고 이후 생긴 세 native consumer lock을 놓쳤다. 네 lock을 함께 갱신·검증하도록 보완하고 stale lock 회귀를 추가한다.
+- writer 비활성 때문에 create_candidate가 skip된 이유를 summary에 직접 표시한다. 기본 dry_run과 쓰기 권한 경계는 유지한다.
+- 첫 운영 실행: 36223270009, baseline a1d8ac4669af370f2c428e1b73c222eb664c3c26. 이 실행은 보완 전 경로를 사용하므로 후보가 생성돼도 네 lock 수용은 별도 확인한다.

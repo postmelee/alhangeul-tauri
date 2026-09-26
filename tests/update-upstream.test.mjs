@@ -15,6 +15,10 @@ import test from 'node:test';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const scriptPath = join(repoRoot, 'scripts/update-upstream.sh');
+const nativeLocks = [
+  'apps/desktop/src-tauri/Cargo.lock', 'crates/document-preview/Cargo.lock',
+  'apps/thumbnail-worker/Cargo.lock', 'apps/linux-thumbnailer/Cargo.lock',
+];
 const upstreamScriptTest = process.platform === 'win32' ? test.skip : test;
 
 upstreamScriptTest('updates source, Cargo lock, WASM, and pin from a verified lightweight tag', async () => {
@@ -36,10 +40,10 @@ upstreamScriptTest('updates source, Cargo lock, WASM, and pin from a verified li
       git(['rev-parse', 'HEAD'], { cwd: fixture.submodule }).stdout.trim(),
       release.commit,
     );
-    assert.match(
-      await readFile(join(fixture.parent, 'apps/desktop/src-tauri/Cargo.lock'), 'utf8'),
-      /name = "rhwp"\nversion = "0\.1\.0"/,
-    );
+    for (const lockPath of nativeLocks) {
+      assert.match(await readFile(join(fixture.parent, lockPath), 'utf8'),
+        /name = "rhwp"\nversion = "0\.1\.0"/);
+    }
     const vendorPackage = JSON.parse(
       await readFile(
         join(fixture.parent, 'apps/studio-host/vendor/rhwp-core/package.json'),
@@ -344,20 +348,18 @@ upstreamScriptTest('--run-checks preserves the full platform-neutral order', asy
     assert.equal(result.status, 0, result.stderr);
     const commands = (await readFile(logPath, 'utf8')).trim().split('\n');
     assert.equal(commands[0], 'wasm-pack --version');
-    assert.equal(
-      commands[1],
-      'cargo update --manifest-path apps/desktop/src-tauri/Cargo.toml -p rhwp',
-    );
+    assert.deepEqual(commands.slice(1, 5), nativeLocks.map(path =>
+      `cargo update --manifest-path ${path.replace('Cargo.lock', 'Cargo.toml')} -p rhwp`));
     assert.match(
-      commands[2],
+      commands[5],
       /^wasm-pack build --target web --release --out-dir \.alhangeul-wasm-build\.[A-Za-z0-9]+$/,
     );
     assert.equal(
-      commands[3],
+      commands[6],
       `node write-rhwp-pin --tag ${release.tag} --commit ${release.commit} --wasm-pack-version 0.15.0`,
     );
-    assert.equal(commands[4], 'node verify-rhwp-pin');
-    assert.deepEqual(commands.slice(5), [
+    assert.equal(commands[7], 'node verify-rhwp-pin');
+    assert.deepEqual(commands.slice(8), [
       'pnpm install --frozen-lockfile',
       'pnpm run check:rhwp-pin',
       'pnpm run check:product-boundary',
@@ -436,6 +438,10 @@ async function createRelease(fixture, { tag, annotated = false }) {
 
 async function createParentSupportFiles(parent) {
   const desktopDir = join(parent, 'apps/desktop/src-tauri');
+  for (const lockPath of nativeLocks) {
+    await mkdir(dirname(join(parent, lockPath)), { recursive: true });
+    await writeFile(join(parent, lockPath), 'version = 4\n\n[[package]]\nname = "rhwp"\nversion = "0.0.0"\n');
+  }
   const vendorDir = join(parent, 'apps/studio-host/vendor/rhwp-core');
   const scriptsDir = join(parent, 'scripts');
   await mkdir(desktopDir, { recursive: true });
@@ -495,9 +501,9 @@ if (process.env.ALHANGEUL_COMMAND_LOG) {
 if (args[0] === 'update') {
   const cargo = readFileSync('third_party/rhwp/Cargo.toml', 'utf8');
   const version = cargo.match(/^version = "([^"]+)"/m)[1];
-  mkdirSync('apps/desktop/src-tauri', { recursive: true });
+  const lockPath = args[args.indexOf('--manifest-path') + 1].replace('Cargo.toml', 'Cargo.lock');
   writeFileSync(
-    'apps/desktop/src-tauri/Cargo.lock',
+    lockPath,
     \`version = 4\\n\\n[[package]]\\nname = "rhwp"\\nversion = "\${version}"\\n\`,
   );
 }
