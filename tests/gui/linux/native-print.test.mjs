@@ -14,6 +14,7 @@ test('production native print는 준비·Print to File·cancel·CUPS를 같은 �
       calls.push(['actionOptional', selector, timeout]);
       return { performed: true };
     },
+    action: async (selector) => { calls.push(['action', selector]); },
     focus: async (selector) => { calls.push(['focus', selector]); },
     triggerSystemPrint: async () => { calls.push(['trigger']); },
     printToFile: async (path, trigger) => { calls.push(['printToFile', path]); await trigger(); },
@@ -34,17 +35,18 @@ test('production native print는 준비·Print to File·cancel·CUPS를 같은 �
     assertEditorBody: async (label) => { calls.push(['body', label]); },
   });
   assert.deepEqual(calls.map(([name]) => name), [
+    'actionOptional', 'waitAbsent', 'actionOptional', 'action', 'waitAbsent',
     'actionOptional', 'waitAbsent', 'wait', 'wait', 'body',
     'printToFile', 'wait', 'trigger', 'wait', 'body', 'file',
     'cancelPrint', 'wait', 'trigger', 'wait', 'body',
     'virtualPrinter', 'wait', 'trigger', 'wait', 'body', 'cupsPdf',
   ]);
   assert.equal(calls[0][2], 10000);
-  assert.deepEqual(calls[2][1], { roles: ['document text'], names: ['biz_plan.hwp'] });
+  assert.deepEqual(calls[7][1], { roles: ['document text'], names: ['biz_plan.hwp'] });
   assert.deepEqual(calls.filter(([name]) => name === 'body').map(([, label]) => label), [
     'before-print', 'after-print-to-file', 'after-cancel', 'after-cups-pdf',
   ]);
-  for (const [, selector] of calls.filter(([name], index) => name === 'wait' && index !== 2)) {
+  for (const [, selector] of calls.filter(([name], index) => name === 'wait' && index !== 7)) {
     assert.deepEqual(selector, {
       roles: ['document text'], names: ['biz_plan.hwp'], focused: true,
     });

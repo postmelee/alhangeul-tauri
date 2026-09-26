@@ -27,6 +27,8 @@ import {
 } from './gui/support/document-ux.ts';
 import { runScenarioWithEvidence } from './gui/support/scenario-runner.ts';
 
+import { validateStartupDialogs, dismissKnownDialog, isStudioStartupReady } from './gui/support/studio-startup.ts';
+
 const repoRoot = fileURLToPath(new URL('..', import.meta.url));
 
 test('공통 config는 exact-SHA 입력과 bounded retry 없는 runner 계약을 만든다', () => {
@@ -209,12 +211,11 @@ test('숨은 file input upload와 글꼴 선택은 OS 권한·style 변경 없�
   assert.match(nativeSource, /waitForInitialDesktopReady\(browser, inputs\.timeoutMs\)/);
   assert.match(helperSource, /document\.querySelector\(statusSelector\)\?\.textContent/);
   assert.match(helperSource, /document\.querySelector\(pageSelector\)\?\.textContent/);
-  assert.match(helperSource, /status === INITIAL_DESKTOP_STATUS/);
-  assert.match(helperSource, /alhangeul-toolbar-ready/);
+  assert.match(helperSource, /await waitForStudioStartup\(session, timeoutMs\)/);
   assert.doesNotMatch(documentSource, /input\.setValue|display:\s*'block'|setAttribute\(['"]style/);
   assert.match(helperSource, /\.replace\(\/\\s\*×\\s\*\$\/, ''\)/);
-  assert.match(helperSource, /title !== '로컬 글꼴 감지'/);
-  assert.match(helperSource, /clickExactDialogButton\(session, '대체 글꼴로 보기'/);
+  assert.match(helperSource, /\['로컬 글꼴 감지', '로컬 글꼴 설정'\]\.includes\(title\)/);
+  assert.match(helperSource, /await dismissKnownDialog/);
   assert.doesNotMatch(helperSource, /로컬 글꼴 감지 \(권장\)/);
   assert.doesNotMatch(nativeSource, /confirmDroppedDocument/);
   assert.doesNotMatch(helperSource, /로컬 파일 열기 확인/);
@@ -317,3 +318,33 @@ function validEnv(override = {}) {
     ...override,
   };
 }
+
+
+test('시작 안내는 알려진 고유 modal만 수용하고 알 수 없는 확인·중복을 거부한다', () => {
+  validateStartupDialogs([]);
+  validateStartupDialogs(['로컬 글꼴 설정', '화면 스킨 선택']);
+  assert.throws(() => validateStartupDialogs(['덮어쓰기 확인']), /예상하지 않은/);
+  assert.throws(() => validateStartupDialogs(['화면 스킨 선택', '화면 스킨 선택']), /중복/);
+});
+
+test('시작 안내 버튼이 없거나 중복이면 클릭하지 않는다', async () => {
+  let clicks = 0;
+  const button = { getText: async () => '시작하기', click: async () => { clicks += 1; } };
+  for (const buttons of [[], [button, button]]) {
+    await assert.rejects(dismissKnownDialog({ $$: async () => buttons }, '화면 스킨 선택'), /버튼이/);
+  }
+  assert.equal(clicks, 0);
+  await dismissKnownDialog({ $$: async () => [button] }, '화면 스킨 선택');
+  assert.equal(clicks, 1);
+});
+
+
+test('새 Studio는 초기 안내 문구나 다른 문서를 준비된 빈 문서로 오인하지 않는다', () => {
+  const state = { status: '새 문서.hwp — 1페이지', hasAutomation: true, canvasReady: true, toolbarReady: true };
+  assert.equal(isStudioStartupReady(state), true);
+  for (const next of [
+    { status: 'HWP 파일을 선택해주세요.' }, { status: '다른 파일.hwp — 1페이지' },
+    { canvasReady: false }, { toolbarReady: false }, { status: '새 문서 생성 중...' },
+  ]) assert.equal(isStudioStartupReady({ ...state, ...next }), false);
+  assert.equal(isStudioStartupReady({ ...state, status: 'HWP 파일을 선택해주세요.', hasAutomation: false, canvasReady: false }), true);
+});

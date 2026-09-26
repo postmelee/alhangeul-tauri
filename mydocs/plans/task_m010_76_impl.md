@@ -117,3 +117,9 @@ GitHub Issue: [#76](https://github.com/postmelee/alhangeul-tauri/issues/76)
 - 첫 실행은 2026-09-26 15:27 KST에 upstream baseline의 저장 확인 함수가 새 options 인자를 받는 변경을 과거 정규식이 거부해 실패했다. 취소 요청 시 이미 실패 종료였다. 원본 로그는 run 36223270009에 보존한다.
 - 저장 확인 adapter는 upstream 인자를 그대로 전달하는 Parameters 기반 rest signature로 맞춘다. Tauri native 저장 확인은 유지한다.
 - 후보 workflow는 clean devel만 사용하므로 Stage 1.1의 backward-compatible 보완을 선행 PR로 devel에 반영한 뒤 Stage 1.2 후보 생성을 재실행한다. #76은 선행 PR에서 close하지 않는다. 최종 설치본 검증과 최종 보고는 Stage 3에서 수행한다.
+
+## GUI harness 수용 준비
+
+v0.8.6의 공개 source에서 시작 시 빈 문서 자동 열기·최초 스킨 안내가 추가된 것을 확인했다. 기존의 영구 빈 editor/status 문구 가정과 #74 이전 글꼴 modal 문구를 그대로 쓰면 알려진 자동화 실패가 되므로, 알려진 고유 modal만 처리하고 새 문서의 실제 canvas·상태를 기다리는 helper로 맞춘다. 알 수 없는 modal·중복 버튼은 실패하며 같은 버튼을 반복 클릭하지 않는다. native print도 스킨 안내와 제품 글꼴 사용 안 함 선택을 구분하고 문서 본문·포커스 사후 조건을 유지한다. Native UI 테스트 가이드에 따라 neutral 계약·typecheck 뒤 새 exact 설치본의 local-fonts/full GUI에서 검증한다. 이 변경은 제품 기능·public release 승인과 무관하다.
+
+GUI 준비 검증: `pnpm run typecheck:gui` 통과, 공통 GUI 계약 22개·native print 계약 5개 통과. 실제 OS에서 새 첫 실행 화면의 selector/포커스 수용은 설치본 GUI 실행 전까지 미검증이다. 원본/업스트림의 DOM을 직접 수정하거나 localStorage 설정을 주입해 안내를 건너뛰지 않는다.

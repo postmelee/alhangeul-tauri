@@ -1,3 +1,5 @@
+import { dismissKnownDialog, waitForStudioStartup } from './studio-startup.ts';
+
 export const GUI_SELECTORS = {
   documentCanvas: '#scroll-content > canvas[data-rhwp-rendered-zoom]',
   fileInput: '#file-input',
@@ -118,16 +120,7 @@ export async function waitForInitialDesktopReady(
   session: WebdriverIO.Browser,
   timeoutMs: number,
 ): Promise<void> {
-  await session.waitUntil(async () => {
-    const state = await session.execute((statusSelector) => ({
-      status: document.querySelector(statusSelector)?.textContent?.trim() ?? '',
-      toolbarReady: document.documentElement.classList.contains('alhangeul-toolbar-ready'),
-    }), GUI_SELECTORS.statusMessage);
-    return state.status === INITIAL_DESKTOP_STATUS && state.toolbarReady;
-  }, {
-    timeout: timeoutMs,
-    timeoutMsg: 'Studio 초기 file input listener가 준비되지 않았습니다',
-  });
+  await waitForStudioStartup(session, timeoutMs);
 }
 
 export async function resolveLocalFontDialog(
@@ -152,10 +145,10 @@ export async function resolveLocalFontDialog(
   const overlay = await session.$(GUI_SELECTORS.modalOverlay);
   if (!await overlay.isExisting()) return;
   const title = normalizeDialogTitle(await overlay.$(GUI_SELECTORS.modalTitle).getText());
-  if (title !== '로컬 글꼴 감지') {
+  if (!['로컬 글꼴 감지', '로컬 글꼴 설정'].includes(title)) {
     throw new Error(`${displayName} 예상하지 않은 문서 로드 모달: ${title}`);
   }
-  await clickExactDialogButton(session, '대체 글꼴로 보기', displayName);
+  await dismissKnownDialog(await overlay.getElement(), title);
   await waitForDialogGone(session, timeoutMs, displayName);
 }
 
@@ -236,22 +229,6 @@ export async function waitForStudioStatus(
 
 function normalizeDialogTitle(title: string): string {
   return title.replace(/\s*×\s*$/, '');
-}
-
-async function clickExactDialogButton(
-  session: WebdriverIO.Browser,
-  label: string,
-  context: string,
-): Promise<void> {
-  const overlay = await session.$(GUI_SELECTORS.modalOverlay);
-  const buttons = await overlay.$$(GUI_SELECTORS.modalButtons);
-  for (const button of buttons) {
-    if (await button.getText() === label) {
-      await button.click();
-      return;
-    }
-  }
-  throw new Error(`${context} ${label} 버튼을 찾을 수 없습니다`);
 }
 
 async function waitForDialogGone(
