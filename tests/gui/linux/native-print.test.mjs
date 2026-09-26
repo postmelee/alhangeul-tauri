@@ -35,13 +35,15 @@ test('production native print는 준비·Print to File·cancel·CUPS를 같은 �
     assertEditorBody: async (label) => { calls.push(['body', label]); },
   });
   assert.deepEqual(calls.map(([name]) => name), [
-    'actionOptional', 'waitAbsent', 'actionOptional', 'action', 'waitAbsent',
+    'actionOptional', 'action', 'waitAbsent', 'actionOptional', 'waitAbsent',
     'actionOptional', 'waitAbsent', 'wait', 'wait', 'body',
     'printToFile', 'wait', 'trigger', 'wait', 'body', 'file',
     'cancelPrint', 'wait', 'trigger', 'wait', 'body',
     'virtualPrinter', 'wait', 'trigger', 'wait', 'body', 'cupsPdf',
   ]);
   assert.equal(calls[0][2], 10000);
+  assert.deepEqual(calls[0][1].exactNames, ['사용 안 함 (대체 글꼴로 보기)']);
+  assert.deepEqual(calls[3][1].exactNames, ['시작하기']);
   assert.deepEqual(calls[7][1], { roles: ['document text'], names: ['biz_plan.hwp'] });
   assert.deepEqual(calls.filter(([name]) => name === 'body').map(([, label]) => label), [
     'before-print', 'after-print-to-file', 'after-cancel', 'after-cups-pdf',

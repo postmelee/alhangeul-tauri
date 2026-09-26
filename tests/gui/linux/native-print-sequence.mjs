@@ -8,13 +8,14 @@ export async function runProductionPrintSequence(options) {
   if (typeof options.assertEditorBody !== 'function') throw new Error('editor 본문 검증이 필요합니다');
   const document = { roles: ['document text'], names: [options.displayName] };
   const focusedDocument = { ...document, focused: true };
-  await options.adapter.actionOptional(SKIN_BUTTON, 10000);
-  await options.adapter.waitAbsent(SKIN_BUTTON);
-  const choice = await options.adapter.actionOptional(FONT_DISABLED, 5000);
+  // CLI document loading may append the font dialog above synchronous skin onboarding.
+  const choice = await options.adapter.actionOptional(FONT_DISABLED, 10000);
   if (choice?.performed) {
     await options.adapter.action({ roles: ['push button', 'button'], exactNames: ['확인'] });
     await options.adapter.waitAbsent(FONT_DISABLED);
   }
+  await options.adapter.actionOptional(SKIN_BUTTON, 10000);
+  await options.adapter.waitAbsent(SKIN_BUTTON);
   await options.adapter.actionOptional(LOCAL_FONT_BUTTON, 1000);
   await options.adapter.waitAbsent(LOCAL_FONT_BUTTON);
   await options.adapter.wait(document);
