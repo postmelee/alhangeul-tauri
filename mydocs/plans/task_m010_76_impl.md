@@ -183,3 +183,8 @@ v0.8.6은 preview 압축 해제 전에 10 MiB 상한으로 `None`을 반환한�
 - helper를 focus→경로 exact readback→고유한 enabled/sensitive Open 또는 Save 버튼 한 번→chooser 종료 순서로 정리한다. entry activate는 이 경로에서 호출하지 않는다. 잘못된 버튼·중복·비활성 후보를 거부하며 기존 5초 bounded close·실제 문서 identity·저장/PDF 결과 검사는 유지한다. timeout 확대·좌표 클릭·재시도는 추가하지 않는다.
 - 실제 Python dispatch/selector/text/action 함수를 추출한 회귀로 한 번 제출, 경로 readback 실패, wrong name·hidden·disabled·insensitive·중복 거부를 검사한다. 기존 driver에 필수 상태/고유성 guard 5줄만 추가해 311 LOC이며 범위 밖 driver 재구성은 하지 않는다.
 - 로컬 `typecheck:gui`, Linux 계약 회귀 68개, diff 검사 통과. 제품 bytes와 성공한 글꼴 GUI는 그대로다. Open/Save 공용 adapter가 직접 PDF 등에도 사용되므로 동일 DEB의 전체 GUI로 영향을 확인한다. 실패하면 기존 chooser tree·화면을 보존하며 전체 통과로 바꾸지 않는다. Actions 완료 대기는 하지 않는다.
+
+
+## Stage 3 최종 수용
+
+전체 GUI `36277021792` success와 artifact `10916948891` ZIP/hash·참조 파일 61개를 대조했다. WebDriver 7/7, nativePrint=0, 썸네일 포함 모든 step success다. 대표 PDF 4개를 추가 판독했다. 제품은 기존 `02388f59`이며 전체 harness는 `0bd29211`이다. 마지막 로컬 전체 automation에서 진단 경로의 host dirname 계약 위반을 찾아 Linux 의미와 같은 `posix.dirname`으로 명시하고 977/977을 확인했다. 실제 입력·제품 코드 변경은 없어 exact GUI 증거를 재사용한다. Stage 3와 최종 보고서에 이전 실패·Windows 원시 제한·사용자 점검 대기를 보존했다.

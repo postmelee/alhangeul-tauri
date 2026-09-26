@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
-import { dirname, posix } from 'node:path';
+import { posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   resolveExecutable,
@@ -57,7 +57,7 @@ async function writeTransferEvidence(path, evidence, output) {
   if (!path) return;
   evidence.markers = String(output).split(/\r?\n/)
     .filter((line) => /^(READY|STARTED|DATA|FINISHED|FAILED:[A-Z_-]+)$/.test(line));
-  await mkdir(dirname(path), { recursive: true });
+  await mkdir(posix.dirname(path), { recursive: true });
   await writeFile(path, JSON.stringify(evidence, null, 2));
 }
 
