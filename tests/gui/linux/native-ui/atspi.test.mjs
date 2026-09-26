@@ -25,13 +25,15 @@ test('Save As는 focused location entry에 full target을 넣고 명시적으로
   assert.equal(triggered, true);
   assert.deepEqual(shortcuts, ['ctrl+l']);
   assert.deepEqual(calls.map(({ command }) => command), [
-    'wait', 'submitText', 'actionIfPresent', 'waitAbsent',
+    'wait', 'setText', 'action', 'waitAbsent',
   ]);
   assert.equal(calls[1].value, '/tmp/output/saved.hwp');
   assert.equal(calls[1].selector.focused, true);
   assert.deepEqual(calls[1].selector.within.roles, ['file chooser']);
   assert.deepEqual(calls[2].selector.exactNames, ['save', '저장']);
-  assert.deepEqual(calls[2].guardSelector.roles, ['file chooser', 'dialog']);
+  assert.equal(calls[2].requireUnique, true);
+  assert.equal(calls[2].selector.enabled, true);
+  assert.equal(calls[2].selector.sensitive, true);
   assert.deepEqual(calls[2].actionNames, ['click', 'press']);
 });
 
@@ -47,7 +49,7 @@ test('native open은 GTK location shortcut을 한 번 쓰고 modal close를 기�
   await adapter.openDocument('/fixtures/biz_plan.hwp', async () => {});
   assert.deepEqual(shortcuts, ['ctrl+l']);
   assert.deepEqual(calls.map(({ command }) => command), [
-    'wait', 'submitText', 'actionIfPresent', 'waitAbsent',
+    'wait', 'setText', 'action', 'waitAbsent',
   ]);
   assert.equal(calls[1].value, '/fixtures/biz_plan.hwp');
   assert.equal(calls[1].selector.focused, true);

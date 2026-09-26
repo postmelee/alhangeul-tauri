@@ -84,7 +84,7 @@ export class LinuxNativeUiAdapter {
       await trigger();
       await this.wait(FILE_DIALOG);
       await this.shortcut('ctrl+l');
-      await this.submitText(LOCATION_ENTRY, path);
+      await this.setText(LOCATION_ENTRY, path);
       await this.acceptFileChooser(['open', '열기']);
     });
   }
@@ -95,7 +95,7 @@ export class LinuxNativeUiAdapter {
       await trigger();
       await this.wait(FILE_DIALOG);
       await this.shortcut('ctrl+l');
-      await this.submitText(LOCATION_ENTRY, path);
+      await this.setText(LOCATION_ENTRY, path);
       await this.acceptFileChooser(['save', '저장']);
     });
   }
@@ -231,9 +231,12 @@ export class LinuxNativeUiAdapter {
     return runActionWithPostcondition(
       (request) => this.command(request),
       {
-        command: 'actionIfPresent',
-        selector: { roles: BUTTON_ROLES, exactNames: names, within: FILE_CHOOSER_SCOPE },
-        guardSelector: FILE_DIALOG,
+        command: 'action',
+        selector: {
+          roles: BUTTON_ROLES, exactNames: names, within: FILE_CHOOSER_SCOPE,
+          enabled: true, sensitive: true,
+        },
+        requireUnique: true,
         actionNames: ['click', 'press'], timeoutMs, desktopScope,
       },
       { command: 'waitAbsent', selector: FILE_DIALOG, timeoutMs, desktopScope },

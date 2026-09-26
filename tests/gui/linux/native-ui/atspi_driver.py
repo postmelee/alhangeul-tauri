@@ -90,6 +90,9 @@ def matches_info(info, selector):
         return False
     if selector.get("showing", True) and not info["showing"]:
         return False
+    for state in ("enabled", "sensitive"):
+        if isinstance(selector.get(state), bool) and info[state] != selector[state]:
+            return False
     focused = selector.get("focused")
     if isinstance(focused, bool) and info["focused"] != focused:
         return False
@@ -150,6 +153,8 @@ def wait_for_matches(request, absent=False):
 
 def selected_node(request):
     found = wait_for_matches(request)
+    if request.get("requireUnique", False) and len(found) != 1:
+        raise LookupError("action requires exactly one target")
     index = int(request.get("index", 0))
     if index < 0 or index >= len(found):
         raise LookupError(f"selector index {index} is unavailable ({len(found)} matches)")

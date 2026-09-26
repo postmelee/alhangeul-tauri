@@ -172,3 +172,14 @@ v0.8.6은 preview 압축 해제 전에 10 MiB 상한으로 `None`을 반환한�
 - 단위 재현은 이번 관측에서 개인 정보 없이 `READY/STARTED/FINISHED`만 구성해 DATA 부재 거부를 검사한다. 관측 지연, 잘못된 bounds, 중복 source, 실패 시 단일 release와 cleanup도 실제 helper를 실행해 검사한다. 설치본/제품/성공한 글꼴 GUI는 변경하지 않는다.
 
 - 보완 로컬 검증: `typecheck:gui`, drag helper 회귀 9개와 이를 포함한 `test:gui:linux:contracts` 67개, Python AST 구문·diff 검사 통과. Linux 실행 성공은 다음 Actions 결과로 확인한다.
+
+
+## Linux GUI 세 번째 결과와 chooser 단일 제출
+
+- full run [36276264694](https://github.com/postmelee/alhangeul-tauri/actions/runs/36276264694)은 harness `0c52286d601470d5fd8cbf44d82bf0e526045383`, 같은 제품 SHA/producer에서 failure다. artifact `10917059377`의 실제 ZIP SHA256 `535c24b3cb5a9fd445ae32212cbeb4ebd1acc3d1f2a2efe2476df864631d87a9`, workflow context와 시나리오 참조 파일 53개의 크기·hash를 대조했다.
+- drag 기록은 READY→STARTED→DATA→FINISHED와 phase=complete다. 고유 GTK source에서 파일 URI가 전달됐고 실제 `form-002.hwpx` identity·10쪽 검사가 통과했다. 최종 화면의 한글 표·본문도 확인했다. 문서 UX 2건·직접 HWP/HWPX PDF·system print·thumbnail manager도 통과했다.
+- native-save는 첫 Open File chooser 종료에서 실패했다. 실패 tree에는 focused entry(textLength=87)와 enabled Open/click 버튼이 남았다. 이어진 새 문서 저장 화면은 저장 완료였지만 tree에는 선행 Open File이 남아 있어 waitAbsent가 실패했다. 두 저장 시나리오를 이번 실행 통과로 기록하지 않으며 이전 실행의 성공과 구분한다. WebDriver 5 passing/2 failing, nativePrint=0이다.
+- 기존 chooser 입력은 `setText + entry activate` 뒤 별도 Open/Save 버튼을 수행한다. [GTK 3.24.33 공식 소스](https://github.com/GNOME/gtk/blob/3.24.33/gtk/gtkfilechooserwidget.c#L2638)는 location entry의 activates-default와 비동기 파일 확인을 사용한다. 이 이중 제출의 경합을 다음 검증 가설로 삼되, 이번 자료만으로 근본 원인을 확정하지 않는다.
+- helper를 focus→경로 exact readback→고유한 enabled/sensitive Open 또는 Save 버튼 한 번→chooser 종료 순서로 정리한다. entry activate는 이 경로에서 호출하지 않는다. 잘못된 버튼·중복·비활성 후보를 거부하며 기존 5초 bounded close·실제 문서 identity·저장/PDF 결과 검사는 유지한다. timeout 확대·좌표 클릭·재시도는 추가하지 않는다.
+- 실제 Python dispatch/selector/text/action 함수를 추출한 회귀로 한 번 제출, 경로 readback 실패, wrong name·hidden·disabled·insensitive·중복 거부를 검사한다. 기존 driver에 필수 상태/고유성 guard 5줄만 추가해 311 LOC이며 범위 밖 driver 재구성은 하지 않는다.
+- 로컬 `typecheck:gui`, Linux 계약 회귀 68개, diff 검사 통과. 제품 bytes와 성공한 글꼴 GUI는 그대로다. Open/Save 공용 adapter가 직접 PDF 등에도 사용되므로 동일 DEB의 전체 GUI로 영향을 확인한다. 실패하면 기존 chooser tree·화면을 보존하며 전체 통과로 바꾸지 않는다. Actions 완료 대기는 하지 않는다.
