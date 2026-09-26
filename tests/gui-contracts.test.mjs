@@ -339,12 +339,12 @@ test('시작 안내 버튼이 없거나 중복이면 클릭하지 않는다', as
 });
 
 
-test('Studio 시작은 desktop idle 또는 렌더된 빈 문서를 요구하고 다른 문서를 거부한다', () => {
-  const state = { status: '새 문서.hwp — 1페이지', hasAutomation: true, canvasReady: true, toolbarReady: true };
+test('Studio 시작은 native idle을 요구하고 자동 빈 문서나 다른 문서를 거부한다', () => {
+  const state = { status: 'HWP 파일을 선택해주세요.', canvasReady: false, toolbarReady: true };
   assert.equal(isStudioStartupReady(state), true);
   for (const next of [
     { status: '다른 파일.hwp — 1페이지' },
-    { canvasReady: false }, { toolbarReady: false }, { status: '새 문서 생성 중...' },
+    { status: '새 문서.hwp — 1페이지', canvasReady: true },
+    { canvasReady: true }, { toolbarReady: false }, { status: '새 문서 생성 중...' },
   ]) assert.equal(isStudioStartupReady({ ...state, ...next }), false);
-  assert.equal(isStudioStartupReady({ ...state, status: 'HWP 파일을 선택해주세요.', hasAutomation: false, canvasReady: false }), true);
 });

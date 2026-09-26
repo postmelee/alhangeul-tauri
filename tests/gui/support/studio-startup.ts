@@ -50,13 +50,12 @@ export async function waitForStudioStartup(session: WebdriverIO.Browser, timeout
       toolbarReady: document.documentElement.classList.contains('alhangeul-toolbar-ready'),
     }));
     return isStudioStartupReady(state);
-  }, { timeout: timeoutMs, timeoutMsg: 'Studio 시작 문서와 알려진 대화상자 처리가 완료되지 않았습니다' });
+  }, { timeout: timeoutMs, timeoutMsg: 'Alhangeul idle 시작과 알려진 대화상자 처리가 완료되지 않았습니다' });
 }
 
 
 export function isStudioStartupReady(state: {
   status: string; canvasReady: boolean; toolbarReady: boolean;
 }): boolean {
-  return state.toolbarReady && (state.status === 'HWP 파일을 선택해주세요.'
-    || (state.canvasReady && state.status.startsWith('새 문서.hwp')));
+  return state.toolbarReady && !state.canvasReady && state.status === 'HWP 파일을 선택해주세요.';
 }
