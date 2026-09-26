@@ -1,12 +1,21 @@
 # Windows 최종 설치본·로컬 글꼴 점검
 
-이 절차는 Task #76의 rhwp v0.8.6 통합 후보를 Windows x64에서 점검하기 위한 안내다. 설치본의 정확한 Actions 링크와 SHA-256은 [Task #76 검증 보고서](../../mydocs/report/task_m010_76_report.md)의 인계 표를 사용한다. 이전 v0.8.4 설치본 결과와 구분해 기록한다.
+이 절차는 Task #76의 rhwp v0.8.6 통합 후보를 Windows x64에서 점검하기 위한 안내다. 제품 버전은 `0.1.0`이며 이전 v0.8.4 엔진 설치본 결과와 구분해 기록한다.
+
+## 점검할 설치본
+
+- [Windows x64 설치본 ZIP 다운로드](https://github.com/postmelee/alhangeul-tauri/actions/runs/36229142460/artifacts/10902469644) — GitHub 로그인 필요.
+- [전체 CI 결과](https://github.com/postmelee/alhangeul-tauri/actions/runs/36229142460): success. 제품 source는 `02388f59e88efbf37514894a28a69466bcde9a8b`다.
+- ZIP SHA-256: `420c5b51ca4e38f7eb6010824c4b277aeb3d2396af2184dbcf87aa46e43bd84d`.
+- NSIS `nsis/Alhangeul_0.1.0_x64-setup.exe` SHA-256: `ee70185e47ab59a00904e5b9b9bbd97ebb16b85e2dcdf75b7f835b229ea6afb9`.
+
+ZIP과 내부 파일 4개의 해시·inventory·source SHA를 확인했다. 전체 CI 성공은 Windows 실환경의 글꼴 표시 수용을 대신하지 않으므로 아래 점검 결과를 별도로 기록한다.
 
 ## 준비
 
 1. 기존 Alhangeul에서 편집 중인 문서를 저장하고 모든 창을 종료한다.
-2. 검증 보고서의 **Windows artifact**를 내려받아 ZIP 압축을 푼다. `nsis/Alhangeul_0.1.0_x64-setup.exe`를 실행해 기존 NSIS 설치 환경을 업데이트한다. 이번 점검에서 MSI를 추가로 혼합 설치할 필요는 없다.
-3. 파일 이름의 제품 버전은 `0.1.0`으로 같을 수 있다. 설치 파일을 Shift+우클릭해 경로를 복사한 뒤 PowerShell에서 아래 명령을 실행하고 보고서의 hash와 비교한다.
+2. 위 **Windows x64 설치본 ZIP**을 내려받아 압축을 푼다. `nsis/Alhangeul_0.1.0_x64-setup.exe`를 실행해 기존 NSIS 설치 환경을 업데이트한다. 이번 점검에서 MSI를 추가로 혼합 설치할 필요는 없다.
+3. 파일 이름의 제품 버전은 `0.1.0`으로 같을 수 있다. 설치 파일을 Shift+우클릭해 경로를 복사한 뒤 PowerShell에서 아래 명령을 실행하고 위 NSIS hash와 비교한다.
 
    ```powershell
    Get-FileHash -Algorithm SHA256 'C:\Users\사용자\Downloads\압축푼폴더\nsis\Alhangeul_0.1.0_x64-setup.exe'
@@ -56,6 +65,7 @@ Windows 버전 / NSIS 설치:
 같은 문서·다른 문서 재열기: 통과 / 실패
 새 창 / 모든 창 종료 후 재실행: 통과 / 실패
 HWP / HWPX 저장 후 Alhangeul·한컴 재열기: 
+새 문서 입력 / HWP 저장·재열기:
 PDF 저장 / 시스템 인쇄: 
 오류 문구, 실패 단계, 캡처 파일:
 ```

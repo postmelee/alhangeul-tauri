@@ -140,3 +140,11 @@ v0.8.6은 preview 압축 해제 전에 10 MiB 상한으로 `None`을 반환한�
 두 번째 full 36225908122에서 preview 계약 12개 중 11개는 통과했지만 단순 text인 `not valid XML`은 upstream에서 빈 문서로 허용돼 직접 실패 조건을 충족하지 못했다. pinned WASM으로 실제 parser를 조사하여 text/invalid UTF-8은 수용되고 불일치 닫는 태그는 XML 오류로 거부됨을 확인했다. 세 fixture를 `<broken></mismatch>`로 고정하고 Linux native profile로 우선 재검증한 뒤 전체 설치본을 생성한다. 테스트 성공 조건을 낮추지 않는다.
 
 집중 native 36226889223은 성공했다. 세 번째 full 36227541535에서는 Windows worker 3개까지 통과한 뒤 COM handler의 별도 BMP fixture(`apps/thumbnail-handler/tests/support/mod.rs`)에 같은 package 항목 누락이 남아 fallback이 E_FAIL로 실패했다. 후속 2개 실패는 공유 mutex poison이다. repository의 Preview ZIP 생성 지점을 재검색해 네 번째 helper도 동일하게 보완한다. 제품 DLL/worker·성공 HRESULT 기준·deadline은 변경하지 않는다. 새 source에서 전체 검증을 수행한다.
+
+## Stage 3 — 2026-09-27 실행 확인과 인계 준비
+
+- full [36229142460](https://github.com/postmelee/alhangeul-tauri/actions/runs/36229142460)은 source `02388f59e88efbf37514894a28a69466bcde9a8b`에서 success다. 세 플랫폼 core·native·패키징과 Windows 설치 계약 집계가 통과했다. Windows COM handler 3개도 통과했다.
+- Windows [artifact 10902469644](https://github.com/postmelee/alhangeul-tauri/actions/runs/36229142460/artifacts/10902469644)의 archive digest `sha256:420c5b51ca4e38f7eb6010824c4b277aeb3d2396af2184dbcf87aa46e43bd84d`를 실제 ZIP과 대조했다. 내부 NSIS·MSI·handler·worker 4개 파일의 크기·SHA256, inventory와 source SHA 및 `check:desktop-artifacts`가 일치했다. NSIS hash는 Windows 점검 안내에 기록했다.
+- 설치 원시 결과: MSI lifecycle은 실제 passed. NSIS는 raw failure 12개(0x80040154), lifecycle passed·thumbnail not-accepted인 hosted 진단 계약만 passed다. MSI forced reinstall은 3010/reboot-required·post-reboot-unverified로 계약만 passed다. 세 증거 ZIP digest와 evaluation IO 검증 결과도 확인했으며 이를 전체 Shell 기능 수용으로 바꾸지 않는다.
+- 같은 제품 SHA·producer를 입력한 Linux GUI [full 36273638799](https://github.com/postmelee/alhangeul-tauri/actions/runs/36273638799)와 [local-fonts 36273643047](https://github.com/postmelee/alhangeul-tauri/actions/runs/36273643047)를 실행했다. 두 검증의 harness SHA도 `02388f59e88efbf37514894a28a69466bcde9a8b`다. 결과와 화면·PDF 판독은 아직 미확인이다.
+- 작업지시자의 Actions 대기·조회 중단 지시를 유지한다. 위 두 실행의 완료 통지를 받은 뒤 결과·증거를 확인하고 Stage 3/최종 보고·PR 반영·Windows 최종 점검 인계를 진행한다. 이 문서 기록만으로 Stage 3 완료나 공개 release 수용을 선언하지 않는다.
