@@ -2,7 +2,7 @@
 
 GitHub Issue: [#76](https://github.com/postmelee/alhangeul-tauri/issues/76)
 구현계획서: [task_m010_76_impl.md](../plans/task_m010_76_impl.md)
-Stage: 1 (1.1 보완 검증 완료, 1.2 실제 후보·멱등성 검증 대기)
+Stage: 1 (완료)
 
 ## 단계 목적
 
@@ -37,14 +37,22 @@ upstream source는 수정하지 않는다. 기본 검증 pin은 v0.8.4를 유지
 
 - 보완 후 실제 v0.8.6 source의 저장 확인 baseline 1개와 focused Studio 12개 통과(관련 없는 11개는 명시 선택에서 제외). 검증 뒤 source checkout을 v0.8.4로 복원했다.
 
+## 실제 후보 생성과 멱등성 결과
+
+- 선행 PR [#77](https://github.com/postmelee/alhangeul-tauri/pull/77)은 merge commit `85f8cf09f833252bef3fcdf90a6edc3563d3de02`로 반영했다. #76은 계속 OPEN이다.
+- [36224131632](https://github.com/postmelee/alhangeul-tauri/actions/runs/36224131632): `create_candidate`, 네 Cargo.lock·WASM 생성, neutral/native test·clippy, GitHub App token·push·Draft PR 생성 모두 성공.
+- 자동 후보 [#78](https://github.com/postmelee/alhangeul-tauri/pull/78), head `54ee0745576875b427efe29908d414874db0b4c8`, stable `v0.8.6`, resolved commit `f1f9c6ae58344ee9368996d3543f76b9345cf227`.
+- 반복 [36225031135](https://github.com/postmelee/alhangeul-tauri/actions/runs/36225031135): `existing_pr`, writer skipped, 후보 head 불변. 추가 PR·커밋 없음.
+- 운영 변수는 true를 유지한다. 자동 PR 작성만 허용하며 자동 merge·release는 수행하지 않는다.
+
 ## 잔여 위험
 
-- Stage 1.2에서 보완된 clean devel 기반 candidate의 전체 preflight와 App token·Draft PR 생성을 아직 확인해야 한다.
+- 후보 생성·멱등성은 완료했다. 최종 제품의 startup 보완과 설치본 검증은 후속 단계다.
 - v0.8.6 실제 native/설치본·Linux GUI·최종 Windows는 후속 단계다. 첫 실패나 사전 source 검사를 전체 성공으로 기록하지 않는다.
 
 ## 다음 단계 영향
 
-선행 PR 반영 후 target_tag=v0.8.6, dry_run=false를 실행한다. 생성된 exact candidate head와 반복 dispatch의 existing_pr/no additional commit을 확인한 뒤 이 보고서에 Stage 1 결과를 보완한다.
+후보 head를 작업 브랜치에 merge하여 최종 제품 adapter와 함께 수용한다. 검증 실패 이력은 보존한다.
 
 ## 승인 근거
 

@@ -5,6 +5,7 @@ import type { Plugin } from 'vite';
 import { createAlhangeulOverrides } from './alhangeul-overrides';
 import { createAlhangeulLocalFontPlugin } from './local-font-overrides';
 import { createLocalFontEntryHooks } from './local-font-entry-hooks';
+import { createDesktopStartupEntry } from './desktop-startup-entry';
 
 const desktopConfig = JSON.parse(
   readFileSync(resolve(__dirname, '../desktop/src-tauri/tauri.conf.json'), 'utf-8'),
@@ -130,6 +131,7 @@ export default defineConfig({
   plugins: [
     createAlhangeulLocalFontPlugin({ upstreamSrc, alhangeulSrc }),
     createLocalFontEntryHooks(upstreamSrc, alhangeulSrc),
+    createDesktopStartupEntry(upstreamSrc, alhangeulSrc),
     alhangeulDesktopShell(),
     alhangeulFontAssets(),
   ],

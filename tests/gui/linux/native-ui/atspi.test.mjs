@@ -25,13 +25,15 @@ test('Save As는 focused location entry에 full target을 넣고 명시적으로
   assert.equal(triggered, true);
   assert.deepEqual(shortcuts, ['ctrl+l']);
   assert.deepEqual(calls.map(({ command }) => command), [
-    'wait', 'submitText', 'actionIfPresent', 'waitAbsent',
+    'wait', 'setText', 'action', 'waitAbsent',
   ]);
   assert.equal(calls[1].value, '/tmp/output/saved.hwp');
   assert.equal(calls[1].selector.focused, true);
   assert.deepEqual(calls[1].selector.within.roles, ['file chooser']);
   assert.deepEqual(calls[2].selector.exactNames, ['save', '저장']);
-  assert.deepEqual(calls[2].guardSelector.roles, ['file chooser', 'dialog']);
+  assert.equal(calls[2].requireUnique, true);
+  assert.equal(calls[2].selector.enabled, true);
+  assert.equal(calls[2].selector.sensitive, true);
   assert.deepEqual(calls[2].actionNames, ['click', 'press']);
 });
 
@@ -47,7 +49,7 @@ test('native open은 GTK location shortcut을 한 번 쓰고 modal close를 기�
   await adapter.openDocument('/fixtures/biz_plan.hwp', async () => {});
   assert.deepEqual(shortcuts, ['ctrl+l']);
   assert.deepEqual(calls.map(({ command }) => command), [
-    'wait', 'submitText', 'actionIfPresent', 'waitAbsent',
+    'wait', 'setText', 'action', 'waitAbsent',
   ]);
   assert.equal(calls[1].value, '/fixtures/biz_plan.hwp');
   assert.equal(calls[1].selector.focused, true);
@@ -169,6 +171,18 @@ test('production native phase는 선택형 글꼴 버튼과 focused document wai
   assert.deepEqual(calls.map(({ command }) => command), ['actionOptional', 'wait']);
   assert.deepEqual(calls[0].actionNames, ['click', 'press']);
   assert.equal(calls[0].timeoutMs, 5000);
+});
+
+test('radio의 관측된 select action을 요청하고 checked 사후 조건을 기다린다', async () => {
+  const calls = [];
+  const adapter = createAdapter({
+    runAtspi: async (request) => { calls.push(request); return { performed: true }; },
+  });
+  const selector = { roles: ['radio button'], exactNames: ['사용 안 함 (대체 글꼴로 보기)'] };
+  await adapter.actionOptional(selector, 10000, ['select']);
+  await adapter.wait({ ...selector, checked: true });
+  assert.deepEqual(calls[0].actionNames, ['select']);
+  assert.equal(calls[1].selector.checked, true);
 });
 
 test('Python bridge는 editable text를 focus·readback한 같은 node에서 semantic activate한다', async () => {

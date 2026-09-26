@@ -22,6 +22,7 @@ import {
   type NativeDocumentCommand,
 } from '../support/document-ux.ts';
 import { readGuiHarnessInputs } from '../wdio.shared.conf.ts';
+import { acceptNewNativeDocument } from '../support/new-document-acceptance.ts';
 
 const inputs = readGuiHarnessInputs();
 const generatedDir = join(inputs.outputDir, 'generated');
@@ -57,6 +58,13 @@ describe('Alhangeul native Linux acceptance', () => {
     });
   });
 
+  it('파일 → 새로 만들기의 native 세션은 입력·저장·재열기·PDF를 보존한다', async () => {
+    await runScenario('linux-new-document', [], () => acceptNewNativeDocument({
+      outputDir: inputs.outputDir, timeoutMs: inputs.timeoutMs,
+      trigger: triggerFileCommand, adapter: nativeAdapter({}),
+    }));
+  });
+
   it('X11 bounded drag-in은 한 번의 검증된 gesture로 문서를 연다', async () => {
     const fixture = fixtureById(fixtures, 'form-hwpx');
     await runScenario('linux-native-drag-in', [fixture], async () => {
@@ -65,6 +73,7 @@ describe('Alhangeul native Linux acceptance', () => {
         await dragFileIntoWindow({
           filePath: fixture.absolutePath,
           targetRect: await appWindowBounds(),
+          evidencePath: join(inputs.outputDir, 'native-ui', 'drag-transfer.json'),
           timeoutMs: Math.min(inputs.timeoutMs, 30000),
           env: process.env,
         });

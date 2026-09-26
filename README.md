@@ -69,7 +69,7 @@ pnpm tauri dev
 ## 의존성과 출처
 
 - 지속 upstream: [edwardkim/rhwp](https://github.com/edwardkim/rhwp)
-- 현재 Stable pin: `v0.8.4` (`496333b27d21ddb9114ba9ae340bcb895870c9a7`)
+- 현재 Stable pin: `v0.8.6` (`f1f9c6ae58344ee9368996d3543f76b9345cf227`)
 - 기계 검증 가능한 pin과 artifact 출처: [rhwp-core.lock](rhwp-core.lock)
 - 의존 경계와 갱신·rollback 절차: [UPSTREAM.md](docs/architecture/UPSTREAM.md)
 - 초기 코드와 자산 출처: [PROVENANCE.md](docs/architecture/PROVENANCE.md)

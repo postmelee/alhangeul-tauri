@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process';
+import { mkdir, writeFile } from 'node:fs/promises';
 import { posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -25,37 +26,78 @@ export async function dragFileIntoWindow(options, services = {}) {
     [SOURCE_PATH, options.filePath],
     { env },
   );
+  const evidence = { phase: 'source-ready', target, markers: [] };
   try {
     await waitForReady(sourceProcess, options.timeoutMs ?? 10000, services.delay);
     const screen = readScreenRect(xdotool, env, services.spawnSync);
     const source = readSourceRect(xdotool, env, services.spawnSync);
     assertInside(screen, source, 'source');
     assertInside(screen, target, 'target');
-    performBoundedDrag(xdotool, source, target, env, services.spawnSync);
+    Object.assign(evidence, { screen, source });
+    await performBoundedDrag(xdotool, source, target, env, {
+      execute: services.spawnSync,
+      observe: async (marker) => {
+        evidence.phase = marker === 'STARTED' ? 'drag-start' : 'uri-transfer';
+        await waitForMarker(sourceProcess, marker, options.timeoutMs ?? 10000, services.delay);
+      },
+    });
+    evidence.phase = 'drag-end';
     await waitForTransfer(sourceProcess, options.timeoutMs ?? 10000, services.delay);
+    evidence.phase = 'complete';
   } finally {
-    await (services.stopProcess ?? stopProcess)(sourceProcess.child);
+    try {
+      await writeTransferEvidence(options.evidencePath, evidence, sourceProcess.stdout.value());
+    } finally {
+      await (services.stopProcess ?? stopProcess)(sourceProcess.child);
+    }
   }
 }
 
-export function performBoundedDrag(xdotool, sourceRect, targetRect, env, execute = spawnSync) {
+async function writeTransferEvidence(path, evidence, output) {
+  if (!path) return;
+  evidence.markers = String(output).split(/\r?\n/)
+    .filter((line) => /^(READY|STARTED|DATA|FINISHED|FAILED:[A-Z_-]+)$/.test(line));
+  await mkdir(posix.dirname(path), { recursive: true });
+  await writeFile(path, JSON.stringify(evidence, null, 2));
+}
+
+export async function performBoundedDrag(xdotool, sourceRect, targetRect, env, services = {}) {
   const sourceBounds = validateRect(sourceRect, 'source');
   const source = center(sourceBounds);
   const threshold = dragThresholdPoint(sourceBounds, source);
   const target = center(validateRect(targetRect, 'target'));
-  const result = execute(xdotool, [
-    'mousemove', '--sync', String(source.x), String(source.y),
-    'mousedown', '1',
-    'sleep', '0.2',
-    'mousemove', '--sync', String(threshold.x), String(threshold.y),
-    'sleep', '0.1',
-    'mousemove', '--sync', String(target.x), String(target.y),
-    'sleep', '0.2',
-    'mouseup', '1',
-  ], { encoding: 'utf8', env, timeout: 10000 });
-  if (result.status !== 0) {
-    throw new Error(`bounded drag failed: ${String(result.stderr || result.error || '').trim()}`);
+  const execute = services.execute ?? spawnSync;
+  const observe = services.observe ?? (async () => {});
+  const input = (args) => {
+    const result = execute(xdotool, args, { encoding: 'utf8', env, timeout: 10000 });
+    if (result.status !== 0) {
+      throw new Error(`bounded drag failed: ${String(result.stderr || result.error || '').trim()}`);
+    }
+  };
+  // One gesture: wait for GTK/Xdnd observations instead of assuming 200ms delivers the URI.
+  try {
+    input([
+      'mousemove', '--sync', String(source.x), String(source.y),
+      'mousedown', '1', 'sleep', '0.2',
+      'mousemove', '--sync', String(threshold.x), String(threshold.y),
+    ]);
+    await observe('STARTED');
+    input(['mousemove', '--sync', String(target.x), String(target.y)]);
+    await observe('DATA');
+  } finally {
+    input(['mouseup', '1']);
   }
+}
+
+async function waitForMarker(process, marker, timeoutMs, delay = defaultDelay) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const output = process.stdout.value();
+    if (hasMarker(output, marker)) return;
+    if (hasMarker(output, 'FINISHED') || process.child.exitCode !== null) break;
+    await delay(50);
+  }
+  throw new Error(`GTK drag ${marker} 관측을 확인하지 못했습니다`);
 }
 
 function readScreenRect(xdotool, env, execute = spawnSync) {

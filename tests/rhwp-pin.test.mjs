@@ -41,8 +41,8 @@ test('writer가 deterministic lock을 만들고 verifier가 정상 fixture를 �
 
 test('실제 저장소의 rhwp pin과 managed artifact가 일치한다', async () => {
   const pin = await verifyRepositoryPin({ repoRoot });
-  assert.equal(pin.rhwp_release_tag, 'v0.8.4');
-  assert.equal(pin.rhwp_commit, '496333b27d21ddb9114ba9ae340bcb895870c9a7');
+  assert.equal(pin.rhwp_release_tag, 'v0.8.6');
+  assert.equal(pin.rhwp_commit, 'f1f9c6ae58344ee9368996d3543f76b9345cf227');
 });
 
 mutationTest(

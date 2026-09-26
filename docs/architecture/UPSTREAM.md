@@ -5,8 +5,8 @@ Alhangeul의 유일한 지속 upstream은 [`edwardkim/rhwp`](https://github.com/
 ## 현재 고정 상태
 
 - upstream URL: `https://github.com/edwardkim/rhwp.git`
-- Stable release tag: `v0.8.4`
-- resolved commit: `496333b27d21ddb9114ba9ae340bcb895870c9a7`
+- Stable release tag: `v0.8.6`
+- resolved commit: `f1f9c6ae58344ee9368996d3543f76b9345cf227`
 - 읽기 전용 source submodule: `third_party/rhwp`
 - 기계 검증 가능한 출처 lock: `rhwp-core.lock`
 - bundled WASM: `apps/studio-host/vendor/rhwp-core`
@@ -52,6 +52,12 @@ studio host의 실제 Vite root와 entry는 각각 `third_party/rhwp/rhwp-studio
 문서 초기화보다 먼저 수행하고, 후자는 Tauri에서 제품 설정 안내를 처리해 upstream의 고정
 저장 성공 문구를 실행하지 않는다. 일반 browser는 upstream 안내를 유지한다. 두 함수 서명과
 설정 메뉴 marker는 단일 일치를 요구하며 변경되면 build를 실패시킨다. upstream 파일은 수정하지 않는다.
+
+`apps/studio-host/desktop-startup-entry.ts`는 v0.8.6의 `openBlankDocumentIfIdle` 시작점에서
+Tauri의 자동 빈 문서 생성만 생략한다. Alhangeul은 기존 idle 화면에서 시작하며
+`파일 → 새로 만들기`가 Rust native 세션을 먼저 만든다. browser의 자동 생성은 보존한다.
+이 경계 없이 upstream이 직접 만든 WASM 문서는 native 저장 세션이 없어 저장할 수 없다.
+함수 marker의 단일 일치를 요구하며 일반 문서 생성·renderer는 수정하지 않는다.
 
 사용 선택은 native 앱 데이터의 version 1 설정에만 저장한다. 창은 revision 이벤트와
 문서 진입·focus snapshot으로 상태를 맞추며 저장 실패는 해당 창의 임시 선택으로 안내한다.
@@ -107,8 +113,8 @@ PDF command는 upstream `file:print-to-pdf` 메뉴 위치와 활성 규칙을 �
 
 ```sh
 scripts/update-upstream.sh \
-  --tag v0.8.4 \
-  --commit 496333b27d21ddb9114ba9ae340bcb895870c9a7 \
+  --tag v0.8.6 \
+  --commit f1f9c6ae58344ee9368996d3543f76b9345cf227 \
   --run-checks
 ```
 
@@ -152,6 +158,16 @@ workflow를 default branch에 merge하면 read-only daily 판정은 시작되지
 
 Windows native와 Linux Tauri build·GUI·packaging은 승인된 후속 플랫폼 작업에서 검증한다. Ubuntu Rust preflight와 플랫폼 중립 수용 결과만으로 native 배포 준비가 완료되었다고 판단하지 않는다.
 
+## `v0.8.6` 설치본 수용 범위
+
+Task #76에서 writer를 활성화하고 실제 후보 생성·반복 입력의 멱등성을 검증했다.
+제품 `02388f59e88efbf37514894a28a69466bcde9a8b`의 Windows x64·Linux x64/arm64
+full CI와 동일 DEB의 Linux x64 전체 GUI·로컬 글꼴 검증을 완료했다.
+Windows 최종 사용자 점검은 아직 대기이며 NSIS hosted thumbnail과 MSI 재부팅 후 확인의
+원시 제한을 유지한다. 후보 자동 merge와 공개 release는 수행하지 않는다.
+실행·artifact·hash·한계는 [Task #76 보고서](../../mydocs/report/task_m010_76_report.md),
+사용자 점검은 [Windows 안내](../operations/WINDOWS_FONT_ACCEPTANCE.md)를 따른다.
+
 ## `v0.8.4` native 수용 기준선
 
 Task #24는 `v0.8.4` / `496333b27d21ddb9114ba9ae340bcb895870c9a7`의 source,
@@ -161,7 +177,7 @@ Windows x64·Linux x64·Linux arm64 native build, inventory, Windows installer s
 같은 SHA에서 성공했다. Windows x64와 Linux x64에서는 대표 HWP/HWPX의 열기·저장·재열기,
 searchable PDF 직접 저장, system print dialog와 전체 페이지 출력까지 수동 수용했다.
 
-이 결과는 Alhangeul에서 현재 고정한 upstream release와 leaf adapter 경계의 native 수용
+이 결과는 Alhangeul에서 당시 고정한 upstream release와 leaf adapter 경계의 native 수용
 기준선이다. Linux arm64는 hosted runner의 DEB build·inventory까지만 확인했고 실제 arm64
 GUI를 실행하지 않았다. GitHub Release, tag, 서명, package 게시, 고정 다운로드 URL과
 updater는 이 기준선에 포함되지 않는다. 상세 run, artifact와 플랫폼별 제한은
