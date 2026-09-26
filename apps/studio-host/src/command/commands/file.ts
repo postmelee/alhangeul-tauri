@@ -11,10 +11,11 @@ import { resolveDesktopRecentPath } from '../../recent/recent-store';
 const upstreamById = new Map(upstreamFileCommands.map((command) => [command.id, command]));
 
 export async function confirmSaveBeforeReplacingDocument(
-  services: CommandServices,
+  ...args: Parameters<typeof confirmUpstreamReplacement>
 ): Promise<boolean> {
+  const [services] = args;
   if (!isTauriRuntime() || !getDesktopHost().activeSession) {
-    return confirmUpstreamReplacement(services);
+    return confirmUpstreamReplacement(...args);
   }
   try {
     return await getDesktopHost().confirmDocumentReplacement(services);

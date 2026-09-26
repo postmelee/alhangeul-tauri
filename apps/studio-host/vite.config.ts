@@ -134,6 +134,8 @@ export default defineConfig({
     alhangeulFontAssets(),
   ],
   define: {
+    // Use upstream's standalone Studio build; Alhangeul does not host the OCX plugin.
+    __RHWP_HWPCTRL__: 'false',
     __APP_VERSION__: JSON.stringify(rhwpWasmPackage.version),
     __ALHANGEUL_VERSION__: JSON.stringify(desktopConfig.version),
   },

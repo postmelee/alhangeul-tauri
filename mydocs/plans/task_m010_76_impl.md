@@ -110,3 +110,10 @@ GitHub Issue: [#76](https://github.com/postmelee/alhangeul-tauri/issues/76)
 - 기존 갱신기/검증기/allowlist는 desktop Cargo.lock만 관리하고 이후 생긴 세 native consumer lock을 놓쳤다. 네 lock을 함께 갱신·검증하도록 보완하고 stale lock 회귀를 추가한다.
 - writer 비활성 때문에 create_candidate가 skip된 이유를 summary에 직접 표시한다. 기본 dry_run과 쓰기 권한 경계는 유지한다.
 - 첫 운영 실행: 36223270009, baseline a1d8ac4669af370f2c428e1b73c222eb664c3c26. 이 실행은 보완 전 경로를 사용하므로 후보가 생성돼도 네 lock 수용은 별도 확인한다.
+- v0.8.6은 선택적 hwpctrl plugin을 compile-time 상수로 분리한다. Alhangeul은 해당 플러그인 호스트가 아니므로 upstream standalone 모드와 동일하게 `__RHWP_HWPCTRL__=false`를 정의한다. upstream source나 추가 UI 기능은 변경하지 않는다.
+- v0.8.6 사전 source 점검에서 Studio 230/233 통과. 1건은 의도적으로 남은 old pin이며 2건은 upstream의 자동 글꼴 prompt 제거와 toolbar inline→hidden 전환에 대한 과거 문자열 가정이었다. 원본 browser 함수 본문 보존과 모든 남은 inline-hidden의 CSP owner 검증으로 계약을 정리한다. toolbar 표시 복원은 inline display뿐 아니라 새 hidden 속성도 해제한다.
+- 사전 TypeScript 실패 11건은 v0.8.4 binding에 없는 새 v0.8.6 WASM API이며 새 binding 수신 전 수용으로 기록하지 않는다.
+
+- 첫 실행은 2026-09-26 15:27 KST에 upstream baseline의 저장 확인 함수가 새 options 인자를 받는 변경을 과거 정규식이 거부해 실패했다. 취소 요청 시 이미 실패 종료였다. 원본 로그는 run 36223270009에 보존한다.
+- 저장 확인 adapter는 upstream 인자를 그대로 전달하는 Parameters 기반 rest signature로 맞춘다. Tauri native 저장 확인은 유지한다.
+- 후보 workflow는 clean devel만 사용하므로 Stage 1.1의 backward-compatible 보완을 선행 PR로 devel에 반영한 뒤 Stage 1.2 후보 생성을 재실행한다. #76은 선행 PR에서 close하지 않는다. 최종 설치본 검증과 최종 보고는 Stage 3에서 수행한다.

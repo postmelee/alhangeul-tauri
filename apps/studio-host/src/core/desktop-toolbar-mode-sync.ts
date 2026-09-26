@@ -126,7 +126,10 @@ function renderToolbarMode(elements: ToolbarModeElements, state: ToolbarModeStat
 function setVisible(element: HTMLElement | null, visible: boolean): void {
   if (!element) return;
   element.classList.toggle(DESKTOP_TOOLBAR_HIDDEN_CLASS, !visible);
-  if (visible) element.style.removeProperty('display');
+  if (visible) {
+    element.hidden = false;
+    element.style.removeProperty('display');
+  }
 }
 
 function managedElements(elements: ToolbarModeElements): Array<HTMLElement | null> {
