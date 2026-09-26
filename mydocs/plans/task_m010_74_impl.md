@@ -741,3 +741,31 @@ passed다. 재부팅 후 수용·모든 썸네일 성공으로 확대하지 않�
 추가 확인한다. Abel `iii`의 문단 폭 맞춤 차이는 upstream 범위로 유지한다.
 현재 후보의 Windows GUI·Linux GUI·새 창 수용은 미완료이며 이전 후보의 Linux Abel
 성공을 새 후보로 이전하지 않는다. Stage 4 완료 보고·최종 PR은 아직 작성하지 않는다.
+
+
+### Stage 4 Windows 사용자 적용 확인·릴리즈 전 제안 검토 — 2026-09-26
+
+작업지시자가 새 설치본 안내에 이어 나눔스퀘어와 Abel의 설치 후 재감지 시 정상 적용을
+확인했다고 보고했다. 첨부 3개 화면에서 Abel 표시·감지 안내와 문서 글꼴 범주를 확인했다.
+사용자 보고에 해당하는 실제 적용 항목을 수용하며 현재 후보의 재실행·새 창, 전체 글꼴,
+현재 Linux GUI와 release 수용으로 확대하지 않는다. 개인정보가 포함된 원본 캡처는
+저장소에 넣지 않고 `acceptance.json`에 결과 요약만 남겼다.
+
+기존 upstream Toolbar의 `system` 범주는 제품 `getLocalFonts()`를 사용하므로 감지된
+로컬 글꼴 목록이 이미 있다. 별도 중복 범주 추가보다 ‘시스템 글꼴’ 명칭/빈 상태 안내의
+명확화를 권장하며 실제 목록 누락 여부는 해당 범주에서 구분한다. v0.8.6에도 같은 범주가
+존재함을 read-only로 확인했다. 신규 UI 구현은 이번 조사에서 수행하지 않았다.
+
+지정 [sync run 36101759959](https://github.com/postmelee/alhangeul-tauri/actions/runs/36101759959)은
+current v0.8.4에서 target v0.8.6 `f1f9c6ae58344ee9368996d3543f76b9345cf227`을
+`create_candidate`로 판정했지만 writer job은 skipped다. 저장소 variable
+`ALHANGEUL_UPSTREAM_SYNC_ENABLED=false`이며 App client ID/secret은 이름·존재만
+확인했다. [Issue #23 완료 기록](https://github.com/postmelee/alhangeul-tauri/issues/23#issuecomment-5277849996)은
+actual sync·멱등성 검증 후 이 값을 false로 되돌렸음을 명시한다. 현재 열린 PR은 없다.
+이 실행의 success는 판정 성공이며 PR 생성 성공이 아니다.
+
+릴리즈 전에는 현재 #74 수용 결과 정리·반영 후 별도 upstream 수용 Issue에서 writer 운영
+정책과 exact v0.8.6 동기화·제품 adapter 호환성을 확인하고 Windows/Linux 최종 후보를
+재검증하는 순서를 권장한다. 최신 stable 변경은 조판·저장·입력 안전성에도 걸쳐 있으므로
+단순 pin 치환으로 완료하지 않는다. writer 설정 변경·dispatch·pin 갱신은 이번 판단 요청에
+포함된 실행 승인으로 간주하지 않고 아직 수행하지 않았다.

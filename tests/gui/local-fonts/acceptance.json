@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "stage4Status": "font-name-and-path-fix-ci-passed-windows-gui-pending",
+  "stage4Status": "windows-user-font-install-redetect-applied-confirmed-remaining-gui-scenarios-pending",
   "runId": 36104289925,
   "attempt": 1,
   "profile": "full",
@@ -217,7 +217,7 @@
     "MSI forced reinstall exit 3010 (reboot required)"
   ],
   "gui": {
-    "windows-x64": "pending user verification of run 36104289925 installer; native CI is not actual screen acceptance",
+    "windows-x64": "User confirmed NanumSquare and Abel apply after installation and re-detection on 2026-09-26; current-candidate restart/new-window scenarios not explicitly reported",
     "linux-x64": "not executed for current candidate; historical Abel GUI success applies only to c4e9714 / run 35984829169",
     "linux-arm64": "not in GUI acceptance scope"
   },
@@ -1228,6 +1228,33 @@
         "Actual renderer backend in VDI",
         "Latest candidate new-window/settings lifecycle results"
       ]
+    },
+    {
+      "reportedOn": "2026-09-26",
+      "environment": "Windows VDI; screenshot taskbar and user report",
+      "candidateContext": {
+        "producerRunId": 36104289925,
+        "artifactId": 10850898849,
+        "sourceSha": "a2f48b5013e86f9d21b67f4f36c79895f6a61297",
+        "basis": "Follow-up to supplied installer; installed binary hash not independently measured"
+      },
+      "evidence": "User explicitly confirms NanumSquare and Abel apply normally after installing fonts and re-detecting; three screenshots supplied outside repository",
+      "passed": [
+        "NanumSquare actual application after installation and re-detection (user reported)",
+        "Abel actual application after installation and re-detection (user reported)"
+      ],
+      "observed": [
+        "Abel document rendering and detection notification visible",
+        "Font menu currently selects document category; three document fonts visible"
+      ],
+      "excluded": [
+        "Abel iii paragraph-fitting thickness remains upstream scope"
+      ],
+      "unverified": [
+        "Current-candidate restart and new-window behavior",
+        "VDI installed font file hash/location and effective renderer backend"
+      ],
+      "scope": "Selected fonts and install/re-detect scenario only; not all-font, Linux-current-candidate, or release acceptance"
     }
   ],
   "fontNameInvestigation": {
