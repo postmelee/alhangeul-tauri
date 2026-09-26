@@ -46,7 +46,6 @@ export async function waitForStudioStartup(session: WebdriverIO.Browser, timeout
     }
     const state = await session.execute(() => ({
       status: document.getElementById('sb-message')?.textContent?.trim() ?? '',
-      hasAutomation: !!(window as Window & { rhwpStudio?: { automation?: unknown } }).rhwpStudio?.automation,
       canvasReady: !!document.querySelector('#scroll-content > canvas[data-rhwp-rendered-zoom]'),
       toolbarReady: document.documentElement.classList.contains('alhangeul-toolbar-ready'),
     }));
@@ -56,9 +55,8 @@ export async function waitForStudioStartup(session: WebdriverIO.Browser, timeout
 
 
 export function isStudioStartupReady(state: {
-  status: string; hasAutomation: boolean; canvasReady: boolean; toolbarReady: boolean;
+  status: string; canvasReady: boolean; toolbarReady: boolean;
 }): boolean {
-  return state.toolbarReady && (state.hasAutomation
-    ? state.canvasReady && state.status.startsWith('새 문서.hwp')
-    : state.status === 'HWP 파일을 선택해주세요.');
+  return state.toolbarReady && (state.status === 'HWP 파일을 선택해주세요.'
+    || (state.canvasReady && state.status.startsWith('새 문서.hwp')));
 }

@@ -123,3 +123,8 @@ GitHub Issue: [#76](https://github.com/postmelee/alhangeul-tauri/issues/76)
 v0.8.6의 공개 source에서 시작 시 빈 문서 자동 열기·최초 스킨 안내가 추가된 것을 확인했다. 기존의 영구 빈 editor/status 문구 가정과 #74 이전 글꼴 modal 문구를 그대로 쓰면 알려진 자동화 실패가 되므로, 알려진 고유 modal만 처리하고 새 문서의 실제 canvas·상태를 기다리는 helper로 맞춘다. 알 수 없는 modal·중복 버튼은 실패하며 같은 버튼을 반복 클릭하지 않는다. native print도 스킨 안내와 제품 글꼴 사용 안 함 선택을 구분하고 문서 본문·포커스 사후 조건을 유지한다. Native UI 테스트 가이드에 따라 neutral 계약·typecheck 뒤 새 exact 설치본의 local-fonts/full GUI에서 검증한다. 이 변경은 제품 기능·public release 승인과 무관하다.
 
 GUI 준비 검증: `pnpm run typecheck:gui` 통과, 공통 GUI 계약 22개·native print 계약 5개 통과. 실제 OS에서 새 첫 실행 화면의 selector/포커스 수용은 설치본 GUI 실행 전까지 미검증이다. 원본/업스트림의 DOM을 직접 수정하거나 localStorage 설정을 주입해 안내를 건너뛰지 않는다.
+
+
+## v0.8.6 시작 문서 native 경계 보완
+
+upstream `openBlankDocumentIfIdle`은 WASM에 빈 문서를 직접 만들어 DesktopHost.pendingNewDocument/Rust 세션을 거치지 않는다. 기존 `saveCurrent`는 native session을 요구하므로 이를 그대로 수용하면 최초 빈 문서의 저장이 실패한다. Alhangeul은 기존 idle 시작과 `파일 → 새로 만들기`의 native 생성 경로를 유지한다. 새 exact entry transform은 Tauri에서 해당 자동 시작만 반환하며 browser에서는 원본 동작을 보존한다. renderer·upstream source·일반 문서 생성 함수는 수정하지 않는다. strict marker 검증, Tauri/browser 분기 회귀, 새 설치본의 기존 문서·새 문서 저장으로 확인한다. Windows 안내와 GUI 준비 조건도 이 제품 동작으로 정정한다. 스킨 선택 안내는 유지한다.
