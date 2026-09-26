@@ -35,9 +35,38 @@ branch, 이동 가능한 floating ref, tag 없이 전달된 commit은 Stable 갱
 - `apps/studio-host/`: exact upstream Studio entry를 쓰는 Vite host, Tauri bridge와 desktop event·command·font leaf adapter, 최소 제품 UX 보정
 - `assets/`, `docs/`, `scripts/`: 제품 자산, 공식 문서와 운영 자동화
 
-studio host의 실제 Vite root와 entry는 각각 `third_party/rhwp/rhwp-studio`, 그 아래 `index.html`과 `src/main.ts`다. local `index.html`, `src/main.ts`, Toolbar, CanvasView, Ruler, renderer와 범용 dialog·style 복제본은 허용하지 않는다. 제품 title·접근성 label·새 창 항목·제품 style/icon만 HTML transform으로 보충하고, upstream import를 대체하는 alias는 native host·font policy·제품 정보에 필요한 12개 leaf adapter로 제한한다.
+studio host의 실제 Vite root와 entry는 각각 `third_party/rhwp/rhwp-studio`, 그 아래 `index.html`과 `src/main.ts`다. local `index.html`, `src/main.ts`, Toolbar, CanvasView, Ruler, renderer와 범용 dialog·style 복제본은 허용하지 않는다. 제품 title·접근성 label·새 창·로컬 글꼴 설정 항목·제품 style/icon만 HTML transform으로 보충하고, upstream import를 대체하는 alias는 native host·font policy·제품 정보에 필요한 12개 leaf adapter로 제한한다.
 
 `apps/studio-host/alhangeul-overrides.ts`가 adapter owner와 disposition의 진실 원천이다. `apps/studio-host/src/core/upstream-boundary.test.ts`는 12개 alias, `legacy-upstream-copy` 0개, 금지 entry와 제거된 shadow의 물리적 부재, adapter 300 LOC 상한을 검사한다. `tests/rhwp-baseline.test.mjs`는 exact entry, upstream 메뉴 command와 HWPX/PDF 실행 경계를 함께 고정한다. engine API나 renderer bug는 먼저 upstream에서 해결하고, 데스크톱 통합 차이는 이 경계 안의 leaf adapter에 둔다.
+
+`apps/studio-host/local-font-overrides.ts`는 위 alias를 우회하는 상대 import 두 곳을 같은
+`core/local-fonts` adapter로 연결한다. 대상은 pinned Studio의 `core/document-font-status.ts`와
+`core/font-substitution.ts`가 읽는 `./local-fonts.ts`뿐이다. Vite와 Vitest는 동일 resolver를
+사용하며 12개 alias 목록, upstream source와 renderer는 유지한다. 실제 상태 분석·표시 글꼴
+체인 회귀와 dev/build module 검증으로 별도 upstream 글꼴 캐시가 섞이지 않는지 확인한다.
+이 연결의 성공은 사용 선택의 영속 저장이나 모든 renderer의 글꼴 적용 성공을 뜻하지 않는다.
+
+`apps/studio-host/local-font-entry-hooks.ts`는 exact `main.ts`의 `initializeDocument`와
+`promptLocalFontsIfNeeded` 시작점만 연결한다. 전자는 native 사용 선택 복원과 catalog 준비를
+문서 초기화보다 먼저 수행하고, 후자는 Tauri에서 제품 설정 안내를 처리해 upstream의 고정
+저장 성공 문구를 실행하지 않는다. 일반 browser는 upstream 안내를 유지한다. 두 함수 서명과
+설정 메뉴 marker는 단일 일치를 요구하며 변경되면 build를 실패시킨다. upstream 파일은 수정하지 않는다.
+
+사용 선택은 native 앱 데이터의 version 1 설정에만 저장한다. 창은 revision 이벤트와
+문서 진입·focus snapshot으로 상태를 맞추며 저장 실패는 해당 창의 임시 선택으로 안내한다.
+`stored`/`native-preference`는 사용 선택이 저장되었다는 뜻이며 글꼴 목록·bytes 저장이나
+화면 적용의 증거가 아니다. 제품 설정 화면은 upstream `ModalDialog`를 상속하고, 변경 시
+기존 renderer session 무효화·CanvasView 재준비 callback을 사용한다. 재준비가 끝난 뒤
+현재 CanvasKit renderer에 필요한 로컬 글꼴을 다시 공급하고 완료 후 보기만 갱신한다.
+문서 generation과 view/session/renderer·decisionKey가 바뀐 경우 오래된 작업은 화면을
+갱신하지 않는다. 문서의 dirty와 원본 글꼴 데이터는 변경하지 않으며 실제 renderer별
+공급·표시 수용은 별도로 검증한다.
+
+제품 font provider는 자신이 등록한 FontFace와 bytes·실패 cache를 세대별로 회수한다.
+문서 전환에서는 필요한 bytes를 다시 확인하고, 재감지·미사용 전환에서는 기존 공개
+`RendererSession.invalidateDocument()`가 CanvasKit의 `resetDocumentResources()`를
+호출하게 한다. private renderer map이나 추가 renderer transform은 사용하지 않는다.
+자세한 선택·공급 한계와 실제 수용 범위는 [LOCAL_FONTS.md](LOCAL_FONTS.md)를 따른다.
 
 ## Windows thumbnail parse·render 경계
 

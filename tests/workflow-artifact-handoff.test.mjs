@@ -249,3 +249,33 @@ function artifact(override = {}) {
 function artifactResponse() {
   return { total_count: 1, artifacts: [artifact()] };
 }
+
+
+// Linux GUI consumers accept the two known producer entries without weakening
+// the existing SHA, success, repository and exact artifact checks.
+for (const producer of ['ci.yml', 'alhangeul-desktop.yml']) {
+  test(`Linux GUI accepts exact successful ${producer} artifact`, async () => {
+    const { verifyLinuxGuiArtifact } = await import('../scripts/verify-linux-gui-artifact.mjs');
+    const result = await verifyLinuxGuiArtifact(inputs(), {
+      fetchJson: async path => path.includes('/artifacts?') ? artifactResponse()
+        : { ...workflowRun(), path: `.github/workflows/${producer}` },
+    });
+    assert.equal(result.workflowPath, `.github/workflows/${producer}`);
+    assert.equal(result.artifactId, 987654321);
+  });
+}
+for (const overrides of [
+  { path: '.github/workflows/other.yml' },
+  { path: '.github/workflows/ci.yml', conclusion: 'failure' },
+  { path: '.github/workflows/ci.yml', head_sha: 'f'.repeat(40) },
+]) {
+  test(`Linux GUI rejects invalid producer ${JSON.stringify(overrides)}`, async () => {
+    const { verifyLinuxGuiArtifact } = await import('../scripts/verify-linux-gui-artifact.mjs');
+    await assert.rejects(verifyLinuxGuiArtifact(inputs(), {
+      fetchJson: async path => {
+        assert.ok(!path.includes('/artifacts?'));
+        return { ...workflowRun(), ...overrides };
+      },
+    }));
+  });
+}
