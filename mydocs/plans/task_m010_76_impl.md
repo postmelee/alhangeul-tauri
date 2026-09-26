@@ -138,3 +138,5 @@ run 36225178661에서 Linux x64/arm64 core 각각 88개 실제 결과·resource 
 v0.8.6은 preview 압축 해제 전에 10 MiB 상한으로 `None`을 반환한다. 기존 제품의 16 MiB 방어는 유지되며 더 엄격한 upstream 거부 결과를 검증한다. 기존 `docs/architecture/WINDOWS_THUMBNAILS.md` resource 표의 해당 한 행에 실효 제한을 기록한다. 공식 architecture 위치를 그대로 유지하는 문서 보정이다.
 
 두 번째 full 36225908122에서 preview 계약 12개 중 11개는 통과했지만 단순 text인 `not valid XML`은 upstream에서 빈 문서로 허용돼 직접 실패 조건을 충족하지 못했다. pinned WASM으로 실제 parser를 조사하여 text/invalid UTF-8은 수용되고 불일치 닫는 태그는 XML 오류로 거부됨을 확인했다. 세 fixture를 `<broken></mismatch>`로 고정하고 Linux native profile로 우선 재검증한 뒤 전체 설치본을 생성한다. 테스트 성공 조건을 낮추지 않는다.
+
+집중 native 36226889223은 성공했다. 세 번째 full 36227541535에서는 Windows worker 3개까지 통과한 뒤 COM handler의 별도 BMP fixture(`apps/thumbnail-handler/tests/support/mod.rs`)에 같은 package 항목 누락이 남아 fallback이 E_FAIL로 실패했다. 후속 2개 실패는 공유 mutex poison이다. repository의 Preview ZIP 생성 지점을 재검색해 네 번째 helper도 동일하게 보완한다. 제품 DLL/worker·성공 HRESULT 기준·deadline은 변경하지 않는다. 새 source에서 전체 검증을 수행한다.
