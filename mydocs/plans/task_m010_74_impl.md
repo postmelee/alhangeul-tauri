@@ -787,3 +787,16 @@ actual sync·멱등성 검증 후 이 값을 false로 되돌렸음을 명시한�
 문서 위치는 기존 계획·acceptance metadata·LOCAL_FONTS와 승인된 단계/최종 보고 위치를
 유지한다. 현재 Windows 사용자 보고를 미검증 시나리오로 확대하지 않으며 최종 Windows
 재실행·새 창·전체 통합 점검은 후속 v0.8.6 후보 수용에 명시적으로 남긴다.
+
+
+### Stage 4 Linux 최종 수용 결과 — 2026-09-26
+
+harness `8d4d8a1`로 [GUI run 36222469761](https://github.com/postmelee/alhangeul-tauri/actions/runs/36222469761)을 실행해 success를 확인했다.
+product는 `a2f48b5`, producer는 `36104289925`다. 24개 화면 관측, 새 native 창 4회,
+새 프로세스 재시작 6회를 기록했다. 사용/미사용 새 창은 각각 별도 WebDriver handle과
+동일 프로세스로 확인했다. CanvasKit 사용/재감지/복구/새 창에서 localTypefaceCount=1,
+unregisteredFontFallbacks=0이며 미사용/삭제 시 direct Typeface=0이다.
+실제 page PNG를 검토했고 HWP/HWPX 내보내기 파일의 Abel 이름과 본문을 다시 확인했다.
+감지 미사용은 OS CSS 조회 자체를 차단하지 않으므로 Canvas2D 미사용 후 metric 유지가
+직접 공급 지속의 증거가 아님도 구분한다. exact 설치 DEB와 evidence ID/digest는 acceptance.json에 기록했다.
+#74 수정 수용과 devel 통합을 진행하며 사용자 최종 Windows 통합 점검은 요청한 v0.8.6 후보에서 받는다.

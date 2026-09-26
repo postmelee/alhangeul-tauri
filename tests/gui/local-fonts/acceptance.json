@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "stage4Status": "windows-user-font-install-redetect-applied-confirmed-remaining-gui-scenarios-pending",
+  "stage4Status": "task74-correction-accepted-final-windows-release-integration-pending",
   "runId": 36104289925,
   "attempt": 1,
   "profile": "full",
@@ -120,7 +120,28 @@
       "expired": false,
       "url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/36104289925/artifacts/10851346017",
       "archiveDigestVerifiedLocally": false,
-      "inventoryVerifiedLocally": false
+      "inventoryVerifiedLocally": false,
+      "archiveAndInventoryVerifiedByGuiRun": 36222469761,
+      "installers": [
+        {
+          "path": "appimage/Alhangeul_0.1.0_amd64.AppImage",
+          "kind": "appimage",
+          "size": 134031864,
+          "sha256": "e3bc4a6fe8cb1fe36b121bfdbfbb2edb063db8ba2c6653524e2a1a1e8bfbc4ad"
+        },
+        {
+          "path": "deb/Alhangeul_0.1.0_amd64.deb",
+          "kind": "deb",
+          "size": 64847060,
+          "sha256": "f265e9dd0e9ae5e4b5ef5c4a95edf282992909a0301e3e7c4ecfc13226a1f098"
+        },
+        {
+          "path": "rpm/Alhangeul-0.1.0-1.x86_64.rpm",
+          "kind": "rpm",
+          "size": 64846298,
+          "sha256": "508c2ea534bd5fa844d4fcffadb6032ee11da3937823b3bb6af3e87d00120dbd"
+        }
+      ]
     },
     {
       "id": 10851097179,
@@ -218,7 +239,7 @@
   ],
   "gui": {
     "windows-x64": "User confirmed NanumSquare and Abel apply after installation and re-detection on 2026-09-26; current-candidate restart/new-window scenarios not explicitly reported",
-    "linux-x64": "not executed for current candidate; historical Abel GUI success applies only to c4e9714 / run 35984829169",
+    "linux-x64": "passed on exact current product: Canvas2D/CanvasKit application, refresh, file removal/recovery, six process restarts and four native new-window scenarios; run 36222469761",
     "linux-arm64": "not in GUI acceptance scope"
   },
   "observations": [
@@ -759,6 +780,34 @@
       ],
       "exportReadback": "Downloaded HWP/HWPX exports retain Abel font name and fixture text",
       "visualReview": "Actual page PNGs confirm CanvasKit refresh and enabled restart retain Abel; disabled restart uses fallback"
+    },
+    {
+      "runId": 36222469761,
+      "attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "harnessSha": "8d4d8a10ba8c5bab49c4a65ffcc3aa3cbe1d7fe4",
+      "sourceSha": "a2f48b5013e86f9d21b67f4f36c79895f6a61297",
+      "producerRunId": "36104289925",
+      "artifactId": 10899666538,
+      "artifactDigest": "sha256:ee80ee8b5e30d94ab91e573a6a986f89cfe41e175eb9117bcf9bd348aafced74",
+      "installedDebSha256": "f265e9dd0e9ae5e4b5ef5c4a95edf282992909a0301e3e7c4ecfc13226a1f098",
+      "review": "Native metadata and paired page PNGs reviewed; downloaded HWP/HWPX font and text checked",
+      "pageObservations": 24,
+      "processRestarts": 6,
+      "newWindowScenarios": 4,
+      "passed": [
+        "Canvas2D/CanvasKit HWP/HWPX local application",
+        "Re-detection and removed/restored font supply",
+        "Enabled/disabled process restart restoration",
+        "Enabled/disabled new native windows with distinct handles in same process",
+        "Exported HWP/HWPX preserve Abel and public sample text"
+      ],
+      "limitations": [
+        "Linux x64 only; public Abel fixture",
+        "Disabled selection stops direct supply, not OS CSS font lookup",
+        "Windows final integration checklist belongs to upcoming v0.8.6 candidate acceptance"
+      ]
     }
   ],
   "previousFullRuns": [
@@ -1439,5 +1488,14 @@
     ],
     "windowsJobId": 107974240110,
     "linuxArm64JobId": 107974240162
+  },
+  "followupAcceptance": {
+    "requestedOn": "2026-09-26",
+    "scope": "User requested Task74 integration then separate v0.8.6 upgrade and will perform final Windows installer checks",
+    "windowsRemaining": [
+      "Final integrated candidate restart/new-window",
+      "Final integrated candidate NanumSquare/Abel and other release checks"
+    ],
+    "releaseAcceptance": "not granted"
   }
 }

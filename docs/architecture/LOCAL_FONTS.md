@@ -164,3 +164,11 @@ Windows desktop 189개에 실제 NanumSquareB의 한글/영문 이름과 중복 
 Windows archive digest와 내부 inventory/source SHA도 검증했다. MSI 일반 설치는 raw passed,
 NSIS 썸네일 실패·MSI 강제 재설치의 재부팅 요구는 기존 진단 계약만 통과했다.
 실제 Windows 나눔스퀘어 표시와 새 후보의 GUI 수용은 사용자 검증 대기다.
+
+
+2026-09-26 Windows 사용자는 나눔스퀘어·Abel의 설치 후 재감지와 실제 적용 성공을 확인했다.
+동일 제품 후보 `a2f48b5`의 [Linux GUI 36222469761](https://github.com/postmelee/alhangeul-tauri/actions/runs/36222469761)도 통과했다.
+Canvas2D·CanvasKit에서 24개 화면 관측, 6회 프로세스 재시작, 사용/미사용 각각의 새 창
+4개 시나리오를 확인했다. CanvasKit 새 창에서도 사용 시 localTypefaceCount=1,
+미사용 시 0이며 글꼴 삭제·복구 후 공급 상태가 바뀐다. HWP/HWPX 내보내기의 이름·본문도 보존된다.
+최종 Windows 재실행·새 창·릴리즈 통합 점검은 작업지시자가 후속 v0.8.6 설치본에서 수행한다.
