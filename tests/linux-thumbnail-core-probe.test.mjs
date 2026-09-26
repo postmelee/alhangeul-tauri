@@ -132,6 +132,13 @@ test('script와 함수가 저장소 크기 상한을 지킨다', () => {
 });
 
 const metadata = { repositorySha: 'a'.repeat(40), rhwpSha: RHWP_SHA };
+test('Linux fixture 수용 pin은 현재 upstream lock과 일치한다', async () => {
+  const pin = (await readFile(join(repoRoot, 'rhwp-core.lock'), 'utf8'))
+    .match(/^rhwp_commit = "([0-9a-f]{40})"$/m)?.[1];
+  assert.ok(pin, '현재 upstream pin이 필요합니다');
+  assert.equal(RHWP_SHA, pin);
+});
+
 function validRecords() {
   return expectedRecords().map(({ fixture, edge, mode, expectedSuccess }) => ({
     fixtureId: `fixture-${fixture.sha256}`, fixtureClass: fixture.fixtureClass, format: fixture.format,

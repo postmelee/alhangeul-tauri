@@ -128,3 +128,11 @@ GUI 준비 검증: `pnpm run typecheck:gui` 통과, 공통 GUI 계약 22개·nat
 ## v0.8.6 시작 문서 native 경계 보완
 
 upstream `openBlankDocumentIfIdle`은 WASM에 빈 문서를 직접 만들어 DesktopHost.pendingNewDocument/Rust 세션을 거치지 않는다. 기존 `saveCurrent`는 native session을 요구하므로 이를 그대로 수용하면 최초 빈 문서의 저장이 실패한다. Alhangeul은 기존 idle 시작과 `파일 → 새로 만들기`의 native 생성 경로를 유지한다. 새 exact entry transform은 Tauri에서 해당 자동 시작만 반환하며 browser에서는 원본 동작을 보존한다. renderer·upstream source·일반 문서 생성 함수는 수정하지 않는다. strict marker 검증, Tauri/browser 분기 회귀, 새 설치본의 기존 문서·새 문서 저장으로 확인한다. Windows 안내와 GUI 준비 조건도 이 제품 동작으로 정정한다. 스킨 선택 안내는 유지한다.
+
+## Stage 3 첫 native 실행 보완
+
+run 36225178661에서 Linux x64/arm64 core 각각 88개 실제 결과·resource budget은 모두 통과했으나 fixture 명세의 이전 pin이 남아 `rhwp-pin-mismatch`로 실패했다. 고정 fixture bytes/hash가 변하지 않았음을 확인한 뒤 명세의 수용 pin을 v0.8.6으로 갱신하고 neutral 단계에서 현재 lock과 불일치를 잡는다. Windows fixture 4개도 bytes/hash 동일성을 확인했다.
+
+새 upstream은 HWPX 필수 `Contents/content.hpf`·`Contents/header.xml` 없는 ZIP을 거부한다. preview만 넣었던 세 Rust fixture는 두 항목에 잘못된 XML을 넣어, HWPX 식별은 되지만 직접 parsing은 실패하는 원래 시험 조건을 복구한다. 일반 ZIP+preview는 계속 거부한다는 음성 회귀도 추가한다. production parser·resource 제한·upstream은 변경하지 않는다. 기존 300 LOC 초과 preview 계약 파일에는 이 fixture 관련 최소 변경만 두며 범위 밖 재구성을 하지 않는다. 보완 SHA에서 full CI를 다시 수행하고 첫 실패를 최종 보고에 보존한다.
+
+v0.8.6은 preview 압축 해제 전에 10 MiB 상한으로 `None`을 반환한다. 기존 제품의 16 MiB 방어는 유지되며 더 엄격한 upstream 거부 결과를 검증한다. 기존 `docs/architecture/WINDOWS_THUMBNAILS.md` resource 표의 해당 한 행에 실효 제한을 기록한다. 공식 architecture 위치를 그대로 유지하는 문서 보정이다.

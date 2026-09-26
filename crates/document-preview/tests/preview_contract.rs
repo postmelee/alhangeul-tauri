@@ -1,6 +1,6 @@
 use alhangeul_document_preview::limits::{
-    bounded_requested_edge, validate_input_len, validate_svg_len, FRAME_HEADER_BYTES,
-    FRAME_SELECTION_DEADLINE_MS, MAX_BITMAP_PAYLOAD_BYTES, MAX_FINAL_PIXELS, MAX_FRAME_BYTES,
+    bounded_requested_edge, validate_input_len, validate_preview_len, validate_svg_len,
+    FRAME_HEADER_BYTES, FRAME_SELECTION_DEADLINE_MS, MAX_BITMAP_PAYLOAD_BYTES, MAX_FINAL_PIXELS, MAX_FRAME_BYTES,
     MAX_INPUT_BYTES, MAX_PREVIEW_BYTES, MAX_PREVIEW_PIXELS, MAX_REQUESTED_EDGE, MAX_SVG_BYTES,
     WORKER_MEMORY_LIMIT_BYTES,
 };
@@ -57,6 +57,10 @@ fn stage_one_resource_budgets_are_fixed() {
     assert!(matches!(
         validate_svg_len(MAX_SVG_BYTES + 1),
         Err(PreviewError::SvgTooLarge { .. })
+    ));
+    assert!(matches!(
+        validate_preview_len(MAX_PREVIEW_BYTES + 1),
+        Err(PreviewError::PreviewTooLarge { .. })
     ));
 }
 
@@ -266,12 +270,22 @@ fn corrupt_unsupported_and_oversized_previews_are_rejected() {
         Err(PreviewError::EmbeddedPreview(_))
     ));
 
-    let oversized_bytes = vec![0_u8; MAX_PREVIEW_BYTES + 1];
+    // v0.8.6 rejects oversized entries before decompressing them (10 MiB upstream cap).
+    let oversized_bytes = vec![0_u8; rhwp::parser::MAX_THUMBNAIL_BYTES + 1];
     let oversized = preview_only_hwpx(&oversized_bytes);
-    assert!(matches!(
-        extract_embedded_preview(&oversized),
-        Err(PreviewError::PreviewTooLarge { .. })
-    ));
+    assert!(extract_embedded_preview(&oversized).unwrap().is_none());
+}
+
+#[test]
+fn unrelated_zip_with_preview_is_not_treated_as_hwpx() {
+    let mut writer = ZipWriter::new(Cursor::new(Vec::new()));
+    writer
+        .start_file("Preview/PrvImage.png", SimpleFileOptions::default())
+        .unwrap();
+    writer.write_all(PNG_1X1).unwrap();
+    let input = writer.finish().unwrap().into_inner();
+    assert!(extract_embedded_preview(&input).unwrap().is_none());
+    assert!(render_first_page_svg(&input).is_err());
 }
 
 fn mutate_hwpx_preview(source: &[u8], mutation: PreviewMutation<'_>) -> Vec<u8> {
@@ -313,6 +327,11 @@ fn preview_only_hwpx(preview: &[u8]) -> Vec<u8> {
     let cursor = Cursor::new(Vec::new());
     let mut writer = ZipWriter::new(cursor);
     let options = SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+    // HWPX detection requires both package entries. Malformed XML keeps direct parsing invalid.
+    for name in ["Contents/content.hpf", "Contents/header.xml"] {
+        writer.start_file(name, options).unwrap();
+        writer.write_all(b"not valid XML").unwrap();
+    }
     writer.start_file("Preview/PrvImage.png", options).unwrap();
     writer.write_all(preview).unwrap();
     writer.finish().unwrap().into_inner()

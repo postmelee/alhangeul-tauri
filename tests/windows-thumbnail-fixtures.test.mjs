@@ -27,7 +27,9 @@ function ordered(source, markers) {
 
 test('small/large HWP, HWPX, JPG를 고정 pin의 실제 SHA/bytes와 대조한다', async () => {
   assert.equal(manifest.schemaVersion, 1);
-  assert.equal(manifest.rhwpSha, '496333b27d21ddb9114ba9ae340bcb895870c9a7');
+  const pin = (await read('rhwp-core.lock')).match(/^rhwp_commit = "([0-9a-f]{40})"$/m)?.[1];
+  assert.ok(pin, '현재 upstream pin이 필요합니다');
+  assert.equal(manifest.rhwpSha, pin);
   assert.equal(manifest.edge, 256);
   assert.deepEqual(manifest.fixtures.map((fixture) => fixture.id),
     ['small-hwp', 'large-hwp', 'form-hwpx', 'control-jpg']);
