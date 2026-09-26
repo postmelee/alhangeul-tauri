@@ -10,8 +10,8 @@ test('production native print는 준비·Print to File·cancel·CUPS를 같은 �
   const adapter = {
     wait: async (selector) => { calls.push(['wait', selector]); },
     waitAbsent: async (selector) => { calls.push(['waitAbsent', selector]); },
-    actionOptional: async (selector, timeout) => {
-      calls.push(['actionOptional', selector, timeout]);
+    actionOptional: async (selector, timeout, actions) => {
+      calls.push(['actionOptional', selector, timeout, actions]);
       return { performed: true };
     },
     action: async (selector) => { calls.push(['action', selector]); },
@@ -35,20 +35,22 @@ test('production native print는 준비·Print to File·cancel·CUPS를 같은 �
     assertEditorBody: async (label) => { calls.push(['body', label]); },
   });
   assert.deepEqual(calls.map(([name]) => name), [
-    'actionOptional', 'action', 'waitAbsent', 'actionOptional', 'waitAbsent',
+    'actionOptional', 'wait', 'action', 'waitAbsent', 'actionOptional', 'waitAbsent',
     'actionOptional', 'waitAbsent', 'wait', 'wait', 'body',
     'printToFile', 'wait', 'trigger', 'wait', 'body', 'file',
     'cancelPrint', 'wait', 'trigger', 'wait', 'body',
     'virtualPrinter', 'wait', 'trigger', 'wait', 'body', 'cupsPdf',
   ]);
   assert.equal(calls[0][2], 10000);
+  assert.deepEqual(calls[0][3], ['select']);
   assert.deepEqual(calls[0][1].exactNames, ['사용 안 함 (대체 글꼴로 보기)']);
-  assert.deepEqual(calls[3][1].exactNames, ['시작하기']);
-  assert.deepEqual(calls[7][1], { roles: ['document text'], names: ['biz_plan.hwp'] });
+  assert.equal(calls[1][1].checked, true);
+  assert.deepEqual(calls[4][1].exactNames, ['시작하기']);
+  assert.deepEqual(calls[8][1], { roles: ['document text'], names: ['biz_plan.hwp'] });
   assert.deepEqual(calls.filter(([name]) => name === 'body').map(([, label]) => label), [
     'before-print', 'after-print-to-file', 'after-cancel', 'after-cups-pdf',
   ]);
-  for (const [, selector] of calls.filter(([name], index) => name === 'wait' && index !== 7)) {
+  for (const [, selector] of calls.filter(([name], index) => name === 'wait' && index > 8)) {
     assert.deepEqual(selector, {
       roles: ['document text'], names: ['biz_plan.hwp'], focused: true,
     });

@@ -148,3 +148,14 @@ v0.8.6은 preview 압축 해제 전에 10 MiB 상한으로 `None`을 반환한�
 - 설치 원시 결과: MSI lifecycle은 실제 passed. NSIS는 raw failure 12개(0x80040154), lifecycle passed·thumbnail not-accepted인 hosted 진단 계약만 passed다. MSI forced reinstall은 3010/reboot-required·post-reboot-unverified로 계약만 passed다. 세 증거 ZIP digest와 evaluation IO 검증 결과도 확인했으며 이를 전체 Shell 기능 수용으로 바꾸지 않는다.
 - 같은 제품 SHA·producer를 입력한 Linux GUI [full 36273638799](https://github.com/postmelee/alhangeul-tauri/actions/runs/36273638799)와 [local-fonts 36273643047](https://github.com/postmelee/alhangeul-tauri/actions/runs/36273643047)를 실행했다. 두 검증의 harness SHA도 `02388f59e88efbf37514894a28a69466bcde9a8b`다. 결과와 화면·PDF 판독은 아직 미확인이다.
 - 작업지시자의 Actions 대기·조회 중단 지시를 유지한다. 위 두 실행의 완료 통지를 받은 뒤 결과·증거를 확인하고 Stage 3/최종 보고·PR 반영·Windows 최종 점검 인계를 진행한다. 이 문서 기록만으로 Stage 3 완료나 공개 release 수용을 선언하지 않는다.
+
+## Linux GUI 첫 결과와 harness 보완
+
+- local-fonts run `36273643047`은 success다. artifact `10916865310`의 digest `sha256:546d72178d374d11dc2b22bae9937bce4a5a2a6643a159ede7563348d8790931`를 실제 ZIP과 대조했다. 설치 DEB hash는 `996c8b969a5da7a5186c7edbc32e46584753ce9464d007f8d9cac8219632147e`로 producer와 일치했다.
+- 관측은 화면 24개·process restart 6회·새 창 4개다. Canvas2D와 CanvasKit의 설치 전/후 대표 페이지 4개를 직접 판독했으며 Abel 적용 후 글자 모양 변화와 본문 보존을 확인했다. 두 renderer에서 HWP/HWPX 직접 공급·재감지·삭제/복구·사용 설정 유지·저장본 글꼴명 보존 검사가 통과했다. CanvasKit localTypefaceCount는 적용 1 → 삭제 0 → 복구 1이었다. 이는 영문 Abel 검증이며 Windows 나눔스퀘어 최종 확인을 대신하지 않는다.
+- full run `36273638799`는 failure다. artifact `10916920071` / digest `sha256:14bac365d7c249469f2c43d1869594a5674dec5dce28d42238ae73a0795a3dc8`를 검증하고 로그·실패 화면을 보존했다. DEB 설치·MIME·helper 무결성은 통과했지만 thumbnail manager probe와 native print·WebDriver가 실패했다. 문서 저장·PDF 검사는 실행되지 못했으므로 미검증이다.
+- 원인 1: idle 상태 문구가 upstream initialize 완료보다 먼저 나타나 새 스킨 안내를 처리하기 전에 문서를 열었다. public `ready` RPC가 같은 initPromise를 기다리는 것을 확인하고, 이를 barrier로 사용한 뒤 기존 고유 모달 처리·native idle 검증을 수행한다. 초기화 지연과 오류 회귀를 추가하며 임의 sleep·localStorage 주입·제품 source 수정은 하지 않는다.
+- 원인 2: WebKit radio의 실제 AT-SPI action은 로그상 `select`였으나 helper는 button용 click/press만 요청했다. 해당 radio에만 select를 지정하고 STATE_CHECKED 사후 조건을 확인한다. 중복 대상을 거부하고 실제 driver 판단 함수를 추출해 관측 capability·선택 상태·중복 거부를 재생한다.
+- 원인 3: shell probe의 별도 synthetic preview ZIP에도 HWPX package 항목이 빠져 있었다. 같은 손상 XML 형식으로 보정했다. 실제 Python 생성기를 실행해 ZIP 구조와 pinned WASM의 XML 오류를 검증한다. 제품 helper·parser·성공 기준은 유지한다.
+- 로컬 검증: `typecheck:gui`, 집중 회귀 47개, `test:gui:linux:contracts` 65개, shell 구문·diff 검사 통과. 실제 AT-SPI와 전체 GUI의 보완 수용은 같은 제품 SHA/run의 새 full GUI에서 확인한다. 변경은 harness·문서뿐이므로 설치본을 재빌드하지 않고, 성공한 글꼴 실행의 결과도 보존한다.
+- 기존 `atspi_driver.py` 300 LOC에 checked 판독과 고유 대상 거부 6줄을 추가해 306 LOC가 된다. 이번 관측 실패에 필요한 최소 변경이며 driver 전체 분리는 범위에 넣지 않는다.

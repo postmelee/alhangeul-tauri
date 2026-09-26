@@ -27,7 +27,7 @@ import {
 } from './gui/support/document-ux.ts';
 import { runScenarioWithEvidence } from './gui/support/scenario-runner.ts';
 
-import { validateStartupDialogs, dismissKnownDialog, isStudioStartupReady } from './gui/support/studio-startup.ts';
+import { validateStartupDialogs, dismissKnownDialog, isStudioStartupReady, waitForStudioStartup } from './gui/support/studio-startup.ts';
 
 const repoRoot = fileURLToPath(new URL('..', import.meta.url));
 
@@ -347,4 +347,31 @@ test('Studio 시작은 native idle을 요구하고 자동 빈 문서나 다른 �
     { status: '새 문서.hwp — 1페이지', canvasReady: true },
     { canvasReady: true }, { toolbarReady: false }, { status: '새 문서 생성 중...' },
   ]) assert.equal(isStudioStartupReady({ ...state, ...next }), false);
+});
+
+test('idle 문구 뒤 늦게 나타나는 스킨 안내도 public ready 응답 후 처리한다', async () => {
+  let ready = false;
+  let modal = false;
+  let clicked = 0;
+  const overlay = {
+    $: () => ({ getText: async () => '화면 스킨 선택 ×' }),
+    $$: async () => [{ getText: async () => '시작하기', click: async () => { modal = false; clicked += 1; } }],
+  };
+  const session = {
+    execute: async () => ready
+      ? { status: 'HWP 파일을 선택해주세요.', canvasReady: false, toolbarReady: true } : true,
+    executeAsync: async () => { ready = true; modal = true; return { result: true }; },
+    $$: () => ({ getElements: async () => {
+      assert.equal(ready, true, '초기화 전에 모달 부재를 준비 완료로 간주하면 안 됩니다');
+      return modal ? [overlay] : [];
+    } }),
+    waitUntil: async (predicate) => {
+      for (let attempt = 0; attempt < 3; attempt += 1) if (await predicate()) return;
+      assert.fail('시작 준비를 완료하지 못했습니다');
+    },
+  };
+  await waitForStudioStartup(session, 1000);
+  assert.equal(clicked, 1);
+  session.executeAsync = async () => ({ error: 'initialization failed' });
+  await assert.rejects(waitForStudioStartup(session, 1000), /initialization failed/);
 });

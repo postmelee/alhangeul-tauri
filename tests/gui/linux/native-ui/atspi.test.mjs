@@ -171,6 +171,18 @@ test('production native phase는 선택형 글꼴 버튼과 focused document wai
   assert.equal(calls[0].timeoutMs, 5000);
 });
 
+test('radio의 관측된 select action을 요청하고 checked 사후 조건을 기다린다', async () => {
+  const calls = [];
+  const adapter = createAdapter({
+    runAtspi: async (request) => { calls.push(request); return { performed: true }; },
+  });
+  const selector = { roles: ['radio button'], exactNames: ['사용 안 함 (대체 글꼴로 보기)'] };
+  await adapter.actionOptional(selector, 10000, ['select']);
+  await adapter.wait({ ...selector, checked: true });
+  assert.deepEqual(calls[0].actionNames, ['select']);
+  assert.equal(calls[1].selector.checked, true);
+});
+
 test('Python bridge는 editable text를 focus·readback한 같은 node에서 semantic activate한다', async () => {
   const source = await readFile(new URL('./atspi_driver.py', import.meta.url), 'utf8');
   assert.match(source, /within = selector\.get\("within"\)/);

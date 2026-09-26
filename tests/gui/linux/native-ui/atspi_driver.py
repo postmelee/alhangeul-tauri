@@ -27,6 +27,7 @@ def node_info(node):
         "enabled": has_state(node, pyatspi.STATE_ENABLED),
         "sensitive": has_state(node, pyatspi.STATE_SENSITIVE),
         "selected": has_state(node, pyatspi.STATE_SELECTED),
+        "checked": has_state(node, pyatspi.STATE_CHECKED),
         "selectable": has_state(node, pyatspi.STATE_SELECTABLE),
     }
 
@@ -91,6 +92,9 @@ def matches_info(info, selector):
         return False
     focused = selector.get("focused")
     if isinstance(focused, bool) and info["focused"] != focused:
+        return False
+    checked = selector.get("checked")
+    if isinstance(checked, bool) and info["checked"] != checked:
         return False
     selected = selector.get("selected")
     return not isinstance(selected, bool) or info["selected"] == selected
@@ -183,6 +187,8 @@ def perform_optional(request):
     while True:
         found = find_matches(request)
         if found:
+            if len(found) != 1:
+                raise LookupError("optional action requires exactly one target")
             return {"performed": True, "node": perform_action(
                 found[0], request.get("actionNames", []))}
         if time.monotonic() >= deadline:

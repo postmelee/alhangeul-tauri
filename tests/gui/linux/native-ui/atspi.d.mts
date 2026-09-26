@@ -27,7 +27,7 @@ export class LinuxNativeUiAdapter implements NativeDialogAdapter {
   wait(selector: Record<string, unknown>): Promise<unknown>;
   waitAbsent(selector: Record<string, unknown>): Promise<unknown>;
   actionOptional(
-    selector: Record<string, unknown>, timeoutMs?: number,
+    selector: Record<string, unknown>, timeoutMs?: number, actionNames?: string[],
   ): Promise<{ performed: boolean }>;
   withFailureEvidence<T>(
     label: string,

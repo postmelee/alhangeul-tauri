@@ -244,10 +244,10 @@ export class LinuxNativeUiAdapter {
     return this.command({ command: 'action', selector });
   }
 
-  actionOptional(selector, timeoutMs = 5000) {
+  actionOptional(selector, timeoutMs = 5000, actionNames = ['click', 'press']) {
     return this.command({
       command: 'actionOptional', selector, timeoutMs,
-      actionNames: ['click', 'press'],
+      actionNames,
     });
   }
 

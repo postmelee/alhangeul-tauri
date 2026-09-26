@@ -27,6 +27,12 @@ export async function dismissKnownDialog(overlay: WebdriverIO.Element, title: st
 }
 
 export async function waitForStudioStartup(session: WebdriverIO.Browser, timeoutMs: number): Promise<void> {
+  // The idle status is set before initialize() finishes and opens skin onboarding.
+  // Public ready RPC awaits that same initPromise; never infer readiness from pixels alone.
+  await session.waitUntil(() => session.execute(() =>
+    document.documentElement.classList.contains('alhangeul-toolbar-ready')
+      && !!document.getElementById('sb-message')?.textContent?.trim()), { timeout: timeoutMs });
+  await waitForStudioInitialization(session, timeoutMs);
   const handled = new Set<string>();
   await session.waitUntil(async () => {
     const overlays = await session.$$('.modal-overlay').getElements();
@@ -51,6 +57,27 @@ export async function waitForStudioStartup(session: WebdriverIO.Browser, timeout
     }));
     return isStudioStartupReady(state);
   }, { timeout: timeoutMs, timeoutMsg: 'Alhangeul idle 시작과 알려진 대화상자 처리가 완료되지 않았습니다' });
+}
+
+async function waitForStudioInitialization(session: WebdriverIO.Browser, timeoutMs: number): Promise<void> {
+  const response = await session.executeAsync((timeout, done) => {
+    const id = `startup-ready-${Date.now()}-${Math.random()}`;
+    const timer = setTimeout(() => {
+      window.removeEventListener('message', listener);
+      done({ error: 'Studio ready RPC timeout' });
+    }, timeout);
+    function listener(event: MessageEvent) {
+      if (event.source !== window || event.data?.type !== 'rhwp-response' || event.data.id !== id) return;
+      clearTimeout(timer);
+      window.removeEventListener('message', listener);
+      done(event.data);
+    }
+    window.addEventListener('message', listener);
+    window.postMessage({ type: 'rhwp-request', id, method: 'ready', params: {} }, '*');
+  }, Math.min(timeoutMs, 15000)) as { result?: unknown; error?: string };
+  if (response.error || response.result !== true) {
+    throw new Error(response.error ?? 'Studio ready RPC did not confirm initialization');
+  }
 }
 
 

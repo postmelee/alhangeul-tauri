@@ -9,8 +9,9 @@ export async function runProductionPrintSequence(options) {
   const document = { roles: ['document text'], names: [options.displayName] };
   const focusedDocument = { ...document, focused: true };
   // CLI document loading may append the font dialog above synchronous skin onboarding.
-  const choice = await options.adapter.actionOptional(FONT_DISABLED, 10000);
+  const choice = await options.adapter.actionOptional(FONT_DISABLED, 10000, ['select']);
   if (choice?.performed) {
+    await options.adapter.wait({ ...FONT_DISABLED, checked: true });
     await options.adapter.action({ roles: ['push button', 'button'], exactNames: ['확인'] });
     await options.adapter.waitAbsent(FONT_DISABLED);
   }
