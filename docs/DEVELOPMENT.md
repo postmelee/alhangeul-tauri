@@ -209,7 +209,7 @@ scripts/update-upstream.sh \
   --run-checks
 ```
 
-script는 다음 순서로 source submodule, native Cargo lock, 새로 빌드한 WASM artifact와 `rhwp-core.lock`을 맞춘 뒤 검증한다. branch, floating ref, 기존 `UPSTREAM_*`/`RUN_CHECKS` 환경 변수는 허용하지 않는다. script가 성공해도 변경된 submodule commit과 artifact diff는 커밋 전에 명시적으로 검토한다.
+script는 source submodule, desktop·document-preview·Windows worker·Linux thumbnailer의 네 native Cargo lock, 새로 빌드한 WASM artifact와 `rhwp-core.lock`을 맞춘 뒤 검증한다. branch, floating ref, 기존 `UPSTREAM_*`/`RUN_CHECKS` 환경 변수는 허용하지 않는다. script가 성공해도 변경된 submodule commit과 artifact diff는 커밋 전에 명시적으로 검토한다.
 
 ### Stable candidate 읽기 전용 확인
 
@@ -245,6 +245,8 @@ candidate writer에는 현재 repository에 설치된 GitHub App과 다음 Actio
 
 생성된 draft PR은 자동 검증이 통과했더라도 Windows/Linux native 수용 전이다. target release를 명시한 별도 Issue에서 Rust·Tauri build, GUI와 packaging을 검토하며 candidate PR 또는 수용 Issue를 자동 merge·close하지 않는다. `v0.8.4` 수용은 [Task #24 근거](releases/v0.1.0.md#기존-검증-근거)에 보존하며 이후 pin 변경은 별도 작업으로 수행한다.
 
+2026-09-26 Task #76에서 writer를 상시 활성화했다. 이후 새 Stable은 검증을 통과하면 Draft PR로 제안하며 자동 병합이나 릴리즈는 수행하지 않는다. candidate가 생기지 않으면 먼저 Actions summary의 `decision`과 `writer enabled`를 함께 확인한다. `create_candidate`여도 writer가 `false`면 의도된 skip이다.
+
 ### candidate 장애 복구
 
 - `current`, `upstream_behind_current`, `dry_run`, `existing_pr`, `candidate_blocker` 판정은 write가 없는 정상 종료다. Actions summary의 current/target/base/decision, 열린 candidate 수와 기존 PR URL을 확인한다. `candidate_blocker`는 다른 tag의 자동 candidate를 먼저 검토·종료해야 함을 뜻한다.
@@ -268,6 +270,8 @@ git diff --submodule=log
 git restore --source=<last-verified-commit> -- \
   third_party/rhwp \
   apps/desktop/src-tauri/Cargo.lock \
+  crates/document-preview/Cargo.lock apps/thumbnail-worker/Cargo.lock \
+  apps/linux-thumbnailer/Cargo.lock \
   apps/studio-host/vendor/rhwp-core \
   rhwp-core.lock
 git submodule update --init --recursive third_party/rhwp

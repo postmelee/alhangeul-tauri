@@ -78,7 +78,7 @@ mutationTest(
   async (fixture) => {
     await replaceInFile(fixture.desktopLockPath, fixtureVersion, '9.9.9');
   },
-  /desktop Cargo\.lock rhwp version이 release tag와 다릅니다/,
+  /apps\/desktop\/src-tauri\/Cargo\.lock rhwp version이 release tag와 다릅니다/,
 );
 
 mutationTest(
@@ -152,6 +152,16 @@ mutationTest(
   /upstream submodule에 추적되지 않은 변경이 있습니다/,
 );
 
+for (const lockPath of [
+  'crates/document-preview/Cargo.lock', 'apps/thumbnail-worker/Cargo.lock',
+  'apps/linux-thumbnailer/Cargo.lock',
+]) {
+  mutationTest(`${lockPath} stale rhwp version을 거부한다`, async fixture => {
+    const path = join(fixture.root, lockPath);
+    await writeFile(path, (await readFile(path, 'utf8')).replace(fixtureVersion, '0.0.1'));
+  }, /rhwp version이 release tag와 다릅니다/);
+}
+
 function mutationTest(name, mutate, expectedError) {
   test(name, async () => {
     const fixture = await createFixture();
@@ -205,6 +215,13 @@ async function createFixture() {
     desktopLockPath,
     `version = 4\n\n[[package]]\nname = "rhwp"\nversion = "${fixtureVersion}"\n`,
   );
+  for (const lockPath of [
+    'crates/document-preview/Cargo.lock', 'apps/thumbnail-worker/Cargo.lock',
+    'apps/linux-thumbnailer/Cargo.lock',
+  ]) {
+    await mkdir(dirname(join(root, lockPath)), { recursive: true });
+    await writeFile(join(root, lockPath), await readFile(desktopLockPath));
+  }
   const artifacts = new Map([
     ['package.json', `${JSON.stringify({ name: 'rhwp', version: fixtureVersion }, null, 2)}\n`],
     ['rhwp.js', 'export default async function init() {}\n'],

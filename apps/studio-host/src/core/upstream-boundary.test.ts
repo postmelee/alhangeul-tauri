@@ -196,7 +196,11 @@ describe('upstream Studio override boundary', () => {
       'apps/studio-host/src/style.css',
     ), 'utf8');
 
-    expect(inlineHiddenSelectors(upstreamIndex)).toEqual(DESKTOP_CSP_INLINE_HIDDEN_SELECTORS);
+    // Upstream can migrate an inline style to native hidden without requiring a
+    // product owner. Every remaining CSP-sensitive inline style must be owned.
+    for (const selector of inlineHiddenSelectors(upstreamIndex)) {
+      expect(DESKTOP_CSP_INLINE_HIDDEN_SELECTORS).toContain(selector);
+    }
     for (const selector of ['#file-input', '#sb-field:empty']) {
       expect(productStyle).toContain(selector);
     }

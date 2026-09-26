@@ -10,7 +10,8 @@ Alhangeul의 유일한 지속 upstream은 [`edwardkim/rhwp`](https://github.com/
 - 읽기 전용 source submodule: `third_party/rhwp`
 - 기계 검증 가능한 출처 lock: `rhwp-core.lock`
 - bundled WASM: `apps/studio-host/vendor/rhwp-core`
-- native Rust lockfile: `apps/desktop/src-tauri/Cargo.lock`
+- native Rust lockfile: `apps/desktop/src-tauri/Cargo.lock`, `crates/document-preview/Cargo.lock`,
+  `apps/thumbnail-worker/Cargo.lock`, `apps/linux-thumbnailer/Cargo.lock`
 - WASM 생성 도구: `wasm-pack 0.15.0`
 - WASM 생성 profile: `wasm-pack build --target web --release`
 
@@ -21,7 +22,7 @@ Alhangeul의 유일한 지속 upstream은 [`edwardkim/rhwp`](https://github.com/
 의존성 갱신은 Stable `rhwp` release tag와 그 tag가 가리키는 resolved commit을 함께 입력해야 한다. 같은 release 기준으로 다음 경계를 원자적으로 맞춘다.
 
 1. `third_party/rhwp` source submodule
-2. native Rust dependency를 고정하는 `apps/desktop/src-tauri/Cargo.lock`
+2. desktop·document-preview·Windows worker·Linux thumbnailer의 네 native Cargo lock
 3. 같은 source commit에서 새로 생성한 bundled WASM package
 4. 위 출처와 artifact hash를 기록하는 `rhwp-core.lock`
 

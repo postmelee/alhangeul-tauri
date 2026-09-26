@@ -110,10 +110,15 @@ test('clean-base automation 계약 뒤 관리 참조와 target gate를 실행한
 });
 
 test('changed path와 explicit staging 범위를 승인된 파일로 제한한다', () => {
-  assert.equal(RHWP_SYNC_ALLOWED_PATHS.length, 14);
+  assert.equal(RHWP_SYNC_ALLOWED_PATHS.length, 17);
   assert.match(candidateJob, /node scripts\/verify-rhwp-sync-changes\.mjs/);
   assert.match(candidateJob, /--output "\$RUNNER_TEMP\/rhwp-sync-changed-paths\.txt"/);
   assert.match(candidateJob, /git add -- \\/);
+  for (const path of ['crates/document-preview/Cargo.lock',
+    'apps/thumbnail-worker/Cargo.lock', 'apps/linux-thumbnailer/Cargo.lock']) {
+    assert.ok(RHWP_SYNC_ALLOWED_PATHS.includes(path));
+    assert.ok(getStepContaining(candidateJob, 'gh pr create').includes(path));
+  }
   assert.match(candidateJob, /apps\/studio-host\/vendor\/rhwp-core \\/);
   assert.match(candidateJob, /rhwp-core\.lock tests\/rhwp-pin\.test\.mjs third_party\/rhwp/);
   assert.match(candidateJob, /diff -u "\$RUNNER_TEMP\/rhwp-sync-changed-paths\.txt"/);

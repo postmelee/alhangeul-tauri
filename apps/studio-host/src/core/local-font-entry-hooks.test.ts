@@ -19,12 +19,15 @@ describe('pinned local-font entry hooks', () => {
       target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext,
     } });
     expect(code.diagnostics).toEqual([]);
-    expect(result).toContain('if (choice !== \'detect\') return;');
+    const originalAst = ts.createSourceFile('upstream.ts', main, ts.ScriptTarget.Latest, true);
+    const originalPrompt = originalAst.statements.find((node): node is ts.FunctionDeclaration =>
+      ts.isFunctionDeclaration(node) && node.name?.text === 'promptLocalFontsIfNeeded');
+    expect(result).toContain(originalPrompt!.body!.getText(originalAst).slice(1, -1));
     const hook = result.slice(result.indexOf('await __alhangeulPrepareFonts({'), result.indexOf("console.log('[initDoc] 1. 폰트 로딩 시작')"));
     expect(hook).not.toContain('documentState');
   });
 
-  it('returns from the real upstream prompt before its fixed saved-success path in Tauri', async () => {
+  it('returns from the real upstream prompt before browser font logic in Tauri', async () => {
     const result = transformLocalFontEntry(main, '/controller.ts');
     const ast = ts.createSourceFile('main.ts', result, ts.ScriptTarget.Latest, true);
     const prompt = ast.statements.find((node) => ts.isFunctionDeclaration(node)

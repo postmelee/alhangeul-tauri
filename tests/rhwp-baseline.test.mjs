@@ -58,7 +58,7 @@ test('Alhangeul keeps unsaved-document guards on local file and new-document rep
   assert.match(mainSource, /import \{ confirmSaveBeforeReplacingDocument, fileCommands \} from ['"]@\/command\/commands\/file['"]/);
   assert.match(fileAdapter, /confirmSaveBeforeReplacingDocument/);
   assert.match(fileAdapter, /from ['"]@upstream\/command\/commands\/file['"]/);
-  assert.match(mainSource, /async function canReplaceCurrentDocument\([\s\S]*confirmSaveBeforeReplacingDocument\(commandServices\)/);
+  assert.match(mainSource, /async function canReplaceCurrentDocument\([\s\S]*confirmSaveBeforeReplacingDocument\(commandServices(?:\)|,\s*\{)/);
   assert.match(mainSource, /const skipUnsavedGuard = input\.dataset\.skipUnsavedGuard === ['"]true['"]/);
   assert.match(mainSource, /await loadFile\(file, \{ skipUnsavedGuard \}\)/);
   assert.match(mainSource, /if \(!await canReplaceCurrentDocument\(options\?\.skipUnsavedGuard\)\) return/);
