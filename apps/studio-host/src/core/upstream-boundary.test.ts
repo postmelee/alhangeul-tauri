@@ -14,7 +14,7 @@ import {
 import { DESKTOP_CSP_INLINE_HIDDEN_SELECTORS } from './desktop-toolbar-mode-sync';
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..');
-const expectedUpstreamCommit = '496333b27d21ddb9114ba9ae340bcb895870c9a7';
+const expectedUpstreamCommit = 'f1f9c6ae58344ee9368996d3543f76b9345cf227';
 const expectedIdsByOwner = {
   'font-policy': [
     'core/font-loader',
@@ -389,7 +389,7 @@ describe('upstream Studio override boundary', () => {
     const lockCommit = lock.match(/^rhwp_commit = "([0-9a-f]{40})"$/m)?.[1];
     const releaseTag = lock.match(/^rhwp_release_tag = "([^"]+)"$/m)?.[1];
     expect(lockCommit).toBe(expectedUpstreamCommit);
-    expect(releaseTag).toBe('v0.8.4');
+    expect(releaseTag).toBe('v0.8.6');
 
     const submoduleRoot = resolve(repositoryRoot, 'third_party/rhwp');
     expect(git(['rev-parse', 'HEAD'], submoduleRoot)).toBe(expectedUpstreamCommit);
