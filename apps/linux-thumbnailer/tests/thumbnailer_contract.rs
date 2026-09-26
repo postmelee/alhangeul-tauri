@@ -185,7 +185,7 @@ fn preview_only_hwpx() -> Vec<u8> {
     // Recognized HWPX with an invalid body must still use its embedded preview.
     for name in ["Contents/content.hpf", "Contents/header.xml"] {
         writer.start_file(name, options).unwrap();
-        writer.write_all(b"not valid XML").unwrap();
+        writer.write_all(b"<broken></mismatch>").unwrap();
     }
     writer.start_file("Preview/PrvImage.png", options).unwrap();
     writer.write_all(&png.into_inner()).unwrap();

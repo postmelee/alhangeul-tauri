@@ -136,3 +136,5 @@ run 36225178661에서 Linux x64/arm64 core 각각 88개 실제 결과·resource 
 새 upstream은 HWPX 필수 `Contents/content.hpf`·`Contents/header.xml` 없는 ZIP을 거부한다. preview만 넣었던 세 Rust fixture는 두 항목에 잘못된 XML을 넣어, HWPX 식별은 되지만 직접 parsing은 실패하는 원래 시험 조건을 복구한다. 일반 ZIP+preview는 계속 거부한다는 음성 회귀도 추가한다. production parser·resource 제한·upstream은 변경하지 않는다. 기존 300 LOC 초과 preview 계약 파일에는 이 fixture 관련 최소 변경만 두며 범위 밖 재구성을 하지 않는다. 보완 SHA에서 full CI를 다시 수행하고 첫 실패를 최종 보고에 보존한다.
 
 v0.8.6은 preview 압축 해제 전에 10 MiB 상한으로 `None`을 반환한다. 기존 제품의 16 MiB 방어는 유지되며 더 엄격한 upstream 거부 결과를 검증한다. 기존 `docs/architecture/WINDOWS_THUMBNAILS.md` resource 표의 해당 한 행에 실효 제한을 기록한다. 공식 architecture 위치를 그대로 유지하는 문서 보정이다.
+
+두 번째 full 36225908122에서 preview 계약 12개 중 11개는 통과했지만 단순 text인 `not valid XML`은 upstream에서 빈 문서로 허용돼 직접 실패 조건을 충족하지 못했다. pinned WASM으로 실제 parser를 조사하여 text/invalid UTF-8은 수용되고 불일치 닫는 태그는 XML 오류로 거부됨을 확인했다. 세 fixture를 `<broken></mismatch>`로 고정하고 Linux native profile로 우선 재검증한 뒤 전체 설치본을 생성한다. 테스트 성공 조건을 낮추지 않는다.
