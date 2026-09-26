@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { browser, $, expect } from '@wdio/globals';
 import { HwpDocument, initSync } from '../../../apps/studio-host/vendor/rhwp-core/rhwp.js';
 import { installFixtureFont, verifyFixtures } from '../local-fonts/fixture.mjs';
-import { choose, output, rpc, settings, snapshot } from '../local-fonts/ui.ts';
+import { choose, menu, output, rpc, settings, snapshot } from '../local-fonts/ui.ts';
 import { waitForInitialDesktopReady, waitForLoadedDocument } from '../support/document-ux.ts';
 import { readGuiHarnessInputs } from '../wdio.shared.conf.ts';
 
@@ -80,6 +80,7 @@ describe('Linux installed local fonts', () => {
       const refreshed = await capture(`${renderer}-refreshed`);
       assertLocalApplied(refreshed, renderer);
       expect(refreshed.pixelHash).toBe(enabledHash);
+      await checkNewWindow(renderer, true);
       await checkRemovedFont(renderer);
       await restart(renderer);
       await open('hwpx');
@@ -89,6 +90,7 @@ describe('Linux installed local fonts', () => {
       expect(await settings()).toContain('사용 설정이 저장되었습니다');
       await choose('disabled');
       await capture(`${renderer}-disabled`);
+      await checkNewWindow(renderer, false);
       await restart(renderer);
       await open('hwp');
       expect(await settings()).toContain('직접 공급을 사용하지 않습니다');
@@ -133,6 +135,35 @@ async function capture(name: string) {
   const observation = await snapshot(name);
   observations.push(observation);
   return observation;
+}
+
+async function checkNewWindow(renderer: string, enabled: boolean) {
+  const parent = await browser.getWindowHandle();
+  const beforeHandles = await browser.getWindowHandles();
+  const beforePids = pids();
+  await menu('file:new-window', '파일');
+  await browser.waitUntil(async () => (await browser.getWindowHandles()).length === beforeHandles.length + 1,
+    { timeout: inputs.timeoutMs, timeoutMsg: 'new native editor window did not appear' });
+  const child = (await browser.getWindowHandles()).find(handle => !beforeHandles.includes(handle))!;
+  await browser.switchToWindow(child);
+  try {
+    await waitForInitialDesktopReady(browser, inputs.timeoutMs);
+    expect(pids().sort()).toEqual(beforePids.sort());
+    expect(await settings()).toContain(enabled ? '사용 설정이 저장되었습니다' : '직접 공급을 사용하지 않습니다');
+    await $('.dialog-close').click();
+    await navigate(renderer);
+    await open('hwpx');
+    const state = await capture(`${renderer}-${enabled ? 'enabled' : 'disabled'}-new-window`);
+    if (enabled) assertLocalApplied(state, renderer);
+    else {
+      expect(state.fonts.faces.length).toBe(0);
+      if (renderer === 'canvaskit') expect(state.diagnostics.page.canvaskit?.localTypefaceCount).toBe(0);
+    }
+    observations.push({ scenario: 'new-window', renderer, enabled, parent, child, processIds: pids() });
+  } finally {
+    await browser.closeWindow();
+    await browser.switchToWindow(parent);
+  }
 }
 
 async function assertExportPreservesFont(format: string) {
