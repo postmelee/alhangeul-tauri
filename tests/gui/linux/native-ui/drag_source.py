@@ -34,6 +34,11 @@ def supply_uri(_widget, _context, selection, _info, _time):
     print("DATA", flush=True)
 
 
+def fail_drag(_widget, _context, result):
+    print("FAILED:" + result.value_name, flush=True)
+    return False
+
+
 def finish_drag(_widget, _context):
     print("FINISHED", flush=True)
 
@@ -41,6 +46,7 @@ def finish_drag(_widget, _context):
 source.connect("drag-begin", start_drag)
 source.connect("drag-data-get", supply_uri)
 source.connect("drag-end", finish_drag)
+source.connect("drag-failed", fail_drag)
 window.connect("destroy", Gtk.main_quit)
 window.add(source)
 window.show_all()

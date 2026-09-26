@@ -73,6 +73,7 @@ describe('Alhangeul native Linux acceptance', () => {
         await dragFileIntoWindow({
           filePath: fixture.absolutePath,
           targetRect: await appWindowBounds(),
+          evidencePath: join(inputs.outputDir, 'native-ui', 'drag-transfer.json'),
           timeoutMs: Math.min(inputs.timeoutMs, 30000),
           env: process.env,
         });

@@ -159,3 +159,16 @@ v0.8.6은 preview 압축 해제 전에 10 MiB 상한으로 `None`을 반환한�
 - 원인 3: shell probe의 별도 synthetic preview ZIP에도 HWPX package 항목이 빠져 있었다. 같은 손상 XML 형식으로 보정했다. 실제 Python 생성기를 실행해 ZIP 구조와 pinned WASM의 XML 오류를 검증한다. 제품 helper·parser·성공 기준은 유지한다.
 - 로컬 검증: `typecheck:gui`, 집중 회귀 47개, `test:gui:linux:contracts` 65개, shell 구문·diff 검사 통과. 실제 AT-SPI와 전체 GUI의 보완 수용은 같은 제품 SHA/run의 새 full GUI에서 확인한다. 변경은 harness·문서뿐이므로 설치본을 재빌드하지 않고, 성공한 글꼴 실행의 결과도 보존한다.
 - 기존 `atspi_driver.py` 300 LOC에 checked 판독과 고유 대상 거부 6줄을 추가해 306 LOC가 된다. 이번 관측 실패에 필요한 최소 변경이며 driver 전체 분리는 범위에 넣지 않는다.
+
+
+## Linux GUI 두 번째 결과와 drag 전달 관측
+
+- full run [36275362102](https://github.com/postmelee/alhangeul-tauri/actions/runs/36275362102)은 harness `ac465bda5d0f3177c4827d25275031dce76280b0`, 동일 제품 `02388f59e88efbf37514894a28a69466bcde9a8b`/producer `36229142460`에서 failure다. artifact `10916542730`의 실제 ZIP SHA256 `929cd962903e49d55e7551ffdf6fbcc9c1406dc9d6d00ca522841bc9ac625861`와 workflow context를 대조했다.
+- 이전 세 차단 원인은 이번 실행에서 해소됐다. 파일 관리자 Nautilus/Thunar의 실제 HWP/HWPX thumbnail/cache/change 검사, native print·cancel·CUPS·편집기 복원, 문서 UX 두 건, HWP/HWPX native 저장/재열기, 새 문서 입력→HWP 저장/재열기→PDF, 직접 PDF가 통과했다. WebDriver 6 passing/1 failing, nativePrint=0이다.
+- 직접 HWP PDF 6쪽, HWPX PDF 10쪽, GTK/CUPS 각각 6쪽, 새 문서 PDF 1쪽과 제목·페이지별 텍스트 검사가 통과했다. 새 문서 PDF 전체 marker, GTK 인쇄 표지 한글, HWPX 첫 쪽 본문/표를 대표 이미지로 판독했다. 모든 페이지의 시각 수용으로 확대하지 않는다.
+- 유일한 실패는 drag-in의 `FINISHED` 시점에 `DATA`가 없는 경우다. 실패 화면은 새 문서와 PDF 저장 완료 상태이며 열린 모달은 없었다. 원시 증거에는 source/target geometry·GTK 실패 이유가 없어 제품 결함과 gesture 타이밍 중 원인을 확정할 수 없다. 앞선 성공 항목이나 실패 실행 전체를 통과로 소급하지 않는다.
+- 기존 helper는 threshold 이동 후 100ms, target 이동 후 200ms만 기다리고 mouseup했다. 로컬에 있는 Wry 구현의 GTK drag-data-received → enter/store_paths → drop 경계에 맞춰 같은 한 번의 gesture에서 STARTED → target 이동 → DATA → release → FINISHED를 관측한다. 실패해도 release·helper 종료는 수행하며 다른 target/재시도/fallback은 추가하지 않는다. drop 뒤 문서 identity/10쪽 확인은 유지한다.
+- 다음 실행은 geometry·현재 단계·허용된 GTK marker와 drag-failed enum만 별도 JSON에 남긴다. URI·문서 본문·개인 경로는 진단에 추가하지 않는다. 이번 보완은 원인 확정이나 실제 Linux 성공 증거가 아니며 같은 DEB의 전체 GUI에서 확인한다.
+- 단위 재현은 이번 관측에서 개인 정보 없이 `READY/STARTED/FINISHED`만 구성해 DATA 부재 거부를 검사한다. 관측 지연, 잘못된 bounds, 중복 source, 실패 시 단일 release와 cleanup도 실제 helper를 실행해 검사한다. 설치본/제품/성공한 글꼴 GUI는 변경하지 않는다.
+
+- 보완 로컬 검증: `typecheck:gui`, drag helper 회귀 9개와 이를 포함한 `test:gui:linux:contracts` 67개, Python AST 구문·diff 검사 통과. Linux 실행 성공은 다음 Actions 결과로 확인한다.
