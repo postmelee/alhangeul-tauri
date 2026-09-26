@@ -53,6 +53,12 @@ studio host의 실제 Vite root와 entry는 각각 `third_party/rhwp/rhwp-studio
 저장 성공 문구를 실행하지 않는다. 일반 browser는 upstream 안내를 유지한다. 두 함수 서명과
 설정 메뉴 marker는 단일 일치를 요구하며 변경되면 build를 실패시킨다. upstream 파일은 수정하지 않는다.
 
+`apps/studio-host/desktop-startup-entry.ts`는 v0.8.6의 `openBlankDocumentIfIdle` 시작점에서
+Tauri의 자동 빈 문서 생성만 생략한다. Alhangeul은 기존 idle 화면에서 시작하며
+`파일 → 새로 만들기`가 Rust native 세션을 먼저 만든다. browser의 자동 생성은 보존한다.
+이 경계 없이 upstream이 직접 만든 WASM 문서는 native 저장 세션이 없어 저장할 수 없다.
+함수 marker의 단일 일치를 요구하며 일반 문서 생성·renderer는 수정하지 않는다.
+
 사용 선택은 native 앱 데이터의 version 1 설정에만 저장한다. 창은 revision 이벤트와
 문서 진입·focus snapshot으로 상태를 맞추며 저장 실패는 해당 창의 임시 선택으로 안내한다.
 `stored`/`native-preference`는 사용 선택이 저장되었다는 뜻이며 글꼴 목록·bytes 저장이나
