@@ -5,12 +5,13 @@ Alhangeul의 유일한 지속 upstream은 [`edwardkim/rhwp`](https://github.com/
 ## 현재 고정 상태
 
 - upstream URL: `https://github.com/edwardkim/rhwp.git`
-- Stable release tag: `v0.8.4`
-- resolved commit: `496333b27d21ddb9114ba9ae340bcb895870c9a7`
+- Stable release tag: `v0.8.6`
+- resolved commit: `f1f9c6ae58344ee9368996d3543f76b9345cf227`
 - 읽기 전용 source submodule: `third_party/rhwp`
 - 기계 검증 가능한 출처 lock: `rhwp-core.lock`
 - bundled WASM: `apps/studio-host/vendor/rhwp-core`
-- native Rust lockfile: `apps/desktop/src-tauri/Cargo.lock`
+- native Rust lockfile: `apps/desktop/src-tauri/Cargo.lock`, `crates/document-preview/Cargo.lock`,
+  `apps/thumbnail-worker/Cargo.lock`, `apps/linux-thumbnailer/Cargo.lock`
 - WASM 생성 도구: `wasm-pack 0.15.0`
 - WASM 생성 profile: `wasm-pack build --target web --release`
 
@@ -21,7 +22,7 @@ Alhangeul의 유일한 지속 upstream은 [`edwardkim/rhwp`](https://github.com/
 의존성 갱신은 Stable `rhwp` release tag와 그 tag가 가리키는 resolved commit을 함께 입력해야 한다. 같은 release 기준으로 다음 경계를 원자적으로 맞춘다.
 
 1. `third_party/rhwp` source submodule
-2. native Rust dependency를 고정하는 `apps/desktop/src-tauri/Cargo.lock`
+2. desktop·document-preview·Windows worker·Linux thumbnailer의 네 native Cargo lock
 3. 같은 source commit에서 새로 생성한 bundled WASM package
 4. 위 출처와 artifact hash를 기록하는 `rhwp-core.lock`
 
@@ -35,9 +36,44 @@ branch, 이동 가능한 floating ref, tag 없이 전달된 commit은 Stable 갱
 - `apps/studio-host/`: exact upstream Studio entry를 쓰는 Vite host, Tauri bridge와 desktop event·command·font leaf adapter, 최소 제품 UX 보정
 - `assets/`, `docs/`, `scripts/`: 제품 자산, 공식 문서와 운영 자동화
 
-studio host의 실제 Vite root와 entry는 각각 `third_party/rhwp/rhwp-studio`, 그 아래 `index.html`과 `src/main.ts`다. local `index.html`, `src/main.ts`, Toolbar, CanvasView, Ruler, renderer와 범용 dialog·style 복제본은 허용하지 않는다. 제품 title·접근성 label·새 창 항목·제품 style/icon만 HTML transform으로 보충하고, upstream import를 대체하는 alias는 native host·font policy·제품 정보에 필요한 12개 leaf adapter로 제한한다.
+studio host의 실제 Vite root와 entry는 각각 `third_party/rhwp/rhwp-studio`, 그 아래 `index.html`과 `src/main.ts`다. local `index.html`, `src/main.ts`, Toolbar, CanvasView, Ruler, renderer와 범용 dialog·style 복제본은 허용하지 않는다. 제품 title·접근성 label·새 창·로컬 글꼴 설정 항목·제품 style/icon만 HTML transform으로 보충하고, upstream import를 대체하는 alias는 native host·font policy·제품 정보에 필요한 12개 leaf adapter로 제한한다.
 
 `apps/studio-host/alhangeul-overrides.ts`가 adapter owner와 disposition의 진실 원천이다. `apps/studio-host/src/core/upstream-boundary.test.ts`는 12개 alias, `legacy-upstream-copy` 0개, 금지 entry와 제거된 shadow의 물리적 부재, adapter 300 LOC 상한을 검사한다. `tests/rhwp-baseline.test.mjs`는 exact entry, upstream 메뉴 command와 HWPX/PDF 실행 경계를 함께 고정한다. engine API나 renderer bug는 먼저 upstream에서 해결하고, 데스크톱 통합 차이는 이 경계 안의 leaf adapter에 둔다.
+
+`apps/studio-host/local-font-overrides.ts`는 위 alias를 우회하는 상대 import 두 곳을 같은
+`core/local-fonts` adapter로 연결한다. 대상은 pinned Studio의 `core/document-font-status.ts`와
+`core/font-substitution.ts`가 읽는 `./local-fonts.ts`뿐이다. Vite와 Vitest는 동일 resolver를
+사용하며 12개 alias 목록, upstream source와 renderer는 유지한다. 실제 상태 분석·표시 글꼴
+체인 회귀와 dev/build module 검증으로 별도 upstream 글꼴 캐시가 섞이지 않는지 확인한다.
+이 연결의 성공은 사용 선택의 영속 저장이나 모든 renderer의 글꼴 적용 성공을 뜻하지 않는다.
+
+`apps/studio-host/local-font-entry-hooks.ts`는 exact `main.ts`의 `initializeDocument`와
+`promptLocalFontsIfNeeded` 시작점만 연결한다. 전자는 native 사용 선택 복원과 catalog 준비를
+문서 초기화보다 먼저 수행하고, 후자는 Tauri에서 제품 설정 안내를 처리해 upstream의 고정
+저장 성공 문구를 실행하지 않는다. 일반 browser는 upstream 안내를 유지한다. 두 함수 서명과
+설정 메뉴 marker는 단일 일치를 요구하며 변경되면 build를 실패시킨다. upstream 파일은 수정하지 않는다.
+
+`apps/studio-host/desktop-startup-entry.ts`는 v0.8.6의 `openBlankDocumentIfIdle` 시작점에서
+Tauri의 자동 빈 문서 생성만 생략한다. Alhangeul은 기존 idle 화면에서 시작하며
+`파일 → 새로 만들기`가 Rust native 세션을 먼저 만든다. browser의 자동 생성은 보존한다.
+이 경계 없이 upstream이 직접 만든 WASM 문서는 native 저장 세션이 없어 저장할 수 없다.
+함수 marker의 단일 일치를 요구하며 일반 문서 생성·renderer는 수정하지 않는다.
+
+사용 선택은 native 앱 데이터의 version 1 설정에만 저장한다. 창은 revision 이벤트와
+문서 진입·focus snapshot으로 상태를 맞추며 저장 실패는 해당 창의 임시 선택으로 안내한다.
+`stored`/`native-preference`는 사용 선택이 저장되었다는 뜻이며 글꼴 목록·bytes 저장이나
+화면 적용의 증거가 아니다. 제품 설정 화면은 upstream `ModalDialog`를 상속하고, 변경 시
+기존 renderer session 무효화·CanvasView 재준비 callback을 사용한다. 재준비가 끝난 뒤
+현재 CanvasKit renderer에 필요한 로컬 글꼴을 다시 공급하고 완료 후 보기만 갱신한다.
+문서 generation과 view/session/renderer·decisionKey가 바뀐 경우 오래된 작업은 화면을
+갱신하지 않는다. 문서의 dirty와 원본 글꼴 데이터는 변경하지 않으며 실제 renderer별
+공급·표시 수용은 별도로 검증한다.
+
+제품 font provider는 자신이 등록한 FontFace와 bytes·실패 cache를 세대별로 회수한다.
+문서 전환에서는 필요한 bytes를 다시 확인하고, 재감지·미사용 전환에서는 기존 공개
+`RendererSession.invalidateDocument()`가 CanvasKit의 `resetDocumentResources()`를
+호출하게 한다. private renderer map이나 추가 renderer transform은 사용하지 않는다.
+자세한 선택·공급 한계와 실제 수용 범위는 [LOCAL_FONTS.md](LOCAL_FONTS.md)를 따른다.
 
 ## Windows thumbnail parse·render 경계
 
@@ -77,8 +113,8 @@ PDF command는 upstream `file:print-to-pdf` 메뉴 위치와 활성 규칙을 �
 
 ```sh
 scripts/update-upstream.sh \
-  --tag v0.8.4 \
-  --commit 496333b27d21ddb9114ba9ae340bcb895870c9a7 \
+  --tag v0.8.6 \
+  --commit f1f9c6ae58344ee9368996d3543f76b9345cf227 \
   --run-checks
 ```
 
@@ -122,6 +158,16 @@ workflow를 default branch에 merge하면 read-only daily 판정은 시작되지
 
 Windows native와 Linux Tauri build·GUI·packaging은 승인된 후속 플랫폼 작업에서 검증한다. Ubuntu Rust preflight와 플랫폼 중립 수용 결과만으로 native 배포 준비가 완료되었다고 판단하지 않는다.
 
+## `v0.8.6` 설치본 수용 범위
+
+Task #76에서 writer를 활성화하고 실제 후보 생성·반복 입력의 멱등성을 검증했다.
+제품 `02388f59e88efbf37514894a28a69466bcde9a8b`의 Windows x64·Linux x64/arm64
+full CI와 동일 DEB의 Linux x64 전체 GUI·로컬 글꼴 검증을 완료했다.
+Windows 최종 사용자 점검은 아직 대기이며 NSIS hosted thumbnail과 MSI 재부팅 후 확인의
+원시 제한을 유지한다. 후보 자동 merge와 공개 release는 수행하지 않는다.
+실행·artifact·hash·한계는 [Task #76 보고서](../../mydocs/report/task_m010_76_report.md),
+사용자 점검은 [Windows 안내](../operations/WINDOWS_FONT_ACCEPTANCE.md)를 따른다.
+
 ## `v0.8.4` native 수용 기준선
 
 Task #24는 `v0.8.4` / `496333b27d21ddb9114ba9ae340bcb895870c9a7`의 source,
@@ -131,7 +177,7 @@ Windows x64·Linux x64·Linux arm64 native build, inventory, Windows installer s
 같은 SHA에서 성공했다. Windows x64와 Linux x64에서는 대표 HWP/HWPX의 열기·저장·재열기,
 searchable PDF 직접 저장, system print dialog와 전체 페이지 출력까지 수동 수용했다.
 
-이 결과는 Alhangeul에서 현재 고정한 upstream release와 leaf adapter 경계의 native 수용
+이 결과는 Alhangeul에서 당시 고정한 upstream release와 leaf adapter 경계의 native 수용
 기준선이다. Linux arm64는 hosted runner의 DEB build·inventory까지만 확인했고 실제 arm64
 GUI를 실행하지 않았다. GitHub Release, tag, 서명, package 게시, 고정 다운로드 URL과
 updater는 이 기준선에 포함되지 않는다. 상세 run, artifact와 플랫폼별 제한은

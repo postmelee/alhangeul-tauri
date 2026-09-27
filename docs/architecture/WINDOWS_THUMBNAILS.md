@@ -89,7 +89,7 @@ embedded preview는 빠른 후보일 뿐 최신 문서 내용의 진실 원천�
 | 입력 문서 | 64 MiB |
 | 요청 edge | 1024 px |
 | 직접 render SVG | 16 MiB |
-| embedded preview bytes | 16 MiB |
+| embedded preview bytes | 제품 상한 16 MiB; rhwp v0.8.6 추출기는 해제 전 10 MiB 초과를 먼저 거부 |
 | embedded preview decode | 16,777,216 pixels |
 | 최종 bitmap | 1,048,576 pixels |
 | bitmap payload | 4,194,304 bytes |

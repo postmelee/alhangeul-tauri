@@ -14,7 +14,7 @@ import {
 import { DESKTOP_CSP_INLINE_HIDDEN_SELECTORS } from './desktop-toolbar-mode-sync';
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..');
-const expectedUpstreamCommit = '496333b27d21ddb9114ba9ae340bcb895870c9a7';
+const expectedUpstreamCommit = 'f1f9c6ae58344ee9368996d3543f76b9345cf227';
 const expectedIdsByOwner = {
   'font-policy': [
     'core/font-loader',
@@ -88,6 +88,14 @@ const removedStageTwoPaths = [
 ] as const;
 
 describe('upstream Studio override boundary', () => {
+  it('connects the relative local-font consumers in both production and test configs', () => {
+    for (const config of ['vite.config.ts', 'vitest.config.ts']) {
+      const source = readFileSync(resolve(repositoryRoot, 'apps/studio-host', config), 'utf8');
+      expect(source).toContain("from './local-font-overrides'");
+      expect(source).toContain('createAlhangeulLocalFontPlugin({ upstreamSrc, alhangeulSrc })');
+    }
+  });
+
   it('classifies the 12 remaining leaf aliases', () => {
     const ids = alhangeulOverrideSpecs.map((spec) => spec.id);
     expect(ids).toHaveLength(12);
@@ -188,7 +196,11 @@ describe('upstream Studio override boundary', () => {
       'apps/studio-host/src/style.css',
     ), 'utf8');
 
-    expect(inlineHiddenSelectors(upstreamIndex)).toEqual(DESKTOP_CSP_INLINE_HIDDEN_SELECTORS);
+    // Upstream can migrate an inline style to native hidden without requiring a
+    // product owner. Every remaining CSP-sensitive inline style must be owned.
+    for (const selector of inlineHiddenSelectors(upstreamIndex)) {
+      expect(DESKTOP_CSP_INLINE_HIDDEN_SELECTORS).toContain(selector);
+    }
     for (const selector of ['#file-input', '#sb-field:empty']) {
       expect(productStyle).toContain(selector);
     }
@@ -377,7 +389,7 @@ describe('upstream Studio override boundary', () => {
     const lockCommit = lock.match(/^rhwp_commit = "([0-9a-f]{40})"$/m)?.[1];
     const releaseTag = lock.match(/^rhwp_release_tag = "([^"]+)"$/m)?.[1];
     expect(lockCommit).toBe(expectedUpstreamCommit);
-    expect(releaseTag).toBe('v0.8.4');
+    expect(releaseTag).toBe('v0.8.6');
 
     const submoduleRoot = resolve(repositoryRoot, 'third_party/rhwp');
     expect(git(['rev-parse', 'HEAD'], submoduleRoot)).toBe(expectedUpstreamCommit);

@@ -70,17 +70,19 @@ describe('desktop toolbar mode sync', () => {
     expect(hidden(elements.rotateGroup)).toBe(false);
   });
 
-  it('uses CSP-safe classes after upstream writes conflicting inline display values', () => {
+  it('restores visibility after upstream writes conflicting inline or native hidden values', () => {
     const { elements, eventBus, flush } = fixture();
     installToolbarModeSync(eventBus, elements, flush.schedule);
 
     eventBus.emit('headerFooterModeChanged', 'header');
     elements.headerFooterGroup!.style.display = 'none';
+    elements.headerFooterGroup!.hidden = true;
     elements.defaultGroups[0].style.display = '';
     flush.run();
 
     expect(hidden(elements.headerFooterGroup)).toBe(false);
     expect(display(elements.headerFooterGroup)).toBe('');
+    expect(elements.headerFooterGroup!.hidden).toBe(false);
     expect(hidden(elements.defaultGroups[0])).toBe(true);
   });
 

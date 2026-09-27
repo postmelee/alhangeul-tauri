@@ -1,4 +1,8 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const fontBytes = [...readFileSync(resolve(__dirname, '../../../../tests/gui/local-fonts/Abel-Regular.ttf'))];
 
 const invokeMock = vi.hoisted(() => vi.fn());
 
@@ -7,12 +11,14 @@ vi.mock('@tauri-apps/api/core', () => ({
 }));
 
 describe('local fonts', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.resetModules();
     vi.clearAllMocks();
     delete (globalThis as { window?: unknown }).window;
     delete (globalThis as { document?: unknown }).document;
     delete (globalThis as { FontFace?: unknown }).FontFace;
+    const { acceptFontPreferences } = await import('./local-font-preferences');
+    acceptFontPreferences({ choice: 'enabled', persisted: true, revision: 1, promptDismissed: false, error: null });
   });
 
   it('hydrates desktop font families from the native catalog while filtering blocked authoring names', async () => {
@@ -85,7 +91,7 @@ describe('local fonts', () => {
       }
       if (command === 'read_local_font') {
         expect(args?.path).toBe('/vendor/NewFont.ttf');
-        return [0, 1, 2, 3];
+        return fontBytes;
       }
       throw new Error(`unexpected command: ${command}`);
     });
@@ -127,7 +133,7 @@ describe('local fonts', () => {
       }
       if (command === 'read_local_font') {
         expect(args?.path).toBe('/vendor/NewFont-Regular.ttf');
-        return [10, 20, 30];
+        return fontBytes;
       }
       throw new Error(`unexpected command: ${command}`);
     });
@@ -157,14 +163,14 @@ describe('local fonts', () => {
 
     const loadedBytes = await loadLocalFontBytesFor(['NewFont-Regular']);
     expect(record).not.toBeNull();
-    const fontBytes = loadedBytes.get(localFontFaceKey(record!));
-    expect(fontBytes).toBeDefined();
-    expect(Array.from(new Uint8Array(fontBytes!))).toEqual([10, 20, 30]);
+    const loaded = loadedBytes.get(localFontFaceKey(record!));
+    expect(loaded).toBeDefined();
+    expect(Array.from(new Uint8Array(loaded!))).toEqual(fontBytes);
 
     await clearStoredLocalFonts();
     expect(getLocalFontState()).toMatchObject({
       loaded: false,
-      stored: false,
+      stored: true,
       count: 0,
     });
   });
@@ -173,6 +179,7 @@ describe('local fonts', () => {
 function installBinaryFontEnvironment(addedFamilies: string[]) {
   (globalThis as { document?: unknown }).document = {
     fonts: {
+      delete: vi.fn(),
       add: vi.fn((face: { family: string }) => {
         addedFamilies.push(face.family);
       }),

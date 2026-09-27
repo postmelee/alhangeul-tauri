@@ -8,16 +8,17 @@ on:
         required: true
         type: string
       native_run_id:
-        description: Successful Alhangeul Desktop Artifact Build run ID for build_ref.
+        description: Successful Desktop Artifact Build or CI run ID for build_ref.
         required: true
         type: string
       scope:
-        description: Full acceptance or only HWPX direct PDF using the existing DEB.
+        description: Full, HWPX PDF, or local-font acceptance using the existing DEB.
         type: choice
         default: full
         options:
           - full
           - pdf-hwpx
+          - local-fonts
 
 permissions:
   actions: read
@@ -55,7 +56,7 @@ jobs:
           [[ "$ACCEPTANCE_REF" =~ ^[0-9a-f]{40}$ ]]
           [[ "$BUILD_REF" =~ ^[0-9a-f]{40}$ ]]
           [[ "$NATIVE_RUN_ID" =~ ^[1-9][0-9]*$ ]]
-          [[ "$GUI_SCOPE" == full || "$GUI_SCOPE" == pdf-hwpx ]]
+          [[ "$GUI_SCOPE" == full || "$GUI_SCOPE" == pdf-hwpx || "$GUI_SCOPE" == local-fonts ]]
 
       - name: Checkout exact acceptance source
         id: checkout
@@ -109,11 +110,10 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          node scripts/verify-workflow-artifact.mjs \
+          node scripts/verify-linux-gui-artifact.mjs \
             --repository "$GITHUB_REPOSITORY" \
             --build-ref "$BUILD_REF" \
             --run-id "$NATIVE_RUN_ID" \
-            --workflow-path .github/workflows/alhangeul-desktop.yml \
             --artifact-name alhangeul-desktop-linux-x64 \
             --json-output "$EVIDENCE_ROOT/artifact-handoff.json" \
             --github-output "$GITHUB_OUTPUT"
@@ -139,11 +139,10 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          node scripts/verify-workflow-artifact.mjs \
+          node scripts/verify-linux-gui-artifact.mjs \
             --repository "$GITHUB_REPOSITORY" \
             --build-ref "$BUILD_REF" \
             --run-id "$NATIVE_RUN_ID" \
-            --workflow-path .github/workflows/alhangeul-desktop.yml \
             --artifact-name alhangeul-linux-x64-thumbnailer \
             --json-output "$EVIDENCE_ROOT/thumbnailer-artifact-handoff.json" \
             --github-output "$GITHUB_OUTPUT"
@@ -197,6 +196,8 @@ jobs:
 
       - name: Verify artifact inventory and select one DEB
         id: verify-inventory
+        env:
+          BUILD_REF: ${{ inputs.build_ref }}
         shell: bash
         run: |
           set -euo pipefail
@@ -204,6 +205,11 @@ jobs:
             --platform linux-x64 \
             --root "$ARTIFACT_ROOT" \
             --verify-inventory "$ARTIFACT_ROOT/alhangeul-artifact-inventory.json"
+          node --input-type=module -e '
+            import { readFileSync } from "node:fs";
+            const inventory = JSON.parse(readFileSync(process.env.ARTIFACT_ROOT + "/alhangeul-artifact-inventory.json"));
+            if (inventory.sourceSha !== process.env.BUILD_REF) throw new Error("product source SHA mismatch");
+          '
           mapfile -d '' packages < <(find "$ARTIFACT_ROOT/deb" -maxdepth 1 -type f -name '*.deb' -print0)
           [[ "${#packages[@]}" -eq 1 ]]
           printf 'deb_path=%s\n' "${packages[0]}" >> "$GITHUB_OUTPUT"
@@ -423,6 +429,15 @@ jobs:
                 "$@"
               ' bash "$phase" "$@"
           }
+          if [[ "$GUI_SCOPE" == local-fonts ]]; then
+            webdriver_status=0
+            run_isolated_phase local-fonts pnpm run test:gui:linux \
+              --spec tests/gui/specs/local-fonts.e2e.ts || webdriver_status=$?
+            printf '{"scope":"local-fonts","webdriver":%s}\n' "$webdriver_status" \
+              > "$ALHANGEUL_GUI_OUTPUT_DIR/gui-phase-outcomes.json"
+            [[ "$webdriver_status" -eq 0 ]]
+            exit 0
+          fi
           if [[ "$GUI_SCOPE" == pdf-hwpx ]]; then
             webdriver_status=0
             run_isolated_phase webdriver pnpm run test:gui:linux \
@@ -518,6 +533,7 @@ jobs:
           done
           expected=success
           if [[ "$GUI_SCOPE" == pdf-hwpx ]]; then expected=skipped; fi
+          if [[ "$GUI_SCOPE" == local-fonts ]]; then expected=skipped; fi
           for outcome in "$THUMBNAILER_HANDOFF" "$THUMBNAILER_DOWNLOAD" "$THUMBNAILER_VERIFY" \
             "$PREINSTALL_MIME" "$INSTALLED_THUMBNAIL" "$THUMBNAIL_MANAGER" "$CUPS"; do
             [[ "$outcome" == "$expected" ]]

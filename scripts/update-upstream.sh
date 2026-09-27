@@ -173,10 +173,14 @@ if [[ "$actual_commit" != "$expected_commit" ]]; then
   false
 fi
 
-failure_step="desktop Cargo.lock update"
-(cd "$repo_root" && cargo update \
-  --manifest-path apps/desktop/src-tauri/Cargo.toml \
-  -p rhwp)
+for manifest in \
+  apps/desktop/src-tauri/Cargo.toml \
+  crates/document-preview/Cargo.toml \
+  apps/thumbnail-worker/Cargo.toml \
+  apps/linux-thumbnailer/Cargo.toml; do
+  failure_step="$manifest Cargo.lock update"
+  (cd "$repo_root" && cargo update --manifest-path "$manifest" -p rhwp)
+done
 
 failure_step="fresh WASM staging setup"
 staging_dir="$(mktemp -d "$submodule_dir/.alhangeul-wasm-build.XXXXXX")"

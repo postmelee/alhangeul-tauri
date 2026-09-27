@@ -49,6 +49,9 @@ png = base64.b64decode(
     "AScY42YAAAAASUVORK5CYII="
 )
 with zipfile.ZipFile(sys.argv[1], "w", zipfile.ZIP_DEFLATED) as archive:
+    # Recognizable HWPX with broken XML forces the real preview fallback.
+    archive.writestr("Contents/content.hpf", "<broken></mismatch>")
+    archive.writestr("Contents/header.xml", "<broken></mismatch>")
     archive.writestr("Preview/PrvImage.png", png)
 PY
 }

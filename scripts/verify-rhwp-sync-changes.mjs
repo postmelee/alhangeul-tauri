@@ -8,6 +8,9 @@ import { fileURLToPath } from 'node:url';
 export const RHWP_SYNC_ALLOWED_PATHS = Object.freeze([
   'README.md',
   'apps/desktop/src-tauri/Cargo.lock',
+  'crates/document-preview/Cargo.lock',
+  'apps/thumbnail-worker/Cargo.lock',
+  'apps/linux-thumbnailer/Cargo.lock',
   'apps/studio-host/src/core/upstream-boundary.test.ts',
   'apps/studio-host/vendor/rhwp-core/LICENSE',
   'apps/studio-host/vendor/rhwp-core/package.json',

@@ -6,6 +6,11 @@ use zip::ZipWriter;
 pub fn preview_only_hwpx() -> Vec<u8> {
     let mut writer = ZipWriter::new(Cursor::new(Vec::new()));
     let options = SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+    // HWPX package identity is required even when only its preview can be recovered.
+    for name in ["Contents/content.hpf", "Contents/header.xml"] {
+        writer.start_file(name, options).unwrap();
+        writer.write_all(b"<broken></mismatch>").unwrap();
+    }
     writer.start_file("Preview/PrvImage.bmp", options).unwrap();
     writer.write_all(&bmp_1x1()).unwrap();
     writer.finish().unwrap().into_inner()

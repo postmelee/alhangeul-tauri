@@ -29,7 +29,7 @@ test('Freedesktop registration은 제품 helper와 HWP HWPX MIME만 선언한다
 test('GUI workflow는 같은 native run의 exact Linux helper artifact를 별도로 검증한다', () => {
   const handoff = stepContaining(workflow, 'Verify exact Linux thumbnailer artifact handoff');
   assert.match(handoff, /--artifact-name alhangeul-linux-x64-thumbnailer/);
-  assert.match(handoff, /--workflow-path \.github\/workflows\/alhangeul-desktop\.yml/);
+  assert.match(handoff, /verify-linux-gui-artifact\.mjs/);
   assert.match(handoff, /--build-ref "\$BUILD_REF"/);
   assert.match(handoff, /--run-id "\$NATIVE_RUN_ID"/);
   const download = stepContaining(workflow, 'Download verified Linux thumbnailer artifact');

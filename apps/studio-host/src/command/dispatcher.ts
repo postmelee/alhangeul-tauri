@@ -7,6 +7,7 @@ import { setupDesktopEvents } from '../core/desktop-events';
 import { installDesktopToolbarModeSync } from '../core/desktop-toolbar-mode-sync';
 import { installPageHideCleanup } from '../core/page-lifecycle';
 import { isTauriRuntime } from '../core/platform';
+import { installDesktopLocalFonts } from '../core/local-font-lifecycle';
 
 type Disposer = () => void;
 
@@ -28,6 +29,7 @@ export class CommandDispatcher extends UpstreamCommandDispatcher {
       host,
       dispatcher: this,
       eventBus,
+      registry,
       setMessage(message) {
         const status = document.getElementById('sb-message');
         if (status) status.textContent = message;
@@ -44,11 +46,13 @@ function installDesktopAdapters({
   host,
   dispatcher,
   eventBus,
+  registry,
   setMessage,
-}: Parameters<typeof setupDesktopEvents>[0] & { eventBus: EventBus }): Disposer {
+}: Parameters<typeof setupDesktopEvents>[0] & { eventBus: EventBus; registry: CommandRegistry }): Disposer {
   activeDesktopRegistration?.dispose();
   const abortController = new AbortController();
   const disposeToolbar = installDesktopToolbarModeSync(eventBus);
+  const disposeFonts = installDesktopLocalFonts(registry);
   let disposeEvents: Disposer | null = null;
   let removePageHideCleanup: Disposer = () => {};
   let disposed = false;
@@ -61,6 +65,7 @@ function installDesktopAdapters({
       abortController.abort();
       disposeEvents?.();
       disposeToolbar();
+      disposeFonts();
     },
   };
   const uninstall = () => {

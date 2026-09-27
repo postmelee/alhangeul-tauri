@@ -1,9 +1,31 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readFile, mkdtemp, rm } from 'node:fs/promises';
+import { execFileSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import test from 'node:test';
 
 const probe = await readFile(new URL('../../../../scripts/linux-thumbnail-manager-probe.sh', import.meta.url), 'utf8');
 const session = await readFile(new URL('../../../../scripts/linux-thumbnail-manager-session.sh', import.meta.url), 'utf8');
+
+test('실제 preview 생성기는 HWPX 항목을 포함하되 pinned parser의 XML 오류를 유도한다', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'alhangeul-preview-fixture-'));
+  try {
+    const path = join(directory, 'preview.hwpx');
+    const python = probe.match(/python3 - "\$destination" <<'PY'\n([\s\S]*?)\nPY/)?.[1];
+    assert.ok(python);
+    execFileSync('python3', ['-c', python, path]);
+    const entries = JSON.parse(execFileSync('python3', ['-c',
+      'import json,sys,zipfile; print(json.dumps(zipfile.ZipFile(sys.argv[1]).namelist()))', path], { encoding: 'utf8' }));
+    assert.deepEqual(entries.sort(), ['Contents/content.hpf', 'Contents/header.xml', 'Preview/PrvImage.png']);
+    const { HwpDocument, initSync } = await import('../../../../apps/studio-host/vendor/rhwp-core/rhwp.js');
+    initSync({ module: await readFile(new URL('../../../../apps/studio-host/vendor/rhwp-core/rhwp_bg.wasm', import.meta.url)) });
+    const bytes = new Uint8Array(await readFile(path));
+    assert.throws(() => new HwpDocument(bytes), /XML|xml/);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
 
 test('제품 helper는 direct와 preview를 다섯 edge에서 RGBA PNG로 검증한다', () => {
   assert.match(probe, /for edge in 128 256 512 1024 333/);

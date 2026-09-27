@@ -258,14 +258,16 @@ async function verifySourceAndVersionState({
     );
   }
 
-  const desktopVersion = await readCargoLockPackageVersion(
-    resolve(repoRoot, 'apps/desktop/src-tauri/Cargo.lock'),
-    'rhwp',
-  );
-  if (desktopVersion !== expectedVersion) {
-    throw new Error(
-      `desktop Cargo.lock rhwp version이 release tag와 다릅니다: ${desktopVersion}`,
-    );
+  for (const lockPath of [
+    'apps/desktop/src-tauri/Cargo.lock',
+    'crates/document-preview/Cargo.lock',
+    'apps/thumbnail-worker/Cargo.lock',
+    'apps/linux-thumbnailer/Cargo.lock',
+  ]) {
+    const nativeVersion = await readCargoLockPackageVersion(resolve(repoRoot, lockPath), 'rhwp');
+    if (nativeVersion !== expectedVersion) {
+      throw new Error(`${lockPath} rhwp version이 release tag와 다릅니다: ${nativeVersion}`);
+    }
   }
 
   const vendorPackage = JSON.parse(

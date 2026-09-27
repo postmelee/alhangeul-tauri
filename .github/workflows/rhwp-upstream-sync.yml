@@ -90,6 +90,7 @@ jobs:
           DECISION: ${{ steps.release.outputs.decision }}
           EXISTING_PR_URL: ${{ steps.release.outputs.existing_pr_url }}
           CANDIDATE_COUNT: ${{ steps.release.outputs.candidate_count }}
+          WRITER_ENABLED: ${{ vars.ALHANGEUL_UPSTREAM_SYNC_ENABLED }}
         run: |
           {
             echo "## rhwp upstream sync decision"
@@ -98,6 +99,10 @@ jobs:
             echo "- target: \`${TARGET_TAG:-unresolved}\` \`${TARGET_COMMIT:-unresolved}\`"
             echo "- base branch: \`${BASE_BRANCH_OUTPUT:-unresolved}\`"
             echo "- decision: \`${DECISION:-failed}\`"
+            echo "- writer enabled: ${WRITER_ENABLED:-false}"
+            if [[ "$DECISION" == create_candidate && "$WRITER_ENABLED" != true ]]; then
+              echo "- candidate skipped: set ALHANGEUL_UPSTREAM_SYNC_ENABLED=true to enable the writer."
+            fi
             echo "- existing PR: ${EXISTING_PR_URL:-none}"
             echo "- open automation candidates: ${CANDIDATE_COUNT:-unresolved}"
           } >> "$GITHUB_STEP_SUMMARY"
@@ -275,6 +280,8 @@ jobs:
           git switch -c "$BRANCH"
           git add -- \
             README.md apps/desktop/src-tauri/Cargo.lock \
+            crates/document-preview/Cargo.lock apps/thumbnail-worker/Cargo.lock \
+            apps/linux-thumbnailer/Cargo.lock \
             apps/studio-host/src/core/upstream-boundary.test.ts \
             apps/studio-host/vendor/rhwp-core \
             docs/DEVELOPMENT.md docs/architecture/UPSTREAM.md \

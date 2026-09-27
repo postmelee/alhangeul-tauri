@@ -27,6 +27,7 @@ def node_info(node):
         "enabled": has_state(node, pyatspi.STATE_ENABLED),
         "sensitive": has_state(node, pyatspi.STATE_SENSITIVE),
         "selected": has_state(node, pyatspi.STATE_SELECTED),
+        "checked": has_state(node, pyatspi.STATE_CHECKED),
         "selectable": has_state(node, pyatspi.STATE_SELECTABLE),
     }
 
@@ -89,8 +90,14 @@ def matches_info(info, selector):
         return False
     if selector.get("showing", True) and not info["showing"]:
         return False
+    for state in ("enabled", "sensitive"):
+        if isinstance(selector.get(state), bool) and info[state] != selector[state]:
+            return False
     focused = selector.get("focused")
     if isinstance(focused, bool) and info["focused"] != focused:
+        return False
+    checked = selector.get("checked")
+    if isinstance(checked, bool) and info["checked"] != checked:
         return False
     selected = selector.get("selected")
     return not isinstance(selected, bool) or info["selected"] == selected
@@ -146,6 +153,8 @@ def wait_for_matches(request, absent=False):
 
 def selected_node(request):
     found = wait_for_matches(request)
+    if request.get("requireUnique", False) and len(found) != 1:
+        raise LookupError("action requires exactly one target")
     index = int(request.get("index", 0))
     if index < 0 or index >= len(found):
         raise LookupError(f"selector index {index} is unavailable ({len(found)} matches)")
@@ -183,6 +192,8 @@ def perform_optional(request):
     while True:
         found = find_matches(request)
         if found:
+            if len(found) != 1:
+                raise LookupError("optional action requires exactly one target")
             return {"performed": True, "node": perform_action(
                 found[0], request.get("actionNames", []))}
         if time.monotonic() >= deadline:
