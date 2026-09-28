@@ -34,7 +34,8 @@ test('Linux release acceptance keeps package dependency resolution and strict GU
   const rpm = await read('scripts/ci/accept-release-fedora.sh');
   const arm = await read('scripts/ci/accept-release-arm64.sh');
   const gui = await read('scripts/ci/run-release-file-gui.sh');
-  assert.match(workflow, /os: ubuntu-24\.04-arm/);
+  assert.match(workflow, /"kind":"arm64","os":"ubuntu-24\.04-arm"/);
+  assert.match(workflow, /fromJSON\(inputs\.rpm_only && '\[\{"kind":"rpm","os":"ubuntu-22\.04"\}\]'/);
   assert.match(workflow, /persist-credentials: false/);
   assert.match(workflow, /FEDORA_IMAGE: quay\.io\/fedora\/fedora@sha256:[a-f0-9]{64}/);
   assert.doesNotMatch(workflow, /secrets\.|: write|continue-on-error|build:desktop|build:studio|tauri build|cargo build|gh release|--privileged|docker\.sock/);
@@ -49,5 +50,11 @@ test('Linux release acceptance keeps package dependency resolution and strict GU
   assert.match(gui, /sha256sum "\$ALHANGEUL_GUI_DRIVER_PATH"/);
   assert.match(workflow, /cargo install --list > candidate-evidence\/cargo-installed\.txt/);
   assert.match(workflow, /grep -Fx 'tauri-driver v2\.0\.6:'/);
+  assert.match(workflow, /--shm-size=1g/);
+  assert.match(rpm, /install -d -m 0700 -o acceptance -g acceptance "\$XDG_RUNTIME_DIR"/);
+  const session = await read('scripts/ci/release-fedora-gui-session.sh');
+  assert.match(session, /dbus-update-activation-environment DISPLAY XAUTHORITY/);
+  assert.match(session, /local result=\$\?/);
+  assert.match(session, /exit "\$result"/);
   assert.doesNotMatch(rpm + arm, /--nodeps|--skip-broken|--ignorearch|\|\| true/);
 });

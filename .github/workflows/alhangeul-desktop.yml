@@ -43,7 +43,7 @@ on:
         default: true
         type: boolean
       artifact_platform:
-        description: Ordinary artifact scope; release-file-acceptance also accepts windows-x64 for an MSI-only retry.
+        description: Artifact scope; acceptance retries use windows-x64 for MSI or linux-x64 for RPM only.
         type: choice
         default: all
         options: [all, windows-x64, linux, linux-x64, linux-arm64]
@@ -135,6 +135,8 @@ jobs:
       contents: read
       actions: read
     uses: ./.github/workflows/alhangeul-release-linux-files.yml
+    with:
+      rpm_only: ${{ inputs.artifact_platform == 'linux-x64' }}
 
   release-file-acceptance:
     if: ${{ inputs.mode == 'release-file-acceptance' && !inputs.publish_release }}

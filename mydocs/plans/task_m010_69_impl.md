@@ -445,3 +445,20 @@ RPM `10988712121` / `06354474c21a296252c97d1d572bfad47fec8e35c7826461270e2db5faa
 버전 증거는 host의 `cargo install --list`에서 정확한 2.0.6을 확인해 보존하고, 실행 환경에서는
 실제 driver binary의 SHA-256을 기록한다. 지원하지 않는 CLI 호출은 제거하고 이를 회귀 검사에
 추가한다. 같은 제품/이미지/fixture 입력으로 양쪽 GUI를 재실행하며 MSI/AppImage는 반복하지 않는다.
+
+2026-09-29 재실행 `36465315970`: arm64 job success. artifact `10989578015` ZIP digest
+`1c33585d8c0544031b093e709b75561bbbadd2dc40c8e1fa2331bbb7a855b67c`와 두 시나리오의 파일 4개
+크기/hash, 저장 문서 2개 marker를 재검증했다. HWPX 재열기 화면의 한글/표 표시도 확인했다.
+RPM job은 설치와 WebDriver session/Studio 초기화까지 성공했으나 native Open 후 AT-SPI에서
+대화상자를 찾지 못했다. 이후 screenshot 요청은 `session deleted because of page crash or hang`
+이며 접근성 트리에 application 0개였다. 제품/환경 중 원인은 아직 확정하지 않는다.
+RPM 증거 `10988863866` ZIP digest `d7711621aab01d8b94a997bdcfebeb8fc2e3f7137683ec038cc60ee7f7161e9d`를 확인했다.
+
+RPM만 `artifact_platform=linux-x64`로 재실행한다. 성공한 arm64는 반복하지 않는다.
+관찰된 `which` 누락을 보완하고 비root XDG runtime directory·X11 session·D-Bus activation
+환경을 명시한다. [portal session 통합 지침](https://flatpak.github.io/xdg-desktop-portal/docs/system-integration.html)을
+따르는 준비이며 portal/FUSE 경고가 crash 원인이라고 단정하지 않는다.
+[Docker 기본 shared memory 64MiB](https://docs.docker.com/engine/containers/run/)의 영향을 배제하도록
+컨테이너 `/dev/shm`을 1GiB로 설정하고 실측값을 기록한다. WebDriver 연결이 끊겨도 수집되는
+독립 desktop screenshot·process 목록·cgroup memory events를 보완한다. 진단 결과는 원래 GUI
+exit code를 덮어쓰지 않는다. 제품/설치본/이미지 digest와 문서 통과 조건은 그대로 유지한다.

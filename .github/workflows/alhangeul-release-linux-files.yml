@@ -1,6 +1,10 @@
 name: Alhangeul final Linux package acceptance
 on:
   workflow_call:
+    inputs:
+      rpm_only:
+        type: boolean
+        default: false
 permissions:
   contents: read
   actions: read
@@ -14,11 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - kind: rpm
-            os: ubuntu-22.04
-          - kind: arm64
-            os: ubuntu-24.04-arm
+        include: ${{ fromJSON(inputs.rpm_only && '[{"kind":"rpm","os":"ubuntu-22.04"}]' || '[{"kind":"rpm","os":"ubuntu-22.04"},{"kind":"arm64","os":"ubuntu-24.04-arm"}]') }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 50
     env:
@@ -85,7 +85,7 @@ jobs:
             docker pull "$FEDORA_IMAGE"
             docker image inspect "$FEDORA_IMAGE" > candidate-evidence/fedora-image.json
             node_directory=$(dirname "$(dirname "$(command -v node)")")
-            docker run --rm --security-opt seccomp=unconfined \
+            docker run --rm --security-opt seccomp=unconfined --shm-size=1g \
               --mount "type=bind,src=$PWD,dst=$PWD,readonly" \
               --mount "type=bind,src=$ALHANGEUL_GUI_OUTPUT_DIR,dst=$ALHANGEUL_GUI_OUTPUT_DIR" \
               --mount "type=bind,src=$node_directory,dst=$node_directory,readonly" \

@@ -8,6 +8,10 @@ cat /etc/os-release > "$ALHANGEUL_GUI_OUTPUT_DIR/gui-os-release.txt"
 uname -m > "$ALHANGEUL_GUI_OUTPUT_DIR/gui-architecture.txt"
 id > "$ALHANGEUL_GUI_OUTPUT_DIR/gui-user.txt"
 sha256sum "$ALHANGEUL_GUI_DRIVER_PATH" > "$ALHANGEUL_GUI_OUTPUT_DIR/tauri-driver.sha256"
+if [[ "${ALHANGEUL_GUI_FEDORA_SESSION:-0}" == 1 ]]; then
+  exec xvfb-run --auto-servernum --server-args='-screen 0 1920x1080x24 -nolisten tcp' \
+    dbus-run-session -- bash scripts/ci/release-fedora-gui-session.sh
+fi
 # shellcheck disable=SC2016
 xvfb-run --auto-servernum --server-args='-screen 0 1920x1080x24 -nolisten tcp' \
   dbus-run-session -- bash -euo pipefail -c '
