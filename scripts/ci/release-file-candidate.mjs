@@ -25,9 +25,9 @@ export const CANDIDATES = Object.freeze({
   },
 });
 
-export function assertCandidateIdentity(candidate, handoff) {
+export function assertCandidateIdentity(candidate, handoff, producerRun = PRODUCER_RUN) {
   assert.equal(handoff.buildRef, PRODUCT_SHA);
-  assert.equal(handoff.nativeRunId, PRODUCER_RUN);
+  assert.equal(handoff.nativeRunId, producerRun);
   assert.equal(handoff.artifactId, candidate.id);
   assert.equal(handoff.artifactDigest, candidate.digest);
   assert.equal(handoff.artifactName, candidate.name);
@@ -40,7 +40,7 @@ export function assertCandidateFile(candidate, result) {
   return file;
 }
 
-async function verifyProductDependencies() {
+export async function verifyProductDependencies() {
   // The harness may change; its public key, fixtures and parser must not drift.
   for (const path of ['apps/desktop/src-tauri/tauri.updater.conf.json',
     'apps/studio-host/vendor/rhwp-core/rhwp_bg.wasm',
@@ -54,7 +54,7 @@ async function verifyProductDependencies() {
   assert.equal(actual, pinned, 'fixture submodule pin');
 }
 
-async function downloadCandidate(candidate, root) {
+export async function downloadCandidate(candidate, root) {
   const archive = resolve('candidate.zip');
   const fd = openSync(archive, 'wx');
   try {

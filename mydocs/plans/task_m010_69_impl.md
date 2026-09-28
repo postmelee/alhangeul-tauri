@@ -396,3 +396,40 @@ Fedora에서 `dnf` 의존성 해결을 포함한 설치와 가상 화면 실행�
 DEB GUI를 시도한다. 실제 사용할 배포판·driver·의존성 및 fixture를 실행 전 고정한다.
 환경 준비나 driver가 실패하면 설치/GUI가 통과했다고 기록하지 않는다. 제품 파일을 고치거나
 재생성해야 하는 결함이면 먼저 영향과 새 후보 필요성을 보고한다.
+
+2026-09-29 MSI 재실행 `36457019871`은 성공했다. 증거 artifact `10986131635`의 ZIP digest
+`005c4caa07408effd162da667f71434ec1770e38f634475ff10fd77885731c91`와 두 시나리오 참조 파일
+4개의 크기/hash, 저장 파일 2개의 marker를 재검증했다. 설치/제거 exit 0, WebView2 policy
+`restored=true`, HWPX 재열기 한글/표 화면을 확인했다. Stage 3.1의 MSI·AppImage 수용을
+기록하고 이미 승인된 다음 추가 검증 범위로 진행한다.
+
+Stage 3.2 실행 환경·구현 고정:
+
+- `release-linux-file-acceptance` mode와 별도 reusable workflow를 추가한다. 기존 GUI spec을
+  그대로 사용해 HWP/HWPX 편집·저장·재시작/재열기를 검사한다. 성공한 MSI/AppImage는 반복하지 않는다.
+- arm64: `ubuntu-24.04-arm` native runner, 일반 artifact `10932449136`, ZIP digest
+  `5b2260d5c43934641a8f8607a652062d4796e2ccc87b3774497359cca13cfe6f`,
+  DEB SHA `a317382ff9b3ec911ec8761de3be7d641309d1f97d58b8a19601a8adb4a21a2e`.
+  apt 의존성 해결 설치·dpkg arm64/version·Xvfb/DBus/AT-SPI GUI를 검사한다.
+- RPM: `ubuntu-22.04` host의 Docker에서 Fedora 44 x64
+  `quay.io/fedora/fedora@sha256:fb31d002de20bfa7742b8c9b0d0ff723bb9fa2534fd43ecac0101a35f703fef0`.
+  [공식 Fedora 이미지 안내](https://fedoraproject.org/misc/)의 registry에서 manifest를 조회해
+  amd64 digest를 고정했다. 일반 artifact `10932826761`, ZIP digest
+  `91ace60dbe2ac5b818a8f2f572afae8bb8f00908a497e119ce21a07900da2660`,
+  RPM SHA `6c87ba0321f6a9c8ca5068915217064f8c839cabaf3a8d60451df8f3e496308c`.
+- RPM은 Fedora 기본 image에서 `dnf install`로 실제 의존성을 해결한다. `--nodeps`는 금지한다.
+  설치와 GUI 준비/실행의 결과를 분리 기록한다. GTK3/WebKit4.1 제품에 Fedora가 제공하는
+  [WebKitWebDriver](https://packages.fedoraproject.org/pkgs/webkitgtk/webkitgtk6.0/fedora-44-updates.html)를
+  사용하며 설치된 4.1/6.0/driver 버전과 OS/architecture를 증거에 남긴다.
+- Fedora GUI는 비root 사용자와 Xvfb/DBus/AT-SPI로 수행한다. read-only checkout·Node/driver와
+  쓰기 가능한 evidence directory만 mount한다. WebKit의 중첩 sandbox용 container seccomp 제한은
+  해제하되 privileged/host network/Docker socket mount는 쓰지 않는다. 실제 Fedora 데스크톱·
+  Wayland·물리 프린터·Shell 전체 수용으로 확대 해석하지 않는다.
+- 공통: 원본 ZIP·source SHA·전체 package inventory·선택 installer SHA를 검증한 뒤 설치한다.
+  tauri-driver 2.0.6만 검증 도구로 컴파일하고 제품은 빌드하지 않는다. package/GUI 필수 성공 및
+  증거 upload를 gate로 유지한다. 실패 시 단계와 로그를 보존하고 성공으로 면제하지 않는다.
+
+Stage 3.2 실행 전 로컬 확인: 자동화 987건, 새 source/archive/package 변조 회귀,
+변경 workflow의 actionlint, 실행 스크립트 3개의 shellcheck, 제품 경계와 diff 검사를 통과했다.
+최종 스크립트 조정 후 관련 회귀 10건과 shellcheck를 다시 통과했다. native 설치/GUI는 아직
+미검증이며 Actions 완료를 기다리지 않고 링크를 전달한다.

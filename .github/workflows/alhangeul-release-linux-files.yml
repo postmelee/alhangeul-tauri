@@ -1,0 +1,136 @@
+name: Alhangeul final Linux package acceptance
+on:
+  workflow_call:
+permissions:
+  contents: read
+  actions: read
+env:
+  GIT_CONFIG_COUNT: '1'
+  GIT_CONFIG_KEY_0: core.autocrlf
+  GIT_CONFIG_VALUE_0: 'false'
+jobs:
+  accept:
+    name: Accept final Linux ${{ matrix.kind }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - kind: rpm
+            os: ubuntu-22.04
+          - kind: arm64
+            os: ubuntu-24.04-arm
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 50
+    env:
+      CANDIDATE_KIND: ${{ matrix.kind }}
+      ALHANGEUL_GUI_BUILD_REF: fc3cad15682f35723ab6558d1301e9096f7eec67
+      ALHANGEUL_GUI_NATIVE_RUN_ID: '36320353815'
+      ALHANGEUL_GUI_APP_VERSION: '0.1.0'
+      ALHANGEUL_GUI_APP_PATH: /usr/bin/Alhangeul
+      ALHANGEUL_GUI_DRIVER_VERSION: tauri-driver 2.0.6
+      ALHANGEUL_GUI_TIMEOUT_MS: '120000'
+      NO_AT_BRIDGE: '0'
+      GTK_MODULES: gail:atk-bridge
+      LANG: C.UTF-8
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          submodules: true
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Prepare evidence and GUI paths
+        shell: bash
+        run: |
+          mkdir -p candidate-evidence
+          {
+            echo "ALHANGEUL_GUI_FIXTURE_ROOT=$PWD"
+            echo "ALHANGEUL_GUI_OUTPUT_DIR=$PWD/candidate-evidence"
+            echo "ALHANGEUL_GUI_DRIVER_PATH=$HOME/.cargo/bin/tauri-driver"
+          } >> "$GITHUB_ENV"
+      - name: Verify exact Linux archive and package inventory
+        id: candidate
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/ci/release-linux-candidate.mjs
+      - name: Install harness dependencies
+        shell: bash
+        run: |
+          corepack enable
+          pnpm install --frozen-lockfile
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install tauri-driver only
+        shell: bash
+        run: cargo install tauri-driver --version 2.0.6 --locked
+      - name: Install and exercise exact Linux package
+        id: acceptance
+        shell: bash
+        env:
+          INSTALLER_PATH: ${{ steps.candidate.outputs.installer }}
+          FEDORA_IMAGE: quay.io/fedora/fedora@sha256:fb31d002de20bfa7742b8c9b0d0ff723bb9fa2534fd43ecac0101a35f703fef0
+        run: |
+          if [[ "$CANDIDATE_KIND" == arm64 ]]; then
+            bash scripts/ci/accept-release-arm64.sh
+          else
+            docker pull "$FEDORA_IMAGE"
+            docker image inspect "$FEDORA_IMAGE" > candidate-evidence/fedora-image.json
+            node_directory=$(dirname "$(dirname "$(command -v node)")")
+            docker run --rm --security-opt seccomp=unconfined \
+              --mount "type=bind,src=$PWD,dst=$PWD,readonly" \
+              --mount "type=bind,src=$ALHANGEUL_GUI_OUTPUT_DIR,dst=$ALHANGEUL_GUI_OUTPUT_DIR" \
+              --mount "type=bind,src=$node_directory,dst=$node_directory,readonly" \
+              --mount "type=bind,src=$ALHANGEUL_GUI_DRIVER_PATH,dst=/usr/local/bin/tauri-driver,readonly" \
+              --workdir "$PWD" \
+              -e "PATH=$node_directory/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" \
+              -e "ACCEPTANCE_UID=$(id -u)" -e INSTALLER_PATH \
+              -e ALHANGEUL_GUI_BUILD_REF -e ALHANGEUL_GUI_NATIVE_RUN_ID \
+              -e ALHANGEUL_GUI_APP_VERSION -e ALHANGEUL_GUI_APP_PATH \
+              -e ALHANGEUL_GUI_DRIVER_VERSION -e ALHANGEUL_GUI_TIMEOUT_MS \
+              -e ALHANGEUL_GUI_FIXTURE_ROOT -e ALHANGEUL_GUI_OUTPUT_DIR \
+              -e ALHANGEUL_GUI_DRIVER_PATH=/usr/local/bin/tauri-driver \
+              -e NO_AT_BRIDGE -e GTK_MODULES -e LANG \
+              "$FEDORA_IMAGE" bash scripts/ci/accept-release-fedora.sh
+          fi
+      - name: Record outcomes
+        if: always()
+        shell: bash
+        env:
+          CANDIDATE: ${{ steps.candidate.outcome }}
+          ACCEPTANCE: ${{ steps.acceptance.outcome }}
+        run: |
+          node --input-type=module <<'JS'
+          import {mkdirSync,writeFileSync} from 'node:fs';
+          mkdirSync('candidate-evidence',{recursive:true});
+          writeFileSync('candidate-evidence/step-outcomes.json',JSON.stringify({
+            candidate:process.env.CANDIDATE,acceptance:process.env.ACCEPTANCE,
+            kind:process.env.CANDIDATE_KIND,architecture:process.arch,harnessSha:process.env.GITHUB_SHA,
+          },null,2));
+          JS
+      - name: Upload evidence
+        id: upload
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: alhangeul-final-${{ matrix.kind }}-${{ github.run_id }}
+          path: candidate-evidence/**
+          if-no-files-found: error
+      - name: Require candidate, package GUI and evidence
+        if: always()
+        shell: bash
+        env:
+          UPLOAD: ${{ steps.upload.outcome }}
+        run: |
+          node --input-type=module <<'JS'
+          import {readFileSync} from 'node:fs';
+          const state=JSON.parse(readFileSync('candidate-evidence/step-outcomes.json'));
+          if(process.env.UPLOAD!=='success'||state.candidate!=='success'||state.acceptance!=='success')
+            throw new Error('Incomplete Linux package acceptance');
+          const phases=JSON.parse(readFileSync('candidate-evidence/package-acceptance.json'));
+          if(phases.exitCode!==0||phases.lastPhase!=='complete') throw new Error('Incomplete package/GUI phases');
+          JS

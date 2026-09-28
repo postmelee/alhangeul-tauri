@@ -11,6 +11,7 @@ on:
         options:
           - artifact
           - release-file-acceptance
+          - release-linux-file-acceptance
           - updater
           - updater-acceptance
           - updater-native-acceptance
@@ -128,6 +129,13 @@ env:
   GIT_CONFIG_VALUE_0: "false"
 
 jobs:
+  release-linux-file-acceptance:
+    if: ${{ inputs.mode == 'release-linux-file-acceptance' && !inputs.publish_release }}
+    permissions:
+      contents: read
+      actions: read
+    uses: ./.github/workflows/alhangeul-release-linux-files.yml
+
   release-file-acceptance:
     if: ${{ inputs.mode == 'release-file-acceptance' && !inputs.publish_release }}
     permissions:
