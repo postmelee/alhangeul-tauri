@@ -67,7 +67,11 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - name: Install tauri-driver only
         shell: bash
-        run: cargo install tauri-driver --version 2.0.6 --locked
+        run: |
+          cargo install tauri-driver --version 2.0.6 --locked
+          cargo install --list > candidate-evidence/cargo-installed.txt
+          grep -Fx 'tauri-driver v2.0.6:' candidate-evidence/cargo-installed.txt \
+            > candidate-evidence/tauri-driver-version.txt
       - name: Install and exercise exact Linux package
         id: acceptance
         shell: bash

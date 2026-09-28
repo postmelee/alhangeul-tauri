@@ -433,3 +433,15 @@ Stage 3.2 실행 전 로컬 확인: 자동화 987건, 새 source/archive/package
 변경 workflow의 actionlint, 실행 스크립트 3개의 shellcheck, 제품 경계와 diff 검사를 통과했다.
 최종 스크립트 조정 후 관련 회귀 10건과 shellcheck를 다시 통과했다. native 설치/GUI는 아직
 미검증이며 Actions 완료를 기다리지 않고 링크를 전달한다.
+
+2026-09-29 첫 Linux 추가 실행 `36464534232`는 양쪽 failure다. 원본 ZIP/inventory 검증과
+Fedora 44 dnf RPM 설치(`alhangeul x86_64 0.1.0-1`), Ubuntu 24.04 arm64 apt DEB 설치
+(`alhangeul arm64 0.1.0`), GUI 의존성 준비·비root 실행 진입은 통과했다. 다만 공통 harness가
+tauri-driver 2.0.6의 미지원 `--version` 옵션을 호출해 GUI 세션 시작 전에 exit 1로 중단됐다.
+제품 결함/GUI 실패로 단정하지 않으며 GUI 수용은 여전히 미검증이다.
+
+증거 ZIP 검증: arm64 `10989116902` / `c2a583909623b6e5f0c25747863ed93ef6f8c44a2e31b50ec0157553bf9a00b1`,
+RPM `10988712121` / `06354474c21a296252c97d1d572bfad47fec8e35c7826461270e2db5faa90611`.
+버전 증거는 host의 `cargo install --list`에서 정확한 2.0.6을 확인해 보존하고, 실행 환경에서는
+실제 driver binary의 SHA-256을 기록한다. 지원하지 않는 CLI 호출은 제거하고 이를 회귀 검사에
+추가한다. 같은 제품/이미지/fixture 입력으로 양쪽 GUI를 재실행하며 MSI/AppImage는 반복하지 않는다.

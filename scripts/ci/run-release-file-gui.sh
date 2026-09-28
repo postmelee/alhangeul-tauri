@@ -7,7 +7,7 @@ command -v WebKitWebDriver
 cat /etc/os-release > "$ALHANGEUL_GUI_OUTPUT_DIR/gui-os-release.txt"
 uname -m > "$ALHANGEUL_GUI_OUTPUT_DIR/gui-architecture.txt"
 id > "$ALHANGEUL_GUI_OUTPUT_DIR/gui-user.txt"
-"$ALHANGEUL_GUI_DRIVER_PATH" --version > "$ALHANGEUL_GUI_OUTPUT_DIR/tauri-driver-version.txt"
+sha256sum "$ALHANGEUL_GUI_DRIVER_PATH" > "$ALHANGEUL_GUI_OUTPUT_DIR/tauri-driver.sha256"
 # shellcheck disable=SC2016
 xvfb-run --auto-servernum --server-args='-screen 0 1920x1080x24 -nolisten tcp' \
   dbus-run-session -- bash -euo pipefail -c '

@@ -45,5 +45,9 @@ test('Linux release acceptance keeps package dependency resolution and strict GU
   assert.match(arm, /sudo apt-get install -y "\$INSTALLER_PATH"/);
   assert.match(arm, /test "\$\(uname -m\)" = aarch64/);
   assert.match(gui, /test "\$\(id -u\)" -ne 0/);
+  assert.doesNotMatch(gui, /ALHANGEUL_GUI_DRIVER_PATH" --version/);
+  assert.match(gui, /sha256sum "\$ALHANGEUL_GUI_DRIVER_PATH"/);
+  assert.match(workflow, /cargo install --list > candidate-evidence\/cargo-installed\.txt/);
+  assert.match(workflow, /grep -Fx 'tauri-driver v2\.0\.6:'/);
   assert.doesNotMatch(rpm + arm, /--nodeps|--skip-broken|--ignorearch|\|\| true/);
 });
