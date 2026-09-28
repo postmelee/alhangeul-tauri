@@ -1,6 +1,10 @@
 name: Alhangeul final release file acceptance
 on:
   workflow_call:
+    inputs:
+      windows_only:
+        type: boolean
+        default: false
 permissions:
   contents: read
   actions: read
@@ -14,11 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - kind: msi
-            os: windows-2025
-          - kind: appimage
-            os: ubuntu-22.04
+        include: ${{ fromJSON(inputs.windows_only && '[{"kind":"msi","os":"windows-2025"}]' || '[{"kind":"msi","os":"windows-2025"},{"kind":"appimage","os":"ubuntu-22.04"}]') }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 50
     env:
@@ -83,6 +83,13 @@ jobs:
             gir1.2-gtk-3.0 libgtk-3-0 libwebkit2gtk-4.1-0 openbox python3-gi python3-pyatspi \
             scrot webkit2gtk-driver xdotool xvfb
           test -c /dev/fuse
+      - name: Configure elevated WebView2 automation policy
+        id: webview-policy
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: >-
+          ./scripts/updater/windows-webview2-automation-policy.ps1
+          -Phase Setup -OutputDirectory $env:ALHANGEUL_GUI_OUTPUT_DIR
       - name: Install exact MSI
         id: install
         if: runner.os == 'Windows'
@@ -143,6 +150,13 @@ jobs:
           & scripts/updater/windows-native-acceptance.ps1 -Phase Cleanup -Kind msi `
             -OutputDirectory "$env:ALHANGEUL_GUI_OUTPUT_DIR\installer"
           if (-not $?) { throw 'MSI cleanup failed' }
+      - name: Restore elevated WebView2 automation policy
+        id: restore-webview-policy
+        if: always() && runner.os == 'Windows'
+        shell: pwsh
+        run: >-
+          ./scripts/updater/windows-webview2-automation-policy.ps1
+          -Phase Cleanup -OutputDirectory $env:ALHANGEUL_GUI_OUTPUT_DIR
       - name: Record outcomes
         if: always()
         shell: bash
@@ -153,11 +167,13 @@ jobs:
           WINDOWS_GUI: ${{ steps.windows-gui.outcome }}
           LINUX_GUI: ${{ steps.linux-gui.outcome }}
           CLEANUP: ${{ steps.cleanup.outcome }}
+          WEBVIEW_POLICY_SETUP: ${{ steps.webview-policy.outcome }}
+          WEBVIEW_POLICY_RESTORE: ${{ steps.restore-webview-policy.outcome }}
         run: |
           node --input-type=module <<'JS'
           import {mkdirSync,writeFileSync} from 'node:fs';
           mkdirSync('candidate-evidence',{recursive:true});
-          const keys=['CANDIDATE','INSTALL','PREPARE_APP','WINDOWS_GUI','LINUX_GUI','CLEANUP'];
+          const keys=['CANDIDATE','INSTALL','PREPARE_APP','WINDOWS_GUI','LINUX_GUI','CLEANUP','WEBVIEW_POLICY_SETUP','WEBVIEW_POLICY_RESTORE'];
           writeFileSync('candidate-evidence/step-outcomes.json',JSON.stringify(
             Object.fromEntries(keys.map(k=>[k,process.env[k]])),null,2));
           JS
@@ -179,7 +195,7 @@ jobs:
           import {readFileSync} from 'node:fs';
           const state=JSON.parse(readFileSync('candidate-evidence/step-outcomes.json'));
           const required=process.platform==='win32'
-            ?['CANDIDATE','INSTALL','PREPARE_APP','WINDOWS_GUI','CLEANUP']
+            ?['CANDIDATE','INSTALL','PREPARE_APP','WINDOWS_GUI','CLEANUP','WEBVIEW_POLICY_SETUP','WEBVIEW_POLICY_RESTORE']
             :['CANDIDATE','PREPARE_APP','LINUX_GUI'];
           if(process.env.UPLOAD!=='success'||required.some(k=>state[k]!=='success')) throw new Error('Incomplete final file acceptance');
           JS

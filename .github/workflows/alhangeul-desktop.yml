@@ -42,7 +42,7 @@ on:
         default: true
         type: boolean
       artifact_platform:
-        description: Ordinary artifact platform scope (partial unless all).
+        description: Ordinary artifact scope; release-file-acceptance also accepts windows-x64 for an MSI-only retry.
         type: choice
         default: all
         options: [all, windows-x64, linux, linux-x64, linux-arm64]
@@ -134,6 +134,8 @@ jobs:
       contents: read
       actions: read
     uses: ./.github/workflows/alhangeul-release-files.yml
+    with:
+      windows_only: ${{ inputs.artifact_platform == 'windows-x64' }}
 
   artifact:
     if: ${{ inputs.mode == 'artifact' }}

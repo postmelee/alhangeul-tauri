@@ -375,6 +375,20 @@ git status --short
 `pnpm run check:product-boundary`, `git diff --check`를 통과했다. 설치/GUI 실제 수용은
 Actions 결과 확인 전까지 미검증으로 유지한다. 제품 소스와 공개 후보 파일은 변경하지 않았다.
 
+2026-09-29 첫 실행 결과: run `36455831548`의 AppImage job은 성공했다. 원본 실행/FUSE·쓰기
+권한·HWP/HWPX 편집 저장·재시작 재열기를 통과했다. 증거 ZIP `10984674594`의 digest
+`1a2af4de0505bc082bd7b71714cbfabc2deaa7856f3625d5d90d213900ad2a1c`와 두 시나리오의 참조 파일
+4개 크기/hash를 확인하고, 저장 파일 2개의 marker를 pinned WASM으로 다시 확인했다.
+HWPX 재열기 화면의 한글/표 표시도 확인했다.
+
+MSI job은 설치/제거 exit 0 및 metadata/handler 검사를 통과했으나 WebDriver session 생성에서
+`DevToolsActivePort file doesn't exist`로 실패했다. 문서 시나리오는 실행되지 않았다.
+증거 ZIP `10985720561`의 digest는 `85f578854752316a562ea0766e11777cbfd04bf8e8f0dfc8b18d50341067dd97`로
+검증했다. 기존 Windows native/PDF 경로에 있는 elevated WebView2 automation policy setup/cleanup이
+이번 경로에서 누락된 것을 확인했다. 같은 설정과 always 복원·필수 gate를 재사용하고,
+`artifact_platform=windows-x64`로 MSI만 재실행한다. 제품 파일 변경 없이 harness만 보완하며,
+전체 수용 및 MSI GUI 성공은 재실행 결과 확인 전까지 선언하지 않는다.
+
 ### 3.2 Fedora RPM·arm64 후속 실행
 
 3.1의 결과를 반영한 뒤 기존 일반 producer `36320353815`의 RPM과 arm64 DEB를 재사용한다.
