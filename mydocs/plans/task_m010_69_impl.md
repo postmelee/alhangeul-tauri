@@ -370,6 +370,11 @@ git status --short
 - 승인된 `publish/task69-validation`의 정확한 harness SHA로 Desktop mode를 dispatch한다.
   사용자 요청에 따라 완료 대기 없이 run 링크와 실제 요청 입력을 보고한다.
 
+2026-09-29 실행 전 확인: metadata/installer 변조 거부와 workflow 안전 경계를 포함한
+`pnpm run test:automation` 982건, `pnpm run typecheck:gui`, 두 변경 workflow의 `actionlint`,
+`pnpm run check:product-boundary`, `git diff --check`를 통과했다. 설치/GUI 실제 수용은
+Actions 결과 확인 전까지 미검증으로 유지한다. 제품 소스와 공개 후보 파일은 변경하지 않았다.
+
 ### 3.2 Fedora RPM·arm64 후속 실행
 
 3.1의 결과를 반영한 뒤 기존 일반 producer `36320353815`의 RPM과 arm64 DEB를 재사용한다.
