@@ -340,3 +340,40 @@ git status --short
 - 공개 전후 단계별 PR이 필요한 운영 task의 예외 운용과 중간 merge 시 #69 OPEN 유지
 - 실제 공개 파일의 수용을 유지하면서 과거 근거를 재사용하고 불필요한 CI 반복을 제한하는 원칙
 - 각 외부 실행 직전 exact 입력을 제시하고 별도 승인받는 경계
+
+## 2026-09-29 — Stage 3 추가 설치본 검증 구현
+
+작업지시자의 추가 검증 진행 승인으로 아래 범위는 실행한다. 과거의 신규 CI 제외 조건을
+최종 산출물을 읽는 좁은 검증 경로 보완에 한해 조정한다. 공개/제품 변경 권한은 확대하지 않는다.
+
+### 3.1 MSI·AppImage 우선 실행
+
+- 제품 SHA `fc3cad15682f35723ab6558d1301e9096f7eec67`, updater run `36320371932`.
+  MSI는 artifact `10933208421` / archive digest `fbd15d72bcf126e3a22947f3a1ece3779291a768404c50e8fb94202abb07a091`,
+  AppImage는 `10933550939` / `59aa3cd56a7dd0bf31a8107bf31a5a283439dd9ac5f6e0c1a7ee2f4bd89e34d6`.
+- 새 reusable workflow와 기존 Desktop의 `release-file-acceptance` mode를 연결한다.
+  Secrets·release environment·contents write 없이 actions read만 사용한다.
+- artifact metadata·원본 ZIP digest·개별 installer SHA·Minisign을 검증한 뒤에만 설치/실행한다.
+  제품 버전/샘플/공개키는 product SHA의 파일과 일치하는지 확인한다. harness SHA와 product SHA를
+  분리해 기록한다. 불일치 또는 누락 시 실행 전 실패한다.
+- Windows: 기존 updater native Install/Cleanup 스크립트로 MSI를 격리 설치/제거하고
+  tauri-driver/UIA로 문서를 열어 실제 editor input으로 수정한다. Save As/current save 뒤
+  앱 재시작·재열기와 저장 파일의 텍스트 marker를 검증한다. 3010은 성공으로 면제하지 않는다.
+- Linux: AppImage 자체를 실행 경로로 사용한다. FUSE·Xvfb/DBus/openbox/AT-SPI 환경에서
+  동일 문서 시나리오를 실행하고 파일/부모 디렉터리의 실효 쓰기 권한을 기록한다.
+  AppImage 추출 실행으로 대체하거나 production 업데이트 요청을 수행하지 않는다.
+- 테스트 보조 파일은 역할별로 `scripts/ci/`와 `tests/gui/`에 둔다. workflow는 300행 아래로
+  유지하고 기존 GUI helper를 재사용한다. 증거는 always upload하고 설치/GUI/cleanup/upload의
+  필수 성공을 gate로 검사한다. 실패를 출력 캡처 성공으로 상쇄하지 않는다.
+- 로컬: 새 metadata/hash 변조 회귀, GUI typecheck, 관련 workflow 계약과 제품 경계 검사를 실행한다.
+  Windows PowerShell·실제 native 실행은 Windows/Linux Actions에서 수행한다.
+- 승인된 `publish/task69-validation`의 정확한 harness SHA로 Desktop mode를 dispatch한다.
+  사용자 요청에 따라 완료 대기 없이 run 링크와 실제 요청 입력을 보고한다.
+
+### 3.2 Fedora RPM·arm64 후속 실행
+
+3.1의 결과를 반영한 뒤 기존 일반 producer `36320353815`의 RPM과 arm64 DEB를 재사용한다.
+Fedora에서 `dnf` 의존성 해결을 포함한 설치와 가상 화면 실행을 시도하고, native arm64 runner에서
+DEB GUI를 시도한다. 실제 사용할 배포판·driver·의존성 및 fixture를 실행 전 고정한다.
+환경 준비나 driver가 실패하면 설치/GUI가 통과했다고 기록하지 않는다. 제품 파일을 고치거나
+재생성해야 하는 결함이면 먼저 영향과 새 후보 필요성을 보고한다.
