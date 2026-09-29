@@ -462,3 +462,26 @@ RPM만 `artifact_platform=linux-x64`로 재실행한다. 성공한 arm64는 반�
 컨테이너 `/dev/shm`을 1GiB로 설정하고 실측값을 기록한다. WebDriver 연결이 끊겨도 수집되는
 독립 desktop screenshot·process 목록·cgroup memory events를 보완한다. 진단 결과는 원래 GUI
 exit code를 덮어쓰지 않는다. 제품/설치본/이미지 digest와 문서 통과 조건은 그대로 유지한다.
+
+2026-09-29 RPM 단독 재실행 `36466879752`도 failure다. 원본 후보 검증·dnf 설치·앱 초기화는
+성공했으나 첫 native Open에서 AT-SPI chooser 대기가 만료되어 문서 검증을 진행하지 못했다.
+증거 artifact `10991030222`의 ZIP digest
+`c09a57c4e2de9ae02060ef7b0d5c42dcfb0fa3dc144cdfae37e7ec30bed75e92`를 검증했다.
+`package-acceptance.json`은 `lastPhase=gui`, `exitCode=1`이다.
+
+독립 화면/프로세스 증거에서 실행 초기 Alhangeul 창과 WebKit 프로세스가 살아 있음을 확인했다.
+cgroup memory events의 OOM/OOM-kill은 0이고 `/dev/shm` 크기는 1GiB다. 이 자료로 모든 자원
+문제를 배제할 수는 없으나 관찰된 메모리 부족 종료 증거는 없다. 종료 시 검은 화면과 프로세스
+소멸은 WebDriver 정리 이후 자료이므로 자발적 앱 crash의 증거로 사용하지 않는다.
+AT-SPI의 application 0개는 Alhangeul 이름으로 필터한 결과이며 시스템 전체 접근성 앱 수가 아니다.
+WebDriver의 `page crash or hang` 오류만으로 제품 crash 또는 컨테이너 원인을 확정하지 않는다.
+
+제품 의존성은 GTK3 dialog 경로다. portal/FUSE 경고를 원인으로 단정하거나 portal 설정만 바꿔
+동일 검사를 반복하지 않는다. 다음 검증 방향은 동일 RPM을 실제 Fedora 44 x64 데스크톱 VM에서
+열어 native Open을 비교하는 것이다. VM 실행이나 새 Actions dispatch는 이번 결과 확인에 포함하지
+않았다. 컨테이너와 실제 데스크톱의 차이 또는 제품 결함은 여전히 미확정이다.
+
+Stage 3.1 MSI·AppImage 및 Stage 3.2 arm64의 수용은 유지하고 RPM GUI는 미수용으로 남긴다.
+Stage 3 전체 완료·릴리즈 전체 통과를 선언하지 않는다. 기존 Windows Shell/재부팅 후 제한도
+해소된 것으로 간주하지 않는다. 제품 SHA와 설치본은 변경하지 않았으며 Windows 사용자 재점검,
+제품 재빌드·재서명·공개는 수행하지 않았다.
