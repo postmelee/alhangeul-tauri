@@ -5,8 +5,8 @@ GitHub Issue: [#69](https://github.com/postmelee/alhangeul-tauri/issues/69)
 마일스톤: M010
 
 2026-09-20 수행계획 승인 후 작성. 같은 스레드의 작업지시자 `진행해줘`로 구현계획 승인.
-현재 상태: Stage 1 완료 보고, 최소 검증안·비게시 후보 진입 조건 조정 승인. 준비 PR 생성 승인 대기.
-아래 명령은 실행 계획이며, 이 문서 작성 중 제품 검증·CI·서명·게시를 실행한 것이 아니다.
+현재 상태(2026-09-29): 최종 후보의 추가 설치/문서 검증 완료. Stage 3 수용 보고와 잔여 위험 검토, 공개 실행안 승인 전 보류.
+아래 초기 계획과 과거 실행 기록은 보존하며, 최신 결과는 Stage 3 보고서와 문서 끝의 실행 기록을 따른다.
 
 ## 단계 개요
 
@@ -547,3 +547,15 @@ status=done, extended_status=degraded done, errors=[]이다. recoverable_errors�
 처리하는 변경은 없다. 동일 image digest·RPM bytes로 VM만 재실행한다. 이전 root 로그/PID 권한
 보정은 이번 실제 upload/cleanup 결과로 확인됐으며 Windows 재점검이나 제품 재빌드는 필요 없다.
 보정 후 VM 계약 3건, 셸 3개 shellcheck와 diff 검사를 통과했다. workflow·제품 소스는 변경하지 않았다.
+
+
+2026-09-29 Fedora VM `36513158401`은 모든 필수 단계 success다. artifact `11009958648` ZIP
+SHA-256 `98661376753ef6ab2f29ecfe96f1d3b3d3359af785d0b90e5d7b6f832b4da0af`를 재계산했다.
+VM/GUI outcome은 모두 complete/0, cloud-init errors와 recoverable_errors는 비어 있다.
+LightDM·Xfce·X11 비root 실제 guest session, 동일 RPM의 dnf 설치·HWP/HWPX 수정 저장·재시작
+재열기가 통과했다. 두 시나리오의 참조 파일 4개 크기/hash와 두 저장 문서 marker를 재검증하고
+두 재열기 화면의 한글/표/추가 marker를 확인했다. VM 정리와 증거 upload도 성공했다.
+
+승인된 추가 형식 검증 결과를 [Stage 3 보고서](../working/task_m010_69_stage3.md)에 정리했다.
+동일 RPM의 VM 성공은 컨테이너 실패의 정확한 원인을 확정하지 않는다. 기존 Windows Shell·3010
+재부팅 후 미검증과 공개 승인 경계는 유지한다. 제품 변경·사용자 Windows 재점검·추가 CI는 없다.
