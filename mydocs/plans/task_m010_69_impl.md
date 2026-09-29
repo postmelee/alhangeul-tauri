@@ -559,3 +559,27 @@ LightDM·Xfce·X11 비root 실제 guest session, 동일 RPM의 dnf 설치·HWP/H
 승인된 추가 형식 검증 결과를 [Stage 3 보고서](../working/task_m010_69_stage3.md)에 정리했다.
 동일 RPM의 VM 성공은 컨테이너 실패의 정확한 원인을 확정하지 않는다. 기존 Windows Shell·3010
 재부팅 후 미검증과 공개 승인 경계는 유지한다. 제품 변경·사용자 Windows 재점검·추가 CI는 없다.
+
+### Stage 3 검토와 Stage 4 승인 입력 준비 — 2026-09-29
+
+작업지시자의 `진행해줘`로 검증 변경 검토와 최종 릴리즈 실행안 확정을 진행했다.
+`ef2e42c2`까지의 검증 경로를 검토해 후보 고정·원본 검증·실패 전달·GUI 수용 결과를 무효화하는
+차단 결함을 발견하지 못했다. 원격 devel은 현재 HEAD의 조상이며 다른 작업을 덮어쓰지 않았다.
+제품/서명/fixture는 final SHA와 같다. 고정 artifact용 검증 경로를 후속 버전에 일반화하지 않는다.
+
+이미 승인한 공식 기록 위치 `docs/releases/v0.1.0.md`에 최신 수용 상태·게시 11개 파일의 크기/해시·
+알려진 제한·tag/draft 승인 범위·Release 본문 초안을 추가했다. 과거 기록은 보존했다.
+source version `0.1.0`, rhwp `v0.8.6`/6관리 artifact, release metadata와 관련 회귀 65건 통과.
+로컬 staging 정확히 11개 파일·SHA256SUMS 10행·3개의 실제 Minisign을 재검증하고 complete
+inventory 전체를 대조했다. 임시 검증 코드가 verifier 반환값에 sourceSha가 있다고 잘못 가정한
+첫 대조는 중단됐으며, createReleaseInventory의 실제 반환 스키마로 전체 대조를 수정해 통과했다.
+제품/파일 결함이 아니라 로컬 대조 스크립트의 오류였으며 실패를 통과로 기록하지 않았다.
+
+원격 main `fc3cad15682f35723ab6558d1301e9096f7eec67`, devel `c54498c6fef1de125181175b75995145f715342e`,
+Release 0개·tag v0.1.0 없음, CLI 사용자 postmelee, release reviewer/self-review/ref 제한과
+Pages devel 제한을 재확인했다. 사용 archive 4개 모두 expired=false, 만료 예정 2026-10-11 UTC다.
+본문 UTF-8 SHA-256 `f61b3d9d799eeab17775cd724e2c8dd8f8f20bd5dabae266e1d08c04ce959c52`.
+
+다음 승인 요청은 잔여 위험 수용 및 CLI 경로의 exact SHA annotated tag 생성/push·draft 11개
+asset 업로드까지다. draft read-back 후 stable 공개는 별도 승인이다. 이번에는 PR 생성/merge,
+새 CI, tag/draft/stable, Pages/manifest 변경을 하지 않았다. #69는 계속 OPEN이다.
