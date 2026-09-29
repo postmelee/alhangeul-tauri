@@ -50,6 +50,8 @@ qemu-img create -f qcow2 -F qcow2 -b "$vm_root/base.qcow2" "$vm_root/guest.qcow2
 ssh-keygen -q -t ed25519 -N '' -f "$vm_root/id_ed25519"
 cat > "$vm_root/user-data" <<CLOUD
 #cloud-config
+# This test needs no custom guest hostname. Keep the image default.
+preserve_hostname: true
 users:
   - name: acceptance
     shell: /bin/bash
@@ -60,7 +62,7 @@ users:
 ssh_pwauth: false
 disable_root: true
 CLOUD
-printf 'instance-id: alhangeul-rpm-vm\nlocal-hostname: alhangeul-rpm-vm\n' > "$vm_root/meta-data"
+printf 'instance-id: alhangeul-rpm-vm\n' > "$vm_root/meta-data"
 cloud-localds "$vm_root/seed.img" "$vm_root/user-data" "$vm_root/meta-data"
 phase=boot
 # QEMU runs as root; precreate the serial log as the runner so upload can read it.

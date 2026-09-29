@@ -532,3 +532,18 @@ harness 보정: serial log를 QEMU 실행 전에 runner 소유로 생성하고 P
 같은 RPM/image/문서 시나리오로 VM만 재실행한다. 제품 변경이나 새 후보 생성은 없다.
 보정 후 자동화 990건, VM 관련 회귀 3건, 셸 3개 shellcheck와 diff 검사를 통과했다.
 실제 VM 부팅/GUI 검증은 다음 run의 결과 확인 전까지 미검증으로 유지한다.
+
+2026-09-29 VM 재실행 `36512713947`은 failure다. 증거 upload와 VM 종료는 성공했다.
+artifact `11009446808` ZIP SHA-256
+`59fa7cb128c745f8cd17290922b10ef2d80725a3eb87ab5ed8d258e07e78768d`를 검증했다.
+`vm-outcome.json`은 lastPhase=cloud-init / exitCode=2이며 `cloud-init-status.txt`는
+status=done, extended_status=degraded done, errors=[]이다. recoverable_errors는 지정한
+`alhangeul-rpm-vm` hostname 설정 실패 경고 4개다. VM 부팅/SSH 연결까지 진행됐지만 RPM 전달·
+설치·desktop/GUI는 시작하지 않았다. 제품 실패나 이전 native Open의 VM 재현으로 기록하지 않는다.
+
+문서 검증과 무관한 hostname 변경을 제거한다. NoCloud metadata에는 instance-id만 유지하고
+[cloud-init 공식 설정](https://docs.cloud-init.io/en/latest/reference/yaml_examples/set_hostname.html)의
+`preserve_hostname: true`로 이미지의 기본 이름을 유지한다. cloud-init nonzero/GUI 실패를 통과로
+처리하는 변경은 없다. 동일 image digest·RPM bytes로 VM만 재실행한다. 이전 root 로그/PID 권한
+보정은 이번 실제 upload/cleanup 결과로 확인됐으며 Windows 재점검이나 제품 재빌드는 필요 없다.
+보정 후 VM 계약 3건, 셸 3개 shellcheck와 diff 검사를 통과했다. workflow·제품 소스는 변경하지 않았다.

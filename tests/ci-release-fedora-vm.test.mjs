@@ -44,6 +44,8 @@ test('VM diagnostics remain readable and preserve cloud-init and cleanup failure
   const host = await read('scripts/ci/release-fedora-vm.sh');
   assert.ok(host.indexOf(': > "$evidence/vm-serial.log"') < host.indexOf('sudo qemu-system-x86_64'));
   assert.match(host, /set -euo pipefail/);
+  assert.match(host, /preserve_hostname: true/);
+  assert.doesNotMatch(host, /local-hostname:/);
   assert.match(host, /phase=cloud-init\nguest 'sudo cloud-init status --wait --long' 2>&1 \| tee/);
   assert.doesNotMatch(host, /cloud-init status[^\n]*\|\| true/);
   assert.match(host, /if \[\[ "\$code" == 0 \]\]; then code=1; fi/);
