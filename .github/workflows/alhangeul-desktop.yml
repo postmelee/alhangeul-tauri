@@ -12,6 +12,7 @@ on:
           - artifact
           - release-file-acceptance
           - release-linux-file-acceptance
+          - release-fedora-vm-acceptance
           - updater
           - updater-acceptance
           - updater-native-acceptance
@@ -129,6 +130,13 @@ env:
   GIT_CONFIG_VALUE_0: "false"
 
 jobs:
+  release-fedora-vm-acceptance:
+    if: ${{ inputs.mode == 'release-fedora-vm-acceptance' && !inputs.publish_release }}
+    permissions:
+      contents: read
+      actions: read
+    uses: ./.github/workflows/alhangeul-release-fedora-vm.yml
+
   release-linux-file-acceptance:
     if: ${{ inputs.mode == 'release-linux-file-acceptance' && !inputs.publish_release }}
     permissions:

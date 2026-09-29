@@ -485,3 +485,36 @@ Stage 3.1 MSI·AppImage 및 Stage 3.2 arm64의 수용은 유지하고 RPM GUI는
 Stage 3 전체 완료·릴리즈 전체 통과를 선언하지 않는다. 기존 Windows Shell/재부팅 후 제한도
 해소된 것으로 간주하지 않는다. 제품 SHA와 설치본은 변경하지 않았으며 Windows 사용자 재점검,
 제품 재빌드·재서명·공개는 수행하지 않았다.
+
+### 3.3 동일 RPM의 Fedora 데스크톱 VM 비교
+
+작업지시자가 `진행해줘`로 실제 Fedora 데스크톱 VM 비교를 승인했다. #69와 현재 검증 브랜치에서
+Stage 3을 이어간다. 현재 Mac은 arm64/여유 공간 약 9GiB이며 로컬 VM은 생성하지 않는다.
+Ubuntu 24.04 x64 Actions runner의 QEMU/KVM에 Fedora 44 Cloud 1.7을 부팅하고 LightDM·Xfce·
+Xorg 로그인 세션을 설치한다. cloud image 기반 데스크톱이며 Fedora Workstation/GNOME/Wayland
+전체 수용으로 확대하지 않는다. KVM 가용성은 사전 검사하고 불가하면 환경 준비 실패로 기록한다.
+
+- 공식 image: `Fedora-Cloud-Base-Generic-44-1.7.x86_64.qcow2`, SHA-256
+  `28680fe5b371a5a82ebf43a31926e086a168e59949d03969c5093e7071f90b7f`.
+  출처: Fedora 공식 Cloud 다운로드와 `dl.fedoraproject.org`의 44/Cloud/x86_64/images CHECKSUM.
+  다운로드 bytes를 이 값으로 확인한다. SHA 고정 확인이며 OpenPGP 검증 수행으로 주장하지 않는다.
+- 원본 RPM·producer·artifact·inventory 검사는 기존 helper를 재사용한다. VM 전달 후에도 RPM
+  SHA를 대조한다. driver 2.0.6과 Node/잠금된 JS 의존성·공개 fixture만 전달하며 제품 빌드는 없다.
+- guest systemd/system bus/logind와 LightDM의 비root Xfce X11 session에서 기존 HWP/HWPX
+  문서 시나리오를 실행한다. Xvfb·컨테이너·새로운 dbus-run-session으로 대체하지 않는다.
+- 게스트 SSH는 일회성 키와 host loopback 포트만 사용한다. GH token·서명 secret·Git 자격증명은
+  전달하지 않는다. 임시 VM과 키는 runner의 임시 디렉터리에 두고 종료 시 VM 프로세스를 정리한다.
+- VM boot/provision/session/GUI를 구분한다. system journal·desktop screenshot·process와
+  시나리오 증거를 회수하고 모든 필수 단계와 upload가 성공해야 수용한다. 수집 실패도 gate 실패다.
+- 문서 위치는 기존 승인된 `mydocs/plans/`와 `mydocs/orders/`를 유지한다. 구현은
+  `.github/workflows/alhangeul-release-fedora-vm.yml`, Desktop 진입 mode 및 역할별
+  `scripts/ci/release-fedora-vm*.sh`, 회귀 검사는 `tests/ci-release-fedora-vm.test.mjs`에 둔다.
+  각 신규 파일은 300행 미만이다. guest 준비/수집 셸은 순차 운영 스크립트로 분리한다.
+- 로컬 검증: workflow actionlint, shellcheck, 자동화 계약과 제품 경계. 실제 Linux VM 검증은
+  Actions에서만 수행한다. 승인된 RPM만 실행하며 성공한 다른 설치 형식은 반복하지 않는다.
+  dispatch 후 링크를 전달하고 사용자 요청대로 완료를 기다리지 않는다.
+
+VM 실행 전 검증: 자동화 989건, 두 변경 workflow의 actionlint, 신규 셸 3개 shellcheck,
+제품 경계 688파일, diff 검사를 통과했다. 이후 SSH keepalive·접근성 앱 이름 진단·UID 충돌 방지
+조정 후 관련 VM 계약 2건과 shellcheck를 다시 통과했다. Fedora VM 실제 실행과 문서 수용은
+Actions 결과 확인 전까지 미검증이며 이전 RPM 실패 근거를 보존한다.
