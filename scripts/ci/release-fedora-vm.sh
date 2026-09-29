@@ -13,6 +13,7 @@ ssh_options=(-i "$vm_root/id_ed25519" -p 2222 -o BatchMode=yes -o ConnectTimeout
 guest() { ssh "${ssh_options[@]}" acceptance@127.0.0.1 "$@"; }
 collect() {
   guest 'sudo journalctl -b --no-pager -u lightdm -u systemd-logind' > "$evidence/guest-session-journal.txt"
+  guest 'sudo journalctl -b --no-pager -u cloud-init-local -u cloud-init-network -u cloud-config -u cloud-final' > "$evidence/guest-cloud-init-journal.txt"
   guest 'sudo journalctl -b -k --no-pager' > "$evidence/guest-kernel.txt"
   guest 'tar -C /home/acceptance/payload/evidence -czf - .' | tar -xzf - -C "$evidence/guest"
 }
@@ -20,7 +21,15 @@ finish() {
   local code=$?
   trap - EXIT
   if [[ "$phase" != complete ]]; then collect 2> "$evidence/collection-errors.txt" || true; fi
-  if [[ -f "$vm_root/qemu.pid" ]]; then sudo kill "$(cat "$vm_root/qemu.pid")" 2>/dev/null || true; fi
+  local vm_pid
+  if [[ -f "$vm_root/qemu.pid" ]]; then
+    if vm_pid=$(sudo cat "$vm_root/qemu.pid") && [[ "$vm_pid" =~ ^[1-9][0-9]+$ ]] && sudo kill -- "$vm_pid"; then
+      printf 'terminated %s\n' "$vm_pid" > "$evidence/vm-cleanup.txt"
+    else
+      printf 'VM cleanup failed\n' > "$evidence/vm-cleanup.txt"
+      if [[ "$code" == 0 ]]; then code=1; fi
+    fi
+  fi
   printf '{"lastPhase":"%s","exitCode":%s}\n' "$phase" "$code" > "$evidence/vm-outcome.json"
   exit "$code"
 }
@@ -54,6 +63,8 @@ CLOUD
 printf 'instance-id: alhangeul-rpm-vm\nlocal-hostname: alhangeul-rpm-vm\n' > "$vm_root/meta-data"
 cloud-localds "$vm_root/seed.img" "$vm_root/user-data" "$vm_root/meta-data"
 phase=boot
+# QEMU runs as root; precreate the serial log as the runner so upload can read it.
+: > "$evidence/vm-serial.log"
 sudo qemu-system-x86_64 -enable-kvm -cpu host -smp 2 -m 4096 \
   -drive "file=$vm_root/guest.qcow2,if=virtio,format=qcow2" \
   -drive "file=$vm_root/seed.img,if=virtio,format=raw,readonly=on" \
@@ -64,7 +75,8 @@ for ((attempt=0; attempt<90; attempt++)); do
   if guest true 2>/dev/null; then break; fi
   sleep 5
 done
-guest 'sudo cloud-init status --wait' > "$evidence/cloud-init-status.txt"
+phase=cloud-init
+guest 'sudo cloud-init status --wait --long' 2>&1 | tee "$evidence/cloud-init-status.txt"
 phase=transfer
 # Allowlisted payload: no .git, host environment, credentials, or private SSH key.
 mkdir -p "$vm_root/payload"

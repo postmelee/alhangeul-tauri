@@ -518,3 +518,17 @@ VM 실행 전 검증: 자동화 989건, 두 변경 workflow의 actionlint, 신�
 제품 경계 688파일, diff 검사를 통과했다. 이후 SSH keepalive·접근성 앱 이름 진단·UID 충돌 방지
 조정 후 관련 VM 계약 2건과 shellcheck를 다시 통과했다. Fedora VM 실제 실행과 문서 수용은
 Actions 결과 확인 전까지 미검증이며 이전 RPM 실패 근거를 보존한다.
+
+2026-09-29 VM 첫 실행 `36511679150`은 failure다. 원본 RPM 후보 검사·KVM 장치 사전 검사·
+검증 도구 설치는 통과했다. VM 단계는 exit 2로 중단됐고, 종료 처리에서 root 소유 qemu.pid를
+runner가 읽지 못했다. 이어 upload가 root 소유 vm-serial.log의 EACCES로 실패해 artifact는 0개다.
+따라서 증거 ZIP/hash 확인이나 Fedora desktop/RPM 문서 성공을 주장하지 않는다. 이전 컨테이너의
+native Open 문제를 VM에서도 재현했다고 판단할 근거도 없다.
+
+harness 보정: serial log를 QEMU 실행 전에 runner 소유로 생성하고 PID는 sudo로 읽어 해당 VM만
+정리한다. 정리 실패는 원래 실패를 보존하며 원래 성공이면 실패로 바꾼다. cloud-init 대기 단계의
+상세 상태를 tee로 실행 로그와 파일 양쪽에 남기고 관련 system journal도 회수한다. 기존 exit 2의
+정확한 원인은 업로드 실패로 아직 미확정이다. cloud-init의 nonzero는 면제하지 않는다.
+같은 RPM/image/문서 시나리오로 VM만 재실행한다. 제품 변경이나 새 후보 생성은 없다.
+보정 후 자동화 990건, VM 관련 회귀 3건, 셸 3개 shellcheck와 diff 검사를 통과했다.
+실제 VM 부팅/GUI 검증은 다음 run의 결과 확인 전까지 미검증으로 유지한다.

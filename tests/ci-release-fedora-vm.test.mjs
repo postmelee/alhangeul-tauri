@@ -16,7 +16,8 @@ test('Fedora VM acceptance uses the verified candidate without forwarding host c
   assert.match(host, /image_sha=28680fe5b371a5a82ebf43a31926e086a168e59949d03969c5093e7071f90b7f/);
   assert.match(host, /sha256sum --check > "\$evidence\/vm-image-verification.txt"/);
   assert.match(host, /-enable-kvm/);
-  assert.match(host, /sudo kill "\$\(cat "\$vm_root\/qemu.pid"\)"/);
+  assert.match(host, /vm_pid=\$\(sudo cat "\$vm_root\/qemu.pid"\)/);
+  assert.match(host, /sudo kill -- "\$vm_pid"/);
 });
 
 test('Fedora VM uses a real guest desktop and never converts missing GUI evidence to success', async () => {
@@ -36,4 +37,14 @@ test('Fedora VM uses a real guest desktop and never converts missing GUI evidenc
   assert.match(workflow, /state.candidate!=='success'\|\|state.acceptance!=='success'/);
   assert.match(session, /local result=\$\?/);
   assert.match(session, /exit "\$result"/);
+});
+
+
+test('VM diagnostics remain readable and preserve cloud-init and cleanup failures', async () => {
+  const host = await read('scripts/ci/release-fedora-vm.sh');
+  assert.ok(host.indexOf(': > "$evidence/vm-serial.log"') < host.indexOf('sudo qemu-system-x86_64'));
+  assert.match(host, /set -euo pipefail/);
+  assert.match(host, /phase=cloud-init\nguest 'sudo cloud-init status --wait --long' 2>&1 \| tee/);
+  assert.doesNotMatch(host, /cloud-init status[^\n]*\|\| true/);
+  assert.match(host, /if \[\[ "\$code" == 0 \]\]; then code=1; fi/);
 });
