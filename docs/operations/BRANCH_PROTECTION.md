@@ -12,6 +12,9 @@
   최신 base를 요구한다(`strict=true`). 다른 App의 같은 이름이나 수동 status로 대체하지 않는다.
 - PR opened/synchronize/reopened/ready_for_review/converted_to_draft에서 자동 실행한다.
   draft도 검사한다. 경로별 skip이 없으며 fork에는 `contents:read`만 제공한다.
+  draft 상태는 `isDraft`를 함께 확인한다. 검사 성공 후 `mergeStateStatus=CLEAN`과
+  `isDraft=true`를 관측할 수 있으며, 병합 단계에는 ready 전환이 필요하다.
+  [GitHub draft 정책](https://docs.github.com/en/pull-requests/reference/pull-requests#draft-pull-requests)을 따른다.
 - `github.sha`의 merge candidate에서 기존 Linux Node/Studio·Windows PowerShell fast 검사를
   수행한다. 최종 check는 `always()`로 실행하고 두 job을 포함한 reusable 결과가 `success`일
   때만 성공한다. 누락·실패·취소·skipped는 merge gate 성공으로 처리하지 않는다.
@@ -47,6 +50,10 @@ event 검사를 받고 draft 상태에서는 병합할 수 없다.
 2. PR에서 자동 check의 실제 이름·App·merge candidate SHA와 성공을 확인한다. 이름만 정하고
    아직 실행하지 않은 check를 required로 등록하지 않는다.
 3. task의 구체 payload·실행 승인 기록과 함께 보호 API를 적용한다.
+
+   필수 검사는 App을 지정한 `checks`만 보낸다. legacy `contexts`를 함께 보내면 API
+   스키마에서 거부될 수 있다. GET 응답의 정규화된 `contexts`와 생략된 null 필드는 정책
+   의미로 대조하고, App/context·strict·관리자·force/delete 필드는 실제 값으로 확인한다.
 
 ```sh
 gh api --method PUT repos/postmelee/alhangeul-tauri/branches/devel/protection \
