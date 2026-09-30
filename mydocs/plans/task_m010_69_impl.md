@@ -5,7 +5,7 @@ GitHub Issue: [#69](https://github.com/postmelee/alhangeul-tauri/issues/69)
 마일스톤: M010
 
 2026-09-20 수행계획 승인 후 작성. 같은 스레드의 작업지시자 `진행해줘`로 구현계획 승인.
-현재 상태(2026-09-30): Stage 4 stable/latest 공개 및 11개 파일·3서명 원격 대조 완료. Stage 5 Pages 배포·공개 manifest 대조 성공. 안내 문구 보정과 실제 설치본 production 조회 잔여.
+현재 상태(2026-09-30): Stage 1~6 수용 범위 완료. stable/latest 공개·11개 파일 대조·운영 Pages/manifest와 세 설치본 production 조회 통과. 최종 PR 검토·병합 대기.
 아래 초기 계획과 과거 실행 기록은 보존하며, 최신 결과는 Stage 4 보고서와 문서 끝의 실행 기록을 따른다.
 
 ## 단계 개요
@@ -778,3 +778,19 @@ NSIS·MSI·AppImage 모두 실제 production 동일 버전 조회가 통과했�
 `pnpm run build:pages` 및 `pnpm run check:pages` 재확인: source=16/output=19 통과.
 직전 실행 준비의 회귀 93건·타입·actionlint 통과를 재사용했다. 조회 완료로 Stage 5 완료이며
 Stage 6 최종 인계·최종 보고서·PR은 다음 단계 승인 후 진행한다. #69는 OPEN이다.
+
+
+### Stage 6 최종 인계 승인과 완료 — 2026-09-30
+
+작업지시자는 Stage 5 보고 뒤 `진행해줘`로 Stage 6 최종 인계·보고서·PR 준비를 승인했다.
+기존 docs/releases 위치에 제품/tag/Release/생산/Pages/조회 SHA 구분, 보존 자료,
+다음 production N → N+1 입력과 확인 순서, #58/#67 및 잔여 위험을 기록했다.
+Stage 2 독립 보고 파일 누락을 기존 PR #80·성공한 두 producer 근거로 회고 보완했다.
+기존 stage 승인·실행 시점이나 테스트 결과를 새로 만들어 쓰지 않았다.
+
+공개 API의 11 asset과 보존한 공개 read-back bytes를 이름/크기/SHA로 재대조했다.
+원격 tag·Release와 manifest identity도 일치한다. Stage 5 원격 수용을 재사용하고
+문서 정리에 제품/native/full·서명·운영 배포를 반복하지 않는다. Actions/임시 사본은 영구 백업이
+아니며 설치된 runner 상태는 보존하지 않았다. 공개 파일과 고정 기록으로 다음 기준선을 재구성한다.
+
+최종 단계·최종 보고를 묶어 devel 대상 PR을 게시한다. merge/close/정리는 이번에 수행하지 않는다.
