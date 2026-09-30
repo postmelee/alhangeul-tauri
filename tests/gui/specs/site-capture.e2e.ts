@@ -23,8 +23,8 @@ describe('Site Windows capture of original document', () => {
     await waitForLoadedDocument(browser, 'biz_plan.hwp', 6, inputs.timeoutMs);
     const zoom = await $('#scroll-content > canvas[data-rhwp-rendered-zoom]').getAttribute('data-rhwp-rendered-zoom');
     expect(Number(zoom)).toBe(1);
-    await run('powershell.exe', ['-NoProfile', '-File', nativeCapture,
-      '-OutputPath', join(inputs.outputDir, 'windows-app.png')], {timeout:30000});
+    await run('powershell.exe', ['-NoProfile', '-STA', '-File', nativeCapture,
+      '-OutputPath', join(inputs.outputDir, 'windows-app.png')], {timeout:90000});
     expect(await readFile(source)).toEqual(before);
     await writeFile(join(inputs.outputDir, 'windows-app-source.json'), JSON.stringify({
       source:'samples/biz_plan.hwp', sha256:createHash('sha256').update(before).digest('hex'),
@@ -33,9 +33,9 @@ describe('Site Windows capture of original document', () => {
   });
   it('attempts an Explorer capture without treating it as thumbnail acceptance', async () => {
     try {
-      await run('powershell.exe', ['-NoProfile', '-File', nativeCapture, '-Kind', 'Explorer',
+      await run('powershell.exe', ['-NoProfile', '-STA', '-File', nativeCapture, '-Kind', 'Explorer',
         '-Folder', join(inputs.fixtureRoot, 'capture-samples'),
-        '-OutputPath', join(inputs.outputDir, 'windows-explorer-attempt.png')], {timeout:60000});
+        '-OutputPath', join(inputs.outputDir, 'windows-explorer-attempt.png')], {timeout:120000});
     } catch (error) {
       await writeFile(join(inputs.outputDir, 'explorer-unavailable.txt'), String(error));
     }

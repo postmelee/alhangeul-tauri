@@ -1,6 +1,10 @@
 name: Alhangeul site screenshot capture
 on:
   workflow_call:
+    inputs:
+      windows_only:
+        type: boolean
+        default: false
 permissions:
   contents: read
   actions: read
@@ -164,6 +168,7 @@ jobs:
           JS
 
   linux-gallery:
+    if: ${{ !inputs.windows_only }}
     name: Capture Linux eight-sample gallery
     runs-on: ubuntu-22.04
     timeout-minutes: 25

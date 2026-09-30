@@ -51,3 +51,21 @@ Windows 앱·Explorer 시도와 Linux Nautilus 8개 gallery가 독립 job으로 
 사용자 요청대로 Actions 완료를 기다리지 않는다. Windows 네이티브 구문·실제 UI·Linux cache
 생성은 아직 실행 결과 미확인이다. 이번 커밋은 실행 기록만 보충하며 위 run의 harness SHA를
 바꾸지 않는다. 다음 입력에서 artifact를 내려받아 화면을 직접 검토한다.
+
+## 최초 결과와 Windows 내장 캡처 재시도
+
+run 36670325455는 양쪽 job이 성공했으나 이미지 수용은 분리한다. Linux Nautilus는 8개
+실제 첫 페이지와 창 테두리를 육안 확인했다. Windows 앱은 바깥 배경·알림이 남았고,
+Explorer는 문서 thumbnail 대신 앱 아이콘이었다. Windows 이미지는 채택하지 않는다.
+
+사용자의 Actions 내장 캡처 요청에 따라 Stage 1 안에서 촬영 방식을 보완한다.
+SnippingTool.exe 존재 확인 후 창 캡처 단축키와 창 선택을 자동 조작하고 clipboard PNG를
+저장한다. 도구 미설치·UI 버전 차이·실행 실패 시 Windows Alt+PrintScreen으로 활성 창을
+촬영한다. 방식과 실패 이유를 JSON에 분리 기록하며 화면 좌표 복사로 조용히 대체하지 않는다.
+STA clipboard, 활성 창 확인, 예상 창 크기 검사를 적용하되 이미지 내용은 후속 육안 확인한다.
+앱 알림 대기 시간을 늘린다. 화면 해상도와 Explorer thumbnail 문제는 별도 미해결이다.
+Linux 성공 evidence를 재사용하며 artifact_platform=windows-x64로 Windows만 재실행한다.
+새 제품 빌드·사이트 구현·배포는 수행하지 않는다.
+
+재시도 준비: Node 계약 30건, GUI TypeScript, actionlint, diff check 통과. PowerShell 구문과
+Snipping Tool 실제 실행 가능 여부는 Windows job에서 확인한다. 성공 여부는 아직 미확인이다.
