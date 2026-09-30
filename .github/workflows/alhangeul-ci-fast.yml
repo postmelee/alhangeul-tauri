@@ -36,6 +36,7 @@ jobs:
       - run: pnpm run check:product-version
       - run: pnpm run check:release-metadata
       - run: pnpm run check:rhwp-pin
+      - run: pnpm run check:committed-rhwp
       - run: pnpm run test:automation
       - run: pnpm run typecheck:gui
       - run: pnpm run test:upstream

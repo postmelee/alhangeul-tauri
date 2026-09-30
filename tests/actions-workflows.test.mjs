@@ -53,6 +53,7 @@ test('모든 workflow가 공통 또는 전용 contract test inventory에 등록�
     'alhangeul-windows-smoke.yml',
     'ci.yml',
     'pages.yml',
+    'pr-acceptance.yml',
     'rhwp-upstream-sync.yml',
   ]);
 });
