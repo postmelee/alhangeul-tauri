@@ -42,7 +42,7 @@ Task #27 Stage 1: 외부 Action provenance inventory 확정
 
 ### 산출물
 
-모든 workflow와 composite uses, scripts/verify-action-pins.mjs, tests/action-pins.test.mjs, package.json, 기존 workflow tests.
+모든 workflow와 composite uses, scripts/verify-action-pins.mjs, tests/action-pins.test.mjs, package.json·pnpm-lock.yaml, 기존 workflow tests.
 
 ### 변경 내용
 
@@ -93,3 +93,5 @@ Action version 정렬은 입력 계약과 Windows/Linux full로 확인한다. �
 ## 승인 요청 사항
 
 2026-09-30 사용자가 #27 수행·PR 생성·리뷰·병합과 이후 #28을 명시 승인했다. 위 3단계와 문서 위치는 해당 목적 내의 구현 선택이며 별도 배포/secret 권한을 포함하지 않는다.
+
+검사 구현 세부: 기존 pnpm lock의 yaml 2.9.0을 직접 devDependency로 선언하고 YAML AST로 모든 uses를 검사한다. CLI는 설치된 개발 도구만 사용하며 runtime 제품 의존성은 바뀌지 않는다.
