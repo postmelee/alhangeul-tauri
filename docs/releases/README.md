@@ -5,11 +5,11 @@
 
 ## 릴리즈 목록
 
-2026-09-04 확인: 이 저장소의 GitHub Release 목록은 비어 있다.
+2026-09-30 확인: v0.1.0 stable/latest 공개 및 원격 파일 대조 완료. 사이트·updater 배포는 별도 진행 중.
 
 | 버전 | 상태 | 이전 공개 버전 | GitHub Release | 기록 |
 |---|---|---|---|---|
-| v0.1.0 | 준비 중, 공개 승인 대기 | 없음 | 미생성 | [v0.1.0 준비 기록](v0.1.0.md) |
+| v0.1.0 | GitHub Release 공개, Pages 전환 준비 | 없음 | [v0.1.0](https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.0) | [v0.1.0 공개 기록](v0.1.0.md) |
 
 최신 공개 버전은 실제 non-draft Release와 공개 read-back으로 판정한다. 가장 높은 파일명이나
 현재 source version을 최신 공개 버전으로 취급하지 않는다. 상태 확인 시점을 함께 갱신한다.

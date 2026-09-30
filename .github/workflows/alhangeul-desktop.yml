@@ -10,6 +10,9 @@ on:
         type: choice
         options:
           - artifact
+          - release-file-acceptance
+          - release-linux-file-acceptance
+          - release-fedora-vm-acceptance
           - updater
           - updater-acceptance
           - updater-native-acceptance
@@ -41,7 +44,7 @@ on:
         default: true
         type: boolean
       artifact_platform:
-        description: Ordinary artifact platform scope (partial unless all).
+        description: Artifact scope; acceptance retries use windows-x64 for MSI or linux-x64 for RPM only.
         type: choice
         default: all
         options: [all, windows-x64, linux, linux-x64, linux-arm64]
@@ -127,6 +130,31 @@ env:
   GIT_CONFIG_VALUE_0: "false"
 
 jobs:
+  release-fedora-vm-acceptance:
+    if: ${{ inputs.mode == 'release-fedora-vm-acceptance' && !inputs.publish_release }}
+    permissions:
+      contents: read
+      actions: read
+    uses: ./.github/workflows/alhangeul-release-fedora-vm.yml
+
+  release-linux-file-acceptance:
+    if: ${{ inputs.mode == 'release-linux-file-acceptance' && !inputs.publish_release }}
+    permissions:
+      contents: read
+      actions: read
+    uses: ./.github/workflows/alhangeul-release-linux-files.yml
+    with:
+      rpm_only: ${{ inputs.artifact_platform == 'linux-x64' }}
+
+  release-file-acceptance:
+    if: ${{ inputs.mode == 'release-file-acceptance' && !inputs.publish_release }}
+    permissions:
+      contents: read
+      actions: read
+    uses: ./.github/workflows/alhangeul-release-files.yml
+    with:
+      windows_only: ${{ inputs.artifact_platform == 'windows-x64' }}
+
   artifact:
     if: ${{ inputs.mode == 'artifact' }}
     permissions:

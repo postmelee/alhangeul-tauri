@@ -1,0 +1,84 @@
+name: Alhangeul final RPM Fedora desktop VM acceptance
+on:
+  workflow_call:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  accept:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    env:
+      CANDIDATE_KIND: rpm
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          submodules: true
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Verify exact existing RPM candidate
+        id: candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/ci/release-linux-candidate.mjs
+      - name: Install harness and VM dependencies
+        run: |
+          corepack enable
+          pnpm install --frozen-lockfile
+          sudo apt-get update
+          sudo apt-get install -y qemu-system-x86 qemu-utils cloud-image-utils
+          sudo test -c /dev/kvm
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install test driver only
+        run: |
+          cargo install tauri-driver --version 2.0.6 --locked
+          cargo install --list > candidate-evidence/cargo-installed.txt
+          grep -Fx 'tauri-driver v2.0.6:' candidate-evidence/cargo-installed.txt
+      - name: Boot Fedora and exercise RPM in desktop session
+        id: acceptance
+        env:
+          INSTALLER_PATH: ${{ steps.candidate.outputs.installer }}
+        run: bash scripts/ci/release-fedora-vm.sh
+      - name: Record outcomes
+        if: always()
+        env:
+          CANDIDATE: ${{ steps.candidate.outcome }}
+          ACCEPTANCE: ${{ steps.acceptance.outcome }}
+        run: |
+          node --input-type=module <<'JS'
+          import {mkdirSync,writeFileSync} from 'node:fs';
+          mkdirSync('candidate-evidence',{recursive:true});
+          writeFileSync('candidate-evidence/step-outcomes.json',JSON.stringify({
+            candidate:process.env.CANDIDATE,acceptance:process.env.ACCEPTANCE,
+            harnessSha:process.env.GITHUB_SHA,environment:'Fedora 44 x64 QEMU/KVM Xfce X11',
+          },null,2));
+          JS
+      - name: Upload VM evidence
+        id: upload
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: alhangeul-final-rpm-vm-${{ github.run_id }}
+          path: candidate-evidence/**
+          if-no-files-found: error
+      - name: Require actual desktop document acceptance
+        if: always()
+        env:
+          UPLOAD: ${{ steps.upload.outcome }}
+        run: |
+          node --input-type=module <<'JS'
+          import {readFileSync} from 'node:fs';
+          const state=JSON.parse(readFileSync('candidate-evidence/step-outcomes.json'));
+          if(process.env.UPLOAD!=='success'||state.candidate!=='success'||state.acceptance!=='success')
+            throw new Error('Incomplete Fedora VM acceptance');
+          const vm=JSON.parse(readFileSync('candidate-evidence/vm-outcome.json'));
+          const gui=JSON.parse(readFileSync('candidate-evidence/guest/package-acceptance.json'));
+          if(vm.exitCode!==0||vm.lastPhase!=='complete'||gui.exitCode!==0||gui.lastPhase!=='complete')
+            throw new Error('VM desktop document verification did not complete');
+          JS
