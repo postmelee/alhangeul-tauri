@@ -129,6 +129,19 @@ NSIS의 실제 실패를 진단 도구가 올바르게 분류하더라도 제품
 재사용하며 문서 보고 commit을 native 검증 SHA로 기재하지 않는다. 기존 archive 안의 문서는
 빌드 당시 복사본이다. 최신 안내는 저장소 문서를 읽고, manifest 검증 대상 파일을 고쳐 쓰지 않는다.
 
+## 공개 기본 브랜치와 운영 대상
+
+저장소의 공개 기본 브랜치는 `main`, 개발 통합과 일반 기여 PR 대상은 `devel`로 둔다.
+공개 후 승인된 README·커뮤니티 안내·사이트·운영 문서는 `devel → main` PR로 정렬한다.
+이때 공개 제품 source와의 차이를 확인하고, 문서용 main commit을 기존 설치본의 source로 기록하지 않는다.
+기존 release tag와 asset은 해당 공개 제품 기준으로 보존한다.
+
+예약 upstream workflow는 GitHub 기본 브랜치의 정의로 실행되며, checkout과 후보 PR 대상은
+명시된 `BASE_BRANCH=devel`을 유지한다. 기본 브랜치 전환 후에는 workflow 존재와 이 대상을 확인한다.
+Pages는 승인된 exact `devel` SHA와 기존 `github-pages` 환경의 devel 허용 정책을 계속 사용한다.
+기본 브랜치 변경만으로 새 Release·설치본·manifest·Pages 배포를 실행하지 않는다.
+새 기본 브랜치에서 Community Standards·제보 양식·보안 정책과 공개 사이트 연결을 재확인한다.
+
 ## 승인과 게시 순서
 
 1. release owner가 변경 범위, 이전 버전, 후보 SHA·version·tag·채널, 서명 정책과 지원 matrix를
