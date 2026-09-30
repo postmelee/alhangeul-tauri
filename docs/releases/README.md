@@ -5,11 +5,11 @@
 
 ## 릴리즈 목록
 
-2026-09-30 확인: v0.1.0 stable/latest 공개 및 원격 파일 대조 완료. 사이트·updater 배포는 별도 진행 중.
+2026-09-30 확인: v0.1.0 stable/latest 공개 및 원격 파일 대조 완료. 사이트·updater 운영 배포와 세 설치본의 동일 버전 조회 확인 완료. 실제 N → N+1은 다음 릴리즈에서 확인한다.
 
 | 버전 | 상태 | 이전 공개 버전 | GitHub Release | 기록 |
 |---|---|---|---|---|
-| v0.1.0 | GitHub Release 공개, Pages 전환 준비 | 없음 | [v0.1.0](https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.0) | [v0.1.0 공개 기록](v0.1.0.md) |
+| v0.1.0 | stable 공개·Pages/updater 전환 및 동일 버전 조회 완료 | 없음 | [v0.1.0](https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.0) | [v0.1.0 공개 기록](v0.1.0.md) |
 
 최신 공개 버전은 실제 non-draft Release와 공개 read-back으로 판정한다. 가장 높은 파일명이나
 현재 source version을 최신 공개 버전으로 취급하지 않는다. 상태 확인 시점을 함께 갱신한다.

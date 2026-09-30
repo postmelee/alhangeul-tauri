@@ -15,7 +15,8 @@ const capabilities: TauriCapabilities[] = [{
 }];
 export const config: WebdriverIO.Config = {
   ...createSharedWdioConfig(inputs),
-  specs: [join(import.meta.dirname, 'specs/release-files.e2e.ts')],
+  specs: [join(import.meta.dirname, process.env.ALHANGEUL_GUI_PRODUCTION_CHECK === 'true'
+    ? 'specs/production-updater.e2e.ts' : 'specs/release-files.e2e.ts')],
   services: [['@wdio/tauri-service', service]], capabilities,
   mochaOpts: { ui: 'bdd', timeout: 600000 },
 };

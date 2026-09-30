@@ -5,7 +5,7 @@ GitHub Issue: [#69](https://github.com/postmelee/alhangeul-tauri/issues/69)
 마일스톤: M010
 
 2026-09-20 수행계획 승인 후 작성. 같은 스레드의 작업지시자 `진행해줘`로 구현계획 승인.
-현재 상태(2026-09-30): Stage 4 stable/latest 공개 및 11개 파일·3서명 원격 대조 완료. Stage 5 데이터 준비·로컬 검증 완료, 데이터 PR 생성 승인 대기.
+현재 상태(2026-09-30): Stage 1~6 수용 범위 완료. stable/latest 공개·11개 파일 대조·운영 Pages/manifest와 세 설치본 production 조회 통과. 최종 PR 검토·병합 대기.
 아래 초기 계획과 과거 실행 기록은 보존하며, 최신 결과는 Stage 4 보고서와 문서 끝의 실행 기록을 따른다.
 
 ## 단계 개요
@@ -644,3 +644,153 @@ URL·서명도 일치한다. manifest SHA-256:
 Stage 3 검증 harness와 Stage 3/4 기록도 포함된다. 제품 코드·upstream pin·공개 installer는
 변경하지 않았다. PR 생성/merge, Pages dispatch와 production 동일 버전 조회는 아직 수행하지
 않았으므로 Stage 5 전체 완료로 기록하지 않는다.
+
+### Stage 5 PR #81 병합 — 2026-09-30
+
+작업지시자가 PR 생성과 병합을 각각 `진행해줘`로 승인했다. PR #81의 head는
+`498fd0b36605b6d29d33770b8a821e66209cf4fa`, base는
+`c54498c6fef1de125181175b75995145f715342e`였으며 mergeable/CLEAN을 확인했다.
+현재 head에는 Actions/check-run이 0개다. 최근 정기 upstream sync 성공을 PR CI 성공으로
+취급하지 않는다. 기존 Pages 83건과 추가 후보 검증 계약 13건 통과, 코드 검토에서 병합을 막는
+결함을 발견하지 못했고 제품 코드·pin·설치본 변경이 없음을 확인했다.
+
+2026-09-30T04:06:24Z에 merge commit
+`6e2d8deb3caa22a98a2c4c2d480bc1e9478754f1`로 devel에 병합됐다.
+원격 devel이 같은 SHA이며 검증한 head와 Pages 입력·생성 코드·workflow가 동일하다.
+진행 중인 #69와 작업 브랜치/worktree는 Stage 5~6에 필요하므로 유지한다.
+
+다음 승인 대상은 `pages.yml --ref devel`에 deploy_ref=
+`6e2d8deb3caa22a98a2c4c2d480bc1e9478754f1`을 전달해 사이트 다운로드 및 production
+updater manifest를 게시하는 것이다. 실행 직전 원격 devel 일치를 다시 확인한다.
+이번 턴에는 Pages dispatch를 하지 않았고 production 조회도 아직 미검증이다.
+
+### Stage 5 Pages 배포 실행 승인
+
+작업지시자가 `진행해줘`로 exact devel SHA
+`6e2d8deb3caa22a98a2c4c2d480bc1e9478754f1`의 Pages 및 production updater manifest
+배포를 승인했다. 실행 직전 원격 devel 일치와 중복 실행 부재를 확인했다.
+첫 dispatch는 HTTP 500을 반환했다. 해당 SHA/event의 실행 0개를 재확인한 후 동일 입력으로
+한 번 재시도했고 [run 36667548738](https://github.com/postmelee/alhangeul-tauri/actions/runs/36667548738)
+생성 응답을 받았다. `pages.yml --ref devel`, deploy_ref는 위 SHA다.
+
+사용자 요청대로 Actions 완료를 기다리거나 반복 조회하지 않았다. run 성공, 실제 배포,
+공개 화면·manifest 일치와 설치본 동일 버전 조회는 아직 미확인이다. 사용자가 완료를 알리면
+이 run을 확인하고 승인된 배포 후 검증을 이어간다.
+
+### Stage 5 Pages 게시 API 오류와 동일 실행 재시도
+
+사용자 완료 알림 후 run 36667548738을 확인했다. exact SHA 검증, dependency 설치,
+Pages build/check, 계약 검사, Pages 설정과 artifact 업로드까지 성공했다. 마지막 deploy-pages의
+배포 생성 요청만 HTTP 500으로 실패했다. 로그는 GitHub 서버 오류와 재실행을 안내하며
+제품 코드나 검증 실패로 판단할 근거는 없다.
+
+artifact ID는 11076572172, Pages environment deployment 6751285452의 마지막 상태는
+failure였다. production `/updater/stable.json`은 HTTP 404로 아직 게시되지 않았다.
+기존 승인 범위에서 `gh run rerun 36667548738 --failed`로 같은 SHA의 실패 작업을 한 번
+재실행했고 CLI 요청이 성공했다. 코드·데이터·권한 설정 변경은 없고 완료를 기다리지 않았다.
+실제 게시 및 production 검증은 재실행 결과 확인 전까지 미완료로 유지한다.
+
+### Stage 5 중복 Pages artifact 실패와 새 실행
+
+run 36667548738 attempt 2는 build/check/tests/upload를 통과했지만 deploy-pages가 같은 이름의
+`github-pages` artifact 2개를 발견해 배포 생성 전에 실패했다. 이전 HTTP 500과 다른 원인이다.
+artifact ID 11076572172와 11077490415가 모두 expired=false로 존재함을 API에서 확인했다.
+동일 run 전체 작업 재시도가 업로드도 반복하는 점을 놓친 복구 선택이었다. 실패 증거는 보존한다.
+
+원격 devel이 승인 SHA `6e2d8deb3caa22a98a2c4c2d480bc1e9478754f1` 그대로이고
+Pages 실행이 완료 상태임을 확인했다. 코드·설정·승인 입력 변경 없이 새 workflow_dispatch로
+[run 36668279136](https://github.com/postmelee/alhangeul-tauri/actions/runs/36668279136)을 생성했다.
+`pages.yml --ref devel`, deploy_ref는 동일 SHA다. 새 run은 이전 run의 artifact와 분리된다.
+완료를 기다리지 않았으며 실제 배포와 production 검증은 결과 확인 전까지 미완료다.
+
+### Stage 5 Pages 공개 성공 및 read-back
+
+run 36668279136은 success다. head SHA는 승인한
+`6e2d8deb3caa22a98a2c4c2d480bc1e9478754f1`, deploy step 완료 시각은
+2026-09-30T04:19:27Z다. exact SHA·build/check/tests/upload/deploy 모두 통과했다.
+공개 release.json과 updater/stable.json을 curl --fail로 내려받아 승인 출력과 cmp 일치를
+확인했다. manifest SHA-256은 기존
+`e3c27ee429063ae12d0f12e7188f5ee2a3e498104963900889501228caba88d1` 그대로다.
+HTTP 성공은 실제 앱 업데이트 조회 성공으로 대신 기록하지 않는다.
+
+인앱 브라우저에서 홈 Windows NSIS/MSI 링크, Linux 선택 시 AppImage 링크와 DEB/RPM/arm64
+수동 Release 링크, 업데이트 메뉴의 세 다운로드·v0.1.0 릴리즈 노트 링크, 문의 화면을 확인했다.
+390px 모바일 업데이트 화면에서 메뉴와 줄바꿈을 관찰했다. 홈 Linux 전환은 키보드 ArrowRight로
+확인했으며 radio check 도구 호출 실패 자체를 제품 클릭 장애로 판단하지 않았다.
+
+공개 후 남은 문구: site/index.html:78의 “공개 전에는…” 안내가 published에서도 남는다.
+site/updates/index.html:54의 “첫 공개 릴리스 검증이 끝나면…”도 후속 조회 완료 후 정리가 필요하다.
+사이트 문구 보정은 별도 변경 승인 대상으로 제시한다. 실제 NSIS/MSI/AppImage의 production
+동일 버전 조회는 여전히 미검증이므로 Stage 5 전체 완료나 Stage 6 진입을 선언하지 않는다.
+
+
+### Stage 5 production 동일 버전 조회 보완 승인 — 2026-09-30
+
+작업지시자는 #82 운영 배포 완료 후 제안한 #69 잔여 검증에 `진행해줘`로 진행을 승인했다.
+기존 `local/task69-validation`의 기록을 보존하며 devel `c3ee834c`를 통합했다. 충돌은 오늘할일
+#69 상태 한 행이며 현재 상태와 #82 행을 함께 유지했다. 제품 소스·upstream·공개 파일은 변경하지 않는다.
+
+기존 release-file acceptance consumer에 `production-updater-check` 조회 모드를 추가한다.
+Windows 2025 별도 runner의 NSIS/MSI, Ubuntu 22.04의 원본 writable AppImage를 실행한다.
+제품 SHA는 `fc3cad15682f35723ab6558d1301e9096f7eec67`, producer run은 `36320371932`다.
+기존 고정 archive ID/digest와 installer SHA 및 Minisign 검증을 재사용한다. NSIS hash는
+공개 승인 목록의 `a5eca9761defb46065187430b8274fe5b7a90c163ffe6f19410011e29af96d0c`다.
+Windows 두 종류는 서로 다른 runner에서 설치/제거하므로 install marker가 섞이지 않는다.
+
+- manifest: `https://postmelee.github.io/alhangeul-tauri/updater/stable.json`, SHA-256
+  `e3c27ee429063ae12d0f12e7188f5ee2a3e498104963900889501228caba88d1`.
+- 실제 운영 manifest HTTP 200·해시·버전, 고정 제품 updater config의 endpoint를 확인한 뒤
+  실제 native `updater_check`를 호출한다. 성공 조건은 idle/manual/operationId 존재,
+  currentVersion=0.1.0, availableVersion/blocker/failure=null이다.
+- disabled/manual fallback, HTTP 오류, 다른 manifest와 조회 실패는 통과하지 않는다.
+  `updater_apply` 및 endpoint override는 사용하지 않는다. 새 버전 설치는 수행하지 않는다.
+- 기존 문서 roundtrip 모드는 유지한다. 이번 조회 모드에서 이미 통과한 roundtrip을 반복하지 않는다.
+- native snapshot, 운영 manifest bytes/hash, GUI 화면, installer/cleanup 및 driver 진단을 남긴다.
+  필수 단계와 evidence upload가 모두 성공해야 통과한다.
+- 문서 위치는 기존 plans/working/orders와 `docs/releases/v0.1.0.md`를 유지한다.
+  Stage 5 완료 보고서와 Stage 6은 실제 원격 결과 대조 후 별도 단계로 진행한다.
+
+로컬 검증: actionlint 두 workflow, GUI 타입 검사, candidate/Pages/updater/workflow 회귀
+93건 통과(실패·skip 0), diff 검사 통과. 운영 manifest 해시와 Release API의 세 installer
+해시도 일치했다. Pages `36692552385` success/head=`c3ee834c`를 재확인했다.
+이는 native production 조회 통과를 의미하지 않는다.
+
+원격 실행 입력은 `alhangeul-desktop.yml`, 기존 `publish/task69-validation`의 검증 commit,
+mode=`production-updater-check`, artifact_platform=`all`, publish_release=`false`다.
+제품 재빌드·서명·게시·Pages 배포 권한은 사용하지 않는다. 승인된 잔여 검증 실행 후 대기하지 않고
+run URL을 보고하며, 작업지시자의 완료 알림 이후 원격 증거를 읽는다. #69는 OPEN을 유지한다.
+
+
+Stage 5 조회 실행: [36695858456](https://github.com/postmelee/alhangeul-tauri/actions/runs/36695858456),
+harness SHA `4b3366e7`. 위의 mode/all/publish=false 입력으로 dispatch했다.
+실행 완료를 기다리지 않았으며 결과는 아직 미수용이다.
+
+
+### Stage 5 원격 증거 수용·완료 — 2026-09-30
+
+작업지시자의 완료 알림 후 run `36695858456`의 exact harness SHA 및 세 대상 success를 확인했다.
+각 ZIP을 다시 내려받아 API digest와 SHA-256을 대조했고 native 자동/수동 조회 응답,
+운영 manifest bytes/hash 및 후보 hash/서명 확인 기록, 설치/cleanup/정책 복원/증거 upload를 확인했다.
+NSIS·MSI·AppImage 모두 실제 production 동일 버전 조회가 통과했다. disabled/error/fallback을
+성공으로 처리하지 않았다. updater 적용은 없었다. screenshot은 MSI 1×1, 나머지는 스킨 선택
+화면이므로 updater UI 표시 검증으로 확대하지 않는다.
+
+`pnpm run build:pages` 및 `pnpm run check:pages` 재확인: source=16/output=19 통과.
+직전 실행 준비의 회귀 93건·타입·actionlint 통과를 재사용했다. 조회 완료로 Stage 5 완료이며
+Stage 6 최종 인계·최종 보고서·PR은 다음 단계 승인 후 진행한다. #69는 OPEN이다.
+
+
+### Stage 6 최종 인계 승인과 완료 — 2026-09-30
+
+작업지시자는 Stage 5 보고 뒤 `진행해줘`로 Stage 6 최종 인계·보고서·PR 준비를 승인했다.
+기존 docs/releases 위치에 제품/tag/Release/생산/Pages/조회 SHA 구분, 보존 자료,
+다음 production N → N+1 입력과 확인 순서, #58/#67 및 잔여 위험을 기록했다.
+Stage 2 독립 보고 파일 누락을 기존 PR #80·성공한 두 producer 근거로 회고 보완했다.
+기존 stage 승인·실행 시점이나 테스트 결과를 새로 만들어 쓰지 않았다.
+
+공개 API의 11 asset과 보존한 공개 read-back bytes를 이름/크기/SHA로 재대조했다.
+원격 tag·Release와 manifest identity도 일치한다. Stage 5 원격 수용을 재사용하고
+문서 정리에 제품/native/full·서명·운영 배포를 반복하지 않는다. Actions/임시 사본은 영구 백업이
+아니며 설치된 runner 상태는 보존하지 않았다. 공개 파일과 고정 기록으로 다음 기준선을 재구성한다.
+
+최종 단계·최종 보고를 묶어 devel 대상 PR을 게시한다. merge/close/정리는 이번에 수행하지 않는다.
