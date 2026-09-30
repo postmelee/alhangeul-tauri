@@ -5,7 +5,7 @@ GitHub Issue: [#69](https://github.com/postmelee/alhangeul-tauri/issues/69)
 마일스톤: M010
 
 2026-09-20 수행계획 승인 후 작성. 같은 스레드의 작업지시자 `진행해줘`로 구현계획 승인.
-현재 상태(2026-09-30): Stage 4 stable/latest 공개 및 11개 파일·3서명 원격 대조 완료. Stage 5 진입 승인 대기.
+현재 상태(2026-09-30): Stage 4 stable/latest 공개 및 11개 파일·3서명 원격 대조 완료. Stage 5 데이터 준비·로컬 검증 완료, 데이터 PR 생성 승인 대기.
 아래 초기 계획과 과거 실행 기록은 보존하며, 최신 결과는 Stage 4 보고서와 문서 끝의 실행 기록을 따른다.
 
 ## 단계 개요
@@ -618,3 +618,29 @@ draft=true / prerelease=false / published_at=null이다. 증거는 로컬 read-b
   사용자 Windows 재설치 점검은 추가로 필요하지 않다. 알려진 제한은 기존 수용 범위 그대로다.
 - 다음은 Stage 5 사이트 다운로드 데이터·updater 전환 준비다. 데이터 PR 생성/병합과
   Pages/manifest 배포는 각각 별도 승인 대상으로 유지하며 #69는 OPEN이다.
+
+### Stage 5 데이터 준비 승인 — 2026-09-30
+
+작업지시자가 Stage 4 보고 뒤 `진행해줘`로 사이트 다운로드·updater 데이터 반영과 로컬 검증을
+승인했다. 기존 #69 검증 브랜치에서 계속한다. 실제 stable API와 Stage 4 read-back inventory를
+사용해 `site/release.json`을 published로 변경하고, 배포 후보에 manifestPublished=true 및 검증
+inventory를 포함한다. 이는 로컬 manifest 생성 준비이며 실제 Pages/manifest 활성화는 별도 배포
+승인 이후다. PR 생성/merge도 별도 승인 경계를 유지한다.
+
+문서 위치는 기존 `docs/releases/v0.1.0.md`와 #69 계획·오늘할일을 유지한다. 공개 인덱스
+`docs/releases/README.md`도 기존 docs/releases 내 상태 표만 실제 공개 결과로 갱신한다.
+고정 fixture 회귀와 source 계약은 이미 상태 독립적이므로 실패 근거 없이 테스트를 변경하지 않는다.
+
+Stage 5 로컬 결과: `pnpm run build:pages`, `pnpm run check:pages` 통과(source 11/output 14).
+`node --test tests/updater-release.test.mjs tests/pages.test.mjs tests/actions-workflows.test.mjs`는
+83 passed, 0 failed/skipped다. 기존 unreleased 및 published manifest true/false fixture를
+변경하지 않았다. 현재 GitHub Release API의 tag·시각·asset URL/크기/digest를 대조했고,
+tracked inventory는 Stage 4에서 검증한 공개 inventory와 전체 일치한다. 생성 manifest의 세
+URL·서명도 일치한다. manifest SHA-256:
+`e3c27ee429063ae12d0f12e7188f5ee2a3e498104963900889501228caba88d1`.
+
+최신 origin/devel `c54498c6fef1de125181175b75995145f715342e`는 현재 브랜치의 조상이며
+추가 통합 충돌이 없다. 기존 `publish/task69-validation`의 열린 PR은 없다. 다음 데이터 PR에는
+Stage 3 검증 harness와 Stage 3/4 기록도 포함된다. 제품 코드·upstream pin·공개 installer는
+변경하지 않았다. PR 생성/merge, Pages dispatch와 production 동일 버전 조회는 아직 수행하지
+않았으므로 Stage 5 전체 완료로 기록하지 않는다.
