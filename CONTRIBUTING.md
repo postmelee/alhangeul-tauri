@@ -40,6 +40,8 @@ Alhangeul에 바로 제보하세요. 개인정보나 기밀 문서를 공개 데
 
 ```sh
 pnpm run check:product-boundary
+pnpm run check:committed-rhwp
+pnpm run test:automation
 pnpm run test:upstream
 pnpm run test:studio
 pnpm run build:studio
@@ -57,3 +59,5 @@ API 이름·코드·파일 경로는 원래 표기를 유지합니다.
 
 실제 개인 문서, 토큰, 인증서나 글꼴 바이너리를 저장소·로그·이슈에 포함하지 마세요.
 샘플이나 자산을 추가한다면 공개·재배포 권한과 출처·라이선스를 확인해 주세요.
+
+devel PR은 [필수 빠른 검증과 보호 정책](docs/operations/BRANCH_PROTECTION.md)을 따른다. merge candidate의 필수 check가 성공하고 작업지시자의 리뷰·병합 승인을 받은 뒤 병합한다. native/package 검증은 변경 영향에 맞춰 별도로 수행한다.

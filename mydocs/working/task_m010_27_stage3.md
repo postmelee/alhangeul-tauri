@@ -34,10 +34,12 @@ live Pages, 서명·Release 게시, App token 발급, 다음 scheduled 실행은
 
 ## 다음 단계 영향
 
-사용자 명시 지시에 따라 최종 보고·devel PR 리뷰/병합을 진행한다. 예약 workflow는 default main 정의를 사용하므로 같은 task head로 main 운영 PR을 별도 리뷰/병합해 pin 적용을 완료한다. 다른 task90을 포함하지 않으며 release/배포를 실행하지 않는다.
+사용자 명시 지시에 따라 최종 보고·devel PR 리뷰/병합을 진행한다. 예약 workflow는 default main 정의를 사용하므로 최신 main62ab74ab와 task27을 통합하는 운영 PR을 별도 리뷰/병합한다. 이미 main에 있는 task90을 보존하고 PR diff는 #27만 포함한다. release/배포를 실행하지 않는다.
 
 ## 승인 요청
 
 같은 스레드의 #27 수행·PR 생성·리뷰·병합 전체 지시를 적용한다. 각 실제 CI 성공과 exact head를 확인한 뒤 진행한다.
 
 원격 source 이후 최종 변경은 mydocs task 기록과 orders뿐이다. 2026-10-01 KST 수용 완료.
+
+운영 통합 추가: devel PR93 merge 확인. fast36736060155(source5daac1dc) Node/Studio·Windows PowerShell 모두 success. full source와 .github·package/lock·apps/crates·third_party/pin diff 없음. 최초 main 운영 계획을 최신 main 보존 통합으로 보완했다.

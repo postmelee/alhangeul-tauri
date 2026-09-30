@@ -57,6 +57,10 @@ GitHub Issue: [#27](https://github.com/postmelee/alhangeul-tauri/issues/27)
 - 첫 run [36723402631](https://github.com/postmelee/alhangeul-tauri/actions/runs/36723402631)은 installer-status/result 실패로 전체 수용하지 않는다. 완료 후 같은 API 계약 재검산 성공과 fresh full 결과를 구분한다.
 - 원격 검증 이후 task 문서만 추가한 경우 source diff를 대조해 동일 source의 검증으로 재사용한다.
 
+### 최신 main 운영 통합 추가 검증
+
+main은 병행 PR92로 갱신됐다. local/task27-main에서 최신 main과 task27을 통합했다. full source dcef92a1와 비교해 .github·package.json·pnpm-lock·apps·crates·third_party·rhwp-core.lock diff는 빈 출력이다. 추가 차이는 기존 main의 README/site/일반 Node 계약과 task 기록이다. [fast36736060155](https://github.com/postmelee/alhangeul-tauri/actions/runs/36736060155), source 5daac1dc42fed197a651de64d96e32e8b7330821에서 Node/Studio·Windows PowerShell 모두 성공했다. 후속 변경은 운영 증거 문서뿐이다. 기존 full의 제품 검증과 추가 fast의 통합 검증을 구분한다.
+
 ## 잔여 위험과 후속 작업
 
 ### 잔여 위험
@@ -68,7 +72,7 @@ GitHub Issue: [#27](https://github.com/postmelee/alhangeul-tauri/issues/27)
 ### 후속 작업 후보
 
 - #28에서 devel PR 자동 검증과 실제 보호 정책을 적용한다.
-- scheduled definition의 기본 브랜치 적용을 위해 task27 동일 head의 main 운영 PR을 리뷰/병합한다. 해당 PR은 Release/Pages 배포가 아니며 task90은 포함하지 않는다.
+- devel PR93을 리뷰·merge했다. 최신 main62ab74ab를 보존하는 운영 통합 branch publish/task27-main으로 #27 변경만 리뷰·병합한다. 이미 main에 있는 task90 변경은 보존하며 운영 PR diff에 추가하지 않는다. Release/Pages 배포는 실행하지 않는다.
 
 ## 작업지시자 승인 요청
 

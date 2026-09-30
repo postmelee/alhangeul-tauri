@@ -82,7 +82,7 @@ Alhangeul은 `rhwp`의 문서 엔진과 웹 editor를 기반으로 다음 제품
 - Linux thumbnail exact-SHA package candidate는 x64 DEB/RPM lifecycle, arm64 DEB lifecycle·직접 PNG와 x64 DEB의 Nautilus·Thunar/Tumbler gate를 통과했다. package-installed system MIME만 사용한 공개 실사용 HWP/HWPX의 서로 구분되는 첫 페이지도 시각 확인했다.
 - 현재 제품 source version은 독립 Alhangeul의 M010 기준선인 `0.1.0`이며, 공식 release나 tag를 뜻하지 않는다.
 - updater runtime·production overlay·서명 build와 시험용 N→N+1 수용은 구현·검증되었다. 공식 Release·production manifest와 실제 공개본 간 업그레이드는 아직 미실행이다. 일반 artifact/debug build는 updater overlay를 사용하지 않는다.
-- GitHub Actions는 활성 상태지만 CI와 Windows/Linux native artifact workflow는 수동 `workflow_dispatch` 전용이다. Actions artifact는 build smoke 결과이며 공식 설치 파일이나 공개 release가 아니다.
+- devel PR은 Node/Studio·Windows PS 빠른 계약과 committed rhwp 정합성을 자동 검증한다. Windows/Linux native artifact workflow는 수동 `workflow_dispatch`를 유지한다. Actions artifact는 build smoke 결과이며 공식 설치 파일이나 공개 release가 아니다.
 
 exact SHA·실행 환경·미해결 위험은 [v0.1.0 기록](releases/v0.1.0.md)을 확인한다. 릴리즈 때는
 [실행 가이드](operations/PUBLIC_RELEASE_RUNBOOK.md)와 [최소 체크리스트](operations/RELEASE_CHECKLIST.md)로
@@ -106,6 +106,7 @@ pnpm run check:product-boundary
 pnpm run check:product-version
 pnpm run check:release-metadata
 pnpm run check:rhwp-pin
+pnpm run check:committed-rhwp
 pnpm run test:automation
 pnpm run test:upstream
 pnpm run test:studio
@@ -292,3 +293,5 @@ pnpm run check:rhwp-pin
 - [공개 실행 가이드](operations/PUBLIC_RELEASE_RUNBOOK.md)
 - [최소 검증 체크리스트](operations/RELEASE_CHECKLIST.md)
 - [버전별 릴리즈 기록](releases/README.md)
+
+개발 source의 PR 필수 gate·리뷰·설정 복구는 [devel 보호 정책](operations/BRANCH_PROTECTION.md)을 따른다. 지원 Windows/Linux의 `pnpm test`는 committed rhwp·automation·upstream·Studio·desktop 검사를 순서대로 수행한다. upstream 후보를 만드는 중간 단계는 기존 전용 검증을 사용한다.

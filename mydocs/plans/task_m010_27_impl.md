@@ -101,3 +101,5 @@ Action version 정렬은 입력 계약과 Windows/Linux full로 확인한다. �
 검사 구현 세부: 기존 pnpm lock의 yaml 2.9.0을 직접 devDependency로 선언하고 YAML AST로 모든 uses를 검사한다. CLI는 설치된 개발 도구만 사용하며 runtime 제품 의존성은 바뀌지 않는다.
 
 Stage3 운영 정렬: 기본 main의 scheduled upstream 정의는 여전히 가변 Action을 사용한다. 사용자 #27 PR 생성·리뷰·병합 지시의 실제 운영 완료를 위해 devel PR 병합 뒤 같은 publish/task27 head로 main 대상 운영 PR도 검토·병합한다. 두 PR diff에서 제품·pin·공개 파일·Pages 데이터 불변을 확인하고, 다른 task의 devel 변경은 head에 포함하지 않는다. 새 tag/Release/Pages 배포는 없다. 이슈 종료·ref 정리는 두 PR merge 확인 뒤 수행한다.
+
+Stage3.4 운영 통합 보완: PR93을 devel에 병합했고 별도 작업자가 PR92로 main을 62ab74ab까지 갱신했다. 현재 main의 task90 변경을 보존하도록 local/task27-main 분리 checkout에서 최신 main과 task27을 통합하고 publish/task27-main 운영 PR을 사용한다. 운영 PR diff에는 #27만 포함한다. 제품·rhwp pin·native 빌드 경로·lock은 기존 검증 source와 같고 추가 main baseline 변경은 README/site/일반 Node 계약이므로 통합 상태의 fresh fast를 추가 확인한다. 기존 full36730348163과 새 fast의 소유 범위를 구분한다. Release/Pages 배포·기존 main 변경의 되돌림은 수행하지 않는다.
