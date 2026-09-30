@@ -30,7 +30,7 @@ jobs:
     timeout-minutes: 45
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.build_ref }}
           submodules: true
@@ -48,11 +48,11 @@ jobs:
             pkg-config \
             time \
             zip
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "24"
           package-manager-cache: false
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
       - name: Cache isolated core compilation
         uses: ./.github/actions/cargo-cache
         with:
@@ -109,7 +109,7 @@ jobs:
       - name: Upload Windows thumbnail core diagnostics
         id: upload-thumbnail-core-diagnostics
         if: ${{ always() && matrix.name == 'windows-x64' }}
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: alhangeul-windows-x64-thumbnail-core
           path: diagnostics/thumbnail-core/**
@@ -175,7 +175,7 @@ jobs:
       - name: Upload Linux thumbnail core diagnostics
         id: upload-linux-thumbnail-core-diagnostics
         if: ${{ always() && startsWith(matrix.name, 'linux-') }}
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: alhangeul-${{ matrix.name }}-thumbnail-core
           path: diagnostics/thumbnail-core-${{ matrix.name }}/**

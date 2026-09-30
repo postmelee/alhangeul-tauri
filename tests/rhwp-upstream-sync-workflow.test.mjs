@@ -40,11 +40,11 @@ test('top-level token은 read-only이고 concurrency가 writer를 직렬화한�
 test('resolve job은 단일 base의 shallow submodule에서 Node 24 read-only helper만 실행한다', () => {
   assert.match(resolveJob, /^    runs-on: ubuntu-24\.04$/m);
   assert.match(resolveJob, /^      GH_TOKEN: \$\{\{ github\.token \}\}$/m);
-  assert.match(resolveJob, /uses: actions\/checkout@v6/);
+  assert.match(resolveJob, /uses: actions\/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1/);
   assert.match(resolveJob, /^          ref: \$\{\{ env\.BASE_BRANCH \}\}$/m);
   assert.match(resolveJob, /^          fetch-depth: 1$/m);
   assert.match(resolveJob, /^          submodules: recursive$/m);
-  assert.match(resolveJob, /uses: actions\/setup-node@v6/);
+  assert.match(resolveJob, /uses: actions\/setup-node@820762786026740c76f36085b0efc47a31fe5020/);
   assert.match(resolveJob, /^          node-version: \$\{\{ env\.NODE_VERSION \}\}$/m);
   assert.match(resolveJob, /node scripts\/check-rhwp-upstream-release\.mjs/);
   assert.match(resolveJob, /args=\(--github-output "\$GITHUB_OUTPUT" --base-branch "\$BASE_BRANCH"\)/);
@@ -125,7 +125,7 @@ test('changed path와 explicit staging 범위를 승인된 파일로 제한한�
 });
 
 test('App token은 모든 검증 뒤 현재 저장소 최소 권한으로만 발급한다', () => {
-  const tokenStep = getStepContaining(candidateJob, 'actions/create-github-app-token@v3.2.0');
+  const tokenStep = getStepContaining(candidateJob, 'actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1');
   assert.match(tokenStep, /client-id: \$\{\{ vars\.ALHANGEUL_AUTOMATION_CLIENT_ID \}\}/);
   assert.match(tokenStep, /private-key: \$\{\{ secrets\.ALHANGEUL_AUTOMATION_APP_PRIVATE_KEY \}\}/);
   assert.match(tokenStep, /permission-contents: write/);
