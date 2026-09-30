@@ -40,12 +40,13 @@ test('미공개 또는 잘못된 버전이면 공개 릴리즈 안내를 만들�
   }
 });
 
-test('이미지 전환은 클릭·focus·hover를 지원하며 touch 이동과 중앙 hover에는 유지된다', async () => {
+test('이미지 전환은 실제 hit 대상에 반응하고 빈 공간·touch 이동에는 유지된다', async () => {
   const script = await readFile(new URL('../site/home-showcase.js', import.meta.url), 'utf8');
   const control = dataset => ({dataset, handlers:{}, setAttribute(k,v){this[k]=v;}, addEventListener(k,v){this.handlers[k]=v;}});
   const pairs = ['windows','linux'].map(os => {
     const controls = ['editor','explorer'].map(view => control({view}));
-    const stack = {...control({}), getBoundingClientRect:()=>({left:0,top:0,width:100,height:100})};
+    const stack = {...control({}), contains: shot => controls.includes(shot)};
+    controls.forEach(item => { item.dataset.shot = item.dataset.view; });
     return {dataset:{productPlatform:os,front:'editor'},controls,stack,
       querySelector:()=>stack,querySelectorAll:()=>controls};
   });
@@ -55,11 +56,20 @@ test('이미지 전환은 클릭·focus·hover를 지원하며 touch 이동과 �
   inputs[0].checked=false;inputs[1].checked=true;inputs[1].handlers.change();
   assert.equal(pairs[0].hidden,true);assert.equal(pairs[1].hidden,false);
   const pair=pairs[1];pair.controls[1].handlers.click();assert.equal(pair.dataset.front,'explorer');
-  pair.stack.handlers.pointermove({pointerType:'mouse',clientX:50,clientY:50});
+  const move = (pointerType, shot) => pair.stack.handlers.pointermove({
+    pointerType, target: {closest:()=>shot},
+  });
+  move('mouse', null); // Empty space must not switch either image.
   assert.equal(pair.dataset.front,'explorer');
-  pair.stack.handlers.pointermove({pointerType:'touch',clientX:1,clientY:99});
+  move('touch', pair.controls[0]);
   assert.equal(pair.dataset.front,'explorer');
-  pair.stack.handlers.pointermove({pointerType:'mouse',clientX:1,clientY:99});
+  move('mouse', pair.controls[0]);
   assert.equal(pair.dataset.front,'editor');
+  move('mouse', pair.controls[1]); // Exposed explorer image, regardless of its coordinates.
+  assert.equal(pair.dataset.front,'explorer');
+  move('mouse', pair.controls[1]); // No alternating state after stacking changes.
+  assert.equal(pair.dataset.front,'explorer');
+  move('mouse', {dataset:{shot:'editor'}}); // An unrelated element is ignored.
+  assert.equal(pair.dataset.front,'explorer');
   pair.controls[1].handlers.focus();assert.equal(pair.controls[1]['aria-pressed'],'true');
 });

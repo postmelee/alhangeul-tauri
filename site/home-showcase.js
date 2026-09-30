@@ -22,13 +22,10 @@ for (const pair of productPairs) {
         control.addEventListener('click', () => bringForward(view));
         control.addEventListener('focus', () => bringForward(view));
     }
-    // Stable exposed edges avoid a hover loop when stacking order changes under the pointer.
+    // Use the browser's hit target so only visible image pixels trigger a switch.
     stack.addEventListener('pointermove', event => {
         if (event.pointerType !== 'mouse' || !matchMedia('(hover: hover)').matches) return;
-        const bounds = stack.getBoundingClientRect();
-        const x = (event.clientX - bounds.left) / bounds.width;
-        const y = (event.clientY - bounds.top) / bounds.height;
-        if (y < 0.13 || x > 0.92) bringForward('explorer');
-        else if (x < 0.08 || y > 0.88) bringForward('editor');
+        const shot = event.target.closest('[data-shot]');
+        if (shot && stack.contains(shot)) bringForward(shot.dataset.shot);
     });
 }
