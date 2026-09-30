@@ -5,7 +5,7 @@ GitHub Issue: [#69](https://github.com/postmelee/alhangeul-tauri/issues/69)
 마일스톤: M010
 
 2026-09-20 수행계획 승인 후 작성. 같은 스레드의 작업지시자 `진행해줘`로 구현계획 승인.
-현재 상태(2026-09-30): Stage 4 stable/latest 공개 및 11개 파일·3서명 원격 대조 완료. Stage 5 PR #81 병합 완료, exact Pages SHA 배포 승인 대기.
+현재 상태(2026-09-30): Stage 4 stable/latest 공개 및 11개 파일·3서명 원격 대조 완료. Stage 5 승인된 Pages 배포 요청 완료(run 36667548738), 결과 미확인.
 아래 초기 계획과 과거 실행 기록은 보존하며, 최신 결과는 Stage 4 보고서와 문서 끝의 실행 기록을 따른다.
 
 ## 단계 개요
@@ -663,3 +663,16 @@ Stage 3 검증 harness와 Stage 3/4 기록도 포함된다. 제품 코드·upstr
 `6e2d8deb3caa22a98a2c4c2d480bc1e9478754f1`을 전달해 사이트 다운로드 및 production
 updater manifest를 게시하는 것이다. 실행 직전 원격 devel 일치를 다시 확인한다.
 이번 턴에는 Pages dispatch를 하지 않았고 production 조회도 아직 미검증이다.
+
+### Stage 5 Pages 배포 실행 승인
+
+작업지시자가 `진행해줘`로 exact devel SHA
+`6e2d8deb3caa22a98a2c4c2d480bc1e9478754f1`의 Pages 및 production updater manifest
+배포를 승인했다. 실행 직전 원격 devel 일치와 중복 실행 부재를 확인했다.
+첫 dispatch는 HTTP 500을 반환했다. 해당 SHA/event의 실행 0개를 재확인한 후 동일 입력으로
+한 번 재시도했고 [run 36667548738](https://github.com/postmelee/alhangeul-tauri/actions/runs/36667548738)
+생성 응답을 받았다. `pages.yml --ref devel`, deploy_ref는 위 SHA다.
+
+사용자 요청대로 Actions 완료를 기다리거나 반복 조회하지 않았다. run 성공, 실제 배포,
+공개 화면·manifest 일치와 설치본 동일 버전 조회는 아직 미확인이다. 사용자가 완료를 알리면
+이 run을 확인하고 승인된 배포 후 검증을 이어간다.
