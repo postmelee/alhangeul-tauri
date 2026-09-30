@@ -8,6 +8,8 @@ import { runInNewContext } from 'node:vm';
 
 const repositoryRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const readSite = (path, encoding) => readFile(join(repositoryRoot, 'site', path), encoding);
+const otherPlatform = ['mac', 'OS'].join('');
+const approvedFamilySiteLink = `<a class="header-link" href="https://postmelee.github.io/alhangeul-${otherPlatform.toLowerCase()}/" aria-label="알한글 ${otherPlatform} 홈페이지로 이동">알한글 for ${otherPlatform}</a>`;
 const screenshots = Object.freeze({
   'assets/windows-app.png': {
     width: 1030,
@@ -60,7 +62,7 @@ test('홈·업데이트·문의 페이지는 승인된 메뉴와 공유 메타�
     assert.match(html, /<title>[^<]+<\/title>/);
     assert.match(html, /<meta name="description" content="[^"]+" \/>/);
     assert.match(html, /<meta property="og:image" content="https:\/\/postmelee\.github\.io\/alhangeul-tauri\/assets\/og-main\.png" \/>/);
-    assert.match(html, /styles\.css\?v=82-2/);
+    assert.match(html, /styles\.css\?v=90-4/);
     assert.match(html, new RegExp(`<link rel="canonical" href="${escapeRegExp(expected.canonical)}" \\/>`));
     assert.match(html, /href="https:\/\/github\.com\/postmelee\/alhangeul-tauri"/);
     for (const link of expected.links) {
@@ -68,6 +70,7 @@ test('홈·업데이트·문의 페이지는 승인된 메뉴와 공유 메타�
     }
     const header = html.match(/<header[\s\S]*?<\/header>/)?.[0] ?? '';
     const footer = html.match(/<footer[\s\S]*?<\/footer>/)?.[0] ?? '';
+    assert.equal(header.split('\n').filter((line) => line.trim() === approvedFamilySiteLink).length, 1);
     assert.doesNotMatch(header, />다운로드<\/a>/);
     assert.match(footer, /class="site-footer-inner"/);
     assert.match(footer, />MIT License<\/a>/);
@@ -253,14 +256,15 @@ test('홈은 일반 화면에서 스크롤을 막고 작은 화면 fallback과 �
   assert.match(script, /\['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'\]/);
 });
 
-test('Pages source에는 지원 범위 밖 제품 표현이 없다', async () => {
+test('Pages source는 승인된 외부 홈페이지 안내 외 지원 범위 밖 제품 표현이 없다', async () => {
   const source = [
     await readSite('index.html', 'utf8'),
     await readSite('updates/index.html', 'utf8'),
     await readSite('feedback/index.html', 'utf8'),
     await readSite('styles.css', 'utf8'),
     await readSite('script.js', 'utf8'),
-  ].join('\n').toLowerCase();
+  ].map((content) => content.replace(/<header[\s\S]*?<\/header>/,
+    (header) => header.replace(approvedFamilySiteLink, ''))).join('\n').toLowerCase();
   const forbidden = [
     ['thumb', 'nail'],
     ['quick', ' look'],

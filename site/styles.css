@@ -31,7 +31,7 @@ button { font: inherit; }
 .brand-link { display: flex; align-items: center; gap: 10px; font-size: 21px; font-weight: 600; line-height: 1; text-decoration: none; }
 .brand-link img { width: 28px; height: 28px; border-radius: 8px; }
 .header-actions { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 18px; }
-.header-link { display: flex; min-height: 44px; align-items: center; font-size: 14px; line-height: 1; text-decoration: none; transition: color var(--quick) var(--ease); }
+.header-link { display: flex; min-height: 44px; align-items: center; font-size: 14px; line-height: 1; text-decoration: none; white-space: nowrap; transition: color var(--quick) var(--ease); }
 .header-link:hover { color: var(--blue); }
 :focus-visible { outline: 3px solid rgba(0, 113, 227, 0.42); outline-offset: 3px; }
 
@@ -150,10 +150,11 @@ a.download-option:hover { background: var(--blue-soft); }
     .site-footer-inner nav { grid-column: 1; justify-self: start; }
 }
 @media (max-width: 520px) {
-    .site-header-inner { width: min(calc(100% - 24px), 980px); gap: 12px; }
+    .site-header { height: auto; }
+    .site-header-inner { width: min(calc(100% - 24px), 980px); flex-wrap: wrap; gap: 0; padding-block: 6px; }
     .site-footer-inner { width: min(calc(100% - 24px), 980px); }
     .brand-link span { font-size: 17px; }
-    .header-actions { gap: 8px; }
+    .header-actions { width: 100%; justify-content: space-between; gap: 8px; }
     .header-link { font-size: 12px; }
     .feedback-contact-card { padding: 20px; }
     .feedback-contact-card h2 { font-size: 24px; }
@@ -184,5 +185,4 @@ a.download-option:hover { background: var(--blue-soft); }
     .download-picker .page-action-button { width: max-content; margin-inline: auto; }
     .download-options { position: static; width: 100%; margin-top: 8px; transform: none; }
 }
-@media (max-width: 380px) { .brand-link span { display: none; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; } }

@@ -58,9 +58,13 @@ git diff --check
   https://postmelee.github.io/alhangeul-macos/를 추가한다.
 - 기존 링크의 탐색 동작을 유지하고 모바일 520px 이하에서는 브랜드와 nav를 두 행으로 배치한다.
 - 세 HTML의 stylesheet cache key만 갱신한다. 본문·다운로드·updater 데이터는 보존한다.
+- 기존 Pages 디자인 테스트의 메뉴·cache 기대를 반영한다. 제품 경계 검사의 기존 exact-line
+  예외 패턴에 세 페이지의 외부 헤더 링크만 등록하며 build output의 같은 세 경로도 포함한다.
+  허용 줄 밖의 제품 표현·변경된 목적지·다른 소스 파일 검출을 기존 product-boundary 테스트에 보완한다.
 - 등록명 rhwp-mac, origin alhangeul-macos인 프로젝트에 새 세션을 생성해 사용자가 요청한
   rhwp 배지·‘알한글 for Windows / Linux’ 링크의 구현·검증·PR 작업을 전달한다.
-- 검증: pnpm run build:pages, pnpm run check:pages, node --test tests/pages.test.mjs,
+- 검증: pnpm run build:pages, pnpm run check:pages, pnpm run check:product-boundary,
+  node --test tests/pages.test.mjs tests/product-boundary.test.mjs,
   원문 비교·manifest hash, 로컬 1280px/320px 실제 헤더·링크·다운로드 확인.
 - 커밋: `Task #90 Stage 4 + 최종 보고서: 운영체제별 홈페이지 링크와 모바일 헤더 보완`.
 - 기존 PR #91의 제목·본문·수용 기준·보고를 최종 범위로 갱신한다. 새 CI를 기다리지 않는다.
