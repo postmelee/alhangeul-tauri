@@ -34,7 +34,7 @@ test('홈은 OS 선택과 데이터 기반 다운로드, 실제 화면 쌍을 �
   }
   assert.equal([...html.matchAll(/class="download-platform-radio"/g)].length, 2);
   assert.match(html, /<h2 id="install-title">다운로드<\/h2>/);
-  assert.match(html, /data-release-formats/);
+  assert.doesNotMatch(html, /data-release-formats/);
   assert.match(html, /<noscript>[\s\S]*updates\/#latest-download/);
   assert.doesNotMatch(html, /releases\/download\//);
 });
@@ -167,7 +167,7 @@ for (const manifestPublished of [false, true]) {
   );
   assert.doesNotMatch(menuAction.replacement['aria-label'], /준비 중/);
   assert.equal(note.replacement.href, 'https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.2.0');
-  assert.match(message.textContent, /0\.2\.0 안정 릴리스/);
+  assert.match(message.textContent, /최신 버전 v0\.2\.0/);
   });
 }
 
@@ -229,13 +229,13 @@ test('홈은 일반 화면에서 스크롤을 막고 작은 화면 fallback과 �
   assert.match(css, /--standard: 280ms/);
   assert.match(css, /translateY\(12px\)/);
   assert.match(css, /font-family: system-ui, sans-serif/);
-  assert.match(css, /\.home-copy h1 \{[^}]*font-size: clamp\(2\.65rem, 3\.8vw, 3\.25rem\)/);
+  assert.match(css, /\.home-copy h1 \{[^}]*font-size: clamp\(1\.75rem, 3\.2vw, 2\.625rem\)/);
   assert.match(css, /\.headline-line \{ display: block; white-space: nowrap; \}/);
   assert.match(css, /\.product-window \{[^}]*border: 0; border-radius: 2px;/);
   for (const pattern of [/\.download-chevron \{[^}]*width: 16px; height: 16px/, /\.download-chevron path \{[^}]*stroke: currentcolor/]) assert.match(css, pattern);
   for (const pattern of [/\.updates-actions \{[^}]*flex-wrap: wrap; align-items: center; justify-content: center/, /@media \(max-width: 820px\)[\s\S]*\.updates-actions \{ justify-content: center; \}/, /@media \(max-width: 340px\)[\s\S]*\.updates-actions \{ flex-direction: column; align-items: center; \}/, /\.download-picker \.page-action-button \{ width: max-content; margin-inline: auto; \}/, /\.download-options \{ position: static; width: 100%; margin-top: 8px; transform: none; \}/]) assert.match(css, pattern);
   for (const pattern of [/\.updates-hero h1 \{[^}]*font-size: clamp\(40px, 7vw, 72px\)/, /\.updates-hero > p \{[^}]*font-size: 21px/, /\.updates-section h2 \{[^}]*font-size: 26px/, /\.feedback-contact-card h2 \{[^}]*font-size: 26px/]) assert.match(css, pattern);
-  assert.match(css, /\.install-heading h2 \{[^}]*color: var\(--muted\); font-size: 15px; font-weight: 600/);
+  assert.match(css, /\.install-heading h2 \{[^}]*color: var\(--ink\); font-size: 17px; font-weight: 600/);
   assert.match(css, /\.download-platform-switch \{[^}]*grid-template-columns: repeat\(2, minmax\(92px, 1fr\)\)/);
   assert.match(css, /#download-platform-windows:checked ~ \.download-platform-panels \.windows-panel/);
   assert.match(css, /\.download-platform-panels \{ min-height: 139px/);

@@ -1,5 +1,3 @@
-.release-formats { margin: 6px 0 0; color: var(--subtle); font-size: 12px; line-height: 1.5; word-break: keep-all; }
-.release-formats:empty { display: none; }
 .home-product { display: flex; flex-direction: column; height: auto; gap: 12px; isolation: isolate; }
 .product-pair { width: 100%; }
 .product-pair[hidden] { display: none; }

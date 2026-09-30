@@ -17,22 +17,17 @@ function context(lists = [], fetch = async () => ({ok:false})) {
     querySelectorAll: selector => selector === '[data-package-platform]' ? lists : [],
   } };
 }
-test('배포 목록 추가는 문구와 행을 같은 배열에서 확장하며 잘못된 URL은 안내에 포함하지 않는다', () => {
+test('배포 목록 추가는 배열에서 다운로드 행을 확장한다', () => {
   const list = element(); list.dataset.packagePlatform = 'windows';
   const ctx = context();
   runInNewContext(source, ctx);
   ctx.document.querySelectorAll = selector => selector === '[data-package-platform]' ? [list] : [];
-  const result = runInNewContext(`
+  runInNewContext(`
     distributionChannels[0].formats.push({name:'ZIP', target:'windows-zip', description:'휴대용'});
     renderPackageLists();
-    describeReleaseFormats({tag:'v0.2.0',downloads:{
-      'windows-x86_64-nsis':'https://evil.example/installer.exe',
-      'windows-zip':'https://github.com/postmelee/alhangeul-tauri/releases/download/v0.2.0/app.zip'
-    }});
   `, ctx);
   assert.equal(list.children.length, 3);
   assert.equal(list.children[2].children[0].children[0].textContent, 'ZIP');
-  assert.equal(result, 'Windows x64: ZIP를 직접 받을 수 있습니다.');
 });
 test('미공개 또는 잘못된 버전이면 공개 릴리즈 안내를 만들지 않는다', async () => {
   for (const release of [null, {status:'unreleased'}, {status:'published',version:'bad',tag:'vbad'}]) {

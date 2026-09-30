@@ -1,5 +1,5 @@
 const siteRoot = document.body.dataset.siteRoot ?? './';
-// Add distribution formats here; home rows and release guidance share this catalog.
+// Add distribution formats here; home download rows share this catalog.
 const distributionChannels = [
     { platform: 'windows', label: 'Windows', architecture: 'x64', formats: [
         { name: 'NSIS', target: 'windows-x86_64-nsis', description: '일반 설치 권장' },
@@ -51,15 +51,12 @@ async function setupReleaseData() {
         if (!isPublishedRelease(release)) return;
 
         for (const message of document.querySelectorAll('[data-release-message]')) {
-            message.textContent = `알한글 ${release.version} 안정 릴리스가 준비되었습니다.`;
+            message.textContent = `최신 버전 v${release.version}`;
         }
         for (const action of document.querySelectorAll('[data-download-target]')) {
             const url = release.downloads[action.dataset.downloadTarget];
             if (!isExactDownload(url, release.tag)) continue;
             hydrateDownloadAction(action, url, release);
-        }
-        for (const message of document.querySelectorAll('[data-release-formats]')) {
-            message.textContent = describeReleaseFormats(release);
         }
         for (const note of document.querySelectorAll('[data-install-note]')) {
             note.textContent = '설치 방식별 안내와 변경 내용은 업데이트 페이지에서 확인하세요.';
@@ -168,11 +165,3 @@ function renderPackageLists() {
     }
 }
 
-function describeReleaseFormats(release, channels = distributionChannels) {
-    const descriptions = channels.flatMap(channel => {
-        const names = channel.formats.filter(format => format.target
-            && isExactDownload(release.downloads[format.target], release.tag)).map(format => format.name);
-        return names.length ? [`${channel.label} ${channel.architecture}: ${names.join('·')}`] : [];
-    });
-    return descriptions.length ? `${descriptions.join(' / ')}를 직접 받을 수 있습니다.` : '';
-}
