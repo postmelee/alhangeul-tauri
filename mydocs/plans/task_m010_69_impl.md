@@ -5,7 +5,7 @@ GitHub Issue: [#69](https://github.com/postmelee/alhangeul-tauri/issues/69)
 마일스톤: M010
 
 2026-09-20 수행계획 승인 후 작성. 같은 스레드의 작업지시자 `진행해줘`로 구현계획 승인.
-현재 상태(2026-09-30): Stage 4 stable/latest 공개 및 11개 파일·3서명 원격 대조 완료. Stage 5 Pages 첫 실행은 게시 API 500 실패, 동일 run 재실행 요청 완료.
+현재 상태(2026-09-30): Stage 4 stable/latest 공개 및 11개 파일·3서명 원격 대조 완료. Stage 5 Pages 재시도는 중복 artifact 실패, 새 run 36668279136 요청 완료.
 아래 초기 계획과 과거 실행 기록은 보존하며, 최신 결과는 Stage 4 보고서와 문서 끝의 실행 기록을 따른다.
 
 ## 단계 개요
@@ -689,3 +689,16 @@ failure였다. production `/updater/stable.json`은 HTTP 404로 아직 게시되
 기존 승인 범위에서 `gh run rerun 36667548738 --failed`로 같은 SHA의 실패 작업을 한 번
 재실행했고 CLI 요청이 성공했다. 코드·데이터·권한 설정 변경은 없고 완료를 기다리지 않았다.
 실제 게시 및 production 검증은 재실행 결과 확인 전까지 미완료로 유지한다.
+
+### Stage 5 중복 Pages artifact 실패와 새 실행
+
+run 36667548738 attempt 2는 build/check/tests/upload를 통과했지만 deploy-pages가 같은 이름의
+`github-pages` artifact 2개를 발견해 배포 생성 전에 실패했다. 이전 HTTP 500과 다른 원인이다.
+artifact ID 11076572172와 11077490415가 모두 expired=false로 존재함을 API에서 확인했다.
+동일 run 전체 작업 재시도가 업로드도 반복하는 점을 놓친 복구 선택이었다. 실패 증거는 보존한다.
+
+원격 devel이 승인 SHA `6e2d8deb3caa22a98a2c4c2d480bc1e9478754f1` 그대로이고
+Pages 실행이 완료 상태임을 확인했다. 코드·설정·승인 입력 변경 없이 새 workflow_dispatch로
+[run 36668279136](https://github.com/postmelee/alhangeul-tauri/actions/runs/36668279136)을 생성했다.
+`pages.yml --ref devel`, deploy_ref는 동일 SHA다. 새 run은 이전 run의 artifact와 분리된다.
+완료를 기다리지 않았으며 실제 배포와 production 검증은 결과 확인 전까지 미완료다.
