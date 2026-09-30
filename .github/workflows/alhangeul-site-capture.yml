@@ -1,0 +1,210 @@
+name: Alhangeul site screenshot capture
+on:
+  workflow_call:
+permissions:
+  contents: read
+  actions: read
+env:
+  GIT_CONFIG_COUNT: '1'
+  GIT_CONFIG_KEY_0: core.autocrlf
+  GIT_CONFIG_VALUE_0: 'false'
+jobs:
+  windows-app:
+    name: Capture Windows app and try Explorer
+    runs-on: windows-2025
+    timeout-minutes: 50
+    env:
+      CANDIDATE_KIND: msi
+      ALHANGEUL_GUI_BUILD_REF: fc3cad15682f35723ab6558d1301e9096f7eec67
+      ALHANGEUL_GUI_NATIVE_RUN_ID: '36320371932'
+      ALHANGEUL_GUI_APP_VERSION: '0.1.0'
+      ALHANGEUL_GUI_DRIVER_VERSION: tauri-driver 2.0.6
+      ALHANGEUL_GUI_TIMEOUT_MS: '120000'
+      NO_AT_BRIDGE: '0'
+      GTK_MODULES: gail:atk-bridge
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          submodules: true
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Check capture PowerShell syntax
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            "$PWD/scripts/site-capture/windows-window.ps1", [ref]$tokens, [ref]$errors) | Out-Null
+          if ($errors.Count) { throw ($errors | Out-String) }
+      - name: Prepare evidence and GUI paths
+        shell: bash
+        run: |
+          node --input-type=module <<'JS'
+          import {mkdirSync, appendFileSync, writeFileSync} from 'node:fs';
+          import {resolve, join} from 'node:path';
+          import {homedir} from 'node:os';
+          mkdirSync('candidate-evidence', {recursive:true});
+          writeFileSync('candidate-evidence/environment.json', JSON.stringify({
+            os:process.platform, architecture:process.arch, harnessSha:process.env.GITHUB_SHA,
+            runner:process.env.RUNNER_OS, kind:process.env.CANDIDATE_KIND,
+          }, null, 2));
+          appendFileSync(process.env.GITHUB_ENV, [
+            `ALHANGEUL_GUI_FIXTURE_ROOT=${process.cwd()}`,
+            `ALHANGEUL_GUI_OUTPUT_DIR=${resolve('candidate-evidence')}`,
+            `ALHANGEUL_GUI_DRIVER_PATH=${join(homedir(), '.cargo/bin', process.platform==='win32'?'tauri-driver.exe':'tauri-driver')}`,
+          ].join('\n')+'\n');
+          JS
+      - name: Verify exact published-candidate bytes and signatures
+        id: candidate
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/ci/release-file-candidate.mjs
+      - name: Install harness dependencies
+        shell: bash
+        run: |
+          corepack enable
+          pnpm install --frozen-lockfile
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install tauri-driver only
+        shell: bash
+        run: cargo install tauri-driver --version 2.0.6 --locked
+      - name: Configure elevated WebView2 automation policy
+        id: webview-policy
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: >-
+          ./scripts/updater/windows-webview2-automation-policy.ps1
+          -Phase Setup -OutputDirectory $env:ALHANGEUL_GUI_OUTPUT_DIR
+      - name: Install exact MSI
+        id: install
+        if: runner.os == 'Windows'
+        shell: powershell
+        env:
+          CANDIDATE_ROOT: ${{ steps.candidate.outputs.artifact_root }}
+        run: |
+          & scripts/updater/windows-native-acceptance.ps1 -Phase Install -Kind msi `
+            -OutputDirectory "$env:ALHANGEUL_GUI_OUTPUT_DIR\installer" `
+            -ArtifactRoot $env:CANDIDATE_ROOT -ExpectedVersion '0.1.0'
+          if (-not $?) { throw 'MSI installation failed' }
+      - name: Prepare gallery samples and installed app
+        id: prepare-app
+        shell: bash
+        env:
+          MSI_APP_PATH: ${{ steps.install.outputs.app_path }}
+        run: |
+          node scripts/site-capture/prepare-samples.mjs
+          echo "ALHANGEUL_GUI_APP_PATH=$MSI_APP_PATH" >> "$GITHUB_ENV"
+      - name: Native document roundtrip on Windows
+        id: windows-gui
+        if: runner.os == 'Windows'
+        shell: bash
+        run: pnpm exec wdio run tests/gui/wdio.site-capture.conf.ts
+      - name: Cleanup installed MSI
+        id: cleanup
+        if: always() && runner.os == 'Windows' && steps.candidate.outcome == 'success'
+        shell: powershell
+        run: |
+          & scripts/updater/windows-native-acceptance.ps1 -Phase Cleanup -Kind msi `
+            -OutputDirectory "$env:ALHANGEUL_GUI_OUTPUT_DIR\installer"
+          if (-not $?) { throw 'MSI cleanup failed' }
+      - name: Restore elevated WebView2 automation policy
+        id: restore-webview-policy
+        if: always() && runner.os == 'Windows'
+        shell: pwsh
+        run: >-
+          ./scripts/updater/windows-webview2-automation-policy.ps1
+          -Phase Cleanup -OutputDirectory $env:ALHANGEUL_GUI_OUTPUT_DIR
+      - name: Record outcomes
+        if: always()
+        shell: bash
+        env:
+          CANDIDATE: ${{ steps.candidate.outcome }}
+          INSTALL: ${{ steps.install.outcome }}
+          PREPARE_APP: ${{ steps.prepare-app.outcome }}
+          WINDOWS_GUI: ${{ steps.windows-gui.outcome }}
+          CLEANUP: ${{ steps.cleanup.outcome }}
+          WEBVIEW_POLICY_SETUP: ${{ steps.webview-policy.outcome }}
+          WEBVIEW_POLICY_RESTORE: ${{ steps.restore-webview-policy.outcome }}
+        run: |
+          node --input-type=module <<'JS'
+          import {mkdirSync,writeFileSync} from 'node:fs';
+          mkdirSync('candidate-evidence',{recursive:true});
+          const keys=['CANDIDATE','INSTALL','PREPARE_APP','WINDOWS_GUI','CLEANUP','WEBVIEW_POLICY_SETUP','WEBVIEW_POLICY_RESTORE'];
+          writeFileSync('candidate-evidence/step-outcomes.json',JSON.stringify(
+            Object.fromEntries(keys.map(k=>[k,process.env[k]])),null,2));
+          JS
+      - name: Upload evidence
+        id: upload
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: alhangeul-site-windows-${{ github.run_id }}
+          path: |
+            candidate-evidence/**
+            capture-samples/**
+          if-no-files-found: error
+      - name: Require candidate, GUI, cleanup and evidence
+        if: always()
+        shell: bash
+        env:
+          UPLOAD: ${{ steps.upload.outcome }}
+        run: |
+          node --input-type=module <<'JS'
+          import {readFileSync} from 'node:fs';
+          const state=JSON.parse(readFileSync('candidate-evidence/step-outcomes.json'));
+          const required=['CANDIDATE','INSTALL','PREPARE_APP','WINDOWS_GUI','CLEANUP','WEBVIEW_POLICY_SETUP','WEBVIEW_POLICY_RESTORE'];
+          if(process.env.UPLOAD!=='success'||required.some(k=>state[k]!=='success')) throw new Error('Incomplete final file acceptance');
+          JS
+
+  linux-gallery:
+    name: Capture Linux eight-sample gallery
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          submodules: true
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Verify original Linux archive
+        env:
+          CANDIDATE_KIND: rpm
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/ci/release-linux-candidate.mjs
+      - name: Install exact DEB and gallery dependencies
+        run: |
+          echo '778bb9cf85a9f35bedb63650a34a1d398092aca7de0a27fdcbef608b92755802  candidate/deb/Alhangeul_0.1.0_amd64.deb' | sha256sum --check
+          sudo apt-get update
+          sudo apt-get install -y "$PWD/candidate/deb/Alhangeul_0.1.0_amd64.deb" \
+            nautilus openbox dbus-x11 xvfb scrot xdotool imagemagick python3-pil fonts-noto-cjk fonts-unfonts-core
+          node scripts/site-capture/prepare-samples.mjs
+          dpkg-query -W > candidate-evidence/packages.txt
+      - name: Observe actual thumbnails and capture gallery
+        env:
+          XDG_CACHE_HOME: ${{ github.workspace }}/capture-cache
+        run: |
+          xvfb-run --auto-servernum --server-args='-screen 0 1400x1000x24 -nolisten tcp' \
+            dbus-run-session -- bash scripts/site-capture/linux-gallery.sh
+      - name: Upload gallery evidence and exact samples
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: alhangeul-site-linux-${{ github.run_id }}
+          path: |
+            candidate-evidence/**
+            capture-samples/**
+            capture-cache/thumbnails/**
+          if-no-files-found: error

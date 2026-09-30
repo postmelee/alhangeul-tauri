@@ -1,0 +1,66 @@
+[
+  {
+    "name": "01-사업계획서.hwp",
+    "source": "samples/biz_plan.hwp",
+    "sourceCommit": "f1f9c6ae58344ee9368996d3543f76b9345cf227",
+    "sha256": "8b786d6824622afae2220b203beeef6e5592157e1896fea055ebc602817113c1",
+    "pages": 6,
+    "preview": "wasm-svg-first-page"
+  },
+  {
+    "name": "02-업무계획.hwp",
+    "source": "samples/2022년 국립국어원 업무계획.hwp",
+    "sourceCommit": "f1f9c6ae58344ee9368996d3543f76b9345cf227",
+    "sha256": "ab59c95dde8cd42e490f7b9a3deb13a9142969706e784053237bf9dc625150e9",
+    "pages": 35,
+    "preview": "wasm-svg-first-page"
+  },
+  {
+    "name": "03-서식.hwpx",
+    "source": "samples/hwpx/form-002.hwpx",
+    "sourceCommit": "f1f9c6ae58344ee9368996d3543f76b9345cf227",
+    "sha256": "5ab8f7c368e02538f75f1cd2bd82bbd8de2f925a54ba7b38ec9395b2cdb804d4",
+    "pages": 10,
+    "preview": "wasm-svg-first-page"
+  },
+  {
+    "name": "04-수학시험.hwp",
+    "source": "samples/exam_math.hwp",
+    "sourceCommit": "f1f9c6ae58344ee9368996d3543f76b9345cf227",
+    "sha256": "e40e3d675373c8efb3a844fc71f209600d3b0db987a04b3808b8e74a6b1671fe",
+    "pages": 20,
+    "preview": "wasm-svg-first-page"
+  },
+  {
+    "name": "05-과학시험.hwp",
+    "source": "samples/exam_science.hwp",
+    "sourceCommit": "f1f9c6ae58344ee9368996d3543f76b9345cf227",
+    "sha256": "22d29786a80d68a9b2ad9294c2dab4915e0eced941e790e37390b14312b8b6a8",
+    "pages": 4,
+    "preview": "wasm-svg-first-page"
+  },
+  {
+    "name": "06-추진일정.hwpx",
+    "source": "samples/추진일정.hwpx",
+    "sourceCommit": "f1f9c6ae58344ee9368996d3543f76b9345cf227",
+    "sha256": "0a025754efc239ecc20f291f7a9f065e8d73d1a5352b75096811242e0df93954",
+    "pages": 1,
+    "preview": "wasm-svg-first-page"
+  },
+  {
+    "name": "07-막대차트.hwpx",
+    "source": "samples/chart/세로막대형/묶은세로막대형.hwpx",
+    "sourceCommit": "f1f9c6ae58344ee9368996d3543f76b9345cf227",
+    "sha256": "e8ffa2ef81e630b5ac7e0a230c101924b96bd4d61be958cf608161bfe9a7365a",
+    "pages": 1,
+    "preview": "wasm-svg-first-page"
+  },
+  {
+    "name": "08-그림표.hwp",
+    "source": "samples/pic-in-table-01.hwp",
+    "sourceCommit": "f1f9c6ae58344ee9368996d3543f76b9345cf227",
+    "sha256": "c73145d60f3f0b041bc8fee64b65e6d419a1fc78aa62a90fa150b36f35278f4a",
+    "pages": 22,
+    "preview": "wasm-svg-first-page"
+  }
+]
