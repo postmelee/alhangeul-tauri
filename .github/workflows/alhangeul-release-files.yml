@@ -1,0 +1,205 @@
+name: Alhangeul final release file acceptance
+on:
+  workflow_call:
+    inputs:
+      windows_only:
+        type: boolean
+        default: false
+      production_check:
+        type: boolean
+        default: false
+permissions:
+  contents: read
+  actions: read
+env:
+  GIT_CONFIG_COUNT: '1'
+  GIT_CONFIG_KEY_0: core.autocrlf
+  GIT_CONFIG_VALUE_0: 'false'
+jobs:
+  accept:
+    name: Accept final ${{ matrix.kind }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(inputs.production_check && '[{"kind":"nsis","os":"windows-2025"},{"kind":"msi","os":"windows-2025"},{"kind":"appimage","os":"ubuntu-22.04"}]' || inputs.windows_only && '[{"kind":"msi","os":"windows-2025"}]' || '[{"kind":"msi","os":"windows-2025"},{"kind":"appimage","os":"ubuntu-22.04"}]') }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 50
+    env:
+      ALHANGEUL_GUI_PRODUCTION_CHECK: ${{ inputs.production_check }}
+      CANDIDATE_KIND: ${{ matrix.kind }}
+      ALHANGEUL_GUI_BUILD_REF: fc3cad15682f35723ab6558d1301e9096f7eec67
+      ALHANGEUL_GUI_NATIVE_RUN_ID: '36320371932'
+      ALHANGEUL_GUI_APP_VERSION: '0.1.0'
+      ALHANGEUL_GUI_DRIVER_VERSION: tauri-driver 2.0.6
+      ALHANGEUL_GUI_TIMEOUT_MS: '120000'
+      NO_AT_BRIDGE: '0'
+      GTK_MODULES: gail:atk-bridge
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          submodules: true
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Prepare evidence and GUI paths
+        shell: bash
+        run: |
+          node --input-type=module <<'JS'
+          import {mkdirSync, appendFileSync, writeFileSync} from 'node:fs';
+          import {resolve, join} from 'node:path';
+          import {homedir} from 'node:os';
+          mkdirSync('candidate-evidence', {recursive:true});
+          writeFileSync('candidate-evidence/environment.json', JSON.stringify({
+            os:process.platform, architecture:process.arch, harnessSha:process.env.GITHUB_SHA,
+            runner:process.env.RUNNER_OS, kind:process.env.CANDIDATE_KIND,
+          }, null, 2));
+          appendFileSync(process.env.GITHUB_ENV, [
+            `ALHANGEUL_GUI_FIXTURE_ROOT=${process.cwd()}`,
+            `ALHANGEUL_GUI_OUTPUT_DIR=${resolve('candidate-evidence')}`,
+            `ALHANGEUL_GUI_DRIVER_PATH=${join(homedir(), '.cargo/bin', process.platform==='win32'?'tauri-driver.exe':'tauri-driver')}`,
+          ].join('\n')+'\n');
+          JS
+      - name: Verify exact published-candidate bytes and signatures
+        id: candidate
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/ci/release-file-candidate.mjs
+      - name: Install harness dependencies
+        shell: bash
+        run: |
+          corepack enable
+          pnpm install --frozen-lockfile
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install tauri-driver only
+        shell: bash
+        run: cargo install tauri-driver --version 2.0.6 --locked
+      - name: Install Linux GUI dependencies
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libfuse2 at-spi2-core dbus-x11 fonts-noto-cjk fonts-unfonts-core \
+            gir1.2-gtk-3.0 libgtk-3-0 libwebkit2gtk-4.1-0 openbox python3-gi python3-pyatspi \
+            scrot webkit2gtk-driver xdotool xvfb
+          test -c /dev/fuse
+      - name: Configure elevated WebView2 automation policy
+        id: webview-policy
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: >-
+          ./scripts/updater/windows-webview2-automation-policy.ps1
+          -Phase Setup -OutputDirectory $env:ALHANGEUL_GUI_OUTPUT_DIR
+      - name: Install exact Windows package
+        id: install
+        if: runner.os == 'Windows'
+        shell: powershell
+        env:
+          CANDIDATE_ROOT: ${{ steps.candidate.outputs.artifact_root }}
+        run: |
+          & scripts/updater/windows-native-acceptance.ps1 -Phase Install -Kind $env:CANDIDATE_KIND `
+            -OutputDirectory "$env:ALHANGEUL_GUI_OUTPUT_DIR\installer" `
+            -ArtifactRoot $env:CANDIDATE_ROOT -ExpectedVersion '0.1.0'
+          if (-not $?) { throw 'Windows installation failed' }
+      - name: Select installed executable or writable AppImage
+        id: prepare-app
+        shell: bash
+        env:
+          MSI_APP_PATH: ${{ steps.install.outputs.app_path }}
+          INSTALLER_PATH: ${{ steps.candidate.outputs.installer }}
+        run: |
+          node --input-type=module <<'JS'
+          import {accessSync, chmodSync, constants, appendFileSync, writeFileSync} from 'node:fs';
+          import {dirname} from 'node:path';
+          const app=process.platform==='win32'?process.env.MSI_APP_PATH:process.env.INSTALLER_PATH;
+          if (!app) throw new Error('missing verified application');
+          if (process.platform==='linux') {
+            chmodSync(app,0o755);
+            accessSync(app,constants.R_OK|constants.W_OK|constants.X_OK);
+            accessSync(dirname(app),constants.W_OK|constants.X_OK);
+            writeFileSync('candidate-evidence/appimage-permissions.json',JSON.stringify({
+              path:app,uid:process.getuid(),fileWritable:true,parentWritable:true,
+              launchMode:'original-appimage-fuse',productionUpdateTested:false,
+            },null,2));
+          }
+          appendFileSync(process.env.GITHUB_ENV,`ALHANGEUL_GUI_APP_PATH=${app}\n`);
+          JS
+      - name: Native release verification on Windows
+        id: windows-gui
+        if: runner.os == 'Windows'
+        shell: bash
+        run: pnpm exec wdio run tests/gui/wdio.release-files.conf.ts
+      - name: Native release verification on Linux
+        id: linux-gui
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          # shellcheck disable=SC2016
+          xvfb-run --auto-servernum --server-args='-screen 0 1920x1080x24 -nolisten tcp' \
+            dbus-run-session -- bash -euo pipefail -c '
+              openbox >candidate-evidence/openbox.log 2>&1 &
+              wm_pid=$!
+              trap '\''kill "$wm_pid" 2>/dev/null || true'\'' EXIT
+              pnpm exec wdio run tests/gui/wdio.release-files.conf.ts
+            '
+      - name: Cleanup installed Windows package
+        id: cleanup
+        if: always() && runner.os == 'Windows' && steps.candidate.outcome == 'success'
+        shell: powershell
+        run: |
+          & scripts/updater/windows-native-acceptance.ps1 -Phase Cleanup -Kind $env:CANDIDATE_KIND `
+            -OutputDirectory "$env:ALHANGEUL_GUI_OUTPUT_DIR\installer"
+          if (-not $?) { throw 'Windows cleanup failed' }
+      - name: Restore elevated WebView2 automation policy
+        id: restore-webview-policy
+        if: always() && runner.os == 'Windows'
+        shell: pwsh
+        run: >-
+          ./scripts/updater/windows-webview2-automation-policy.ps1
+          -Phase Cleanup -OutputDirectory $env:ALHANGEUL_GUI_OUTPUT_DIR
+      - name: Record outcomes
+        if: always()
+        shell: bash
+        env:
+          CANDIDATE: ${{ steps.candidate.outcome }}
+          INSTALL: ${{ steps.install.outcome }}
+          PREPARE_APP: ${{ steps.prepare-app.outcome }}
+          WINDOWS_GUI: ${{ steps.windows-gui.outcome }}
+          LINUX_GUI: ${{ steps.linux-gui.outcome }}
+          CLEANUP: ${{ steps.cleanup.outcome }}
+          WEBVIEW_POLICY_SETUP: ${{ steps.webview-policy.outcome }}
+          WEBVIEW_POLICY_RESTORE: ${{ steps.restore-webview-policy.outcome }}
+        run: |
+          node --input-type=module <<'JS'
+          import {mkdirSync,writeFileSync} from 'node:fs';
+          mkdirSync('candidate-evidence',{recursive:true});
+          const keys=['CANDIDATE','INSTALL','PREPARE_APP','WINDOWS_GUI','LINUX_GUI','CLEANUP','WEBVIEW_POLICY_SETUP','WEBVIEW_POLICY_RESTORE'];
+          writeFileSync('candidate-evidence/step-outcomes.json',JSON.stringify(
+            Object.fromEntries(keys.map(k=>[k,process.env[k]])),null,2));
+          JS
+      - name: Upload evidence
+        id: upload
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: alhangeul-final-${{ matrix.kind }}-${{ github.run_id }}
+          path: candidate-evidence/**
+          if-no-files-found: error
+      - name: Require candidate, GUI, cleanup and evidence
+        if: always()
+        shell: bash
+        env:
+          UPLOAD: ${{ steps.upload.outcome }}
+        run: |
+          node --input-type=module <<'JS'
+          import {readFileSync} from 'node:fs';
+          const state=JSON.parse(readFileSync('candidate-evidence/step-outcomes.json'));
+          const required=process.platform==='win32'
+            ?['CANDIDATE','INSTALL','PREPARE_APP','WINDOWS_GUI','CLEANUP','WEBVIEW_POLICY_SETUP','WEBVIEW_POLICY_RESTORE']
+            :['CANDIDATE','PREPARE_APP','LINUX_GUI'];
+          if(process.env.UPLOAD!=='success'||required.some(k=>state[k]!=='success')) throw new Error('Incomplete final file acceptance');
+          JS
