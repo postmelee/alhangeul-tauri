@@ -9,6 +9,7 @@ on:
         default: artifact
         type: choice
         options:
+          - site-capture
           - artifact
           - release-file-acceptance
           - release-linux-file-acceptance
@@ -130,6 +131,15 @@ env:
   GIT_CONFIG_VALUE_0: "false"
 
 jobs:
+  site-capture:
+    if: ${{ inputs.mode == 'site-capture' && !inputs.publish_release }}
+    permissions:
+      contents: read
+      actions: read
+    uses: ./.github/workflows/alhangeul-site-capture.yml
+    with:
+      windows_only: ${{ inputs.artifact_platform == 'windows-x64' }}
+
   release-fedora-vm-acceptance:
     if: ${{ inputs.mode == 'release-fedora-vm-acceptance' && !inputs.publish_release }}
     permissions:
