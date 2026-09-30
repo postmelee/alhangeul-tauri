@@ -33,11 +33,16 @@ describe('Site Windows capture of original document', () => {
   });
   it('attempts an Explorer capture without treating it as thumbnail acceptance', async () => {
     try {
-      await run('powershell.exe', ['-NoProfile', '-STA', '-File', nativeCapture, '-Kind', 'Explorer',
+      await run('powershell.exe', ['-NoProfile', '-STA', '-File',
+        join(inputs.fixtureRoot, 'scripts/site-capture/windows-gallery.ps1'),
         '-Folder', join(inputs.fixtureRoot, 'capture-samples'),
-        '-OutputPath', join(inputs.outputDir, 'windows-explorer-attempt.png')], {timeout:120000});
+        '-OutputPath', join(inputs.outputDir, 'windows-explorer-attempt.png')], {timeout:180000});
     } catch (error) {
       await writeFile(join(inputs.outputDir, 'explorer-unavailable.txt'), String(error));
     }
+    const settings = JSON.parse((await readFile(
+      join(inputs.outputDir, 'windows-explorer-attempt.png.settings.json'), 'utf8')).replace(/^\uFEFF/, ''));
+    expect(settings.display.restored).not.toBe(false);
+    if (settings.display.prepared) expect(settings.display.restored).toBe(true);
   });
 });

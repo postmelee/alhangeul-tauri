@@ -69,3 +69,20 @@ Linux 성공 evidence를 재사용하며 artifact_platform=windows-x64로 Window
 
 재시도 준비: Node 계약 30건, GUI TypeScript, actionlint, diff check 통과. PowerShell 구문과
 Snipping Tool 실제 실행 가능 여부는 Windows job에서 확인한다. 성공 여부는 아직 미확인이다.
+
+## Explorer 표시 설정 진단 및 재촬영
+
+내장 캡처 run 36673287013 (harness e1e474e737ec0fb22482c5fd1dbf68787ccbbf27)은 성공했다.
+Snipping Tool은 기대한 창 이미지를 주지 못했고 Alt+PrintScreen으로 986×713 두 장을 얻었다.
+테두리·알림은 개선됐으나 Explorer는 앱 아이콘만 보인다. 이번 실행에는 IconsOnly 값이 없어
+원인을 확정하지 않는다. 과거 #57의 IconsOnly=1 관측과 현재 촬영 준비 누락이 조사 근거다.
+
+사용자의 진행 승인에 따라 기존 disposable CI display guard를 재사용해 원래 IconsOnly를
+보존하고 0으로 설정, 새 폴더 창 촬영 후 finally에서 원복·검증한다. 차단 정책은 변경하지 않는다.
+설정 변경 전/중/후의 정책·등록·파일 hash·프로세스 token 정보를 기존 allowlist 진단으로
+기록한다. Explorer에 설정 변경을 통지하고 큰 아이콘 보기로 8개 표시를 시도한다.
+캐시 직접 생성이나 renderer 강제 호출은 하지 않는다. 창 캡처 실패는 best-effort로 남기되
+설정 복원 실패는 GUI 검증 실패로 전파한다. 제품 bytes와 Linux 성공 촬영은 재사용한다.
+
+검증: Node 계약 30건, GUI TypeScript, actionlint, diff check 통과. 신규 PowerShell도
+Windows job 시작 시 구문 검사한다. Windows 전용 재촬영을 실행하고 결과는 후속 확인한다.

@@ -48,8 +48,8 @@ $height = [Math]::Min(924,$screen.Height-48)
 if (-not [CaptureWindow]::MoveWindow($handle,8,8,$width,$height,$true)) { throw 'MoveWindow failed' }
 if ($Kind -eq 'Explorer') {
   $window.Document.CurrentViewMode = 5
-  (New-Object -ComObject WScript.Shell).SendKeys('^+1')
-  Start-Sleep -Seconds 20
+  (New-Object -ComObject WScript.Shell).SendKeys('^+2')
+  Start-Sleep -Seconds 40
 } else { Start-Sleep -Seconds 12 }
 [System.Windows.Forms.Cursor]::Position = [System.Drawing.Point]::new(($screen.Width-2),($screen.Height-2))
 $rect = New-Object CaptureWindow+Rect
