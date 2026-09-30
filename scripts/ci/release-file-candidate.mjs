@@ -17,6 +17,12 @@ export const CANDIDATES = Object.freeze({
     target: 'windows-x86_64-msi', targets: ['windows-x86_64-nsis', 'windows-x86_64-msi'],
     sha256: '1901d255f3a1295fc007cb45f934cd602ea3b4573ea975d24abee30ea4140b68',
   },
+  nsis: {
+    name: 'alhangeul-updater-windows-x64', id: 10933208421,
+    digest: 'sha256:fbd15d72bcf126e3a22947f3a1ece3779291a768404c50e8fb94202abb07a091',
+    target: 'windows-x86_64-nsis', targets: ['windows-x86_64-nsis', 'windows-x86_64-msi'],
+    sha256: 'a5eca9761defb46065187430b8274fe5b7a90c163ffe6f19410011e29af96d0c',
+  },
   appimage: {
     name: 'alhangeul-updater-linux-x64', id: 10933550939,
     digest: 'sha256:59aa3cd56a7dd0bf31a8107bf31a5a283439dd9ac5f6e0c1a7ee2f4bd89e34d6',

@@ -5,6 +5,9 @@ on:
       windows_only:
         type: boolean
         default: false
+      production_check:
+        type: boolean
+        default: false
 permissions:
   contents: read
   actions: read
@@ -18,10 +21,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include: ${{ fromJSON(inputs.windows_only && '[{"kind":"msi","os":"windows-2025"}]' || '[{"kind":"msi","os":"windows-2025"},{"kind":"appimage","os":"ubuntu-22.04"}]') }}
+        include: ${{ fromJSON(inputs.production_check && '[{"kind":"nsis","os":"windows-2025"},{"kind":"msi","os":"windows-2025"},{"kind":"appimage","os":"ubuntu-22.04"}]' || inputs.windows_only && '[{"kind":"msi","os":"windows-2025"}]' || '[{"kind":"msi","os":"windows-2025"},{"kind":"appimage","os":"ubuntu-22.04"}]') }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 50
     env:
+      ALHANGEUL_GUI_PRODUCTION_CHECK: ${{ inputs.production_check }}
       CANDIDATE_KIND: ${{ matrix.kind }}
       ALHANGEUL_GUI_BUILD_REF: fc3cad15682f35723ab6558d1301e9096f7eec67
       ALHANGEUL_GUI_NATIVE_RUN_ID: '36320371932'
@@ -90,17 +94,17 @@ jobs:
         run: >-
           ./scripts/updater/windows-webview2-automation-policy.ps1
           -Phase Setup -OutputDirectory $env:ALHANGEUL_GUI_OUTPUT_DIR
-      - name: Install exact MSI
+      - name: Install exact Windows package
         id: install
         if: runner.os == 'Windows'
         shell: powershell
         env:
           CANDIDATE_ROOT: ${{ steps.candidate.outputs.artifact_root }}
         run: |
-          & scripts/updater/windows-native-acceptance.ps1 -Phase Install -Kind msi `
+          & scripts/updater/windows-native-acceptance.ps1 -Phase Install -Kind $env:CANDIDATE_KIND `
             -OutputDirectory "$env:ALHANGEUL_GUI_OUTPUT_DIR\installer" `
             -ArtifactRoot $env:CANDIDATE_ROOT -ExpectedVersion '0.1.0'
-          if (-not $?) { throw 'MSI installation failed' }
+          if (-not $?) { throw 'Windows installation failed' }
       - name: Select installed executable or writable AppImage
         id: prepare-app
         shell: bash
@@ -124,12 +128,12 @@ jobs:
           }
           appendFileSync(process.env.GITHUB_ENV,`ALHANGEUL_GUI_APP_PATH=${app}\n`);
           JS
-      - name: Native document roundtrip on Windows
+      - name: Native release verification on Windows
         id: windows-gui
         if: runner.os == 'Windows'
         shell: bash
         run: pnpm exec wdio run tests/gui/wdio.release-files.conf.ts
-      - name: Native document roundtrip on Linux
+      - name: Native release verification on Linux
         id: linux-gui
         if: runner.os == 'Linux'
         shell: bash
@@ -142,14 +146,14 @@ jobs:
               trap '\''kill "$wm_pid" 2>/dev/null || true'\'' EXIT
               pnpm exec wdio run tests/gui/wdio.release-files.conf.ts
             '
-      - name: Cleanup installed MSI
+      - name: Cleanup installed Windows package
         id: cleanup
         if: always() && runner.os == 'Windows' && steps.candidate.outcome == 'success'
         shell: powershell
         run: |
-          & scripts/updater/windows-native-acceptance.ps1 -Phase Cleanup -Kind msi `
+          & scripts/updater/windows-native-acceptance.ps1 -Phase Cleanup -Kind $env:CANDIDATE_KIND `
             -OutputDirectory "$env:ALHANGEUL_GUI_OUTPUT_DIR\installer"
-          if (-not $?) { throw 'MSI cleanup failed' }
+          if (-not $?) { throw 'Windows cleanup failed' }
       - name: Restore elevated WebView2 automation policy
         id: restore-webview-policy
         if: always() && runner.os == 'Windows'

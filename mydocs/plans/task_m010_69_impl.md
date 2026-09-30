@@ -722,3 +722,40 @@ HTTP 성공은 실제 앱 업데이트 조회 성공으로 대신 기록하지 �
 site/updates/index.html:54의 “첫 공개 릴리스 검증이 끝나면…”도 후속 조회 완료 후 정리가 필요하다.
 사이트 문구 보정은 별도 변경 승인 대상으로 제시한다. 실제 NSIS/MSI/AppImage의 production
 동일 버전 조회는 여전히 미검증이므로 Stage 5 전체 완료나 Stage 6 진입을 선언하지 않는다.
+
+
+### Stage 5 production 동일 버전 조회 보완 승인 — 2026-09-30
+
+작업지시자는 #82 운영 배포 완료 후 제안한 #69 잔여 검증에 `진행해줘`로 진행을 승인했다.
+기존 `local/task69-validation`의 기록을 보존하며 devel `c3ee834c`를 통합했다. 충돌은 오늘할일
+#69 상태 한 행이며 현재 상태와 #82 행을 함께 유지했다. 제품 소스·upstream·공개 파일은 변경하지 않는다.
+
+기존 release-file acceptance consumer에 `production-updater-check` 조회 모드를 추가한다.
+Windows 2025 별도 runner의 NSIS/MSI, Ubuntu 22.04의 원본 writable AppImage를 실행한다.
+제품 SHA는 `fc3cad15682f35723ab6558d1301e9096f7eec67`, producer run은 `36320371932`다.
+기존 고정 archive ID/digest와 installer SHA 및 Minisign 검증을 재사용한다. NSIS hash는
+공개 승인 목록의 `a5eca9761defb46065187430b8274fe5b7a90c163ffe6f19410011e29af96d0c`다.
+Windows 두 종류는 서로 다른 runner에서 설치/제거하므로 install marker가 섞이지 않는다.
+
+- manifest: `https://postmelee.github.io/alhangeul-tauri/updater/stable.json`, SHA-256
+  `e3c27ee429063ae12d0f12e7188f5ee2a3e498104963900889501228caba88d1`.
+- 실제 운영 manifest HTTP 200·해시·버전, 고정 제품 updater config의 endpoint를 확인한 뒤
+  실제 native `updater_check`를 호출한다. 성공 조건은 idle/manual/operationId 존재,
+  currentVersion=0.1.0, availableVersion/blocker/failure=null이다.
+- disabled/manual fallback, HTTP 오류, 다른 manifest와 조회 실패는 통과하지 않는다.
+  `updater_apply` 및 endpoint override는 사용하지 않는다. 새 버전 설치는 수행하지 않는다.
+- 기존 문서 roundtrip 모드는 유지한다. 이번 조회 모드에서 이미 통과한 roundtrip을 반복하지 않는다.
+- native snapshot, 운영 manifest bytes/hash, GUI 화면, installer/cleanup 및 driver 진단을 남긴다.
+  필수 단계와 evidence upload가 모두 성공해야 통과한다.
+- 문서 위치는 기존 plans/working/orders와 `docs/releases/v0.1.0.md`를 유지한다.
+  Stage 5 완료 보고서와 Stage 6은 실제 원격 결과 대조 후 별도 단계로 진행한다.
+
+로컬 검증: actionlint 두 workflow, GUI 타입 검사, candidate/Pages/updater/workflow 회귀
+93건 통과(실패·skip 0), diff 검사 통과. 운영 manifest 해시와 Release API의 세 installer
+해시도 일치했다. Pages `36692552385` success/head=`c3ee834c`를 재확인했다.
+이는 native production 조회 통과를 의미하지 않는다.
+
+원격 실행 입력은 `alhangeul-desktop.yml`, 기존 `publish/task69-validation`의 검증 commit,
+mode=`production-updater-check`, artifact_platform=`all`, publish_release=`false`다.
+제품 재빌드·서명·게시·Pages 배포 권한은 사용하지 않는다. 승인된 잔여 검증 실행 후 대기하지 않고
+run URL을 보고하며, 작업지시자의 완료 알림 이후 원격 증거를 읽는다. #69는 OPEN을 유지한다.

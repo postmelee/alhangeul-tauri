@@ -32,9 +32,9 @@ test('final file acceptance cannot rebuild, publish or mask failed GUI/install s
   assert.match(workflow, /\['CANDIDATE','PREPARE_APP','LINUX_GUI'\]/);
   assert.match(workflow, /process\.env\.UPLOAD!=='success'\|\|required\.some\(k=>state\[k\]!=='success'\)/);
   const dispatcher = await readFile(new URL('../.github/workflows/alhangeul-desktop.yml', import.meta.url), 'utf8');
-  assert.match(dispatcher, /inputs\.mode == 'release-file-acceptance' && !inputs\.publish_release/);
+  assert.match(dispatcher, /inputs\.mode == 'release-file-acceptance' \|\| inputs\.mode == 'production-updater-check'/);
   assert.match(dispatcher, /windows_only: \$\{\{ inputs\.artifact_platform == 'windows-x64' \}\}/);
-  assert.match(workflow, /include: \$\{\{ fromJSON\(inputs\.windows_only && '\[\{"kind":"msi","os":"windows-2025"\}\]'/);
+  assert.match(workflow, /inputs\.windows_only && '\[\{"kind":"msi","os":"windows-2025"\}\]'/);
   assert.match(workflow, /id: webview-policy[\s\S]*?-Phase Setup -OutputDirectory \$env:ALHANGEUL_GUI_OUTPUT_DIR/);
   assert.match(workflow, /id: restore-webview-policy\n        if: always\(\) && runner\.os == 'Windows'[\s\S]*?-Phase Cleanup -OutputDirectory \$env:ALHANGEUL_GUI_OUTPUT_DIR/);
 });
