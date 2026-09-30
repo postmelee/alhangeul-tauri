@@ -64,7 +64,7 @@ Task #28 Stage 2: PR required check와 committed pin 검증 도입
 
 ### 변경 내용
 
-#27 병합 후 최신 devel 통합. 비게시 full 실행과 정상 PR automatic required check 성공을 확인한 후 payload 리뷰·devel 보호 PUT·GET. 별도 probe PR에서 pending/BLOCKED→floating Action 고의 실패/BLOCKED→복구 success를 관측하고 close·ref 삭제. maintainer draft에서 검사가 실행돼도 draft merge 불가를 확인한다. 기존 실제 App draft 및 최소 권한 정의와 새 trigger 경계를 정적으로 대조한다. App secret/새 upstream 후보 실행은 하지 않는다.
+#27 병합 후 최신 devel 통합. 비게시 full 실행과 정상 PR automatic required check 성공을 확인한 후 payload 리뷰·devel 보호 PUT·GET. 별도 probe PR에서 pending/BLOCKED→고의 Node assertion 실패/BLOCKED→복구 success를 관측하고 close·ref 삭제. 테스트는 기존 ci-*.test.mjs glob에 편입되는 임시 파일만 추가해 deterministic 실패를 만들고 floating dependency를 실행하지 않는다. maintainer draft에서 검사가 실행돼도 draft merge 불가를 확인한다. 기존 실제 App draft 및 최소 권한 정의와 새 trigger 경계를 정적으로 대조한다. App secret/새 upstream 후보 실행은 하지 않는다.
 
 ### 검증
 
@@ -95,3 +95,7 @@ Task #28 Stage 3 + 최종 보고서: devel 보호와 PR gate 수용
 동일 스레드의 #28 전체 수행·PR 생성·리뷰·병합 명시 지시에 따라 위 단계·문서 위치·실제 보호 gate를 수행한다.
 
 Stage3 실행 순서 보완: #27 full의 장시간 Windows package 대기 중 독립 #28 source의 비게시 full을 먼저 실행할 수 있다. #27 병합 후 devel을 통합하고 변경이 task 기록뿐인지 대조한다. PR 생성·보호 적용·병합은 #27 완료 뒤에만 한다. runtime/workflow/lock 변경이 추가되면 기존 run을 재사용하지 않는다.
+
+실제 pull_request check는 PR이 존재해야 검증 가능하므로, full 성공 뒤 보호 활성화 전 준비 PR을 연다. 이 PR 본문에는 Stage3 live check·보호·probe가 진행 중임을 표시한다. 그 동일 PR에서 증거와 최종 보고서를 추가하고 최종 head의 새 automatic required check 성공을 확인한 뒤 리뷰·병합한다. 완료되지 않은 live 수용을 완료로 기록하지 않는다.
+
+병행 task90의 PR91이 별도 작업자에 의해 devel에 병합됐다. README·site·Node 관리 참조/검사도 바뀌었으므로 기존 독립 full의 task28 source와 동일하다고 간주하지 않는다. PR 게시 순서는 #27 완료 뒤로 유지하되, 검증 대기 중 최신 devel을 먼저 통합해 새 full을 실행한다. #27 후속 보고 기록은 코드가 같을 때만 문서 diff 근거로 수용한다. user task90 worktree는 현재 devel을 사용 중이므로 해당 checkout이나 변경을 수정하지 않는다.
