@@ -5,7 +5,7 @@ GitHub Issue: [#69](https://github.com/postmelee/alhangeul-tauri/issues/69)
 마일스톤: M010
 
 2026-09-20 수행계획 승인 후 작성. 같은 스레드의 작업지시자 `진행해줘`로 구현계획 승인.
-현재 상태(2026-09-29): 최종 후보의 추가 설치/문서 검증 완료. Stage 3 수용 보고와 잔여 위험 검토, 공개 실행안 승인 전 보류.
+현재 상태(2026-09-30): 승인된 tag·draft 생성 및 11개 원격 파일 대조 완료. Stable 공개 승인 대기.
 아래 초기 계획과 과거 실행 기록은 보존하며, 최신 결과는 Stage 3 보고서와 문서 끝의 실행 기록을 따른다.
 
 ## 단계 개요
@@ -583,3 +583,19 @@ Pages devel 제한을 재확인했다. 사용 archive 4개 모두 expired=false,
 다음 승인 요청은 잔여 위험 수용 및 CLI 경로의 exact SHA annotated tag 생성/push·draft 11개
 asset 업로드까지다. draft read-back 후 stable 공개는 별도 승인이다. 이번에는 PR 생성/merge,
 새 CI, tag/draft/stable, Pages/manifest 변경을 하지 않았다. #69는 계속 OPEN이다.
+
+### Stage 4 tag·draft 실행 승인 — 2026-09-30
+
+작업지시자는 명시한 잔여 위험과 exact 제품 SHA·11개 asset·본문·CLI 실행안에 대한 질문에
+`진행해줘`로 승인했다. 승인 범위는 postmelee CLI로 annotated v0.1.0 tag 생성/push 및 draft
+생성·read-back까지이며 stable 공개·Pages/updater 전환은 포함하지 않는다.
+직전 main SHA·Release/tag 부재·계정과 로컬 11개 hash/3서명/본문 SHA를 다시 대조했다.
+annotated tag object `3b6b4bc5eef0a5e290b8060b81191c5460cc4c63`을 생성해 원격 push했고,
+peeled commit `fc3cad15682f35723ab6558d1301e9096f7eec67` 일치를 확인했다.
+
+Draft Release ID `399698591`을 생성했고 11개 asset 업로드가 완료됐다. 새 폴더로 다시 다운로드해
+파일 이름·개수·크기·SHA/API digest·SHA256SUMS 자체를 승인값과 대조했다. 원격 파일의 실제
+Minisign 3개 및 complete inventory 전체도 일치했다. 본문은 개행 정규화 후 승인 텍스트와 같다.
+Draft URL은 `https://github.com/postmelee/alhangeul-tauri/releases/tag/untagged-a10602970e2dbe1ce46a`.
+draft=true / prerelease=false / published_at=null이다. 증거는 로컬 read-back verification.json과
+공식 버전 기록, #69에 남긴다. Stable 공개·Pages/manifest·새 CI·제품 빌드는 실행하지 않았다.
