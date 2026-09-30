@@ -5,8 +5,8 @@ GitHub Issue: [#69](https://github.com/postmelee/alhangeul-tauri/issues/69)
 마일스톤: M010
 
 2026-09-20 수행계획 승인 후 작성. 같은 스레드의 작업지시자 `진행해줘`로 구현계획 승인.
-현재 상태(2026-09-30): 승인된 tag·draft 생성 및 11개 원격 파일 대조 완료. Stable 공개 승인 대기.
-아래 초기 계획과 과거 실행 기록은 보존하며, 최신 결과는 Stage 3 보고서와 문서 끝의 실행 기록을 따른다.
+현재 상태(2026-09-30): Stage 4 stable/latest 공개 및 11개 파일·3서명 원격 대조 완료. Stage 5 진입 승인 대기.
+아래 초기 계획과 과거 실행 기록은 보존하며, 최신 결과는 Stage 4 보고서와 문서 끝의 실행 기록을 따른다.
 
 ## 단계 개요
 
@@ -599,3 +599,22 @@ Minisign 3개 및 complete inventory 전체도 일치했다. 본문은 개행 �
 Draft URL은 `https://github.com/postmelee/alhangeul-tauri/releases/tag/untagged-a10602970e2dbe1ce46a`.
 draft=true / prerelease=false / published_at=null이다. 증거는 로컬 read-back verification.json과
 공식 버전 기록, #69에 남긴다. Stable 공개·Pages/manifest·새 CI·제품 빌드는 실행하지 않았다.
+
+### Stage 4 stable 공개 승인·완료 — 2026-09-30
+
+작업지시자가 draft 대조 결과에 대해 다시 `진행해줘`로 stable/latest 전환과 공개 후 대조를
+승인했다. `postmelee`가 동일 Release ID `399698591`을 공개했다.
+
+- [Alhangeul v0.1.0](https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.0):
+  draft=false, prerelease=false, published_at=`2026-09-30T03:46:46Z`.
+  `/releases/latest`도 같은 ID를 반환했다.
+- 새 폴더에 공개 파일 11개를 다시 다운로드해 이름·개수·크기·SHA-256·API digest를
+  공식 버전 기록의 승인 목록과 대조했다. SHA256SUMS 자체와 대상 10개 파일 모두 일치한다.
+- 공개 bytes로 complete inventory를 다시 구성해 승인 inventory 전체와 일치하고,
+  Minisign 3개를 검증했다. 본문은 개행 정규화 후 승인 텍스트와 일치한다.
+- 원격 annotated tag object `3b6b4bc5eef0a5e290b8060b81191c5460cc4c63`,
+  peeled commit `fc3cad15682f35723ab6558d1301e9096f7eec67`은 변경되지 않았다.
+- **Stage 4 완료**. 재빌드·재서명·파일 교체 없이 이미 수용한 파일을 공개했다.
+  사용자 Windows 재설치 점검은 추가로 필요하지 않다. 알려진 제한은 기존 수용 범위 그대로다.
+- 다음은 Stage 5 사이트 다운로드 데이터·updater 전환 준비다. 데이터 PR 생성/병합과
+  Pages/manifest 배포는 각각 별도 승인 대상으로 유지하며 #69는 OPEN이다.
