@@ -23,10 +23,11 @@ test('허용된 current pin 참조만 새 tag와 commit으로 갱신한다', asy
     const result = await updateRhwpManagedReferences(options(fixture.root));
 
     assert.deepEqual(result.changedFiles, MANAGED_REFERENCE_PATHS);
-    assert.ok(
-      (await source(fixture.root, 'README.md'))
-        .includes(`현재 Stable pin: \`${toTag}\` (\`${toCommit}\`)`),
-    );
+    const readme = await source(fixture.root, 'README.md');
+    assert.ok(readme.includes(`현재 Stable pin: \`${toTag}\` (\`${toCommit}\`)`));
+    assert.ok(readme.includes(`[![포함된 rhwp ${toTag}]`));
+    assert.ok(readme.includes(`/badge/bundled%20rhwp-${toTag}-5865f2`));
+    assert.ok(readme.includes(`](https://github.com/edwardkim/rhwp/releases/tag/${toTag})`));
     const development = await source(fixture.root, 'docs/DEVELOPMENT.md');
     assert.match(development, new RegExp(`rhwp ${toTag}.*${toCommit}`));
     assert.match(development, new RegExp(`--tag ${toTag}.*--commit ${toCommit}`, 's'));
@@ -48,6 +49,42 @@ test('허용된 current pin 참조만 새 tag와 commit으로 갱신한다', asy
     await rm(fixture.root, { recursive: true, force: true });
   }
 });
+
+for (const [label, mutate] of [
+  ['누락', (line) => ''],
+  ['중복', (line) => `${line}\n${line}`],
+  ['표시 버전 불일치', (line) => line.replace(`rhwp-${fromTag}-`, 'rhwp-v9.9.9-')],
+  ['링크 불일치', (line) => line.replace(`/tag/${fromTag}`, '/tag/v9.9.9')],
+]) {
+  test(`rhwp 배지 ${label} 시 어떤 파일도 쓰지 않는다`, async () => {
+    const fixture = await createFixture();
+    let writes = 0;
+    try {
+      const readmePath = join(fixture.root, 'README.md');
+      const readme = await readFile(readmePath, 'utf8');
+      const badge = readme.split('\n').find((line) => line.startsWith('[![포함된 rhwp'));
+      await writeFile(readmePath, readme.replace(badge, mutate(badge)));
+      const before = await managedSources(fixture.root);
+      await assert.rejects(
+        updateRhwpManagedReferences({
+          ...options(fixture.root),
+          io: {
+            readFile,
+            writeFile: async (...args) => {
+              writes += 1;
+              return writeFile(...args);
+            },
+          },
+        }),
+        /bundled-rhwp-badge marker 개수가 올바르지 않습니다/,
+      );
+      assert.equal(writes, 0);
+      assert.deepEqual(await managedSources(fixture.root), before);
+    } finally {
+      await rm(fixture.root, { recursive: true, force: true });
+    }
+  });
+}
 
 test('marker가 하나라도 다르면 어떤 파일도 쓰지 않는다', async () => {
   const fixture = await createFixture();
@@ -135,7 +172,12 @@ test('실제 저장소의 관리 marker가 current lock과 정렬되어 있다',
 async function createFixture() {
   const root = await mkdtemp(join(tmpdir(), 'alhangeul-managed-refs-'));
   const files = new Map([
-    ['README.md', `# Alhangeul\n\n- 현재 Stable pin: \`${fromTag}\` (\`${fromCommit}\`)\n`],
+    ['README.md', `# Alhangeul
+
+[![포함된 rhwp ${fromTag}](https://img.shields.io/badge/bundled%20rhwp-${fromTag}-5865f2)](https://github.com/edwardkim/rhwp/releases/tag/${fromTag})
+
+- 현재 Stable pin: \`${fromTag}\` (\`${fromCommit}\`)
+`],
     ['docs/DEVELOPMENT.md', developmentSource()],
     ['docs/architecture/UPSTREAM.md', upstreamSource()],
     [
