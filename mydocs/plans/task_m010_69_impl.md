@@ -759,3 +759,8 @@ Windows 두 종류는 서로 다른 runner에서 설치/제거하므로 install 
 mode=`production-updater-check`, artifact_platform=`all`, publish_release=`false`다.
 제품 재빌드·서명·게시·Pages 배포 권한은 사용하지 않는다. 승인된 잔여 검증 실행 후 대기하지 않고
 run URL을 보고하며, 작업지시자의 완료 알림 이후 원격 증거를 읽는다. #69는 OPEN을 유지한다.
+
+
+Stage 5 조회 실행: [36695858456](https://github.com/postmelee/alhangeul-tauri/actions/runs/36695858456),
+harness SHA `4b3366e7`. 위의 mode/all/publish=false 입력으로 dispatch했다.
+실행 완료를 기다리지 않았으며 결과는 아직 미수용이다.
