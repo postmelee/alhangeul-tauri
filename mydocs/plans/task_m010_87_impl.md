@@ -1,4 +1,4 @@
-# 公開 기본 브랜치 전환과 원격 정리 구현계획서
+# 공개 기본 브랜치 전환과 원격 정리 구현계획서
 
 수행계획서: [task_m010_87.md](task_m010_87.md)
 GitHub Issue: [#87](https://github.com/postmelee/alhangeul-tauri/issues/87)
