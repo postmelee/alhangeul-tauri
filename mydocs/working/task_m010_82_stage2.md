@@ -88,3 +88,7 @@ Pages 41 tests, build/check, diff check 및 1280×720 브라우저 배치 확인
 상단 기준 배치로 변경해 행 수가 늘어나도 제목·OS 버튼은 고정되고 안내 링크만 내려가게 했다.
 Pages 41 tests 및 build/check 통과. 실제 브라우저에서 Windows→Linux 전환 전후 좌표를
 비교해 제목 y=140, OS 선택 y=352.84375, 이미지 영역 y=89.6484375가 유지됨을 확인했다.
+
+후속 위치 조정: 사용자가 제시한 이전 Windows 배치에 가깝도록 상단 여백을 늘렸다.
+1280×720에서 제목 y=140→176으로 이동했고 Windows/Linux 모두 y=176을 유지했다.
+Pages build/check 및 diff check 통과. 모바일 여백 규칙은 유지했다.

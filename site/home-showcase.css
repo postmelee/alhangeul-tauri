@@ -1,4 +1,4 @@
-.home-copy { align-self: start; padding-top: clamp(32px, 10vh, 100px); }
+.home-copy { align-self: start; padding-top: clamp(64px, 15vh, 180px); }
 .home-product { display: flex; flex-direction: column; height: auto; gap: 12px; isolation: isolate; }
 .product-pair { width: 100%; }
 .product-pair[hidden] { display: none; }
