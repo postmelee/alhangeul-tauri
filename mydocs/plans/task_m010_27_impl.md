@@ -95,3 +95,5 @@ Action version 정렬은 입력 계약과 Windows/Linux full로 확인한다. �
 2026-09-30 사용자가 #27 수행·PR 생성·리뷰·병합과 이후 #28을 명시 승인했다. 위 3단계와 문서 위치는 해당 목적 내의 구현 선택이며 별도 배포/secret 권한을 포함하지 않는다.
 
 검사 구현 세부: 기존 pnpm lock의 yaml 2.9.0을 직접 devDependency로 선언하고 YAML AST로 모든 uses를 검사한다. CLI는 설치된 개발 도구만 사용하며 runtime 제품 의존성은 바뀌지 않는다.
+
+Stage3 운영 정렬: 기본 main의 scheduled upstream 정의는 여전히 가변 Action을 사용한다. 사용자 #27 PR 생성·리뷰·병합 지시의 실제 운영 완료를 위해 devel PR 병합 뒤 같은 publish/task27 head로 main 대상 운영 PR도 검토·병합한다. 두 PR diff에서 제품·pin·공개 파일·Pages 데이터 불변을 확인하고, 다른 task의 devel 변경은 head에 포함하지 않는다. 새 tag/Release/Pages 배포는 없다. 이슈 종료·ref 정리는 두 PR merge 확인 뒤 수행한다.
