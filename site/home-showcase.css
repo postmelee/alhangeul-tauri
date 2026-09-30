@@ -1,3 +1,4 @@
+.home-copy { align-self: start; padding-top: clamp(32px, 10vh, 100px); }
 .home-product { display: flex; flex-direction: column; height: auto; gap: 12px; isolation: isolate; }
 .product-pair { width: 100%; }
 .product-pair[hidden] { display: none; }
@@ -16,6 +17,7 @@
 .product-glow { pointer-events: none; z-index: -1; transition: transform var(--standard) var(--ease); }
 .home-product:has([data-front="explorer"]:not([hidden])) .product-glow { transform: translate(8px, -8px); }
 @media (max-width: 820px) {
+    .home-copy { padding-top: 0; }
     .home-page { height: auto; overflow: auto; }
     .home-product { display: flex; margin-top: 40px; }
     .product-stack { aspect-ratio: 1.3; }
