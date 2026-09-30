@@ -764,3 +764,17 @@ run URL을 보고하며, 작업지시자의 완료 알림 이후 원격 증거�
 Stage 5 조회 실행: [36695858456](https://github.com/postmelee/alhangeul-tauri/actions/runs/36695858456),
 harness SHA `4b3366e7`. 위의 mode/all/publish=false 입력으로 dispatch했다.
 실행 완료를 기다리지 않았으며 결과는 아직 미수용이다.
+
+
+### Stage 5 원격 증거 수용·완료 — 2026-09-30
+
+작업지시자의 완료 알림 후 run `36695858456`의 exact harness SHA 및 세 대상 success를 확인했다.
+각 ZIP을 다시 내려받아 API digest와 SHA-256을 대조했고 native 자동/수동 조회 응답,
+운영 manifest bytes/hash 및 후보 hash/서명 확인 기록, 설치/cleanup/정책 복원/증거 upload를 확인했다.
+NSIS·MSI·AppImage 모두 실제 production 동일 버전 조회가 통과했다. disabled/error/fallback을
+성공으로 처리하지 않았다. updater 적용은 없었다. screenshot은 MSI 1×1, 나머지는 스킨 선택
+화면이므로 updater UI 표시 검증으로 확대하지 않는다.
+
+`pnpm run build:pages` 및 `pnpm run check:pages` 재확인: source=16/output=19 통과.
+직전 실행 준비의 회귀 93건·타입·actionlint 통과를 재사용했다. 조회 완료로 Stage 5 완료이며
+Stage 6 최종 인계·최종 보고서·PR은 다음 단계 승인 후 진행한다. #69는 OPEN이다.
