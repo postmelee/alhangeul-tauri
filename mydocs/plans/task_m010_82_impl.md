@@ -136,3 +136,17 @@ run 36676600660 (bc122d38) 성공: VM 1024×768→1920×1080 적용 및 원복 �
 앱 구도는 사용할 수 있으나 Explorer는 8개가 한 줄에 몰려 채택을 보류한다. Ctrl+wheel 대신
 공식 IShellFolderViewDual3.IconSize를 192로 지정하고 readback을 검사하도록 보완한다.
 이 변경은 동일 Stage 1 구도 조정 범위이며 Windows만 재촬영한다.
+
+## Stage 2 구현 계획
+
+이번 턴의 진행 승인으로 사이트 구현에 진입한다. 기존 script.js에 배포 대상 배열을 두어
+홈 다운로드 행·접근성 이름·직접 다운로드 제공 문장을 같은 데이터에서 생성한다. 버전은
+release.json을 사용하며 유효한 exact URL만 활성화하는 계약을 유지한다. 미공개/통신 실패
+안내는 유지하되 공개 상태에서 오래된 '공개 전' 문구를 교체한다. JS 미실행 시 안내 링크를 둔다.
+
+home-showcase.js/css는 이미지 전환과 겹침만 소유한다. 왼쪽 OS 라디오와 다운로드/이미지를
+동기화하고 두 native 이미지의 hover 노출 영역·focus·명시적 버튼/tap을 지원한다. 위치가
+바뀌는 hover 대상 때문에 앞뒤가 반복 전환되지 않게 고정된 가장자리 영역만 hover에 쓴다.
+280ms transform과 그림자 전환, 작은 화면에서도 이미지 접근, reduced-motion을 적용한다.
+기존 site/ 파일과 승인된 mydocs/ 위치만 사용한다. Stage 2 확인은 Pages 상태 fixture 회귀,
+실제 브라우저 기본 동작 및 화면 검토이며 정식 Stage 3/PR·배포는 별도 단계다.

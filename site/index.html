@@ -16,8 +16,10 @@
         <meta name="twitter:card" content="summary_large_image" />
         <link rel="canonical" href="https://postmelee.github.io/alhangeul-tauri/" />
         <link rel="icon" href="../assets/logo/favicon.ico" />
-        <link rel="stylesheet" href="styles.css?v=45-3-17" />
-        <script src="script.js" defer></script>
+        <link rel="stylesheet" href="styles.css?v=82-2" />
+        <link rel="stylesheet" href="home-showcase.css?v=82-2" />
+        <script src="script.js?v=82-2" defer></script>
+        <script src="home-showcase.js?v=82-2" defer></script>
     </head>
     <body class="home-page" data-site-root="./">
         <a class="skip-link" href="#main">본문으로 이동</a>
@@ -49,6 +51,7 @@
                             <h2 id="install-title">다운로드</h2>
                             <p data-release-message>첫 공개 릴리스를 준비하고 있습니다.</p>
                         </div>
+                        <p class="release-formats" data-release-formats></p>
                         <fieldset class="download-platform-picker">
                             <legend class="visually-hidden">다운로드 플랫폼 선택</legend>
                             <input class="download-platform-radio" type="radio" name="download-platform" id="download-platform-windows" value="windows" checked />
@@ -60,30 +63,50 @@
                             <div class="download-platform-panels">
                                 <section class="download-platform-panel windows-panel" aria-labelledby="windows-package-title">
                                     <h3 class="visually-hidden" id="windows-package-title">Windows 다운로드</h3>
-                                    <div class="download-package-list">
-                                        <div class="download-package-option"><span class="download-package-copy"><strong>NSIS</strong><span>Windows x64 · 일반 설치 권장</span></span><a class="download-package-action" href="updates/#latest-download" data-download-target="windows-x86_64-nsis"><span data-download-state="home">다운로드</span></a></div>
-                                        <div class="download-package-option"><span class="download-package-copy"><strong>MSI</strong><span>Windows x64 · 조직·관리 배포</span></span><a class="download-package-action" href="updates/#latest-download" data-download-target="windows-x86_64-msi"><span data-download-state="home">다운로드</span></a></div>
-                                    </div>
+                                    <div class="download-package-list" data-package-platform="windows"></div>
                                 </section>
                                 <section class="download-platform-panel linux-panel" aria-labelledby="linux-package-title">
                                     <h3 class="visually-hidden" id="linux-package-title">Linux 다운로드</h3>
-                                    <div class="download-package-list">
-                                        <div class="download-package-option"><span class="download-package-copy"><strong>AppImage</strong><span>Linux x64 · 자동 업데이트 권장</span></span><a class="download-package-action" href="updates/#latest-download" data-download-target="linux-x86_64-appimage"><span data-download-state="home">다운로드</span></a></div>
-                                        <div class="download-package-option"><span class="download-package-copy"><strong>DEB/RPM</strong><span>Linux x64 · 배포판 패키지</span></span><a class="download-package-action" href="https://github.com/postmelee/alhangeul-tauri/releases" rel="noreferrer" aria-label="Linux x64 DEB/RPM 다운로드 — GitHub Releases에서 수동 설치"><span data-download-state="home">다운로드</span></a></div>
-                                        <div class="download-package-option"><span class="download-package-copy"><strong>DEB</strong><span>Linux arm64 · 수동 설치</span></span><a class="download-package-action" href="https://github.com/postmelee/alhangeul-tauri/releases" rel="noreferrer" aria-label="Linux arm64 DEB 다운로드 — GitHub Releases에서 수동 설치"><span data-download-state="home">다운로드</span></a></div>
-                                    </div>
+                                    <div class="download-package-list" data-package-platform="linux"></div>
                                 </section>
                             </div>
                         </fieldset>
-                        <p class="install-note">공개 전에는 설치 파일 대신 검증 범위와 준비 상태를 안내합니다.</p>
+                        <noscript><p><a href="updates/#latest-download">다운로드 및 설치 안내 보기</a></p></noscript>
+                        <p class="install-note" data-install-note>공개 전에는 설치 파일 대신 검증 범위와 준비 상태를 안내합니다.</p>
                     </section>
                 </div>
 
-                <figure class="home-product page-enter" aria-label="실제 알한글 편집 화면">
+                <figure class="home-product page-enter" aria-label="Windows와 Linux 실제 앱과 파일 탐색기 화면">
                     <div class="product-glow" aria-hidden="true"></div>
-                    <div class="product-window">
-                        <img src="assets/linux-editor.png?v=45-3-9" alt="Linux 네이티브 창에서 HWP 문서를 연 실제 알한글 편집 화면" width="1282" height="924" />
+                    <div class="product-pair" data-product-platform="windows" data-front="editor">
+                        <div class="product-stack">
+                            <button class="product-shot editor-shot" type="button" data-shot="editor" aria-label="Windows 편집 화면 앞으로 보기" aria-pressed="true">
+                                <img src="assets/windows-editor.png" alt="Windows 알한글에서 사업계획서 HWP 원본을 100% 배율로 연 화면" width="1282" height="924" />
+                            </button>
+                            <button class="product-shot explorer-shot" type="button" data-shot="explorer" aria-label="Windows 파일 탐색기 화면 앞으로 보기" aria-pressed="false">
+                                <img src="assets/windows-explorer.png" alt="Windows 파일 탐색기에서 8개 HWP·HWPX 문서의 첫 페이지 썸네일이 보이는 화면" width="1180" height="780" />
+                            </button>
+                        </div>
+                        <div class="product-view-picker" role="group" aria-label="Windows 화면 선택">
+                            <button type="button" data-view="editor" aria-pressed="true">편집 화면</button>
+                            <button type="button" data-view="explorer" aria-pressed="false">파일 탐색기</button>
+                        </div>
                     </div>
+                    <div class="product-pair" data-product-platform="linux" data-front="editor" hidden>
+                        <div class="product-stack">
+                            <button class="product-shot editor-shot" type="button" data-shot="editor" aria-label="Linux 편집 화면 앞으로 보기" aria-pressed="true">
+                                <img src="assets/linux-editor.png" alt="Linux 알한글에서 사업계획서 HWP 원본을 100% 배율로 연 화면" width="1282" height="924" />
+                            </button>
+                            <button class="product-shot explorer-shot" type="button" data-shot="explorer" aria-label="Linux 파일 탐색기 화면 앞으로 보기" aria-pressed="false">
+                                <img src="assets/linux-explorer.png" alt="Linux 파일 탐색기에서 8개 HWP·HWPX 문서의 첫 페이지 썸네일이 보이는 화면" width="1180" height="780" />
+                            </button>
+                        </div>
+                        <div class="product-view-picker" role="group" aria-label="Linux 화면 선택">
+                            <button type="button" data-view="editor" aria-pressed="true">편집 화면</button>
+                            <button type="button" data-view="explorer" aria-pressed="false">파일 탐색기</button>
+                        </div>
+                    </div>
+                    <figcaption class="product-caption">문서 편집부터 파일 탐색기의 미리보기까지.</figcaption>
                 </figure>
             </section>
         </main>

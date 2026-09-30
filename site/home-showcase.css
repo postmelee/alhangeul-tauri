@@ -1,0 +1,31 @@
+.release-formats { margin: 6px 0 0; color: var(--subtle); font-size: 12px; line-height: 1.5; word-break: keep-all; }
+.release-formats:empty { display: none; }
+.home-product { display: flex; flex-direction: column; height: auto; gap: 12px; isolation: isolate; }
+.product-pair { width: 100%; }
+.product-pair[hidden] { display: none; }
+.product-stack { position: relative; width: 100%; aspect-ratio: 1.36; }
+.product-shot { position: absolute; width: 92%; padding: 0; border: 0; border-radius: 3px; background: white; cursor: pointer; box-shadow: 0 12px 32px rgba(34, 46, 67, 0.12); transition: transform var(--standard) var(--ease), box-shadow var(--standard) var(--ease); }
+.product-shot img { width: 100%; height: auto; border-radius: inherit; }
+.editor-shot { left: 0; bottom: 0; }
+.explorer-shot { right: 0; top: 0; }
+.product-pair[data-front="editor"] .editor-shot,
+.product-pair[data-front="explorer"] .explorer-shot { z-index: 2; transform: translateY(-2px); box-shadow: 0 24px 54px rgba(34, 46, 67, 0.2); }
+.product-pair[data-front="editor"] .explorer-shot,
+.product-pair[data-front="explorer"] .editor-shot { z-index: 1; transform: scale(0.97); }
+.product-view-picker { display: flex; justify-content: center; gap: 5px; margin-top: 18px; }
+.product-view-picker button { min-height: 44px; padding: 0 14px; border: 1px solid transparent; border-radius: 999px; background: transparent; color: var(--muted); font-size: 12px; cursor: pointer; transition: background var(--quick) var(--ease), color var(--quick) var(--ease); }
+.product-view-picker button[aria-pressed="true"] { background: var(--blue-soft); color: var(--blue); }
+.product-caption { color: var(--subtle); font-size: 12px; text-align: center; }
+.product-glow { pointer-events: none; z-index: -1; transition: transform var(--standard) var(--ease); }
+.home-product:has([data-front="explorer"]:not([hidden])) .product-glow { transform: translate(8px, -8px); }
+@media (max-width: 820px) {
+    .home-page { height: auto; overflow: auto; }
+    .home-product { display: flex; margin-top: 40px; }
+    .home-main { overflow: visible; }
+}
+@media (max-height: 799px) and (min-width: 821px) {
+    .home-product { height: auto; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .product-shot, .product-glow, .product-view-picker button { transition: none; }
+}

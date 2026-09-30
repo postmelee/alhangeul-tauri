@@ -1,9 +1,23 @@
 const siteRoot = document.body.dataset.siteRoot ?? './';
-const downloadTargetLabels = Object.freeze({
-    'windows-x86_64-nsis': 'Windows x64 NSIS',
-    'windows-x86_64-msi': 'Windows x64 MSI',
-    'linux-x86_64-appimage': 'Linux x64 AppImage',
-});
+// Add distribution formats here; home rows and release guidance share this catalog.
+const distributionChannels = [
+    { platform: 'windows', label: 'Windows', architecture: 'x64', formats: [
+        { name: 'NSIS', target: 'windows-x86_64-nsis', description: '일반 설치 권장' },
+        { name: 'MSI', target: 'windows-x86_64-msi', description: '조직·관리 배포' },
+    ] },
+    { platform: 'linux', label: 'Linux', architecture: 'x64', formats: [
+        { name: 'AppImage', target: 'linux-x86_64-appimage', description: '자동 업데이트 권장' },
+        { name: 'DEB/RPM', description: '배포판 패키지' },
+    ] },
+    { platform: 'linux', label: 'Linux', architecture: 'arm64', formats: [
+        { name: 'DEB', description: '수동 설치' },
+    ] },
+];
+const downloadTargetLabels = Object.fromEntries(distributionChannels.flatMap(channel =>
+    channel.formats.filter(format => format.target).map(format =>
+        [format.target, `${channel.label} ${channel.architecture} ${format.name}`])));
+
+renderPackageLists();
 
 setupPlatformPreference();
 setupReleaseData();
@@ -24,6 +38,7 @@ function setupPlatformPreference() {
             const next = radios[(index + step + radios.length) % radios.length];
             next.checked = true;
             next.focus();
+            next.dispatchEvent(new Event('change', { bubbles: true }));
         });
     }
 }
@@ -36,12 +51,18 @@ async function setupReleaseData() {
         if (!isPublishedRelease(release)) return;
 
         for (const message of document.querySelectorAll('[data-release-message]')) {
-            message.textContent = `알한글 ${release.version} 안정 릴리스가 준비되었습니다. Windows는 NSIS·MSI, Linux x64는 AppImage를 직접 받을 수 있습니다.`;
+            message.textContent = `알한글 ${release.version} 안정 릴리스가 준비되었습니다.`;
         }
         for (const action of document.querySelectorAll('[data-download-target]')) {
             const url = release.downloads[action.dataset.downloadTarget];
             if (!isExactDownload(url, release.tag)) continue;
             hydrateDownloadAction(action, url, release);
+        }
+        for (const message of document.querySelectorAll('[data-release-formats]')) {
+            message.textContent = describeReleaseFormats(release);
+        }
+        for (const note of document.querySelectorAll('[data-install-note]')) {
+            note.textContent = '설치 방식별 안내와 변경 내용은 업데이트 페이지에서 확인하세요.';
         }
         hydrateReleaseNote(release);
     } catch {
@@ -115,4 +136,43 @@ function isExactDownload(value, tag) {
     } catch {
         return false;
     }
+}
+
+function renderPackageLists() {
+    for (const list of document.querySelectorAll('[data-package-platform]')) {
+        for (const channel of distributionChannels.filter(item => item.platform === list.dataset.packagePlatform)) {
+            for (const format of channel.formats) {
+                const row = document.createElement('div');
+                row.className = 'download-package-option';
+                const copy = document.createElement('span');
+                copy.className = 'download-package-copy';
+                const name = document.createElement('strong');
+                name.textContent = format.name;
+                const description = document.createElement('span');
+                description.textContent = `${channel.label} ${channel.architecture} · ${format.description}`;
+                copy.append(name, description);
+                const action = document.createElement('a');
+                action.className = 'download-package-action';
+                action.href = format.target ? `${siteRoot}updates/#latest-download`
+                    : 'https://github.com/postmelee/alhangeul-tauri/releases';
+                if (format.target) action.dataset.downloadTarget = format.target;
+                action.setAttribute('aria-label', `${channel.label} ${channel.architecture} ${format.name} 다운로드 안내`);
+                const state = document.createElement('span');
+                state.dataset.downloadState = 'home';
+                state.textContent = '다운로드';
+                action.append(state);
+                row.append(copy, action);
+                list.append(row);
+            }
+        }
+    }
+}
+
+function describeReleaseFormats(release, channels = distributionChannels) {
+    const descriptions = channels.flatMap(channel => {
+        const names = channel.formats.filter(format => format.target
+            && isExactDownload(release.downloads[format.target], release.tag)).map(format => format.name);
+        return names.length ? [`${channel.label} ${channel.architecture}: ${names.join('·')}`] : [];
+    });
+    return descriptions.length ? `${descriptions.join(' / ')}를 직접 받을 수 있습니다.` : '';
 }

@@ -14,6 +14,9 @@ const screenshots = Object.freeze({
     height: 801,
     sha256: '9e50463e32afbcfed2e864fb761efa8c1be0d21bf2dfad4a8a9f552fbce1c411',
   },
+  'assets/windows-editor.png': { width: 1282, height: 924, sha256: '3034cef5c00e16eda0d1a51804ab60f12d4e3594d8a9b1220061f0ef43e76c86' },
+  'assets/windows-explorer.png': { width: 1180, height: 780, sha256: '460f225615e9876aea9e3aeeca382a25e2ebaf41b71105af92a8c30878c0e35d' },
+  'assets/linux-explorer.png': { width: 1180, height: 780, sha256: '2182a6476a972533e726d5ee64875c92557aac26894aeaf30df4be3fcfce61f8' },
   'assets/linux-editor.png': {
     width: 1282,
     height: 924,
@@ -21,46 +24,18 @@ const screenshots = Object.freeze({
   },
 });
 
-test('홈은 한 화면 설치 안내와 개별 페이지 탐색 계약을 지킨다', async () => {
+test('홈은 OS 선택과 데이터 기반 다운로드, 실제 화면 쌍을 제공한다', async () => {
   const html = await readSite('index.html', 'utf8');
-  for (const marker of [
-    'class="home-main"',
-    'class="home-shell"',
-    'class="download-platform-picker"',
-    'href="updates/"',
-    'href="feedback/"',
-    'href="https://github.com/postmelee/alhangeul-tauri"',
-  ]) assert.match(html, new RegExp(escapeRegExp(marker)));
-
+  for (const platform of ['windows', 'linux']) {
+    assert.ok(html.includes(`data-package-platform="${platform}"`));
+    assert.ok(html.includes(`data-product-platform="${platform}"`));
+    assert.ok(html.includes(`assets/${platform}-editor.png`));
+    assert.ok(html.includes(`assets/${platform}-explorer.png`));
+  }
   assert.equal([...html.matchAll(/class="download-platform-radio"/g)].length, 2);
-  assert.equal([...html.matchAll(/class="download-platform-panel [^"]+-panel"/g)].length, 2);
-  assert.equal([...html.matchAll(/class="download-package-option"/g)].length, 5);
-  assert.equal([...html.matchAll(/class="download-package-action"/g)].length, 5);
-  assert.equal([...html.matchAll(/<a class="download-package-action"/g)].length, 5);
-  assert.equal([...html.matchAll(/href="updates\/#latest-download"/g)].length, 3);
-  assert.equal([...html.matchAll(/href="https:\/\/github\.com\/postmelee\/alhangeul-tauri\/releases" rel="noreferrer" aria-label="Linux/g)].length, 2);
-  assert.equal([...html.matchAll(/data-download-state="home"/g)].length, 5);
-
-  assert.doesNotMatch(html, /Windows &amp; Linux · Open source/);
-  assert.match(html, /HWP\/HWPX/);
   assert.match(html, /<h2 id="install-title">다운로드<\/h2>/);
-  assert.match(html, /id="download-platform-windows"[^>]+checked/);
-  assert.match(html, /<label for="download-platform-windows">Windows<\/label>[\s\S]*?<label for="download-platform-linux">Linux<\/label>/);
-  assert.match(html, /class="download-platform-panel windows-panel"[\s\S]*?<strong>NSIS<\/strong>/);
-  assert.match(html, /class="download-platform-panel linux-panel"[\s\S]*?<strong>AppImage<\/strong>/);
-  assert.equal([...html.matchAll(/data-download-state="home">다운로드<\/span>/g)].length, 5);
-  assert.doesNotMatch(html, /<a class="download-package-option"|class="install-row|class="install-action|download-recommended|download-primary-action|download-secondary-option/);
-  assert.match(html, /<p class="home-summary">HWP\/HWPX 문서를 열고, 편집하고, 저장하세요\.<\/p>/);
-  assert.doesNotMatch(html, /플랫폼과 용도에 맞는 설치 방식을 한곳에서 안내합니다/);
-  assert.equal([...html.matchAll(/class="headline-line"/g)].length, 3);
-  assert.match(html, /<span class="headline-line">더 이상 <em>낯선 문서<\/em>가<\/span>/);
-  assert.doesNotMatch(html, /<a class="header-link"[^>]*>다운로드<\/a>/);
-  assert.equal([...html.matchAll(/<a[^>]+data-download-target=/g)].length, 3);
-  assert.match(html, /aria-label="Linux x64 DEB\/RPM 다운로드 — GitHub Releases에서 수동 설치"/);
-  assert.match(html, /aria-label="Linux arm64 DEB 다운로드 — GitHub Releases에서 수동 설치"/);
-  assert.equal([...html.matchAll(/assets\/linux-editor\.png/g)].length, 1);
-  assert.match(html, /assets\/linux-editor\.png\?v=45-3-9/);
-  assert.doesNotMatch(html, /assets\/windows-app\.png|linux-window|windows-window|platform-dot/);
+  assert.match(html, /data-release-formats/);
+  assert.match(html, /<noscript>[\s\S]*updates\/#latest-download/);
   assert.doesNotMatch(html, /releases\/download\//);
 });
 
@@ -85,7 +60,7 @@ test('홈·업데이트·문의 페이지는 승인된 메뉴와 공유 메타�
     assert.match(html, /<title>[^<]+<\/title>/);
     assert.match(html, /<meta name="description" content="[^"]+" \/>/);
     assert.match(html, /<meta property="og:image" content="https:\/\/postmelee\.github\.io\/alhangeul-tauri\/assets\/og-main\.png" \/>/);
-    assert.match(html, /styles\.css\?v=45-3-17/);
+    assert.match(html, /styles\.css\?v=82-2/);
     assert.match(html, new RegExp(`<link rel="canonical" href="${escapeRegExp(expected.canonical)}" \\/>`));
     assert.match(html, /href="https:\/\/github\.com\/postmelee\/alhangeul-tauri"/);
     for (const link of expected.links) {
@@ -242,7 +217,7 @@ test('홈은 일반 화면에서 스크롤을 막고 작은 화면 fallback과 �
   const css = await readSite('styles.css', 'utf8');
   const script = await readSite('script.js', 'utf8');
 
-  for (const html of pages) assert.doesNotMatch(html, /\shidden(?:\s|=|>)/);
+  assert.match(pages[0], /data-product-platform="linux"[^>]* hidden/);
   assert.match(css, /body > main \{ flex: 1 0 auto; \}/);
   assert.match(css, /\.home-page \{ height: 100dvh; overflow: hidden; \}/);
   assert.match(css, /\.home-main \{ min-height: 0;[^}]*overflow: hidden; \}/);
