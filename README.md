@@ -1,77 +1,87 @@
-# Alhangeul
+<p align="center">
+  <img src="assets/logo/logo-256.png" width="72" alt="알한글 로고">
+</p>
 
-Alhangeul은 Windows와 Linux에서 HWP/HWPX 문서를 열고 편집하기 위한 Tauri 기반 오픈소스 데스크톱 앱입니다. 문서 파싱과 렌더링은 [rhwp](https://github.com/edwardkim/rhwp)를 사용하고, 이 저장소는 데스크톱 셸과 파일·창·인쇄 같은 제품 통합을 소유합니다.
+# 알한글 (Alhangeul)
 
-> 현재 소스의 제품 버전은 독립 Alhangeul의 M010 기준선인 `0.1.0`입니다. 공식 설치 파일, 태그나 공개 릴리스는 아직 제공하지 않습니다.
+**Windows와 Linux를 위한 오픈소스 HWP/HWPX 문서 편집기입니다.**
+한글 문서를 열고, 편집하고, 저장하세요. 파일 탐색기에서도 문서의 첫 페이지를 미리 확인할 수 있습니다.
 
-## 현재 기능
+**[다운로드](https://postmelee.github.io/alhangeul-tauri/)** · [설치 안내·업데이트](https://postmelee.github.io/alhangeul-tauri/updates/) · [문의·제보](https://postmelee.github.io/alhangeul-tauri/feedback/)
 
-- HWP/HWPX 문서 열기
-- HWP/HWPX 문서 저장, 다른 이름으로 저장과 형식 변환 저장
-- 현재 편집 상태의 페이지 SVG를 이용한 직접 PDF 저장
-- 시스템 인쇄
-- 파일 드래그 앤 드롭과 파일 연결
-- 여러 창에서 문서 열기
-- Windows MSI/NSIS에서 Explorer HWP/HWPX 첫 페이지 썸네일
-- Linux DEB/RPM에서 HWP/HWPX 첫 페이지 파일 관리자 썸네일
-- Windows MSI/NSIS·Linux x64 AppImage의 동일 설치 형식 updater (구현·시험 수용 완료, production 미공개)
+현재 안정 버전: **[v0.1.0](https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.0)**
+무료로 사용할 수 있으며, 소스 코드는 [MIT 라이선스](LICENSE)로 공개합니다.
 
-HWP/HWPX 저장·재열기, 직접 PDF와 시스템 인쇄는 `rhwp v0.8.4`의 Windows NSIS·Linux x64 DEB 대표 환경에서 확인했습니다. native 저장에는 외부 원본 변경 감지·덮어쓰기 확인이 있으며, upstream Studio의 브라우저 autosave/recovery와 별개로 native recovery 저장소는 제공하지 않습니다. 검증된 과거 후보와 새 공개 파일의 수용은 구분합니다.
+| Windows | Linux |
+|---|---|
+| ![Windows에서 사업 수행 계획서 HWP를 연 알한글 편집 화면](site/assets/windows-editor.png) | ![Linux에서 같은 사업 수행 계획서 HWP를 연 알한글 편집 화면](site/assets/linux-editor.png) |
 
-Windows 썸네일은 MSI·NSIS 등록·복원과 실제 Shell bitmap, VDI 대표 화면의 시각 수용 근거가 있습니다. 다만 이후 독립 Windows 검사에서는 NSIS의 사용자별 처리기 등록·직접 COM 생성이 성공해도 Shell 썸네일이 실패하고 MSI는 성공하는 조건이 재현됐습니다. 모든 Explorer 보기 크기·DPI·한컴 조합을 검증한 것은 아닙니다. [수동 진단과 MSI 대안 안내](docs/architecture/WINDOWS_THUMBNAILS.md#수동-진단과-msi-대안)를 확인하세요. 별도 시험용 진단 묶음의 Windows CI 검증은 통과했지만, 실제 사용자 PC의 실사용 검증은 아직 하지 않았습니다.
+## 다운로드와 설치
 
-Linux 썸네일은 x64 DEB/RPM·arm64 DEB의 package lifecycle과 x64 DEB의 Nautilus·Thunar/Tumbler를 확인했습니다. package가 설치한 system MIME만 사용한 실제 문서의 첫 페이지·cache 갱신·손상 문서 fallback도 확인했습니다. Fedora RPM GUI·arm64 GUI 수용과 AppImage 파일 관리자 등록은 이 결과에 포함되지 않습니다. 자세한 matrix는 [Linux thumbnail 아키텍처](docs/architecture/LINUX_THUMBNAILS.md)를 따릅니다.
+[다운로드 페이지](https://postmelee.github.io/alhangeul-tauri/)에서 운영체제를 선택하세요.
+모든 설치 파일과 체크섬은 [GitHub Release](https://github.com/postmelee/alhangeul-tauri/releases/latest)에서도 받을 수 있습니다.
 
-updater의 시험용 N→N+1 수용과 실제 production 업데이트는 다릅니다. 공개 manifest와 설치 파일은 아직 게시하지 않았습니다. [updater 아키텍처](docs/architecture/UPDATER.md), [버전별 검증 근거와 미해결 한계](docs/releases/v0.1.0.md)를 함께 확인하세요.
+| 운영체제 | 설치 형식 | 선택 안내 |
+|---|---|---|
+| Windows x64 | NSIS (`.exe`) | 일반 설치 권장 |
+| Windows x64 | MSI (`.msi`) | 조직·관리 배포, NSIS 썸네일 문제 시 대안 |
+| Linux x64 | AppImage | 실행 권한을 부여해 실행, 자동 업데이트 지원 |
+| Linux x64 | DEB / RPM | 배포판에 맞는 패키지, 파일 관리자 썸네일 지원 |
+| Linux arm64 | DEB | 수동 패키지 설치·업데이트 |
 
-## 지원 범위
+- Windows에서는 NSIS와 MSI 중 한 가지 형식을 선택하세요. 현재 설치 파일은 Windows 코드 서명(Authenticode)이 없어 보안 경고가 표시될 수 있습니다.
+- AppImage는 파일과 상위 폴더가 쓰기 가능한 위치에 보관하세요. 파일 관리자 썸네일 등록은 DEB/RPM 패키지에서 제공합니다.
+- Windows NSIS/MSI와 Linux x64 AppImage는 앱에서 업데이트를 확인할 수 있습니다. DEB/RPM은 새 패키지를 받아 설치합니다. 첫 릴리즈인 만큼 실제 공개 버전 간 자동 업그레이드는 다음 릴리즈에서 검증할 예정입니다.
 
-- Windows x64
-- Linux x64
-- Linux arm64
+자세한 설치 방법과 알려진 제한은 [설치 안내·업데이트](https://postmelee.github.io/alhangeul-tauri/updates/)에서 확인하세요.
 
-CI와 Windows/Linux native artifact workflow는 수동 `workflow_dispatch` 전용입니다. Actions artifact는 임시 검증물이며 공식 설치 파일이 아닙니다. 일반 artifact build는 게시하지 않고, 서명·Release 게시와 Pages 배포는 각각 명시 승인된 별도 실행입니다.
+## 할 수 있는 일
 
-## 릴리즈 문서
+- **문서 편집**: HWP/HWPX 열기·편집·저장, 다른 이름으로 저장과 두 형식 간 변환 저장
+- **PDF와 인쇄**: 현재 편집한 문서를 PDF로 저장하거나 시스템 인쇄로 출력
+- **로컬 글꼴**: 지원되는 설치 글꼴을 감지해 문서에 적용
+- **파일 열기**: 파일 연결, 드래그 앤 드롭, 여러 창에서 문서 열기
+- **첫 페이지 미리보기**: Windows Explorer와 Linux 파일 관리자에서 HWP/HWPX 썸네일 확인
 
-처음 공개하거나 다음 버전을 배포할 때는 아래 순서로 읽습니다. 문서의 완료가 제품 공개 승인을 뜻하지는 않습니다.
+| Windows Explorer | Linux 파일 관리자 |
+|---|---|
+| ![Windows Explorer에서 서로 다른 HWP/HWPX 문서 8개의 첫 페이지 썸네일](site/assets/windows-explorer.png) | ![Linux 파일 관리자에서 같은 HWP/HWPX 문서 8개의 첫 페이지 썸네일](site/assets/linux-explorer.png) |
 
-1. [릴리즈 정책](docs/operations/DESKTOP_RELEASE.md) — 지원 패키지·서명·승인·복구 기준
-2. [공개 실행 가이드](docs/operations/PUBLIC_RELEASE_RUNBOOK.md) — 입력 확정부터 게시·실패 재개까지
-3. [최소 검증 체크리스트](docs/operations/RELEASE_CHECKLIST.md) — 변경 영향에 따른 실행·근거 재사용
-4. [버전별 기록](docs/releases/README.md) — 준비/공개 상태와 결과, [첫 공개 인계](docs/releases/v0.1.0.md#첫-공개-작업-9-인계)
+## 처음 사용할 때
 
-전체 문서 위치는 [문서 인덱스](docs/README.md)를 참고하세요.
+1. 문서를 열거나 앱 창으로 끌어 놓으세요. 새 문서를 작성할 수도 있습니다.
+2. 문서에 필요한 글꼴을 운영체제에 설치했다면 **도구 → 로컬 글꼴 설정…** 메뉴에서 사용을 선택하세요. 앱 실행 중 글꼴을 추가했다면 **다시 감지** 버튼을 누르세요.
+3. 편집한 문서는 저장하거나 다른 이름으로 저장하세요. 중요한 문서는 원본을 보관하고 저장 결과를 다시 열어 확인하세요.
 
-## 개발 시작
+[키보드 단축키](docs/KEYBOARD_SHORTCUTS.md)를 확인하면 더 빠르게 작업할 수 있습니다.
 
-Node.js 24, Corepack, Rust stable과 대상 운영체제의 Tauri 2 시스템 의존성이 필요합니다.
+## 알아두세요
 
-```sh
-git submodule update --init --recursive
-corepack enable
-pnpm install --frozen-lockfile
-pnpm run check:product-boundary
-pnpm run check:product-version
-pnpm run test:upstream
-pnpm run test:studio
-pnpm run build:studio
-```
+- 문서 구성과 글꼴에 따라 한컴에서 보이는 배치와 달라질 수 있습니다. 모든 문서·글꼴·프린터 조합을 검증한 것은 아닙니다.
+- 직접 공급하는 로컬 글꼴은 지원되는 정적 TTF/OTF에 한정됩니다. 일부 글꼴은 대체 글꼴로 표시되며, 한컴 전용 글꼴을 제품에 포함하지 않습니다. [글꼴 처리 범위](docs/architecture/LOCAL_FONTS.md)를 참고하세요.
+- Windows NSIS 설치에서 환경에 따라 썸네일이 표시되지 않는 문제가 있습니다. [진단과 MSI 대안](docs/architecture/WINDOWS_THUMBNAILS.md#수동-진단과-msi-대안)을 확인하세요.
+- 별도의 데스크톱 자동 복구 저장소는 제공하지 않습니다. 작업 중 문서를 자주 저장하세요.
 
-지원 플랫폼에서 데스크톱 개발 서버를 실행합니다.
+버전별 실제 검증 환경과 남은 제한은 [v0.1.0 기록](docs/releases/v0.1.0.md)에 정리되어 있습니다.
 
-```sh
-pnpm tauri dev
-```
+## 문의와 기여
 
-자세한 구조와 검증 명령은 [개발 문서](docs/DEVELOPMENT.md)를 참고하세요.
+사용 중 문제가 있거나 개선 의견이 있으면 [문의·제보 페이지](https://postmelee.github.io/alhangeul-tauri/feedback/) 또는
+[GitHub Issues](https://github.com/postmelee/alhangeul-tauri/issues/new/choose)를 이용하세요.
+운영체제·설치 형식·앱 버전과 재현 방법을 알려주시면 확인에 도움이 됩니다.
+**개인정보나 기밀이 담긴 문서를 공개 이슈에 첨부하지 마세요.**
 
-## 의존성과 출처
+보안 취약점은 공개 이슈 대신 [비공개 보안 제보 안내](SECURITY.md)를 따라주세요.
+코드·문서·테스트 기여는 [기여 안내](CONTRIBUTING.md), 커뮤니티 참여 기준은 [행동 강령](CODE_OF_CONDUCT.md)을 참고하세요.
+개발 환경과 구조는 [개발 문서](docs/DEVELOPMENT.md), 전체 안내는 [문서 인덱스](docs/README.md)에 있습니다.
 
-- 지속 upstream: [edwardkim/rhwp](https://github.com/edwardkim/rhwp)
+## 엔진과 출처
+
+문서 파싱·렌더링과 편집기는 [edwardkim/rhwp](https://github.com/edwardkim/rhwp)를 기반으로 합니다.
+Alhangeul은 Tauri 데스크톱 셸, 파일·창·글꼴·인쇄와 운영체제 통합을 담당합니다.
+
 - 현재 Stable pin: `v0.8.6` (`f1f9c6ae58344ee9368996d3543f76b9345cf227`)
-- 기계 검증 가능한 pin과 artifact 출처: [rhwp-core.lock](rhwp-core.lock)
-- 의존 경계와 갱신·rollback 절차: [UPSTREAM.md](docs/architecture/UPSTREAM.md)
-- 초기 코드와 자산 출처: [PROVENANCE.md](docs/architecture/PROVENANCE.md)
+- 고정 버전과 출처: [rhwp-core.lock](rhwp-core.lock), [upstream 경계](docs/architecture/UPSTREAM.md)
+- 초기 코드와 제품 자산 출처: [PROVENANCE.md](docs/architecture/PROVENANCE.md)
 
-License: MIT
+제품 소스: [MIT](LICENSE). 글꼴 등 함께 사용하는 자산의 출처·라이선스는 위 출처 문서를 참고하세요.
