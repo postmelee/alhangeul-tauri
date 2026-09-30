@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 다운로드·설치 안내
+    url: https://postmelee.github.io/alhangeul-tauri/updates/
+    about: 지원 패키지, 설치·업데이트 방법과 알려진 제한을 확인하세요.
+  - name: 일반 문의
+    url: https://postmelee.github.io/alhangeul-tauri/feedback/
+    about: GitHub 이슈 대신 문의 페이지와 이메일을 이용할 수 있습니다.
+  - name: 비공개 보안 취약점 제보
+    url: https://github.com/postmelee/alhangeul-tauri/security/advisories/new
+    about: 취약점과 민감한 재현 정보는 공개 이슈에 올리지 마세요.
