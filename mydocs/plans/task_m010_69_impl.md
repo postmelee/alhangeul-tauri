@@ -5,7 +5,7 @@ GitHub Issue: [#69](https://github.com/postmelee/alhangeul-tauri/issues/69)
 마일스톤: M010
 
 2026-09-20 수행계획 승인 후 작성. 같은 스레드의 작업지시자 `진행해줘`로 구현계획 승인.
-현재 상태(2026-09-30): Stage 4 stable/latest 공개 및 11개 파일·3서명 원격 대조 완료. Stage 5 데이터 준비·로컬 검증 완료, 데이터 PR 생성 승인 대기.
+현재 상태(2026-09-30): Stage 4 stable/latest 공개 및 11개 파일·3서명 원격 대조 완료. Stage 5 PR #81 병합 완료, exact Pages SHA 배포 승인 대기.
 아래 초기 계획과 과거 실행 기록은 보존하며, 최신 결과는 Stage 4 보고서와 문서 끝의 실행 기록을 따른다.
 
 ## 단계 개요
@@ -644,3 +644,22 @@ URL·서명도 일치한다. manifest SHA-256:
 Stage 3 검증 harness와 Stage 3/4 기록도 포함된다. 제품 코드·upstream pin·공개 installer는
 변경하지 않았다. PR 생성/merge, Pages dispatch와 production 동일 버전 조회는 아직 수행하지
 않았으므로 Stage 5 전체 완료로 기록하지 않는다.
+
+### Stage 5 PR #81 병합 — 2026-09-30
+
+작업지시자가 PR 생성과 병합을 각각 `진행해줘`로 승인했다. PR #81의 head는
+`498fd0b36605b6d29d33770b8a821e66209cf4fa`, base는
+`c54498c6fef1de125181175b75995145f715342e`였으며 mergeable/CLEAN을 확인했다.
+현재 head에는 Actions/check-run이 0개다. 최근 정기 upstream sync 성공을 PR CI 성공으로
+취급하지 않는다. 기존 Pages 83건과 추가 후보 검증 계약 13건 통과, 코드 검토에서 병합을 막는
+결함을 발견하지 못했고 제품 코드·pin·설치본 변경이 없음을 확인했다.
+
+2026-09-30T04:06:24Z에 merge commit
+`6e2d8deb3caa22a98a2c4c2d480bc1e9478754f1`로 devel에 병합됐다.
+원격 devel이 같은 SHA이며 검증한 head와 Pages 입력·생성 코드·workflow가 동일하다.
+진행 중인 #69와 작업 브랜치/worktree는 Stage 5~6에 필요하므로 유지한다.
+
+다음 승인 대상은 `pages.yml --ref devel`에 deploy_ref=
+`6e2d8deb3caa22a98a2c4c2d480bc1e9478754f1`을 전달해 사이트 다운로드 및 production
+updater manifest를 게시하는 것이다. 실행 직전 원격 devel 일치를 다시 확인한다.
+이번 턴에는 Pages dispatch를 하지 않았고 production 조회도 아직 미검증이다.
