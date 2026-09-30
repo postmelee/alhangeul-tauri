@@ -90,8 +90,14 @@ Stage 1 출처 대조 뒤 Stage 2, 정적/회귀 통과 뒤 Stage 3으로 진행
 
 Action version 정렬은 입력 계약과 Windows/Linux full로 확인한다. 제품·권한·출력 identity는 변경하지 않는다.
 
+## 원격 검증 보완
+
+첫 full run 36723402631은 native/build와 개별 설치 3종이 성공했으나 installer-status와 result가 실패했다. 완료 후 동일 SHA·artifact·attempt의 기존 검증 함수를 같은 API 버전으로 재실행하면 모두 성공한다. 원격 응답 시점 문제 가능성은 아직 추정이며 최초 run을 전체 성공으로 기록하지 않는다. source를 바꾸지 않은 fresh full run 36730348163으로 전체 수용을 다시 확인한다. stale attempt의 artifact를 재사용하는 failed-job-only rerun은 수행하지 않는다.
+
 ## 승인 요청 사항
 
 2026-09-30 사용자가 #27 수행·PR 생성·리뷰·병합과 이후 #28을 명시 승인했다. 위 3단계와 문서 위치는 해당 목적 내의 구현 선택이며 별도 배포/secret 권한을 포함하지 않는다.
 
 검사 구현 세부: 기존 pnpm lock의 yaml 2.9.0을 직접 devDependency로 선언하고 YAML AST로 모든 uses를 검사한다. CLI는 설치된 개발 도구만 사용하며 runtime 제품 의존성은 바뀌지 않는다.
+
+Stage3 운영 정렬: 기본 main의 scheduled upstream 정의는 여전히 가변 Action을 사용한다. 사용자 #27 PR 생성·리뷰·병합 지시의 실제 운영 완료를 위해 devel PR 병합 뒤 같은 publish/task27 head로 main 대상 운영 PR도 검토·병합한다. 두 PR diff에서 제품·pin·공개 파일·Pages 데이터 불변을 확인하고, 다른 task의 devel 변경은 head에 포함하지 않는다. 새 tag/Release/Pages 배포는 없다. 이슈 종료·ref 정리는 두 PR merge 확인 뒤 수행한다.
