@@ -4,12 +4,17 @@
 
 ## 시작 위치
 
-- 개발·기여: [개발 안내](DEVELOPMENT.md), [upstream 경계](architecture/UPSTREAM.md)
+- 설치·사용: [사용자 README](../README.md), [다운로드](https://postmelee.github.io/alhangeul-tauri/), [설치 안내·업데이트](https://postmelee.github.io/alhangeul-tauri/updates/)
+- 문의·참여: [문의·제보](https://postmelee.github.io/alhangeul-tauri/feedback/), [기여 안내](../CONTRIBUTING.md), [행동 강령](../CODE_OF_CONDUCT.md), [보안 정책](../SECURITY.md)
+- 개발: [개발 안내](DEVELOPMENT.md), [upstream 경계](architecture/UPSTREAM.md)
 - native UI·Actions 테스트 작성/진단: [Native UI 테스트 가이드](operations/NATIVE_UI_TESTING.md)
 - 릴리즈 준비: [정책](operations/DESKTOP_RELEASE.md) → [실행 가이드](operations/PUBLIC_RELEASE_RUNBOOK.md) → [최소 체크리스트](operations/RELEASE_CHECKLIST.md)
 - 실제 공개 상태·근거: [릴리즈 기록 인덱스](releases/README.md), [v0.1.0 준비와 인계](releases/v0.1.0.md)
 - 다음 버전 기록 작성: [중앙 기록 템플릿](../mydocs/_templates/release_record.md)
 - 업데이트 동작·신뢰 경계: [updater 아키텍처](architecture/UPDATER.md)
+
+현재 공개 버전과 설치 파일은 사용자 README·다운로드 페이지를, 실제 검증 범위는 버전별 기록의
+최신 절을 우선한다. 개별 개발·아키텍처 문서의 과거 준비 상태가 현재 공개 상태를 뜻하지는 않는다.
 
 ## 구성
 
