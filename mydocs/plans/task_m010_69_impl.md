@@ -5,7 +5,7 @@ GitHub Issue: [#69](https://github.com/postmelee/alhangeul-tauri/issues/69)
 마일스톤: M010
 
 2026-09-20 수행계획 승인 후 작성. 같은 스레드의 작업지시자 `진행해줘`로 구현계획 승인.
-현재 상태(2026-09-30): Stage 4 stable/latest 공개 및 11개 파일·3서명 원격 대조 완료. Stage 5 승인된 Pages 배포 요청 완료(run 36667548738), 결과 미확인.
+현재 상태(2026-09-30): Stage 4 stable/latest 공개 및 11개 파일·3서명 원격 대조 완료. Stage 5 Pages 첫 실행은 게시 API 500 실패, 동일 run 재실행 요청 완료.
 아래 초기 계획과 과거 실행 기록은 보존하며, 최신 결과는 Stage 4 보고서와 문서 끝의 실행 기록을 따른다.
 
 ## 단계 개요
@@ -676,3 +676,16 @@ updater manifest를 게시하는 것이다. 실행 직전 원격 devel 일치를
 사용자 요청대로 Actions 완료를 기다리거나 반복 조회하지 않았다. run 성공, 실제 배포,
 공개 화면·manifest 일치와 설치본 동일 버전 조회는 아직 미확인이다. 사용자가 완료를 알리면
 이 run을 확인하고 승인된 배포 후 검증을 이어간다.
+
+### Stage 5 Pages 게시 API 오류와 동일 실행 재시도
+
+사용자 완료 알림 후 run 36667548738을 확인했다. exact SHA 검증, dependency 설치,
+Pages build/check, 계약 검사, Pages 설정과 artifact 업로드까지 성공했다. 마지막 deploy-pages의
+배포 생성 요청만 HTTP 500으로 실패했다. 로그는 GitHub 서버 오류와 재실행을 안내하며
+제품 코드나 검증 실패로 판단할 근거는 없다.
+
+artifact ID는 11076572172, Pages environment deployment 6751285452의 마지막 상태는
+failure였다. production `/updater/stable.json`은 HTTP 404로 아직 게시되지 않았다.
+기존 승인 범위에서 `gh run rerun 36667548738 --failed`로 같은 SHA의 실패 작업을 한 번
+재실행했고 CLI 요청이 성공했다. 코드·데이터·권한 설정 변경은 없고 완료를 기다리지 않았다.
+실제 게시 및 production 검증은 재실행 결과 확인 전까지 미완료로 유지한다.
