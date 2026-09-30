@@ -117,3 +117,16 @@ Explorer PID 4616→2628 재시작 후에는 8개 실제 첫 페이지 썸네일
 JPG는 탐색기 gallery에 넣지 않았으므로 cache-only 실패를 제품 썸네일 실패로 분류하지 않는다.
 Windows/Linux 8개 gallery 촬영은 확보했다. Windows 창은 986×713이며 기존 Linux 앱 창과의
 구도 차이는 남는다. 사이트 채택 및 Stage 2 진행은 아직 완료 처리하지 않는다.
+
+## Windows 구도 정렬
+
+사용자의 구도 조정 승인에 따라 disposable VM 화면을 1920×1080으로 요청하고 실제 적용
+크기를 기록한다. 적용 불가 시 작은 창으로 성공 처리하지 않고 실패 근거를 남긴다. 해상도는
+촬영 후 always 단계에서 복원한다. Windows 앱의 보이는 창 테두리는 Linux와 같은 1282×924,
+Explorer는 기존 Linux gallery와 같은 1180×780을 목표로 DWM의 비가시 resize margin을
+보정한다. 원본 문서·100% 배율은 유지한다. Explorer는 large에서 Ctrl+wheel로 썸네일 크기를
+높여 8개 문서를 여러 행으로 배치한다. 사이드바는 우선 유지하며 결과에 따라 조정한다.
+원본 Linux 이미지 변경, screenshot 합성, 제품 변경은 없다. 실제 구도는 실행 후 육안 확인한다.
+
+준비 검증: Node 계약 30건, GUI TypeScript, actionlint, diff check 통과. Windows에서
+PowerShell 구문·표시 모드 지원·실제 캡처 크기·구도를 확인한다. Actions 완료는 기다리지 않는다.

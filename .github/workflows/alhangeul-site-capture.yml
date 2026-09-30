@@ -107,11 +107,19 @@ jobs:
         run: |
           node scripts/site-capture/prepare-samples.mjs
           echo "ALHANGEUL_GUI_APP_PATH=$MSI_APP_PATH" >> "$GITHUB_ENV"
+      - name: Prepare larger capture display
+        id: capture-display
+        shell: powershell
+        run: ./scripts/site-capture/windows-display.ps1 -Phase Setup -EvidencePath "$env:ALHANGEUL_GUI_OUTPUT_DIR/display.json"
       - name: Native document roundtrip on Windows
         id: windows-gui
         if: runner.os == 'Windows'
         shell: bash
         run: pnpm exec wdio run tests/gui/wdio.site-capture.conf.ts
+      - name: Restore capture display
+        if: always() && steps.capture-display.outcome != 'skipped'
+        shell: powershell
+        run: ./scripts/site-capture/windows-display.ps1 -Phase Restore -EvidencePath "$env:ALHANGEUL_GUI_OUTPUT_DIR/display.json"
       - name: Cleanup installed MSI
         id: cleanup
         if: always() && runner.os == 'Windows' && steps.candidate.outcome == 'success'

@@ -11,6 +11,7 @@ using System;
 using System.Runtime.InteropServices;
 public class CaptureWindow {
  [StructLayout(LayoutKind.Sequential)] public struct Rect { public int Left, Top, Right, Bottom; }
+ [DllImport("dwmapi.dll")] public static extern int DwmGetWindowAttribute(IntPtr h,int attribute,out Rect r,int size);
  [DllImport("user32.dll")] public static extern bool SetProcessDPIAware();
  [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
  [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr h,int cmd);
@@ -43,12 +44,34 @@ if ($Kind -eq 'App') {
 [CaptureWindow]::ShowWindow($handle,9) | Out-Null
 [CaptureWindow]::SetForegroundWindow($handle) | Out-Null
 $screen = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
-$width = [Math]::Min(1282,$screen.Width-24)
-$height = [Math]::Min(924,$screen.Height-48)
+$targetWidth = $(if ($Kind -eq 'App') {1282} else {1180})
+$targetHeight = $(if ($Kind -eq 'App') {924} else {780})
+if ($screen.Width -lt 1400 -or $screen.Height -lt 1000) { throw 'Screen too small for matched composition' }
+$width = $targetWidth
+$height = $targetHeight
 if (-not [CaptureWindow]::MoveWindow($handle,8,8,$width,$height,$true)) { throw 'MoveWindow failed' }
+# Compensate invisible resize margins so the captured visible frame matches Linux dimensions.
+Start-Sleep -Milliseconds 500
+$outer = New-Object CaptureWindow+Rect
+$visible = New-Object CaptureWindow+Rect
+if (-not [CaptureWindow]::GetWindowRect($handle,[ref]$outer) -or
+    [CaptureWindow]::DwmGetWindowAttribute($handle,9,[ref]$visible,16) -ne 0) { throw 'Visible frame bounds unavailable' }
+$width += ($outer.Right-$outer.Left)-($visible.Right-$visible.Left)
+$height += ($outer.Bottom-$outer.Top)-($visible.Bottom-$visible.Top)
+if (-not [CaptureWindow]::MoveWindow($handle,20,20,$width,$height,$true)) { throw 'Frame size adjustment failed' }
 if ($Kind -eq 'Explorer') {
   $window.Document.CurrentViewMode = 5
   (New-Object -ComObject WScript.Shell).SendKeys('^+2')
+  Start-Sleep -Milliseconds 500
+  # Native Explorer zoom between large and extra-large, for a fuller thumbnail grid.
+  [System.Windows.Forms.Cursor]::Position = [System.Drawing.Point]::new(650,450)
+  [CaptureWindow]::keybd_event(0x11,0,0,[UIntPtr]::Zero)
+  try {
+    for ($tick=0; $tick -lt 2; $tick++) {
+      [CaptureWindow]::mouse_event(0x800,0,0,120,[UIntPtr]::Zero)
+      Start-Sleep -Milliseconds 300
+    }
+  } finally { [CaptureWindow]::keybd_event(0x11,0,2,[UIntPtr]::Zero) }
   Start-Sleep -Seconds 40
 } else { Start-Sleep -Seconds 12 }
 [System.Windows.Forms.Cursor]::Position = [System.Drawing.Point]::new(($screen.Width-2),($screen.Height-2))
@@ -124,6 +147,7 @@ try {
   $bitmap.Save($OutputPath,[System.Drawing.Imaging.ImageFormat]::Png)
 } finally {
   @{kind=$Kind;method=$method;attempts=@($attempts.ToArray());
+    targetWidth=$targetWidth;targetHeight=$targetHeight;
     width=$(if ($bitmap) { $bitmap.Width } else { 0 });
     height=$(if ($bitmap) { $bitmap.Height } else { 0 });
     snippingToolPath=$(if ($snipCommand) { $snipCommand.Source } else { $null });
