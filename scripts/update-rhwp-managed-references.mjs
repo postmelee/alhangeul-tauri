@@ -58,6 +58,7 @@ export async function updateRhwpManagedReferences(options) {
 function referenceRules(values) {
   const { fromTag, fromCommit, toTag, toCommit } = values;
   return [
+    exactRule('README.md', 'bundled-rhwp-badge', rhwpBadge(fromTag), rhwpBadge(toTag)),
     exactRule(
       'README.md',
       'current-pin',
@@ -97,6 +98,10 @@ function referenceRules(values) {
       `    expect(releaseTag).toBe('${toTag}');`,
     ),
   ];
+}
+
+function rhwpBadge(tag) {
+  return `[![포함된 rhwp ${tag}](https://img.shields.io/badge/bundled%20rhwp-${tag}-5865f2)](https://github.com/edwardkim/rhwp/releases/tag/${tag})`;
 }
 
 function commandRule(path, fromTag, fromCommit, toTag, toCommit) {

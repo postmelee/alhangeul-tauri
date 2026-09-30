@@ -4,6 +4,11 @@
 
 # 알한글 (Alhangeul)
 
+[![Alhangeul 안정 릴리즈](https://img.shields.io/github/v/release/postmelee/alhangeul-tauri?label=Alhangeul&color=0066cc)](https://postmelee.github.io/alhangeul-tauri/)
+[![포함된 rhwp v0.8.6](https://img.shields.io/badge/bundled%20rhwp-v0.8.6-5865f2)](https://github.com/edwardkim/rhwp/releases/tag/v0.8.6)
+[![지원 플랫폼 Windows와 Linux](https://img.shields.io/badge/platform-Windows%20%7C%20Linux-555555)](https://postmelee.github.io/alhangeul-tauri/updates/)
+[![MIT 라이선스](https://img.shields.io/badge/license-MIT-3da639)](LICENSE)
+
 **Windows와 Linux를 위한 오픈소스 HWP/HWPX 문서 편집기입니다.**
 한글 문서를 열고, 편집하고, 저장하세요. 파일 탐색기에서도 문서의 첫 페이지를 미리 확인할 수 있습니다.
 
