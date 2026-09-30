@@ -104,3 +104,16 @@ timeout 있는 진단 도구를 적용한다. 먼저 cache-only를 관측하고 
 준비 검증: 기존 Node 계약 30건, GUI TypeScript, actionlint, diff check 통과. PowerShell
 구문 검사는 Windows job에서 수행한다. 재시작 후 registry snapshot도 기록해 되돌림 여부를
 확인한다. 비교 진단의 실제 성공·실패와 사진 채택 여부는 Actions 결과 후 판단한다.
+
+비교 결과: [run 36675197659](https://github.com/postmelee/alhangeul-tauri/actions/runs/36675197659),
+harness 79907d18, Windows job success. IconsOnly=0 상태에서 재시작 전에는 8개 아이콘,
+Explorer PID 4616→2628 재시작 후에는 8개 실제 첫 페이지 썸네일을 육안 확인했다.
+재시작 후에도 IconsOnly=0이었고 촬영 뒤 1로 복원 및 Explorer 재시작을 확인했다.
+이 VM에서는 설정 변경 통지만으로 기존 Explorer 표시가 갱신되지 않았으며 재시작으로 해결됐다.
+제품 bytes 변경이나 생성 API 호출 없이 재시작 후 PNG가 먼저 촬영됐다.
+
+이후 HWP/HWPX 각 1개 cache-only·shell·force-extract는 모두 0x00000000과 181×256 bitmap을
+반환했다. 별도 JPG 대조군은 cache-only 0x80030002, shell/force-extract 성공(164×152)이었다.
+JPG는 탐색기 gallery에 넣지 않았으므로 cache-only 실패를 제품 썸네일 실패로 분류하지 않는다.
+Windows/Linux 8개 gallery 촬영은 확보했다. Windows 창은 986×713이며 기존 Linux 앱 창과의
+구도 차이는 남는다. 사이트 채택 및 Stage 2 진행은 아직 완료 처리하지 않는다.
