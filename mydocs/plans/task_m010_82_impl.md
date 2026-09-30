@@ -41,3 +41,13 @@ GUI typecheck, actionlint, shellcheck, diff check 통과. PowerShell 구문은 W
 Windows는 실제 화면 해상도보다 창을 크게 강제하지 않는다. 작은 runner 해상도에서는 가능한
 크기로 촬영하고 실제 크기 JSON을 기록한다. 완성 이미지는 결과 확인 후 채택 여부를 결정한다.
 Linux는 8개 cache 결과와 화면 둘 다 확인하며 cache 생성만으로 시각적 정상 표시를 단정하지 않는다.
+
+## 최초 촬영 실행
+
+harness SHA `031fb39096e3191133b93b5f9a8de2e55fa76174`, publish/task82,
+Alhangeul Desktop Artifact Build mode=site-capture / publish_release=false로 실행했다.
+[run 36670325455](https://github.com/postmelee/alhangeul-tauri/actions/runs/36670325455).
+Windows 앱·Explorer 시도와 Linux Nautilus 8개 gallery가 독립 job으로 실행된다.
+사용자 요청대로 Actions 완료를 기다리지 않는다. Windows 네이티브 구문·실제 UI·Linux cache
+생성은 아직 실행 결과 미확인이다. 이번 커밋은 실행 기록만 보충하며 위 run의 harness SHA를
+바꾸지 않는다. 다음 입력에서 artifact를 내려받아 화면을 직접 검토한다.
