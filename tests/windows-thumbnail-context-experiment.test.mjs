@@ -26,7 +26,7 @@ test('opt-in job requires Windows artifact tests and prohibits release publishin
   assert.match(job, /digest-mismatch: error/);
   assert.match(job, /GITHUB_WORKFLOW_SHA/);
   assert.match(job, /windows-thumbnail-context-tests.ps1 -CIConsent/);
-  assert.match(job, /actions\/upload-artifact@v7/);
+  assert.match(job, /actions\/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a/);
   assert.doesNotMatch(job, /continue-on-error|publish_release=true|regsvr32|ExecutionPolicy/);
 });
 

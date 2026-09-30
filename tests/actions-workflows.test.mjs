@@ -302,7 +302,7 @@ test('Windows thumbnail core probe는 exact checkout에서 진단을 항상 보�
       /^\s{8}if: \$\{\{ always\(\) && matrix\.name == 'windows-x64' \}\}$/m,
     );
   }
-  assert.match(uploadStep, /uses: actions\/upload-artifact@v7/);
+  assert.match(uploadStep, /uses: actions\/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a/);
   assert.match(uploadStep, /path: diagnostics\/thumbnail-core\/\*\*/);
   assert.match(uploadStep, /^\s{10}if-no-files-found: error$/m);
   assert.match(uploadStep, /^\s{10}retention-days: 14$/m);
@@ -354,7 +354,7 @@ test('Linux thumbnail core probe는 x64 arm64 resource 증거를 각각 보존�
       /^        if: \$\{\{ always\(\) && startsWith\(matrix\.name, 'linux-'\) \}\}$/m,
     );
   }
-  assert.match(uploadStep, /uses: actions\/upload-artifact@v7/);
+  assert.match(uploadStep, /uses: actions\/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a/);
   assert.match(uploadStep, /path: diagnostics\/thumbnail-core-\$\{\{ matrix\.name \}\}\/\*\*/);
   assert.match(uploadStep, /^          if-no-files-found: error$/m);
   assert.match(uploadStep, /^          retention-days: 14$/m);
@@ -579,7 +579,7 @@ test('installer smoke 진단은 항상 보존되고 마지막 gate가 실패를 
     );
   }
   assert.match(uploadStep, /^\s{8}if: \$\{\{ always\(\) \}\}$/m);
-  assert.match(uploadStep, /uses: actions\/upload-artifact@v7/);
+  assert.match(uploadStep, /uses: actions\/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a/);
   assert.match(
     uploadStep,
     /path: diagnostics\/windows-installer-smoke\/\*\*/,
