@@ -5,7 +5,7 @@ GitHub Issue: [#69](https://github.com/postmelee/alhangeul-tauri/issues/69)
 마일스톤: M010
 
 2026-09-20 수행계획 승인 후 작성. 같은 스레드의 작업지시자 `진행해줘`로 구현계획 승인.
-현재 상태(2026-09-30): Stage 4 stable/latest 공개 및 11개 파일·3서명 원격 대조 완료. Stage 5 Pages 재시도는 중복 artifact 실패, 새 run 36668279136 요청 완료.
+현재 상태(2026-09-30): Stage 4 stable/latest 공개 및 11개 파일·3서명 원격 대조 완료. Stage 5 Pages 배포·공개 manifest 대조 성공. 안내 문구 보정과 실제 설치본 production 조회 잔여.
 아래 초기 계획과 과거 실행 기록은 보존하며, 최신 결과는 Stage 4 보고서와 문서 끝의 실행 기록을 따른다.
 
 ## 단계 개요
@@ -702,3 +702,23 @@ Pages 실행이 완료 상태임을 확인했다. 코드·설정·승인 입력 
 [run 36668279136](https://github.com/postmelee/alhangeul-tauri/actions/runs/36668279136)을 생성했다.
 `pages.yml --ref devel`, deploy_ref는 동일 SHA다. 새 run은 이전 run의 artifact와 분리된다.
 완료를 기다리지 않았으며 실제 배포와 production 검증은 결과 확인 전까지 미완료다.
+
+### Stage 5 Pages 공개 성공 및 read-back
+
+run 36668279136은 success다. head SHA는 승인한
+`6e2d8deb3caa22a98a2c4c2d480bc1e9478754f1`, deploy step 완료 시각은
+2026-09-30T04:19:27Z다. exact SHA·build/check/tests/upload/deploy 모두 통과했다.
+공개 release.json과 updater/stable.json을 curl --fail로 내려받아 승인 출력과 cmp 일치를
+확인했다. manifest SHA-256은 기존
+`e3c27ee429063ae12d0f12e7188f5ee2a3e498104963900889501228caba88d1` 그대로다.
+HTTP 성공은 실제 앱 업데이트 조회 성공으로 대신 기록하지 않는다.
+
+인앱 브라우저에서 홈 Windows NSIS/MSI 링크, Linux 선택 시 AppImage 링크와 DEB/RPM/arm64
+수동 Release 링크, 업데이트 메뉴의 세 다운로드·v0.1.0 릴리즈 노트 링크, 문의 화면을 확인했다.
+390px 모바일 업데이트 화면에서 메뉴와 줄바꿈을 관찰했다. 홈 Linux 전환은 키보드 ArrowRight로
+확인했으며 radio check 도구 호출 실패 자체를 제품 클릭 장애로 판단하지 않았다.
+
+공개 후 남은 문구: site/index.html:78의 “공개 전에는…” 안내가 published에서도 남는다.
+site/updates/index.html:54의 “첫 공개 릴리스 검증이 끝나면…”도 후속 조회 완료 후 정리가 필요하다.
+사이트 문구 보정은 별도 변경 승인 대상으로 제시한다. 실제 NSIS/MSI/AppImage의 production
+동일 버전 조회는 여전히 미검증이므로 Stage 5 전체 완료나 Stage 6 진입을 선언하지 않는다.
