@@ -130,3 +130,9 @@ Explorer는 기존 Linux gallery와 같은 1180×780을 목표로 DWM의 비가�
 
 준비 검증: Node 계약 30건, GUI TypeScript, actionlint, diff check 통과. Windows에서
 PowerShell 구문·표시 모드 지원·실제 캡처 크기·구도를 확인한다. Actions 완료는 기다리지 않는다.
+
+run 36676600660 (bc122d38) 성공: VM 1024×768→1920×1080 적용 및 원복 확인. 앱 PNG는
+1282×924, 탐색기는 1180×780으로 목표와 일치한다. 문서 원본 hash와 100% 배율을 유지했다.
+앱 구도는 사용할 수 있으나 Explorer는 8개가 한 줄에 몰려 채택을 보류한다. Ctrl+wheel 대신
+공식 IShellFolderViewDual3.IconSize를 192로 지정하고 readback을 검사하도록 보완한다.
+이 변경은 동일 Stage 1 구도 조정 범위이며 Windows만 재촬영한다.

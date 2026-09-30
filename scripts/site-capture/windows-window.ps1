@@ -61,17 +61,11 @@ $height += ($outer.Bottom-$outer.Top)-($visible.Bottom-$visible.Top)
 if (-not [CaptureWindow]::MoveWindow($handle,20,20,$width,$height,$true)) { throw 'Frame size adjustment failed' }
 if ($Kind -eq 'Explorer') {
   $window.Document.CurrentViewMode = 5
-  (New-Object -ComObject WScript.Shell).SendKeys('^+2')
+  # IShellFolderViewDual3: set and read back the actual native icon size.
+  $window.Document.IconSize = 192
   Start-Sleep -Milliseconds 500
-  # Native Explorer zoom between large and extra-large, for a fuller thumbnail grid.
-  [System.Windows.Forms.Cursor]::Position = [System.Drawing.Point]::new(650,450)
-  [CaptureWindow]::keybd_event(0x11,0,0,[UIntPtr]::Zero)
-  try {
-    for ($tick=0; $tick -lt 2; $tick++) {
-      [CaptureWindow]::mouse_event(0x800,0,0,120,[UIntPtr]::Zero)
-      Start-Sleep -Milliseconds 300
-    }
-  } finally { [CaptureWindow]::keybd_event(0x11,0,2,[UIntPtr]::Zero) }
+  $actualIconSize = [int]$window.Document.IconSize
+  if ($actualIconSize -ne 192) { throw "Explorer did not apply requested icon size: $actualIconSize" }
   Start-Sleep -Seconds 40
 } else { Start-Sleep -Seconds 12 }
 [System.Windows.Forms.Cursor]::Position = [System.Drawing.Point]::new(($screen.Width-2),($screen.Height-2))
@@ -147,6 +141,7 @@ try {
   $bitmap.Save($OutputPath,[System.Drawing.Imaging.ImageFormat]::Png)
 } finally {
   @{kind=$Kind;method=$method;attempts=@($attempts.ToArray());
+    iconSize=$(if ($Kind -eq 'Explorer') { $actualIconSize } else { $null });
     targetWidth=$targetWidth;targetHeight=$targetHeight;
     width=$(if ($bitmap) { $bitmap.Width } else { 0 });
     height=$(if ($bitmap) { $bitmap.Height } else { 0 });
