@@ -58,9 +58,6 @@ async function setupReleaseData() {
             if (!isExactDownload(url, release.tag)) continue;
             hydrateDownloadAction(action, url, release);
         }
-        for (const note of document.querySelectorAll('[data-install-note]')) {
-            note.textContent = '설치 방식별 안내와 변경 내용은 업데이트 페이지에서 확인하세요.';
-        }
         hydrateReleaseNote(release);
     } catch {
         // 공개 전 기본 안내와 최신 다운로드 안내 링크를 유지한다.

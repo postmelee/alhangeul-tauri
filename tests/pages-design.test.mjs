@@ -238,7 +238,7 @@ test('홈은 일반 화면에서 스크롤을 막고 작은 화면 fallback과 �
   assert.match(css, /\.install-heading h2 \{[^}]*color: var\(--ink\); font-size: 17px; font-weight: 600/);
   assert.match(css, /\.download-platform-switch \{[^}]*grid-template-columns: repeat\(2, minmax\(92px, 1fr\)\)/);
   assert.match(css, /#download-platform-windows:checked ~ \.download-platform-panels \.windows-panel/);
-  assert.match(css, /\.download-platform-panels \{ min-height: 139px/);
+  assert.match(css, /\.download-platform-panels \{ margin-top: 10px/);
   assert.match(css, /\.download-package-option \{[^}]*min-height: 44px;[^}]*grid-template-columns: minmax\(0, 1fr\) auto/);
   assert.match(css, /\.download-package-copy \{[^}]*grid-template-columns: 76px minmax\(0, 1fr\)/);
   assert.match(css, /\.download-package-copy strong \{[^}]*font-size: 14px; font-weight: 650/);
