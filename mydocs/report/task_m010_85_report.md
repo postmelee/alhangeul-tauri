@@ -9,7 +9,7 @@ GitHub Issue: [#85](https://github.com/postmelee/alhangeul-tauri/issues/85)
 - 목적: 첫 안정 릴리즈를 소개할 수 있도록 사용자 README·Community Standards·저장소 소개를 정비한다.
 - README는 공개 v0.1.0 다운로드·사용 순서·실제 Windows/Linux 화면·제한과 제보를 먼저 안내한다.
 - 기여·행동 강령·보안 문서와 한국어 제보 양식, 다운로드 홈페이지·12개 토픽·비공개 신고를 준비/반영했다.
-- 구현·로컬/공개 브랜치 검증은 완료했다. Open PR의 병합과 기본 브랜치 Community Standards 최종 수용은 남아 있다.
+- 구현·로컬/공개 브랜치 검증과 첫 fast CI 수용·PR 검토를 완료했다. 검토 후 내부 기록/공백만 정리했으며 새 head CI는 PR에서 확인한다. PR 병합과 기본 브랜치 Community Standards 최종 수용은 남아 있다.
 
 ## 변경 파일 목록과 영향 범위
 
@@ -78,7 +78,7 @@ GitHub Issue: [#85](https://github.com/postmelee/alhangeul-tauri/issues/85)
 
 ### 잔여 위험
 
-- 최종 PR head의 수동 fast CI는 실행 링크를 PR에 연결하고 완료를 기다리지 않는다. 해당 run 성공을 아직 수용하지 않는다.
+- 최초 PR head `e50d9f986558a5a3ad68bfab06cc5b31d1584e94`의 fast CI는 아래 후속 확인에서 수용했다. 검토 후 변경은 내부 기록·공백에 한정되며 최종 head의 새 fast CI는 PR에 연결하고 결과를 기다리지 않는다.
 - Community Standards는 PR 병합 후 기본 브랜치 UI의 8개 체크를 확인해야 한다. API score는 YAML/Security 인식이 달라 최종 수용 근거로 쓰지 않는다.
 - 새 chooser와 보안 정책의 기본 브랜치 자동 노출도 병합 후 확인한다. 이메일·실제 취약점 전송은 시험하지 않았다.
 - 문서만 변경해 새 native 설치본·서명·Pages/manifest 배포를 만들지 않았다. 기존 설치본의 Authenticode 미서명,
@@ -87,7 +87,7 @@ GitHub Issue: [#85](https://github.com/postmelee/alhangeul-tauri/issues/85)
 
 ### 후속 작업 후보
 
-1. fast CI 결과 확인과 PR 검토, 별도 병합 승인.
+1. 검토 후 최종 head의 fast CI 확인과 별도 병합 승인.
 2. 병합 후 Community Standards 8개·chooser·보안 정책·README 연결 확인 및 #85 종료/부산물 정리.
 3. 완료된 공개 소개를 바탕으로 사용자가 마케팅을 진행할 수 있다. 메시지 발송은 이번 작업에 포함하지 않는다.
 
@@ -95,3 +95,27 @@ GitHub Issue: [#85](https://github.com/postmelee/alhangeul-tauri/issues/85)
 
 작업지시자가 “작업을 계속진행하고 PR 생성까지 진행해줘”로 이슈 등록·문서 위치·설정·각 단계와
 Open PR 게시를 명시 승인했다. 그 범위까지 진행하며 병합·이슈 close·릴리즈/배포는 실행하지 않는다.
+
+## PR #86 CI 수용·검토 — 2026-09-30
+
+작업지시자가 CI 완료를 알리고 다음 진행을 지시했다. 기존 계획의 PR 제출 범위에 이어
+CI 수용·PR 검토와 내부 기록/공백 보정을 수행한다. 새 제품 기능이나 공식 문서 위치 변경은 없다.
+
+- [fast CI 36709677925](https://github.com/postmelee/alhangeul-tauri/actions/runs/36709677925):
+  completed/success, workflow_dispatch, source/head `e50d9f986558a5a3ad68bfab06cc5b31d1584e94`.
+- `select`, `fast / Fast Node and Studio contracts`, `fast / Fast Windows PowerShell contracts`가 success다.
+  native/package/installer/PDF cleanup은 이 profile에서 선택하지 않아 skipped이며 통과로 확대하지 않는다.
+- CI 로그 대조: automation 995 passed/0 failed/0 skipped, upstream 39 passed/0 failed/0 skipped,
+  Studio 38 test files/235 tests passed. GUI typecheck·Studio build·version/release/pin 검사도 성공했다.
+- Windows 계약 artifact: ID `11093347406`, `alhangeul-fast-windows-script-contracts`, 7,466 bytes,
+  SHA-256 `c1493cb0bf2c182193b043e54ed33678e9a6afaacde6e933b29f3f12b034892d`.
+  API digest와 다운로드 ZIP digest를 대조했다. 합성 실패 입력의 거부 결과는 의도한 negative case이며
+  설치 제품 수용을 뜻하지 않는다.
+- 공개 문서 8개와 내부 기록 7개를 검토했다. README의 공개 상태·다운로드·지원 패키지/제한,
+  행동 강령 출처·연락처, 외부 기여와 비공개 제보, chooser·선택적 upstream 비교에서 차단할 문제를 찾지 못했다.
+- 전체 PR diff의 `git diff --check`가 계획서 EOF의 불필요한 빈 줄 1개를 지적해 정리했다.
+  기존 작업 트리만의 diff 검사에서 놓친 커밋된 공백이므로 전체 base..head 범위로 다시 확인한다.
+- 검토 후 수정은 수행계획서 EOF와 이 보고서·오늘할일뿐이다. 공개 안내·제품·검증 script/workflow는
+  성공한 CI 기준선과 동일하다. 새 최종 head에 fast CI를 실행하고 PR 본문에서 결과를 추적한다.
+- About description/homepage/12 topics 및 private reporting=true를 재조회해 승인값 유지 확인.
+  PR은 devel 대상 Open, draft=false이며 병합 전 Community Standards 최종 체크와 #85 종료는 남아 있다.
