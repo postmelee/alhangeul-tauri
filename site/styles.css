@@ -66,6 +66,8 @@ button { font: inherit; }
 .download-package-action:hover { background: var(--blue-dark); box-shadow: 0 4px 10px rgba(0, 72, 145, 0.14); transform: translateY(-1px); }
 .install-note a { text-underline-offset: 3px; }
 .install-note { margin: 14px 0 0; color: var(--subtle); font-size: 11px; font-weight: 400; line-height: 1.4; }
+.family-mobile-note { display: none; }
+.family-mobile-note a { display: inline-flex; min-height: 32px; align-items: center; gap: 4px; color: var(--blue); white-space: nowrap; }
 .home-product { position: relative; display: flex; min-width: 0; height: min(650px, 76vh); align-items: center; justify-content: center; margin: 0; }
 .product-glow { position: absolute; inset: 8% 0; border-radius: 50%; background: radial-gradient(circle, rgba(0, 102, 204, 0.18), transparent 68%); filter: blur(28px); }
 .product-window { position: relative; z-index: 1; width: 100%; overflow: hidden; border: 0; border-radius: 2px; background: white; box-shadow: 0 28px 70px rgba(34, 46, 67, 0.17); }
@@ -150,12 +152,14 @@ a.download-option:hover { background: var(--blue-soft); }
     .site-footer-inner nav { grid-column: 1; justify-self: start; }
 }
 @media (max-width: 520px) {
-    .site-header { height: auto; }
-    .site-header-inner { width: min(calc(100% - 24px), 980px); flex-wrap: wrap; gap: 0; padding-block: 6px; }
+    .site-header-inner { width: min(calc(100% - 24px), 980px); gap: 12px; }
     .site-footer-inner { width: min(calc(100% - 24px), 980px); }
     .brand-link span { font-size: 17px; }
-    .header-actions { width: 100%; justify-content: space-between; gap: 8px; }
+    .header-actions { gap: 12px; }
     .header-link { font-size: 12px; }
+    .family-header-link { display: none; }
+    .family-mobile-note { display: block; margin: 10px 0 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .site-footer > .family-mobile-note { width: calc(100% - 24px); margin: 12px auto 0; }
     .feedback-contact-card { padding: 20px; }
     .feedback-contact-card h2 { font-size: 24px; }
     .feedback-card-copy p { font-size: 15px; line-height: 1.58; }

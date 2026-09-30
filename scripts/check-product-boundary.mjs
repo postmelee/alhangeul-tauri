@@ -32,11 +32,14 @@ const unsupportedPlatformAllowlist = new Set([
   'scripts/check-product-boundary.mjs',
 ]);
 
-const approvedSiteHeaderLink = '                    <a class="header-link" href="https://postmelee.github.io/alhangeul-macos/" aria-label="알한글 macOS 홈페이지로 이동">알한글 for macOS</a>';
+const approvedSiteHeaderLink = '                    <a class="header-link family-header-link" href="https://postmelee.github.io/alhangeul-macos/" aria-label="알한글 macOS 홈페이지로 이동">알한글 for macOS</a>';
+const approvedSiteMobileNote = '<p class="family-mobile-note">macOS를 사용하시나요? <a href="https://postmelee.github.io/alhangeul-macos/">알한글 for macOS <span aria-hidden="true">→</span></a></p>';
 
 const approvedReferenceLines = new Map([
   ...['site', '_site'].flatMap((root) => ['index.html', 'updates/index.html', 'feedback/index.html']
-    .map((page) => [`${root}/${page}`, { group: 'platform', lines: new Set([approvedSiteHeaderLink]) }])),
+    .map((page) => [`${root}/${page}`, { group: 'platform', lines: new Set([
+      approvedSiteHeaderLink, `${' '.repeat(page === 'index.html' ? 24 : 12)}${approvedSiteMobileNote}`,
+    ]) }])),
   ['docs/operations/DESKTOP_RELEASE.md', { group: 'legacy', lines: new Set([
     '- 초기 HOP version과 Alhangeul의 독립 계보는 [출처 문서](../architecture/PROVENANCE.md)를',
   ]) }],

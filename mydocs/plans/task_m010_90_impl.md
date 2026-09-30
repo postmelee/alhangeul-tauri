@@ -12,13 +12,14 @@ GitHub Issue: [#90](https://github.com/postmelee/alhangeul-tauri/issues/90)
 | 2 | 동기화 정합성 | updater·기존 테스트·Stage 2 | 갱신·무쓰기·관련 계약 |
 | 3 | 실제 렌더링과 PR | Stage 3·최종 보고·PR | GitHub 이미지·링크·전체 diff |
 | 4 | 홈페이지 상호 안내 | site 헤더·CSS·Stage 4·PR 갱신 | Pages 계약·실제 desktop/mobile |
+| 5 | 모바일 보조 안내 | 다운로드 아래·푸터·한 행 헤더·Stage 5 | Pages/경계·실제 미리보기 |
 
 ## 문서 위치 확인
 
 | 파일 | 수행계획서 위치 | 실제 위치 | 일치 |
 |---|---|---|---|
 | 배지 | README.md | 제목 아래·기존 본문 앞 | OK |
-| 홈페이지 링크 | site 기존 HTML·styles.css | 공통 헤더 3개·기존 모바일 media query | OK |
+| 홈페이지 링크 | site 기존 HTML·styles.css | 공통 헤더·모바일 다운로드 아래 및 푸터 | OK |
 | 내부 기록 | mydocs/plans·working·report·orders | 기존 역할별 위치 | OK |
 
 ## Stage 1 — 상단 배지 안내
@@ -69,10 +70,25 @@ git diff --check
 - 커밋: `Task #90 Stage 4 + 최종 보고서: 운영체제별 홈페이지 링크와 모바일 헤더 보완`.
 - 기존 PR #91의 제목·본문·수용 기준·보고를 최종 범위로 갱신한다. 새 CI를 기다리지 않는다.
 
+## Stage 5 — 모바일 보조 안내
+
+- 사용자가 승인한 보조 링크 배치로 모바일 520px 이하 헤더를 기존 세 메뉴 한 행으로 복원한다.
+- 데스크톱 헤더 링크는 유지한다. 홈은 설치 안내 아래에 ‘macOS를 사용하시나요?’와
+  ‘알한글 for macOS →’를 표시하고 업데이트·문의는 푸터에 같은 모바일 보조 안내를 둔다.
+- CSS cache를 v90-5로 갱신하고 release/다운로드 JS·showcase 자산·제품 pin을 보존한다.
+- 기존 Pages·경계 검증의 exact 문장에 새 보조 안내를 반영한다. 다른 URL·지원 표현·경로는
+  계속 거부하며 모바일 보조 링크에 대해서도 기존 거부 사례를 실행한다.
+- 검증: build:pages·check:pages·check:product-boundary,
+  node --test tests/pages.test.mjs tests/product-boundary.test.mjs, git diff --check,
+  320/390/520px 홈·320px 하위 페이지·521/1280px 헤더 실제 브라우저 미리보기.
+- 같은 방향을 이미 생성한 macOS 세션에 전달하고 CI 완료를 기다리지 않는다.
+- Stage 5·최종 보고·orders를 갱신하고 기존 publish/task90 / PR #91을 갱신한다.
+- 커밋: `Task #90 Stage 5 + 최종 보고서: 모바일 보조 링크와 한 행 헤더 배치`.
+
 ## 검증·커밋·단계 의존성
 
 검증 후 단계 산출물과 보고서를 묶어 커밋한다. Stage 1 → 2 → 3 순서로 진행한다.
-PR 게시 이후의 추가 사용자 지시를 Stage 4로 진행하며 이전 검증 source가 동일하면 재실행하지 않는다.
+PR 게시 이후의 추가 사용자 지시를 Stage 4~5로 진행하며 이전 검증 source가 동일하면 재실행하지 않는다.
 수행계획서의 작은 문서 보완 요청 범위를 유지하고 PR 병합·main 공개 반영은 별도 승인 사항이다.
 새 설치본·native 검증은 이 변경의 수용 기준이 아니며 Actions를 기다리는 절차를 추가하지 않는다.
 

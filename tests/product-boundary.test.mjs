@@ -12,14 +12,16 @@ const approvedHandoffReference =
   `- 초기 ${legacyProduct} version과 Alhangeul의 독립 계보는 [출처 문서](../architecture/PROVENANCE.md)를`;
 const approvedSyncReference =
   `3. [${unsupportedPlatform} sync PR #491](https://github.com/postmelee/${unsupportedRepository}/pull/491)은 참고만 한다.`;
-const approvedSiteHeaderLink = `                    <a class="header-link" href="https://postmelee.github.io/${unsupportedRepository}/" aria-label="알한글 ${unsupportedPlatform} 홈페이지로 이동">알한글 for ${unsupportedPlatform}</a>`;
+const approvedSiteHeaderLink = `                    <a class="header-link family-header-link" href="https://postmelee.github.io/${unsupportedRepository}/" aria-label="알한글 ${unsupportedPlatform} 홈페이지로 이동">알한글 for ${unsupportedPlatform}</a>`;
+const approvedSiteMobileNote = `<p class="family-mobile-note">${unsupportedPlatform}를 사용하시나요? <a href="https://postmelee.github.io/${unsupportedRepository}/">알한글 for ${unsupportedPlatform} <span aria-hidden="true">→</span></a></p>`;
+const mobileLine = (page) => `${' '.repeat(page === 'index.html' ? 24 : 12)}${approvedSiteMobileNote}`;
 
 test('승인된 참조 문장은 실제 해당 문서에 존재한다', async () => {
   for (const [path, line] of [
     ['docs/operations/DESKTOP_RELEASE.md', approvedHandoffReference],
     ['docs/releases/v0.1.0.md', approvedSyncReference],
     ...['index.html', 'updates/index.html', 'feedback/index.html']
-      .map((page) => [`site/${page}`, approvedSiteHeaderLink]),
+      .flatMap((page) => [[`site/${page}`, approvedSiteHeaderLink], [`site/${page}`, mobileLine(page)]]),
   ]) {
     const source = await readFile(new URL(`../${path}`, import.meta.url), 'utf8');
     assert.ok(source.split(/\r?\n/).includes(line), `${path}의 승인 참조가 변경되거나 사라졌습니다.`);
@@ -97,7 +99,7 @@ test('승인된 외부 홈페이지 링크는 세 source·output 페이지의 �
   try {
     for (const root of ['site', '_site']) {
       for (const page of ['index.html', 'updates/index.html', 'feedback/index.html']) {
-        await writeRepositoryFile(fixture.root, `${root}/${page}`, `${approvedSiteHeaderLink}\n`);
+        await writeRepositoryFile(fixture.root, `${root}/${page}`, `${approvedSiteHeaderLink}\n${mobileLine(page)}\n`);
       }
     }
     assert.deepEqual((await verifyProductBoundary({ repositoryRoot: fixture.root })).violations, []);
@@ -110,6 +112,9 @@ for (const [label, path, source] of [
   ['제품 지원 표현 추가', 'site/index.html', `${approvedSiteHeaderLink}\n${unsupportedPlatform} 배포도 지원한다.\n`],
   ['목적지 변경', 'site/updates/index.html', approvedSiteHeaderLink.replace('postmelee.github.io', 'example.invalid')],
   ['다른 소스 경로', 'apps/desktop/header.html', approvedSiteHeaderLink],
+  ['보조 안내에 제품 지원 추가', 'site/index.html', mobileLine('index.html').replace('사용하시나요?', '배포도 지원합니다.')],
+  ['보조 안내 목적지 변경', '_site/feedback/index.html', mobileLine('feedback/index.html').replace('postmelee.github.io', 'example.invalid')],
+  ['보조 안내의 다른 소스 경로', 'apps/desktop/footer.html', mobileLine('index.html')],
 ]) {
   test(`외부 홈페이지 예외는 ${label}을 허용하지 않는다`, async () => {
     const fixture = await createFixture();

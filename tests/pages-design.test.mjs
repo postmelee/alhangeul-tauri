@@ -9,7 +9,8 @@ import { runInNewContext } from 'node:vm';
 const repositoryRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const readSite = (path, encoding) => readFile(join(repositoryRoot, 'site', path), encoding);
 const otherPlatform = ['mac', 'OS'].join('');
-const approvedFamilySiteLink = `<a class="header-link" href="https://postmelee.github.io/alhangeul-${otherPlatform.toLowerCase()}/" aria-label="알한글 ${otherPlatform} 홈페이지로 이동">알한글 for ${otherPlatform}</a>`;
+const approvedFamilySiteLink = `<a class="header-link family-header-link" href="https://postmelee.github.io/alhangeul-${otherPlatform.toLowerCase()}/" aria-label="알한글 ${otherPlatform} 홈페이지로 이동">알한글 for ${otherPlatform}</a>`;
+const approvedFamilyMobileNote = `<p class="family-mobile-note">${otherPlatform}를 사용하시나요? <a href="https://postmelee.github.io/alhangeul-${otherPlatform.toLowerCase()}/">알한글 for ${otherPlatform} <span aria-hidden="true">→</span></a></p>`;
 const screenshots = Object.freeze({
   'assets/windows-app.png': {
     width: 1030,
@@ -62,7 +63,7 @@ test('홈·업데이트·문의 페이지는 승인된 메뉴와 공유 메타�
     assert.match(html, /<title>[^<]+<\/title>/);
     assert.match(html, /<meta name="description" content="[^"]+" \/>/);
     assert.match(html, /<meta property="og:image" content="https:\/\/postmelee\.github\.io\/alhangeul-tauri\/assets\/og-main\.png" \/>/);
-    assert.match(html, /styles\.css\?v=90-4/);
+    assert.match(html, /styles\.css\?v=90-5/);
     assert.match(html, new RegExp(`<link rel="canonical" href="${escapeRegExp(expected.canonical)}" \\/>`));
     assert.match(html, /href="https:\/\/github\.com\/postmelee\/alhangeul-tauri"/);
     for (const link of expected.links) {
@@ -71,6 +72,9 @@ test('홈·업데이트·문의 페이지는 승인된 메뉴와 공유 메타�
     const header = html.match(/<header[\s\S]*?<\/header>/)?.[0] ?? '';
     const footer = html.match(/<footer[\s\S]*?<\/footer>/)?.[0] ?? '';
     assert.equal(header.split('\n').filter((line) => line.trim() === approvedFamilySiteLink).length, 1);
+    assert.equal(html.split('\n').filter((line) => line.trim() === approvedFamilyMobileNote).length, 1);
+    const mobileContext = path === 'index.html' ? html.match(/<section class="install-panel"[\s\S]*?<\/fieldset>[\s\S]*?<\/section>/)?.[0] : footer;
+    assert.ok(mobileContext?.includes(approvedFamilyMobileNote));
     assert.doesNotMatch(header, />다운로드<\/a>/);
     assert.match(footer, /class="site-footer-inner"/);
     assert.match(footer, />MIT License<\/a>/);
@@ -264,7 +268,7 @@ test('Pages source는 승인된 외부 홈페이지 안내 외 지원 범위 밖
     await readSite('styles.css', 'utf8'),
     await readSite('script.js', 'utf8'),
   ].map((content) => content.replace(/<header[\s\S]*?<\/header>/,
-    (header) => header.replace(approvedFamilySiteLink, ''))).join('\n').toLowerCase();
+    (header) => header.replace(approvedFamilySiteLink, '')).replace(approvedFamilyMobileNote, '')).join('\n').toLowerCase();
   const forbidden = [
     ['thumb', 'nail'],
     ['quick', ' look'],
