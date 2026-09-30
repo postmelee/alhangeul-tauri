@@ -84,7 +84,7 @@ body:
     id: rhwp-result
     attributes:
       label: upstream rhwp 비교 (선택)
-      description: 공개 가능한 문서의 파싱·편집·배치 문제만 rhwp 데모(https://edwardkim.github.io/rhwp/)에서 비교할 수 있습니다. 설치·OS 통합 문제는 비교하지 않아도 됩니다. 기밀 문서는 데모에 올리지 마세요.
+      description: 공개 가능한 문서의 파싱·편집·배치 문제만 [rhwp 데모](https://edwardkim.github.io/rhwp/)에서 비교할 수 있습니다. 설치·OS 통합 문제는 비교하지 않아도 됩니다. 기밀 문서는 데모에 올리지 마세요.
       options:
         - 비교하지 않았음 (기밀 문서 포함)
         - 비교 불필요 (설치·운영체제 통합 등)
