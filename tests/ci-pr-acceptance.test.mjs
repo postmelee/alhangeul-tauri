@@ -56,6 +56,7 @@ test('local default and PR acceptance include strict committed state without cha
 
 test('personal repository requires PR/checks even for admin, without one-person review deadlock', () => {
   assert.equal(policy.required_status_checks.strict, true);
+  assert.equal(policy.required_status_checks.contexts, undefined);
   assert.deepEqual(policy.required_status_checks.checks, [{ context: 'Alhangeul PR required', app_id: 15368 }]);
   assert.equal(policy.enforce_admins, true);
   assert.equal(policy.allow_force_pushes, false);

@@ -1,7 +1,6 @@
 {
   "required_status_checks": {
     "strict": true,
-    "contexts": [],
     "checks": [
       { "context": "Alhangeul PR required", "app_id": 15368 }
     ]

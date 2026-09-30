@@ -78,6 +78,8 @@ Task #28 Stage 3 + 최종 보고서: devel 보호와 PR gate 수용
 
 실패/취소/누락은 성공으로 기록하지 않는다. 실제 bot 발급·다음 scheduled 성공은 미실행으로 구분한다. full은 GUI/updater/공개 수용이 아니다.
 
+실제 API 수용 보완: 최초 보호 PUT는 legacy contexts와 App 지정 checks를 동시에 넣어 oneOf 스키마 HTTP422로 거부됐고 설정은 적용되지 않았다. 동일 App/context 정책을 유지하며 contexts 필드를 제거하고 checks만 보낸다. 전용 계약 test로 입력 필드의 중복을 거부한다. 변경은 보호 JSON·일반 Node test·task 기록뿐이며 full source와 제품/native/workflow/lock은 같으므로 fresh PR fast로 추가 수용한다. 수정 head의 실제 required check 성공 뒤 PUT·GET을 다시 수행한다.
+
 ## 커밋
 
 각 stage 코드와 보고를 묶는다. source/evidence 후속 commit은 source SHA를 보존한다.
