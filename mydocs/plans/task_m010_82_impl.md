@@ -86,3 +86,21 @@ Snipping Tool은 기대한 창 이미지를 주지 못했고 Alt+PrintScreen으�
 
 검증: Node 계약 30건, GUI TypeScript, actionlint, diff check 통과. 신규 PowerShell도
 Windows job 시작 시 구문 검사한다. Windows 전용 재촬영을 실행하고 결과는 후속 확인한다.
+
+## Explorer 재시작과 Shell API 분리 진단
+
+run 36674162294는 성공했지만 8개 모두 아이콘이었다. IconsOnly는 1→0→1로 변경·복원됐고,
+조회한 DisableThumbnails 정책은 없었다. HKLM 처리기 등록과 DLL/worker가 존재했다.
+registry 변경만으로 UI 반영을 확정할 수 없으므로 사용자의 후속 진행 승인으로 비교를 추가한다.
+
+동일 VM에서 설정 변경 후 재시작 전/후 PNG를 모두 보존한다. Explorer 재시작은 disposable
+hosted CI의 현재 session 및 Windows explorer.exe 경로를 확인한 PID로 제한한다. 복원 후에도
+다시 시작해 실행 중 설정을 원복한다. HWP/HWPX 각 1개와 pinned samples/s1.jpg 대조군에 기존
+timeout 있는 진단 도구를 적용한다. 먼저 cache-only를 관측하고 별도 복사본에 shell/force-extract
+요청을 실행해 HRESULT·bitmap 여부를 보존한다. 생성 요청은 두 이미지 촬영 후에만 수행해
+촬영 화면에 진단 생성 cache가 섞이지 않게 한다. API 성공은 Explorer UI 성공으로 간주하지 않는다.
+제품 수정/새 빌드 없이 Windows 전용 실행이며 단계는 계속 Stage 1이다.
+
+준비 검증: 기존 Node 계약 30건, GUI TypeScript, actionlint, diff check 통과. PowerShell
+구문 검사는 Windows job에서 수행한다. 재시작 후 registry snapshot도 기록해 되돌림 여부를
+확인한다. 비교 진단의 실제 성공·실패와 사진 채택 여부는 Actions 결과 후 판단한다.

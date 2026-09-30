@@ -36,7 +36,7 @@ describe('Site Windows capture of original document', () => {
       await run('powershell.exe', ['-NoProfile', '-STA', '-File',
         join(inputs.fixtureRoot, 'scripts/site-capture/windows-gallery.ps1'),
         '-Folder', join(inputs.fixtureRoot, 'capture-samples'),
-        '-OutputPath', join(inputs.outputDir, 'windows-explorer-attempt.png')], {timeout:180000});
+        '-OutputPath', join(inputs.outputDir, 'windows-explorer-attempt.png')], {timeout:480000});
     } catch (error) {
       await writeFile(join(inputs.outputDir, 'explorer-unavailable.txt'), String(error));
     }
@@ -44,5 +44,6 @@ describe('Site Windows capture of original document', () => {
       join(inputs.outputDir, 'windows-explorer-attempt.png.settings.json'), 'utf8')).replace(/^\uFEFF/, ''));
     expect(settings.display.restored).not.toBe(false);
     if (settings.display.prepared) expect(settings.display.restored).toBe(true);
+    if (settings.restartAttempted) expect(settings.restartRestored).not.toBeNull();
   });
 });

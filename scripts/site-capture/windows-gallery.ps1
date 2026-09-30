@@ -6,6 +6,7 @@ $ErrorActionPreference = 'Stop'
 $shared = Split-Path $PSScriptRoot -Parent
 . (Join-Path $shared 'windows-thumbnail-state.ps1')
 . (Join-Path $shared 'windows-thumbnail-app-display.ps1')
+. (Join-Path $PSScriptRoot 'windows-gallery-diagnostics.ps1')
 Add-Type -Path (Join-Path $shared 'windows-thumbnail-token.cs')
 Add-Type @'
 using System;
@@ -27,7 +28,7 @@ function Notify-GallerySettings {
 $report = [ordered]@{
   stage='initial';failureStage=$null;display=[ordered]@{};before=$null;prepared=$null;after=$null
   notificationPrepared=$false;notificationRestored=$false;captureExitCode=$null
-  requiresVisualReview=$true
+  requiresVisualReview=$true;restartAttempted=$false;restart=$null;afterRestart=$null;restartRestored=$null;beforeRestartExitCode=$null;diagnosticsCompleted=$false
 }
 try {
   $report.before = Get-ThumbnailEnvironmentState
@@ -39,14 +40,29 @@ try {
     foreach ($existing in @($shell.Windows())) {
       try { if ($existing.Document.Folder.Self.Path -eq $Folder) { $existing.Quit() } } catch { }
     }
+    $beforeRestart = [IO.Path]::ChangeExtension($OutputPath, 'before-restart.png')
+    & powershell.exe -NoProfile -STA -File (Join-Path $PSScriptRoot 'windows-window.ps1') `
+      -Kind Explorer -Folder $Folder -OutputPath $beforeRestart
+    $report.beforeRestartExitCode = $LASTEXITCODE
+    $report.restartAttempted = $true
+    $report.restart = Restart-GalleryExplorer
+    $report.afterRestart = Get-ThumbnailEnvironmentState
     & powershell.exe -NoProfile -STA -File (Join-Path $PSScriptRoot 'windows-window.ps1') `
       -Kind Explorer -Folder $Folder -OutputPath $OutputPath
     $report.captureExitCode = $LASTEXITCODE
-    if ($LASTEXITCODE -ne 0) { throw 'Explorer capture failed; inspect window capture metadata' }
+    # Do not seed the gallery cache before either screenshot.
+    Invoke-GalleryThumbnailDiagnostics $Folder (Join-Path (Split-Path $OutputPath -Parent) 'thumbnail-probes')
+    $report.diagnosticsCompleted = $true
+    if ($report.captureExitCode -ne 0) { throw 'Explorer capture failed; inspect window capture metadata' }
   }
 } finally {
-  $report.notificationRestored = Notify-GallerySettings
-  $report.after = Get-ThumbnailEnvironmentState
-  $report | ConvertTo-Json -Depth 15 |
-    Set-Content -LiteralPath "$OutputPath.settings.json" -Encoding UTF8
+  # The display guard has restored the registry. Restart again to restore Explorer's live setting.
+  try {
+    if ($report.restartAttempted) { $report.restartRestored = Restart-GalleryExplorer }
+  } finally {
+    $report.notificationRestored = Notify-GallerySettings
+    $report.after = Get-ThumbnailEnvironmentState
+    $report | ConvertTo-Json -Depth 15 |
+      Set-Content -LiteralPath "$OutputPath.settings.json" -Encoding UTF8
+  }
 }
