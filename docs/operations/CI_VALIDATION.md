@@ -2,6 +2,9 @@
 
 이 문서는 작업자가 필요한 검증을 선택하는 운영 계약이다. 개별 실행의 성패와 시간은 task 보고서에 기록한다. Actions artifact는 공식 릴리즈가 아니며 이 문서는 게시 권한을 부여하지 않는다.
 
+외부 Action 고정·갱신은 [Action 의존성 정책](ACTION_DEPENDENCIES.md)을 따른다.
+`pnpm run check:action-pins`와 `test:automation`은 workflow/composite의 전체 외부 참조를 검사한다.
+
 ## 계층과 책임
 
 | 계층 | 입력 | 결과/소유권 | 대체하지 못하는 것 |

@@ -227,7 +227,7 @@ jobs:
           [[ -n "$RELEASE_NOTES" ]]
 
       - name: Checkout exact updater source
-        uses: actions/checkout@v5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.build_ref }}
           submodules: true
@@ -259,7 +259,7 @@ jobs:
             pkg-config
 
       - name: Setup Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           package-manager-cache: false
@@ -271,7 +271,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
         with:
           targets: ${{ matrix.target }}
 
@@ -321,7 +321,7 @@ jobs:
             --public-key-env TAURI_UPDATER_PUBLIC_KEY
 
       - name: Upload verified updater artifact slice
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: alhangeul-updater-${{ matrix.name }}
           path: ${{ matrix.artifact_paths }}
@@ -409,7 +409,7 @@ jobs:
           esac
 
       - name: Checkout exact updater acceptance source
-        uses: actions/checkout@v5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.build_ref }}
           submodules: true
@@ -441,7 +441,7 @@ jobs:
             pkg-config
 
       - name: Setup updater acceptance Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           package-manager-cache: false
@@ -453,7 +453,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Setup updater acceptance Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
         with:
           targets: ${{ matrix.target }}
 
@@ -508,7 +508,7 @@ jobs:
             --public-key-env TAURI_UPDATER_PUBLIC_KEY
 
       - name: Upload verified updater acceptance slice
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: alhangeul-updater-acceptance-${{ matrix.role }}-${{ matrix.name }}
           path: ${{ matrix.artifact_paths }}
@@ -525,7 +525,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout exact updater acceptance inventory source
-        uses: actions/checkout@v5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.build_ref }}
           submodules: false
@@ -539,7 +539,7 @@ jobs:
           [[ "$(git rev-parse HEAD)" == "$SOURCE_SHA" ]]
 
       - name: Setup updater acceptance inventory Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           package-manager-cache: false
@@ -562,25 +562,25 @@ jobs:
           printf 'TAURI_UPDATER_PUBLIC_KEY=%s\n' "$public_key" >> "$GITHUB_ENV"
 
       - name: Download updater acceptance N Windows slice
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: alhangeul-updater-acceptance-n-windows-x64
           path: updater-acceptance/n
 
       - name: Download updater acceptance N Linux slice
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: alhangeul-updater-acceptance-n-linux-x64
           path: updater-acceptance/n
 
       - name: Download updater acceptance N+1 Windows slice
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: alhangeul-updater-acceptance-n-plus-one-windows-x64
           path: updater-acceptance/n-plus-one
 
       - name: Download updater acceptance N+1 Linux slice
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: alhangeul-updater-acceptance-n-plus-one-linux-x64
           path: updater-acceptance/n-plus-one
@@ -621,7 +621,7 @@ jobs:
           ! printf '%s\n' "${assets[@]}" | grep -q '99\.1\.0'
 
       - name: Upload updater acceptance N inventory
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: alhangeul-updater-acceptance-n-inventory
           path: updater-acceptance-output/alhangeul-updater-test-n-inventory.json
@@ -629,7 +629,7 @@ jobs:
           retention-days: 14
 
       - name: Upload updater acceptance public candidate
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: alhangeul-updater-acceptance-candidate
           path: |
@@ -654,7 +654,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout exact inventory source
-        uses: actions/checkout@v5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.build_ref }}
           submodules: false
@@ -668,7 +668,7 @@ jobs:
           [[ "$(git rev-parse HEAD)" == "$SOURCE_SHA" ]]
 
       - name: Setup Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           package-manager-cache: false
@@ -691,7 +691,7 @@ jobs:
           printf 'TAURI_UPDATER_PUBLIC_KEY=%s\n' "$public_key" >> "$GITHUB_ENV"
 
       - name: Download verified updater slices
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           pattern: alhangeul-updater-*-x64
           path: updater-release
@@ -714,7 +714,7 @@ jobs:
             --write-inventory updater-inventory/alhangeul-updater-release-inventory.json
 
       - name: Upload verified updater release inventory
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: alhangeul-updater-release-inventory
           path: updater-inventory/alhangeul-updater-release-inventory.json
@@ -732,13 +732,13 @@ jobs:
       contents: write
     steps:
       - name: Checkout exact publish source
-        uses: actions/checkout@v5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.build_ref }}
           submodules: false
 
       - name: Setup Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           package-manager-cache: false
@@ -765,7 +765,7 @@ jobs:
           printf 'TAURI_UPDATER_PUBLIC_KEY=%s\n' "$public_key" >> "$GITHUB_ENV"
 
       - name: Download verified updater slices
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           pattern: alhangeul-updater-*-x64
           path: updater-release

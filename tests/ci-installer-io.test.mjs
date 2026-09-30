@@ -150,6 +150,6 @@ test('both installer workflows preserve raw process evidence and fail-closed gat
   assert.match(reused, /Require reused installer contract and evidence\n\s+if: \$\{\{ always\(\) \}\}/);
   assert.match(reused, /installer-evidence.mjs gate/);
   const windows = fast.slice(fast.indexOf('  windows-scripts:'));
-  assert.ok(windows.indexOf('actions/setup-node@v5') < windows.indexOf('windows-tests.ps1'));
+  assert.ok(windows.indexOf('actions/setup-node@820762786026740c76f36085b0efc47a31fe5020') < windows.indexOf('windows-tests.ps1'));
   assert.match(windows, /node-version: "24"/);
 });
