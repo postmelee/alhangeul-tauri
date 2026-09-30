@@ -96,6 +96,6 @@ Task #28 Stage 3 + 최종 보고서: devel 보호와 PR gate 수용
 
 Stage3 실행 순서 보완: #27 full의 장시간 Windows package 대기 중 독립 #28 source의 비게시 full을 먼저 실행할 수 있다. #27 병합 후 devel을 통합하고 변경이 task 기록뿐인지 대조한다. PR 생성·보호 적용·병합은 #27 완료 뒤에만 한다. runtime/workflow/lock 변경이 추가되면 기존 run을 재사용하지 않는다.
 
-실제 pull_request check는 PR이 존재해야 검증 가능하므로, full 성공 뒤 보호 활성화 전 준비 PR을 연다. 이 PR 본문에는 Stage3 live check·보호·probe가 진행 중임을 표시한다. 그 동일 PR에서 증거와 최종 보고서를 추가하고 최종 head의 새 automatic required check 성공을 확인한 뒤 리뷰·병합한다. 완료되지 않은 live 수용을 완료로 기록하지 않는다.
+실제 pull_request check는 PR이 존재해야 검증 가능하므로, fast 성공 후 보호 활성화 전 준비 PR을 연다. #27 완료 뒤 full의 장시간 Windows build 대기와 PR automatic fast를 병렬 검증할 수 있다. 본문에는 full·Stage3 live check·보호·probe가 진행 중임을 표시하며 full 성공 전 보호 PUT 또는 merge는 수행하지 않는다. 그 동일 PR에서 증거와 최종 보고서를 추가하고 최종 head의 새 automatic required check 성공을 확인한 뒤 리뷰·병합한다. 완료되지 않은 live 수용을 완료로 기록하지 않는다.
 
 병행 task90의 PR91이 별도 작업자에 의해 devel에 병합됐다. README·site·Node 관리 참조/검사도 바뀌었으므로 기존 독립 full의 task28 source와 동일하다고 간주하지 않는다. PR 게시 순서는 #27 완료 뒤로 유지하되, 검증 대기 중 최신 devel을 먼저 통합해 새 full을 실행한다. #27 후속 보고 기록은 코드가 같을 때만 문서 diff 근거로 수용한다. user task90 worktree는 현재 devel을 사용 중이므로 해당 checkout이나 변경을 수정하지 않는다.
