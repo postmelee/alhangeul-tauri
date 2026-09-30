@@ -93,3 +93,5 @@ Task #28 Stage 3 + 최종 보고서: devel 보호와 PR gate 수용
 ## 승인 요청 사항
 
 동일 스레드의 #28 전체 수행·PR 생성·리뷰·병합 명시 지시에 따라 위 단계·문서 위치·실제 보호 gate를 수행한다.
+
+Stage3 실행 순서 보완: #27 full의 장시간 Windows package 대기 중 독립 #28 source의 비게시 full을 먼저 실행할 수 있다. #27 병합 후 devel을 통합하고 변경이 task 기록뿐인지 대조한다. PR 생성·보호 적용·병합은 #27 완료 뒤에만 한다. runtime/workflow/lock 변경이 추가되면 기존 run을 재사용하지 않는다.
