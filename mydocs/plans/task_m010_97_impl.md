@@ -4,13 +4,14 @@
 GitHub Issue: [#97](https://github.com/postmelee/alhangeul-tauri/issues/97)
 마일스톤: M010
 작성일: 2026-10-03 (Asia/Seoul)
-상태: 구현계획·Stage 1~2 승인 완료, Stage 2 검증 완료·Stage 3 승인 대기
+상태: Stage 3 진입 승인·full CI 실행 중, 실제 설치 비교 자동화 보정 승인 대기
 
 ## 승인과 기준
 
 작업지시자의 같은 스레드의 “진행해줘”를 수행계획 승인과 본 구현계획 작성 승인으로 기록한다.
 후속 “진행해줘”를 구현계획 및 Stage 1 진입 승인으로 기록한다. Stage 1은 테스트·측정만 추가하며 제품 동작은 변경하지 않는다.
 Stage 1 보고 승인 요청에 대한 후속 “진행해줘”를 Stage 2 진입 승인으로 기록한다.
+Stage 2 보고 승인 요청에 대한 후속 “진행해줘”를 Stage 3 진입 승인으로 기록한다.
 기준은 origin/devel `97550085a9334129062266dddb625798bcdc77e2`, 계획 커밋은 `6986c8e2`다.
 배포본 v0.1.0 기준 함수와 실제 소비 경로는 Stage 1에서 다시 확인한다.
 
@@ -261,3 +262,65 @@ updater 신규 활성화는 하지 않으며 공개 manifest와 실제 productio
 - 위 Stage 1~4 산출물·검증·커밋·단계 의존성.
 - 이름 인덱스와 현재 후보 가용성 확인을 결합하는 설계 방향.
 - 구현계획 승인 후 Stage 1의 baseline·회귀 시나리오 고정 작업 진입.
+
+## Stage 3 계획 보정안 — 같은 VM의 실제 설치본 비교 (승인 대기)
+
+### 확인된 제약
+
+- 기존 `alhangeul-release-files.yml`과 `scripts/ci/release-file-candidate.mjs`는
+  v0.1.0 source, run, artifact ID/digest, package hash 및 version을 고정한다.
+  현재 후보를 전달할 수 없으며 이전 성공을 새 후보 수용으로 사용할 수 없다.
+- 기존 `local-fonts.e2e.ts`는 Linux x64만 실행하며 Windows의 일반 성능 비교 spec은 없다.
+- v0.1.0 signed updater artifact는 2026-10-03 확인 시 만료되지 않았다.
+  Windows artifact 10933208421, Linux artifact 10933550939를 보존된 고정 digest로 검증할 수 있다.
+- 후보 `66abcd52c77b90a7394ba5fb9e90afc0cef2f6e9`의 full producer
+  [37114851835](https://github.com/postmelee/alhangeul-tauri/actions/runs/37114851835)를 실행했다.
+  아직 진행 중이며 성공·설치 수용으로 기록하지 않는다.
+
+### 최소 추가 범위
+
+| 파일 | 역할 | 경계 |
+|---|---|---|
+| `.github/workflows/alhangeul-font-performance.yml` | Windows/Linux 같은 hosted VM에서 기준본·개선본 순차 설치·성능 관찰 | workflow_dispatch, contents/actions read; 기존 driver·설치·cleanup·WebView2 정책 재사용 |
+| `scripts/ci/font-performance-candidate.mjs` | 기준 signed updater artifact와 개선 desktop artifact의 exact bytes 확인 | 기존 handoff·safe download·inventory·hash·기준 서명 검증 재사용; 불완전/실패 producer 거부 |
+| `tests/gui/specs/local-font-performance.e2e.ts` | 실제 설치본의 HWP/HWPX on/off 반복 조작 | 현재 wdio.release-files.conf.ts의 --spec override; 제품 개발용 global/명령 주입 없음 |
+| `tests/gui/local-fonts/performance.ts` | WebView 내부 시간과 프레임 관찰 | 같은 fixture·조작의 준비/열기/입력/스크롤을 분리; 각 5회 이상 |
+| 관련 focused 계약 테스트 | provenance·누락/불일치 실패 및 관찰 결과 검증 | 기존 자동화/GUI 검사 범위; 원격 결과를 mock으로 대신하지 않음 |
+
+기존 v0.1.0 release acceptance의 고정 상수와 동작은 그대로 둔다. 새 측정 경로는
+제품 배포나 updater 활성화를 수행하지 않는다. Stage 4의 최종 release-file 입력화는
+필요한 경우 별도로 검토·승인하며 여기서 선행 변경하지 않는다. 새 제품 문서는 만들지 않고
+계획·관찰 증거는 승인된 `mydocs/plans`, `mydocs/working` 위치에 둔다.
+
+### 실행과 수용
+
+1. 후보 full CI의 성공 및 Windows/Linux x64 desktop artifact ID/digest를 확인한다.
+2. workflow 입력은 후보 40자리 SHA와 성공 producer run으로 제한한다. harness SHA는 별도 기록한다.
+   Windows MSI·Linux AppImage의 기준/개선 파일을 같은 job에서 순차 실행한다.
+3. Windows 설치·제거, Linux 원본 AppImage 실행, WebView2 자동화 정책 복원은 기존 도구를 쓴다.
+   기준과 후보 모두의 설치/실행/정리 성공, 정확한 파일 hash 및 증거 업로드를 필수로 한다.
+4. 같은 public HWP/HWPX, Abel fixture와 runner의 실제 catalog, 창 크기, renderer를 고정한다.
+   감지·첫 렌더와 warm 편집을 분리하고 enabled/disabled를 각 5회 이상 관찰한다.
+   측정 workload와 실제 글꼴 적용·문서 내용·스크린샷을 함께 보존한다.
+5. WebView 내부 performance.now와 프레임 관찰을 사용해 WebDriver 왕복 대기와 구분한다.
+   입력 완료는 내용 변화와 canvas 반영을 확인하고, 스크롤은 실제 이동 범위와 프레임 간격을 기록한다.
+   관찰 자체의 비용·GPU/소프트웨어 backend·설치 글꼴 수·실행 순서·분산을 명시한다.
+6. baseline/after 원시 samples, 중앙값·범위와 on/off 차이를 비교한다. renderer fallback,
+   내용/face 불일치, 지연 감소 불명확이면 성능 수용 완료로 처리하지 않는다.
+7. 기존 Linux local-fonts scope도 유지해 재감지·삭제/복구·새 창·프로세스 재시작·roundtrip을 검증한다.
+   Wayland 제보 장비와 작업지시자의 Windows 문서 직접 재현 여부는 별도로 기록한다.
+
+### 추가 검증 명령
+
+```bash
+pnpm run typecheck:gui
+pnpm run test:gui:contracts
+pnpm run test:automation
+node --test tests/gui/local-fonts/fixture.test.mjs
+pnpm run check:product-boundary
+git diff --check
+```
+
+원격 비교 workflow의 정확한 dispatch 입력·run 및 결과는 Stage 3 보고서에 기록한다.
+이 보정안 승인 전 신규 workflow/script/spec 소스는 작성하지 않는다. Stage 3은 진행 중이며
+완료보고·다음 단계 승인으로 간주하지 않는다.
