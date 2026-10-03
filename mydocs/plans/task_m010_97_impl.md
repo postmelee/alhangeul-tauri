@@ -4,7 +4,7 @@
 GitHub Issue: [#97](https://github.com/postmelee/alhangeul-tauri/issues/97)
 마일스톤: M010
 작성일: 2026-10-03 (Asia/Seoul)
-상태: Stage 3 완료, Stage 4 최종 후보·배포 준비 진행 중
+상태: Stage 1–4 구현·검증 완료, PR merge·공개 Release·사이트 전달 대기
 
 ## 승인과 기준
 
@@ -515,3 +515,12 @@ Stage 4 native 파일 고정 기록:
 - signed 일반 문서 수용 [37125756156](https://github.com/postmelee/alhangeul-tauri/actions/runs/37125756156), harness fast CI [37125754390](https://github.com/postmelee/alhangeul-tauri/actions/runs/37125754390)는 success다. NSIS/MSI install·cleanup exit 0, 정책 복원 true, HWP/HWPX 저장 marker와 6 재열기 화면을 확인했다.
 - native ZIP 두 개의 archive digest·원본 case-sensitive 경로별 inventory size/hash·source 및 thumbnail package evidence를 대조하고 선택 installer bytes SHA-256도 확인했다. 분석 호스트에서 unpacked 보조 경로의 Alhangeul/alhangeul 합침으로 일반 inventory 재계산이 한 번 실패했고, 원본 ZIP 경로를 사용해 기존 AppDir 중간 산출물 제외 경계를 그대로 대조했다. 지원 Linux CI·GUI의 실제 filesystem verifier는 변경하지 않았다.
 - 후보 JSON에 동일 source의 RPM·arm64 DEB를 추가했다. Linux x64 DEB 전체 GUI [37127089292](https://github.com/postmelee/alhangeul-tauri/actions/runs/37127089292)는 success이며 actual inventory·설치·문서·PDF·인쇄 gate를 모두 통과했다. 원시 결과와 시각 증거를 확인 중이다. RPM Fedora KVM 및 arm64 최종 GUI 수용은 아직 미실행이며 Stage 4 전체는 미완료다.
+
+
+Stage 4 최종 수용 기록 (2026-10-03 23:13 KST):
+
+- Fedora RPM run 37128109422 / arm64 DEB run 37128112105는 success다. harness 5e6b870689ba2c396b7f004050996b5c01c8d261·product 8f48d83b30cbe1b7d1af9f7b857044145c5bcdcc를 구분했다.
+- 원시 phase complete/exit 0·설치 version/architecture·파일 hash·pinned WASM marker와 재열기 4개 화면을 확인했다. Fedora KVM·실제 LightDM non-root Xfce session·VM cleanup도 확인했다.
+- DEB full GUI 9 scenario의 identity·61 파일 참조 hash, 29 PDF 페이지 시각 판독과 4 print restoration checkpoint를 확인했다. native 문서 save는 marker 입력 검사가 아니며 별도 parser 재읽기로 기록했다.
+- 최종 공개 후보 6종의 새 bytes 설치 수용까지 완료했다. Stage 4·최종 보고를 작성하고 devel Open PR을 준비한다. 공개 Release/Pages 및 main exact source 판단은 후속 승인 게이트에 남는다.
+- 오늘할일 완료는 구현·검증 범위이며 #97은 공개 전달 추적 때문에 OPEN 유지한다.
