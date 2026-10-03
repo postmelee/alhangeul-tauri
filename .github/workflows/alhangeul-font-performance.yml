@@ -89,7 +89,9 @@ jobs:
           }, null, 2));
           JS
           pnpm --version >font-performance-evidence/pnpm.txt
-          tauri-driver --version >font-performance-evidence/driver.txt
+          cargo install --list >font-performance-evidence/cargo-installed.txt
+          grep -Fx 'tauri-driver v2.0.6:' font-performance-evidence/cargo-installed.txt \
+            >font-performance-evidence/driver.txt
           if [[ "$RUNNER_OS" == Linux ]]; then
             dpkg-query -W libwebkit2gtk-4.1-0 webkit2gtk-driver fonts-noto-cjk >font-performance-evidence/linux-packages.txt
             fc-list >font-performance-evidence/system-fonts.txt

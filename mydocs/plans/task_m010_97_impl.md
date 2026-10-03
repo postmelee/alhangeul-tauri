@@ -387,3 +387,50 @@ Stage 3 전체는 미완료이며 Stage 4 진입 승인 요청이 아니다.
 
 기준 full CI 37114851835는 최종 failure다. Linux x64/arm64 및 세 core job은 통과했고,
 Windows Clippy 실패로 Windows package/설치 smoke는 미수행이다. 새 후보 검증으로 이어간다.
+
+
+## Stage 4 진입 때 함께 검토할 보정안 — 새 릴리즈 후보의 exact-file 수용 (승인 대기)
+
+Stage 3 구현·검증을 진행하는 동안 기존 release harness의 고정값을 읽어 아래 범위를 확인했다.
+아래 소스 변경은 Stage 4 진입 승인 후에만 수행한다. 현재 제품 version은 0.1.0이다.
+
+- `scripts/ci/release-file-candidate.mjs`, `release-linux-candidate.mjs`의 기존 v0.1.0 baseline
+  상수·기본 호출 계약을 보존하고, 새 후보를 위한 검증 입력 경로를 별도 추가한다.
+  성능 비교가 사용하는 v0.1.0 기준을 v0.1.1로 조용히 교체하지 않는다.
+- 새 입력은 version/tag/source SHA, 성공한 signed/native producer run, artifact ID/digest,
+  선택 package path/hash를 가진 승인된 후보 JSON으로 전달한다. caller workflow input → env →
+  JSON parser만 사용하며 shell 문자열로 실행하지 않는다. 누락·형식 오류·producer 실패·
+  archive digest·inventory·파일 hash·서명 불일치를 거부한다.
+- `.github/workflows/alhangeul-desktop.yml`의 기존 release acceptance mode에서 새 입력을 전달하고,
+  `alhangeul-release-files.yml`, `alhangeul-release-linux-files.yml`, `alhangeul-release-fedora-vm.yml`
+  에 같은 후보 입력을 연결한다. 기존 mode와 v0.1.0 기본 동작을 보존한다.
+- Windows NSIS/MSI 및 AppImage는 production updater 검사와 분리한 기존 native 문서 시나리오로
+  각각 확인할 수 있도록 matrix 선택을 최소 입력화한다. production updater 신규 활성화나
+  기존 production-check 시나리오 변경은 포함하지 않는다.
+- `accept-release-arm64.sh`, `accept-release-fedora.sh`, `release-fedora-vm-guest.sh`,
+  `release-fedora-vm-session.sh`의 version/source/run 고정값은 검증한 후보 환경값으로 전달한다.
+  KVM/Fedora·arm64 실행·정리·필수 GUI gate는 완화하지 않는다.
+- 관련 기존 release-candidate/Windows·Linux acceptance 계약 테스트를 보정하고,
+  승인된 입력의 거부 조건과 이전 baseline 계약 보존을 검증한다.
+- 최종 DEB x64는 기존 Linux GUI full 경로로 native 저장·재열기·PDF·인쇄를 수용한다.
+  나머지 NSIS/MSI/AppImage, RPM Fedora VM, arm64 DEB는 위 기존 exact-file 경로를 쓴다.
+- 제품 version 변경, `LOCAL_FONTS.md`의 최소 계약 보정 및 최종 full CI는 원래 Stage 4 계획을 따른다.
+  새 signed bytes와 native package bytes의 실제 설치 수용 후에만 공개 후보를 확정한다.
+
+추가 제품 문서 루트는 만들지 않는다. 후보 데이터·실행 증거는 승인된 working/report 위치와
+GitHub Actions artifact에 보존한다. 전체 source/bytes와 미검증 항목은 Stage 4 보고서에서 구분한다.
+이 보정안은 Stage 3 수용 보고와 다음 단계 승인 요청 때 함께 제시하며 현재 승인을 간주하지 않는다.
+
+
+Stage 3 비교 harness 실행 보정 기록:
+
+- 제품 후보 `ef54ae9dd1de17a208eff6986335d23b2e7ff86b`의 full CI
+  [37116980444](https://github.com/postmelee/alhangeul-tauri/actions/runs/37116980444)는 최종 success다.
+- 비교 run [37119712473](https://github.com/postmelee/alhangeul-tauri/actions/runs/37119712473)은
+  두 플랫폼에서 환경 증거 수집의 `tauri-driver --version` 호출로 실패했다. 이 driver는 해당
+  옵션을 지원하지 않는다. 실제 앱 비교는 시작하지 않았으며 성능 수용 결과가 없다.
+- 승인된 Stage 3 harness 범위에서 기존 Linux release harness와 같이 `cargo install --list` 및
+  고정 버전 행 확인으로 보정한다. 제품 코드·후보 파일·서명·upstream은 바꾸지 않는다.
+- harness SHA와 product SHA를 구분하고 성공한 37116980444의 exact 후보 파일을 재사용한다.
+  Linux local-fonts/full 및 Windows PDF 검증은 같은 product SHA로 별도 실행 중이다.
+- 아래 후속 Stage 4 보정안은 계속 승인 대기이며, 이번 커밋에 제안 문서만 포함한다.
