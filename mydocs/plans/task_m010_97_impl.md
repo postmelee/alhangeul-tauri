@@ -507,3 +507,11 @@ Stage 4 서명 후보 고정 기록:
 - exact 세 archive를 /tmp의 별도 폴더로 내려받아 metadata/digest, installer hash·Minisign·complete inventory를 대조했다. 검증 결과로 mydocs/working/task_m010_97.json에 NSIS/MSI/AppImage 세 후보를 고정했다. native full CI 37123984482는 아직 진행 중이므로 해당 파일들은 아직 추가하지 않았다.
 - 후속 harness의 자동화 1,044·boundary·actionlint·diff가 통과했다. signed 파일 일반 수용을 먼저 실행하고 full CI 성공 뒤 같은 source의 수동 패키지를 보완한다. 구현 runtime은 Stage 3 ef54ae9d와 동일하다(git diff로 runtime 소유 경로 확인).
 - 최신 공개 Alhangeul은 v0.1.0/fc3cad15682f35723ab6558d1301e9096f7eec67이며 upstream 최신 stable은 현재 pin과 같은 v0.8.6이다. 공개 Release/Pages는 아직 변경하지 않았다.
+
+Stage 4 native 파일 고정 기록:
+
+- 전체 native producer [37123984482](https://github.com/postmelee/alhangeul-tauri/actions/runs/37123984482)는 최종 success다. 세 core, Windows/Linux x64·arm64 native/package와 필수 설치 계약 gate가 통과했다. watcher의 일시적인 네트워크 오류(exit 1)는 API 완료 결과 재조회로 구분했다.
+- Windows raw MSI는 passed/exit 0, NSIS는 raw failed/exit 1/12건·thumbnail not-accepted/hosted diagnostic passed, forced MSI는 raw failed/exit 1/1건·reboot-required/post-reboot-unverified를 유지했다. 계약 success를 전체 실제 기능 성공으로 쓰지 않는다.
+- signed 일반 문서 수용 [37125756156](https://github.com/postmelee/alhangeul-tauri/actions/runs/37125756156), harness fast CI [37125754390](https://github.com/postmelee/alhangeul-tauri/actions/runs/37125754390)는 success다. NSIS/MSI install·cleanup exit 0, 정책 복원 true, HWP/HWPX 저장 marker와 6 재열기 화면을 확인했다.
+- native ZIP 두 개의 archive digest·원본 case-sensitive 경로별 inventory size/hash·source 및 thumbnail package evidence를 대조하고 선택 installer bytes SHA-256도 확인했다. 분석 호스트에서 unpacked 보조 경로의 Alhangeul/alhangeul 합침으로 일반 inventory 재계산이 한 번 실패했고, 원본 ZIP 경로를 사용해 기존 AppDir 중간 산출물 제외 경계를 그대로 대조했다. 지원 Linux CI·GUI의 실제 filesystem verifier는 변경하지 않았다.
+- 후보 JSON에 동일 source의 RPM·arm64 DEB를 추가했다. Linux x64 DEB 전체 GUI [37127089292](https://github.com/postmelee/alhangeul-tauri/actions/runs/37127089292)는 success이며 actual inventory·설치·문서·PDF·인쇄 gate를 모두 통과했다. 원시 결과와 시각 증거를 확인 중이다. RPM Fedora KVM 및 arm64 최종 GUI 수용은 아직 미실행이며 Stage 4 전체는 미완료다.

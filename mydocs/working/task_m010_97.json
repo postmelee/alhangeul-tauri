@@ -44,6 +44,28 @@
       "targets": [
         "linux-x86_64-appimage"
       ]
+    },
+    "rpm": {
+      "name": "alhangeul-desktop-linux-x64",
+      "id": 11274996353,
+      "digest": "sha256:b9c7e0453c45884ba200cf2f963e8a61852f1d4cb6e7bbd03d6b6e2c15778b12",
+      "producerRun": 37123984482,
+      "workflowPath": ".github/workflows/ci.yml",
+      "path": "rpm/Alhangeul-0.1.1-1.x86_64.rpm",
+      "sha256": "dcf6e0ceebaeb494433d69950f22731039bbb18749aaa8c86f2d51a7bf060674",
+      "platform": "linux-x64",
+      "kind": "rpm"
+    },
+    "arm64": {
+      "name": "alhangeul-desktop-linux-arm64",
+      "id": 11275051018,
+      "digest": "sha256:68d6938fd1ca3f09eb205c96c01d9765ad43617fa078d92f5c4b76f48026910f",
+      "producerRun": 37123984482,
+      "workflowPath": ".github/workflows/ci.yml",
+      "path": "deb/Alhangeul_0.1.1_arm64.deb",
+      "sha256": "79eb78d7b095e4e3d141cb0f8e66b0e0afadfea55a248e13526d54d4267d891c",
+      "platform": "linux-arm64",
+      "kind": "deb"
     }
   }
 }
