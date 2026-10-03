@@ -3,7 +3,7 @@
 GitHub Issue: [#97](https://github.com/postmelee/alhangeul-tauri/issues/97)
 마일스톤: M010
 작성일: 2026-10-03 (Asia/Seoul)
-상태: Stage 1–4·main 승격 및 새 파일 6종 수용 완료, arm64 harness 보정 완료·공개 승인 대기 (미게시)
+상태: v0.1.1 GitHub Release 공개·원격 재검증 완료, 사이트/manifest 갱신 PR·Pages 승인 대기
 
 ## 작업 요약
 
@@ -11,7 +11,7 @@ GitHub Issue: [#97](https://github.com/postmelee/alhangeul-tauri/issues/97)
 - 목적: 로컬 글꼴을 켰을 때 반복 조회가 전체 catalog를 재변환·순회하던 병목을 제거한다.
 - catalog 소유 인덱스를 한 번 구축하고 alias/sourceKey로 후보만 찾되 현재 provider 가용성은 매번 확인한다.
 - 글꼴 의미·실패 복구·저장 문서·화면을 보존하고 Windows/Linux 실제 설치본으로 개선을 확인했다.
-- 버전 0.1.1 후보 6종은 새 bytes 설치 수용을 완료했다. 공개 배포는 아직 하지 않았다.
+- 버전 0.1.1 새 파일 6종 수용 및 GitHub Release 11개 asset 공개·원격 재검증을 완료했다. 사이트/manifest는 갱신 PR·Pages 승인 대기다.
 - 계획 승인·단계별 후속 “진행해줘” 및 Stage 4 exact-file 보정 승인은 구현계획서에 기록했다.
 
 ## 변경 파일 목록과 영향 범위
@@ -293,10 +293,57 @@ reload 뒤 다시 확인한다. 120초 timeout·retry/skip 없음, 실제 파일
 썸네일 미수용·forced MSI post-reboot 미검증, 사용자 Wayland/GPU·물리 프린터 제한은 유지한다.
 일반 MSI의 raw passed/exit 0를 대안 근거로 안내하며 모든 PC의 썸네일 성공을 보장하지 않는다.
 
-### Gate 4 공개 승인 요청
+### Gate 4 공개 승인 요청 당시 입력
 
 - stable **v0.1.1**, tag resolved main **96e89e900415ee9e1e942b5c01c833dea3415e86**.
 - CLI 인증 주체 **postmelee**, Actions 환경 승인과 구분한 maintainer CLI 경로. 기존 tag/Release는 없음을 조회했다.
 - 위 고정 표의 **11개 asset 전체** 및 위 사용자 notes. 기존 NSIS 제한·MSI 대안과 재부팅 후 미검증을 포함한 범위 판단을 함께 요청한다.
 - annotated tag 새 생성 → 동일 bytes draft upload → 11개 파일·서명·notes 원격 read-back → stable non-draft/non-prerelease/latest 공개 → 다시 read-back. 다른 파일·미결정 상태에서는 게시하지 않는다.
 - 아직 tag/draft/public/Pages 미실행이다. 보정 PR merge와 Gate 4 실행 승인을 요청하며, Pages·production manifest 갱신은 공개 read-back 후 Gate 5 승인으로 진행한다. #97 OPEN·오늘할일 진행중을 유지한다.
+
+
+### Gate 4 실제 공개 결과 — 2026-10-04
+
+- 작업지시자의 후속 “진행해줘”로 PR #100 merge와 위 exact main/11개 파일·notes·CLI 주체 postmelee·tag/draft/read-back/stable 공개/read-back 범위를 승인받았다. 승인 기록 UTC 시각: 2026-10-03T16:56:37.543378+00:00.
+- [PR #100](https://github.com/postmelee/alhangeul-tauri/pull/100)은 exact head 623f7bd0339216359920783e6070f8b018681ea4·required success/CLEAN에서 normal merge했다. merge SHA 939cdb511c08e707120860aac1ba0d0c7fe48a92, mergedAt 2026-10-03T16:56:35Z.
+- 새 annotated tag v0.1.1 객체 `b7b858e13c3f9153562e28e33cc398e75e896adf`, peeled main `96e89e900415ee9e1e942b5c01c833dea3415e86`를 push 전후 대조했다. 기존 tag 이동이나 재빌드는 없다.
+- [공개 Release v0.1.1](https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.1), ID **402604603**, publishedAt **2026-10-03T17:07:44Z** (2026-10-04 02:07:44 KST). non-draft/non-prerelease이며 latest API도 같은 ID다.
+- draft와 public을 서로 다른 새 폴더에 다시 내려받았다. 11개 이름·크기·원본 SHA-256·서버 digest·uploaded 상태, 10행 SHA256SUMS 자체 및 내용, 세 Minisign·키 fingerprint·complete inventory·안내문 hash·tag peeled SHA 모두 통과했다. public 고정 URL은 승인한 v0.1.1 tag다.
+- draft는 태그별 API에 나오지 않아 인증된 목록에서 정확한 ID를 확인한 뒤 ID로 읽었다. draft 전용 untagged URL과 공개 v0.1.1 URL을 구분했다. tag_name·bytes·서명·notes·source 조건은 완화하지 않았다.
+
+| 공개 asset | asset ID |
+|---|---:|
+| `Alhangeul-0.1.1-1.x86_64.rpm` | 608174760 |
+| `Alhangeul_0.1.1_amd64.AppImage` | 608174616 |
+| `Alhangeul_0.1.1_amd64.AppImage.sig` | 608174705 |
+| `Alhangeul_0.1.1_amd64.deb` | 608174714 |
+| `Alhangeul_0.1.1_arm64.deb` | 608179311 |
+| `Alhangeul_0.1.1_x64-setup.exe` | 608174618 |
+| `Alhangeul_0.1.1_x64-setup.exe.sig` | 608174619 |
+| `Alhangeul_0.1.1_x64_en-US.msi` | 608174620 |
+| `Alhangeul_0.1.1_x64_en-US.msi.sig` | 608174617 |
+| `SHA256SUMS` | 608179489 |
+| `alhangeul-updater-release-inventory.json` | 608179415 |
+
+위 고정 11개 표의 bytes/hash·producer와 이 ID의 원격 다운로드를 대조했다. notes SHA-256
+`8465f0ddc61efe25799c4ccb192ce6fae49118bb194bf97ec516645a0d126e6a`, SHA256SUMS
+`9e3bac3b575f8d074cae21a68dfcaa88e5b6205873996c3d0c4a379640745a44`다.
+
+### Gate 5 갱신안 준비
+
+원래 승인된 수행계획서의 site/release.json 범위에서 별도 게시 데이터 PR을 준비한다.
+현재 공개 사이트 release.json과 stable manifest는 실제 HTTP 조회에서 아직 0.1.0이다.
+사이트 version/tag/실제 공개 시각·안내문·고정 다운로드 3개와 complete inventory만 0.1.1로
+갱신한다. 기존 endpoint와 manifestPublished=true 정책은 유지하며 신규 updater 활성화가 아니다.
+공개 파일·서명 검증을 통과한 inventory만 사용한다. 수동 DEB/RPM/arm64는 Release 안내를 따른다.
+
+Pages 배포와 0.1.1 production manifest 공개는 아직 실행하지 않았다. 데이터 PR 검토·merge,
+그 merge의 exact devel SHA와 Pages/manifest 공개 승인을 거쳐 원격 release data·manifest·
+화면과 링크를 다시 확인한다. manifest 공개와 실제 N→N+1 production upgrade 성공은 구분한다.
+이번 계획에서 새 production upgrade harness 변경은 승인하지 않았으므로 성공으로 보고하지 않는다.
+#97은 공개 사이트 전달 추적을 위해 OPEN, 오늘할일 진행중을 유지한다.
+
+갱신안의 플랫폼 중립 Pages 생성·검사(source 16/output 19), 기존 Pages/updater/workflow
+계약 **86개 / fail 0 / skip 0**, diff 검사를 통과했다. 생성한 stable manifest SHA-256은
+`00a4773b643f2425f6ee8555e00e32c7c518df30b5dd838080cf9f2955caf5b8`이며 실제 공개 read-back의 version·publishedAt·세 URL/서명과 대조했다.
+아직 원격 Pages 배포나 앱 내 production upgrade 수용 결과는 아니다.
