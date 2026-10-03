@@ -4,7 +4,7 @@
 GitHub Issue: [#97](https://github.com/postmelee/alhangeul-tauri/issues/97)
 마일스톤: M010
 작성일: 2026-10-03 (Asia/Seoul)
-상태: Stage 1–4 완료·main 승격 완료, main 새 후보 파일 검증 진행 중
+상태: v0.1.1 GitHub 공개 완료 / #102 규격 통합·PR #101 갱신 검증 중 / body·Pages 공개 및 실제 upgrade 대기
 
 ## 승인과 기준
 
@@ -602,3 +602,23 @@ arm64 종료 조건 보정 수용 완료 (2026-10-04):
 - 두 run 모두 실제 non-root aarch64 / 설치 arm64 0.1.1 / phase complete exit 0, HWP/HWPX 2 scenario 및 저장 4참조의 hash/pinned WASM marker·재열기 2화면을 독립 확인했다. 최종 cleanup snapshot에 app/driver/4444·4445 listener가 없다. 캡처 대기나 임의 고정 delay 없이 실제 종료 조건을 사용하고 120초 timeout·retry/skip 없음은 유지했다.
 - fast CI 37137615232: 자동화 1,050개·upstream 39개·Studio 251개·GUI typecheck·Studio build·Windows PowerShell 계약 모두 success다. 이 fast 결과는 이미 완료한 main native full/6종 파일 수용을 대신하지 않는다.
 - 확정 main 새 파일 6종 수용을 완료했다. 공개 11개 전체 hash/checksum 및 notes를 다시 대조했으며 CLI postmelee·main exact SHA·v0.1.1 local/remote tag와 Release 부재를 확인했다. 태그 생성·동일 bytes draft upload/read-back·stable publish/read-back을 묶은 Gate 4 승인과 보정 PR merge 승인을 요청한다. Pages/manifest는 공개 read-back 후 별도 Gate 5를 따른다. #97과 오늘할일 공개 전달 상태는 진행중이다.
+
+
+Gate 4 승인·공개 완료와 Gate 5 준비 (2026-10-04):
+
+- 작업지시자의 후속 “진행해줘”로 PR #100 exact head 623f7bd0 normal merge 및 고정 11개 파일·notes·CLI postmelee·annotated tag/draft/read-back/stable 공개/read-back을 승인받았다. PR #100 merge 939cdb511c08e707120860aac1ba0d0c7fe48a92이며 main source는 96e89e90 그대로다.
+- Release 402604603 / v0.1.1 / publishedAt 2026-10-03T17:07:44Z, latest·non-draft/non-prerelease다. annotated tag b7b858e13c3f9153562e28e33cc398e75e896adf가 main 96e89e900415ee9e1e942b5c01c833dea3415e86로 resolve된다.
+- draft/public 각 새 폴더 원격 11개 파일 hash·서버 digest·uploaded 상태·checksum·Minisign·inventory·notes·tag 검증을 통과했다. exact 공개 메타데이터/asset ID는 기존 최종 보고서에 보존한다.
+- 원래 수행계획서에서 승인된 site/release.json의 후속 데이터 PR 준비 범위를 수행한다. 최신 merge된 devel 939cdb51을 시작 기준으로 version/tag·실제 publishedAt·기존 사용자 notes·고정 다운로드 3개·검증한 complete inventory를 반영한다. endpoint·manifestPublished=true 정책은 유지한다. 제품 runtime·production upgrade harness를 바꾸지 않는다.
+- 기존 site 위치만 수정하며 공식 릴리즈 문서 root를 추가하지 않는다. 공개 증거와 단계 기록은 기존 plans/report/orders에 둔다. 최종 보고서가 300줄을 초과하지만 승인/Stage 증거·main provenance·11개 파일과 공개 ID를 같은 이슈의 결과 기록으로 유지하기 위해 기존 파일에 최소 후속 기록을 추가한다.
+- macOS에서는 플랫폼 중립 Pages 생성/검사와 기존 Pages/updater/workflow 계약만 수행한다. PR 필수 검사 후 데이터 merge 및 exact devel Pages SHA/기존 manifest 갱신의 별도 공개 승인을 받는다. 실제 N→N+1 upgrade 수용은 manifest 생성 성공으로 대신하지 않는다.
+
+## Gate 5 안내 규격 적용 — 승인 완료 (2026-10-04)
+
+- PR #103 검증 보고의 “PR #103 병합과 PR #101 규격 반영” 요청 뒤 같은 스레드의 “진행해줘”를 해당 범위 승인으로 기록한다. PR #103은 일반 merge 73faf113e8a75cd847e10b4aa3e7fc7e3cb66f41으로 통합됐고 #102는 close됐다.
+- local/task97은 최신 devel을 merge 방식으로 반영한다. 오늘할일 충돌은 #97의 실제 GitHub 공개 완료 상태와 #102의 완료 행을 함께 보존한다. force/rebase/tag 이동은 없다.
+- 승인된 #102의 docs/releases·site/updates 위치와 사용자 원문을 재사용한다. 새 공식 루트·제품 runtime·updater key/endpoint·pin·installer를 변경하지 않는다.
+- site/release.json.notes만 content.updaterSummary 문자열로 정렬한다. version·실제 공개일·고정 3개 download·complete inventory·manifestPublished 정책은 동일하다. 생성 HTML은 devel에 통합한 #102의 같은 bytes를 사용한다.
+- 기존 Task 기록 및 docs/releases/v0.1.1.md에는 규격 통합·새 요약·새 manifest/body hash와 현재 미게시 gate를 기록한다. #102 plans/report는 실제 CI·merge/close 상태만 보완한다. 문서 위치 판단은 #102 승인된 계획을 따른다.
+- 검증은 generate:release-notes(새 directory)·check:release-notes·test:release-notes·build:pages·check:pages, Pages/updater/workflow 계약과 diff 확인이다. 게시한 새 PR #101 head의 Windows/Linux·required check를 확인한다. 같은 원문·site/template bytes의 #102 브라우저 1366/390/320px 수용을 재사용하고 실제 후보 data 최신 표시·다운로드를 대조한다.
+- 실제 공개 body 수정·PR #101 merge·exact devel SHA Pages/manifest 공개는 검토한 최종 산출물의 별도 승인 후 실행한다. production N→N+1 harness의 변경/실행은 아직 승인하지 않았고 계획 보정 후 수행한다.

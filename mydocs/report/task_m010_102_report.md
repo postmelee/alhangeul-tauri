@@ -3,7 +3,7 @@
 GitHub Issue: [#102](https://github.com/postmelee/alhangeul-tauri/issues/102)
 마일스톤: M010
 작성일: 2026-10-04 KST
-상태: 4개 Stage 구현·로컬 수용 완료 / 승인된 PR 게시·원격 CI 확인 단계
+상태: 완료 / PR #103 원격 CI 통과·merge·이슈 close / 공개 적용은 #97 인계
 최종 보고·PR 게시 승인: Stage 4 완료 보고 후 같은 스레드에서 작업지시자의 “진행해줘”.
 
 ## 작업 요약
@@ -71,7 +71,7 @@ runtime·installer·updater key/endpoint·rhwp pin/gitlink·공개 asset/tag·`s
 | 공개 bytes 재사용 근거 | OK — 보존 public bytes 재해시·작은 파일 5개 새 read-back·checksum 10행·Minisign 3종 일치; 이번 단계의 새 설치 수용 아님 |
 | 웹 수용 | OK — 1366px/390px/320px, 고정 다운로드·최신 메뉴·공개일·링크·0.1.0/후보0.1.1 상태·가로 넘침/console 오류 없음 |
 | 문서·실행 예제 | OK — 공식 문서/양식 9개·로컬 링크/앵커 85개·Bash syntax 17개; 생성 예제 3개 bytes 일치 |
-| 원격 CI | 작성 시점 미실행 — PR 게시 후 exact head/merge candidate와 Windows/Linux job·Alhangeul PR required를 읽어 PR 검증 표에 결과 기록 |
+| 원격 CI | OK — [PR #103 run 37152620380](https://github.com/postmelee/alhangeul-tauri/actions/runs/37152620380) Windows/Linux와 Alhangeul PR required 성공; head 23263b60 / merge candidate 167b2b42 |
 
 Stage 4의 필수 로컬 통합 명령을 모두 실행했다. 최종 보고 단계는 문서 상태만 변경하므로 같은 code/template/site/pin bytes의 결과를 재사용한다. 최종 커밋 전 diff/본문 섹션·링크·보존 feed·submodule을 추가 확인한다. 새 원격 CI 실패를 기존 로컬 성공으로 상쇄하지 않는다.
 
@@ -96,7 +96,7 @@ Stage 3 screenshot은 검토용 `/tmp/task102-stage3-screens/`에 보존했다. 
 
 ### 잔여 위험
 
-- 이번 PR의 exact SHA 원격 빠른 CI와 required check는 게시 후 실제 결과를 확인한다. 전체 native/GUI/installer 수용을 뜻하지 않는다.
+- PR #103 fast/required는 통과했다. 이 범위는 전체 native/GUI/installer 수용을 뜻하지 않는다.
 - 기존 v0.1.1 body는 아직 새 규격으로 수정하지 않았다. 현재 live feed는 0.1.0, PR #101은 OPEN이다.
 - production NSIS/MSI/AppImage의 실제 v0.1.0 → v0.1.1 upgrade는 미실행이다. 기존 설치 수용·same-version·시험 endpoint 성공을 대체 근거로 쓰지 않는다.
 - Authenticode 미서명·NSIS raw 썸네일 실패·강제 MSI 재부팅 후 미검증·실제 Wayland/GPU/프린터 환경 등의 제품 한계는 공식 기록에 유지한다.
@@ -114,4 +114,4 @@ Stage 3 screenshot은 검토용 `/tmp/task102-stage3-screens/`에 보존했다. 
 
 ## 작업지시자 승인 요청
 
-최종 보고서 작성·PR 게시는 이미 승인됐다. PR의 exact CI 결과와 본 보고서를 검토한 뒤 #102 일반 merge 승인을 요청한다. 현재 승인은 self-merge·Release body 수정·PR #101 merge·Pages 배포·actual upgrade를 대신하지 않는다.
+PR #103 exact CI 보고 뒤 작업지시자의 “진행해줘”로 일반 merge를 승인받았다. 2026-10-03T20:55:47Z merge `73faf113e8a75cd847e10b4aa3e7fc7e3cb66f41`, #102 close는 2026-10-03T20:58:10Z다. head `23263b60b6ef03955ce53d889814f54d16ad3ef6`와 checkout/workflow merge candidate `167b2b4208d80f4f281eeb4c81bf1a4f2b12d4bd`의 tree가 같고 GitHub Actions App 15368의 required check를 확인했다. 원격 publish/task102를 삭제하고 #97에 통합했다. 현재 승인은 Release body 수정·PR #101 merge·Pages 배포·actual upgrade를 대신하지 않는다.

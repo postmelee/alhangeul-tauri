@@ -3,7 +3,7 @@
 수행계획서: [task_m010_102.md](task_m010_102.md)
 GitHub Issue: [#102](https://github.com/postmelee/alhangeul-tauri/issues/102)
 마일스톤: M010
-상태: 구현계획 승인 완료 / Stage 1~4 구현·로컬 검증 완료 / 최종 보고·PR 게시 승인 완료 / 원격 CI·merge 대기
+상태: 완료 / PR #103 merge·원격 CI 통과·이슈 close / #97 공개 적용 인계
 작성일: 2026-10-04 KST
 수행계획 승인: 수행계획 보고 후 같은 스레드에서 작업지시자의 “진행해줘”.
 구현계획·Stage 1 승인: 2026-10-04, 구현계획 보고 후 같은 스레드에서 작업지시자의 “진행해줘”.
@@ -255,3 +255,5 @@ Stage 4 변경·stage4 report를 묶고 별도 최종 보고 승인 후 `task-fi
 - 4개 stage의 구체적인 파일·입출력 계약·검증·commit·의존성을 승인 요청한다.
 - 구현계획 승인과 Stage 1 시작 승인을 요청한다. 승인 후 첫 stage의 template·validator·회귀부터 구현한다.
 - 공개 body 수정, #102/#101 merge, Pages/manifest 게시, actual upgrade를 이번 구현계획 승인으로 실행하지 않는다.
+
+PR #103 병합 승인·완료: 2026-10-04, 검증 보고 뒤 작업지시자의 “진행해줘”; merge `73faf113e8a75cd847e10b4aa3e7fc7e3cb66f41`, 원격 Windows/Linux/required run 37152620380 성공. #102 close는 2026-10-03T20:58:10Z이며 남은 공개 적용은 #97에서 추적한다.
