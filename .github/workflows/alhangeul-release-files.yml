@@ -24,7 +24,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include: ${{ fromJSON(inputs.candidate_path != '' && inputs.windows_only && '[{"kind":"nsis","os":"windows-2025"},{"kind":"msi","os":"windows-2025"}]' || (inputs.production_check || inputs.candidate_path != '') && '[{"kind":"nsis","os":"windows-2025"},{"kind":"msi","os":"windows-2025"},{"kind":"appimage","os":"ubuntu-22.04"}]' || inputs.windows_only && '[{"kind":"msi","os":"windows-2025"}]' || '[{"kind":"msi","os":"windows-2025"},{"kind":"appimage","os":"ubuntu-22.04"}]') }}
+        include: ${{ fromJSON(!inputs.production_check && inputs.candidate_path != '' && inputs.windows_only && '[{"kind":"nsis","os":"windows-2025"},{"kind":"msi","os":"windows-2025"}]' || (inputs.production_check || inputs.candidate_path != '') && '[{"kind":"nsis","os":"windows-2025"},{"kind":"msi","os":"windows-2025"},{"kind":"appimage","os":"ubuntu-22.04"}]' || inputs.windows_only && '[{"kind":"msi","os":"windows-2025"}]' || '[{"kind":"msi","os":"windows-2025"},{"kind":"appimage","os":"ubuntu-22.04"}]') }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 50
     env:

@@ -60,6 +60,8 @@ test('empty input preserves immutable v0.1.0 performance baseline', async () => 
   assert.equal(PRODUCER_RUN, 36320371932);
   await assert.rejects(loadCandidate('msi', fallback, '../outside.json'));
   await assert.rejects(loadCandidate('msi', fallback, '/tmp/candidate.json'));
+  await assert.rejects(loadCandidate('msi', fallback, 'C:outside.json'), /safe package path/);
+  await assert.rejects(loadCandidate('msi', fallback, 'file\\ninjected.json'), /safe package path/);
 });
 
 test('VM identity parser rejects shell/newline values and requires a package hash', () => {
@@ -75,6 +77,7 @@ test('new exact candidates reach every acceptance workflow without production ac
   assert.equal((dispatcher.match(/candidate_path: \$\{\{ inputs\.release_candidate_path \}\}/g) ?? []).length, 3);
   const files = await read('.github/workflows/alhangeul-release-files.yml');
   assert.match(files, /inputs\.candidate_path != '' && inputs\.windows_only && '\[\{"kind":"nsis".*"kind":"msi"/);
+  assert.match(files, /fromJSON\(!inputs\.production_check && inputs\.candidate_path/);
   assert.match(files, /ALHANGEUL_GUI_PRODUCTION_CHECK: \$\{\{ inputs\.production_check \}\}/);
   assert.match(files, /-ExpectedVersion \$env:ALHANGEUL_GUI_APP_VERSION/);
   const linux = await read('.github/workflows/alhangeul-release-linux-files.yml');

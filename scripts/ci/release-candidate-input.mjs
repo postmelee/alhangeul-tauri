@@ -57,6 +57,7 @@ export function validateCandidate(document, kind) {
 
 export async function loadCandidate(kind, fallback, path = process.env.RELEASE_CANDIDATE_PATH) {
   if (!path) return fallback;
+  validatePath(path);
   assert.ok(!isAbsolute(path) && !relative(process.cwd(), resolve(path)).startsWith('..'), 'candidate JSON inside checkout');
   return validateCandidate(JSON.parse(await readFile(path, 'utf8')), kind);
 }

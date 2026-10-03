@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "version": "0.1.1",
+  "tag": "v0.1.1",
+  "sourceSha": "8f48d83b30cbe1b7d1af9f7b857044145c5bcdcc",
+  "candidates": {
+    "nsis": {
+      "name": "alhangeul-updater-windows-x64",
+      "id": 11275190891,
+      "digest": "sha256:6d2623857add47b10d56f96b187ae6a59208608519efca6f44a2892eea955041",
+      "producerRun": 37123986488,
+      "workflowPath": ".github/workflows/alhangeul-desktop.yml",
+      "path": "nsis/Alhangeul_0.1.1_x64-setup.exe",
+      "sha256": "31719e8a94ff67f6a7d80f473cdf81676cccdfaa0774aa97b6df221a5551f799",
+      "target": "windows-x86_64-nsis",
+      "targets": [
+        "windows-x86_64-nsis",
+        "windows-x86_64-msi"
+      ]
+    },
+    "msi": {
+      "name": "alhangeul-updater-windows-x64",
+      "id": 11275190891,
+      "digest": "sha256:6d2623857add47b10d56f96b187ae6a59208608519efca6f44a2892eea955041",
+      "producerRun": 37123986488,
+      "workflowPath": ".github/workflows/alhangeul-desktop.yml",
+      "path": "msi/Alhangeul_0.1.1_x64_en-US.msi",
+      "sha256": "acde761349ade61d30d2bc0208ded46abf30e99ed2ea3422d41c69a2e26497e3",
+      "target": "windows-x86_64-msi",
+      "targets": [
+        "windows-x86_64-nsis",
+        "windows-x86_64-msi"
+      ]
+    },
+    "appimage": {
+      "name": "alhangeul-updater-linux-x64",
+      "id": 11273649560,
+      "digest": "sha256:cc869b95b2d26a159b2eb7d9911ca9941f863b6b41e26093140a0a779e1dda75",
+      "producerRun": 37123986488,
+      "workflowPath": ".github/workflows/alhangeul-desktop.yml",
+      "path": "Alhangeul_0.1.1_amd64.AppImage",
+      "sha256": "20f0e6c1218f4fd0b8dd9d9b09d992ae72e2d71832cc3491fafbef4255d109a7",
+      "target": "linux-x86_64-appimage",
+      "targets": [
+        "linux-x86_64-appimage"
+      ]
+    }
+  }
+}

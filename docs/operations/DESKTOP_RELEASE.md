@@ -78,6 +78,15 @@ CI 전체 성공도 모든 썸네일 환경의 성공을 뜻하지 않는다. �
 성공 producer의 Windows bytes는 `additional-validation-only`로 추가 검사에 사용할 수 있으나
 제품/릴리즈 수용은 별도다. 독립 재검산 자동화는 #67 후속이며 첫 공개 선행 조건이 아니다.
 
+최종 파일 수용의 `release-file-acceptance`, `release-linux-file-acceptance`,
+`release-fedora-vm-acceptance`는 checkout 안의 후보 JSON 경로를 `release_candidate_path`로 받는다.
+JSON은 stable version/tag, exact source SHA, 선택한 성공 producer의 workflow/run,
+archive ID/digest와 package path/hash를 고정한다. 다운로드 bytes·inventory 또는 서명·선택 파일을
+대조한 뒤에만 설치와 GUI를 실행하며 누락·불일치는 실패다. 새 후보의 일반 문서 수용은
+NSIS/MSI/AppImage를 포함하고, Windows-only는 두 Windows 형식, Linux arm64 선택은 arm64만
+실행한다. production 검사 선택은 별도다. 입력을 비우면 과거 v0.1.0 검증 기본값을 보존하므로
+새 릴리즈 수용에는 후보 JSON을 명시한다. 이는 공개 승인이나 updater 활성화를 대신하지 않는다.
+
 일반 native build와 updater build를 혼용하지 않는다. 기본 build의 성공은 production endpoint와
 서명이 포함된 파일의 검증이 아니다. updater build는 일반 build의 전체 test·package smoke를
 자동으로 반복하는 경로가 아니므로 변경 영향과 실제 job 결과를 따로 확인한다.

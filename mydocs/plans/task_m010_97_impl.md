@@ -493,3 +493,17 @@ Stage 4 후보 게시 전 확인:
 - 버전 5개 표면 0.1.1 일치, release metadata·boundary(734파일)·upstream 39·Studio 251·build·automation 1,044·변경 workflow actionlint·diff가 통과했다. 기존 metadata 검사 두 기대값도 새 제품 버전으로 갱신했다.
 - 기존 candidate prepare 함수는 검증 순서를 한 흐름으로 보존하기 위해 권장 50줄을 약간 넘긴다(각 70줄 미만). 추가 입력 검증·identity 전달은 별도 100줄 미만 모듈로 분리했다.
 - full native CI와 비게시 signed updater producer를 이 후보 commit에서 실행한다. 이 기록은 실제 설치 수용 결과가 아니다.
+
+Stage 4 검증 harness 후속 보정:
+
+- 새 입력 경로는 Windows drive-relative·개행·상위 경로를 JSON 읽기 전에 거부한다. production_check=true의 기존 3종 matrix는 새 candidate_path와 windows_only가 함께 주어져도 우선한다. 제품 runtime 변경 없이 관련 입력·workflow 계약을 다시 검증한다.
+- 새 후보 JSON 입력이라는 운영 계약이 생겼으므로 승인된 docs/operations/DESKTOP_RELEASE.md의 기존 workflow 계층에 전달·거부·기본값 계약만 최소 추가한다. 새 공식 문서나 root는 만들지 않는다.
+- signed producer가 먼저 성공하면 그 exact NSIS/MSI/AppImage 세 후보를 먼저 고정해 검사할 수 있다. native full producer가 성공하기 전에는 DEB/RPM/arm64 파일을 수용에 넘기거나 Stage 4 전체 완료로 기록하지 않는다. 두 producer를 같은 제품 SHA에 고정하며 이후 JSON에 native 후보를 보완한다.
+
+Stage 4 서명 후보 고정 기록:
+
+- product source `8f48d83b30cbe1b7d1af9f7b857044145c5bcdcc`, 비게시 signed producer [37123986488](https://github.com/postmelee/alhangeul-tauri/actions/runs/37123986488)는 success다. Windows/Linux build와 complete inventory gate 모두 통과했다.
+- release 환경 조회에서 reviewer postmelee·prevent_self_review=false·ref 제한 없음·current_user_can_approve=true를 확인했다. 같은 스레드의 Stage 4 비게시 서명 후보 승인에 따라 해당 source의 pending 환경 실행만 승인했다. 공개 job은 publish_release=false로 skipped다.
+- exact 세 archive를 /tmp의 별도 폴더로 내려받아 metadata/digest, installer hash·Minisign·complete inventory를 대조했다. 검증 결과로 mydocs/working/task_m010_97.json에 NSIS/MSI/AppImage 세 후보를 고정했다. native full CI 37123984482는 아직 진행 중이므로 해당 파일들은 아직 추가하지 않았다.
+- 후속 harness의 자동화 1,044·boundary·actionlint·diff가 통과했다. signed 파일 일반 수용을 먼저 실행하고 full CI 성공 뒤 같은 source의 수동 패키지를 보완한다. 구현 runtime은 Stage 3 ef54ae9d와 동일하다(git diff로 runtime 소유 경로 확인).
+- 최신 공개 Alhangeul은 v0.1.0/fc3cad15682f35723ab6558d1301e9096f7eec67이며 upstream 최신 stable은 현재 pin과 같은 v0.8.6이다. 공개 Release/Pages는 아직 변경하지 않았다.
