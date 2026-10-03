@@ -151,3 +151,26 @@ Minisign·complete inventory/파일 metadata를 대조했다. source는 main 96e
 | `Alhangeul_0.1.1_amd64.AppImage` | `c3a599fdea3b52353d875a4c50738babaf91102c26fcd7a6079e69e96b6bebf0` | 11276672561 / `sha256:2a221aaf7fd21af7b9f4c498a9f146678594f5e21961b2ccf46532a9fe55cdd0` |
 
 이 세 새 bytes의 설치 수용을 실행하며 native full은 아직 진행 중이다. 공개·tag·Pages는 미실행이다.
+
+
+### main native 및 설치 수용 진행 — 2026-10-04
+
+full native 37130396817은 모든 필수 gate success다. 새 native ZIP의 archive digest·
+원본 case-sensitive inventory 경로/size/hash·선택 installer bytes를 독립 대조했다.
+main 후보 JSON에 같은 source의 RPM·arm64 DEB를 추가한다. x64 DEB는 아래 같은 native inventory에서 고정한다.
+
+| 파일 | SHA-256 | archive ID/digest |
+|---|---|---|
+| `deb/Alhangeul_0.1.1_amd64.deb` | `6ad4492529dd228d38d37b697d0175323e71e2632212f472c1557f3868913862` | 11277562240 / `sha256:1ea3c739764eeb7368f115d5af09a922402b269672d99e561ed914928c23ae2a` |
+| `rpm/Alhangeul-0.1.1-1.x86_64.rpm` | `185c399e737c2a686f5d5f599866fa3a63abac442e928f9442c29d9f178564b3` | 11277562240 / `sha256:1ea3c739764eeb7368f115d5af09a922402b269672d99e561ed914928c23ae2a` |
+| `deb/Alhangeul_0.1.1_arm64.deb` | `3e29375bf7f824bdc84ae3f1dbff5b5cbeacae5ae694fa64d30c423a5be58859` | 11276793052 / `sha256:c2a3cfede5a8707b1f629fa4ad00cad93be2a05ed488112af90a02491dc7229c` |
+
+main signed 3종 실제 설치 수용 37132406842는 success다. NSIS/MSI 설치·삭제 exit 0,
+설치 version 0.1.1, WebView 정책 복원 true, HWP/HWPX 두 시나리오별 저장 파일 hash·
+pinned WASM 재읽기 marker 및 6개 재열기 화면을 독립 확인했다. AppImage는 원본 FUSE 실행 경로다.
+x64 DEB full GUI 37132752100도 success이며 원시 문서·PDF·인쇄 증거 확인을 진행한다.
+RPM Fedora KVM·arm64 새 bytes 실제 설치 수용은 이어서 수행한다.
+
+native raw ordinary MSI passed/exit 0, NSIS hosted raw failed/exit 1/12건·thumbnail not-accepted,
+forced MSI raw failed/exit 1/1건·reboot-required/post-reboot-unverified를 확인했다.
+계약 gate success가 이 제한을 해소한 것은 아니다. tag/공개 Release·Pages는 미실행이다.

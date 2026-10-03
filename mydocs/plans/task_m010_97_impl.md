@@ -543,3 +543,11 @@ main 서명 후보 고정 기록 (2026-10-04):
 - signed producer 37130399389는 success이며 publish job skipped다. source main 96e89e900415ee9e1e942b5c01c833dea3415e86, archive metadata/digest·Minisign·complete inventory를 독립 대조했다.
 - mydocs/working/task_m010_97.json을 새 main의 NSIS/MSI/AppImage 세 후보로 갱신한다. 이전 Stage 4 JSON은 PR #98 head 28ae0a91f4bdc9f9b9552db48f8012aaaf4f58d7에 그대로 남는다. 새 source 아래에 이전 native producer 파일을 혼합하지 않는다.
 - full native producer는 아직 미완료이므로 RPM·arm64 항목을 새 JSON에 넣지 않았다. 성공한 signed 세 파일의 일반 문서 수용을 먼저 실행한다. 이 고정은 실제 설치 수용 완료나 공개 승인 결과가 아니다.
+
+
+main native 후보 확정 및 설치 수용 진행 (2026-10-04):
+
+- full native 37130396817은 최종 success다. archive digest·original ZIP inventory 경로/size/hash·installer bytes를 대조하고 main 후보 JSON을 signed 3종 및 같은 main RPM/arm64 5항목으로 확장했다. x64 DEB는 같은 native inventory로 고정한다.
+- signed 새 파일 수용 37132406842는 3종 success이며 actual install/cleanup exit 0·version 0.1.1·정책 복원·문서 hash/pinned WASM marker·재열기 6화면을 독립 확인했다.
+- x64 DEB full GUI 37132752100은 success다. 원시 9 scenario/PDF/인쇄 복원 증거를 확인하고 RPM KVM·arm64 실제 설치 수용을 이어간다. public tag/Release·Pages는 아직 미실행이다.
+- raw NSIS 썸네일 실패/forced MSI post-reboot 미검증 제한은 새 main에서도 유지한다.
