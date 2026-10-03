@@ -4,7 +4,7 @@
 GitHub Issue: [#97](https://github.com/postmelee/alhangeul-tauri/issues/97)
 마일스톤: M010
 작성일: 2026-10-03 (Asia/Seoul)
-상태: Stage 3 진입 승인·full CI 실행 중, 실제 설치 비교 자동화 보정 승인 대기
+상태: Stage 3·설치 비교 자동화 보정 승인 완료, 구현·원격 검증 진행 중
 
 ## 승인과 기준
 
@@ -263,7 +263,7 @@ updater 신규 활성화는 하지 않으며 공개 manifest와 실제 productio
 - 이름 인덱스와 현재 후보 가용성 확인을 결합하는 설계 방향.
 - 구현계획 승인 후 Stage 1의 baseline·회귀 시나리오 고정 작업 진입.
 
-## Stage 3 계획 보정안 — 같은 VM의 실제 설치본 비교 (승인 대기)
+## Stage 3 계획 보정 — 같은 VM의 실제 설치본 비교 (승인 완료)
 
 ### 확인된 제약
 
@@ -285,6 +285,7 @@ updater 신규 활성화는 하지 않으며 공개 manifest와 실제 productio
 | `scripts/ci/font-performance-candidate.mjs` | 기준 signed updater artifact와 개선 desktop artifact의 exact bytes 확인 | 기존 handoff·safe download·inventory·hash·기준 서명 검증 재사용; 불완전/실패 producer 거부 |
 | `tests/gui/specs/local-font-performance.e2e.ts` | 실제 설치본의 HWP/HWPX on/off 반복 조작 | 현재 wdio.release-files.conf.ts의 --spec override; 제품 개발용 global/명령 주입 없음 |
 | `tests/gui/local-fonts/performance.ts` | WebView 내부 시간과 프레임 관찰 | 같은 fixture·조작의 준비/열기/입력/스크롤을 분리; 각 5회 이상 |
+| `.github/workflows/alhangeul-desktop.yml` | 기존 dispatcher에서 새 비교 reusable workflow 호출 | `font-performance` mode와 전용 producer run 입력만 추가; 기존 build/release mode 보존 |
 | 관련 focused 계약 테스트 | provenance·누락/불일치 실패 및 관찰 결과 검증 | 기존 자동화/GUI 검사 범위; 원격 결과를 mock으로 대신하지 않음 |
 
 기존 v0.1.0 release acceptance의 고정 상수와 동작은 그대로 둔다. 새 측정 경로는
@@ -322,5 +323,17 @@ git diff --check
 ```
 
 원격 비교 workflow의 정확한 dispatch 입력·run 및 결과는 Stage 3 보고서에 기록한다.
-이 보정안 승인 전 신규 workflow/script/spec 소스는 작성하지 않는다. Stage 3은 진행 중이며
+작업지시자의 보정안 승인 요청에 대한 후속 “진행해줘”를 위 신규 workflow/script/spec 및
+설치·실행 orchestration helper, 관련 계약 검사 등록의 승인으로 기록한다. Stage 3은 진행 중이며
 완료보고·다음 단계 승인으로 간주하지 않는다.
+
+
+Stage 3 원격 실행 준비 기록:
+
+- 새 workflow는 기존 dispatcher의 `font-performance` mode로 호출한다. 새 workflow 파일의
+  default-branch 등록이나 검증 전 PR merge를 요구하지 않으며 기존 branch workflow 호출 방식을 쓴다.
+- `run-font-performance.mjs`는 기존 MSI install/cleanup과 wdio CLI 실행만 순차 묶는다.
+- 원격 실행을 위해 검증 harness 후보 커밋을 먼저 게시하고, 실제 수용 후 최종 Stage 3 보고서와
+  결과·필요한 보정을 묶어 단계 커밋한다. 후보 게시를 Stage 3 완료로 기록하지 않는다.
+- GUI typecheck, GUI contracts 23개, automation 1031개, public fixture 3개, boundary 732개가 통과했다.
+  후보 native CI는 아직 진행 중이다. 원격 비교 전 현재 변경에 대한 최종 계약 검사를 다시 확인한다.

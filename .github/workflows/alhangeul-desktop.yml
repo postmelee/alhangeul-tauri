@@ -9,6 +9,7 @@ on:
         default: artifact
         type: choice
         options:
+          - font-performance
           - site-capture
           - artifact
           - release-file-acceptance
@@ -29,6 +30,11 @@ on:
           - windows-dialog-verify
       build_ref:
         description: Artifact mode requires a ref resolving to the selected workflow commit; other modes accept branch/tag/commit. Empty uses the workflow commit.
+        required: false
+        default: ""
+        type: string
+      font_performance_run_id:
+        description: Successful ci.yml producer used only for installed font performance comparison.
         required: false
         default: ""
         type: string
@@ -132,6 +138,16 @@ env:
   GIT_CONFIG_VALUE_0: "false"
 
 jobs:
+  font-performance:
+    if: ${{ inputs.mode == 'font-performance' && !inputs.publish_release }}
+    permissions:
+      contents: read
+      actions: read
+    uses: ./.github/workflows/alhangeul-font-performance.yml
+    with:
+      build_ref: ${{ inputs.build_ref }}
+      native_run_id: ${{ inputs.font_performance_run_id }}
+
   site-capture:
     if: ${{ inputs.mode == 'site-capture' && !inputs.publish_release }}
     permissions:
