@@ -3,7 +3,7 @@
 GitHub Issue: [#97](https://github.com/postmelee/alhangeul-tauri/issues/97)
 마일스톤: M010
 작성일: 2026-10-03 (Asia/Seoul)
-상태: Stage 1–4 구현·검증 완료, PR merge·공개 Release·사이트 전달 대기
+상태: Stage 1–4 완료·main 승격 완료, main 새 후보 검증 및 공개 전달 진행 중
 
 ## 작업 요약
 
@@ -119,3 +119,35 @@ PR 최종 head와 product source를 혼동하지 않는다. 원격 PR required c
 오늘할일의 완료는 Stage 1–4 구현·검증 범위다. #97은 공개 전달 추적을 위해 OPEN 유지한다.
 Release·사이트 전달을 마친 뒤 본 보고서에 공개 URL·exact source·asset hash·Pages 근거를 추가한다.
 PR merge만으로 사용자 요청 전체를 완료로 보고하지 않는다.
+
+
+## 후속 릴리즈 승격 — 2026-10-03
+
+작업지시자의 다음 “진행해줘”로 PR #98 merge 및 릴리즈 승격 단계 승인을 받았다.
+[PR #98](https://github.com/postmelee/alhangeul-tauri/pull/98)은 required success/CLEAN에서 merge됐으며
+devel SHA는 6979d2f67bcfcef6e565031a840d6523e9576e80다.
+[Release PR #99](https://github.com/postmelee/alhangeul-tauri/pull/99)은 devel→main으로 생성하고
+[승격 fast CI 37130039967](https://github.com/postmelee/alhangeul-tauri/actions/runs/37130039967) success 뒤 merge했다.
+최종 main source는 **96e89e900415ee9e1e942b5c01c833dea3415e86**다.
+
+Stage 4 후보 이후 runtime diff는 없으나 새 main source의 파일 provenance를 만들기 위해
+[full native 37130396817](https://github.com/postmelee/alhangeul-tauri/actions/runs/37130396817)과
+[비게시 signed 37130399389](https://github.com/postmelee/alhangeul-tauri/actions/runs/37130399389)를 실행 중이다.
+이 새 files의 실제 설치 수용·tag/Release·public read-back·사이트/manifest 전달은 아직 완료하지 않았다.
+#97은 OPEN이다. 앞의 Stage 4 파일 식별자는 당시 후보이며 새 main 후보로 소급 변경하지 않는다.
+
+
+### main 서명 후보 파일 검증 — 2026-10-04
+
+비게시 signed producer 37130399389는 success, publish skipped다. 정확한 archive digest와
+Minisign·complete inventory/파일 metadata를 대조했다. source는 main 96e89e900415ee9e1e942b5c01c833dea3415e86다.
+현재 task_m010_97.json은 아래 main 후보 3종으로 갱신한다. Stage 4 당시 JSON은
+[PR #98 고정 head의 원본](https://github.com/postmelee/alhangeul-tauri/blob/28ae0a91f4bdc9f9b9552db48f8012aaaf4f58d7/mydocs/working/task_m010_97.json)에 보존돼 있다.
+
+| 파일 | SHA-256 | archive ID/digest |
+|---|---|---|
+| `nsis/Alhangeul_0.1.1_x64-setup.exe` | `9ff5e10e9b99f2605ab77b2d8525870819f3ed9d138b84fe2e6009b2222a1ca3` | 11276414082 / `sha256:ed84bb3849c460b881446e3ce30598d9275e3342ac88936d6fb8d5e6f6b7e2a0` |
+| `msi/Alhangeul_0.1.1_x64_en-US.msi` | `6a34ae3a52c59bf4737cf1595d65a914fdd2ec588a3a1c54270c7d83c578fc98` | 11276414082 / `sha256:ed84bb3849c460b881446e3ce30598d9275e3342ac88936d6fb8d5e6f6b7e2a0` |
+| `Alhangeul_0.1.1_amd64.AppImage` | `c3a599fdea3b52353d875a4c50738babaf91102c26fcd7a6079e69e96b6bebf0` | 11276672561 / `sha256:2a221aaf7fd21af7b9f4c498a9f146678594f5e21961b2ccf46532a9fe55cdd0` |
+
+이 세 새 bytes의 설치 수용을 실행하며 native full은 아직 진행 중이다. 공개·tag·Pages는 미실행이다.

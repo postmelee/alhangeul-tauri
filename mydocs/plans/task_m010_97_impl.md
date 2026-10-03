@@ -4,7 +4,7 @@
 GitHub Issue: [#97](https://github.com/postmelee/alhangeul-tauri/issues/97)
 마일스톤: M010
 작성일: 2026-10-03 (Asia/Seoul)
-상태: Stage 1–4 구현·검증 완료, PR merge·공개 Release·사이트 전달 대기
+상태: Stage 1–4 완료·main 승격 완료, main 새 후보 파일 검증 진행 중
 
 ## 승인과 기준
 
@@ -524,3 +524,22 @@ Stage 4 최종 수용 기록 (2026-10-03 23:13 KST):
 - DEB full GUI 9 scenario의 identity·61 파일 참조 hash, 29 PDF 페이지 시각 판독과 4 print restoration checkpoint를 확인했다. native 문서 save는 marker 입력 검사가 아니며 별도 parser 재읽기로 기록했다.
 - 최종 공개 후보 6종의 새 bytes 설치 수용까지 완료했다. Stage 4·최종 보고를 작성하고 devel Open PR을 준비한다. 공개 Release/Pages 및 main exact source 판단은 후속 승인 게이트에 남는다.
 - 오늘할일 완료는 구현·검증 범위이며 #97은 공개 전달 추적 때문에 OPEN 유지한다.
+
+
+릴리즈 승격 승인·실행 기록 (2026-10-03):
+
+- Stage 4·PR #98 완료 보고의 “PR을 merge하고 릴리즈 승격 단계로 진행할까요?”에 대한 후속 “진행해줘”를 PR #98 merge와 릴리즈 source 승격·비게시 후보 준비 단계의 승인으로 기록한다.
+- PR #98은 정확한 head 28ae0a91f4bdc9f9b9552db48f8012aaaf4f58d7·required 모두 success/CLEAN에서 normal merge했다. devel merge SHA 6979d2f67bcfcef6e565031a840d6523e9576e80, mergedAt 2026-10-03T14:30:40Z, #97 OPEN 유지다.
+- Release PR #99은 devel→main, 포함 PR #98·기존 #95 운영 변경을 본문에 명시했다. main은 기존 보호/ruleset이 없는 상태로 조회했으며 새 보호 정책을 적용하지 않았다. head fast CI 37130039967 success 뒤 승인된 승격 단계에서 normal merge했다.
+- 확정 main SHA 96e89e900415ee9e1e942b5c01c833dea3415e86, PR #99 mergedAt 2026-10-03T14:39:02Z. Stage 4 source 이후 제품 runtime diff가 없으나 이전 bytes를 이 새 SHA의 provenance로 바꾸지 않는다.
+- 확정 main full native 37130396817과 비게시 signed producer 37130399389를 실행했다. workflow/source/ref와 main remote SHA를 대조했다. signed run의 publish_release=false, reviewer postmelee·prevent_self_review=false·current_user_can_approve=true·ref 제한 없음 확인 후 이 비게시 run만 환경 승인했다.
+- main의 새 bytes는 source/ID/digest/hash/Minisign/complete inventory 및 6종 실제 설치 수용을 다시 확인한다. 제품 기능 A/B 측정은 동일 runtime의 Stage 3 증거를 재사용하고 새 파일 최소 설치 수용을 재사용하지 않는다.
+- 전용 local/task97은 main으로 fast-forward했다. 원래 사용자 checkout과 다른 devel worktree는 보존한다. 전용 worktree·harness branch는 후속 검증과 site 준비에 필요하므로 아직 제거하지 않는다.
+- 승인할 공개 입력은 stable/v0.1.1·확정 main SHA·CLI 주체 postmelee·서명 정책/제한·notes·검증한 11개 asset 전체로 준비한다. tag/draft/public Release·Pages는 이 기록 시점 미실행이다.
+
+
+main 서명 후보 고정 기록 (2026-10-04):
+
+- signed producer 37130399389는 success이며 publish job skipped다. source main 96e89e900415ee9e1e942b5c01c833dea3415e86, archive metadata/digest·Minisign·complete inventory를 독립 대조했다.
+- mydocs/working/task_m010_97.json을 새 main의 NSIS/MSI/AppImage 세 후보로 갱신한다. 이전 Stage 4 JSON은 PR #98 head 28ae0a91f4bdc9f9b9552db48f8012aaaf4f58d7에 그대로 남는다. 새 source 아래에 이전 native producer 파일을 혼합하지 않는다.
+- full native producer는 아직 미완료이므로 RPM·arm64 항목을 새 JSON에 넣지 않았다. 성공한 signed 세 파일의 일반 문서 수용을 먼저 실행한다. 이 고정은 실제 설치 수용 완료나 공개 승인 결과가 아니다.
