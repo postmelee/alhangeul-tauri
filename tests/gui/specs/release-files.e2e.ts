@@ -16,6 +16,7 @@ const inputs = readGuiHarnessInputs();
 const run = promisify(execFile);
 const marker = 'ALHANGEUL RELEASE FILE ROUNDTRIP 0123456789';
 let dialogIndex = 0;
+let restartIndex = 0;
 
 describe('Final release file native document acceptance', () => {
   it('HWP/HWPX native Save As, edited current save and process restart retain text', async () => {
@@ -47,7 +48,7 @@ describe('Final release file native document acceptance', () => {
         const bytes = await readFile(saved);
         const doc = new HwpDocument(bytes);
         try { expect(doc.getTextFileText()).toContain(marker); } finally { doc.free(); }
-        await browser.reloadSession();
+        await restartSession();
         await waitForInitialDesktopReady(browser, inputs.timeoutMs);
         await dialog('Open', saved, 'file:open');
         await waitForLoadedDocument(browser, basename(saved), null, inputs.timeoutMs);
@@ -56,7 +57,7 @@ describe('Final release file native document acceptance', () => {
         const evidence = [await describeEvidenceFile(inputs.outputDir, saved, 'generated-document')];
         return evidence;
       });
-      await browser.reloadSession();
+      await restartSession();
     }
   });
 });
@@ -80,4 +81,27 @@ async function dialog(mode: 'Open' | 'Save', target: string, command: string) {
   await run('powershell.exe', ['-NoProfile', '-File', join(inputs.fixtureRoot, 'scripts/windows-pdf-dialog.ps1'),
     '-Mode', mode, '-TargetPath', target, '-EvidencePath',
     join(inputs.outputDir, `native-dialog-${++dialogIndex}.json`)], { timeout: 100000 });
+}
+
+async function restartSession() {
+  const label = `restart-${++restartIndex}`;
+  await captureRestart(`${label}-before`);
+  try {
+    await browser.reloadSession();
+    await captureRestart(`${label}-after`);
+  } catch (error) {
+    await captureRestart(`${label}-failed`);
+    throw error;
+  }
+}
+
+async function captureRestart(label: string) {
+  if (process.platform !== 'linux') return;
+  try {
+    await run('bash', [join(inputs.fixtureRoot, 'scripts/ci/release-file-process-probe.sh'),
+      'snapshot', label], { timeout: 15000 });
+  } catch (error) {
+    // Diagnostics never replace the actual session result.
+    console.error(`process diagnostic ${label} failed`, error);
+  }
 }

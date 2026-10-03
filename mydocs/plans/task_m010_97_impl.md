@@ -572,3 +572,10 @@ main 마지막 Linux 수용 증거:
 
 
 v0.1.0 arm64 대조 수용 37134870041은 success다. archive 11278097614 / digest sha256:e14446159e74771d9fcde312ba216d7bcf65e54019b06e66219ee331e578982f, 설치 arm64 0.1.0·phase complete/exit 0·두 문서 marker/hash·재열기 두 화면을 독립 확인했다. 동일 harness에서 기준선은 성공했지만 새로운 0.1.1 두 파일 수용 실패의 원인은 아직 확정하지 않는다. 위 진단 보정안의 source 변경 승인을 요청한다.
+
+
+arm64 진단 보정 승인·착수 (2026-10-04):
+
+- 위 보정안에 대한 작업지시자의 후속 “진행해줘”를 진단 추가와 확인된 harness 종료·재시작 결함 보정 범위 승인으로 기록한다. 동일 main bytes, 120초 timeout, retry/skip 없는 실제 문서·재실행 수용 기준을 유지한다.
+- 기존 GUI session shell에서 제한된 process/port/resource 상태를 주기적으로 수집하고 재실행 전/후/실패 checkpoint 및 독립 desktop screenshot을 보존한다. WDIO stdout/stderr를 append console 파일에도 남겨 세션 교체 시 logger 파일 덮어쓰기와 구분한다. 전체 환경·개인 문서 내용은 수집하지 않는다.
+- 진단만 추가한 harness로 먼저 같은 arm64 후보를 실행하고 원시 결과에 따라 다음 변경을 결정한다.

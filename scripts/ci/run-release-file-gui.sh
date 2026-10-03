@@ -17,6 +17,18 @@ xvfb-run --auto-servernum --server-args='-screen 0 1920x1080x24 -nolisten tcp' \
   dbus-run-session -- bash -euo pipefail -c '
     openbox > "$ALHANGEUL_GUI_OUTPUT_DIR/openbox.log" 2>&1 &
     wm_pid=$!
-    trap '\''kill "$wm_pid" 2>/dev/null || true'\'' EXIT
-    node node_modules/@wdio/cli/bin/wdio.js run tests/gui/wdio.release-files.conf.ts
+    bash scripts/ci/release-file-process-probe.sh watch > "$ALHANGEUL_GUI_OUTPUT_DIR/process-probe-errors.log" 2>&1 &
+    probe_pid=$!
+    finish() {
+      local result=$?
+      trap - EXIT
+      set +e
+      bash scripts/ci/release-file-process-probe.sh snapshot "session-exit-$result"
+      kill "$probe_pid" "$wm_pid" 2>/dev/null
+      wait "$probe_pid" 2>/dev/null
+      exit "$result"
+    }
+    trap finish EXIT
+    node node_modules/@wdio/cli/bin/wdio.js run tests/gui/wdio.release-files.conf.ts 2>&1 \
+      | tee -a "$ALHANGEUL_GUI_OUTPUT_DIR/session-console.log"
   '
