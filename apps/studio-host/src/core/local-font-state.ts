@@ -1,20 +1,23 @@
 import { normalizeFontEntries, type LocalFontEntry } from './local-font-records';
+import { createLocalFontLookup, type LocalFontLookup } from './local-font-lookup';
 import { subscribeFontPreferences } from './local-font-preferences';
 import { resetDesktopFontProvider } from './local-font-provider';
 
 let entries: LocalFontEntry[] | null = null;
+let lookup: LocalFontLookup | null = null;
 let detectedAt: string | null = null;
 let error: string | null = null;
 let generation = 0;
 let pending: Promise<LocalFontEntry[]> | null = null;
 
 export function getFontCatalog() {
-  return { entries, detectedAt, error, generation };
+  return { entries, lookup, detectedAt, error, generation };
 }
 
 export function invalidateFontCatalog(): void {
   generation += 1;
   entries = null;
+  lookup = null;
   detectedAt = null;
   error = null;
   pending = null;
@@ -35,7 +38,9 @@ export async function loadFontCatalog(
     try {
       const result = normalizeFontEntries(await loader());
       if (started !== generation) return [];
+      const indexed = createLocalFontLookup(result);
       entries = result;
+      lookup = indexed;
       detectedAt = new Date().toISOString();
       return result;
     } catch {

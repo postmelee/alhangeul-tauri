@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { loadCandidate, recordCandidateIdentity } from './release-candidate-input.mjs';
 import { execFileSync } from 'node:child_process';
 import { mkdir, writeFile, appendFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
@@ -24,8 +25,8 @@ export const LINUX_CANDIDATES = Object.freeze({
   },
 });
 
-export function selectLinuxInstaller(candidate, inventory) {
-  assert.equal(inventory.sourceSha, PRODUCT_SHA);
+export function selectLinuxInstaller(candidate, inventory, productSha = PRODUCT_SHA) {
+  assert.equal(inventory.sourceSha, productSha);
   assert.equal(inventory.platform, candidate.platform);
   const matches = inventory.files.filter(file => file.kind === candidate.kind);
   assert.equal(matches.length, 1, 'exactly one installer');
@@ -36,7 +37,9 @@ export function selectLinuxInstaller(candidate, inventory) {
 
 async function prepare() {
   const kind = process.env.CANDIDATE_KIND;
-  const candidate = LINUX_CANDIDATES[kind];
+  const selection = await loadCandidate(kind, { productSha: PRODUCT_SHA, producerRun: PRODUCER_RUN,
+    version: '0.1.0', tag: 'v0.1.0', candidate: LINUX_CANDIDATES[kind] });
+  const { productSha, producerRun, version, tag, workflowPath, candidate } = selection;
   assert.ok(candidate, 'unsupported Linux candidate');
   const root = resolve('candidate');
   const evidence = resolve('candidate-evidence');
@@ -44,26 +47,27 @@ async function prepare() {
   const harnessSha = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
   assert.equal(harnessSha, process.env.GITHUB_SHA);
   await writeFile(resolve(evidence, 'context.json'), JSON.stringify({
-    productSha: PRODUCT_SHA, harnessSha, producerRun: PRODUCER_RUN, kind, candidate,
+    productSha, harnessSha, producerRun, version, tag, kind, candidate,
     runId: process.env.GITHUB_RUN_ID, verificationStartedAt: new Date().toISOString(),
   }, null, 2));
-  await verifyProductDependencies();
+  await verifyProductDependencies(productSha);
   const handoff = await verifyWorkflowArtifact({
-    repository: 'postmelee/alhangeul-tauri', buildRef: PRODUCT_SHA,
-    runId: PRODUCER_RUN, artifactName: candidate.name,
+    repository: 'postmelee/alhangeul-tauri', buildRef: productSha,
+    runId: producerRun, artifactName: candidate.name, workflowPath,
   });
-  assertCandidateIdentity(candidate, handoff, PRODUCER_RUN);
+  assertCandidateIdentity(candidate, handoff, producerRun, productSha);
   await writeFile(resolve(evidence, 'handoff.json'), JSON.stringify(handoff, null, 2));
   await downloadCandidate(candidate, root);
   const inventory = await verifyDesktopArtifacts({
-    platform: candidate.platform, root, sourceSha: PRODUCT_SHA,
+    platform: candidate.platform, root, sourceSha: productSha,
     verifyInventoryPath: resolve(root, 'alhangeul-artifact-inventory.json'),
   });
-  const selectedFile = selectLinuxInstaller(candidate, inventory);
+  const selectedFile = selectLinuxInstaller(candidate, inventory, productSha);
   await writeFile(resolve(evidence, 'verified-candidate.json'), JSON.stringify({
     ...handoff, harnessSha, archiveVerified: true, inventoryVerified: true,
     selectedFile, inventory,
   }, null, 2));
+  await recordCandidateIdentity(selection, evidence);
   await appendFile(process.env.GITHUB_OUTPUT, `installer=${resolve(root, selectedFile.path)}\n`);
 }
 

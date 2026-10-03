@@ -9,6 +9,7 @@ on:
         default: artifact
         type: choice
         options:
+          - font-performance
           - site-capture
           - artifact
           - release-file-acceptance
@@ -29,6 +30,16 @@ on:
           - windows-dialog-verify
       build_ref:
         description: Artifact mode requires a ref resolving to the selected workflow commit; other modes accept branch/tag/commit. Empty uses the workflow commit.
+        required: false
+        default: ""
+        type: string
+      release_candidate_path:
+        description: Validated exact-file candidate JSON inside this checkout; empty preserves v0.1.0 acceptance.
+        required: false
+        default: ""
+        type: string
+      font_performance_run_id:
+        description: Successful ci.yml producer used only for installed font performance comparison.
         required: false
         default: ""
         type: string
@@ -132,6 +143,16 @@ env:
   GIT_CONFIG_VALUE_0: "false"
 
 jobs:
+  font-performance:
+    if: ${{ inputs.mode == 'font-performance' && !inputs.publish_release }}
+    permissions:
+      contents: read
+      actions: read
+    uses: ./.github/workflows/alhangeul-font-performance.yml
+    with:
+      build_ref: ${{ inputs.build_ref }}
+      native_run_id: ${{ inputs.font_performance_run_id }}
+
   site-capture:
     if: ${{ inputs.mode == 'site-capture' && !inputs.publish_release }}
     permissions:
@@ -147,6 +168,8 @@ jobs:
       contents: read
       actions: read
     uses: ./.github/workflows/alhangeul-release-fedora-vm.yml
+    with:
+      candidate_path: ${{ inputs.release_candidate_path }}
 
   release-linux-file-acceptance:
     if: ${{ inputs.mode == 'release-linux-file-acceptance' && !inputs.publish_release }}
@@ -156,6 +179,8 @@ jobs:
     uses: ./.github/workflows/alhangeul-release-linux-files.yml
     with:
       rpm_only: ${{ inputs.artifact_platform == 'linux-x64' }}
+      arm64_only: ${{ inputs.artifact_platform == 'linux-arm64' }}
+      candidate_path: ${{ inputs.release_candidate_path }}
 
   release-file-acceptance:
     if: ${{ (inputs.mode == 'release-file-acceptance' || inputs.mode == 'production-updater-check') && !inputs.publish_release }}
@@ -166,6 +191,7 @@ jobs:
     with:
       windows_only: ${{ inputs.artifact_platform == 'windows-x64' }}
       production_check: ${{ inputs.mode == 'production-updater-check' }}
+      candidate_path: ${{ inputs.release_candidate_path }}
 
   artifact:
     if: ${{ inputs.mode == 'artifact' }}

@@ -1,6 +1,10 @@
 name: Alhangeul final RPM Fedora desktop VM acceptance
 on:
   workflow_call:
+    inputs:
+      candidate_path:
+        type: string
+        default: ""
 permissions:
   contents: read
   actions: read
@@ -10,6 +14,7 @@ jobs:
     timeout-minutes: 50
     env:
       CANDIDATE_KIND: rpm
+      RELEASE_CANDIDATE_PATH: ${{ inputs.candidate_path }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

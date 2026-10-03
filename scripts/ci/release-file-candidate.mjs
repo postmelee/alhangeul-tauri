@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { loadCandidate, recordCandidateIdentity } from './release-candidate-input.mjs';
 import { execFileSync } from 'node:child_process';
 import { openSync, closeSync } from 'node:fs';
 import { readFile, mkdir, writeFile, appendFile } from 'node:fs/promises';
@@ -31,8 +32,8 @@ export const CANDIDATES = Object.freeze({
   },
 });
 
-export function assertCandidateIdentity(candidate, handoff, producerRun = PRODUCER_RUN) {
-  assert.equal(handoff.buildRef, PRODUCT_SHA);
+export function assertCandidateIdentity(candidate, handoff, producerRun = PRODUCER_RUN, productSha = PRODUCT_SHA) {
+  assert.equal(handoff.buildRef, productSha);
   assert.equal(handoff.nativeRunId, producerRun);
   assert.equal(handoff.artifactId, candidate.id);
   assert.equal(handoff.artifactDigest, candidate.digest);
@@ -43,19 +44,20 @@ export function assertCandidateFile(candidate, result) {
   const file = result.targets[candidate.target];
   assert.ok(file, 'missing target');
   assert.equal(file.sha256, candidate.sha256, 'approved installer SHA-256');
+  if (candidate.path) assert.equal(file.path, candidate.path, 'approved installer path');
   return file;
 }
 
-export async function verifyProductDependencies() {
+export async function verifyProductDependencies(productSha = PRODUCT_SHA) {
   // The harness may change; its public key, fixtures and parser must not drift.
   for (const path of ['apps/desktop/src-tauri/tauri.updater.conf.json',
     'apps/studio-host/vendor/rhwp-core/rhwp_bg.wasm',
     'apps/studio-host/vendor/rhwp-core/rhwp.js',
     'tests/gui/support/document-fixture.ts']) {
-    const product = execFileSync('git', ['show', `${PRODUCT_SHA}:${path}`], { maxBuffer: 20 * 1024 * 1024 });
+    const product = execFileSync('git', ['show', `${productSha}:${path}`], { maxBuffer: 20 * 1024 * 1024 });
     assert.deepEqual(await readFile(path), product, `product dependency mismatch: ${path}`);
   }
-  const pinned = execFileSync('git', ['rev-parse', `${PRODUCT_SHA}:third_party/rhwp`], { encoding: 'utf8' }).trim();
+  const pinned = execFileSync('git', ['rev-parse', `${productSha}:third_party/rhwp`], { encoding: 'utf8' }).trim();
   const actual = execFileSync('git', ['-C', 'third_party/rhwp', 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
   assert.equal(actual, pinned, 'fixture submodule pin');
 }
@@ -82,7 +84,9 @@ with zipfile.ZipFile(sys.argv[1]) as z:
 
 async function prepare() {
   const kind = process.env.CANDIDATE_KIND;
-  const candidate = CANDIDATES[kind];
+  const selection = await loadCandidate(kind, { productSha: PRODUCT_SHA, producerRun: PRODUCER_RUN,
+    version: '0.1.0', tag: 'v0.1.0', candidate: CANDIDATES[kind] });
+  const { productSha, producerRun, version, tag, workflowPath, candidate } = selection;
   assert.ok(candidate, 'unsupported candidate kind');
   const root = resolve('candidate');
   const evidence = resolve('candidate-evidence');
@@ -90,20 +94,20 @@ async function prepare() {
   const harnessSha = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
   assert.equal(harnessSha, process.env.GITHUB_SHA);
   await writeFile(resolve(evidence, 'context.json'), JSON.stringify({
-    productSha: PRODUCT_SHA, harnessSha, producerRun: PRODUCER_RUN, kind,
+    productSha, harnessSha, producerRun, version, tag, kind,
     candidate, runId: process.env.GITHUB_RUN_ID, verificationStartedAt: new Date().toISOString(),
   }, null, 2));
-  await verifyProductDependencies();
+  await verifyProductDependencies(productSha);
   const handoff = await verifyWorkflowArtifact({
-    repository: 'postmelee/alhangeul-tauri', buildRef: PRODUCT_SHA,
-    runId: PRODUCER_RUN, artifactName: candidate.name,
+    repository: 'postmelee/alhangeul-tauri', buildRef: productSha,
+    runId: producerRun, artifactName: candidate.name, workflowPath,
   });
-  assertCandidateIdentity(candidate, handoff);
+  assertCandidateIdentity(candidate, handoff, producerRun, productSha);
   await writeFile(resolve(evidence, 'handoff.json'), JSON.stringify(handoff, null, 2));
   await downloadCandidate(candidate, root);
   const config = JSON.parse(await readFile('apps/desktop/src-tauri/tauri.updater.conf.json', 'utf8'));
   const verified = await verifyUpdaterArtifacts({
-    root, version: '0.1.0', tag: 'v0.1.0', sourceSha: PRODUCT_SHA,
+    root, version, tag, sourceSha: productSha,
     publicKey: config.plugins.updater.pubkey, targets: candidate.targets,
   });
   const file = assertCandidateFile(candidate, verified);
@@ -111,6 +115,7 @@ async function prepare() {
     ...handoff, harnessSha, archiveVerified: true, signaturesVerified: true,
     keyFingerprint: verified.keyFingerprint, selectedFile: file,
   }, null, 2));
+  await recordCandidateIdentity(selection, evidence);
   await appendFile(process.env.GITHUB_OUTPUT,
     `installer=${resolve(root, file.path)}\nartifact_root=${root}\n`);
 }

@@ -2,6 +2,9 @@ name: Alhangeul final release file acceptance
 on:
   workflow_call:
     inputs:
+      candidate_path:
+        type: string
+        default: ""
       windows_only:
         type: boolean
         default: false
@@ -21,12 +24,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include: ${{ fromJSON(inputs.production_check && '[{"kind":"nsis","os":"windows-2025"},{"kind":"msi","os":"windows-2025"},{"kind":"appimage","os":"ubuntu-22.04"}]' || inputs.windows_only && '[{"kind":"msi","os":"windows-2025"}]' || '[{"kind":"msi","os":"windows-2025"},{"kind":"appimage","os":"ubuntu-22.04"}]') }}
+        include: ${{ fromJSON(!inputs.production_check && inputs.candidate_path != '' && inputs.windows_only && '[{"kind":"nsis","os":"windows-2025"},{"kind":"msi","os":"windows-2025"}]' || (inputs.production_check || inputs.candidate_path != '') && '[{"kind":"nsis","os":"windows-2025"},{"kind":"msi","os":"windows-2025"},{"kind":"appimage","os":"ubuntu-22.04"}]' || inputs.windows_only && '[{"kind":"msi","os":"windows-2025"}]' || '[{"kind":"msi","os":"windows-2025"},{"kind":"appimage","os":"ubuntu-22.04"}]') }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 50
     env:
       ALHANGEUL_GUI_PRODUCTION_CHECK: ${{ inputs.production_check }}
       CANDIDATE_KIND: ${{ matrix.kind }}
+      RELEASE_CANDIDATE_PATH: ${{ inputs.candidate_path }}
       ALHANGEUL_GUI_BUILD_REF: fc3cad15682f35723ab6558d1301e9096f7eec67
       ALHANGEUL_GUI_NATIVE_RUN_ID: '36320371932'
       ALHANGEUL_GUI_APP_VERSION: '0.1.0'
@@ -103,7 +107,7 @@ jobs:
         run: |
           & scripts/updater/windows-native-acceptance.ps1 -Phase Install -Kind $env:CANDIDATE_KIND `
             -OutputDirectory "$env:ALHANGEUL_GUI_OUTPUT_DIR\installer" `
-            -ArtifactRoot $env:CANDIDATE_ROOT -ExpectedVersion '0.1.0'
+            -ArtifactRoot $env:CANDIDATE_ROOT -ExpectedVersion $env:ALHANGEUL_GUI_APP_VERSION
           if (-not $?) { throw 'Windows installation failed' }
       - name: Select installed executable or writable AppImage
         id: prepare-app
