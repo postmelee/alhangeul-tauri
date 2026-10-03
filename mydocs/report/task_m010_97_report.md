@@ -3,7 +3,7 @@
 GitHub Issue: [#97](https://github.com/postmelee/alhangeul-tauri/issues/97)
 마일스톤: M010
 작성일: 2026-10-03 (Asia/Seoul)
-상태: v0.1.1 공개 전달 완료 / production upgrade 도구 구현·로컬 검증 완료 / 원격 fast 및 실제 native 실행 승인 대기
+상태: v0.1.1 공개 전달 완료 / Linux 실제 upgrade 통과 / Windows 시작 검증 도구 실패·보정 승인 대기
 
 ## 작업 요약
 
@@ -410,3 +410,36 @@ Pages 배포와 0.1.1 production manifest 공개는 아직 실행하지 않았�
 #### 다음 단계 영향과 승인 요청
 
 로컬 구현·검증 뒤 한 번의 profile=fast 실행으로 Windows/Linux 계약과 Windows 내장 PS 구문을 확인한다. 이후 검토한 exact harness SHA와 세 설치 형식의 native production-upgrade-check run 승인을 요청한다. tag/asset/feed를 추가 변경하지 않고 #97은 실제 결과 정리까지 OPEN이다.
+
+
+## Gate 6 실제 production upgrade 첫 실행 결과 — 2026-10-04
+
+### 승인과 목적
+
+exact harness `a74d3638116e0bf579985f517e008b365399945f`의 Windows NSIS/MSI·Linux AppImage 실제 실행안 제시 후 같은 스레드의 “진행해줘”로 실행·증거 분석·기존 문서 위치의 결과 기록을 승인받았다. [빠른 CI 37157613138](https://github.com/postmelee/alhangeul-tauri/actions/runs/37157613138)은 같은 SHA에서 success이며 Linux automation 1214·upstream 39·Studio 251/빌드·GUI typecheck, Windows 순수 계약 26·PowerShell source83/격리회귀16·신규 workflow 10블록 parser가 통과했다. 원격 product boundary는 773 files scanned다. fast를 실제 설치 수용으로 기록하지 않는다.
+
+### 실행·산출물과 판정
+
+[실제 run 37158705809](https://github.com/postmelee/alhangeul-tauri/actions/runs/37158705809)은 exact harness에서 mode=production-upgrade-check/publish_release=false로 실행했고 최종 **failure**다. 공개 제품 source N `fc3cad15682f35723ab6558d1301e9096f7eec67`, N+1 `96e89e900415ee9e1e942b5c01c833dea3415e86`와 harness를 구분한다. 이미 공개된 bytes만 사용했으며 제품 build/signing·tag/asset/feed 변경은 없다.
+
+| 형식 | job 결과 | 실제 upgrade 수용 | 원시 증거 |
+|---|---|---|---|
+| Linux x64 AppImage | success | 통과 | [job](https://github.com/postmelee/alhangeul-tauri/actions/runs/37158705809/job/111307414907), [artifact11286572569](https://github.com/postmelee/alhangeul-tauri/actions/runs/37158705809/artifacts/11286572569) |
+| Windows x64 NSIS | failure | 미수용 — 시작 준비 검사 실패, 설치 버튼 미도달 | [job](https://github.com/postmelee/alhangeul-tauri/actions/runs/37158705809/job/111307415036), [artifact11286658178](https://github.com/postmelee/alhangeul-tauri/actions/runs/37158705809/artifacts/11286658178) |
+| Windows x64 MSI | failure | 미수용 — 같은 시작 준비 검사 실패 | [job](https://github.com/postmelee/alhangeul-tauri/actions/runs/37158705809/job/111307415056), [artifact11287246483](https://github.com/postmelee/alhangeul-tauri/actions/runs/37158705809/artifacts/11287246483) |
+
+세 archive의 API ID/digest 및 실제 다운로드 zip SHA-256을 대조했다. AppImage는 `318195343cbd1bfeb7050c5cb8fdbe000da96a1a8df4c65c9b38731d57ccddab`, NSIS는 `bea79fc7cf2c043ff26f2b6b8003f2f1a6c12ffaa459831f902e3b0111325c07`, MSI는 `b6c85901e00f04e0e3786040305c7a0254e153cf2c289f642f7f072a6aae8760`이다. 각각 680601/183011/217582 bytes다. 공개 installer bytes는 CI에서 해시·checksum·Minisign을 검증했고 증거 archive에서는 제외했다. 로컬 재검토를 installer 서명 재계산으로 표현하지 않는다.
+
+### Linux 실제 관측
+
+public-input·apply/result·verify/result·accepted 모두 passed다. 시작/수동 조회의 0.1.0→0.1.1·정확한 appimage target·dirty 문서 차단·UI 동의, 다운로드 135346680 bytes, restartRequired, 제품 재시작 버튼 이후 PID5230→5399와 서로 다른 실제 FUSE mount를 확인했다. 교체된 원본 AppImage hash는 공개 N+1 `c3a599fdea3b52353d875a4c50738babaf91102c26fcd7a6079e69e96b6bebf0`과 같다. 관측한 새 PID만 종료한 뒤 fresh driver session에서 Alhangeul0.1.1/no-update, 설정 보존, HWP6쪽/HWPX10쪽·canvas·두 원본 hash 유지가 통과했다. 두 문서 화면도 직접 확인했다. 원시 계약을 로컬에서 재대조했다. 문서 열기는 loadFile RPC이며 native Open 대화상자 수용이 아니다. 이 Linux GUI/FUSE VM 결과를 모든 Wayland/GPU 환경으로 확대하지 않는다.
+
+### Windows 실패 원인과 미수용 범위
+
+두 형식 모두 공개 입력 검증·clean0.1.0 설치 exit0가 통과했다. 실제 Studio ready RPC=true, toolbarReady=true, canvasReady=false 및 알려진 첫 실행 모달 처리 뒤 상태 문구가 **“0.1.1 업데이트가 있습니다. 제품 정보에서 확인하세요.”**였다. 공통 startup helper는 **“HWP 파일을 선택해주세요.”**만 허용하므로 180초 대기 후 실패했다. 업데이트 알림과 엄격한 idle 문구 조건이 충돌한 검증 도구 결함이다.
+
+apply/result는 failed이고 startup/manual/consent/install 증거가 없으며 설치 버튼에 도달하지 않았다. continue-on-error가 선행 실패를 다음 단계로 전달하여 설치 후 검사에서 추가10분을 기다렸고 실제 exe/uninstall version은0.1.0이었다. 따라서 이번 결과로 Windows updater의 다운로드·설치 실패를 확정하지 않는다. applyTransport=failure·installedVersion=failure·verify=skipped·cleanup=success·policyRestore=success 원시 상태를 보존한다. 두 VM의 제품 제거 exit0와 WebView2 정책 복원을 확인했다. 전체 run failure와 Windows 미수용은 Linux 부분 성공으로 상쇄하지 않는다.
+
+### 잔여 위험·다음 단계
+
+Windows 자동 업데이트는 미수용이다. production 전용 startup의 정확한 알림 허용·준비 상태 진단·실패 apply의 불필요한 설치 대기 차단 및 Windows만 선택한 후속 검증을 위한 도구 보정안이 필요하다. 현재 결과 분석·기록 이후 소스 변경은 아직 승인하지 않았다. 수정·fast 이후 새 exact harness의 실제 Windows 실행 gate를 진행한다. Linux 근거는 이 성공 job/기존 harness 그대로 재사용하며 다른 SHA에서 새로 통과했다고 기록하지 않는다. 공개 안내는 아직 검증 중 문구를 유지하고 #97은 OPEN/진행중이다.
