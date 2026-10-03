@@ -14,6 +14,7 @@ on:
           - artifact
           - release-file-acceptance
           - production-updater-check
+          - production-upgrade-check
           - release-linux-file-acceptance
           - release-fedora-vm-acceptance
           - updater
@@ -192,6 +193,18 @@ jobs:
       windows_only: ${{ inputs.artifact_platform == 'windows-x64' }}
       production_check: ${{ inputs.mode == 'production-updater-check' }}
       candidate_path: ${{ inputs.release_candidate_path }}
+
+  production-upgrade-windows:
+    if: ${{ inputs.mode == 'production-upgrade-check' && !inputs.publish_release }}
+    permissions:
+      contents: read
+    uses: ./.github/workflows/alhangeul-production-upgrade-windows.yml
+
+  production-upgrade-linux:
+    if: ${{ inputs.mode == 'production-upgrade-check' && !inputs.publish_release }}
+    permissions:
+      contents: read
+    uses: ./.github/workflows/alhangeul-production-upgrade-linux.yml
 
   artifact:
     if: ${{ inputs.mode == 'artifact' }}

@@ -3,7 +3,7 @@
 GitHub Issue: [#97](https://github.com/postmelee/alhangeul-tauri/issues/97)
 마일스톤: M010
 작성일: 2026-10-03 (Asia/Seoul)
-상태: v0.1.1 GitHub 본문·웹사이트·production 피드 공개 완료 / 실제 Windows·Linux upgrade 계획 보정 대기
+상태: v0.1.1 공개 전달 완료 / production upgrade 도구 구현·로컬 검증 완료 / 원격 fast 및 실제 native 실행 승인 대기
 
 ## 작업 요약
 
@@ -369,3 +369,44 @@ Pages 배포와 0.1.1 production manifest 공개는 아직 실행하지 않았�
 - 실제 공개 HTTP 파일 **20/20**을 해당 SHA와 같은 tree의 수용 output과 bytes로 대조했다. 공개 release.json은 v0.1.1 / SHA-256 `87f4544545fd9946f9cf7fbfc4cecffab38cbb31e1e4c290a55e76d1810207cd`, stable.json은 v0.1.1 / SHA-256 `62fae230339497b132be013ec91df7cd83b710b69c9de4f56ffff1c407463728`이다. version·pub_date·notes·세 URL·signature가 수용 output과 동일하다. 이전 0.1.0 피드는 이번 공개에 의해 전환됐다.
 - 실제 공개 홈·업데이트 목록·v0.1.1 안내·feedback을 확인했다. 최신0.1.1·목록1행·최신 다운로드3개·고정 다운로드6개·Linux 플랫폼 선택을 수용했다. 1366px·390px 화면과 320px 홈/버전 안내에 가로 넘침이 없다. 로컬 화면 캡처는 검토 자료이며 장기 저장·앱 updater 수용을 대신하지 않는다.
 - **실제 앱 v0.1.0→v0.1.1 production upgrade는 아직 미수용**이다. 기존 운영 검사는 같은 version의 idle만 확인하고 기존 native 검사는 99.1.x test-only endpoint다. Windows NSIS→NSIS·MSI→MSI, Linux x64 AppImage→AppImage 검증 도구의 계획 보정 승인이 필요하다. #97은 OPEN/진행중을 유지한다.
+
+### Gate 6 production upgrade 검증 도구 구현·로컬 검증 — 2026-10-04
+
+#### 단계 목적
+
+같은 스레드의 “진행해줘”로 승인한 실제 v0.1.0→v0.1.1 계획 보정을 구현했다. 현재 단계는 도구 구현·플랫폼 중립 검증·원격 fast 확인이며 실제 설치/업데이트 run 승인과 수용은 다음 gate다. #97 기존 이슈·local/task97·계획서·진행중 행을 유지한다.
+
+#### 산출물
+
+| 역할 | 산출물 |
+|---|---|
+| 공개 입력 | tests/gui/production-upgrade-inputs.json: 실제 두 Release ID·tag object·source SHA·11개 asset identity/digest 각각 고정 |
+| read-back·서명 | scripts/updater/production-{contract,download,upgrade}.mjs: API·태그·실제 source config·checksum·inventory·Minisign·exact manifest·같은 harness 증거 요구 |
+| 결과 수용 | scripts/updater/production-evidence.mjs: startup/manual·dirty 보호·UI consent·실제 재시작·새 버전·설정·HWP/HWPX·두 Windows handler·3010 미수용 조건 |
+| 원본 AppImage | production-process.mjs 및 GUI restart.ts: 실제 FUSE executable/PID 전환 관측 뒤 이 VM의 확인된 PID만 종료하고 새 verification driver session 사용 |
+| 앱 UI | wdio.production-upgrade.conf.ts·production-upgrade.e2e.ts 및 inputs/native/apply/verify: 공개 앱의 설치·재시작 버튼과 새 앱 버전·대표 문서 재열기 검사 |
+| CI | 기존 등록된 desktop dispatcher production-upgrade-check + 전용 Windows/Linux reusable 2개; NSIS/MSI 각각 clean Windows VM, x64 원본 writable AppImage Linux VM |
+| 회귀 | production-upgrade Node 26개·workflow 4개, Windows embedded PS 10블록 구문 검사; 기존 fast Windows 경로에 순수 Node 계약 검사 추가 |
+
+#### 본문 변경 정도 / 본문 무손실 여부
+
+제품 runtime·updater config/key/endpoint·rhwp pin·기존 시험 endpoint·동일 버전 검사·GitHub body·site/release.json·생성 웹 안내는 바꾸지 않았다. 기존 dispatcher에 mode와 read-only reusable 호출만 추가했다. 기본 GitHub branch main에 새 workflow 등록을 요청할 필요 없이 기존 dispatcher를 작업 ref에서 실행할 수 있다. 검증에 새 제품 build/signing/publish는 없으며 이미 공개된 N/N+1 파일만 사용한다. 새 도구 파일은 모두 300 LOC 이하이고 기존 큰 dispatcher의 최소 추가는 승인된 계획 예외를 따른다. 실제 native artifactKind는 Rust lowercase 계약의 appimage로 확인했으며 TypeScript UI 선언 표기와 혼동하지 않는다.
+
+#### 검증 결과
+
+- 로컬 test:automation **1214/1214**, test:upstream **39/39**, test:studio **251/251(39 files)** 통과다. fail/skip0이며 GUI typecheck·build:studio도 통과했다. 빌드의 기존 chunk/dynamic import 경고는 오류가 아니다.
+- 새 전용 계약 **30/30**은 version/source/endpoint/key/manifest·asset ID·checksum 변조/누락/중복·inventory traversal·cross-format·동의/dirty 증거 누락·재부팅/잘못된 exe version·미변경 문서/재시작 증거 누락을 거부한다.
+- Action pins **29 files/165 references/11 pins** 및 product boundary·release notes·diff 검사를 통과했다. 로컬 product boundary는 최종 helper 추가 후 793 files scanned를 확인했다. 원격 checkout 수치는 별도로 기록한다. Windows PS syntax는 Mac에서 실행하지 않고 원격 fast에서 확인한다.
+- 새 read-back 모듈로 실제 v0.1.0/v0.1.1 API metadata·11 asset identity 각각·annotated tag object와 resolved product SHA·공개 source의 운영 key/endpoint/passive mode를 읽기 전용으로 대조했다. 모두 일치한다. 이 확인을 다운로드·설치·실제 upgrade 수용으로 확대하지 않는다.
+- Linux 재시작 관측은 [Tauri 2.10.3 process::restart](https://github.com/tauri-apps/tauri/blob/tauri-v2.10.3/crates/tauri/src/process.rs)의 AppImage 경로 재실행/새 process 생성 계약에 맞춘다. 요청한 버튼만 기록하지 않고 새 PID·새 FUSE mount를 요구한다. 실제 새 프로세스 기능 검증은 독립 driver 세션으로 같은 교체 AppImage를 다시 실행해 수행한다.
+
+#### 잔여 위험
+
+- 원격 fast CI는 게시할 exact head에서 아직 확인해야 한다. 통과하면 해당 run과 harness SHA를 작업지시자에게 제시한다. fast는 제품 설치/upgrade 성공이 아니다.
+- 실제 Windows NSIS/MSI·Linux AppImage production N→N+1은 미실행·미수용이다. GUI 환경·driver transport·실제 installer 및 재시작 한계는 run 결과로 판정한다. Windows connection close는 설치된 버전과 재실행 증거가 모두 통과하기 전까지 잠정 상태다.
+- 시작 조회는 startup, 수동 조회는 public native updater_check 응답으로 확인하며 제품 정보 화면과 실제 설치/재시작은 UI 버튼을 사용한다. 수동 조회 native 확인을 UI 메뉴가 새 요청을 보낸 증거로 혼동하지 않는다. 대표 문서 재열기는 공개 loadFile RPC와 실제 Canvas를 사용하며 native Open dialog 수용을 대신하지 않는다.
+- Windows helper가 3010이나 timeout/문서 연결·기본값 손실을 확인하면 실패다. 전체 native job success와 필수 accepted evidence가 모두 있어야 수용하며 누락·skip·partial success를 전체 성공으로 쓰지 않는다.
+
+#### 다음 단계 영향과 승인 요청
+
+로컬 구현·검증 뒤 한 번의 profile=fast 실행으로 Windows/Linux 계약과 Windows 내장 PS 구문을 확인한다. 이후 검토한 exact harness SHA와 세 설치 형식의 native production-upgrade-check run 승인을 요청한다. tag/asset/feed를 추가 변경하지 않고 #97은 실제 결과 정리까지 OPEN이다.
