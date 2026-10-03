@@ -3,9 +3,10 @@
 수행계획서: [task_m010_102.md](task_m010_102.md)
 GitHub Issue: [#102](https://github.com/postmelee/alhangeul-tauri/issues/102)
 마일스톤: M010
-상태: 구현계획·Stage 1 승인 대기
+상태: 구현계획 승인 완료 / Stage 1 완료·Stage 2 승인 대기
 작성일: 2026-10-04 KST
 수행계획 승인: 수행계획 보고 후 같은 스레드에서 작업지시자의 “진행해줘”.
+구현계획·Stage 1 승인: 2026-10-04, 구현계획 보고 후 같은 스레드에서 작업지시자의 “진행해줘”.
 기준: devel `939cdb511c08e707120860aac1ba0d0c7fe48a92`, 계획 commit `b1f5eb8d975ad92ef9e8e038f8639380e208db47`.
 작업 브랜치: `local/task102`, 분리 작업 공간 `task102-release-format/alhangeul-tauri`.
 
