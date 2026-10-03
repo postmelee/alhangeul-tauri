@@ -1,12 +1,13 @@
 import { execFile } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { promisify } from 'node:util';
-import { mkdir, readFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 import { browser, $, expect } from '@wdio/globals';
 import { HwpDocument, initSync } from '../../../apps/studio-host/vendor/rhwp-core/rhwp.js';
 import { LinuxNativeUiAdapter } from '../linux/native-ui/atspi.mjs';
 import { resolveDocumentFixtures } from '../support/document-fixture.ts';
+import { createSessionExitGuard } from '../support/linux-session-lifecycle.mjs';
 import { describeEvidenceFile } from '../support/evidence.ts';
 import { runScenarioWithEvidence } from '../support/scenario-runner.ts';
 import { waitForInitialDesktopReady, waitForLoadedDocument, waitForStudioStatus } from '../support/document-ux.ts';
@@ -16,8 +17,19 @@ const inputs = readGuiHarnessInputs();
 const run = promisify(execFile);
 const marker = 'ALHANGEUL RELEASE FILE ROUNDTRIP 0123456789';
 let dialogIndex = 0;
+let restartIndex = 0;
+const exitGuard = process.platform === 'linux' && process.arch === 'arm64'
+  ? createSessionExitGuard({ timeoutMs: inputs.timeoutMs }) : null;
 
 describe('Final release file native document acceptance', () => {
+  before(() => {
+    if (!exitGuard) return;
+    // WDIO's runtime supports protocol commands; its overload only lists UI commands.
+    const overwrite = browser.overwriteCommand as (name: 'deleteSession',
+      callback: (original: typeof browser.deleteSession,
+        ...args: Parameters<typeof browser.deleteSession>) => ReturnType<typeof browser.deleteSession>) => void;
+    overwrite.call(browser, 'deleteSession', (original, ...args) => exitGuard.deleteSession(original, ...args));
+  });
   it('HWP/HWPX native Save As, edited current save and process restart retain text', async () => {
     await mkdir(join(inputs.outputDir, 'generated'), { recursive: true });
     initSync({ module: await readFile(join(inputs.fixtureRoot, 'apps/studio-host/vendor/rhwp-core/rhwp_bg.wasm')) });
@@ -47,7 +59,7 @@ describe('Final release file native document acceptance', () => {
         const bytes = await readFile(saved);
         const doc = new HwpDocument(bytes);
         try { expect(doc.getTextFileText()).toContain(marker); } finally { doc.free(); }
-        await browser.reloadSession();
+        await restartSession();
         await waitForInitialDesktopReady(browser, inputs.timeoutMs);
         await dialog('Open', saved, 'file:open');
         await waitForLoadedDocument(browser, basename(saved), null, inputs.timeoutMs);
@@ -56,7 +68,7 @@ describe('Final release file native document acceptance', () => {
         const evidence = [await describeEvidenceFile(inputs.outputDir, saved, 'generated-document')];
         return evidence;
       });
-      await browser.reloadSession();
+      await restartSession();
     }
   });
 });
@@ -80,4 +92,32 @@ async function dialog(mode: 'Open' | 'Save', target: string, command: string) {
   await run('powershell.exe', ['-NoProfile', '-File', join(inputs.fixtureRoot, 'scripts/windows-pdf-dialog.ps1'),
     '-Mode', mode, '-TargetPath', target, '-EvidencePath',
     join(inputs.outputDir, `native-dialog-${++dialogIndex}.json`)], { timeout: 100000 });
+}
+
+async function restartSession() {
+  const label = `restart-${++restartIndex}`;
+  console.info(`RESTART_CHECKPOINT ${new Date().toISOString()} ${label}-before`);
+  try {
+    await browser.reloadSession();
+    exitGuard?.assertCompleted();
+    console.info(`RESTART_CHECKPOINT ${new Date().toISOString()} ${label}-after`);
+  } catch (error) {
+    await captureRestart(`${label}-failed`);
+    exitGuard?.assertCompleted();
+    throw error;
+  } finally {
+    if (exitGuard) await writeFile(join(inputs.outputDir, 'session-exit-conditions.json'),
+      JSON.stringify(exitGuard.events, null, 2));
+  }
+}
+
+async function captureRestart(label: string) {
+  if (process.platform !== 'linux') return;
+  try {
+    await run('bash', [join(inputs.fixtureRoot, 'scripts/ci/release-file-process-probe.sh'),
+      'snapshot', label], { timeout: 15000 });
+  } catch (error) {
+    // Diagnostics never replace the actual session result.
+    console.error(`process diagnostic ${label} failed`, error);
+  }
 }

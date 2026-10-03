@@ -4,7 +4,7 @@
 GitHub Issue: [#97](https://github.com/postmelee/alhangeul-tauri/issues/97)
 마일스톤: M010
 작성일: 2026-10-03 (Asia/Seoul)
-상태: Stage 1–4 구현·검증 완료, PR merge·공개 Release·사이트 전달 대기
+상태: Stage 1–4 완료·main 승격 완료, main 새 후보 파일 검증 진행 중
 
 ## 승인과 기준
 
@@ -524,3 +524,81 @@ Stage 4 최종 수용 기록 (2026-10-03 23:13 KST):
 - DEB full GUI 9 scenario의 identity·61 파일 참조 hash, 29 PDF 페이지 시각 판독과 4 print restoration checkpoint를 확인했다. native 문서 save는 marker 입력 검사가 아니며 별도 parser 재읽기로 기록했다.
 - 최종 공개 후보 6종의 새 bytes 설치 수용까지 완료했다. Stage 4·최종 보고를 작성하고 devel Open PR을 준비한다. 공개 Release/Pages 및 main exact source 판단은 후속 승인 게이트에 남는다.
 - 오늘할일 완료는 구현·검증 범위이며 #97은 공개 전달 추적 때문에 OPEN 유지한다.
+
+
+릴리즈 승격 승인·실행 기록 (2026-10-03):
+
+- Stage 4·PR #98 완료 보고의 “PR을 merge하고 릴리즈 승격 단계로 진행할까요?”에 대한 후속 “진행해줘”를 PR #98 merge와 릴리즈 source 승격·비게시 후보 준비 단계의 승인으로 기록한다.
+- PR #98은 정확한 head 28ae0a91f4bdc9f9b9552db48f8012aaaf4f58d7·required 모두 success/CLEAN에서 normal merge했다. devel merge SHA 6979d2f67bcfcef6e565031a840d6523e9576e80, mergedAt 2026-10-03T14:30:40Z, #97 OPEN 유지다.
+- Release PR #99은 devel→main, 포함 PR #98·기존 #95 운영 변경을 본문에 명시했다. main은 기존 보호/ruleset이 없는 상태로 조회했으며 새 보호 정책을 적용하지 않았다. head fast CI 37130039967 success 뒤 승인된 승격 단계에서 normal merge했다.
+- 확정 main SHA 96e89e900415ee9e1e942b5c01c833dea3415e86, PR #99 mergedAt 2026-10-03T14:39:02Z. Stage 4 source 이후 제품 runtime diff가 없으나 이전 bytes를 이 새 SHA의 provenance로 바꾸지 않는다.
+- 확정 main full native 37130396817과 비게시 signed producer 37130399389를 실행했다. workflow/source/ref와 main remote SHA를 대조했다. signed run의 publish_release=false, reviewer postmelee·prevent_self_review=false·current_user_can_approve=true·ref 제한 없음 확인 후 이 비게시 run만 환경 승인했다.
+- main의 새 bytes는 source/ID/digest/hash/Minisign/complete inventory 및 6종 실제 설치 수용을 다시 확인한다. 제품 기능 A/B 측정은 동일 runtime의 Stage 3 증거를 재사용하고 새 파일 최소 설치 수용을 재사용하지 않는다.
+- 전용 local/task97은 main으로 fast-forward했다. 원래 사용자 checkout과 다른 devel worktree는 보존한다. 전용 worktree·harness branch는 후속 검증과 site 준비에 필요하므로 아직 제거하지 않는다.
+- 승인할 공개 입력은 stable/v0.1.1·확정 main SHA·CLI 주체 postmelee·서명 정책/제한·notes·검증한 11개 asset 전체로 준비한다. tag/draft/public Release·Pages는 이 기록 시점 미실행이다.
+
+
+main 서명 후보 고정 기록 (2026-10-04):
+
+- signed producer 37130399389는 success이며 publish job skipped다. source main 96e89e900415ee9e1e942b5c01c833dea3415e86, archive metadata/digest·Minisign·complete inventory를 독립 대조했다.
+- mydocs/working/task_m010_97.json을 새 main의 NSIS/MSI/AppImage 세 후보로 갱신한다. 이전 Stage 4 JSON은 PR #98 head 28ae0a91f4bdc9f9b9552db48f8012aaaf4f58d7에 그대로 남는다. 새 source 아래에 이전 native producer 파일을 혼합하지 않는다.
+- full native producer는 아직 미완료이므로 RPM·arm64 항목을 새 JSON에 넣지 않았다. 성공한 signed 세 파일의 일반 문서 수용을 먼저 실행한다. 이 고정은 실제 설치 수용 완료나 공개 승인 결과가 아니다.
+
+
+main native 후보 확정 및 설치 수용 진행 (2026-10-04):
+
+- full native 37130396817은 최종 success다. archive digest·original ZIP inventory 경로/size/hash·installer bytes를 대조하고 main 후보 JSON을 signed 3종 및 같은 main RPM/arm64 5항목으로 확장했다. x64 DEB는 같은 native inventory로 고정한다.
+- signed 새 파일 수용 37132406842는 3종 success이며 actual install/cleanup exit 0·version 0.1.1·정책 복원·문서 hash/pinned WASM marker·재열기 6화면을 독립 확인했다.
+- x64 DEB full GUI 37132752100은 success다. 원시 8 scenario·69 파일 참조·29쪽 PDF/인쇄 복원 증거를 확인하고 RPM KVM·arm64 실제 설치 수용을 이어간다. public tag/Release·Pages는 아직 미실행이다.
+- raw NSIS 썸네일 실패/forced MSI post-reboot 미검증 제한은 새 main에서도 유지한다.
+
+
+main 마지막 Linux 수용 증거:
+
+- RPM 37133517774는 성공, 원시 KVM·일반 사용자 Xfce·0.1.1-1·transfer hash·phase complete/exit 0·문서 marker/재열기·VM cleanup을 독립 확인했다.
+- arm64 37133522684는 HWPX 저장 후 WebDriver reloadSession의 POST /session timeout으로 실패했다. 설치 0.1.1·HWP 수용·HWP/HWPX 저장 marker는 확인했지만 전체 수용은 실패로 남긴다.
+- 같은 main bytes·harness ccd592791077b5ad7af7db3f347b407a5c8c747c·검증 조건을 변경하지 않고 37134244591을 실행했다. 필수 gate를 완화하지 않는다.
+
+
+릴리즈 승격 검증 보정안 — arm64 재실행 진단 (소스 변경 승인 요청):
+
+- 같은 main 파일의 두 run 37133522684·37134244591에서 저장 후 WebDriver POST /session timeout이 반복됐다. 두 번째는 HWP 재실행부터 실패했다. raw package gui/exit 1을 보존하고 성공으로 간주하지 않는다.
+- 이전 성공 run 37128112105와 두 실패 run의 WebKitGTK/WebDriver 2.52.6, tauri-driver 2.0.6 실행 파일 hash 573553048589a86fa57e225c6c182ac66a810439565ea60227c024fc2a3a2c79는 같다. 제품 소스는 Stage 4 source 이후 runtime diff가 없으나 arm64 실행 파일 hash는 다르므로 새 bytes의 수용을 생략하지 않는다.
+- 기존 v0.1.0 기준선(fc3cad15682f35723ab6558d1301e9096f7eec67, native 36320353815, arm64 artifact 10932449136)을 동일 harness로 실행한 37134870041로 제품 버전/환경 원인을 추가 구분한다.
+- 제안: 검증 전용 scripts/ci/run-release-file-gui.sh와 tests/gui/specs/release-files.e2e.ts에 진단을 연결하고 새 scripts/ci/release-file-process-probe.sh를 작은 process/port 증거 수집 helper로 둔다. 재실행 전후의 앱·tauri-driver·WebKit PID/부모/상태·지정 driver port 상태·기존 stderr·완료/실패 시점 화면을 보존해 실제 종료/시작과 프로토콜 세션 생성을 구분한다. 전체 environment나 개인 문서 내용을 수집하지 않는다.
+- 진단에서 확인된 검증 harness의 종료·재시작 결함만 보정할 수 있다. 제품 runtime 수정이 필요하면 그 근거와 별도 수정/새 빌드·수용 범위를 먼저 제시한다. 임의 timeout 증가, test retry·skip, 이전 파일 성공 전용 재사용으로 통과시키지 않는다.
+- source main 96e89e900415ee9e1e942b5c01c833dea3415e86와 동일 0.1.1 arm64 bytes를 유지하고 harness SHA는 별도로 기록한다. 실제 aarch64 일반 사용자 설치 0.1.1·HWP/HWPX 편집 save·process restart·파일 hash/pinned WASM marker·재열기 화면·전체 phase complete exit 0가 수용 기준이다.
+- 문서 위치는 기존 plans/report/orders와 GitHub artifact를 사용하며 새 공식 문서 root는 만들지 않는다. source 변경 전 이번 보정 범위 승인을 요청한다. v0.1.1 tag/Release·Pages는 미실행이고 #97 OPEN이다.
+
+
+v0.1.0 arm64 대조 수용 37134870041은 success다. archive 11278097614 / digest sha256:e14446159e74771d9fcde312ba216d7bcf65e54019b06e66219ee331e578982f, 설치 arm64 0.1.0·phase complete/exit 0·두 문서 marker/hash·재열기 두 화면을 독립 확인했다. 동일 harness에서 기준선은 성공했지만 새로운 0.1.1 두 파일 수용 실패의 원인은 아직 확정하지 않는다. 위 진단 보정안의 source 변경 승인을 요청한다.
+
+
+arm64 진단 보정 승인·착수 (2026-10-04):
+
+- 위 보정안에 대한 작업지시자의 후속 “진행해줘”를 진단 추가와 확인된 harness 종료·재시작 결함 보정 범위 승인으로 기록한다. 동일 main bytes, 120초 timeout, retry/skip 없는 실제 문서·재실행 수용 기준을 유지한다.
+- 기존 GUI session shell에서 제한된 process/port/resource 상태를 주기적으로 수집하고 재실행 전/후/실패 checkpoint 및 독립 desktop screenshot을 보존한다. WDIO stdout/stderr를 append console 파일에도 남겨 세션 교체 시 logger 파일 덮어쓰기와 구분한다. 전체 환경·개인 문서 내용은 수집하지 않는다.
+- 진단만 추가한 harness로 먼저 같은 arm64 후보를 실행하고 원시 결과에 따라 다음 변경을 결정한다.
+
+
+arm64 진단 결과와 관찰 영향 분리:
+
+- 진단 harness 68dcda8c / 동일 main 파일 수용 37135625721·37135906830은 success다. 첫 run의 4회 restart는 app PID 6778→7042→7192→7391→7544로 바뀌고 종료 시 app/driver 및 4444/4445 listener가 없다. 두 문서 file hash/pinned WASM marker·재열기 화면을 확인했다. 최초 실패가 해결됐다고 단정하지 않는다.
+- 재실행 직전/후 외부 screenshot/probe 명령을 기다리는 것이 관찰 타이밍을 바꿀 가능성을 분리한다. 정상 경로는 동기 timestamp marker와 기존 reloadSession 호출만 두고, 독립 background process monitor·append console·실패 시 snapshot을 유지하는 harness로 동일 bytes를 추가 확인한다. 임의 delay/timeout·retry/skip 추가는 없다.
+
+
+arm64 타이밍 분리 실패와 종료 조건 보정:
+
+- 정상 경로의 캡처 대기를 제거한 e67bd791 / 37136290009는 HWPX 저장 후 세 번째 restart의 POST /session timeout으로 실패했다. archive 11278349549, digest sha256:910becf75a07e197c8f2ce70d65a70aeb2e720e6356bc3ea7e8f4acf0e3d6447, package gui/exit 1을 유지한다.
+- 16:20:22–16:22:22 UTC에는 앱 PID가 없고 tauri-driver 5642 / WebKitWebDriver 5643과 두 listener만 남았다. 실패 화면도 빈 desktop이다. 1초 sampling 사이의 짧은 신규 프로세스 실행/종료는 배제할 수 없으며 GPU 원인 또는 제품 회귀로 단정하지 않는다.
+- WebdriverIO 9.29.1의 reloadSession은 DELETE 반환 직후 POST를 보내며 DELETE 오류를 내부에서 억제한다. 실제 앱 프로세스 종료와 API 반환의 차이를 확인하기 위해 arm64 검증 경로에만 PID 종료 조건을 연결한다. tests/gui/support/linux-session-lifecycle.mjs 및 선언 파일은 현재 UID의 tauri-driver→WebKitWebDriver→Alhangeul 관계와 /proc 시작 시각을 고정하고, DELETE 후 그 프로세스의 소멸을 기존 120초 한도 내에서 기다린다. 임의 고정 delay, kill, timeout 증가, retry/skip은 없다.
+- DELETE 오류 억제로 검증 실패가 성공으로 바뀌지 않도록 reload 뒤에도 guard 오류를 확인한다. 타이밍 증거는 메모리에 모은 뒤 새 세션 결과가 나온 후 기록한다. tests/ci-release-session-lifecycle.test.mjs는 PID 소유 범위, PID 재사용, 종료 대기 순서, timeout 및 억제된 오류의 실패 보존을 플랫폼 중립으로 검증한다. 제품 source/installer bytes는 그대로 유지한다.
+
+
+arm64 종료 조건 보정 수용 완료 (2026-10-04):
+
+- harness 737e650fce87d0895914a5868026715986287b71, product main 96e89e900415ee9e1e942b5c01c833dea3415e86 / native producer 37130396817을 구분한다. 동일 arm64 DEB hash 3e29375bf7f824bdc84ae3f1dbff5b5cbeacae5ae694fa64d30c423a5be58859를 유지했다.
+- 37137612562·37137864838 두 별도 runner에서 모두 success다. 총 8회 DELETE 응답 시 기존 app PID가 아직 존재했고 이후 실제 소멸까지 21.17–96.33ms를 기다렸다. 종료 응답만으로 재실행 readiness를 판단하던 harness 경계를 보정했다. 최초 실패에서 짧은 신규 app의 충돌/종료를 직접 포착한 것은 아니므로 제품 실행 원인까지 단정하지 않는다.
+- 두 run 모두 실제 non-root aarch64 / 설치 arm64 0.1.1 / phase complete exit 0, HWP/HWPX 2 scenario 및 저장 4참조의 hash/pinned WASM marker·재열기 2화면을 독립 확인했다. 최종 cleanup snapshot에 app/driver/4444·4445 listener가 없다. 캡처 대기나 임의 고정 delay 없이 실제 종료 조건을 사용하고 120초 timeout·retry/skip 없음은 유지했다.
+- fast CI 37137615232: 자동화 1,050개·upstream 39개·Studio 251개·GUI typecheck·Studio build·Windows PowerShell 계약 모두 success다. 이 fast 결과는 이미 완료한 main native full/6종 파일 수용을 대신하지 않는다.
+- 확정 main 새 파일 6종 수용을 완료했다. 공개 11개 전체 hash/checksum 및 notes를 다시 대조했으며 CLI postmelee·main exact SHA·v0.1.1 local/remote tag와 Release 부재를 확인했다. 태그 생성·동일 bytes draft upload/read-back·stable publish/read-back을 묶은 Gate 4 승인과 보정 PR merge 승인을 요청한다. Pages/manifest는 공개 read-back 후 별도 Gate 5를 따른다. #97과 오늘할일 공개 전달 상태는 진행중이다.
