@@ -32,6 +32,7 @@ import {
 } from './fixtures/pages-release-fixtures.mjs';
 import './pages-design.test.mjs';
 import './pages-showcase.test.mjs';
+import './pages-release-notes.test.mjs';
 
 const repositoryRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const createFixture = () => createPagesFixture(unreleasedFixture());
@@ -44,7 +45,7 @@ test('tracked release data는 현재 상태의 전체 계약을 통과하고 sou
   assert.equal(validateReleaseData(release, { allowManifestPublished: true }), release);
   assert.deepEqual(
     await checkPages({ repositoryRoot, mode: 'source' }),
-    [{ mode: 'source', files: 16, status: release.status }],
+    [{ mode: 'source', files: 17, status: release.status }],
   );
   assert.equal(await readFile(releasePath, 'utf8'), sourceBefore);
 });

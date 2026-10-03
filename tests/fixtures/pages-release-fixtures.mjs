@@ -107,7 +107,14 @@ export async function createPagesFixture(release) {
   const tmp = await mkdtemp(join(tmpdir(), 'alhangeul-pages-'));
   const root = join(tmp, 'repository');
   await mkdir(root);
-  await cp(join(repositoryRoot, 'site'), join(root, 'site'), { recursive: true });
+  await cp(join(repositoryRoot, 'site'), join(root, 'site'), {
+    recursive: true,
+    filter: (path) => !/[/\\]updates[/\\]v\d+\.\d+\.\d+\.html$/.test(path),
+  });
+  // These fixtures model release/feed states independently of actual published note history.
+  const indexPath = join(root, 'site/updates/index.html');
+  const index = await readFile(indexPath, 'utf8');
+  await writeFile(indexPath, index.replace(/\s*<a\b[^>]*data-release-note-version="[^"]+"[^>]*>[\s\S]*?<\/a>/g, ''));
   await writeFile(join(root, 'site/release.json'), `${JSON.stringify(release, null, 2)}\n`);
   for (const asset of ROOT_ASSETS) {
     const output = join(root, asset);

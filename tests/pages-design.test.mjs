@@ -63,7 +63,7 @@ test('홈·업데이트·문의 페이지는 승인된 메뉴와 공유 메타�
     assert.match(html, /<title>[^<]+<\/title>/);
     assert.match(html, /<meta name="description" content="[^"]+" \/>/);
     assert.match(html, /<meta property="og:image" content="https:\/\/postmelee\.github\.io\/alhangeul-tauri\/assets\/og-main\.png" \/>/);
-    assert.match(html, /styles\.css\?v=90-5/);
+    assert.match(html, /styles\.css\?v=102-3/);
     assert.match(html, new RegExp(`<link rel="canonical" href="${escapeRegExp(expected.canonical)}" \\/>`));
     assert.match(html, /href="https:\/\/github\.com\/postmelee\/alhangeul-tauri"/);
     for (const link of expected.links) {

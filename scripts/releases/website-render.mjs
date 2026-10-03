@@ -31,7 +31,7 @@ export function renderWebsiteNotes(notes, template) {
   const paragraphs = (values) => values.map((value) => `<p>${escapeHtml(value)}</p>`).join('\n                    ');
   const releaseUrl = `https://github.com/${RELEASE_REPOSITORY}/releases/tag/${meta.tag}`;
   const values = {
-    pageTitle: `Alhangeul ${meta.tag} 릴리즈 안내`, description: escapeHtml(content.summary.join(' ')),
+    pageTitle: `알한글 ${meta.tag} 릴리즈 안내`, description: escapeHtml(content.summary.join(' ')),
     canonicalUrl: `https://postmelee.github.io/alhangeul-tauri/updates/${meta.tag}.html`,
     version: meta.version, publicationStatus: meta.status, publicationDate: publicationDate(meta),
     heroSummary: escapeHtml(content.summary[0]), releaseUrl,
