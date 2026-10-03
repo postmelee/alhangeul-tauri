@@ -4,12 +4,12 @@
 GitHub Issue: [#97](https://github.com/postmelee/alhangeul-tauri/issues/97)
 마일스톤: M010
 작성일: 2026-10-03 (Asia/Seoul)
-상태: 구현계획 승인 및 Stage 1 진입 승인 대기
+상태: 구현계획·Stage 1 승인 완료, Stage 1 검증 완료·Stage 2 승인 대기
 
 ## 승인과 기준
 
 작업지시자의 같은 스레드의 “진행해줘”를 수행계획 승인과 본 구현계획 작성 승인으로 기록한다.
-이 문서 작성은 구현 단계 진입이 아니다. 현재 문서 외 제품 변경은 없다.
+후속 “진행해줘”를 구현계획 및 Stage 1 진입 승인으로 기록한다. Stage 1은 테스트·측정만 추가하며 제품 동작은 변경하지 않는다.
 기준은 origin/devel `97550085a9334129062266dddb625798bcdc77e2`, 계획 커밋은 `6986c8e2`다.
 배포본 v0.1.0 기준 함수와 실제 소비 경로는 Stage 1에서 다시 확인한다.
 
@@ -64,7 +64,7 @@ GitHub Issue: [#97](https://github.com/postmelee/alhangeul-tauri/issues/97)
 
 ```bash
 pnpm install --frozen-lockfile
-pnpm --filter @postmelee/alhangeul-studio-host test -- src/core/local-font-lookup.test.ts src/core/local-font-names.test.ts src/core/local-font-lifecycle.test.ts
+pnpm --filter @postmelee/alhangeul-studio-host exec vitest run src/core/local-font-lookup.test.ts src/core/local-font-names.test.ts src/core/local-font-lifecycle.test.ts
 pnpm --filter @postmelee/alhangeul-studio-host exec vitest bench --run src/core/local-font-lookup.bench.ts
 pnpm run check:product-boundary
 git diff --check
@@ -110,7 +110,7 @@ git diff --check
 ### 검증
 
 ```bash
-pnpm --filter @postmelee/alhangeul-studio-host test -- src/core/local-font
+pnpm --filter @postmelee/alhangeul-studio-host exec vitest run src/core/local-font
 pnpm --filter @postmelee/alhangeul-studio-host exec vitest bench --run src/core/local-font-lookup.bench.ts
 pnpm run check:product-boundary
 pnpm run test:upstream
