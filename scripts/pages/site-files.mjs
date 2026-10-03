@@ -74,3 +74,10 @@ export function assertInside(root, target, label) {
 export function toSitePath(root, target) {
   return relative(root, target).split(sep).join('/');
 }
+
+export function normalizeRootAssetReferences(sitePath, content) {
+  const depth = sitePath.split('/').length - 1;
+  const sourcePrefix = `${'../'.repeat(depth + 1)}assets/`;
+  const outputPrefix = `${'../'.repeat(depth)}assets/`;
+  return content.replaceAll(sourcePrefix, outputPrefix);
+}

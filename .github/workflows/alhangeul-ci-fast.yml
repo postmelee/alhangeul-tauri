@@ -37,6 +37,9 @@ jobs:
       - run: pnpm run check:release-metadata
       - run: pnpm run check:rhwp-pin
       - run: pnpm run check:committed-rhwp
+      - run: pnpm run check:release-notes
+      - run: pnpm run build:pages
+      - run: pnpm run check:pages
       - run: pnpm run test:automation
       - run: pnpm run typecheck:gui
       - run: pnpm run test:upstream
@@ -58,6 +61,10 @@ jobs:
         with:
           node-version: "24"
           package-manager-cache: false
+      - name: Check release notes
+        run: node scripts/releases/notes-cli.mjs check
+      - name: Test release generation contracts
+        run: node --test tests/release-notes.test.mjs tests/release-notes-generation.test.mjs tests/release-notes-integration.test.mjs
       - name: Parse PowerShell and run isolated regressions
         shell: powershell
         run: .\scripts\ci\windows-tests.ps1

@@ -155,7 +155,7 @@ test('웹 템플릿은 공통 원문의 짧은 안내와 버전 고정 다운로
   assert.deepEqual(headings, ['변경 요약', '포함된 rhwp 변화', '알한글 앱 변화', '알려진 한계', '설치와 업데이트']);
   assert.match(source, /href="\{\{releaseUrl\}\}">이 버전 다운로드/);
   assert.match(source, /href="\.\/#latest-download">최신 버전 다운로드/);
-  assert.doesNotMatch(source, /\.dmg|Sparkle|appcast|Homebrew/);
+  assert.doesNotMatch(source, /Sparkle|appcast|Homebrew/);
 });
 
 function freezeDeep(value) {

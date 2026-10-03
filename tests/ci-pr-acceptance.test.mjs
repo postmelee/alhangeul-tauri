@@ -65,3 +65,25 @@ test('personal repository requires PR/checks even for admin, without one-person 
   assert.equal(policy.required_pull_request_reviews.bypass_pull_request_allowances, undefined);
   assert.equal(policy.restrictions, null);
 });
+
+test('fast CI checks release contracts and Pages on Linux and generation paths on Windows', () => {
+  const linux = fast.jobs.contracts.steps;
+  for (const command of ['check:release-notes', 'build:pages', 'check:pages']) {
+    const step = linux.find((entry) => entry.run === `pnpm run ${command}`);
+    assert.ok(step, command);
+    assert.equal(step.if, undefined);
+    assert.equal(step['continue-on-error'], undefined);
+  }
+  const windows = fast.jobs['windows-scripts'].steps.find((entry) => entry.name === 'Test release generation contracts');
+  const check = fast.jobs['windows-scripts'].steps.find((entry) => entry.run === 'node scripts/releases/notes-cli.mjs check');
+  assert.ok(check);
+  assert.equal(check.if, undefined);
+  assert.equal(check['continue-on-error'], undefined);
+  assert.equal(windows.if, undefined);
+  assert.equal(windows['continue-on-error'], undefined);
+  for (const name of ['release-notes', 'release-notes-generation', 'release-notes-integration']) {
+    assert.ok(windows.run.includes(`tests/${name}.test.mjs`));
+    assert.ok(pkg.scripts['test:automation'].includes(`tests/${name}.test.mjs`));
+    assert.ok(pkg.scripts['test:release-notes'].includes(`tests/${name}.test.mjs`));
+  }
+});
