@@ -3,12 +3,13 @@
 수행계획서: [task_m010_102.md](task_m010_102.md)
 GitHub Issue: [#102](https://github.com/postmelee/alhangeul-tauri/issues/102)
 마일스톤: M010
-상태: 구현계획 승인 완료 / Stage 3 완료·Stage 4 승인 대기
+상태: 구현계획 승인 완료 / Stage 4 구현·로컬 통합 검증 완료 / 최종 보고·PR 게시 승인 대기
 작성일: 2026-10-04 KST
 수행계획 승인: 수행계획 보고 후 같은 스레드에서 작업지시자의 “진행해줘”.
 구현계획·Stage 1 승인: 2026-10-04, 구현계획 보고 후 같은 스레드에서 작업지시자의 “진행해줘”.
 Stage 2 승인: 2026-10-04, Stage 1 완료 보고 후 같은 스레드에서 작업지시자의 “진행해줘”.
 Stage 3 승인: 2026-10-04, Stage 2 완료 보고 후 같은 스레드에서 작업지시자의 “진행해줘”.
+Stage 4 승인: 2026-10-04, Stage 3 완료 보고 후 같은 스레드에서 작업지시자의 “진행해줘”.
 기준: devel `939cdb511c08e707120860aac1ba0d0c7fe48a92`, 계획 commit `b1f5eb8d975ad92ef9e8e038f8639380e208db47`.
 작업 브랜치: `local/task102`, 분리 작업 공간 `task102-release-format/alhangeul-tauri`.
 
@@ -185,6 +186,7 @@ Stage 3 문서·생성 page·source·검증·stage3 report를 함께 커밋한�
 ### 변경 내용
 
 - 원문 작성→metadata 대조→생성→check→본문 승인→게시→read-back 순서를 기존 gate에 연결한다. 제품 공개 승인을 도구 검사로 대체하지 않는다.
+- 기존 runbook은 이미 309줄이다. 승인된 문서 위치와 Gate 0~7·복구 순서를 보존하기 위해 해당 파일에 명령과 참조를 추가하고 새 문서로 분할하지 않는다. 300줄 목표의 기존 초과를 기록하며 source 함수·모듈 상한을 확대하지 않는다.
 - v0.1.1 기록에 GitHub 공개 완료와 Pages/manifest·actual upgrade 미실행을 따로 적는다. #97 고정 source/run/report를 연결해 native exact bytes 수용을 재사용한 이유를 적는다.
 - 참조 macOS 저장소의 고정 commit·관련 파일·형식 차용·라이선스 판단을 PROVENANCE에 기록한다. 직접 복사한 코드가 있을 때 notice를 보존한다.
 - #97 인계에는 공통 규격 merge SHA, 생성 원문, PR #101에 적용할 short notes·웹 연결과 아래 재검증을 명시한다.
