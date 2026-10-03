@@ -455,3 +455,13 @@ Stage 3 비교 harness 실행 보정 기록:
   저장 bytes의 marker 확인과 실제 변경된 canvas 확인 gate를 유지한다.
 - Windows PDF run 37119725535, Linux full run 37119720929 및 Linux local-fonts run
   37119716779는 모두 success다. 원시 PDF·스크린샷을 읽어 수용 범위와 제한을 확인한다.
+
+
+- 비교 run [37120738635](https://github.com/postmelee/alhangeul-tauri/actions/runs/37120738635)은
+  두 플랫폼의 설치·GUI·정리를 끝까지 수행해 success다. Linux의 모든 configuration viewport는
+  기준/개선 모두 1280×900이다. 16개 첫 페이지 PNG의 기준/개선 SHA-256도 모두 동일하다.
+- Windows 원시 configuration은 기준본 viewport 1028×769, 개선본 1280×900이다.
+  큰 지연 감소가 관찰돼도 동일 창 조건의 필수 수용으로 간주하지 않는다.
+- 승인된 harness 디버깅 범위에서 초기 앱 준비 완료 후 창 크기를 지정하고 실제 viewport를
+  대기한다. 매 renderer/설정 configuration의 실제 viewport도 1280×900으로 검증해 불일치를
+  즉시 실패시킨다. 동일 exact product bytes로 비교를 재실행하며 제품 코드는 바꾸지 않는다.

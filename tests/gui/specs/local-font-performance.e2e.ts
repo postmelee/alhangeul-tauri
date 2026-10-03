@@ -27,8 +27,10 @@ describe('Installed local font performance', () => {
     initSync({ module: await readFile(join(inputs.fixtureRoot, 'apps/studio-host/vendor/rhwp-core/rhwp_bg.wasm')) });
     installed = await installFixtureFont({ platform: process.platform, home: homedir(), localAppData: process.env.LOCALAPPDATA });
     await browser.setTimeout({ script: 120000 });
-    await browser.setWindowSize(1280, 900);
     await waitForInitialDesktopReady(browser, inputs.timeoutMs);
+    await browser.setWindowSize(1280, 900);
+    await browser.waitUntil(async () => browser.execute(() => innerWidth === 1280 && innerHeight === 900),
+      { timeout: 5000, timeoutMsg: 'comparison viewport did not reach 1280x900' });
   });
 
   after(async () => {
@@ -67,6 +69,7 @@ describe('Installed local font performance', () => {
           devicePixelRatio, longTaskSupported: typeof PerformanceObserver !== 'undefined'
             && PerformanceObserver.supportedEntryTypes?.includes('longtask'),
         }));
+        expect(environment.viewport).toEqual([1280, 900]);
         observations.push({ scenario: 'configuration', renderer, choice, detectionWallMs, catalogStatus, environment });
         for (const document of documents) {
           await observeDocument(document, renderer, choice, fallback);
