@@ -551,3 +551,24 @@ main native 후보 확정 및 설치 수용 진행 (2026-10-04):
 - signed 새 파일 수용 37132406842는 3종 success이며 actual install/cleanup exit 0·version 0.1.1·정책 복원·문서 hash/pinned WASM marker·재열기 6화면을 독립 확인했다.
 - x64 DEB full GUI 37132752100은 success다. 원시 9 scenario/PDF/인쇄 복원 증거를 확인하고 RPM KVM·arm64 실제 설치 수용을 이어간다. public tag/Release·Pages는 아직 미실행이다.
 - raw NSIS 썸네일 실패/forced MSI post-reboot 미검증 제한은 새 main에서도 유지한다.
+
+
+main 마지막 Linux 수용 증거:
+
+- RPM 37133517774는 성공, 원시 KVM·일반 사용자 Xfce·0.1.1-1·transfer hash·phase complete/exit 0·문서 marker/재열기·VM cleanup을 독립 확인했다.
+- arm64 37133522684는 HWPX 저장 후 WebDriver reloadSession의 POST /session timeout으로 실패했다. 설치 0.1.1·HWP 수용·HWP/HWPX 저장 marker는 확인했지만 전체 수용은 실패로 남긴다.
+- 같은 main bytes·harness ccd592791077b5ad7af7db3f347b407a5c8c747c·검증 조건을 변경하지 않고 37134244591을 실행했다. 필수 gate를 완화하지 않는다.
+
+
+릴리즈 승격 검증 보정안 — arm64 재실행 진단 (소스 변경 승인 요청):
+
+- 같은 main 파일의 두 run 37133522684·37134244591에서 저장 후 WebDriver POST /session timeout이 반복됐다. 두 번째는 HWP 재실행부터 실패했다. raw package gui/exit 1을 보존하고 성공으로 간주하지 않는다.
+- 이전 성공 run 37128112105와 두 실패 run의 WebKitGTK/WebDriver 2.52.6, tauri-driver 2.0.6 실행 파일 hash 573553048589a86fa57e225c6c182ac66a810439565ea60227c024fc2a3a2c79는 같다. 제품 소스는 Stage 4 source 이후 runtime diff가 없으나 arm64 실행 파일 hash는 다르므로 새 bytes의 수용을 생략하지 않는다.
+- 기존 v0.1.0 기준선(fc3cad15682f35723ab6558d1301e9096f7eec67, native 36320353815, arm64 artifact 10932449136)을 동일 harness로 실행한 37134870041로 제품 버전/환경 원인을 추가 구분한다.
+- 제안: 검증 전용 scripts/ci/run-release-file-gui.sh와 tests/gui/specs/release-files.e2e.ts에 진단을 연결하고 새 scripts/ci/release-file-process-probe.sh를 작은 process/port 증거 수집 helper로 둔다. 재실행 전후의 앱·tauri-driver·WebKit PID/부모/상태·지정 driver port 상태·기존 stderr·완료/실패 시점 화면을 보존해 실제 종료/시작과 프로토콜 세션 생성을 구분한다. 전체 environment나 개인 문서 내용을 수집하지 않는다.
+- 진단에서 확인된 검증 harness의 종료·재시작 결함만 보정할 수 있다. 제품 runtime 수정이 필요하면 그 근거와 별도 수정/새 빌드·수용 범위를 먼저 제시한다. 임의 timeout 증가, test retry·skip, 이전 파일 성공 전용 재사용으로 통과시키지 않는다.
+- source main 96e89e900415ee9e1e942b5c01c833dea3415e86와 동일 0.1.1 arm64 bytes를 유지하고 harness SHA는 별도로 기록한다. 실제 aarch64 일반 사용자 설치 0.1.1·HWP/HWPX 편집 save·process restart·파일 hash/pinned WASM marker·재열기 화면·전체 phase complete exit 0가 수용 기준이다.
+- 문서 위치는 기존 plans/report/orders와 GitHub artifact를 사용하며 새 공식 문서 root는 만들지 않는다. source 변경 전 이번 보정 범위 승인을 요청한다. v0.1.1 tag/Release·Pages는 미실행이고 #97 OPEN이다.
+
+
+v0.1.0 arm64 대조 수용 37134870041은 success다. archive 11278097614 / digest sha256:e14446159e74771d9fcde312ba216d7bcf65e54019b06e66219ee331e578982f, 설치 arm64 0.1.0·phase complete/exit 0·두 문서 marker/hash·재열기 두 화면을 독립 확인했다. 동일 harness에서 기준선은 성공했지만 새로운 0.1.1 두 파일 수용 실패의 원인은 아직 확정하지 않는다. 위 진단 보정안의 source 변경 승인을 요청한다.
