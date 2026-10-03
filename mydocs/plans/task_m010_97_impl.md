@@ -4,7 +4,7 @@
 GitHub Issue: [#97](https://github.com/postmelee/alhangeul-tauri/issues/97)
 마일스톤: M010
 작성일: 2026-10-03 (Asia/Seoul)
-상태: Stage 3·설치 비교 자동화 보정 승인 완료, 구현·원격 검증 진행 중
+상태: Stage 3 자동화 fast 검증 통과, Windows Rust 1.99 빌드 호환성 보정 승인 대기
 
 ## 승인과 기준
 
@@ -337,3 +337,49 @@ Stage 3 원격 실행 준비 기록:
   결과·필요한 보정을 묶어 단계 커밋한다. 후보 게시를 Stage 3 완료로 기록하지 않는다.
 - GUI typecheck, GUI contracts 23개, automation 1031개, public fixture 3개, boundary 732개가 통과했다.
   후보 native CI는 아직 진행 중이다. 원격 비교 전 현재 변경에 대한 최종 계약 검사를 다시 확인한다.
+
+
+## Stage 3 추가 계획 보정안 — Rust 1.99 Windows 빌드 호환성 (승인 대기)
+
+### 실제 실패 증거
+
+- 제품 producer 37114851835의 Windows job 111180224686은 `Lint Windows thumbnail handler`에서 실패했다.
+- toolchain 설치 로그는 Rust 1.98.1에서 2026-10-01 공개된 stable 1.99.0으로 갱신되었음을 기록한다.
+- `apps/thumbnail-handler/src/lib.rs:77`의 `AtomicU32::fetch_update`에 대한 deprecated 경고가
+  `-D warnings`로 오류가 되어 package 생성과 Windows installer smoke가 수행되지 않았다.
+- desktop Rust test/Clippy, thumbnail worker/handler test 및 worker Clippy는 통과했다.
+  이 호출은 v0.1.0·기준 devel부터 있었으며 이번 글꼴 인덱스 변경 파일에 포함되지 않는다.
+- Rust 공식 [Atomic 문서](https://doc.rust-lang.org/std/sync/atomic/struct.Atomic.html)는
+  `fetch_update`가 1.99부터 deprecated이며 `try_update`의 alias임을 설명한다.
+  `try_update`는 Rust 1.95부터 stable이다. 프로젝트 manifest에 별도 rust-version은 선언되어 있지 않다.
+
+### 승인 요청 범위
+
+`apps/thumbnail-handler/src/lib.rs`의 기존 한 호출 이름만 다음처럼 바꾼다.
+
+```diff
+-        let _ = SERVER_LOCKS.fetch_update(Ordering::AcqRel, Ordering::Acquire, |count| {
++        let _ = SERVER_LOCKS.try_update(Ordering::AcqRel, Ordering::Acquire, |count| {
+             count.checked_sub(1)
+         });
+```
+
+동일한 memory ordering, checked_sub 및 반환값 무시 계약을 보존한다. 경고 전체 허용,
+CI gate 완화, stable 버전 rollback, upstream 코드 수정 또는 pin 갱신은 포함하지 않는다.
+이 보정은 이번 릴리즈 후보 생성의 실제 blocker 해소에 한정하며 썸네일 기능을 확대하지 않는다.
+
+### 검증 및 이후 실행
+
+- 현 호스트에서 Rust desktop/Windows target 빌드·검증을 수행하지 않는다.
+- 지원되는 Windows 원격 환경에서 기존 thumbnail handler test/Clippy를 포함한
+  `ci.yml profile=full`로 보정 후 전체 후보를 새 source SHA에 고정한다.
+- 기존 37114851835는 실패 기록으로 보존한다. 부분 Linux 성공으로 full/Windows 수용을 대체하지 않는다.
+- 새 성공 producer의 exact Windows/Linux artifact로 계획대로 기존 Linux local-fonts GUI와
+  같은 VM baseline/improved 성능 비교를 실행한다.
+- 현재 검증 harness 커밋 49705b9c의 fast CI 37116113744는 성공했다.
+  이는 실제 설치 성능이나 제품 전체 CI 성공을 뜻하지 않는다.
+- API rename은 기존 연산의 alias 이동이므로 구현을 복제하는 새 단위 테스트를 추가하지 않는다.
+  기존 native 검사와 설치 수용을 보존한다.
+
+문서 위치는 기존 plans/working/orders에 유지한다. 이 범위 승인 전 thumbnail-handler 소스는 수정하지 않는다.
+Stage 3 전체는 미완료이며 Stage 4 진입 승인 요청이 아니다.
