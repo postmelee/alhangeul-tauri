@@ -3,7 +3,7 @@
 GitHub Issue: [#97](https://github.com/postmelee/alhangeul-tauri/issues/97)
 마일스톤: M010
 작성일: 2026-10-03 (Asia/Seoul)
-상태: v0.1.1 GitHub Release 공개·원격 재검증 완료, 사이트/manifest 갱신 PR·Pages 승인 대기
+상태: v0.1.1 GitHub 공개 완료 / #102 규격 적용·PR #101 새 head 검증 준비 / body·Pages 공개와 실제 upgrade 대기
 
 ## 작업 요약
 
@@ -347,3 +347,14 @@ Pages 배포와 0.1.1 production manifest 공개는 아직 실행하지 않았�
 계약 **86개 / fail 0 / skip 0**, diff 검사를 통과했다. 생성한 stable manifest SHA-256은
 `00a4773b643f2425f6ee8555e00e32c7c518df30b5dd838080cf9f2955caf5b8`이며 실제 공개 read-back의 version·publishedAt·세 URL/서명과 대조했다.
 아직 원격 Pages 배포나 앱 내 production upgrade 수용 결과는 아니다.
+
+### Gate 5 새 안내 규격 적용 — 2026-10-04
+
+- 작업지시자의 “진행해줘”로 PR #103 merge와 PR #101 규격 반영을 승인받았다. #102의 Windows/Linux/required run [37152620380](https://github.com/postmelee/alhangeul-tauri/actions/runs/37152620380)은 모두 success다. head 23263b60과 merge candidate 167b2b42의 tree가 같고 App 15368 required check를 대조했다.
+- PR #103 실제 일반 merge는 `73faf113e8a75cd847e10b4aa3e7fc7e3cb66f41`, mergedAt 2026-10-03T20:55:47Z다. #102는 2026-10-03T20:58:10Z close했고 원격 publish/task102를 삭제했다. #97 브랜치는 최신 devel을 merge하고 오늘할일의 두 작업 최신 상태를 보존했다.
+- 원문 [v0.1.1.notes.json](../../docs/releases/v0.1.1.notes.json)·버전별 안내·공식 기록을 사용한다. site/release.json은 notes만 content.updaterSummary로 바꾸며 version·pub_date·URL3개·inventory·production 정책은 유지한다. 실제 공개 body·asset·tag·runtime·pin/key/endpoint는 바꾸지 않았다.
+- 새 directory 생성, 원문 check, 규격 회귀 **124/124**, Pages build/check **source17/output20**, Pages/updater/workflow **94/94** 통과다. 실패·skip 0이다. 로컬 변경을 새 head로 게시해 Windows/Linux·required를 확인해야 한다.
+- 새 site/release.json SHA-256 `87f4544545fd9946f9cf7fbfc4cecffab38cbb31e1e4c290a55e76d1810207cd`, 새 manifest `62fae230339497b132be013ec91df7cd83b710b69c9de4f56ffff1c407463728`이다. 위 과거 manifest `00a477...`은 이번 승인 대상이 아니다.
+- 생성 GitHub body SHA-256 `43b9a7b31f54ad5fb17cd4902801532d52ff3ecb49f8cc2e200f910ae387b8f7`, short notes 파일 `74457f7c870670f1da49fccd71989fcf7941d221bb22a334cb2ac81edfdaafa1`이다. #102 검토 결과와 같은 bytes다. 기존 body `8465f0...`는 아직 공개된 상태이며 수정 승인 전 보존한다.
+- 웹 수용은 #102의 같은 source/template/script/notes와 같은 후보 data에 대한 1366/390/320px·최신 표시·download/browser 결과를 재사용한다. 실제 built tree 비교 결과를 함께 확인하며 Pages 공개 후에는 새 배포의 HTTP·화면을 다시 확인한다.
+- 공개 body 수정·PR #101 merge·exact Pages SHA 배포는 아직 미실행이며 검토한 산출물의 별도 승인이 필요하다. 실제 production v0.1.0→v0.1.1 NSIS/MSI/AppImage는 아직 미수용이고 다음 harness 계획 승인이 필요하다.

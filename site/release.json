@@ -4,7 +4,7 @@
   "version": "0.1.1",
   "tag": "v0.1.1",
   "publishedAt": "2026-10-03T17:07:44Z",
-  "notes": "Alhangeul 0.1.1은 로컬 글꼴을 사용할 때 문서 열기와 편집이 느려지는 조회 병목을 개선합니다. 글꼴 목록의 이름과 파일 식별자를 한 번 인덱싱하고 요청한 글꼴의 후보만 조회하도록 바꿨습니다. 재감지와 글꼴 파일 읽기 실패·복구 시의 기존 동작을 유지합니다.\n\n같은 Windows 테스트 환경에서 로컬 글꼴을 켠 Canvas2D의 공개 HWPX 10쪽 문서 열기 중앙값은 약 18.3초에서 0.52초로 줄었습니다. Linux에서도 해당 문서의 열기 중앙값이 약 2.5초에서 0.64초로 줄었습니다. 공개 fixture와 고정 환경의 측정이며 사용자 PC 전체의 성능을 보장하는 수치는 아닙니다.\n\nWindows x64 NSIS/MSI, Linux x64 AppImage/DEB/RPM, Linux arm64 DEB를 제공합니다. MSI·NSIS·AppImage의 .sig는 updater Minisign 서명이며 Windows Authenticode 서명과는 다릅니다. SHA256SUMS로 파일 무결성을 확인할 수 있습니다.\n\n알려진 제한: 일부 Windows NSIS 사용자별 설치에서 Shell 썸네일 생성 문제가 남으며 MSI 설치본이 대안입니다. MSI 강제 재설치의 재부팅 후 검증은 완료하지 않았습니다. 사용자 Wayland·하이브리드 GPU 환경과 물리 프린터는 이번 성능 검증에 포함하지 않았습니다. 문서 레이아웃은 한컴과 완전한 동등성을 보장하지 않습니다.",
+  "notes": "로컬 글꼴을 사용할 때 문서 열기·입력·스크롤 반응을 개선했습니다. rhwp v0.8.6은 유지합니다.\n\nWindows 코드 서명·일부 탐색기 썸네일·환경별 표시에는 제한이 있습니다. 실제 이전 버전에서의 앱 내 업데이트 검증은 진행 중입니다. 자세한 변경과 설치 안내는 v0.1.1 릴리즈 노트를 확인하세요.",
   "downloads": {
     "windows-x86_64-nsis": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.1/Alhangeul_0.1.1_x64-setup.exe",
     "windows-x86_64-msi": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.1/Alhangeul_0.1.1_x64_en-US.msi",

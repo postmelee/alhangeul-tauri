@@ -30,6 +30,8 @@ N→N+1을 만들 필요도 없다. 릴리즈를 실제 게시한다면 아래 �
 - [ ] Windows Authenticode와 updater Minisign 구분, 미서명 경고·배포 정책 판단.
 - [ ] `release`/`github-pages` 실제 reviewer·허용 ref 확인; 변경이 필요하면 별도 승인.
 - [ ] 변경 영향·재사용 근거·미검증 Windows/Linux 환경과 필수 위험 처리 결정.
+- [ ] `v<version>.notes.json`의 사용자 변화·rhwp 변화·관련/해결 Issue·조회 근거와 6개 asset/3개 updater metadata 대조.
+- [ ] 본문·웹·짧은 notes 생성 및 `check:release-notes` 통과; 공개일·고정 URL·placeholder·출력 drift 확인.
 - [ ] Pages 상태별 검사는 공개 권한 검사가 아님을 확인. 첫 전환은 Release read-back 후 별도 데이터 PR·배포 승인으로 통제.
 
 ### 파일·설치 — runbook Gate 2~3
@@ -53,14 +55,16 @@ CLI 게시까지 보호하지 않는다. 인증 주체·허용 ref·최종 파�
 
 ### 공개·read-back — runbook Gate 4~7
 
+- [ ] 생성 `release-body.md`의 exact 내용·hash 승인; 기존 body만 보정할 때도 수정 승인·identity 보존·read-back 일치 기록.
 - [ ] source/채널/최종 asset/notes 공개 승인 후 게시. 비게시 서명 승인을 공개 승인으로 쓰지 않음.
 - [ ] exact tag가 후보 commit을 가리키며 Release draft/prerelease 상태가 승인 채널과 일치.
 - [ ] 원격 installer를 새로 받아 크기/hash/서명/inventory를 게시 전 근거와 비교.
 - [ ] draft에 고정 목록 전체를 올려 read-back한 뒤 stable 공개; 공개 후 다시 내려받아 동일 bytes 확인.
 - [ ] 기존 tag/Release 선조회, tag resolved SHA 대조; 불명확한 응답은 재조회하고 중복 생성/덮어쓰기 금지.
 - [ ] Release read-back 후 `site/release.json` PR 검토·devel merge·Pages/manifest 게시 승인.
+- [ ] 같은 version의 site notes는 원문의 updaterSummary와 일치; 긴 GitHub 본문 복사 금지. 새 원문이면 새 생성물/hash 검사.
 - [ ] exact Pages SHA/workflow/deploy_ref 일치, build/check/test/upload/deploy 성공.
-- [ ] 공개 홈·업데이트·문의의 링크/다운로드와 승인된 manifest version/URL/서명 read-back.
+- [ ] 공개 홈·업데이트·문의·버전별 안내의 링크/다운로드·공개일·최신 표시와 승인된 manifest version/URL/서명 read-back.
 - [ ] 실제 production 설치본의 결과 확인. 첫 공개·다음 공개의 차이는 아래 항목 적용.
 - [ ] 버전 기록·릴리즈 인덱스에 실제 게시 시각/URL/run/근거/미실행/승인/후속 Issue 반영.
 
@@ -82,6 +86,7 @@ native UI 자동화 자체를 변경하거나 실패를 진단할 때는
 | updater Rust/형식 판별/dirty·설치 | 변경 target 계약, 동일 형식 positive 설치·재실행, 영향받은 fail-closed/쓰기 자격/dirty 보호 | 수정된 분기의 이전 수용은 재사용 불가; 무관한 negative 전체는 반복 불필요 |
 | updater key·endpoint·manifest/schema | 공개키 신뢰·서명·target URL/bytes, 필요 malformed/wrong-signature/wrong-target 시험, 기존 설치본 연속성 | 승인된 test-only 범위로 시험; production feed에 negative fixture 주입 금지 |
 | Pages UI/release data/배포 workflow | build:pages/check:pages, Pages·updater·workflow 계약, 반응형·링크·read-back; published 전환 시 승인된 tests/pages.test.mjs 보정(미공개 고정/null 단언·manifest 부재 검사), manifest true/false 확인 | 미공개 fail-closed는 고정 fixture로 보존하고 실제 source 검증과 분리; 앱 source가 같으면 native/thumbnail 재실행 불필요 |
+| 릴리즈 원문·템플릿·생성기 | check:release-notes/test:release-notes, 같은 원문 body/HTML/short notes, metadata·PR/Issue 의미 검토·출력 drift·좁은 화면 | 원문/템플릿이 바뀌면 생성 bytes/hash 재검사; 동일 앱·설치본은 재빌드하지 않음 |
 | 문서만 | diff·사실/명령·상대 링크/앵커·미공개 표현·기록 정합성 | runtime/config/pin/판정 도구가 같으면 기존 source 수용 재사용 |
 | build/lock/toolchain/workflow | 생성물·권한·provenance 변화에 해당하는 위 항목과 대상 package 확인 | source 코드가 같아도 새 bytes의 무결성/서명/설치는 재사용 불가 |
 

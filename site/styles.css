@@ -97,6 +97,7 @@ a.download-option:hover { background: var(--blue-soft); }
 .updates-content { display: grid; width: min(880px, calc(100% - 40px)); min-width: 0; gap: 18px; margin: auto; }
 .updates-section { min-width: 0; padding: 28px 0; border-top: 1px solid var(--line); }
 .updates-section h2 { margin: 0; font-size: 26px; line-height: 1.18; }
+.updates-section li a, .updates-section > p a { color: var(--blue); text-decoration: underline; text-underline-offset: 3px; }
 .updates-section > p { margin: 12px 0 0; color: var(--muted); line-height: 1.65; }
 .release-note-list { display: grid; gap: 10px; margin-top: 16px; }
 .release-note-list > * { display: flex; min-height: 59px; align-items: center; justify-content: space-between; gap: 18px; padding: 16px 18px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); font-weight: 600; text-decoration: none; }

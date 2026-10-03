@@ -172,3 +172,11 @@ main 승격·tag·동일 bytes 게시·사이트 PR/Pages는 승인 게이트를
 ## 승인 요청
 
 Stage 4·최종 보고·PR 리뷰 후 merge 단계 승인을 요청한다. 공개 배포까지 완료한 상태는 아니다.
+
+## 후속 공개 안내 규격 적용 (2026-10-04)
+
+PR #103 merge와 PR #101 반영을 같은 스레드의 “진행해줘”로 승인받았다. 공통 규격은 merge `73faf113e8a75cd847e10b4aa3e7fc7e3cb66f41`이며 #102 원격 Windows/Linux/required는 [37152620380](https://github.com/postmelee/alhangeul-tauri/actions/runs/37152620380)에서 success다.
+
+#97에서 merge 방식으로 규격을 반영하고 notes만 같은 원문의 updaterSummary로 정렬했다. 새 생성·check·릴리즈 회귀 124개·Pages17/20·Pages/updater/workflow94개가 통과했다. 새 PR #101 head의 required 검사는 게시 후 확인한다. source/runtime·installer·공개 tag/asset·키/endpoint·pin은 동일하다.
+
+body/notes/manifest의 새 exact hash·공개 승인 필요값은 [최종 보고서](../report/task_m010_97_report.md#gate-5-새-안내-규격-적용--2026-10-04)에 기록했다. 실제 body 수정·Pages 배포·production upgrade는 아직 미실행이다.

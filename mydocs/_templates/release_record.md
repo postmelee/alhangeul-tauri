@@ -8,6 +8,10 @@
 - 반복 정책은 `docs/operations/DESKTOP_RELEASE.md`, Task 결과는 `mydocs/working/`·`report/`에 둔다.
 - 실행 gate는 [공개 가이드](../../docs/operations/PUBLIC_RELEASE_RUNBOOK.md), 검증 선택은
   [체크리스트](../../docs/operations/RELEASE_CHECKLIST.md)를 따르고 실제 결과만 기록한다.
+- 사용자 문구·metadata 원문은 `docs/releases/v<version>.notes.json`에 작성하고
+  [본문 양식](release_notes.md)·[웹 양식](website_release_note.html)에서 생성한다.
+  명령·drift 검사는 [작성 절차](../../docs/releases/README.md#작성과-생성-및-검사)를 따른다.
+  기술 기록, GitHub 전체 본문, 웹 안내, 짧은 updater 요약의 역할을 구분한다.
 - 본 템플릿의 설명·placeholder를 실제 실행 성공으로 복사하지 않는다. 미확정은 `미확정`,
   미실행은 이유와 다음 담당자를 쓰며 첫 공개의 이전 version은 `없음`으로 적는다.
 
@@ -45,6 +49,7 @@
 | 최신 upstream과 다른 pin 유지 판단 | `{동일 / 승인된 유지 이유 / 미확정}` |
 | GitHub Release / 공개 시각 | `{실제 URL·UTC 시각 또는 미게시}` |
 | Pages source SHA / deploy run | `{앱 source와 구분; 미실행 가능}` |
+| 안내 원문·생성/검토 bytes | `{notes.json·body/HTML/short notes hash·승인 또는 미승인}` |
 | manifest / 실제 N → N+1 상태 | `{게시·read-back·실제 upgrade를 분리}` |
 
 ### 사용자 요약과 포함 PR 분석
@@ -133,6 +138,8 @@ stable tag 이동·asset 교체·history rewrite·무단 key rotation을 복구 
 - candidate와 previous, updater 서명과 Authenticode, 파일 hash와 archive digest를 구분한다.
 - local 링크·고정 commit·run·공개 URL이 해당 근거와 일치하며 미검증 환경을 숨기지 않는다.
 - private key·암호·token·개인 문서·실제 credential 보관 경로는 포함하지 않는다.
+- `check:release-notes`·`build:pages`·`check:pages`를 통과한 생성물을 기록한다. 공개 body의
+  exact 내용·hash와 승인값, 게시 후 read-back 일치를 남긴다.
 - 실제 Release·Pages·manifest 상태를 확인한 뒤 인덱스를 갱신한다. 전체 공개 완료와 후속
   production 업그레이드 미실행 여부를 별개로 표시한다.
 - 300 LOC 이내를 목표로 하고 긴 근거는 원본을 연결한다. 경로·구조 확장은 먼저 승인받는다.

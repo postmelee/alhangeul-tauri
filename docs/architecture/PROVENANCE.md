@@ -38,6 +38,22 @@ HOP 기준 commit에 기록된 `0.3.1`은 HOP의 release 계보에 속한다. Al
 
 Windows/Linux PNG·ICO와 studio favicon은 이 source를 기계적으로 resize·변환한 산출물이다. 새로운 그림을 합성하거나 원본 디자인을 변경하지 않았다.
 
+## 릴리즈 안내 형식 참조
+
+Task #102는 같은 제품군 저장소의 GitHub 본문 제목 순서와 짧은 웹 안내 구조를 참고했다.
+이는 제품 upstream 추가나 해당 플랫폼 코드·빌드·배포의 도입이 아니다.
+
+- 참조 저장소: [postmelee/alhangeul-macos](https://github.com/postmelee/alhangeul-macos)
+- main 고정 commit: `43b4e998b93032b62bcb0517fb9c894de3dc8ae1`; v0.2.2 tag resolved commit: `64ed89f881438efdbaec8bb33a6b52d66b83746d`.
+- 본문 참고: [write-release-notes.sh](https://github.com/postmelee/alhangeul-macos/blob/43b4e998b93032b62bcb0517fb9c894de3dc8ae1/scripts/ci/write-release-notes.sh), [check-release-notes-template.sh](https://github.com/postmelee/alhangeul-macos/blob/43b4e998b93032b62bcb0517fb9c894de3dc8ae1/scripts/ci/check-release-notes-template.sh).
+- 웹 참고: [v0.2.2 안내](https://github.com/postmelee/alhangeul-macos/blob/43b4e998b93032b62bcb0517fb9c894de3dc8ae1/docs/updates/v0.2.2.html), [updates.js](https://github.com/postmelee/alhangeul-macos/blob/43b4e998b93032b62bcb0517fb9c894de3dc8ae1/docs/updates.js).
+- 적용: 주요 변경을 먼저 두는 본문 16개 heading, 앱/rhwp 변화·해결/참고 Issue 분리, 웹 5개 구역·실제 공개일·버전 고정 다운로드. 해당 저장소 전용 설치 subsection은 제외했다.
+- 구현: 원본 Bash·웹 script·HTML/CSS의 코드를 직접 복사하지 않았다. 이 저장소의 기존 site 구조와 Node/Tauri 계약에 맞춰 `scripts/releases/`·중앙 템플릿을 작성했다. 최신 표시도 실제 공개 release data를 사용한다.
+- 라이선스: [고정 원본 LICENSE](https://github.com/postmelee/alhangeul-macos/blob/43b4e998b93032b62bcb0517fb9c894de3dc8ae1/LICENSE)는 MIT, `Copyright (c) 2025-2026 Taegyu Lee`다. 이번 산출물은 형식 참조이며 원본 코드의 복사·substantial portion을 포함하지 않는다. 후속 직접 차용 시 원본 copyright와 MIT notice를 함께 보존한다.
+
+Windows/Linux의 6개 설치 파일·3개 updater target·공식 기록 위치는 이 저장소가 소유한다.
+실제 원문·생성·검사 절차는 [릴리즈 인덱스](../releases/README.md#작성과-생성-및-검사)를 따른다.
+
 ## 독립 remote 원칙
 
 - 기본 remote는 `postmelee/alhangeul-tauri`만 제품 개발과 게시 대상으로 사용한다.

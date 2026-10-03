@@ -6,7 +6,6 @@ const defaultRepositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '
 const usage = 'Usage: node scripts/check-product-boundary.mjs [--root <repository-root>]';
 
 const scanRoots = ['.'];
-
 const excludedPrefixes = [
   '.git/',
   'apps/desktop/src-tauri/gen/',
@@ -20,16 +19,12 @@ const excludedPrefixes = [
 const excludedDirectoryNames = new Set(['node_modules', 'target', 'target-local']);
 
 const historicalAllowlist = new Set([
-  'AGENTS.md',
-  'LICENSE',
-  'docs/architecture/PROVENANCE.md',
-  'scripts/check-product-boundary.mjs',
+  'AGENTS.md', 'LICENSE',
+  'docs/architecture/PROVENANCE.md', 'scripts/check-product-boundary.mjs',
 ]);
 
 const unsupportedPlatformAllowlist = new Set([
-  'docs/architecture/PROVENANCE.md',
-  'pnpm-lock.yaml',
-  'scripts/check-product-boundary.mjs',
+  'docs/architecture/PROVENANCE.md', 'pnpm-lock.yaml', 'scripts/check-product-boundary.mjs',
 ]);
 
 const approvedSiteHeaderLink = '                    <a class="header-link family-header-link" href="https://postmelee.github.io/alhangeul-macos/" aria-label="알한글 macOS 홈페이지로 이동">알한글 for macOS</a>';
@@ -164,7 +159,10 @@ async function registeredNestedWorktrees(repositoryRoot) {
 }
 
 function maskApprovedReferenceLines(repositoryPath, content, group) {
-  const approved = approvedReferenceLines.get(repositoryPath);
+  const versionPage = /^(?:site|_site)\/updates\/v(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.html$/.test(repositoryPath);
+  const approved = approvedReferenceLines.get(repositoryPath) ?? (versionPage ? {
+    group: 'platform', lines: new Set([approvedSiteHeaderLink, `            ${approvedSiteMobileNote}`]),
+  } : null);
   if (approved?.group !== group) return content;
   return content.split('\n').map((line) => (approved.lines.has(line) ? '' : line)).join('\n');
 }

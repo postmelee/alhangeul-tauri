@@ -10,7 +10,8 @@ import {
 } from 'node:fs/promises';
 import { dirname, extname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ROOT_ASSETS, assertInside, listSiteFiles } from './pages/site-files.mjs';
+import { ROOT_ASSETS, assertInside, listSiteFiles, normalizeRootAssetReferences } from './pages/site-files.mjs';
+import { checkReleaseNotes } from './releases/notes-check.mjs';
 import { validateReleaseData } from './pages/release-data.mjs';
 import { buildUpdaterManifest, serializeUpdaterManifest } from './updater/manifest.mjs';
 
@@ -26,6 +27,7 @@ export async function buildPages(options = {}) {
   const release = await readReleaseData(layout.sourceRoot);
   await verifyRootAssets(layout.repositoryRoot);
   assertNoRootAssetCollision(sourceFiles);
+  await checkReleaseNotes({ repositoryRoot: layout.repositoryRoot, treeRoot: layout.sourceRoot, release });
 
   await rm(layout.outputRoot, { recursive: true, force: true });
   await mkdir(layout.outputRoot, { recursive: true });
@@ -125,13 +127,6 @@ async function verifyRootAssets(repositoryRoot) {
       throw new Error(`승인된 root asset이 일반 파일이 아닙니다: ${assetPath}`);
     }
   }
-}
-
-function normalizeRootAssetReferences(sitePath, content) {
-  const depth = sitePath.split('/').length - 1;
-  const sourcePrefix = `${'../'.repeat(depth + 1)}assets/`;
-  const outputPrefix = `${'../'.repeat(depth)}assets/`;
-  return content.replaceAll(sourcePrefix, outputPrefix);
 }
 
 function isInside(root, target) {
