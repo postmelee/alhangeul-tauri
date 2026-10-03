@@ -434,3 +434,12 @@ Stage 3 비교 harness 실행 보정 기록:
 - harness SHA와 product SHA를 구분하고 성공한 37116980444의 exact 후보 파일을 재사용한다.
   Linux local-fonts/full 및 Windows PDF 검증은 같은 product SHA로 별도 실행 중이다.
 - 아래 후속 Stage 4 보정안은 계속 승인 대기이며, 이번 커밋에 제안 문서만 포함한다.
+
+
+- 비교 보정 run [37120027655](https://github.com/postmelee/alhangeul-tauri/actions/runs/37120027655)의
+  Windows job 111194182296은 기준본 설치 전 Get-FileHash cmdlet을 찾지 못했다.
+  install.json과 outcomes.json에서 baseline installed=false/gui=false/cleaned=true를 확인했다.
+  Linux 비교는 별도 job에서 진행 중이며 이 Windows 실패를 성능 수용으로 처리하지 않는다.
+- Windows 비교 step의 shell을 기존 release-files의 native install/cleanup과 같은 `powershell`로
+  명시한다. Node 자식 powershell.exe까지 같은 호스트의 모듈 환경을 상속하도록 맞춘다.
+  기존 native installer/helper 및 제품 파일을 변경하지 않고 보정한 harness만 재실행한다.

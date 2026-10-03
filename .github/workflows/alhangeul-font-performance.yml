@@ -105,6 +105,7 @@ jobs:
       - name: Compare installed Windows products
         id: windows-gui
         if: runner.os == 'Windows'
+        shell: powershell
         run: node scripts/ci/run-font-performance.mjs
       - name: Compare original Linux AppImages
         id: linux-gui
