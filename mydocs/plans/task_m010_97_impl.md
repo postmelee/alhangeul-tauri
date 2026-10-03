@@ -4,7 +4,7 @@
 GitHub Issue: [#97](https://github.com/postmelee/alhangeul-tauri/issues/97)
 마일스톤: M010
 작성일: 2026-10-03 (Asia/Seoul)
-상태: Stage 3 자동화 fast 검증 통과, Windows Rust 1.99 빌드 호환성 보정 승인 대기
+상태: Stage 3·Rust 1.99 보정 승인 완료, 새 후보 전체 검증 진행 중
 
 ## 승인과 기준
 
@@ -339,7 +339,7 @@ Stage 3 원격 실행 준비 기록:
   후보 native CI는 아직 진행 중이다. 원격 비교 전 현재 변경에 대한 최종 계약 검사를 다시 확인한다.
 
 
-## Stage 3 추가 계획 보정안 — Rust 1.99 Windows 빌드 호환성 (승인 대기)
+## Stage 3 추가 계획 보정 — Rust 1.99 Windows 빌드 호환성 (승인 완료)
 
 ### 실제 실패 증거
 
@@ -381,5 +381,9 @@ CI gate 완화, stable 버전 rollback, upstream 코드 수정 또는 pin 갱신
 - API rename은 기존 연산의 alias 이동이므로 구현을 복제하는 새 단위 테스트를 추가하지 않는다.
   기존 native 검사와 설치 수용을 보존한다.
 
-문서 위치는 기존 plans/working/orders에 유지한다. 이 범위 승인 전 thumbnail-handler 소스는 수정하지 않는다.
+작업지시자의 보정 요청에 대한 후속 “진행해줘”를 이 범위 승인으로 기록한다.
+문서 위치는 기존 plans/working/orders에 유지한다. thumbnail-handler의 호출 이름 한 곳만 보정한다.
 Stage 3 전체는 미완료이며 Stage 4 진입 승인 요청이 아니다.
+
+기준 full CI 37114851835는 최종 failure다. Linux x64/arm64 및 세 core job은 통과했고,
+Windows Clippy 실패로 Windows package/설치 smoke는 미수행이다. 새 후보 검증으로 이어간다.

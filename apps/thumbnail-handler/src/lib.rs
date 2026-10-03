@@ -74,7 +74,7 @@ pub(crate) fn set_server_lock(lock: bool) {
     if lock {
         SERVER_LOCKS.fetch_add(1, Ordering::AcqRel);
     } else {
-        let _ = SERVER_LOCKS.fetch_update(Ordering::AcqRel, Ordering::Acquire, |count| {
+        let _ = SERVER_LOCKS.try_update(Ordering::AcqRel, Ordering::Acquire, |count| {
             count.checked_sub(1)
         });
     }
