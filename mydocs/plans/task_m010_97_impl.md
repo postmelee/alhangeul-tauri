@@ -585,3 +585,11 @@ arm64 진단 결과와 관찰 영향 분리:
 
 - 진단 harness 68dcda8c / 동일 main 파일 수용 37135625721·37135906830은 success다. 첫 run의 4회 restart는 app PID 6778→7042→7192→7391→7544로 바뀌고 종료 시 app/driver 및 4444/4445 listener가 없다. 두 문서 file hash/pinned WASM marker·재열기 화면을 확인했다. 최초 실패가 해결됐다고 단정하지 않는다.
 - 재실행 직전/후 외부 screenshot/probe 명령을 기다리는 것이 관찰 타이밍을 바꿀 가능성을 분리한다. 정상 경로는 동기 timestamp marker와 기존 reloadSession 호출만 두고, 독립 background process monitor·append console·실패 시 snapshot을 유지하는 harness로 동일 bytes를 추가 확인한다. 임의 delay/timeout·retry/skip 추가는 없다.
+
+
+arm64 타이밍 분리 실패와 종료 조건 보정:
+
+- 정상 경로의 캡처 대기를 제거한 e67bd791 / 37136290009는 HWPX 저장 후 세 번째 restart의 POST /session timeout으로 실패했다. archive 11278349549, digest sha256:910becf75a07e197c8f2ce70d65a70aeb2e720e6356bc3ea7e8f4acf0e3d6447, package gui/exit 1을 유지한다.
+- 16:20:22–16:22:22 UTC에는 앱 PID가 없고 tauri-driver 5642 / WebKitWebDriver 5643과 두 listener만 남았다. 실패 화면도 빈 desktop이다. 1초 sampling 사이의 짧은 신규 프로세스 실행/종료는 배제할 수 없으며 GPU 원인 또는 제품 회귀로 단정하지 않는다.
+- WebdriverIO 9.29.1의 reloadSession은 DELETE 반환 직후 POST를 보내며 DELETE 오류를 내부에서 억제한다. 실제 앱 프로세스 종료와 API 반환의 차이를 확인하기 위해 arm64 검증 경로에만 PID 종료 조건을 연결한다. tests/gui/support/linux-session-lifecycle.mjs 및 선언 파일은 현재 UID의 tauri-driver→WebKitWebDriver→Alhangeul 관계와 /proc 시작 시각을 고정하고, DELETE 후 그 프로세스의 소멸을 기존 120초 한도 내에서 기다린다. 임의 고정 delay, kill, timeout 증가, retry/skip은 없다.
+- DELETE 오류 억제로 검증 실패가 성공으로 바뀌지 않도록 reload 뒤에도 guard 오류를 확인한다. 타이밍 증거는 메모리에 모은 뒤 새 세션 결과가 나온 후 기록한다. tests/ci-release-session-lifecycle.test.mjs는 PID 소유 범위, PID 재사용, 종료 대기 순서, timeout 및 억제된 오류의 실패 보존을 플랫폼 중립으로 검증한다. 제품 source/installer bytes는 그대로 유지한다.
