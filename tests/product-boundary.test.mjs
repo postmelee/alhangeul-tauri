@@ -108,6 +108,22 @@ test('승인된 외부 홈페이지 링크는 세 source·output 페이지의 �
   }
 });
 
+test('version note pages allow the same exact family links without expanding product support', async () => {
+  const fixture = await createFixture();
+  try {
+    for (const root of ['site', '_site']) {
+      await writeRepositoryFile(fixture.root, `${root}/updates/v0.1.1.html`, `${approvedSiteHeaderLink}\n${mobileLine('updates/index.html')}\n`);
+    }
+    assert.deepEqual((await verifyProductBoundary({ repositoryRoot: fixture.root })).violations, []);
+    await writeRepositoryFile(fixture.root, 'site/updates/v0.1.1.html', `${approvedSiteHeaderLink}\n${unsupportedPlatform} 배포도 지원한다.\n`);
+    assert.equal((await verifyProductBoundary({ repositoryRoot: fixture.root })).violations.length, 1);
+    await writeRepositoryFile(fixture.root, 'site/updates/v00.1.1.html', approvedSiteHeaderLink);
+    assert.equal((await verifyProductBoundary({ repositoryRoot: fixture.root })).violations.length, 2);
+  } finally {
+    await rm(fixture.root, { recursive: true, force: true });
+  }
+});
+
 for (const [label, path, source] of [
   ['제품 지원 표현 추가', 'site/index.html', `${approvedSiteHeaderLink}\n${unsupportedPlatform} 배포도 지원한다.\n`],
   ['목적지 변경', 'site/updates/index.html', approvedSiteHeaderLink.replace('postmelee.github.io', 'example.invalid')],

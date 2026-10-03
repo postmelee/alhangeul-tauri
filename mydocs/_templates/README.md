@@ -26,6 +26,8 @@
 - `external_pr_review_impl.md`
 - `external_pr_report.md`
 - `release_record.md`
+- `release_notes.md`
+- `website_release_note.html`
 - 그 밖에 산출물 종류가 드러나는 이름
 
 ## 사용 템플릿
@@ -38,6 +40,16 @@
 실제 결과는 `docs/releases/v<version>.md`에 작성하며 이 폴더에는 공개 이력·검증 결과를
 쌓지 않는다. 준비 시 identity·검증 계획을 채우고 공개 후 승인·URL·artifact·read-back 결과를
 갱신한다. 작성 순서는 [릴리즈 기록 인덱스](../../docs/releases/README.md)를 따른다.
+
+## 사용자 릴리즈 안내 양식
+
+[release_notes.md](release_notes.md)는 GitHub 전체 본문의 제목·토큰 규격이고,
+[website_release_note.html](website_release_note.html)은 기존 사이트 디자인의 버전별 안내 규격이다.
+사용자 문구와 검증된 metadata는 `docs/releases/v<version>.notes.json`에 작성한다.
+`pnpm run generate:release-notes`는 검토용 본문·웹 HTML·짧은 updater notes를 만들며
+`pnpm run check:release-notes`는 원문·템플릿·웹 생성물과 같은 버전 사이트 data의 drift를 검사한다.
+실제 작성 명령과 승인 순서는 [릴리즈 인덱스](../../docs/releases/README.md#작성과-생성-및-검사)를 따른다.
+생성·CI 성공은 공개 승인이 아니며 이 폴더에 실제 버전 결과를 쌓지 않는다.
 
 ## 반드시 포함할 내용
 

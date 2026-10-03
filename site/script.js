@@ -59,6 +59,7 @@ async function setupReleaseData() {
             hydrateDownloadAction(action, url, release);
         }
         hydrateReleaseNote(release);
+        hydrateVersionStatus(release);
     } catch {
         // 공개 전 기본 안내와 최신 다운로드 안내 링크를 유지한다.
     }
@@ -86,6 +87,13 @@ function hydrateDownloadAction(action, url, release) {
 function hydrateReleaseNote(release) {
     const placeholder = document.querySelector('[data-release-note]');
     if (!placeholder) return;
+    const local = document.querySelector(`[data-release-note-version="${release.version}"]`);
+    if (local) {
+        placeholder.remove();
+        const title = local.querySelector('strong');
+        if (title) title.textContent = `알한글 ${release.tag} · 최신 버전`;
+        return;
+    }
     const link = document.createElement('a');
     link.href = `https://github.com/postmelee/alhangeul-tauri/releases/tag/${release.tag}`;
     const title = document.createElement('strong');
@@ -94,6 +102,16 @@ function hydrateReleaseNote(release) {
     summary.textContent = '최신 안정 릴리즈의 변경 내용을 GitHub Releases에서 확인하세요.';
     link.append(title, summary);
     placeholder.replaceWith(link);
+}
+
+function hydrateVersionStatus(release) {
+    const version = document.body.dataset.releaseVersion;
+    const message = document.querySelector('[data-version-status]');
+    if (!message || !version || document.body.dataset.releaseStatus !== 'published') return;
+    message.textContent = version === release.version
+        ? '사이트의 최신 버전입니다.'
+        : `이 안내는 v${version}입니다. 사이트의 최신 버전은 ${release.tag}입니다. 최신 버전 다운로드에서 확인하세요.`;
+    message.hidden = false;
 }
 
 function setupCopyButtons() {

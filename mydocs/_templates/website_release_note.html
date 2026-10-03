@@ -1,0 +1,88 @@
+<!--
+웹 릴리즈 안내 템플릿
+사용 위치: site/updates/v<version>.html. 원문: docs/releases/v<version>.notes.json.
+작성 시점: 승인 원문과 공개 metadata를 검증한 뒤 생성, Pages 게시 전 화면 검토.
+언어: 한국어(ko). 기존 header/hero/actions/footer 구조를 유지한다.
+필수: 변경 요약, rhwp 변화, 앱 변화, 한계, 설치와 업데이트, 실제 공개일, 버전 고정 다운로드.
+선택: 기술 기록·GitHub Release 링크. 긴 provenance·PR 로그는 웹 본문에 복제하지 않는다.
+검증: token 누락/unknown 거부, 원문 escape, 생성물 drift·링크·넓은/좁은 화면 확인.
+승인: 템플릿·생성 성공은 Pages/manifest 게시 승인이 아니다.
+draft 입력은 검토용이며 실제 공개일·공개 완료를 미리 표시하지 않는다.
+아래 HTML이 출력 형식이며 원문 문자열을 raw HTML로 치환하지 않는다.
+-->
+<!doctype html>
+<html lang="ko">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>{{pageTitle}}</title>
+        <meta name="description" content="{{description}}" />
+        <meta property="og:title" content="{{pageTitle}}" />
+        <meta property="og:description" content="{{description}}" />
+        <meta property="og:image" content="https://postmelee.github.io/alhangeul-tauri/assets/og-main.png" />
+        <link rel="canonical" href="{{canonicalUrl}}" />
+        <link rel="icon" href="../../assets/logo/favicon.ico" />
+        <link rel="stylesheet" href="../styles.css?v=102-3" />
+        <script src="../script.js?v=102-3" defer></script>
+    </head>
+    <body data-site-root="../" data-release-version="{{version}}" data-release-status="{{publicationStatus}}">
+        <a class="skip-link" href="#main">본문으로 이동</a>
+        <header class="site-header" aria-label="주요 탐색">
+            <div class="site-header-inner">
+                <a class="brand-link" href="../" aria-label="알한글 홈"><img src="../../assets/logo/logo-256.png" alt="" width="28" height="28" /><span>알한글</span></a>
+                <nav class="header-actions" aria-label="주요 링크">
+                    <a class="header-link" href="./">업데이트 목록</a>
+                    <a class="header-link" href="../feedback/">문의/제보</a>
+                    <a class="header-link family-header-link" href="https://postmelee.github.io/alhangeul-macos/" aria-label="알한글 macOS 홈페이지로 이동">알한글 for macOS</a>
+                    <a class="header-link" href="https://github.com/postmelee/alhangeul-tauri">GitHub</a>
+                </nav>
+            </div>
+        </header>
+        <main class="updates-page page-enter" id="main">
+            <section class="updates-hero" aria-labelledby="updates-title">
+                <h1 id="updates-title">{{pageTitle}}</h1>
+                {{publicationDate}}
+                <p>{{heroSummary}}</p>
+                <p data-version-status hidden></p>
+                <div class="updates-actions" aria-label="릴리즈 주요 링크">
+                    <a class="page-action-button" href="{{releaseUrl}}">이 버전 다운로드</a>
+                    <a class="page-secondary-link" href="./#latest-download">최신 버전 다운로드</a>
+                </div>
+            </section>
+            <div class="updates-content">
+                <section class="updates-section" aria-labelledby="summary-title">
+                    <h2 id="summary-title">변경 요약</h2>
+                    {{summaryParagraphs}}
+                </section>
+                <section class="updates-section" aria-labelledby="rhwp-title">
+                    <h2 id="rhwp-title">포함된 rhwp 변화</h2>
+                    {{rhwpParagraphs}}
+                </section>
+                <section class="updates-section" aria-labelledby="app-title">
+                    <h2 id="app-title">알한글 앱 변화</h2>
+                    {{appParagraphs}}
+                </section>
+                <section class="updates-section" aria-labelledby="limitations-title">
+                    <h2 id="limitations-title">알려진 한계</h2>
+                    {{limitationsList}}
+                </section>
+                <section class="updates-section" aria-labelledby="installation-title">
+                    <h2 id="installation-title">설치와 업데이트</h2>
+                    {{supportedParagraphs}}
+                    {{installationParagraphs}}
+                    {{updateParagraphs}}
+                    {{downloadLinks}}
+                    <p><a href="{{recordUrl}}">검증 환경과 상세 기록</a> · <a href="{{releaseUrl}}">GitHub Release</a></p>
+                </section>
+            </div>
+        </main>
+        <footer class="site-footer">
+            <div class="site-footer-inner">
+                <div class="footer-brand"><img src="../../assets/logo/logo-256.png" alt="" width="24" height="24" /><span>알한글</span></div>
+                <p>Windows와 Linux용 HWP/HWPX 문서 편집기입니다.</p>
+                <nav aria-label="푸터 링크"><a href="https://github.com/postmelee/alhangeul-tauri/blob/devel/LICENSE" rel="noreferrer">MIT License</a></nav>
+            </div>
+            <p class="family-mobile-note">macOS를 사용하시나요? <a href="https://postmelee.github.io/alhangeul-macos/">알한글 for macOS <span aria-hidden="true">→</span></a></p>
+        </footer>
+    </body>
+</html>
