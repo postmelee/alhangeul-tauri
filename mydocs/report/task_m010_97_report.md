@@ -3,7 +3,7 @@
 GitHub Issue: [#97](https://github.com/postmelee/alhangeul-tauri/issues/97)
 마일스톤: M010
 작성일: 2026-10-03 (Asia/Seoul)
-상태: v0.1.1 GitHub 공개 완료 / #102 규격 적용·PR #101 새 head 검증 준비 / body·Pages 공개와 실제 upgrade 대기
+상태: v0.1.1 GitHub 본문·웹사이트·production 피드 공개 완료 / 실제 Windows·Linux upgrade 계획 보정 대기
 
 ## 작업 요약
 
@@ -11,7 +11,7 @@ GitHub Issue: [#97](https://github.com/postmelee/alhangeul-tauri/issues/97)
 - 목적: 로컬 글꼴을 켰을 때 반복 조회가 전체 catalog를 재변환·순회하던 병목을 제거한다.
 - catalog 소유 인덱스를 한 번 구축하고 alias/sourceKey로 후보만 찾되 현재 provider 가용성은 매번 확인한다.
 - 글꼴 의미·실패 복구·저장 문서·화면을 보존하고 Windows/Linux 실제 설치본으로 개선을 확인했다.
-- 버전 0.1.1 새 파일 6종 수용 및 GitHub Release 11개 asset 공개·원격 재검증을 완료했다. 사이트/manifest는 갱신 PR·Pages 승인 대기다.
+- 버전 0.1.1 새 파일 6종 수용 및 GitHub Release 11개 asset 공개·원격 재검증을 완료했다. 사이트/manifest와 규격 body 공개까지 완료했고 실제 앱 upgrade는 미수용이다.
 - 계획 승인·단계별 후속 “진행해줘” 및 Stage 4 exact-file 보정 승인은 구현계획서에 기록했다.
 
 ## 변경 파일 목록과 영향 범위
@@ -358,3 +358,14 @@ Pages 배포와 0.1.1 production manifest 공개는 아직 실행하지 않았�
 - 생성 GitHub body SHA-256 `43b9a7b31f54ad5fb17cd4902801532d52ff3ecb49f8cc2e200f910ae387b8f7`, short notes 파일 `74457f7c870670f1da49fccd71989fcf7941d221bb22a334cb2ac81edfdaafa1`이다. #102 검토 결과와 같은 bytes다. 기존 body `8465f0...`는 아직 공개된 상태이며 수정 승인 전 보존한다.
 - 웹 수용은 #102의 같은 source/template/script/notes와 같은 후보 data에 대한 1366/390/320px·최신 표시·download/browser 결과를 재사용한다. 실제 built tree 비교 결과를 함께 확인하며 Pages 공개 후에는 새 배포의 HTTP·화면을 다시 확인한다.
 - 공개 body 수정·PR #101 merge·exact Pages SHA 배포는 아직 미실행이며 검토한 산출물의 별도 승인이 필요하다. 실제 production v0.1.0→v0.1.1 NSIS/MSI/AppImage는 아직 미수용이고 다음 harness 계획 승인이 필요하다.
+
+## 2026-10-04 공개 안내·Pages 전달 결과
+
+이 절이 앞선 준비 당시의 미게시 표기보다 최신 상태다. 같은 스레드에서 PR #101 merge·검토한 exact body 적용을 승인했고, 이어 merge된 exact Pages SHA의 공개 요청에 “진행해줘”로 승인했다.
+
+- PR #101은 `fb777a4eeb550a2de572c65c335869973fc6fb7f`로 일반 병합됐다(2026-10-03T21:15:26Z). 갱신 head `f04c5ad873399d916c443c1b5bc52df314fc6336`의 [CI 37153867899](https://github.com/postmelee/alhangeul-tauri/actions/runs/37153867899)에서 Linux·Windows·required 3개 검사 모두 success다. workflow/checkout 후보 `f14267b89a57e5721ad9f807f09895dbdfba117e` 및 실제 merge의 tree `f1519bdc09e44e707f11527fb422f59f9e74eea6`가 같다. Linux automation 1184·upstream 39·Studio, Windows 릴리즈 회귀 124와 PS 검사가 통과했다.
+- GitHub v0.1.1 body를 승인 파일로 수정한 뒤 UTF-8 bytes를 재조회했다. SHA-256 `43b9a7b31f54ad5fb17cd4902801532d52ff3ecb49f8cc2e200f910ae387b8f7`이 정확히 일치한다. Release ID402604603·tag/source·공개 시각·stable 상태·11개 asset 전체 metadata와 tag object는 전후 동일하다. 새 파일 생산·tag 이동·교체는 없다.
+- [Pages run 37154837431](https://github.com/postmelee/alhangeul-tauri/actions/runs/37154837431)은 exact `fb777a4eeb550a2de572c65c335869973fc6fb7f`에서 검사·upload·deploy 모두 success다. 기존 github-pages 환경의 devel 허용 정책을 유지했다. source17/output20, Pages/updater/workflow 계약 94/94(fail0/skip0)가 통과했다.
+- 실제 공개 HTTP 파일 **20/20**을 해당 SHA와 같은 tree의 수용 output과 bytes로 대조했다. 공개 release.json은 v0.1.1 / SHA-256 `87f4544545fd9946f9cf7fbfc4cecffab38cbb31e1e4c290a55e76d1810207cd`, stable.json은 v0.1.1 / SHA-256 `62fae230339497b132be013ec91df7cd83b710b69c9de4f56ffff1c407463728`이다. version·pub_date·notes·세 URL·signature가 수용 output과 동일하다. 이전 0.1.0 피드는 이번 공개에 의해 전환됐다.
+- 실제 공개 홈·업데이트 목록·v0.1.1 안내·feedback을 확인했다. 최신0.1.1·목록1행·최신 다운로드3개·고정 다운로드6개·Linux 플랫폼 선택을 수용했다. 1366px·390px 화면과 320px 홈/버전 안내에 가로 넘침이 없다. 로컬 화면 캡처는 검토 자료이며 장기 저장·앱 updater 수용을 대신하지 않는다.
+- **실제 앱 v0.1.0→v0.1.1 production upgrade는 아직 미수용**이다. 기존 운영 검사는 같은 version의 idle만 확인하고 기존 native 검사는 99.1.x test-only endpoint다. Windows NSIS→NSIS·MSI→MSI, Linux x64 AppImage→AppImage 검증 도구의 계획 보정 승인이 필요하다. #97은 OPEN/진행중을 유지한다.
