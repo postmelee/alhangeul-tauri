@@ -20,7 +20,7 @@ async function detect(entries = lookupCatalog(2)) {
   return fonts;
 }
 
-describe('local-font lookup semantics before indexing', () => {
+describe('local-font lookup semantics', () => {
   it('does not keep a miss from before catalog loading in the same generation', async () => {
     const fonts = await import('./local-fonts');
     const { getFontCatalog } = await import('./local-font-state');
@@ -154,5 +154,59 @@ describe('local-font lookup semantics before indexing', () => {
     bold.postscriptName = 'Changed PostScript';
     bold.aliases.length = 0;
     expect(fonts.resolveLocalFont('Lookup0-Bold')?.postscriptName).toBe('Lookup0-Bold');
+  });
+});
+
+describe('indexed lookup work and ownership', () => {
+  it.each([100, 1000])('does not revisit unrelated entries or rebuild records for %i fonts', async (size) => {
+    const records = await import('./local-font-records');
+    const convert = vi.spyOn(records, 'toLocalFontRecord');
+    const normalize = vi.spyOn(records, 'normalizeFontName');
+    const fonts = await detect(lookupCatalog(size));
+    expect(convert).toHaveBeenCalledTimes(size);
+    const { getFontCatalog } = await import('./local-font-state');
+    const unrelated = getFontCatalog().entries![0];
+    const readPath = vi.fn(() => '/synthetic-fonts/lookup-0.ttf');
+    Object.defineProperty(unrelated, 'path', { get: readPath });
+    convert.mockClear();
+    normalize.mockClear();
+    const pair = size / 2 - 1;
+    for (let index = 0; index < 20; index += 1) {
+      expect(fonts.resolveLocalFont(`Lookup${pair}-Bold`)).not.toBeNull();
+      expect(fonts.resolveLocalFont(`조회 글꼴 ${pair} Bold`)).not.toBeNull();
+      expect(fonts.resolveLocalFont(`Lookup Family ${pair}`)).toBeNull();
+      expect(fonts.resolveLocalFont('Missing Font')).toBeNull();
+    }
+    expect(convert).not.toHaveBeenCalled();
+    expect(normalize).toHaveBeenCalledTimes(80);
+    expect(readPath).not.toHaveBeenCalled();
+  });
+
+  it('counts a face only once when different alias spellings normalize to one key', async () => {
+    const fonts = await detect([
+      lookupFont(0, { aliases: ['Unique Alias', ' UNIQUE  ALIAS ', 'unique alias'] }),
+      lookupFont(1),
+    ]);
+    expect(fonts.resolveLocalFont('unique alias')?.postscriptName).toBe('Lookup0-Regular');
+  });
+
+  it('builds once for coalesced detection and releases the index with its catalog', async () => {
+    const records = await import('./local-font-records');
+    const convert = vi.spyOn(records, 'toLocalFontRecord');
+    invoke.mockResolvedValue(lookupCatalog(2));
+    const fonts = await import('./local-fonts');
+    const { getFontCatalog } = await import('./local-font-state');
+    await Promise.all([fonts.detectLocalFontEntries(), fonts.detectLocalFontEntries()]);
+    expect(convert).toHaveBeenCalledTimes(2);
+    const lookup = getFontCatalog().lookup;
+    expect(lookup).not.toBeNull();
+    await fonts.detectLocalFontEntries();
+    expect(getFontCatalog().lookup).toBe(lookup);
+    expect(convert).toHaveBeenCalledTimes(2);
+    await fonts.detectLocalFontEntries(true);
+    expect(getFontCatalog().lookup).not.toBe(lookup);
+    expect(convert).toHaveBeenCalledTimes(4);
+    await fonts.clearStoredLocalFonts();
+    expect(getFontCatalog()).toMatchObject({ entries: null, lookup: null });
   });
 });

@@ -4,12 +4,13 @@
 GitHub Issue: [#97](https://github.com/postmelee/alhangeul-tauri/issues/97)
 마일스톤: M010
 작성일: 2026-10-03 (Asia/Seoul)
-상태: 구현계획·Stage 1 승인 완료, Stage 1 검증 완료·Stage 2 승인 대기
+상태: 구현계획·Stage 1~2 승인 완료, Stage 2 검증 완료·Stage 3 승인 대기
 
 ## 승인과 기준
 
 작업지시자의 같은 스레드의 “진행해줘”를 수행계획 승인과 본 구현계획 작성 승인으로 기록한다.
 후속 “진행해줘”를 구현계획 및 Stage 1 진입 승인으로 기록한다. Stage 1은 테스트·측정만 추가하며 제품 동작은 변경하지 않는다.
+Stage 1 보고 승인 요청에 대한 후속 “진행해줘”를 Stage 2 진입 승인으로 기록한다.
 기준은 origin/devel `97550085a9334129062266dddb625798bcdc77e2`, 계획 커밋은 `6986c8e2`다.
 배포본 v0.1.0 기준 함수와 실제 소비 경로는 Stage 1에서 다시 확인한다.
 

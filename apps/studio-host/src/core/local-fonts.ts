@@ -7,8 +7,6 @@ import {
 } from './local-font-provider';
 import {
   normalizeFontName,
-  fontEntryKey,
-  toLocalFontRecord,
   uniqueAuthoringFamilies,
   type LocalFontEntry,
   type LocalFontRecord,
@@ -102,22 +100,12 @@ export function getDetectedLocalFonts(): string[] {
 export function getLocalFontRecords(
   _options: GetLocalFontsOptions = {},
 ): LocalFontRecord[] {
-  return (getFontCatalog().entries ?? [])
-    .filter((entry) => entry.sourceKind !== 'file-backed' || !entry.path || !desktopFontUnavailable(entry.path))
-    .map(toLocalFontRecord);
+  return getFontCatalog().lookup?.records() ?? [];
 }
 
 export function resolveLocalFont(fontName: string): LocalFontRecord | null {
   if (isAuthoringBlockedFontFamily(fontName)) return null;
-  const key = normalizeFontName(fontName);
-  if (!key) return null;
-  const records = getLocalFontRecords({ includeRegistered: true }).filter((record) =>
-    record.aliases.some((alias) => normalizeFontName(alias) === key));
-  if (records.length === 1) return records[0];
-  const exact = records.filter((record) => normalizeFontName(record.postscriptName) === key);
-  if (exact.length === 1) return exact[0];
-  const full = records.filter(record => normalizeFontName(record.fullName) === key);
-  return full.length === 1 ? full[0] : null;
+  return getFontCatalog().lookup?.resolve(fontName) ?? null;
 }
 
 export function localFontFaceKey(
@@ -135,9 +123,7 @@ export async function loadLocalFontBytesFor(
     if (started !== desktopFontGeneration()) return new Map();
     const record = resolveLocalFont(fontName);
     if (!record) continue;
-    const entry = (getFontCatalog().entries ?? []).find(
-      (candidate) => fontEntryKey(candidate) === record.sourceKey,
-    );
+    const entry = getFontCatalog().lookup?.entryFor(record.sourceKey);
     if (!entry?.path) continue;
     try {
       const bytes = await readDesktopFontBytes(entry.path);
@@ -208,7 +194,7 @@ export async function ensureLocalFontsAvailable(targetFamilies?: Iterable<string
   for (const requested of requestedNames) {
     const record = resolveLocalFont(requested);
     if (!record) continue;
-    const entry = entries.find(candidate => fontEntryKey(candidate) === record.sourceKey);
+    const entry = getFontCatalog().lookup?.entryFor(record.sourceKey);
     if (entry?.sourceKind !== 'file-backed' || !entry.path) continue;
     try {
       for (const family of new Set([record.family, requested])) {
