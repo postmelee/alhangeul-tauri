@@ -443,3 +443,15 @@ Stage 3 비교 harness 실행 보정 기록:
 - Windows 비교 step의 shell을 기존 release-files의 native install/cleanup과 같은 `powershell`로
   명시한다. Node 자식 powershell.exe까지 같은 호스트의 모듈 환경을 상속하도록 맞춘다.
   기존 native installer/helper 및 제품 파일을 변경하지 않고 보정한 harness만 재실행한다.
+
+
+- 비교 run 37120027655의 Linux job은 기준본 Canvas2D/글꼴 off에서 Abel HWP/HWPX와
+  biz_plan HWP 각각 5회 열기·입력, biz_plan 5회 90-frame 스크롤 표본을 수집했다.
+  이어 form-002.hwpx의 첫 입력에서 canvas 변화 대기가 실패해 complete=false다.
+  이 불완전 결과를 개선 효과나 단계 완료 근거로 쓰지 않는다.
+- 표가 문서 앞부분을 채우는 공개 form fixture의 입력 준비에서 첫 페이지의 보이는 label 셀을
+  WebDriver pointer로 클릭하고 편집 입력 활성화를 확인한다. 위치 준비는 측정 clock 밖이며
+  기준본·개선본에 동일하게 적용한다. 사적인 editor API나 제품 개발용 명령을 추가하지 않는다.
+  저장 bytes의 marker 확인과 실제 변경된 canvas 확인 gate를 유지한다.
+- Windows PDF run 37119725535, Linux full run 37119720929 및 Linux local-fonts run
+  37119716779는 모두 success다. 원시 PDF·스크린샷을 읽어 수용 범위와 제한을 확인한다.

@@ -5,7 +5,7 @@ import { browser, $, expect } from '@wdio/globals';
 import { HwpDocument, initSync } from '../../../apps/studio-host/vendor/rhwp-core/rhwp.js';
 import { installFixtureFont, verifyFixtures } from '../local-fonts/fixture.mjs';
 import { choose, rpc, settings, snapshot, output } from '../local-fonts/ui.ts';
-import { measureInput, measureOpen, measureScroll, prepareDocument, startLongTaskObservation, finishLongTaskObservation } from '../local-fonts/performance.ts';
+import { measureInput, measureOpen, measureScroll, prepareDocument, focusFirstFormCell, startLongTaskObservation, finishLongTaskObservation } from '../local-fonts/performance.ts';
 import { resolveDocumentFixtures } from '../support/document-fixture.ts';
 import { waitForInitialDesktopReady } from '../support/document-ux.ts';
 import { readGuiHarnessInputs } from '../wdio.shared.conf.ts';
@@ -109,6 +109,7 @@ async function observeDocument(document: { path: string; local: boolean; scroll:
   const samples = [];
   for (let repetition = 0; repetition < 5; repetition++) {
     const open = await measureOpen();
+    if (name === 'form-002.hwpx') await focusFirstFormCell();
     const input = await measureInput(marker);
     const scroll = document.scroll ? await measureScroll() : null;
     samples.push({ repetition, open, input, scroll });

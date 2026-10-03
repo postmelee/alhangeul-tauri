@@ -40,6 +40,26 @@ export async function measureOpen(): Promise<OpenTiming> {
   });
 }
 
+// The public form fixture starts in a table. Click its visible first label cell
+// before measuring input; loadFile's initial body cursor need not be visible.
+export async function focusFirstFormCell(): Promise<void> {
+  const point = await browser.execute(() => {
+    const page = document.querySelector<HTMLCanvasElement>('#scroll-content > canvas[data-rhwp-rendered-zoom]');
+    if (!page) throw new Error('missing form canvas');
+    const box = page.getBoundingClientRect();
+    return { x: Math.floor(box.left + box.width * 0.2), y: Math.floor(box.top + box.height * 0.1) };
+  });
+  await browser.performActions([{ type: 'pointer', id: 'font-performance-pointer',
+    parameters: { pointerType: 'mouse' }, actions: [
+      { type: 'pointerMove', origin: 'viewport', duration: 0, ...point },
+      { type: 'pointerDown', button: 0 }, { type: 'pointerUp', button: 0 },
+    ] }]);
+  await browser.releaseActions();
+  await browser.waitUntil(async () => browser.execute(() =>
+    document.activeElement?.getAttribute('aria-label') === '문서 편집 입력'),
+  { timeout: 5000, timeoutMsg: 'form cell click did not activate editor input' });
+}
+
 // Measures editor input to changed page pixels plus a subsequent animation frame.
 // This is a canvas observation, not a claim about physical display presentation.
 export async function measureInput(text: string): Promise<InputTiming> {
