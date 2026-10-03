@@ -3,7 +3,7 @@
 GitHub Issue: [#97](https://github.com/postmelee/alhangeul-tauri/issues/97)
 마일스톤: M010
 작성일: 2026-10-03 (Asia/Seoul)
-상태: Stage 1–4·main 승격 완료, main 후보 5종 수용 통과·arm64 재실행 진단 보정 진행 중 (미게시)
+상태: Stage 1–4·main 승격 및 새 파일 6종 수용 완료, arm64 harness 보정 완료·공개 승인 대기 (미게시)
 
 ## 작업 요약
 
@@ -209,7 +209,7 @@ PDF 5개/29페이지의 A4 크기·비어 있지 않은 내용·제목과 29개 
 | `alhangeul-updater-release-inventory.json` | 2606 | `8f594523bca49993ba3addc51346932ce0018b29533cf237987234f96eac9b82` | 37130399389 |
 | `SHA256SUMS` | 976 | `9e3bac3b575f8d074cae21a68dfcaa88e5b6205873996c3d0c4a379640745a44` | 로컬 exact 10행 생성 |
 
-승인용 사용자 notes (UTF-8 파일 SHA-256 `e5457533cad47fe33bb47e7b4f2dacf996b090fde148bbbb5805d42075a18ab6`):
+승인용 사용자 notes (UTF-8 파일 SHA-256 `8465f0ddc61efe25799c4ccb192ce6fae49118bb194bf97ec516645a0d126e6a`):
 
 Alhangeul 0.1.1은 로컬 글꼴을 사용할 때 문서 열기와 편집이 느려지는 조회 병목을 개선합니다. 글꼴 목록의 이름과 파일 식별자를 한 번 인덱싱하고 요청한 글꼴의 후보만 조회하도록 바꿨습니다. 재감지와 글꼴 파일 읽기 실패·복구 시의 기존 동작을 유지합니다.
 
@@ -217,7 +217,7 @@ Alhangeul 0.1.1은 로컬 글꼴을 사용할 때 문서 열기와 편집이 느
 
 Windows x64 NSIS/MSI, Linux x64 AppImage/DEB/RPM, Linux arm64 DEB를 제공합니다. MSI·NSIS·AppImage의 .sig는 updater Minisign 서명이며 Windows Authenticode 서명과는 다릅니다. SHA256SUMS로 파일 무결성을 확인할 수 있습니다.
 
-알려진 제한: 일부 Windows NSIS 사용자별 설치에서 Shell 썸네일 생성 문제가 남습니다. MSI 강제 재설치의 재부팅 후 검증은 완료하지 않았습니다. 사용자 Wayland·하이브리드 GPU 환경과 물리 프린터는 이번 성능 검증에 포함하지 않았습니다. 문서 레이아웃은 한컴과 완전한 동등성을 보장하지 않습니다.
+알려진 제한: 일부 Windows NSIS 사용자별 설치에서 Shell 썸네일 생성 문제가 남으며 MSI 설치본이 대안입니다. MSI 강제 재설치의 재부팅 후 검증은 완료하지 않았습니다. 사용자 Wayland·하이브리드 GPU 환경과 물리 프린터는 이번 성능 검증에 포함하지 않았습니다. 문서 레이아웃은 한컴과 완전한 동등성을 보장하지 않습니다.
 
 
 ### main RPM 수용 및 arm64 최초 실패
@@ -244,7 +244,7 @@ DRI3 경고만으로 그래픽 원인을 확정하지 않는다. v0.1.0 대조 �
 arm64 종료·재시작 process/driver 진단 보정안은 기존 구현계획서에 기록했고 아직 소스를 수정하지 않았다.
 
 
-### 현재 수용 상태와 다음 승인 요청
+### 진단 보정 승인 요청 당시 수용 상태
 
 v0.1.0 arm64 대조 37134870041은 success다. archive 11278097614 / digest
 `sha256:e14446159e74771d9fcde312ba216d7bcf65e54019b06e66219ee331e578982f`, source
@@ -256,3 +256,47 @@ fc3cad15682f35723ab6558d1301e9096f7eec67 / producer 36320353815 / harness ccd592
 11개 asset 준비와 해시·서명 대조는 완료했으나 Gate 3 전체는 미통과이므로 공개 승인 요청 단계가 아니다.
 기존 구현계획서의 arm64 종료·재실행 process/driver 진단 보정 범위 승인을 요청한다.
 source 변경은 미실행이며 v0.1.1 tag/Release·Pages는 미게시, #97 OPEN을 유지한다.
+
+
+### arm64 재실행 보정과 main 6종 수용 완료
+
+캡처를 기다리던 진단 run 37135625721·37135906830은 통과했지만 정상 경로의 캡처 대기를
+제거한 37136290009는 HWPX 저장 뒤 세 번째 POST /session timeout으로 다시 실패했다.
+archive 11278349549 / digest `sha256:910becf75a07e197c8f2ce70d65a70aeb2e720e6356bc3ea7e8f4acf0e3d6447`,
+package gui/exit 1과 빈 실패 화면을 보존했다. 실패 120초 동안 앱은 없고 두 driver와 listener만 남았다.
+관찰 타이밍에 따른 성공을 해결 근거로 쓰지 않았다.
+
+WebdriverIO 9.29.1의 reloadSession은 DELETE 응답 뒤 POST를 보내며 DELETE 오류를 억제한다.
+검증 경로에만 현재 UID·단일 tauri-driver→WebKitWebDriver→Alhangeul의 PID/시작 시각을 고정하고
+DELETE 뒤 해당 프로세스 소멸을 기다리는 guard를 추가했다. PID 재사용을 구분하며 guard 실패도
+reload 뒤 다시 확인한다. 120초 timeout·retry/skip 없음, 실제 파일·문서 gate를 유지했다.
+제품 runtime과 공개 후보 bytes는 바꾸지 않았다.
+
+| 보정 수용 run | evidence archive | archive digest SHA-256 | 실제 결과 |
+|---|---:|---|---|
+| [37137612562](https://github.com/postmelee/alhangeul-tauri/actions/runs/37137612562) | 11279326174 | `eb02c3db05577a8227dbbdc0599afbb388dcdcd026e9712eebdaca2f1852a704` | success / complete / exit 0 |
+| [37137864838](https://github.com/postmelee/alhangeul-tauri/actions/runs/37137864838) | 11279761182 | `5808fd9a25a5d9517a7f67c103abd0512134328a0292efa6e6848d7767190a74` | success / complete / exit 0 |
+
+두 run의 harness는 `737e650fce87d0895914a5868026715986287b71`, product main은
+`96e89e900415ee9e1e942b5c01c833dea3415e86`, producer는 37130396817이다.
+총 8회 모두 DELETE 응답 시 app PID가 남았고 소멸까지 21.17–96.33ms가 걸렸다.
+종료 API 반환과 실제 앱 종료가 다르다는 harness 경계를 확인하고 동기화했다. 최초 실패의
+짧은 신규 process 충돌까지 직접 포착한 것은 아니므로 제품 프로세스 원인까지 단정하지 않는다.
+
+실제 non-root aarch64 / 설치 arm64 0.1.1 / HWP·HWPX 각 저장 marker·file hash/pinned WASM
+및 재열기 화면 두 장을 run별 확인했다. 마지막 cleanup에는 app/driver/4444·4445 listener가 없다.
+[fast CI 37137615232](https://github.com/postmelee/alhangeul-tauri/actions/runs/37137615232)는
+자동화 1,050개·upstream 39개·Studio 251개, GUI typecheck·Studio build·Windows PowerShell 계약 success다.
+
+현재 main 새 파일 **NSIS/MSI/AppImage/DEB x64/RPM x64/DEB arm64 6종 수용 완료**다.
+서명 후보 3종과 production 설정·키·inventory 대조는 앞 절의 근거를 사용한다. 기존 NSIS raw
+썸네일 미수용·forced MSI post-reboot 미검증, 사용자 Wayland/GPU·물리 프린터 제한은 유지한다.
+일반 MSI의 raw passed/exit 0를 대안 근거로 안내하며 모든 PC의 썸네일 성공을 보장하지 않는다.
+
+### Gate 4 공개 승인 요청
+
+- stable **v0.1.1**, tag resolved main **96e89e900415ee9e1e942b5c01c833dea3415e86**.
+- CLI 인증 주체 **postmelee**, Actions 환경 승인과 구분한 maintainer CLI 경로. 기존 tag/Release는 없음을 조회했다.
+- 위 고정 표의 **11개 asset 전체** 및 위 사용자 notes. 기존 NSIS 제한·MSI 대안과 재부팅 후 미검증을 포함한 범위 판단을 함께 요청한다.
+- annotated tag 새 생성 → 동일 bytes draft upload → 11개 파일·서명·notes 원격 read-back → stable non-draft/non-prerelease/latest 공개 → 다시 read-back. 다른 파일·미결정 상태에서는 게시하지 않는다.
+- 아직 tag/draft/public/Pages 미실행이다. 보정 PR merge와 Gate 4 실행 승인을 요청하며, Pages·production manifest 갱신은 공개 read-back 후 Gate 5 승인으로 진행한다. #97 OPEN·오늘할일 진행중을 유지한다.

@@ -549,7 +549,7 @@ main native 후보 확정 및 설치 수용 진행 (2026-10-04):
 
 - full native 37130396817은 최종 success다. archive digest·original ZIP inventory 경로/size/hash·installer bytes를 대조하고 main 후보 JSON을 signed 3종 및 같은 main RPM/arm64 5항목으로 확장했다. x64 DEB는 같은 native inventory로 고정한다.
 - signed 새 파일 수용 37132406842는 3종 success이며 actual install/cleanup exit 0·version 0.1.1·정책 복원·문서 hash/pinned WASM marker·재열기 6화면을 독립 확인했다.
-- x64 DEB full GUI 37132752100은 success다. 원시 9 scenario/PDF/인쇄 복원 증거를 확인하고 RPM KVM·arm64 실제 설치 수용을 이어간다. public tag/Release·Pages는 아직 미실행이다.
+- x64 DEB full GUI 37132752100은 success다. 원시 8 scenario·69 파일 참조·29쪽 PDF/인쇄 복원 증거를 확인하고 RPM KVM·arm64 실제 설치 수용을 이어간다. public tag/Release·Pages는 아직 미실행이다.
 - raw NSIS 썸네일 실패/forced MSI post-reboot 미검증 제한은 새 main에서도 유지한다.
 
 
@@ -593,3 +593,12 @@ arm64 타이밍 분리 실패와 종료 조건 보정:
 - 16:20:22–16:22:22 UTC에는 앱 PID가 없고 tauri-driver 5642 / WebKitWebDriver 5643과 두 listener만 남았다. 실패 화면도 빈 desktop이다. 1초 sampling 사이의 짧은 신규 프로세스 실행/종료는 배제할 수 없으며 GPU 원인 또는 제품 회귀로 단정하지 않는다.
 - WebdriverIO 9.29.1의 reloadSession은 DELETE 반환 직후 POST를 보내며 DELETE 오류를 내부에서 억제한다. 실제 앱 프로세스 종료와 API 반환의 차이를 확인하기 위해 arm64 검증 경로에만 PID 종료 조건을 연결한다. tests/gui/support/linux-session-lifecycle.mjs 및 선언 파일은 현재 UID의 tauri-driver→WebKitWebDriver→Alhangeul 관계와 /proc 시작 시각을 고정하고, DELETE 후 그 프로세스의 소멸을 기존 120초 한도 내에서 기다린다. 임의 고정 delay, kill, timeout 증가, retry/skip은 없다.
 - DELETE 오류 억제로 검증 실패가 성공으로 바뀌지 않도록 reload 뒤에도 guard 오류를 확인한다. 타이밍 증거는 메모리에 모은 뒤 새 세션 결과가 나온 후 기록한다. tests/ci-release-session-lifecycle.test.mjs는 PID 소유 범위, PID 재사용, 종료 대기 순서, timeout 및 억제된 오류의 실패 보존을 플랫폼 중립으로 검증한다. 제품 source/installer bytes는 그대로 유지한다.
+
+
+arm64 종료 조건 보정 수용 완료 (2026-10-04):
+
+- harness 737e650fce87d0895914a5868026715986287b71, product main 96e89e900415ee9e1e942b5c01c833dea3415e86 / native producer 37130396817을 구분한다. 동일 arm64 DEB hash 3e29375bf7f824bdc84ae3f1dbff5b5cbeacae5ae694fa64d30c423a5be58859를 유지했다.
+- 37137612562·37137864838 두 별도 runner에서 모두 success다. 총 8회 DELETE 응답 시 기존 app PID가 아직 존재했고 이후 실제 소멸까지 21.17–96.33ms를 기다렸다. 종료 응답만으로 재실행 readiness를 판단하던 harness 경계를 보정했다. 최초 실패에서 짧은 신규 app의 충돌/종료를 직접 포착한 것은 아니므로 제품 실행 원인까지 단정하지 않는다.
+- 두 run 모두 실제 non-root aarch64 / 설치 arm64 0.1.1 / phase complete exit 0, HWP/HWPX 2 scenario 및 저장 4참조의 hash/pinned WASM marker·재열기 2화면을 독립 확인했다. 최종 cleanup snapshot에 app/driver/4444·4445 listener가 없다. 캡처 대기나 임의 고정 delay 없이 실제 종료 조건을 사용하고 120초 timeout·retry/skip 없음은 유지했다.
+- fast CI 37137615232: 자동화 1,050개·upstream 39개·Studio 251개·GUI typecheck·Studio build·Windows PowerShell 계약 모두 success다. 이 fast 결과는 이미 완료한 main native full/6종 파일 수용을 대신하지 않는다.
+- 확정 main 새 파일 6종 수용을 완료했다. 공개 11개 전체 hash/checksum 및 notes를 다시 대조했으며 CLI postmelee·main exact SHA·v0.1.1 local/remote tag와 Release 부재를 확인했다. 태그 생성·동일 bytes draft upload/read-back·stable publish/read-back을 묶은 Gate 4 승인과 보정 PR merge 승인을 요청한다. Pages/manifest는 공개 read-back 후 별도 Gate 5를 따른다. #97과 오늘할일 공개 전달 상태는 진행중이다.
