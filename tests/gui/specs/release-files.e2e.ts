@@ -85,10 +85,10 @@ async function dialog(mode: 'Open' | 'Save', target: string, command: string) {
 
 async function restartSession() {
   const label = `restart-${++restartIndex}`;
-  await captureRestart(`${label}-before`);
+  console.info(`RESTART_CHECKPOINT ${new Date().toISOString()} ${label}-before`);
   try {
     await browser.reloadSession();
-    await captureRestart(`${label}-after`);
+    console.info(`RESTART_CHECKPOINT ${new Date().toISOString()} ${label}-after`);
   } catch (error) {
     await captureRestart(`${label}-failed`);
     throw error;

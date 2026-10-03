@@ -579,3 +579,9 @@ arm64 진단 보정 승인·착수 (2026-10-04):
 - 위 보정안에 대한 작업지시자의 후속 “진행해줘”를 진단 추가와 확인된 harness 종료·재시작 결함 보정 범위 승인으로 기록한다. 동일 main bytes, 120초 timeout, retry/skip 없는 실제 문서·재실행 수용 기준을 유지한다.
 - 기존 GUI session shell에서 제한된 process/port/resource 상태를 주기적으로 수집하고 재실행 전/후/실패 checkpoint 및 독립 desktop screenshot을 보존한다. WDIO stdout/stderr를 append console 파일에도 남겨 세션 교체 시 logger 파일 덮어쓰기와 구분한다. 전체 환경·개인 문서 내용은 수집하지 않는다.
 - 진단만 추가한 harness로 먼저 같은 arm64 후보를 실행하고 원시 결과에 따라 다음 변경을 결정한다.
+
+
+arm64 진단 결과와 관찰 영향 분리:
+
+- 진단 harness 68dcda8c / 동일 main 파일 수용 37135625721·37135906830은 success다. 첫 run의 4회 restart는 app PID 6778→7042→7192→7391→7544로 바뀌고 종료 시 app/driver 및 4444/4445 listener가 없다. 두 문서 file hash/pinned WASM marker·재열기 화면을 확인했다. 최초 실패가 해결됐다고 단정하지 않는다.
+- 재실행 직전/후 외부 screenshot/probe 명령을 기다리는 것이 관찰 타이밍을 바꿀 가능성을 분리한다. 정상 경로는 동기 timestamp marker와 기존 reloadSession 호출만 두고, 독립 background process monitor·append console·실패 시 snapshot을 유지하는 harness로 동일 bytes를 추가 확인한다. 임의 delay/timeout·retry/skip 추가는 없다.
