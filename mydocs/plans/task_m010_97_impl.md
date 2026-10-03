@@ -4,7 +4,7 @@
 GitHub Issue: [#97](https://github.com/postmelee/alhangeul-tauri/issues/97)
 마일스톤: M010
 작성일: 2026-10-03 (Asia/Seoul)
-상태: Stage 3·Rust 1.99 보정 승인 완료, 새 후보 전체 검증 진행 중
+상태: Stage 3 실제 성능·기능 검증 완료, Stage 4 진입 승인 대기
 
 ## 승인과 기준
 
@@ -465,3 +465,17 @@ Stage 3 비교 harness 실행 보정 기록:
 - 승인된 harness 디버깅 범위에서 초기 앱 준비 완료 후 창 크기를 지정하고 실제 viewport를
   대기한다. 매 renderer/설정 configuration의 실제 viewport도 1280×900으로 검증해 불일치를
   즉시 실패시킨다. 동일 exact product bytes로 비교를 재실행하며 제품 코드는 바꾸지 않는다.
+
+
+Stage 3 최종 수용 기록:
+
+- 비교 run 37121708256 / attempt 1, harness 8df43960d0b2d39b278b9566d9e294e9ba86c47a는
+  Windows/Linux 모두 success다. 기준·개선의 실제 viewport는 모든 조건에서 1280×900이다.
+- 제품 source ef54ae9dd1de17a208eff6986335d23b2e7ff86b와 producer 37116980444는 유지했다.
+  두 OS의 기준/개선 16개 첫 페이지 쌍 모두 byte-identical이며 실제 face·입력 본문을 보존했다.
+- Windows Canvas2D/on HWPX 열기 중앙값 18,255→515.7ms, 입력 6,951.6→106.6ms,
+  Linux Canvas2D/on HWPX 열기 2,504→636ms와 HWP 입력 1,814→165ms를 확인했다.
+- 같은 source의 Linux local-fonts/full GUI 및 Windows PDF 증거와 원시 페이지를 읽었다.
+  GUI 계약 23·자동화 1,031·fixture 3·제품 경계·typecheck·diff 검증도 통과했다.
+- 상세 source/파일/표본/실패 이력/설치 진단 제한은 task_m010_97_stage3.md에 기록한다.
+  Stage 3은 완료했으며 Stage 4 및 위 exact-file 입력화 보정안은 계속 승인 대기다.
