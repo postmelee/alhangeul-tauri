@@ -2,6 +2,12 @@ name: Alhangeul final Linux package acceptance
 on:
   workflow_call:
     inputs:
+      candidate_path:
+        type: string
+        default: ""
+      arm64_only:
+        type: boolean
+        default: false
       rpm_only:
         type: boolean
         default: false
@@ -18,11 +24,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include: ${{ fromJSON(inputs.rpm_only && '[{"kind":"rpm","os":"ubuntu-22.04"}]' || '[{"kind":"rpm","os":"ubuntu-22.04"},{"kind":"arm64","os":"ubuntu-24.04-arm"}]') }}
+        include: ${{ fromJSON(inputs.rpm_only && '[{"kind":"rpm","os":"ubuntu-22.04"}]' || inputs.arm64_only && '[{"kind":"arm64","os":"ubuntu-24.04-arm"}]' || '[{"kind":"rpm","os":"ubuntu-22.04"},{"kind":"arm64","os":"ubuntu-24.04-arm"}]') }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 50
     env:
       CANDIDATE_KIND: ${{ matrix.kind }}
+      RELEASE_CANDIDATE_PATH: ${{ inputs.candidate_path }}
       ALHANGEUL_GUI_BUILD_REF: fc3cad15682f35723ab6558d1301e9096f7eec67
       ALHANGEUL_GUI_NATIVE_RUN_ID: '36320353815'
       ALHANGEUL_GUI_APP_VERSION: '0.1.0'

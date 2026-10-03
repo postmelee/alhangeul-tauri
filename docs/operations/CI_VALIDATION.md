@@ -5,6 +5,14 @@
 외부 Action 고정·갱신은 [Action 의존성 정책](ACTION_DEPENDENCIES.md)을 따른다.
 `pnpm run check:action-pins`와 `test:automation`은 workflow/composite의 전체 외부 참조를 검사한다.
 
+## PR 필수 검증
+
+`devel` 대상 PR은 [PR acceptance](../../.github/workflows/pr-acceptance.yml)가 자동으로 기존
+Node/Studio·Windows PS fast를 실행한다. draft와 문서-only PR도 검사하며 단일 check
+`Alhangeul PR required`는 실패·취소·누락·skip을 거부한다. merge candidate SHA와 committed
+rhwp lock/HEAD/index/submodule 정합성을 확인한다. fast 성공은 native/package/GUI 수용이 아니다.
+추가 수용은 아래 profile/task 계획에 따른다. 실제 보호·리뷰·복구는 [devel 보호 정책](BRANCH_PROTECTION.md)을 따른다.
+
 ## 계층과 책임
 
 | 계층 | 입력 | 결과/소유권 | 대체하지 못하는 것 |

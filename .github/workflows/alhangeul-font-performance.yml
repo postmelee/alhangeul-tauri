@@ -1,0 +1,155 @@
+name: Alhangeul installed font performance
+on:
+  workflow_call:
+    inputs:
+      build_ref:
+        required: true
+        type: string
+      native_run_id:
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      build_ref:
+        description: Exact improved product SHA from successful full CI.
+        required: true
+        type: string
+      native_run_id:
+        description: Successful ci.yml producer run ID.
+        required: true
+        type: string
+permissions:
+  contents: read
+  actions: read
+env:
+  GIT_CONFIG_COUNT: '1'
+  GIT_CONFIG_KEY_0: core.autocrlf
+  GIT_CONFIG_VALUE_0: 'false'
+jobs:
+  compare:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows-x64
+            os: windows-2025
+          - platform: linux-x64
+            os: ubuntu-22.04
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 55
+    env:
+      FONT_PERFORMANCE_BUILD_REF: ${{ inputs.build_ref }}
+      FONT_PERFORMANCE_RUN_ID: ${{ inputs.native_run_id }}
+      FONT_PERFORMANCE_PLATFORM: ${{ matrix.platform }}
+      NO_AT_BRIDGE: '0'
+      GTK_MODULES: gail:atk-bridge
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.workflow_sha }}
+          fetch-depth: 0
+          submodules: true
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Install frozen harness dependencies
+        shell: bash
+        run: |
+          corepack enable
+          pnpm install --frozen-lockfile
+      - name: Verify both exact product archives and files
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/ci/font-performance-candidate.mjs
+      - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
+      - name: Install existing driver
+        shell: bash
+        run: cargo install tauri-driver --version 2.0.6 --locked
+      - name: Install Linux GUI dependencies
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libfuse2 at-spi2-core dbus-x11 fonts-noto-cjk fonts-unfonts-core \
+            libgtk-3-0 libwebkit2gtk-4.1-0 openbox webkit2gtk-driver xvfb
+          test -c /dev/fuse
+      - name: Prepare environment evidence
+        shell: bash
+        run: |
+          node --input-type=module <<'JS'
+          import {writeFileSync} from 'node:fs';
+          import {cpus, release, totalmem} from 'node:os';
+          writeFileSync('font-performance-evidence/environment.json', JSON.stringify({
+            platform:process.platform, architecture:process.arch, kernel:release(),
+            cpu:cpus()[0].model, logicalCpus:cpus().length, memoryBytes:totalmem(),
+            node:process.version, harnessSha:process.env.GITHUB_SHA,
+            productExecutionOrder:['baseline','improved'],
+          }, null, 2));
+          JS
+          pnpm --version >font-performance-evidence/pnpm.txt
+          cargo install --list >font-performance-evidence/cargo-installed.txt
+          grep -Fx 'tauri-driver v2.0.6:' font-performance-evidence/cargo-installed.txt \
+            >font-performance-evidence/driver.txt
+          if [[ "$RUNNER_OS" == Linux ]]; then
+            dpkg-query -W libwebkit2gtk-4.1-0 webkit2gtk-driver fonts-noto-cjk >font-performance-evidence/linux-packages.txt
+            fc-list >font-performance-evidence/system-fonts.txt
+          fi
+      - name: Configure existing WebView2 automation policy
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: >-
+          ./scripts/updater/windows-webview2-automation-policy.ps1
+          -Phase Setup -OutputDirectory font-performance-evidence
+      - name: Compare installed Windows products
+        id: windows-gui
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: node scripts/ci/run-font-performance.mjs
+      - name: Compare original Linux AppImages
+        id: linux-gui
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          xvfb-run --auto-servernum --server-args='-screen 0 1920x1080x24 -nolisten tcp' \
+            dbus-run-session -- bash -euo pipefail -c '
+              openbox >font-performance-evidence/openbox.log 2>&1 &
+              wm_pid=$!
+              trap "kill $wm_pid 2>/dev/null || true" EXIT
+              node scripts/ci/run-font-performance.mjs
+            '
+      - name: Restore existing WebView2 automation policy
+        id: restore-policy
+        if: always() && runner.os == 'Windows'
+        shell: pwsh
+        run: >-
+          ./scripts/updater/windows-webview2-automation-policy.ps1
+          -Phase Cleanup -OutputDirectory font-performance-evidence
+      - name: Upload comparison evidence
+        id: upload
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: alhangeul-font-performance-${{ matrix.platform }}-${{ github.run_id }}
+          path: font-performance-evidence/**
+          if-no-files-found: error
+          retention-days: 14
+      - name: Require both products, GUI, cleanup and evidence
+        if: always()
+        shell: bash
+        env:
+          GUI_OUTCOME: ${{ runner.os == 'Windows' && steps.windows-gui.outcome || steps.linux-gui.outcome }}
+          RESTORE_OUTCOME: ${{ steps.restore-policy.outcome }}
+          UPLOAD_OUTCOME: ${{ steps.upload.outcome }}
+        run: |
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          import {readFileSync} from 'node:fs';
+          assert.equal(process.env.GUI_OUTCOME,'success');
+          assert.equal(process.env.UPLOAD_OUTCOME,'success');
+          if(process.platform==='win32') assert.equal(process.env.RESTORE_OUTCOME,'success');
+          const outcomes=JSON.parse(readFileSync('font-performance-evidence/outcomes.json'));
+          assert.deepEqual(outcomes.map(o=>o.label),['baseline','improved']);
+          assert.ok(outcomes.every(o=>o.installed&&o.gui&&o.cleaned));
+          JS

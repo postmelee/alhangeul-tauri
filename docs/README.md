@@ -7,6 +7,7 @@
 - 설치·사용: [사용자 README](../README.md), [다운로드](https://postmelee.github.io/alhangeul-tauri/), [설치 안내·업데이트](https://postmelee.github.io/alhangeul-tauri/updates/)
 - 문의·참여: [문의·제보](https://postmelee.github.io/alhangeul-tauri/feedback/), [기여 안내](../CONTRIBUTING.md), [행동 강령](../CODE_OF_CONDUCT.md), [보안 정책](../SECURITY.md)
 - 개발: [개발 안내](DEVELOPMENT.md), [upstream 경계](architecture/UPSTREAM.md)
+- PR 검증·브랜치 보호: [devel 보호 정책](operations/BRANCH_PROTECTION.md)
 - Action 의존성 갱신·고정: [Action 정책](operations/ACTION_DEPENDENCIES.md)
 - native UI·Actions 테스트 작성/진단: [Native UI 테스트 가이드](operations/NATIVE_UI_TESTING.md)
 - 릴리즈 준비: [정책](operations/DESKTOP_RELEASE.md) → [실행 가이드](operations/PUBLIC_RELEASE_RUNBOOK.md) → [최소 체크리스트](operations/RELEASE_CHECKLIST.md)
