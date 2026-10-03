@@ -12,7 +12,7 @@ cat /etc/os-release > "$ALHANGEUL_GUI_OUTPUT_DIR/package-os-release.txt"
 phase=install
 dnf install -y "$INSTALLER_PATH" 2>&1 | tee "$ALHANGEUL_GUI_OUTPUT_DIR/install.log"
 package_name=$(rpm -qp --qf '%{NAME}' "$INSTALLER_PATH")
-test "$(rpm -q --qf '%{ARCH} %{VERSION}-%{RELEASE}' "$package_name")" = 'x86_64 0.1.0-1'
+test "$(rpm -q --qf '%{ARCH} %{VERSION}-%{RELEASE}' "$package_name")" = "x86_64 $ALHANGEUL_GUI_APP_VERSION-1"
 rpm -q --qf '%{NAME} %{ARCH} %{VERSION}-%{RELEASE}\n' "$package_name" > "$ALHANGEUL_GUI_OUTPUT_DIR/installed-package.txt"
 rpm -qa | sort > "$ALHANGEUL_GUI_OUTPUT_DIR/packages.txt"
 phase=gui-dependencies

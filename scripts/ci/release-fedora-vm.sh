@@ -85,10 +85,14 @@ mkdir -p "$vm_root/payload"
 cp "$(command -v node)" "$vm_root/payload/node"
 cp "$HOME/.cargo/bin/tauri-driver" "$vm_root/payload/tauri-driver"
 cp "$INSTALLER_PATH" "$vm_root/payload/candidate.rpm"
-printf '6c87ba0321f6a9c8ca5068915217064f8c839cabaf3a8d60451df8f3e496308c  candidate.rpm\n' \
-  > "$vm_root/payload/candidate.sha256"
+cp candidate-evidence/identity.json "$vm_root/payload/identity.json"
+read -r candidate_source candidate_run candidate_version candidate_sha < <(
+  node scripts/ci/release-candidate-input.mjs candidate-evidence/identity.json
+)
+printf '%s  candidate.rpm\n' "$candidate_sha" > "$vm_root/payload/candidate.sha256"
+(cd "$vm_root/payload" && sha256sum --check candidate.sha256)
 tar -cf - package.json node_modules tests/gui scripts/ci/release-fedora-vm-guest.sh \
-  scripts/ci/release-fedora-vm-session.sh apps/studio-host/vendor/rhwp-core \
+  scripts/ci/release-fedora-vm-session.sh scripts/ci/release-candidate-input.mjs apps/studio-host/vendor/rhwp-core \
   third_party/rhwp/samples/biz_plan.hwp third_party/rhwp/samples/hwpx/form-002.hwpx \
   | tar -xf - -C "$vm_root/payload"
 tar -C "$vm_root/payload" -czf "$vm_root/payload.tar.gz" .

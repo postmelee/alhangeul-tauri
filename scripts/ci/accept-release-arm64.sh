@@ -12,7 +12,7 @@ phase=install
 sudo apt-get update
 sudo apt-get install -y "$INSTALLER_PATH" 2>&1 | tee "$ALHANGEUL_GUI_OUTPUT_DIR/install.log"
 package_name=$(dpkg-deb -f "$INSTALLER_PATH" Package)
-test "$(dpkg-query -W -f='${Architecture} ${Version}' "$package_name")" = 'arm64 0.1.0'
+test "$(dpkg-query -W -f='${Architecture} ${Version}' "$package_name")" = "arm64 $ALHANGEUL_GUI_APP_VERSION"
 dpkg-query -W -f='${Package} ${Architecture} ${Version}\n' "$package_name" > "$ALHANGEUL_GUI_OUTPUT_DIR/installed-package.txt"
 dpkg-query -W > "$ALHANGEUL_GUI_OUTPUT_DIR/packages.txt"
 phase=gui-dependencies

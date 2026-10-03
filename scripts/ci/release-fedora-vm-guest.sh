@@ -18,10 +18,13 @@ cat /etc/os-release > evidence/package-os-release.txt
 uname -a > evidence/kernel.txt
 systemd-detect-virt > evidence/virtualization.txt
 sha256sum --check candidate.sha256 > evidence/rpm-transfer-verification.txt
+read -r ALHANGEUL_GUI_BUILD_REF ALHANGEUL_GUI_NATIVE_RUN_ID ALHANGEUL_GUI_APP_VERSION candidate_sha < <(
+  ./node scripts/ci/release-candidate-input.mjs identity.json
+)
 phase=install
 dnf install -y ./candidate.rpm 2>&1 | tee evidence/install.log
 package_name=$(rpm -qp --qf '%{NAME}' candidate.rpm)
-test "$(rpm -q --qf '%{ARCH} %{VERSION}-%{RELEASE}' "$package_name")" = 'x86_64 0.1.0-1'
+test "$(rpm -q --qf '%{ARCH} %{VERSION}-%{RELEASE}' "$package_name")" = "x86_64 $ALHANGEUL_GUI_APP_VERSION-1"
 rpm -q --qf '%{NAME} %{ARCH} %{VERSION}-%{RELEASE}\n' "$package_name" > evidence/installed-package.txt
 phase=desktop-dependencies
 dnf install -y lightdm lightdm-gtk xfce4-session xfwm4 xfdesktop xfce4-panel Thunar \

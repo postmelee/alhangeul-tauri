@@ -4,7 +4,7 @@
 GitHub Issue: [#97](https://github.com/postmelee/alhangeul-tauri/issues/97)
 마일스톤: M010
 작성일: 2026-10-03 (Asia/Seoul)
-상태: Stage 3 실제 성능·기능 검증 완료, Stage 4 진입 승인 대기
+상태: Stage 3 완료, Stage 4 최종 후보·배포 준비 진행 중
 
 ## 승인과 기준
 
@@ -389,7 +389,7 @@ Stage 3 전체는 미완료이며 Stage 4 진입 승인 요청이 아니다.
 Windows Clippy 실패로 Windows package/설치 smoke는 미수행이다. 새 후보 검증으로 이어간다.
 
 
-## Stage 4 진입 때 함께 검토할 보정안 — 새 릴리즈 후보의 exact-file 수용 (승인 대기)
+## Stage 4 진입 때 함께 검토한 보정안 — 새 릴리즈 후보의 exact-file 수용 (승인 완료)
 
 Stage 3 구현·검증을 진행하는 동안 기존 release harness의 고정값을 읽어 아래 범위를 확인했다.
 아래 소스 변경은 Stage 4 진입 승인 후에만 수행한다. 현재 제품 version은 0.1.0이다.
@@ -479,3 +479,17 @@ Stage 3 최종 수용 기록:
   GUI 계약 23·자동화 1,031·fixture 3·제품 경계·typecheck·diff 검증도 통과했다.
 - 상세 source/파일/표본/실패 이력/설치 진단 제한은 task_m010_97_stage3.md에 기록한다.
   Stage 3은 완료했으며 Stage 4 및 위 exact-file 입력화 보정안은 계속 승인 대기다.
+
+
+Stage 4 진입 승인 기록 (2026-10-03):
+
+- Stage 3 완료·exact-file 보정안 보고에 대한 작업지시자의 후속 “진행해줘”를 Stage 4와 위 보정 범위의 승인으로 기록한다. 위 역사상 승인 대기 표시는 당시 상태다.
+- Fedora VM host의 `release-fedora-vm.sh`에도 기존 RPM hash가 고정돼 있어 같은 검증 후보 전달 범위에서 보정한다. 검증 후 생성한 identity JSON을 allowlisted payload로 전달하고 Node parser로 읽는다. 임의 환경 전체 전달·shell source/eval은 사용하지 않는다.
+- 기존 artifact_platform 선택을 재사용한다. 새 후보 입력 시 일반 문서 검증에 NSIS/MSI/AppImage를 포함하고 Windows-only는 두 Windows 형식을 선택한다. Linux arm64 선택은 arm64만 실행하며 기본 v0.1.0 matrix는 보존한다.
+- 후보 product commit을 먼저 게시해 full/signed producer를 생성한다. producer 성공 후 exact ID/digest/path/hash JSON을 별도 harness commit으로 고정하고 제품 source와 harness source를 구분한다. 설치 수용 전에는 Stage 4 완료나 공개 준비 완료로 기록하지 않는다.
+
+Stage 4 후보 게시 전 확인:
+
+- 버전 5개 표면 0.1.1 일치, release metadata·boundary(734파일)·upstream 39·Studio 251·build·automation 1,044·변경 workflow actionlint·diff가 통과했다. 기존 metadata 검사 두 기대값도 새 제품 버전으로 갱신했다.
+- 기존 candidate prepare 함수는 검증 순서를 한 흐름으로 보존하기 위해 권장 50줄을 약간 넘긴다(각 70줄 미만). 추가 입력 검증·identity 전달은 별도 100줄 미만 모듈로 분리했다.
+- full native CI와 비게시 signed updater producer를 이 후보 commit에서 실행한다. 이 기록은 실제 설치 수용 결과가 아니다.
