@@ -291,3 +291,36 @@ Windows NSIS/MSI의 첫 실제 run37158705809는 설치 버튼 전의 strict idl
 ### 잔여 위험·다음 단계·승인 경계
 
 원격 fast는 새 exact commit에서 확인해야 한다. 통과 후 해당 SHA와 Windows NSIS/MSI만 선택한 실제 production 실행안을 제시한다. 실제 설치 및 문서·설정 수용은 미검증이며 old run 실패를 소급 성공으로 바꾸지 않는다. Linux 성공은 기존 a74d3638/run37158705809/artifact11286572569 근거를 유지하며 새 Windows harness에서 Linux도 새로 통과했다고 쓰지 않는다. 제품 재빌드/새 서명/게시/태그 이동·asset 또는 production feed 변경은 없고 공개 안내와 #97 OPEN 상태를 유지한다.
+
+
+## Gate 6 Windows production 재실행 결과 — 2026-10-04
+
+### 승인·실행과 판정
+
+새 exact harness `1680a608bd507adec3736d4ba6aed5e534f71931`의 Windows NSIS/MSI 재실행안을 제시한 뒤 같은 스레드의 “진행해줘”로 실제 실행·증거 분석·기존 위치 기록을 승인받았다. [fast 37175896878](https://github.com/postmelee/alhangeul-tauri/actions/runs/37175896878)은 이 SHA에서 success다. Linux automation1228/upstream39/Studio251·build/GUI typecheck, Windows production36·릴리즈124·PS83sources/격리16·workflow11블록 parser가 통과했다. 이 fast 결과는 실제 설치 수용을 대신하지 않는다.
+
+[실제 run37176405544](https://github.com/postmelee/alhangeul-tauri/actions/runs/37176405544)은 mode=production-upgrade-check/production_upgrade_platform=windows-x64/publish_release=false로 exact SHA에서 실행했고 전체 **failure**다. 두 Windows job은 설치 후 버전 검사에서 실패했다. Linux는 의도적으로 선택하지 않았으며 이전 run37158705809/harness a74d3638/artifact11286572569의 실제 성공 근거를 그대로 유지한다. 공개 제품 N/N+1, key/manifest/source/tag/asset를 변경하지 않고 기존 installer bytes를 사용했다.
+
+| 형식 | 실제 결과 | 증거 |
+|---|---|---|
+| Windows NSIS | 미수용 — 설치된 버전0.1.0, 10분 대기 실패 | [job111359814746](https://github.com/postmelee/alhangeul-tauri/actions/runs/37176405544/job/111359814746), [artifact11293513567](https://github.com/postmelee/alhangeul-tauri/actions/runs/37176405544/artifacts/11293513567) |
+| Windows MSI | 미수용 — 같은 설치 후 버전 실패 | [job111359814531](https://github.com/postmelee/alhangeul-tauri/actions/runs/37176405544/job/111359814531), [artifact11293159841](https://github.com/postmelee/alhangeul-tauri/actions/runs/37176405544/artifacts/11293159841) |
+
+### 확인된 진행과 원시 증거 재검토
+
+두 형식 모두 공개 입력 검증·clean0.1.0 설치 exit0·정확한 시작/수동 조회의 version/target/trigger·dirty 문서 차단·UI 설치 동의 및 다운로드100%가 통과했다. NSIS56793106 bytes, MSI64102400 bytes를 내려받았다. apply/result와 apply-gate는 passed이나 **설치 완료 수용은 아니다**. 설치 후 executable ProductVersion/FileVersion과 uninstall DisplayVersion은 모두0.1.0이며 verify는 skipped, accepted 증거는 없다. 설정의 사전 snapshot만 있어 업데이트 후 설정·문서 보존은 이번 실행에서 검증하지 못했다.
+
+API artifact ID·headSha·run·크기·digest와 실제 다운로드 ZIP bytes를 대조했다. NSIS119835 bytes/SHA-256 `4c772ed0a3c014f5b802b3f041f9464cae6a593788020752042385c3024b4514`, MSI146926 bytes/SHA-256 `510c844c4220aa073b7f4b813eb506e01d5882c21a5f2fdf557a7d8c683a092f`가 일치한다. 공개 두 Release metadata·manifest bytes·N 설치 hash·CI 서명 검증 receipt·apply 계약을 재대조했고, failed validate를 최종 설치 계약이 거부함을 확인했다. installer/signature/inventory 원본은 archive에서 제외되어 해당 검증은 CI receipt 근거이며 로컬에서 서명을 재계산했다는 의미가 아니다. 두 VM 모두 applyTransport=success/installedVersion=failure/verify=skipped/cleanup=success/policyRestore=success다. 제거 exit0·잔여 설치 제거·WebView2 정책 restored=true를 확인했다.
+
+### 설치 완료 전 검증 종료 관측과 원인 한계
+
+- NSIS는 installing snapshot 뒤 apply 종료04:19:55.757Z, WebDriver deleteSession04:19:55.760Z로 **3ms** 차이다. 연결 삭제 응답은04:20:03.626Z, driver 중지는04:20:04.012Z다.
+- MSI는 apply 종료04:19:15.569Z, deleteSession04:19:15.573Z로 **4ms** 차이다. driver 중지는04:19:16.867Z다.
+- 두 apply/result에 transportClosed는 없다. 검증 함수가 installing을 보고 즉시 return하고 WDIO runner가 세션을 삭제한 사실이 원시 로그와 소스에서 일치한다. 설치 후 helper가 제품을 강제 종료하는 코드는 버전 준비 이후이며, 이번 실패에서는 그 지점에 도달하지 않았다.
+- 제품 service/apply.rs는 begin_install→상태 publish→update.install 순서다. 고정 [tauri-plugin-updater2.10.1 소스](https://github.com/tauri-apps/plugins-workspace/blob/updater-v2.10.1/plugins/updater/src/updater.rs#L732)는 installer 임시 파일 기록·ShellExecuteW 실행 이후 process exit를 수행한다. 따라서 installing은 installer 실행 완료 증거가 아니다.
+
+검증 도구의 조기 종료가 제품의 설치 handoff를 중단했을 가능성이 높다. 다만 현재 archive에는 설치 프로그램 시작/종료나 제품의 자연 종료를 독립적으로 관측한 증거가 없어 **실패 원인으로 확정하지 않는다**. 제품 자체 설치 실패 또는 CI 상호작용 가능성도 다음 관측에서 구분해야 한다. 제품 수정이나 새 릴리즈가 필요하다고 아직 결론 내리지 않는다.
+
+### 잔여 위험과 다음 승인 경계
+
+Windows 실제 업그레이드는 미수용이고 #97은 OPEN/진행중이다. 이번 기록은 단계 완료 보고가 아닌 실패 결과 기록이다. GitHub body·원문 notes·웹 안내·production feed의 검증 중 문구를 유지했다. 다음 보정안은 Windows에서 installing만으로 조기 return하지 않고 제품의 자연 종료/연결 종료까지 기다리며, 제한 시간·오류·마지막 상태/화면 증거와 별도 설치 버전·재실행 수용을 유지하는 검증 도구 수정이다. 회귀 계약·Windows/Linux fast를 먼저 확인하고 새 exact SHA의 실제 Windows run은 별도 승인 gate를 따른다. 새 source 변경·제품 build/sign/publish·공개 안내 갱신·PR/merge/Pages는 이번 실행 승인 범위에 포함되지 않는다.

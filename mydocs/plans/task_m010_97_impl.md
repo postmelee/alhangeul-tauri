@@ -715,3 +715,8 @@ tests/gui/specs/production-updater.e2e.ts는 v0.1.0 동일 버전과 이전 mani
 - 실제 Windows가 통과하기 전에는 공개 안내의 자동 업데이트 검증 중 문구를 전체 성공으로 바꾸지 않고 #97을 OPEN으로 유지한다.
 
 근거: AGENTS.md의 “소스 수정 전 반드시 작업지시자 승인 요청”, “각 단계 완료 후 승인 없이 다음 단계 진행 금지”; 기존 Gate 6의 실제 실행 결과·공개 변경 승인 경계.
+
+
+### Gate 6 Windows 재실행 승인·결과 인계 — 2026-10-04
+
+같은 스레드의 “진행해줘”로 exact harness1680a608bd507adec3736d4ba6aed5e534f71931의 Windows NSIS/MSI 실제 재실행·증거 분석·기존 위치 기록을 승인받았다. fast37175896878 success 뒤 [실제37176405544](https://github.com/postmelee/alhangeul-tauri/actions/runs/37176405544)를 실행했고 전체 failure다. 두 형식은 조회·dirty 차단·UI 동의·다운로드100%를 통과했으나 installed version0.1.0/verify skipped로 실제 upgrade는 미수용이다. installing 관측 직후3/4ms 안에 검증 함수가 끝나 WDIO deleteSession이 실행됐다. 조기 검증 종료의 원인 기여는 유력한 추론이며 독립 installer/제품 자연 종료 증거가 없어 확정하지 않는다. 두 VM cleanup/정책 복원은 통과했다. 상세·artifact hash·fast 근거는 기존 stage4/report와 docs/releases/v0.1.1.md에 기록했다. Linux는 이전 실제 성공 근거를 재사용하고 이번 Windows run에서 재실행하지 않았다. 공개 문구·제품·태그·asset·feed 변경 없이 #97은 OPEN이다. 다음 source 보정·새 exact native 실행은 승인 전이며 현재 기록은 단계 완료가 아니다.
