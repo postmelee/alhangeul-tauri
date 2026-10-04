@@ -5,11 +5,11 @@
 
 ## 릴리즈 목록
 
-2026-10-04T06:10:07Z 확인: GitHub stable v0.1.1과 설치 파일 11개, 사이트·production manifest 0.1.1은 공개됐고 PR #101은 병합됐다. Windows NSIS·MSI와 Linux x64 AppImage의 실제 v0.1.0 → v0.1.1 업데이트·설정 유지·HWP/HWPX 재열기는 수용됐다. 이 검증 결과를 안내하는 새 body·웹·피드 문구의 공개 갱신은 아직 대기 중이다.
+2026-10-04T06:40:03.560Z 확인: GitHub stable v0.1.1과 설치 파일11개, 규격 body·웹 안내·production manifest0.1.1 및 실제 업데이트 검증 결과 문구를 공개했다. Windows NSIS·MSI와 Linux x64 AppImage의 v0.1.0 → v0.1.1 업데이트·설정 유지·HWP/HWPX 재열기를 수용했다. PR #101·#104 병합, exact Pages37183359064와 실제 공개 HTTP20/20 bytes·표시·링크 대조를 완료했다.
 
 | 버전 | 상태 | 이전 공개 버전 | GitHub Release | 기록 |
 |---|---|---|---|---|
-| v0.1.1 | Release·웹·피드 공개 및 세 형식 실제 upgrade 수용; 결과 문구 공개 갱신 대기 | v0.1.0 | [v0.1.1](https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.1) | [v0.1.1 공개 기록](v0.1.1.md), [안내 원문](v0.1.1.notes.json) |
+| v0.1.1 | Release·규격 body·웹·피드·검증 결과 안내 공개, 세 형식 실제 upgrade·HTTP 수용 완료 | v0.1.0 | [v0.1.1](https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.1) | [v0.1.1 공개 기록](v0.1.1.md), [안내 원문](v0.1.1.notes.json) |
 | v0.1.0 | stable 공개·Pages/updater 전환 및 동일 버전 조회 완료 | 없음 | [v0.1.0](https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.0) | [v0.1.0 공개 기록](v0.1.0.md) |
 
 최신 공개 버전은 실제 non-draft Release와 공개 read-back으로 판정한다. 가장 높은 파일명이나

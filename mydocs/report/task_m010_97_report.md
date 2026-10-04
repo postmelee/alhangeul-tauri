@@ -3,7 +3,7 @@
 GitHub Issue: [#97](https://github.com/postmelee/alhangeul-tauri/issues/97)
 마일스톤: M010
 작성일: 2026-10-03 (Asia/Seoul)
-상태: v0.1.1 공개 전달 완료 / Windows NSIS·MSI와 Linux AppImage 실제 upgrade 통과 / 결과 문구 보정·로컬 검사 완료 / exact fast 통과 / 최종 PR·공개·정리 승인 완료 및 실행 중
+상태: 제품·Release·규격 body/Pages/feed·세 형식 실제 upgrade·결과 안내 공개 수용 완료 / 기록 PR·승인된 close/cleanup 진행
 
 ## 작업 요약
 
@@ -628,3 +628,24 @@ Windows 실제37179376994/b7f6979c와 Linux 실제37158705809/a74d3638은 당시
 [새 안내 fast37182206176](https://github.com/postmelee/alhangeul-tauri/actions/runs/37182206176)는 exact633629fead088b3c7c894d8a146c66dfcb4459f7에서 전체 success다. Linux Node/Studio job과 Windows PowerShell job의 모든 필수 step이 success이며 Linuxautomation1251/upstream39/Studio251/GUItype/Pages17-20,Windowsrelease124/production59/PowerShell83sources-16isolated/productionworkflow11blocks가 통과했다. native/package는 해당 profile에서 skipped이며 새로운 제품/native 수용으로 표현하지 않는다. receipt `/tmp/task97-result-copy-fast-receipt.json`에 run/job/step을 보존했다.
 
 실제 production 수용은 Windows37179376994/b7f6979c와 Linux37158705809/job111307414907/a74d3638의 기존 근거다. 새 native 실행은 필요하지 않다. 다음 PR의 merge ref required는 게시 이후 별도로 확인하며 아직 수행 전이다. 승인 전후 검토 대상 body·site·installer·key·tag identity는 재대조했고 기존 body43b9a7b3… 및11assets는 유지됐다. 공개 변경 전 현재 확인 시각은2026-10-04T06:28:24Z다.
+
+
+## Gate 8 최종 공개 인계 수용 — 2026-10-04
+
+승인된 실행안대로 [PR #104](https://github.com/postmelee/alhangeul-tauri/pull/104)를 게시하고 [필수 CI37182972337](https://github.com/postmelee/alhangeul-tauri/actions/runs/37182972337)의 Windows/Linux contracts·Alhangeul PR required 및 모든 필수 step success를 확인했다. PR head52c6085375746348eb7d71507ed6c615552ee79f는633629fe 이후 문서만 변경했고 검토 후보 bytes를 보존했다. 일반 merge는2026-10-04T06:36:39Z, 실제 commit은 `ac5ec6ce27cac988231d9ac6e06a2d769bb5bc03`이다.
+
+GitHub v0.1.1 body는 규격 생성 파일로 갱신한 뒤 API read-back bytes를 대조했다. body SHA-256 `3544f72d3e3aac3d4f7aab2955ef245bc3cb8cda30dfc5bde1ee889678e250b4`(5152bytes)이며 Release ID402604603·공개시각·non-draft/non-prerelease·11assets와 annotated tag `b7b858e13c3f9153562e28e33cc398e75e896adf`는 보존됐다. source/key/inventory/installer/URL/signature/rhwp pin 변경은 없다.
+
+[Pages37183359064](https://github.com/postmelee/alhangeul-tauri/actions/runs/37183359064)는 exact `ac5ec6ce27cac988231d9ac6e06a2d769bb5bc03`에서 모든 step success다. SHA를 dispatch ref에 직접 전달한 최초 요청은 GitHub422(No ref found)로 run이 생성되지 않았다. devel tip이 같은 SHA임을 API로 확인해 devel ref/deploy_ref ac5를 지정했고, 실제 WORKFLOW_SHA·DEPLOY_REF·checkout SHA 일치 gate를 통과했다. 임의 tag/force/history rewrite는 없다. Pages build/check source17-output20·계약94/94·upload/deploy 모두 통과했다.
+
+공개 HTTP `2026-10-04T06:40:03.560Z` 확인에서20/20 files가 해당 SHA의 deterministic `_site`와 byte 단위로 일치했다. `release.json` SHA-256 `aa2bce9bf52a37a37c091b80be47e0146d5b15e6b338cabcc6e8b204cce07efd`(3862bytes), stable SHA-256 `654efd7efc5f57de061d56743d30ab55c0f152d693df52c4022306261edbc638`(2295bytes), 실제 HTML SHA-256 `1a20dde8ca0cde80a05e2e5a8a9ea80254982933179423e4e9611e1f72acb7ef`(8542bytes)다. 생성 원문 HTML8551bytes/fd04f92c…와 게시 HTML 차이는 승인된 root asset reference 정규화다. stable은 기존62fae230…와 notes만 달라지고 version/pub_date/platform URLs/signatures는 deepEqual이다.
+
+공개 브라우저1366·390·320px에서 새 업데이트 결과·설정 유지·HWP/HWPX 재열기·수동 DEB/RPM/arm64·기존 한계 표시를 확인했고 가로 overflow가 없다. 최신 노트는0.1.1 한 항목이며 목록의 최신 다운로드3개와 상세 고정 다운로드6개 모두0.1.1 URL이다. 사용자 탭은 공개 릴리즈 안내로 돌려두고 viewport override는 해제했다. 화면 `/tmp/task97-final-public-{desktop,390,320}.png`, UI receipt `/tmp/task97-final-public-ui.json`, HTTP receipt `/tmp/task97-final-http-receipt.json`, Pages/API/CI 원시 기록 `/tmp/task97-final-pages-{result,ci}.*` 및 `/tmp/task97-pr104-{ci-result,merged}.json`에 보존했다.
+
+### 최종 수용과 후속 정리
+
+로컬 글꼴 성능 개선·제품6종 수용/11assets 공개·규격 body/Pages/feed·실제 NSIS/MSI/AppImage0.1.0→0.1.1·설정/문서 보존 및 결과 안내 공개까지 수용했다. 새 안내의 fast1251/39/251·Windowsrelease124/production59/PS83sources16tests·PRrequired·Pages94·HTTP20/20을 각 exact source/run 범위로 기록했다. Windows actual37179376994/b7f6979c와 Linux actual37158705809/job111307414907/a74d3638 및 당시 manifest62fae230… 근거는 그대로다. notes-only 게시를 새 native 실행 성공으로 확대하지 않는다.
+
+기존 Authenticode 미서명·일부 NSIS 썸네일·강제 MSI3010 후 재부팅·모든 Wayland/GPU/문서/폰트/프린터·native 열기 대화상자/전체 수동UI 검증 한계를 유지한다. Mac Rust/Tauri/native 검증·제품 재빌드/서명/태그 이동/asset 교체는 하지 않았다.
+
+문서 위치는 승인한 기존 plans2개·stage4/report/orders·docs/releases 기록/인덱스이며 새 공식 루트는 없다. 이번 후속 기록은 문서만 변경하므로 실제 사이트 게시 source는ac5와 Pages37183359064로 고정한다. 사이트 입력 bytes가 같으면 기록 merge 후 Pages/native/full CI를 반복하지 않는다. 현재 공개 인계는 수용 완료이고, 승인된 기록-only PR 필수 검사/일반 merge 뒤 #97 close·원격/로컬task97·managed worktree 정리를 진행한다. 사용자 root local/task69와 다른 devel worktree는 보존한다.
