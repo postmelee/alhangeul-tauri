@@ -649,3 +649,14 @@ GitHub v0.1.1 body는 규격 생성 파일로 갱신한 뒤 API read-back bytes�
 기존 Authenticode 미서명·일부 NSIS 썸네일·강제 MSI3010 후 재부팅·모든 Wayland/GPU/문서/폰트/프린터·native 열기 대화상자/전체 수동UI 검증 한계를 유지한다. Mac Rust/Tauri/native 검증·제품 재빌드/서명/태그 이동/asset 교체는 하지 않았다.
 
 문서 위치는 승인한 기존 plans2개·stage4/report/orders·docs/releases 기록/인덱스이며 새 공식 루트는 없다. 이번 후속 기록은 문서만 변경하므로 실제 사이트 게시 source는ac5와 Pages37183359064로 고정한다. 사이트 입력 bytes가 같으면 기록 merge 후 Pages/native/full CI를 반복하지 않는다. 현재 공개 인계는 수용 완료이고, 승인된 기록-only PR 필수 검사/일반 merge 뒤 #97 close·원격/로컬task97·managed worktree 정리를 진행한다. 사용자 root local/task69와 다른 devel worktree는 보존한다.
+
+
+## README 공개 상태 후속 보정 — 2026-10-04
+
+작업지시자의 “정리해줘”에 따라 단순 문구 수정 축소 절차를 적용했다. 기존 루트 README.md와 #97 계획서·최종 보고서 위치를 사용하며 새 이슈나 문서 루트를 추가하지 않았다. devel README는 두 문단, main README는 세 문단만 보정했다. 안정 버전과 웹 다운로드·updater 피드가 모두 v0.1.1임을 안내하고, NSIS/MSI/Linux x64 AppImage의 실제 업데이트·설정 유지·HWP/HWPX 재열기 수용 및 DEB/RPM/arm64 수동 설치를 표시한다. main의 이전 버전 전용 링크는 실제 공개 v0.1.1 안내로 연결한다.
+
+공개 Release는 v0.1.1/non-draft/non-prerelease, production stable.json은 version 0.1.1임을 재조회했다. 실제 실행 근거는 Windows run37179376994와 Linux run37158705809/job111307414907의 기존 수용 결과를 사용한다. README 보정을 새 native 실행 성공으로 표현하지 않는다. 다운로드 형식·미서명·썸네일·글꼴·문서·프린터 제한 문단은 그대로 유지했다.
+
+main에는 README.md만 변경하는 별도 PR을 준비하고 devel에는 README와 기존 계획·보고 기록만 포함한다. 두 PR의 필수 검사와 공개 링크·최소 diff·whitespace 결과를 PR 본문에 기록한 뒤 병합 승인을 요청한다. 제품 runtime·release/tag/assets·site/updater 입력·rhwp pin 변경 및 제품/native/Pages 재배포는 없다. 사용자 root local/task69 미커밋 변경과 다른 devel worktree를 보존했다.
+
+검토 전 검사: 두 worktree의 git diff --check 통과, devel README 2줄 교체·main README 3줄 교체를 확인했다. 새 Release·공개 v0.1.1 안내·release.json 링크는 HTTP 200이며 웹 다운로드 version도 0.1.1이다. 읽기 전용 공개 검증 결과는 /tmp/task97-readme-links.json에 남겼다. main diff는 README.md 단일 파일, devel diff는 README.md와 기존 계획·최종 보고서 세 파일로 제한된다.
