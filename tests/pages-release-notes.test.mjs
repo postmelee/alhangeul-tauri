@@ -19,8 +19,8 @@ function element(tag = 'DIV') {
 async function hydrate(options = {}) {
   const note = element();
   const local = element('A');
-  const title = element('STRONG'); title.textContent = '알한글 v0.1.1';
-  local.querySelector = () => title;
+  const title = element('SPAN'); title.textContent = '알한글 v0.1.1';
+  local.querySelector = selector => selector === '.release-entry-title' ? title : null;
   const message = element(); message.hidden = true;
   const release = options.release ?? publishedFixture();
   const document = {
@@ -62,13 +62,19 @@ test('matching live version uses existing local note and removes duplicate lates
   const result = await hydrate({ release: releaseAt('0.1.1') });
   assert.equal(result.note.removed, true);
   assert.equal(result.note.replacement, undefined);
-  assert.equal(result.title.textContent, '알한글 v0.1.1 · 최신 버전');
+  assert.equal(result.title.textContent, '알한글 v0.1.1');
+  assert.equal(result.title.children.length, 1);
+  assert.equal(result.title.children[0].textContent, '최신 버전');
+  assert.equal(result.title.children[0].className, 'latest-badge');
   assert.equal(result.message.textContent, '사이트의 최신 버전입니다.');
 });
 
 test('a newer live version without a local page links to its exact GitHub Release', async () => {
   const result = await hydrate({ release: releaseAt('0.2.0') });
   assert.equal(result.note.replacement.href, 'https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.2.0');
+  const nodes = result.note.replacement.children.flatMap(node => [node, ...node.children]);
+  assert.equal(nodes.filter(node => node.className === 'latest-badge').length, 1);
+  assert.equal(nodes.filter(node => node.className === 'release-entry-title').length, 1);
   assert.match(result.message.textContent, /이 안내는 v0\.1\.1.*최신 버전은 v0\.2\.0/);
   assert.equal(result.title.textContent, '알한글 v0.1.1');
 });

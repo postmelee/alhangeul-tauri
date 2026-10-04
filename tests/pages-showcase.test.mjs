@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { runInNewContext } from 'node:vm';
 import test from 'node:test';
 
-const source = await readFile(new URL('../site/script.js', import.meta.url), 'utf8');
+const source = `${await readFile(new URL('../site/package-downloads.js', import.meta.url), 'utf8')}\n${await readFile(new URL('../site/script.js', import.meta.url), 'utf8')}`;
 function element(tagName = 'DIV') {
   return { tagName, dataset: {}, children: [], attributes: {}, textContent: '',
     append(...items) { this.children.push(...items); },
@@ -17,17 +17,16 @@ function context(lists = [], fetch = async () => ({ok:false})) {
     querySelectorAll: selector => selector === '[data-package-platform]' ? lists : [],
   } };
 }
-test('배포 목록 추가는 배열에서 다운로드 행을 확장한다', () => {
-  const list = element(); list.dataset.packagePlatform = 'windows';
-  const ctx = context();
-  runInNewContext(source, ctx);
-  ctx.document.querySelectorAll = selector => selector === '[data-package-platform]' ? [list] : [];
-  runInNewContext(`
-    distributionChannels[0].formats.push({name:'ZIP', target:'windows-zip', description:'휴대용'});
-    renderPackageLists();
-  `, ctx);
-  assert.equal(list.children.length, 3);
-  assert.equal(list.children[2].children[0].children[0].textContent, 'ZIP');
+test('홈은 공통 6종 정의에서 Windows 2행·Linux 4행을 표시한다', () => {
+  const lists = ['windows', 'linux'].map(platform => {
+    const list = element(); list.dataset.packagePlatform = platform; return list;
+  });
+  runInNewContext(source, context(lists));
+  assert.equal(lists[0].children.length, 2);
+  assert.equal(lists[1].children.length, 4);
+  const links = lists.flatMap(list => list.children.map(row => row.children[1]));
+  assert.equal(new Set(links.map(link => link.dataset.downloadTarget)).size, 6);
+  assert.equal(lists[1].children[3].children[0].children[0].textContent, 'DEB arm64');
 });
 test('미공개 또는 잘못된 버전이면 공개 릴리즈 안내를 만들지 않는다', async () => {
   for (const release of [null, {status:'unreleased'}, {status:'published',version:'bad',tag:'vbad'}]) {
