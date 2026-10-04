@@ -14,7 +14,7 @@
 
 **[다운로드](https://postmelee.github.io/alhangeul-tauri/)** · [설치 안내·업데이트](https://postmelee.github.io/alhangeul-tauri/updates/) · [문의·제보](https://postmelee.github.io/alhangeul-tauri/feedback/)
 
-현재 GitHub 안정 버전: **[v0.1.1](https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.1)**. 웹 다운로드·업데이트 피드는 아직 v0.1.0이며 v0.1.1 반영을 준비 중입니다.
+현재 안정 버전: **[v0.1.1](https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.1)**. 웹 다운로드와 앱 내 업데이트 피드도 v0.1.1을 제공합니다.
 무료로 사용할 수 있으며, 소스 코드는 [MIT 라이선스](LICENSE)로 공개합니다.
 
 | Windows | Linux |
@@ -36,7 +36,7 @@
 
 - Windows에서는 NSIS와 MSI 중 한 가지 형식을 선택하세요. 현재 설치 파일은 Windows 코드 서명(Authenticode)이 없어 보안 경고가 표시될 수 있습니다.
 - AppImage는 파일과 상위 폴더가 쓰기 가능한 위치에 보관하세요. 파일 관리자 썸네일 등록은 DEB/RPM 패키지에서 제공합니다.
-- Windows NSIS/MSI와 Linux x64 AppImage는 앱에서 업데이트를 확인할 수 있습니다. DEB/RPM은 새 패키지를 받아 설치합니다. v0.1.0 → v0.1.1 실제 자동 업그레이드는 새 피드 반영 후 검증할 예정입니다.
+- Windows NSIS/MSI와 Linux x64 AppImage는 앱에서 업데이트를 확인할 수 있습니다. v0.1.0 → v0.1.1 업데이트와 설정 유지·HWP/HWPX 문서 재열기를 검증했습니다. DEB/RPM과 Linux arm64는 새 패키지를 받아 수동으로 설치합니다.
 
 자세한 설치 방법과 알려진 제한은 [설치 안내·업데이트](https://postmelee.github.io/alhangeul-tauri/updates/)에서 확인하세요.
 
