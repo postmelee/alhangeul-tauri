@@ -324,3 +324,31 @@ API artifact ID·headSha·run·크기·digest와 실제 다운로드 ZIP bytes�
 ### 잔여 위험과 다음 승인 경계
 
 Windows 실제 업그레이드는 미수용이고 #97은 OPEN/진행중이다. 이번 기록은 단계 완료 보고가 아닌 실패 결과 기록이다. GitHub body·원문 notes·웹 안내·production feed의 검증 중 문구를 유지했다. 다음 보정안은 Windows에서 installing만으로 조기 return하지 않고 제품의 자연 종료/연결 종료까지 기다리며, 제한 시간·오류·마지막 상태/화면 증거와 별도 설치 버전·재실행 수용을 유지하는 검증 도구 수정이다. 회귀 계약·Windows/Linux fast를 먼저 확인하고 새 exact SHA의 실제 Windows run은 별도 승인 gate를 따른다. 새 source 변경·제품 build/sign/publish·공개 안내 갱신·PR/merge/Pages는 이번 실행 승인 범위에 포함되지 않는다.
+
+
+## Gate 6 Windows 설치 handoff 보정 구현·로컬 검증 — 2026-10-04
+
+### 단계 목적과 승인
+
+실제37176405544에서 Windows apply가 installing 뒤 즉시 반환하고3/4ms 뒤 WDIO 세션을 삭제했다. 검토한 설치 handoff 보정안에 같은 스레드의 “진행해줘”로 검증 도구 수정·기존 계획 기록·중립 로컬 검증·Windows/Linux fast를 승인받았다. 조기 종료의 제품 설치 실패 기여는 여전히 추론이며 이번 구현은 실제 Windows upgrade 성공이 아니다. 새 exact SHA의 실제 native 실행은 별도 승인 gate다.
+
+### 산출물과 기존 동작 보존
+
+- production-upgrade/windows-handoff.ts(70 LOC)는 주입 가능한 readState/pause/clock으로 Windows 상태를 관측한다. installing만으로 return하지 않으며 기본10분 제한 내에서 연결 종료까지 관측한다. updater error·예상 밖 상태/driver 오류·timeout은 실패다. 일반 session/closed 문구를 전부 연결 종료로 허용하던 조건을 실제 driver closure 문구로 제한했다.
+- downloading/installing 전환과 시각·마지막 snapshot·closure source/state-poll 또는 install-click·closedAt을 windowsHandoff에 남긴다. 연결 종료는 requiresInstalledVersionVerification=true인 잠정 증거다. 클릭 도중 제품이 빠르게 종료하는 경로도 독립 receipt를 남기고 이후 OS/GUI 필수 수용을 요구한다.
+- apply.ts(90 LOC)는 Windows 경로를 별도 연결 코드로 분리해 관측 완료 후에만 WDIO 종료를 허용한다. windows-handoff.json을 별도로 보존하고 실패에는 작은 상태 문구·toolbar/canvas·화면을 수집한다. install-diagnostics.ts(14 LOC)는 readState/screenshot을 주입받으며 진단 실패로 원래 오류를 덮지 않는다. 순수 helper는 WDIO runtime이나 설치한 패키지에 의존하지 않아 의존성 설치 없는 Windows fast에도 사용할 수 있다.
+- production-evidence.mjs(84 LOC)는 연결 종료 receipt·시각 순서·source·마지막 snapshot 일치·별도 설치 검증 필요 표시를 필수로 확인한다. installing-only/observing/failed 증거는 apply gate에서 거부한다. 실제 executable/uninstall0.1.1·연결/기본값·fresh GUI/no-update·설정/문서·최종 accepted 조건은 유지한다.
+- production-upgrade.test.mjs(287 LOC)에 관측과 오류/timeout/빠른 종료·진단 실패·불완전 receipt 회귀22개를 추가했다. 신규 파일·함수는 권장 상한 이내다. 기존 AppImage restart·공통 startup·제품 runtime·공개 release bytes/key/feed/notes/site·rhwp pin은 보존했다.
+
+### 검증 결과
+
+- 전용 production/workflow/GUI 계약 **89/89**, production 단독 **58/58**, 전체 automation **1250/1250**, upstream **39/39**, Studio **251/251(39 files)**가 통과했다. fail/skip0다. GUI typecheck·Studio build도 통과했고 기존 chunk/dynamic import 경고만 남는다.
+- node_modules 없는 임시 checkout에서 production 계약 **58/58** 통과를 확인했다. Windows 플랫폼 결과를 대신하지 않으며 새 exact Windows fast에서 별도로 확인한다.
+- 실제 이전 Windows artifact의 installing-only apply 증거 두 개를 새 계약이 거부했다. 이전 Linux 실제 apply/verify 원시 증거는 새 계약에서도 통과하여 기존 수용을 유지했다. 원시 bytes 재검토이며 native Linux를 재실행한 결과가 아니다.
+- check:product-boundary **796 files scanned**, check:action-pins **29 files/165 references/11 pins**, check:release-notes **1 documents**, git diff --check 통과다. rhwp v0.8.6/resolved f1f9c6ae58344ee9368996d3543f76b9345cf227 submodule은 clean이다.
+
+### 잔여 위험·다음 단계·승인 경계
+
+새 exact commit을 게시한 뒤 승인된 Windows/Linux fast를 한 번 실행해 플랫폼 계약과 PowerShell parser를 확인한다. fast는 실제 product install/upgrade 수용이 아니다. 이번 commit의 실제 Windows 설치·재실행·문서/설정 수용은 아직 미검증이다. 연결 종료만으로 제품의 정상 종료나 설치 성공을 확정하지 않고 후속 OS version/fresh GUI/accepted 증거를 요구한다. 다음 실제 run에서 installer 실패가 재현되면 당시 원시 증거에 따라 제품 또는 CI 환경 원인을 구분한다.
+
+fast 통과 후 새 exact harness와 Windows NSIS/MSI 실행안을 제시해 승인을 요청한다. Linux는 이전37158705809/a74d3638/artifact11286572569의 실제 성공을 재사용한다. 제품 build/sign/publish·공개 body/notes/site/feed 변경·PR/merge/Pages는 이번 승인 범위 밖이다. 공개 검증 중 문구와 #97 OPEN/진행중을 유지한다.

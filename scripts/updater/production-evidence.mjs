@@ -28,7 +28,26 @@ export function validateApply(evidence, kind) {
     assert.ok(Number.isSafeInteger(evidence.restart.current.pid) && evidence.restart.current.pid > 0);
     assert.notEqual(evidence.restart.previous.pid, evidence.restart.current.pid);
     assert.notEqual(evidence.restart.previous.executable, evidence.restart.current.executable);
-  } else assert.equal(evidence.installObserved, true);
+  } else validateWindowsHandoff(evidence);
+}
+
+function validateWindowsHandoff(evidence) {
+  assert.equal(evidence.installObserved, true);
+  assert.equal(evidence.requiresInstalledVersionVerification, true);
+  assert.ok(typeof evidence.transportClosed === 'string' && evidence.transportClosed.trim(), 'driver closure evidence');
+  const handoff = evidence.windowsHandoff;
+  assert.ok(handoff, 'Windows handoff receipt');
+  assert.equal(handoff.status, 'transportClosed', 'installing alone is not installer handoff');
+  assert.ok(['install-click', 'state-poll'].includes(handoff.closureSource));
+  for (const field of ['startedAt', 'closedAt']) {
+    assert.ok(typeof handoff[field] === 'string' && Number.isFinite(Date.parse(handoff[field])), `${field} timestamp`);
+  }
+  assert.ok(Date.parse(handoff.closedAt) >= Date.parse(handoff.startedAt), 'closure follows observation start');
+  assert.ok(Array.isArray(handoff.transitions));
+  if (handoff.lastSnapshot) {
+    assert.ok(['available', 'downloading', 'installing'].includes(handoff.lastSnapshot.status));
+    assert.deepEqual(handoff.lastSnapshot, evidence.installed, 'last observed updater snapshot');
+  }
 }
 
 export function validateVerify(evidence, kind) {

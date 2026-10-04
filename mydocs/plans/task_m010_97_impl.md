@@ -720,3 +720,15 @@ tests/gui/specs/production-updater.e2e.ts는 v0.1.0 동일 버전과 이전 mani
 ### Gate 6 Windows 재실행 승인·결과 인계 — 2026-10-04
 
 같은 스레드의 “진행해줘”로 exact harness1680a608bd507adec3736d4ba6aed5e534f71931의 Windows NSIS/MSI 실제 재실행·증거 분석·기존 위치 기록을 승인받았다. fast37175896878 success 뒤 [실제37176405544](https://github.com/postmelee/alhangeul-tauri/actions/runs/37176405544)를 실행했고 전체 failure다. 두 형식은 조회·dirty 차단·UI 동의·다운로드100%를 통과했으나 installed version0.1.0/verify skipped로 실제 upgrade는 미수용이다. installing 관측 직후3/4ms 안에 검증 함수가 끝나 WDIO deleteSession이 실행됐다. 조기 검증 종료의 원인 기여는 유력한 추론이며 독립 installer/제품 자연 종료 증거가 없어 확정하지 않는다. 두 VM cleanup/정책 복원은 통과했다. 상세·artifact hash·fast 근거는 기존 stage4/report와 docs/releases/v0.1.1.md에 기록했다. Linux는 이전 실제 성공 근거를 재사용하고 이번 Windows run에서 재실행하지 않았다. 공개 문구·제품·태그·asset·feed 변경 없이 #97은 OPEN이다. 다음 source 보정·새 exact native 실행은 승인 전이며 현재 기록은 단계 완료가 아니다.
+
+
+### Gate 6 Windows 설치 handoff 관측 보정 — 2026-10-04 승인 완료
+
+작업지시자가 검토용 /tmp/task97-windows-install-handoff-plan.md의 보정안에 같은 스레드의 “진행해줘”로 응답하여 검증 도구 수정·로컬 계약/GUI 검사·Windows/Linux fast를 승인했다. 실제 native Windows 재실행은 새 exact harness와 fast 결과 제시 후 별도 gate다.
+
+- 원시 run37176405544에서 Windows apply가 installing만 보고 반환한 뒤3/4ms 안에 WDIO deleteSession을 실행했다. 다운로드100%/dirty/UI 동의는 통과했지만 설치 버전0.1.0이며 verify skipped다. 조기 종료의 인과는 아직 추론이다.
+- production Windows 관측을 작은 독립 helper로 분리해 clock/read-state/pause를 주입하고, installing만으로 반환하지 않고 제품 종료에 따른 driver 연결 종료까지 대기한다. 명시 오류·예상 밖 driver 오류·timeout은 실패다. 클릭 도중 빠르게 종료하는 경로는 별도 closure receipt와 이후 OS 설치/GUI 수용을 결합한다. 연결 종료만으로 최종 설치 성공을 기록하지 않는다.
+- 마지막 snapshot·상태 전환·시각·closure source를 기록하고 실패에는 가능한 작은 UI 상태/화면을 남긴다. 실패 진단 오류는 원래 오류를 덮지 않는다. require-apply는 installing-only receipt를 거부한다. 기존 AppImage 재시작 경로는 보존한다.
+- 의미 있는 관측 회귀는 downloading→installing→closure, installing 유지 시 timeout, updater error, 예상 밖 driver 오류, 빠른 closure, 진단 실패의 원 오류 보존 및 gate의 불완전 receipt 거부다. 전체 automation/upstream/Studio·build·GUI typecheck·product boundary/action pins/release notes와 새 exact Windows/Linux fast를 확인한다. Mac에서는 중립 검사만 수행한다.
+- 문서 위치는 기존 plans2개·stage4/report/orders/docs/releases/v0.1.1.md를 사용한다. 새 공식 문서 루트나 제품/사용자 문서를 만들지 않는다. 신규 helper는 파일300 LOC/함수50 LOC/매개변수5개 등 권장 상한 내에서 분리한다.
+- 제품 runtime·새 build/sign/publish·공개 body/notes/site/feed·PR/merge/Pages는 이번 승인 범위 밖이다. Linux는 기존 run37158705809/artifact11286572569의 실제 성공 근거를 유지하고 반복하지 않는다. #97은 OPEN이다.

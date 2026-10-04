@@ -6,6 +6,8 @@ import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 import { requireApply } from '../scripts/updater/production-upgrade.mjs';
 import test from 'node:test';
+import { observeWindowsHandoff, recordWindowsClosure, isWindowsTransportClosed } from './gui/production-upgrade/windows-handoff.ts';
+import { captureInstallFailure } from './gui/production-upgrade/install-diagnostics.ts';
 import { digest, validateInputs, validateMetadata, validateBytes, validateConfig, validateInventory, installerName, MANIFEST_HASH } from '../scripts/updater/production-contract.mjs';
 import { validateApply, validateVerify, validateWindowsInstallation } from '../scripts/updater/production-evidence.mjs';
 
@@ -60,7 +62,7 @@ test('released key and endpoint are immutable', () => {
 function applied(kind) {
   const target = kind === 'appimage' ? 'linux-x86_64-appimage' : `windows-x86_64-${kind}`;
   const snapshot = { status: 'available', currentVersion: '0.1.0', availableVersion: '0.1.1', target: { target, artifactKind: kind }, failure: null };
-  return { kind, phase: 'apply', status: 'passed', startup: { ...snapshot, trigger: 'startup' }, manual: { ...snapshot, trigger: 'manual' }, dirty: { blocker: 'dirtyDocuments', status: 'available' }, consent: 'download-and-install-ui', manifestVerified: true, manifestSha256: MANIFEST_HASH, installed: { status: 'restartRequired' }, restartRequested: true, restart: { observed: true, previous: { pid: 123, executable: '/tmp/.mount_old/usr/bin/alhangeul' }, current: { pid: 456, executable: '/tmp/.mount_new/usr/bin/alhangeul' } }, installObserved: true };
+  return { kind, phase: 'apply', status: 'passed', startup: { ...snapshot, trigger: 'startup' }, manual: { ...snapshot, trigger: 'manual' }, dirty: { blocker: 'dirtyDocuments', status: 'available' }, consent: 'download-and-install-ui', manifestVerified: true, manifestSha256: MANIFEST_HASH, installed: { status: 'restartRequired' }, restartRequested: true, restart: { observed: true, previous: { pid: 123, executable: '/tmp/.mount_old/usr/bin/alhangeul' }, current: { pid: 456, executable: '/tmp/.mount_new/usr/bin/alhangeul' } }, installObserved: true, requiresInstalledVersionVerification: true, transportClosed: 'invalid session id', windowsHandoff: { status: 'transportClosed', startedAt: '2026-10-04T04:00:00.000Z', closedAt: '2026-10-04T04:00:01.000Z', closureSource: 'state-poll', transitions: [] } };
 }
 function verified(kind) {
   return { kind, phase: 'verify', manifestVerified: true, manifestSha256: MANIFEST_HASH, status: 'passed', noUpdate: { status: 'idle', currentVersion: '0.1.1', availableVersion: null, failure: null, blocker: null }, productVersion: 'Alhangeul 0.1.1', settingsPreserved: true, documents: ['hwp', 'hwpx'].map(format => ({ format, pageCount: 1, unchanged: true, canvasReady: true })) };
@@ -146,6 +148,140 @@ test('CLI returns failure for startup failure before installed-version waiting',
     });
     assert.equal(result.status, 1);
     assert.match(result.stderr, /Production upgrade require-apply failed/);
+    assert.equal(JSON.parse(await readFile(join(root, 'apply-gate.json'))).status, 'failed');
+  });
+});
+
+
+function updaterState(status, failure = null) {
+  return { status, failure, trigger: 'manual', currentVersion: '0.1.0', availableVersion: '0.1.1',
+    blocker: null, target: { target: 'windows-x86_64-nsis', artifactKind: 'nsis' } };
+}
+
+test('Windows keeps observing through download and installing until driver closure', async () => {
+  let clock = 0; let reads = 0; const evidence = {};
+  await observeWindowsHandoff({ now: () => clock, timeoutMs: 1000,
+    readState: async () => {
+      if (reads++ === 2) throw new Error('invalid session id: session deleted');
+      return updaterState(reads === 1 ? 'downloading' : 'installing');
+    }, pause: async ms => { assert.equal(evidence.installObserved, undefined); clock += ms; },
+  }, evidence);
+  assert.equal(reads, 3);
+  assert.deepEqual(evidence.windowsHandoff.transitions.map(t => t.status), ['downloading', 'installing']);
+  assert.equal(evidence.windowsHandoff.status, 'transportClosed');
+  assert.equal(evidence.windowsHandoff.closureSource, 'state-poll');
+  assert.equal(evidence.windowsHandoff.lastSnapshot.status, 'installing');
+  assert.equal(evidence.windowsHandoff.closedAt, '1970-01-01T00:00:00.500Z');
+  assert.equal(evidence.requiresInstalledVersionVerification, true);
+  validateApply({ ...applied('nsis'), ...evidence }, 'nsis');
+});
+
+test('Windows installing without closure hits deadline and cannot pass apply gate', async () => {
+  let clock = 0; let reads = 0; const evidence = {};
+  await assert.rejects(observeWindowsHandoff({ now: () => clock, timeoutMs: 500,
+    readState: async () => { reads++; return updaterState('installing'); },
+    pause: async ms => { clock += ms; },
+  }, evidence), /observation deadline/);
+  assert.equal(reads, 2); assert.equal(evidence.installObserved, undefined);
+  assert.equal(evidence.windowsHandoff.status, 'failed');
+  assert.equal(evidence.installed.status, 'installing');
+  assert.throws(() => validateApply({ ...applied('nsis'), ...evidence }, 'nsis'));
+});
+
+test('Windows updater error records last failed state instead of accepting handoff', async () => {
+  const evidence = {};
+  await assert.rejects(observeWindowsHandoff({ readState: async () => updaterState('error', { code: 'install' }),
+    pause: async () => assert.fail('must fail immediately'),
+  }, evidence), /Updater failed.*install/);
+  assert.equal(evidence.windowsHandoff.status, 'failed');
+  assert.equal(evidence.windowsHandoff.lastSnapshot.failure.code, 'install');
+  assert.equal(evidence.installObserved, undefined);
+});
+
+test('Windows unrelated driver/session errors preserve original error and fail', async () => {
+  const original = new Error('script timeout while session is active'); const evidence = {};
+  await assert.rejects(observeWindowsHandoff({ readState: async () => { throw original; },
+    pause: async () => assert.fail('no polling after error'),
+  }, evidence), error => error === original);
+  assert.equal(evidence.windowsHandoff.status, 'failed');
+  assert.equal(evidence.transportClosed, undefined);
+});
+
+test('Windows unexpected updater status is rejected without waiting', async () => {
+  const evidence = {};
+  await assert.rejects(observeWindowsHandoff({ readState: async () => updaterState('idle'),
+    pause: async () => assert.fail('no polling after unexpected state'),
+  }, evidence), /Unexpected Windows updater state: idle/);
+  assert.equal(evidence.windowsHandoff.status, 'failed');
+});
+
+test('Windows closure during installation click stays provisional with durable receipt', () => {
+  const evidence = {};
+  recordWindowsClosure(evidence, new Error('no such window: target window already closed'), 'install-click', () => 1000);
+  assert.equal(evidence.windowsHandoff.closureSource, 'install-click');
+  assert.equal(evidence.windowsHandoff.closedAt, evidence.windowsHandoff.startedAt);
+  assert.equal(evidence.requiresInstalledVersionVerification, true);
+  assert.equal(evidence.installed, undefined);
+  validateApply({ ...applied('msi'), ...evidence }, 'msi');
+});
+
+test('Windows rapid state-poll closure does not require an already observed installing snapshot', async () => {
+  const evidence = {};
+  await observeWindowsHandoff({ readState: async () => { throw new Error('disconnected: not connected to DevTools'); },
+    pause: async () => assert.fail('no polling after closure'),
+  }, evidence);
+  assert.equal(evidence.windowsHandoff.status, 'transportClosed');
+  assert.equal(evidence.windowsHandoff.transitions.length, 0);
+  assert.equal(evidence.requiresInstalledVersionVerification, true);
+});
+
+test('Windows closure classifier does not turn arbitrary closed/session text into acceptance', () => {
+  for (const message of ['invalid session id', 'disconnected: WebView closed', 'no such window', 'ECONNREFUSED', 'ECONNRESET']) {
+    assert.equal(isWindowsTransportClosed(new Error(message)), true, message);
+  }
+  for (const message of ['session timeout', 'permission denied', 'installer log closed', 'script timeout', 'connectionRetryTimeout']) {
+    assert.equal(isWindowsTransportClosed(new Error(message)), false, message);
+    assert.throws(() => recordWindowsClosure({}, new Error(message), 'state-poll'), new RegExp(message));
+  }
+});
+
+test('Windows failure diagnostics collect only provided UI and screenshot result', async () => {
+  const evidence = {}; const ui = { status: '설치 중', toolbarReady: true, canvasReady: false };
+  await captureInstallFailure(evidence, { readState: async () => ui, screenshot: async () => {} });
+  assert.deepEqual(evidence.installFailure, { ui, screenshot: 'install-failure.png' });
+});
+
+test('Windows disconnected diagnostics do not mask original installation failure', async () => {
+  const evidence = {}; const original = new Error('observation deadline');
+  await assert.rejects((async () => {
+    try { throw original; }
+    catch (error) {
+      await captureInstallFailure(evidence, { readState: async () => { throw new Error('no such window'); },
+        screenshot: async () => { throw new Error('invalid session id'); } });
+      throw error;
+    }
+  })(), error => error === original);
+  assert.equal(evidence.installFailure.stateError, 'no such window');
+  assert.equal(evidence.installFailure.screenshotError, 'invalid session id');
+});
+
+const handoffMutations = {
+  installingOnly: v => { delete v.transportClosed; delete v.windowsHandoff; v.installed = updaterState('installing'); },
+  noReceipt: v => { delete v.windowsHandoff; },
+  noClosure: v => { delete v.transportClosed; },
+  observedOnly: v => { v.windowsHandoff.status = 'observing'; },
+  failedHandoff: v => { v.windowsHandoff.status = 'failed'; },
+  noNativeVerification: v => { delete v.requiresInstalledVersionVerification; },
+  invalidTimestamp: v => { v.windowsHandoff.closedAt = 'invalid'; },
+  reversedTimestamp: v => { v.windowsHandoff.closedAt = '2026-10-04T03:59:59.000Z'; },
+  unknownSource: v => { v.windowsHandoff.closureSource = 'wdio-teardown'; },
+  missingTransitions: v => { delete v.windowsHandoff.transitions; },
+  updaterFailure: v => { v.windowsHandoff.lastSnapshot = updaterState('error'); },
+  snapshotMismatch: v => { v.windowsHandoff.lastSnapshot = updaterState('installing'); },
+};
+for (const [name, mutate] of Object.entries(handoffMutations)) test(`Windows apply gate rejects ${name} handoff receipt`, async () => {
+  await withApplyGate('nsis', (_input, value) => mutate(value), async root => {
+    await assert.rejects(requireApply('nsis', root, harness));
     assert.equal(JSON.parse(await readFile(join(root, 'apply-gate.json'))).status, 'failed');
   });
 });
