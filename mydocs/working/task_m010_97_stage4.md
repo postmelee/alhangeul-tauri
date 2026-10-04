@@ -4,7 +4,7 @@ GitHub Issue: [#97](https://github.com/postmelee/alhangeul-tauri/issues/97)
 구현계획서: [`task_m010_97_impl.md`](../plans/task_m010_97_impl.md)
 Stage: 4
 작성일: 2026-10-03 (Asia/Seoul)
-상태: 구현·최종 후보 검증 완료, PR merge·공개 배포 대기
+상태: Release·Pages 공개 및 세 형식 실제 upgrade 수용 / 결과 문구 보정·로컬 검사 완료 / exact fast·최종 공개 인계 대기
 
 ## 단계 목적
 
@@ -390,3 +390,52 @@ fast 통과 후 새 exact harness와 Windows NSIS/MSI 실행안을 제시해 승
 검증 도구를 보정한 뒤 같은 공개 설치본의 Windows 두 형식이 실제로 통과했다. 이전 installing-only 관측 뒤3/4ms의 조기 세션 종료와 새 연결 유지·설치 완료 관측의 차이를 확인했다. 이를 Windows 제품 updater를 수정한 결과로 표현하지 않는다. 세 형식의 실제 N→N+1 단계는 수용됐지만 모든 PC/GPU/문서·native Open 대화상자·강제 MSI3010 후 재부팅 수용까지 확대하지 않는다. 수동 조회는 public native updater_check이고 문서 열기는 loadFile RPC다. 알려진 Authenticode·일부 NSIS thumbnail/표시 한계도 유지한다.
 
 공개 body/원문 notes/site/feed에는 아직 검증 중 문구가 남아 있다. 다음은 실제 수용 결과에 맞는 원문·생성 body/website/updaterSummary와 릴리즈 인덱스 상태를 보정하는 검토다. source 구현·PR 준비 뒤 exact 공개물 검토/승인·PR merge·Pages·HTTP 대조·#97 close/cleanup까지는 남아 있으며 이번 실행 승인 범위 밖이다. 따라서 #97은 OPEN/진행중이다. 새 공개 notes-only manifest는 원래 actual 수용의 당시 hash/고정 harness 근거를 보존하고 installer identity와 구분한다.
+
+
+## Gate 7 / Stage 4.9 — 실제 업데이트 결과 안내 보정 (2026-10-04)
+
+### 목적과 승인
+
+같은 스레드의 “진행해줘”로 `/tmp/task97-public-upgrade-result-draft.md`와 생성기 후보 bytes의 기존 위치 적용·중립 검사·Windows/Linux fast·PR 검토용 정리를 승인받았다. 이미 수용한 세 형식의 실제 업데이트 결과를 릴리즈 안내에 반영한다. PR 게시·공개 body 적용·merge·Pages/HTTP·close/cleanup은 다음 승인 gate이며 아직 수행하지 않았다.
+
+### 산출물과 본문 보존
+
+- `docs/releases/v0.1.1.notes.json`: 검증 중 문구 두 개만 보정. 첫 업데이트 안내·metadata·knownLimitations·references 보존.
+- `site/release.json`: notes만 동기화. version/pub_date/downloads/source/tag/key/inventory/platform URL/signature는 기계 deepEqual로 보존 확인.
+- `site/updates/v0.1.1.html`: 공식 규격 생성기 산출물과 동일한 파일로 교체. HTML 직접 편집 없음.
+- `docs/releases/README.md`와 `v0.1.1.md` 첫 상태: 공개 0.1.1·PR101 MERGED·세 형식 실제 수용과 새 결과 문구 공개 대기 구분. 과거 확인/실패/run/hash 기록은 보존.
+- production 입력 JSON·contract hash를 새 안내의 manifest bytes에 정렬. 기존 production 테스트에 현재 feed 생성 bytes와 pin의 일치·notes 변경 시 drift를 검사하는 의미 있는 계약 추가. 테스트 파일295 LOC, 함수7 LOC로 권장 범위 내.
+- 기존 plans2개·stage4/report/orders에 문서 위치·승인·변경·검증·다음 gate 기록. 새 공식 루트 없음.
+
+### 검증 결과
+
+- `pnpm run generate:release-notes -- --version 0.1.1 --output-dir /tmp/task97-result-copy-generated`: body/HTML/short notes 생성. 승인 후보와 세 파일의 SHA-256 및 byte 수 일치.
+- `pnpm run check:release-notes`: 1문서 drift 통과.
+- `pnpm run build:pages` / `pnpm run check:pages`: source17/output20 통과. 새 stable manifest는 공개 원본과 notes만 다름.
+- `pnpm run test:automation`: 1,251/1,251 통과, fail/skip0. release notes/updater/production/workflow 회귀 포함.
+- `pnpm run check:product-boundary`: 796파일 통과.
+- `pnpm run test:upstream`: 39/39, `pnpm run test:studio`: 251/251·39파일 통과.
+- `pnpm run build:studio`·`pnpm run typecheck:gui`: 통과. Studio 기존 chunk/dynamic import 경고만 남음.
+- `pnpm run check:action-pins`: 29파일/165참조/11pins 통과.
+- Browser skill의 in-app browser로 생성 Pages를 1366·390·320px에서 관측. 새 결과 문구·수동 패키지 안내·기존 한계가 표시되고 가로 overflow 없음. 릴리즈 상세 고정 다운로드6개와 목록 최신 다운로드3개는0.1.1, 최신 노트 항목1개 확인. 중간 heading press가 focus 불가로 실패했으나 페이지 변경 없이 screenshot/DOM 직접 관측으로 검증을 완료했다.
+- 생성/보존 receipt `/tmp/task97-result-copy-generation-receipt.json`, 원시 로그 `/tmp/task97-result-copy-{automation,boundary,upstream,studio,studio-build,gui-type,pins}.log`, 화면 `/tmp/task97-result-copy-{notes-desktop,notes-320,update-section}.png`.
+- Windows/Linux fast는 이 소스·보고서 묶음의 exact commit을 push한 뒤 한 번 실행하고 별도 PR 검토용 receipt에 기록한다. 이전 b7 SHA의 성공을 이번 SHA 결과로 재사용하지 않는다.
+
+### 공개 후보 bytes
+
+| 산출물 | bytes | SHA-256 |
+|---|---:|---|
+| release-body.md | 5152 | `3544f72d3e3aac3d4f7aab2955ef245bc3cb8cda30dfc5bde1ee889678e250b4` |
+| website-release-note.html | 8551 | `fd04f92cccf23f84e3d8c9933d97539635e8b72c42e0ba4ece69c74dd76a10f2` |
+| updater-notes.txt | 411 | `7552a58c2269f93c08ccbd02af733a0abb2be2cd36474c8d1338cacda413546c` |
+| stable.json | 2295 | `654efd7efc5f57de061d56743d30ab55c0f152d693df52c4022306261edbc638` |
+
+### 잔여 위험과 다음 영향
+
+Windows 실제37179376994/b7f6979c와 Linux 실제37158705809/a74d3638은 당시 공개 manifest `62fae230339497b132be013ec91df7cd83b710b69c9de4f56ffff1c407463728`로 수용됐다. 새 notes-only 후보의 hash는 위654e이며 새 native 실행 수용이 아니다. 이미 통과한 installer/URL/signature/key/targets는 같다. 과거 증거를 새 contract로 소급 재해석하지 않는다.
+
+코드 서명·일부 NSIS 썸네일·강제 MSI3010 후 재부팅·모든 Wayland/GPU/문서/폰트/프린터 제한은 보존한다. 제품 runtime·build/sign/tag/assets/upstream pin 및 Mac desktop 검증은 변경·실행하지 않았다. 현재 공개 body와 feed는 기존 검증 중 문구이며 최종 공개 gate까지 #97은 OPEN이다.
+
+### 다음 승인 요청
+
+새 exact commit의 Windows/Linux fast 결과와 PR 검토용 본문·공개 후보 bytes를 제시한 뒤 PR 게시·body 적용·devel merge·exact Pages 게시·실제 HTTP/표시/링크·close/cleanup gate 승인을 요청한다.

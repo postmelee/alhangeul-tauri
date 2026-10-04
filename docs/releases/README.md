@@ -5,11 +5,11 @@
 
 ## 릴리즈 목록
 
-2026-10-03T20:24:09Z 확인: GitHub stable v0.1.1과 설치 파일 11개는 공개됐다. 사이트·production manifest는 0.1.0이며 PR #101은 OPEN이다. v0.1.1 안내 규격 적용·피드 게시 및 실제 v0.1.0 → v0.1.1 업그레이드는 아직 완료하지 않았다.
+2026-10-04T06:10:07Z 확인: GitHub stable v0.1.1과 설치 파일 11개, 사이트·production manifest 0.1.1은 공개됐고 PR #101은 병합됐다. Windows NSIS·MSI와 Linux x64 AppImage의 실제 v0.1.0 → v0.1.1 업데이트·설정 유지·HWP/HWPX 재열기는 수용됐다. 이 검증 결과를 안내하는 새 body·웹·피드 문구의 공개 갱신은 아직 대기 중이다.
 
 | 버전 | 상태 | 이전 공개 버전 | GitHub Release | 기록 |
 |---|---|---|---|---|
-| v0.1.1 | GitHub stable 공개; 웹·피드 전환 및 실제 upgrade 대기 | v0.1.0 | [v0.1.1](https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.1) | [v0.1.1 공개 기록](v0.1.1.md), [안내 원문](v0.1.1.notes.json) |
+| v0.1.1 | Release·웹·피드 공개 및 세 형식 실제 upgrade 수용; 결과 문구 공개 갱신 대기 | v0.1.0 | [v0.1.1](https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.1) | [v0.1.1 공개 기록](v0.1.1.md), [안내 원문](v0.1.1.notes.json) |
 | v0.1.0 | stable 공개·Pages/updater 전환 및 동일 버전 조회 완료 | 없음 | [v0.1.0](https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.0) | [v0.1.0 공개 기록](v0.1.0.md) |
 
 최신 공개 버전은 실제 non-draft Release와 공개 read-back으로 판정한다. 가장 높은 파일명이나

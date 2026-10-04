@@ -5,7 +5,7 @@ import { publicKeyFingerprint, UPDATER_TARGETS } from './artifact-verifier.mjs';
 import { validateReleaseInventory } from './release-inventory.mjs';
 
 export const digest = bytes => createHash('sha256').update(bytes).digest('hex');
-export const MANIFEST_HASH = '62fae230339497b132be013ec91df7cd83b710b69c9de4f56ffff1c407463728';
+export const MANIFEST_HASH = '654efd7efc5f57de061d56743d30ab55c0f152d693df52c4022306261edbc638';
 export const INVENTORY = 'alhangeul-updater-release-inventory.json';
 export const TARGETS = Object.freeze({ nsis: 'windows-x86_64-nsis', msi: 'windows-x86_64-msi', appimage: 'linux-x86_64-appimage' });
 const ENDPOINT = 'https://postmelee.github.io/alhangeul-tauri/updater/stable.json';

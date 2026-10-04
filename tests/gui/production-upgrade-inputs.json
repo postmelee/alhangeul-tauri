@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "repository": "postmelee/alhangeul-tauri",
   "endpoint": "https://postmelee.github.io/alhangeul-tauri/updater/stable.json",
-  "manifestSha256": "62fae230339497b132be013ec91df7cd83b710b69c9de4f56ffff1c407463728",
+  "manifestSha256": "654efd7efc5f57de061d56743d30ab55c0f152d693df52c4022306261edbc638",
   "keyFingerprint": "9f86f804067eff359cd32707137dfaaea8710450985dda86b0392da5db63b8f8",
   "releases": {
     "n": {

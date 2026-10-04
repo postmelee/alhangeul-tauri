@@ -737,3 +737,15 @@ tests/gui/specs/production-updater.e2e.ts는 v0.1.0 동일 버전과 이전 mani
 ### Gate 6 handoff 보정 후 Windows 실행 승인·세 형식 수용 — 2026-10-04
 
 같은 스레드의 “진행해줘”로 exact harness b7f6979c1f38c060e27f2824bdd71d32c5047468의 Windows NSIS/MSI 실제 run·증거 분석·기존 위치 기록을 승인받았다. 동일 SHA fast37178736722 success 뒤 [실제37179376994](https://github.com/postmelee/alhangeul-tauri/actions/runs/37179376994)를 windows-x64/publish_release=false로 실행했고 전체 success다. 두 Windows 형식 모두 다운로드/dirty/UI 동의·연결 종료·실제exe/uninstall0.1.1·handler/defaults·fresh UI/no-update·설정/HWP6쪽/HWPX10쪽/canvas/원본 hash·accepted·cleanup/정책 복원이 통과했고 원시 ZIP/API digest와 계약·화면4장을 재대조했다. Linux는 이전 실제37158705809/a74d3638/artifact11286572569 성공을 재사용하며 이번 run에서는 선택하지 않았다. 세 형식 실제 upgrade 단계는 수용됐지만 공개 결과 문구·최종 PR/merge·Pages/HTTP 인계·issue close/cleanup은 남아 #97은 OPEN이다. 상세 식별자·archive hashes·당시 manifest·한계는 기존 stage4/report/docs/releases/v0.1.1.md에 기록했다. 이번 실행은 제품 build/sign/tag/assets/body/site/feed를 변경하지 않았다. 다음 source 보정과 공개 실행은 별도 승인 단계다.
+
+
+### Gate 7 실제 업데이트 결과 안내 보정 — 2026-10-04 승인 완료
+
+작업지시자가 검토용 `/tmp/task97-public-upgrade-result-draft.md`와 규격 생성기 산출물에 같은 스레드의 “진행해줘”로 응답해 원문·문서 보정, 플랫폼 중립 검사, Windows/Linux fast 및 PR 검토용 정리를 승인했다. PR 게시·공개 body 적용·merge·Pages/HTTP 게시·close/cleanup은 검증 결과 제시 후 다음 승인 단계다.
+
+- 문서 위치 판단: 기존 공식 `docs/releases`의 v0.1.1.notes.json·README.md·v0.1.1.md, 기존 `site/updates/v0.1.1.html` 생성 페이지와 `site/release.json`을 사용한다. 새 공식 루트는 없다. plans2개·stage4/report/orders에 승인·결과를 기록한다.
+- 원문 두 문구를 NSIS·MSI·Linux x64 AppImage의 실제 v0.1.0→v0.1.1 업데이트, 설정 유지·HWP/HWPX 재열기 수용으로 보정한다. 첫 업데이트 안내·knownLimitations·metadata는 보존하고 공식 생성기로 body/HTML/short notes를 다시 만든다.
+- site/release.json은 notes만 변경하고 version/date/source/tag/URL/signature/key/inventory/assets는 보존한다. 새 manifest bytes에 맞춰 production 입력·contract의 hash만 갱신하고 현재 원문/생성 manifest의 drift 계약을 검사한다. 과거 실제 성공 기록은 당시 원래 manifest hash·exact harness/run/artifact를 유지하며 새 native 성공으로 표현하지 않는다.
+- 릴리즈 인덱스와 공개 기록 첫 상태는 읽기 전용 공개 확인 및 이미 수용한 실제 증거에 맞춘다. 결과 문구 공개 갱신은 아직 대기임을 명시한다.
+- release notes 생성·drift·Pages/updater/워크플로 계약, Pages build/check, GUI 시각 확인(1366·390·320px), product boundary/upstream/Studio test·build/GUI typecheck/action pins/automation 및 새 exact Windows/Linux fast를 수행한다. Mac에서는 중립 검사만 한다. 제품 runtime/build/sign/tag/assets/native 재실행은 없다.
+- 통과 후 기존 stage4/report에 승인·변경·검증·보존 여부·제한·다음 공개 gate를 기록하고 소스와 묶음 커밋한다. 같은 bytes의 제품 CI·설치 검증을 반복하지 않는다. #97은 최종 공개 인계까지 OPEN이다.

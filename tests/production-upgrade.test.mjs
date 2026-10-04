@@ -5,6 +5,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 import { requireApply } from '../scripts/updater/production-upgrade.mjs';
+import { buildUpdaterManifest, serializeUpdaterManifest } from '../scripts/updater/manifest.mjs';
 import test from 'node:test';
 import { observeWindowsHandoff, recordWindowsClosure, isWindowsTransportClosed } from './gui/production-upgrade/windows-handoff.ts';
 import { captureInstallFailure } from './gui/production-upgrade/install-diagnostics.ts';
@@ -89,6 +90,13 @@ test('Windows rejects reboot incomplete executable version wrong or association 
 });
 
 const currentData = JSON.parse(await readFile(new URL('../site/release.json', import.meta.url)));
+test('production pinned manifest matches the current generated public feed bytes', () => {
+  const bytes = serializeUpdaterManifest(buildUpdaterManifest(currentData), currentData);
+  assert.equal(digest(bytes), MANIFEST_HASH);
+  assert.equal(spec.manifestSha256, digest(bytes));
+  const changed = clone(currentData); changed.notes += '\nChanged release guidance';
+  assert.notEqual(digest(serializeUpdaterManifest(buildUpdaterManifest(changed), changed)), MANIFEST_HASH);
+});
 test('signed inventory rejects path traversal and wrong product identity', () => {
   const inventory = currentData.updater.inventory;
   validateInventory(inventory, spec.releases.next, spec);
