@@ -1,0 +1,480 @@
+{
+  "checkedAt": "2026-10-04T18:59:22.041546+00:00",
+  "approval": "진행해줘. 병합및 이번 작업 마무리까지 별도 승인없이 계속 진행해줘.",
+  "mainSha": "7bab9062b7d231faad53465536aff407d535f52d",
+  "develSha": "1d3817c7133658c9e4251f65f5202baafd0624f4",
+  "productSourceSha": "96e89e900415ee9e1e942b5c01c833dea3415e86",
+  "mergeBase": "96e89e900415ee9e1e942b5c01c833dea3415e86",
+  "directChangedPaths": [
+    ".github/workflows/alhangeul-ci-fast.yml",
+    ".github/workflows/alhangeul-desktop.yml",
+    ".github/workflows/alhangeul-production-upgrade-linux.yml",
+    ".github/workflows/alhangeul-production-upgrade-windows.yml",
+    "README.md",
+    "docs/README.md",
+    "docs/architecture/PROVENANCE.md",
+    "docs/operations/PUBLIC_RELEASE_RUNBOOK.md",
+    "docs/operations/RELEASE_CHECKLIST.md",
+    "docs/releases/README.md",
+    "docs/releases/v0.1.1.md",
+    "docs/releases/v0.1.1.notes.json",
+    "mydocs/_templates/README.md",
+    "mydocs/_templates/release_notes.md",
+    "mydocs/_templates/release_record.md",
+    "mydocs/_templates/website_release_note.html",
+    "mydocs/orders/20261003.md",
+    "mydocs/orders/20261004.md",
+    "mydocs/orders/20261005.md",
+    "mydocs/plans/task_m010_102.md",
+    "mydocs/plans/task_m010_102_impl.md",
+    "mydocs/plans/task_m010_108.md",
+    "mydocs/plans/task_m010_108_impl.md",
+    "mydocs/plans/task_m010_97.md",
+    "mydocs/plans/task_m010_97_impl.md",
+    "mydocs/report/task_m010_102_report.md",
+    "mydocs/report/task_m010_108_report.md",
+    "mydocs/report/task_m010_97_report.md",
+    "mydocs/working/task_m010_102_stage1.md",
+    "mydocs/working/task_m010_102_stage2.md",
+    "mydocs/working/task_m010_102_stage3.md",
+    "mydocs/working/task_m010_102_stage4.md",
+    "mydocs/working/task_m010_108_stage1.md",
+    "mydocs/working/task_m010_108_stage2.md",
+    "mydocs/working/task_m010_108_stage3.md",
+    "mydocs/working/task_m010_97.json",
+    "mydocs/working/task_m010_97_stage4.md",
+    "package.json",
+    "scripts/build-pages.mjs",
+    "scripts/check-pages.mjs",
+    "scripts/check-product-boundary.mjs",
+    "scripts/ci/release-file-process-probe.sh",
+    "scripts/ci/run-release-file-gui.sh",
+    "scripts/pages/package-downloads.mjs",
+    "scripts/pages/site-files.mjs",
+    "scripts/releases/notes-check.mjs",
+    "scripts/releases/notes-cli.mjs",
+    "scripts/releases/notes-fields.mjs",
+    "scripts/releases/notes-files.mjs",
+    "scripts/releases/notes-metadata.mjs",
+    "scripts/releases/notes-render.mjs",
+    "scripts/releases/notes-schema.mjs",
+    "scripts/releases/website-render.mjs",
+    "scripts/updater/production-contract.mjs",
+    "scripts/updater/production-download.mjs",
+    "scripts/updater/production-evidence.mjs",
+    "scripts/updater/production-process.mjs",
+    "scripts/updater/production-upgrade.mjs",
+    "site/feedback/index.html",
+    "site/index.html",
+    "site/package-downloads.js",
+    "site/release.json",
+    "site/script.js",
+    "site/styles.css",
+    "site/updates/index.html",
+    "site/updates/v0.1.1.html",
+    "tests/actions-workflows.test.mjs",
+    "tests/ci-pr-acceptance.test.mjs",
+    "tests/ci-release-session-lifecycle.test.mjs",
+    "tests/fixtures/pages-package-fixtures.mjs",
+    "tests/fixtures/pages-release-fixtures.mjs",
+    "tests/fixtures/pages-ui-dom.mjs",
+    "tests/fixtures/release-note-files.mjs",
+    "tests/fixtures/release-note-fixtures.mjs",
+    "tests/gui-contracts.test.mjs",
+    "tests/gui/production-upgrade-inputs.json",
+    "tests/gui/production-upgrade/apply.ts",
+    "tests/gui/production-upgrade/inputs.ts",
+    "tests/gui/production-upgrade/install-diagnostics.ts",
+    "tests/gui/production-upgrade/native.ts",
+    "tests/gui/production-upgrade/restart.ts",
+    "tests/gui/production-upgrade/startup.ts",
+    "tests/gui/production-upgrade/verify.ts",
+    "tests/gui/production-upgrade/windows-handoff.ts",
+    "tests/gui/specs/production-upgrade.e2e.ts",
+    "tests/gui/specs/release-files.e2e.ts",
+    "tests/gui/support/linux-session-lifecycle.d.mts",
+    "tests/gui/support/linux-session-lifecycle.mjs",
+    "tests/gui/support/studio-startup.ts",
+    "tests/gui/wdio.production-upgrade.conf.ts",
+    "tests/pages-design.test.mjs",
+    "tests/pages-package-downloads.test.mjs",
+    "tests/pages-package-ui.test.mjs",
+    "tests/pages-release-notes.test.mjs",
+    "tests/pages-showcase.test.mjs",
+    "tests/pages.test.mjs",
+    "tests/product-boundary.test.mjs",
+    "tests/production-upgrade-workflows.test.mjs",
+    "tests/production-upgrade.test.mjs",
+    "tests/release-notes-generation.test.mjs",
+    "tests/release-notes-integration.test.mjs",
+    "tests/release-notes.test.mjs",
+    "tests/windows-production-upgrade.test.ps1"
+  ],
+  "productPathsIdentical": true,
+  "tagObjectSha": "b7b858e13c3f9153562e28e33cc398e75e896adf",
+  "release": {
+    "id": 402604603,
+    "tag": "v0.1.1",
+    "bodySha256": "3544f72d3e3aac3d4f7aab2955ef245bc3cb8cda30dfc5bde1ee889678e250b4",
+    "assets": [
+      {
+        "id": 608174760,
+        "name": "Alhangeul-0.1.1-1.x86_64.rpm",
+        "size": 66948539,
+        "digest": "sha256:185c399e737c2a686f5d5f599866fa3a63abac442e928f9442c29d9f178564b3"
+      },
+      {
+        "id": 608179415,
+        "name": "alhangeul-updater-release-inventory.json",
+        "size": 2606,
+        "digest": "sha256:8f594523bca49993ba3addc51346932ce0018b29533cf237987234f96eac9b82"
+      },
+      {
+        "id": 608174616,
+        "name": "Alhangeul_0.1.1_amd64.AppImage",
+        "size": 135346680,
+        "digest": "sha256:c3a599fdea3b52353d875a4c50738babaf91102c26fcd7a6079e69e96b6bebf0"
+      },
+      {
+        "id": 608174705,
+        "name": "Alhangeul_0.1.1_amd64.AppImage.sig",
+        "size": 420,
+        "digest": "sha256:9306fecf0bdf7a367d4c848191f6b4e58b8255ca63e8d50401508b494f448a32"
+      },
+      {
+        "id": 608174714,
+        "name": "Alhangeul_0.1.1_amd64.deb",
+        "size": 66954862,
+        "digest": "sha256:6ad4492529dd228d38d37b697d0175323e71e2632212f472c1557f3868913862"
+      },
+      {
+        "id": 608179311,
+        "name": "Alhangeul_0.1.1_arm64.deb",
+        "size": 66823896,
+        "digest": "sha256:3e29375bf7f824bdc84ae3f1dbff5b5cbeacae5ae694fa64d30c423a5be58859"
+      },
+      {
+        "id": 608174618,
+        "name": "Alhangeul_0.1.1_x64-setup.exe",
+        "size": 56793106,
+        "digest": "sha256:9ff5e10e9b99f2605ab77b2d8525870819f3ed9d138b84fe2e6009b2222a1ca3"
+      },
+      {
+        "id": 608174619,
+        "name": "Alhangeul_0.1.1_x64-setup.exe.sig",
+        "size": 420,
+        "digest": "sha256:449beb188b00a3ec9ce3fb25c28a821fddbd97e1e797f57c210980f46132ce6a"
+      },
+      {
+        "id": 608174620,
+        "name": "Alhangeul_0.1.1_x64_en-US.msi",
+        "size": 64102400,
+        "digest": "sha256:6a34ae3a52c59bf4737cf1595d65a914fdd2ec588a3a1c54270c7d83c578fc98"
+      },
+      {
+        "id": 608174617,
+        "name": "Alhangeul_0.1.1_x64_en-US.msi.sig",
+        "size": 420,
+        "digest": "sha256:48e55d46a848e7fad77f8eb2cb41facfbf5e7f2edb632fe73eeb4fc00f1fd636"
+      },
+      {
+        "id": 608179489,
+        "name": "SHA256SUMS",
+        "size": 976,
+        "digest": "sha256:9e3bac3b575f8d074cae21a68dfcaa88e5b6205873996c3d0c4a379640745a44"
+      }
+    ]
+  },
+  "existingFast": {
+    "runId": 37222603474,
+    "attempt": 1,
+    "headSha": "02d71ead1cf2b6b516ecf61eb583763c1fea9c83",
+    "conclusion": "success",
+    "jobs": [
+      {
+        "id": 111495808896,
+        "name": "contracts / Fast Windows PowerShell contracts",
+        "conclusion": "success",
+        "html_url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/37222603474/job/111495808896"
+      },
+      {
+        "id": 111495809070,
+        "name": "contracts / Fast Node and Studio contracts",
+        "conclusion": "success",
+        "html_url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/37222603474/job/111495809070"
+      },
+      {
+        "id": 111496324195,
+        "name": "Alhangeul PR required",
+        "conclusion": "success",
+        "html_url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/37222603474/job/111496324195"
+      }
+    ]
+  },
+  "existingPages": {
+    "runId": 37223289065,
+    "sourceSha": "1d3817c7133658c9e4251f65f5202baafd0624f4",
+    "conclusion": "success"
+  },
+  "existingWindowsUpgrade": {
+    "runId": 37179376994,
+    "headSha": "b7f6979c1f38c060e27f2824bdd71d32c5047468",
+    "conclusion": "success"
+  },
+  "existingLinuxUpgrade": {
+    "runId": 37158705809,
+    "headSha": "a74d3638116e0bf579985f517e008b365399945f",
+    "runConclusion": "failure",
+    "jobs": [
+      {
+        "id": 111307414907,
+        "name": "production-upgrade-linux / Production Linux AppImage 0.1.0 to 0.1.1",
+        "conclusion": "success",
+        "html_url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/37158705809/job/111307414907"
+      },
+      {
+        "id": 111307415036,
+        "name": "production-upgrade-windows / Production Windows nsis 0.1.0 to 0.1.1",
+        "conclusion": "failure",
+        "html_url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/37158705809/job/111307415036"
+      },
+      {
+        "id": 111307415056,
+        "name": "production-upgrade-windows / Production Windows msi 0.1.0 to 0.1.1",
+        "conclusion": "failure",
+        "html_url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/37158705809/job/111307415056"
+      },
+      {
+        "id": 111307415365,
+        "name": "Test dialog policy and observe controlled confirmation",
+        "conclusion": "skipped",
+        "html_url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/37158705809/job/111307415365"
+      },
+      {
+        "id": 111307415577,
+        "name": "release-linux-file-acceptance",
+        "conclusion": "skipped",
+        "html_url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/37158705809/job/111307415577"
+      },
+      {
+        "id": 111307415584,
+        "name": "Build updater acceptance ${{ matrix.role }} ${{ matrix.name }}",
+        "conclusion": "skipped",
+        "html_url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/37158705809/job/111307415584"
+      },
+      {
+        "id": 111307415641,
+        "name": "release-file-acceptance",
+        "conclusion": "skipped",
+        "html_url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/37158705809/job/111307415641"
+      },
+      {
+        "id": 111307415668,
+        "name": "artifact",
+        "conclusion": "skipped",
+        "html_url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/37158705809/job/111307415668"
+      },
+      {
+        "id": 111307415902,
+        "name": "Verify complete updater release inventory",
+        "conclusion": "skipped",
+        "html_url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/37158705809/job/111307415902"
+      },
+      {
+        "id": 111307415997,
+        "name": "site-capture",
+        "conclusion": "skipped",
+        "html_url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/37158705809/job/111307415997"
+      },
+      {
+        "id": 111307416186,
+        "name": "Verify nonpublishing updater acceptance candidate",
+        "conclusion": "skipped",
+        "html_url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/37158705809/job/111307416186"
+      },
+      {
+        "id": 111307416543,
+        "name": "Publish verified updater release",
+        "conclusion": "skipped",
+        "html_url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/37158705809/job/111307416543"
+      },
+      {
+        "id": 111307430548,
+        "name": "release-fedora-vm-acceptance",
+        "conclusion": "skipped",
+        "html_url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/37158705809/job/111307430548"
+      },
+      {
+        "id": 111307432122,
+        "name": "font-performance",
+        "conclusion": "skipped",
+        "html_url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/37158705809/job/111307432122"
+      },
+      {
+        "id": 111307434291,
+        "name": "Verify existing Windows product PDF export",
+        "conclusion": "skipped",
+        "html_url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/37158705809/job/111307434291"
+      },
+      {
+        "id": 111307434960,
+        "name": "Build updater ${{ matrix.name }}",
+        "conclusion": "skipped",
+        "html_url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/37158705809/job/111307434960"
+      },
+      {
+        "id": 111307435478,
+        "name": "Diagnose Linux window automation only",
+        "conclusion": "skipped",
+        "html_url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/37158705809/job/111307435478"
+      },
+      {
+        "id": 111307440075,
+        "name": "Run updater native negative acceptance",
+        "conclusion": "skipped",
+        "html_url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/37158705809/job/111307440075"
+      },
+      {
+        "id": 111307444408,
+        "name": "Run updater native acceptance",
+        "conclusion": "skipped",
+        "html_url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/37158705809/job/111307444408"
+      }
+    ]
+  },
+  "publicFiles": [
+    {
+      "path": "assets/linux-drag-in.png",
+      "size": 178918,
+      "sha256": "ee021b47b66e8a6069f2eec918a27153c8a15df4a22c3a37e82d275f2131cbd7",
+      "httpStatus": 200
+    },
+    {
+      "path": "assets/linux-editor.png",
+      "size": 79227,
+      "sha256": "a3d4460b8fc432f00a2ce97cd68552582b2f5dfdc88faec9f749e58be132618b",
+      "httpStatus": 200
+    },
+    {
+      "path": "assets/linux-explorer.png",
+      "size": 106078,
+      "sha256": "2182a6476a972533e726d5ee64875c92557aac26894aeaf30df4be3fcfce61f8",
+      "httpStatus": 200
+    },
+    {
+      "path": "assets/linux-pdf.png",
+      "size": 66740,
+      "sha256": "3b646ac975aa4b3720add31dcef78a9b42b87a8e4260d3e8825581db947df742",
+      "httpStatus": 200
+    },
+    {
+      "path": "assets/logo/favicon.ico",
+      "size": 46778,
+      "sha256": "bd9aa0ab1cd0eb2a86fd783b2775deefc992d1044718c5bef1dbf6d6a614c16a",
+      "httpStatus": 200
+    },
+    {
+      "path": "assets/logo/logo-256.png",
+      "size": 40783,
+      "sha256": "c1d2d9ec13e10bcb8a046cf8c6392fa8b0d91bbca2e07c0dead7c235133917db",
+      "httpStatus": 200
+    },
+    {
+      "path": "assets/og-main.png",
+      "size": 269618,
+      "sha256": "8e478814d1bcebc233adc82cbdaed0d796c8214c3c6e3fcc1fd78587702ed54d",
+      "httpStatus": 200
+    },
+    {
+      "path": "assets/windows-app.png",
+      "size": 39153,
+      "sha256": "9e50463e32afbcfed2e864fb761efa8c1be0d21bf2dfad4a8a9f552fbce1c411",
+      "httpStatus": 200
+    },
+    {
+      "path": "assets/windows-editor.png",
+      "size": 68691,
+      "sha256": "3034cef5c00e16eda0d1a51804ab60f12d4e3594d8a9b1220061f0ef43e76c86",
+      "httpStatus": 200
+    },
+    {
+      "path": "assets/windows-explorer.png",
+      "size": 114402,
+      "sha256": "460f225615e9876aea9e3aeeca382a25e2ebaf41b71105af92a8c30878c0e35d",
+      "httpStatus": 200
+    },
+    {
+      "path": "downloads.json",
+      "size": 2737,
+      "sha256": "3a4e7b29cba59b24bfc9e8fdad3ab192472e4b7706fa383c754be7060ab05eb9",
+      "httpStatus": 200
+    },
+    {
+      "path": "feedback/index.html",
+      "size": 6561,
+      "sha256": "c6efebb24358e51872de5092f2fc81edc3739c448f8114b80e0bfb7f1521532c",
+      "httpStatus": 200
+    },
+    {
+      "path": "home-showcase.css",
+      "size": 2359,
+      "sha256": "7aaf8967e450186eada21e751b29ccabb73da8ec44b006d7d6c6607a33a07cdd",
+      "httpStatus": 200
+    },
+    {
+      "path": "home-showcase.js",
+      "size": 1607,
+      "sha256": "b3321a3f4e96f30adb8e53600c16cc4b4f04d9aec1006ad9115640b7d90ce9f9",
+      "httpStatus": 200
+    },
+    {
+      "path": "index.html",
+      "size": 9540,
+      "sha256": "b44794787efe4a205db64c34f229dfdb01c85e55e9ef37ab2981e3f29e4a3ac9",
+      "httpStatus": 200
+    },
+    {
+      "path": "package-downloads.js",
+      "size": 6115,
+      "sha256": "3502910ccb88aa520850a7e2d6859ff01365070fbb7fe8199c54c7466d234fa7",
+      "httpStatus": 200
+    },
+    {
+      "path": "release.json",
+      "size": 3862,
+      "sha256": "aa2bce9bf52a37a37c091b80be47e0146d5b15e6b338cabcc6e8b204cce07efd",
+      "httpStatus": 200
+    },
+    {
+      "path": "script.js",
+      "size": 5887,
+      "sha256": "466a9c33406cf758364495477da5ff273280936ad723da550b36b747ccbea941",
+      "httpStatus": 200
+    },
+    {
+      "path": "styles.css",
+      "size": 17820,
+      "sha256": "fe758b86ff87b724e8db9ab73a884a11b0f1d8f603707a8f9fd3ed48a5de24a6",
+      "httpStatus": 200
+    },
+    {
+      "path": "updater/stable.json",
+      "size": 2295,
+      "sha256": "654efd7efc5f57de061d56743d30ab55c0f152d693df52c4022306261edbc638",
+      "httpStatus": 200
+    },
+    {
+      "path": "updates/index.html",
+      "size": 7895,
+      "sha256": "0d5e9a3bb71f790038ca08b8dec8c42b5fe10b9921b55e1f5f31605440843c47",
+      "httpStatus": 200
+    },
+    {
+      "path": "updates/v0.1.1.html",
+      "size": 8633,
+      "sha256": "1037b12d5f312f12e98ad12c3c26342a8c5b47d3b55e6631ea8366e552703d75",
+      "httpStatus": 200
+    }
+  ],
+  "scope": "Existing v0.1.1 and published Pages read-back; no new native build or upgrade execution"
+}
