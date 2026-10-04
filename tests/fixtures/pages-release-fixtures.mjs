@@ -55,8 +55,7 @@ export function publishedFixture() {
   };
 }
 
-export function publishedManifestFixture() {
-  const release = publishedFixture();
+export function publishedManifestFixture(release = publishedFixture()) {
   const signature = fixtureSignature();
   const contracts = {
     'windows-x86_64-nsis': ['nsis', `nsis/Alhangeul_${release.version}_x64-setup.exe`],
@@ -102,7 +101,7 @@ function fixtureSignature() {
   return Buffer.from(source).toString('base64');
 }
 
-export async function createPagesFixture(release) {
+export async function createPagesFixture(release, options = {}) {
   if (!release) throw new Error('고정 release fixture가 필요합니다.');
   const tmp = await mkdtemp(join(tmpdir(), 'alhangeul-pages-'));
   const root = join(tmp, 'repository');
@@ -111,7 +110,7 @@ export async function createPagesFixture(release) {
     recursive: true,
     filter: (path) => !/[/\\]updates[/\\]v\d+\.\d+\.\d+\.html$/.test(path),
   });
-  // These fixtures model release/feed states independently of actual published note history.
+  // 고정 release/feed 상태의 원문은 아래에서 명시적으로 구성한다.
   const indexPath = join(root, 'site/updates/index.html');
   const index = await readFile(indexPath, 'utf8');
   await writeFile(indexPath, index.replace(/\s*<a\b[^>]*data-release-note-version="[^"]+"[^>]*>[\s\S]*?<\/a>/g, ''));
@@ -121,12 +120,16 @@ export async function createPagesFixture(release) {
     await mkdir(dirname(output), { recursive: true });
     await cp(join(repositoryRoot, asset), output);
   }
+  if (release.status === 'published' && options.includeNotes !== false) {
+    const { installPublishedNotes } = await import('./pages-package-fixtures.mjs');
+    await installPublishedNotes(root, release);
+  }
   return { tmp, root, cleanup: () => rm(tmp, { recursive: true, force: true }) };
 }
 
-export async function siteInventory(root) {
+export async function siteInventory(root, options = {}) {
   const entries = [];
-  for (const path of await listSiteFiles(root)) {
+  for (const path of await listSiteFiles(root, options)) {
     const content = await readFile(join(root, path));
     entries.push([path, createHash('sha256').update(content).digest('hex')]);
   }

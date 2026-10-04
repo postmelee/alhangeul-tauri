@@ -4,7 +4,6 @@ import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
-import { runInNewContext } from 'node:vm';
 
 const repositoryRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const readSite = (path, encoding) => readFile(join(repositoryRoot, 'site', path), encoding);
@@ -63,7 +62,7 @@ test('홈·업데이트·문의 페이지는 승인된 메뉴와 공유 메타�
     assert.match(html, /<title>[^<]+<\/title>/);
     assert.match(html, /<meta name="description" content="[^"]+" \/>/);
     assert.match(html, /<meta property="og:image" content="https:\/\/postmelee\.github\.io\/alhangeul-tauri\/assets\/og-main\.png" \/>/);
-    assert.match(html, /styles\.css\?v=102-3/);
+    assert.match(html, /styles\.css\?v=108-2/);
     assert.match(html, new RegExp(`<link rel="canonical" href="${escapeRegExp(expected.canonical)}" \\/>`));
     assert.match(html, /href="https:\/\/github\.com\/postmelee\/alhangeul-tauri"/);
     for (const link of expected.links) {
@@ -84,99 +83,20 @@ test('홈·업데이트·문의 페이지는 승인된 메뉴와 공유 메타�
 
 test('업데이트 페이지는 MSI·NSIS·AppImage와 수동 설치 범위를 fail-closed로 안내한다', async () => {
   const html = await readSite('updates/index.html', 'utf8');
-  assert.equal([...html.matchAll(/data-download-target=/g)].length, 3);
-  for (const target of [
-    'windows-x86_64-nsis',
-    'windows-x86_64-msi',
-    'linux-x86_64-appimage',
-  ]) {
-    assert.match(html, new RegExp(`<span[^>]+data-download-target="${target}"`));
-  }
-  assert.match(html, /<details class="download-picker" id="latest-download">/);
-  assert.match(html, /<summary class="page-action-button">[\s\S]*최신 버전 다운로드[\s\S]*<svg class="download-chevron"/);
-  assert.match(html, /<path d="m4 6 4 4 4-4"><\/path>/);
-  assert.doesNotMatch(html, /⌄/);
+  assert.match(html, /<button[^>]+data-download-toggle[^>]+aria-expanded="false"[^>]+aria-controls="download-panel"/);
+  assert.match(html, /<section class="download-panel" id="download-panel"[^>]+ hidden>/);
+  for (const platform of ['windows', 'linux']) assert.ok(html.includes(`data-package-platform="${platform}"`));
+  assert.doesNotMatch(html, /<details|<summary|class="download-options"/);
   assert.match(html, /class="release-note-list"/);
   assert.match(html, /data-release-note/);
   assert.match(html, /앱에서 업데이트 확인/);
   assert.match(html, /릴리즈 노트/);
   assert.match(html, /DEB·RPM과 Linux arm64는 GitHub Releases/);
-  assert.doesNotMatch(html, /설치 형식|업데이트 manifest 주소|updater\/stable\.json/);
+  assert.doesNotMatch(html, /업데이트 manifest 주소|updater\/stable\.json/);
   assert.doesNotMatch(html, /Updates &amp; installation/i);
-  assert.doesNotMatch(html, /platform-card|download-action/);
+  assert.doesNotMatch(html, /platform-card|class="download-action"/);
   assert.doesNotMatch(html, /releases\/download\//);
 });
-
-for (const manifestPublished of [false, true]) {
-  test(`published release hydration은 manifestPublished=${manifestPublished}에서 exact artifact로 전환한다`, async () => {
-  const source = await readSite('script.js', 'utf8');
-  const homeAction = fakeElement('A', { textContent: 'NSIS Windows x64 · 일반 설치 권장 다운로드' });
-  const homeState = { dataset: { downloadState: 'home' }, textContent: '다운로드' };
-  homeAction.querySelector = () => homeState;
-  homeAction.dataset.downloadTarget = 'windows-x86_64-nsis';
-  homeAction.href = 'updates/#latest-download';
-  const msiAction = fakeElement('A', { textContent: 'MSI Windows x64 · 조직·관리 배포 다운로드' });
-  const msiState = { dataset: { downloadState: 'home' }, textContent: '다운로드' };
-  msiAction.querySelector = () => msiState;
-  msiAction.dataset.downloadTarget = 'windows-x86_64-msi';
-  const menuAction = fakeElement('SPAN', { textContent: 'Linux x64 AppImage · 준비 중' });
-  menuAction.dataset.downloadTarget = 'linux-x86_64-appimage';
-  const menuState = { dataset: {}, textContent: 'AppImage · 준비 중' };
-  const message = { textContent: '' };
-  const note = fakeElement('DIV');
-  const document = {
-    body: { dataset: { siteRoot: './' } },
-    createElement: (tag) => {
-      const element = fakeElement(tag.toUpperCase());
-      if (tag.toUpperCase() === 'A') element.querySelector = () => menuState;
-      return element;
-    },
-    querySelector: (selector) => selector === '[data-release-note]' ? note : null,
-    querySelectorAll: (selector) => ({
-      '[data-release-message]': [message],
-      '[data-download-target]': [homeAction, msiAction, menuAction],
-      '[data-copy-value]': [],
-    })[selector] ?? [],
-  };
-  const release = {
-    status: 'published',
-    version: '0.2.0',
-    tag: 'v0.2.0',
-    downloads: {
-      'windows-x86_64-nsis': 'https://github.com/postmelee/alhangeul-tauri/releases/download/v0.2.0/Alhangeul_0.2.0_x64-setup.exe',
-      'windows-x86_64-msi': 'https://github.com/postmelee/alhangeul-tauri/releases/download/v0.2.0/Alhangeul_0.2.0_x64_en-US.msi',
-      'linux-x86_64-appimage': 'https://github.com/postmelee/alhangeul-tauri/releases/download/v0.2.0/Alhangeul_0.2.0_amd64.AppImage',
-    },
-    updater: { manifestPublished },
-  };
-
-  runInNewContext(source, {
-    document,
-    fetch: async () => ({ ok: true, json: async () => release }),
-    URL,
-    window: { setTimeout },
-    navigator: {},
-  });
-  await new Promise((resolve) => setImmediate(resolve));
-
-  assert.equal(homeAction.href, release.downloads['windows-x86_64-nsis']);
-  assert.equal(homeAction.dataset.downloadReady, 'true');
-  assert.equal(homeState.textContent, '다운로드');
-  assert.equal(msiState.textContent, '다운로드');
-  assert.equal(homeAction['aria-label'], 'Windows x64 NSIS · 알한글 0.2.0 다운로드');
-  assert.equal(msiAction['aria-label'], 'Windows x64 MSI · 알한글 0.2.0 다운로드');
-  assert.equal(menuAction.replacement.href, release.downloads['linux-x86_64-appimage']);
-  assert.equal(menuAction.replacement.dataset.downloadReady, 'true');
-  assert.equal(menuState.textContent, 'AppImage · 0.2.0 다운로드');
-  assert.equal(
-    menuAction.replacement['aria-label'],
-    'Linux x64 AppImage · 알한글 0.2.0 다운로드',
-  );
-  assert.doesNotMatch(menuAction.replacement['aria-label'], /준비 중/);
-  assert.equal(note.replacement.href, 'https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.2.0');
-  assert.match(message.textContent, /최신 버전 v0\.2\.0/);
-  });
-}
 
 test('문의 페이지는 개인정보 안내와 이메일·Issue 경로를 제공한다', async () => {
   const html = await readSite('feedback/index.html', 'utf8');
@@ -240,14 +160,12 @@ test('홈은 일반 화면에서 스크롤을 막고 작은 화면 fallback과 �
   assert.match(css, /\.headline-line \{ display: block; white-space: nowrap; \}/);
   assert.match(css, /\.product-window \{[^}]*border: 0; border-radius: 2px;/);
   for (const pattern of [/\.download-chevron \{[^}]*width: 16px; height: 16px/, /\.download-chevron path \{[^}]*stroke: currentcolor/]) assert.match(css, pattern);
-  for (const pattern of [/\.updates-actions \{[^}]*flex-wrap: wrap; align-items: center; justify-content: center/, /@media \(max-width: 820px\)[\s\S]*\.updates-actions \{ justify-content: center; \}/, /@media \(max-width: 340px\)[\s\S]*\.updates-actions \{ flex-direction: column; align-items: center; \}/, /\.download-picker \.page-action-button \{ width: max-content; margin-inline: auto; \}/, /\.download-options \{ position: static; width: 100%; margin-top: 8px; transform: none; \}/]) assert.match(css, pattern);
   for (const pattern of [/\.updates-hero h1 \{[^}]*font-size: clamp\(40px, 7vw, 72px\)/, /\.updates-hero > p \{[^}]*font-size: 21px/, /\.updates-section h2 \{[^}]*font-size: 26px/, /\.feedback-contact-card h2 \{[^}]*font-size: 26px/]) assert.match(css, pattern);
   assert.match(css, /\.install-heading h2 \{[^}]*color: var\(--ink\); font-size: 17px; font-weight: 600/);
   assert.match(css, /\.download-platform-switch \{[^}]*grid-template-columns: repeat\(2, minmax\(92px, 1fr\)\)/);
   assert.match(css, /#download-platform-windows:checked ~ \.download-platform-panels \.windows-panel/);
   assert.match(css, /\.download-platform-panels \{ margin-top: 10px/);
   assert.match(css, /\.download-package-option \{[^}]*min-height: 44px;[^}]*grid-template-columns: minmax\(0, 1fr\) auto/);
-  assert.match(css, /\.download-package-copy \{[^}]*grid-template-columns: 76px minmax\(0, 1fr\)/);
   assert.match(css, /\.download-package-copy strong \{[^}]*font-size: 14px; font-weight: 650/);
   assert.match(css, /\.download-package-action \{[^}]*min-width: 76px; min-height: 32px;[^}]*background: var\(--blue\); color: white; font-size: 12px/);
   assert.match(css, /\.download-package-action:hover \{[^}]*background: var\(--blue-dark\)/);
@@ -255,8 +173,6 @@ test('홈은 일반 화면에서 스크롤을 막고 작은 화면 fallback과 �
   for (const pattern of [/\.page-action-button \{[^}]*min-height: 46px;[^}]*font-size: 16px/, /\.page-secondary-link \{[^}]*min-height: 42px;[^}]*font-size: 14px/, /\.site-footer \{[^}]*padding: 18px 0[^}]*font-size: 13px/, /\.site-footer-inner \{[^}]*width: min\(980px, calc\(100% - 40px\)\)[^}]*grid-template-columns: minmax\(140px, 1fr\)/, /\.footer-brand img \{[^}]*width: 24px; height: 24px/, /\.updates-page \+ \.site-footer \{ margin-top: 48px; \}/]) assert.match(css, pattern);
   assert.match(script, /fetch\(`\$\{siteRoot\}release\.json`/);
   assert.match(script, /navigator\.clipboard\.writeText/);
-  assert.match(script, /isExactDownload\(url, release\.tag\)/);
-  assert.match(script, /state\?\.dataset\.downloadState === 'home'/);
   assert.match(script, /\['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'\]/);
 });
 
@@ -282,20 +198,4 @@ test('Pages source는 승인된 외부 홈페이지 안내 외 지원 범위 밖
 
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-function fakeElement(tagName, options = {}) {
-  return {
-    tagName,
-    className: '',
-    dataset: {},
-    innerHTML: '',
-    textContent: options.textContent ?? '',
-    children: [],
-    setAttribute(name, value) { this[name] = value; },
-    removeAttribute(name) { delete this[name]; },
-    querySelector() { return null; },
-    replaceWith(value) { this.replacement = value; },
-    append(...values) { this.children.push(...values); },
-  };
 }

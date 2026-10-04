@@ -10,10 +10,11 @@
         <meta property="og:image" content="https://postmelee.github.io/alhangeul-tauri/assets/og-main.png" />
         <link rel="canonical" href="https://postmelee.github.io/alhangeul-tauri/updates/" />
         <link rel="icon" href="../../assets/logo/favicon.ico" />
-        <link rel="stylesheet" href="../styles.css?v=102-3" />
-        <script src="../script.js?v=102-3" defer></script>
+        <link rel="stylesheet" href="../styles.css?v=108-2" />
+        <script src="../package-downloads.js?v=108-2" defer></script>
+        <script src="../script.js?v=108-2" defer></script>
     </head>
-    <body data-site-root="../">
+    <body class="release-page" data-site-root="../">
         <a class="skip-link" href="#main">본문으로 이동</a>
         <header class="site-header" aria-label="주요 탐색">
             <div class="site-header-inner">
@@ -32,21 +33,37 @@
                 <h1 id="updates-title">알한글 업데이트</h1>
                 <p data-release-message>Windows와 Linux 설치 파일과 버전별 변경 내용을 확인하세요. 최신 버전은 공개 데이터를 불러와 안내합니다.</p>
                 <div class="updates-actions" aria-label="업데이트 주요 링크">
-                    <details class="download-picker" id="latest-download">
-                        <summary class="page-action-button">
-                            최신 버전 다운로드
-                            <svg class="download-chevron" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
-                                <path d="m4 6 4 4 4-4"></path>
-                            </svg>
-                        </summary>
-                        <div class="download-options" aria-label="플랫폼별 다운로드">
-                            <span class="download-option" aria-disabled="true" data-download-target="windows-x86_64-nsis"><strong>Windows x64</strong><span data-download-state>NSIS · 준비 중</span></span>
-                            <span class="download-option" aria-disabled="true" data-download-target="windows-x86_64-msi"><strong>Windows x64</strong><span data-download-state>MSI · 준비 중</span></span>
-                            <span class="download-option" aria-disabled="true" data-download-target="linux-x86_64-appimage"><strong>Linux x64</strong><span data-download-state>AppImage · 준비 중</span></span>
-                        </div>
-                    </details>
+                    <button class="page-action-button" id="latest-download" type="button" data-download-toggle aria-expanded="false" aria-controls="download-panel">
+                        최신 버전 다운로드
+                        <svg class="download-chevron" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false"><path d="m4 6 4 4 4-4"></path></svg>
+                    </button>
                     <a class="page-secondary-link" href="https://github.com/postmelee/alhangeul-tauri/releases">GitHub Releases</a>
                 </div>
+                <section class="download-panel" id="download-panel" aria-labelledby="download-panel-title" hidden>
+                    <h2 id="download-panel-title">설치 파일 선택</h2>
+                    <p class="download-panel-hint">사용할 운영체제와 설치 형식을 선택하세요.</p>
+                    <fieldset class="download-platform-picker">
+                        <legend class="visually-hidden">다운로드 플랫폼 선택</legend>
+                        <input class="download-platform-radio" type="radio" name="download-platform" id="download-platform-windows" value="windows" checked />
+                        <input class="download-platform-radio" type="radio" name="download-platform" id="download-platform-linux" value="linux" />
+                        <div class="download-platform-switch">
+                            <label for="download-platform-windows">Windows</label>
+                            <label for="download-platform-linux">Linux</label>
+                        </div>
+                        <div class="download-platform-panels">
+                            <section class="download-platform-panel windows-panel" data-download-platform-panel="windows" aria-labelledby="windows-package-title">
+                                <h3 class="visually-hidden" id="windows-package-title">Windows 다운로드</h3>
+                                <div class="download-package-list" data-package-platform="windows"></div>
+                            </section>
+                            <section class="download-platform-panel linux-panel" data-download-platform-panel="linux" hidden aria-labelledby="linux-package-title">
+                                <h3 class="visually-hidden" id="linux-package-title">Linux 다운로드</h3>
+                                <div class="download-package-list" data-package-platform="linux"></div>
+                            </section>
+                        </div>
+                    </fieldset>
+                    <p class="download-panel-note">AppImage는 여러 배포판에서 사용할 수 있는 형식입니다. 실행 조건과 검증된 환경은 릴리즈 안내를 확인하세요.</p>
+                </section>
+                <noscript><p><a href="https://github.com/postmelee/alhangeul-tauri/releases">GitHub Releases에서 설치 파일 확인</a></p></noscript>
             </section>
 
             <div class="updates-content">
@@ -59,8 +76,8 @@
                 <section class="updates-section" aria-labelledby="release-notes-title">
                     <h2 id="release-notes-title">릴리즈 노트</h2>
                     <div class="release-note-list">
-                        <a href="./v0.1.1.html" data-release-note-version="0.1.1"><strong>알한글 v0.1.1</strong><span>로컬 글꼴 사용 시 문서 열기·입력 반응 개선</span></a>
-                        <div class="release-note-empty" data-release-note><strong>사이트의 최신 버전</strong><span>공개 릴리즈 안내를 불러오고 있습니다.</span></div>
+                        <a href="./v0.1.1.html" data-release-note-version="0.1.1"><span class="release-entry-title">알한글 v0.1.1</span><span class="release-entry-summary">로컬 글꼴 사용 시 문서 열기·입력 반응 개선</span></a>
+                        <div class="release-note-empty" data-release-note><span class="release-entry-title">사이트의 최신 버전</span><span class="release-entry-summary">공개 릴리즈 안내를 불러오고 있습니다.</span></div>
                     </div>
                 </section>
 

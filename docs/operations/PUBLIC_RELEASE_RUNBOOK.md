@@ -266,6 +266,18 @@ Release를 먼저 조회한다. 실패 시 이전 body와 차이를 보존하고
 유효한 published 입력도 검사를 통과하므로 첫 공개 전환의 권한은 별도 데이터 PR·Release read-back·배포 승인으로 통제한다.
 고정 unreleased의 null·manifest 부재와 published manifest true/false 검사를 유지하며 skip으로 우회하지 않는다.
 
+웹 일반 다운로드 목록은 승인 원문 `docs/releases/v<version>.notes.json`의 installer 6종에서
+`build:pages`가 `_site/downloads.json`으로 생성한다. Windows x64 NSIS·MSI와 Linux x64
+AppImage는 앱 내 업데이트 대상이며 Linux x64 DEB·RPM과 Linux arm64 DEB는 수동 업데이트다.
+`site/release.json.downloads`와 signed updater manifest는 기존 3종을 유지한다.
+
+새 published release는 같은 version/tag/공개일/짧은 notes와 installer inventory를 가진 원문을
+먼저 준비하고 버전 HTML을 공식 생성한다. published 원문 누락·metadata/inventory 불일치나
+수동 작성한 `site/downloads.json`은 build/check에서 거부한다. unreleased 목록은 비어 있다.
+빌드 후 `check:pages`는 생성 목록의 exact bytes를 원문과 대조한다. 브라우저는 release와
+목록의 정합성을 확인한 뒤 6종을 함께 활성화하며 조회 실패·버전 혼합에는 GitHub Releases
+‘다운로드 안내’를 유지한다. 웹 목록 검사는 installer bytes·서명 검증을 대신하지 않는다.
+
 로컬 생성·검사 — 승인된 Pages checkout에서:
 
 ```bash
@@ -306,8 +318,8 @@ cmp _site/updater/stable.json "$ALH_READBACK_DIR/stable.json"
 
 `_site`는 Gate 5 exact SHA output이다. HTTP 성공과 version/pub_date/notes/세 URL·signature를 대조한다.
 manifest false라면 미게시 상태를 확인한다. HTTP 200은 installer 서명 검증 성공이 아니다.
-공개 홈·`/updates/`·`/feedback/`와 `/updates/v<version>.html`의 버튼/드롭다운·notes·수동 안내·모바일 줄바꿈과 승인 파일 연결을 확인한다.
-버전별 안내의 실제 공개 날짜·6개 고정 다운로드·기술 기록 링크, 최신 메뉴의 실제 release data를 대조한다.
+공개 홈·`/updates/`·`/feedback/`와 `/updates/v<version>.html`의 버튼/페이지 안 다운로드 선택·notes·수동 안내·모바일 줄바꿈과 승인 파일 연결을 확인한다.
+버전별 안내의 실제 공개 날짜·6개 고정 다운로드·기술 기록 링크, 최신 선택 영역의 Windows 2종·Linux 4종과 실제 release/downloads data를 대조한다.
 
 첫 공개: version·production key/endpoint와 manifest 게시 시 같은 버전의 '업데이트 없음'을 확인한다.
 manifest 미게시라면 production 확인 미실행 사유를 남긴다. endpoint 오류를 '업데이트 없음'으로 기록하지 않는다.

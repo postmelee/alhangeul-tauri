@@ -1,24 +1,7 @@
 const siteRoot = document.body.dataset.siteRoot ?? './';
-// Add distribution formats here; home download rows share this catalog.
-const distributionChannels = [
-    { platform: 'windows', label: 'Windows', architecture: 'x64', formats: [
-        { name: 'NSIS', target: 'windows-x86_64-nsis', description: '일반 설치 권장' },
-        { name: 'MSI', target: 'windows-x86_64-msi', description: '조직·관리 배포' },
-    ] },
-    { platform: 'linux', label: 'Linux', architecture: 'x64', formats: [
-        { name: 'AppImage', target: 'linux-x86_64-appimage', description: '자동 업데이트 권장' },
-        { name: 'DEB/RPM', description: '배포판 패키지' },
-    ] },
-    { platform: 'linux', label: 'Linux', architecture: 'arm64', formats: [
-        { name: 'DEB', description: '수동 설치' },
-    ] },
-];
-const downloadTargetLabels = Object.fromEntries(distributionChannels.flatMap(channel =>
-    channel.formats.filter(format => format.target).map(format =>
-        [format.target, `${channel.label} ${channel.architecture} ${format.name}`])));
+if (typeof packageDownloads !== 'undefined') packageDownloads.renderLists();
 
-renderPackageLists();
-
+setupDownloadPanel();
 setupPlatformPreference();
 setupReleaseData();
 setupCopyButtons();
@@ -26,11 +9,21 @@ setupCopyButtons();
 function setupPlatformPreference() {
     const radios = [...document.querySelectorAll('input[name="download-platform"]')];
     if (radios.length === 0) return;
-    if (/Linux/i.test(navigator.userAgent ?? '')) {
+    const userAgent = navigator.userAgent ?? '';
+    if (/Linux/i.test(userAgent) && !/Android/i.test(userAgent)) {
         const linux = document.querySelector('#download-platform-linux');
         if (linux) linux.checked = true;
     }
+    const updatePanels = () => {
+        const selected = radios.find(radio => radio.checked)?.value ?? 'windows';
+        for (const panel of document.querySelectorAll('[data-download-platform-panel]')) {
+            panel.hidden = panel.dataset.downloadPlatformPanel !== selected;
+            if (panel.hidden && panel.contains(document.activeElement)) radios.find(radio => radio.checked)?.focus();
+        }
+    };
+    updatePanels();
     for (const [index, radio] of radios.entries()) {
+        radio.addEventListener('change', updatePanels);
         radio.addEventListener('keydown', (event) => {
             if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return;
             event.preventDefault();
@@ -53,35 +46,15 @@ async function setupReleaseData() {
         for (const message of document.querySelectorAll('[data-release-message]')) {
             message.textContent = `최신 버전 v${release.version}`;
         }
-        for (const action of document.querySelectorAll('[data-download-target]')) {
-            const url = release.downloads[action.dataset.downloadTarget];
-            if (!isExactDownload(url, release.tag)) continue;
-            hydrateDownloadAction(action, url, release);
-        }
+
         hydrateReleaseNote(release);
         hydrateVersionStatus(release);
+        if (typeof packageDownloads === 'undefined' || !document.querySelector('[data-package-platform]')) return;
+        const downloads = await fetch(`${siteRoot}downloads.json`, { cache: 'no-store' });
+        if (downloads.ok) packageDownloads.activate(await downloads.json(), release);
     } catch {
-        // 공개 전 기본 안내와 최신 다운로드 안내 링크를 유지한다.
+        // 원문 목록이 없거나 혼합되면 GitHub Releases 안내 링크를 유지한다.
     }
-}
-
-function hydrateDownloadAction(action, url, release) {
-    let link = action;
-    if (action.tagName !== 'A') {
-        link = document.createElement('a');
-        link.className = action.className;
-        link.dataset.downloadTarget = action.dataset.downloadTarget;
-        link.innerHTML = action.innerHTML;
-        action.replaceWith(link);
-    }
-    link.href = url;
-    link.removeAttribute('aria-disabled');
-    link.dataset.downloadReady = 'true';
-    const state = link.querySelector('[data-download-state]');
-    if (state?.dataset.downloadState === 'home') state.textContent = '다운로드';
-    else if (state) state.textContent = `${state.textContent.split(' · ')[0]} · ${release.version} 다운로드`;
-    const targetLabel = downloadTargetLabels[link.dataset.downloadTarget] ?? link.textContent.trim();
-    link.setAttribute('aria-label', `${targetLabel} · 알한글 ${release.version} 다운로드`);
 }
 
 function hydrateReleaseNote(release) {
@@ -90,17 +63,19 @@ function hydrateReleaseNote(release) {
     const local = document.querySelector(`[data-release-note-version="${release.version}"]`);
     if (local) {
         placeholder.remove();
-        const title = local.querySelector('strong');
-        if (title) title.textContent = `알한글 ${release.tag} · 최신 버전`;
+        addLatestBadge(local);
         return;
     }
     const link = document.createElement('a');
     link.href = `https://github.com/postmelee/alhangeul-tauri/releases/tag/${release.tag}`;
-    const title = document.createElement('strong');
+    const title = document.createElement('span');
+    title.className = 'release-entry-title';
     title.textContent = `알한글 v${release.version}`;
     const summary = document.createElement('span');
+    summary.className = 'release-entry-summary';
     summary.textContent = '최신 안정 릴리즈의 변경 내용을 GitHub Releases에서 확인하세요.';
     link.append(title, summary);
+    addLatestBadge(link);
     placeholder.replaceWith(link);
 }
 
@@ -130,52 +105,35 @@ function setupCopyButtons() {
 
 function isPublishedRelease(release) {
     return release?.status === 'published'
-        && /^\d+\.\d+\.\d+$/.test(release.version)
+        && /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(release.version)
         && release.tag === `v${release.version}`
         && release.downloads
         && typeof release.downloads === 'object';
 }
 
-function isExactDownload(value, tag) {
-    if (typeof value !== 'string') return false;
-    try {
-        const url = new URL(value);
-        return url.protocol === 'https:'
-            && url.hostname === 'github.com'
-            && !url.search
-            && !url.hash
-            && url.pathname.startsWith(`/postmelee/alhangeul-tauri/releases/download/${tag}/`);
-    } catch {
-        return false;
-    }
+function addLatestBadge(link) {
+    if (link.querySelector('.latest-badge')) return;
+    const badge = document.createElement('span');
+    badge.className = 'latest-badge';
+    badge.textContent = '최신 버전';
+    const title = link.querySelector('.release-entry-title');
+    if (title) title.append(badge);
+    else link.append(badge);
 }
 
-function renderPackageLists() {
-    for (const list of document.querySelectorAll('[data-package-platform]')) {
-        for (const channel of distributionChannels.filter(item => item.platform === list.dataset.packagePlatform)) {
-            for (const format of channel.formats) {
-                const row = document.createElement('div');
-                row.className = 'download-package-option';
-                const copy = document.createElement('span');
-                copy.className = 'download-package-copy';
-                const name = document.createElement('strong');
-                name.textContent = format.name;
-                const description = document.createElement('span');
-                description.textContent = `${channel.label} ${channel.architecture} · ${format.description}`;
-                copy.append(name, description);
-                const action = document.createElement('a');
-                action.className = 'download-package-action';
-                action.href = format.target ? `${siteRoot}updates/#latest-download`
-                    : 'https://github.com/postmelee/alhangeul-tauri/releases';
-                if (format.target) action.dataset.downloadTarget = format.target;
-                action.setAttribute('aria-label', `${channel.label} ${channel.architecture} ${format.name} 다운로드 안내`);
-                const state = document.createElement('span');
-                state.dataset.downloadState = 'home';
-                state.textContent = '다운로드';
-                action.append(state);
-                row.append(copy, action);
-                list.append(row);
-            }
-        }
-    }
+function setupDownloadPanel() {
+    const button = document.querySelector('[data-download-toggle]');
+    const panel = document.querySelector('#download-panel');
+    if (!button || !panel) return;
+    const setOpen = open => {
+        if (!open && panel.contains(document.activeElement)) button.focus();
+        panel.hidden = !open;
+        button.setAttribute('aria-expanded', String(open));
+    };
+    button.addEventListener('click', () => setOpen(panel.hidden));
+    const openFromHash = () => {
+        if (window.location.hash === '#latest-download') setOpen(true);
+    };
+    window.addEventListener('hashchange', openFromHash);
+    openFromHash();
 }
