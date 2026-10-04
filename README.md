@@ -68,6 +68,7 @@
 - 별도의 데스크톱 자동 복구 저장소는 제공하지 않습니다. 작업 중 문서를 자주 저장하세요.
 
 v0.1.1의 업데이트 검증 결과와 알려진 제한은 [릴리즈 안내](https://postmelee.github.io/alhangeul-tauri/updates/v0.1.1.html)에서 확인하세요.
+버전별 실제 검증 환경과 남은 제한은 [버전별 릴리즈 기록](docs/releases/README.md)에 정리되어 있습니다.
 
 ## 문의와 기여
 

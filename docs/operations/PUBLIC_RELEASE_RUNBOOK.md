@@ -57,6 +57,8 @@ pnpm run check:rhwp-pin
 기대: HEAD·후보 일치, 제품 version·공개키/endpoint·rhwp tag/commit·core/WASM/Studio 출처 정합성. pin tag만 로컬에 없으면
 [upstream 절차](../architecture/UPSTREAM.md)로 exact tag를 확보한다. 임의 pin 갱신은 하지 않는다.
 포함 PR은 앱/upstream/운영/문서, Issue는 해결/참고로 구분한다. 최신 upstream과 다르면 pin 유지 승인 또는 별도 갱신 Task를 기록한다.
+사용자 원문 `docs/releases/v<version>.notes.json`과 기술 기록을 함께 준비한다.
+[작성·생성·검사](../releases/README.md#작성과-생성-및-검사)에 따라 metadata·문구·실제 PR/Issue 근거를 확정한다.
 
 [영향표](RELEASE_CHECKLIST.md#변경-영향별-추가-확인)로 실행/재사용/해당 없음을 정한다. 재사용에는 SHA·run·환경·diff가 필요하다.
 문서-only에 native/negative 전체를 반복하지 않으며, 새 bytes의 설치·무결성은 재사용하지 않는다.
@@ -157,6 +159,9 @@ Linux launcher 변경 시 DEB/RPM 및 AppImage 내부 `.desktop`의 `%F`, 실제
 ## Gate 4 — GitHub Release 게시와 원격 파일 재검증
 
 선행: Gate 3 통과와 exact 후보/채널/asset·notes 공개 승인. 문서 PR merge나 비게시 서명 승인은 공개 승인이 아니다.
+`ALH_NOTES_FILE`은 승인 원문·템플릿에서 생성한 `release-body.md` 절대 경로다.
+`check:release-notes` 통과 뒤 exact 내용·hash를 owner에게 제시하고 공개 승인을 기록한다.
+updater build의 짧은 `ALH_NOTES`와 GitHub 전체 본문 파일은 용도가 다르다.
 
 유지관리자 CLI로 Gate 3 파일을 그대로 게시한다. `gh api user --jq .login`으로 인증 주체를
 확인하고 버전 기록에 owner·승인 시각·허용 main SHA·파일 목록을 남긴다. CLI는 Actions의
@@ -225,6 +230,24 @@ Release 평면 파일명을 구분하며 inventory 자체 hash·Release/asset ID
 `gh release upload "$ALH_TAG" -R "$ALH_REPO" <승인한-누락-파일>`로 보완하고 `--clobber`는 금지한다.
 다른 bytes·공개 후 누락이면 게시/Pages를 중단하고 [복구 표](#실패와-재개)를 따른다.
 
+### 기존 공개 Release의 body만 보정할 때
+
+원문·metadata·템플릿을 검사하고 새 directory에 생성한 exact body의 수정 승인을 받는다.
+기존 Release ID·tag/source·publishedAt·11개 asset identity/hash를 먼저 기록한다.
+승인 후 다음 명령은 body만 변경한다. tag 이동·재빌드·asset 교체·채널 변경은 수행하지 않는다.
+
+```bash
+: "${ALH_NOTES_FILE:?승인한 생성 body의 절대 경로}"
+gh release edit "$ALH_TAG" -R "$ALH_REPO" --notes-file "$ALH_NOTES_FILE"
+gh release view "$ALH_TAG" -R "$ALH_REPO" \
+  --json body,tagName,isDraft,isPrerelease,publishedAt,assets \
+  > "$ALH_NOTES_DIR/release-readback.json"
+```
+
+JSON body 문자열과 승인 파일의 UTF-8 bytes를 정확히 비교하고 hash를 남긴다. 기존 identity·
+공개 시각·asset 목록이 같아야 한다. 생성 성공을 수정 완료로 쓰지 않으며 응답이 불명확하면
+Release를 먼저 조회한다. 실패 시 이전 body와 차이를 보존하고 owner에게 복구 판단을 요청한다.
+
 ## Gate 5 — release data PR과 Pages 배포
 
 입력: Gate 4 metadata·inventory, 별도 Pages/manifest 승인. [site/release.json](../../site/release.json)은 `devel` 대상 PR로 변경한다.
@@ -232,7 +255,7 @@ Release 평면 파일명을 구분하며 inventory 자체 hash·Release/asset ID
 | 필드 | 공개값과 검토 기준 |
 |---|---|
 | status/channel/version/tag | `published`/`stable`/승인 X.Y.Z/일치하는 vX.Y.Z |
-| publishedAt/notes | 실제 UTC 공개 시각/비어 있지 않은 4000자 이하 사용자 요약 |
+| publishedAt/notes | 실제 UTC 공개 시각/같은 version 원문의 content.updaterSummary 그대로, 4000자 이하 |
 | downloads | NSIS·MSI·AppImage 세 target의 고정 tag HTTPS URL; 수동 패키지 key 추가 금지 |
 | updater | 고정 production endpoint, 활성화 승인 시 `manifestPublished=true`와 검증 inventory |
 
@@ -243,14 +266,31 @@ Release 평면 파일명을 구분하며 inventory 자체 hash·Release/asset ID
 유효한 published 입력도 검사를 통과하므로 첫 공개 전환의 권한은 별도 데이터 PR·Release read-back·배포 승인으로 통제한다.
 고정 unreleased의 null·manifest 부재와 published manifest true/false 검사를 유지하며 skip으로 우회하지 않는다.
 
+웹 일반 다운로드 목록은 승인 원문 `docs/releases/v<version>.notes.json`의 installer 6종에서
+`build:pages`가 `_site/downloads.json`으로 생성한다. Windows x64 NSIS·MSI와 Linux x64
+AppImage는 앱 내 업데이트 대상이며 Linux x64 DEB·RPM과 Linux arm64 DEB는 수동 업데이트다.
+`site/release.json.downloads`와 signed updater manifest는 기존 3종을 유지한다.
+
+새 published release는 같은 version/tag/공개일/짧은 notes와 installer inventory를 가진 원문을
+먼저 준비하고 버전 HTML을 공식 생성한다. published 원문 누락·metadata/inventory 불일치나
+수동 작성한 `site/downloads.json`은 build/check에서 거부한다. unreleased 목록은 비어 있다.
+빌드 후 `check:pages`는 생성 목록의 exact bytes를 원문과 대조한다. 브라우저는 release와
+목록의 정합성을 확인한 뒤 6종을 함께 활성화하며 조회 실패·버전 혼합에는 GitHub Releases
+‘다운로드 안내’를 유지한다. 웹 목록 검사는 installer bytes·서명 검증을 대신하지 않는다.
+
 로컬 생성·검사 — 승인된 Pages checkout에서:
 
 ```bash
+pnpm run check:release-notes
+pnpm run test:release-notes
 pnpm run build:pages
 pnpm run check:pages
 node --test tests/updater-release.test.mjs tests/pages.test.mjs tests/actions-workflows.test.mjs
 ```
 
+버전별 HTML·목록 링크·short notes를 [작성 절차](../releases/README.md#작성과-생성-및-검사)에 따라 반영한다.
+규격이 별도 PR이면 먼저 devel에 병합하고 데이터 PR은 최신 devel을 merge해 새 head를 검사한다.
+원문·템플릿·짧은 notes가 바뀌면 이전 manifest/body hash를 재사용하지 않는다.
 기대: data/inventory/manifest·Pages 검사 성공. 원격 파일 검사가 아니므로 Gate 4를 대체하지 않는다. PR diff·Pages SHA도 기록한다.
 원격 실행·공개 — merge된 exact `devel` SHA를 `ALH_PAGES_SHA`로 승인받은 뒤:
 
@@ -278,7 +318,8 @@ cmp _site/updater/stable.json "$ALH_READBACK_DIR/stable.json"
 
 `_site`는 Gate 5 exact SHA output이다. HTTP 성공과 version/pub_date/notes/세 URL·signature를 대조한다.
 manifest false라면 미게시 상태를 확인한다. HTTP 200은 installer 서명 검증 성공이 아니다.
-공개 홈·`/updates/`·`/feedback/`의 버튼/드롭다운·notes·수동 안내·모바일 줄바꿈과 승인 파일 연결을 확인한다.
+공개 홈·`/updates/`·`/feedback/`와 `/updates/v<version>.html`의 버튼/페이지 안 다운로드 선택·notes·수동 안내·모바일 줄바꿈과 승인 파일 연결을 확인한다.
+버전별 안내의 실제 공개 날짜·6개 고정 다운로드·기술 기록 링크, 최신 선택 영역의 Windows 2종·Linux 4종과 실제 release/downloads data를 대조한다.
 
 첫 공개: version·production key/endpoint와 manifest 게시 시 같은 버전의 '업데이트 없음'을 확인한다.
 manifest 미게시라면 production 확인 미실행 사유를 남긴다. endpoint 오류를 '업데이트 없음'으로 기록하지 않는다.

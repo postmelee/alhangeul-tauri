@@ -1,0 +1,159 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "repository": "postmelee/alhangeul-tauri",
+    "status": "published",
+    "version": "0.1.1",
+    "tag": "v0.1.1",
+    "sourceSha": "96e89e900415ee9e1e942b5c01c833dea3415e86",
+    "publishedAt": "2026-10-03T17:07:44Z",
+    "rhwp": {
+      "tag": "v0.8.6",
+      "commit": "f1f9c6ae58344ee9368996d3543f76b9345cf227"
+    },
+    "previous": {
+      "version": "0.1.0",
+      "tag": "v0.1.0",
+      "sourceSha": "fc3cad15682f35723ab6558d1301e9096f7eec67",
+      "rhwp": {
+        "tag": "v0.8.6",
+        "commit": "f1f9c6ae58344ee9368996d3543f76b9345cf227"
+      }
+    },
+    "assets": {
+      "windows-x86_64-nsis": {
+        "name": "Alhangeul_0.1.1_x64-setup.exe",
+        "size": 56793106,
+        "sha256": "9ff5e10e9b99f2605ab77b2d8525870819f3ed9d138b84fe2e6009b2222a1ca3",
+        "url": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.1/Alhangeul_0.1.1_x64-setup.exe"
+      },
+      "windows-x86_64-msi": {
+        "name": "Alhangeul_0.1.1_x64_en-US.msi",
+        "size": 64102400,
+        "sha256": "6a34ae3a52c59bf4737cf1595d65a914fdd2ec588a3a1c54270c7d83c578fc98",
+        "url": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.1/Alhangeul_0.1.1_x64_en-US.msi"
+      },
+      "linux-x86_64-appimage": {
+        "name": "Alhangeul_0.1.1_amd64.AppImage",
+        "size": 135346680,
+        "sha256": "c3a599fdea3b52353d875a4c50738babaf91102c26fcd7a6079e69e96b6bebf0",
+        "url": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.1/Alhangeul_0.1.1_amd64.AppImage"
+      },
+      "linux-x86_64-deb": {
+        "name": "Alhangeul_0.1.1_amd64.deb",
+        "size": 66954862,
+        "sha256": "6ad4492529dd228d38d37b697d0175323e71e2632212f472c1557f3868913862",
+        "url": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.1/Alhangeul_0.1.1_amd64.deb"
+      },
+      "linux-x86_64-rpm": {
+        "name": "Alhangeul-0.1.1-1.x86_64.rpm",
+        "size": 66948539,
+        "sha256": "185c399e737c2a686f5d5f599866fa3a63abac442e928f9442c29d9f178564b3",
+        "url": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.1/Alhangeul-0.1.1-1.x86_64.rpm"
+      },
+      "linux-aarch64-deb": {
+        "name": "Alhangeul_0.1.1_arm64.deb",
+        "size": 66823896,
+        "sha256": "3e29375bf7f824bdc84ae3f1dbff5b5cbeacae5ae694fa64d30c423a5be58859",
+        "url": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.1/Alhangeul_0.1.1_arm64.deb"
+      }
+    },
+    "updaterInventory": {
+      "schemaVersion": 1,
+      "repository": "postmelee/alhangeul-tauri",
+      "sourceSha": "96e89e900415ee9e1e942b5c01c833dea3415e86",
+      "version": "0.1.1",
+      "tag": "v0.1.1",
+      "keyFingerprint": "9f86f804067eff359cd32707137dfaaea8710450985dda86b0392da5db63b8f8",
+      "targets": {
+        "windows-x86_64-nsis": {
+          "kind": "nsis",
+          "path": "nsis/Alhangeul_0.1.1_x64-setup.exe",
+          "size": 56793106,
+          "sha256": "9ff5e10e9b99f2605ab77b2d8525870819f3ed9d138b84fe2e6009b2222a1ca3",
+          "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUaEFNampwWnpESVpvQ3Q1M2tYcnpianV1K3loMWthU01XY01IbjRVVzcyVEdCb28rOVloaTRaRnIzOXNkeDZZNTFaSEtkdks0RmVSSW5YcWhxMHZEUmo1cmVCUmcrdGdzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkxMDM5OTE5CWZpbGU6QWxoYW5nZXVsXzAuMS4xX3g2NC1zZXR1cC5leGUKSWVMU29VRGpSSTdWd1YwTUtjV3NwZEZkdHg4Y09rUTMwSDBNNkI2NjhXQ1FOVDYxOWtuU25iaHpSL3pRQmpFYXVlaTU1MVBJUU5JT3dwTUVLMlQ4Q1E9PQo=",
+          "url": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.1/Alhangeul_0.1.1_x64-setup.exe"
+        },
+        "windows-x86_64-msi": {
+          "kind": "msi",
+          "path": "msi/Alhangeul_0.1.1_x64_en-US.msi",
+          "size": 64102400,
+          "sha256": "6a34ae3a52c59bf4737cf1595d65a914fdd2ec588a3a1c54270c7d83c578fc98",
+          "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUaEFNampwWnpESVZ2aHBBWnI0R2lzbzZCc05QRDViL0JSSXlNWWRqVURRdnIxL29oRjg0My90VWJaNkZBc1FkODIzand4cFRCRis1NXFOb1hvZFJraVZxMWlNb0VLMGcwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkxMDM5OTE5CWZpbGU6QWxoYW5nZXVsXzAuMS4xX3g2NF9lbi1VUy5tc2kKeXNiMHNlZXRqYkh5NFRydThtQnhGUHNDSHp1TGgvMnB6Q1liUkIzL1lBNEpnYnVwRTJRbEtVbEgrdXRrOElNb2d5aU95cHJSTmw5YVBicHRCSlVDQ1E9PQo=",
+          "url": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.1/Alhangeul_0.1.1_x64_en-US.msi"
+        },
+        "linux-x86_64-appimage": {
+          "kind": "appimage",
+          "path": "Alhangeul_0.1.1_amd64.AppImage",
+          "size": 135346680,
+          "sha256": "c3a599fdea3b52353d875a4c50738babaf91102c26fcd7a6079e69e96b6bebf0",
+          "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUaEFNampwWnpESVo2RnhEVHc5U0hDcmMrZ0h0UlJpRnkzbHJyTjh1amQ0RzIyRkxPbUFMdGVQdk56Y2ZacmlaRWdPNm44amY5bk9HbUlYRndvM1ozTUZuOVJDYjlrT3dvPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkxMDM5MTg4CWZpbGU6QWxoYW5nZXVsXzAuMS4xX2FtZDY0LkFwcEltYWdlCnNGeVExTDJVTVJuYXQzTEIwd3lHWGdxZFdyS1Fta0xDeVB5a2Mzem5sQVpNVnkzaFhyMVpSeWU5K2tLelIxL3hrbFZoTlJIVXNyN3RKb2crYVFxbERnPT0K",
+          "url": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.1/Alhangeul_0.1.1_amd64.AppImage"
+        }
+      }
+    }
+  },
+  "content": {
+    "summary": [
+      "로컬 글꼴을 사용할 때 문서를 여는 속도와 입력·스크롤 반응을 개선했습니다. Windows와 Linux 설치 파일을 받을 수 있습니다."
+    ],
+    "rhwpChanges": {
+      "status": "unchanged",
+      "paragraphs": [
+        "v0.1.0과 같은 rhwp v0.8.6을 사용합니다. 이번 릴리즈에는 새로운 upstream 기능 변경이 포함되지 않습니다."
+      ]
+    },
+    "appChanges": [
+      "글꼴 이름과 한글 별칭을 찾는 과정에서 같은 글꼴 목록을 반복 조회하던 비용을 줄였습니다. 글꼴 사용 설정 변경과 다시 감지 결과도 조회에 반영됩니다.",
+      "고정된 Windows VM에서 Canvas2D·로컬 글꼴 켜짐 조건의 10쪽 HWPX 문서 재열기 중앙값은 18.255초에서 0.516초로, 같은 조건의 Linux VM에서는 2.504초에서 0.636초로 줄었습니다. 공개 문서와 같은 화면 크기로 5회씩 비교한 결과이며, 사용자의 모든 PC와 문서에서 같은 속도를 보장하지는 않습니다."
+    ],
+    "supportedEnvironments": [
+      "Windows x64와 Linux x64를 지원하며, Linux arm64는 DEB 설치 파일을 제공합니다. Windows에서는 WebView2 Runtime이 필요합니다."
+    ],
+    "installation": [
+      "Windows는 NSIS 또는 MSI 설치 파일 중 하나를 선택합니다. Linux AppImage는 실행 권한을 부여하고 파일과 폴더에 쓰기 권한이 있는 위치에 보관합니다. DEB·RPM은 배포판에 맞는 패키지를 설치합니다."
+    ],
+    "updateInstructions": [
+      "Windows NSIS·MSI와 Linux x64 AppImage는 앱 시작 시 또는 제품 정보에서 새 버전을 확인하는 대상입니다. 다운로드 및 설치는 사용자가 선택하며, 저장하지 않은 문서가 있으면 먼저 저장하도록 안내합니다.",
+      "Windows NSIS·MSI와 Linux x64 AppImage에서 v0.1.0 → v0.1.1 앱 내 업데이트를 검증했습니다. 업데이트 후 설정 유지와 HWP/HWPX 문서 재열기를 확인했습니다. DEB·RPM과 Linux arm64는 새 패키지를 받아 수동으로 설치합니다."
+    ],
+    "limitations": [
+      "Windows 설치 파일은 Authenticode 미서명입니다. 자동 업데이트용 Minisign 검증과 운영체제의 코드 서명은 별개입니다.",
+      "일부 Windows NSIS 환경에서 탐색기 썸네일이 정상 표시되지 않는 제한이 남아 있습니다. 강제 MSI 설치의 재부팅 후 동작은 검증하지 않았습니다.",
+      "사용자의 Wayland·하이브리드 그래픽 환경, 모든 글꼴·문서·배포판과 물리 프린터 조합을 검증하지 않았습니다. 이번 성능 결과만으로 그래픽 드라이버 문제의 해결을 단정하지 않습니다."
+    ],
+    "updaterSummary": "로컬 글꼴을 사용할 때 문서 열기·입력·스크롤 반응을 개선했습니다. rhwp v0.8.6은 유지합니다.\n\nWindows NSIS·MSI와 Linux x64 AppImage의 v0.1.0 → v0.1.1 앱 내 업데이트를 확인했습니다. Windows 코드 서명·일부 탐색기 썸네일·환경별 표시에는 제한이 있습니다. 자세한 변경과 설치 안내는 v0.1.1 릴리즈 노트를 확인하세요.",
+    "references": {
+      "checkedAt": "2026-10-03T19:33:02Z",
+      "pullRequests": [
+        {"number": 81, "title": "Task #69: v0.1.0 사이트·updater 데이터와 설치본 검증 기록 반영", "url": "https://github.com/postmelee/alhangeul-tauri/pull/81", "category": "operations", "summaryIncluded": false, "evidence": ["https://github.com/postmelee/alhangeul-tauri/commit/6e2d8deb3caa22a98a2c4c2d480bc1e9478754f1"]},
+        {"number": 83, "title": "Task #82: 사이트 다운로드 안내와 Windows/Linux 실제 화면 전환 개선", "url": "https://github.com/postmelee/alhangeul-tauri/pull/83", "category": "operations", "summaryIncluded": false, "evidence": ["https://github.com/postmelee/alhangeul-tauri/commit/c3ee834c4b0a47fc8360b0dfaaf8689e7adcdad5"]},
+        {"number": 84, "title": "Task #69: v0.1.0 운영 updater 검증과 최종 릴리즈 인계", "url": "https://github.com/postmelee/alhangeul-tauri/pull/84", "category": "operations", "summaryIncluded": false, "evidence": ["https://github.com/postmelee/alhangeul-tauri/commit/f5702ce56b07421b0cad6c9119a2bd2afe4a06ad"]},
+        {"number": 86, "title": "Task #85: 첫 릴리즈 사용자 README와 커뮤니티 안내 정비", "url": "https://github.com/postmelee/alhangeul-tauri/pull/86", "category": "operations", "summaryIncluded": false, "evidence": ["https://github.com/postmelee/alhangeul-tauri/commit/1ee2883e011f0ad1d07cd0f77460bad73559cb48"]},
+        {"number": 88, "title": "Task #87: 공개 기본 브랜치 운영 정렬과 종료 원격 브랜치 정리", "url": "https://github.com/postmelee/alhangeul-tauri/pull/88", "category": "operations", "summaryIncluded": false, "evidence": ["https://github.com/postmelee/alhangeul-tauri/commit/a44a48a3ec42e8ccd3edce9efe018f26ac056e36"]},
+        {"number": 89, "title": "Task #87: 공개 사용자 안내와 운영 기록을 main에 정렬", "url": "https://github.com/postmelee/alhangeul-tauri/pull/89", "category": "operations", "summaryIncluded": false, "evidence": ["https://github.com/postmelee/alhangeul-tauri/commit/033932b1e7586ab8ec3c7251528ed4fcaa9a52c4"]},
+        {"number": 91, "title": "Task #90: README 배지와 운영체제별 홈페이지 안내", "url": "https://github.com/postmelee/alhangeul-tauri/pull/91", "category": "operations", "summaryIncluded": false, "evidence": ["https://github.com/postmelee/alhangeul-tauri/commit/f58e6fbdd1f05be0b6f816947fa09482cac2ec80"]},
+        {"number": 92, "title": "Task #90: README 배지와 홈페이지 안내를 main에 반영", "url": "https://github.com/postmelee/alhangeul-tauri/pull/92", "category": "operations", "summaryIncluded": false, "evidence": ["https://github.com/postmelee/alhangeul-tauri/commit/62ab74abfa7162ce89b63b88311e2847cccfcb46"]},
+        {"number": 93, "title": "Task #27: GitHub Actions dependency SHA 고정과 갱신 정책", "url": "https://github.com/postmelee/alhangeul-tauri/pull/93", "category": "operations", "summaryIncluded": false, "evidence": ["https://github.com/postmelee/alhangeul-tauri/commit/3a5f0bd7310ad5980338c0a9cc05684f7ad08826"]},
+        {"number": 94, "title": "Task #27: 기본 main의 Action SHA 운영 정의 정렬", "url": "https://github.com/postmelee/alhangeul-tauri/pull/94", "category": "operations", "summaryIncluded": false, "evidence": ["https://github.com/postmelee/alhangeul-tauri/commit/5206fb549e07ab68582bf19a16cbca6a4cd7d4c7"]},
+        {"number": 95, "title": "Task #28: devel 보호와 자동 PR required check 도입", "url": "https://github.com/postmelee/alhangeul-tauri/pull/95", "category": "operations", "summaryIncluded": false, "evidence": ["https://github.com/postmelee/alhangeul-tauri/commit/97550085a9334129062266dddb625798bcdc77e2"]},
+        {"number": 98, "title": "Task #97: 로컬 글꼴 조회 성능 개선과 v0.1.1 후보 검증", "url": "https://github.com/postmelee/alhangeul-tauri/pull/98", "category": "app", "summaryIncluded": true, "evidence": ["https://github.com/postmelee/alhangeul-tauri/commit/6979d2f67bcfcef6e565031a840d6523e9576e80"]},
+        {"number": 99, "title": "Release: Alhangeul v0.1.1", "url": "https://github.com/postmelee/alhangeul-tauri/pull/99", "category": "operations", "summaryIncluded": false, "evidence": ["https://github.com/postmelee/alhangeul-tauri/commit/96e89e900415ee9e1e942b5c01c833dea3415e86"]}
+      ],
+      "resolvedIssues": [],
+      "relatedIssues": [
+        {
+          "number": 97,
+          "title": "로컬 글꼴 조회 병목을 개선하고 v0.1.1을 검증·배포한다",
+          "url": "https://github.com/postmelee/alhangeul-tauri/issues/97",
+          "state": "OPEN",
+          "resolution": null,
+          "evidence": [
+            "https://github.com/postmelee/alhangeul-tauri/pull/98",
+            "https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.1"
+          ]
+        }
+      ]
+    }
+  }
+}

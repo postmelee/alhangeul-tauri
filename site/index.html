@@ -16,9 +16,10 @@
         <meta name="twitter:card" content="summary_large_image" />
         <link rel="canonical" href="https://postmelee.github.io/alhangeul-tauri/" />
         <link rel="icon" href="../assets/logo/favicon.ico" />
-        <link rel="stylesheet" href="styles.css?v=90-5" />
+        <link rel="stylesheet" href="styles.css?v=108-2" />
         <link rel="stylesheet" href="home-showcase.css?v=82-2" />
-        <script src="script.js?v=82-2" defer></script>
+        <script src="package-downloads.js?v=108-2" defer></script>
+        <script src="script.js?v=108-2" defer></script>
         <script src="home-showcase.js?v=82-2" defer></script>
     </head>
     <body class="home-page" data-site-root="./">
@@ -60,11 +61,11 @@
                                 <label for="download-platform-linux">Linux</label>
                             </div>
                             <div class="download-platform-panels">
-                                <section class="download-platform-panel windows-panel" aria-labelledby="windows-package-title">
+                                <section class="download-platform-panel windows-panel" data-download-platform-panel="windows" aria-labelledby="windows-package-title">
                                     <h3 class="visually-hidden" id="windows-package-title">Windows 다운로드</h3>
                                     <div class="download-package-list" data-package-platform="windows"></div>
                                 </section>
-                                <section class="download-platform-panel linux-panel" aria-labelledby="linux-package-title">
+                                <section class="download-platform-panel linux-panel" data-download-platform-panel="linux" hidden aria-labelledby="linux-package-title">
                                     <h3 class="visually-hidden" id="linux-package-title">Linux 다운로드</h3>
                                     <div class="download-package-list" data-package-platform="linux"></div>
                                 </section>

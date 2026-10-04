@@ -26,7 +26,9 @@ export async function dismissKnownDialog(overlay: WebdriverIO.Element, title: st
   await matching[0].click();
 }
 
-export async function waitForStudioStartup(session: WebdriverIO.Browser, timeoutMs: number): Promise<void> {
+export async function waitForStudioStartup(
+  session: WebdriverIO.Browser, timeoutMs: number, expectedUpdateVersion?: string,
+): Promise<void> {
   // The idle status is set before initialize() finishes and opens skin onboarding.
   // Public ready RPC awaits that same initPromise; never infer readiness from pixels alone.
   await session.waitUntil(() => session.execute(() =>
@@ -55,7 +57,7 @@ export async function waitForStudioStartup(session: WebdriverIO.Browser, timeout
       canvasReady: !!document.querySelector('#scroll-content > canvas[data-rhwp-rendered-zoom]'),
       toolbarReady: document.documentElement.classList.contains('alhangeul-toolbar-ready'),
     }));
-    return isStudioStartupReady(state);
+    return isStudioStartupReady(state, expectedUpdateVersion);
   }, { timeout: timeoutMs, timeoutMsg: 'Alhangeul idle 시작과 알려진 대화상자 처리가 완료되지 않았습니다' });
 }
 
@@ -83,6 +85,9 @@ async function waitForStudioInitialization(session: WebdriverIO.Browser, timeout
 
 export function isStudioStartupReady(state: {
   status: string; canvasReady: boolean; toolbarReady: boolean;
-}): boolean {
-  return state.toolbarReady && !state.canvasReady && state.status === 'HWP 파일을 선택해주세요.';
+}, expectedUpdateVersion?: string): boolean {
+  const updateNotice = expectedUpdateVersion && /^\d+\.\d+\.\d+$/.test(expectedUpdateVersion)
+    ? `${expectedUpdateVersion} 업데이트가 있습니다. 제품 정보에서 확인하세요.` : null;
+  return state.toolbarReady && !state.canvasReady
+    && (state.status === 'HWP 파일을 선택해주세요.' || state.status === updateNotice);
 }

@@ -1,0 +1,104 @@
+name: Alhangeul Production Upgrade Linux
+on:
+  workflow_call:
+permissions:
+  contents: read
+jobs:
+  linux:
+    name: Production Linux AppImage 0.1.0 to 0.1.1
+    runs-on: ubuntu-22.04
+    timeout-minutes: 50
+    env:
+      HARNESS_SHA: ${{ github.workflow_sha }}
+      EVIDENCE_ROOT: ${{ github.workspace }}/production-evidence-linux-appimage
+      APPIMAGE_PATH: ${{ github.workspace }}/production-appimage/Alhangeul.AppImage
+      ALHANGEUL_PRODUCTION_ROOT: ${{ github.workspace }}
+      ALHANGEUL_PRODUCTION_KIND: appimage
+      ALHANGEUL_PRODUCTION_DRIVER: /home/runner/.cargo/bin/tauri-driver
+    steps:
+      - name: Checkout exact harness
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.workflow_sha }}
+          submodules: true
+      - name: Verify exact harness SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$(git rev-parse HEAD)" == "$HARNESS_SHA" ]]
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Install exact dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          corepack enable
+          pnpm run fetch:rhwp-pin-tag
+          pnpm install --frozen-lockfile
+      - name: Setup driver toolchain
+        uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
+      - name: Install pinned native driver
+        shell: bash
+        run: cargo install tauri-driver --version 2.0.6 --locked
+      - name: Install Linux runtime and GUI dependencies
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y libfuse2 dbus-x11 libgtk-3-0 libwebkit2gtk-4.1-0 openbox webkit2gtk-driver xvfb fonts-noto-cjk
+          test -c /dev/fuse
+      - name: Verify public release inputs and signatures
+        id: public
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/updater/production-upgrade.mjs prepare appimage "$EVIDENCE_ROOT"
+      - name: Prepare original writable public N AppImage
+        env:
+          N_PATH: ${{ steps.public.outputs.n_path }}
+        run: |
+          set -euo pipefail
+          install -d -m 0755 "$(dirname "$APPIMAGE_PATH")"
+          install -m 0755 "$N_PATH" "$APPIMAGE_PATH"
+          test -w "$APPIMAGE_PATH" && test -w "$(dirname "$APPIMAGE_PATH")"
+          sha256sum "$APPIMAGE_PATH" > "$EVIDENCE_ROOT/original-appimage.sha256"
+      - name: Apply production upgrade and request app restart
+        env:
+          ALHANGEUL_PRODUCTION_APP: ${{ env.APPIMAGE_PATH }}
+          ALHANGEUL_PRODUCTION_PHASE: apply
+          ALHANGEUL_PRODUCTION_OUTPUT: ${{ env.EVIDENCE_ROOT }}/apply
+        run: |
+          set -euo pipefail
+          bash scripts/updater/run-linux-native-gui.sh "$EVIDENCE_ROOT/openbox-apply.log" pnpm run test:gui:production-upgrade
+      - name: Verify replaced original AppImage bytes
+        env:
+          NEXT_SHA256: ${{ steps.public.outputs.next_sha256 }}
+        run: |
+          set -euo pipefail
+          actual_sha="$(sha256sum "$APPIMAGE_PATH" | cut -d' ' -f1)"
+          [[ "$actual_sha" == "$NEXT_SHA256" ]]
+          printf '%s\n' "$actual_sha" > "$EVIDENCE_ROOT/replaced-appimage.sha256"
+      - name: Stop observed restarted process for fresh driver session
+        run: node scripts/updater/production-upgrade.mjs stop appimage "$EVIDENCE_ROOT"
+      - name: Verify N plus one UI version settings and documents
+        env:
+          ALHANGEUL_PRODUCTION_APP: ${{ env.APPIMAGE_PATH }}
+          ALHANGEUL_PRODUCTION_PHASE: verify
+          ALHANGEUL_PRODUCTION_OUTPUT: ${{ env.EVIDENCE_ROOT }}/verify
+        run: |
+          set -euo pipefail
+          bash scripts/updater/run-linux-native-gui.sh "$EVIDENCE_ROOT/openbox-verify.log" pnpm run test:gui:production-upgrade
+      - name: Require complete production upgrade evidence
+        run: node scripts/updater/production-upgrade.mjs finalize appimage "$EVIDENCE_ROOT" "$APPIMAGE_PATH"
+      - name: Preserve production Linux evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: production-upgrade-linux-appimage-${{ github.run_id }}
+          path: |
+            ${{ env.EVIDENCE_ROOT }}/**
+            !${{ env.EVIDENCE_ROOT }}/n/**/Alhangeul*
+            !${{ env.EVIDENCE_ROOT }}/next/**/Alhangeul*
+          if-no-files-found: error
+          retention-days: 14

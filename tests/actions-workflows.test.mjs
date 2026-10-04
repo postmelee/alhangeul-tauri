@@ -37,6 +37,8 @@ test('모든 workflow가 공통 또는 전용 contract test inventory에 등록�
     'alhangeul-font-performance.yml',
     'alhangeul-installer-reuse.yml',
     'alhangeul-linux-gui.yml',
+    'alhangeul-production-upgrade-linux.yml',
+    'alhangeul-production-upgrade-windows.yml',
     'alhangeul-release-fedora-vm.yml',
     'alhangeul-release-files.yml',
     'alhangeul-release-linux-files.yml',

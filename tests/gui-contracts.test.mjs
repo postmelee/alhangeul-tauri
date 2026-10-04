@@ -375,3 +375,42 @@ test('idle 문구 뒤 늦게 나타나는 스킨 안내도 public ready 응답 �
   session.executeAsync = async () => ({ error: 'initialization failed' });
   await assert.rejects(waitForStudioStartup(session, 1000), /initialization failed/);
 });
+
+
+test('production 시작만 정확한 예상 업데이트 알림을 허용한다', () => {
+  const status = '0.1.1 업데이트가 있습니다. 제품 정보에서 확인하세요.';
+  const state = { status, canvasReady: false, toolbarReady: true };
+  assert.equal(isStudioStartupReady(state), false, '일반 시작 검사는 기존 idle 계약을 유지한다');
+  assert.equal(isStudioStartupReady(state, '0.1.1'), true);
+  for (const version of ['0.1.0', '0.1.10', '', '0.1.1\n', '99.1.1']) {
+    assert.equal(isStudioStartupReady(state, version), false);
+  }
+  for (const change of [
+    { toolbarReady: false }, { canvasReady: true }, { status: '0.1.1 다운로드 중...' },
+    { status: '0.1.10 업데이트가 있습니다. 제품 정보에서 확인하세요.' },
+    { status: '0.1.1 업데이트가 있습니다. 제품 정보에서 확인하세요. ' },
+  ]) assert.equal(isStudioStartupReady({ ...state, ...change }, '0.1.1'), false);
+});
+
+test('production 알림도 public ready 및 알려진 대화상자 해소 후에만 수용한다', async () => {
+  let ready = false; let modal = true; let clicks = 0;
+  const overlay = {
+    $: () => ({ getText: async () => '화면 스킨 선택 ×' }),
+    $$: async () => [{ getText: async () => '시작하기', click: async () => { modal = false; clicks++; } }],
+  };
+  const session = {
+    execute: async () => ready ? { status: '0.1.1 업데이트가 있습니다. 제품 정보에서 확인하세요.', canvasReady: false, toolbarReady: true } : true,
+    executeAsync: async () => { ready = true; return { result: true }; },
+    $$: () => ({ getElements: async () => { assert.equal(ready, true); return modal ? [overlay] : []; } }),
+    waitUntil: async predicate => {
+      for (let i = 0; i < 3; i++) if (await predicate()) return;
+      throw new Error('not ready');
+    },
+  };
+  await waitForStudioStartup(session, 1000, '0.1.1'); assert.equal(clicks, 1);
+  session.executeAsync = async () => ({ error: 'initialization failed' });
+  await assert.rejects(waitForStudioStartup(session, 1000, '0.1.1'), /initialization failed/);
+  session.executeAsync = async () => ({ result: true });
+  overlay.$ = () => ({ getText: async () => '예상 밖 안내' }); modal = true;
+  await assert.rejects(waitForStudioStartup(session, 1000, '0.1.1'), /예상하지 않은 시작 대화상자/);
+});
