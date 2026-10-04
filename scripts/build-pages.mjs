@@ -11,7 +11,9 @@ import {
 import { dirname, extname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ROOT_ASSETS, assertInside, listSiteFiles, normalizeRootAssetReferences } from './pages/site-files.mjs';
+import { canonicalRoot, ownedPath } from './releases/notes-files.mjs';
 import { checkReleaseNotes } from './releases/notes-check.mjs';
+import { PACKAGE_DOWNLOADS_PATH, readPackageDownloads, serializePackageDownloads } from './pages/package-downloads.mjs';
 import { validateReleaseData } from './pages/release-data.mjs';
 import { buildUpdaterManifest, serializeUpdaterManifest } from './updater/manifest.mjs';
 
@@ -23,26 +25,20 @@ export async function buildPages(options = {}) {
   const layout = resolveLayout(options);
   await assertBuildLayout(layout);
   await assertOutputIsNotSymlink(layout.outputRoot);
+  const root = await canonicalRoot(layout.repositoryRoot);
+  await ownedPath(root, assertInside(layout.repositoryRoot, layout.sourceRoot, 'Pages source'));
+  await ownedPath(root, assertInside(layout.repositoryRoot, layout.outputRoot, 'Pages output'), { optional: true });
   const sourceFiles = await listSiteFiles(layout.sourceRoot);
   const release = await readReleaseData(layout.sourceRoot);
   await verifyRootAssets(layout.repositoryRoot);
   assertNoRootAssetCollision(sourceFiles);
+  const downloads = await readPackageDownloads(layout.repositoryRoot, release);
   await checkReleaseNotes({ repositoryRoot: layout.repositoryRoot, treeRoot: layout.sourceRoot, release });
 
   await rm(layout.outputRoot, { recursive: true, force: true });
   await mkdir(layout.outputRoot, { recursive: true });
 
-  for (const sitePath of sourceFiles) {
-    const source = join(layout.sourceRoot, sitePath);
-    const output = join(layout.outputRoot, sitePath);
-    await mkdir(dirname(output), { recursive: true });
-    if (TEXT_EXTENSIONS.has(extname(sitePath))) {
-      const content = await readFile(source, 'utf8');
-      await writeFile(output, normalizeRootAssetReferences(sitePath, content));
-    } else {
-      await copyFile(source, output);
-    }
-  }
+  await copySourceFiles(layout, sourceFiles);
 
   for (const assetPath of ROOT_ASSETS) {
     const output = join(layout.outputRoot, assetPath);
@@ -57,11 +53,27 @@ export async function buildPages(options = {}) {
     await writeFile(output, serializeUpdaterManifest(manifest, release), 'utf8');
   }
 
+  await writeFile(join(layout.outputRoot, PACKAGE_DOWNLOADS_PATH), serializePackageDownloads(downloads), 'utf8');
+
   return {
     outputRoot: layout.outputRoot,
     sourceFiles: sourceFiles.length,
     rootAssets: ROOT_ASSETS.length,
   };
+}
+
+async function copySourceFiles(layout, sourceFiles) {
+  for (const sitePath of sourceFiles) {
+    const source = join(layout.sourceRoot, sitePath);
+    const output = join(layout.outputRoot, sitePath);
+    await mkdir(dirname(output), { recursive: true });
+    if (TEXT_EXTENSIONS.has(extname(sitePath))) {
+      const content = await readFile(source, 'utf8');
+      await writeFile(output, normalizeRootAssetReferences(sitePath, content));
+    } else {
+      await copyFile(source, output);
+    }
+  }
 }
 
 async function readReleaseData(sourceRoot) {

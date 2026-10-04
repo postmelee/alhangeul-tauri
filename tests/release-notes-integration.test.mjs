@@ -8,6 +8,7 @@ import { checkReleaseNotes } from '../scripts/releases/notes-check.mjs';
 import { generateReleaseNotes } from '../scripts/releases/notes-cli.mjs';
 import { renderWebsiteNotes } from '../scripts/releases/website-render.mjs';
 import { releaseNotesFixture } from './fixtures/release-note-fixtures.mjs';
+import { installPublishedNotes } from './fixtures/pages-package-fixtures.mjs';
 import { createReleaseNotesFiles, templates } from './fixtures/release-note-files.mjs';
 import { createPagesFixture, publishedFixture, publishedManifestFixture, unreleasedFixture } from './fixtures/pages-release-fixtures.mjs';
 
@@ -22,10 +23,10 @@ async function saveNotes(fixture) {
 }
 
 for (const release of [unreleasedFixture(), publishedFixture(), publishedManifestFixture()]) {
-  test(`legacy Pages state ${release.status}, manifest=${release.updater.manifestPublished} remains valid`, async (t) => {
+  test(`Pages state with matching published notes ${release.status}, manifest=${release.updater.manifestPublished} remains valid`, async (t) => {
     const fixture = await createPagesFixture(release);
     t.after(fixture.cleanup);
-    assert.equal((await checkReleaseNotes({ repositoryRoot: fixture.root })).documents, 0);
+    assert.equal((await checkReleaseNotes({ repositoryRoot: fixture.root })).documents, release.status === 'published' ? 1 : 0);
     await buildPages({ repositoryRoot: fixture.root });
     assert.equal((await checkPages({ repositoryRoot: fixture.root })).length, 2);
   });
@@ -113,6 +114,7 @@ test('a newer release note does not silently change older live release data', as
   release.version = '0.1.0'; release.tag = 'v0.1.0';
   for (const target of Object.keys(release.downloads)) release.downloads[target] = release.downloads[target].replaceAll('0.2.0', '0.1.0');
   const fixture = await fixtureFor(t, { release });
+  await installPublishedNotes(fixture.root, release);
   const before = await readFile(join(fixture.root, 'site/release.json'));
   await buildPages({ repositoryRoot: fixture.root });
   await checkPages({ repositoryRoot: fixture.root });

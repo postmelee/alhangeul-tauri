@@ -13,7 +13,7 @@ export async function createReleaseNotesFiles(options = {}) {
   const notes = options.notes ?? releaseNotesFixture();
   const release = options.release ?? publishedManifestFixture();
   if (!options.release) release.notes = notes.content.updaterSummary;
-  const fixture = await createPagesFixture(release);
+  const fixture = await createPagesFixture(release, { includeNotes: false });
   await mkdir(join(fixture.root, 'mydocs/_templates'), { recursive: true });
   for (const name of ['release_notes.md', 'website_release_note.html']) {
     await cp(new URL(`../../mydocs/_templates/${name}`, import.meta.url), join(fixture.root, 'mydocs/_templates', name));

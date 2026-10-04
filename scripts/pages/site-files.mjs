@@ -58,6 +58,9 @@ export function assertAllowedFile(sitePath, options = {}) {
   ) {
     throw new Error(`Pages에 허용되지 않은 파일입니다: ${sitePath}`);
   }
+  if (sitePath === 'downloads.json' && !options.allowPackageDownloads) {
+    throw new Error('downloads.json은 source에 둘 수 없으며 검증된 output에서만 허용합니다.');
+  }
   if (sitePath === 'updater/stable.json' && !options.allowUpdaterManifest) {
     throw new Error('updater manifest는 source에 둘 수 없으며 검증된 output에서만 허용합니다.');
   }

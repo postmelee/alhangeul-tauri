@@ -4,7 +4,7 @@
 GitHub Issue: [#108](https://github.com/postmelee/alhangeul-tauri/issues/108)
 마일스톤: M010
 작성일: 2026-10-05 KST
-상태: 구현계획서 승인 대기
+상태: Stage 1 구현·검증 완료 · Stage 2 승인 대기
 작업 브랜치: `local/task108`
 기준 devel: `b925faa31251114e7064e76209c5640147dd013e`
 
@@ -193,3 +193,7 @@ Task #108 Stage 3 + 최종 보고서: 다운로드 선택 UI 통합 검증과 �
 - 이 3단계 산출물·검증 명령·커밋과 원문 기반 6종 JSON·기존 updater 3종 보존 방향.
 - 승인된 문서 위치와 필요한 shared helper·test fixture 연결 범위.
 - 구현계획 승인 후 Stage 1 구현·로컬 중립 검증·단계 보고/커밋까지 진행. Stage 2 및 공개는 그 결과 제시 후 다음 승인 단계로 둔다.
+
+## 구현계획 승인 기록
+
+- 작업지시자는 구현계획서와 Stage 1 구현·검증·단계 보고 승인 요청을 확인한 뒤 같은 스레드에서 “진행해줘.”라고 지시했다. 이에 따라 Stage 1 범위를 승인받았다. Stage 2와 공개 배포는 별도 다음 승인 대상이다.

@@ -4,9 +4,8 @@ const REPOSITORY = 'postmelee/alhangeul-tauri';
 const RHWP = { tag: 'v0.8.6', commit: 'f1f9c6ae58344ee9368996d3543f76b9345cf227' };
 
 // 합성 문구·hash·signature 구조 fixture. 실제 게시·서명 검증 결과가 아니다.
-export function releaseNotesFixture() {
-  const release = publishedManifestFixture();
-  const inventory = release.updater.inventory;
+export function releaseNotesFixture(release = publishedManifestFixture()) {
+  const inventory = structuredClone(release.updater.inventory ?? publishedManifestFixture(structuredClone(release)).updater.inventory);
   return {
     schemaVersion: 1,
     metadata: {
@@ -17,13 +16,13 @@ export function releaseNotesFixture() {
       sourceSha: inventory.sourceSha,
       publishedAt: release.publishedAt,
       rhwp: { ...RHWP },
-      previous: { version: '0.1.0', tag: 'v0.1.0', sourceSha: 'b'.repeat(40), rhwp: { ...RHWP } },
+      previous: release.version === '0.1.0' ? null : { version: '0.1.0', tag: 'v0.1.0', sourceSha: 'b'.repeat(40), rhwp: { ...RHWP } },
       assets: installerAssets(inventory),
       updaterInventory: inventory,
     },
     content: {
       summary: ['문서를 여는 속도를 개선했습니다.'],
-      rhwpChanges: { status: 'unchanged', paragraphs: ['기존 rhwp v0.8.6을 유지합니다.'] },
+      rhwpChanges: { status: release.version === '0.1.0' ? 'initial' : 'unchanged', paragraphs: ['기존 rhwp v0.8.6을 유지합니다.'] },
       appChanges: ['필요한 로컬 글꼴을 조회하는 시간을 줄였습니다.'],
       supportedEnvironments: ['Windows x64와 Linux x64, Linux arm64 DEB를 지원합니다.'],
       installation: ['AppImage는 실행 권한을 부여하고 쓰기 가능한 위치에 보관합니다.'],

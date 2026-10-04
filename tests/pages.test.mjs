@@ -33,10 +33,11 @@ import {
 import './pages-design.test.mjs';
 import './pages-showcase.test.mjs';
 import './pages-release-notes.test.mjs';
+import './pages-package-downloads.test.mjs';
 
 const repositoryRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const createFixture = () => createPagesFixture(unreleasedFixture());
-const inventory = siteInventory;
+const inventory = (root) => siteInventory(root, { allowPackageDownloads: true });
 
 test('tracked release data는 현재 상태의 전체 계약을 통과하고 source를 바꾸지 않는다', async () => {
   const releasePath = join(repositoryRoot, 'site/release.json');
@@ -64,9 +65,9 @@ test('고정 unreleased fixture는 unpublished fail-closed 계약을 지킨다',
 });
 
 for (const [name, releaseFactory, outputFiles] of [
-  ['unreleased', unreleasedFixture, 18],
-  ['published + manifest false', publishedFixture, 18],
-  ['published + manifest true', publishedManifestFixture, 19],
+  ['unreleased', unreleasedFixture, 19],
+  ['published + manifest false', publishedFixture, 20],
+  ['published + manifest true', publishedManifestFixture, 21],
 ]) {
   test(`${name} fixture는 source 검사부터 output 검사까지 통과하고 source를 보존한다`, async () => {
     const fixture = await createPagesFixture(releaseFactory());
@@ -74,7 +75,7 @@ for (const [name, releaseFactory, outputFiles] of [
       const sourceBefore = await siteInventory(join(fixture.root, 'site'));
       assert.deepEqual(
         await checkPages({ repositoryRoot: fixture.root, mode: 'source' }),
-        [{ mode: 'source', files: 16, status: releaseFactory().status }],
+        [{ mode: 'source', files: releaseFactory().status === 'published' ? 17 : 16, status: releaseFactory().status }],
       );
       await buildPages({ repositoryRoot: fixture.root });
       assert.deepEqual(
@@ -119,8 +120,8 @@ test('manifestPublished=true이면 complete inventory에서 output manifest만 �
     assert.deepEqual(
       await checkPages({ repositoryRoot: fixture.root }),
       [
-        { mode: 'source', files: 16, status: 'published' },
-        { mode: 'output', files: 19, status: 'published' },
+        { mode: 'source', files: 17, status: 'published' },
+        { mode: 'output', files: 21, status: 'published' },
       ],
     );
     await writeFile(manifestPath, '{}\n');

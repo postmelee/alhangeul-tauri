@@ -4,6 +4,7 @@ import { readFile, stat } from 'node:fs/promises';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { checkReleaseNotes } from './releases/notes-check.mjs';
+import { assertPackageDownloads } from './pages/package-downloads.mjs';
 import { validateReleaseData } from './pages/release-data.mjs';
 import { ROOT_ASSETS, listSiteFiles } from './pages/site-files.mjs';
 import { buildUpdaterManifest, serializeUpdaterManifest } from './updater/manifest.mjs';
@@ -49,6 +50,7 @@ export async function checkPages(options = {}) {
 async function checkTree(context) {
   const files = await listSiteFiles(context.treeRoot, {
     allowUpdaterManifest: context.mode === 'output',
+    allowPackageDownloads: context.mode === 'output',
   });
   const fileSet = new Set(files);
   const missingFiles = REQUIRED_SITE_FILES.filter((path) => !fileSet.has(path));
@@ -58,6 +60,7 @@ async function checkTree(context) {
   const release = await readReleaseData(context.treeRoot);
   validateReleaseData(release, { allowManifestPublished: true });
   await assertUpdaterManifest(context, fileSet, release);
+  await assertPackageDownloads(context, release);
   await checkReleaseNotes({ ...context, release });
   const referencedAssets = new Set();
   for (const sitePath of files.filter((path) => TEXT_EXTENSIONS.test(path))) {
