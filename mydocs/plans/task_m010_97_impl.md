@@ -682,3 +682,36 @@ tests/gui/specs/production-updater.e2e.ts는 v0.1.0 동일 버전과 이전 mani
 ### Gate 6 실제 실행 승인 및 결과 인계 — 2026-10-04
 
 같은 스레드의 “진행해줘”로 exact harness `a74d3638116e0bf579985f517e008b365399945f`의 NSIS/MSI/AppImage 실제 검증·분석·기존 위치의 기록을 승인받았다. fast37157613138 success 뒤 실제 [37158705809](https://github.com/postmelee/alhangeul-tauri/actions/runs/37158705809)를 실행했다. 전체 failure이며 Linux AppImage 실제 upgrade는 success, Windows 두 형식은 정상 업데이트 알림과 startup의 엄격한 idle 문구 조건 충돌로 버튼 도달 전 실패다. 제품 설치 실패로 단정하지 않는다. 상세 증거·실패·cleanup은 기존 stage4와 report, docs/releases/v0.1.1.md에 기록했다. 다음 소스 보정·새 exact Windows 실행은 아직 승인 전이다. 공개 제품/사이트/피드 변경 없이 #97을 OPEN으로 유지한다.
+
+
+### Gate 6 Windows 시작 검증 보정 — 2026-10-04 승인 완료
+
+같은 스레드의 “진행해줘”로 다음 계획 보정·검증 도구 수정·로컬 계약/GUI typecheck·Windows/Linux fast CI를 승인받았다. 실제 Windows 재실행은 fast 통과 후 새 exact harness 제시·승인 gate로 진행한다.
+
+## 확인한 결과와 원인
+
+- 고정 harness a74d3638116e0bf579985f517e008b365399945f의 실제 run 37158705809는 전체 failure다.
+- Linux AppImage는 실제 0.1.0→0.1.1 다운로드·서명·원본 교체·새 PID/FUSE mount·0.1.1 재실행·설정·HWP/HWPX 수용이 통과했다. artifact 11286572569의 archive digest와 다운로드 bytes, 원시 결과 및 화면을 확인했다.
+- Windows NSIS/MSI는 공개 파일 확인과 clean 0.1.0 설치가 통과했다. Studio ready RPC=true·toolbarReady=true·canvasReady=false와 시작 대화상자 해소가 실제 로그에 있다.
+- Windows 상태 문구는 정상 업데이트 알림인 “0.1.1 업데이트가 있습니다. 제품 정보에서 확인하세요.”다. 공통 startup helper는 “HWP 파일을 선택해주세요.”만 허용하므로 180초 동안 대기하다 실패했다.
+- apply/result.json은 failed이며 startup/manual/consent/install 증거가 없다. 설치 버튼에 도달하지 않았고 설치 후 버전은 0.1.0이다. Windows updater 자체의 다운로드/설치 실패로 확정할 근거가 아니다.
+- workflow의 continue-on-error가 이 선행 실패도 다음 단계로 넘겨 설치 후 검사에서 불필요하게 10분을 기다렸다. VM cleanup과 WebView2 정책 복원은 두 형식 모두 통과했다.
+
+## 소스 변경 범위
+
+1. 공통 Studio startup helper의 기존 엄격한 기본 계약은 유지한다. production upgrade 전용 호출에만 정확한 예상 0.1.1 알림 문구를 허용하는 작은 입력을 추가한다. Studio ready RPC, 알려진 모달 처리, toolbar 준비, 열린 canvas 없음 조건은 모두 유지한다. 이후 실제 native snapshot의 current=0.1.0/available=0.1.1/target/failure/trigger를 필수 대조한다. 임의 status 또는 다른 version을 허용하지 않는다.
+2. production GUI의 시작 실패에는 허용한 작은 DOM 상태(상태 문구·toolbar/canvas·모달 제목)와 화면을 남긴다. 이 일회용 VM의 공개/합성 자료만 수집하며 환경 변수·자격 증명·개인 문서는 수집하지 않는다.
+3. Windows는 설치 후 대기에 들어가기 전에 apply/result.json의 필수 계약을 검사한다. 시작 준비 실패·동의 누락·dirty 검사 누락은 즉시 실패시킨다. 실제 installer 종료 때문에 WDIO transport가 닫힌 경우도 별도 installed version 및 verify/finalize 통과 전에는 미수용이다.
+4. 기존 desktop dispatcher에 production upgrade 전용 platform 선택(all/windows-x64/linux-x64)을 추가하고 두 reusable 호출을 조건부 선택한다. Windows 재검증에서는 이미 통과한 Linux를 반복하지 않는다. 제품 source/installer/endpoint/key/tag/assets/notes/site는 바꾸지 않는다.
+5. 수행계획서와 구현계획서의 기존 Gate 6에 보정·문서 위치·검증 범위를 기록한다. 결과는 기존 stage4/report/orders 및 docs/releases/v0.1.1.md에 유지하며 새 공식 문서 루트를 만들지 않는다. 수정은 작은 역할별 파일에 한정하고 신규 함수/파일 권장 상한을 따른다.
+
+## 검증과 다음 승인
+
+- 이번 승인 대상: 위 검증 도구 보정·필요한 계획 기록·로컬 계약/GUI typecheck·Windows/Linux fast CI.
+- 회귀는 일반 idle 통과, 정확한 추가 알림만 production 경로에서 통과, 다른 version/임의 알림/미준비 toolbar/열린 canvas/중복·예상 밖 모달 거부, 실패 apply 증거의 설치 대기 진입 거부, platform 선택과 기존 mode 보존을 확인한다.
+- Mac에서는 Node/TypeScript·Studio 허용 검사만 수행한다. Rust desktop/Tauri 제품 build·native Windows/Linux 실행은 원격에서만 한다.
+- 통과 후 새 exact harness SHA와 Windows NSIS/MSI만 선택한 실행안을 제시하고 실제 재검증 승인 gate를 진행한다. 공개 제품 파일은 그대로 재사용하고 새 product build/sign/publish는 없다.
+- Linux는 기존 성공 run·harness·artifact를 그대로 근거로 인계한다. 새 Windows harness의 성공으로 Linux까지 같은 SHA에서 새로 통과했다고 표현하지 않는다.
+- 실제 Windows가 통과하기 전에는 공개 안내의 자동 업데이트 검증 중 문구를 전체 성공으로 바꾸지 않고 #97을 OPEN으로 유지한다.
+
+근거: AGENTS.md의 “소스 수정 전 반드시 작업지시자 승인 요청”, “각 단계 완료 후 승인 없이 다음 단계 진행 금지”; 기존 Gate 6의 실제 실행 결과·공개 변경 승인 경계.

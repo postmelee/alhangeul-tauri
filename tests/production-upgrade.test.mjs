@@ -1,5 +1,10 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readFile, mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
+import { requireApply } from '../scripts/updater/production-upgrade.mjs';
 import test from 'node:test';
 import { digest, validateInputs, validateMetadata, validateBytes, validateConfig, validateInventory, installerName, MANIFEST_HASH } from '../scripts/updater/production-contract.mjs';
 import { validateApply, validateVerify, validateWindowsInstallation } from '../scripts/updater/production-evidence.mjs';
@@ -94,4 +99,53 @@ test('signed inventory rejects path traversal and wrong product identity', () =>
 test('AppImage restart request alone is not completed restart evidence', () => {
   const missing = applied('appimage'); delete missing.restart; assert.throws(() => validateApply(missing, 'appimage'));
   const same = applied('appimage'); same.restart.current = same.restart.previous; assert.throws(() => validateApply(same, 'appimage'));
+});
+
+
+const harness = 'a'.repeat(40);
+async function withApplyGate(kind, mutate, verify) {
+  const root = await mkdtemp(join(tmpdir(), 'production-apply-gate-'));
+  try {
+    const input = { status: 'passed', kind, harnessSha: harness, manifestSha256: MANIFEST_HASH };
+    const value = { ...applied(kind), harnessSha: harness };
+    mutate(input, value);
+    await mkdir(join(root, 'apply'));
+    await writeFile(join(root, 'public-input.json'), JSON.stringify(input));
+    await writeFile(join(root, 'apply/result.json'), JSON.stringify(value));
+    await verify(root);
+  } finally { await rm(root, { recursive: true, force: true }); }
+}
+for (const kind of ['nsis', 'msi']) test(`${kind}: apply gate only admits complete matching harness evidence`, async () => {
+  await withApplyGate(kind, () => {}, async root => {
+    await requireApply(kind, root, harness);
+    assert.equal(JSON.parse(await readFile(join(root, 'apply-gate.json'))).status, 'passed');
+  });
+});
+const incompleteApply = {
+  startupFailure: (_input, value) => { value.status = 'failed'; delete value.startup; },
+  missingConsent: (_input, value) => { delete value.consent; },
+  missingDirty: (_input, value) => { delete value.dirty; },
+  missingInstall: (_input, value) => { delete value.installObserved; },
+  wrongHarness: (_input, value) => { value.harnessSha = 'b'.repeat(40); },
+  wrongKind: (input) => { input.kind = 'msi'; },
+  failedPublic: (input) => { input.status = 'failed'; },
+};
+for (const [name, mutate] of Object.entries(incompleteApply)) test(`apply gate rejects ${name} before installer wait`, async () => {
+  await withApplyGate('nsis', mutate, async root => {
+    await assert.rejects(requireApply('nsis', root, harness));
+    assert.equal(JSON.parse(await readFile(join(root, 'apply-gate.json'))).status, 'failed');
+  });
+});
+
+
+test('CLI returns failure for startup failure before installed-version waiting', async () => {
+  await withApplyGate('nsis', (_input, value) => { value.status = 'failed'; delete value.startup; }, async root => {
+    const cli = fileURLToPath(new URL('../scripts/updater/production-upgrade.mjs', import.meta.url));
+    const result = spawnSync(process.execPath, [cli, 'require-apply', 'nsis', root], {
+      env: { ...process.env, HARNESS_SHA: harness }, encoding: 'utf8', timeout: 10000,
+    });
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /Production upgrade require-apply failed/);
+    assert.equal(JSON.parse(await readFile(join(root, 'apply-gate.json'))).status, 'failed');
+  });
 });

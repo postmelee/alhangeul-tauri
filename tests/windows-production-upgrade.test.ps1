@@ -19,5 +19,5 @@ foreach ($step in ($workflow -split '(?m)^      - name:')) {
     if ($errors.Count -ne 0) { throw "Embedded PowerShell syntax failure: $($errors | Out-String)" }
     $count++
 }
-if ($count -ne 10) { throw "Expected 10 embedded scripts, found $count" }
+if ($count -ne 11) { throw "Expected 11 embedded scripts, found $count" }
 Write-Output "Production Windows workflow: $count PowerShell blocks parsed; no install executed."

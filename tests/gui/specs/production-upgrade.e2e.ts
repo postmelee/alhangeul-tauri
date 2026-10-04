@@ -5,7 +5,7 @@ import { readUpgradeInputs } from '../production-upgrade/inputs.ts';
 import { verifyManifest, type UpgradeEvidence } from '../production-upgrade/native.ts';
 import { applyUpgrade } from '../production-upgrade/apply.ts';
 import { verifyUpgrade } from '../production-upgrade/verify.ts';
-import { waitForInitialDesktopReady } from '../support/document-ux.ts';
+import { waitForProductionStartup } from '../production-upgrade/startup.ts';
 
 const input = readUpgradeInputs();
 describe(`Production ${input.kind} 0.1.0 → 0.1.1 ${input.phase}`, () => {
@@ -15,7 +15,7 @@ describe(`Production ${input.kind} 0.1.0 → 0.1.1 ${input.phase}`, () => {
       status: 'failed', harnessSha: process.env.HARNESS_SHA, startedAt: new Date().toISOString() };
     try {
       await browser.setTimeout({ script: 300000 });
-      await waitForInitialDesktopReady(browser, 180000);
+      await waitForProductionStartup(input, evidence);
       await verifyManifest(input, evidence);
       if (input.phase === 'apply') await applyUpgrade(input, evidence);
       else await verifyUpgrade(input, evidence);

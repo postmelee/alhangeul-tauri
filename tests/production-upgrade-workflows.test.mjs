@@ -11,7 +11,8 @@ test('production mode uses registered dispatcher and cannot publish products', (
   assert.ok(desktop.on.workflow_dispatch.inputs.mode.options.includes('production-upgrade-check'));
   for (const os of ['windows', 'linux']) {
     const job = desktop.jobs[`production-upgrade-${os}`];
-    assert.equal(job.if, "${{ inputs.mode == 'production-upgrade-check' && !inputs.publish_release }}");
+    const target = os === 'windows' ? 'windows-x64' : 'linux-x64';
+    assert.equal(job.if, `\${{ inputs.mode == 'production-upgrade-check' && !inputs.publish_release && (inputs.production_upgrade_platform == 'all' || inputs.production_upgrade_platform == '${target}') }}`);
     assert.deepEqual(job.permissions, { contents: 'read' });
     assert.equal(job.uses, `./.github/workflows/alhangeul-production-upgrade-${os}.yml`);
   }
@@ -53,4 +54,31 @@ test('Windows driver close is provisional until install and document evidence pa
   assert.ok(steps.some(s => s.run?.includes('production-upgrade.mjs finalize')));
   assert.ok(steps.some(s => s.id === 'cleanup' && s.if === '${{ always() }}'));
   assert.ok(steps.some(s => s.id === 'restore' && s.if === '${{ always() }}'));
+});
+
+
+test('production platform selection reruns Windows alone and preserves other modes', () => {
+  const choice = desktop.on.workflow_dispatch.inputs.production_upgrade_platform;
+  assert.equal(choice.default, 'all'); assert.deepEqual(choice.options, ['all', 'windows-x64', 'linux-x64']);
+  const selected = inputs => ['windows', 'linux'].filter(os => {
+    const expression = desktop.jobs[`production-upgrade-${os}`].if.slice(3, -2).trim();
+    return Function('inputs', `return (${expression});`)(inputs);
+  });
+  for (const [platform, expected] of [['all', ['windows', 'linux']], ['windows-x64', ['windows']], ['linux-x64', ['linux']]]) {
+    const inputs = { mode: 'production-upgrade-check', publish_release: false, production_upgrade_platform: platform };
+    assert.deepEqual(selected(inputs), expected);
+    assert.deepEqual(selected({ ...inputs, publish_release: true }), []);
+    assert.deepEqual(selected({ ...inputs, mode: 'artifact' }), []);
+  }
+});
+
+test('Windows incomplete apply evidence stops before ten-minute installer wait', () => {
+  const steps = windows.jobs.windows.steps;
+  const applied = steps.findIndex(s => s.id === 'apply');
+  const gate = steps.findIndex(s => s.run?.includes('production-upgrade.mjs require-apply'));
+  const validate = steps.findIndex(s => s.id === 'validate');
+  assert.ok(applied >= 0 && applied < gate && gate < validate);
+  assert.notEqual(steps[gate]['continue-on-error'], true);
+  assert.ok(steps[gate].run.includes('if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }'));
+  assert.notEqual(steps[validate].if, '${{ always() }}');
 });

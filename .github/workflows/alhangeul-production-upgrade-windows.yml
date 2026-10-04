@@ -76,6 +76,11 @@ jobs:
           $env:ALHANGEUL_PRODUCTION_DRIVER = Join-Path $env:USERPROFILE '.cargo\bin\tauri-driver.exe'
           pnpm run test:gui:production-upgrade
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Require apply evidence before waiting for installed version
+        shell: pwsh
+        run: |
+          node scripts/updater/production-upgrade.mjs require-apply $env:ALHANGEUL_PRODUCTION_KIND $env:EVIDENCE_ROOT
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Validate installed N plus one and associations
         id: validate
         shell: pwsh

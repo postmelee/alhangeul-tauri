@@ -29,6 +29,12 @@ on:
           - windows-pdf-dialog-verify
           - windows-dialog-probe
           - windows-dialog-verify
+      production_upgrade_platform:
+        description: Platform for production-upgrade-check only; reuses published products.
+        required: true
+        default: all
+        type: choice
+        options: [all, windows-x64, linux-x64]
       build_ref:
         description: Artifact mode requires a ref resolving to the selected workflow commit; other modes accept branch/tag/commit. Empty uses the workflow commit.
         required: false
@@ -195,13 +201,13 @@ jobs:
       candidate_path: ${{ inputs.release_candidate_path }}
 
   production-upgrade-windows:
-    if: ${{ inputs.mode == 'production-upgrade-check' && !inputs.publish_release }}
+    if: ${{ inputs.mode == 'production-upgrade-check' && !inputs.publish_release && (inputs.production_upgrade_platform == 'all' || inputs.production_upgrade_platform == 'windows-x64') }}
     permissions:
       contents: read
     uses: ./.github/workflows/alhangeul-production-upgrade-windows.yml
 
   production-upgrade-linux:
-    if: ${{ inputs.mode == 'production-upgrade-check' && !inputs.publish_release }}
+    if: ${{ inputs.mode == 'production-upgrade-check' && !inputs.publish_release && (inputs.production_upgrade_platform == 'all' || inputs.production_upgrade_platform == 'linux-x64') }}
     permissions:
       contents: read
     uses: ./.github/workflows/alhangeul-production-upgrade-linux.yml

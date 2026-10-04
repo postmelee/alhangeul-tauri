@@ -38,6 +38,24 @@ async function prepare(kind, output) {
   finally { evidence.finishedAt = new Date().toISOString(); await writeJson(join(output, 'public-input.json'), evidence); }
 }
 
+export async function requireApply(kind, output, expectedHarness = process.env.HARNESS_SHA) {
+  const receipt = { kind, harnessSha: expectedHarness, status: 'failed' };
+  try {
+    assert.match(expectedHarness ?? '', /^[a-f0-9]{40}$/);
+    const spec = await json(join(root, 'tests/gui/production-upgrade-inputs.json'));
+    validateInputs(spec, kind);
+    const input = await json(join(output, 'public-input.json'));
+    assert.equal(input.status, 'passed'); assert.equal(input.kind, kind);
+    assert.equal(input.harnessSha, expectedHarness);
+    assert.equal(input.manifestSha256, spec.manifestSha256);
+    const applied = await json(join(output, 'apply', 'result.json'));
+    assert.equal(applied.harnessSha, expectedHarness);
+    validateApply(applied, kind);
+    receipt.status = 'passed';
+  } catch (error) { receipt.error = error.message; throw error; }
+  finally { await writeJson(join(output, 'apply-gate.json'), receipt); }
+}
+
 async function finalize(kind, output, appPath) {
   const spec = await json(join(root, 'tests/gui/production-upgrade-inputs.json'));
   validateInputs(spec, kind);
@@ -63,9 +81,10 @@ async function finalize(kind, output, appPath) {
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const [phase, kind, path, appPath, ...extra] = process.argv.slice(2);
   try {
-    assert.ok(['prepare', 'stop', 'finalize'].includes(phase) && path && extra.length === 0, 'upgrade CLI arguments');
+    assert.ok(['prepare', 'require-apply', 'stop', 'finalize'].includes(phase) && path && extra.length === 0, 'upgrade CLI arguments');
     const output = resolve(path);
     if (phase === 'prepare') await prepare(kind, output);
+    else if (phase === 'require-apply') await requireApply(kind, output);
     else if (phase === 'stop') { assert.equal(kind, 'appimage'); await stopRestartedAppImage(output); }
     else await finalize(kind, output, appPath);
   } catch (error) { console.error(`Production upgrade ${phase} failed: ${error.message}`); process.exitCode = 1; }

@@ -3,7 +3,7 @@
 GitHub Issue: [#97](https://github.com/postmelee/alhangeul-tauri/issues/97)
 마일스톤: M010
 작성일: 2026-10-03 (Asia/Seoul)
-상태: v0.1.1 공개 전달 완료 / Linux 실제 upgrade 통과 / Windows 시작 검증 도구 실패·보정 승인 대기
+상태: v0.1.1 공개 전달 완료 / Linux 실제 upgrade 통과 / Windows 시작 검증 보정·로컬 검사 완료 / 새 exact fast 확인 대기
 
 ## 작업 요약
 
@@ -443,3 +443,29 @@ apply/result는 failed이고 startup/manual/consent/install 증거가 없으며 
 ### 잔여 위험·다음 단계
 
 Windows 자동 업데이트는 미수용이다. production 전용 startup의 정확한 알림 허용·준비 상태 진단·실패 apply의 불필요한 설치 대기 차단 및 Windows만 선택한 후속 검증을 위한 도구 보정안이 필요하다. 현재 결과 분석·기록 이후 소스 변경은 아직 승인하지 않았다. 수정·fast 이후 새 exact harness의 실제 Windows 실행 gate를 진행한다. Linux 근거는 이 성공 job/기존 harness 그대로 재사용하며 다른 SHA에서 새로 통과했다고 기록하지 않는다. 공개 안내는 아직 검증 중 문구를 유지하고 #97은 OPEN/진행중이다.
+
+
+## Gate 6 Windows 시작 검증 보정 구현·로컬 검증 — 2026-10-04
+
+### 단계 목적과 승인
+
+Windows NSIS/MSI의 첫 실제 run37158705809는 설치 버튼 전의 strict idle 상태 문구 검사에서 실패했다. 검토한 보정안에 같은 스레드의 “진행해줘”로 도구 수정·계획 기록·플랫폼 중립 로컬 검사·Windows/Linux fast CI를 승인받았다. 이번 구현은 실제 Windows upgrade 성공이 아니며 새 exact harness의 실제 Windows 실행은 다음 승인 gate다.
+
+### 산출물과 기존 동작 보존
+
+- 공통 studio-startup.ts에 optional expectedUpdateVersion을 추가했다. 입력 없는 기존 helper 호출은 정확한 idle만 허용한다. production apply 호출만 예상0.1.1의 정확한 알림을 허용하며 ready RPC·known modal·toolbar 준비·canvas 없음 조건과 이후 native0.1.0→0.1.1/target/trigger/failure 대조를 유지한다. 임의 알림이나 다른 version을 허용하지 않는다.
+- production-upgrade/startup.ts(32 LOC)는 실패 시 상태 문구·toolbar/canvas·modal 제목과 화면을 남긴다. 실패 증거 수집 오류로 원래 오류를 덮지 않으며 환경 변수·자격 증명·개인 문서 정보를 수집하지 않는다.
+- production-upgrade.mjs의 require-apply CLI가 공개 입력/동일 harness 및 적용 필수 증거를 확인하고 apply-gate.json을 기록한다. Windows 설치 후10분 대기 전에 이 필수 gate를 실행한다. continue-on-error의 transport close 가능성은 유지하되 시작 실패·동의/dirty/설치 증거 누락은 즉시 실패시킨다. installed version·문서/설정·최종 수용은 여전히 별도 필수다.
+- desktop dispatcher에 production_upgrade_platform=all/windows-x64/linux-x64 choice를 추가했다. Windows 재검증에서는 production 두 Windows job만 실행할 수 있다. 기존 mode·공개 제품 source/bytes·key/endpoint·site/notes/feed·rhwp pin은 변경하지 않았다. 신규 파일/함수는 권장 상한 이내이며 기존 dispatcher에는 작은 입력/조건만 추가했다.
+
+### 검증 결과
+
+- 전용 production/workflow/GUI 계약 **67/67**, 전체 automation **1228/1228**, upstream **39/39**, Studio **251/251(39 files)** 통과했다. fail/skip0다. GUI typecheck와 Studio build도 통과했으며 기존 chunk/dynamic import 경고만 남는다.
+- 일반 strict idle 보존·정확한 production 알림만 통과·다른 version/임의 문구/미준비 toolbar/열린 canvas 거부·ready RPC/알려진 modal 처리 순서·예상 밖 modal 거부를 확인했다.
+- 두 Windows kind의 완전한 적용 증거는 gate를 통과하고 시작 실패·동의/dirty/설치 증거 누락·다른 harness/kind·공개 입력 실패는 거부한다. 실제 CLI도 시작 실패에서 exit1을 반환하고 failed receipt를 남긴다. YAML 순서 검사로 gate가 설치 대기 이전에 배치되고 강제 실패인지를 확인했다.
+- all/windows-x64/linux-x64 선택과 publish_release/다른mode 차단을 actual job condition으로 평가했다. 신규 Windows workflow PS block은11개이며 원격 Windows fast parser에서 확인한다.
+- check:action-pins **29 files/165 references/11 pins**, check:product-boundary **794 files scanned**, check:release-notes1doc와 git diff --check 통과다. rhwp submodule은 v0.8.6 resolved f1f9c6ae58344ee9368996d3543f76b9345cf227에서 clean이다.
+
+### 잔여 위험·다음 단계·승인 경계
+
+원격 fast는 새 exact commit에서 확인해야 한다. 통과 후 해당 SHA와 Windows NSIS/MSI만 선택한 실제 production 실행안을 제시한다. 실제 설치 및 문서·설정 수용은 미검증이며 old run 실패를 소급 성공으로 바꾸지 않는다. Linux 성공은 기존 a74d3638/run37158705809/artifact11286572569 근거를 유지하며 새 Windows harness에서 Linux도 새로 통과했다고 쓰지 않는다. 제품 재빌드/새 서명/게시/태그 이동·asset 또는 production feed 변경은 없고 공개 안내와 #97 OPEN 상태를 유지한다.
