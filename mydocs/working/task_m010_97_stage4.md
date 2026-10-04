@@ -352,3 +352,41 @@ Windows 실제 업그레이드는 미수용이고 #97은 OPEN/진행중이다. �
 새 exact commit을 게시한 뒤 승인된 Windows/Linux fast를 한 번 실행해 플랫폼 계약과 PowerShell parser를 확인한다. fast는 실제 product install/upgrade 수용이 아니다. 이번 commit의 실제 Windows 설치·재실행·문서/설정 수용은 아직 미검증이다. 연결 종료만으로 제품의 정상 종료나 설치 성공을 확정하지 않고 후속 OS version/fresh GUI/accepted 증거를 요구한다. 다음 실제 run에서 installer 실패가 재현되면 당시 원시 증거에 따라 제품 또는 CI 환경 원인을 구분한다.
 
 fast 통과 후 새 exact harness와 Windows NSIS/MSI 실행안을 제시해 승인을 요청한다. Linux는 이전37158705809/a74d3638/artifact11286572569의 실제 성공을 재사용한다. 제품 build/sign/publish·공개 body/notes/site/feed 변경·PR/merge/Pages는 이번 승인 범위 밖이다. 공개 검증 중 문구와 #97 OPEN/진행중을 유지한다.
+
+
+## Gate 6 production upgrade 세 형식 실제 수용 — 2026-10-04
+
+### 승인·fast·실행 식별자
+
+설치 handoff 보정 뒤 새 exact harness `b7f6979c1f38c060e27f2824bdd71d32c5047468`의 Windows NSIS/MSI 실행안을 제시했고 같은 스레드의 “진행해줘”로 Windows NSIS/MSI 실제 재검증·증거 분석·기존 위치 기록을 승인받았다.
+
+[fast37178736722](https://github.com/postmelee/alhangeul-tauri/actions/runs/37178736722)은 같은 SHA에서 success다. Linux automation1250/upstream39/Studio251·build/GUI typecheck와 원격 boundary776files, Windows 릴리즈124/production58·PowerShell83sources/격리16·workflow11블록 parser가 통과했다. fast는 실제 product upgrade 수용이 아니다.
+
+[실제37179376994](https://github.com/postmelee/alhangeul-tauri/actions/runs/37179376994)은 이 SHA에서 mode=production-upgrade-check/production_upgrade_platform=windows-x64/publish_release=false로 실행했고 전체 **success**다. Windows NSIS/MSI 두 job 모두 필수 적용·설치·재실행·accepted·cleanup/정책 복원을 통과했다. Linux는 선택하지 않았고 이전 실제 성공 근거를 재사용한다. 제품 N source `fc3cad15682f35723ab6558d1301e9096f7eec67`, N+1 `96e89e900415ee9e1e942b5c01c833dea3415e86`, 두 공개 Release399698591/402604603의 기존 bytes와 manifest `62fae230339497b132be013ec91df7cd83b710b69c9de4f56ffff1c407463728`를 사용했다. 제품 재빌드·서명·tag/assets/body/site/feed 변경은 없다.
+
+### 형식별 최종 수용 근거
+
+| 형식 | 실제 수용 | harness/run/job/artifact |
+|---|---|---|
+| Windows x64 NSIS | 통과 | b7f6979c/[37179376994](https://github.com/postmelee/alhangeul-tauri/actions/runs/37179376994)/[111368643157](https://github.com/postmelee/alhangeul-tauri/actions/runs/37179376994/job/111368643157)/[11294931216](https://github.com/postmelee/alhangeul-tauri/actions/runs/37179376994/artifacts/11294931216) |
+| Windows x64 MSI | 통과 | b7f6979c/37179376994/[111368643112](https://github.com/postmelee/alhangeul-tauri/actions/runs/37179376994/job/111368643112)/[11294057902](https://github.com/postmelee/alhangeul-tauri/actions/runs/37179376994/artifacts/11294057902) |
+| Linux x64 AppImage | 이전 실제 성공 재사용 | a74d3638116e0bf579985f517e008b365399945f/[37158705809](https://github.com/postmelee/alhangeul-tauri/actions/runs/37158705809)/[111307414907](https://github.com/postmelee/alhangeul-tauri/actions/runs/37158705809/job/111307414907)/[11286572569](https://github.com/postmelee/alhangeul-tauri/actions/runs/37158705809/artifacts/11286572569) |
+
+기존37158705809/37176405544 전체 failure를 소급 success로 바꾸지 않는다. Linux는 이전 run의 해당 success job만 수용하며 이번 Windows SHA에서 새로 통과했다고 쓰지 않는다.
+
+### Windows 실제 관측·보존과 로컬 재대조
+
+두 VM 모두 public-input passed/clean0.1.0 install exit0, 실제 시작·수동 native 조회의0.1.0→0.1.1/동일 target·dirty 문서 차단·UI 설치 동의·다운로드100%를 확인했다. NSIS56793106 bytes/MSI64102400 bytes다. 새 handoff 관측은 installing에서 return하지 않고 driver의 invalid session id/브라우저 연결 종료까지 유지했다. 두 apply/result/windows-handoff.json·apply-gate·verify/result·accepted는 같은 harness의 passed 증거다.
+
+- NSIS: installing05:20:42.111Z→연결 종료05:20:42.631Z(520ms), WDIO deleteSession은 종료 관측 뒤05:20:42.638Z다. 설치 버전 검사05:20:44.825Z~05:20:51.213Z에서 통과했다.
+- MSI: installing05:21:12.975Z→연결 종료05:21:13.828Z(853ms), deleteSession은05:21:13.834Z다. 설치 버전 검사05:21:18.142Z~05:21:20.503Z에서 통과했다.
+
+두 형식 모두 실제 executable ProductVersion/FileVersion 및 uninstall DisplayVersion0.1.1, .hwp/.hwpx handler Valid=true, 기본 연결/UserChoice 보존을 확인했다. fresh driver session의 Alhangeul0.1.1/no-update, settingsPreserved=true, HWP6쪽/HWPX10쪽·canvasReady·unchanged=true 및 두 원본 hash 유지가 통과했다. Windows 두 형식×두 문서 화면4장을 직접 확인했다. 두 VM applyTransport/installedVersion/verify/cleanup/policyRestore는 모두 success이고 제거 exit0·잔여 설치 제거·WebView2 restored=true다.
+
+각 API artifact의 ID·exact headSha·run·비만료·bytes 크기/digest를 실제 ZIP에 대조했다. NSIS674312 bytes/SHA-256 `f8f5f2f2625de66b7c03d6648c01e7529cf86b334d60cf3afe0186b103fd0fa7`, MSI700752 bytes/SHA-256 `3bff9026d14de2abfcc54c9c7e5f2816e6a8dbb52161dfa305f532a09119c168`가 일치한다. 공개 Release metadata·checksum10개/metadata 파일 hash·manifest apply/verify bytes·N 설치 hash·CI signatureVerified receipt·consent 및 apply/installed/verify/accepted 계약을 로컬에서 재대조했다. Windows archive에서 제외된 installer/signature/inventory 원본은 CI receipt 근거이며 로컬에서 제품 bytes/Minisign을 다시 계산했다는 의미가 아니다.
+
+### 원인 판단·잔여 한계·다음 단계
+
+검증 도구를 보정한 뒤 같은 공개 설치본의 Windows 두 형식이 실제로 통과했다. 이전 installing-only 관측 뒤3/4ms의 조기 세션 종료와 새 연결 유지·설치 완료 관측의 차이를 확인했다. 이를 Windows 제품 updater를 수정한 결과로 표현하지 않는다. 세 형식의 실제 N→N+1 단계는 수용됐지만 모든 PC/GPU/문서·native Open 대화상자·강제 MSI3010 후 재부팅 수용까지 확대하지 않는다. 수동 조회는 public native updater_check이고 문서 열기는 loadFile RPC다. 알려진 Authenticode·일부 NSIS thumbnail/표시 한계도 유지한다.
+
+공개 body/원문 notes/site/feed에는 아직 검증 중 문구가 남아 있다. 다음은 실제 수용 결과에 맞는 원문·생성 body/website/updaterSummary와 릴리즈 인덱스 상태를 보정하는 검토다. source 구현·PR 준비 뒤 exact 공개물 검토/승인·PR merge·Pages·HTTP 대조·#97 close/cleanup까지는 남아 있으며 이번 실행 승인 범위 밖이다. 따라서 #97은 OPEN/진행중이다. 새 공개 notes-only manifest는 원래 actual 수용의 당시 hash/고정 harness 근거를 보존하고 installer identity와 구분한다.
