@@ -4,7 +4,7 @@
   "version": "0.1.1",
   "tag": "v0.1.1",
   "publishedAt": "2026-10-03T17:07:44Z",
-  "notes": "로컬 글꼴을 사용할 때 문서 열기·입력·스크롤 반응을 개선했습니다. rhwp v0.8.6은 유지합니다.\n\nWindows 코드 서명·일부 탐색기 썸네일·환경별 표시에는 제한이 있습니다. 실제 이전 버전에서의 앱 내 업데이트 검증은 진행 중입니다. 자세한 변경과 설치 안내는 v0.1.1 릴리즈 노트를 확인하세요.",
+  "notes": "로컬 글꼴을 사용할 때 문서 열기·입력·스크롤 반응을 개선했습니다. rhwp v0.8.6은 유지합니다.\n\nWindows NSIS·MSI와 Linux x64 AppImage의 v0.1.0 → v0.1.1 앱 내 업데이트를 확인했습니다. Windows 코드 서명·일부 탐색기 썸네일·환경별 표시에는 제한이 있습니다. 자세한 변경과 설치 안내는 v0.1.1 릴리즈 노트를 확인하세요.",
   "downloads": {
     "windows-x86_64-nsis": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.1/Alhangeul_0.1.1_x64-setup.exe",
     "windows-x86_64-msi": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.1/Alhangeul_0.1.1_x64_en-US.msi",

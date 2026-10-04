@@ -1,0 +1,139 @@
+name: Alhangeul Production Upgrade Windows
+on:
+  workflow_call:
+permissions:
+  contents: read
+jobs:
+  windows:
+    name: Production Windows ${{ matrix.kind }} 0.1.0 to 0.1.1
+    runs-on: windows-2025
+    timeout-minutes: 50
+    strategy:
+      fail-fast: false
+      matrix:
+        kind: [nsis, msi]
+    env:
+      HARNESS_SHA: ${{ github.workflow_sha }}
+      EVIDENCE_ROOT: ${{ github.workspace }}\production-evidence-windows-${{ matrix.kind }}
+      ALHANGEUL_PRODUCTION_ROOT: ${{ github.workspace }}
+      ALHANGEUL_PRODUCTION_KIND: ${{ matrix.kind }}
+    steps:
+      - name: Checkout exact harness
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.workflow_sha }}
+          submodules: true
+      - name: Verify exact harness SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$(git rev-parse HEAD)" == "$HARNESS_SHA" ]]
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Install exact dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          corepack enable
+          pnpm run fetch:rhwp-pin-tag
+          pnpm install --frozen-lockfile
+      - name: Setup driver toolchain
+        uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
+      - name: Install pinned native driver
+        shell: bash
+        run: cargo install tauri-driver --version 2.0.6 --locked
+      - name: Verify public release inputs and signatures
+        id: public
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          node scripts/updater/production-upgrade.mjs prepare $env:ALHANGEUL_PRODUCTION_KIND $env:EVIDENCE_ROOT
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Configure WebView2 automation
+        id: policy
+        shell: pwsh
+        run: ./scripts/updater/windows-webview2-automation-policy.ps1 -Phase Setup -OutputDirectory $env:EVIDENCE_ROOT
+      - name: Install public N in clean VM
+        id: install
+        shell: pwsh
+        run: >-
+          ./scripts/updater/windows-native-acceptance.ps1 -Phase Install
+          -Kind $env:ALHANGEUL_PRODUCTION_KIND -ArtifactRoot (Join-Path $env:EVIDENCE_ROOT 'n')
+          -OutputDirectory $env:EVIDENCE_ROOT -ExpectedVersion '0.1.0'
+      - name: Apply production upgrade through app UI
+        id: apply
+        continue-on-error: true
+        shell: pwsh
+        env:
+          ALHANGEUL_PRODUCTION_APP: ${{ steps.install.outputs.app_path }}
+          ALHANGEUL_PRODUCTION_PHASE: apply
+          ALHANGEUL_PRODUCTION_OUTPUT: ${{ env.EVIDENCE_ROOT }}\apply
+        run: |
+          $env:ALHANGEUL_PRODUCTION_DRIVER = Join-Path $env:USERPROFILE '.cargo\bin\tauri-driver.exe'
+          pnpm run test:gui:production-upgrade
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Require apply evidence before waiting for installed version
+        shell: pwsh
+        run: |
+          node scripts/updater/production-upgrade.mjs require-apply $env:ALHANGEUL_PRODUCTION_KIND $env:EVIDENCE_ROOT
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Validate installed N plus one and associations
+        id: validate
+        shell: pwsh
+        run: >-
+          ./scripts/updater/windows-native-acceptance.ps1 -Phase Validate
+          -Kind $env:ALHANGEUL_PRODUCTION_KIND -OutputDirectory $env:EVIDENCE_ROOT -ExpectedVersion '0.1.1'
+      - name: Verify N plus one UI version settings and documents
+        id: verify
+        shell: pwsh
+        env:
+          ALHANGEUL_PRODUCTION_APP: ${{ steps.validate.outputs.app_path }}
+          ALHANGEUL_PRODUCTION_PHASE: verify
+          ALHANGEUL_PRODUCTION_OUTPUT: ${{ env.EVIDENCE_ROOT }}\verify
+        run: |
+          $env:ALHANGEUL_PRODUCTION_DRIVER = Join-Path $env:USERPROFILE '.cargo\bin\tauri-driver.exe'
+          pnpm run test:gui:production-upgrade
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Require complete production upgrade evidence
+        shell: pwsh
+        run: |
+          node scripts/updater/production-upgrade.mjs finalize $env:ALHANGEUL_PRODUCTION_KIND $env:EVIDENCE_ROOT
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Cleanup disposable Windows installation
+        id: cleanup
+        if: ${{ always() }}
+        shell: pwsh
+        run: ./scripts/updater/windows-native-acceptance.ps1 -Phase Cleanup -Kind $env:ALHANGEUL_PRODUCTION_KIND -OutputDirectory $env:EVIDENCE_ROOT
+      - name: Restore WebView2 automation policy
+        id: restore
+        if: ${{ always() }}
+        shell: pwsh
+        run: ./scripts/updater/windows-webview2-automation-policy.ps1 -Phase Cleanup -OutputDirectory $env:EVIDENCE_ROOT
+      - name: Record actual Windows step outcomes
+        if: ${{ always() }}
+        shell: pwsh
+        env:
+          APPLY_OUTCOME: ${{ steps.apply.outcome }}
+          VALIDATE_OUTCOME: ${{ steps.validate.outcome }}
+          VERIFY_OUTCOME: ${{ steps.verify.outcome }}
+          CLEANUP_OUTCOME: ${{ steps.cleanup.outcome }}
+          RESTORE_OUTCOME: ${{ steps.restore.outcome }}
+        run: |
+          New-Item -ItemType Directory -Path $env:EVIDENCE_ROOT -Force | Out-Null
+          [ordered]@{ applyTransport = $env:APPLY_OUTCOME; installedVersion = $env:VALIDATE_OUTCOME; verify = $env:VERIFY_OUTCOME; cleanup = $env:CLEANUP_OUTCOME; policyRestore = $env:RESTORE_OUTCOME } |
+            ConvertTo-Json | Set-Content -LiteralPath (Join-Path $env:EVIDENCE_ROOT 'step-outcomes.json') -Encoding UTF8
+      - name: Preserve production Windows evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: production-upgrade-windows-${{ matrix.kind }}-${{ github.run_id }}
+          path: |
+            ${{ env.EVIDENCE_ROOT }}/**
+            !${{ env.EVIDENCE_ROOT }}/n/**/Alhangeul*
+            !${{ env.EVIDENCE_ROOT }}/next/**/Alhangeul*
+          if-no-files-found: error
+          retention-days: 14
