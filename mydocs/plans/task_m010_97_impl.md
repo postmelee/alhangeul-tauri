@@ -749,3 +749,14 @@ tests/gui/specs/production-updater.e2e.ts는 v0.1.0 동일 버전과 이전 mani
 - 릴리즈 인덱스와 공개 기록 첫 상태는 읽기 전용 공개 확인 및 이미 수용한 실제 증거에 맞춘다. 결과 문구 공개 갱신은 아직 대기임을 명시한다.
 - release notes 생성·drift·Pages/updater/워크플로 계약, Pages build/check, GUI 시각 확인(1366·390·320px), product boundary/upstream/Studio test·build/GUI typecheck/action pins/automation 및 새 exact Windows/Linux fast를 수행한다. Mac에서는 중립 검사만 한다. 제품 runtime/build/sign/tag/assets/native 재실행은 없다.
 - 통과 후 기존 stage4/report에 승인·변경·검증·보존 여부·제한·다음 공개 gate를 기록하고 소스와 묶음 커밋한다. 같은 bytes의 제품 CI·설치 검증을 반복하지 않는다. #97은 최종 공개 인계까지 OPEN이다.
+
+
+## Gate 8 최종 PR·공개·정리 승인 — 2026-10-04
+
+작업지시자가 `/tmp/task97-result-copy-publish-plan.md`와 PR 본문·생성 body/HTML/manifest 후보를 검토한 뒤 같은 스레드에서 “진행해줘”로 승인했다. 이는 non-draft PR 게시·필수 검사 통과 후 일반 merge·v0.1.1 body만 갱신·exact merge SHA Pages·HTTP20개 bytes/표시/링크 대조·기존 위치 결과 기록(필요한 문서-only 후속 PR 포함)·성공 뒤 #97 close와 task 부산물 안전 정리의 명시 승인이다.
+
+문서 위치는 기존 plans2개·stage4/report/orders 및 docs/releases의 v0.1.1 기록/인덱스를 그대로 사용한다. 사이트/생성 후보 bytes는633629fe와 같고 제품 runtime·build/sign/tag/assets/upstream pin 변경은 없다. 사용자 root local/task69 미커밋 변경·다른 작업자의 devel worktree는 보존한다. 완료 상태와 issue close는 공개 read-back 수용 뒤 기록한다.
+
+[새 안내 fast37182206176](https://github.com/postmelee/alhangeul-tauri/actions/runs/37182206176)는 exact633629fead088b3c7c894d8a146c66dfcb4459f7에서 전체 success다. Linux Node/Studio job과 Windows PowerShell job의 모든 필수 step이 success이며 Linuxautomation1251/upstream39/Studio251/GUItype/Pages17-20,Windowsrelease124/production59/PowerShell83sources-16isolated/productionworkflow11blocks가 통과했다. native/package는 해당 profile에서 skipped이며 새로운 제품/native 수용으로 표현하지 않는다. receipt `/tmp/task97-result-copy-fast-receipt.json`에 run/job/step을 보존했다.
+
+실제 production 수용은 Windows37179376994/b7f6979c와 Linux37158705809/job111307414907/a74d3638의 기존 근거다. 새 native 실행은 필요하지 않다. 다음 PR의 merge ref required는 게시 이후 별도로 확인하며 아직 수행 전이다. 승인 전후 검토 대상 body·site·installer·key·tag identity는 재대조했고 기존 body43b9a7b3… 및11assets는 유지됐다. 공개 변경 전 현재 확인 시각은2026-10-04T06:28:24Z다.

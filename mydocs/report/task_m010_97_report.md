@@ -1,9 +1,9 @@
-# Task #97 최종 보고서 — 로컬 글꼴 조회 개선과 v0.1.1 후보
+# Task #97 최종 보고서 — 로컬 글꼴 조회 개선과 v0.1.1 배포·업데이트 수용
 
 GitHub Issue: [#97](https://github.com/postmelee/alhangeul-tauri/issues/97)
 마일스톤: M010
 작성일: 2026-10-03 (Asia/Seoul)
-상태: v0.1.1 공개 전달 완료 / Windows NSIS·MSI와 Linux AppImage 실제 upgrade 통과 / 결과 문구 보정·로컬 검사 완료 / exact fast·최종 PR/병합·Pages 인계 대기
+상태: v0.1.1 공개 전달 완료 / Windows NSIS·MSI와 Linux AppImage 실제 upgrade 통과 / 결과 문구 보정·로컬 검사 완료 / exact fast 통과 / 최종 PR·공개·정리 승인 완료 및 실행 중
 
 ## 작업 요약
 
@@ -617,3 +617,14 @@ Windows 실제37179376994/b7f6979c와 Linux 실제37158705809/a74d3638은 당시
 ### 다음 승인 요청
 
 새 exact commit의 Windows/Linux fast 결과와 PR 검토용 본문·공개 후보 bytes를 제시한 뒤 PR 게시·body 적용·devel merge·exact Pages 게시·실제 HTTP/표시/링크·close/cleanup gate 승인을 요청한다.
+
+
+## Gate 8 최종 PR·공개·정리 승인 — 2026-10-04
+
+작업지시자가 `/tmp/task97-result-copy-publish-plan.md`와 PR 본문·생성 body/HTML/manifest 후보를 검토한 뒤 같은 스레드에서 “진행해줘”로 승인했다. 이는 non-draft PR 게시·필수 검사 통과 후 일반 merge·v0.1.1 body만 갱신·exact merge SHA Pages·HTTP20개 bytes/표시/링크 대조·기존 위치 결과 기록(필요한 문서-only 후속 PR 포함)·성공 뒤 #97 close와 task 부산물 안전 정리의 명시 승인이다.
+
+문서 위치는 기존 plans2개·stage4/report/orders 및 docs/releases의 v0.1.1 기록/인덱스를 그대로 사용한다. 사이트/생성 후보 bytes는633629fe와 같고 제품 runtime·build/sign/tag/assets/upstream pin 변경은 없다. 사용자 root local/task69 미커밋 변경·다른 작업자의 devel worktree는 보존한다. 완료 상태와 issue close는 공개 read-back 수용 뒤 기록한다.
+
+[새 안내 fast37182206176](https://github.com/postmelee/alhangeul-tauri/actions/runs/37182206176)는 exact633629fead088b3c7c894d8a146c66dfcb4459f7에서 전체 success다. Linux Node/Studio job과 Windows PowerShell job의 모든 필수 step이 success이며 Linuxautomation1251/upstream39/Studio251/GUItype/Pages17-20,Windowsrelease124/production59/PowerShell83sources-16isolated/productionworkflow11blocks가 통과했다. native/package는 해당 profile에서 skipped이며 새로운 제품/native 수용으로 표현하지 않는다. receipt `/tmp/task97-result-copy-fast-receipt.json`에 run/job/step을 보존했다.
+
+실제 production 수용은 Windows37179376994/b7f6979c와 Linux37158705809/job111307414907/a74d3638의 기존 근거다. 새 native 실행은 필요하지 않다. 다음 PR의 merge ref required는 게시 이후 별도로 확인하며 아직 수행 전이다. 승인 전후 검토 대상 body·site·installer·key·tag identity는 재대조했고 기존 body43b9a7b3… 및11assets는 유지됐다. 공개 변경 전 현재 확인 시각은2026-10-04T06:28:24Z다.
