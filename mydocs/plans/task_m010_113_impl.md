@@ -198,7 +198,7 @@ focused 회귀와 PR required/fast 결과를 연결한다. 영향받지 않은 n
 
 현재 승인: 수행계획·구현계획과 Stage 1 후보 생성·검토에 더해, 2026-10-07 작업지시자의
 “진행해줘”로 아래 Stage 1.1 최소 소스 보정·선행 devel PR/일반 병합과 Stage 1.2 재실행이 승인됐다.
-Stage 2 이후 진입 승인은 별도로 받는다.
+Stage 1.3 보정안까지 승인받았으며 Stage 2의 나머지 작업 이후 진입 승인은 별도로 받는다.
 
 
 ## Stage 1 실행 결과와 순서 보정안 — 2026-10-07
@@ -285,7 +285,7 @@ Stage 1 전체 미완료 상태와 원격 failure를 유지하며 Stage 1.1 검�
   enabled 선택을 계속 요구한다. 기본 desktop 공급 경로의 `hasHostFontProvider()`는 false다.
 - protocol helper는 tag에 없는 upstream 모듈을 import하지 않아 v0.8.6 pin에서도 빌드된다.
   metadata/bytes 상한·immutable copy·revision/abort·provider replacement를 검증하고 경로를 오류에 싣지 않는다.
-  계약 validation의 필드별 조건은 metadata 경계의 명시성을 위해 한 helper에 둔다(59 LOC 파일).
+  계약 validation의 필드별 조건은 metadata 경계의 명시성을 위해 한 helper에 둔다(52 LOC 파일).
 - 상대 import allowlist는 실제 5개 소비자만 포함하며 extension 유무를 모두 같은 adapter로 연결한다.
 - 전체 Studio 268/268, upstream 39/39, automation 1,308/1,308, product boundary·pin·Studio build 통과.
   exact v0.8.7 HTML/main hook과 5개 소비자의 34 import export 대조도 통과했다.
@@ -295,3 +295,129 @@ Stage 1 전체 미완료 상태와 원격 failure를 유지하며 Stage 1.1 검�
 - macOS에서는 platform-neutral 검사만 했다. Windows/Linux native·패키지·GUI는 후속 gate다.
 - Stage 1.1 보고서: `mydocs/working/task_m010_113_stage1.1.md`.
   이 선행 PR은 #113을 close하지 않고 전체 Stage 1·제품 0.1.2 배포 완료를 주장하지 않는다.
+
+
+### Stage 1.1 원격 수용과 Stage 1.2 시작 — 2026-10-07
+
+- 선행 [PR #114](https://github.com/postmelee/alhangeul-tauri/pull/114), head
+  `37ad0f71dd8356900b116b7d59cb4cc9df9f7675`, base `bdbf3863a573a4ce397dab8660648a082f5226ff`.
+- [PR acceptance 37581123897](https://github.com/postmelee/alhangeul-tauri/actions/runs/37581123897):
+  Node/Studio·Windows script·Alhangeul PR required 모두 success, GitHub Actions app_id 15368 확인.
+  latest base/CLEAN·실제 COMMENT 코드 리뷰 후 2026-10-07T06:27:05Z 일반 merge했다.
+- 새 devel·작업 branch는 `00f93a8fda6897585750ebba9ea9b7a0db9c2b68`이다. #113은 OPEN 유지한다.
+  후속 작업에 쓰는 task branch/worktree는 유지하고 이번 검증의 ignored dist만 정리했다.
+- Stage 1.2 [37581631131](https://github.com/postmelee/alhangeul-tauri/actions/runs/37581631131)를
+  2026-10-07T06:27:52Z dispatch했다. workflow ref는 main `7acff6bc5fa0a71d277cc14d94affc741cc43baa`,
+  configured base는 새 devel, 입력 target_tag=v0.8.7/dry_run=false다. 자동 생성 run은 success지만
+  아래 후보 PR required가 failure이므로 전체 Stage 1은 미완료다.
+
+
+## Stage 1.2 결과와 추가 보정안 — 2026-10-07
+
+현재 절은 실패한 후보의 진단·계획 보정이다. `_stage1.md`와 `_stage1.2.md` 완료보고서나
+완료 commit을 만들지 않는다. 아래 Stage 1.3 소스·자동화 변경은 기존 메뉴/font 보정 범위를 넘으며,
+2026-10-07 작업지시자의 “그렇게 진행해줘”로 계획·소스·검증·선행 일반 PR 통합·#115 정리가 승인됐다.
+
+### 자동 생성·멱등성에서 확인한 결과
+
+- [37581631131](https://github.com/postmelee/alhangeul-tauri/actions/runs/37581631131): resolve/candidate
+  모두 success, [draft PR #115](https://github.com/postmelee/alhangeul-tauri/pull/115) 생성.
+  head `5ffd882fd768683f508ce8daaad4e0aaf4b1c482`, base `00f93a8fda6897585750ebba9ea9b7a0db9c2b68`.
+- clean-base automation **1,308/1,308**, post-update upstream **39/39**, Studio **268/268**, Studio build
+  성공. Ubuntu desktop Rust test **187+21+3=211** 통과·ignored 0, Clippy 성공.
+- source/4 native lock/fresh WASM/provenance 성공, changed-path allowlist **16개** 통과.
+- 실제 candidate Git blob을 읽어 v0.8.7 tag/gitlink·upstream Cargo.lock hash·4 native lock version·
+  WASM package 0.8.7과 6 artifact size/hash를 독립 재검산했다. 작업 pin은 v0.8.6 유지다.
+- 같은 target/dry_run=false [37583517253](https://github.com/postmelee/alhangeul-tauri/actions/runs/37583517253)
+  resolve가 `existing_pr`, URL #115, candidate_count=1로 성공했다. candidate job의 conditional skip은
+  의도된 중복 방지이며 새 빌드 성공으로 세지 않는다. 열린 자동 후보는 #115 하나다.
+- gh watch 하나는 network timeout으로 종료됐지만 API·완료 로그로 실제 run success를 회복 확인했다.
+  workflow 실패로 분류하지 않는다.
+
+### 후보 required의 실제 실패
+
+- [PR acceptance 37583461314](https://github.com/postmelee/alhangeul-tauri/actions/runs/37583461314):
+  Windows PowerShell success, Node/Studio failure, Alhangeul PR required failure. draft/BLOCKED 유지.
+- Node job의 `pnpm run test:automation`은 **1,308개 중 1,306 통과·2 실패**, skip 0이다.
+  뒤의 GUI typecheck·upstream·Studio·build는 이 required run에서 실행되지 않았다.
+- 실패 위치:
+  - `tests/linux-thumbnail-core-probe.test.mjs:139`: `RHWP_SHA`가 current lock과 다르다.
+  - `tests/windows-thumbnail-fixtures.test.mjs:32`: manifest `rhwpSha`가 current lock과 다르다.
+- actual `f1f9c6ae58344ee9368996d3543f76b9345cf227`, expected `1a76570e833917d15817415a53c09ad61ab3203f`.
+- 누락된 current-pin 원본은 `scripts/linux-thumbnail-core-fixtures.mjs`의 `RHWP_SHA`와
+  `scripts/windows-thumbnail-fixtures.json`의 `rhwpSha`다. 두 경로는 managed references·
+  changed-path allowlist·자동 stage 목록에 없다.
+- exact v0.8.7의 **10개 고유 fixture**는 기존 manifest의 hash·size와 모두 일치한다. 문서 bytes나
+  기대 preview 계약이 달라졌다는 근거는 없고 pin 참조 2개만 오래됐다.
+- writer는 변경 전 clean-base에서만 automation을 검사해 이 mismatch를 게시 전 발견하지 못했다.
+  `tests/committed-rhwp.test.mjs`가 실제 HEAD/index/submodule 정합성을 검사하므로 전체 automation을
+  새 pin의 commit 전에 단순 추가하면 올바르게 실패한다. commit 이후·push/PR 이전에 검사해야 한다.
+- PR #115는 merge/ready 전환하지 않았다. devel은 `00f93a8...`/v0.8.6, main·공개 앱은 0.1.1 유지다.
+  부분 성공을 후보 수용·전체 Stage 1 완료·배포 성공으로 기록하지 않는다.
+
+### 제안 Stage 1.3 — current-pin 관리 누락과 게시 전 gate 보정
+
+1. 기존 source/4 lock/6 WASM artifact 생성물과 bot commit credit를 보존해 #115 후보를 task113에
+   통합하는 부분만 기존 Stage 2에서 앞당긴다. 새 native/renderer 기능이나 0.1.2 버전 변경은 하지 않는다.
+2. exact tag fixture hash·size를 확인한 근거로 위 두 pin 필드만 v0.8.7 commit으로 정합화한다.
+   fixture bytes·preview 기대값·실패 검증 자체는 완화하지 않는다.
+3. future sync 관리 경계에 두 경로를 추가한다:
+   - `scripts/update-rhwp-managed-references.mjs`: managed path와 field별 단일 marker preflight/replacement.
+   - `scripts/verify-rhwp-sync-changes.mjs`: explicit allowlist 두 경로.
+   - `.github/workflows/rhwp-upstream-sync.yml`: explicit stage 목록 두 경로.
+4. 같은 workflow의 local candidate commit과 remote push/PR 게시를 분리한다. commit 후
+   `check:committed-rhwp`·`test:automation`을 통과해야 push/PR을 허용한다. 게시 직전 remote branch
+   존재 재검사·non-force·중복 방지·App 최소 권한·draft·수동 merge 경계는 유지한다.
+5. `scripts/write-rhwp-sync-pr-body.mjs`에는 clean-base/post-commit automation 범위를 사실대로 적는다.
+   관리참조·allowlist·workflow·PR body 회귀와 current manifest native 계약을 함께 검증한다.
+6. 공식 설명은 기존 `docs/architecture/UPSTREAM.md`의 관리 경계/검증 순서만 수정한다.
+   이 파일은 이미 선택된 architecture 문서이며 새 문서 위치를 만들지 않는다. 수행 문서는 현재
+   `mydocs/plans`, `mydocs/working`, `mydocs/orders`의 #113 경로만 사용한다.
+7. local task113 집중 계약·product boundary·pin·committed pin·automation·upstream·Studio·build와
+   새 devel PR required를 통과시킨다. 통합 후보는 일반 merge하며, 병합 후 #115를 통합 완료로
+   종료하고 불필요한 automation branch를 정리한다. #113은 OPEN 유지한다.
+8. 보정된 현재 pin과 future writer의 계약 결과를 구분해 Stage 1을 보고한다. 다른 Stable target의
+   실제 positive writer run을 수행하지 않은 경우 그 한계를 남긴다. Stage 2 이후 gate는 유지한다.
+
+예상 추가 소스: 위 scripts 4개·workflow 1개·fixture 정의 2개·관련 Node 회귀·기존 UPSTREAM 설명.
+변경 유형별 검증은 Node/Studio + PR Linux/Windows fast이며, native source/lock/WASM bytes는
+기존 성공 producer의 동일 pin 생성물이다. Windows/Linux 전체 native/package/GUI 수용은 Stage 3에서 한다.
+
+### 승인 요청
+
+Stage 1.3의 후보 통합 선행·참조 2개 정합화·future 관리 목록/게시 전 gate·회귀·일반 PR 통합과
+superseded #115 정리는 2026-10-07 작업지시자의 “그렇게 진행해줘”로 승인받았다.
+Stage 2의 나머지 제품 0.1.2 정합화·수용·공개 gate는 그대로 유지한다.
+
+
+### Stage 1.3 승인 후 구현 정렬
+
+- 2026-10-07 “그렇게 진행해줘”를 기록하고 bot `5ffd882...`를 fast-forward로 통합했다.
+  source/native locks/WASM 생성물·bot author를 보존하고 exact submodule `1a76570...`를 선택했다.
+- 기존 workflow는 298 LOC이며 commit/gate/publish 분리를 모두 inline으로 쓰면 300 상한을 넘는다.
+  실행·explicit staging·remote branch guard를 작은 `scripts/rhwp-sync-publisher.sh`로 분리한다.
+  workflow에서 commit → committed-rhwp/automation → publish 순서를 명시하며 default success gate를 유지한다.
+- Node 회귀는 실제 shell helper와 workflow 단계 순서를 격리된 fake CLI로 실행해 post-commit 실패·
+  remote race/IO 오류·staging mismatch가 게시를 막는지 확인한다. root package 변경은 이 테스트의
+  automation suite 등록뿐이며 제품 0.1.1 version과 pnpm lock을 바꾸지 않는다.
+
+
+### Stage 1.3 로컬 구현·검증 결과
+
+- managed references는 7개 경로, sync allowlist는 19개 경로로 두 fixture pin을 포함한다.
+  현재 fixture pin만 `1a76570...`로 변경했으며 10개 원본 bytes/hash·preview 기대값을 보존했다.
+- publisher helper는 75 LOC, workflow는 281 LOC다. local commit의 exact SHA를 출력하고 post-commit
+  committed-rhwp/automation 통과 후 HEAD 동일성·remote branch 부재를 확인해 non-force 게시한다.
+  source/native preflight 후 App token을 발급하며 local commit에 bot identity가 필요해 post-commit
+  automation보다 먼저 발급된다. 실패 시 token post cleanup은 유지되고 push/PR은 실행하지 않는다.
+- 실제 shell helper·workflow를 fake CLI로 실행한 회귀에서 두 gate 실패, existing/IO/race branch,
+  staging mismatch·HEAD 변경은 게시하지 않고 정상 경로만 commit→검사→push→draft를 수행했다.
+- 집중 계약 43/43, 전체 automation 1,321/1,321, upstream 39/39, Studio 268/268와 build 통과.
+  product boundary/version(0.1.1)/release metadata/pin(0.8.7)/committed pin도 통과했다.
+- 최초 집중 검사는 staging 코드가 helper로 이동한 기존 assertion 1건, 최초 전체 자동화는
+  sync workflow 전체에서 strict 검사 부재를 요구한 CI assertion 1건이 실패했다. 각각 실제 helper
+  검사와 commit 전/후 경계·default success/continue-on-error 부재로 정렬한 뒤 전체 검증을 통과했다.
+- sparse status용 metadata blob을 확보하고 task113 submodule의 gc.auto만 0으로 설정했다.
+  upstream은 선택된 commit 그대로이며 수동 source 변경이 없다.
+- 로컬 단계 보고서: `mydocs/working/task_m010_113_stage1.3.md`. 승인된 선행 PR의 remote required·
+  일반 merge·superseded #115 정리·현재 pin no-op 결과는 전체 Stage 1 보고에 기록한다.

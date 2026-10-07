@@ -28,7 +28,9 @@ test('provenance, changed paths, 검증과 native handoff를 포함한다', () =
   assert.ok(body.indexOf('- `README.md`') < body.indexOf('- `rhwp-core.lock`'));
   assert.ok(body.indexOf('- `rhwp-core.lock`') < body.indexOf('- `third_party/rhwp`'));
   assert.match(body, /scripts\/update-upstream\.sh` source·lock·WASM·provenance 갱신/);
-  assert.match(body, /automation·upstream·Studio test/);
+  assert.match(body, /clean-base automation contract/);
+  assert.match(body, /upstream·Studio test/);
+  assert.match(body, /commit 이후 target pin의 committed-rhwp·automation contract \(push\/PR 게시 전\)/);
   assert.match(body, /Ubuntu desktop Rust test와 Clippy preflight/);
   assert.match(body, /release별 known issue 기록은 current pin 관리 참조가 아니므로 자동 갱신하지 않습니다/);
   assert.match(body, /Windows native build·설치·실행 검증/);

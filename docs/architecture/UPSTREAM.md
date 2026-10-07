@@ -132,11 +132,17 @@ base branch는 workflow top-level `BASE_BRANCH`가 단일 진실 원천이다. �
 
 candidate는 clean `devel` checkout에서 다음 순서를 지킨다.
 
-1. 허용된 current-pin 관리 참조를 ephemeral checkout 안에서 새 pin으로 맞춘다.
-2. `scripts/update-upstream.sh`로 source, Cargo lock, WASM과 provenance를 갱신한다.
-3. frozen pnpm 의존성을 준비한 뒤 플랫폼 중립 gate 전체, Ubuntu desktop Rust test·Clippy preflight와 changed-path allowlist를 한 번씩 검증한다.
-4. 검증이 모두 끝난 뒤 현재 repository에 한정된 GitHub App token을 발급한다.
-5. explicit allowlist만 stage해 새 branch에 non-force push하고 `devel` 대상 draft PR을 만든다.
+1. frozen pnpm 의존성과 clean-base automation contract를 확인한다.
+2. 허용된 current-pin 관리 참조를 새 pin으로 맞춘다. Windows·Linux thumbnail fixture 정의의
+   `rhwpSha`·`RHWP_SHA`도 포함하며 fixture hash·size와 preview 기대값은 보존한다.
+3. `scripts/update-upstream.sh`로 source, 네 native Cargo lock, fresh WASM과 provenance를 갱신한다.
+4. 플랫폼 중립 gate, Ubuntu desktop Rust test·Clippy preflight와 changed-path allowlist를 검증한다.
+5. 현재 repository에 한정된 GitHub App token을 발급하고, `scripts/rhwp-sync-publisher.sh commit`이
+   explicit allowlist만 stage해 local candidate commit을 만든다.
+6. commit 이후 `check:committed-rhwp`와 `test:automation`으로 target pin·HEAD·index·submodule과
+   fixture 참조 정합성을 확인한다. 실패하면 push와 PR 게시를 실행하지 않는다.
+7. `scripts/rhwp-sync-publisher.sh publish`가 remote branch 부재를 다시 확인하고 non-force push와
+   `devel` 대상 draft PR 생성을 수행한다.
 
 token은 `contents: write`와 `pull-requests: write`만 요청하며 auto approval·merge, release/tag, issue close, package publish와 Pages deploy에는 사용하지 않는다. 후보 본문은 old/new tag·commit, Stable release URL, 변경 경로와 자동 검증을 기록한다.
 
