@@ -6,6 +6,7 @@ import { createAlhangeulOverrides } from './alhangeul-overrides';
 import { createAlhangeulLocalFontPlugin } from './local-font-overrides';
 import { createLocalFontEntryHooks } from './local-font-entry-hooks';
 import { createDesktopStartupEntry } from './desktop-startup-entry';
+import { insertStudioMenuItem } from './studio-menu-hooks';
 
 const desktopConfig = JSON.parse(
   readFileSync(resolve(__dirname, '../desktop/src-tauri/tauri.conf.json'), 'utf-8'),
@@ -78,14 +79,10 @@ function alhangeulDesktopShell(): Plugin {
         'editor accessible name',
       );
       return {
-        html: replaceRequired(
+        html: insertStudioMenuItem(
           withAccessibleName,
-          '<div class="md-item disabled" data-cmd="file:new-doc"><span class="md-icon icon-new-doc"></span><span class="md-label">새로 만들기</span></div>',
-          [
-            '<div class="md-item disabled" data-cmd="file:new-doc"><span class="md-icon icon-new-doc"></span><span class="md-label">새로 만들기</span></div>',
-            '<div class="md-item" data-cmd="file:new-window"><span class="md-icon"></span><span class="md-label">새 창</span><span class="md-shortcut">Ctrl+Shift+N</span></div>',
-          ].join('\n'),
-          'new window menu insertion point',
+          'file:new-doc',
+          '<div class="md-item" data-cmd="file:new-window"><span class="md-icon"></span><span class="md-label">새 창</span><span class="md-shortcut">Ctrl+Shift+N</span></div>',
         ),
         tags: [
           {

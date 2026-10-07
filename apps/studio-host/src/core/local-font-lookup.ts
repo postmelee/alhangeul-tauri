@@ -1,3 +1,4 @@
+import type { LocalFontStyleRequest } from './host-font-contract';
 import { desktopFontUnavailable } from './local-font-provider';
 import {
   normalizeFontName, toLocalFontRecord,
@@ -13,7 +14,7 @@ interface IndexedFont {
 
 export interface LocalFontLookup {
   records(): LocalFontRecord[];
-  resolve(name: string): LocalFontRecord | null;
+  resolve(name: string, style?: LocalFontStyleRequest): LocalFontRecord | null;
   entryFor(sourceKey: string | undefined): LocalFontEntry | undefined;
 }
 
@@ -40,15 +41,19 @@ export function createLocalFontLookup(entries: readonly LocalFontEntry[]): Local
   }
   return {
     records: () => fonts.filter(isAvailable).map(font => copyRecord(font.record)),
-    resolve: (name) => resolveFromAliases(aliases, name),
+    resolve: (name, style) => resolveFromAliases(aliases, name, style),
     entryFor: (key) => key === undefined ? undefined : sources.get(key),
   };
 }
 
-function resolveFromAliases(aliases: ReadonlyMap<string, IndexedFont[]>, name: string): LocalFontRecord | null {
+function resolveFromAliases(aliases: ReadonlyMap<string, IndexedFont[]>, name: string, style?: LocalFontStyleRequest): LocalFontRecord | null {
   const key = normalizeFontName(name);
   if (!key) return null;
   const candidates = aliases.get(key)?.filter(isAvailable) ?? [];
+  if (style && candidates.some(font => font.entry.hostReference)) {
+    const selected = hostStyledCandidate(candidates, key, style);
+    return selected ? copyRecord(selected.record) : null;
+  }
   const selected = candidates.length === 1 ? candidates[0]
     : uniqueExact(candidates, key, 'postscriptKey') ?? uniqueExact(candidates, key, 'fullNameKey');
   return selected ? copyRecord(selected.record) : null;
@@ -72,4 +77,18 @@ function isAvailable({ entry }: IndexedFont): boolean {
 
 function copyRecord(record: LocalFontRecord): LocalFontRecord {
   return { ...record, aliases: [...record.aliases] };
+}
+
+function hostStyledCandidate(fonts: readonly IndexedFont[], key: string, style: LocalFontStyleRequest): IndexedFont | null {
+  const postscript = fonts.filter(font => font.postscriptKey === key);
+  if (postscript.length) return postscript.length === 1 ? postscript[0] : null;
+  if (fonts.length === 1 && normalizeFontName(fonts[0].record.family) !== key
+    && (fonts[0].fullNameKey === key
+      || normalizeFontName(`${fonts[0].record.family} ${fonts[0].record.style}`) === key)) return fonts[0];
+  const match = (slant: string) => fonts.filter(({ entry }) => entry.weight === style.weight && entry.slant === slant);
+  const exact = match(style.slant);
+  if (exact.length === 1) return exact[0];
+  if (exact.length || style.slant === 'normal') return null;
+  const alternate = match(style.slant === 'italic' ? 'oblique' : 'italic');
+  return alternate.length === 1 ? alternate[0] : null;
 }

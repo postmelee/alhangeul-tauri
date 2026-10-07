@@ -124,7 +124,8 @@ test('Alhangeul builds the exact upstream Studio entry with only minimal product
   for (const marker of [
     '<title>rhwp-studio</title>',
     'rhwp-studio 문서 편집기',
-    '<div class="md-item disabled" data-cmd="file:new-doc"><span class="md-icon icon-new-doc"></span><span class="md-label">새로 만들기</span></div>',
+    'data-cmd="file:new-doc"',
+    'data-cmd="tool:options"',
   ]) {
     assert.equal(indexHtml.split(marker).length - 1, 1, `upstream HTML marker drift: ${marker}`);
   }
