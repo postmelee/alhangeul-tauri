@@ -69,7 +69,9 @@ ${paths.map((path) => `- \`${path}\``).join('\n')}
 - [x] 관리 참조 marker preflight와 exact allowlist 갱신
 - [x] \`scripts/update-upstream.sh\` source·lock·WASM·provenance 갱신
 - [x] product boundary·version·release metadata·rhwp pin 검사
-- [x] automation·upstream·Studio test와 Studio production build
+- [x] clean-base automation contract
+- [x] upstream·Studio test와 Studio production build
+- [x] commit 이후 target pin의 committed-rhwp·automation contract (push/PR 게시 전)
 - [x] Ubuntu desktop Rust test와 Clippy preflight
 - [x] repository changed-path allowlist와 \`git diff --check\`
 

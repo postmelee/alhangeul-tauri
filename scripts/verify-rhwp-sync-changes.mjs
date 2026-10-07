@@ -21,6 +21,8 @@ export const RHWP_SYNC_ALLOWED_PATHS = Object.freeze([
   'docs/DEVELOPMENT.md',
   'docs/architecture/UPSTREAM.md',
   'rhwp-core.lock',
+  'scripts/linux-thumbnail-core-fixtures.mjs',
+  'scripts/windows-thumbnail-fixtures.json',
   'tests/rhwp-pin.test.mjs',
   'third_party/rhwp',
 ]);
