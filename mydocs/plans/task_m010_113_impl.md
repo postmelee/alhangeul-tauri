@@ -4,7 +4,7 @@
 GitHub Issue: [#113](https://github.com/postmelee/alhangeul-tauri/issues/113)
 마일스톤: M010
 작성일: 2026-10-07 (Asia/Seoul)
-상태: Stage 1 미완료 — 후보 검증 실패 / 호환성 선행 보정 승인 대기
+상태: Stage 1 완료 — devel v0.8.7 통합·required·현재 pin no-op 수용 / Stage 2 진입 승인 대기
 
 ## 승인 기록과 입력
 
@@ -198,7 +198,7 @@ focused 회귀와 PR required/fast 결과를 연결한다. 영향받지 않은 n
 
 현재 승인: 수행계획·구현계획과 Stage 1 후보 생성·검토에 더해, 2026-10-07 작업지시자의
 “진행해줘”로 아래 Stage 1.1 최소 소스 보정·선행 devel PR/일반 병합과 Stage 1.2 재실행이 승인됐다.
-Stage 1.3 보정안까지 승인받았으며 Stage 2의 나머지 작업 이후 진입 승인은 별도로 받는다.
+Stage 1.3 보정·선행 일반 통합·정리·현재 pin 확인은 완료했으며 Stage 2의 나머지 작업 진입 승인은 별도로 받는다.
 
 
 ## Stage 1 실행 결과와 순서 보정안 — 2026-10-07
@@ -421,3 +421,42 @@ Stage 2의 나머지 제품 0.1.2 정합화·수용·공개 gate는 그대로 �
   upstream은 선택된 commit 그대로이며 수동 source 변경이 없다.
 - 로컬 단계 보고서: `mydocs/working/task_m010_113_stage1.3.md`. 승인된 선행 PR의 remote required·
   일반 merge·superseded #115 정리·현재 pin no-op 결과는 전체 Stage 1 보고에 기록한다.
+
+
+## Stage 1.3 원격 수용·정리와 전체 Stage 1 완료 — 2026-10-07
+
+- 통합 [PR #116](https://github.com/postmelee/alhangeul-tauri/pull/116), head
+  `0770bd539c86e4799f0ee8fcd4e8aa06c97361ee`, base `00f93a8fda6897585750ebba9ea9b7a0db9c2b68`다.
+  [37594489485](https://github.com/postmelee/alhangeul-tauri/actions/runs/37594489485)의
+  Linux Node/Studio·Windows PowerShell·Alhangeul PR required 모두 success/Actions app_id 15368이다.
+- 실제 code COMMENT review·latest base/CLEAN·exact head를 확인해 2026-10-07T08:37:37Z 일반 merge했다.
+  devel/local task113은 `bad557572f070700d195df2288fe570483f67c3f`, bot `5ffd882...`는 ancestor다.
+- #115는 통합된 commit으로 GitHub가 08:37:39Z MERGED 처리했다. 수동 close 직전 경합의 read-back으로
+  최종 상태를 확인했다. #115의 실패 required를 성공으로 바꿔 기록하지 않는다. exact head 확인 뒤
+  불필요한 automation branch를 삭제·부재 확인했다. #113과 필요한 task branch/worktree는 유지한다.
+- 병합된 HEAD의 `check:rhwp-pin`은 v0.8.7/6 artifacts, `check:committed-rhwp`는 같은 commit으로 통과했다.
+- [37595544513](https://github.com/postmelee/alhangeul-tauri/actions/runs/37595544513),
+  workflow ref/checkout devel `bad55757...`, target_tag=v0.8.7/dry_run=false,
+  2026-10-07T08:42:19Z dispatch·08:45:27Z 완료다. resolve success·decision=current,
+  target/current `1a76570e833917d15817415a53c09ad61ab3203f` 동일·candidate_count=0·candidate conditional skip다.
+  열린 자동 후보도 API로 0개 확인했다. 이는 full positive writer 실행이 아니다.
+- 전체 [Stage 1 보고서](../working/task_m010_113_stage1.md)를 작성하고 기존 하위 단계 source/report
+  커밋을 보존한다. 위 실패 절은 당시 진단 이력이며 현재 전체 단계 수용과 구분한다.
+
+### Stage 2 진입 시 구체적 잔여 범위
+
+- 제품 root/desktop package·Tauri/Cargo manifest/lock을 0.1.2로 맞춘다. rhwp는 v0.8.7 고정이다.
+- 새 upstream `ui/document-title.ts`가 init/파일명 변경 시 쓰는 제품 제목을 최소 제품 hook/leaf로
+  연결하고 blank/document/파일명 변경 회귀를 확인한다. exact upstream entry/renderer는 유지한다.
+- 제품 접근성 h1은 기존 HTML transform 후 `showsOriginal` 조건 때문에 한국어 제품명 그대로 남는다.
+  초기 번역이 이를 upstream 이름으로 덮는다고 단정하지 않고 ko/en 실제 initI18n 계약에 맞는
+  제품 locale label 연결을 보정한다. 관련 source는 기존 Vite/entry hook과 작은 제품 helper·focused 회귀다.
+- 상대 font 소비자 5개와 renderer/catalog 계약을 승인된 기존 `docs/architecture/UPSTREAM.md`·
+  필요 시 `LOCAL_FONTS.md`의 해당 설명만 정합화한다. 새 공식 문서 루트를 만들지 않는다.
+- native PDF의 직접 registry svg2pdf와 upstream vendored patch의 소비 경계를 검토한다. 전체 native/PDF
+  수용은 Stage 3이며 새 dependency 적용이나 회귀를 추정만으로 기재하지 않는다.
+- `docs/releases/v0.1.2.md`·notes.json·기존 생성 출력은 미게시로 준비한다. 공개 site 최신 데이터는
+  실제 Release read-back 이후에 전환한다. 완료하지 않은 설치·출력·upgrade 성공 문구를 쓰지 않는다.
+- 검증은 원래 Stage 2 명령과 실제 title/locale 집중 회귀다. source 보정·version·notes 검증 완료 후
+  다음 stage 승인 gate를 유지한다. main은 `7acff6bc...`·공개 latest는 v0.1.1이며 main 승격 전 daily
+  workflow는 이전 publisher 순서다. 다른 Stable positive run 미실행도 유지한다.
