@@ -3,7 +3,6 @@ import {
   desktopFontGeneration, desktopFontUnavailable,
   ensureDesktopFontFace,
   listDesktopFontEntries,
-  readDesktopFontBytes,
 } from './local-font-provider';
 import {
   normalizeFontName,
@@ -13,7 +12,12 @@ import {
 } from './local-font-records';
 import { isTauriRuntime } from './platform';
 import { ensureFontPreferences, getFontPreferences } from './local-font-preferences';
-import { getFontCatalog, invalidateFontCatalog, loadFontCatalog } from './local-font-state';
+import { getFontCatalog, hostFontSource, invalidateFontCatalog, loadFontCatalog,
+  onFontCatalogChanged } from './local-font-state';
+import type { HostFontProvider } from './host-font-contract';
+import { loadRendererLocalFont } from './local-font-renderer';
+export { resolveRendererLocalFont, loadRendererLocalFont } from './local-font-renderer';
+export type { HostFontProvider, LocalFontStyleRequest } from './host-font-contract';
 
 export type { LocalFontEntry, LocalFontRecord } from './local-font-records';
 
@@ -79,7 +83,8 @@ export function getLocalFontDetectionMethod(): LocalFontDetectionSource | null {
 
 export async function detectLocalFontEntries(force = false): Promise<LocalFontEntry[]> {
   if (isTauriRuntime() && (await ensureFontPreferences()).choice !== 'enabled') return [];
-  return loadFontCatalog(isTauriRuntime() ? listDesktopFontEntries : detectBrowserFontEntries, force);
+  return loadFontCatalog(hasHostFontProvider() ? detectHostFontEntries
+    : isTauriRuntime() ? listDesktopFontEntries : detectBrowserFontEntries, force);
 }
 
 export async function detectLocalFonts(
@@ -109,9 +114,9 @@ export function resolveLocalFont(fontName: string): LocalFontRecord | null {
 }
 
 export function localFontFaceKey(
-  record: Pick<LocalFontRecord, 'family' | 'fullName' | 'postscriptName' | 'sourceKey'>,
+  record: Pick<LocalFontRecord, 'family' | 'fullName' | 'postscriptName' | 'sourceKey' | 'hostReference'>,
 ): string {
-  return record.sourceKey ?? normalizeFontName(record.postscriptName || record.fullName || record.family);
+  return record.hostReference?.key ?? record.sourceKey ?? normalizeFontName(record.postscriptName || record.fullName || record.family);
 }
 
 export async function loadLocalFontBytesFor(
@@ -123,18 +128,9 @@ export async function loadLocalFontBytesFor(
     if (started !== desktopFontGeneration()) return new Map();
     const record = resolveLocalFont(fontName);
     if (!record) continue;
-    const entry = getFontCatalog().lookup?.entryFor(record.sourceKey);
-    if (!entry?.path) continue;
-    try {
-      const bytes = await readDesktopFontBytes(entry.path);
-      if (started !== desktopFontGeneration()) return new Map();
-      result.set(
-        localFontFaceKey(record),
-        bytes.slice().buffer as ArrayBuffer,
-      );
-    } catch {
-      // CanvasKit falls back to bundled fonts when native bytes cannot be read.
-    }
+    const data = await loadRendererLocalFont(record);
+    if (started !== desktopFontGeneration()) return new Map();
+    if (data) result.set(localFontFaceKey(record), data.bytes);
   }
   return started === desktopFontGeneration() ? result : new Map();
 }
@@ -243,4 +239,30 @@ function supportsBinaryFontLoading(): boolean {
   return typeof document !== 'undefined'
     && !!document.fonts
     && typeof FontFace === 'function';
+}
+
+export function hasHostFontProvider(): boolean {
+  return hostFontSource.active && (!isTauriRuntime() || getFontPreferences().choice === 'enabled');
+}
+export function onHostFontsChanged(listener: () => void): () => void {
+  return onFontCatalogChanged(listener);
+}
+export async function setHostFontProvider(provider: HostFontProvider | null): Promise<void> {
+  hostFontSource.setProvider(provider);
+  await prepareHostFontCatalog();
+}
+export async function prepareHostFontCatalog(): Promise<void> {
+  await detectLocalFontEntries();
+}
+export function getHostFontState() {
+  const catalog = getFontCatalog();
+  return { active: hasHostFontProvider(), generation: catalog.generation,
+    count: catalog.entries?.length ?? 0, lastError: hostFontSource.lastError ?? catalog.error };
+}
+async function detectHostFontEntries(): Promise<LocalFontEntry[]> {
+  return (await hostFontSource.references()).map(ref => ({
+    family: ref.face.family, fullName: ref.face.fullName, postScriptName: ref.face.postscriptName,
+    style: ref.face.style, aliases: [`${ref.face.family} ${ref.face.style}`, ...(ref.face.aliases ?? [])], weight: ref.face.weight,
+    slant: ref.face.slant, hostReference: ref, sourceKind: 'system-installed',
+  }));
 }

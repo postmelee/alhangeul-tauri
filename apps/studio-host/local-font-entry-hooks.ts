@@ -1,5 +1,6 @@
 import { resolve } from 'node:path';
 import { normalizePath, type Plugin } from 'vite';
+import { insertStudioMenuItem } from './studio-menu-hooks';
 
 const documentEntry = `async function initializeDocument(
   docInfo: DocumentInfo,
@@ -7,7 +8,6 @@ const documentEntry = `async function initializeDocument(
   options: { suppressDialogs?: boolean } = {},
 ): Promise<void> {`;
 const promptEntry = 'async function promptLocalFontsIfNeeded(docInfo: DocumentInfo, displayName: string): Promise<void> {';
-const settingsMenu = '<div class="md-item" data-cmd="tool:options"><span class="md-icon"></span><span class="md-label">환경 설정</span></div>';
 
 function replaceOnce(source: string, marker: string, replacement: string): string {
   if (source.split(marker).length !== 2) throw new Error('upstream local-font hook marker mismatch');
@@ -58,8 +58,8 @@ export function createLocalFontEntryHooks(upstreamSrc: string, alhangeulSrc: str
       return { code: transformLocalFontEntry(source, controller), map: null };
     },
     transformIndexHtml(html) {
-      return replaceOnce(html, settingsMenu, `${settingsMenu}
-          <div class="md-item" data-cmd="tool:local-font-settings"><span class="md-icon"></span><span class="md-label">로컬 글꼴 설정…</span></div>`);
+      return insertStudioMenuItem(html, 'tool:options',
+        '<div class="md-item" data-cmd="tool:local-font-settings"><span class="md-icon"></span><span class="md-label">로컬 글꼴 설정…</span></div>');
     },
   };
 }
