@@ -1,14 +1,14 @@
 {
   "status": "published",
   "channel": "stable",
-  "version": "0.1.1",
-  "tag": "v0.1.1",
-  "publishedAt": "2026-10-03T17:07:44Z",
-  "notes": "로컬 글꼴을 사용할 때 문서 열기·입력·스크롤 반응을 개선했습니다. rhwp v0.8.6은 유지합니다.\n\nWindows NSIS·MSI와 Linux x64 AppImage의 v0.1.0 → v0.1.1 앱 내 업데이트를 확인했습니다. Windows 코드 서명·일부 탐색기 썸네일·환경별 표시에는 제한이 있습니다. 자세한 변경과 설치 안내는 v0.1.1 릴리즈 노트를 확인하세요.",
+  "version": "0.1.2",
+  "tag": "v0.1.2",
+  "publishedAt": "2026-10-08T16:49:38Z",
+  "notes": "rhwp v0.8.7의 표·문단 조판과 열기·저장·편집 개선을 반영합니다. 새 글꼴 공급 API와 제품 창 제목·접근성 이름을 Alhangeul에 연결합니다.\n\nWindows/Linux 6종 설치 파일을 공개했습니다. v0.1.1 → v0.1.2 앱 내 업데이트 수용은 아직 실행하지 않았습니다. Windows 코드 서명과 일부 탐색기 썸네일에는 제한이 있습니다. 자세한 변경과 설치 안내는 v0.1.2 릴리즈 노트를 확인하세요.",
   "downloads": {
-    "windows-x86_64-nsis": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.1/Alhangeul_0.1.1_x64-setup.exe",
-    "windows-x86_64-msi": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.1/Alhangeul_0.1.1_x64_en-US.msi",
-    "linux-x86_64-appimage": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.1/Alhangeul_0.1.1_amd64.AppImage"
+    "windows-x86_64-nsis": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.2/Alhangeul_0.1.2_x64-setup.exe",
+    "windows-x86_64-msi": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.2/Alhangeul_0.1.2_x64_en-US.msi",
+    "linux-x86_64-appimage": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.2/Alhangeul_0.1.2_amd64.AppImage"
   },
   "updater": {
     "endpoint": "https://postmelee.github.io/alhangeul-tauri/updater/stable.json",
@@ -16,34 +16,34 @@
     "inventory": {
       "schemaVersion": 1,
       "repository": "postmelee/alhangeul-tauri",
-      "sourceSha": "96e89e900415ee9e1e942b5c01c833dea3415e86",
-      "version": "0.1.1",
-      "tag": "v0.1.1",
+      "sourceSha": "6dcb05e96ec2075d09d8a60160e1d82f08c0811b",
+      "version": "0.1.2",
+      "tag": "v0.1.2",
       "keyFingerprint": "9f86f804067eff359cd32707137dfaaea8710450985dda86b0392da5db63b8f8",
       "targets": {
         "windows-x86_64-nsis": {
           "kind": "nsis",
-          "path": "nsis/Alhangeul_0.1.1_x64-setup.exe",
-          "size": 56793106,
-          "sha256": "9ff5e10e9b99f2605ab77b2d8525870819f3ed9d138b84fe2e6009b2222a1ca3",
-          "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUaEFNampwWnpESVpvQ3Q1M2tYcnpianV1K3loMWthU01XY01IbjRVVzcyVEdCb28rOVloaTRaRnIzOXNkeDZZNTFaSEtkdks0RmVSSW5YcWhxMHZEUmo1cmVCUmcrdGdzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkxMDM5OTE5CWZpbGU6QWxoYW5nZXVsXzAuMS4xX3g2NC1zZXR1cC5leGUKSWVMU29VRGpSSTdWd1YwTUtjV3NwZEZkdHg4Y09rUTMwSDBNNkI2NjhXQ1FOVDYxOWtuU25iaHpSL3pRQmpFYXVlaTU1MVBJUU5JT3dwTUVLMlQ4Q1E9PQo=",
-          "url": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.1/Alhangeul_0.1.1_x64-setup.exe"
+          "path": "nsis/Alhangeul_0.1.2_x64-setup.exe",
+          "size": 58453720,
+          "sha256": "591fac591d4d35b50abbdd78d32ea8ccbf1334f6e522e545d5a28076aa2776c3",
+          "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUaEFNampwWnpESWVER2o1bzVuVXVZMVcrdkdXY2lid3NuOERvcXdqc0hhVHBDQjUvdUNueGkzRW9STGJKekVRWFBFNUxXZHZSWEcyV0VpSXdXLzl2WUVGNFpQb0dEL0FrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkxNDcyODQ5CWZpbGU6QWxoYW5nZXVsXzAuMS4yX3g2NC1zZXR1cC5leGUKMGV6Q1Fqc3BNTHV1bUNjd21tODQrNXl2aWpZL0tNb3BYalRUdnhEMk5MNXlWYU9sVzA3QTkzazAxbHgyWlVvMk8wL05MZElLUmoxNGtNUFJENDRMQkE9PQo=",
+          "url": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.2/Alhangeul_0.1.2_x64-setup.exe"
         },
         "windows-x86_64-msi": {
           "kind": "msi",
-          "path": "msi/Alhangeul_0.1.1_x64_en-US.msi",
-          "size": 64102400,
-          "sha256": "6a34ae3a52c59bf4737cf1595d65a914fdd2ec588a3a1c54270c7d83c578fc98",
-          "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUaEFNampwWnpESVZ2aHBBWnI0R2lzbzZCc05QRDViL0JSSXlNWWRqVURRdnIxL29oRjg0My90VWJaNkZBc1FkODIzand4cFRCRis1NXFOb1hvZFJraVZxMWlNb0VLMGcwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkxMDM5OTE5CWZpbGU6QWxoYW5nZXVsXzAuMS4xX3g2NF9lbi1VUy5tc2kKeXNiMHNlZXRqYkh5NFRydThtQnhGUHNDSHp1TGgvMnB6Q1liUkIzL1lBNEpnYnVwRTJRbEtVbEgrdXRrOElNb2d5aU95cHJSTmw5YVBicHRCSlVDQ1E9PQo=",
-          "url": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.1/Alhangeul_0.1.1_x64_en-US.msi"
+          "path": "msi/Alhangeul_0.1.2_x64_en-US.msi",
+          "size": 66150400,
+          "sha256": "12fbf4f551e32e9c08b762ffd8e5ccc05f6a6534a20bb29c409ec4e0763dd951",
+          "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUaEFNampwWnpESVY5V2NrbXExV0VVL2tOaFJkT2ZPVTFHR2NFZmFaQUZ0Z25HRDY3ckNvUUh0dEZoWXVSeXd2a3ZEZ0xZOS9yRVRXZWJWRVFoUzdrZ3NzWVZUeXllSEFnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkxNDcyODQ5CWZpbGU6QWxoYW5nZXVsXzAuMS4yX3g2NF9lbi1VUy5tc2kKZnZhTGxaYVFhZDFiUEprakd1T0tvek8vcktXdExxUElOL3YvVDM0QzFyQUlRRlJhYTZMWG5qMjVZQWNudTkxN1pYaW1tUjRSeFNRdlJucFlVR3puQmc9PQo=",
+          "url": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.2/Alhangeul_0.1.2_x64_en-US.msi"
         },
         "linux-x86_64-appimage": {
           "kind": "appimage",
-          "path": "Alhangeul_0.1.1_amd64.AppImage",
-          "size": 135346680,
-          "sha256": "c3a599fdea3b52353d875a4c50738babaf91102c26fcd7a6079e69e96b6bebf0",
-          "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUaEFNampwWnpESVo2RnhEVHc5U0hDcmMrZ0h0UlJpRnkzbHJyTjh1amQ0RzIyRkxPbUFMdGVQdk56Y2ZacmlaRWdPNm44amY5bk9HbUlYRndvM1ozTUZuOVJDYjlrT3dvPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkxMDM5MTg4CWZpbGU6QWxoYW5nZXVsXzAuMS4xX2FtZDY0LkFwcEltYWdlCnNGeVExTDJVTVJuYXQzTEIwd3lHWGdxZFdyS1Fta0xDeVB5a2Mzem5sQVpNVnkzaFhyMVpSeWU5K2tLelIxL3hrbFZoTlJIVXNyN3RKb2crYVFxbERnPT0K",
-          "url": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.1/Alhangeul_0.1.1_amd64.AppImage"
+          "path": "Alhangeul_0.1.2_amd64.AppImage",
+          "size": 136792568,
+          "sha256": "b216c098dbebafc062b463edd225d918071a6710c9bf8c874055298a3224ea80",
+          "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUaEFNampwWnpESVM1bys5Z2Jpc29UcUE2eVV6ZmJ5Q2xQNUE4NURkSjdpeGNydEJkSjhieHRSUEdZQmMvQ0pYTk1oM0ZiUUVtaG5rN1kzNlkrYzNjWXpoRFh6enBUeVE0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkxNDcyMDIxCWZpbGU6QWxoYW5nZXVsXzAuMS4yX2FtZDY0LkFwcEltYWdlCkRHc3pUZzd5cCtQdVh3bmxVazRCVktic0dNZHRTOG44TnJRVEk4czNvRERTNTlWLzNRb3Z3NEk4by96eXdKM0M2c3lYTjZRbjkzY0FOTUdHMnNJMkJBPT0K",
+          "url": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.2/Alhangeul_0.1.2_amd64.AppImage"
         }
       }
     }

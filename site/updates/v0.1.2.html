@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ko">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>알한글 v0.1.2 릴리즈 안내</title>
+        <meta name="description" content="rhwp v0.8.7을 반영해 표와 문단의 조판, 문서 열기·저장·편집 개선을 포함합니다. Alhangeul의 창 제목과 접근성 이름을 제품명으로 유지하고 새 글꼴 공급 API와 연결합니다." />
+        <meta property="og:title" content="알한글 v0.1.2 릴리즈 안내" />
+        <meta property="og:description" content="rhwp v0.8.7을 반영해 표와 문단의 조판, 문서 열기·저장·편집 개선을 포함합니다. Alhangeul의 창 제목과 접근성 이름을 제품명으로 유지하고 새 글꼴 공급 API와 연결합니다." />
+        <meta property="og:image" content="https://postmelee.github.io/alhangeul-tauri/assets/og-main.png" />
+        <link rel="canonical" href="https://postmelee.github.io/alhangeul-tauri/updates/v0.1.2.html" />
+        <link rel="icon" href="../../assets/logo/favicon.ico" />
+        <link rel="stylesheet" href="../styles.css?v=108-2" />
+        <script src="../package-downloads.js?v=108-2" defer></script>
+        <script src="../script.js?v=108-2" defer></script>
+    </head>
+    <body class="release-page" data-site-root="../" data-release-version="0.1.2" data-release-status="published">
+        <a class="skip-link" href="#main">본문으로 이동</a>
+        <header class="site-header" aria-label="주요 탐색">
+            <div class="site-header-inner">
+                <a class="brand-link" href="../" aria-label="알한글 홈"><img src="../../assets/logo/logo-256.png" alt="" width="28" height="28" /><span>알한글</span></a>
+                <nav class="header-actions" aria-label="주요 링크">
+                    <a class="header-link" href="./">업데이트 목록</a>
+                    <a class="header-link" href="../feedback/">문의/제보</a>
+                    <a class="header-link family-header-link" href="https://postmelee.github.io/alhangeul-macos/" aria-label="알한글 macOS 홈페이지로 이동">알한글 for macOS</a>
+                    <a class="header-link" href="https://github.com/postmelee/alhangeul-tauri">GitHub</a>
+                </nav>
+            </div>
+        </header>
+        <main class="updates-page page-enter" id="main">
+            <section class="updates-hero" aria-labelledby="updates-title">
+                <h1 id="updates-title">알한글 v0.1.2 릴리즈 안내</h1>
+                <p>공개일: <time datetime="2026-10-08T16:49:38Z">2026-10-09 KST</time></p>
+                <p>rhwp v0.8.7을 반영해 표와 문단의 조판, 문서 열기·저장·편집 개선을 포함합니다. Alhangeul의 창 제목과 접근성 이름을 제품명으로 유지하고 새 글꼴 공급 API와 연결합니다.</p>
+                <p data-version-status hidden></p>
+                <div class="updates-actions" aria-label="릴리즈 주요 링크">
+                    <a class="page-action-button" href="https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.2">이 버전 다운로드</a>
+                    <a class="page-secondary-link" href="./#latest-download">최신 버전 다운로드</a>
+                </div>
+            </section>
+            <div class="updates-content">
+                <section class="updates-section" aria-labelledby="summary-title">
+                    <h2 id="summary-title">변경 요약</h2>
+                    <p>rhwp v0.8.7을 반영해 표와 문단의 조판, 문서 열기·저장·편집 개선을 포함합니다. Alhangeul의 창 제목과 접근성 이름을 제품명으로 유지하고 새 글꼴 공급 API와 연결합니다.</p>
+                </section>
+                <section class="updates-section" aria-labelledby="rhwp-title">
+                    <h2 id="rhwp-title">포함된 rhwp 변화</h2>
+                    <p>문단 안 연속 표의 너비·줄바꿈과 중첩 표·행 병합 표의 페이지 분할을 보정했습니다.</p>
+                    <p>빈 머리말·꼬리말이 있는 HWP 저장본과 반복 표 제목·쪽 경계 설정의 저장을 보정했습니다.</p>
+                    <p>Studio 영어 UI, 웹 하이퍼링크 편집, 덮어쓰기 모드와 찾기 결과 개수 표시를 추가했습니다.</p>
+                    <p>표 뒤 Enter와 중첩 표의 선택·삭제·붙여넣기, 글꼴 공급 및 문서 입력 경계의 처리를 보강했습니다.</p>
+                </section>
+                <section class="updates-section" aria-labelledby="app-title">
+                    <h2 id="app-title">알한글 앱 변화</h2>
+                    <p>기존 로컬 글꼴 선택·이름별 조회·파일 읽기 캐시를 새 upstream renderer API에서도 공유합니다.</p>
+                    <p>새 upstream 시작·문서 제목 처리에서도 Alhangeul 제품명을 유지합니다. native 문서의 수정 상태 표시는 기존 문서 세션이 관리하고, 접근성 이름은 한국어·영어 초기화에 맞춥니다.</p>
+                    <p>CanvasKit 표시 모드에서 로컬 글꼴 파일을 삭제한 뒤 다시 감지할 때 페이지가 비어 보이던 문제를 보정했습니다.</p>
+                </section>
+                <section class="updates-section" aria-labelledby="limitations-title">
+                    <h2 id="limitations-title">알려진 한계</h2>
+                    <ul><li>Windows 설치 파일은 Authenticode 미서명이며 자동 업데이트용 Minisign과는 별개입니다.</li><li>일부 Windows NSIS 환경에서 탐색기 썸네일이 정상 표시되지 않는 제한이 남아 있습니다. 강제 MSI 재설치의 3010 재부팅 요구를 관측했으며 재부팅 후 동작은 검증하지 않았습니다.</li><li>사용자의 모든 Wayland·GPU·글꼴·문서·배포판·물리 프린터 조합은 검증하지 않았습니다. 이전 버전의 성능 수치를 새 pin의 측정 결과로 승계하지 않습니다.</li></ul>
+                </section>
+                <section class="updates-section" aria-labelledby="installation-title">
+                    <h2 id="installation-title">설치와 업데이트</h2>
+                    <p>Windows x64와 Linux x64를 지원하며 Linux arm64는 DEB 형식을 준비합니다. Windows에는 WebView2 Runtime이 필요합니다.</p>
+                    <p>Windows는 NSIS 또는 MSI를 선택합니다. Linux x64는 AppImage·DEB·RPM 중 환경에 맞는 형식을 선택합니다. AppImage는 실행 권한과 파일·폴더 쓰기 권한이 필요합니다. Linux arm64는 DEB를 사용합니다.</p>
+                    <p>Windows NSIS·MSI와 Linux x64 AppImage는 앱 시작 시 또는 제품 정보에서 새 버전을 확인합니다. 다운로드·설치는 사용자가 선택하며 저장하지 않은 문서가 있으면 먼저 저장하도록 안내합니다.</p>
+                    <p>v0.1.2 설치 파일을 공개했습니다. v0.1.1 → v0.1.2 앱 내 업데이트 수용은 아직 실행하지 않았습니다. DEB·RPM·Linux arm64는 배포판에 맞는 새 패키지를 수동으로 설치합니다.</p>
+                    <ul><li><a href="https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.2/Alhangeul_0.1.2_x64-setup.exe">Windows x64 NSIS</a></li><li><a href="https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.2/Alhangeul_0.1.2_x64_en-US.msi">Windows x64 MSI</a></li><li><a href="https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.2/Alhangeul_0.1.2_amd64.AppImage">Linux x64 AppImage</a></li><li><a href="https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.2/Alhangeul_0.1.2_amd64.deb">Linux x64 DEB</a></li><li><a href="https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.2/Alhangeul-0.1.2-1.x86_64.rpm">Linux x64 RPM</a></li><li><a href="https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.2/Alhangeul_0.1.2_arm64.deb">Linux arm64 DEB</a></li></ul>
+                    <p><a href="https://github.com/postmelee/alhangeul-tauri/blob/devel/docs/releases/v0.1.2.md">검증 환경과 상세 기록</a> · <a href="https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.2">GitHub Release</a></p>
+                </section>
+            </div>
+        </main>
+        <footer class="site-footer">
+            <div class="site-footer-inner">
+                <div class="footer-brand"><img src="../../assets/logo/logo-256.png" alt="" width="24" height="24" /><span>알한글</span></div>
+                <p>Windows와 Linux용 HWP/HWPX 문서 편집기입니다.</p>
+                <nav aria-label="푸터 링크"><a href="https://github.com/postmelee/alhangeul-tauri/blob/devel/LICENSE" rel="noreferrer">MIT License</a></nav>
+            </div>
+            <p class="family-mobile-note">macOS를 사용하시나요? <a href="https://postmelee.github.io/alhangeul-macos/">알한글 for macOS <span aria-hidden="true">→</span></a></p>
+        </footer>
+    </body>
+</html>

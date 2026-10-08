@@ -812,3 +812,106 @@ gh workflow run alhangeul-desktop.yml --ref publish/task113 \
   기존 release 준비 기록도300LOC를 넘지만 FF/P 실패·수용 이력을 되돌리거나 누락하지 않는 운영 기록이다.
 - notes2/tests124·body6170/d7a344fc...·HTML9106/9b399d12...·short358/adac1d9c... 임시 생성물 수용,
   sourceP/assets6/3sig/draft 상태는 그대로다. final head의 PR required를 확인 후 merge 승인 요청한다.
+
+## 후속 Gate 2~3 명시 승인·진행 — 2026-10-08~09
+
+- PR117은 required37754637500 통과 후 승인된 일반 merge로 devel8a91bf52에 통합했다.
+  PR118도 작업지시자의 명시 승인 후 main6dcb05e96ec2075d09d8a60160e1d82f08c0811b에
+  일반 merge했다. 실제 main tree e558ea966d6bb89893d595b789354ce14c240b00은 승인된 devel과
+  같고 product P의 apps/crates/third_party/package·lock diff도 없다.
+- 확정 main/ref·all/full/tests=true ordinary·기존 production key의 비게시 updater012/v012/
+  nonempty notes/publish=false·새6종 실제 설치/문서 수용 입력을 제시한 뒤 작업지시자의
+  “진행해줘”가 이 gate를 승인했다. source/workflow/build/checkout은 같은 main SHA로 고정한다.
+- ordinary37789356504는 attempt1·필수14 jobs success, Windows258/Linux 각247 Rust tests·
+  failed/ignored0이다. signing37789417321은 기존 release Environment required-reviewer의
+  정상 승인으로 진행 중이며 보호 설정·production 공개키·endpoint를 바꾸지 않았다.
+- 새 DEB x64 GUI37796099048은 same main/producer·actual hash c98d3d36...의 설치와
+  문서8시나리오·PDF/GTK/CUPS29A4쪽·Nautilus/Thunar 수용을 완료했다. 서명3종·RPM/ARM의
+  새 bytes 수용은 아직 진행 전/진행 중이며 이전 P 파일 수용으로 대체하지 않는다.
+- actual archive/installer 결과에 따라 기존 mydocs/working/task_m010_113.json의 candidate
+  metadata를 정합화하고 기존 docs/releases 원문·기술 기록·계획/보고/오늘할일 위치를 사용한다.
+  제품/검증 구현 변경은 없으며 main product SHA와 data-only harness SHA를 구분한다.
+- Windows raw NSIS12실패/thumbnail not-accepted·forced MSI3010/post-reboot-unverified는
+  동일한 known limitation이다. 현재 승인에는 공개 tag/Release·Pages/feed·실제 upgrade·close가 없다.
+
+- signed37789417321도 attempt1·Windows/Linux2 build와 complete inventory success·publish
+  skipped로 끝났다. actual ZIP digest·3 installer bytes/Minisign·complete source/target/fingerprint를
+  독립 검증했다. draft notes의 actual6 files/3sig/sourceMain·실제13 merged PR/5Issue를 갱신했다.
+  existing sourceP 기록은 기술 이력에 남기고 final 파일로 혼용하지 않는다. candidate JSON은
+  새 main producer/run/ID/digest/hash만 사용하며 data-only harness로 새5종 설치/GUI를 실행한다.
+
+### 최종 main Gate2~3 완료
+
+- 새 signed3 GUI37802164321·RPM/ARM37802538555·FedoraVM37804655669 모두 H/data-only
+  harness·main6d actual bytes에서 attempt1/whole success다. 실제 문서2개씩·PK/hash·cleanup/
+  owned exits와 screenshot을 검산했고 총10 생성 문서를 bundled core로 독립 parse해 marker를 확인했다.
+- DEB37796099048의 8시나리오·29A4 PDF/가상print·thumbnail, signed3 각80입력/20scroll 및
+  RPM/ARM/VM 각4restarts를 수용했다. raw performance unverified·NSIS/3010 한계를 보존한다.
+- 기존 승인 위치의 Stage4.2 보고·release index/record·최종 구현 보고·오늘할일을 연결한다.
+  exact11 files·checksum10행·생성 body hash를 고정해 Gate4 CLI/tag/draft/Stable 공개 승인 입력으로
+  제시한다. 태그/Release/Pages/manifest/upgrade/close는 아직 실행하지 않는다.
+
+## Gate4 명시 승인·완료와 Gate5 제안 — 2026-10-09 01:50 KST
+
+- 작업지시자의 “진행해줘.”는 제시한 main `6dcb05e96ec2075d09d8a60160e1d82f08c0811b`·exact11/body·새 annotated tag·
+  maintainer CLI/draft read-back·일치 시 Stable/latest 공개 승인이다. 승인 근거 기록
+  `2026-10-08T16:41:42.961Z`·owner/actor postmelee·CLI 경로와 알려진 한계를 포함했다.
+- Release407055948을 `2026-10-08T16:49:38Z`에 공개했다. draft/public 새 다운로드의11파일,
+  checksum 자체hash/10행·Minisign3·inventory·본문·tag 검산과 latest 확인까지 완료했다.
+  source·제품·CI·script·test를 바꾸거나 재빌드하지 않았다.
+- 다음 Stage4.4/Gate5 제안은 **승인 대기**다. 기존 `docs/releases/v0.1.2.notes.json`에
+  published/actual UTC와 새 참조시각·업데이트 미검증 문구를 반영한다. 기존 `site/release.json`은
+  012의3대상 URL/inventory/짧은 notes로 바꾸며 production endpoint/key는 유지한다.
+  `site/updates/v0.1.2.html`은 공식 template 생성물을 넣고 README의 버전·안내 진입점을 정합화한다.
+  공식 제품 문서 역할은 기존 docs/releases 원문/기술 기록·site 웹 안내·README이며, 승인된
+  mydocs/plans/working/report/orders는 추적용이다. 새 문서 루트·매뉴얼 제품 문서는 만들지 않는다.
+- 임시 제안4파일/patch·공식3출력·manifest를 준비했고 notes schema/release/manifest와
+  공개 뒤 PR13·Issue5 조회18건을 확인했다. 새 본문6186 bytes/hash
+  `03cde7aa70f6b7d395cc16bbe7eed6baa7d326dbe5e1ac825f3d5bba7b2d45b6`, manifest2371/hash
+  `58ca348b234945e8330911ec6f77ba1c3af5ac6b5e05db8a585a29e55a107ad3`다. 아직 source/public body/site/feed 미적용이다.
+- 다음 승인 범위는 원문·웹/updater data·README/기록 수정, 승인한 새 body만 보정 후 identity11/
+  body read-back, notes check/test·build/check Pages·updater/pages/actions tests·diff check, 단계
+  commit·devel Open data PR/required CI까지다. PR merge 및 actual merged devel full SHA의 Pages/
+  manifest 배포는 결과 기반으로 별도 승인받는다. production011→012 harness/실행도 별도다.
+- 공개 결과/제안 위치 판단을 포함해 Stage4.3 보고·기존 release 기록·인덱스·최종 보고·오늘할일을
+  묶는다. #113 OPEN·남은 자료/branch/worktree를 유지하고 전체 task 완료로 표시하지 않는다.
+
+## Stage4.4 Gate5 데이터 명시 승인·로컬 수용 — 2026-10-09 02:09 KST
+
+- 작업지시자의 “진행해줘.”는 Stage4.3의 prepared4 source files·exact body 보정·기록·generic
+  검증·devel Open data PR/required CI까지 승인했다. 기록 `2026-10-08T17:01:10.304Z`다.
+  PR merge/actual merged devel Pages SHA 배포·production upgrade·close는 후속 승인 gate다.
+- 기존 docs/releases 원문·기록/index, site/release.json·site/updates/v012.html 공식 웹, README
+  사용자 진입점과 mydocs/plans/working/report/orders 추적의 위치 판단을 재승인받았다. 해당 위치만
+  사용했고 사용자 주요 기능·기존 검증/실패 이력은 유지했다. new notes321LOC 단일 strict schema
+  data는 이전 승인 예외대로 분할·중복하지 않는다. 제품·CI/native 경로 변경은 없다.
+- notes source2/tests124·Pages source19/output23 수용, original4/source·generated3·manifest bytes는
+  승인 hash와 같다. 본문6186/hash03cde7aa... body-only read-back `2026-10-08T17:03:40.244Z`으로
+  11asset ID/hash/URL/created-updated identity·tag·공개시각·Stable/latest 유지까지 확인했다.
+- 최초 contract150/151의1fail은 새HTML 추가에 따른 tracked source18→19 기대값이었다. 준비한
+  한 줄 diff를 제시하고 작업지시자가 “기대 파일 수 한 줄 보정·재검증 (권장)”으로 승인했다.
+  기록 `2026-10-08T17:03:59.612Z`, patch `dd9eb317dc5b591493007a9d7da2cd2e7fc998b705353817e231756bca85bfdb`다.
+  tests/pages.test.mjs의 해당1행만 수정해151/151·fail/skip0 수용했다. fixture의 기대값/나머지
+  assertion·unreleased 차단·timeout을 바꾸지 않았다. 최초 실패 로그를 보존했다.
+- 로컬 생성 웹에서 v012/KST 공개일·latest·6고정 링크·미검증/한계를 AX/전체 화면으로 확인하고
+  임시 tab/server를 정리했다. production 웹/모바일/upgrade 수용으로 승격하지 않는다.
+- 단계 소스·보고를 묶어 정상 ff publish/task113→devel Open data PR을 게시한다. PR required는
+  실제 merge candidate에서 자동 실행된1회 결과만 확인하고 불필요한 dispatch/재실행은 하지 않는다.
+
+## Stage4.4.1 고정 production 회귀 보정 승인·수용 — 2026-10-09 02:21 KST
+
+- PR119/head a414f536/합성59d4a11c의 최초 CI37814746426 attempt1은 Node/Windows/required 전체
+  failure다. Node1329/1331·Windows57/59의 같은2건을 보존하고 로컬에서도 재현했다. 기존010→011
+  회귀가 새 site012를 읽는 입력 혼합이며 제품/공개 artifact 결함으로 단정하지 않는다.
+- 준비한 tests/production-upgrade.test.mjs1파일 diff·임시 검토 tree59/59와 입력 보정 범위를
+  제시했고 작업지시자가 “고정 회귀 입력 보정·재검증 (권장)”으로 명시 승인했다. 근거 기록
+  `2026-10-08T17:18:56.148Z`, patch `d77dd76b7f92e2d041628ff7f560a7ede57f0cff9e5478471fd7f2d98244a1ec`다.
+- 해당2계약의 입력만 spec.next011의 published 원문으로 재구성한다. 고정hash/변조거부·inventory
+  source/path assertion, runtime helper/CLI/workflows·010→011입력·MANIFEST_HASH·사이트012/본문/
+  manifest/key/endpoint는 유지했다. 실제011→012 migration과 실행은 후속 승인 범위다.
+- tests/production-upgrade.test.mjs는295→306LOC다. 기존59 negative/CLI gate와 해당 recorded
+  fixture context를1파일에 두는11행 재구성의 최소 diff여서 권장300LOC 예외를 기록한다. 별도
+  fixture 파일·중복된 full payload·helper source 변경을 만들지 않는다.
+- 승인 후 actual production59/59·전체 automation1331/1331·fail/skip0·diff check를 수용했다.
+  기존 실패 CI/로컬 로그는 보존한다. 다음 push에 따른 새 PR head의 자동 required만 확인하며
+  같은 source의 blind rerun·native rebuild·보호 변경은 하지 않는다. #113 OPEN 유지다.
