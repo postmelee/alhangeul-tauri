@@ -636,3 +636,60 @@ gh workflow run alhangeul-desktop.yml --ref publish/task113 \
 - Windows PDF [37724319402](https://github.com/postmelee/alhangeul-tauri/actions/runs/37724319402)를
   FF workflow·acceptance_candidate_sha=FF·ordinary run으로 한 번 dispatch했다. 현재 서명 뒤
   pending이며 같은 desktop concurrency의 pending 교체를 피하여 추가 desktop mode는 기다린다.
+
+## Stage 3.3 제품 글꼴 refresh 보정안 — 승인 대기
+
+### 관측과 충돌 경로
+
+- 진단 harness `1f5c8dc6...`의 fast `37725336047`은 success다. 같은 FF 제품으로 local-fonts
+  `37725338707`을 추가 진단했으며 failure다. archive `11527374730`, digest
+  `sha256:4759cf8c8e795075931925b0e7ff7fce69d149e62d63a24b8c2cb9ea80afb2fc`.
+- 실패 시 initialized=true, initializationError/selectionError=null, effectiveBackend=canvaskit,
+  canvas 0개·page diagnostics null·document/resource revision 33이었다. window handle은 1개다.
+  최초 글꼴 적용과 새 창까지 정상이며 삭제 재감지에서 문서 placeholder만 남았다.
+- 새 upstream main의 `onHostFontsChanged`는 `canvasView.refreshFontResources()`를 실행한다.
+  현재 앱 hook은 같은 catalog 변화 뒤 `session.invalidateDocument()` + `view.loadDocument()`를
+  수행한다. `loadDocument`는 문서 교체용 reset/빈 쪽을 만든 후 동시 font revision 변화로 selection이
+  취소되면 canvas를 만들기 전에 반환할 수 있다. 실제 빈 쪽·무오류 진단과 일치하는 충돌 경로다.
+  새 source의 실제 GUI 통과 전 원인 보정 성공으로 확정하지 않는다.
+
+### 검토 가능한 최소 변경
+
+- `/private/tmp/task113-stage3-font-refresh-proposal/font-refresh.patch`에 실제 diff를 준비했다.
+  repository product source는 아직 수정하지 않았다.
+- `apps/studio-host/local-font-entry-hooks.ts`: 문서 invalidate/load 두 호출을 upstream의
+  `await view?.refreshFontResources()` 한 호출로 바꾼다. 문서·undo/dirty 상태를 보존하는 font
+  resource 전용 API를 사용하고 현재 document/view/session/renderer/decision guard는 유지한다.
+- 기존 `local-font-entry-hooks.test.ts`의 pinned API 기대값을 정렬하고 actual transformed callback의
+  resource refresh→font prepare→paint 순서와 문서 교체 후 paint 거부 회귀 2건을 추가한다.
+  proposal의 callback 검사는 2/2 통과했다. 이것은 실제 GUI 보정 수용을 뜻하지 않는다.
+- third_party content·pin/WASM/native locks·제품 0.1.2·지원 OS는 현재 승인 범위와 동일하다.
+  기존 source와 source-specific asset의 수용을 새 bytes의 수용으로 승계하지 않는다.
+
+### 승인 후 실행 입력과 검증
+
+1. 위 두 product/test 파일의 승인된 diff와 보고/계획을 반영하고 focused·automation·upstream·
+   Studio/build·GUI typecheck·product version/pin/boundary/notes 검증을 실행한다.
+2. 보정 commit의 exact product SHA를 새 검증 source P로 계산해 기록한다. 같은 workflow/checkout P의
+   ordinary all/full/run_tests=true/publish_release=false와 updater version0.1.2/tagv0.1.2/
+   publish_release=false를 각각 한 번 수행한다. 이전 FF와 새 P의 provenance를 구분한다.
+3. production 공개키 3 서명과 실제 6종 asset의 identity/hash를 새로 검증한다. Native Windows/Linux
+   full·새 bytes의 NSIS/MSI/AppImage/DEB/RPM/arm64/Fedora 설치·문서·글꼴·PDF/인쇄·thumbnail
+   수용을 완료한다. 글꼴 삭제/복구·설정·새 창·재시작 assertion과 실패 gate를 유지한다.
+4. 새 source의 실제 metadata가 확인된 뒤 candidate/notes JSON·생성 body를 정렬한다. 아직 공개
+   source가 아니며 final main·Release/tag/assets·Pages/feed·production upgrade gate는 이후에 받는다.
+
+제품 source 및 새 서명 source를 바꾸는 보정안이므로 작업지시자의 명시 승인을 받은 뒤 적용한다.
+현재 승인된 FF의 나머지 exact-file/Windows PDF·RPM/Fedora·arm64 검사와 기록은 계속한다.
+
+### Stage 3.2 실제 metadata와 draft 생성 수용
+
+- 성공한 FF ordinary/signed producer의 실제 archive 및 6종 file·3 Minisign을 독립 검증했다.
+  production 공개키 fingerprint 9f86f804...이며 합산 inventory도 일치한다.
+- `task_m010_113.json`과 `v0.1.2.notes.json`을 완성했다. 기존 schema 유지·draft/publishedAt=null,
+  source FF·previous 0.1.1/96e89e900...·rhwp087, 실제 PR 11개·참고 Issue 5개다.
+- notes check 2 documents·tests124/124·staging 생성3종·diff check 통과. body 6140 bytes/
+  ec25e655602002e16e58344e92f02c3195040cde24d780fed27224f102d73472.
+  source site/manifest는 0.1.1이며 기록은 `task_m010_113_stage3.2.md`에 묶는다.
+- FF source와 새 검사 commit을 구분하여 6종 설치/GUI를 계속한다. Stage3.3 product 보정은
+  비동기 승인 요청 중이며 답변 전 제품 source를 변경하지 않는다.
