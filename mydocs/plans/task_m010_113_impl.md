@@ -875,3 +875,25 @@ gh workflow run alhangeul-desktop.yml --ref publish/task113 \
   manifest 배포는 결과 기반으로 별도 승인받는다. production011→012 harness/실행도 별도다.
 - 공개 결과/제안 위치 판단을 포함해 Stage4.3 보고·기존 release 기록·인덱스·최종 보고·오늘할일을
   묶는다. #113 OPEN·남은 자료/branch/worktree를 유지하고 전체 task 완료로 표시하지 않는다.
+
+## Stage4.4 Gate5 데이터 명시 승인·로컬 수용 — 2026-10-09 02:09 KST
+
+- 작업지시자의 “진행해줘.”는 Stage4.3의 prepared4 source files·exact body 보정·기록·generic
+  검증·devel Open data PR/required CI까지 승인했다. 기록 `2026-10-08T17:01:10.304Z`다.
+  PR merge/actual merged devel Pages SHA 배포·production upgrade·close는 후속 승인 gate다.
+- 기존 docs/releases 원문·기록/index, site/release.json·site/updates/v012.html 공식 웹, README
+  사용자 진입점과 mydocs/plans/working/report/orders 추적의 위치 판단을 재승인받았다. 해당 위치만
+  사용했고 사용자 주요 기능·기존 검증/실패 이력은 유지했다. new notes321LOC 단일 strict schema
+  data는 이전 승인 예외대로 분할·중복하지 않는다. 제품·CI/native 경로 변경은 없다.
+- notes source2/tests124·Pages source19/output23 수용, original4/source·generated3·manifest bytes는
+  승인 hash와 같다. 본문6186/hash03cde7aa... body-only read-back `2026-10-08T17:03:40.244Z`으로
+  11asset ID/hash/URL/created-updated identity·tag·공개시각·Stable/latest 유지까지 확인했다.
+- 최초 contract150/151의1fail은 새HTML 추가에 따른 tracked source18→19 기대값이었다. 준비한
+  한 줄 diff를 제시하고 작업지시자가 “기대 파일 수 한 줄 보정·재검증 (권장)”으로 승인했다.
+  기록 `2026-10-08T17:03:59.612Z`, patch `dd9eb317dc5b591493007a9d7da2cd2e7fc998b705353817e231756bca85bfdb`다.
+  tests/pages.test.mjs의 해당1행만 수정해151/151·fail/skip0 수용했다. fixture의 기대값/나머지
+  assertion·unreleased 차단·timeout을 바꾸지 않았다. 최초 실패 로그를 보존했다.
+- 로컬 생성 웹에서 v012/KST 공개일·latest·6고정 링크·미검증/한계를 AX/전체 화면으로 확인하고
+  임시 tab/server를 정리했다. production 웹/모바일/upgrade 수용으로 승격하지 않는다.
+- 단계 소스·보고를 묶어 정상 ff publish/task113→devel Open data PR을 게시한다. PR required는
+  실제 merge candidate에서 자동 실행된1회 결과만 확인하고 불필요한 dispatch/재실행은 하지 않는다.

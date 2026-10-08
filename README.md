@@ -14,7 +14,7 @@
 
 **[다운로드](https://postmelee.github.io/alhangeul-tauri/)** · [설치 안내·업데이트](https://postmelee.github.io/alhangeul-tauri/updates/) · [문의·제보](https://postmelee.github.io/alhangeul-tauri/feedback/)
 
-현재 안정 버전: **[v0.1.1](https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.1)**. 웹 다운로드와 앱 내 업데이트 피드도 v0.1.1을 제공합니다.
+현재 안정 버전: **[v0.1.2](https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.2)**. rhwp v0.8.7을 반영한 Windows/Linux 설치 파일을 제공합니다.
 무료로 사용할 수 있으며, 소스 코드는 [MIT 라이선스](LICENSE)로 공개합니다.
 
 | Windows | Linux |
@@ -36,7 +36,7 @@
 
 - Windows에서는 NSIS와 MSI 중 한 가지 형식을 선택하세요. 현재 설치 파일은 Windows 코드 서명(Authenticode)이 없어 보안 경고가 표시될 수 있습니다.
 - AppImage는 파일과 상위 폴더가 쓰기 가능한 위치에 보관하세요. 파일 관리자 썸네일 등록은 DEB/RPM 패키지에서 제공합니다.
-- Windows NSIS/MSI와 Linux x64 AppImage는 앱에서 업데이트를 확인할 수 있습니다. v0.1.0 → v0.1.1 업데이트와 설정 유지·HWP/HWPX 문서 재열기를 검증했습니다. DEB/RPM과 Linux arm64는 새 패키지를 받아 수동으로 설치합니다.
+- Windows NSIS/MSI와 Linux x64 AppImage는 앱에서 업데이트를 확인할 수 있습니다. v0.1.0 → v0.1.1 업데이트와 설정 유지·HWP/HWPX 문서 재열기를 검증했습니다. v0.1.1 → v0.1.2 실제 업데이트는 아직 검증하지 않았습니다. DEB/RPM과 Linux arm64는 새 패키지를 받아 수동으로 설치합니다.
 
 자세한 설치 방법과 알려진 제한은 [설치 안내·업데이트](https://postmelee.github.io/alhangeul-tauri/updates/)에서 확인하세요.
 
@@ -67,7 +67,7 @@
 - Windows NSIS 설치에서 환경에 따라 썸네일이 표시되지 않는 문제가 있습니다. [진단과 MSI 대안](docs/architecture/WINDOWS_THUMBNAILS.md#수동-진단과-msi-대안)을 확인하세요.
 - 별도의 데스크톱 자동 복구 저장소는 제공하지 않습니다. 작업 중 문서를 자주 저장하세요.
 
-v0.1.1의 업데이트 검증 결과와 알려진 제한은 [릴리즈 안내](https://postmelee.github.io/alhangeul-tauri/updates/v0.1.1.html)에서 확인하세요.
+v0.1.2의 변경 사항과 알려진 제한은 [릴리즈 안내](https://postmelee.github.io/alhangeul-tauri/updates/v0.1.2.html)에서 확인하세요.
 버전별 실제 검증 환경과 남은 제한은 [버전별 릴리즈 기록](docs/releases/README.md)에 정리되어 있습니다.
 
 ## 문의와 기여

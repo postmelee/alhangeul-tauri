@@ -2,8 +2,10 @@
 
 GitHub Issue: [#113](https://github.com/postmelee/alhangeul-tauri/issues/113)
 마일스톤: M010
-확인일: 2026-10-08 (Asia/Seoul)
-상태: Stage1~4 구현 수용·보고 완료 / devel task PR117 게시 / 실제 릴리즈 전달은 계속 진행
+확인일: 2026-10-09 02:09 (Asia/Seoul)
+상태: Stage1~4 구현·GitHub012 공개/본문 보정·Gate5 데이터 로컬 수용 완료 / Pages·실제011→012 전달 계속 진행
+
+아래 Stage1~4 요약은 당시 구현 인계 snapshot이다. 현재 공개/전달 상태는 후속 Gate별 기록으로 구분한다.
 
 ## 작업 요약
 
@@ -164,3 +166,13 @@ annotated tag198ebba7→main6dcb05e9·11파일/본문·Minisign3을 draft/public
 검산했고 latest/non-prerelease를 확인했다. [Stage4.3 보고](../working/task_m010_113_stage4.3.md)에
 actual 공개시각 `2026-10-08T16:49:38Z`과 asset ID/hash·한계·다음 제안을 연결했다.
 site/feed011·공개 상태 문구 보정·실제011→012·최종 close/cleanup은 후속 승인 범위다. #113 OPEN이다.
+
+## Gate5 데이터 PR 준비 수용 — 2026-10-09 02:09 KST
+
+[Stage4.4 보고](../working/task_m010_113_stage4.4.md)에 승인 source4파일+별도 기대1행, 문서 위치,
+body-only 공개·11identity유지·generated3/manifest hash와 notes124/contract151·Pages19/23을 연결했다.
+제품·CI·pin·native bytes 변경 없이 published 원문·웹6다운로드·updater3 inventory·README를 정합화했다.
+GitHub body6186/03cde7aa... read-back 통과, 기존 공개시각/asset/tag/채널 유지다.
+이 데이터 PR은 구현 작업PR117 및 releasePR118 뒤의 delivery 데이터 인계다. devel PR required
+결과를 확인한 뒤 일반 merge와 exact merged devel Pages SHA의 배포를 별도 승인받는다.
+remote Pages/feed011·actual011→012·최종 close/cleanup은 후속이며 #113을 완료로 닫지 않는다.

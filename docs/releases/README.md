@@ -9,7 +9,7 @@
 
 | 버전 | 상태 | 이전 공개 버전 | GitHub Release | 기록 |
 |---|---|---|---|---|
-| v0.1.2 | GitHub Stable/latest 공개·exact11/본문/서명·tag 원격 검산 완료 / Pages/feed·실제 upgrade 후속 | v0.1.1 | [v0.1.2](https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.2) | [v0.1.2 공개 기록](v0.1.2.md) |
+| v0.1.2 | GitHub Stable/latest·published 본문 공개·웹/updater 데이터 로컬 수용 / Pages/feed·실제 upgrade 후속 | v0.1.1 | [v0.1.2](https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.2) | [v0.1.2 공개 기록](v0.1.2.md) |
 | v0.1.1 | Release·규격 body·웹·피드·검증 결과 안내 공개, 세 형식 실제 upgrade·HTTP 수용 완료 | v0.1.0 | [v0.1.1](https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.1) | [v0.1.1 공개 기록](v0.1.1.md), [안내 원문](v0.1.1.notes.json) |
 | v0.1.0 | stable 공개·Pages/updater 전환 및 동일 버전 조회 완료 | 없음 | [v0.1.0](https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.0) | [v0.1.0 공개 기록](v0.1.0.md) |
 
@@ -97,3 +97,5 @@ Linux/Windows 빠른 CI는 릴리즈 규격 계약을 검사하며 native 설치
 과거 Actions archive는 만료될 수 있다. 고유 SHA·run·digest·수용 한계는 Task 원본 보고서와
 고정 commit 링크로 보존하되 archive 가용성이나 현재 후보의 성공을 보장하는 값으로 쓰지 않는다.
 private key·암호·token·개인 문서·실제 credential 보관 경로는 기록하지 않는다.
+
+2026-10-08T17:03:40.244Z 확인: v0.1.2 본문을 actual published metadata로 보정해 read-back했다.012 원문/웹/manifest 데이터는 로컬 검증과 devel PR 준비 상태이며 원격 Pages/feed는011 유지다.
