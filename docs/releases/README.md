@@ -9,9 +9,11 @@
 
 | 버전 | 상태 | 이전 공개 버전 | GitHub Release | 기록 |
 |---|---|---|---|---|
-| v0.1.2 | 최종 main6dcb05e9·새6종/서명 수용 완료·미게시 / exact11·본문 공개 승인 대기 | v0.1.1 | 미게시 | [v0.1.2 준비 기록](v0.1.2.md) |
+| v0.1.2 | GitHub Stable/latest 공개·exact11/본문/서명·tag 원격 검산 완료 / Pages/feed·실제 upgrade 후속 | v0.1.1 | [v0.1.2](https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.2) | [v0.1.2 공개 기록](v0.1.2.md) |
 | v0.1.1 | Release·규격 body·웹·피드·검증 결과 안내 공개, 세 형식 실제 upgrade·HTTP 수용 완료 | v0.1.0 | [v0.1.1](https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.1) | [v0.1.1 공개 기록](v0.1.1.md), [안내 원문](v0.1.1.notes.json) |
 | v0.1.0 | stable 공개·Pages/updater 전환 및 동일 버전 조회 완료 | 없음 | [v0.1.0](https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.0) | [v0.1.0 공개 기록](v0.1.0.md) |
+
+2026-10-08T16:50:52.403Z 확인: GitHub 최신 Stable는 v0.1.2이며 main6dcb05e9의11파일·서명3·본문·tag 검산을 완료했다. 사이트/production feed는 v0.1.1, 실제011→012 미실행이다.
 
 최신 공개 버전은 실제 non-draft Release와 공개 read-back으로 판정한다. 가장 높은 파일명이나
 현재 source version을 최신 공개 버전으로 취급하지 않는다. 상태 확인 시점을 함께 갱신한다.

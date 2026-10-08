@@ -850,3 +850,28 @@ gh workflow run alhangeul-desktop.yml --ref publish/task113 \
 - 기존 승인 위치의 Stage4.2 보고·release index/record·최종 구현 보고·오늘할일을 연결한다.
   exact11 files·checksum10행·생성 body hash를 고정해 Gate4 CLI/tag/draft/Stable 공개 승인 입력으로
   제시한다. 태그/Release/Pages/manifest/upgrade/close는 아직 실행하지 않는다.
+
+## Gate4 명시 승인·완료와 Gate5 제안 — 2026-10-09 01:50 KST
+
+- 작업지시자의 “진행해줘.”는 제시한 main `6dcb05e96ec2075d09d8a60160e1d82f08c0811b`·exact11/body·새 annotated tag·
+  maintainer CLI/draft read-back·일치 시 Stable/latest 공개 승인이다. 승인 근거 기록
+  `2026-10-08T16:41:42.961Z`·owner/actor postmelee·CLI 경로와 알려진 한계를 포함했다.
+- Release407055948을 `2026-10-08T16:49:38Z`에 공개했다. draft/public 새 다운로드의11파일,
+  checksum 자체hash/10행·Minisign3·inventory·본문·tag 검산과 latest 확인까지 완료했다.
+  source·제품·CI·script·test를 바꾸거나 재빌드하지 않았다.
+- 다음 Stage4.4/Gate5 제안은 **승인 대기**다. 기존 `docs/releases/v0.1.2.notes.json`에
+  published/actual UTC와 새 참조시각·업데이트 미검증 문구를 반영한다. 기존 `site/release.json`은
+  012의3대상 URL/inventory/짧은 notes로 바꾸며 production endpoint/key는 유지한다.
+  `site/updates/v0.1.2.html`은 공식 template 생성물을 넣고 README의 버전·안내 진입점을 정합화한다.
+  공식 제품 문서 역할은 기존 docs/releases 원문/기술 기록·site 웹 안내·README이며, 승인된
+  mydocs/plans/working/report/orders는 추적용이다. 새 문서 루트·매뉴얼 제품 문서는 만들지 않는다.
+- 임시 제안4파일/patch·공식3출력·manifest를 준비했고 notes schema/release/manifest와
+  공개 뒤 PR13·Issue5 조회18건을 확인했다. 새 본문6186 bytes/hash
+  `03cde7aa70f6b7d395cc16bbe7eed6baa7d326dbe5e1ac825f3d5bba7b2d45b6`, manifest2371/hash
+  `58ca348b234945e8330911ec6f77ba1c3af5ac6b5e05db8a585a29e55a107ad3`다. 아직 source/public body/site/feed 미적용이다.
+- 다음 승인 범위는 원문·웹/updater data·README/기록 수정, 승인한 새 body만 보정 후 identity11/
+  body read-back, notes check/test·build/check Pages·updater/pages/actions tests·diff check, 단계
+  commit·devel Open data PR/required CI까지다. PR merge 및 actual merged devel full SHA의 Pages/
+  manifest 배포는 결과 기반으로 별도 승인받는다. production011→012 harness/실행도 별도다.
+- 공개 결과/제안 위치 판단을 포함해 Stage4.3 보고·기존 release 기록·인덱스·최종 보고·오늘할일을
+  묶는다. #113 OPEN·남은 자료/branch/worktree를 유지하고 전체 task 완료로 표시하지 않는다.

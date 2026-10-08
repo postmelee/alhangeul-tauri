@@ -156,3 +156,11 @@ Fedora KVM 수용을 완료했다. [현재 Stage4.2 보고](../working/task_m010
 정확한 source/harness·새 archive/file hashes·시각/문서/기능 결과·known limitation·exact11 및
 본문/checksum을 연결했다. 위의 Stage1~4 구현 P 수용과 실패 이력은 당시 기록으로 보존한다.
 현재 tag/Release012·Pages/feed·실제011→012는 미실행이며 Gate4 공개 승인을 기다린다. #113 OPEN이다.
+
+## 후속 전달 Gate4 공개 완료 — 2026-10-09 01:50 KST
+
+[v0.1.2 Stable](https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.2)을 명시 승인된 exact bytes로 공개했다. Release407055948·
+annotated tag198ebba7→main6dcb05e9·11파일/본문·Minisign3을 draft/public 새 다운로드 두 시점에서
+검산했고 latest/non-prerelease를 확인했다. [Stage4.3 보고](../working/task_m010_113_stage4.3.md)에
+actual 공개시각 `2026-10-08T16:49:38Z`과 asset ID/hash·한계·다음 제안을 연결했다.
+site/feed011·공개 상태 문구 보정·실제011→012·최종 close/cleanup은 후속 승인 범위다. #113 OPEN이다.
