@@ -4,7 +4,7 @@
 GitHub Issue: [#113](https://github.com/postmelee/alhangeul-tauri/issues/113)
 마일스톤: M010
 작성일: 2026-10-07 (Asia/Seoul)
-상태: Stage 2 로컬 검증 완료 — source/report 커밋 후 exact Windows/Linux fast 확인 예정
+상태: Stage 2 완료 — 제품 0.1.2·title/locale·문구·exact fast 수용 / Stage 3 승인 대기
 
 ## 승인 기록과 입력
 
@@ -511,3 +511,43 @@ Stage 2에서는 기존 published 원문과 generation 계약의 검증을 실�
   이는 승인된 Stage 2 fast이며 full/native/package/GUI·PR required 수용으로 확대하지 않는다.
 - 원격 결과 전 다음 Stage로 진입하지 않는다. 최종 Task PR은 원래 Stage 4에서 만들며 이번에는
   단순 fast 실행을 위한 원격 branch만 사용한다. #113은 OPEN, main/public/site/feed는0.1.1 유지다.
+
+
+### Stage 2 원격 fast 수용과 Stage 3 입력 고정 — 2026-10-08
+
+- source/report commit은 `ff48d15011e53169bfd97b13a4f7084c3284c289`다. 원격 publish/task113도 이 SHA다.
+- [37712633686](https://github.com/postmelee/alhangeul-tauri/actions/runs/37712633686),
+  ci.yml·scope=full/profile=fast, 2026-10-08T01:22:52Z dispatch, 전체 success다.
+  head/checkout SHA를 고정했고 select·Linux Node/Studio·Windows PS의 필수 step이 모두 success다.
+  auto comparison/native/package/installer conditional skip은 fast 범위이며 전체 수용으로 세지 않는다.
+- 원격 automation1321/upstream39/Studio281·build/GUI typecheck·notes/Pages/version/pin이 통과했다.
+  [Stage 2 보고서](../working/task_m010_113_stage2.md)에 job ID·완료시각·실제 범위를 기록했다.
+- 이후 기록 commit은 docs/mydocs뿐이다. source/report 최초 commit을 재작성하지 않고
+  publish/task113을 ff48d150...로 유지한다. 다음 product producer의 workflow/source를 같은 값으로 고정한다.
+- #113은 OPEN, devel은 bad55757.../제품0.1.1/core0.8.7, main은7acff6bc.../공개0.1.1이다.
+  Stage 2 source0.1.2와 미게시 상태를 구분한다. Stage 3 이후 실행은 승인 대기다.
+
+#### 검토 가능한 Stage 3 입력 (미실행)
+
+```bash
+gh workflow run alhangeul-desktop.yml --ref publish/task113 \
+  -f mode=artifact -f build_ref=ff48d15011e53169bfd97b13a4f7084c3284c289 \
+  -f artifact_platform=all -f validation_profile=full \
+  -f run_tests=true -f publish_release=false
+gh workflow run alhangeul-desktop.yml --ref publish/task113 \
+  -f mode=updater -f build_ref=ff48d15011e53169bfd97b13a4f7084c3284c289 \
+  -f release_version=0.1.2 -f release_tag=v0.1.2 \
+  -f release_notes='Alhangeul v0.1.2 비게시 검증 후보 — rhwp v0.8.7' \
+  -f publish_release=false
+```
+
+- dispatch 직전 원격 ref tip·workflow SHA·build_ref의 동일성을 확인한다. 임의 tag/force는 없다.
+- 기존 release environment의 production key로 NSIS/MSI/AppImage 3종과 signature/inventory를
+  준비하며 Secret 값은 출력·저장하지 않는다. public job은 publish_release=false 조건으로 실행하지 않는다.
+- 실제 run/attempt·archive ID/digest/만료·path/size/hash·Minisign을 검증하고 기존 승인된
+  `mydocs/working/task_m010_113.json` 경로에 실제 candidate identity를 기록한다.
+- Windows NSIS/MSI·Linux x64 AppImage/DEB/RPM·arm64 DEB의 새 bytes를 기존 exact-file Windows/
+  Linux/Fedora harness와 공개 문서·글꼴·PDF/system print·thumbnail/lifecycle에서 수용한다.
+  harness 기록만 바뀌면 product SHA와 구분하고 critical dependency/pin 정합성은 계속 검증한다.
+- 실제 6종 file·signed inventory 수용 후 새 notes JSON·body/HTML/short notes를 완성한다.
+  final main/새 final bytes/게시·Pages·production upgrade gate는 이 승인에 포함하지 않는다.

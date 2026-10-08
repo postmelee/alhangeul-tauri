@@ -2,7 +2,7 @@
 
 GitHub Issue: [#113](https://github.com/postmelee/alhangeul-tauri/issues/113)
 구현계획서: [`task_m010_113_impl.md`](../plans/task_m010_113_impl.md)
-Stage: 2 (source·로컬 검증 완료, 원격 exact fast 결과는 후속 기록)
+Stage: 2 완료 (source·로컬 및 exact Windows/Linux fast 수용)
 
 ## 단계 목적
 
@@ -80,14 +80,23 @@ git diff --check
 - Pages source **18**/output **22** build/check 성공. generated `release.json`은 source와 같고
   `updater/stable.json`도 version **0.1.1**이다. v0.1.2 다운로드·feed·웹 안내를 게시하지 않았다.
 - 성공 출력은 `/private/tmp/task113-stage2-{install,focused,automation,upstream,studio,build,release-notes,gui-typecheck,pages}.log`에 보존했다.
-- 승인된 원격 명령은 source/report commit을 non-force push한 뒤
-  `gh workflow run ci.yml --ref publish/task113 -f scope=full -f profile=fast` 한 번이다.
-  실제 head/checkout SHA·Linux Node/Studio·Windows PS 결과를 확인한 뒤 전체 Stage 2 수용을 기록한다.
+- source와 local report를 `ff48d15011e53169bfd97b13a4f7084c3284c289`에 함께 커밋하고 non-force
+  push했다. `gh workflow run ci.yml --ref publish/task113 -f scope=full -f profile=fast`를 한 번 실행했다.
+- [fast 37712633686](https://github.com/postmelee/alhangeul-tauri/actions/runs/37712633686):
+  head/workflow/checkout은 위 SHA, profile=fast, run success다. select와 필수 Linux Node/Studio·
+  Windows PS job/step 모두 success를 확인했다. select의 auto comparison과 native/package/installer는
+  선택하지 않은 profile의 의도된 skip이며 전체 native 수용으로 세지 않는다.
+- Windows job **113101891171**은 2026-10-08T01:25:04Z, Linux job **113101891205**는
+  **01:29:44Z** 완료했다. 원격 Linux의 automation **1,321/1,321**·upstream **39/39**·
+  Studio **43 files·281/281**·build/GUI typecheck·version/metadata/pin/notes/Pages 모두 통과했다.
+- `/private/tmp/task113-stage2-fast-result.json`·`task113-stage2-fast.log`에 원격 근거를 보존했다.
+  source/report commit 이후 실제 CI 결과의 이 기록은 문서만 후속 보정하며 source를 재작성하지 않는다.
+  `publish/task113`은 검증 source `ff48d150...`로 유지해 다음 producer의 workflow/source 입력을 고정한다.
 
 ## 잔여 위험
 
-- 이 커밋의 원격 Windows/Linux fast는 아직 실행 전이다. 이전 PR 성공을 새 source의 성공으로
-  승계하지 않고 실제 결과를 후속 기록한다. fast는 full/native/package/GUI 수용이 아니다.
+- exact Windows/Linux fast는 성공했지만 full/native/package/GUI 수용은 아니다.
+  최종 Task PR의 merge candidate required는 Stage 4에서 실제 결과를 확인한다.
 - 제품은 source 0.1.2이고 공개 설치본은0.1.1이다. 새 6종 files·PDF/인쇄·글꼴·문서·thumbnail
   실제 GUI, 비게시 signing·공개·production upgrade는 후속 gate다.
 - notes JSON metadata·생성 bytes는 이연 승인 상태다. final main source·새 package bytes가
@@ -98,14 +107,15 @@ git diff --check
 
 ## 다음 단계 영향
 
-- 원격 exact fast 성공 후 Stage 3 진입 승인 요청을 한다. Task final/devel PR은 Stage 4 순서다.
+- 원격 exact fast를 수용했다. Stage 3 진입 승인 요청을 하며 Task final/devel PR은 Stage 4 순서다.
 - 고정된 Stage 2 source/workflow를 기준으로 Windows x64·Linux x64/arm64의
   `alhangeul-desktop.yml mode=artifact/artifact_platform=all/validation_profile=full/run_tests=true/publish_release=false`
   producer와 같은 source의 nonpublishing updater candidate를 준비한다.
 - 6종 새 bytes의 exact inventory·서명·기능·설치 수용 뒤 notes JSON과 생성물 완성을 이어간다.
-  final main·서명 입력·게시 files/notes·Release/Pages/production upgrade 승인은 각각 유지한다.
+  final main source·후속 서명 입력·게시 files/notes·Release/Pages/production upgrade 승인은 각각 유지한다.
 
 ## 승인 요청
 
-- Stage 2 source·검증과 notes 완성 이연은 승인 범위다. 원격 fast 결과를 확인하기 전 다음 Stage로 진입하지 않는다.
-- 실제 결과를 보고한 뒤 Stage 3의 Windows/Linux native·6종 패키지·기능 수용 진입을 요청한다.
+- Stage 2 source·검증과 notes 완성 이연의 승인 범위를 완료했다.
+- exact source `ff48d15011e53169bfd97b13a4f7084c3284c289`에서 Stage 3의 전체 Windows/Linux native·
+  6종 패키지·동일 source 비게시 updater signing·실제 설치/기능 수용 진입을 요청한다.
