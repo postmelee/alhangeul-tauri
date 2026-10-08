@@ -5,8 +5,8 @@ Alhangeul의 유일한 지속 upstream은 [`edwardkim/rhwp`](https://github.com/
 ## 현재 고정 상태
 
 - upstream URL: `https://github.com/edwardkim/rhwp.git`
-- Stable release tag: `v0.8.6`
-- resolved commit: `f1f9c6ae58344ee9368996d3543f76b9345cf227`
+- Stable release tag: `v0.8.7`
+- resolved commit: `1a76570e833917d15817415a53c09ad61ab3203f`
 - 읽기 전용 source submodule: `third_party/rhwp`
 - 기계 검증 가능한 출처 lock: `rhwp-core.lock`
 - bundled WASM: `apps/studio-host/vendor/rhwp-core`
@@ -36,16 +36,24 @@ branch, 이동 가능한 floating ref, tag 없이 전달된 commit은 Stable 갱
 - `apps/studio-host/`: exact upstream Studio entry를 쓰는 Vite host, Tauri bridge와 desktop event·command·font leaf adapter, 최소 제품 UX 보정
 - `assets/`, `docs/`, `scripts/`: 제품 자산, 공식 문서와 운영 자동화
 
-studio host의 실제 Vite root와 entry는 각각 `third_party/rhwp/rhwp-studio`, 그 아래 `index.html`과 `src/main.ts`다. local `index.html`, `src/main.ts`, Toolbar, CanvasView, Ruler, renderer와 범용 dialog·style 복제본은 허용하지 않는다. 제품 title·접근성 label·새 창·로컬 글꼴 설정 항목·제품 style/icon만 HTML transform으로 보충하고, upstream import를 대체하는 alias는 native host·font policy·제품 정보에 필요한 12개 leaf adapter로 제한한다.
+studio host의 실제 Vite root와 entry는 각각 `third_party/rhwp/rhwp-studio`, 그 아래 `index.html`과 `src/main.ts`다. local `index.html`, `src/main.ts`, Toolbar, CanvasView, Ruler, renderer와 범용 dialog·style 복제본은 허용하지 않는다. 제품 title·접근성 label·새 창·로컬 글꼴 설정 항목·제품 style/icon을 최소 HTML/entry transform으로 보충하고, upstream import를 대체하는 alias는 native host·font policy·제품 정보에 필요한 12개 leaf adapter로 제한한다.
 
 `apps/studio-host/alhangeul-overrides.ts`가 adapter owner와 disposition의 진실 원천이다. `apps/studio-host/src/core/upstream-boundary.test.ts`는 12개 alias, `legacy-upstream-copy` 0개, 금지 entry와 제거된 shadow의 물리적 부재, adapter 300 LOC 상한을 검사한다. `tests/rhwp-baseline.test.mjs`는 exact entry, upstream 메뉴 command와 HWPX/PDF 실행 경계를 함께 고정한다. engine API나 renderer bug는 먼저 upstream에서 해결하고, 데스크톱 통합 차이는 이 경계 안의 leaf adapter에 둔다.
 
-`apps/studio-host/local-font-overrides.ts`는 위 alias를 우회하는 상대 import 두 곳을 같은
-`core/local-fonts` adapter로 연결한다. 대상은 pinned Studio의 `core/document-font-status.ts`와
-`core/font-substitution.ts`가 읽는 `./local-fonts.ts`뿐이다. Vite와 Vitest는 동일 resolver를
-사용하며 12개 alias 목록, upstream source와 renderer는 유지한다. 실제 상태 분석·표시 글꼴
-체인 회귀와 dev/build module 검증으로 별도 upstream 글꼴 캐시가 섞이지 않는지 확인한다.
-이 연결의 성공은 사용 선택의 영속 저장이나 모든 renderer의 글꼴 적용 성공을 뜻하지 않는다.
+`apps/studio-host/local-font-overrides.ts`는 위 alias를 우회하는 상대 import 다섯 곳을 같은
+`core/local-fonts` adapter로 연결한다. 대상은 pinned Studio의 `core/document-font-status.ts`,
+`core/font-substitution.ts`, `core/host-font-requests.ts`, `core/host-canvas-fonts.ts`,
+`core/wasm-bridge.ts`가 읽는 `./local-fonts.ts` 또는 `./local-fonts`뿐이다. Vite와 Vitest는
+동일 resolver를 사용하며 12개 alias 목록, upstream source와 renderer는 유지한다.
+실제 상태 분석·표시 글꼴 체인과 새 renderer 공급 회귀 및 dev/build module 검증으로 별도
+upstream 글꼴 캐시가 섞이지 않는지 확인한다. 이 연결의 성공은 사용 선택의 영속 저장이나
+모든 renderer의 글꼴 적용 성공을 뜻하지 않는다.
+
+`apps/studio-host/product-shell-entry.ts`는 exact main의 title import와 `initI18n()` 호출만
+연결한다. `ui/product-shell.ts`는 Tauri에서 기존 DesktopHost의 session·dirty title 소유권을
+유지하고 browser에서는 파일명·display-mode 변경을 Alhangeul 제목에 반영한다. upstream
+초기화 결과 뒤 접근성 h1을 ko/en 제품 문구로 정렬하며 번역 catalog나 renderer를 복제하지 않는다.
+단일 marker·label이 누락/중복되면 거부한다. 정적 HTML title/label도 첫 표시를 위해 유지한다.
 
 `apps/studio-host/local-font-entry-hooks.ts`는 exact `main.ts`의 `initializeDocument`와
 `promptLocalFontsIfNeeded` 시작점만 연결한다. 전자는 native 사용 선택 복원과 catalog 준비를
@@ -53,7 +61,7 @@ studio host의 실제 Vite root와 entry는 각각 `third_party/rhwp/rhwp-studio
 저장 성공 문구를 실행하지 않는다. 일반 browser는 upstream 안내를 유지한다. 두 함수 서명과
 설정 메뉴 marker는 단일 일치를 요구하며 변경되면 build를 실패시킨다. upstream 파일은 수정하지 않는다.
 
-`apps/studio-host/desktop-startup-entry.ts`는 v0.8.6의 `openBlankDocumentIfIdle` 시작점에서
+`apps/studio-host/desktop-startup-entry.ts`는 현재 pinned Studio의 `openBlankDocumentIfIdle` 시작점에서
 Tauri의 자동 빈 문서 생성만 생략한다. Alhangeul은 기존 idle 화면에서 시작하며
 `파일 → 새로 만들기`가 Rust native 세션을 먼저 만든다. browser의 자동 생성은 보존한다.
 이 경계 없이 upstream이 직접 만든 WASM 문서는 native 저장 세션이 없어 저장할 수 없다.
@@ -113,8 +121,8 @@ PDF command는 upstream `file:print-to-pdf` 메뉴 위치와 활성 규칙을 �
 
 ```sh
 scripts/update-upstream.sh \
-  --tag v0.8.6 \
-  --commit f1f9c6ae58344ee9368996d3543f76b9345cf227 \
+  --tag v0.8.7 \
+  --commit 1a76570e833917d15817415a53c09ad61ab3203f \
   --run-checks
 ```
 
@@ -132,11 +140,17 @@ base branch는 workflow top-level `BASE_BRANCH`가 단일 진실 원천이다. �
 
 candidate는 clean `devel` checkout에서 다음 순서를 지킨다.
 
-1. 허용된 current-pin 관리 참조를 ephemeral checkout 안에서 새 pin으로 맞춘다.
-2. `scripts/update-upstream.sh`로 source, Cargo lock, WASM과 provenance를 갱신한다.
-3. frozen pnpm 의존성을 준비한 뒤 플랫폼 중립 gate 전체, Ubuntu desktop Rust test·Clippy preflight와 changed-path allowlist를 한 번씩 검증한다.
-4. 검증이 모두 끝난 뒤 현재 repository에 한정된 GitHub App token을 발급한다.
-5. explicit allowlist만 stage해 새 branch에 non-force push하고 `devel` 대상 draft PR을 만든다.
+1. frozen pnpm 의존성과 clean-base automation contract를 확인한다.
+2. 허용된 current-pin 관리 참조를 새 pin으로 맞춘다. Windows·Linux thumbnail fixture 정의의
+   `rhwpSha`·`RHWP_SHA`도 포함하며 fixture hash·size와 preview 기대값은 보존한다.
+3. `scripts/update-upstream.sh`로 source, 네 native Cargo lock, fresh WASM과 provenance를 갱신한다.
+4. 플랫폼 중립 gate, Ubuntu desktop Rust test·Clippy preflight와 changed-path allowlist를 검증한다.
+5. 현재 repository에 한정된 GitHub App token을 발급하고, `scripts/rhwp-sync-publisher.sh commit`이
+   explicit allowlist만 stage해 local candidate commit을 만든다.
+6. commit 이후 `check:committed-rhwp`와 `test:automation`으로 target pin·HEAD·index·submodule과
+   fixture 참조 정합성을 확인한다. 실패하면 push와 PR 게시를 실행하지 않는다.
+7. `scripts/rhwp-sync-publisher.sh publish`가 remote branch 부재를 다시 확인하고 non-force push와
+   `devel` 대상 draft PR 생성을 수행한다.
 
 token은 `contents: write`와 `pull-requests: write`만 요청하며 auto approval·merge, release/tag, issue close, package publish와 Pages deploy에는 사용하지 않는다. 후보 본문은 old/new tag·commit, Stable release URL, 변경 경로와 자동 검증을 기록한다.
 

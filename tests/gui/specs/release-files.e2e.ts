@@ -18,7 +18,8 @@ const run = promisify(execFile);
 const marker = 'ALHANGEUL RELEASE FILE ROUNDTRIP 0123456789';
 let dialogIndex = 0;
 let restartIndex = 0;
-const exitGuard = process.platform === 'linux' && process.arch === 'arm64'
+const exitGuard = process.platform === 'linux'
+  && (process.arch === 'arm64' || process.env.ALHANGEUL_GUI_FEDORA_SESSION === '1')
   ? createSessionExitGuard({ timeoutMs: inputs.timeoutMs }) : null;
 
 describe('Final release file native document acceptance', () => {

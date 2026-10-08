@@ -17,6 +17,8 @@ export const MANAGED_REFERENCE_PATHS = Object.freeze([
   'docs/architecture/UPSTREAM.md',
   'tests/rhwp-pin.test.mjs',
   'apps/studio-host/src/core/upstream-boundary.test.ts',
+  'scripts/linux-thumbnail-core-fixtures.mjs',
+  'scripts/windows-thumbnail-fixtures.json',
 ]);
 
 export async function updateRhwpManagedReferences(options) {
@@ -58,6 +60,7 @@ export async function updateRhwpManagedReferences(options) {
 function referenceRules(values) {
   const { fromTag, fromCommit, toTag, toCommit } = values;
   return [
+    ...fixturePinRules(fromCommit, toCommit),
     exactRule('README.md', 'bundled-rhwp-badge', rhwpBadge(fromTag), rhwpBadge(toTag)),
     exactRule(
       'README.md',
@@ -97,6 +100,15 @@ function referenceRules(values) {
       `    expect(releaseTag).toBe('${fromTag}');`,
       `    expect(releaseTag).toBe('${toTag}');`,
     ),
+  ];
+}
+
+function fixturePinRules(fromCommit, toCommit) {
+  return [
+    exactRule('scripts/linux-thumbnail-core-fixtures.mjs', 'linux-fixture-pin',
+      `export const RHWP_SHA = '${fromCommit}';`, `export const RHWP_SHA = '${toCommit}';`),
+    exactRule('scripts/windows-thumbnail-fixtures.json', 'windows-fixture-pin',
+      `"rhwpSha": "${fromCommit}"`, `"rhwpSha": "${toCommit}"`),
   ];
 }
 

@@ -44,6 +44,13 @@ test('허용된 current pin 참조만 새 tag와 commit으로 갱신한다', asy
     );
     assert.match(boundary, new RegExp(`expectedUpstreamCommit = '${toCommit}'`));
     assert.match(boundary, new RegExp(`releaseTag\\)\\.toBe\\('${toTag}'\\)`));
+    const linux = await source(fixture.root, 'scripts/linux-thumbnail-core-fixtures.mjs');
+    assert.ok(linux.includes(`RHWP_SHA = '${toCommit}'`));
+    assert.ok(linux.includes(`HISTORICAL_SHA = '${fromCommit}'`));
+    const windows = JSON.parse(await source(fixture.root, 'scripts/windows-thumbnail-fixtures.json'));
+    assert.equal(windows.rhwpSha, toCommit);
+    assert.equal(windows.previousSha, fromCommit);
+    assert.deepEqual(windows.fixtures, [{ sha256: 'c'.repeat(64), bytes: 10 }]);
     assert.deepEqual(await historicalSources(fixture.root), historicalBefore);
   } finally {
     await rm(fixture.root, { recursive: true, force: true });
@@ -121,6 +128,22 @@ test('marker가 하나라도 다르면 어떤 파일도 쓰지 않는다', async
   }
 });
 
+for (const path of ['scripts/linux-thumbnail-core-fixtures.mjs', 'scripts/windows-thumbnail-fixtures.json']) {
+  for (const kind of ['missing', 'duplicate']) {
+    test(`fixture marker ${kind}를 거부하고 다른 참조도 보존한다: ${path}`, async () => {
+      const fixture = await createFixture();
+      try {
+        const original = await source(fixture.root, path);
+        await writeFile(join(fixture.root, path), kind === 'missing'
+          ? original.replace(fromCommit, 'd'.repeat(40)) : `${original}\n${original}`);
+        const before = await managedSources(fixture.root);
+        await assert.rejects(updateRhwpManagedReferences(options(fixture.root)), /fixture-pin marker 개수/);
+        assert.deepEqual(await managedSources(fixture.root), before);
+      } finally { await rm(fixture.root, { recursive: true, force: true }); }
+    });
+  }
+}
+
 test('동일 tag와 commit 재실행은 파일 I/O 없는 no-op이다', async () => {
   const result = await updateRhwpManagedReferences({
     fromTag,
@@ -188,6 +211,10 @@ async function createFixture() {
       'apps/studio-host/src/core/upstream-boundary.test.ts',
       `const expectedUpstreamCommit = '${fromCommit}';\nexpect(releaseTag).toBe('history');\n    expect(releaseTag).toBe('${fromTag}');\n`,
     ],
+    ['scripts/linux-thumbnail-core-fixtures.mjs',
+      `export const RHWP_SHA = '${fromCommit}';\nexport const HISTORICAL_SHA = '${fromCommit}';\n`],
+    ['scripts/windows-thumbnail-fixtures.json',
+      JSON.stringify({ rhwpSha: fromCommit, previousSha: fromCommit, fixtures: [{ sha256: 'c'.repeat(64), bytes: 10 }] }, null, 2)],
     ['tests/rhwp-pin-fetch.test.mjs', `const fixtureTag = '${fromTag}';\n`],
     [
       'apps/studio-host/src/core/local-fonts.test.ts',

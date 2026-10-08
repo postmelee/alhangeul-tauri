@@ -46,11 +46,21 @@ test('single always gate aggregates both reusable jobs at the merge candidate SH
   assert.ok(fast.jobs.contracts.steps.some((step) => step.run === 'pnpm run check:committed-rhwp'));
 });
 
-test('local default and PR acceptance include strict committed state without changing candidate post-update gate', async () => {
+test('strict committed state is checked locally, in PR acceptance and after the candidate commit', async () => {
   assert.ok(pkg.scripts.test.indexOf('check:committed-rhwp') < pkg.scripts.test.indexOf('test:upstream'));
   assert.ok(pkg.scripts.test.includes('test:automation'));
   const candidate = await readFile(new URL('../.github/workflows/rhwp-upstream-sync.yml', import.meta.url), 'utf8');
-  assert.doesNotMatch(candidate, /check:committed-rhwp/);
+  const steps = parse(candidate).jobs.candidate.steps;
+  const commit = steps.findIndex(step => step.name === 'Commit candidate locally');
+  const gate = steps.findIndex(step => step.name === 'Verify committed candidate automation contract');
+  const publish = steps.findIndex(step => step.name === 'Publish validated draft PR');
+  assert.ok(commit >= 0 && gate > commit && publish > gate);
+  for (const step of steps.slice(0, commit)) assert.doesNotMatch(step.run ?? '', /check:committed-rhwp/);
+  assert.match(steps[gate].run, /check:committed-rhwp[\s\S]*test:automation/);
+  for (const index of [gate, publish]) {
+    assert.equal(steps[index].if, undefined);
+    assert.equal(steps[index]['continue-on-error'], undefined);
+  }
   assert.doesNotMatch(pkg.scripts['test:upstream'], /committed-rhwp/);
 });
 

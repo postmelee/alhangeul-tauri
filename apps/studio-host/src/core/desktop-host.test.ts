@@ -105,7 +105,9 @@ describe('desktop host', () => {
 
     host.markDocumentDirty();
     host.markDocumentDirty();
+    expect(document.title).toBe('• opened.hwp - Alhangeul');
     const result = await host.saveCurrent();
+    expect(document.title).toBe('opened.hwp - Alhangeul');
 
     expect(fixture.invoke).toHaveBeenCalledTimes(7);
     expect(fixture.invoke).toHaveBeenCalledWith('mark_document_dirty', { docId: 'saved' });

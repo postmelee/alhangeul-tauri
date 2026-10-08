@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { PRODUCT_SHA, assertCandidateIdentity } from '../scripts/ci/release-file-candidate.mjs';
 import { LINUX_CANDIDATES, PRODUCER_RUN, selectLinuxInstaller } from '../scripts/ci/release-linux-candidate.mjs';
+const read = path => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 
 for (const [kind, candidate] of Object.entries(LINUX_CANDIDATES)) {
   test(`${kind}: ordinary release identity cannot be replaced by another run/archive`, () => {
@@ -29,7 +30,6 @@ for (const [kind, candidate] of Object.entries(LINUX_CANDIDATES)) {
 }
 
 test('Linux release acceptance keeps package dependency resolution and strict GUI gates', async () => {
-  const read = path => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
   const workflow = await read('.github/workflows/alhangeul-release-linux-files.yml');
   const rpm = await read('scripts/ci/accept-release-fedora.sh');
   const arm = await read('scripts/ci/accept-release-arm64.sh');
@@ -57,4 +57,17 @@ test('Linux release acceptance keeps package dependency resolution and strict GU
   assert.match(session, /local result=\$\?/);
   assert.match(session, /exit "\$result"/);
   assert.doesNotMatch(rpm + arm, /--nodeps|--skip-broken|--ignorearch|\|\| true/);
+});
+
+test('Fedora container는 실제 non-root SVG loader를 확인하고 내부 sandbox를 유지한다', async () => {
+  const workflow = await read('.github/workflows/alhangeul-release-linux-files.yml');
+  const rpm = await read('scripts/ci/accept-release-fedora.sh');
+  assert.match(workflow, /--security-opt apparmor=unconfined/);
+  assert.match(workflow, /src=\$PWD,dst=\$PWD,readonly/);
+  assert.doesNotMatch(workflow, /--privileged|--cap-add|apparmor_parser|sysctl/);
+  assert.match(rpm, /phase=gtk-icon-loader/);
+  assert.match(rpm, /runuser -u acceptance -- python3/);
+  assert.match(rpm, /GdkPixbuf\.Pixbuf\.new_from_file\(source\)/);
+  assert.match(rpm, /assert image\.get_width\(\) > 0 and image\.get_height\(\) > 0/);
+  assert.doesNotMatch(rpm, /GLYCIN_DISABLE_SANDBOX|GDK_PIXBUF_MODULE_FILE|GTK_USE_PORTAL|--skip-broken|--nodeps/);
 });

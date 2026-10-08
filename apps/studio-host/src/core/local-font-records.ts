@@ -1,3 +1,4 @@
+import type { HostFontReference } from './host-font-contract';
 import {
   filterAuthoringFontFamilies,
   isAuthoringBlockedFontFamily,
@@ -10,12 +11,15 @@ export interface LocalFontEntry {
   postScriptName: string;
   style: string;
   weight?: number;
+  slant?: 'normal' | 'italic' | 'oblique';
+  hostReference?: HostFontReference;
   sourceKind: 'system-installed' | 'file-backed';
   path?: string | null;
 }
 
 export interface LocalFontRecord {
   sourceKey?: string;
+  hostReference?: HostFontReference;
   family: string;
   fullName: string;
   postscriptName: string;
@@ -25,6 +29,7 @@ export interface LocalFontRecord {
 }
 
 export function fontEntryKey(entry: LocalFontEntry): string {
+  if (entry.hostReference) return entry.hostReference.key;
   return JSON.stringify([entry.path ?? null, entry.postScriptName, entry.style,
     entry.weight ?? null, entry.sourceKind, entry.path ? null : entry.family]);
 }
@@ -63,6 +68,7 @@ export function uniqueAuthoringFamilies(entries: LocalFontEntry[]): string[] {
 export function toLocalFontRecord(entry: LocalFontEntry): LocalFontRecord {
   return {
     sourceKey: fontEntryKey(entry),
+    ...(entry.hostReference ? { hostReference: entry.hostReference } : {}),
     family: entry.sourceKind === 'file-backed' && entry.path
       ? entry.fullName || entry.family : entry.family,
     fullName: entry.fullName || entry.postScriptName,

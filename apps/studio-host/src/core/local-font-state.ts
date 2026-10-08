@@ -2,6 +2,14 @@ import { normalizeFontEntries, type LocalFontEntry } from './local-font-records'
 import { createLocalFontLookup, type LocalFontLookup } from './local-font-lookup';
 import { subscribeFontPreferences } from './local-font-preferences';
 import { resetDesktopFontProvider } from './local-font-provider';
+import { HostFontSource } from './host-font-source';
+
+const listeners = new Set<() => void>();
+export const hostFontSource = new HostFontSource(invalidateFontCatalog);
+export function onFontCatalogChanged(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => { listeners.delete(listener); };
+}
 
 let entries: LocalFontEntry[] | null = null;
 let lookup: LocalFontLookup | null = null;
@@ -22,6 +30,8 @@ export function invalidateFontCatalog(): void {
   error = null;
   pending = null;
   resetDesktopFontProvider();
+  hostFontSource.reset();
+  for (const listener of listeners) listener();
 }
 
 subscribeFontPreferences(invalidateFontCatalog);

@@ -14,7 +14,7 @@ import {
 import { DESKTOP_CSP_INLINE_HIDDEN_SELECTORS } from './desktop-toolbar-mode-sync';
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..');
-const expectedUpstreamCommit = 'f1f9c6ae58344ee9368996d3543f76b9345cf227';
+const expectedUpstreamCommit = '1a76570e833917d15817415a53c09ad61ab3203f';
 const expectedIdsByOwner = {
   'font-policy': [
     'core/font-loader',
@@ -93,6 +93,8 @@ describe('upstream Studio override boundary', () => {
       const source = readFileSync(resolve(repositoryRoot, 'apps/studio-host', config), 'utf8');
       expect(source).toContain("from './local-font-overrides'");
       expect(source).toContain('createAlhangeulLocalFontPlugin({ upstreamSrc, alhangeulSrc })');
+      expect(source).toContain("from './product-shell-entry'");
+      expect(source).toContain('createProductShellEntry(upstreamSrc, alhangeulSrc)');
     }
   });
 
@@ -389,7 +391,7 @@ describe('upstream Studio override boundary', () => {
     const lockCommit = lock.match(/^rhwp_commit = "([0-9a-f]{40})"$/m)?.[1];
     const releaseTag = lock.match(/^rhwp_release_tag = "([^"]+)"$/m)?.[1];
     expect(lockCommit).toBe(expectedUpstreamCommit);
-    expect(releaseTag).toBe('v0.8.6');
+    expect(releaseTag).toBe('v0.8.7');
 
     const submoduleRoot = resolve(repositoryRoot, 'third_party/rhwp');
     expect(git(['rev-parse', 'HEAD'], submoduleRoot)).toBe(expectedUpstreamCommit);

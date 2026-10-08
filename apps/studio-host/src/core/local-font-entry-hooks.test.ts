@@ -13,8 +13,9 @@ describe('pinned local-font entry hooks', () => {
     expect(result.indexOf('await __alhangeulPrepareFonts({')).toBeLessThan(
       result.indexOf("console.log('[initDoc] 1. 폰트 로딩 시작')"),
     );
-    expect(result).toContain('session?.invalidateDocument();');
-    expect(result).toContain('await view?.loadDocument();');
+    expect(result).toContain('await view?.refreshFontResources();');
+    expect(result).not.toContain('session?.invalidateDocument();');
+    expect(result).not.toContain('await view?.loadDocument();');
     const code = ts.transpileModule(result, { reportDiagnostics: true, compilerOptions: {
       target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext,
     } });
@@ -45,4 +46,49 @@ describe('pinned local-font entry hooks', () => {
     expect(() => transformLocalFontEntry(`${main}\n${main}`, '/controller.ts')).toThrow('marker mismatch');
     expect(() => transformLocalFontEntry(transformLocalFontEntry(main, '/controller.ts'), '/controller.ts')).toThrow('duplicate');
   });
+  it('refreshes font resources without reloading the document and paints after font preparation', async () => {
+    const calls: string[] = [];
+    let key = 'before';
+    const renderer = { prepareLocalFonts: async () => { calls.push('prepare-fonts'); } };
+    const view = { refreshFontResources: async () => { calls.push('refresh-fonts'); key = 'after'; },
+      loadDocument: async () => { calls.push('reload-document'); }, getRenderBackend: () => 'canvaskit' };
+    const session = { invalidateDocument: () => { calls.push('invalidate-document'); },
+      getCanvasKitRenderer: () => renderer, diagnostics: () => ({ decisionKey: key }) };
+    const binding = fontBinding({ docInfo: { fontsUsed: ['Abel'] }, rendererSession: session,
+      canvasView: view, eventBus: { emit: (name: string) => { calls.push(name); } }, analyzeDocumentFonts: () => ({}) });
+    await binding.refreshView(() => true);
+    expect(calls).toEqual(['refresh-fonts', 'prepare-fonts', 'document-view-changed']);
+  });
+
+  it('does not paint a replaced document after awaiting local fonts', async () => {
+    const calls: string[] = [];
+    let current = true;
+    const renderer = { prepareLocalFonts: async () => { current = false; } };
+    const view = { refreshFontResources: async () => {}, getRenderBackend: () => 'canvaskit' };
+    const session = { getCanvasKitRenderer: () => renderer, diagnostics: () => ({ decisionKey: 'current' }) };
+    const binding = fontBinding({ docInfo: { fontsUsed: ['Abel'] }, rendererSession: session,
+      canvasView: view, eventBus: { emit: (name: string) => { calls.push(name); } }, analyzeDocumentFonts: () => ({}) });
+    await binding.refreshView(() => current);
+    expect(calls).toEqual([]);
+  });
+
 });
+
+function fontBinding(scope: Record<string, unknown>): { refreshView(isCurrent: () => boolean): Promise<void> } {
+  const source = transformLocalFontEntry(main, '/controller.ts');
+  const ast = ts.createSourceFile('main.ts', source, ts.ScriptTarget.Latest, true);
+  let binding: ts.Expression | undefined;
+  function visit(node: ts.Node): void {
+    if (ts.isCallExpression(node) && node.expression.getText(ast) === '__alhangeulPrepareFonts') {
+      binding = node.arguments[0];
+    }
+    ts.forEachChild(node, visit);
+  }
+  visit(ast);
+  if (!binding) throw new Error('missing native font binding');
+  const code = ts.transpileModule(`const binding = ${binding.getText(ast)};`, { compilerOptions: {
+    target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext,
+  } }).outputText;
+  return new Function('scope', `const {docInfo,rendererSession,canvasView,eventBus,analyzeDocumentFonts}=scope;
+    ${code}; return binding;`)(scope);
+}

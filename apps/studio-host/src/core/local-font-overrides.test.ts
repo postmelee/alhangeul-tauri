@@ -13,7 +13,9 @@ const upstreamSrc = resolve(hostRoot, '../../third_party/rhwp/rhwp-studio/src');
 const alhangeulSrc = resolve(hostRoot, 'src');
 const paths = { upstreamSrc, alhangeulSrc };
 const adapter = normalizePath(resolve(alhangeulSrc, 'core/local-fonts.ts'));
-const consumers = ['document-font-status', 'font-substitution'];
+const consumers = ['document-font-status', 'font-substitution',
+  'host-font-requests', 'host-canvas-fonts', 'wasm-bridge'];
+const existingConsumers = ['document-font-status', 'font-substitution'];
 
 function config() {
   return {
@@ -29,6 +31,7 @@ describe('local-font import boundary', () => {
   it.each(consumers)('redirects only the exact %s consumer', (name) => {
     const importer = resolve(upstreamSrc, `core/${name}.ts`);
     expect(resolveAlhangeulLocalFontImport('./local-fonts.ts', importer, paths)).toBe(adapter);
+    expect(resolveAlhangeulLocalFontImport('./local-fonts', importer, paths)).toBe(adapter);
     expect(resolveAlhangeulLocalFontImport('./local-fonts.ts', `${importer}?v=1`, paths))
       .toBe(adapter);
     expect(resolveAlhangeulLocalFontImport('./local-fonts.ts', importer.replaceAll('/', '\\'), paths))
@@ -98,7 +101,7 @@ describe('local-font import boundary', () => {
     const modules = outputs.flatMap(({ output }) => output.flatMap((item) =>
       item.type === 'chunk' ? Object.keys(item.modules) : []));
     expect(modules.filter((id) => id.endsWith('/core/local-fonts.ts'))).toEqual([adapter]);
-    for (const name of consumers) {
+    for (const name of existingConsumers) {
       expect(modules).toContain(normalizePath(resolve(upstreamSrc, `core/${name}.ts`)));
     }
   });

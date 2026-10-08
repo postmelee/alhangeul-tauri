@@ -26,6 +26,28 @@ export XDG_RUNTIME_DIR="/tmp/alhangeul-runtime-$ACCEPTANCE_UID"
 install -d -m 0700 -o acceptance -g acceptance "$XDG_RUNTIME_DIR"
 export XDG_CURRENT_DESKTOP=Openbox XDG_SESSION_TYPE=x11 GDK_BACKEND=x11
 export ALHANGEUL_GUI_FEDORA_SESSION=1
+phase=gtk-icon-loader
+# Exercise Fedora's real SVG loader as the same unprivileged GUI user.
+runuser -u acceptance -- cat /proc/self/attr/current > "$ALHANGEUL_GUI_OUTPUT_DIR/container-apparmor.txt"
+runuser -u acceptance -- python3 - "$ALHANGEUL_GUI_OUTPUT_DIR" <<'PYICON'
+from pathlib import Path
+import json
+import sys
+import gi
+
+gi.require_version('GdkPixbuf', '2.0')
+from gi.repository import GdkPixbuf
+
+root = Path(sys.argv[1])
+source = '/usr/share/icons/Adwaita/scalable/status/image-missing.svg'
+image = GdkPixbuf.Pixbuf.new_from_file(source)
+assert image.get_width() > 0 and image.get_height() > 0
+image.savev(str(root / 'fedora-gtk-icon.png'), 'png', [], [])
+(root / 'fedora-gtk-icon.json').write_text(json.dumps({
+    'source': source, 'width': image.get_width(), 'height': image.get_height(),
+    'status': 'passed',
+}) + '\n')
+PYICON
 phase=gui
 runuser -u acceptance -- env "PATH=$PATH" bash scripts/ci/run-release-file-gui.sh
 phase=complete

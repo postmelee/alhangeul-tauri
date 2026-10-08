@@ -8,6 +8,7 @@ import { RHWP_SYNC_ALLOWED_PATHS } from '../scripts/verify-rhwp-sync-changes.mjs
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const workflowPath = join(repoRoot, '.github/workflows/rhwp-upstream-sync.yml');
 const workflow = await readFile(workflowPath, 'utf8');
+const publisher = await readFile(join(repoRoot, 'scripts/rhwp-sync-publisher.sh'), 'utf8');
 const updateScript = await readFile(join(repoRoot, 'scripts/update-upstream.sh'), 'utf8');
 const rhwpLock = await readFile(join(repoRoot, 'rhwp-core.lock'), 'utf8');
 const resolveJob = getJob(workflow, 'resolve');
@@ -95,7 +96,10 @@ test('clean-base automation 계약 뒤 관리 참조와 target gate를 실행한
     '- name: Verify changed-path allowlist',
     '- name: Write draft PR body',
     '- name: Create current-repository GitHub App token',
-    '- name: Commit, push and open draft PR',
+    '- name: Commit candidate locally',
+    '- name: Verify committed candidate automation contract',
+    'pnpm run check:committed-rhwp',
+    '- name: Publish validated draft PR',
   ]);
   const cleanBaseStep = getStepContaining(candidateJob, 'Verify clean-base automation contract');
   const targetGateStep = getStepContaining(candidateJob, 'Run platform-neutral gates');
@@ -103,43 +107,56 @@ test('clean-base automation 계약 뒤 관리 참조와 target gate를 실행한
   assert.match(cleanBaseStep, /pnpm run test:automation/);
   assert.doesNotMatch(targetGateStep, /pnpm install|test:automation/);
   assert.equal((candidateJob.match(/pnpm install --frozen-lockfile/g) ?? []).length, 1);
-  assert.equal((candidateJob.match(/pnpm run test:automation/g) ?? []).length, 1);
+  assert.equal((candidateJob.match(/pnpm run test:automation/g) ?? []).length, 2);
   assert.match(candidateJob, /cargo install wasm-pack --version "\$WASM_PACK_VERSION" --locked/);
   assert.match(candidateJob, /wasm-pack \$WASM_PACK_VERSION/);
   assert.match(candidateJob, /libwebkit2gtk-4\.1-dev/);
 });
 
 test('changed path와 explicit staging 범위를 승인된 파일로 제한한다', () => {
-  assert.equal(RHWP_SYNC_ALLOWED_PATHS.length, 17);
+  assert.equal(RHWP_SYNC_ALLOWED_PATHS.length, 19);
   assert.match(candidateJob, /node scripts\/verify-rhwp-sync-changes\.mjs/);
   assert.match(candidateJob, /--output "\$RUNNER_TEMP\/rhwp-sync-changed-paths\.txt"/);
-  assert.match(candidateJob, /git add -- \\/);
+  assert.match(publisher, /git add -- \\/);
   for (const path of ['crates/document-preview/Cargo.lock',
-    'apps/thumbnail-worker/Cargo.lock', 'apps/linux-thumbnailer/Cargo.lock']) {
+    'apps/thumbnail-worker/Cargo.lock', 'apps/linux-thumbnailer/Cargo.lock',
+    'scripts/linux-thumbnail-core-fixtures.mjs', 'scripts/windows-thumbnail-fixtures.json']) {
     assert.ok(RHWP_SYNC_ALLOWED_PATHS.includes(path));
-    assert.ok(getStepContaining(candidateJob, 'gh pr create').includes(path));
+    assert.ok(publisher.includes(path));
   }
-  assert.match(candidateJob, /apps\/studio-host\/vendor\/rhwp-core \\/);
-  assert.match(candidateJob, /rhwp-core\.lock tests\/rhwp-pin\.test\.mjs third_party\/rhwp/);
-  assert.match(candidateJob, /diff -u "\$RUNNER_TEMP\/rhwp-sync-changed-paths\.txt"/);
+  assert.match(publisher, /apps\/studio-host\/vendor\/rhwp-core \\/);
+  assert.match(publisher, /rhwp-core\.lock tests\/rhwp-pin\.test\.mjs third_party\/rhwp/);
+  assert.match(publisher, /diff -u "\$RUNNER_TEMP\/rhwp-sync-changed-paths\.txt"/);
 });
 
-test('App token은 모든 검증 뒤 현재 저장소 최소 권한으로만 발급한다', () => {
+test('App token은 source/native preflight 뒤 현재 저장소 최소 권한으로만 발급한다', () => {
   const tokenStep = getStepContaining(candidateJob, 'actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1');
   assert.match(tokenStep, /client-id: \$\{\{ vars\.ALHANGEUL_AUTOMATION_CLIENT_ID \}\}/);
   assert.match(tokenStep, /private-key: \$\{\{ secrets\.ALHANGEUL_AUTOMATION_APP_PRIVATE_KEY \}\}/);
   assert.match(tokenStep, /permission-contents: write/);
   assert.match(tokenStep, /permission-pull-requests: write/);
   assert.doesNotMatch(tokenStep, /permission-issues|owner:|repositories:/);
-  assert.equal((candidateJob.match(/steps\.app-token\.outputs\.token/g) ?? []).length, 1);
-  const publish = getStepContaining(candidateJob, 'gh pr create');
+  assert.equal((candidateJob.match(/steps\.app-token\.outputs\.token/g) ?? []).length, 2);
+  const publish = getStepContaining(candidateJob, 'Publish validated draft PR');
   assert.match(publish, /GH_TOKEN: \$\{\{ steps\.app-token\.outputs\.token \}\}/);
-  assert.match(publish, /git push origin "HEAD:refs\/heads\/\$BRANCH"/);
-  assert.match(publish, /gh pr create[\s\S]*--base "\$BASE_BRANCH" --head "\$BRANCH" --draft/);
-  assert.match(publish, /--body-file "\$RUNNER_TEMP\/rhwp-sync-pr-body\.md"/);
-  assert.match(publish, /remote_status=0/);
-  assert.match(publish, /remote_status != 2/);
-  assert.match(publish, /Failed to verify the automation branch/);
+  assert.match(publisher, /git push origin "HEAD:refs\/heads\/\$BRANCH"/);
+  assert.match(publisher, /gh pr create[\s\S]*--base "\$BASE_BRANCH" --head "\$BRANCH" --draft/);
+  assert.match(publisher, /--body-file "\$RUNNER_TEMP\/rhwp-sync-pr-body\.md"/);
+  assert.match(publisher, /remote_status=0/);
+  assert.match(publisher, /remote_status != 2/);
+  assert.match(publisher, /Failed to verify the automation branch/);
+});
+
+test('committed target 검사 뒤 default success gate로만 같은 candidate HEAD를 게시한다', () => {
+  const commit = getStepContaining(candidateJob, 'Commit candidate locally');
+  const gate = getStepContaining(candidateJob, 'Verify committed candidate automation contract');
+  const publish = getStepContaining(candidateJob, 'Publish validated draft PR');
+  assert.match(commit, /rhwp-sync-publisher\.sh commit/);
+  assert.match(gate, /check:committed-rhwp[\s\S]*test:automation/);
+  assert.match(publish, /rhwp-sync-publisher\.sh publish/);
+  assert.match(publish, /CANDIDATE_SHA: \$\{\{ steps\.candidate-commit\.outputs\.candidate_sha \}\}/);
+  assert.doesNotMatch(gate + publish, /if:/);
+  assert.match(publisher, /Candidate HEAD changed/);
 });
 
 test('release 판정 값은 검증된 environment를 통해 shell에 전달한다', () => {
@@ -176,7 +193,7 @@ test('자동 merge, force push, release와 배포 동작을 포함하지 않는�
     /actions\/deploy-pages/,
     /\bgh issue close\b/,
   ]) {
-    assert.doesNotMatch(workflow, pattern);
+    assert.doesNotMatch(`${workflow}\n${publisher}`, pattern);
   }
 });
 
@@ -188,6 +205,7 @@ test('workflow와 helper 경계는 파일 크기 상한을 지킨다', async () 
     'scripts/rhwp-upstream-release-services.mjs',
     'scripts/verify-rhwp-sync-changes.mjs',
     'scripts/write-rhwp-sync-pr-body.mjs',
+    'scripts/rhwp-sync-publisher.sh',
   ]) {
     const source = await readFile(join(repoRoot, path), 'utf8');
     assert.ok(lineCount(source) <= 300, `${path} ${lineCount(source)} LOC`);

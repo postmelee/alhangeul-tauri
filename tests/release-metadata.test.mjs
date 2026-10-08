@@ -28,7 +28,7 @@ test('현재 HWP/HWPX release metadata를 읽기 전용으로 승인한다', asy
     fixturePaths.map((path) => readFile(join(repositoryRoot, path), 'utf8')),
   );
   assert.equal(result.productName, 'Alhangeul');
-  assert.equal(result.version, '0.1.1');
+  assert.equal(result.version, '0.1.2');
   assert.deepEqual(result.fileAssociations, ['hwp', 'hwpx']);
   assert.equal(result.updaterKeyFingerprint, '9f86f804067eff359cd32707137dfaaea8710450985dda86b0392da5db63b8f8');
   assert.deepEqual(after, before);
@@ -95,7 +95,7 @@ test('tracked updater release overlay 누락을 거부한다', async () => {
 test('CLI는 repository, root override와 잘못된 인자를 구분한다', async () => {
   const direct = runCli([]);
   assert.equal(direct.status, 0, direct.stderr);
-  assert.match(direct.stdout, /Release metadata check passed: Alhangeul 0\.1\.1/);
+  assert.match(direct.stdout, /Release metadata check passed: Alhangeul 0\.1\.2/);
 
   const fixture = await createFixture();
   try {
