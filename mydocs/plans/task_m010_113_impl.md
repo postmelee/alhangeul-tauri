@@ -724,3 +724,32 @@ gh workflow run alhangeul-desktop.yml --ref publish/task113 \
 - 이 metadata commit의 harness SHA를 제품 P와 구분해 새 candidate 경로의 NSIS/MSI/AppImage,
   RPM/arm64 및 Fedora VM을 실행한다. Windows PDF37733046031은 이미 P를 capture했다.
   desktop ref에는 pending을 한 건만 유지한다. Stage3 전체 완료·Stage4·main/공개 gate는 이후다.
+
+## Stage 3.5 남은 패키지 수용 harness 최소 보정
+
+- 승인한 Stage3의 candidate/acceptance 최소 보정 범위다. product P 및 실제 6 files·3 signatures는
+  그대로이며 새로운 제품 동작·native byte 변경은 없다. 문서는 기존 승인 위치와 working 하위 보고에 둔다.
+- Windows PDF37733046031은 success, source P·ordinary37728636737이다. fresh/restart HWP6/HWPX10
+  총 A4 32쪽을 시각 검토했다. signed exact-file37736564625는 NSIS/MSI/AppImage 설치·문서·
+  글꼴 off/on·반복 입력/scroll 전체 success다. actual structured evidence는 최종 수용 기록에 연결한다.
+- Linux full37732474374의 실제 Nautilus/Thunar cache·helper 호출 증거도 확인했다.
+  두 manager 모두 실제 HWP/HWPX first2→cached2→changed4, failure success PNG0이다.
+- Linux-file37737163861은 실패를 유지한다. RPM은 고정 image fb31d002...의 manifest404로 설치 전
+  중단했고 arm64는 document spec1을 통과한 뒤 x64 전용 font-performance spec이 잘못 선택됐다.
+  config의 font spec은 승인 범위인 signed nsis/msi/appimage에만 연결한다. arm64/RPM의 document·
+  restart assertion과 x64 spec 내부 guard, retries0은 그대로다. 실제 config import 회귀3건을 추가했다.
+- Fedora 공식44 Linux/amd64 immutable manifest를 registry metadata로 검증했다.
+  [공식 container 안내](https://fedoraproject.org/en/misc/)의 quay.io/fedora/fedora에서
+  tag44 index sha256:ba35579e107f26a4c2c000390fb3ff549f3858a9584a6b5a35f7fa51f54de309,
+  amd64 sha256:cd3513b19e87220eb6fba1aeb041cf88f9c00c3b1de213c36db7532c383f4a1c,
+  config sha256:f938ca6f501bc4b8892197e50dad1fcd318a8fe18cb3298fa61154cba95e57f8다.
+  header/body hash·arch/os·version44를 확인했고 기존 digest404는 보존했다. Mac container 실행은 없다.
+- 독립 Fedora VM37738091057은 실제 RPM 설치와 처음 두 session restart 후 세 번째
+  POST /session timeout으로 실패했다. 당시 owned tauri-driver/WebKitWebDriver는 남고 app은 없었다.
+  OOM/제품 결함으로 단정하지 않는다. 기존 UID/PID/start-time/driver ownership app exit fence를
+  Fedora session에도 적용하고 VM allowlist에 누락된 process probe만 추가한다. 종료 강제 kill,
+  blind retry, timeout 증가, assertion skip은 없다. 이 보정 효과는 새 실제 VM 결과 전에는 미확인이다.
+- 로컬 automation1330/1330, GUI typecheck·bash syntax 및 action pins·boundary·diff 검증을 완료했다.
+  하위3.5 보고서는 성공한 로컬 harness 범위만 기록한다. 실패 run을 전체 수용으로 승격하지 않는다.
+- 새 harness SHA에서 fast CI와 exact RPM/arm64·Fedora VM을 실행한다. desktop 동일 ref pending은
+  한 건만 유지한다. P의 기존 full/signing과 파일 digest를 재사용하며 binary를 재빌드하지 않는다.

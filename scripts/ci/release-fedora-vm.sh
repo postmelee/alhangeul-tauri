@@ -92,7 +92,8 @@ read -r candidate_source candidate_run candidate_version candidate_sha < <(
 printf '%s  candidate.rpm\n' "$candidate_sha" > "$vm_root/payload/candidate.sha256"
 (cd "$vm_root/payload" && sha256sum --check candidate.sha256)
 tar -cf - package.json node_modules tests/gui scripts/ci/release-fedora-vm-guest.sh \
-  scripts/ci/release-fedora-vm-session.sh scripts/ci/release-candidate-input.mjs apps/studio-host/vendor/rhwp-core \
+  scripts/ci/release-fedora-vm-session.sh scripts/ci/release-file-process-probe.sh \
+  scripts/ci/release-candidate-input.mjs apps/studio-host/vendor/rhwp-core \
   third_party/rhwp/samples/biz_plan.hwp third_party/rhwp/samples/hwpx/form-002.hwpx \
   | tar -xf - -C "$vm_root/payload"
 tar -C "$vm_root/payload" -czf "$vm_root/payload.tar.gz" .

@@ -4,7 +4,8 @@ import { createSharedWdioConfig, readGuiHarnessInputs } from './wdio.shared.conf
 
 const inputs = readGuiHarnessInputs();
 const productionCheck = process.env.ALHANGEUL_GUI_PRODUCTION_CHECK === 'true';
-const fontInteraction = !productionCheck && Boolean(process.env.RELEASE_CANDIDATE_PATH);
+const fontInteraction = !productionCheck && Boolean(process.env.RELEASE_CANDIDATE_PATH)
+  && ['nsis', 'msi', 'appimage'].includes(process.env.CANDIDATE_KIND ?? '');
 const service: TauriServiceOptions = {
   appBinaryPath: inputs.appPath, tauriDriverPath: inputs.driverPath,
   driverProvider: 'external', autoInstallTauriDriver: false,

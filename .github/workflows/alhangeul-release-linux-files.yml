@@ -84,7 +84,7 @@ jobs:
         shell: bash
         env:
           INSTALLER_PATH: ${{ steps.candidate.outputs.installer }}
-          FEDORA_IMAGE: quay.io/fedora/fedora@sha256:fb31d002de20bfa7742b8c9b0d0ff723bb9fa2534fd43ecac0101a35f703fef0
+          FEDORA_IMAGE: quay.io/fedora/fedora@sha256:cd3513b19e87220eb6fba1aeb041cf88f9c00c3b1de213c36db7532c383f4a1c
         run: |
           if [[ "$CANDIDATE_KIND" == arm64 ]]; then
             bash scripts/ci/accept-release-arm64.sh

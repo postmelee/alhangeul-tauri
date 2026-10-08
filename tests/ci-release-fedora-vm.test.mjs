@@ -50,3 +50,16 @@ test('VM diagnostics remain readable and preserve cloud-init and cleanup failure
   assert.doesNotMatch(host, /cloud-init status[^\n]*\|\| true/);
   assert.match(host, /if \[\[ "\$code" == 0 \]\]; then code=1; fi/);
 });
+
+test('Fedora 재시작은 기존 소유 app exit fence와 payload process probe를 사용한다', async () => {
+  const host = await read('scripts/ci/release-fedora-vm.sh');
+  const session = await read('scripts/ci/release-fedora-vm-session.sh');
+  const spec = await read('tests/gui/specs/release-files.e2e.ts');
+  assert.match(host, /scripts\/ci\/release-fedora-vm-session\.sh scripts\/ci\/release-file-process-probe\.sh/);
+  assert.match(session, /ALHANGEUL_GUI_FEDORA_SESSION=1/);
+  assert.match(session, /test -r scripts\/ci\/release-file-process-probe\.sh/);
+  assert.match(spec, /process\.arch === 'arm64' \|\| process\.env\.ALHANGEUL_GUI_FEDORA_SESSION === '1'/);
+  assert.match(spec, /exitGuard\.deleteSession\(original, \.\.\.args\)/);
+  assert.match(spec, /exitGuard\?\.assertCompleted\(\)/);
+  assert.doesNotMatch(session, /killall|pkill|force-kill/);
+});
