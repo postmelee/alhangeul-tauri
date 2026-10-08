@@ -915,3 +915,22 @@ gh workflow run alhangeul-desktop.yml --ref publish/task113 \
 - 승인 후 actual production59/59·전체 automation1331/1331·fail/skip0·diff check를 수용했다.
   기존 실패 CI/로컬 로그는 보존한다. 다음 push에 따른 새 PR head의 자동 required만 확인하며
   같은 source의 blind rerun·native rebuild·보호 변경은 하지 않는다. #113 OPEN 유지다.
+
+## Stage4.5 data merge 승인·actual Pages 입력 — 2026-10-09 02:37 KST
+
+- 최신 PR119 required37815889210 attempt1의 Node/Windows/required3job 전체success·head8bb6a641/
+  실제 checkoutb2133999/tree76c6d69e·CLEAN·closingReferences=[]를 확인했다. 원격 automation1331/
+  upstream39/Studio283(43files), Windows notes124/production59·PowerShell83sources/16isolated다.
+- 제시한 exact head8bb6a641/base8a91bf52·일반 merge/보호 유지·후속 actualSHA 입력에 대해
+  작업지시자가 “PR119 일반 merge 진행 (권장)”으로 승인했다. 기록 `2026-10-08T17:31:15.935Z`다.
+- 실제 merge `2026-10-08T17:31:18Z`·devel `1f33d03918b50a5b9140978a9eb28d1b5e65ebe6`/tree `76c6d69e4be59df1efd252a761980e16e1b0ba49`와
+  두 parent·remote 일치·main6d 불변·Issue113 OPEN을 확인했다. 소유한 local/task113만 ff했다.
+- actual devel에서 generic Pages build/check source19/output23을 수용하고23 bytes/hash를 frozen
+  inventory로 고정했다. manifest2371/hash58ca348b...·download6/updater3·기존 key/endpoint다.
+  github-pages의 devel branch policy·환경/보호 유지·activePages0·currentfeed011/hash654efd7e...다.
+- 다음 **승인 대기** 범위는 existing pages.yml --ref devel/deploy_ref `1f33d03918b50a5b9140978a9eb28d1b5e65ebe6`의
+  workflow/source/checkout exact, 기존 환경으로 Pages/production manifest012 공개, 실제 artifact23
+  및 HTTP23 bytes·6downloads/manifest3·공개 desktop/mobile 화면 대조다. native build/signing/
+  Release/tag 변경이나 실제 upgrade source/harness 수정/실행은 없다. ref/상태 drift는 중단 후 판단한다.
+- 기존 승인 docs/releases·mydocs plans/working/report/orders에 currentCI/merge/출력·승인 입력을
+  기록한다. 실제011→012 승인·검증과 최종 record PR/close/cleanup이 남아 branch/자료는 유지한다.
