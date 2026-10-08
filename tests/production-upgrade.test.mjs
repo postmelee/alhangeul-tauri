@@ -89,16 +89,27 @@ test('Windows rejects reboot incomplete executable version wrong or association 
   }
 });
 
-const currentData = JSON.parse(await readFile(new URL('../site/release.json', import.meta.url)));
-test('production pinned manifest matches the current generated public feed bytes', () => {
-  const bytes = serializeUpdaterManifest(buildUpdaterManifest(currentData), currentData);
+const recordedNotes = JSON.parse(await readFile(new URL(`../docs/releases/${spec.releases.next.tag}.notes.json`, import.meta.url)));
+const recordedInventory = recordedNotes.metadata.updaterInventory;
+const recordedData = {
+  status: recordedNotes.metadata.status,
+  channel: 'stable',
+  version: recordedNotes.metadata.version,
+  tag: recordedNotes.metadata.tag,
+  publishedAt: recordedNotes.metadata.publishedAt,
+  notes: recordedNotes.content.updaterSummary,
+  downloads: Object.fromEntries(Object.entries(recordedInventory.targets).map(([target, entry]) => [target, entry.url])),
+  updater: { endpoint: spec.endpoint, manifestPublished: true, inventory: recordedInventory },
+};
+test('production pinned manifest matches the recorded next release bytes', () => {
+  const bytes = serializeUpdaterManifest(buildUpdaterManifest(recordedData), recordedData);
   assert.equal(digest(bytes), MANIFEST_HASH);
   assert.equal(spec.manifestSha256, digest(bytes));
-  const changed = clone(currentData); changed.notes += '\nChanged release guidance';
+  const changed = clone(recordedData); changed.notes += '\nChanged release guidance';
   assert.notEqual(digest(serializeUpdaterManifest(buildUpdaterManifest(changed), changed)), MANIFEST_HASH);
 });
 test('signed inventory rejects path traversal and wrong product identity', () => {
-  const inventory = currentData.updater.inventory;
+  const inventory = recordedData.updater.inventory;
   validateInventory(inventory, spec.releases.next, spec);
   const bad = clone(inventory); bad.targets['windows-x86_64-nsis'].path = '../' + bad.targets['windows-x86_64-nsis'].path;
   assert.throws(() => validateInventory(bad, spec.releases.next, spec));

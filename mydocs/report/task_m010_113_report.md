@@ -176,3 +176,10 @@ GitHub body6186/03cde7aa... read-back 통과, 기존 공개시각/asset/tag/채�
 이 데이터 PR은 구현 작업PR117 및 releasePR118 뒤의 delivery 데이터 인계다. devel PR required
 결과를 확인한 뒤 일반 merge와 exact merged devel Pages SHA의 배포를 별도 승인받는다.
 remote Pages/feed011·actual011→012·최종 close/cleanup은 후속이며 #113을 완료로 닫지 않는다.
+
+### PR119 최초 CI와 Stage4.4.1 — 2026-10-09 02:21 KST
+
+첫 required37814746426은 Node1329/1331·Windows57/59의 같은2 fixed010→011 입력 충돌로 전체
+failure였다. 명시 승인한 unit1파일의 recorded011 입력 보정과 actual59/automation1331 수용을
+[Stage4.4.1](../working/task_m010_113_stage4.4.1.md)에 기록했다. 새 head required를 확인한 뒤
+merge 승인받으며 old failure·site/feed011·actual011→012 미실행을 유지한다. #113 OPEN이다.

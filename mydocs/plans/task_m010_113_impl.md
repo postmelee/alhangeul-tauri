@@ -897,3 +897,21 @@ gh workflow run alhangeul-desktop.yml --ref publish/task113 \
   임시 tab/server를 정리했다. production 웹/모바일/upgrade 수용으로 승격하지 않는다.
 - 단계 소스·보고를 묶어 정상 ff publish/task113→devel Open data PR을 게시한다. PR required는
   실제 merge candidate에서 자동 실행된1회 결과만 확인하고 불필요한 dispatch/재실행은 하지 않는다.
+
+## Stage4.4.1 고정 production 회귀 보정 승인·수용 — 2026-10-09 02:21 KST
+
+- PR119/head a414f536/합성59d4a11c의 최초 CI37814746426 attempt1은 Node/Windows/required 전체
+  failure다. Node1329/1331·Windows57/59의 같은2건을 보존하고 로컬에서도 재현했다. 기존010→011
+  회귀가 새 site012를 읽는 입력 혼합이며 제품/공개 artifact 결함으로 단정하지 않는다.
+- 준비한 tests/production-upgrade.test.mjs1파일 diff·임시 검토 tree59/59와 입력 보정 범위를
+  제시했고 작업지시자가 “고정 회귀 입력 보정·재검증 (권장)”으로 명시 승인했다. 근거 기록
+  `2026-10-08T17:18:56.148Z`, patch `d77dd76b7f92e2d041628ff7f560a7ede57f0cff9e5478471fd7f2d98244a1ec`다.
+- 해당2계약의 입력만 spec.next011의 published 원문으로 재구성한다. 고정hash/변조거부·inventory
+  source/path assertion, runtime helper/CLI/workflows·010→011입력·MANIFEST_HASH·사이트012/본문/
+  manifest/key/endpoint는 유지했다. 실제011→012 migration과 실행은 후속 승인 범위다.
+- tests/production-upgrade.test.mjs는295→306LOC다. 기존59 negative/CLI gate와 해당 recorded
+  fixture context를1파일에 두는11행 재구성의 최소 diff여서 권장300LOC 예외를 기록한다. 별도
+  fixture 파일·중복된 full payload·helper source 변경을 만들지 않는다.
+- 승인 후 actual production59/59·전체 automation1331/1331·fail/skip0·diff check를 수용했다.
+  기존 실패 CI/로컬 로그는 보존한다. 다음 push에 따른 새 PR head의 자동 required만 확인하며
+  같은 source의 blind rerun·native rebuild·보호 변경은 하지 않는다. #113 OPEN 유지다.
