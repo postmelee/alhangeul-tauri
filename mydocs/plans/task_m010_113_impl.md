@@ -753,3 +753,27 @@ gh workflow run alhangeul-desktop.yml --ref publish/task113 \
   하위3.5 보고서는 성공한 로컬 harness 범위만 기록한다. 실패 run을 전체 수용으로 승격하지 않는다.
 - 새 harness SHA에서 fast CI와 exact RPM/arm64·Fedora VM을 실행한다. desktop 동일 ref pending은
   한 건만 유지한다. P의 기존 full/signing과 파일 digest를 재사용하며 binary를 재빌드하지 않는다.
+
+### Stage 3.5 원격 결과와 3.6 Fedora container 보정
+
+- harness20bcc1fd8f7d951fb64175f3577ed7b4efcccb6b의 fast37741256674는 Node·Windows 전체 success다.
+  automation1330/upstream39/Studio43 test files·notes124/Windows59 및 PowerShell 계약을 통과했다.
+- Linux-file37741260462 전체는 failure다. arm64 job은 candidate·실제 DEB 설치·HWP/HWPX·4 restart·
+  upload·gate 전체 success, app exit fence4회에서 DELETE 뒤21~51ms 실제 종료를 확인했다.
+  ARM evidence11533478392/sha256:79dee45877cc7dbf56a9d7667152d024e0235023c466547641af6029dfb38cdb다.
+- RPM candidate·실제 설치는 success, GUI는 failure다. dialog wait 전에 GTK icon helper가
+  /usr/share/icons/Adwaita/scalable/status/image-missing.svg의 Glycin bwrap exit1로 abort했다.
+  accessibility apps0·최종 app없음·oom_kill0. RPM evidence11533868937/
+  sha256:08f08bb436d3fd9fdf88e72cf196897f6d6048c1f8b0343f18396a5011b5541b를 검증했다.
+- [Fedora 유사 보고](https://bugzilla.redhat.com/show_bug.cgi?id=2412232)와
+  [Docker AppArmor 설명](https://docs.docker.com/engine/security/apparmor/)을 대조했다.
+  nested sandbox 실행 조건을 확인하기 위해 일회성 RPM container에 apparmor=unconfined를 지정한다.
+  기존 seccomp=unconfined·read-only code mounts·단일 evidence write mount·비root GUI는 유지한다.
+  host AppArmor 정책/daemon/sysctl을 변경하거나 privileged/cap-add·Docker socket·credential을 주지 않는다.
+  제품·Glycin 내부 sandbox·icon loader를 변경하거나 끄지 않는다. 실제 효과는 새 결과 전 미확인이다.
+- 동일 비root user의 GdkPixbuf SVG load·positive size·실제 PNG를 GUI 전에 필수 확인한다.
+  실패는 phase=gtk-icon-loader/exit nonzero로 보존한다. dialog/assertion/timeout/retry는 그대로다.
+- 초기 추가 테스트 read helper scope1 오류를 보정한 automation1331/1331·bash syntax·action pins29/165/11·
+  boundary819·diff check 통과. 로컬3.6 하위 보고만 완료하며 RPM/독립 VM 전체 수용은 진행 중이다.
+- 독립 VM37741321797은 J20bcc1fd를 이미 capture했다. 새 harness에서 RPM-only를 한 건만 대기열에
+  넣고 ARM의 성공 범위는 별도 기록한다. 미확인 전체 수용·Stage4·공개 gate로 승격하지 않는다.

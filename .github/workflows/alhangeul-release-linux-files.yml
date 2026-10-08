@@ -92,7 +92,8 @@ jobs:
             docker pull "$FEDORA_IMAGE"
             docker image inspect "$FEDORA_IMAGE" > candidate-evidence/fedora-image.json
             node_directory=$(dirname "$(dirname "$(command -v node)")")
-            docker run --rm --security-opt seccomp=unconfined --shm-size=1g \
+            docker run --rm --security-opt seccomp=unconfined \
+              --security-opt apparmor=unconfined --shm-size=1g \
               --mount "type=bind,src=$PWD,dst=$PWD,readonly" \
               --mount "type=bind,src=$ALHANGEUL_GUI_OUTPUT_DIR,dst=$ALHANGEUL_GUI_OUTPUT_DIR" \
               --mount "type=bind,src=$node_directory,dst=$node_directory,readonly" \
