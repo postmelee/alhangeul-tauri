@@ -5,6 +5,7 @@ import type { Plugin } from 'vite';
 import { createAlhangeulOverrides } from './alhangeul-overrides';
 import { createAlhangeulLocalFontPlugin } from './local-font-overrides';
 import { createLocalFontEntryHooks } from './local-font-entry-hooks';
+import { createProductShellEntry } from './product-shell-entry';
 import { createDesktopStartupEntry } from './desktop-startup-entry';
 import { insertStudioMenuItem } from './studio-menu-hooks';
 
@@ -128,6 +129,7 @@ export default defineConfig({
   plugins: [
     createAlhangeulLocalFontPlugin({ upstreamSrc, alhangeulSrc }),
     createLocalFontEntryHooks(upstreamSrc, alhangeulSrc),
+    createProductShellEntry(upstreamSrc, alhangeulSrc),
     createDesktopStartupEntry(upstreamSrc, alhangeulSrc),
     alhangeulDesktopShell(),
     alhangeulFontAssets(),

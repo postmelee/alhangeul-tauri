@@ -4,7 +4,7 @@
 GitHub Issue: [#113](https://github.com/postmelee/alhangeul-tauri/issues/113)
 마일스톤: M010
 작성일: 2026-10-07 (Asia/Seoul)
-상태: Stage 1 완료 — devel v0.8.7 통합·required·현재 pin no-op 수용 / Stage 2 진입 승인 대기
+상태: Stage 2 로컬 검증 완료 — source/report 커밋 후 exact Windows/Linux fast 확인 예정
 
 ## 승인 기록과 입력
 
@@ -460,3 +460,54 @@ Stage 2의 나머지 제품 0.1.2 정합화·수용·공개 gate는 그대로 �
 - 검증은 원래 Stage 2 명령과 실제 title/locale 집중 회귀다. source 보정·version·notes 검증 완료 후
   다음 stage 승인 gate를 유지한다. main은 `7acff6bc...`·공개 latest는 v0.1.1이며 main 승격 전 daily
   workflow는 이전 publisher 순서다. 다른 Stable positive run 미실행도 유지한다.
+
+
+## Stage 2 착수 승인 — 2026-10-08
+
+- Stage 1 보고 후 제품 버전·창 제목/번역·미게시 릴리즈 노트 정합화의 Stage 2 진입 요청에
+  같은 스레드의 “진행해줘”가 승인했다. source 작업은 local/task113 `6e0db926...`에서 이어간다.
+  origin/devel `bad55757...`와 #113 OPEN, upstream latest v0.8.7은 착수 시 재확인했다.
+- 제목은 Tauri에서 기존 DesktopHost의 native session/dirty title 소유권을 유지한다. browser에서는
+  파일명·display-mode 이벤트를 제품명으로 연결한다. main의 exact title import와 initI18n 호출만
+  작은 product-shell entry transform으로 연결하고 12개 alias와 upstream 본문은 유지한다.
+- locale은 upstream initI18n 결과 뒤 제품 접근성 h1을 ko/en 문구로 정렬한다. upstream 번역 catalog를
+  복제하거나 메뉴/renderer 전체를 대체하지 않는다. title·locale·drift의 집중 회귀를 함께 검증한다.
+- 현재 notes validator는 draft에도 source SHA·실제 6개 파일 size/hash와 3종 signed inventory를
+  요구한다. 아직 Stage 3/최종 source 수용 전이므로 이를 꾸며 채우지 않는다.
+  v0.1.2.md에 사용자 문구를 먼저 준비하고 exact bytes 확인 후 JSON·생성물을 완성하는 순서 조정을
+  작업지시자에게 요청했다. 답변 전에는 schema 완화·JSON 가상 metadata 작성·Stage 3 실행을 하지 않는다.
+- 문서 위치는 기존 승인된 architecture·docs/releases와 mydocs plans/working/orders다.
+  오늘 보드는 20261008.md로 이어가고 20261007.md의 실제 기록은 유지한다.
+
+
+### notes 완성 순서 조정 승인 — 2026-10-08
+
+작업지시자가 “기존 규격 유지·JSON 완성 이연 (권장)”을 선택했다. Stage 2의 notes 산출물은
+기존 `docs/releases/v0.1.2.md`에 구체적인 사용자 문구·포함 PR·지원/설치·한계 초안으로 준비한다.
+`docs/releases/v0.1.2.notes.json`과 생성 body/HTML/short notes의 완성은 Stage 3의 실제 6개 파일·
+3 updater inventory 검증 후로 이연한다. 이 순서 조정은 승인됐으며 validator/schema는 유지한다.
+Stage 2에서는 기존 published 원문과 generation 계약의 검증을 실행하고 새 JSON 생성 성공으로
+기록하지 않는다. 실제 공개 main/bytes 확정 시 notes source/inventory를 다시 정합화한다.
+
+
+### Stage 2 구현·로컬 수용과 원격 fast 입력
+
+- 제품 version 표면 5개가 0.1.2다. desktop Cargo.lock은 제품 package version 한 줄만 변경했고
+  upstream source/gitlink·native dependency blocks·WASM 6개 bytes·pnpm lock·key/endpoint는 유지한다.
+- exact main의 title import/initI18n만 연결하는 product-shell-entry(28 LOC)와 product-shell(29 LOC)을
+  Vite/Vitest에 등록했다. native title/dirty 소유권·browser 파일명/mode change·실제 upstream ko/en
+  초기화·반복 초기화·누락/중복/drift 회귀에 성공했다. alias는 12개, renderer/entry 본문은 그대로다.
+- 기존 UPSTREAM/LOCAL_FONTS 설명을 현재 상대 소비자 5개·title/locale·host/catalog 경계로 최소 정렬했다.
+  v0.1.2.md(131 LOC)에 사용자 문구·포함 PR·한계·미실행 gate를 준비하고 인덱스에 미게시로 추가했다.
+- frozen pnpm·product boundary/version/metadata/pin/committed/action pins·release notes 통과.
+  focused 32, Studio 281/43 files, automation 1321, upstream 39, release notes 124 tests 전부 통과·skip 0다.
+  TypeScript/Vite build·GUI typecheck·Pages source18/output22 검사 통과. generated production은0.1.1이며
+  source site/release.json과 동일하다. 새 notes JSON·body/HTML/short notes 생성은 승인대로 이연했다.
+- 최초 automation은 현재 metadata expected version 2곳이 0.1.1이라 1319/1321로 실패했다.
+  두 literal 기대값만 0.1.2로 맞춰 재검증했다. negative 계약·fingerprint·endpoint·검사 자체는 유지한다.
+- `task-stage-report`에 따라 source와 local stage report를 한 커밋으로 보존한다. source commit을
+  publish/task113에 non-force push한 후 `ci.yml --ref publish/task113 scope=full/profile=fast`를
+  한 번 실행한다. 실제 head/workflow/checkout SHA와 Linux Node/Studio·Windows PS 성공을 고정한다.
+  이는 승인된 Stage 2 fast이며 full/native/package/GUI·PR required 수용으로 확대하지 않는다.
+- 원격 결과 전 다음 Stage로 진입하지 않는다. 최종 Task PR은 원래 Stage 4에서 만들며 이번에는
+  단순 fast 실행을 위한 원격 branch만 사용한다. #113은 OPEN, main/public/site/feed는0.1.1 유지다.

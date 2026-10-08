@@ -93,6 +93,8 @@ describe('upstream Studio override boundary', () => {
       const source = readFileSync(resolve(repositoryRoot, 'apps/studio-host', config), 'utf8');
       expect(source).toContain("from './local-font-overrides'");
       expect(source).toContain('createAlhangeulLocalFontPlugin({ upstreamSrc, alhangeulSrc })');
+      expect(source).toContain("from './product-shell-entry'");
+      expect(source).toContain('createProductShellEntry(upstreamSrc, alhangeulSrc)');
     }
   });
 
