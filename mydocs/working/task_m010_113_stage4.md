@@ -3,7 +3,7 @@
 GitHub Issue: [#113](https://github.com/postmelee/alhangeul-tauri/issues/113)
 구현계획서: [`task_m010_113_impl.md`](../plans/task_m010_113_impl.md)
 Stage: 4
-상태: 구현 보고·규격 검증 완료 / 승인된 Open PR 게시 준비
+상태: 구현 보고·규격 검증·PR117 게시 완료 / final head required 확인 중
 확인일: 2026-10-08 (Asia/Seoul)
 
 ## 단계 목적
@@ -65,3 +65,11 @@ git status --short
 
 같은 스레드의 “진행해줘”가 Stage4 보고·devel Open PR 게시 승인이다. 이 범위는 재승인 없이 수행한다.
 구체적 PR 리뷰·merge 및 미확정 final main/게시 입력의 승인은 이후 결과와 함께 요청한다.
+
+### Stage4 원문·생성물 최종 정합
+
+actual PR117 반영 후 notes check2·tests124/124·local links·metadata/sourceP/actual6/3 동일을 확인했다.
+body는6170 bytes·SHA256 d7a344fcdf4605de050df58dae82dd98671c208ddbdef53e66383925e6b81066이다.
+HTML9106·9b399d1246d2170814dee7ad710f378f6149af5fa2ffea3e871b3fbd48612458,
+short358·adac1d9c80d8fb5186622a8cae34f36b6e543e062a70aef0c849cc623dbca57f는 동일하다.
+생성물은 /private/tmp/task113-stage4-notes-final이며 public site/feed/body는 아직 전환하지 않았다.

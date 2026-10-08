@@ -3,7 +3,7 @@
 GitHub Issue: [#113](https://github.com/postmelee/alhangeul-tauri/issues/113)
 마일스톤: M010
 확인일: 2026-10-08 (Asia/Seoul)
-상태: Stage1~4 구현 수용·보고 완료 / devel task PR 게시 준비 / 실제 릴리즈 전달은 계속 진행
+상태: Stage1~4 구현 수용·보고 완료 / devel task PR117 게시 / 실제 릴리즈 전달은 계속 진행
 
 ## 작업 요약
 
@@ -131,3 +131,19 @@ git status --short
 2026-10-08 같은 스레드의 “진행해줘”는 Stage4 최종 구현 보고·devel Open PR 게시 승인이다.
 이를 추가로 묻지 않고 게시한다. 이후 구체적 PR 리뷰·일반 merge와 후속 릴리즈 gate를 승인받는다.
 완료 범위는 구현·검증·인계 보고이며 #113의 실제 배포 작업은 계속 추적한다.
+
+### 실제 PR 게시 근거
+
+[PR117](https://github.com/postmelee/alhangeul-tauri/pull/117)은 승인한 publish/task113→devel Open PR이다.
+최초heade0511200, non-draft·closingIssuesReferences=[]를 확인했다. 원문에 actual PR117을 추가하고
+12 PR 실제 title/URL·기존11 merged·current117OPEN 및5 Issue 상태를 확인했다. issue113은 OPEN이다.
+후속 기록 commit은 기존 productP의 actual assets·signatures/status를 바꾸지 않는다. PR 필수 CI는
+actual final head/merge candidate에서 확인하고 PR checks·본문을 인계 근거로 사용한다.
+
+### Stage4 원문·생성물 최종 정합
+
+actual PR117 반영 후 notes check2·tests124/124·local links·metadata/sourceP/actual6/3 동일을 확인했다.
+body는6170 bytes·SHA256 d7a344fcdf4605de050df58dae82dd98671c208ddbdef53e66383925e6b81066이다.
+HTML9106·9b399d1246d2170814dee7ad710f378f6149af5fa2ffea3e871b3fbd48612458,
+short358·adac1d9c80d8fb5186622a8cae34f36b6e543e062a70aef0c849cc623dbca57f는 동일하다.
+생성물은 /private/tmp/task113-stage4-notes-final이며 public site/feed/body는 아직 전환하지 않았다.

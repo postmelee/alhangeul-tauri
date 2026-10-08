@@ -4,7 +4,7 @@
 GitHub Issue: [#113](https://github.com/postmelee/alhangeul-tauri/issues/113)
 마일스톤: M010
 작성일: 2026-10-07 (Asia/Seoul)
-상태: Stage4 승인·진행 — 최종 구현 보고·devel Open PR / 실제 공개 gate 유지
+상태: Stage4 구현 보고·PR117 게시 완료 — final head required 확인 / 실제 공개 gate 유지
 
 ## 승인 기록과 입력
 
@@ -801,3 +801,14 @@ gh workflow run alhangeul-desktop.yml --ref publish/task113 \
 - 선행 Stage3 P 수용·K fast는 exact 재사용이다. PR required는 실제 merge candidate SHA에서 확인한다.
   source bytes/native build로 오기하지 않는다. 합격 전 merge 승인 요청을 하지 않는다.
 - 이번 승인에는 self-merge·main 승격·최종 main/signing/Release/tag·Pages/feed·실제 upgrade가 없다.
+
+### Stage4 actual PR·원문 수용
+
+- PR117 actual non-draft OPEN/devel/publish-task113·closingIssuesReferences=[]를 확인하고 채팅에 연결했다.
+  최초head e0511200와productP를 구분한다. actual12 PR title/URL·기존11 merged/current117OPEN·5 Issue
+  상태를 재확인했다. #113 OPEN·resolvedIssues=[]다.
+- notes310LOC는 실제6 assets/3sig/12 PR/5Issue의 single strict JSON data다. 나누면 원문/inventory
+  schema·검증/생성 계약이 깨지므로 권장300LOC 예외를 기록하고 기존 schema·정확한 provenance를 유지한다.
+  기존 release 준비 기록도300LOC를 넘지만 FF/P 실패·수용 이력을 되돌리거나 누락하지 않는 운영 기록이다.
+- notes2/tests124·body6170/d7a344fc...·HTML9106/9b399d12...·short358/adac1d9c... 임시 생성물 수용,
+  sourceP/assets6/3sig/draft 상태는 그대로다. final head의 PR required를 확인 후 merge 승인 요청한다.
