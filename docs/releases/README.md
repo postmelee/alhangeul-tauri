@@ -9,7 +9,7 @@
 
 | 버전 | 상태 | 이전 공개 버전 | GitHub Release | 기록 |
 |---|---|---|---|---|
-| v0.1.2 | 구현·6종 파일 수용 완료·미게시, draft JSON 완성 / main·공개 인계 | v0.1.1 | 미게시 | [v0.1.2 준비 기록](v0.1.2.md) |
+| v0.1.2 | 최종 main6dcb05e9·새6종/서명 수용 완료·미게시 / exact11·본문 공개 승인 대기 | v0.1.1 | 미게시 | [v0.1.2 준비 기록](v0.1.2.md) |
 | v0.1.1 | Release·규격 body·웹·피드·검증 결과 안내 공개, 세 형식 실제 upgrade·HTTP 수용 완료 | v0.1.0 | [v0.1.1](https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.1) | [v0.1.1 공개 기록](v0.1.1.md), [안내 원문](v0.1.1.notes.json) |
 | v0.1.0 | stable 공개·Pages/updater 전환 및 동일 버전 조회 완료 | 없음 | [v0.1.0](https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.0) | [v0.1.0 공개 기록](v0.1.0.md) |
 

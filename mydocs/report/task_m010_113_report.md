@@ -147,3 +147,12 @@ body는6170 bytes·SHA256 d7a344fcdf4605de050df58dae82dd98671c208ddbdef53e663839
 HTML9106·9b399d1246d2170814dee7ad710f378f6149af5fa2ffea3e871b3fbd48612458,
 short358·adac1d9c80d8fb5186622a8cae34f36b6e543e062a70aef0c849cc623dbca57f는 동일하다.
 생성물은 /private/tmp/task113-stage4-notes-final이며 public site/feed/body는 아직 전환하지 않았다.
+
+## 후속 전달 Gate2~3 완료 — 2026-10-09
+
+PR117·PR118을 승인된 일반 merge로 devel/main에 통합했다. 실제 main6dcb05e9의
+ordinary37789356504·signed37789417321 및 새 actual6 files·3 signatures·DEB/signed3/RPM/ARM/
+Fedora KVM 수용을 완료했다. [현재 Stage4.2 보고](../working/task_m010_113_stage4.2.md)에
+정확한 source/harness·새 archive/file hashes·시각/문서/기능 결과·known limitation·exact11 및
+본문/checksum을 연결했다. 위의 Stage1~4 구현 P 수용과 실패 이력은 당시 기록으로 보존한다.
+현재 tag/Release012·Pages/feed·실제011→012는 미실행이며 Gate4 공개 승인을 기다린다. #113 OPEN이다.

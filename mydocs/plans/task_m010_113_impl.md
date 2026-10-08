@@ -839,3 +839,14 @@ gh workflow run alhangeul-desktop.yml --ref publish/task113 \
   독립 검증했다. draft notes의 actual6 files/3sig/sourceMain·실제13 merged PR/5Issue를 갱신했다.
   existing sourceP 기록은 기술 이력에 남기고 final 파일로 혼용하지 않는다. candidate JSON은
   새 main producer/run/ID/digest/hash만 사용하며 data-only harness로 새5종 설치/GUI를 실행한다.
+
+### 최종 main Gate2~3 완료
+
+- 새 signed3 GUI37802164321·RPM/ARM37802538555·FedoraVM37804655669 모두 H/data-only
+  harness·main6d actual bytes에서 attempt1/whole success다. 실제 문서2개씩·PK/hash·cleanup/
+  owned exits와 screenshot을 검산했고 총10 생성 문서를 bundled core로 독립 parse해 marker를 확인했다.
+- DEB37796099048의 8시나리오·29A4 PDF/가상print·thumbnail, signed3 각80입력/20scroll 및
+  RPM/ARM/VM 각4restarts를 수용했다. raw performance unverified·NSIS/3010 한계를 보존한다.
+- 기존 승인 위치의 Stage4.2 보고·release index/record·최종 구현 보고·오늘할일을 연결한다.
+  exact11 files·checksum10행·생성 body hash를 고정해 Gate4 CLI/tag/draft/Stable 공개 승인 입력으로
+  제시한다. 태그/Release/Pages/manifest/upgrade/close는 아직 실행하지 않는다.
