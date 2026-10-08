@@ -22,8 +22,7 @@ export function transformLocalFontEntry(source: string, controllerPath: string):
     refreshView: async (isCurrent) => {
       const session = rendererSession;
       const view = canvasView;
-      session?.invalidateDocument();
-      await view?.loadDocument();
+      await view?.refreshFontResources();
       if (!isCurrent() || view !== canvasView || session !== rendererSession
         || view?.getRenderBackend() !== 'canvaskit') return;
       const renderer = session?.getCanvasKitRenderer();

@@ -33,7 +33,8 @@ export ALHANGEUL_GUI_BUILD_REF ALHANGEUL_GUI_NATIVE_RUN_ID ALHANGEUL_GUI_APP_VER
 export ALHANGEUL_GUI_APP_PATH=/usr/bin/Alhangeul ALHANGEUL_GUI_DRIVER_PATH=/usr/local/bin/tauri-driver
 export ALHANGEUL_GUI_DRIVER_VERSION='tauri-driver 2.0.6' ALHANGEUL_GUI_TIMEOUT_MS=120000
 export ALHANGEUL_GUI_FIXTURE_ROOT="$PWD" ALHANGEUL_GUI_OUTPUT_DIR="$PWD/evidence"
-export NO_AT_BRIDGE=0 GTK_MODULES=gail:atk-bridge LANG=C.UTF-8
+export NO_AT_BRIDGE=0 GTK_MODULES=gail:atk-bridge LANG=C.UTF-8 ALHANGEUL_GUI_FEDORA_SESSION=1
+test -r scripts/ci/release-file-process-probe.sh
 # Independent snapshots survive a WebDriver hang and show whether a chooser exists.
 (
   for ((index=0; index<60; index++)); do

@@ -36,16 +36,24 @@ branch, 이동 가능한 floating ref, tag 없이 전달된 commit은 Stable 갱
 - `apps/studio-host/`: exact upstream Studio entry를 쓰는 Vite host, Tauri bridge와 desktop event·command·font leaf adapter, 최소 제품 UX 보정
 - `assets/`, `docs/`, `scripts/`: 제품 자산, 공식 문서와 운영 자동화
 
-studio host의 실제 Vite root와 entry는 각각 `third_party/rhwp/rhwp-studio`, 그 아래 `index.html`과 `src/main.ts`다. local `index.html`, `src/main.ts`, Toolbar, CanvasView, Ruler, renderer와 범용 dialog·style 복제본은 허용하지 않는다. 제품 title·접근성 label·새 창·로컬 글꼴 설정 항목·제품 style/icon만 HTML transform으로 보충하고, upstream import를 대체하는 alias는 native host·font policy·제품 정보에 필요한 12개 leaf adapter로 제한한다.
+studio host의 실제 Vite root와 entry는 각각 `third_party/rhwp/rhwp-studio`, 그 아래 `index.html`과 `src/main.ts`다. local `index.html`, `src/main.ts`, Toolbar, CanvasView, Ruler, renderer와 범용 dialog·style 복제본은 허용하지 않는다. 제품 title·접근성 label·새 창·로컬 글꼴 설정 항목·제품 style/icon을 최소 HTML/entry transform으로 보충하고, upstream import를 대체하는 alias는 native host·font policy·제품 정보에 필요한 12개 leaf adapter로 제한한다.
 
 `apps/studio-host/alhangeul-overrides.ts`가 adapter owner와 disposition의 진실 원천이다. `apps/studio-host/src/core/upstream-boundary.test.ts`는 12개 alias, `legacy-upstream-copy` 0개, 금지 entry와 제거된 shadow의 물리적 부재, adapter 300 LOC 상한을 검사한다. `tests/rhwp-baseline.test.mjs`는 exact entry, upstream 메뉴 command와 HWPX/PDF 실행 경계를 함께 고정한다. engine API나 renderer bug는 먼저 upstream에서 해결하고, 데스크톱 통합 차이는 이 경계 안의 leaf adapter에 둔다.
 
-`apps/studio-host/local-font-overrides.ts`는 위 alias를 우회하는 상대 import 두 곳을 같은
-`core/local-fonts` adapter로 연결한다. 대상은 pinned Studio의 `core/document-font-status.ts`와
-`core/font-substitution.ts`가 읽는 `./local-fonts.ts`뿐이다. Vite와 Vitest는 동일 resolver를
-사용하며 12개 alias 목록, upstream source와 renderer는 유지한다. 실제 상태 분석·표시 글꼴
-체인 회귀와 dev/build module 검증으로 별도 upstream 글꼴 캐시가 섞이지 않는지 확인한다.
-이 연결의 성공은 사용 선택의 영속 저장이나 모든 renderer의 글꼴 적용 성공을 뜻하지 않는다.
+`apps/studio-host/local-font-overrides.ts`는 위 alias를 우회하는 상대 import 다섯 곳을 같은
+`core/local-fonts` adapter로 연결한다. 대상은 pinned Studio의 `core/document-font-status.ts`,
+`core/font-substitution.ts`, `core/host-font-requests.ts`, `core/host-canvas-fonts.ts`,
+`core/wasm-bridge.ts`가 읽는 `./local-fonts.ts` 또는 `./local-fonts`뿐이다. Vite와 Vitest는
+동일 resolver를 사용하며 12개 alias 목록, upstream source와 renderer는 유지한다.
+실제 상태 분석·표시 글꼴 체인과 새 renderer 공급 회귀 및 dev/build module 검증으로 별도
+upstream 글꼴 캐시가 섞이지 않는지 확인한다. 이 연결의 성공은 사용 선택의 영속 저장이나
+모든 renderer의 글꼴 적용 성공을 뜻하지 않는다.
+
+`apps/studio-host/product-shell-entry.ts`는 exact main의 title import와 `initI18n()` 호출만
+연결한다. `ui/product-shell.ts`는 Tauri에서 기존 DesktopHost의 session·dirty title 소유권을
+유지하고 browser에서는 파일명·display-mode 변경을 Alhangeul 제목에 반영한다. upstream
+초기화 결과 뒤 접근성 h1을 ko/en 제품 문구로 정렬하며 번역 catalog나 renderer를 복제하지 않는다.
+단일 marker·label이 누락/중복되면 거부한다. 정적 HTML title/label도 첫 표시를 위해 유지한다.
 
 `apps/studio-host/local-font-entry-hooks.ts`는 exact `main.ts`의 `initializeDocument`와
 `promptLocalFontsIfNeeded` 시작점만 연결한다. 전자는 native 사용 선택 복원과 catalog 준비를
@@ -53,7 +61,7 @@ studio host의 실제 Vite root와 entry는 각각 `third_party/rhwp/rhwp-studio
 저장 성공 문구를 실행하지 않는다. 일반 browser는 upstream 안내를 유지한다. 두 함수 서명과
 설정 메뉴 marker는 단일 일치를 요구하며 변경되면 build를 실패시킨다. upstream 파일은 수정하지 않는다.
 
-`apps/studio-host/desktop-startup-entry.ts`는 v0.8.6의 `openBlankDocumentIfIdle` 시작점에서
+`apps/studio-host/desktop-startup-entry.ts`는 현재 pinned Studio의 `openBlankDocumentIfIdle` 시작점에서
 Tauri의 자동 빈 문서 생성만 생략한다. Alhangeul은 기존 idle 화면에서 시작하며
 `파일 → 새로 만들기`가 Rust native 세션을 먼저 만든다. browser의 자동 생성은 보존한다.
 이 경계 없이 upstream이 직접 만든 WASM 문서는 native 저장 세션이 없어 저장할 수 없다.

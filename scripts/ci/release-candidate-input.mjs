@@ -42,7 +42,9 @@ export function validateCandidate(document, kind) {
   assert.match(candidate.digest, /^sha256:[a-f0-9]{64}$/, 'archive digest');
   validatePath(candidate.path);
   const signed = kind === 'nsis' || kind === 'msi' || kind === 'appimage';
-  assert.equal(candidate.workflowPath, signed ? '.github/workflows/alhangeul-desktop.yml' : '.github/workflows/ci.yml');
+  const workflows = signed ? ['.github/workflows/alhangeul-desktop.yml'] :
+    ['.github/workflows/ci.yml', '.github/workflows/alhangeul-desktop.yml'];
+  assert.ok(workflows.includes(candidate.workflowPath), 'approved producer workflow');
   if (signed) {
     assert.equal(candidate.target, contract[1], 'updater target');
     assert.deepEqual(candidate.targets, kind === 'appimage' ? ['linux-x86_64-appimage'] :

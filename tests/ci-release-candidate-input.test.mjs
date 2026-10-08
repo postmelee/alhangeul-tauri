@@ -53,6 +53,26 @@ for (const kind of ['nsis', 'msi', 'appimage', 'rpm', 'arm64']) {
   });
 }
 
+for (const kind of ['rpm', 'arm64']) {
+  test(`${kind}: selected ordinary desktop producer retains exact package identity`, () => {
+    const input = document(kind);
+    input.candidates[kind].workflowPath = '.github/workflows/alhangeul-desktop.yml';
+    const selected = validateCandidate(input, kind);
+    assert.equal(selected.workflowPath, '.github/workflows/alhangeul-desktop.yml');
+    assert.equal(selected.productSha, sourceSha);
+    assert.equal(selected.producerRun, 12345);
+    assert.equal(selected.candidate.path, input.candidates[kind].path);
+    assert.equal(selected.candidate.sha256, input.candidates[kind].sha256);
+  });
+}
+for (const kind of ['nsis', 'msi', 'appimage']) {
+  test(`${kind}: signed candidates cannot use the unsigned CI workflow`, () => {
+    const input = document(kind);
+    input.candidates[kind].workflowPath = '.github/workflows/ci.yml';
+    assert.throws(() => validateCandidate(input, kind), /approved producer workflow/);
+  });
+}
+
 test('empty input preserves immutable v0.1.0 performance baseline', async () => {
   const fallback = { productSha: PRODUCT_SHA, producerRun: PRODUCER_RUN, candidate: CANDIDATES.msi };
   assert.equal(await loadCandidate('msi', fallback, ''), fallback);

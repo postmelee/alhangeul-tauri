@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { createAlhangeulOverrides } from './alhangeul-overrides';
 import { createAlhangeulLocalFontPlugin } from './local-font-overrides';
 import { createLocalFontEntryHooks } from './local-font-entry-hooks';
+import { createProductShellEntry } from './product-shell-entry';
 
 const upstreamSrc = resolve(__dirname, '../../third_party/rhwp/rhwp-studio/src');
 const alhangeulSrc = resolve(__dirname, 'src');
@@ -12,6 +13,7 @@ export default defineConfig({
   plugins: [
     createAlhangeulLocalFontPlugin({ upstreamSrc, alhangeulSrc }),
     createLocalFontEntryHooks(upstreamSrc, alhangeulSrc),
+    createProductShellEntry(upstreamSrc, alhangeulSrc),
   ],
   test: {
     environment: 'node',

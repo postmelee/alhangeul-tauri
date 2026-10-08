@@ -4,7 +4,7 @@
 GitHub Issue: [#113](https://github.com/postmelee/alhangeul-tauri/issues/113)
 마일스톤: M010
 작성일: 2026-10-07 (Asia/Seoul)
-상태: Stage 1 미완료 — 후보 검증 실패 / 호환성 선행 보정 승인 대기
+상태: Stage4 구현 보고·PR117 게시 완료 — final head required 확인 / 실제 공개 gate 유지
 
 ## 승인 기록과 입력
 
@@ -35,7 +35,7 @@ GitHub Issue: [#113](https://github.com/postmelee/alhangeul-tauri/issues/113)
 | current pin 안내 | README.md, docs/DEVELOPMENT.md, docs/architecture/UPSTREAM.md | 동일 | OK | 자동 marker만 갱신 |
 | adapter 계약 | 기존 docs/architecture | 실제 계약이 바뀐 기존 문서 | OK | 필요 시 최소 수정 |
 | 버전 기록·원문 | docs/releases | v0.1.2.md, v0.1.2.notes.json, README.md | OK | 기존 규격 |
-| 생성 웹·배포 데이터 | site | updates/v0.1.2/index.html, release.json | OK | 최신 전환은 공개 read-back 뒤 |
+| 생성 웹·배포 데이터 | site | updates/v0.1.2.html, release.json | OK | 최신 전환은 공개 read-back 뒤 |
 | 계획·단계·보고 | mydocs/plans, working, report | task_m010_113{,_impl,_stageN,_report}.md | OK | 한국어 작업 추적 |
 | 후보 identity | mydocs/working | task_m010_113.json | OK | 필요 시 기존 candidate schema 사용 |
 | 오늘할일 | mydocs/orders | 실제 작업일 YYYYMMDD.md | OK | 완료 시각은 실제 범위 완료 때 기록 |
@@ -198,7 +198,7 @@ focused 회귀와 PR required/fast 결과를 연결한다. 영향받지 않은 n
 
 현재 승인: 수행계획·구현계획과 Stage 1 후보 생성·검토에 더해, 2026-10-07 작업지시자의
 “진행해줘”로 아래 Stage 1.1 최소 소스 보정·선행 devel PR/일반 병합과 Stage 1.2 재실행이 승인됐다.
-Stage 1.3 보정안까지 승인받았으며 Stage 2의 나머지 작업 이후 진입 승인은 별도로 받는다.
+Stage 1.3 보정·선행 일반 통합·정리·현재 pin 확인은 완료했으며 Stage 2의 나머지 작업 진입 승인은 별도로 받는다.
 
 
 ## Stage 1 실행 결과와 순서 보정안 — 2026-10-07
@@ -421,3 +421,394 @@ Stage 2의 나머지 제품 0.1.2 정합화·수용·공개 gate는 그대로 �
   upstream은 선택된 commit 그대로이며 수동 source 변경이 없다.
 - 로컬 단계 보고서: `mydocs/working/task_m010_113_stage1.3.md`. 승인된 선행 PR의 remote required·
   일반 merge·superseded #115 정리·현재 pin no-op 결과는 전체 Stage 1 보고에 기록한다.
+
+
+## Stage 1.3 원격 수용·정리와 전체 Stage 1 완료 — 2026-10-07
+
+- 통합 [PR #116](https://github.com/postmelee/alhangeul-tauri/pull/116), head
+  `0770bd539c86e4799f0ee8fcd4e8aa06c97361ee`, base `00f93a8fda6897585750ebba9ea9b7a0db9c2b68`다.
+  [37594489485](https://github.com/postmelee/alhangeul-tauri/actions/runs/37594489485)의
+  Linux Node/Studio·Windows PowerShell·Alhangeul PR required 모두 success/Actions app_id 15368이다.
+- 실제 code COMMENT review·latest base/CLEAN·exact head를 확인해 2026-10-07T08:37:37Z 일반 merge했다.
+  devel/local task113은 `bad557572f070700d195df2288fe570483f67c3f`, bot `5ffd882...`는 ancestor다.
+- #115는 통합된 commit으로 GitHub가 08:37:39Z MERGED 처리했다. 수동 close 직전 경합의 read-back으로
+  최종 상태를 확인했다. #115의 실패 required를 성공으로 바꿔 기록하지 않는다. exact head 확인 뒤
+  불필요한 automation branch를 삭제·부재 확인했다. #113과 필요한 task branch/worktree는 유지한다.
+- 병합된 HEAD의 `check:rhwp-pin`은 v0.8.7/6 artifacts, `check:committed-rhwp`는 같은 commit으로 통과했다.
+- [37595544513](https://github.com/postmelee/alhangeul-tauri/actions/runs/37595544513),
+  workflow ref/checkout devel `bad55757...`, target_tag=v0.8.7/dry_run=false,
+  2026-10-07T08:42:19Z dispatch·08:45:27Z 완료다. resolve success·decision=current,
+  target/current `1a76570e833917d15817415a53c09ad61ab3203f` 동일·candidate_count=0·candidate conditional skip다.
+  열린 자동 후보도 API로 0개 확인했다. 이는 full positive writer 실행이 아니다.
+- 전체 [Stage 1 보고서](../working/task_m010_113_stage1.md)를 작성하고 기존 하위 단계 source/report
+  커밋을 보존한다. 위 실패 절은 당시 진단 이력이며 현재 전체 단계 수용과 구분한다.
+
+### Stage 2 진입 시 구체적 잔여 범위
+
+- 제품 root/desktop package·Tauri/Cargo manifest/lock을 0.1.2로 맞춘다. rhwp는 v0.8.7 고정이다.
+- 새 upstream `ui/document-title.ts`가 init/파일명 변경 시 쓰는 제품 제목을 최소 제품 hook/leaf로
+  연결하고 blank/document/파일명 변경 회귀를 확인한다. exact upstream entry/renderer는 유지한다.
+- 제품 접근성 h1은 기존 HTML transform 후 `showsOriginal` 조건 때문에 한국어 제품명 그대로 남는다.
+  초기 번역이 이를 upstream 이름으로 덮는다고 단정하지 않고 ko/en 실제 initI18n 계약에 맞는
+  제품 locale label 연결을 보정한다. 관련 source는 기존 Vite/entry hook과 작은 제품 helper·focused 회귀다.
+- 상대 font 소비자 5개와 renderer/catalog 계약을 승인된 기존 `docs/architecture/UPSTREAM.md`·
+  필요 시 `LOCAL_FONTS.md`의 해당 설명만 정합화한다. 새 공식 문서 루트를 만들지 않는다.
+- native PDF의 직접 registry svg2pdf와 upstream vendored patch의 소비 경계를 검토한다. 전체 native/PDF
+  수용은 Stage 3이며 새 dependency 적용이나 회귀를 추정만으로 기재하지 않는다.
+- `docs/releases/v0.1.2.md`·notes.json·기존 생성 출력은 미게시로 준비한다. 공개 site 최신 데이터는
+  실제 Release read-back 이후에 전환한다. 완료하지 않은 설치·출력·upgrade 성공 문구를 쓰지 않는다.
+- 검증은 원래 Stage 2 명령과 실제 title/locale 집중 회귀다. source 보정·version·notes 검증 완료 후
+  다음 stage 승인 gate를 유지한다. main은 `7acff6bc...`·공개 latest는 v0.1.1이며 main 승격 전 daily
+  workflow는 이전 publisher 순서다. 다른 Stable positive run 미실행도 유지한다.
+
+
+## Stage 2 착수 승인 — 2026-10-08
+
+- Stage 1 보고 후 제품 버전·창 제목/번역·미게시 릴리즈 노트 정합화의 Stage 2 진입 요청에
+  같은 스레드의 “진행해줘”가 승인했다. source 작업은 local/task113 `6e0db926...`에서 이어간다.
+  origin/devel `bad55757...`와 #113 OPEN, upstream latest v0.8.7은 착수 시 재확인했다.
+- 제목은 Tauri에서 기존 DesktopHost의 native session/dirty title 소유권을 유지한다. browser에서는
+  파일명·display-mode 이벤트를 제품명으로 연결한다. main의 exact title import와 initI18n 호출만
+  작은 product-shell entry transform으로 연결하고 12개 alias와 upstream 본문은 유지한다.
+- locale은 upstream initI18n 결과 뒤 제품 접근성 h1을 ko/en 문구로 정렬한다. upstream 번역 catalog를
+  복제하거나 메뉴/renderer 전체를 대체하지 않는다. title·locale·drift의 집중 회귀를 함께 검증한다.
+- 현재 notes validator는 draft에도 source SHA·실제 6개 파일 size/hash와 3종 signed inventory를
+  요구한다. 아직 Stage 3/최종 source 수용 전이므로 이를 꾸며 채우지 않는다.
+  v0.1.2.md에 사용자 문구를 먼저 준비하고 exact bytes 확인 후 JSON·생성물을 완성하는 순서 조정을
+  작업지시자에게 요청했다. 답변 전에는 schema 완화·JSON 가상 metadata 작성·Stage 3 실행을 하지 않는다.
+- 문서 위치는 기존 승인된 architecture·docs/releases와 mydocs plans/working/orders다.
+  오늘 보드는 20261008.md로 이어가고 20261007.md의 실제 기록은 유지한다.
+
+
+### notes 완성 순서 조정 승인 — 2026-10-08
+
+작업지시자가 “기존 규격 유지·JSON 완성 이연 (권장)”을 선택했다. Stage 2의 notes 산출물은
+기존 `docs/releases/v0.1.2.md`에 구체적인 사용자 문구·포함 PR·지원/설치·한계 초안으로 준비한다.
+`docs/releases/v0.1.2.notes.json`과 생성 body/HTML/short notes의 완성은 Stage 3의 실제 6개 파일·
+3 updater inventory 검증 후로 이연한다. 이 순서 조정은 승인됐으며 validator/schema는 유지한다.
+Stage 2에서는 기존 published 원문과 generation 계약의 검증을 실행하고 새 JSON 생성 성공으로
+기록하지 않는다. 실제 공개 main/bytes 확정 시 notes source/inventory를 다시 정합화한다.
+
+
+### Stage 2 구현·로컬 수용과 원격 fast 입력
+
+- 제품 version 표면 5개가 0.1.2다. desktop Cargo.lock은 제품 package version 한 줄만 변경했고
+  upstream source/gitlink·native dependency blocks·WASM 6개 bytes·pnpm lock·key/endpoint는 유지한다.
+- exact main의 title import/initI18n만 연결하는 product-shell-entry(28 LOC)와 product-shell(29 LOC)을
+  Vite/Vitest에 등록했다. native title/dirty 소유권·browser 파일명/mode change·실제 upstream ko/en
+  초기화·반복 초기화·누락/중복/drift 회귀에 성공했다. alias는 12개, renderer/entry 본문은 그대로다.
+- 기존 UPSTREAM/LOCAL_FONTS 설명을 현재 상대 소비자 5개·title/locale·host/catalog 경계로 최소 정렬했다.
+  v0.1.2.md(131 LOC)에 사용자 문구·포함 PR·한계·미실행 gate를 준비하고 인덱스에 미게시로 추가했다.
+- frozen pnpm·product boundary/version/metadata/pin/committed/action pins·release notes 통과.
+  focused 32, Studio 281/43 files, automation 1321, upstream 39, release notes 124 tests 전부 통과·skip 0다.
+  TypeScript/Vite build·GUI typecheck·Pages source18/output22 검사 통과. generated production은0.1.1이며
+  source site/release.json과 동일하다. 새 notes JSON·body/HTML/short notes 생성은 승인대로 이연했다.
+- 최초 automation은 현재 metadata expected version 2곳이 0.1.1이라 1319/1321로 실패했다.
+  두 literal 기대값만 0.1.2로 맞춰 재검증했다. negative 계약·fingerprint·endpoint·검사 자체는 유지한다.
+- `task-stage-report`에 따라 source와 local stage report를 한 커밋으로 보존한다. source commit을
+  publish/task113에 non-force push한 후 `ci.yml --ref publish/task113 scope=full/profile=fast`를
+  한 번 실행한다. 실제 head/workflow/checkout SHA와 Linux Node/Studio·Windows PS 성공을 고정한다.
+  이는 승인된 Stage 2 fast이며 full/native/package/GUI·PR required 수용으로 확대하지 않는다.
+- 원격 결과 전 다음 Stage로 진입하지 않는다. 최종 Task PR은 원래 Stage 4에서 만들며 이번에는
+  단순 fast 실행을 위한 원격 branch만 사용한다. #113은 OPEN, main/public/site/feed는0.1.1 유지다.
+
+
+### Stage 2 원격 fast 수용과 Stage 3 입력 고정 — 2026-10-08
+
+- source/report commit은 `ff48d15011e53169bfd97b13a4f7084c3284c289`다. 원격 publish/task113도 이 SHA다.
+- [37712633686](https://github.com/postmelee/alhangeul-tauri/actions/runs/37712633686),
+  ci.yml·scope=full/profile=fast, 2026-10-08T01:22:52Z dispatch, 전체 success다.
+  head/checkout SHA를 고정했고 select·Linux Node/Studio·Windows PS의 필수 step이 모두 success다.
+  auto comparison/native/package/installer conditional skip은 fast 범위이며 전체 수용으로 세지 않는다.
+- 원격 automation1321/upstream39/Studio281·build/GUI typecheck·notes/Pages/version/pin이 통과했다.
+  [Stage 2 보고서](../working/task_m010_113_stage2.md)에 job ID·완료시각·실제 범위를 기록했다.
+- 이후 기록 commit은 docs/mydocs뿐이다. source/report 최초 commit을 재작성하지 않고
+  publish/task113을 ff48d150...로 유지한다. 다음 product producer의 workflow/source를 같은 값으로 고정한다.
+- #113은 OPEN, devel은 bad55757.../제품0.1.1/core0.8.7, main은7acff6bc.../공개0.1.1이다.
+  Stage 2 source0.1.2와 미게시 상태를 구분한다. Stage 3 이후 실행은 승인 대기다.
+
+#### 검토 가능한 Stage 3 입력 (미실행)
+
+```bash
+gh workflow run alhangeul-desktop.yml --ref publish/task113 \
+  -f mode=artifact -f build_ref=ff48d15011e53169bfd97b13a4f7084c3284c289 \
+  -f artifact_platform=all -f validation_profile=full \
+  -f run_tests=true -f publish_release=false
+gh workflow run alhangeul-desktop.yml --ref publish/task113 \
+  -f mode=updater -f build_ref=ff48d15011e53169bfd97b13a4f7084c3284c289 \
+  -f release_version=0.1.2 -f release_tag=v0.1.2 \
+  -f release_notes='Alhangeul v0.1.2 비게시 검증 후보 — rhwp v0.8.7' \
+  -f publish_release=false
+```
+
+- dispatch 직전 원격 ref tip·workflow SHA·build_ref의 동일성을 확인한다. 임의 tag/force는 없다.
+- 기존 release environment의 production key로 NSIS/MSI/AppImage 3종과 signature/inventory를
+  준비하며 Secret 값은 출력·저장하지 않는다. public job은 publish_release=false 조건으로 실행하지 않는다.
+- 실제 run/attempt·archive ID/digest/만료·path/size/hash·Minisign을 검증하고 기존 승인된
+  `mydocs/working/task_m010_113.json` 경로에 실제 candidate identity를 기록한다.
+- Windows NSIS/MSI·Linux x64 AppImage/DEB/RPM·arm64 DEB의 새 bytes를 기존 exact-file Windows/
+  Linux/Fedora harness와 공개 문서·글꼴·PDF/system print·thumbnail/lifecycle에서 수용한다.
+  harness 기록만 바뀌면 product SHA와 구분하고 critical dependency/pin 정합성은 계속 검증한다.
+- 실제 6종 file·signed inventory 수용 후 새 notes JSON·body/HTML/short notes를 완성한다.
+  final main/새 final bytes/게시·Pages·production upgrade gate는 이 승인에 포함하지 않는다.
+
+
+## Stage 3 착수 승인 — 2026-10-08
+
+- Stage 2 보고와 exact ff48d150 source의 full native·6종 package·비게시 signing·설치/GUI
+  검증 요청에 같은 스레드의 “진행해줘”가 승인했다. 위 두 producer와 실제 파일/기능 수용을 진행한다.
+- 직전 재조회에서 publish/task113은 `ff48d15011e53169bfd97b13a4f7084c3284c289`, #113 OPEN이며
+  이 ref의 desktop 기존 run은 없다. 일반 producer와 동일 source의 signing을 한 번씩 dispatch한다.
+- source 변경 없이 local task의 기록은 이어간다. candidate/acceptance harness 기록·필요 최소 보정은
+  제품 source와 구분한다. main·Release/tag/Pages/feed·production upgrade는 후속 승인 gate다.
+
+
+### producer 시작·acceptance harness 최소 정렬
+
+- 일반 [37719733676](https://github.com/postmelee/alhangeul-tauri/actions/runs/37719733676),
+  서명 [37719736557](https://github.com/postmelee/alhangeul-tauri/actions/runs/37719736557),
+  두 head는 ff48d150...이며 2026-10-08T02:49:13Z/02:49:15Z dispatch했다.
+  같은 desktop ref concurrency로 서명은 일반 producer 뒤 pending이며 중복 dispatch하지 않는다.
+- 기존 `release-candidate-input.mjs`의 unsigned RPM/arm64 입력이 ci.yml만 허용해 승인한
+  ordinary desktop producer를 거부한다. 기존 verify-workflow-artifact와 Linux GUI는 desktop
+  producer를 이미 지원한다. 원래 승인한 수행계획의 새 release 수용 입력 최소 보정 범위다.
+- harness의 unsigned workflow allowlist만 ci.yml + alhangeul-desktop.yml로 명시한다. signed는
+  desktop.yml만 허용한다. version/tag/source/run·archive ID/digest·path/hash·목표 kind/platform과
+  실제 producer success 검증은 유지하고 불명확한 workflow를 거부한다. 제품 source FF는 바꾸지 않는다.
+- 두 unsigned kind의 실제 선택 identity 보존과 signed의 ci.yml 거부 회귀를 추가한다.
+  harness/plan은 향후 실제 candidate JSON과 별도 commit으로 기록하며 product SHA와 구분한다.
+
+### Stage 3 글꼴 기능 수용 연결
+
+- 기존 A/B performance producer는 v0.1.0 baseline의 WASM/gitlink 정합성을 요구하므로 새 v0.8.7
+  pin에 사용하지 않는다. baseline 검증과 비교 계약을 완화하지 않는다.
+- `wdio.release-files.conf.ts`는 검증된 새 candidate JSON이 있고 production updater check가
+  아닌 경우에만 기존 `local-font-performance.e2e.ts`를 문서 저장·재시작 spec과 함께 실행한다.
+  NSIS/MSI/AppImage의 실제 설치 bytes로 Windows/Linux x64, renderer 2종, 로컬 글꼴 off/on,
+  HWP/HWPX 5회 재열기·입력·6쪽 scroll을 확인한다. 이전 성능 수치나 개선률을 승계하지 않는다.
+- product FF·package bytes는 그대로이며 변경은 검사 harness다. native 설치·document spec·
+  cleanup·WebView policy·최종 upload gate는 유지한다. Linux DEB의 글꼴 재감지·재시작·새 창
+  기능은 별도 `scope=local-fonts`의 기존 시나리오로 수용한다.
+
+### Stage 3 안내 참고 범위 확인
+
+- 이전 공개 source `96e89e900...`부터 product FF까지 first-parent merge와 bot 통합을 대조했다.
+  #100·#101·#103·#104·#105·#106·#109·#111도 실제 포함되며 운영/웹/문서 참고로 기록한다.
+  이들의 기존 v0.1.1 공개/성능 결과를 새 파일 수용이나 주요 앱 기능으로 승계하지 않는다.
+- #97·#102·#108·#110의 CLOSED·completed와 #113 OPEN을 API에서 확인했다. 이전 운영
+  Issue는 참고로 유지하고 #113을 해결로 쓰지 않는다. schema와 JSON 완성 순서 조정은 유지한다.
+
+### 생성물 위치와 비게시 경계 정렬
+
+- 작업지시자의 기존 JSON/생성 규격 유지 선택에 따라 기존 generator의 실제 target은
+  `site/updates/v0.1.2.html`이다. 계획의 초기 `v0.1.2/index.html` 표기를 같은 공식 site 루트의
+  기존 flat route로 정렬한다. 새 template/route/schema를 만들지 않는다.
+- Stage 3 draft 생성 body·HTML·short notes는 `/private/tmp/task113-stage3-notes-generated`의
+  새 staging directory에서 검토하고 hash를 기록한다. 공개 site tree에 draft HTML을 넣지 않는다.
+  실제 HTML·release.json·manifest 전환은 Release read-back 뒤 별도 공개 gate다.
+
+### Stage 3 일반 producer·Linux GUI 결과와 CanvasKit 실패 진단
+
+- ordinary [37719733676](https://github.com/postmelee/alhangeul-tauri/actions/runs/37719733676)의
+  all/full/run_tests=true가 전체 success다. 선택 job 14개 success, native Rust는 Windows 258,
+  Linux x64/arm64 각 247 tests·0 failed·0 ignored다. 세 core·package lifecycle·설치 계약이 완료됐다.
+- NSIS raw exit 1·12 실패는 기존 hosted diagnostic으로 계약만 통과했다. 썸네일 not-accepted 유지.
+  MSI raw exit 0·0 실패는 strict-product 통과, 강제 MSI는 raw exit 1·3010/reboot-required로
+  계약 통과이며 post-reboot-unverified다. 전체 썸네일 해결·재부팅 후 검증으로 쓰지 않는다.
+- 원본 Linux archive 전체 digest·배포 대상 inventory의 exact ZIP 경로/크기/hash를 확인했다.
+  로컬 macOS의 Alhangeul/alhangeul 디렉터리 병합과 기존 AppDir 제외 계약을 분리했다.
+  원본 inventory/ZIP은 수정하지 않았고 Linux 소비자의 추출 후 strict 검증을 유지한다.
+- Linux full [37723131983](https://github.com/postmelee/alhangeul-tauri/actions/runs/37723131983)는
+  success다. source/workflow FF, ordinary producer의 exact DEB·helper·inventory와 실제
+  문서/새 문서·PDF·GTK/CUPS virtual print·Nautilus thumbnail 수용을 완료했다.
+- local-fonts [37723134560](https://github.com/postmelee/alhangeul-tauri/actions/runs/37723134560)는
+  failure다. Canvas2D의 전체 설정/삭제/복구/새 창/재시작은 통과했다. CanvasKit 초기 HWP/HWPX
+  off/on·재감지·새 창까지 통과했으나 글꼴 삭제 후 재감지에서 canvas 미표시 timeout과 빈 페이지다.
+  selector 완화·renderer 대체·검사 skip을 하지 않는다. Stage 3 전체는 미완료다.
+- `local-fonts.e2e.ts`의 afterEach 실패 진단만 renderer RPC·canvas 크기/marker·window handles로
+  보완한다. source FF와 critical dependency는 유지하고 검사 harness SHA를 별도로 고정한다.
+  원인이 드러나지 않은 현재 상태에서는 product/third_party source를 수정하지 않는다.
+  수정한 진단으로 같은 exact DEB를 local-fonts scope에서 한 번 확인한다.
+- 비게시 signing [37719736557](https://github.com/postmelee/alhangeul-tauri/actions/runs/37719736557)는
+  release Environment required reviewer `postmelee`·self-review 허용·ref 제한 없음·current approval
+  가능을 확인했다. 이미 승인한 FF/publish_release=false에만 정상 review를 기록했고 보호 설정이나
+  admin bypass를 사용하지 않았다. public job·tag/Release/Pages/feed는 별도 gate다.
+- Windows PDF [37724319402](https://github.com/postmelee/alhangeul-tauri/actions/runs/37724319402)를
+  FF workflow·acceptance_candidate_sha=FF·ordinary run으로 한 번 dispatch했다. 현재 서명 뒤
+  pending이며 같은 desktop concurrency의 pending 교체를 피하여 추가 desktop mode는 기다린다.
+
+## Stage 3.3 제품 글꼴 refresh 보정 — 2026-10-08 승인·진행
+
+### 관측과 충돌 경로
+
+- 진단 harness `1f5c8dc6...`의 fast `37725336047`은 success다. 같은 FF 제품으로 local-fonts
+  `37725338707`을 추가 진단했으며 failure다. archive `11527374730`, digest
+  `sha256:4759cf8c8e795075931925b0e7ff7fce69d149e62d63a24b8c2cb9ea80afb2fc`.
+- 실패 시 initialized=true, initializationError/selectionError=null, effectiveBackend=canvaskit,
+  canvas 0개·page diagnostics null·document/resource revision 33이었다. window handle은 1개다.
+  최초 글꼴 적용과 새 창까지 정상이며 삭제 재감지에서 문서 placeholder만 남았다.
+- 새 upstream main의 `onHostFontsChanged`는 `canvasView.refreshFontResources()`를 실행한다.
+  현재 앱 hook은 같은 catalog 변화 뒤 `session.invalidateDocument()` + `view.loadDocument()`를
+  수행한다. `loadDocument`는 문서 교체용 reset/빈 쪽을 만든 후 동시 font revision 변화로 selection이
+  취소되면 canvas를 만들기 전에 반환할 수 있다. 실제 빈 쪽·무오류 진단과 일치하는 충돌 경로다.
+  새 source의 실제 GUI 통과 전 원인 보정 성공으로 확정하지 않는다.
+
+### 검토 가능한 최소 변경
+
+- `/private/tmp/task113-stage3-font-refresh-proposal/font-refresh.patch`에 실제 diff를 준비했다.
+  2026-10-08 작업지시자의 “진행해줘”와 “최소 보정·새 source 재검증 (권장)” 답변으로 승인됐다.
+- `apps/studio-host/local-font-entry-hooks.ts`: 문서 invalidate/load 두 호출을 upstream의
+  `await view?.refreshFontResources()` 한 호출로 바꾼다. 문서·undo/dirty 상태를 보존하는 font
+  resource 전용 API를 사용하고 현재 document/view/session/renderer/decision guard는 유지한다.
+- 기존 `local-font-entry-hooks.test.ts`의 pinned API 기대값을 정렬하고 actual transformed callback의
+  resource refresh→font prepare→paint 순서와 문서 교체 후 paint 거부 회귀 2건을 추가한다.
+  proposal의 callback 검사는 2/2 통과했다. 이것은 실제 GUI 보정 수용을 뜻하지 않는다.
+- third_party content·pin/WASM/native locks·제품 0.1.2·지원 OS는 현재 승인 범위와 동일하다.
+  기존 source와 source-specific asset의 수용을 새 bytes의 수용으로 승계하지 않는다.
+
+### 승인 후 실행 입력과 검증
+
+1. 위 두 product/test 파일의 승인된 diff와 보고/계획을 반영하고 focused·automation·upstream·
+   Studio/build·GUI typecheck·product version/pin/boundary/notes 검증을 실행한다.
+2. 보정 commit의 exact product SHA를 새 검증 source P로 계산해 기록한다. 같은 workflow/checkout P의
+   ordinary all/full/run_tests=true/publish_release=false와 updater version0.1.2/tagv0.1.2/
+   publish_release=false를 각각 한 번 수행한다. 이전 FF와 새 P의 provenance를 구분한다.
+3. production 공개키 3 서명과 실제 6종 asset의 identity/hash를 새로 검증한다. Native Windows/Linux
+   full·새 bytes의 NSIS/MSI/AppImage/DEB/RPM/arm64/Fedora 설치·문서·글꼴·PDF/인쇄·thumbnail
+   수용을 완료한다. 글꼴 삭제/복구·설정·새 창·재시작 assertion과 실패 gate를 유지한다.
+4. 새 source의 실제 metadata가 확인된 뒤 candidate/notes JSON·생성 body를 정렬한다. 아직 공개
+   source가 아니며 final main·Release/tag/assets·Pages/feed·production upgrade gate는 이후에 받는다.
+
+2026-10-08 같은 스레드의 명시 승인에 따라 두 파일의 최소 diff를 적용하고 새 exact product P의
+전체 빌드·비게시 production signing·6종 설치/GUI를 수행한다. 전체 Studio 회귀에서 기존
+`local-font-application.test.ts`의 view mock 세 곳이 이전 loadDocument API를 사용해 4건 실패했다.
+동일 보정의 테스트 정렬로 mock을 refreshFontResources와 실제 session font-resource reset 경계로
+바꾸며 typeface 재공급·문서/decision 교체 시 paint 거부 assertion은 그대로 유지한다. 기존 FF의 Windows PDF 검사는
+37724319402 success로 완료됐다. 남은 exact-file·RPM/Fedora·arm64는 새 P의 실제 bytes로 검증한다.
+
+### Stage 3.2 실제 metadata와 draft 생성 수용
+
+- 성공한 FF ordinary/signed producer의 실제 archive 및 6종 file·3 Minisign을 독립 검증했다.
+  production 공개키 fingerprint 9f86f804...이며 합산 inventory도 일치한다.
+- `task_m010_113.json`과 `v0.1.2.notes.json`을 완성했다. 기존 schema 유지·draft/publishedAt=null,
+  source FF·previous 0.1.1/96e89e900...·rhwp087, 실제 PR 11개·참고 Issue 5개다.
+- notes check 2 documents·tests124/124·staging 생성3종·diff check 통과. body 6140 bytes/
+  ec25e655602002e16e58344e92f02c3195040cde24d780fed27224f102d73472.
+  source site/manifest는 0.1.1이며 기록은 `task_m010_113_stage3.2.md`에 묶는다.
+- FF source의 draft candidate/notes는 보정 전 기준이다. Stage3.3 승인 후 새 P의 actual inventory가
+  확인되면 source·archive·6종 files·3 signatures를 함께 갱신한다. F의 bytes 수용을 승계하지 않는다.
+
+### Stage 3.3 로컬 보정 검증 결과
+
+- 실제 hook의 focused 5/5, 전체 Studio 283/283, automation 1326/1326, upstream 39/39 통과.
+- Studio build·GUI typecheck·boundary(818 files)·제품 version/metadata·pin(087/6 artifacts)·
+  Action pins(29 files/165 references/11 pins)·draft notes check(2 documents)·diff check 통과.
+- 초기 전체 Studio 4건의 mock API 불일치는 mock만 정렬해 해결했다. 실제 native/GUI는 새
+  commit P에서 수행하며 로컬 통과를 CanvasKit 삭제 재감지 문제의 실제 수용으로 기록하지 않는다.
+- stage3.3 보고서는 로컬 보정 하위 범위에 한정한다. 새 source P의 원격 수용은 현재 승인에 따라
+  이어서 수행하며 Stage 3 전체 완료와 Stage 4 진입·공개 승인으로 해석하지 않는다.
+
+## Stage 3.4 새 source 실제 metadata·Linux GUI 수용
+
+- Stage3.3 source P는 `f79dbeadf56c0cdb6bdf576103f420591cecdc6b`로 고정했다.
+  ordinary37728636737 full 성공·Windows258/Linux 각247 및 package/core/설치 계약 완료다.
+- signing 최초37728692039는 release_notes 누락으로 checkout 전 실패했다. 같은 P·version012·
+  tagv012·publish=false에 준비 문구를 공급한 새37732807293은 전체 success다. 정상 review
+  deployment6928025186/6928025192는 둘 다 P다. 우회나 공개 job 실행은 없었다.
+- 실제 6 assets·3 production-key Minisign과 합산 inventory·archive digest를 독립 검증했다.
+  candidate/notes를 함께 새 P의 metadata로 갱신하고 기존 schema·draft/publishedAt=null을 유지한다.
+- Linux full37732474374 및 local-fonts37732477818 success와 실제 archive·29쪽 출력 시각 검토·
+  34 font observations를 수용했다. CanvasKit 삭제/복구 빈 페이지 보정이 실제 P에서 통과했다.
+- generated body6036 bytes/70a7b9a7...·HTML9106/9b399d12...·short notes358/adac1d9c...는
+  /private/tmp/task113-stage3.4-notes-generated에만 존재한다. site/manifest는 0.1.1 유지다.
+- 이 metadata commit의 harness SHA를 제품 P와 구분해 새 candidate 경로의 NSIS/MSI/AppImage,
+  RPM/arm64 및 Fedora VM을 실행한다. Windows PDF37733046031은 이미 P를 capture했다.
+  desktop ref에는 pending을 한 건만 유지한다. Stage3 전체 완료·Stage4·main/공개 gate는 이후다.
+
+## Stage 3.5 남은 패키지 수용 harness 최소 보정
+
+- 승인한 Stage3의 candidate/acceptance 최소 보정 범위다. product P 및 실제 6 files·3 signatures는
+  그대로이며 새로운 제품 동작·native byte 변경은 없다. 문서는 기존 승인 위치와 working 하위 보고에 둔다.
+- Windows PDF37733046031은 success, source P·ordinary37728636737이다. fresh/restart HWP6/HWPX10
+  총 A4 32쪽을 시각 검토했다. signed exact-file37736564625는 NSIS/MSI/AppImage 설치·문서·
+  글꼴 off/on·반복 입력/scroll 전체 success다. actual structured evidence는 최종 수용 기록에 연결한다.
+- Linux full37732474374의 실제 Nautilus/Thunar cache·helper 호출 증거도 확인했다.
+  두 manager 모두 실제 HWP/HWPX first2→cached2→changed4, failure success PNG0이다.
+- Linux-file37737163861은 실패를 유지한다. RPM은 고정 image fb31d002...의 manifest404로 설치 전
+  중단했고 arm64는 document spec1을 통과한 뒤 x64 전용 font-performance spec이 잘못 선택됐다.
+  config의 font spec은 승인 범위인 signed nsis/msi/appimage에만 연결한다. arm64/RPM의 document·
+  restart assertion과 x64 spec 내부 guard, retries0은 그대로다. 실제 config import 회귀3건을 추가했다.
+- Fedora 공식44 Linux/amd64 immutable manifest를 registry metadata로 검증했다.
+  [공식 container 안내](https://fedoraproject.org/en/misc/)의 quay.io/fedora/fedora에서
+  tag44 index sha256:ba35579e107f26a4c2c000390fb3ff549f3858a9584a6b5a35f7fa51f54de309,
+  amd64 sha256:cd3513b19e87220eb6fba1aeb041cf88f9c00c3b1de213c36db7532c383f4a1c,
+  config sha256:f938ca6f501bc4b8892197e50dad1fcd318a8fe18cb3298fa61154cba95e57f8다.
+  header/body hash·arch/os·version44를 확인했고 기존 digest404는 보존했다. Mac container 실행은 없다.
+- 독립 Fedora VM37738091057은 실제 RPM 설치와 처음 두 session restart 후 세 번째
+  POST /session timeout으로 실패했다. 당시 owned tauri-driver/WebKitWebDriver는 남고 app은 없었다.
+  OOM/제품 결함으로 단정하지 않는다. 기존 UID/PID/start-time/driver ownership app exit fence를
+  Fedora session에도 적용하고 VM allowlist에 누락된 process probe만 추가한다. 종료 강제 kill,
+  blind retry, timeout 증가, assertion skip은 없다. 이 보정 효과는 새 실제 VM 결과 전에는 미확인이다.
+- 로컬 automation1330/1330, GUI typecheck·bash syntax 및 action pins·boundary·diff 검증을 완료했다.
+  하위3.5 보고서는 성공한 로컬 harness 범위만 기록한다. 실패 run을 전체 수용으로 승격하지 않는다.
+- 새 harness SHA에서 fast CI와 exact RPM/arm64·Fedora VM을 실행한다. desktop 동일 ref pending은
+  한 건만 유지한다. P의 기존 full/signing과 파일 digest를 재사용하며 binary를 재빌드하지 않는다.
+
+### Stage 3.5 원격 결과와 3.6 Fedora container 보정
+
+- harness20bcc1fd8f7d951fb64175f3577ed7b4efcccb6b의 fast37741256674는 Node·Windows 전체 success다.
+  automation1330/upstream39/Studio43 test files·notes124/Windows59 및 PowerShell 계약을 통과했다.
+- Linux-file37741260462 전체는 failure다. arm64 job은 candidate·실제 DEB 설치·HWP/HWPX·4 restart·
+  upload·gate 전체 success, app exit fence4회에서 DELETE 뒤21~51ms 실제 종료를 확인했다.
+  ARM evidence11533478392/sha256:79dee45877cc7dbf56a9d7667152d024e0235023c466547641af6029dfb38cdb다.
+- RPM candidate·실제 설치는 success, GUI는 failure다. dialog wait 전에 GTK icon helper가
+  /usr/share/icons/Adwaita/scalable/status/image-missing.svg의 Glycin bwrap exit1로 abort했다.
+  accessibility apps0·최종 app없음·oom_kill0. RPM evidence11533868937/
+  sha256:08f08bb436d3fd9fdf88e72cf196897f6d6048c1f8b0343f18396a5011b5541b를 검증했다.
+- [Fedora 유사 보고](https://bugzilla.redhat.com/show_bug.cgi?id=2412232)와
+  [Docker AppArmor 설명](https://docs.docker.com/engine/security/apparmor/)을 대조했다.
+  nested sandbox 실행 조건을 확인하기 위해 일회성 RPM container에 apparmor=unconfined를 지정한다.
+  기존 seccomp=unconfined·read-only code mounts·단일 evidence write mount·비root GUI는 유지한다.
+  host AppArmor 정책/daemon/sysctl을 변경하거나 privileged/cap-add·Docker socket·credential을 주지 않는다.
+  제품·Glycin 내부 sandbox·icon loader를 변경하거나 끄지 않는다. 실제 효과는 새 결과 전 미확인이다.
+- 동일 비root user의 GdkPixbuf SVG load·positive size·실제 PNG를 GUI 전에 필수 확인한다.
+  실패는 phase=gtk-icon-loader/exit nonzero로 보존한다. dialog/assertion/timeout/retry는 그대로다.
+- 초기 추가 테스트 read helper scope1 오류를 보정한 automation1331/1331·bash syntax·action pins29/165/11·
+  boundary819·diff check 통과. 로컬3.6 하위 보고만 완료하며 RPM/독립 VM 전체 수용은 진행 중이다.
+- 독립 VM37741321797은 J20bcc1fd를 이미 capture했다. 새 harness에서 RPM-only를 한 건만 대기열에
+  넣고 ARM의 성공 범위는 별도 기록한다. 미확인 전체 수용·Stage4·공개 gate로 승격하지 않는다.
+
+## Stage 3 완료 수용 — 2026-10-08
+
+- product P ordinary/signing·Linux full/fonts·Windows PDF·signed3종·RPM KVM/container·ARM-only를 완료했다.
+  [Stage3 보고](../working/task_m010_113_stage3.md)에 actual run/head/attempt·archive·6 files/3sig와
+  structured/visual 결과·known limitation·실패 이력을 연결했다. 전체 실패 run은 성공으로 바꾸지 않았다.
+- K fast37742487390 Node/Windows success·automation1331/Studio43files/upstream39/Windows59/notes124다.
+- J VM37741321797 complete/exit0·4 owned restarts, K RPM37742491734 actual SVG128×128·GUI0이다.
+  ARM37743003461은 K의 단독 success run·artifact11535020932/sha256:ac08b424b04c89a50e4e3c1c39b544250ac93a7d58e27577d2725f6190fbfcb7로 고정했다.
+  새 producer/signing 없이 same P actual bytes다. product paths/dependency provenance와 draft notes 정합 유지다.
+- Stage3 전체 수용 완료는 구현 검증에 한정한다. Stage4 진입·devel task PR 및 후속 main/public gate는
+  결과 보고와 함께 별도 승인받는다. #113 OPEN·현재 공개011 유지다.
+
+## Stage 4 명시 승인·인계 범위 — 2026-10-08
+
+- Stage3 전체 보고84bd39dc 후 작업지시자의 “진행해줘”가 Stage4 최종 보고·devel Open PR 게시를 승인했다.
+- final/stage4 보고·기존 release index/notes 안내·오늘할일은 기존 승인 위치를 사용한다.
+  오늘할일은 구현·보고 하위 범위만 완료 표시하고 실제 릴리즈 전달 #113은 진행중 행을 유지한다.
+- PR 생성 후 실제 PR 참조를 draft notes/기록에 추가한다. 실제6 files·sourceP·3 signatures·draft 상태는
+  그대로이며 새 생성 hash를 기록한다. JSON은 single original/inventory schema라 300LOC 권장치를
+  넘으면 contract 분할/중복 없이 정확한 data provenance를 유지하는 이유를 기록한다.
+- 선행 Stage3 P 수용·K fast는 exact 재사용이다. PR required는 실제 merge candidate SHA에서 확인한다.
+  source bytes/native build로 오기하지 않는다. 합격 전 merge 승인 요청을 하지 않는다.
+- 이번 승인에는 self-merge·main 승격·최종 main/signing/Release/tag·Pages/feed·실제 upgrade가 없다.
+
+### Stage4 actual PR·원문 수용
+
+- PR117 actual non-draft OPEN/devel/publish-task113·closingIssuesReferences=[]를 확인하고 채팅에 연결했다.
+  최초head e0511200와productP를 구분한다. actual12 PR title/URL·기존11 merged/current117OPEN·5 Issue
+  상태를 재확인했다. #113 OPEN·resolvedIssues=[]다.
+- notes310LOC는 실제6 assets/3sig/12 PR/5Issue의 single strict JSON data다. 나누면 원문/inventory
+  schema·검증/생성 계약이 깨지므로 권장300LOC 예외를 기록하고 기존 schema·정확한 provenance를 유지한다.
+  기존 release 준비 기록도300LOC를 넘지만 FF/P 실패·수용 이력을 되돌리거나 누락하지 않는 운영 기록이다.
+- notes2/tests124·body6170/d7a344fc...·HTML9106/9b399d12...·short358/adac1d9c... 임시 생성물 수용,
+  sourceP/assets6/3sig/draft 상태는 그대로다. final head의 PR required를 확인 후 merge 승인 요청한다.

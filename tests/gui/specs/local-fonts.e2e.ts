@@ -45,9 +45,16 @@ describe('Linux installed local fonts', () => {
         status: document.getElementById('sb-message')?.textContent,
         modal: document.querySelector('.modal-overlay')?.textContent,
         url: location.href,
+        canvases: Array.from(document.querySelectorAll<HTMLCanvasElement>('#scroll-content canvas')).map(canvas => {
+          const rect = canvas.getBoundingClientRect();
+          return { width: canvas.width, height: canvas.height, zoom: canvas.dataset.rhwpRenderedZoom,
+            page: canvas.dataset.pageIndex, visibleWidth: rect.width, visibleHeight: rect.height };
+        }),
       })).catch(() => null);
+      const renderer = await rpc('getRendererDiagnostics').catch(error => ({ error: String(error) }));
+      const handles = await browser.getWindowHandles().catch(() => []);
       await writeFile(join(output, `${name}-failure.json`), JSON.stringify({
-        title: this.currentTest.title, error: this.currentTest.err?.message, ui,
+        title: this.currentTest.title, error: this.currentTest.err?.message, ui, renderer, handles,
       }, null, 2));
     }
   });

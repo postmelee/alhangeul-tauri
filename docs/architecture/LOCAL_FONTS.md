@@ -79,6 +79,12 @@ standalone static sfnt TTF/OTF로 제한한다. 모호한 동명 face, TTC/OTC·
 미확인 container는 성공으로 표시하지 않는다. 이는 아래 native read의 확장자 허용 범위와
 별개이며, PDF·인쇄·썸네일의 지원 범위를 확대하지 않는다.
 
+rhwp v0.8.7의 `resolveRendererLocalFont`·`loadRendererLocalFont`도 같은 catalog/index와 native
+byte cache를 사용한다. 기본 desktop은 기존 native 공급 경로이며 명시 host provider를 설정한
+경우에만 그 snapshot을 같은 catalog로 정규화한다. 사용 선택·금지 family·정확한 face/style과
+revision/generation을 확인하고 stale snapshot/bytes는 버린다. snapshot·bytes는 복사해 반환하며
+transport 연결이 있다는 사실을 font 화면 적용 성공으로 표시하지 않는다.
+
 ## 지원 스캔 root
 
 기본 system font directory는 `fontdb.load_system_fonts()`에 맡긴다. 추가 스캔은 Alhangeul이 소유하는 제한된 root만 허용한다.
