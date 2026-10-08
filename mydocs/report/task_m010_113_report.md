@@ -2,8 +2,8 @@
 
 GitHub Issue: [#113](https://github.com/postmelee/alhangeul-tauri/issues/113)
 마일스톤: M010
-확인일: 2026-10-09 02:09 (Asia/Seoul)
-상태: Stage1~4 구현·GitHub012 공개/본문 보정·Gate5 데이터 로컬 수용 완료 / Pages·실제011→012 전달 계속 진행
+확인일: 2026-10-09 04:45 (Asia/Seoul)
+상태: GitHub/Pages/feed012 공개·실제011→012 지원3종 수용 완료 / 최종 공개 안내·PR 통합·종료 계속 진행
 
 아래 Stage1~4 요약은 당시 구현 인계 snapshot이다. 현재 공개/전달 상태는 후속 Gate별 기록으로 구분한다.
 
@@ -220,3 +220,10 @@ PR120의 이전 required37823417314는 전체3job 성공했지만 actual37824197
 ## Windows2 실제 수용과 Linux 재시작 관측 보정 — 2026-10-09 04:23 KST
 
 새 required37828387632 전체success 뒤 actual37828940744는 Windows NSIS/MSI complete2job/accepted.json·public bytes/서명·설치/version/handler/defaults·strict settings·HWP6/HWPX10·cleanup/policy restore와 GUI4화면을 수용했다. Linux는 restart 클릭 응답 unknown error로 필수 PID/FUSE 관측 전에 실패해 whole run은 failure다. 계획에 세 archive identity와 부분/전체 경계를 보존했다. 명시 승인된3파일 보정·실제 집중94/전체1360·types/기본검사와 Windows 경로 불변 검산은 [Stage4.8.2](../working/task_m010_113_stage4.8.2.md)에 기록한다. 새 H required·Linux-only1회와 조건부 whole3 기록이 후속이다. public product6d/11assets/key/feed와 원래 두 실패 run을 유지하며 전체 release task 완료로 쓰지 않는다.
+
+
+## 실제3종 production upgrade 수용 — 2026-10-09 04:45 KST
+
+[Stage4.8](../working/task_m010_113_stage4.8.md)에 Windows NSIS/MSI의 bc082d00/run37828940744 각 complete success job과 Linux AppImage의 H8a5a28c7/run37832348063 Linux-only whole success를 형식별로 구분했다. Linux job113500633933/archive11573159872·687854bytes·SHA2567bdc6668babafa65b7f6284fbe82e2c592bcb2f775cf84cf305fde46e31e33db를 독립 검산했다. 실제 PID5034→5207/new FUSE exe·public012 파일 교체hash/stop·strict settings·About012·HWP6/HWPX10/bytes·accepted.json과 GUI2화면을 수용했다. Windows4화면을 포함해 실제3종/GUI6 수용이 완료됐다. 최신 H required37831668570 Node/Windows/required 전체success다.
+
+원래37824197495와 mixed37828940744 전체failure는 보존한다. Windows 실행 경로 불변에 근거해 각 형식의 별도 소비자 증거를 조합했으며 제품 source6d/11assets/서명/key/feed58ca는 그대로다. 이번 Linux success는 정상 클릭 뒤 실제 재시작 관측이며 exact unknown-error branch의 실제 재현으로 쓰지 않는다. 기존 썸네일/MSI3010/Authenticode/물리 환경 한계는 유지한다. 공개 notes/body의 미실행 문구와 새 Pages·PR120 merge·Issue113 close/cleanup은 별도 후속 승인이다.

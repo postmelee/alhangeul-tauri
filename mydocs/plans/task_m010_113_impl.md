@@ -1204,3 +1204,10 @@ Pages 배포·Issueclose/cleanup은 후속 승인이다. 이번 제안 source·L
 ### Stage4.8.2 actual generic 수용 — 2026-10-09 04:23 KST
 
 승인3 after hashes·Windows 경로/원래 native restart probe/legacy59/fixed inputs/strict evidence/public data/key 불변을 확인했다. 실제 집중94/전체1360·fail/skip0·GUI types·기본 checks/notes2/Pages19·23/upstream39/Studio283/build를 통과했다. [Stage4.8.2](../working/task_m010_113_stage4.8.2.md)에 generic 보정만 기록한다. 새 H required와 승인된 Linux-only1회가 후속이며 기존 Windows2 수용/두 whole failure는 유지한다.
+
+
+## 실제3종 production upgrade 수용 — 2026-10-09 04:45 KST
+
+[Stage4.8](../working/task_m010_113_stage4.8.md)에 Windows NSIS/MSI의 bc082d00/run37828940744 각 complete success job과 Linux AppImage의 H8a5a28c7/run37832348063 Linux-only whole success를 형식별로 구분했다. Linux job113500633933/archive11573159872·687854bytes·SHA2567bdc6668babafa65b7f6284fbe82e2c592bcb2f775cf84cf305fde46e31e33db를 독립 검산했다. 실제 PID5034→5207/new FUSE exe·public012 파일 교체hash/stop·strict settings·About012·HWP6/HWPX10/bytes·accepted.json과 GUI2화면을 수용했다. Windows4화면을 포함해 실제3종/GUI6 수용이 완료됐다. 최신 H required37831668570 Node/Windows/required 전체success다.
+
+원래37824197495와 mixed37828940744 전체failure는 보존한다. Windows 실행 경로 불변에 근거해 각 형식의 별도 소비자 증거를 조합했으며 제품 source6d/11assets/서명/key/feed58ca는 그대로다. 이번 Linux success는 정상 클릭 뒤 실제 재시작 관측이며 exact unknown-error branch의 실제 재현으로 쓰지 않는다. 기존 썸네일/MSI3010/Authenticode/물리 환경 한계는 유지한다. 공개 notes/body의 미실행 문구와 새 Pages·PR120 merge·Issue113 close/cleanup은 별도 후속 승인이다.

@@ -9,7 +9,7 @@
 
 | 버전 | 상태 | 이전 공개 버전 | GitHub Release | 기록 |
 |---|---|---|---|---|
-| v0.1.2 | GitHub Stable/latest·본문·Pages/feed012 공개·HTTP23 수용 / 목록 local link·실제 upgrade 후속 | v0.1.1 | [v0.1.2](https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.2) | [v0.1.2 공개 기록](v0.1.2.md) |
+| v0.1.2 | GitHub/Pages/feed012·HTTP23·실제011→012 지원3종 수용 / 최종 결과 안내·PR120 통합 후속 | v0.1.1 | [v0.1.2](https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.2) | [v0.1.2 공개 기록](v0.1.2.md) |
 | v0.1.1 | Release·규격 body·웹·피드·검증 결과 안내 공개, 세 형식 실제 upgrade·HTTP 수용 완료 | v0.1.0 | [v0.1.1](https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.1) | [v0.1.1 공개 기록](v0.1.1.md), [안내 원문](v0.1.1.notes.json) |
 | v0.1.0 | stable 공개·Pages/updater 전환 및 동일 버전 조회 완료 | 없음 | [v0.1.0](https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.0) | [v0.1.0 공개 기록](v0.1.0.md) |
 
@@ -105,3 +105,6 @@ private key·암호·token·개인 문서·실제 credential 보관 경로는 �
 2026-10-08T18:00:10.828089+00:00 확인: exact Pages37819153172/source1f33·artifact/HTTP23·production012/hash58ca348b...·서명3/공개6파일·desktop/mobile 확인을 완료했다. updates 목록의 local v012 연결 보정 및 실제011→012는 후속 승인·검증 대상이다.
 
 2026-10-09 03:17 KST 확인: 새011→012 fixed 입력·동일형식3종 harness 및 local v012 목록 항목을 source/generic1347/75로 수용했다. 실제 upgrade·PR/필수CI/merge·목록 재배포는 후속이고 과거010→01159회귀와 공개012 bytes/key/endpoint를 유지한다.
+
+
+2026-10-09 04:45 (Asia/Seoul) 확인: v0.1.2 공개 product6d의 Windows NSIS/MSI·Linux x64 AppImage 실제011→012 업데이트·설정·HWP/HWPX 수용을 완료했다. [Stage4.8](../../mydocs/working/task_m010_113_stage4.8.md)에 Windows bc082d00/37828940744 각 success job과 Linux H8a5a28c7/37832348063 whole success의 별도 evidence identity를 기록했다. 두 과거 whole failure를 유지한다. 공개 안내의 미실행 문구 갱신·PR120 통합·새 Pages·#113 종료는 후속 승인이다.
