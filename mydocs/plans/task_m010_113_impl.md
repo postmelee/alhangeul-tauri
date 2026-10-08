@@ -812,3 +812,30 @@ gh workflow run alhangeul-desktop.yml --ref publish/task113 \
   기존 release 준비 기록도300LOC를 넘지만 FF/P 실패·수용 이력을 되돌리거나 누락하지 않는 운영 기록이다.
 - notes2/tests124·body6170/d7a344fc...·HTML9106/9b399d12...·short358/adac1d9c... 임시 생성물 수용,
   sourceP/assets6/3sig/draft 상태는 그대로다. final head의 PR required를 확인 후 merge 승인 요청한다.
+
+## 후속 Gate 2~3 명시 승인·진행 — 2026-10-08~09
+
+- PR117은 required37754637500 통과 후 승인된 일반 merge로 devel8a91bf52에 통합했다.
+  PR118도 작업지시자의 명시 승인 후 main6dcb05e96ec2075d09d8a60160e1d82f08c0811b에
+  일반 merge했다. 실제 main tree e558ea966d6bb89893d595b789354ce14c240b00은 승인된 devel과
+  같고 product P의 apps/crates/third_party/package·lock diff도 없다.
+- 확정 main/ref·all/full/tests=true ordinary·기존 production key의 비게시 updater012/v012/
+  nonempty notes/publish=false·새6종 실제 설치/문서 수용 입력을 제시한 뒤 작업지시자의
+  “진행해줘”가 이 gate를 승인했다. source/workflow/build/checkout은 같은 main SHA로 고정한다.
+- ordinary37789356504는 attempt1·필수14 jobs success, Windows258/Linux 각247 Rust tests·
+  failed/ignored0이다. signing37789417321은 기존 release Environment required-reviewer의
+  정상 승인으로 진행 중이며 보호 설정·production 공개키·endpoint를 바꾸지 않았다.
+- 새 DEB x64 GUI37796099048은 same main/producer·actual hash c98d3d36...의 설치와
+  문서8시나리오·PDF/GTK/CUPS29A4쪽·Nautilus/Thunar 수용을 완료했다. 서명3종·RPM/ARM의
+  새 bytes 수용은 아직 진행 전/진행 중이며 이전 P 파일 수용으로 대체하지 않는다.
+- actual archive/installer 결과에 따라 기존 mydocs/working/task_m010_113.json의 candidate
+  metadata를 정합화하고 기존 docs/releases 원문·기술 기록·계획/보고/오늘할일 위치를 사용한다.
+  제품/검증 구현 변경은 없으며 main product SHA와 data-only harness SHA를 구분한다.
+- Windows raw NSIS12실패/thumbnail not-accepted·forced MSI3010/post-reboot-unverified는
+  동일한 known limitation이다. 현재 승인에는 공개 tag/Release·Pages/feed·실제 upgrade·close가 없다.
+
+- signed37789417321도 attempt1·Windows/Linux2 build와 complete inventory success·publish
+  skipped로 끝났다. actual ZIP digest·3 installer bytes/Minisign·complete source/target/fingerprint를
+  독립 검증했다. draft notes의 actual6 files/3sig/sourceMain·실제13 merged PR/5Issue를 갱신했다.
+  existing sourceP 기록은 기술 이력에 남기고 final 파일로 혼용하지 않는다. candidate JSON은
+  새 main producer/run/ID/digest/hash만 사용하며 data-only harness로 새5종 설치/GUI를 실행한다.
