@@ -5,7 +5,7 @@
     "status": "draft",
     "version": "0.1.2",
     "tag": "v0.1.2",
-    "sourceSha": "ff48d15011e53169bfd97b13a4f7084c3284c289",
+    "sourceSha": "f79dbeadf56c0cdb6bdf576103f420591cecdc6b",
     "publishedAt": null,
     "rhwp": {
       "tag": "v0.8.7",
@@ -23,45 +23,45 @@
     "assets": {
       "windows-x86_64-nsis": {
         "name": "Alhangeul_0.1.2_x64-setup.exe",
-        "size": 58450096,
-        "sha256": "3948163b3ac7a89abef2dfa3cdff541faa0ea39df50da2440995a127310da90b",
+        "size": 58453088,
+        "sha256": "36633c7cab4883457eb584e88645c272287d53a3dfb013ae5ea640130f7fe48c",
         "url": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.2/Alhangeul_0.1.2_x64-setup.exe"
       },
       "windows-x86_64-msi": {
         "name": "Alhangeul_0.1.2_x64_en-US.msi",
-        "size": 66146304,
-        "sha256": "d418b265cee204b2e4c2f52b05490a5234da6a04d676080b9fc787dbef47f4c1",
+        "size": 66150400,
+        "sha256": "8e1b0e87475c7de8a373d4323634f2d12a997aa101e1aa31db4b822d17d52602",
         "url": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.2/Alhangeul_0.1.2_x64_en-US.msi"
       },
       "linux-x86_64-appimage": {
         "name": "Alhangeul_0.1.2_amd64.AppImage",
-        "size": 136788472,
-        "sha256": "ec7658d10464dcbb5155cdfee0e29b89f27fdc27ed328b29b2c6374f98a7ecdd",
+        "size": 136792568,
+        "sha256": "a24d4f1d4245fd14f7c63d5c8db4db83cb4d7eddd6fdb8211942caa0f9ace866",
         "url": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.2/Alhangeul_0.1.2_amd64.AppImage"
       },
       "linux-x86_64-deb": {
         "name": "Alhangeul_0.1.2_amd64.deb",
-        "size": 69250590,
-        "sha256": "3fa9d63d8f33bafbf360344ef83fca0bb9056b2990a2fb302f7bb06aed343595",
+        "size": 69248564,
+        "sha256": "b213217d22653adfc856de4dcab70b746341610d818ab310224622509c301fa4",
         "url": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.2/Alhangeul_0.1.2_amd64.deb"
       },
       "linux-x86_64-rpm": {
         "name": "Alhangeul-0.1.2-1.x86_64.rpm",
-        "size": 69250972,
-        "sha256": "affac4b8698862b6781dff7c4758d9492d22a19d8e198fff2a35d1de45129a69",
+        "size": 69249334,
+        "sha256": "73397d3dbc619e43e58c86b60d42194fcfb4c570adbd8cfd52be0e383774148d",
         "url": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.2/Alhangeul-0.1.2-1.x86_64.rpm"
       },
       "linux-aarch64-deb": {
         "name": "Alhangeul_0.1.2_arm64.deb",
-        "size": 68839400,
-        "sha256": "71c5dbf4e5e488d6ef99f98e0cba8b2e9846fc3e14187a08f1ccc75a4b8dcd7b",
+        "size": 68845474,
+        "sha256": "1da1665db6aa0b1aa6ce292b76c2c630076023b1a5ff7519142a8d26e80936d3",
         "url": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.2/Alhangeul_0.1.2_arm64.deb"
       }
     },
     "updaterInventory": {
       "schemaVersion": 1,
       "repository": "postmelee/alhangeul-tauri",
-      "sourceSha": "ff48d15011e53169bfd97b13a4f7084c3284c289",
+      "sourceSha": "f79dbeadf56c0cdb6bdf576103f420591cecdc6b",
       "version": "0.1.2",
       "tag": "v0.1.2",
       "keyFingerprint": "9f86f804067eff359cd32707137dfaaea8710450985dda86b0392da5db63b8f8",
@@ -69,25 +69,25 @@
         "windows-x86_64-nsis": {
           "kind": "nsis",
           "path": "nsis/Alhangeul_0.1.2_x64-setup.exe",
-          "size": 58450096,
-          "sha256": "3948163b3ac7a89abef2dfa3cdff541faa0ea39df50da2440995a127310da90b",
-          "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUaEFNampwWnpESWZoaFpjV1ZWb2dGNDd0YjNWSWZoUDJWMi9FajZxWHFOenJ3ZmF3QlM5UVg5bW82VHFqTTBnRVYrTmk3ZzVodXBlK3FaL2VwT05Jc0VtblJwNFpmeEFnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkxNDMxOTY0CWZpbGU6QWxoYW5nZXVsXzAuMS4yX3g2NC1zZXR1cC5leGUKV1hnZ0ZjTUR4enhpNjNzY0lETGpKNDVqMWtKdmM1eG1WcUt3STBHNDYrb1VLd1RWelVmUktVSjdLK2Z6VWFxYmZqdW1leGpEV1VIKzVGZk4xUHNiQWc9PQo=",
+          "size": 58453088,
+          "sha256": "36633c7cab4883457eb584e88645c272287d53a3dfb013ae5ea640130f7fe48c",
+          "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUaEFNampwWnpESWQ2b1gwUjU1RmRYUUhTUTNmSXBpd0EvNHVaUzFYcHhoUEViWS91V0YvdWVpREdGbjdjVXRwUnBHcnB1UVBlV1ZDcWRXc1B6ejIvaWJ2ZG5kaGhaT2dBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkxNDM5MjkxCWZpbGU6QWxoYW5nZXVsXzAuMS4yX3g2NC1zZXR1cC5leGUKOUt2akxqKzRpVXVrN0pGWkRkdE1Fc21Qc2N4OFB2MzJoclhNVVdVdTJEeVJ2SDZydmtPOUtrQWxPV0NnQkJtT2pLMlM5LzQxOVBpcGxTKzRWT3Q5QVE9PQo=",
           "url": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.2/Alhangeul_0.1.2_x64-setup.exe"
         },
         "windows-x86_64-msi": {
           "kind": "msi",
           "path": "msi/Alhangeul_0.1.2_x64_en-US.msi",
-          "size": 66146304,
-          "sha256": "d418b265cee204b2e4c2f52b05490a5234da6a04d676080b9fc787dbef47f4c1",
-          "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUaEFNampwWnpESWUvQ0ZRQXVoMHZKdGxQSm0zb1hLTHVOSDZNQWhEYlBiVG9tbnZsditwWmJrVFJHZXBBQkNZQUVaeTBlNTNzMUltdUVRYmg4Y2UrTWNNMW1OV3VGdWdrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkxNDMxOTY0CWZpbGU6QWxoYW5nZXVsXzAuMS4yX3g2NF9lbi1VUy5tc2kKVnV1NWFiNHoyeGVqRDhKUlVDbnFtRCsvdmh4SWFJbWJtazQ4eVZtVmwzRDRGcTFBUENuSHB3WVpOZzA3TTRnSFR3YnVmcFQ4V1krSFhOVnl2THRzQWc9PQo=",
+          "size": 66150400,
+          "sha256": "8e1b0e87475c7de8a373d4323634f2d12a997aa101e1aa31db4b822d17d52602",
+          "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUaEFNampwWnpESVd3RUJDdmtkUHJBblJ3bGVZVXgxODRpMW50SDZQZWhRbjN0US9MYnd6K3Erc3ZxTHFhSUxlYlprOGVyQ1pMUitWNEJLOEdpbU8yQWZLdGM4cTd5U0FBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkxNDM5MjkxCWZpbGU6QWxoYW5nZXVsXzAuMS4yX3g2NF9lbi1VUy5tc2kKay9WbWFrRml4ZEZDbmdqQlBIOFF6MVIvWVdXRFRDKzd6V3ZQdGwyZGQ4L0I0aVFDMWNoZnlWZGJBMGZIcFkzckhDVEo0eGl5OFhlSER6dmppK3huQnc9PQo=",
           "url": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.2/Alhangeul_0.1.2_x64_en-US.msi"
         },
         "linux-x86_64-appimage": {
           "kind": "appimage",
           "path": "Alhangeul_0.1.2_amd64.AppImage",
-          "size": 136788472,
-          "sha256": "ec7658d10464dcbb5155cdfee0e29b89f27fdc27ed328b29b2c6374f98a7ecdd",
-          "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUaEFNampwWnpESWJqNmJ6bUZwVUtrZ2JlT3ZHM1VLU1lsVlB4M2Q5a3ZFbGdNeGZjc09pUENSSG1XdE14djhiRWwwSW1pVmRZS0hudVRpaHppOWd0YjFHaWJoaG1tbUFjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkxNDMxMjk0CWZpbGU6QWxoYW5nZXVsXzAuMS4yX2FtZDY0LkFwcEltYWdlCkRmNGNjVm82cHl1OHlQTnJ1c05UV3lJanVORzN0M2VJK2N6WXlKeWRhNTJGRm5lSFZBVXdkRFNkWjlvTDRxbTRPdnMrT2NZQTFYUDIwcGdTb0FTekRRPT0K",
+          "size": 136792568,
+          "sha256": "a24d4f1d4245fd14f7c63d5c8db4db83cb4d7eddd6fdb8211942caa0f9ace866",
+          "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUaEFNampwWnpESVhxZ3BNaDdWZ3Y5L0MzeC9WS0F1QmVrS1ZBNzMwVzFiaTRWVzlaSno2blpEN3FuTm04NkNtMGQramJDbmxxMlpqWlRENDdqWkJBbytCa3JRVmlPMVFzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkxNDM4MjYyCWZpbGU6QWxoYW5nZXVsXzAuMS4yX2FtZDY0LkFwcEltYWdlCmlKMFYwNVFFQ0ovanUyM3VFMkJXdUdBV0tyTG9VcVhocFhkWlFHeG04Z3ZKSmsyRzMwQXkrSlQySzVIQzlwM2FQWTY2QlM2VnRveHQ2VUxHNFdEQUJ3PT0K",
           "url": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.2/Alhangeul_0.1.2_amd64.AppImage"
         }
       }
@@ -108,7 +108,8 @@
     },
     "appChanges": [
       "기존 로컬 글꼴 선택·이름별 조회·파일 읽기 캐시를 새 upstream renderer API에서도 공유합니다.",
-      "새 upstream 시작·문서 제목 처리에서도 Alhangeul 제품명을 유지합니다. native 문서의 수정 상태 표시는 기존 문서 세션이 관리하고, 접근성 이름은 한국어·영어 초기화에 맞춥니다."
+      "새 upstream 시작·문서 제목 처리에서도 Alhangeul 제품명을 유지합니다. native 문서의 수정 상태 표시는 기존 문서 세션이 관리하고, 접근성 이름은 한국어·영어 초기화에 맞춥니다.",
+      "CanvasKit 표시 모드에서 로컬 글꼴 파일을 삭제한 뒤 다시 감지할 때 페이지가 비어 보이던 문제를 보정했습니다."
     ],
     "supportedEnvironments": [
       "Windows x64와 Linux x64를 지원하며 Linux arm64는 DEB 형식을 준비합니다. Windows에는 WebView2 Runtime이 필요합니다."
@@ -123,7 +124,6 @@
     "limitations": [
       "Windows 설치 파일은 Authenticode 미서명이며 자동 업데이트용 Minisign과는 별개입니다.",
       "일부 Windows NSIS 환경에서 탐색기 썸네일이 정상 표시되지 않는 제한이 남아 있습니다. 강제 MSI 재설치의 3010 재부팅 요구를 관측했으며 재부팅 후 동작은 검증하지 않았습니다.",
-      "CanvasKit 표시 모드에서 사용 중인 로컬 글꼴 파일을 삭제한 뒤 다시 감지할 때 페이지가 비어 보이는 현상을 관측했습니다. v0.1.2는 공개 전 검증 중이며 해당 결과에 따라 안내를 확정합니다.",
       "사용자의 모든 Wayland·GPU·글꼴·문서·배포판·물리 프린터 조합은 검증하지 않았습니다. 이전 버전의 성능 수치를 새 pin의 측정 결과로 승계하지 않습니다."
     ],
     "updaterSummary": "rhwp v0.8.7의 표·문단 조판과 열기·저장·편집 개선을 반영합니다. 새 글꼴 공급 API와 제품 창 제목·접근성 이름을 Alhangeul에 연결합니다.\n\nWindows/Linux 새 설치 파일과 앱 내 업데이트는 검증·공개 준비 중입니다. 자세한 변경과 설치 안내는 v0.1.2 릴리즈 노트를 확인하세요.",

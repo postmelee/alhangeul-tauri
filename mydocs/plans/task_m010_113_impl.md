@@ -707,3 +707,20 @@ gh workflow run alhangeul-desktop.yml --ref publish/task113 \
   commit P에서 수행하며 로컬 통과를 CanvasKit 삭제 재감지 문제의 실제 수용으로 기록하지 않는다.
 - stage3.3 보고서는 로컬 보정 하위 범위에 한정한다. 새 source P의 원격 수용은 현재 승인에 따라
   이어서 수행하며 Stage 3 전체 완료와 Stage 4 진입·공개 승인으로 해석하지 않는다.
+
+## Stage 3.4 새 source 실제 metadata·Linux GUI 수용
+
+- Stage3.3 source P는 `f79dbeadf56c0cdb6bdf576103f420591cecdc6b`로 고정했다.
+  ordinary37728636737 full 성공·Windows258/Linux 각247 및 package/core/설치 계약 완료다.
+- signing 최초37728692039는 release_notes 누락으로 checkout 전 실패했다. 같은 P·version012·
+  tagv012·publish=false에 준비 문구를 공급한 새37732807293은 전체 success다. 정상 review
+  deployment6928025186/6928025192는 둘 다 P다. 우회나 공개 job 실행은 없었다.
+- 실제 6 assets·3 production-key Minisign과 합산 inventory·archive digest를 독립 검증했다.
+  candidate/notes를 함께 새 P의 metadata로 갱신하고 기존 schema·draft/publishedAt=null을 유지한다.
+- Linux full37732474374 및 local-fonts37732477818 success와 실제 archive·29쪽 출력 시각 검토·
+  34 font observations를 수용했다. CanvasKit 삭제/복구 빈 페이지 보정이 실제 P에서 통과했다.
+- generated body6036 bytes/70a7b9a7...·HTML9106/9b399d12...·short notes358/adac1d9c...는
+  /private/tmp/task113-stage3.4-notes-generated에만 존재한다. site/manifest는 0.1.1 유지다.
+- 이 metadata commit의 harness SHA를 제품 P와 구분해 새 candidate 경로의 NSIS/MSI/AppImage,
+  RPM/arm64 및 Fedora VM을 실행한다. Windows PDF37733046031은 이미 P를 capture했다.
+  desktop ref에는 pending을 한 건만 유지한다. Stage3 전체 완료·Stage4·main/공개 gate는 이후다.
