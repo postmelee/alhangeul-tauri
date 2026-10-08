@@ -4,7 +4,7 @@
 GitHub Issue: [#113](https://github.com/postmelee/alhangeul-tauri/issues/113)
 마일스톤: M010
 작성일: 2026-10-07 (Asia/Seoul)
-상태: Stage 3.3 진행 — 최소 글꼴 refresh 보정 및 새 exact source 전체 빌드·비게시 signing·6종 수용 승인
+상태: Stage 3 수용 완료 — product P 실제 6종·native·GUI 검증 / Stage4 승인 대기
 
 ## 승인 기록과 입력
 
@@ -777,3 +777,15 @@ gh workflow run alhangeul-desktop.yml --ref publish/task113 \
   boundary819·diff check 통과. 로컬3.6 하위 보고만 완료하며 RPM/독립 VM 전체 수용은 진행 중이다.
 - 독립 VM37741321797은 J20bcc1fd를 이미 capture했다. 새 harness에서 RPM-only를 한 건만 대기열에
   넣고 ARM의 성공 범위는 별도 기록한다. 미확인 전체 수용·Stage4·공개 gate로 승격하지 않는다.
+
+## Stage 3 완료 수용 — 2026-10-08
+
+- product P ordinary/signing·Linux full/fonts·Windows PDF·signed3종·RPM KVM/container·ARM-only를 완료했다.
+  [Stage3 보고](../working/task_m010_113_stage3.md)에 actual run/head/attempt·archive·6 files/3sig와
+  structured/visual 결과·known limitation·실패 이력을 연결했다. 전체 실패 run은 성공으로 바꾸지 않았다.
+- K fast37742487390 Node/Windows success·automation1331/Studio43files/upstream39/Windows59/notes124다.
+- J VM37741321797 complete/exit0·4 owned restarts, K RPM37742491734 actual SVG128×128·GUI0이다.
+  ARM37743003461은 K의 단독 success run·artifact11535020932/sha256:ac08b424b04c89a50e4e3c1c39b544250ac93a7d58e27577d2725f6190fbfcb7로 고정했다.
+  새 producer/signing 없이 same P actual bytes다. product paths/dependency provenance와 draft notes 정합 유지다.
+- Stage3 전체 수용 완료는 구현 검증에 한정한다. Stage4 진입·devel task PR 및 후속 main/public gate는
+  결과 보고와 함께 별도 승인받는다. #113 OPEN·현재 공개011 유지다.
