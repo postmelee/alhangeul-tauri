@@ -1,0 +1,133 @@
+# Task #113 최종 구현 보고서 — rhwp v0.8.7과 Alhangeul v0.1.2 인계
+
+GitHub Issue: [#113](https://github.com/postmelee/alhangeul-tauri/issues/113)
+마일스톤: M010
+확인일: 2026-10-08 (Asia/Seoul)
+상태: Stage1~4 구현 수용·보고 완료 / devel task PR 게시 준비 / 실제 릴리즈 전달은 계속 진행
+
+## 작업 요약
+
+- 대상 이슈: #113, 단계 수: 4. 최신 Stable rhwp087을 반영하고 Alhangeul012를 검증·배포하는 작업이다.
+- 자동 후보 생성의 i18n/font API·pin fixture/관리 참조·게시 전 commit gate를 보정했다.
+  선행 PR114·자동 후보115·통합116을 일반 이력으로 devel에 반영했다. upstream 내용·bot credit 유지다.
+- 이번 task PR은 이미087인 devel에 제품012·title/locale·font cache/API 보정과 실제 6종 수용 기록을 추가한다.
+  CanvasKit 글꼴 삭제·재감지 후 빈 페이지는 document reload 대신 resource refresh로 보정했다.
+- 검증 product는 `f79dbeadf56c0cdb6bdf576103f420591cecdc6b`다. full ordinary37728636737와 동일
+  source의 nonpublishing production-key signing37732807293·실제6 files·3sig·Windows/Linux GUI를 수용했다.
+- 구현·보고 완료를 실제 배포 완료로 표시하지 않는다. #113은 OPEN, 공개는0.1.1이다.
+  최종 main source·files/signing·Release/tag·Pages/feed·실제011→012 검증은 결과 기반 후속 gate다.
+
+## 변경 파일 목록과 영향 범위
+
+| 경로 | 변경 요약 | 영향 범위 |
+|---|---|---|
+| upstream pin/locks/WASM·관리 참조 (선행116) |087/1a76570e... 동일 release provenance | Rust core·bundled Studio |
+| `apps/studio-host/product-shell-entry.ts`·`src/ui/product-shell.ts`·Vite 설정/회귀 | locale 초기화·제품 창/접근성 제목 유지 | Alhangeul shell |
+| `apps/studio-host/local-font-entry-hooks.ts`·회귀/mock | refreshFontResources, cache·문서/decision guards 유지 | Canvas2D/CanvasKit 글꼴 갱신 |
+| root/desktop package·Cargo.toml/lock·tauri.conf | 앱012 정합화 | Windows/Linux installer version |
+| `scripts/ci`·`tests/gui`·`tests/ci-*`·Linux acceptance workflow | exact candidate·spec 범위·owned exit·Fedora registry/loader | 검사 harness, 제품 bytes와 구분 |
+| `docs/architecture/LOCAL_FONTS.md`, `UPSTREAM.md` | API 경계와 native PDF 소비 경로 | 기존 architecture 문서 |
+| `docs/releases/v0.1.2{.md,.notes.json}`, README | 실제6 assets·3 signatures·draft·제한·인계 | 릴리즈 원문/운영 기록 |
+| `mydocs/plans`, `working`, `report`, `orders` | 승인·4단계·하위 수용·최종 보고·오늘할일 | 작업 추적 |
+
+source product P 이후의 harness·metadata·보고 commit은 apps/crates/third_party/package/lock bytes와
+같다. upstream source 직접 수정이나 지원 OS 확대는 없다. native 검증은 Windows/Linux에서 수행했다.
+
+## 문서 위치 검증
+
+| 파일 | 계획된 위치 | 실제 위치 | 결과 | 근거 |
+|---|---|---|---|---|
+| pin current marker·architecture | README/docs/DEVELOPMENT/docs/architecture | 같은 기존 파일 | OK | 수행/구현계획 문서 위치표·선행116 |
+| 버전 안내·원문·인덱스 | docs/releases | v0.1.2.md/notes.json·README | OK | 기존 규격과 승인된 위치 |
+| 계획·단계·최종 보고 | mydocs/plans/working/report | task_m010_113 이름 | OK | 중앙 stage/final 템플릿 |
+| candidate identity | mydocs/working | task_m010_113.json | OK | 기존 strict candidate schema |
+| 오늘할일 | mydocs/orders |20261007.md/20261008.md | OK | M010·상태/범위 구분 |
+
+site updates/release.json은 공개 read-back 이후 위치로 승인됐지만 아직 생성·전환하지 않았다.
+mydocs/manual에 제품 문서를 추가하지 않았다.
+
+## 변경 전·후 정량 비교
+
+| 지표 | 변경 전 | 변경 후 |
+|---|---|---|
+| 지속 upstream pin |086/f1f9c6ae... |087/1a76570e..., core·WASM6·Studio 정합 |
+| 앱 source version |011 |012, 실제 공개는011 유지 |
+| CanvasKit 글꼴 삭제 재감지 |FF candidate의 page placeholder/빈 화면 실패 | P에서 fallback 표시·복구 후 Abel/typeface 확인 |
+| 설치 파일·서명 근거 |012 없음 | 실제6 files+3 production-key signatures |
+| PDF/가상 인쇄 시각 수용 |새 pin 미확인 |Linux29쪽·Windows32쪽 A4 |
+| 새로운 성능 측정 |미확인 |signed3종 각 입력80·6쪽scroll20회, 향상율/A-B 주장 없음 |
+
+이전 performance 숫자나 FF source의 bytes 수용을 P의 수용으로 승계하지 않았다.
+
+## 검증 결과
+
+| 구현 수용 기준 | 결과 |
+|---|---|
+| 자동 Stable 감지·후보·중복 방지·현재 pin | OK — dispatch로087 후보생성/기존PR 판정, 오늘 schedule37743793578 current087 success |
+| Rust core·WASM·Studio 같은 release | OK — gitlink1a76570e...·pin·6 generated artifact·native lock·관리 참조 |
+| 제품 제목/locale·글꼴 API·회귀 | OK — focused5·Studio283·upstream39·build/typecheck/boundary |
+| Windows/Linux full native/package | OK — ordinary37728636737 selected14 success, Windows258/Linux각247 fail/ignored0 |
+| 비게시 signing·실제6 bytes | OK — same P37732807293, archive/inventory/size/hash 및 Minisign3 독립 대조 |
+| six exact-file/native GUI | OK — signed3종37736564625, DEB37732474374, RPM37742491734/VM37741321797, ARM37743003461 |
+| 출력·font·thumbnail | OK — 범위별 실제 PDF/가상print·Canvas2D/CanvasKit·Nautilus/Thunar·MSI strict, 알려진 NSIS/3010 제한 별도 |
+| draft notes·원문·generated 규격 | OK — JSON 기존 schema, source P·assets6·3sig·draft/publishedAt=null, notes2 check |
+| Stage4 기록·위치·후속 경계 | OK — 4단계 보고·최종 보고·오늘할일·실제 source/harness·실행/미실행 구분 |
+
+실제 파일별 전체 SHA-256, archive ID/digest·run/head/attempt·structured/visual 근거는
+[Stage3 전체 보고](../working/task_m010_113_stage3.md)에 고정했다. 최종 수용 run은 모두 attempt1/success다.
+일반 MSI/NSIS/AppImage로 signed 파일을 대체하지 않았고 실패 run 파일을 공개 입력으로 쓰지 않는다.
+
+### 단계별 검증 결과
+
+- [Stage1](../working/task_m010_113_stage1.md): 자동 i18n marker failure·pin/fixture/postcommit gate 보정,
+  후보115·통합116·required37594489485 success·일반 mergebad55757, same target no-op/중복 없음.
+- [Stage2](../working/task_m010_113_stage2.md): 제품012/title/locale·font API·문구·로컬/fast37712633686,
+  strict notes JSON의 실제 file/hash/signature 완성 이연 승인.
+- [Stage3](../working/task_m010_113_stage3.md): P full/signing·actual6/3·10최종 success run·scenario/visual 수용.
+  최초 signing 입력누락·Fedora image404·잘못된 x64 spec·VM restart·GTK SVG loader 실패를 각각 보존/보정.
+- [Stage4](../working/task_m010_113_stage4.md): 원문·생성물·위치·보고·인계·Open PR 정합화.
+
+native/core/package는 P의 exact 성공 run, 최신 harness fast는 K=f4cc0017/37742487390다.
+K automation1331/upstream39/Studio43 files, Windows notes124·Windows59·PowerShell 계약 success다.
+PR required는 실제 PR merge candidate SHA의 결과를 PR checks/본문에 추가한다. 새 native 빌드로 쓰지 않는다.
+
+### Stage4 확인 명령
+
+```bash
+pnpm run check:release-notes
+node scripts/releases/notes-cli.mjs generate --version 0.1.2 --output-dir <new temporary directory>
+# 생성3종 bytes/hash·원문/참조/문서 링크, verifyProductDependencies(P), product paths diff
+git diff --check
+git status --short
+```
+
+생성물은 임시 staging에만 있다. PR 생성 후 실제 PR 참조를 원문/기록에 추가하되 assets/source/status를
+변경하지 않는다. 파일·본문의 새 hash는 인계에 기록하고 final public notes로 승격하지 않는다.
+
+## 잔여 위험과 후속 작업
+
+### 잔여 위험
+
+- 자동 감지 schedule37743793578은 main7acff6bc의 workflow가 devel을 읽어 current087을 확인했다.
+  수정 postcommit publisher는 devel에 있으며 main 승격 때 적용된다. 다른 미래 Stable target의
+  새로운 writer full positive run은 미실행이다. mocks/현재 no-op만으로 이를 통과라고 쓰지 않는다.
+- Windows NSIS hosted raw1/12 failures·thumbnail not-accepted, 강제 MSI raw1/1·3010·
+  reboot-required/post-reboot-unverified 유지. Authenticode와 updater Minisign은 별개다.
+- 모든 Wayland/GPU/글꼴/문서/배포판·physical printer/IME·concurrent edit/TTL·010 A/B 성능 미검증이다.
+- native PDF는 기존 registry svg2pdf0.13 direct path이며 upstream vendor patch 자동 적용 주장 없음.
+- P의 현재수용·K/문서용 PR head와 아직미확정 final main source/bytes를 구분해야 한다.
+- Actions evidence는 임시 보존물이다. 실제 공개 artifact/tag/manifest 또는 실제011→012 증거가 아니다.
+
+### 후속 작업 후보
+
+- 같은 #113에서 task PR 일반 merge 승인·devel→main Release PR 검토/승격.
+- exact main SHA에 맞는 일반/비게시 signed producer 입력 승인·실제6 files 재고정/설치 수용.
+- 11 asset·10 checksum행·서명/본문 hash 고정 후 CLI 공개·tag/draft/public read-back 승인.
+- 공개 read-back 뒤 site/Pages exact devel source·stable feed 전환 승인, 동일 형식011→012 실제 업그레이드.
+- 공개/업데이트 검증 결과 안내·최종 기록·issue close/부산물 정리. task PR merge만으로 #113을 닫지 않는다.
+
+## 작업지시자 승인 요청
+
+2026-10-08 같은 스레드의 “진행해줘”는 Stage4 최종 구현 보고·devel Open PR 게시 승인이다.
+이를 추가로 묻지 않고 게시한다. 이후 구체적 PR 리뷰·일반 merge와 후속 릴리즈 gate를 승인받는다.
+완료 범위는 구현·검증·인계 보고이며 #113의 실제 배포 작업은 계속 추적한다.

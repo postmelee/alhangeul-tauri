@@ -4,7 +4,7 @@
 GitHub Issue: [#113](https://github.com/postmelee/alhangeul-tauri/issues/113)
 마일스톤: M010
 작성일: 2026-10-07 (Asia/Seoul)
-상태: Stage 3 수용 완료 — product P 실제 6종·native·GUI 검증 / Stage4 승인 대기
+상태: Stage4 승인·진행 — 최종 구현 보고·devel Open PR / 실제 공개 gate 유지
 
 ## 승인 기록과 입력
 
@@ -789,3 +789,15 @@ gh workflow run alhangeul-desktop.yml --ref publish/task113 \
   새 producer/signing 없이 same P actual bytes다. product paths/dependency provenance와 draft notes 정합 유지다.
 - Stage3 전체 수용 완료는 구현 검증에 한정한다. Stage4 진입·devel task PR 및 후속 main/public gate는
   결과 보고와 함께 별도 승인받는다. #113 OPEN·현재 공개011 유지다.
+
+## Stage 4 명시 승인·인계 범위 — 2026-10-08
+
+- Stage3 전체 보고84bd39dc 후 작업지시자의 “진행해줘”가 Stage4 최종 보고·devel Open PR 게시를 승인했다.
+- final/stage4 보고·기존 release index/notes 안내·오늘할일은 기존 승인 위치를 사용한다.
+  오늘할일은 구현·보고 하위 범위만 완료 표시하고 실제 릴리즈 전달 #113은 진행중 행을 유지한다.
+- PR 생성 후 실제 PR 참조를 draft notes/기록에 추가한다. 실제6 files·sourceP·3 signatures·draft 상태는
+  그대로이며 새 생성 hash를 기록한다. JSON은 single original/inventory schema라 300LOC 권장치를
+  넘으면 contract 분할/중복 없이 정확한 data provenance를 유지하는 이유를 기록한다.
+- 선행 Stage3 P 수용·K fast는 exact 재사용이다. PR required는 실제 merge candidate SHA에서 확인한다.
+  source bytes/native build로 오기하지 않는다. 합격 전 merge 승인 요청을 하지 않는다.
+- 이번 승인에는 self-merge·main 승격·최종 main/signing/Release/tag·Pages/feed·실제 upgrade가 없다.
