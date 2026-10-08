@@ -210,3 +210,8 @@ ZIPdigest9e1b6c23...·tar/HTTP23·production manifest012/2371/hash58ca348b...와
 최초 automation1fail의 oldworkflow011 기대와 new16 CI 연결 누락은 explicit3행 승인 뒤 수정했다.
 이 Open PR은 구현117·release118·공개data119 이후 delivery harness/기록 후속이다. 실제 remote3와
 PR required·PRmerge/공개문구·새Pages·close/cleanup이 남아 전체Task113 완료로 쓰지 않는다.
+
+
+## Production upgrade 실패와 harness 보정 수용 — 2026-10-09 03:57 KST
+
+PR120의 이전 required37823417314는 전체3job 성공했지만 actual37824197495/attempt1은 NSIS·MSI·AppImage 전체 failure다. 계획의 Stage4.8 진단에 actual3 archive identity·부분 관측·실패/미완료 경계를 보존했다. 명시 승인한6파일 보정과 실제 집중87/전체1353·types/기본검사/upstream39/Studio283 수용은 [Stage4.8.1](../working/task_m010_113_stage4.8.1.md)에 기록했다. 새 exact H의 required와 actual3/all 1회 재검증은 승인됐고 후속 수행한다. old failure·strict settings equality/문서/설치/cleanup gate·public product6d/11assets/key/feed는 유지한다. 전체 실제 upgrade 수용·PR merge/공개문구·새Pages·close/cleanup은 아직 완료가 아니다.

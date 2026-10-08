@@ -85,7 +85,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     const output = resolve(path);
     if (phase === 'prepare') await prepare(kind, output);
     else if (phase === 'require-apply') await requireApply(kind, output);
-    else if (phase === 'stop') { assert.equal(kind, 'appimage'); await stopRestartedAppImage(output); }
+    else if (phase === 'stop') { assert.equal(kind, 'appimage'); await stopRestartedAppImage(output, await json(productionInputsPath(root))); }
     else await finalize(kind, output, appPath);
   } catch (error) { console.error(`Production upgrade ${phase} failed: ${error.message}`); process.exitCode = 1; }
 }

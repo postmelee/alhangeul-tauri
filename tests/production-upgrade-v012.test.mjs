@@ -8,6 +8,9 @@ import { join } from 'node:path';
 import test from 'node:test';
 import { validateInputs, productionInputsPath, digest, MANIFEST_HASH } from '../scripts/updater/production-contract.mjs';
 import { validateApply, validateVerify, validateWindowsInstallation } from '../scripts/updater/production-evidence.mjs';
+import { restartedAppImageProcess } from '../scripts/updater/production-process.mjs';
+import { observeWindowsHandoff } from './gui/production-upgrade/windows-handoff.ts';
+import { productionCapabilities } from './gui/production-upgrade/session.ts';
 import { buildUpdaterManifest, serializeUpdaterManifest } from '../scripts/updater/manifest.mjs';
 
 const spec = JSON.parse(await readFile(new URL('gui/production-upgrade-v0.1.2-inputs.json', import.meta.url)));
@@ -87,4 +90,67 @@ for (const kind of ['nsis', 'msi', 'appimage']) test(`${kind}: CLI selects new t
     assert.equal(spawnSync(process.execPath,args,options).status,1);
     assert.equal(JSON.parse(await readFile(join(output,'apply-gate.json'))).status,'failed');
   } finally {await rm(output,{recursive:true,force:true});}
+});
+
+
+test('AppImage stop validation uses the selected tuple and preserves restart identity gates', () => {
+  const value = applied('appimage');
+  assert.deepEqual(restartedAppImageProcess(value, spec), value.restart.current);
+  assert.throws(() => restartedAppImageProcess(value));
+  for (const mutate of [v => { v.startup.currentVersion = '0.1.0'; },
+    v => { v.restart.current.pid = v.restart.previous.pid; },
+    v => { v.restart.current.executable = v.restart.previous.executable; }]) {
+    const bad = clone(value); mutate(bad);
+    assert.throws(() => restartedAppImageProcess(bad, spec));
+  }
+});
+
+test('Windows apply and verify share one disposable profile while formats stay isolated', () => {
+  const input = { appPath: '/vm/app.exe', output: '/vm/nsis/apply' };
+  const profile = output => productionCapabilities({ ...input, output }, 'win32')[0]['tauri:options'].webviewOptions.userDataFolder;
+  assert.equal(profile(input.output), profile('/vm/nsis/verify'));
+  assert.notEqual(profile(input.output), profile('/vm/msi/apply'));
+  assert.equal(productionCapabilities(input, 'linux')[0]['tauri:options'].webviewOptions, undefined);
+});
+
+function windowsState(status) {
+  return { ...applied('nsis').manual, status, trigger: 'manual' };
+}
+
+test('Windows null response keeps last installing state until actual window closure', async () => {
+  let clock = 0; let reads = 0; const evidence = {};
+  await observeWindowsHandoff({ now: () => clock, timeoutMs: 1000,
+    readState: async () => {
+      if (reads++ === 0) return windowsState('installing');
+      if (reads === 2) return null;
+      throw new Error('no such window: target window already closed');
+    }, pause: async ms => { assert.equal(evidence.installObserved, undefined); clock += ms; },
+  }, evidence);
+  assert.equal(evidence.windowsHandoff.emptyStateResponses, 1);
+  assert.equal(evidence.windowsHandoff.lastSnapshot.status, 'installing');
+  assert.equal(evidence.windowsHandoff.status, 'transportClosed');
+  validateApply({ ...applied('nsis'), ...evidence }, 'nsis', spec);
+});
+
+test('Windows null alone times out and never becomes a handoff', async () => {
+  let clock = 0; const evidence = {};
+  await assert.rejects(observeWindowsHandoff({ now: () => clock, timeoutMs: 500,
+    readState: async () => null, pause: async ms => { clock += ms; },
+  }, evidence), /observation deadline/);
+  assert.equal(evidence.windowsHandoff.emptyStateResponses, 2);
+  assert.equal(evidence.windowsHandoff.status, 'failed');
+  assert.equal(evidence.installObserved, undefined);
+  assert.throws(() => validateApply({ ...applied('nsis'), ...evidence }, 'nsis', spec));
+});
+
+for (const [name, next, pattern] of [
+  ['updater error', () => windowsState('error'), /Updater failed/],
+  ['unrelated driver error', () => { throw new Error('script timeout while session is active'); }, /script timeout/],
+]) test(`Windows null response cannot hide ${name}`, async () => {
+  let reads = 0; const evidence = {};
+  await assert.rejects(observeWindowsHandoff({ readState: async () => reads++ === 0 ? null : next(),
+    pause: async () => {},
+  }, evidence), pattern);
+  assert.equal(evidence.windowsHandoff.status, 'failed');
+  assert.equal(evidence.installObserved, undefined);
 });
