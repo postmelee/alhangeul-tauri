@@ -198,9 +198,9 @@ describe('local font supply lifecycle', () => {
     const repaint = vi.fn(() => session.invalidateDocument({ resetResources: false }));
     const view = {
       getRenderBackend: () => 'canvaskit',
-      loadDocument: async () => {
-        // CanvasView.prepareDocumentLoad's real session boundary clears typefaces.
-        session.beginDocument('fixture');
+      refreshFontResources: async () => {
+        // CanvasView.refreshFontResources resets the real session's font resources.
+        session.invalidateDocument({ resetResources: true });
         await session.resolve({} as never);
         expect(renderer.diagnostics().localTypefaceCount).toBe(0);
       },
@@ -219,12 +219,12 @@ describe('local font supply lifecycle', () => {
     session.dispose();
   });
 
-  it('does not supply or repaint a superseded document during async view reload', async () => {
+  it('does not supply or repaint a superseded document during async font resource refresh', async () => {
     let current = true;
     const prepareLocalFonts = vi.fn();
     const session = { invalidateDocument: vi.fn(), getCanvasKitRenderer: () => ({ prepareLocalFonts }) };
     const repaint = vi.fn();
-    const view = { getRenderBackend: () => 'canvaskit', loadDocument: async () => { current = false; } };
+    const view = { getRenderBackend: () => 'canvaskit', refreshFontResources: async () => { current = false; } };
     await refreshHook(session, view, repaint)(() => current);
     expect(prepareLocalFonts).not.toHaveBeenCalled();
     expect(repaint).not.toHaveBeenCalled();
@@ -241,7 +241,7 @@ describe('local font supply lifecycle', () => {
       diagnostics: () => ({ decisionKey }),
     };
     const repaint = vi.fn();
-    const view = { getRenderBackend: () => 'canvaskit', loadDocument: async () => {} };
+    const view = { getRenderBackend: () => 'canvaskit', refreshFontResources: async () => {} };
     const pending = refreshHook(session, view, repaint)(() => current);
     await vi.waitFor(() => expect(finish).toBeTypeOf('function'));
     if (change === 'document') current = false;

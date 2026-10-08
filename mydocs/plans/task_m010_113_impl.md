@@ -4,7 +4,7 @@
 GitHub Issue: [#113](https://github.com/postmelee/alhangeul-tauri/issues/113)
 마일스톤: M010
 작성일: 2026-10-07 (Asia/Seoul)
-상태: Stage 3 진행 — ff48d150 전체 native·6종 패키지·비게시 signing·설치/GUI 수용 승인
+상태: Stage 3.3 진행 — 최소 글꼴 refresh 보정 및 새 exact source 전체 빌드·비게시 signing·6종 수용 승인
 
 ## 승인 기록과 입력
 
@@ -637,7 +637,7 @@ gh workflow run alhangeul-desktop.yml --ref publish/task113 \
   FF workflow·acceptance_candidate_sha=FF·ordinary run으로 한 번 dispatch했다. 현재 서명 뒤
   pending이며 같은 desktop concurrency의 pending 교체를 피하여 추가 desktop mode는 기다린다.
 
-## Stage 3.3 제품 글꼴 refresh 보정안 — 승인 대기
+## Stage 3.3 제품 글꼴 refresh 보정 — 2026-10-08 승인·진행
 
 ### 관측과 충돌 경로
 
@@ -656,7 +656,7 @@ gh workflow run alhangeul-desktop.yml --ref publish/task113 \
 ### 검토 가능한 최소 변경
 
 - `/private/tmp/task113-stage3-font-refresh-proposal/font-refresh.patch`에 실제 diff를 준비했다.
-  repository product source는 아직 수정하지 않았다.
+  2026-10-08 작업지시자의 “진행해줘”와 “최소 보정·새 source 재검증 (권장)” 답변으로 승인됐다.
 - `apps/studio-host/local-font-entry-hooks.ts`: 문서 invalidate/load 두 호출을 upstream의
   `await view?.refreshFontResources()` 한 호출로 바꾼다. 문서·undo/dirty 상태를 보존하는 font
   resource 전용 API를 사용하고 현재 document/view/session/renderer/decision guard는 유지한다.
@@ -679,8 +679,12 @@ gh workflow run alhangeul-desktop.yml --ref publish/task113 \
 4. 새 source의 실제 metadata가 확인된 뒤 candidate/notes JSON·생성 body를 정렬한다. 아직 공개
    source가 아니며 final main·Release/tag/assets·Pages/feed·production upgrade gate는 이후에 받는다.
 
-제품 source 및 새 서명 source를 바꾸는 보정안이므로 작업지시자의 명시 승인을 받은 뒤 적용한다.
-현재 승인된 FF의 나머지 exact-file/Windows PDF·RPM/Fedora·arm64 검사와 기록은 계속한다.
+2026-10-08 같은 스레드의 명시 승인에 따라 두 파일의 최소 diff를 적용하고 새 exact product P의
+전체 빌드·비게시 production signing·6종 설치/GUI를 수행한다. 전체 Studio 회귀에서 기존
+`local-font-application.test.ts`의 view mock 세 곳이 이전 loadDocument API를 사용해 4건 실패했다.
+동일 보정의 테스트 정렬로 mock을 refreshFontResources와 실제 session font-resource reset 경계로
+바꾸며 typeface 재공급·문서/decision 교체 시 paint 거부 assertion은 그대로 유지한다. 기존 FF의 Windows PDF 검사는
+37724319402 success로 완료됐다. 남은 exact-file·RPM/Fedora·arm64는 새 P의 실제 bytes로 검증한다.
 
 ### Stage 3.2 실제 metadata와 draft 생성 수용
 
@@ -691,5 +695,15 @@ gh workflow run alhangeul-desktop.yml --ref publish/task113 \
 - notes check 2 documents·tests124/124·staging 생성3종·diff check 통과. body 6140 bytes/
   ec25e655602002e16e58344e92f02c3195040cde24d780fed27224f102d73472.
   source site/manifest는 0.1.1이며 기록은 `task_m010_113_stage3.2.md`에 묶는다.
-- FF source와 새 검사 commit을 구분하여 6종 설치/GUI를 계속한다. Stage3.3 product 보정은
-  비동기 승인 요청 중이며 답변 전 제품 source를 변경하지 않는다.
+- FF source의 draft candidate/notes는 보정 전 기준이다. Stage3.3 승인 후 새 P의 actual inventory가
+  확인되면 source·archive·6종 files·3 signatures를 함께 갱신한다. F의 bytes 수용을 승계하지 않는다.
+
+### Stage 3.3 로컬 보정 검증 결과
+
+- 실제 hook의 focused 5/5, 전체 Studio 283/283, automation 1326/1326, upstream 39/39 통과.
+- Studio build·GUI typecheck·boundary(818 files)·제품 version/metadata·pin(087/6 artifacts)·
+  Action pins(29 files/165 references/11 pins)·draft notes check(2 documents)·diff check 통과.
+- 초기 전체 Studio 4건의 mock API 불일치는 mock만 정렬해 해결했다. 실제 native/GUI는 새
+  commit P에서 수행하며 로컬 통과를 CanvasKit 삭제 재감지 문제의 실제 수용으로 기록하지 않는다.
+- stage3.3 보고서는 로컬 보정 하위 범위에 한정한다. 새 source P의 원격 수용은 현재 승인에 따라
+  이어서 수행하며 Stage 3 전체 완료와 Stage 4 진입·공개 승인으로 해석하지 않는다.
