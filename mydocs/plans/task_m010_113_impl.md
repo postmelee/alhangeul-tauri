@@ -4,7 +4,7 @@
 GitHub Issue: [#113](https://github.com/postmelee/alhangeul-tauri/issues/113)
 마일스톤: M010
 작성일: 2026-10-07 (Asia/Seoul)
-상태: Stage 2 완료 — 제품 0.1.2·title/locale·문구·exact fast 수용 / Stage 3 승인 대기
+상태: Stage 3 진행 — ff48d150 전체 native·6종 패키지·비게시 signing·설치/GUI 수용 승인
 
 ## 승인 기록과 입력
 
@@ -35,7 +35,7 @@ GitHub Issue: [#113](https://github.com/postmelee/alhangeul-tauri/issues/113)
 | current pin 안내 | README.md, docs/DEVELOPMENT.md, docs/architecture/UPSTREAM.md | 동일 | OK | 자동 marker만 갱신 |
 | adapter 계약 | 기존 docs/architecture | 실제 계약이 바뀐 기존 문서 | OK | 필요 시 최소 수정 |
 | 버전 기록·원문 | docs/releases | v0.1.2.md, v0.1.2.notes.json, README.md | OK | 기존 규격 |
-| 생성 웹·배포 데이터 | site | updates/v0.1.2/index.html, release.json | OK | 최신 전환은 공개 read-back 뒤 |
+| 생성 웹·배포 데이터 | site | updates/v0.1.2.html, release.json | OK | 최신 전환은 공개 read-back 뒤 |
 | 계획·단계·보고 | mydocs/plans, working, report | task_m010_113{,_impl,_stageN,_report}.md | OK | 한국어 작업 추적 |
 | 후보 identity | mydocs/working | task_m010_113.json | OK | 필요 시 기존 candidate schema 사용 |
 | 오늘할일 | mydocs/orders | 실제 작업일 YYYYMMDD.md | OK | 완료 시각은 실제 범위 완료 때 기록 |
@@ -551,3 +551,88 @@ gh workflow run alhangeul-desktop.yml --ref publish/task113 \
   harness 기록만 바뀌면 product SHA와 구분하고 critical dependency/pin 정합성은 계속 검증한다.
 - 실제 6종 file·signed inventory 수용 후 새 notes JSON·body/HTML/short notes를 완성한다.
   final main/새 final bytes/게시·Pages·production upgrade gate는 이 승인에 포함하지 않는다.
+
+
+## Stage 3 착수 승인 — 2026-10-08
+
+- Stage 2 보고와 exact ff48d150 source의 full native·6종 package·비게시 signing·설치/GUI
+  검증 요청에 같은 스레드의 “진행해줘”가 승인했다. 위 두 producer와 실제 파일/기능 수용을 진행한다.
+- 직전 재조회에서 publish/task113은 `ff48d15011e53169bfd97b13a4f7084c3284c289`, #113 OPEN이며
+  이 ref의 desktop 기존 run은 없다. 일반 producer와 동일 source의 signing을 한 번씩 dispatch한다.
+- source 변경 없이 local task의 기록은 이어간다. candidate/acceptance harness 기록·필요 최소 보정은
+  제품 source와 구분한다. main·Release/tag/Pages/feed·production upgrade는 후속 승인 gate다.
+
+
+### producer 시작·acceptance harness 최소 정렬
+
+- 일반 [37719733676](https://github.com/postmelee/alhangeul-tauri/actions/runs/37719733676),
+  서명 [37719736557](https://github.com/postmelee/alhangeul-tauri/actions/runs/37719736557),
+  두 head는 ff48d150...이며 2026-10-08T02:49:13Z/02:49:15Z dispatch했다.
+  같은 desktop ref concurrency로 서명은 일반 producer 뒤 pending이며 중복 dispatch하지 않는다.
+- 기존 `release-candidate-input.mjs`의 unsigned RPM/arm64 입력이 ci.yml만 허용해 승인한
+  ordinary desktop producer를 거부한다. 기존 verify-workflow-artifact와 Linux GUI는 desktop
+  producer를 이미 지원한다. 원래 승인한 수행계획의 새 release 수용 입력 최소 보정 범위다.
+- harness의 unsigned workflow allowlist만 ci.yml + alhangeul-desktop.yml로 명시한다. signed는
+  desktop.yml만 허용한다. version/tag/source/run·archive ID/digest·path/hash·목표 kind/platform과
+  실제 producer success 검증은 유지하고 불명확한 workflow를 거부한다. 제품 source FF는 바꾸지 않는다.
+- 두 unsigned kind의 실제 선택 identity 보존과 signed의 ci.yml 거부 회귀를 추가한다.
+  harness/plan은 향후 실제 candidate JSON과 별도 commit으로 기록하며 product SHA와 구분한다.
+
+### Stage 3 글꼴 기능 수용 연결
+
+- 기존 A/B performance producer는 v0.1.0 baseline의 WASM/gitlink 정합성을 요구하므로 새 v0.8.7
+  pin에 사용하지 않는다. baseline 검증과 비교 계약을 완화하지 않는다.
+- `wdio.release-files.conf.ts`는 검증된 새 candidate JSON이 있고 production updater check가
+  아닌 경우에만 기존 `local-font-performance.e2e.ts`를 문서 저장·재시작 spec과 함께 실행한다.
+  NSIS/MSI/AppImage의 실제 설치 bytes로 Windows/Linux x64, renderer 2종, 로컬 글꼴 off/on,
+  HWP/HWPX 5회 재열기·입력·6쪽 scroll을 확인한다. 이전 성능 수치나 개선률을 승계하지 않는다.
+- product FF·package bytes는 그대로이며 변경은 검사 harness다. native 설치·document spec·
+  cleanup·WebView policy·최종 upload gate는 유지한다. Linux DEB의 글꼴 재감지·재시작·새 창
+  기능은 별도 `scope=local-fonts`의 기존 시나리오로 수용한다.
+
+### Stage 3 안내 참고 범위 확인
+
+- 이전 공개 source `96e89e900...`부터 product FF까지 first-parent merge와 bot 통합을 대조했다.
+  #100·#101·#103·#104·#105·#106·#109·#111도 실제 포함되며 운영/웹/문서 참고로 기록한다.
+  이들의 기존 v0.1.1 공개/성능 결과를 새 파일 수용이나 주요 앱 기능으로 승계하지 않는다.
+- #97·#102·#108·#110의 CLOSED·completed와 #113 OPEN을 API에서 확인했다. 이전 운영
+  Issue는 참고로 유지하고 #113을 해결로 쓰지 않는다. schema와 JSON 완성 순서 조정은 유지한다.
+
+### 생성물 위치와 비게시 경계 정렬
+
+- 작업지시자의 기존 JSON/생성 규격 유지 선택에 따라 기존 generator의 실제 target은
+  `site/updates/v0.1.2.html`이다. 계획의 초기 `v0.1.2/index.html` 표기를 같은 공식 site 루트의
+  기존 flat route로 정렬한다. 새 template/route/schema를 만들지 않는다.
+- Stage 3 draft 생성 body·HTML·short notes는 `/private/tmp/task113-stage3-notes-generated`의
+  새 staging directory에서 검토하고 hash를 기록한다. 공개 site tree에 draft HTML을 넣지 않는다.
+  실제 HTML·release.json·manifest 전환은 Release read-back 뒤 별도 공개 gate다.
+
+### Stage 3 일반 producer·Linux GUI 결과와 CanvasKit 실패 진단
+
+- ordinary [37719733676](https://github.com/postmelee/alhangeul-tauri/actions/runs/37719733676)의
+  all/full/run_tests=true가 전체 success다. 선택 job 14개 success, native Rust는 Windows 258,
+  Linux x64/arm64 각 247 tests·0 failed·0 ignored다. 세 core·package lifecycle·설치 계약이 완료됐다.
+- NSIS raw exit 1·12 실패는 기존 hosted diagnostic으로 계약만 통과했다. 썸네일 not-accepted 유지.
+  MSI raw exit 0·0 실패는 strict-product 통과, 강제 MSI는 raw exit 1·3010/reboot-required로
+  계약 통과이며 post-reboot-unverified다. 전체 썸네일 해결·재부팅 후 검증으로 쓰지 않는다.
+- 원본 Linux archive 전체 digest·배포 대상 inventory의 exact ZIP 경로/크기/hash를 확인했다.
+  로컬 macOS의 Alhangeul/alhangeul 디렉터리 병합과 기존 AppDir 제외 계약을 분리했다.
+  원본 inventory/ZIP은 수정하지 않았고 Linux 소비자의 추출 후 strict 검증을 유지한다.
+- Linux full [37723131983](https://github.com/postmelee/alhangeul-tauri/actions/runs/37723131983)는
+  success다. source/workflow FF, ordinary producer의 exact DEB·helper·inventory와 실제
+  문서/새 문서·PDF·GTK/CUPS virtual print·Nautilus thumbnail 수용을 완료했다.
+- local-fonts [37723134560](https://github.com/postmelee/alhangeul-tauri/actions/runs/37723134560)는
+  failure다. Canvas2D의 전체 설정/삭제/복구/새 창/재시작은 통과했다. CanvasKit 초기 HWP/HWPX
+  off/on·재감지·새 창까지 통과했으나 글꼴 삭제 후 재감지에서 canvas 미표시 timeout과 빈 페이지다.
+  selector 완화·renderer 대체·검사 skip을 하지 않는다. Stage 3 전체는 미완료다.
+- `local-fonts.e2e.ts`의 afterEach 실패 진단만 renderer RPC·canvas 크기/marker·window handles로
+  보완한다. source FF와 critical dependency는 유지하고 검사 harness SHA를 별도로 고정한다.
+  원인이 드러나지 않은 현재 상태에서는 product/third_party source를 수정하지 않는다.
+  수정한 진단으로 같은 exact DEB를 local-fonts scope에서 한 번 확인한다.
+- 비게시 signing [37719736557](https://github.com/postmelee/alhangeul-tauri/actions/runs/37719736557)는
+  release Environment required reviewer `postmelee`·self-review 허용·ref 제한 없음·current approval
+  가능을 확인했다. 이미 승인한 FF/publish_release=false에만 정상 review를 기록했고 보호 설정이나
+  admin bypass를 사용하지 않았다. public job·tag/Release/Pages/feed는 별도 gate다.
+- Windows PDF [37724319402](https://github.com/postmelee/alhangeul-tauri/actions/runs/37724319402)를
+  FF workflow·acceptance_candidate_sha=FF·ordinary run으로 한 번 dispatch했다. 현재 서명 뒤
+  pending이며 같은 desktop concurrency의 pending 교체를 피하여 추가 desktop mode는 기다린다.
