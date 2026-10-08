@@ -934,3 +934,64 @@ gh workflow run alhangeul-desktop.yml --ref publish/task113 \
   Release/tag 변경이나 실제 upgrade source/harness 수정/실행은 없다. ref/상태 drift는 중단 후 판단한다.
 - 기존 승인 docs/releases·mydocs plans/working/report/orders에 currentCI/merge/출력·승인 입력을
   기록한다. 실제011→012 승인·검증과 최종 record PR/close/cleanup이 남아 branch/자료는 유지한다.
+
+## Stage4.6 Pages 공개 완료와 Stage4.7 제안 — 2026-10-09 03:03 KST
+
+- exact devel1f33의 Pages/manifest 공개·23 bytes/화면 검증을 제시한 뒤 작업지시자의 “진행해줘.”를
+  `2026-10-08T17:46:20.940873+00:00`에 기록했다. run37819153172 attempt1·전체 success이며 source/workflow/
+  checkout/deploy1f33다. artifact11568521999/ZIP9e1b6c23... 및 공개HTTP23을 수용했다.
+- manifest2371/hash58ca348b...·target3의 actual public installer bytes Minisign·main6d source,
+  download6·key/endpoint·Release11/body·정상 github-pages 환경/보호를 검산했다. desktop/mobile
+  화면 및mobile390 overflow0도 확인했다. 전체 actual011→012/Gate6 완료는 아직 아니다.
+- updates 목록의 local v012 static entry가 없어 기존 GitHub fallback을 관측했다. 공개 v012
+  HTML은 정상이며1행 static link를 추가하는 제안을 prepared14 patch에 포함했다.
+
+### Stage4.7 승인 대기: 실제011→012 harness·웹 목록 보정
+
+임시 diff `/private/tmp/task113-main-candidate/upgrade012-proposal/upgrade012-and-note-link.patch`
+SHA256 `251ca68564b5ff1f5a57efe03175efb7103a2ae862c7683555b582bcba9080fc`·14파일·619diff lines다.
+아래 파일 외 앱/Rust/pin/빌드·서명·Pages workflow/환경·Release11/body·feed bytes를 바꾸지 않는다.
+전부 기존 test/harness/source 위치이며 new JSON은 tests/gui의 버전별 실행 입력, new test는 해당
+계약의 음성/CLI 선택 검증이다. 사용자 웹은 기존 site/updates/index.html의 local note1행이다.
+제품 공식 기록은 기존 docs/releases, task 계획/단계/최종/오늘할일은 기존 mydocs 위치를 사용한다.
+새 공식 문서 루트나 mydocs/manual 제품 문서는 없다. 전부300LOC 이하이며 기존306LOC 회귀는 수정하지 않는다.
+
+| proposed path | LOC |
+|---|---:|
+| `tests/gui/production-upgrade-v0.1.2-inputs.json` | 183 |
+| `scripts/updater/production-contract.mjs` | 95 |
+| `scripts/updater/production-evidence.mjs` | 93 |
+| `scripts/updater/production-upgrade.mjs` | 91 |
+| `tests/gui/production-upgrade/inputs.ts` | 30 |
+| `tests/gui/production-upgrade/native.ts` | 63 |
+| `tests/gui/production-upgrade/apply.ts` | 90 |
+| `tests/gui/production-upgrade/verify.ts` | 37 |
+| `tests/gui/production-upgrade/startup.ts` | 32 |
+| `tests/gui/specs/production-upgrade.e2e.ts` | 30 |
+| `.github/workflows/alhangeul-production-upgrade-windows.yml` | 140 |
+| `.github/workflows/alhangeul-production-upgrade-linux.yml` | 105 |
+| `site/updates/index.html` | 92 |
+| `tests/production-upgrade-v012.test.mjs` | 90 |
+
+- 기존010→011 `tests/gui/production-upgrade-inputs.json`, production regression59와 MANIFEST_HASH
+  654efd7e...를 그대로 보존한다. 새 `production-upgrade-v0.1.2-inputs.json`은 n011/Release402604603/
+  source96e89e90/tagObjectb7b858e1/publishedOct3와 next012/Release407055948/main6dcb05e9/
+  tagObject198ebba7/publishedOct8의11asset ID/bytes/digest/URL을 고정한다. fresh011 API identity도 확인했다.
+- 허용한2 relative input path·2 tuple/manifest hash만 받아 version을 증거·GUI·Windows resource
+  검산에 전달한다. windows-2025 NSIS/MSI·ubuntu-22.04 writable FUSE AppImage의 기존 workflow가
+  새 input path를 명시하고 실제 N011 설치→production012 check/download/signature→사용자 동의/
+  dirty blocker→설치/재실행→012 version/settings/HWP/HWPX를 검사한다. handoff/process fences,
+  실패 gate·cleanup/WebView2 policy restore·step outcomes·실제 byte/서명·음성 assertion은 유지한다.
+- 별도 임시 검토 tree에서 production75(기존59+신규16)/151 updater-pages-actions, GUI tsc를
+  수용했고 real checkout에는 적용하지 않았다. 승인 후 실제 source에서 같은 검사와 full automation,
+  product-boundary/upstream/Studio 기본 검사 및 PR required의 exact merge candidate를 확인한다.
+  Node generic만 로컬에서 실행하고 native/설치/업그레이드는 Windows/Linux 격리 runner에서만 한다.
+- source/보고 commit을 정상 publish/task113 push해 exact harness H를 고정한다. existing
+  alhangeul-desktop.yml --ref publish/task113, mode=production-upgrade-check,
+  production_upgrade_platform=all, build_ref=H, publish_release=false, run_tests=false로1회 실행한다.
+  workflow/checkout/H/input files가 같아야 하며 native 제품 build/sign/publish jobs는 mode로 제외된다.
+  필요한 pinned native driver는 해당 Windows/Linux runner에서만 설치한다. app source는 공개main6d,
+  updater manifest는 공개012/hash58ca348b...다. 실패/드리프트는 재실행·보호 완화로 우회하지 않는다.
+- 승인 범위는14source 적용·위 검증/기록commit·정상 push/devel Open PR와필수CI·새 H의 실제3형식
+  remote 검증과 artifact/structured/visual 대조까지다. 실제 결과를 기록하고 잔여 공개문구/목록/data
+  PR merge 및exactPages 재배포·body 수정·Issue113close/cleanup은 결과 기반으로 별도 제시한다.

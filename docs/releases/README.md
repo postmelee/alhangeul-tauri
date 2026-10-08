@@ -9,7 +9,7 @@
 
 | 버전 | 상태 | 이전 공개 버전 | GitHub Release | 기록 |
 |---|---|---|---|---|
-| v0.1.2 | GitHub Stable/latest·published 본문 공개·데이터 PR119 통합 / Pages/feed·실제 upgrade 후속 | v0.1.1 | [v0.1.2](https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.2) | [v0.1.2 공개 기록](v0.1.2.md) |
+| v0.1.2 | GitHub Stable/latest·본문·Pages/feed012 공개·HTTP23 수용 / 목록 local link·실제 upgrade 후속 | v0.1.1 | [v0.1.2](https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.2) | [v0.1.2 공개 기록](v0.1.2.md) |
 | v0.1.1 | Release·규격 body·웹·피드·검증 결과 안내 공개, 세 형식 실제 upgrade·HTTP 수용 완료 | v0.1.0 | [v0.1.1](https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.1) | [v0.1.1 공개 기록](v0.1.1.md), [안내 원문](v0.1.1.notes.json) |
 | v0.1.0 | stable 공개·Pages/updater 전환 및 동일 버전 조회 완료 | 없음 | [v0.1.0](https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.0) | [v0.1.0 공개 기록](v0.1.0.md) |
 
@@ -101,3 +101,5 @@ private key·암호·token·개인 문서·실제 credential 보관 경로는 �
 2026-10-08T17:03:40.244Z 확인: v0.1.2 본문을 actual published metadata로 보정해 read-back했다.012 원문/웹/manifest 데이터는 로컬 검증과 devel PR 준비 상태이며 원격 Pages/feed는011 유지다.
 
 2026-10-08T17:31:23.125Z 확인: PR119 일반 merge·devel `1f33d03918b50a5b9140978a9eb28d1b5e65ebe6` 및 Pages19/23 bytes 고정을 완료했다.012 Pages/manifest dispatch는 승인 대기, 현재 production feed는011이다.
+
+2026-10-08T18:00:10.828089+00:00 확인: exact Pages37819153172/source1f33·artifact/HTTP23·production012/hash58ca348b...·서명3/공개6파일·desktop/mobile 확인을 완료했다. updates 목록의 local v012 연결 보정 및 실제011→012는 후속 승인·검증 대상이다.

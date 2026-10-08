@@ -191,3 +191,13 @@ merge 승인받으며 old failure·site/feed011·actual011→012 미실행을 �
 [Stage4.5](../working/task_m010_113_stage4.5.md)에 actual merge/2parents/tree·CI counts·IssueOPEN·
 Pages23 frozen bytes 및 기존 환경/피드011 상태와 다음 승인 입력을 연결했다. Sites/피드012 공개는
 아직 미실행이며 actual011→012·최종 close/cleanup이 남는다. #113 전체 완료로 쓰지 않는다.
+
+## Pages·production012 공개와 Stage4.6 — 2026-10-09 03:03 KST
+
+명시 승인된 exactdevel1f33의 기존 Pages37819153172가 attempt1/whole success다.
+[Stage4.6](../working/task_m010_113_stage4.6.md)에 workflow/source/checkout/deploy SHA·artifact11568521999/
+ZIPdigest9e1b6c23...·tar/HTTP23·production manifest012/2371/hash58ca348b...와 actual3signature를 기록했다.
+6download·desktop/mobile/KST/known limits를 확인했고 환경/보호·Release11/body·main6d/key/endpoint를
+유지했다. updates 목록의 local v012 static link 누락은 미수용으로 남는다. source14/실제011→012
+제안은 임시75/151/GUI typecheck만 통과했으며 저장소 미적용·remote 미실행이다. 전체Gate6/Task113
+완료가 아니며, source 승인·검증·필수CI/actual3upgrade·최종공개문구/PRmerge·close/cleanup이 남는다.
