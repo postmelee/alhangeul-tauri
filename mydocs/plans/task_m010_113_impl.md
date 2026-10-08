@@ -1121,3 +1121,86 @@ cleanup source는 보정하지 않고 새 실행에서 실제 정상 설치 종�
 ### Stage4.8.1 actual generic 수용 — 2026-10-09 03:57 KST
 
 승인6파일 after hashes·legacy59/fixed inputs/strict evidence/public data/key 불변을 검산했다. 집중87/전체1353·fail/skip0·GUI types, 기본 checks/notes2/Pages19·23·upstream39·Studio283/43files/build를 실제 checkout에서 통과했다. [Stage4.8.1](../working/task_m010_113_stage4.8.1.md)에 source와 generic 수용만 기록한다. 새 H required와 승인된 actual3/all 재실행을 이어가며 기존37824197495 failure는 그대로다.
+
+
+### Stage4.8 새 run 결과 — 2026-10-09
+
+Stage4.8.1 source/report H `bc082d0006baf7a045855bcb0b055aa3fad11c12`를 기존 PR120에 normal
+push했다. 새 required [37828387632](https://github.com/postmelee/alhangeul-tauri/actions/runs/37828387632)/attempt1은
+Node1353/upstream39/Studio283·Windows notes124/production81/PowerShell·required3job 전체 success다.
+실제 merge checkout `fa4335c2817bd8843f06abb68dc0b123823dcdd4`/tree889571f6...가 H와 동등하다.
+두 공개 Release/11assets·tag/source96e→6d·본문03cde7aa...·feed2371/hash58ca를 다시 확인한 뒤
+승인한 actual3/all 1회 [37828940744](https://github.com/postmelee/alhangeul-tauri/actions/runs/37828940744)/attempt1을 실행했다.
+전체 run은 failure이며 Windows2 success/Linux failure다. 원래37824197495 failure도 그대로다.
+
+| 형식 | 수용 범위/실제 결과 | job/archive/digest |
+|---|---|---|
+| NSIS | public input/서명·startup/manual/dirty/UI동의·실제 closure·설치012/handler/defaults·strict settings equality·About012·HWP6/HWPX10·bytes 불변·cleanup/policy restore/accepted.json 통과 | job113488965823 / archive11573406006·15780764bytes·sha2566d7f0fc4a04b51158f7ea6768383ff027056bff6309ed88c086cf405114b0dbc |
+| MSI | 같은 전체 Windows 계약 통과, Product/FileVersion012 및 accepted.json | job113488965981 / archive11573131257·15824111bytes·sha256294a30eff1d571a9809343a5d0956bded577dfb927efd2d3f93a481116762481 |
+| AppImage | public input/서명·startup/manual/dirty/동의·install restartRequired까지 관측. restart 클릭에서 execute/async POST unknown error | job113488965215 / archive11573135792·121227bytes·sha25692b51c23170465fb00551cc69dd86bafdb29443b4ffdc6d80ae39618063b5048 |
+
+3개 완료 job 로그·archive bytes/digest·안전 추출을 보존했다. 별도 Node 읽기 검산은 Windows2만
+수용하며 mixed whole run failure·Linux 미완료를 유지한다. 실제 manifests/input source/11identities/
+selected public path(size/hash/url/signatureVerified)·apply/verify/native receipt·완료시각과
+accepted.json/H·settings/각 문서 hash 및 screenshots를 확인했다. NSIS/MSI 각각 HWP6/HWPX10의
+4개 GUI 화면에서 제목·본문/표·툴바·쪽수 상태를 직접 확인했다. white page/로딩 overlay는 없다.
+Linux backend log는 원래 PID4963 뒤 restart 클릭 후 새 PID5136을 보여주지만 FUSE exe/필수
+restart receipt가 없어 성공으로 쓰지 않는다. 다음 bytes/stop/verify/finalize는 skipped·accepted.json 없음이다.
+
+### Stage4.8.2 승인 대기 — AppImage 재시작 응답 관측 3파일 보정
+
+실제 오류는 restart UI 클릭의 `WebDriverError: unknown error when running "execute/async" with method "POST"`다.
+기존 AppImage catch는 session/disconnected/closed/no such window/ECONNREFUSED만 분류해
+`waitForAppImageRestart(previous)` 진입 전에 끝났다. unknown 오류만으로 앱 재시작 성공을 단정하지 않는다.
+
+구체 diff: `/private/tmp/task113-main-candidate/upgrade012-proposal/failure-correction-proposal/restart-correction-proposal/restart-correction.patch`
+SHA256 `e3e72ebd0d1f65e2e0639b4d139728b3ad09ad04f361a6b1a3076ebf4f4fc8f4`·3파일/110diff lines.
+같은 폴더 files.json/approval-inputs.json에 source before/after 및 선택 범위가 있다.
+
+- tests/gui/production-upgrade/restart-observation.ts 신규23LOC: visible restart click의 기존 known
+ closure 또는 관측된 exact execute/async POST 오류만 provisional로 기록하고 기존 native wait를 반드시
+ 호출한다. 앱 API를 직접 호출하거나 update/재시작을 mock하지 않는다. 응답 오류만으로 통과하지 않는다.
+- tests/gui/production-upgrade/apply.ts 90→88LOC: installed restartRequired·이전 realPID/FUSE exe·
+ durable restart-request.json 뒤 위 작은 helper에 visible UI click과 실제 waitForAppImageRestart를 전달한다.
+ restart.ts의 Linux-only 단일 product/FUSE PID·서로 다른PID/exe·120초 deadline 검사는 byte 불변이다.
+- tests/production-upgrade-v012.test.mjs 156→199LOC: new22→29 회귀(+7)다. exact 오류/기존 closure 뒤
+ native wait 필수·native timeout 실패·다른 command의 unknown error/script timeout/permission 거부·정상 클릭
+ 관측을 검증한다. legacy59/input/hash와 fixed012 tuple/strict validators·기존 explicit CI 연결은 보존한다.
+
+임시 tree에서 production88+workflow6=94/94·fail/skip0·GUI tsc와 실제 git apply --check 통과다.
+현재 실제 checkout에는 3파일 diff를 적용하지 않았다. 필요한 실제 generic은 full automation1360와
+94/types·기존 boundary/metadata/pin/notes/Pages19·23/upstream39/Studio283/build다.
+
+### 승인 후 새 H·Linux-only 검증과 Windows 증거 재사용 경계
+
+보정/기록을 Stage4.8.2 generic 단계로 묶어 기존 PR120 normal push한다. 새 H required3job 전체
+success를 확인한 뒤 fixed두Release/public11/tag/source/key/endpoint/manifest58ca 재검산 후 기존
+alhangeul-desktop.yml --ref publish/task113/mode=production-upgrade-check/production_upgrade_platform=linux-x64/
+build_ref=새H/publish_release=false/run_tests=false를 한 번 dispatch한다. Windows 재실행은 요청하지 않는다.
+
+성공한 Windows2는 bc082d00/37828940744의 각 complete job·archive와 accepted.json을 해당
+형식 수용으로 보존한다. 새 patch는 AppImage restart branch에만 실행되며 applyWindowsUpgrade 함수
+본문과 Windows 분기/return, Windows workflow·handoff/profile/verify/native/inputs/config/e2e·strict
+validators/의존성은 byte 불변으로 대조했다. 새 leaf는 top-level native 실행이 없고 Windows 경로에서
+호출되지 않는다. 같은 public product6d/공개 files/서명/manifest를 사용하며 새 product 생성은 없다.
+이 재사용은 실패한 run에서 제품 producer archive를 가져오는 경로가 아니라 완료된 consumer job의
+명시적인 Windows-only 실제 검증 증거다. mixed run 전체를 success로 소급 처리하지 않는다.
+
+Linux 새 run은 public bytes·UI동의/dirty·실제 PID/exe restart·교체hash/stop·설정 equality·About012·
+HWP/HWPX·accepted.json·전체 선택 job/upload 성공을 모두 요구한다. 통과하면 형식별 product/source/
+harness/run/receipt를 각각 적어 Windows2와 Linux를 조합한 지원3형식 수용을 보고한다. 어느 하나라도
+실패/누락이면 whole3는 미완료다. Generic/기존 partial apply로 대신하지 않는다.
+
+문서 위치는 기존 승인 mydocs plans/working/report/orders와 docs/releases 추적이다. Stage4.8 전체
+완료 보고서는 Linux를 포함한 모든 실제 수용 뒤에만 작성한다. PR merge·공개 result 문구/body·새
+Pages 배포·Issueclose/cleanup은 후속 승인이다. 이번 제안 source·Linux-only 재실행은 **승인 대기**다.
+
+
+### Stage4.8.2 명시 승인·착수 — 2026-10-09
+
+같은 스레드의 작업지시자 “진행해줘.”로 위 patche3e72ebd... 3파일 보정·전체 generic·기존 PR120 정상 push/새 required·통과 뒤 새 exact H Linux-only 1회·Windows2 경로 불변 근거의 증거 보존과 조건부 whole3 결과 기록을 승인받았다. 근거 시각은 `2026-10-08T19:21:48.426401+00:00`다. before/after hash를 확인해 실제 source에 적용했다. 두 과거 run failure와 후속 merge/공개문구/Pages/close 승인 gate는 유지한다.
+
+
+### Stage4.8.2 actual generic 수용 — 2026-10-09 04:23 KST
+
+승인3 after hashes·Windows 경로/원래 native restart probe/legacy59/fixed inputs/strict evidence/public data/key 불변을 확인했다. 실제 집중94/전체1360·fail/skip0·GUI types·기본 checks/notes2/Pages19·23/upstream39/Studio283/build를 통과했다. [Stage4.8.2](../working/task_m010_113_stage4.8.2.md)에 generic 보정만 기록한다. 새 H required와 승인된 Linux-only1회가 후속이며 기존 Windows2 수용/두 whole failure는 유지한다.

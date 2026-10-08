@@ -215,3 +215,8 @@ PR required·PRmerge/공개문구·새Pages·close/cleanup이 남아 전체Task1
 ## Production upgrade 실패와 harness 보정 수용 — 2026-10-09 03:57 KST
 
 PR120의 이전 required37823417314는 전체3job 성공했지만 actual37824197495/attempt1은 NSIS·MSI·AppImage 전체 failure다. 계획의 Stage4.8 진단에 actual3 archive identity·부분 관측·실패/미완료 경계를 보존했다. 명시 승인한6파일 보정과 실제 집중87/전체1353·types/기본검사/upstream39/Studio283 수용은 [Stage4.8.1](../working/task_m010_113_stage4.8.1.md)에 기록했다. 새 exact H의 required와 actual3/all 1회 재검증은 승인됐고 후속 수행한다. old failure·strict settings equality/문서/설치/cleanup gate·public product6d/11assets/key/feed는 유지한다. 전체 실제 upgrade 수용·PR merge/공개문구·새Pages·close/cleanup은 아직 완료가 아니다.
+
+
+## Windows2 실제 수용과 Linux 재시작 관측 보정 — 2026-10-09 04:23 KST
+
+새 required37828387632 전체success 뒤 actual37828940744는 Windows NSIS/MSI complete2job/accepted.json·public bytes/서명·설치/version/handler/defaults·strict settings·HWP6/HWPX10·cleanup/policy restore와 GUI4화면을 수용했다. Linux는 restart 클릭 응답 unknown error로 필수 PID/FUSE 관측 전에 실패해 whole run은 failure다. 계획에 세 archive identity와 부분/전체 경계를 보존했다. 명시 승인된3파일 보정·실제 집중94/전체1360·types/기본검사와 Windows 경로 불변 검산은 [Stage4.8.2](../working/task_m010_113_stage4.8.2.md)에 기록한다. 새 H required·Linux-only1회와 조건부 whole3 기록이 후속이다. public product6d/11assets/key/feed와 원래 두 실패 run을 유지하며 전체 release task 완료로 쓰지 않는다.

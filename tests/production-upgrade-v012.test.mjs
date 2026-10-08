@@ -11,6 +11,7 @@ import { validateApply, validateVerify, validateWindowsInstallation } from '../s
 import { restartedAppImageProcess } from '../scripts/updater/production-process.mjs';
 import { observeWindowsHandoff } from './gui/production-upgrade/windows-handoff.ts';
 import { productionCapabilities } from './gui/production-upgrade/session.ts';
+import { observeAppImageRestart } from './gui/production-upgrade/restart-observation.ts';
 import { buildUpdaterManifest, serializeUpdaterManifest } from '../scripts/updater/manifest.mjs';
 
 const spec = JSON.parse(await readFile(new URL('gui/production-upgrade-v0.1.2-inputs.json', import.meta.url)));
@@ -153,4 +154,46 @@ for (const [name, next, pattern] of [
   }, evidence), pattern);
   assert.equal(evidence.windowsHandoff.status, 'failed');
   assert.equal(evidence.installObserved, undefined);
+});
+
+
+for (const message of [
+  'WebDriverError: unknown error when running "execute/async" with method "POST"',
+  'no such window: target window already closed',
+]) test(`AppImage restart still requires native observation after ${message}`, async () => {
+  const evidence = {}; const restart = applied('appimage').restart;
+  let waited = false;
+  await observeAppImageRestart({ previous: restart.previous,
+    click: async () => { throw new Error(message); },
+    wait: async previous => { waited = true; assert.equal(evidence.restart, undefined); assert.deepEqual(previous, restart.previous); return restart; },
+  }, evidence);
+  assert.equal(waited, true); assert.equal(evidence.restartTransportClosed, message);
+  assert.deepEqual(evidence.restart, restart);
+  validateApply({ ...applied('appimage'), ...evidence }, 'appimage', spec);
+});
+
+test('AppImage unknown async response cannot pass without a new native process', async () => {
+  const evidence = {}; const message = 'WebDriverError: unknown error when running "execute/async" with method "POST"';
+  await assert.rejects(observeAppImageRestart({ previous: applied('appimage').restart.previous,
+    click: async () => { throw new Error(message); },
+    wait: async () => { throw new Error('App restart UI did not produce a new product PID from a new FUSE mount'); },
+  }, evidence), /new product PID/);
+  assert.equal(evidence.restart, undefined); assert.equal(evidence.restartTransportClosed, message);
+  assert.throws(() => validateApply({ ...applied('appimage'), restart: undefined }, 'appimage', spec));
+});
+
+for (const message of ['WebDriverError: unknown error when running "screenshot" with method "GET"', 'script timeout', 'permission denied']) {
+  test(`AppImage restart does not hide unrelated ${message}`, async () => {
+    const evidence = {}; const original = new Error(message);
+    await assert.rejects(observeAppImageRestart({ previous: applied('appimage').restart.previous,
+      click: async () => { throw original; }, wait: async () => assert.fail('no native wait after unrelated failure'),
+    }, evidence), error => error === original);
+    assert.equal(evidence.restart, undefined); assert.equal(evidence.restartTransportClosed, undefined);
+  });
+}
+
+test('AppImage normal restart also observes native identity without transport error', async () => {
+  const evidence = {}; const restart = applied('appimage').restart;
+  await observeAppImageRestart({ previous: restart.previous, click: async () => {}, wait: async () => restart }, evidence);
+  assert.deepEqual(evidence.restart, restart); assert.equal(evidence.restartTransportClosed, undefined);
 });

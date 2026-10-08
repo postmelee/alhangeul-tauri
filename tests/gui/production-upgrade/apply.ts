@@ -4,6 +4,7 @@ import { join, dirname } from 'node:path';
 import { clickVisibleDomElement } from '../support/webdriver-dom.ts';
 import { assertAvailable, invoke, settled, showUpdater, settings, type Snapshot, type UpgradeEvidence } from './native.ts';
 import { appImageProcess, waitForAppImageRestart } from './restart.ts';
+import { observeAppImageRestart } from './restart-observation.ts';
 import type { UpgradeInputs } from './inputs.ts';
 import { observeWindowsHandoff, recordWindowsClosure } from './windows-handoff.ts';
 import { captureInstallFailure } from './install-diagnostics.ts';
@@ -63,13 +64,10 @@ async function observeInstallation(input: UpgradeInputs, evidence: UpgradeEviden
       const previous = await appImageProcess();
       evidence.restartRequested = true;
       await writeFile(join(input.output, 'restart-request.json'), JSON.stringify(snapshot));
-      try { await clickVisibleDomElement('.updater-dialog [data-updater-action="restart"]'); }
-      catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        if (!/session|disconnected|closed|no such window|ECONNREFUSED/i.test(message)) throw error;
-        evidence.restartTransportClosed = message;
-      }
-      evidence.restart = await waitForAppImageRestart(previous);
+      await observeAppImageRestart({ previous,
+        click: () => clickVisibleDomElement('.updater-dialog [data-updater-action="restart"]'),
+        wait: waitForAppImageRestart,
+      }, evidence);
       return;
     }
     await browser.pause(250);
