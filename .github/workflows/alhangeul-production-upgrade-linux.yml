@@ -5,10 +5,11 @@ permissions:
   contents: read
 jobs:
   linux:
-    name: Production Linux AppImage 0.1.0 to 0.1.1
+    name: Production Linux AppImage 0.1.1 to 0.1.2
     runs-on: ubuntu-22.04
     timeout-minutes: 50
     env:
+      ALHANGEUL_PRODUCTION_INPUTS: tests/gui/production-upgrade-v0.1.2-inputs.json
       HARNESS_SHA: ${{ github.workflow_sha }}
       EVIDENCE_ROOT: ${{ github.workspace }}/production-evidence-linux-appimage
       APPIMAGE_PATH: ${{ github.workspace }}/production-appimage/Alhangeul.AppImage

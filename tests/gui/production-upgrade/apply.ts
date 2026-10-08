@@ -14,7 +14,7 @@ export async function applyUpgrade(input: UpgradeInputs, evidence: UpgradeEviden
   const manual = await invoke<Snapshot>('updater_check'); assertAvailable(manual, input);
   expect(manual.trigger).toBe('manual'); evidence.manual = manual;
   evidence.manualCheckSurface = 'public-native-command';
-  await showUpdater('0.1.0');
+  await showUpdater(input.fromVersion);
   evidence.settings = await settings();
   await writeFile(join(dirname(input.output), 'settings-before.json'), JSON.stringify(evidence.settings));
   const doc = await invoke<{ docId: string }>('create_document');

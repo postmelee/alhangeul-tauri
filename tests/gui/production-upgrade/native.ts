@@ -29,8 +29,8 @@ export async function settled(): Promise<Snapshot> {
 
 export function assertAvailable(snapshot: Snapshot, input: UpgradeInputs): void {
   expect(snapshot.status).toBe('available');
-  expect(snapshot.currentVersion).toBe('0.1.0');
-  expect(snapshot.availableVersion).toBe('0.1.1');
+  expect(snapshot.currentVersion).toBe(input.fromVersion);
+  expect(snapshot.availableVersion).toBe(input.toVersion);
   expect(snapshot.target).toEqual({ target: input.target, artifactKind: input.kind });
   expect(snapshot.failure).toBeNull(); expect(snapshot.blocker).toBeNull();
 }

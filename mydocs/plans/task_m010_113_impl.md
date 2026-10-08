@@ -995,3 +995,38 @@ SHA256 `251ca68564b5ff1f5a57efe03175efb7103a2ae862c7683555b582bcba9080fc`·14파
 - 승인 범위는14source 적용·위 검증/기록commit·정상 push/devel Open PR와필수CI·새 H의 실제3형식
   remote 검증과 artifact/structured/visual 대조까지다. 실제 결과를 기록하고 잔여 공개문구/목록/data
   PR merge 및exactPages 재배포·body 수정·Issue113close/cleanup은 결과 기반으로 별도 제시한다.
+
+### Stage4.7 actual source 적용·추가 검증 연결 제안 — 2026-10-09
+
+- 작업지시자의 “진행해줘.”로 approved14 patch251ca685...를 실제 local/task113에 적용했고
+ 14 after hashes가 일치한다. actual production75/GUI typecheck 통과다. 최초 full automation은
+ 1330/1331·1fail·skip0이며, Windows workflow 계약의 expected post-install011 assertion1건이다.
+ 승인한 current workflow는012 검증이므로 실제 제품 실패로 쓰지 않는다. 최초 로그를 보존한다.
+- 기존 `test:automation`은 명시 파일 목록이며 new production16을 자동 포함하지 않는다.
+ 기존 Windows fast CI도 old59 파일만 실행한다. source 승인 제안 시 두 연결을 놓쳤으므로
+ new16을 해당 두 명령에 추가하고 workflow assertion1행의 post-install011→012를 보정한다.
+ package.json은 test 명령만 바꾸며 version/dependencies/lockfile·app/runtime build는 같다.
+- 추가 source3은 tests/production-upgrade-workflows.test.mjs·package.json·
+ .github/workflows/alhangeul-ci-fast.yml 각각1행이다. 임시33line diff
+ `/private/tmp/task113-main-candidate/upgrade012-proposal/validation-wiring-proposal/validation-wiring.patch`
+ hash `0e14f2ef6c81da24c16d5477fc9b6cf19480a472c06fe7644c26a614333cf41d`다.
+ 기존010→011 JSON/59 tests/hash·negative assert·GUI/CLI/runtime gates는 보존한다.
+- 별도 임시 tree production75+workflow6=81/81·fail/skip0 및 real git apply --check 통과다.
+ 실제 checkout에는 이3행을 아직 적용하지 않았다. 승인 뒤 actual full automation1347 및75/151,
+ product boundary·notes/Pages·GUI types/upstream/Studio, 새 PR required(Windows도75)를 확인하고
+ 이미 승인받은 normalpush/PR·exact H의 actual011→0123format remote 검증을 계속한다.
+ 현재1fail로 commit/PR/dispatch하지 않고 나머지 승인된 independent generic checks는 수행한다.
+
+### Stage4.7 명시 승인·actual source/generic 수용 — 2026-10-09 03:17 KST
+
+- source14 patch251ca685... 승인 기록 `2026-10-08T18:09:26.341620+00:00`·actual14 after hashes 일치,
+ actual production75/GUI types와 independent 기본 checks를 수용했다. full 최초1330/1331 failure1 보존이다.
+- 추가3행 patch0e14f2ef...는 `2026-10-08T18:14:10.692772+00:00`에 권장안으로 명시 승인받아 적용했다.
+ workflow assertion012와 신규16의 automation/Windows CI 연결이며 actual full1347/fail/skip0 수용이다.
+- actual product-boundary/version/metadata/pin/committedrhwp/notes2·Pages19/23, upstream39·Studio283/
+ 43files·Studio build 통과다. 기존010→011 JSON/test2파일 byte 불변, source17 after hashes 일치,
+ package test script 외 dependencies/lock/runtime/app source6d 불변을 확인했다.
+- Stage4.7 구현/보고 commit H를 normal publish/task113 push/Open PR/required CI로 고정한다.
+ already-approved actual production-upgrade-check3format remote를 같은 H에서 진행하고 remote
+ 전체 evidence/visual 결과를 별도 Stage4.8로 기록한다. app 재빌드/재서명·PRmerge·추가Pages/body/
+ Issueclose/cleanup은 실행하지 않는다. 보고서·계획·기록·오늘할일은 기존 승인 위치다.

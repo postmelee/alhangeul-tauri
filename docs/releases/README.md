@@ -103,3 +103,5 @@ private key·암호·token·개인 문서·실제 credential 보관 경로는 �
 2026-10-08T17:31:23.125Z 확인: PR119 일반 merge·devel `1f33d03918b50a5b9140978a9eb28d1b5e65ebe6` 및 Pages19/23 bytes 고정을 완료했다.012 Pages/manifest dispatch는 승인 대기, 현재 production feed는011이다.
 
 2026-10-08T18:00:10.828089+00:00 확인: exact Pages37819153172/source1f33·artifact/HTTP23·production012/hash58ca348b...·서명3/공개6파일·desktop/mobile 확인을 완료했다. updates 목록의 local v012 연결 보정 및 실제011→012는 후속 승인·검증 대상이다.
+
+2026-10-09 03:17 KST 확인: 새011→012 fixed 입력·동일형식3종 harness 및 local v012 목록 항목을 source/generic1347/75로 수용했다. 실제 upgrade·PR/필수CI/merge·목록 재배포는 후속이고 과거010→01159회귀와 공개012 bytes/key/endpoint를 유지한다.

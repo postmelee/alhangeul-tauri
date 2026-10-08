@@ -201,3 +201,12 @@ ZIPdigest9e1b6c23...·tar/HTTP23·production manifest012/2371/hash58ca348b...와
 유지했다. updates 목록의 local v012 static link 누락은 미수용으로 남는다. source14/실제011→012
 제안은 임시75/151/GUI typecheck만 통과했으며 저장소 미적용·remote 미실행이다. 전체Gate6/Task113
 완료가 아니며, source 승인·검증·필수CI/actual3upgrade·최종공개문구/PRmerge·close/cleanup이 남는다.
+
+## Production harness012·웹 목록 구현 수용 — 2026-10-09 03:17 KST
+
+[Stage4.7](../working/task_m010_113_stage4.7.md)에 approved14+추가3행·actual source17 hashes,
+기존010→011 JSON/59 회귀 불변·새011→012 fixed public identity·기존key/endpoint·dirty/동의/
+설치/재실행/문서 gate 유지와 generic1347/production75/upstream39/Studio283·types/Pages19/23을 기록했다.
+최초 automation1fail의 oldworkflow011 기대와 new16 CI 연결 누락은 explicit3행 승인 뒤 수정했다.
+이 Open PR은 구현117·release118·공개data119 이후 delivery harness/기록 후속이다. 실제 remote3와
+PR required·PRmerge/공개문구·새Pages·close/cleanup이 남아 전체Task113 완료로 쓰지 않는다.
