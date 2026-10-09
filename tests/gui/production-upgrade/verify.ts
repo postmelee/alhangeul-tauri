@@ -9,12 +9,12 @@ import type { UpgradeInputs } from './inputs.ts';
 
 export async function verifyUpgrade(input: UpgradeInputs, evidence: UpgradeEvidence): Promise<void> {
   const noUpdate = await invoke<Snapshot>('updater_check');
-  expect(noUpdate.status).toBe('idle'); expect(noUpdate.currentVersion).toBe('0.1.1');
+  expect(noUpdate.status).toBe('idle'); expect(noUpdate.currentVersion).toBe(input.toVersion);
   expect(noUpdate.availableVersion).toBeNull(); expect(noUpdate.failure).toBeNull(); expect(noUpdate.blocker).toBeNull();
   evidence.noUpdate = noUpdate;
   const before = JSON.parse(await readFile(join(dirname(input.output), 'settings-before.json'), 'utf8'));
   expect(await settings()).toEqual(before); evidence.settingsPreserved = true;
-  await showUpdater('0.1.1'); evidence.productVersion = await browser.$('.about-alhangeul-version').getText();
+  await showUpdater(input.toVersion); evidence.productVersion = await browser.$('.about-alhangeul-version').getText();
   // Close the two dialogs through their visible footer controls before opening fixtures.
   await browser.$('.updater-dialog .dialog-footer button').click();
   await browser.$('.about-alhangeul-version').waitForDisplayed();

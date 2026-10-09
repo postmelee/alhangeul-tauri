@@ -5,7 +5,7 @@ permissions:
   contents: read
 jobs:
   windows:
-    name: Production Windows ${{ matrix.kind }} 0.1.0 to 0.1.1
+    name: Production Windows ${{ matrix.kind }} 0.1.1 to 0.1.2
     runs-on: windows-2025
     timeout-minutes: 50
     strategy:
@@ -13,6 +13,7 @@ jobs:
       matrix:
         kind: [nsis, msi]
     env:
+      ALHANGEUL_PRODUCTION_INPUTS: tests/gui/production-upgrade-v0.1.2-inputs.json
       HARNESS_SHA: ${{ github.workflow_sha }}
       EVIDENCE_ROOT: ${{ github.workspace }}\production-evidence-windows-${{ matrix.kind }}
       ALHANGEUL_PRODUCTION_ROOT: ${{ github.workspace }}
@@ -63,7 +64,7 @@ jobs:
         run: >-
           ./scripts/updater/windows-native-acceptance.ps1 -Phase Install
           -Kind $env:ALHANGEUL_PRODUCTION_KIND -ArtifactRoot (Join-Path $env:EVIDENCE_ROOT 'n')
-          -OutputDirectory $env:EVIDENCE_ROOT -ExpectedVersion '0.1.0'
+          -OutputDirectory $env:EVIDENCE_ROOT -ExpectedVersion '0.1.1'
       - name: Apply production upgrade through app UI
         id: apply
         continue-on-error: true
@@ -86,7 +87,7 @@ jobs:
         shell: pwsh
         run: >-
           ./scripts/updater/windows-native-acceptance.ps1 -Phase Validate
-          -Kind $env:ALHANGEUL_PRODUCTION_KIND -OutputDirectory $env:EVIDENCE_ROOT -ExpectedVersion '0.1.1'
+          -Kind $env:ALHANGEUL_PRODUCTION_KIND -OutputDirectory $env:EVIDENCE_ROOT -ExpectedVersion '0.1.2'
       - name: Verify N plus one UI version settings and documents
         id: verify
         shell: pwsh

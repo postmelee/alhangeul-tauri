@@ -915,3 +915,356 @@ gh workflow run alhangeul-desktop.yml --ref publish/task113 \
 - 승인 후 actual production59/59·전체 automation1331/1331·fail/skip0·diff check를 수용했다.
   기존 실패 CI/로컬 로그는 보존한다. 다음 push에 따른 새 PR head의 자동 required만 확인하며
   같은 source의 blind rerun·native rebuild·보호 변경은 하지 않는다. #113 OPEN 유지다.
+
+## Stage4.5 data merge 승인·actual Pages 입력 — 2026-10-09 02:37 KST
+
+- 최신 PR119 required37815889210 attempt1의 Node/Windows/required3job 전체success·head8bb6a641/
+  실제 checkoutb2133999/tree76c6d69e·CLEAN·closingReferences=[]를 확인했다. 원격 automation1331/
+  upstream39/Studio283(43files), Windows notes124/production59·PowerShell83sources/16isolated다.
+- 제시한 exact head8bb6a641/base8a91bf52·일반 merge/보호 유지·후속 actualSHA 입력에 대해
+  작업지시자가 “PR119 일반 merge 진행 (권장)”으로 승인했다. 기록 `2026-10-08T17:31:15.935Z`다.
+- 실제 merge `2026-10-08T17:31:18Z`·devel `1f33d03918b50a5b9140978a9eb28d1b5e65ebe6`/tree `76c6d69e4be59df1efd252a761980e16e1b0ba49`와
+  두 parent·remote 일치·main6d 불변·Issue113 OPEN을 확인했다. 소유한 local/task113만 ff했다.
+- actual devel에서 generic Pages build/check source19/output23을 수용하고23 bytes/hash를 frozen
+  inventory로 고정했다. manifest2371/hash58ca348b...·download6/updater3·기존 key/endpoint다.
+  github-pages의 devel branch policy·환경/보호 유지·activePages0·currentfeed011/hash654efd7e...다.
+- 다음 **승인 대기** 범위는 existing pages.yml --ref devel/deploy_ref `1f33d03918b50a5b9140978a9eb28d1b5e65ebe6`의
+  workflow/source/checkout exact, 기존 환경으로 Pages/production manifest012 공개, 실제 artifact23
+  및 HTTP23 bytes·6downloads/manifest3·공개 desktop/mobile 화면 대조다. native build/signing/
+  Release/tag 변경이나 실제 upgrade source/harness 수정/실행은 없다. ref/상태 drift는 중단 후 판단한다.
+- 기존 승인 docs/releases·mydocs plans/working/report/orders에 currentCI/merge/출력·승인 입력을
+  기록한다. 실제011→012 승인·검증과 최종 record PR/close/cleanup이 남아 branch/자료는 유지한다.
+
+## Stage4.6 Pages 공개 완료와 Stage4.7 제안 — 2026-10-09 03:03 KST
+
+- exact devel1f33의 Pages/manifest 공개·23 bytes/화면 검증을 제시한 뒤 작업지시자의 “진행해줘.”를
+  `2026-10-08T17:46:20.940873+00:00`에 기록했다. run37819153172 attempt1·전체 success이며 source/workflow/
+  checkout/deploy1f33다. artifact11568521999/ZIP9e1b6c23... 및 공개HTTP23을 수용했다.
+- manifest2371/hash58ca348b...·target3의 actual public installer bytes Minisign·main6d source,
+  download6·key/endpoint·Release11/body·정상 github-pages 환경/보호를 검산했다. desktop/mobile
+  화면 및mobile390 overflow0도 확인했다. 전체 actual011→012/Gate6 완료는 아직 아니다.
+- updates 목록의 local v012 static entry가 없어 기존 GitHub fallback을 관측했다. 공개 v012
+  HTML은 정상이며1행 static link를 추가하는 제안을 prepared14 patch에 포함했다.
+
+### Stage4.7 승인 대기: 실제011→012 harness·웹 목록 보정
+
+임시 diff `/private/tmp/task113-main-candidate/upgrade012-proposal/upgrade012-and-note-link.patch`
+SHA256 `251ca68564b5ff1f5a57efe03175efb7103a2ae862c7683555b582bcba9080fc`·14파일·619diff lines다.
+아래 파일 외 앱/Rust/pin/빌드·서명·Pages workflow/환경·Release11/body·feed bytes를 바꾸지 않는다.
+전부 기존 test/harness/source 위치이며 new JSON은 tests/gui의 버전별 실행 입력, new test는 해당
+계약의 음성/CLI 선택 검증이다. 사용자 웹은 기존 site/updates/index.html의 local note1행이다.
+제품 공식 기록은 기존 docs/releases, task 계획/단계/최종/오늘할일은 기존 mydocs 위치를 사용한다.
+새 공식 문서 루트나 mydocs/manual 제품 문서는 없다. 전부300LOC 이하이며 기존306LOC 회귀는 수정하지 않는다.
+
+| proposed path | LOC |
+|---|---:|
+| `tests/gui/production-upgrade-v0.1.2-inputs.json` | 183 |
+| `scripts/updater/production-contract.mjs` | 95 |
+| `scripts/updater/production-evidence.mjs` | 93 |
+| `scripts/updater/production-upgrade.mjs` | 91 |
+| `tests/gui/production-upgrade/inputs.ts` | 30 |
+| `tests/gui/production-upgrade/native.ts` | 63 |
+| `tests/gui/production-upgrade/apply.ts` | 90 |
+| `tests/gui/production-upgrade/verify.ts` | 37 |
+| `tests/gui/production-upgrade/startup.ts` | 32 |
+| `tests/gui/specs/production-upgrade.e2e.ts` | 30 |
+| `.github/workflows/alhangeul-production-upgrade-windows.yml` | 140 |
+| `.github/workflows/alhangeul-production-upgrade-linux.yml` | 105 |
+| `site/updates/index.html` | 92 |
+| `tests/production-upgrade-v012.test.mjs` | 90 |
+
+- 기존010→011 `tests/gui/production-upgrade-inputs.json`, production regression59와 MANIFEST_HASH
+  654efd7e...를 그대로 보존한다. 새 `production-upgrade-v0.1.2-inputs.json`은 n011/Release402604603/
+  source96e89e90/tagObjectb7b858e1/publishedOct3와 next012/Release407055948/main6dcb05e9/
+  tagObject198ebba7/publishedOct8의11asset ID/bytes/digest/URL을 고정한다. fresh011 API identity도 확인했다.
+- 허용한2 relative input path·2 tuple/manifest hash만 받아 version을 증거·GUI·Windows resource
+  검산에 전달한다. windows-2025 NSIS/MSI·ubuntu-22.04 writable FUSE AppImage의 기존 workflow가
+  새 input path를 명시하고 실제 N011 설치→production012 check/download/signature→사용자 동의/
+  dirty blocker→설치/재실행→012 version/settings/HWP/HWPX를 검사한다. handoff/process fences,
+  실패 gate·cleanup/WebView2 policy restore·step outcomes·실제 byte/서명·음성 assertion은 유지한다.
+- 별도 임시 검토 tree에서 production75(기존59+신규16)/151 updater-pages-actions, GUI tsc를
+  수용했고 real checkout에는 적용하지 않았다. 승인 후 실제 source에서 같은 검사와 full automation,
+  product-boundary/upstream/Studio 기본 검사 및 PR required의 exact merge candidate를 확인한다.
+  Node generic만 로컬에서 실행하고 native/설치/업그레이드는 Windows/Linux 격리 runner에서만 한다.
+- source/보고 commit을 정상 publish/task113 push해 exact harness H를 고정한다. existing
+  alhangeul-desktop.yml --ref publish/task113, mode=production-upgrade-check,
+  production_upgrade_platform=all, build_ref=H, publish_release=false, run_tests=false로1회 실행한다.
+  workflow/checkout/H/input files가 같아야 하며 native 제품 build/sign/publish jobs는 mode로 제외된다.
+  필요한 pinned native driver는 해당 Windows/Linux runner에서만 설치한다. app source는 공개main6d,
+  updater manifest는 공개012/hash58ca348b...다. 실패/드리프트는 재실행·보호 완화로 우회하지 않는다.
+- 승인 범위는14source 적용·위 검증/기록commit·정상 push/devel Open PR와필수CI·새 H의 실제3형식
+  remote 검증과 artifact/structured/visual 대조까지다. 실제 결과를 기록하고 잔여 공개문구/목록/data
+  PR merge 및exactPages 재배포·body 수정·Issue113close/cleanup은 결과 기반으로 별도 제시한다.
+
+### Stage4.7 actual source 적용·추가 검증 연결 제안 — 2026-10-09
+
+- 작업지시자의 “진행해줘.”로 approved14 patch251ca685...를 실제 local/task113에 적용했고
+ 14 after hashes가 일치한다. actual production75/GUI typecheck 통과다. 최초 full automation은
+ 1330/1331·1fail·skip0이며, Windows workflow 계약의 expected post-install011 assertion1건이다.
+ 승인한 current workflow는012 검증이므로 실제 제품 실패로 쓰지 않는다. 최초 로그를 보존한다.
+- 기존 `test:automation`은 명시 파일 목록이며 new production16을 자동 포함하지 않는다.
+ 기존 Windows fast CI도 old59 파일만 실행한다. source 승인 제안 시 두 연결을 놓쳤으므로
+ new16을 해당 두 명령에 추가하고 workflow assertion1행의 post-install011→012를 보정한다.
+ package.json은 test 명령만 바꾸며 version/dependencies/lockfile·app/runtime build는 같다.
+- 추가 source3은 tests/production-upgrade-workflows.test.mjs·package.json·
+ .github/workflows/alhangeul-ci-fast.yml 각각1행이다. 임시33line diff
+ `/private/tmp/task113-main-candidate/upgrade012-proposal/validation-wiring-proposal/validation-wiring.patch`
+ hash `0e14f2ef6c81da24c16d5477fc9b6cf19480a472c06fe7644c26a614333cf41d`다.
+ 기존010→011 JSON/59 tests/hash·negative assert·GUI/CLI/runtime gates는 보존한다.
+- 별도 임시 tree production75+workflow6=81/81·fail/skip0 및 real git apply --check 통과다.
+ 실제 checkout에는 이3행을 아직 적용하지 않았다. 승인 뒤 actual full automation1347 및75/151,
+ product boundary·notes/Pages·GUI types/upstream/Studio, 새 PR required(Windows도75)를 확인하고
+ 이미 승인받은 normalpush/PR·exact H의 actual011→0123format remote 검증을 계속한다.
+ 현재1fail로 commit/PR/dispatch하지 않고 나머지 승인된 independent generic checks는 수행한다.
+
+### Stage4.7 명시 승인·actual source/generic 수용 — 2026-10-09 03:17 KST
+
+- source14 patch251ca685... 승인 기록 `2026-10-08T18:09:26.341620+00:00`·actual14 after hashes 일치,
+ actual production75/GUI types와 independent 기본 checks를 수용했다. full 최초1330/1331 failure1 보존이다.
+- 추가3행 patch0e14f2ef...는 `2026-10-08T18:14:10.692772+00:00`에 권장안으로 명시 승인받아 적용했다.
+ workflow assertion012와 신규16의 automation/Windows CI 연결이며 actual full1347/fail/skip0 수용이다.
+- actual product-boundary/version/metadata/pin/committedrhwp/notes2·Pages19/23, upstream39·Studio283/
+ 43files·Studio build 통과다. 기존010→011 JSON/test2파일 byte 불변, source17 after hashes 일치,
+ package test script 외 dependencies/lock/runtime/app source6d 불변을 확인했다.
+- Stage4.7 구현/보고 commit H를 normal publish/task113 push/Open PR/required CI로 고정한다.
+ already-approved actual production-upgrade-check3format remote를 같은 H에서 진행하고 remote
+ 전체 evidence/visual 결과를 별도 Stage4.8로 기록한다. app 재빌드/재서명·PRmerge·추가Pages/body/
+ Issueclose/cleanup은 실행하지 않는다. 보고서·계획·기록·오늘할일은 기존 승인 위치다.
+
+
+## Stage4.8 원격 업그레이드 실패 진단 — 2026-10-09
+
+이 절은 미완료 단계의 결과 보존·보정 제안이다. Stage4.8 완료 보고서/완료 commit을 만들지 않는다.
+Stage4.7 실제 source H `d6be0dc870337c83a369f27acaa78cabec0ab2a7`의 PR120 required
+[37823417314](https://github.com/postmelee/alhangeul-tauri/actions/runs/37823417314)/attempt1은
+Node·Windows·required 3job 전체 success다. 실제 merge checkout `664acb6d575f81c5485d593ec6dfd5ddd8a4b6ef`의
+ tree `48fe12f50d5de6c7f28998b50a3dcc2ae961313d`가 H와 같다. Node1347/upstream39/Studio283,
+Windows notes124/production75와 PowerShell을 통과했다. 이것은 actual upgrade 성공이 아니다.
+
+승인 범위의 production-upgrade-check/all을 한 번 실행한
+[37824197495](https://github.com/postmelee/alhangeul-tauri/actions/runs/37824197495)/attempt1은
+18:25:45Z 시작·18:34:51Z 종료, 전체 failure다. workflow/checkout H가 같고 build/sign/publish job은
+mode에 따라 skipped다. Windows NSIS/MSI·Linux AppImage 모두 public input/actual signature 검사를
+통과했고 실제 manifest2371/hash58ca348b...가 고정 입력과 같다. 세 형식 모두 accepted.json이 없다.
+
+| 형식 | 실제 관측 | 실패·미완료 경계 | 증거 job / archive identity |
+|---|---|---|---|
+| MSI | apply handoff 통과·설치 DisplayVersion/ProductVersion/FileVersion012·두 handler/defaults 보존, 새 앱 updater idle/current012 | settings의 pageArrangement.kind auto→single 비교 실패, UI About/HWP/HWPX/finalize 미수행. cleanup/policy restore 성공 | job113472672880 / artifact11571460152 / ZIP172692·sha2566f1522d22a679aabf2f93b7ab5e622e83d9757d1e4acb193ca02cb309cda0667 |
+| NSIS | startup/manual011→012·dirty/동의·downloading→installing 뒤 readState=null, 이어 diagnostics가 no such window/web view not found 관측 | null.status TypeError로 apply-gate 실패, validate/verify/finalize skipped. cleanup exit0 뒤 exe 잔존 검사 실패, policy restore 성공 | job113472673457 / artifact11570678570 / ZIP122322·sha25666c09cc4753125e1564bb520330a362133a6e80d9b3fa49dedad3db9739031f3 |
+| AppImage | apply 통과·실제 restartRequired/restart PID4827→5002·서로 다른 mount exe, original bytes가 public012/hashb216c098...로 교체됨 | stop helper가 spec 없이 legacy010→011 validator를 호출해 current011≠010 실패. verify/HWP/HWPX/finalize skipped | job113472673674 / artifact11569884588 / ZIP122017·sha256e07b530386c5c766c900eb008b6d2ccd0c2de6b751e118d49ce80d5eb8db5641 |
+
+완료된 세 job 로그·원시 archive/metadata·안전 추출·digest 재계산을 임시 증거 폴더에 보존했다.
+`/private/tmp/task113-main-candidate/upgrade012-proposal/production012-failure-diagnosis.json`은
+부분 관측과 전체 failure/미수용을 구분한다. AppImage/MSI apply와 MSI native install receipt를
+selected012 validator로 별도 읽기 검산했다. 이 결과로 원래 run을 소급 성공 처리하지 않는다.
+
+### Stage4.8.1 승인 대기 — 검증 harness 6파일 보정과 새 exact H 재실행
+
+MSI auto→single을 정상 migration으로 허용할 근거는 없다. 현재 user-settings source는 vertical
+movement의 auto를 그대로 normalize한다. 두 fresh driver session의 capabilities에는 공통 profile이
+없다. [Microsoft 공식 EdgeOptions](https://learn.microsoft.com/en-us/microsoft-edge/webdriver/capabilities-edge-options)의
+webviewOptions.userDataFolder 미지정 시 temporary folder 생성 설명과
+[tauri-driver v2.0.6 source](https://github.com/tauri-apps/tauri/blob/tauri-driver-v2.0.6/crates/tauri-driver/src/server.rs)의
+그 option 전달 경로를 확인했다. fresh verify의 새 기본값single이라는 관측은 profile 교체와 일치하지만,
+현재 로그에 두 actual profile path가 없어 원인 확정 대신 같은 profile에서 strict 설정 비교로 검증한다.
+
+구체 diff: `/private/tmp/task113-main-candidate/upgrade012-proposal/failure-correction-proposal/failure-correction.patch`
+SHA256 `9a95ae52a353e20f152af248c557c21893b0a1171f05a60c9c90ee367a81761f`·6파일/186diff lines.
+파일별 before/after identity는 같은 폴더 files.json, 실행/승인 입력은 approval-inputs.json이다.
+
+1. scripts/updater/production-process.mjs와 production-upgrade.mjs: stop에도 selected fixed JSON을 전달한다.
+   작은 pure restartedAppImageProcess validator로 tuple/PID/exe 식별 검사를 테스트하며 실제 Linux
+   /proc/{pid}/exe 확인·SIGTERM·shutdown deadline/receipt는 유지한다. 로컬 host에서 native stop은 실행하지 않는다.
+2. tests/gui/production-upgrade/windows-handoff.ts: null 응답은 마지막 유효 snapshot을 유지하고 횟수를
+   기록해 250ms 뒤 재관측한다. null만으로 closure/pass를 만들지 않으며 실제 알려진 transport error가
+   필요하다. 기존 deadline·updater error/임의 오류 거부·설치 버전 후속 gate를 유지한다.
+3. tests/gui/production-upgrade/session.ts 신규17LOC와 wdio.production-upgrade.conf.ts: Windows
+   apply/verify가 해당 형식의 evidence parent/webview-profile을 같은 userDataFolder로 사용한다.
+   형식별 VM/폴더는 격리하고 Linux option은 추가하지 않는다. pinned native-types가 width/height만
+   선언하므로 documented userDataFolder 필드를 좁은 intersection type으로 보완한다. dependency/lock은 바꾸지 않는다.
+4. tests/production-upgrade-v012.test.mjs: 기존 new16에 6개 회귀를 추가한다. selected stop tuple과
+   PID/exe drift 거부, shared/isolated profile, null→actual closure, null-only timeout, null 뒤
+   updater/임의 driver 오류 거부다. 기존 legacy JSON/59tests/hash 및 full/Windows explicit test 연결은 유지한다.
+
+임시 검토 tree에서 production59+new22+workflow6=87/87·fail/skip0와 GUI tsc가 통과했다.
+현재 실제 checkout source에는 이 diff를 적용하지 않았다. source6파일은 각각27/91/77/17/21/156LOC다.
+제품 앱/core/Studio source6d, public11 installer/signature bytes, source96e→6d tuple·key/endpoint/manifest58ca는 그대로다.
+설정 equality·dirty/동의·동일형식 설치·HWP/HWPX·cleanup/policy restore의 수용 기준을 완화하지 않는다.
+NSIS cleanup 잔존은 설치 종료 전에 gate가 멈춘 영향일 가능성이 있으나 현재 증거만으로 확정하지 않는다.
+cleanup source는 보정하지 않고 새 실행에서 실제 정상 설치 종료 뒤 strict cleanup을 재검증한다.
+
+### 승인 후 검증·후속 범위
+
+- 승인6파일 after hash 확인 → 실제 production81/workflow6=87·전체 automation1353·typecheck:gui →
+  boundary/version/metadata/pin/committed-rhwp/notes·Pages19/23·upstream39·Studio283/build와 diff check를 한다.
+- 소스/검증/기록은 Stage4.8.1의 generic 보정 단계로 묶고 normal publish/task113 push로 기존 PR120을
+  갱신한다. 새 exact H의 Node/Windows/required 3job 전체 success와 merge candidate tree 동등성을 확인한다.
+- actual 3형식은 모두 전체 수용 미완료이므로 all 1회 신규 run이 필요하다. 새 H·동일 두 Release
+  source96e/6d·exact11assets·tag·signature·manifest58ca를 재확인하고 기존 environment로
+  alhangeul-desktop.yml --ref publish/task113/mode=production-upgrade-check/production_upgrade_platform=all/
+  build_ref=새H/publish_release=false/run_tests=false를 한 번 dispatch한다. 원래 attempt1 failure는 보존한다.
+- whole actual acceptance는 원격 version/공통profile 실제 설정 equality·HWP/HWPX 두 fixture bytes/렌더/
+  AppImage restart/bytes·Windows handler/defaults·cleanup/policy restore·accepted.json을 모두 요구한다.
+  failure/drift면 해당 진단을 유지하고 원인 보정 없이 rerun하지 않는다. 새 product build/sign은 하지 않는다.
+- 문서 위치는 기존 승인 mydocs/plans/working/report/orders와 docs/releases 추적만 사용한다.
+  source 보정 승인 전에는 계획의 실패 진단과 board/기존 PR 상태만 기록한다. Stage4.8 완료보고는 전체
+  actual3 수용 후에만 작성한다. PR merge·공개 result 문구/body·새 Pages SHA·#113 close/cleanup은 후속 승인이다.
+
+
+### Stage4.8.1 명시 승인·착수 — 2026-10-09
+
+- 같은 스레드의 작업지시자 “승인할게”로 위 patch9a95ae52... 6파일·전체 자동 검증·기존 PR120 정상 push/새 head required CI·success 후 새 exact H의 actual3/all 1회 재검증을 승인받았다.
+- 승인 근거 시각은 `2026-10-08T18:54:36.050352+00:00`이며 파일별 before/after hash를 확인한 뒤 실제 checkout에 적용했다. 기존 sourceH의 actual run37824197495/attempt1 failure와 세 archive identity를 보존한다.
+- PR merge·public notes/body/Pages·Issue close/cleanup은 이번 승인에 포함하지 않는다.
+
+
+### Stage4.8.1 actual generic 수용 — 2026-10-09 03:57 KST
+
+승인6파일 after hashes·legacy59/fixed inputs/strict evidence/public data/key 불변을 검산했다. 집중87/전체1353·fail/skip0·GUI types, 기본 checks/notes2/Pages19·23·upstream39·Studio283/43files/build를 실제 checkout에서 통과했다. [Stage4.8.1](../working/task_m010_113_stage4.8.1.md)에 source와 generic 수용만 기록한다. 새 H required와 승인된 actual3/all 재실행을 이어가며 기존37824197495 failure는 그대로다.
+
+
+### Stage4.8 새 run 결과 — 2026-10-09
+
+Stage4.8.1 source/report H `bc082d0006baf7a045855bcb0b055aa3fad11c12`를 기존 PR120에 normal
+push했다. 새 required [37828387632](https://github.com/postmelee/alhangeul-tauri/actions/runs/37828387632)/attempt1은
+Node1353/upstream39/Studio283·Windows notes124/production81/PowerShell·required3job 전체 success다.
+실제 merge checkout `fa4335c2817bd8843f06abb68dc0b123823dcdd4`/tree889571f6...가 H와 동등하다.
+두 공개 Release/11assets·tag/source96e→6d·본문03cde7aa...·feed2371/hash58ca를 다시 확인한 뒤
+승인한 actual3/all 1회 [37828940744](https://github.com/postmelee/alhangeul-tauri/actions/runs/37828940744)/attempt1을 실행했다.
+전체 run은 failure이며 Windows2 success/Linux failure다. 원래37824197495 failure도 그대로다.
+
+| 형식 | 수용 범위/실제 결과 | job/archive/digest |
+|---|---|---|
+| NSIS | public input/서명·startup/manual/dirty/UI동의·실제 closure·설치012/handler/defaults·strict settings equality·About012·HWP6/HWPX10·bytes 불변·cleanup/policy restore/accepted.json 통과 | job113488965823 / archive11573406006·15780764bytes·sha2566d7f0fc4a04b51158f7ea6768383ff027056bff6309ed88c086cf405114b0dbc |
+| MSI | 같은 전체 Windows 계약 통과, Product/FileVersion012 및 accepted.json | job113488965981 / archive11573131257·15824111bytes·sha256294a30eff1d571a9809343a5d0956bded577dfb927efd2d3f93a481116762481 |
+| AppImage | public input/서명·startup/manual/dirty/동의·install restartRequired까지 관측. restart 클릭에서 execute/async POST unknown error | job113488965215 / archive11573135792·121227bytes·sha25692b51c23170465fb00551cc69dd86bafdb29443b4ffdc6d80ae39618063b5048 |
+
+3개 완료 job 로그·archive bytes/digest·안전 추출을 보존했다. 별도 Node 읽기 검산은 Windows2만
+수용하며 mixed whole run failure·Linux 미완료를 유지한다. 실제 manifests/input source/11identities/
+selected public path(size/hash/url/signatureVerified)·apply/verify/native receipt·완료시각과
+accepted.json/H·settings/각 문서 hash 및 screenshots를 확인했다. NSIS/MSI 각각 HWP6/HWPX10의
+4개 GUI 화면에서 제목·본문/표·툴바·쪽수 상태를 직접 확인했다. white page/로딩 overlay는 없다.
+Linux backend log는 원래 PID4963 뒤 restart 클릭 후 새 PID5136을 보여주지만 FUSE exe/필수
+restart receipt가 없어 성공으로 쓰지 않는다. 다음 bytes/stop/verify/finalize는 skipped·accepted.json 없음이다.
+
+### Stage4.8.2 승인 대기 — AppImage 재시작 응답 관측 3파일 보정
+
+실제 오류는 restart UI 클릭의 `WebDriverError: unknown error when running "execute/async" with method "POST"`다.
+기존 AppImage catch는 session/disconnected/closed/no such window/ECONNREFUSED만 분류해
+`waitForAppImageRestart(previous)` 진입 전에 끝났다. unknown 오류만으로 앱 재시작 성공을 단정하지 않는다.
+
+구체 diff: `/private/tmp/task113-main-candidate/upgrade012-proposal/failure-correction-proposal/restart-correction-proposal/restart-correction.patch`
+SHA256 `e3e72ebd0d1f65e2e0639b4d139728b3ad09ad04f361a6b1a3076ebf4f4fc8f4`·3파일/110diff lines.
+같은 폴더 files.json/approval-inputs.json에 source before/after 및 선택 범위가 있다.
+
+- tests/gui/production-upgrade/restart-observation.ts 신규23LOC: visible restart click의 기존 known
+ closure 또는 관측된 exact execute/async POST 오류만 provisional로 기록하고 기존 native wait를 반드시
+ 호출한다. 앱 API를 직접 호출하거나 update/재시작을 mock하지 않는다. 응답 오류만으로 통과하지 않는다.
+- tests/gui/production-upgrade/apply.ts 90→88LOC: installed restartRequired·이전 realPID/FUSE exe·
+ durable restart-request.json 뒤 위 작은 helper에 visible UI click과 실제 waitForAppImageRestart를 전달한다.
+ restart.ts의 Linux-only 단일 product/FUSE PID·서로 다른PID/exe·120초 deadline 검사는 byte 불변이다.
+- tests/production-upgrade-v012.test.mjs 156→199LOC: new22→29 회귀(+7)다. exact 오류/기존 closure 뒤
+ native wait 필수·native timeout 실패·다른 command의 unknown error/script timeout/permission 거부·정상 클릭
+ 관측을 검증한다. legacy59/input/hash와 fixed012 tuple/strict validators·기존 explicit CI 연결은 보존한다.
+
+임시 tree에서 production88+workflow6=94/94·fail/skip0·GUI tsc와 실제 git apply --check 통과다.
+현재 실제 checkout에는 3파일 diff를 적용하지 않았다. 필요한 실제 generic은 full automation1360와
+94/types·기존 boundary/metadata/pin/notes/Pages19·23/upstream39/Studio283/build다.
+
+### 승인 후 새 H·Linux-only 검증과 Windows 증거 재사용 경계
+
+보정/기록을 Stage4.8.2 generic 단계로 묶어 기존 PR120 normal push한다. 새 H required3job 전체
+success를 확인한 뒤 fixed두Release/public11/tag/source/key/endpoint/manifest58ca 재검산 후 기존
+alhangeul-desktop.yml --ref publish/task113/mode=production-upgrade-check/production_upgrade_platform=linux-x64/
+build_ref=새H/publish_release=false/run_tests=false를 한 번 dispatch한다. Windows 재실행은 요청하지 않는다.
+
+성공한 Windows2는 bc082d00/37828940744의 각 complete job·archive와 accepted.json을 해당
+형식 수용으로 보존한다. 새 patch는 AppImage restart branch에만 실행되며 applyWindowsUpgrade 함수
+본문과 Windows 분기/return, Windows workflow·handoff/profile/verify/native/inputs/config/e2e·strict
+validators/의존성은 byte 불변으로 대조했다. 새 leaf는 top-level native 실행이 없고 Windows 경로에서
+호출되지 않는다. 같은 public product6d/공개 files/서명/manifest를 사용하며 새 product 생성은 없다.
+이 재사용은 실패한 run에서 제품 producer archive를 가져오는 경로가 아니라 완료된 consumer job의
+명시적인 Windows-only 실제 검증 증거다. mixed run 전체를 success로 소급 처리하지 않는다.
+
+Linux 새 run은 public bytes·UI동의/dirty·실제 PID/exe restart·교체hash/stop·설정 equality·About012·
+HWP/HWPX·accepted.json·전체 선택 job/upload 성공을 모두 요구한다. 통과하면 형식별 product/source/
+harness/run/receipt를 각각 적어 Windows2와 Linux를 조합한 지원3형식 수용을 보고한다. 어느 하나라도
+실패/누락이면 whole3는 미완료다. Generic/기존 partial apply로 대신하지 않는다.
+
+문서 위치는 기존 승인 mydocs plans/working/report/orders와 docs/releases 추적이다. Stage4.8 전체
+완료 보고서는 Linux를 포함한 모든 실제 수용 뒤에만 작성한다. PR merge·공개 result 문구/body·새
+Pages 배포·Issueclose/cleanup은 후속 승인이다. 이번 제안 source·Linux-only 재실행은 **승인 대기**다.
+
+
+### Stage4.8.2 명시 승인·착수 — 2026-10-09
+
+같은 스레드의 작업지시자 “진행해줘.”로 위 patche3e72ebd... 3파일 보정·전체 generic·기존 PR120 정상 push/새 required·통과 뒤 새 exact H Linux-only 1회·Windows2 경로 불변 근거의 증거 보존과 조건부 whole3 결과 기록을 승인받았다. 근거 시각은 `2026-10-08T19:21:48.426401+00:00`다. before/after hash를 확인해 실제 source에 적용했다. 두 과거 run failure와 후속 merge/공개문구/Pages/close 승인 gate는 유지한다.
+
+
+### Stage4.8.2 actual generic 수용 — 2026-10-09 04:23 KST
+
+승인3 after hashes·Windows 경로/원래 native restart probe/legacy59/fixed inputs/strict evidence/public data/key 불변을 확인했다. 실제 집중94/전체1360·fail/skip0·GUI types·기본 checks/notes2/Pages19·23/upstream39/Studio283/build를 통과했다. [Stage4.8.2](../working/task_m010_113_stage4.8.2.md)에 generic 보정만 기록한다. 새 H required와 승인된 Linux-only1회가 후속이며 기존 Windows2 수용/두 whole failure는 유지한다.
+
+
+## 실제3종 production upgrade 수용 — 2026-10-09 04:45 KST
+
+[Stage4.8](../working/task_m010_113_stage4.8.md)에 Windows NSIS/MSI의 bc082d00/run37828940744 각 complete success job과 Linux AppImage의 H8a5a28c7/run37832348063 Linux-only whole success를 형식별로 구분했다. Linux job113500633933/archive11573159872·687854bytes·SHA2567bdc6668babafa65b7f6284fbe82e2c592bcb2f775cf84cf305fde46e31e33db를 독립 검산했다. 실제 PID5034→5207/new FUSE exe·public012 파일 교체hash/stop·strict settings·About012·HWP6/HWPX10/bytes·accepted.json과 GUI2화면을 수용했다. Windows4화면을 포함해 실제3종/GUI6 수용이 완료됐다. 최신 H required37831668570 Node/Windows/required 전체success다.
+
+원래37824197495와 mixed37828940744 전체failure는 보존한다. Windows 실행 경로 불변에 근거해 각 형식의 별도 소비자 증거를 조합했으며 제품 source6d/11assets/서명/key/feed58ca는 그대로다. 이번 Linux success는 정상 클릭 뒤 실제 재시작 관측이며 exact unknown-error branch의 실제 재현으로 쓰지 않는다. 기존 썸네일/MSI3010/Authenticode/물리 환경 한계는 유지한다. 공개 notes/body의 미실행 문구와 새 Pages·PR120 merge·Issue113 close/cleanup은 별도 후속 승인이다.
+
+
+### Stage4.8 보고 인계·최신 required 확인 — 2026-10-09
+
+Stage4.8 결과 기록6문서를 25952ec51d869241f1102ce3f952b13097413ccd/treee40a540464e87168b2e69b976389739335847c6e에 묶어 기존 PR120에 normal push했다. [required37834473324](https://github.com/postmelee/alhangeul-tauri/actions/runs/37834473324)/attempt1은 Node/Windows/required3job 모두 success, Node1360/upstream39/Studio283·Windows notes124/production88/PowerShell 통과다. 실제 merge checkout1b5049789697fedcfbca08c58cb31cf5101447e8의 parents는 devel1f33/head25952이고 tree가 head와 같다. MERGEABLE·CLEAN이며 merge하지 않았다. Native 실제 H8a 이후 변경은 기록6문서뿐이라 accepted Windows bcH/Linux H8a evidence identity를 유지한다. PR 본문은 actual3 수용·완료 CI·원래 whole failure·후속 승인 경계를 반영해 read-back했다.
+
+### Stage4.9 승인 대기 — 최종 사용자 결과 안내와 고정 회귀 입력 보존
+
+구체 [검토 diff](/private/tmp/task113-final-guidance-proposal/final-guidance.patch)는 SHA256 `5064367359bf42cf920b36e9f8b6db9e3d18c066e7b14c24c6f152ab0b592d57`·6파일/157diff lines다. 입력 base head는 `25952ec51d869241f1102ce3f952b13097413ccd`이고 before/after hash는 같은 폴더 files.json에 있다. 실제 source에는 적용하지 않았다.
+
+| 위치 | 제안/위치 판단 |
+|---|---|
+| README.md | 기존 제품 설치 안내의 actual011→012 미검증1문장만 결과로 보정 |
+| docs/releases/v0.1.2.notes.json | 기존 승인된 사용자 문구 단일 원문. updateInstructions/updaterSummary·참조 확인 시각 및 PR119/120 운영 근거만 정렬 |
+| site/release.json·site/updates/v0.1.2.html | 기존 승인된 웹/updater 공개 data와 원문 생성물. HTML을 직접 재작성하지 않음 |
+| tests/fixtures/production-upgrade-v012-release.json | 실제 H8a/보고25952의 site/release.json bytes를 그대로 보존하는51LOC 고정 회귀 입력. 제품/운영 문서가 아닌 테스트 fixture |
+| tests/production-upgrade-v012.test.mjs | 위 fixture를 읽도록1행과 설명1행만 보정. 실제 검증 당시 manifest58ca·fixed012 spec·기존59/new29/음성 assertion은 유지 |
+| mydocs/plans/working/report/orders·docs/releases 추적 | 기존 승인 위치에 Stage4.9의 적용/검증/본문-only 결과를 기록 |
+
+원문 JSON/기존 생성 HTML은 metadata/참조를 포함한 기존 규격상300LOC를 넘는 기존 파일이다. 이번 안내에서 규격을 분리하거나 재설계하지 않는다. 새 fixture51LOC와 unit200LOC는 상한 안이다. 외부 API/helper/의존성·workflow·제품/core/Studio/lock은 바꾸지 않는다.
+
+mutable current site data가 notes 변경 뒤에도 과거 fixed012 hash58ca와 같을 수는 없다. 그 1회귀의 입력을 당시 bytes로 고정하고 hash/assertion을 보존한다. 최신 공개 안내는 existing release-notes integration/Pages/updater 계약이 별도로 검사한다. 과거 실제 accepted.json의 manifest/hash를 새 안내 해시로 바꾸지 않는다. 향후 고정 historical production-upgrade run을 새 notes-only feed로 다시 실행하려면 전용 입력 승인이 필요하며 이번에는 재실행하지 않는다.
+
+임시 review-tree에서 production/workflow/notes-generation/integration/Pages/updater/actions 지정369/369·fail/skip0와 GUI types가 통과했다. notes check2·Pages source19/output23도 수용했고 git apply --check 통과다. 실제1280/390 browser 표시와 DOM document width 동등성을 확인했다. 6종 고정 다운로드·KST 공개일·기존 한계를 유지한다. PR14개/Issue5개의 실제 제목·URL·상태를 새로 읽어 확인했으며 PR120과Issue113은 OPEN, resolvedIssues=[]다.
+
+| 제안 생성물 | bytes / SHA256 |
+|---|---|
+| GitHub body-only | 6208 / d932d5f3a4e26cb07d38fe467dee4f86b6676cda4feb340fda64ec7040005e92 |
+| HTML source / Pages normalized HTML | 9166/0452b06a8e5834423328d833ee4bd789042c578015328b4e1523d28368575816 / 9157/1869e70dcbf1d33f27db3e3cd3cfe03d6ec8a2eb24e15c2eef618b8287a56fae |
+| short notes | 550 / 1fec449b459dba4bd4c57a07e5ed6a4667edf39d523b84ad770f4377dc768e4d |
+| 향후 Pages manifest | 2434 / f7517e3dce5048f7fe8c283f48640fb6fed68eb494146ded7441ee5fa0dd64d1 |
+
+원격 body6186/03cde7aa...·Release407055948/Stable/latest·11asset ID/hash·feed2371/58ca를 승인 전 다시 읽기 확인했다. 새 manifest는 notes만 바뀌며 version/pub_date/3URL/3signature가 이전과 정확히 같다. 원문 metadata6 installer size/hash·updater inventory/key/source tuple·known limitations도 불변이다. generated/release-body.md·desktop-preview.jpg·identity-receipt.json과 body-publication-payload.json을 임시 검토 폴더에 준비했다. 이 준비는 공개 동작이 아니다.
+
+### 승인 후 적용·PR 필수 CI·본문-only 공개 범위
+
+1. 승인6파일의 before/after hash를 검산해 적용한다. 실제 full automation1360·집중369·GUI types·기본 boundary/version/metadata/pin/committed-rhwp/notes·Pages19/23·upstream39·Studio283/build를 검증한다. 기존 failure와 harness/source identity를 유지하고 새 native/build/signing은 하지 않는다.
+2. source6파일과 기존 추적 문서/Stage4.9를 묶음 commit해 PR120을 normal push/본문 갱신한다. 새 exact head의 Node/Windows/required3job 전체success·실제 merge checkout/tree를 확인한다. 새 public guidance를 적용한 source의 실패/입력 drift면 원인 보정 없이 게시하지 않는다.
+3. generic/required success 뒤 Release407055948의 old body/hash·Stable/latest·tag198ebba7→main6d·공개시각·11assets 전체identity 불변을 재확인한다. 승인된 exact body6208/d932d5f3...만 JSON PATCH로 갱신해 원격 byte read-back/11identity/채널을 확인한다. 기존 product 파일/서명/tag를 바꾸거나 재업로드하지 않는다.
+4. PR 일반 merge는 새 head의 구체 입력을 제시해 별도 승인받는다. 실제 merged devel SHA의 Pages/f751 notes-only feed 배포는 그 SHA로 별도 승인받는다. 현재production58ca와 actual3 acceptance는 검증 당시 근거로 보존한다. HTTP/화면 검산 뒤 #113 종료·cleanup을 승인받는다.
+
+AGENTS.md의 “소스 수정 전 반드시 작업지시자 승인 요청”·“각 단계 완료 후 승인 없이 다음 단계 진행 금지”와 위 Stage4.8 승인 제외 범위에 따라 지금은 source6/본문-only 갱신을 **승인 대기**한다. PR merge/Pages/#113 close/cleanup은 이번 제안에 포함하지 않는다.
+
+
+### Stage4.9 명시 승인·착수 — 2026-10-09
+
+같은 스레드의 작업지시자 “진행해줘.”로 patch5064367359bf... 최종 안내6파일·고정 regression 입력 보존·실제 전체 generic/보고 commit·기존 PR120 normal push/새 required success 뒤 exact body6208/d932d5f3...만 갱신/원격 검산을 승인받았다. 관측 시각은 `2026-10-09T14:04:27.193634+00:00`다. source before/after hash와 계획/patch identity를 확인해 적용했다. native product6d/공개11파일/서명/key/tag·historical consumer manifest58ca 및 두 whole failure를 유지한다. PR merge·actual merged devel Pages SHA 배포·Issue113 close/cleanup은 이번 승인에서 제외한다.
+
+
+## 최종 결과 안내 source/generic 수용 — 2026-10-09 23:07 KST
+
+명시 승인된6파일을 적용하고 [Stage4.9.1](../working/task_m010_113_stage4.9.1.md)에 before/after hash·고정 fixture3938/f42efd...·historical58ca/실제native증거 보존과 실제 automation1360/집중369·types·기본 checks/notes2/Pages19·23·upstream39/Studio283/build 수용을 기록했다. actual-generated body6208/d932d5f3...·HTML9166/normalized9157·short550·향후manifest2434/f7517e3d...는 승인 검토본과 같은 bytes다. 새 manifest는 notes만 변경하며 installer/key/pubdate/3URL/3signature·한계는 불변이다. source/report를 기존 PR120 normal push해 새 required success 뒤 이미 승인된 body-only 공개를 이어간다. 현재 public body03c/feed58ca·PR120OPEN·#113OPEN이며 merge·새Pages·종료는 후속 승인이다.
+
+
+## 최종 GitHub 결과 안내 공개 수용 — 2026-10-09 23:15 KST
+
+[Stage4.9](../working/task_m010_113_stage4.9.md)에 sourceff1cea2b required37941878782/attempt1의 Node/Windows/required3job 전체success·실제 merge7402feec/tree5a3c1192와 승인된 body-only 실제 공개를 기록했다. 2026-10-09 23:12:41 KST 독립 GET으로 Release407055948 body6208/SHA256d932d5f3a4e26cb07d38fe467dee4f86b6676cda4feb340fda64ec7040005e92를 확인했다. 11asset id/hash·tag198e→main6d·Stable/latest·publishedAt16:49:38Z·현재 feed2371/58ca 불변이다. 새 build/sign/asset upload/Pages dispatch는 하지 않았다. 기존한계·과거 whole failure·native 실제3종/고정58ca evidence를 유지한다. body와 branch final웹/feed data를 구분하며 PR120 merge·actual merged devel SHA Pages/f751 공개·HTTP/화면·#113 close/cleanup은 후속 승인이다.

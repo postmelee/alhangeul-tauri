@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile, mkdir, writeFile, appendFile, lstat } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { digest, validateInputs, validateConfig } from './production-contract.mjs';
+import { digest, validateInputs, validateConfig, productionInputsPath } from './production-contract.mjs';
 import { verifyRelease, downloadRelease, fetchBytes } from './production-download.mjs';
 import { validateApply, validateVerify, validateWindowsInstallation } from './production-evidence.mjs';
 import { stopRestartedAppImage } from './production-process.mjs';
@@ -13,7 +13,7 @@ const json = async path => JSON.parse((await readFile(path, 'utf8')).replace(/^\
 const writeJson = (path, value) => writeFile(path, `${JSON.stringify(value, null, 2)}\n`);
 
 async function prepare(kind, output) {
-  const spec = await json(join(root, 'tests/gui/production-upgrade-inputs.json'));
+  const spec = await json(productionInputsPath(root));
   const target = validateInputs(spec, kind);
   const key = validateConfig(await json(join(root, 'apps/desktop/src-tauri/tauri.updater.conf.json')), spec);
   await mkdir(output, { recursive: false });
@@ -42,7 +42,7 @@ export async function requireApply(kind, output, expectedHarness = process.env.H
   const receipt = { kind, harnessSha: expectedHarness, status: 'failed' };
   try {
     assert.match(expectedHarness ?? '', /^[a-f0-9]{40}$/);
-    const spec = await json(join(root, 'tests/gui/production-upgrade-inputs.json'));
+    const spec = await json(productionInputsPath(root));
     validateInputs(spec, kind);
     const input = await json(join(output, 'public-input.json'));
     assert.equal(input.status, 'passed'); assert.equal(input.kind, kind);
@@ -50,14 +50,14 @@ export async function requireApply(kind, output, expectedHarness = process.env.H
     assert.equal(input.manifestSha256, spec.manifestSha256);
     const applied = await json(join(output, 'apply', 'result.json'));
     assert.equal(applied.harnessSha, expectedHarness);
-    validateApply(applied, kind);
+    validateApply(applied, kind, spec);
     receipt.status = 'passed';
   } catch (error) { receipt.error = error.message; throw error; }
   finally { await writeJson(join(output, 'apply-gate.json'), receipt); }
 }
 
 async function finalize(kind, output, appPath) {
-  const spec = await json(join(root, 'tests/gui/production-upgrade-inputs.json'));
+  const spec = await json(productionInputsPath(root));
   validateInputs(spec, kind);
   const input = await json(join(output, 'public-input.json'));
   assert.equal(input.status, 'passed');
@@ -68,14 +68,14 @@ async function finalize(kind, output, appPath) {
   const apply = await json(join(output, 'apply', 'result.json'));
   const verify = await json(join(output, 'verify', 'result.json'));
   assert.equal(apply.harnessSha, input.harnessSha); assert.equal(verify.harnessSha, input.harnessSha);
-  validateApply(apply, kind); validateVerify(verify, kind);
+  validateApply(apply, kind, spec); validateVerify(verify, kind, spec);
   if (kind === 'appimage') {
     const stopped = await json(join(output, 'restarted-process-shutdown.json'));
     assert.equal(stopped.stopped, true); assert.equal(stopped.pid, apply.restart.current.pid);
     assert.ok(appPath && (await lstat(appPath)).isFile());
     assert.equal(digest(await readFile(appPath)), input.releases.next.selected.sha256, 'real updated AppImage bytes');
-  } else validateWindowsInstallation(await json(join(output, 'validate.json')), kind);
-  await writeJson(join(output, 'accepted.json'), { status: 'passed', kind, harnessSha: input.harnessSha, from: '0.1.0', to: '0.1.1', productionUpgradeTested: true, acceptedAt: new Date().toISOString() });
+  } else validateWindowsInstallation(await json(join(output, 'validate.json')), kind, spec);
+  await writeJson(join(output, 'accepted.json'), { status: 'passed', kind, harnessSha: input.harnessSha, from: spec.releases.n.version, to: spec.releases.next.version, productionUpgradeTested: true, acceptedAt: new Date().toISOString() });
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
@@ -85,7 +85,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     const output = resolve(path);
     if (phase === 'prepare') await prepare(kind, output);
     else if (phase === 'require-apply') await requireApply(kind, output);
-    else if (phase === 'stop') { assert.equal(kind, 'appimage'); await stopRestartedAppImage(output); }
+    else if (phase === 'stop') { assert.equal(kind, 'appimage'); await stopRestartedAppImage(output, await json(productionInputsPath(root))); }
     else await finalize(kind, output, appPath);
   } catch (error) { console.error(`Production upgrade ${phase} failed: ${error.message}`); process.exitCode = 1; }
 }

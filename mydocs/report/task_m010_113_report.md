@@ -2,8 +2,8 @@
 
 GitHub Issue: [#113](https://github.com/postmelee/alhangeul-tauri/issues/113)
 마일스톤: M010
-확인일: 2026-10-09 02:09 (Asia/Seoul)
-상태: Stage1~4 구현·GitHub012 공개/본문 보정·Gate5 데이터 로컬 수용 완료 / Pages·실제011→012 전달 계속 진행
+확인일: 2026-10-09 23:15 (Asia/Seoul)
+상태: GitHub012 결과 안내·실제011→012 지원3종 수용 완료 / 최종 웹·피드 안내·PR120 통합·종료 계속 진행
 
 아래 Stage1~4 요약은 당시 구현 인계 snapshot이다. 현재 공개/전달 상태는 후속 Gate별 기록으로 구분한다.
 
@@ -183,3 +183,57 @@ remote Pages/feed011·actual011→012·최종 close/cleanup은 후속이며 #113
 failure였다. 명시 승인한 unit1파일의 recorded011 입력 보정과 actual59/automation1331 수용을
 [Stage4.4.1](../working/task_m010_113_stage4.4.1.md)에 기록했다. 새 head required를 확인한 뒤
 merge 승인받으며 old failure·site/feed011·actual011→012 미실행을 유지한다. #113 OPEN이다.
+
+## PR119 merge와 Pages 입력 수용 — 2026-10-09 02:37 KST
+
+새 required37815889210 attempt1의 Node/Windows/required 전체3job success를 확인한 뒤
+명시 승인된 일반 merge로 PR119를 actual devel `1f33d03918b50a5b9140978a9eb28d1b5e65ebe6`에 통합했다.
+[Stage4.5](../working/task_m010_113_stage4.5.md)에 actual merge/2parents/tree·CI counts·IssueOPEN·
+Pages23 frozen bytes 및 기존 환경/피드011 상태와 다음 승인 입력을 연결했다. Sites/피드012 공개는
+아직 미실행이며 actual011→012·최종 close/cleanup이 남는다. #113 전체 완료로 쓰지 않는다.
+
+## Pages·production012 공개와 Stage4.6 — 2026-10-09 03:03 KST
+
+명시 승인된 exactdevel1f33의 기존 Pages37819153172가 attempt1/whole success다.
+[Stage4.6](../working/task_m010_113_stage4.6.md)에 workflow/source/checkout/deploy SHA·artifact11568521999/
+ZIPdigest9e1b6c23...·tar/HTTP23·production manifest012/2371/hash58ca348b...와 actual3signature를 기록했다.
+6download·desktop/mobile/KST/known limits를 확인했고 환경/보호·Release11/body·main6d/key/endpoint를
+유지했다. updates 목록의 local v012 static link 누락은 미수용으로 남는다. source14/실제011→012
+제안은 임시75/151/GUI typecheck만 통과했으며 저장소 미적용·remote 미실행이다. 전체Gate6/Task113
+완료가 아니며, source 승인·검증·필수CI/actual3upgrade·최종공개문구/PRmerge·close/cleanup이 남는다.
+
+## Production harness012·웹 목록 구현 수용 — 2026-10-09 03:17 KST
+
+[Stage4.7](../working/task_m010_113_stage4.7.md)에 approved14+추가3행·actual source17 hashes,
+기존010→011 JSON/59 회귀 불변·새011→012 fixed public identity·기존key/endpoint·dirty/동의/
+설치/재실행/문서 gate 유지와 generic1347/production75/upstream39/Studio283·types/Pages19/23을 기록했다.
+최초 automation1fail의 oldworkflow011 기대와 new16 CI 연결 누락은 explicit3행 승인 뒤 수정했다.
+이 Open PR은 구현117·release118·공개data119 이후 delivery harness/기록 후속이다. 실제 remote3와
+PR required·PRmerge/공개문구·새Pages·close/cleanup이 남아 전체Task113 완료로 쓰지 않는다.
+
+
+## Production upgrade 실패와 harness 보정 수용 — 2026-10-09 03:57 KST
+
+PR120의 이전 required37823417314는 전체3job 성공했지만 actual37824197495/attempt1은 NSIS·MSI·AppImage 전체 failure다. 계획의 Stage4.8 진단에 actual3 archive identity·부분 관측·실패/미완료 경계를 보존했다. 명시 승인한6파일 보정과 실제 집중87/전체1353·types/기본검사/upstream39/Studio283 수용은 [Stage4.8.1](../working/task_m010_113_stage4.8.1.md)에 기록했다. 새 exact H의 required와 actual3/all 1회 재검증은 승인됐고 후속 수행한다. old failure·strict settings equality/문서/설치/cleanup gate·public product6d/11assets/key/feed는 유지한다. 전체 실제 upgrade 수용·PR merge/공개문구·새Pages·close/cleanup은 아직 완료가 아니다.
+
+
+## Windows2 실제 수용과 Linux 재시작 관측 보정 — 2026-10-09 04:23 KST
+
+새 required37828387632 전체success 뒤 actual37828940744는 Windows NSIS/MSI complete2job/accepted.json·public bytes/서명·설치/version/handler/defaults·strict settings·HWP6/HWPX10·cleanup/policy restore와 GUI4화면을 수용했다. Linux는 restart 클릭 응답 unknown error로 필수 PID/FUSE 관측 전에 실패해 whole run은 failure다. 계획에 세 archive identity와 부분/전체 경계를 보존했다. 명시 승인된3파일 보정·실제 집중94/전체1360·types/기본검사와 Windows 경로 불변 검산은 [Stage4.8.2](../working/task_m010_113_stage4.8.2.md)에 기록한다. 새 H required·Linux-only1회와 조건부 whole3 기록이 후속이다. public product6d/11assets/key/feed와 원래 두 실패 run을 유지하며 전체 release task 완료로 쓰지 않는다.
+
+
+## 실제3종 production upgrade 수용 — 2026-10-09 04:45 KST
+
+[Stage4.8](../working/task_m010_113_stage4.8.md)에 Windows NSIS/MSI의 bc082d00/run37828940744 각 complete success job과 Linux AppImage의 H8a5a28c7/run37832348063 Linux-only whole success를 형식별로 구분했다. Linux job113500633933/archive11573159872·687854bytes·SHA2567bdc6668babafa65b7f6284fbe82e2c592bcb2f775cf84cf305fde46e31e33db를 독립 검산했다. 실제 PID5034→5207/new FUSE exe·public012 파일 교체hash/stop·strict settings·About012·HWP6/HWPX10/bytes·accepted.json과 GUI2화면을 수용했다. Windows4화면을 포함해 실제3종/GUI6 수용이 완료됐다. 최신 H required37831668570 Node/Windows/required 전체success다.
+
+원래37824197495와 mixed37828940744 전체failure는 보존한다. Windows 실행 경로 불변에 근거해 각 형식의 별도 소비자 증거를 조합했으며 제품 source6d/11assets/서명/key/feed58ca는 그대로다. 이번 Linux success는 정상 클릭 뒤 실제 재시작 관측이며 exact unknown-error branch의 실제 재현으로 쓰지 않는다. 기존 썸네일/MSI3010/Authenticode/물리 환경 한계는 유지한다. 공개 notes/body의 미실행 문구와 새 Pages·PR120 merge·Issue113 close/cleanup은 별도 후속 승인이다.
+
+
+## 최종 결과 안내 source/generic 수용 — 2026-10-09 23:07 KST
+
+명시 승인된6파일을 적용하고 [Stage4.9.1](../working/task_m010_113_stage4.9.1.md)에 before/after hash·고정 fixture3938/f42efd...·historical58ca/실제native증거 보존과 실제 automation1360/집중369·types·기본 checks/notes2/Pages19·23·upstream39/Studio283/build 수용을 기록했다. actual-generated body6208/d932d5f3...·HTML9166/normalized9157·short550·향후manifest2434/f7517e3d...는 승인 검토본과 같은 bytes다. 새 manifest는 notes만 변경하며 installer/key/pubdate/3URL/3signature·한계는 불변이다. source/report를 기존 PR120 normal push해 새 required success 뒤 이미 승인된 body-only 공개를 이어간다. 현재 public body03c/feed58ca·PR120OPEN·#113OPEN이며 merge·새Pages·종료는 후속 승인이다.
+
+
+## 최종 GitHub 결과 안내 공개 수용 — 2026-10-09 23:15 KST
+
+[Stage4.9](../working/task_m010_113_stage4.9.md)에 sourceff1cea2b required37941878782/attempt1의 Node/Windows/required3job 전체success·실제 merge7402feec/tree5a3c1192와 승인된 body-only 실제 공개를 기록했다. 2026-10-09 23:12:41 KST 독립 GET으로 Release407055948 body6208/SHA256d932d5f3a4e26cb07d38fe467dee4f86b6676cda4feb340fda64ec7040005e92를 확인했다. 11asset id/hash·tag198e→main6d·Stable/latest·publishedAt16:49:38Z·현재 feed2371/58ca 불변이다. 새 build/sign/asset upload/Pages dispatch는 하지 않았다. 기존한계·과거 whole failure·native 실제3종/고정58ca evidence를 유지한다. body와 branch final웹/feed data를 구분하며 PR120 merge·actual merged devel SHA Pages/f751 공개·HTTP/화면·#113 close/cleanup은 후속 승인이다.

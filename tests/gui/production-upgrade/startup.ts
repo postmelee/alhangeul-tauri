@@ -6,7 +6,7 @@ import type { UpgradeEvidence } from './native.ts';
 
 export async function waitForProductionStartup(input: UpgradeInputs, evidence: UpgradeEvidence) {
   try {
-    await waitForStudioStartup(browser, 180000, input.phase === 'apply' ? '0.1.1' : undefined);
+    await waitForStudioStartup(browser, 180000, input.phase === 'apply' ? input.toVersion : undefined);
   } catch (error) {
     evidence.startupFailure = await captureStartupFailure(input);
     throw error;

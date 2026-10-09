@@ -66,7 +66,7 @@ jobs:
       - name: Test release generation contracts
         run: node --test tests/release-notes.test.mjs tests/release-notes-generation.test.mjs tests/release-notes-integration.test.mjs
       - name: Test production upgrade contracts
-        run: node --test tests/production-upgrade.test.mjs
+        run: node --test tests/production-upgrade.test.mjs tests/production-upgrade-v012.test.mjs
       - name: Parse PowerShell and run isolated regressions
         shell: powershell
         run: .\scripts\ci\windows-tests.ps1
