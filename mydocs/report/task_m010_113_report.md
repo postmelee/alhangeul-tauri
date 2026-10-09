@@ -2,7 +2,7 @@
 
 GitHub Issue: [#113](https://github.com/postmelee/alhangeul-tauri/issues/113)
 마일스톤: M010
-확인일: 2026-10-09 04:45 (Asia/Seoul)
+확인일: 2026-10-09 23:07 (Asia/Seoul)
 상태: GitHub/Pages/feed012 공개·실제011→012 지원3종 수용 완료 / 최종 공개 안내·PR 통합·종료 계속 진행
 
 아래 Stage1~4 요약은 당시 구현 인계 snapshot이다. 현재 공개/전달 상태는 후속 Gate별 기록으로 구분한다.
@@ -227,3 +227,8 @@ PR120의 이전 required37823417314는 전체3job 성공했지만 actual37824197
 [Stage4.8](../working/task_m010_113_stage4.8.md)에 Windows NSIS/MSI의 bc082d00/run37828940744 각 complete success job과 Linux AppImage의 H8a5a28c7/run37832348063 Linux-only whole success를 형식별로 구분했다. Linux job113500633933/archive11573159872·687854bytes·SHA2567bdc6668babafa65b7f6284fbe82e2c592bcb2f775cf84cf305fde46e31e33db를 독립 검산했다. 실제 PID5034→5207/new FUSE exe·public012 파일 교체hash/stop·strict settings·About012·HWP6/HWPX10/bytes·accepted.json과 GUI2화면을 수용했다. Windows4화면을 포함해 실제3종/GUI6 수용이 완료됐다. 최신 H required37831668570 Node/Windows/required 전체success다.
 
 원래37824197495와 mixed37828940744 전체failure는 보존한다. Windows 실행 경로 불변에 근거해 각 형식의 별도 소비자 증거를 조합했으며 제품 source6d/11assets/서명/key/feed58ca는 그대로다. 이번 Linux success는 정상 클릭 뒤 실제 재시작 관측이며 exact unknown-error branch의 실제 재현으로 쓰지 않는다. 기존 썸네일/MSI3010/Authenticode/물리 환경 한계는 유지한다. 공개 notes/body의 미실행 문구와 새 Pages·PR120 merge·Issue113 close/cleanup은 별도 후속 승인이다.
+
+
+## 최종 결과 안내 source/generic 수용 — 2026-10-09 23:07 KST
+
+명시 승인된6파일을 적용하고 [Stage4.9.1](../working/task_m010_113_stage4.9.1.md)에 before/after hash·고정 fixture3938/f42efd...·historical58ca/실제native증거 보존과 실제 automation1360/집중369·types·기본 checks/notes2/Pages19·23·upstream39/Studio283/build 수용을 기록했다. actual-generated body6208/d932d5f3...·HTML9166/normalized9157·short550·향후manifest2434/f7517e3d...는 승인 검토본과 같은 bytes다. 새 manifest는 notes만 변경하며 installer/key/pubdate/3URL/3signature·한계는 불변이다. source/report를 기존 PR120 normal push해 새 required success 뒤 이미 승인된 body-only 공개를 이어간다. 현재 public body03c/feed58ca·PR120OPEN·#113OPEN이며 merge·새Pages·종료는 후속 승인이다.

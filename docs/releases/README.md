@@ -108,3 +108,6 @@ private key·암호·token·개인 문서·실제 credential 보관 경로는 �
 
 
 2026-10-09 04:45 (Asia/Seoul) 확인: v0.1.2 공개 product6d의 Windows NSIS/MSI·Linux x64 AppImage 실제011→012 업데이트·설정·HWP/HWPX 수용을 완료했다. [Stage4.8](../../mydocs/working/task_m010_113_stage4.8.md)에 Windows bc082d00/37828940744 각 success job과 Linux H8a5a28c7/37832348063 whole success의 별도 evidence identity를 기록했다. 두 과거 whole failure를 유지한다. 공개 안내의 미실행 문구 갱신·PR120 통합·새 Pages·#113 종료는 후속 승인이다.
+
+
+2026-10-09 23:07 (Asia/Seoul) 확인: 승인한 최종 업데이트 결과 안내6파일의 branch source/generic 수용을 [Stage4.9.1](../../mydocs/working/task_m010_113_stage4.9.1.md)에 기록했다. 공개 body03c/feed58ca는 그대로이며 새 required success 뒤 승인된 body-only 공개를 진행한다. 새 Pages f751 안내와 PR120 통합·#113 종료는 후속 승인이다.

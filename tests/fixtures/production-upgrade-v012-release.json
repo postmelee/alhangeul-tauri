@@ -4,7 +4,7 @@
   "version": "0.1.2",
   "tag": "v0.1.2",
   "publishedAt": "2026-10-08T16:49:38Z",
-  "notes": "rhwp v0.8.7의 표·문단 조판과 열기·저장·편집 개선을 반영합니다. 새 글꼴 공급 API와 제품 창 제목·접근성 이름을 Alhangeul에 연결합니다.\n\nWindows/Linux 6종 설치 파일을 공개했습니다. Windows NSIS·MSI와 Linux x64 AppImage의 v0.1.1 → v0.1.2 앱 내 업데이트, 설정 유지와 HWP/HWPX 문서 재열기를 검증했습니다. Windows 코드 서명과 일부 탐색기 썸네일에는 제한이 있습니다. 자세한 변경과 설치 안내는 v0.1.2 릴리즈 노트를 확인하세요.",
+  "notes": "rhwp v0.8.7의 표·문단 조판과 열기·저장·편집 개선을 반영합니다. 새 글꼴 공급 API와 제품 창 제목·접근성 이름을 Alhangeul에 연결합니다.\n\nWindows/Linux 6종 설치 파일을 공개했습니다. v0.1.1 → v0.1.2 앱 내 업데이트 수용은 아직 실행하지 않았습니다. Windows 코드 서명과 일부 탐색기 썸네일에는 제한이 있습니다. 자세한 변경과 설치 안내는 v0.1.2 릴리즈 노트를 확인하세요.",
   "downloads": {
     "windows-x86_64-nsis": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.2/Alhangeul_0.1.2_x64-setup.exe",
     "windows-x86_64-msi": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.2/Alhangeul_0.1.2_x64_en-US.msi",

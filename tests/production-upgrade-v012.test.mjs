@@ -16,7 +16,8 @@ import { buildUpdaterManifest, serializeUpdaterManifest } from '../scripts/updat
 
 const spec = JSON.parse(await readFile(new URL('gui/production-upgrade-v0.1.2-inputs.json', import.meta.url)));
 const legacy = JSON.parse(await readFile(new URL('gui/production-upgrade-inputs.json', import.meta.url)));
-const release = JSON.parse(await readFile(new URL('../site/release.json', import.meta.url)));
+// 실제 업그레이드 검증 당시 manifest58ca의 입력을 보존한다. 이후 공개 안내는 별도로 검사한다.
+const release = JSON.parse(await readFile(new URL('fixtures/production-upgrade-v012-release.json', import.meta.url)));
 const clone = value => structuredClone(value);
 test('new public tuple preserves legacy manifest and inputs', () => {
   for (const kind of ['nsis', 'msi', 'appimage']) { validateInputs(spec, kind); validateInputs(legacy, kind); }

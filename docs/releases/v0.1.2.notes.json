@@ -119,16 +119,16 @@
     ],
     "updateInstructions": [
       "Windows NSIS·MSI와 Linux x64 AppImage는 앱 시작 시 또는 제품 정보에서 새 버전을 확인합니다. 다운로드·설치는 사용자가 선택하며 저장하지 않은 문서가 있으면 먼저 저장하도록 안내합니다.",
-      "v0.1.2 설치 파일을 공개했습니다. v0.1.1 → v0.1.2 앱 내 업데이트 수용은 아직 실행하지 않았습니다. DEB·RPM·Linux arm64는 배포판에 맞는 새 패키지를 수동으로 설치합니다."
+      "Windows NSIS·MSI와 Linux x64 AppImage에서 v0.1.1 → v0.1.2 앱 내 업데이트, 설정 유지와 HWP/HWPX 문서 재열기를 검증했습니다. DEB·RPM·Linux arm64는 배포판에 맞는 새 패키지를 수동으로 설치합니다."
     ],
     "limitations": [
       "Windows 설치 파일은 Authenticode 미서명이며 자동 업데이트용 Minisign과는 별개입니다.",
       "일부 Windows NSIS 환경에서 탐색기 썸네일이 정상 표시되지 않는 제한이 남아 있습니다. 강제 MSI 재설치의 3010 재부팅 요구를 관측했으며 재부팅 후 동작은 검증하지 않았습니다.",
       "사용자의 모든 Wayland·GPU·글꼴·문서·배포판·물리 프린터 조합은 검증하지 않았습니다. 이전 버전의 성능 수치를 새 pin의 측정 결과로 승계하지 않습니다."
     ],
-    "updaterSummary": "rhwp v0.8.7의 표·문단 조판과 열기·저장·편집 개선을 반영합니다. 새 글꼴 공급 API와 제품 창 제목·접근성 이름을 Alhangeul에 연결합니다.\n\nWindows/Linux 6종 설치 파일을 공개했습니다. v0.1.1 → v0.1.2 앱 내 업데이트 수용은 아직 실행하지 않았습니다. Windows 코드 서명과 일부 탐색기 썸네일에는 제한이 있습니다. 자세한 변경과 설치 안내는 v0.1.2 릴리즈 노트를 확인하세요.",
+    "updaterSummary": "rhwp v0.8.7의 표·문단 조판과 열기·저장·편집 개선을 반영합니다. 새 글꼴 공급 API와 제품 창 제목·접근성 이름을 Alhangeul에 연결합니다.\n\nWindows/Linux 6종 설치 파일을 공개했습니다. Windows NSIS·MSI와 Linux x64 AppImage의 v0.1.1 → v0.1.2 앱 내 업데이트, 설정 유지와 HWP/HWPX 문서 재열기를 검증했습니다. Windows 코드 서명과 일부 탐색기 썸네일에는 제한이 있습니다. 자세한 변경과 설치 안내는 v0.1.2 릴리즈 노트를 확인하세요.",
     "references": {
-      "checkedAt": "2026-10-08T16:53:22.722Z",
+      "checkedAt": "2026-10-08T19:49:02.507Z",
       "pullRequests": [
         {
           "number": 100,
@@ -260,6 +260,28 @@
           "summaryIncluded": false,
           "evidence": [
             "https://github.com/postmelee/alhangeul-tauri/commit/6dcb05e96ec2075d09d8a60160e1d82f08c0811b"
+          ]
+        },
+        {
+          "number": 119,
+          "title": "Task #113: v0.1.2 공개 안내·웹 다운로드·updater 데이터 반영",
+          "url": "https://github.com/postmelee/alhangeul-tauri/pull/119",
+          "category": "operations",
+          "summaryIncluded": false,
+          "evidence": [
+            "https://github.com/postmelee/alhangeul-tauri/commit/1f33d03918b50a5b9140978a9eb28d1b5e65ebe6"
+          ]
+        },
+        {
+          "number": 120,
+          "title": "Task #113: v0.1.2 안내 연결 및 production 업그레이드 검증",
+          "url": "https://github.com/postmelee/alhangeul-tauri/pull/120",
+          "category": "operations",
+          "summaryIncluded": false,
+          "evidence": [
+            "https://github.com/postmelee/alhangeul-tauri/commit/25952ec51d869241f1102ce3f952b13097413ccd",
+            "https://github.com/postmelee/alhangeul-tauri/actions/runs/37828940744",
+            "https://github.com/postmelee/alhangeul-tauri/actions/runs/37832348063"
           ]
         }
       ],

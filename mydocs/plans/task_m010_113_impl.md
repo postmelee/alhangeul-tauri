@@ -1211,3 +1211,55 @@ Pages 배포·Issueclose/cleanup은 후속 승인이다. 이번 제안 source·L
 [Stage4.8](../working/task_m010_113_stage4.8.md)에 Windows NSIS/MSI의 bc082d00/run37828940744 각 complete success job과 Linux AppImage의 H8a5a28c7/run37832348063 Linux-only whole success를 형식별로 구분했다. Linux job113500633933/archive11573159872·687854bytes·SHA2567bdc6668babafa65b7f6284fbe82e2c592bcb2f775cf84cf305fde46e31e33db를 독립 검산했다. 실제 PID5034→5207/new FUSE exe·public012 파일 교체hash/stop·strict settings·About012·HWP6/HWPX10/bytes·accepted.json과 GUI2화면을 수용했다. Windows4화면을 포함해 실제3종/GUI6 수용이 완료됐다. 최신 H required37831668570 Node/Windows/required 전체success다.
 
 원래37824197495와 mixed37828940744 전체failure는 보존한다. Windows 실행 경로 불변에 근거해 각 형식의 별도 소비자 증거를 조합했으며 제품 source6d/11assets/서명/key/feed58ca는 그대로다. 이번 Linux success는 정상 클릭 뒤 실제 재시작 관측이며 exact unknown-error branch의 실제 재현으로 쓰지 않는다. 기존 썸네일/MSI3010/Authenticode/물리 환경 한계는 유지한다. 공개 notes/body의 미실행 문구와 새 Pages·PR120 merge·Issue113 close/cleanup은 별도 후속 승인이다.
+
+
+### Stage4.8 보고 인계·최신 required 확인 — 2026-10-09
+
+Stage4.8 결과 기록6문서를 25952ec51d869241f1102ce3f952b13097413ccd/treee40a540464e87168b2e69b976389739335847c6e에 묶어 기존 PR120에 normal push했다. [required37834473324](https://github.com/postmelee/alhangeul-tauri/actions/runs/37834473324)/attempt1은 Node/Windows/required3job 모두 success, Node1360/upstream39/Studio283·Windows notes124/production88/PowerShell 통과다. 실제 merge checkout1b5049789697fedcfbca08c58cb31cf5101447e8의 parents는 devel1f33/head25952이고 tree가 head와 같다. MERGEABLE·CLEAN이며 merge하지 않았다. Native 실제 H8a 이후 변경은 기록6문서뿐이라 accepted Windows bcH/Linux H8a evidence identity를 유지한다. PR 본문은 actual3 수용·완료 CI·원래 whole failure·후속 승인 경계를 반영해 read-back했다.
+
+### Stage4.9 승인 대기 — 최종 사용자 결과 안내와 고정 회귀 입력 보존
+
+구체 [검토 diff](/private/tmp/task113-final-guidance-proposal/final-guidance.patch)는 SHA256 `5064367359bf42cf920b36e9f8b6db9e3d18c066e7b14c24c6f152ab0b592d57`·6파일/157diff lines다. 입력 base head는 `25952ec51d869241f1102ce3f952b13097413ccd`이고 before/after hash는 같은 폴더 files.json에 있다. 실제 source에는 적용하지 않았다.
+
+| 위치 | 제안/위치 판단 |
+|---|---|
+| README.md | 기존 제품 설치 안내의 actual011→012 미검증1문장만 결과로 보정 |
+| docs/releases/v0.1.2.notes.json | 기존 승인된 사용자 문구 단일 원문. updateInstructions/updaterSummary·참조 확인 시각 및 PR119/120 운영 근거만 정렬 |
+| site/release.json·site/updates/v0.1.2.html | 기존 승인된 웹/updater 공개 data와 원문 생성물. HTML을 직접 재작성하지 않음 |
+| tests/fixtures/production-upgrade-v012-release.json | 실제 H8a/보고25952의 site/release.json bytes를 그대로 보존하는51LOC 고정 회귀 입력. 제품/운영 문서가 아닌 테스트 fixture |
+| tests/production-upgrade-v012.test.mjs | 위 fixture를 읽도록1행과 설명1행만 보정. 실제 검증 당시 manifest58ca·fixed012 spec·기존59/new29/음성 assertion은 유지 |
+| mydocs/plans/working/report/orders·docs/releases 추적 | 기존 승인 위치에 Stage4.9의 적용/검증/본문-only 결과를 기록 |
+
+원문 JSON/기존 생성 HTML은 metadata/참조를 포함한 기존 규격상300LOC를 넘는 기존 파일이다. 이번 안내에서 규격을 분리하거나 재설계하지 않는다. 새 fixture51LOC와 unit200LOC는 상한 안이다. 외부 API/helper/의존성·workflow·제품/core/Studio/lock은 바꾸지 않는다.
+
+mutable current site data가 notes 변경 뒤에도 과거 fixed012 hash58ca와 같을 수는 없다. 그 1회귀의 입력을 당시 bytes로 고정하고 hash/assertion을 보존한다. 최신 공개 안내는 existing release-notes integration/Pages/updater 계약이 별도로 검사한다. 과거 실제 accepted.json의 manifest/hash를 새 안내 해시로 바꾸지 않는다. 향후 고정 historical production-upgrade run을 새 notes-only feed로 다시 실행하려면 전용 입력 승인이 필요하며 이번에는 재실행하지 않는다.
+
+임시 review-tree에서 production/workflow/notes-generation/integration/Pages/updater/actions 지정369/369·fail/skip0와 GUI types가 통과했다. notes check2·Pages source19/output23도 수용했고 git apply --check 통과다. 실제1280/390 browser 표시와 DOM document width 동등성을 확인했다. 6종 고정 다운로드·KST 공개일·기존 한계를 유지한다. PR14개/Issue5개의 실제 제목·URL·상태를 새로 읽어 확인했으며 PR120과Issue113은 OPEN, resolvedIssues=[]다.
+
+| 제안 생성물 | bytes / SHA256 |
+|---|---|
+| GitHub body-only | 6208 / d932d5f3a4e26cb07d38fe467dee4f86b6676cda4feb340fda64ec7040005e92 |
+| HTML source / Pages normalized HTML | 9166/0452b06a8e5834423328d833ee4bd789042c578015328b4e1523d28368575816 / 9157/1869e70dcbf1d33f27db3e3cd3cfe03d6ec8a2eb24e15c2eef618b8287a56fae |
+| short notes | 550 / 1fec449b459dba4bd4c57a07e5ed6a4667edf39d523b84ad770f4377dc768e4d |
+| 향후 Pages manifest | 2434 / f7517e3dce5048f7fe8c283f48640fb6fed68eb494146ded7441ee5fa0dd64d1 |
+
+원격 body6186/03cde7aa...·Release407055948/Stable/latest·11asset ID/hash·feed2371/58ca를 승인 전 다시 읽기 확인했다. 새 manifest는 notes만 바뀌며 version/pub_date/3URL/3signature가 이전과 정확히 같다. 원문 metadata6 installer size/hash·updater inventory/key/source tuple·known limitations도 불변이다. generated/release-body.md·desktop-preview.jpg·identity-receipt.json과 body-publication-payload.json을 임시 검토 폴더에 준비했다. 이 준비는 공개 동작이 아니다.
+
+### 승인 후 적용·PR 필수 CI·본문-only 공개 범위
+
+1. 승인6파일의 before/after hash를 검산해 적용한다. 실제 full automation1360·집중369·GUI types·기본 boundary/version/metadata/pin/committed-rhwp/notes·Pages19/23·upstream39·Studio283/build를 검증한다. 기존 failure와 harness/source identity를 유지하고 새 native/build/signing은 하지 않는다.
+2. source6파일과 기존 추적 문서/Stage4.9를 묶음 commit해 PR120을 normal push/본문 갱신한다. 새 exact head의 Node/Windows/required3job 전체success·실제 merge checkout/tree를 확인한다. 새 public guidance를 적용한 source의 실패/입력 drift면 원인 보정 없이 게시하지 않는다.
+3. generic/required success 뒤 Release407055948의 old body/hash·Stable/latest·tag198ebba7→main6d·공개시각·11assets 전체identity 불변을 재확인한다. 승인된 exact body6208/d932d5f3...만 JSON PATCH로 갱신해 원격 byte read-back/11identity/채널을 확인한다. 기존 product 파일/서명/tag를 바꾸거나 재업로드하지 않는다.
+4. PR 일반 merge는 새 head의 구체 입력을 제시해 별도 승인받는다. 실제 merged devel SHA의 Pages/f751 notes-only feed 배포는 그 SHA로 별도 승인받는다. 현재production58ca와 actual3 acceptance는 검증 당시 근거로 보존한다. HTTP/화면 검산 뒤 #113 종료·cleanup을 승인받는다.
+
+AGENTS.md의 “소스 수정 전 반드시 작업지시자 승인 요청”·“각 단계 완료 후 승인 없이 다음 단계 진행 금지”와 위 Stage4.8 승인 제외 범위에 따라 지금은 source6/본문-only 갱신을 **승인 대기**한다. PR merge/Pages/#113 close/cleanup은 이번 제안에 포함하지 않는다.
+
+
+### Stage4.9 명시 승인·착수 — 2026-10-09
+
+같은 스레드의 작업지시자 “진행해줘.”로 patch5064367359bf... 최종 안내6파일·고정 regression 입력 보존·실제 전체 generic/보고 commit·기존 PR120 normal push/새 required success 뒤 exact body6208/d932d5f3...만 갱신/원격 검산을 승인받았다. 관측 시각은 `2026-10-09T14:04:27.193634+00:00`다. source before/after hash와 계획/patch identity를 확인해 적용했다. native product6d/공개11파일/서명/key/tag·historical consumer manifest58ca 및 두 whole failure를 유지한다. PR merge·actual merged devel Pages SHA 배포·Issue113 close/cleanup은 이번 승인에서 제외한다.
+
+
+## 최종 결과 안내 source/generic 수용 — 2026-10-09 23:07 KST
+
+명시 승인된6파일을 적용하고 [Stage4.9.1](../working/task_m010_113_stage4.9.1.md)에 before/after hash·고정 fixture3938/f42efd...·historical58ca/실제native증거 보존과 실제 automation1360/집중369·types·기본 checks/notes2/Pages19·23·upstream39/Studio283/build 수용을 기록했다. actual-generated body6208/d932d5f3...·HTML9166/normalized9157·short550·향후manifest2434/f7517e3d...는 승인 검토본과 같은 bytes다. 새 manifest는 notes만 변경하며 installer/key/pubdate/3URL/3signature·한계는 불변이다. source/report를 기존 PR120 normal push해 새 required success 뒤 이미 승인된 body-only 공개를 이어간다. 현재 public body03c/feed58ca·PR120OPEN·#113OPEN이며 merge·새Pages·종료는 후속 승인이다.
