@@ -1281,3 +1281,22 @@ AGENTS.md의 “소스 수정 전 반드시 작업지시자 승인 요청”·�
 승인 후 remote devel=S·body6208/d932·tag198e/main6d·Release11 identity·환경/policies·IssueOPEN·active Pages run0·frozen23 hashes를 재확인하고 `gh workflow run pages.yml --ref devel -f deploy_ref=2a78e11375c8fe6fcb6c6259247b8825e83b1f49`를 한 번 dispatch한다. exact workflow/checkout SHA와 전체 run success·artifact ZIP digest/tar23를 확인하고 frozen23 bytes와 대조한다. 공개 HTTP23 raw bytes·manifest f751/3URL/3signature를 검산하고1280/390 화면·012 local link/최신badge·6다운로드/KST·수동 안내/기존 한계를 확인한다. CDN 미수렴은 HTTP 상태로 기록하고 배포를 반복하지 않는다. source/env/drift나 실패면 원인 없이 rerun/권한 변경하지 않는다.
 
 승인 문서 위치는 기존 mydocs plans/working/report/orders와 docs/releases 추적이다. source/config/제품 변경·새 build/sign/native upgrade는 하지 않는다. native actual3는 동일 public payload/signature와 historical58ca receipt로 보존한다. 결과를 단계 보고·최종 인계에 반영하며 #113 종료/branch·worktree cleanup은 별도 승인을 받는다.
+
+## Stage4.11 명시 승인·최종 공개 수용 — 2026-10-09 23:49 KST
+
+같은 스레드의 “진행해줘.”로 exact merged devel `2a78e11375c8fe6fcb6c6259247b8825e83b1f49`의 기존 Pages workflow1회와 archive/HTTP23/1280·390 화면 수용을 승인받았다. 승인 관측은 2026-10-09 23:35:41 KST다. [Pages37945341425](https://github.com/postmelee/alhangeul-tauri/actions/runs/37945341425) attempt1/전체success·workflow/checkout/deploy SHA equality와 artifact11622854980·ZIP961001bytes/SHA2567edea8b8b1603dc5a916bfa26b4678fbb0a00a20b8c94ecfbefe1dd2c7cdf33f·tar23/frozen bytes 일치를 확인했다. 공개 HTTP23/23은 첫 fetch에서 모두 일치했고 manifest0.1.2/2434bytes/SHA256f7517e3dce5048f7fe8c283f48640fb6fed68eb494146ded7441ee5fa0dd64d1를 검산했다. 이전2371/58ca와 notes만 다르며 version/pub_date/3URL/3signature는 같다.
+
+2026-10-09 23:49:56 KST까지 실제 공개 home/updates/v012/feedback의 desktop1280/mobile390 화면·가로 overflow 없음·최신badge1·local012 클릭·고정6다운로드·KST·actual011→012 결과 문구/기존한계를 수용했다. GitHub body6208/d932·Release407055948/11assets·main6d/tag198e/key/endpoint·환경/보호/권한은 유지한다. 새 product build/sign/native upgrade는 실행하지 않았다. 실제 Windows2 bc082d00/37828940744 각 success job과 Linux8a5a28c7/37832348063 whole success는 historical manifest58ca의 별도 consumer evidence로 보존한다. 두 과거 whole failure는 그대로다. Issue113OPEN·branch/worktree 유지이며 최종 기록 PR 인계와 종료/cleanup은 후속 승인이다.
+
+[Stage4.11](../working/task_m010_113_stage4.11.md)에 run/job/step·archive ZIP/tar·HTTP23/hash·10 screenshot 식별자와
+브라우저 입력 targeting 관측을 기록한다. 문서 위치는 기존 승인 mydocs plans/working/report/
+orders 및 docs/releases 기록만 사용하며 source/사용자 JSON/site/config 변경은 없다.
+
+### 최종 기록 인계 제안 — 승인 대기
+
+Stage4.10/4.11 기록과 최종 보고 docs-only diff를 immutable local head로 고정해 기존
+publish/task113에 normal push하고 devel Open PR을 생성한다. 필수 Node/Windows/required
+3job의 새 head/merge tree를 수용한다. 테스트 명령/제품/fixture/Pages 입력은 그대로다.
+같은 source tree/output23 identity로 승인된 검증을 재사용하며 새 native build/sign/upgrade/
+Pages dispatch는 하지 않는다. PR merge·Issue113 종료·branch/worktree cleanup은 후속 승인이고
+사용자 primary local/task69 변경과 별도 사용자가 점유한 devel checkout을 유지한다.

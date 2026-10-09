@@ -2,8 +2,8 @@
 
 GitHub Issue: [#113](https://github.com/postmelee/alhangeul-tauri/issues/113)
 마일스톤: M010
-확인일: 2026-10-09 23:31 (Asia/Seoul)
-상태: GitHub012 결과 안내·실제011→012 지원3종·PR120 통합 완료 / 최종 웹·피드 배포·종료 계속 진행
+확인일: 2026-10-09 23:49:56 (Asia/Seoul)
+상태: v0.1.2 Release·본문·웹·피드 공개와 실제011→012 지원3종 수용 완료 / 최종 기록 PR 인계·Issue 종료 후속
 
 아래 Stage1~4 요약은 당시 구현 인계 snapshot이다. 현재 공개/전달 상태는 후속 Gate별 기록으로 구분한다.
 
@@ -242,3 +242,38 @@ PR120의 이전 required37823417314는 전체3job 성공했지만 actual37824197
 ## PR120 일반 merge·최종 Pages 입력 수용 — 2026-10-09 23:31 KST
 
 같은 스레드의 “진행해줘.”로 exact head64576f4f/base1f33·required37942845348 전체success의 PR120 일반 merge만 승인받았다. 2026-10-09 23:23:46 KST actual merged devel `2a78e11375c8fe6fcb6c6259247b8825e83b1f49`/treea5621f52d8fa9d7a7576fd648718e4266b59d9c3를 독립 API/parents/refs로 검산했다. [Stage4.10](../working/task_m010_113_stage4.10.md)에 실제 merge·source/generic 재사용과 S의 Pages23/계약151·현재0.1.2/feed58ca→향후notes-only f751/3URL/signature equality·환경/정책 불변을 기록했다. main6d/tag198e·Release407055948/body6208·11assets·현재feed58ca·Issue113OPEN을 유지했고 Pages/cleanup은 실행하지 않았다.
+
+## 최종 Pages·피드 공개와 HTTP·화면 수용 — 2026-10-09 23:49 KST
+
+[Stage4.11](../working/task_m010_113_stage4.11.md)에 다음 실제 배포 결과와 archive/HTTP23·브라우저 화면의 고정 식별자를 기록했다.
+
+같은 스레드의 “진행해줘.”로 exact merged devel `2a78e11375c8fe6fcb6c6259247b8825e83b1f49`의 기존 Pages workflow1회와 archive/HTTP23/1280·390 화면 수용을 승인받았다. 승인 관측은 2026-10-09 23:35:41 KST다. [Pages37945341425](https://github.com/postmelee/alhangeul-tauri/actions/runs/37945341425) attempt1/전체success·workflow/checkout/deploy SHA equality와 artifact11622854980·ZIP961001bytes/SHA2567edea8b8b1603dc5a916bfa26b4678fbb0a00a20b8c94ecfbefe1dd2c7cdf33f·tar23/frozen bytes 일치를 확인했다. 공개 HTTP23/23은 첫 fetch에서 모두 일치했고 manifest0.1.2/2434bytes/SHA256f7517e3dce5048f7fe8c283f48640fb6fed68eb494146ded7441ee5fa0dd64d1를 검산했다. 이전2371/58ca와 notes만 다르며 version/pub_date/3URL/3signature는 같다.
+
+2026-10-09 23:49:56 KST까지 실제 공개 home/updates/v012/feedback의 desktop1280/mobile390 화면·가로 overflow 없음·최신badge1·local012 클릭·고정6다운로드·KST·actual011→012 결과 문구/기존한계를 수용했다. GitHub body6208/d932·Release407055948/11assets·main6d/tag198e/key/endpoint·환경/보호/권한은 유지한다. 새 product build/sign/native upgrade는 실행하지 않았다. 실제 Windows2 bc082d00/37828940744 각 success job과 Linux8a5a28c7/37832348063 whole success는 historical manifest58ca의 별도 consumer evidence로 보존한다. 두 과거 whole failure는 그대로다. Issue113OPEN·branch/worktree 유지이며 최종 기록 PR 인계와 종료/cleanup은 후속 승인이다.
+
+### 최종 수용 기준
+
+| 수용 기준 | 결과·근거 |
+|---|---|
+| upstream Stable087/core·Studio 동일 release | OK — tag087/resolved1a76570e·Stage1 및 선행PR114/115/116 |
+| Windows/Linux012 제품·6종 설치 파일·updater3서명 | OK — main6d·Stage4.2 ordinary/signed/실제6종 GUI·archive/공개11 identity |
+| GitHub Stable/latest·tag·최종 사용자 본문 | OK — Release407055948·tag198e→main6d·body6208/d932·Stage4.3/4.9 |
+| 실제011→012 NSIS/MSI/AppImage | OK — Windows bc082d00의2 complete job·Linux8a5a28c7 whole success, Stage4.8 |
+| 설정/HWP/HWPX·설치/재시작·사용자동의·dirty gate | OK — 형식별 strict settings/문서 hash/accepted.json·GUI6 |
+| 최종 안내 통합과 웹/feed 공개 | OK — PR120 actualdevel2a78·Pages37945341425 exact S·HTTP23·manifestf751 |
+| 공개 사용자 동선·6다운로드·KST·기존 한계 | OK — desktop1280/mobile390 home/updates/v012/feedback |
+| 장기 기록 devel 인계 | 후속 — Stage4.10/4.11·최종 보고 docs-only PR 게시/필수CI/merge |
+| Issue 종료·부산물 정리 | 후속 — #113 OPEN·명시 승인 후 처리; primary local/task69 보존 |
+
+### 현재 공개와 실제 검증 출처
+
+producer main6d·annotatedtag198e·Release407055948와 consumer Windows bc082d00/37828940744·
+Linux8a5a28c7/37832348063, actualdevel/Pages2a78/37945341425를 서로 구분한다. 실제 native 당시
+manifest58ca와 현재 notes-only manifestf751은 설치 URL/signature가 같다. historical mixed run을
+전체 success로 바꾸지 않는다. 반복 native/서명/배포가 필요하다는 미완료 주장은 남기지 않는다.
+
+### 최종 기록 인계 승인 요청
+
+승인 위치의 결과 기록6파일과 이전 Stage4.10 기록을 devel 대상 docs-only Open PR로 인계하고
+새 head 필수 CI를 검증한다. 제품 source·원문 JSON/site·workflow·고정 fixture·공개 asset/tag/
+key/endpoint와 Pages23 bytes는 유지한다. merge·Issue113 close/cleanup은 별도 승인이다.
