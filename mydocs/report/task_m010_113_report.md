@@ -2,8 +2,8 @@
 
 GitHub Issue: [#113](https://github.com/postmelee/alhangeul-tauri/issues/113)
 마일스톤: M010
-확인일: 2026-10-09 23:07 (Asia/Seoul)
-상태: GitHub/Pages/feed012 공개·실제011→012 지원3종 수용 완료 / 최종 공개 안내·PR 통합·종료 계속 진행
+확인일: 2026-10-09 23:15 (Asia/Seoul)
+상태: GitHub012 결과 안내·실제011→012 지원3종 수용 완료 / 최종 웹·피드 안내·PR120 통합·종료 계속 진행
 
 아래 Stage1~4 요약은 당시 구현 인계 snapshot이다. 현재 공개/전달 상태는 후속 Gate별 기록으로 구분한다.
 
@@ -232,3 +232,8 @@ PR120의 이전 required37823417314는 전체3job 성공했지만 actual37824197
 ## 최종 결과 안내 source/generic 수용 — 2026-10-09 23:07 KST
 
 명시 승인된6파일을 적용하고 [Stage4.9.1](../working/task_m010_113_stage4.9.1.md)에 before/after hash·고정 fixture3938/f42efd...·historical58ca/실제native증거 보존과 실제 automation1360/집중369·types·기본 checks/notes2/Pages19·23·upstream39/Studio283/build 수용을 기록했다. actual-generated body6208/d932d5f3...·HTML9166/normalized9157·short550·향후manifest2434/f7517e3d...는 승인 검토본과 같은 bytes다. 새 manifest는 notes만 변경하며 installer/key/pubdate/3URL/3signature·한계는 불변이다. source/report를 기존 PR120 normal push해 새 required success 뒤 이미 승인된 body-only 공개를 이어간다. 현재 public body03c/feed58ca·PR120OPEN·#113OPEN이며 merge·새Pages·종료는 후속 승인이다.
+
+
+## 최종 GitHub 결과 안내 공개 수용 — 2026-10-09 23:15 KST
+
+[Stage4.9](../working/task_m010_113_stage4.9.md)에 sourceff1cea2b required37941878782/attempt1의 Node/Windows/required3job 전체success·실제 merge7402feec/tree5a3c1192와 승인된 body-only 실제 공개를 기록했다. 2026-10-09 23:12:41 KST 독립 GET으로 Release407055948 body6208/SHA256d932d5f3a4e26cb07d38fe467dee4f86b6676cda4feb340fda64ec7040005e92를 확인했다. 11asset id/hash·tag198e→main6d·Stable/latest·publishedAt16:49:38Z·현재 feed2371/58ca 불변이다. 새 build/sign/asset upload/Pages dispatch는 하지 않았다. 기존한계·과거 whole failure·native 실제3종/고정58ca evidence를 유지한다. body와 branch final웹/feed data를 구분하며 PR120 merge·actual merged devel SHA Pages/f751 공개·HTTP/화면·#113 close/cleanup은 후속 승인이다.
