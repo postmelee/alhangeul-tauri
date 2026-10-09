@@ -9,7 +9,7 @@
 
 | 버전 | 상태 | 이전 공개 버전 | GitHub Release | 기록 |
 |---|---|---|---|---|
-| v0.1.2 | GitHub012 결과 본문·실제011→012 지원3종 수용 / 최종 웹/feed·PR120 통합 후속 | v0.1.1 | [v0.1.2](https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.2) | [v0.1.2 공개 기록](v0.1.2.md) |
+| v0.1.2 | GitHub012 결과 본문·실제011→012 지원3종·PR120 통합 수용 / 최종 웹/feed 후속 | v0.1.1 | [v0.1.2](https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.2) | [v0.1.2 공개 기록](v0.1.2.md) |
 | v0.1.1 | Release·규격 body·웹·피드·검증 결과 안내 공개, 세 형식 실제 upgrade·HTTP 수용 완료 | v0.1.0 | [v0.1.1](https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.1) | [v0.1.1 공개 기록](v0.1.1.md), [안내 원문](v0.1.1.notes.json) |
 | v0.1.0 | stable 공개·Pages/updater 전환 및 동일 버전 조회 완료 | 없음 | [v0.1.0](https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.0) | [v0.1.0 공개 기록](v0.1.0.md) |
 
@@ -114,3 +114,6 @@ private key·암호·token·개인 문서·실제 credential 보관 경로는 �
 
 
 2026-10-09 23:15 (Asia/Seoul) 확인: GitHub v0.1.2의 최종 결과 body6208/d932...를 승인대로 공개하고 11asset/tag/source/채널/공개시각·feed58ca 불변을 검산했다. [Stage4.9](../../mydocs/working/task_m010_113_stage4.9.md)에 required37941878782 전체success와 원격 read-back을 기록했다. 웹/feed 최종 notes-only f751 게시·PR120 통합·#113 종료는 후속 승인이다.
+
+
+2026-10-09 23:31 (Asia/Seoul) 확인: PR120을 일반 merge해 actual devel2a78e113의 최종 Pages23/계약151 입력을 수용했다. [Stage4.10](../../mydocs/working/task_m010_113_stage4.10.md)에 실제 SHA/parents/tree·current GitHub body6208·feed58ca 유지와 exact S의 notes-only f751 Pages 배포 승인 경계를 기록했다. #113 OPEN·최종 웹/feed 공개/HTTP·종료가 후속이다.

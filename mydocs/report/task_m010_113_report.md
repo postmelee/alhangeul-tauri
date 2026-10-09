@@ -2,8 +2,8 @@
 
 GitHub Issue: [#113](https://github.com/postmelee/alhangeul-tauri/issues/113)
 마일스톤: M010
-확인일: 2026-10-09 23:15 (Asia/Seoul)
-상태: GitHub012 결과 안내·실제011→012 지원3종 수용 완료 / 최종 웹·피드 안내·PR120 통합·종료 계속 진행
+확인일: 2026-10-09 23:31 (Asia/Seoul)
+상태: GitHub012 결과 안내·실제011→012 지원3종·PR120 통합 완료 / 최종 웹·피드 배포·종료 계속 진행
 
 아래 Stage1~4 요약은 당시 구현 인계 snapshot이다. 현재 공개/전달 상태는 후속 Gate별 기록으로 구분한다.
 
@@ -237,3 +237,8 @@ PR120의 이전 required37823417314는 전체3job 성공했지만 actual37824197
 ## 최종 GitHub 결과 안내 공개 수용 — 2026-10-09 23:15 KST
 
 [Stage4.9](../working/task_m010_113_stage4.9.md)에 sourceff1cea2b required37941878782/attempt1의 Node/Windows/required3job 전체success·실제 merge7402feec/tree5a3c1192와 승인된 body-only 실제 공개를 기록했다. 2026-10-09 23:12:41 KST 독립 GET으로 Release407055948 body6208/SHA256d932d5f3a4e26cb07d38fe467dee4f86b6676cda4feb340fda64ec7040005e92를 확인했다. 11asset id/hash·tag198e→main6d·Stable/latest·publishedAt16:49:38Z·현재 feed2371/58ca 불변이다. 새 build/sign/asset upload/Pages dispatch는 하지 않았다. 기존한계·과거 whole failure·native 실제3종/고정58ca evidence를 유지한다. body와 branch final웹/feed data를 구분하며 PR120 merge·actual merged devel SHA Pages/f751 공개·HTTP/화면·#113 close/cleanup은 후속 승인이다.
+
+
+## PR120 일반 merge·최종 Pages 입력 수용 — 2026-10-09 23:31 KST
+
+같은 스레드의 “진행해줘.”로 exact head64576f4f/base1f33·required37942845348 전체success의 PR120 일반 merge만 승인받았다. 2026-10-09 23:23:46 KST actual merged devel `2a78e11375c8fe6fcb6c6259247b8825e83b1f49`/treea5621f52d8fa9d7a7576fd648718e4266b59d9c3를 독립 API/parents/refs로 검산했다. [Stage4.10](../working/task_m010_113_stage4.10.md)에 실제 merge·source/generic 재사용과 S의 Pages23/계약151·현재0.1.2/feed58ca→향후notes-only f751/3URL/signature equality·환경/정책 불변을 기록했다. main6d/tag198e·Release407055948/body6208·11assets·현재feed58ca·Issue113OPEN을 유지했고 Pages/cleanup은 실행하지 않았다.

@@ -1268,3 +1268,16 @@ AGENTS.md의 “소스 수정 전 반드시 작업지시자 승인 요청”·�
 ## 최종 GitHub 결과 안내 공개 수용 — 2026-10-09 23:15 KST
 
 [Stage4.9](../working/task_m010_113_stage4.9.md)에 sourceff1cea2b required37941878782/attempt1의 Node/Windows/required3job 전체success·실제 merge7402feec/tree5a3c1192와 승인된 body-only 실제 공개를 기록했다. 2026-10-09 23:12:41 KST 독립 GET으로 Release407055948 body6208/SHA256d932d5f3a4e26cb07d38fe467dee4f86b6676cda4feb340fda64ec7040005e92를 확인했다. 11asset id/hash·tag198e→main6d·Stable/latest·publishedAt16:49:38Z·현재 feed2371/58ca 불변이다. 새 build/sign/asset upload/Pages dispatch는 하지 않았다. 기존한계·과거 whole failure·native 실제3종/고정58ca evidence를 유지한다. body와 branch final웹/feed data를 구분하며 PR120 merge·actual merged devel SHA Pages/f751 공개·HTTP/화면·#113 close/cleanup은 후속 승인이다.
+
+
+## PR120 일반 merge·최종 Pages 입력 수용 — 2026-10-09 23:31 KST
+
+같은 스레드의 “진행해줘.”로 exact head64576f4f/base1f33·required37942845348 전체success의 PR120 일반 merge만 승인받았다. 2026-10-09 23:23:46 KST actual merged devel `2a78e11375c8fe6fcb6c6259247b8825e83b1f49`/treea5621f52d8fa9d7a7576fd648718e4266b59d9c3를 독립 API/parents/refs로 검산했다. [Stage4.10](../working/task_m010_113_stage4.10.md)에 실제 merge·source/generic 재사용과 S의 Pages23/계약151·현재0.1.2/feed58ca→향후notes-only f751/3URL/signature equality·환경/정책 불변을 기록했다. main6d/tag198e·Release407055948/body6208·11assets·현재feed58ca·Issue113OPEN을 유지했고 Pages/cleanup은 실행하지 않았다.
+
+### Stage4.11 승인 대기 — exact merged devel 최종 웹·피드 안내 공개
+
+[확정 배포 입력](/private/tmp/task113-pr120-merge/pages-approval-inputs.json)의 S=`2a78e11375c8fe6fcb6c6259247b8825e83b1f49`를 사용한다. workflowRef=devel/workflowSha=deploy_ref=checkout S, 기존 pages.yml·github-pages 환경/보호/권한을 유지한다. 최종 output23 inventory는 같은 폴더 pages-output-inventory.json과 raw pages-output다. 현재 production0.1.2/2371/hash58ca→target0.1.2/2434/hashf7517e3d...이며 notes만 변경한다. updater 활성화/키/endpoint/설치 URL/signature/version/pubdate는 기존 그대로다.
+
+승인 후 remote devel=S·body6208/d932·tag198e/main6d·Release11 identity·환경/policies·IssueOPEN·active Pages run0·frozen23 hashes를 재확인하고 `gh workflow run pages.yml --ref devel -f deploy_ref=2a78e11375c8fe6fcb6c6259247b8825e83b1f49`를 한 번 dispatch한다. exact workflow/checkout SHA와 전체 run success·artifact ZIP digest/tar23를 확인하고 frozen23 bytes와 대조한다. 공개 HTTP23 raw bytes·manifest f751/3URL/3signature를 검산하고1280/390 화면·012 local link/최신badge·6다운로드/KST·수동 안내/기존 한계를 확인한다. CDN 미수렴은 HTTP 상태로 기록하고 배포를 반복하지 않는다. source/env/drift나 실패면 원인 없이 rerun/권한 변경하지 않는다.
+
+승인 문서 위치는 기존 mydocs plans/working/report/orders와 docs/releases 추적이다. source/config/제품 변경·새 build/sign/native upgrade는 하지 않는다. native actual3는 동일 public payload/signature와 historical58ca receipt로 보존한다. 결과를 단계 보고·최종 인계에 반영하며 #113 종료/branch·worktree cleanup은 별도 승인을 받는다.
