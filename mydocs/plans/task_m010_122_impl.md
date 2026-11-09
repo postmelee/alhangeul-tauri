@@ -1,6 +1,6 @@
 # Task #122 구현계획서 — rhwp v0.9.0 통합과 Alhangeul v0.1.3 후보 검증
 
-M010 · 2026-11-09 · 구현계획 승인 · Stage 1 미완료 · 선행 보정 구현·검증 완료, 후보 재생성 예정
+M010 · 2026-11-09 · Stage 1 완료 · Stage 2 승인 대기
 [수행계획서](task_m010_122.md) · [GitHub 이슈 #122](https://github.com/postmelee/alhangeul-tauri/issues/122)
 
 ## 단계 개요
