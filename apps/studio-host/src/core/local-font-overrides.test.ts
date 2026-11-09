@@ -14,7 +14,8 @@ const alhangeulSrc = resolve(hostRoot, 'src');
 const paths = { upstreamSrc, alhangeulSrc };
 const adapter = normalizePath(resolve(alhangeulSrc, 'core/local-fonts.ts'));
 const consumers = ['document-font-status', 'font-substitution',
-  'host-font-requests', 'host-canvas-fonts', 'wasm-bridge'];
+  'host-font-requests', 'host-canvas-fonts', 'wasm-bridge', 'declared-font-environment',
+  'font-decision-trace', 'metafile-font-session', 'native-pua-font-session'];
 const existingConsumers = ['document-font-status', 'font-substitution'];
 
 function config() {

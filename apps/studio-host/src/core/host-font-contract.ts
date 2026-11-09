@@ -1,4 +1,4 @@
-/** Structural rhwp v0.8.7 host protocol, owned at the product font boundary. */
+/** Structural rhwp host protocol, owned at the product font boundary. */
 export interface HostFontFace {
   id: string;
   family: string;
@@ -17,6 +17,7 @@ export interface HostFontProvider {
   subscribe(onChange: () => void): () => void;
 }
 export interface HostFontReference {
+  readonly order: number;
   readonly key: string;
   readonly face: Readonly<HostFontFace>;
   readonly revision: string;

@@ -1,6 +1,6 @@
 # Task #122 구현계획서 — rhwp v0.9.0 통합과 Alhangeul v0.1.3 후보 검증
 
-M010 · 2026-11-09 · 구현계획 승인 · Stage 1 미완료 · 선행 보정안 승인 대기
+M010 · 2026-11-09 · 구현계획 승인 · Stage 1 미완료 · 선행 보정 구현·검증 완료, 후보 재생성 예정
 [수행계획서](task_m010_122.md) · [GitHub 이슈 #122](https://github.com/postmelee/alhangeul-tauri/issues/122)
 
 ## 단계 개요
@@ -41,7 +41,7 @@ M010 · 2026-11-09 · 구현계획 승인 · Stage 1 미완료 · 선행 보정�
 
 커밋 `Task #122 Stage 1: rhwp v0.9.0 동기화 후보와 변경 영향 검증`
 
-### 첫 실행 결과와 선행 보정안 (2026-11-09, 승인 대기)
+### 첫 실행 결과와 승인된 선행 보정 (2026-11-09)
 
 [동기화 run 42561853953](https://github.com/postmelee/alhangeul-tauri/actions/runs/42561853953/job/128980735091)은 main `6dcb05e96ec2075d09d8a60160e1d82f08c0811b`에서 실행해 devel `4a68111194f2102370eabf5a323ea4fa107a2da4`를 기준으로 후보를 판정했다.
 
@@ -51,7 +51,7 @@ M010 · 2026-11-09 · 구현계획 승인 · Stage 1 미완료 · 선행 보정�
 - upstream document-font-status가 사용하는 `resolveLocalFontProgramCandidates`가 제품 local-fonts 모듈에 없어 CI에서 예외 및 번들 export 검사가 실패했다. 새 main.ts가 가져오는 `localFontNamesIntersect`도 현 adapter에 없다. 프롬프트 선택·취소, 오래된 문서 콜백, 렌더러 갱신을 관련 동작 검사로 검증한다.
 - 태그 소스에서 입력 처리기가 form-action-worker.ts를 module Worker로 열고, Worker가 rhwp-shared/forms/action-runtime.ts를 사용하는 경로를 확인했다. Studio 빌드·설치본 확인은 남아 있다. CI는 Studio 검사에서 종료되어 후속 Studio 빌드, native test/Clippy, allowlist, 후보 커밋·PR 게시를 실행하지 않았다. 저장소의 제품 pin은 v0.8.7이다.
 
-**변경 승인 요청.** 후보 생성기가 Studio 검사를 통과해야 draft PR을 내므로 2단계에 잡았던 글꼴 호환 보정을 아래 순서로 앞당긴다.
+**승인 기록.** 작업지시자의 “그렇게 진행해줘”로 글꼴 선행 PR·일반 병합·재실행을 승인받았다. 후속 “같은 PR에 반영”으로 PDF Worker의 제품 WASM 연결과 선택적 AI 도우미 비활성화도 이 PR에 포함한다. 후보 생성기가 Studio 검사를 통과해야 draft PR을 내므로 2단계에 잡았던 글꼴 호환 보정을 아래 순서로 앞당긴다.
 
 1. **Stage 1.1** — Alhangeul의 `apps/studio-host/local-font-entry-hooks.ts`, `src/core/local-fonts.ts`, 필요한 controller·상대 import 연결 및 위 다섯 파일의 회귀 검사를 보정한다. 기존 v0.8.7과 대상 v0.9.0 각각에서 실제 초기화 구문과 글꼴 후보 해석을 확인한다. 양쪽의 권한 선택·카탈로그·렌더러 수명주기를 보존하고 기존 pin의 제품·Studio 검사를 수행한다. v0.9.0 소스에 대한 집중 검증 결과와 두 태그에서 실행한 범위를 단계 보고에 남긴다.
 2. **선행 통합** — 검증된 보정을 devel 대상 PR로 제출한다. 현 v0.8.7 기준의 필수 검사 및 검토를 통과한 뒤 일반 병합한다. 이 PR은 #122를 열린 상태로 유지한다.

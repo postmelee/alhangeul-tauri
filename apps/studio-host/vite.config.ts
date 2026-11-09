@@ -22,6 +22,21 @@ const rhwpWasmDir = dirname(rhwpWasmModule);
 const rhwpWasmPackage = JSON.parse(readFileSync(resolve(rhwpWasmDir, 'package.json'), 'utf-8'));
 const fontAssetsDir = resolve(__dirname, '../../assets/fonts');
 
+// The upstream PDF Worker imports its repository-local wasm-pack output.
+function pdfWorkerWasm(): Plugin {
+  const worker = normalizePath(resolve(upstreamStudioDir, '../rhwp-shared/pdf/import-worker.js'));
+  return {
+    name: 'alhangeul-pdf-worker-wasm',
+    enforce: 'pre',
+    resolveId(source, importer) {
+      if (source === '../../pkg/rhwp.js' && importer && normalizePath(importer.split('?', 1)[0]) === worker) {
+        return rhwpWasmModule;
+      }
+      return null;
+    },
+  };
+}
+
 function alhangeulFontAssets(): Plugin {
   return {
     name: 'alhangeul-font-assets',
@@ -126,7 +141,9 @@ export default defineConfig({
   base: './',
   root: upstreamStudioDir,
   cacheDir: resolve(__dirname, 'node_modules/.vite'),
+  worker: { format: 'es', plugins: () => [pdfWorkerWasm()] },
   plugins: [
+    pdfWorkerWasm(),
     createAlhangeulLocalFontPlugin({ upstreamSrc, alhangeulSrc }),
     createLocalFontEntryHooks(upstreamSrc, alhangeulSrc),
     createProductShellEntry(upstreamSrc, alhangeulSrc),
@@ -137,6 +154,7 @@ export default defineConfig({
   define: {
     // Use upstream's standalone Studio build; Alhangeul does not host the OCX plugin.
     __RHWP_HWPCTRL__: 'false',
+    __RHWP_AI__: 'false',
     __APP_VERSION__: JSON.stringify(rhwpWasmPackage.version),
     __ALHANGEUL_VERSION__: JSON.stringify(desktopConfig.version),
   },
