@@ -15,6 +15,7 @@ interface IndexedFont {
 export interface LocalFontLookup {
   records(): LocalFontRecord[];
   resolve(name: string, style?: LocalFontStyleRequest): LocalFontRecord | null;
+  programs(name: string, style?: LocalFontStyleRequest): LocalFontRecord[];
   entryFor(sourceKey: string | undefined): LocalFontEntry | undefined;
 }
 
@@ -42,6 +43,7 @@ export function createLocalFontLookup(entries: readonly LocalFontEntry[]): Local
   return {
     records: () => fonts.filter(isAvailable).map(font => copyRecord(font.record)),
     resolve: (name, style) => resolveFromAliases(aliases, name, style),
+    programs: (name, style) => programCandidates(aliases, name, style),
     entryFor: (key) => key === undefined ? undefined : sources.get(key),
   };
 }
@@ -57,6 +59,36 @@ function resolveFromAliases(aliases: ReadonlyMap<string, IndexedFont[]>, name: s
   const selected = candidates.length === 1 ? candidates[0]
     : uniqueExact(candidates, key, 'postscriptKey') ?? uniqueExact(candidates, key, 'fullNameKey');
   return selected ? copyRecord(selected.record) : null;
+}
+
+function programCandidates(aliases: ReadonlyMap<string, IndexedFont[]>, name: string, style?: LocalFontStyleRequest): LocalFontRecord[] {
+  const key = normalizeFontName(name);
+  const matches = aliases.get(key)?.filter(isAvailable) ?? [];
+  const single = resolveFromAliases(aliases, name, style);
+  if (style && single) return [single];
+  if (!matches.length || (!single && new Set(matches.map(font => normalizeFontName(font.entry.family))).size > 1)) return [];
+  const selected = style ? matchingHostPrograms(matches, key, style) : matchingLocalPrograms(matches, single);
+  // A duplicated PostScript identity cannot select a physical font program safely.
+  const ids = selected.map(font => font.postscriptKey);
+  return ids.every(Boolean) && new Set(ids).size === ids.length ? selected.map(font => copyRecord(font.record)) : [];
+}
+
+function matchingHostPrograms(matches: IndexedFont[], key: string, style: LocalFontStyleRequest): IndexedFont[] {
+  if (!matches.every(font => font.entry.hostReference) || matches.some(font => font.postscriptKey === key)) return [];
+  const matching = (slant: string) => matches.filter(font => font.entry.weight === style.weight && font.entry.slant === slant);
+  const exact = matching(style.slant);
+  const selected = exact.length || style.slant === 'normal' ? exact : matching(style.slant === 'italic' ? 'oblique' : 'italic');
+  return selected.sort((left, right) => left.entry.hostReference!.order - right.entry.hostReference!.order);
+}
+
+function matchingLocalPrograms(matches: IndexedFont[], single: LocalFontRecord | null): IndexedFont[] {
+  const reference = single ? matches.find(font => font.record.sourceKey === single.sourceKey)
+    : matches.find(({ entry }) => (!entry.weight || entry.weight === 400) && (!entry.slant || entry.slant === 'normal')
+      && /^(regular|normal|book|roman|보통|일반)$/i.test(entry.style));
+  if (!reference) return [];
+  return matches.filter(({ entry }) => normalizeFontName(entry.family) === normalizeFontName(reference.entry.family)
+    && normalizeFontName(entry.style) === normalizeFontName(reference.entry.style)
+    && entry.weight === reference.entry.weight && entry.slant === reference.entry.slant);
 }
 
 function uniqueExact(

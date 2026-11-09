@@ -16,6 +16,8 @@ import { getFontCatalog, hostFontSource, invalidateFontCatalog, loadFontCatalog,
   onFontCatalogChanged } from './local-font-state';
 import type { HostFontProvider } from './host-font-contract';
 import { loadRendererLocalFont } from './local-font-renderer';
+export { changedLocalFontNames, localFontNamesIntersect, localFontProgramOrder, loadPreferredLocalFontBytes,
+  resolveLocalFontProgramCandidates, resolveRendererLocalFontCandidates } from './local-font-programs';
 export { resolveRendererLocalFont, loadRendererLocalFont } from './local-font-renderer';
 export type { HostFontProvider, LocalFontStyleRequest } from './host-font-contract';
 
@@ -139,6 +141,11 @@ export async function loadLocalFontBytes(fontName: string): Promise<ArrayBuffer 
   const record = resolveLocalFont(fontName);
   if (!record) return null;
   return (await loadLocalFontBytesFor([fontName])).get(localFontFaceKey(record)) ?? null;
+}
+
+export async function prepareDocumentLocalFontPrograms(_fontNames: readonly string[]): Promise<void> {
+  // The desktop catalog is complete after the user's saved opt-in. Never prompt on document open.
+  if (isTauriRuntime() && (await ensureFontPreferences()).choice === 'enabled') await detectLocalFontEntries();
 }
 
 export async function loadStoredLocalFonts(): Promise<LocalFontSnapshot | null> {

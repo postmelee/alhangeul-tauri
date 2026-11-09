@@ -36,9 +36,10 @@ describe('pinned local-font entry hooks', () => {
     const code = ts.transpileModule(prompt.getText(ast), { compilerOptions: {
       target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext,
     } }).outputText;
-    const run = new Function('__alhangeulPromptFonts', `${code}; return promptLocalFontsIfNeeded;`);
-    await expect(run(async () => true)({ fontsUsed: ['Local Test'] }, 'test.hwp')).resolves.toBeUndefined();
-    await expect(run(async () => false)({ fontsUsed: [] }, 'test.hwp')).resolves.toBeUndefined();
+    const run = new Function('__alhangeulPromptFonts', 'getLocalFontState', `${code}; return promptLocalFontsIfNeeded;`);
+    const stored = () => ({ loaded: true, stored: true });
+    await expect(run(async () => true, stored)({ fontsUsed: ['Local Test'] }, 'test.hwp')).resolves.toBeUndefined();
+    await expect(run(async () => false, stored)({ fontsUsed: [] }, 'test.hwp')).resolves.toBeUndefined();
   });
 
   it('rejects missing, duplicate and already transformed entry markers', () => {
