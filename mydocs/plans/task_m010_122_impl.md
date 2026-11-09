@@ -1,6 +1,6 @@
 # Task #122 구현계획서 — rhwp v0.9.0 통합과 Alhangeul v0.1.3 후보 검증
 
-M010 · 2026-11-09 · 구현계획 승인 대기
+M010 · 2026-11-09 · 구현계획 승인 · Stage 1 미완료 · 선행 보정안 승인 대기
 [수행계획서](task_m010_122.md) · [GitHub 이슈 #122](https://github.com/postmelee/alhangeul-tauri/issues/122)
 
 ## 단계 개요
@@ -40,6 +40,22 @@ M010 · 2026-11-09 · 구현계획 승인 대기
 실패하면 첫 실패 step과 정확한 입력, 해결에 필요한 Alhangeul 파일을 특정한다. 생성기가 PR을 만들기 전에 실패한 경우에도 같은 기준을 적용한다. 필요한 선행 보정이 승인 범위를 바꾸면 보고서에 성공을 기록하기 전에 계획을 조정한다.
 
 커밋 `Task #122 Stage 1: rhwp v0.9.0 동기화 후보와 변경 영향 검증`
+
+### 첫 실행 결과와 선행 보정안 (2026-11-09, 승인 대기)
+
+[동기화 run 42561853953](https://github.com/postmelee/alhangeul-tauri/actions/runs/42561853953/job/128980735091)은 main `6dcb05e96ec2075d09d8a60160e1d82f08c0811b`에서 실행해 devel `4a68111194f2102370eabf5a323ea4fa107a2da4`를 기준으로 후보를 판정했다.
+
+- 새 gitlink 대상과 native lock 4종, fresh WASM 및 provenance 생성이 runner에서 성공했다. pin 검사는 v0.9.0 커밋과 관리 산출물 6개를 확인했다. 태그 소스에서 별도로 계산한 upstream Cargo.lock SHA-256은 `6184ebd0c4d86f71314b11e756f1e910001b8eac7f4fc7d4cbd2acfac393c86f`다.
+- 제품 경계·버전·릴리즈 메타데이터·pin 검사와 upstream 테스트 39/39가 통과했다. Studio는 283개 중 261개 통과, 22개 실패였다. 실패 파일은 local-font-application(4), consumers(6), controller(6), entry-hooks(5), overrides(1)다.
+- 같은 제품 변환 함수를 두 태그의 Studio main.ts에 적용했다. v0.8.7에는 두 지점 모두 삽입됐고 v0.9.0에서는 `upstream local-font hook marker mismatch`가 재현됐다. v0.9.0의 initializeDocument 옵션에 suppressLocalFontPrompt가 추가됐고 promptLocalFontsIfNeeded의 인자는 displayName 하나로 바뀌었다.
+- upstream document-font-status가 사용하는 `resolveLocalFontProgramCandidates`가 제품 local-fonts 모듈에 없어 CI에서 예외 및 번들 export 검사가 실패했다. 새 main.ts가 가져오는 `localFontNamesIntersect`도 현 adapter에 없다. 프롬프트 선택·취소, 오래된 문서 콜백, 렌더러 갱신을 관련 동작 검사로 검증한다.
+- 태그 소스에서 입력 처리기가 form-action-worker.ts를 module Worker로 열고, Worker가 rhwp-shared/forms/action-runtime.ts를 사용하는 경로를 확인했다. Studio 빌드·설치본 확인은 남아 있다. CI는 Studio 검사에서 종료되어 후속 Studio 빌드, native test/Clippy, allowlist, 후보 커밋·PR 게시를 실행하지 않았다. 저장소의 제품 pin은 v0.8.7이다.
+
+**변경 승인 요청.** 후보 생성기가 Studio 검사를 통과해야 draft PR을 내므로 2단계에 잡았던 글꼴 호환 보정을 아래 순서로 앞당긴다.
+
+1. **Stage 1.1** — Alhangeul의 `apps/studio-host/local-font-entry-hooks.ts`, `src/core/local-fonts.ts`, 필요한 controller·상대 import 연결 및 위 다섯 파일의 회귀 검사를 보정한다. 기존 v0.8.7과 대상 v0.9.0 각각에서 실제 초기화 구문과 글꼴 후보 해석을 확인한다. 양쪽의 권한 선택·카탈로그·렌더러 수명주기를 보존하고 기존 pin의 제품·Studio 검사를 수행한다. v0.9.0 소스에 대한 집중 검증 결과와 두 태그에서 실행한 범위를 단계 보고에 남긴다.
+2. **선행 통합** — 검증된 보정을 devel 대상 PR로 제출한다. 현 v0.8.7 기준의 필수 검사 및 검토를 통과한 뒤 일반 병합한다. 이 PR은 #122를 열린 상태로 유지한다.
+3. **Stage 1 재개** — 병합된 devel SHA와 동일 태그 후보의 유무를 확인해 기존 후보를 재사용하거나 동일 입력으로 동기화를 다시 실행한다. 새 runner가 생성한 6개 산출물·lock과 Studio 빌드·native 검사·allowlist·draft PR을 검증하고 후보를 작업 브랜치에 통합한다. 이후 단계는 기존 계획을 따른다.
 
 ## Stage 2 — 호환성 보정과 v0.1.3 후보 노트
 
