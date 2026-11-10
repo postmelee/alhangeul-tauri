@@ -1,6 +1,6 @@
 # Task #122 구현계획서 — rhwp v0.9.0 통합과 Alhangeul v0.1.3 후보 검증
 
-M010 · 2026-11-09 · Stage 2 완료 · Stage 3 승인 대기
+M010 · 2026-11-09 · Stage 3 진행 · 설치 파일 6종 확인 · 글꼴 재감지 회귀로 수용 보류
 [수행계획서](task_m010_122.md) · [GitHub 이슈 #122](https://github.com/postmelee/alhangeul-tauri/issues/122)
 
 ## 단계 개요
@@ -96,6 +96,21 @@ pnpm run check:release-notes
 기존 `alhangeul-windows-pdf.yml` 및 `alhangeul-linux-gui.yml`에는 해당 제품 SHA와 성공한 `native_run_id`를 넘긴다. 추가 설치 검증은 같은 run에서 가져온 원본 파일로 수행한다. 서명이 필요한 공개용 검증기는 별도 서명 단계에 둔다. 설치·GUI·해시 증거가 빠진 항목은 미결로 기록한다.
 
 커밋 `Task #122 Stage 3: Windows와 Linux 설치 파일 6종과 대표 문서 검증`
+
+### 2026-11-10 첫 후보 검증과 보정 범위
+
+제품·workflow·GUI harness는 모두 `08a825d7c3e3fcf6a24e731d1a7e7753910374d6`다. [전체 빌드](https://github.com/postmelee/alhangeul-tauri/actions/runs/42743297537) attempt 1과 Windows PDF·Linux 전체 GUI는 성공했다. 설치 파일 6종과 archive 3종을 별도 다운로드해 크기와 SHA-256을 대조했다. 파일 식별자, 각 설치본의 실제 결과와 미결 범위는 [후보 기록](../../docs/releases/v0.1.3.md)에 둔다.
+
+| 검사 | 실행 / 증거 archive ID | 수용 범위 |
+|---|---|---|
+| Windows 설치·썸네일 | 전체 빌드 · 일반 MSI `13733397812`, NSIS `13733572264`, 강제 MSI `13734260741` | MSI 일반은 raw 성공. NSIS는 설치·제거 통과, 사용자별 썸네일 raw 실패 12건. 강제 MSI는 재부팅 필요로 raw 실패 1건. |
+| Windows NSIS PDF | [42751850219](https://github.com/postmelee/alhangeul-tauri/actions/runs/42751850219) · raw `13734104356`, 분석 `13734910742` | HWP/HWPX 편집 후 PDF 생성 및 재시작 덮어쓰기 4건, 페이지·한글 검색 검증 성공 |
+| Linux DEB 전체 GUI | [42751853554](https://github.com/postmelee/alhangeul-tauri/actions/runs/42751853554) · `13733454621` | 문서 저장·재열기, 직접 PDF, GTK·CUPS·취소 후 편집 복귀, Nautilus·Thunar 성공 |
+| Linux DEB 로컬 글꼴 | [42751857930](https://github.com/postmelee/alhangeul-tauri/actions/runs/42751857930) · `13733789528` | 설치·사용·새 창 확인 후 파일 삭제와 재감지에서 2개 시나리오 실패 |
+
+`checkRemovedFont`의 삭제 후 기대 face 수는 0개였다. 실제로는 각 시나리오에서 `Abel`이 1개 남았다. Canvas2D의 페이지 해시는 사용 전 `dac3ae866932…`에서 사용 후 `c41329374106…`로 바뀌고 삭제·재감지 후에도 후자였다. v0.9.0의 `declared-font-environment.ts`는 선언 글꼴 프로그램과 CSS face를 보관하고, upstream main은 `options-dialog-clear` 이벤트에서 `clearDeclaredLocalPrograms()`를 실행한다. 제품 설정의 재감지·비활성화 경로가 보내는 이벤트에는 해당 초기화 지시가 없다. 캐시와 등록 해제를 확인할 집중 회귀 검사를 추가하고 설치본에서 삭제·복구를 다시 검증하는 것이 보정 후보다.
+
+일반 설치 파일용 추가 검증에도 후속 작업이 있다. 공개용 NSIS·MSI·AppImage 검증기는 서명 inventory를 요구한다. RPM·arm64 GUI 검증기의 `verifyProductDependencies`는 20 MiB 버퍼로 26,836,346바이트 WASM을 읽다가 `ENOBUFS`로 실패함을 재현했다. 파일의 실제 Git blob 비교 방식과 일반 archive 검증 경로를 적용하는 안을 작업지시자에게 제시했다. 제품 보정 승인 시에는 새 제품 SHA와 설치 파일을 다시 생성하고 해당 파일로 수용해야 한다.
 
 ## Stage 4 — 후보 인계
 
