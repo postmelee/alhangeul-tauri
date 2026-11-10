@@ -8,6 +8,9 @@ on:
       windows_only:
         type: boolean
         default: false
+      ordinary_artifacts:
+        type: boolean
+        default: false
       production_check:
         type: boolean
         default: false
@@ -28,6 +31,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 50
     env:
+      ALHANGEUL_ORDINARY_ARTIFACTS: ${{ inputs.ordinary_artifacts }}
       ALHANGEUL_GUI_PRODUCTION_CHECK: ${{ inputs.production_check }}
       CANDIDATE_KIND: ${{ matrix.kind }}
       RELEASE_CANDIDATE_PATH: ${{ inputs.candidate_path }}
@@ -66,7 +70,7 @@ jobs:
             `ALHANGEUL_GUI_DRIVER_PATH=${join(homedir(), '.cargo/bin', process.platform==='win32'?'tauri-driver.exe':'tauri-driver')}`,
           ].join('\n')+'\n');
           JS
-      - name: Verify exact published-candidate bytes and signatures
+      - name: Verify candidate bytes and required inventory
         id: candidate
         shell: bash
         env:
