@@ -116,7 +116,7 @@ pnpm run check:release-notes
 
 작업지시자의 “진행해줘”로 글꼴 재감지 보정, 일반 설치 파일 검증 경로, 새 제품 커밋의 6종 재빌드·재검증을 승인받았다. 제품의 글꼴 변경 알림에서 upstream의 `clearDeclaredLocalPrograms()`를 호출해 선언 글꼴의 CSS face·프로그램·별칭을 함께 해제한다. 해제가 새 카탈로그 분석과 갱신 알림보다 먼저 실행되는 회귀 검사를 추가했다. T7 검증 사본의 Studio 290개 검사와 빌드를 통과했다.
 
-일반 설치 파일 수용은 명시적인 artifact 모드에서 기존 provenance·archive digest·파일 inventory 검증을 재사용한다. 대용량 WASM의 출처 비교는 Git blob 해시를 사용한다. Windows/Linux 설치본의 실제 글꼴 삭제·복구와 미결 GUI 범위로 제품 결과를 판정한다. 일반 파일 검증 모드는 `artifact-file-acceptance`로 지정하고, 입력 candidate JSON은 실제 새 빌드의 파일 식별 정보로 작성한다. 이 경로에서 설치본의 모듈 Worker 두 종류, Windows 인쇄 UI 및 기존 문서 roundtrip 검사를 수행한다. 하네스 타입 검사와 자동화 1,365개를 통과했다. 제품 SHA와 하네스 SHA는 각각 기록한다.
+일반 설치 파일 수용은 명시적인 artifact 모드에서 기존 provenance·archive digest·파일 inventory 검증을 재사용한다. 대용량 WASM의 출처 비교는 Git blob 해시를 사용한다. Windows/Linux 설치본의 실제 글꼴 삭제·복구와 미결 GUI 범위로 제품 결과를 판정한다. 일반 파일 검증 모드는 `artifact-file-acceptance`로 지정하고, 입력 candidate JSON은 실제 새 빌드의 파일 식별 정보로 작성한다. 이 경로에서 설치본의 모듈 Worker 두 종류, Windows 인쇄 UI 및 기존 문서 roundtrip 검사를 수행한다. 하네스 타입 검사와 자동화 1,365개를 통과했다. 제품 SHA와 하네스 SHA는 각각 기록한다. Windows 인쇄 저장창은 주 앱 또는 WebView2 하위 프로세스가 소유할 수 있으므로 앱의 프로세스 계보와 native dialog/control 핸들을 확인한 뒤 새 PDF 경로에 저장한다.
 
 ## Stage 4 — 후보 인계
 
