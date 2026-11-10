@@ -1,6 +1,6 @@
 # Task #122 구현계획서 — rhwp v0.9.0 통합과 Alhangeul v0.1.3 후보 검증
 
-M010 · 2026-11-09 · Stage 3 진행 · 설치 파일 6종 확인 · 글꼴 재감지 회귀로 수용 보류
+M010 · 2026-11-09 · Stage 3 진행 · 글꼴 재감지 및 일반 설치 검증 도구 보정 승인
 [수행계획서](task_m010_122.md) · [GitHub 이슈 #122](https://github.com/postmelee/alhangeul-tauri/issues/122)
 
 ## 단계 개요
@@ -111,6 +111,12 @@ pnpm run check:release-notes
 `checkRemovedFont`의 삭제 후 기대 face 수는 0개였다. 실제로는 각 시나리오에서 `Abel`이 1개 남았다. Canvas2D의 페이지 해시는 사용 전 `dac3ae866932…`에서 사용 후 `c41329374106…`로 바뀌고 삭제·재감지 후에도 후자였다. v0.9.0의 `declared-font-environment.ts`는 선언 글꼴 프로그램과 CSS face를 보관하고, upstream main은 `options-dialog-clear` 이벤트에서 `clearDeclaredLocalPrograms()`를 실행한다. 제품 설정의 재감지·비활성화 경로가 보내는 이벤트에는 해당 초기화 지시가 없다. 캐시와 등록 해제를 확인할 집중 회귀 검사를 추가하고 설치본에서 삭제·복구를 다시 검증하는 것이 보정 후보다.
 
 일반 설치 파일용 추가 검증에도 후속 작업이 있다. 공개용 NSIS·MSI·AppImage 검증기는 서명 inventory를 요구한다. RPM·arm64 GUI 검증기의 `verifyProductDependencies`는 20 MiB 버퍼로 26,836,346바이트 WASM을 읽다가 `ENOBUFS`로 실패함을 재현했다. 파일의 실제 Git blob 비교 방식과 일반 archive 검증 경로를 적용하는 안을 작업지시자에게 제시했다. 제품 보정 승인 시에는 새 제품 SHA와 설치 파일을 다시 생성하고 해당 파일로 수용해야 한다.
+
+### 2026-11-11 보정 승인과 제품 변경
+
+작업지시자의 “진행해줘”로 글꼴 재감지 보정, 일반 설치 파일 검증 경로, 새 제품 커밋의 6종 재빌드·재검증을 승인받았다. 제품의 글꼴 변경 알림에서 upstream의 `clearDeclaredLocalPrograms()`를 호출해 선언 글꼴의 CSS face·프로그램·별칭을 함께 해제한다. 해제가 새 카탈로그 분석과 갱신 알림보다 먼저 실행되는 회귀 검사를 추가했다. T7 검증 사본의 Studio 290개 검사와 빌드를 통과했다.
+
+일반 설치 파일 수용은 명시적인 artifact 모드에서 기존 provenance·archive digest·파일 inventory 검증을 재사용한다. 대용량 WASM의 출처 비교는 Git blob 해시를 사용한다. Windows/Linux 설치본의 실제 글꼴 삭제·복구와 미결 GUI 범위로 제품 결과를 판정한다.
 
 ## Stage 4 — 후보 인계
 

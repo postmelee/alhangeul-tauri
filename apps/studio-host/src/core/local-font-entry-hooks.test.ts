@@ -61,6 +61,21 @@ describe('pinned local-font entry hooks', () => {
     expect(calls).toEqual(['refresh-fonts', 'prepare-fonts', 'document-view-changed']);
   });
 
+  it('clears declared local programs before refreshing deleted or disabled fonts', () => {
+    const calls: string[] = [];
+    const binding = fontBinding({
+      docInfo: { fontsUsed: ['Abel'] },
+      clearDeclaredLocalPrograms: () => { calls.push('clear-declared-fonts'); },
+      analyzeDocumentFonts: () => { calls.push('analyze-current-catalog'); return {}; },
+      eventBus: { emit: (name: string, payload: { fonts: string[] }) => {
+        expect(payload.fonts).toEqual([]);
+        calls.push(name);
+      } },
+    });
+    binding.onFontsChanged([]);
+    expect(calls).toEqual(['clear-declared-fonts', 'analyze-current-catalog', 'local-fonts-changed']);
+  });
+
   it('does not paint a replaced document after awaiting local fonts', async () => {
     const calls: string[] = [];
     let current = true;
@@ -75,7 +90,7 @@ describe('pinned local-font entry hooks', () => {
 
 });
 
-function fontBinding(scope: Record<string, unknown>): { refreshView(isCurrent: () => boolean): Promise<void> } {
+function fontBinding(scope: Record<string, unknown>): { refreshView(isCurrent: () => boolean): Promise<void>; onFontsChanged(fonts: string[]): void } {
   const source = transformLocalFontEntry(main, '/controller.ts');
   const ast = ts.createSourceFile('main.ts', source, ts.ScriptTarget.Latest, true);
   let binding: ts.Expression | undefined;
@@ -90,6 +105,6 @@ function fontBinding(scope: Record<string, unknown>): { refreshView(isCurrent: (
   const code = ts.transpileModule(`const binding = ${binding.getText(ast)};`, { compilerOptions: {
     target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext,
   } }).outputText;
-  return new Function('scope', `const {docInfo,rendererSession,canvasView,eventBus,analyzeDocumentFonts}=scope;
+  return new Function('scope', `const {docInfo,rendererSession,canvasView,eventBus,analyzeDocumentFonts,clearDeclaredLocalPrograms}=scope;
     ${code}; return binding;`)(scope);
 }
