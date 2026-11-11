@@ -1,0 +1,70 @@
+[CmdletBinding()]
+param([ValidateSet('runner', 'standard')][string]$Context, [switch]$CIConsent)
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+if (-not $CIConsent -or $env:GITHUB_ACTIONS -cne 'true' -or $env:RUNNER_ENVIRONMENT -cne 'github-hosted') { throw 'requires-disposable-hosted-ci' }
+$root = Join-Path $env:SystemDrive ('alhangeul-observation-' + [Guid]::NewGuid().ToString('N'))
+$destination = Join-Path $env:GITHUB_WORKSPACE 'diagnostics\thumbnail-user-context'
+[void][IO.Directory]::CreateDirectory($destination)
+$account = $null; $accountSid = $null; $created = $false
+$summary = [ordered]@{ schemaVersion = 1; context = $Context; status = 'invalid'; phase = 'prepare'; childExit = $null; accountRemoved = $false; profileRemoved = $false; scratchRemoved = $false; harnessSha = $env:GITHUB_SHA; imageVersion = $env:ImageVersion; productSha = 'bcb892d49a9003615f3acd980babd71e59e147dd'; installerSha256 = '932c3316d9ea83cd5c38e3fe528518535751ac60fedd72776c5306085437c490' }
+try {
+  [void][IO.Directory]::CreateDirectory((Join-Path $root 'scripts'))
+  [void][IO.Directory]::CreateDirectory((Join-Path $root 'evidence'))
+  foreach ($name in @('user-probe.ps1', 'diagnostics.ps1', 'probe.ps1', 'state.ps1', 'native.cs', 'interop.cs', 'token.cs', 'fixtures.json')) {
+    Copy-Item -LiteralPath (Join-Path $PSScriptRoot ('windows-thumbnail-' + $name)) -Destination (Join-Path $root 'scripts')
+  }
+  $fixtures = (Get-Content -LiteralPath (Join-Path $PSScriptRoot 'windows-thumbnail-fixtures.json') -Raw | ConvertFrom-Json).fixtures
+  foreach ($fixture in $fixtures) {
+    $target = Join-Path $root $fixture.path
+    [void][IO.Directory]::CreateDirectory((Split-Path -Parent $target))
+    Copy-Item -LiteralPath (Join-Path $env:GITHUB_WORKSPACE $fixture.path) -Destination $target
+  }
+  Invoke-WebRequest -UseBasicParsing -Uri 'https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.3/Alhangeul_0.1.3_x64-setup.exe' -OutFile (Join-Path $root 'installer.exe')
+  if ((Get-FileHash -LiteralPath (Join-Path $root 'installer.exe') -Algorithm SHA256).Hash.ToLowerInvariant() -cne $summary.installerSha256) { throw 'published-installer-changed' }
+  $summary.phase = 'launch'
+  $executable = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
+  $arguments = '-NoLogo -NoProfile -NonInteractive -STA -File "' + (Join-Path $root 'scripts\windows-thumbnail-user-probe.ps1') + '" -Root "' + $root + '" -Context ' + $Context + ' -CIConsent'
+  $options = @{ FilePath = $executable; ArgumentList = $arguments; WorkingDirectory = $root; PassThru = $true }
+  if ($Context -eq 'standard') {
+    $account = 'alh' + [Guid]::NewGuid().ToString('N').Substring(0, 12)
+    $secret = ConvertTo-SecureString ('Aa1!' + [Guid]::NewGuid().ToString('N') + [Guid]::NewGuid().ToString('N')) -AsPlainText -Force
+    $user = New-LocalUser -Name $account -Password $secret -AccountNeverExpires
+    $created = $true; $accountSid = $user.SID.Value
+    Add-LocalGroupMember -SID 'S-1-5-32-545' -Member $user
+    # Access is scoped to this disposable fixture root. No product HKLM/UAC changes.
+    & icacls.exe $root /grant ('*' + $accountSid + ':(OI)(CI)RX') /T /Q | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw 'fixture-acl-failed' }
+    & icacls.exe (Join-Path $root 'evidence') /grant ('*' + $accountSid + ':(OI)(CI)M') /T /Q | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw 'evidence-acl-failed' }
+    $options.Credential = [Management.Automation.PSCredential]::new($env:COMPUTERNAME + '\' + $account, $secret)
+    $options.LoadUserProfile = $true
+  }
+  $p = Start-Process @options
+  try {
+    [void]$p.Handle
+    if (-not $p.WaitForExit(900000)) { $p.Kill(); throw 'child-timeout' }
+    $p.Refresh(); $summary.childExit = $p.ExitCode
+  } finally { $p.Dispose() }
+  if ($summary.childExit -ne 0) { throw 'child-observation-invalid' }
+  $summary.status = 'observed'
+} catch {
+  $summary['errorCode'] = $_.Exception.HResult
+  $summary['failure'] = $_.Exception.Message
+} finally {
+  try {
+    if (Test-Path -LiteralPath (Join-Path $root 'evidence')) { Copy-Item -Path (Join-Path $root 'evidence\*.json') -Destination $destination }
+    if ($created) {
+      $profile = Get-CimInstance Win32_UserProfile | Where-Object { $_.SID -eq $accountSid }
+      if ($profile) { $profile | Remove-CimInstance }
+      $summary.profileRemoved = @(Get-CimInstance Win32_UserProfile | Where-Object { $_.SID -eq $accountSid }).Count -eq 0
+      Remove-LocalUser -SID $accountSid
+      $summary.accountRemoved = $null -eq (Get-LocalUser -SID $accountSid -ErrorAction SilentlyContinue)
+    } else { $summary.accountRemoved = $true; $summary.profileRemoved = $true }
+    if (Test-Path -LiteralPath $root) { Remove-Item -LiteralPath $root -Recurse -Force }
+    $summary.scratchRemoved = -not (Test-Path -LiteralPath $root)
+  } catch { $summary['cleanupError'] = $_.Exception.HResult; $summary.status = 'invalid' }
+  $summary | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $destination 'driver.json') -Encoding UTF8
+}
+if ($summary.status -ne 'observed' -or -not $summary.accountRemoved -or -not $summary.profileRemoved -or -not $summary.scratchRemoved) { exit 2 }
+exit 0

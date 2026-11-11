@@ -44,6 +44,7 @@ test('모든 workflow가 공통 또는 전용 contract test inventory에 등록�
     'alhangeul-release-linux-files.yml',
     'alhangeul-site-capture.yml',
     'alhangeul-thumbnail-core.yml',
+    'alhangeul-thumbnail-user-context.yml',
     'alhangeul-updater-linux-window-probe.yml',
     'alhangeul-updater-native-acceptance.yml',
     'alhangeul-updater-native-linux.yml',

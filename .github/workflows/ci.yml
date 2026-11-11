@@ -20,6 +20,10 @@ on:
         description: Separately approved disposable Windows context experiment (package/full only).
         type: boolean
         default: false
+      thumbnail_user_context:
+        description: Observe pinned public NSIS in disposable elevated and standard user profiles (fast only).
+        type: boolean
+        default: false
       base_sha:
         description: Auto profile only - exact comparison SHA; missing/unavailable means full.
         type: string
@@ -49,6 +53,11 @@ env:
   NODE_VERSION: "24"
 
 jobs:
+  thumbnail-user-context:
+    needs: fast
+    if: ${{ inputs.thumbnail_user_context && inputs.profile == 'fast' && inputs.scope == 'full' }}
+    uses: ./.github/workflows/alhangeul-thumbnail-user-context.yml
+
   select:
     if: ${{ inputs.scope != 'pdf-cleanup-windows' }}
     runs-on: ubuntu-24.04
