@@ -364,24 +364,34 @@ jobs:
         id: evaluate
         shell: powershell
         run: node scripts/windows-thumbnail-user-acceptance.mjs diagnostics/thumbnail-user-context $env:EXPECTED_SOURCE_SHA
+      - name: Verify public same-version manual upgrade
+        id: upgrade
+        shell: powershell
+        run: ./scripts/windows-thumbnail-user-context.ps1 -Context standard -ArtifactRoot artifacts/windows-x64 -ExpectedSourceSha $env:EXPECTED_SOURCE_SHA -Scenario public-upgrade -CIConsent
+      - name: Evaluate same-version upgrade evidence
+        id: upgrade-evaluate
+        shell: powershell
+        run: node scripts/windows-thumbnail-user-acceptance.mjs diagnostics/thumbnail-user-upgrade $env:EXPECTED_SOURCE_SHA
       - name: Upload standard user evidence
         id: upload
         if: ${{ always() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: alhangeul-windows-x64-standard-user
-          path: diagnostics/thumbnail-user-context/**
+          path: diagnostics/thumbnail-user-*/**
           if-no-files-found: error
           retention-days: 14
       - name: Require standard user acceptance
         if: ${{ always() }}
         shell: powershell
         env:
+          UPGRADE_OUTCOME: ${{ steps.upgrade.outcome }}
+          UPGRADE_EVALUATE_OUTCOME: ${{ steps.upgrade-evaluate.outcome }}
           PROBE_OUTCOME: ${{ steps.probe.outcome }}
           EVALUATE_OUTCOME: ${{ steps.evaluate.outcome }}
           UPLOAD_OUTCOME: ${{ steps.upload.outcome }}
         run: |
-          if ($env:PROBE_OUTCOME -cne 'success' -or $env:EVALUATE_OUTCOME -cne 'success' -or $env:UPLOAD_OUTCOME -cne 'success') {
+          if ($env:UPGRADE_OUTCOME -cne 'success' -or $env:UPGRADE_EVALUATE_OUTCOME -cne 'success' -or $env:PROBE_OUTCOME -cne 'success' -or $env:EVALUATE_OUTCOME -cne 'success' -or $env:UPLOAD_OUTCOME -cne 'success') {
             throw 'Standard user product acceptance or evidence delivery failed.'
           }
 

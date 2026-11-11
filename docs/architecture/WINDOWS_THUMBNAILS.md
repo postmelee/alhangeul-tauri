@@ -153,11 +153,19 @@ build script는 DLL과 worker를 고정 filename으로 stage하고 PE x64 machin
 
 다른 host의 platform-neutral test는 protocol, bounds와 source 계약을 고정하지만 PE, COM host, installer transaction과 실제 Shell 호출을 대신하지 않는다.
 
-현재 CI는 NSIS-only·MSI-only·MSI 강제 재설치를 별도 runner에서 검사한다. 개별 진단 계약이
+현재 CI는 표준 사용자 NSIS 실제 기능, 관리자 NSIS 진단, MSI 일반 설치와 MSI 강제 재설치를 별도 runner에서 검사한다.
+표준 사용자 NSIS는 새 설치·같은 버전 재설치 뒤 HWP/HWPX의 Shell/강제 추출 bitmap과 JPG 대조군,
+연결 조회·직접 COM 생성 및 제품 자체 제거 성공이 필수다. 시험 도구가 잔여 DLL을 대신 지운
+결과는 통과가 아니다. 공개 v0.1.3에서 같은 버전 후보로 수동 재설치하는 경로도 별도로 확인한다. 개별 진단 계약이
 통과해도 NSIS의 실제 bitmap 실패나 forced MSI의 재부팅 후 미검증은 남을 수 있다.
 경량 집계는 필수 검사·upload·최종 gate 상태를 확인할 뿐 독립 증거 재검산이 아니다.
 `contract_status=passed`만으로 썸네일 지원을 판단하지 말고
 [실제 관측 판독 기준](../operations/CI_VALIDATION.md#windows-설치-계약과-실제-관측)을 따른다.
+
+NSIS 설치 전에는 기존 처리기 DLL을 내용 변경 없이 열 수 있을 때까지 최대 60초 기다린다.
+제거 후에는 처리기 DLL 한 개의 삭제를 최대 60초 재시도하고 빈 설치 폴더만 정리한다.
+시간 내 완료하지 못하면 실패를 알린다. 사용자가 추가한 파일을 재귀 삭제하거나 Explorer/dllhost를
+종료하지 않는다. 파일 잠금이 계속되면 미리보기 창을 닫은 뒤 설치·제거를 다시 시도한다.
 
 ## 수동 Explorer gate와 한계
 
@@ -189,7 +197,15 @@ NSIS의 연결 조회·직접 COM 생성·JPG 썸네일이 성공하고 HWP/HWPX
 NSIS의 같은 실패와 MSI 성공이 확인됐다. 전체 CI가 성공한 것은 제한을 보존하는 검사 계약을
 통과했기 때문이지 NSIS 문제가 해결됐기 때문이 아니다. 사용자별 NSIS와 MSI 배포 방식을
 유지하며 전체 사용자 NSIS·UAC/HKLM 변경 실험은 중단했다. UAC 값·관리자 여부·한컴 버전만으로
-실패를 단정하거나 MSI 설치를 일괄 권유하지 않는다. 아래의 실제 진단 패턴에 해당할 때 대안을 검토한다.
+실패 원인을 단정하지 않는다. #132에서 확정한 지원 정책은 일반 사용자 NSIS, 관리자 환경 MSI다.
+사용자별 NSIS를 시스템 전체 설치로 바꾸거나 관리자 문맥에서 HKCU COM을 강제로 활성화하지 않는다.
+일반 사용자 환경의 다른 오류는 아래 실제 진단 패턴으로 구분한다.
+
+공개 v0.1.3의 동일 NSIS bytes를 비교한 [관측 43044745096](https://github.com/postmelee/alhangeul-tauri/actions/runs/43044745096)에서는
+표준 사용자(중간 무결성)에서 HWP/HWPX Shell·강제 추출 6개가 성공했고 관리자(높은 무결성)에서는
+6개가 `0x80040154`로 실패했다. JPG와 직접 COM은 양쪽 모두 성공했다. 별도 계정·runner 비교이며
+UAC 값 하나만 통제한 실험은 아니다. 같은 공개본은 표준 사용자에서 제거 코드 0 뒤 DLL 한 개를
+남겼고 30초 후 시험 도구의 개별 삭제는 성공했다. 이 관측 run의 성공은 제품 제거 성공을 뜻하지 않는다.
 앱 내 진단과 별도 수동 진단 묶음을 제공한다. 앱 진단은 공개 테스트 문서를 사용하고,
 수동 묶음은 사용자가 지정한 문서의 증상을 조사한다. 두 검사 대상과 결과를 혼동하지 않는다.
 

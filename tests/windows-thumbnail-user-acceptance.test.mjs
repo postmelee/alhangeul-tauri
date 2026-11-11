@@ -4,11 +4,11 @@ import { evaluateStandardUser } from '../scripts/windows-thumbnail-user-acceptan
 import { PUBLIC_INPUT, prepareFreshInput } from '../scripts/windows-thumbnail-user-input.mjs';
 const sha = 'a'.repeat(40);
 function fixture() {
-  const input = { ...structuredClone(PUBLIC_INPUT), mode: 'fresh-standard-acceptance', productSha: sha,
+  const input = { ...structuredClone(PUBLIC_INPUT), mode: 'fresh-standard-acceptance', scenario: 'fresh', productSha: sha,
     metadata: { metadataStatus: 'verified', identity: { productSha: sha } } };
   const driver = { status: 'observed', context: 'standard', childExit: 0, harnessSha: sha, productSha: sha,
     installerSha256: input.installerSha256, accountRemoved: true, profileRemoved: true, scratchRemoved: true };
-  const report = { status: 'observed', context: 'standard', inputMode: input.mode, installerSha256: input.installerSha256,
+  const report = { status: 'observed', context: 'standard', scenario: 'fresh', inputMode: input.mode, installerSha256: input.installerSha256,
     installExit: 0, reinstallExit: 0, uninstallExit: 0, cleanup: true, productUninstallPassed: true,
     uninstallState: { directoryExists: false, handlerRegistered: false, remaining: [] },
     token: { status: 'ok', elevated: false, integrityRid: 8192 }, binaries: structuredClone(input.binaries), probes: [] };
@@ -62,4 +62,16 @@ test('fresh input verifies metadata and inventory before copying installer; reje
   inventory.sourceSha = 'c'.repeat(40); await assert.rejects(prepareFreshInput('/owned', '/bundle', { productSha: sha }, services));
   await assert.rejects(prepareFreshInput('/owned', '/bundle', { productSha: sha }, { ...services,
     resolveMetadata: async () => { throw new Error('expired'); } }));
+});
+
+test('same-version upgrade requires pinned public baseline and retained user data', () => {
+  const f = fixture(); f.input.scenario = f.report.scenario = 'public-upgrade';
+  f.input.baseline = structuredClone(PUBLIC_INPUT);
+  f.report.probes.push(...structuredClone(f.report.probes.slice(0, 12)).map(row => ({ ...row, name: row.name.replace(/^installed-/, 'baseline-') })));
+  f.report.baselineInstallExit = 0; f.report.baselineVerified = true; f.report.userDataPreserved = true;
+  assert.equal(evaluate(f).scenario, 'public-upgrade');
+  for (const key of ['baselineVerified', 'userDataPreserved']) {
+    const bad = structuredClone(f); bad.report[key] = false; assert.throws(() => evaluate(bad));
+  }
+  f.input.baseline.installerSha256 = 'f'.repeat(64); assert.throws(() => evaluate(f));
 });

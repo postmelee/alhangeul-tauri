@@ -18,6 +18,12 @@ if ($productInput.mode -cnotin @('public-observation', 'fresh-standard-acceptanc
 $report['inputMode'] = $productInput.mode
 $report['installerSha256'] = $productInput.installerSha256
 $report['reinstallExit'] = $null
+$upgrade = $acceptance -and $productInput.scenario -ceq 'public-upgrade'
+$report['scenario'] = $(if ($acceptance) { $productInput.scenario } else { 'observation' })
+$report['baselineInstallExit'] = $null
+$report['baselineVerified'] = $false
+$dataSentinels = @()
+$report['userDataPreserved'] = $null
 
 function Invoke-OwnedProcess($Path, $Arguments) {
   $p = Start-Process -FilePath $Path -ArgumentList $Arguments -PassThru
@@ -79,7 +85,28 @@ try {
   $report.operation = 'install'
   $installer = Join-Path $Root 'installer.exe'
   if ((Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash.ToLowerInvariant() -cne $productInput.installerSha256) { throw 'installer-hash-mismatch' }
-  $report.installExit = Invoke-OwnedProcess $installer '/S'
+  if ($upgrade) {
+    $baseline = Join-Path $Root 'baseline.exe'
+    if ((Get-FileHash -LiteralPath $baseline -Algorithm SHA256).Hash.ToLowerInvariant() -cne $productInput.baseline.installerSha256) { throw 'baseline-hash-mismatch' }
+    $report.baselineInstallExit = Invoke-OwnedProcess $baseline '/S'
+    if ($report.baselineInstallExit -ne 0) { throw 'baseline-install-failed' }
+    $installDirectory = Split-Path -Parent (Get-Item -LiteralPath $handlerKey).GetValue('')
+    foreach ($expected in $productInput.baseline.binaries) {
+      $file = Get-Item -LiteralPath (Join-Path $installDirectory $expected.name)
+      if ($file.Length -ne $expected.bytes -or (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant() -cne $expected.sha256) { throw 'baseline-binary-mismatch' }
+    }
+    $report.baselineVerified = $true
+    $report.operation = 'probe-public-baseline'
+    Invoke-ProbeSet 'baseline'
+    foreach ($dataRoot in @($local, $roaming)) {
+      $directory = Join-Path $dataRoot 'io.github.postmelee.alhangeul'
+      [void][IO.Directory]::CreateDirectory($directory)
+      $sentinel = Join-Path $directory ('task132-' + [Guid]::NewGuid().ToString('N') + '.txt')
+      [IO.File]::WriteAllText($sentinel, 'synthetic user data preservation probe')
+      $dataSentinels += [ordered]@{ path = $sentinel; hash = (Get-FileHash -LiteralPath $sentinel -Algorithm SHA256).Hash }
+    }
+  }
+  $report.installExit = Invoke-OwnedProcess $installer $(if ($upgrade) { '/S /UPDATE' } else { '/S' })
   if ($report.installExit -ne 0) { throw 'install-failed' }
   $handler = (Get-Item -LiteralPath $handlerKey).GetValue('')
   $installDirectory = Split-Path -Parent $handler
@@ -99,6 +126,10 @@ try {
     $report.operation = 'probe-reinstalled'
     Invoke-ProbeSet 'reinstalled'
   }
+  if ($upgrade) {
+    $report.operation = 'explorer-observation'
+    & (Join-Path $PSScriptRoot 'windows-thumbnail-user-visual.ps1') -Root $Root
+  }
   $report.status = 'observed'
 } catch {
   $report.errorCode = $_.Exception.HResult
@@ -107,7 +138,7 @@ try {
   try {
     if ($installDirectory) {
       $report.uninstallExit = Invoke-OwnedProcess (Join-Path $installDirectory 'uninstall.exe') '/S'
-      for ($i = 0; $i -lt 30 -and (Test-Path -LiteralPath $installDirectory); $i++) { Start-Sleep -Seconds 1 }
+      for ($i = 0; $i -lt 90 -and (Test-Path -LiteralPath $installDirectory); $i++) { Start-Sleep -Seconds 1 }
       $remaining = @()
       if (Test-Path -LiteralPath $installDirectory) {
         $remaining = @(Get-ChildItem -LiteralPath $installDirectory -Force | ForEach-Object { [ordered]@{ name = $_.Name; directory = $_.PSIsContainer } })
@@ -142,6 +173,13 @@ try {
         }
         if (Test-Path -LiteralPath $installDirectory) { throw 'uninstall-residual-locked' }
       }
+    }
+    if ($upgrade) {
+      $report.userDataPreserved = $dataSentinels.Count -eq 2
+      foreach ($sentinel in $dataSentinels) {
+        if (-not (Test-Path -LiteralPath $sentinel.path) -or (Get-FileHash -LiteralPath $sentinel.path -Algorithm SHA256).Hash -cne $sentinel.hash) { $report.userDataPreserved = $false }
+      }
+      if (-not $report.userDataPreserved) { throw 'user-data-preservation-failed' }
     }
     $report.cleanup = $true
   } catch { $report['cleanupError'] = $_.Exception.HResult; $report.status = 'invalid' }

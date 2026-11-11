@@ -1,17 +1,17 @@
 [CmdletBinding()]
-param([ValidateSet('runner', 'standard')][string]$Context, [switch]$CIConsent, [string]$ArtifactRoot, [string]$ExpectedSourceSha)
+param([ValidateSet('runner', 'standard')][string]$Context, [switch]$CIConsent, [string]$ArtifactRoot, [string]$ExpectedSourceSha, [ValidateSet('fresh', 'public-upgrade')][string]$Scenario = 'fresh')
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 if (-not $CIConsent -or $env:GITHUB_ACTIONS -cne 'true' -or $env:RUNNER_ENVIRONMENT -cne 'github-hosted') { throw 'requires-disposable-hosted-ci' }
 $root = Join-Path $env:SystemDrive ('alhangeul-observation-' + [Guid]::NewGuid().ToString('N'))
-$destination = Join-Path $env:GITHUB_WORKSPACE 'diagnostics\thumbnail-user-context'
+$destination = Join-Path $env:GITHUB_WORKSPACE ('diagnostics\thumbnail-user-' + $(if ($Scenario -eq 'fresh') { 'context' } else { 'upgrade' }))
 [void][IO.Directory]::CreateDirectory($destination)
 $account = $null; $accountSid = $null; $created = $false
 $summary = [ordered]@{ schemaVersion = 1; context = $Context; status = 'invalid'; phase = 'prepare'; childExit = $null; accountRemoved = $false; profileRemoved = $false; scratchRemoved = $false; harnessSha = $env:GITHUB_SHA; imageVersion = $env:ImageVersion; productSha = $null; installerSha256 = $null }
 try {
   [void][IO.Directory]::CreateDirectory((Join-Path $root 'scripts'))
   [void][IO.Directory]::CreateDirectory((Join-Path $root 'evidence'))
-  foreach ($name in @('user-probe.ps1', 'diagnostics.ps1', 'probe.ps1', 'state.ps1', 'native.cs', 'interop.cs', 'token.cs', 'fixtures.json')) {
+  foreach ($name in @('user-probe.ps1', 'diagnostics.ps1', 'probe.ps1', 'state.ps1', 'native.cs', 'interop.cs', 'token.cs', 'fixtures.json', 'user-visual.ps1', 'user-visual.cs')) {
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot ('windows-thumbnail-' + $name)) -Destination (Join-Path $root 'scripts')
   }
   $fixtures = (Get-Content -LiteralPath (Join-Path $PSScriptRoot 'windows-thumbnail-fixtures.json') -Raw | ConvertFrom-Json).fixtures
@@ -27,7 +27,7 @@ try {
   $inputArgs = @((Join-Path $PSScriptRoot 'windows-thumbnail-user-input.mjs'), $root)
   if ($ArtifactRoot -or $ExpectedSourceSha) {
     if ($Context -ne 'standard' -or -not $ArtifactRoot -or -not $ExpectedSourceSha) { throw 'invalid-acceptance-request' }
-    $inputArgs += @($ArtifactRoot, $ExpectedSourceSha)
+    $inputArgs += @($ArtifactRoot, $ExpectedSourceSha, $Scenario)
   }
   & node @inputArgs
   if ($LASTEXITCODE -ne 0) { throw 'input-verification-failed' }
@@ -38,6 +38,10 @@ try {
     Invoke-WebRequest -UseBasicParsing -Uri $productInput.installerUrl -OutFile (Join-Path $root 'installer.exe')
   }
   if ((Get-FileHash -LiteralPath (Join-Path $root 'installer.exe') -Algorithm SHA256).Hash.ToLowerInvariant() -cne $summary.installerSha256) { throw 'installer-changed' }
+  if ($Scenario -eq 'public-upgrade') {
+    Invoke-WebRequest -UseBasicParsing -Uri $productInput.baseline.installerUrl -OutFile (Join-Path $root 'baseline.exe')
+    if ((Get-FileHash -LiteralPath (Join-Path $root 'baseline.exe') -Algorithm SHA256).Hash.ToLowerInvariant() -cne $productInput.baseline.installerSha256) { throw 'baseline-installer-changed' }
+  }
   Copy-Item -LiteralPath (Join-Path $root 'input.json') -Destination $destination
   $summary.phase = 'launch'
   $executable = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
@@ -74,7 +78,7 @@ try {
   $summary['failure'] = $_.Exception.Message
 } finally {
   try {
-    if (Test-Path -LiteralPath (Join-Path $root 'evidence')) { Copy-Item -Path (Join-Path $root 'evidence\*.json') -Destination $destination }
+    if (Test-Path -LiteralPath (Join-Path $root 'evidence')) { Get-ChildItem -LiteralPath (Join-Path $root 'evidence') -File | Where-Object { $_.Extension -in @('.json', '.png') } | Copy-Item -Destination $destination }
     if ($created) {
       $profile = Get-CimInstance Win32_UserProfile | Where-Object { $_.SID -eq $accountSid }
       if ($profile) { $profile | Remove-CimInstance }

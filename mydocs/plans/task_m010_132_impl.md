@@ -199,3 +199,31 @@ Stage 1은 43044745096에서 관측·시험 환경 정리를 수용했다. 실�
 - 기존 관리자 MSI strict-product와 관리자 NSIS limitation 관측을 유지하며 서로 대체하지 않는다.
 - 제품 변경은 Windows installer hook뿐이다. Rust renderer/등록 scope/upstream은 그대로다.
 - Windows package 후보를 먼저 실행하고 최종 CI 변경 범위 검증은 CI_VALIDATION 기준으로 확정한다.
+
+## Stage 2·3 검증 구체화 — 2026-11-12
+
+- Stage 2.1 후보 `a647bcc927f92bd72e4d0fea8583599e68588363`의 Windows package 검증은
+  [43048470765](https://github.com/postmelee/alhangeul-tauri/actions/runs/43048470765)에서 진행한다.
+  초기 로컬 자동화 1,403개, product boundary, actionlint(shellcheck 제외), diff 검사가 통과했다.
+  전역 shellcheck 경고는 변경하지 않은 font-performance workflow의 SC2016이며 별도로 남긴다.
+- 장기 잠금에서 제거 파일·등록을 먼저 지우지 않도록 PREUNINSTALL에도 내용 보존 대기를 적용한다.
+  POSTUNINSTALL의 정확한 DLL 삭제 재시도는 경쟁 조건에 대한 마지막 정리다.
+- 같은 Tauri가 내려받은 NSIS 3.11 compiler로 작은 fixture를 Windows에서만 컴파일·실행한다.
+  wait/remove 각각에서 잠금을 2초 후 해제하는 경우와 60초 timeout을 검사한다.
+  성공/1603, 기존 내용, 무관한 파일과 레지스터 보존을 확인한다. 컴파일러나 잠금 테스트를
+  이 Mac에서 실행하지 않는다. fixture는 제품 설치/등록/서비스를 만들지 않는다.
+- 새 후보의 일반 사용자 새 설치·반복 재설치와 별도로, 공개 v0.1.3의 고정 hash를 설치하고
+  baseline Shell/force-extract를 실행한 직후 같은 버전 후보를 수동 재설치한다.
+  source/artifact inventory/설치 파일/DLL/worker hash와 baseline bytes를 각각 확인한다.
+- 수동 재설치 경로에서 기존·수정·반복 재설치 세 단계의 문서 bitmap 18개와 JPG 6개를 요구한다.
+  사용자 Local/Roaming AppData의 제품 경로에 만든 합성 파일 두 개가 제거까지 보존되는지 확인한다.
+  이는 실제 앱 설정 UI의 의미 검증이 아니라 installer의 사용자 데이터 비삭제 검사다.
+- NSIS 원본 uninstaller가 임시 실행본을 띄울 수 있어 최종 제거 상태는 최대 90초 확인한다.
+  실제 제품 제거 실패를 시험 도구의 파일 삭제로 대체하지 않는다.
+- 표준 사용자 토큰으로 만든 고유 fixture 폴더의 Explorer 창을 열어 관측한다.
+  창의 process owner SID와 session이 시험 사용자와 같을 때만 보기 변경·캡처·창 닫기를 한다.
+  프로세스를 종료하거나 전역 캐시·UAC·thumbnail 정책을 바꾸지 않는다.
+  capture 성공도 이미지 직접 검토 전까지 Explorer 수용이 아니다. hosted에서 확보하지 못하면
+  미검증으로 남기고 지원되는 실제 Windows 환경을 요청한다.
+- CI/shared 변경 때문에 최종 후보는 `profile=full`로 검증한다.
+  기존 관리자 NSIS 진단·MSI strict·MSI 3010 관측의 의미는 유지한다.

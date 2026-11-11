@@ -133,7 +133,7 @@ inventory source SHA/hash 확인 뒤 설치·선택 시나리오·cleanup을 실
 scope를 유지한다. installer profile의 네 입력과 PDF의 기존 입력을 혼동하지 않는다.
 
 Windows smoke와 installer reuse는 NSIS-only, MSI-only, MSI 강제 재설치를 각각 별도 runner에서
-실행한다. 같은 run의 `installer-status`는 현재 attempt의 세 job과 필수 step·upload·최종 gate
+실행한다. 같은 run의 `installer-status`는 현재 attempt의 세 job과 표준 사용자 NSIS 필수 기능 job의 step·upload·최종 gate
 성공을 확인하는 경량 집계다. 원시 증거를 재다운로드·독립 재계산하지 않는다. 후속 수정은 아래
 소유 파일에 반영하고, Desktop entry에 옮긴 job 본문을 다시 복제하지 않는다.
 
@@ -161,6 +161,7 @@ Windows smoke와 installer reuse는 NSIS-only, MSI-only, MSI 강제 재설치를
 
 | 계약 | 통과 조건의 의미 | 별도로 읽을 실제 결과 |
 |---|---|---|
+| `strict-standard-user` | 일반 사용자 NSIS의 HWP/HWPX·JPG 실제 bitmap, 설치·같은 버전 재설치·제품 자체 제거와 공개본 수동 재설치 통과 | API/lifecycle 수용이며 Explorer 시각·전체 Windows·릴리즈 수용은 별도 |
 | `strict-product` | 지정한 설치·썸네일·lifecycle 증거 모두 통과 | 해당 시나리오만 수용, 모든 환경 보장 아님 |
 | `hosted-nsis-diagnostic` | 정상 생성 또는 엄격히 정의한 사용자별 Shell 활성화 실패 패턴의 진단·정리 통과 | 제한 재현 시 raw exit 1·실패 12건, `thumbnailStatus=not-accepted` 유지 |
 | `msi-forced-reinstall-reboot` | 정상 완료 또는 재설치 3010과 필수 관측·정리가 계약에 일치 | 3010이면 `reboot-required`·`post-reboot-unverified`, 재부팅 후 성공 아님 |

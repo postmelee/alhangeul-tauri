@@ -1,12 +1,14 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { PUBLIC_INPUT } from './windows-thumbnail-user-input.mjs';
 import { requireEvidence as need } from './ci/acceptance-evidence.mjs';
 
 export const STANDARD_USER_JOB = Object.freeze({ name: 'nsis-standard-user', contract: 'strict-standard-user',
   jobName: 'NSIS standard user thumbnails and lifecycle', requiredSteps: [
     'Checkout standard user source', 'Prepare Node for standard user evidence', 'Download standard user bundle',
     'Verify standard user install thumbnails and lifecycle', 'Evaluate standard user product evidence',
+    'Verify public same-version manual upgrade', 'Evaluate same-version upgrade evidence',
     'Upload standard user evidence', 'Require standard user acceptance',
   ] });
 const clsid = '{C1DCF316-0771-49DD-BFEA-C85F69B1674B}';
@@ -15,6 +17,11 @@ export function evaluateStandardUser(input, driver, report, expectedSha) {
     && /^[a-f0-9]{40}$/.test(expectedSha) && input.productSha === expectedSha
     && input.metadata?.metadataStatus === 'verified'
     && input.metadata.identity.productSha === expectedSha, 'standard-input-unverified');
+  need(['fresh', 'public-upgrade'].includes(input.scenario) && report?.scenario === input.scenario, 'standard-scenario-mismatch');
+  if (input.scenario === 'public-upgrade') {
+    need(input.baseline?.installerSha256 === PUBLIC_INPUT.installerSha256 && input.baseline.productSha === PUBLIC_INPUT.productSha
+      && report.baselineInstallExit === 0 && report.baselineVerified === true && report.userDataPreserved === true, 'standard-upgrade-failed');
+  }
   need(driver?.status === 'observed' && driver.context === 'standard' && driver.childExit === 0
     && driver.harnessSha === expectedSha && driver.productSha === expectedSha
     && driver.installerSha256 === input.installerSha256
@@ -32,7 +39,14 @@ export function evaluateStandardUser(input, driver, report, expectedSha) {
     need(expected.length === 1 && actual.length === 1 && actual[0].sha256 === expected[0].sha256
       && actual[0].bytes === expected[0].bytes, 'standard-binary-mismatch');
   }
-  need(Array.isArray(report.probes) && report.probes.length === 24, 'standard-probe-count');
+  const phases = input.scenario === 'public-upgrade' ? ['baseline', 'installed', 'reinstalled'] : ['installed', 'reinstalled'];
+  verifyProbeSets(report, phases);
+  return { schemaVersion: 1, status: 'passed', scope: 'standard-user-nsis-api-and-lifecycle', scenario: input.scenario,
+    documentBitmaps: phases.length * 6, controlBitmaps: phases.length * 2, explorerVisual: 'unverified', releaseAcceptance: 'unverified',
+    identity: input.metadata.identity, installerSha256: input.installerSha256 };
+}
+function verifyProbeSets(report, phases) {
+  need(Array.isArray(report.probes) && report.probes.length === phases.length * 12, 'standard-probe-count');
   const take = (name, mode, status = 'ok') => {
     const rows = report.probes.filter(row => row.name === name);
     need(rows.length === 1 && rows[0].exitCode === 0 && rows[0].result?.schemaVersion === 1
@@ -40,7 +54,7 @@ export function evaluateStandardUser(input, driver, report, expectedSha) {
     if (status === 'ok') need(rows[0].result.hresult === '0x00000000', 'standard-hresult-failed');
     return rows[0].result;
   };
-  for (const phase of ['installed', 'reinstalled']) {
+  for (const phase of phases) {
     const state = take(`${phase}-environment`, 'state', 'collected').environment;
     need(state?.token?.elevated === false && state.token.integrityRid === 8192
       && state.is64BitProcess === true && state.apartment === 'STA', 'standard-probe-token-invalid');
@@ -53,9 +67,6 @@ export function evaluateStandardUser(input, driver, report, expectedSha) {
     for (const ext of ['hwp', 'hwpx']) need(take(`${phase}-association-${ext}`, 'association').resolvedHandler === clsid, 'standard-association-invalid');
     take(`${phase}-activation`, 'activate');
   }
-  return { schemaVersion: 1, status: 'passed', scope: 'standard-user-nsis-api-and-lifecycle',
-    documentBitmaps: 12, controlBitmaps: 4, explorerVisual: 'unverified', releaseAcceptance: 'unverified',
-    identity: input.metadata.identity, installerSha256: input.installerSha256 };
 }
 async function main(root, expectedSha) {
   const read = async name => JSON.parse((await readFile(join(root, name + '.json'), 'utf8')).replace(/^\uFEFF/, ''));

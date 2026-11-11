@@ -40,7 +40,8 @@ export async function prepareFreshInput(root, artifactRoot, request, services = 
   return input;
 }
 
-async function main([root, artifactRoot, expectedSha], env) {
+async function main([root, artifactRoot, expectedSha, scenario = 'fresh'], env) {
+  requireEvidence(['fresh', 'public-upgrade'].includes(scenario), 'invalid-standard-scenario');
   let input = PUBLIC_INPUT;
   if (artifactRoot || expectedSha) {
     const sha = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
@@ -49,6 +50,10 @@ async function main([root, artifactRoot, expectedSha], env) {
     input = await prepareFreshInput(root, artifactRoot, { repository: env.GITHUB_REPOSITORY,
       runId: env.GITHUB_RUN_ID, runAttempt: env.GITHUB_RUN_ATTEMPT, workflowSha: sha, harnessSha: sha,
       productSha: sha, artifactId: env.PRODUCT_ARTIFACT_ID, expectedVersion: product.version, sourceMode: 'ordinary' });
+  }
+  if (input.mode === 'fresh-standard-acceptance') {
+    input.scenario = scenario;
+    if (scenario === 'public-upgrade') input.baseline = PUBLIC_INPUT;
   }
   await writeFile(join(root, 'input.json'), JSON.stringify(input, null, 2) + '\n');
 }

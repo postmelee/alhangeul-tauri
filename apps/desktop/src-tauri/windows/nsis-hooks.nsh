@@ -162,6 +162,7 @@
 !macroend
 
 !macro NSIS_HOOK_PREUNINSTALL
+  !insertmacro ALHANGEUL_WAIT_THUMBNAIL_WRITABLE
   SetRegView 64
   !insertmacro ALHANGEUL_UNINSTALL_THUMBNAIL
   !insertmacro ALHANGEUL_SNAPSHOT_EXTENSION_DEFAULT "hwp" "Alhangeul.hwp"
