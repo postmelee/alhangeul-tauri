@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "version": "0.1.3",
+  "tag": "v0.1.3",
+  "sourceSha": "bcb892d49a9003615f3acd980babd71e59e147dd",
+  "candidates": {
+    "nsis": {
+      "name": "alhangeul-updater-windows-x64",
+      "id": 13850073360,
+      "digest": "sha256:5b3d405cd8a438cb9ffd361d4b5292fa417ff44349c12e5624c1cb50f09537be",
+      "producerRun": 42996892999,
+      "workflowPath": ".github/workflows/alhangeul-desktop.yml",
+      "path": "nsis/Alhangeul_0.1.3_x64-setup.exe",
+      "sha256": "932c3316d9ea83cd5c38e3fe528518535751ac60fedd72776c5306085437c490",
+      "target": "windows-x86_64-nsis",
+      "targets": [
+        "windows-x86_64-nsis",
+        "windows-x86_64-msi"
+      ]
+    },
+    "msi": {
+      "name": "alhangeul-updater-windows-x64",
+      "id": 13850073360,
+      "digest": "sha256:5b3d405cd8a438cb9ffd361d4b5292fa417ff44349c12e5624c1cb50f09537be",
+      "producerRun": 42996892999,
+      "workflowPath": ".github/workflows/alhangeul-desktop.yml",
+      "path": "msi/Alhangeul_0.1.3_x64_en-US.msi",
+      "sha256": "a953c0d09dec29246ae77340e019e7acae759aac24b21fc7a524326ab81b6085",
+      "target": "windows-x86_64-msi",
+      "targets": [
+        "windows-x86_64-nsis",
+        "windows-x86_64-msi"
+      ]
+    },
+    "appimage": {
+      "name": "alhangeul-updater-linux-x64",
+      "id": 13850110883,
+      "digest": "sha256:52fe89672bae10ea3cd18666c094c81f23de1846b2a47a8b99fcc13bfa59f839",
+      "producerRun": 42996892999,
+      "workflowPath": ".github/workflows/alhangeul-desktop.yml",
+      "path": "Alhangeul_0.1.3_amd64.AppImage",
+      "sha256": "740b622792eb6201691f5993c66f351d6b7cf3b66b5bbdda5771b5d0a2fc997e",
+      "target": "linux-x86_64-appimage",
+      "targets": [
+        "linux-x86_64-appimage"
+      ]
+    },
+    "rpm": {
+      "name": "alhangeul-desktop-linux-x64",
+      "id": 13847083193,
+      "digest": "sha256:0f0870a377d0e3375f665342e3f5ffc96e4e45ceb2c18ad63b6d81d647d01027",
+      "producerRun": 42996821567,
+      "workflowPath": ".github/workflows/alhangeul-desktop.yml",
+      "path": "rpm/Alhangeul-0.1.3-1.x86_64.rpm",
+      "sha256": "5ed094d71f9c2d3c5fc8c15f27c9accaac35c5902a3b17518dfb541b98dbb183",
+      "platform": "linux-x64",
+      "kind": "rpm"
+    },
+    "arm64": {
+      "name": "alhangeul-desktop-linux-arm64",
+      "id": 13847156754,
+      "digest": "sha256:45e04e475be41501cb097c83ff20d4781d49840fcf56db8404e657c5c17e78a8",
+      "producerRun": 42996821567,
+      "workflowPath": ".github/workflows/alhangeul-desktop.yml",
+      "path": "deb/Alhangeul_0.1.3_arm64.deb",
+      "sha256": "ad9e52d9c510fbdc3579f83aff8d8c33ea177bbf294acb670c0c7eb7f6fcd927",
+      "platform": "linux-arm64",
+      "kind": "deb"
+    }
+  }
+}
