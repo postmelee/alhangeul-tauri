@@ -24,6 +24,7 @@ Stage 4에서 독립 검증한 공개 파일을 웹과 production 업데이트 �
 - `pnpm run check:release-notes`: 3 documents 통과.
 - `pnpm run test:release-notes`: 종료 코드 0.
 - `node --test tests/pages.test.mjs tests/production-upgrade-v012.test.mjs tests/production-upgrade-v013.test.mjs tests/production-upgrade-workflows.test.mjs`: 154/154 통과.
+- Windows fast job에도 신규 v0.1.3 계약을 포함해 운영체제별 입력 경로 처리를 확인한다.
 - 신규 tuple·workflow 집중 검사: 19/19 통과. 이전 manifest/source/version/key, 불완전 문서·dirty 증거 및 Windows 3010을 거부한다.
 - `pnpm run typecheck:gui`, `git diff --check`: 통과.
 - T7 검증 복사본의 `pnpm run build:pages`, `pnpm run check:pages`: source 20 / output 24 통과.
