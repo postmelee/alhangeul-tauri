@@ -221,3 +221,13 @@ GitHub의 [reusable workflow 계약](https://docs.github.com/en/actions/how-tos/
 이 옵션을 선택하면 고정된 최초 v0.1.3 설치 파일·해시와 수동 재설치 증거가 필수이며,
 파일 변경·누락·검사 생략은 실패다. 일반 CI는 이 역사적 공개 파일에 의존하지 않는다.
 재릴리즈 후 다른 bytes를 최초 공개본으로 간주하지 않으며 원본 보관과 재검증 입력은 별도 확정한다.
+
+### Ubuntu CI의 DNS 장애 복구
+
+GitHub-hosted Ubuntu jammy/noble의 공식 archive DNS 조회가 실패하면
+`scripts/ci/ubuntu-mirror.py`가 해당 일회용 runner의 Ubuntu URI만 HTTPS 대체 미러로
+전환한다. amd64는 archive, arm64는 ports를 사용한다. 먼저 runner의 기존 Ubuntu archive
+keyring으로 base/updates/security InRelease 서명을 모두 확인하며 실패하면 source를 변경하지 않는다.
+apt의 서명·유효기간 검사, suite/component/Signed-By와 타사 저장소 설정은 유지한다.
+DNS가 정상이거나 알려진 Ubuntu URI가 없으면 기존 source를 그대로 사용한다.
+이 준비는 패키지 설치·빌드·검사 자체를 생략하거나 실패를 통과시키지 않는다.

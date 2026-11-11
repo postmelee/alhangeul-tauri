@@ -242,3 +242,19 @@ Stage 1은 43044745096에서 관측·시험 환경 정리를 수용했다. 실�
 처리하지 않는다. 원시 로그를 보존했고 변경된 최종 후보의 새 runner에서 다시 확인한다.
 작업지시자는 현재 접속 가능한 Windows 10/11 테스트 환경이 없다고 답했다. hosted Explorer
 관측은 계속하되 Windows 10/11 현장 검증을 수행했다고 기록하지 않는다.
+
+### Linux 검증 환경 복구 — Canonical DNS 장애
+
+최종 후보 run 43053237859의 linux-x64 core job 130638159708에서도 동일 DNS 오류와
+apt-get exit 100이 재현됐다. 로컬 읽기 전용 DNS 조회에서도 archive/security/ports/Azure
+Ubuntu 이름을 해석하지 못했다. [runner-images #15296](https://github.com/actions/runner-images/issues/15296)에
+동시간대 동일 장애가 보고돼 있다. 제품 결함과 구별하고 이 실패를 수용하지 않는다.
+
+전체 검증을 완료하기 위해 일회용 GitHub-hosted Ubuntu CI에 한정해 DNS 실패 시 HTTPS
+미러를 사용하는 준비 helper를 추가한다. 지원 image는 jammy/noble, amd64/arm64뿐이다.
+TUNA 대학 미러의 해당 archive/ports InRelease가 HTTP 200인 것을 확인했다. runner 이미지에
+원래 있는 Ubuntu archive keyring으로 base/updates/security 세 InRelease의 gpgv 검증을
+모두 마친 뒤에만 알려진 Ubuntu URI를 치환한다. suite/component/Signed-By/타사 source는
+보존하며 apt의 서명·유효기간 검사를 그대로 유지한다. 외부에서 새 신뢰 키를 받지 않는다.
+DNS가 정상이면 source를 바꾸지 않는다. 제품·릴리즈 파일이나 이 Mac의 DNS/apt 설정을
+변경하지 않는다. 실패 시 닫히는 guard와 URI 변환·서명 선행 순서를 회귀 검사한다.
