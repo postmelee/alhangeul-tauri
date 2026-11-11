@@ -25,11 +25,15 @@ $report['baselineVerified'] = $false
 $dataSentinels = @()
 $report['userDataPreserved'] = $null
 
-function Invoke-OwnedProcess($Path, $Arguments) {
+function Invoke-OwnedProcess($Path, $Arguments, [ValidateRange(1, 180)][int]$TimeoutSeconds = 180) {
   $p = Start-Process -FilePath $Path -ArgumentList $Arguments -PassThru
   try {
     [void]$p.Handle
-    if (-not $p.WaitForExit(180000)) { $p.Kill(); throw 'owned-process-timeout' }
+    if (-not $p.WaitForExit($TimeoutSeconds * 1000)) {
+      try { $p.Kill() } catch { if (-not $p.HasExited) { throw 'owned-process-did-not-exit' } }
+      if (-not $p.WaitForExit(5000)) { throw 'owned-process-did-not-exit' }
+      throw 'owned-process-timeout'
+    }
     $p.Refresh(); return $p.ExitCode
   } finally { $p.Dispose() }
 }
@@ -128,7 +132,26 @@ try {
   }
   if ($upgrade) {
     $report.operation = 'explorer-observation'
-    & (Join-Path $PSScriptRoot 'windows-thumbnail-user-visual.ps1') -Root $Root
+    # Preserve incomplete lifecycle evidence even if an optional UI observation hangs.
+    $report | ConvertTo-Json -Depth 24 | Set-Content -LiteralPath (Join-Path $output 'observation.json') -Encoding UTF8
+    $engine = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
+    $visualScript = Join-Path $PSScriptRoot 'windows-thumbnail-user-visual.ps1'
+    $visualArgs = '-NoLogo -NoProfile -NonInteractive -STA -File "' + $visualScript + '" -Root "' + $Root + '"'
+    try {
+      if ((Invoke-OwnedProcess $engine $visualArgs 45) -ne 0) { throw 'visual-process-failed' }
+    } catch {
+      # Only the capture PowerShell process is bounded; never kill Explorer or a COM host.
+      $visualFailure = $_.Exception.Message
+      $path = Join-Path $output 'explorer-visual.json'
+      $visual = [pscustomobject][ordered]@{ schemaVersion = 1; status = 'unavailable'; phase = 'launch'; requiresVisualReview = $true }
+      if (Test-Path -LiteralPath $path) {
+        try { $saved = Get-Content -LiteralPath $path -Raw | ConvertFrom-Json; if ($saved.schemaVersion -eq 1) { $visual = $saved } } catch { }
+      }
+      $visual.status = 'unavailable'
+      $visual | Add-Member -NotePropertyName failure -NotePropertyValue $visualFailure -Force
+      $visual | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $path -Encoding UTF8
+      if ($visualFailure -eq 'owned-process-did-not-exit') { throw $visualFailure }
+    }
   }
   $report.status = 'observed'
 } catch {

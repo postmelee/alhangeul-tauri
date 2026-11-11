@@ -161,7 +161,7 @@ Windows smoke와 installer reuse는 NSIS-only, MSI-only, MSI 강제 재설치를
 
 | 계약 | 통과 조건의 의미 | 별도로 읽을 실제 결과 |
 |---|---|---|
-| `strict-standard-user` | 일반 사용자 NSIS의 HWP/HWPX·JPG 실제 bitmap, 설치·같은 버전 재설치·제품 자체 제거와 공개본 수동 재설치 통과 | API/lifecycle 수용이며 Explorer 시각·전체 Windows·릴리즈 수용은 별도 |
+| `strict-standard-user` | 일반 사용자 NSIS의 HWP/HWPX·JPG 실제 bitmap, 설치·같은 버전 재설치·제품 자체 제거 통과; 명시 선택 시 최초 공개본 수동 재설치도 필수 | API/lifecycle 수용이며 Explorer 시각·전체 Windows·릴리즈 수용은 별도 |
 | `strict-product` | 지정한 설치·썸네일·lifecycle 증거 모두 통과 | 해당 시나리오만 수용, 모든 환경 보장 아님 |
 | `hosted-nsis-diagnostic` | 정상 생성 또는 엄격히 정의한 사용자별 Shell 활성화 실패 패턴의 진단·정리 통과 | 제한 재현 시 raw exit 1·실패 12건, `thumbnailStatus=not-accepted` 유지 |
 | `msi-forced-reinstall-reboot` | 정상 완료 또는 재설치 3010과 필수 관측·정리가 계약에 일치 | 3010이면 `reboot-required`·`post-reboot-unverified`, 재부팅 후 성공 아님 |

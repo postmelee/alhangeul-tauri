@@ -47,3 +47,16 @@ test('normal CI always requires fresh standard-user acceptance; historical same-
     assert.match(job.steps.find(row => row.name === name).if, /inputs.thumbnail_same_version_upgrade/);
   }
 });
+
+test('Explorer observation requires an owned interactive desktop and cannot block product cleanup', () => {
+  const probe = read('scripts/windows-thumbnail-user-probe.ps1');
+  const visual = read('scripts/windows-thumbnail-user-visual.ps1');
+  assert.match(probe, /Invoke-OwnedProcess \$engine \$visualArgs 45/);
+  assert.match(probe, /WaitForExit\(\$TimeoutSeconds \* 1000\)/);
+  assert.match(probe, /WaitForExit\(5000\)/);
+  assert.ok(visual.indexOf("throw 'interactive-shell-owner-mismatch'") < visual.indexOf('New-Object -ComObject Shell.Application'));
+  assert.match(visual, /GetShellWindow\(\)/);
+  assert.match(visual, /UserInteractive/);
+  assert.match(visual, /windows-thumbnail-token\.cs/);
+  assert.doesNotMatch(visual, /Stop-Process|\.Kill\(/);
+});

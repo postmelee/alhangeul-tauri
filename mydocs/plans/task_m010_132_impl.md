@@ -271,3 +271,37 @@ HTTPS fetch 실패에만 다음 고정 미러를 시도한다. 서명 실패는 
 첫 Windows 후보 a647bcc9의 표준 사용자 job 130660728668은 24개 probe와 제품 자체 제거를
 통과했다. 문서 bitmap 12개는 모두 181×256, JPG 4개는 256×134이고 추가 잔여물 삭제는 없었다.
 이 증거는 초기 후보에만 해당하며 최신 후보의 장기 잠금·공개본 수동 재설치를 대체하지 않는다.
+
+최종 재검증 후보는 `4558204669f82a450a3ee66f3c3081a4b57e3ef0`,
+[run 43061139226](https://github.com/postmelee/alhangeul-tauri/actions/runs/43061139226)의
+full + thumbnail_same_version_upgrade=true다. 선행 43056867702는 x64 미러 403 실패를
+보존한 뒤 중단했으며 수용하지 않는다. 새 후보는 첫 Windows 성공 build의 동일 workload
+cache를 사용할 수 있으나 실제 cache hit·테스트 결과 확인 전까지 재사용 성공으로 기록하지 않는다.
+
+같은 버전 재배포 준비의 읽기 전용 확인에서 기존 release 441647361의 11개 asset metadata와
+#126 public-readback 보관본의 크기·SHA256이 모두 일치했다. 기존 tag/asset/feed는 변경하지 않았다.
+새 source와 서명 파일을 확정하고 같은 버전 수동 설치와 복구안을 검증하기 전에는 교체하지 않는다.
+
+### 파일 분리 기준
+
+신규 실행 helper는 모두 300줄 미만으로 유지한다. 기존 Windows smoke(437줄)와 native build
+workflow(422줄)는 CI_VALIDATION의 지정 소유 파일이며 이번 변경만으로 재분할하지 않는다.
+새 기능 판정·입력 검증·잠금 검사·화면 관측은 별도 helper로 분리해 workflow에는 전달과 의존관계만 둔다.
+
+### Explorer 관측의 무한 대기 분리
+
+full run 43061139226은 실패다. Windows/Linux core·native·패키지와 MSI 계약,
+최종 후보의 일반 사용자 fresh 24개 probe·설치/재설치/제품 자체 제거는 통과했다.
+NSIS 잠금 회귀 4개도 통과했다(해제 후 2.0~2.6초 성공, 영구 잠금은 약 60.2초 후 1603).
+공개본 수동 재설치는 baseline/installed/reinstalled의 36개 원시 probe를 모두 남겼지만,
+마지막 COM 활성화 뒤 Explorer 관측 구간에서 15분 child-timeout이 발생했다.
+그 경로의 observation/제거/합성 사용자 데이터 보존 완료 증거가 없어 수용하지 않는다.
+계정·profile·scratch 정리는 통과했고 제품 제거 성공으로 대체하지 않는다.
+
+화면 관측은 같은 표준 사용자 token의 별도 PowerShell 자식으로 실행하고 45초로 제한한다.
+종료 대상은 직접 만든 관측 PowerShell뿐이며 Explorer/dllhost는 종료하지 않는다.
+interactive desktop 및 기존 Shell의 사용자/session이 시험 사용자와 같을 때만 창을 연다.
+불일치는 unavailable로 기록하고 실제 화면 미검증을 유지한다. 관측 직전 lifecycle의 미완료
+checkpoint와 화면 관측 단계별 JSON을 남겨 전체 시간 초과가 기존 증거를 잃게 하지 않는다.
+독립 Windows fast 회귀에서 0/7 종료 코드와 3초 timeout 후 직접 만든 자식의 종료를 확인한다.
+실패한 run의 artifact를 성공 producer로 재사용하지 않으며 보정 후 새 full을 실행한다.
