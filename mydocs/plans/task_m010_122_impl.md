@@ -118,6 +118,12 @@ pnpm run check:release-notes
 
 일반 설치 파일 수용은 명시적인 artifact 모드에서 기존 provenance·archive digest·파일 inventory 검증을 재사용한다. 대용량 WASM의 출처 비교는 Git blob 해시를 사용한다. Windows/Linux 설치본의 실제 글꼴 삭제·복구와 미결 GUI 범위로 제품 결과를 판정한다. 일반 파일 검증 모드는 `artifact-file-acceptance`로 지정하고, 입력 candidate JSON은 실제 새 빌드의 파일 식별 정보로 작성한다. 이 경로에서 설치본의 모듈 Worker 두 종류, Windows 인쇄 UI 및 기존 문서 roundtrip 검사를 수행한다. 하네스 타입 검사와 자동화 1,365개를 통과했다. 제품 SHA와 하네스 SHA는 각각 기록한다. Windows 인쇄 저장창은 주 앱 또는 WebView2 하위 프로세스가 소유할 수 있으므로 앱의 프로세스 계보와 native dialog/control 핸들을 확인한 뒤 새 PDF 경로에 저장한다.
 
+### 새 설치 파일 생성과 추가 수용 입력
+
+제품 `2de5aa319d29e125bec0efc58f9e5526fc4a65d6`의 [전체 빌드 42919676345](https://github.com/postmelee/alhangeul-tauri/actions/runs/42919676345)가 성공했다. archive 3종과 내부 설치 파일 6종의 크기·SHA-256을 다운로드한 원본에서 대조했다. 추가 GUI의 고정 입력은 [task_m010_122.json](../working/task_m010_122.json)이다. 검증 도구의 인쇄 저장창 보정까지 포함한 [빠른 CI 42923441737](https://github.com/postmelee/alhangeul-tauri/actions/runs/42923441737)도 성공했다.
+
+NSIS·MSI·AppImage에는 일반 파일 수용을 적용하고, x64 DEB에는 기존 전체 GUI 및 글꼴 수용을 적용한다. arm64 DEB는 arm64 runner, RPM은 Fedora 데스크톱 VM에서 실제 문서 작업을 확인한다. RPM의 데스크톱 검증은 기존 VM 경로를 사용하며 컨테이너 결과로 대체하지 않는다. Windows 직접 PDF 검증도 같은 producer의 NSIS를 재사용한다. 각 실행의 실제 harness SHA와 원시 설치 결과는 Stage 3 결과에 기록한다.
+
 ## Stage 4 — 후보 인계
 
 **산출물.** 버전 기록·노트, 6종 파일과 근거를 연결한 단계·최종 보고서, 오늘할일 및 devel 대상 PR.
