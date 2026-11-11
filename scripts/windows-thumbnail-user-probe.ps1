@@ -33,6 +33,19 @@ try {
   if ($Context -eq 'standard' -and ($report.token.elevated -or $report.token.integrityRid -ne 8192)) { throw 'not-standard-user' }
   if ($Context -eq 'runner' -and (-not $report.token.elevated -or $report.token.integrityRid -ne 12288)) { throw 'not-elevated-runner' }
   if (Test-Path -LiteralPath $handlerKey) { throw 'preexisting-handler' }
+  # Alternate credentials load HKCU, but the launcher can inherit the runner's TEMP/profile variables.
+  # Use this token's known folders only in this owned process; no machine/user policy is modified.
+  $profile = [Environment]::GetFolderPath('UserProfile')
+  $local = [Environment]::GetFolderPath('LocalApplicationData')
+  $roaming = [Environment]::GetFolderPath('ApplicationData')
+  if ([string]::IsNullOrWhiteSpace($profile) -or [string]::IsNullOrWhiteSpace($local)) { throw 'profile-unavailable' }
+  $report['inheritedProfileMatches'] = $env:USERPROFILE -ieq $profile
+  $report['inheritedLocalAppDataMatches'] = $env:LOCALAPPDATA -ieq $local
+  $temp = Join-Path $local 'Temp'
+  [void][IO.Directory]::CreateDirectory($temp)
+  foreach ($entry in @{ USERPROFILE = $profile; LOCALAPPDATA = $local; APPDATA = $roaming; TEMP = $temp; TMP = $temp }.GetEnumerator()) {
+    [Environment]::SetEnvironmentVariable($entry.Key, $entry.Value, 'Process')
+  }
   $report.operation = 'install'
   $installer = Join-Path $Root 'installer.exe'
   if ((Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash.ToLowerInvariant() -cne '932c3316d9ea83cd5c38e3fe528518535751ac60fedd72776c5306085437c490') { throw 'installer-hash-mismatch' }
@@ -70,7 +83,12 @@ try {
     if ($installDirectory) {
       $report.uninstallExit = Invoke-OwnedProcess (Join-Path $installDirectory 'uninstall.exe') '/S'
       for ($i = 0; $i -lt 30 -and (Test-Path -LiteralPath $installDirectory); $i++) { Start-Sleep -Seconds 1 }
-      if ($report.uninstallExit -ne 0 -or (Test-Path -LiteralPath $installDirectory) -or (Test-Path -LiteralPath $handlerKey)) { throw 'uninstall-incomplete' }
+      $remaining = @()
+      if (Test-Path -LiteralPath $installDirectory) {
+        $remaining = @(Get-ChildItem -LiteralPath $installDirectory -Force | ForEach-Object { [ordered]@{ name = $_.Name; directory = $_.PSIsContainer } })
+      }
+      $report['uninstallState'] = [ordered]@{ directoryExists = Test-Path -LiteralPath $installDirectory; handlerRegistered = Test-Path -LiteralPath $handlerKey; remaining = $remaining }
+      if ($report.uninstallExit -ne 0 -or $report.uninstallState.directoryExists -or $report.uninstallState.handlerRegistered) { throw 'uninstall-incomplete' }
     }
     $report.cleanup = $true
   } catch { $report['cleanupError'] = $_.Exception.HResult; $report.status = 'invalid' }
