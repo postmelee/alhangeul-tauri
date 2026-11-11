@@ -1,6 +1,6 @@
 # Task #122 구현계획서 — rhwp v0.9.0 통합과 Alhangeul v0.1.3 후보 검증
 
-M010 · 2026-11-09 · Stage 3 완료 · Stage 4 후보 인계 승인 대기
+M010 · 2026-11-09 · Stage 4 후보 인계 산출물 완료 · 최종 보고 및 PR 검토
 [수행계획서](task_m010_122.md) · [GitHub 이슈 #122](https://github.com/postmelee/alhangeul-tauri/issues/122)
 
 ## 단계 개요
@@ -152,6 +152,12 @@ Windows 직접 PDF, Linux 전체 GUI·글꼴 삭제/복구, Fedora RPM 및 arm64
 - `pnpm run check:release-notes`, `git diff --check` 및 최종 커밋 후 작업 트리를 확인한다. 최종 보고 승인 후 `publish/task122`에서 `devel`로 PR을 열고 required checks를 확인한다.
 
 커밋 `Task #122 Stage 4 + 최종 보고서: Alhangeul v0.1.3 릴리즈 후보 인계`
+
+### Stage 4 승인과 인계
+
+2026-11-11 작업지시자의 “진행해줘”는 Stage 4 후보 인계·최종 보고·검토용 PR 게시에 대한 승인이다. 이미 검증한 제품과 설치 파일을 그대로 인계하고 후보 기록·릴리즈 인덱스·단계/최종 보고·오늘할일만 정리한다. 새 제품 빌드나 서명·태그·Release·Pages·updater 전환은 수행하지 않는다.
+
+[Stage 4 보고서](../working/task_m010_122_stage4.md)와 [최종 보고서](../report/task_m010_122_report.md)에 승인된 문서 위치, 설치 형식별 근거, 알려진 제한 및 공개 준비로 남기는 서명 inventory를 기록한다. `devel`은 `9f811db9fe5d282b91cbe64867eaa79870cc053d`이며 작업 브랜치의 조상이다. PR은 `publish/task122`에서 `devel`로 Open 상태로 게시하고 최종 head/merge candidate의 필수 검사 결과를 PR 본문에 연결한다. 병합은 작업지시자 승인 후 일반 merge 경로를 따른다.
 
 ## 단계 의존성과 검증
 
