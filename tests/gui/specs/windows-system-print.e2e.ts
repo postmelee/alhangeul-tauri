@@ -41,7 +41,7 @@ describe('Windows installed system print', () => {
     expect((await readFile(pdf)).subarray(0, 5).toString()).toBe('%PDF-');
     await writeFile(join(inputs.outputDir, 'system-print.json'), JSON.stringify({
       sourceSha: inputs.buildRef, producerRunId: inputs.nativeRunId, status: 'passed',
-      pdf: 'windows-system-print.pdf', expectedPages: 6, expectedText: '사업수행계획서',
+      pdf: 'windows-system-print.pdf', expectedPages: 6, expectedText: 'OO교육대학교',
       editorTitleRestored: true,
     }, null, 2));
   });

@@ -124,6 +124,12 @@ pnpm run check:release-notes
 
 NSIS·MSI·AppImage에는 일반 파일 수용을 적용하고, x64 DEB에는 기존 전체 GUI 및 글꼴 수용을 적용한다. arm64 DEB는 arm64 runner, RPM은 Fedora 데스크톱 VM에서 실제 문서 작업을 확인한다. RPM의 데스크톱 검증은 기존 VM 경로를 사용하며 컨테이너 결과로 대체하지 않는다. Windows 직접 PDF 검증도 같은 producer의 NSIS를 재사용한다. 각 실행의 실제 harness SHA와 원시 설치 결과는 Stage 3 결과에 기록한다.
 
+### 첫 추가 GUI 결과와 검증 도구 정합성
+
+새 제품의 Linux 전체 GUI `42930156329`는 성공했다. 글꼴 run `42930160784`에서 삭제 후 CSS face 0개·기존 fallback 픽셀 복귀, 복구 후 CanvasKit·localTypefaceCount 1 및 재시작 보존을 확인했다. 이후 공급 비활성화 상태의 새 창에서 CanvasKit 진단을 무조건 기대한 검사로 실패했다. v0.9.0은 Abel 프로그램이 없으면 `canvaskitResourcePreparationFailed`와 명시적인 Abel 오류를 보고하며 Canvas2D로 전환한다.
+
+일반 파일 run `42930164791`에서는 문서 roundtrip과 실제 폼·PDF Worker가 성공했다. AppImage의 공급 비활성화 Abel 성능 검사도 같은 CanvasKit 전제에서 실패했다. 예외는 해당 비활성화 fixture와 정확한 fallback 사유로 한정하고, 요청 backend와 실제 backend를 따로 기록한다. 공급 활성화 및 대표 문서는 기존 renderer 요구를 유지한다. Windows 인쇄 취소는 성공했고 출력 검증은 실제 창의 `Microsoft Print to PDF`·`Print` 조합을 찾도록 보정한다. 제품 bytes를 바꾸지 않고 같은 설치 파일로 영향받는 검증만 다시 실행한다.
+
 ## Stage 4 — 후보 인계
 
 **산출물.** 버전 기록·노트, 6종 파일과 근거를 연결한 단계·최종 보고서, 오늘할일 및 devel 대상 PR.

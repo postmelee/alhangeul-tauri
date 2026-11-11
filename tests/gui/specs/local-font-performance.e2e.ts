@@ -4,6 +4,7 @@ import { basename, join } from 'node:path';
 import { browser, $, expect } from '@wdio/globals';
 import { HwpDocument, initSync } from '../../../apps/studio-host/vendor/rhwp-core/rhwp.js';
 import { installFixtureFont, verifyFixtures } from '../local-fonts/fixture.mjs';
+import { assertFontRenderer } from '../local-fonts/renderer-contract.mjs';
 import { choose, rpc, settings, snapshot, output } from '../local-fonts/ui.ts';
 import { measureInput, measureOpen, measureScroll, prepareDocument, focusFirstFormCell, startLongTaskObservation, finishLongTaskObservation } from '../local-fonts/performance.ts';
 import { resolveDocumentFixtures } from '../support/document-fixture.ts';
@@ -107,7 +108,7 @@ async function observeDocument(document: { path: string; local: boolean; scroll:
   await startLongTaskObservation();
   const firstOpen = await measureOpen();
   const state = await snapshot(`${renderer}-${choice}-${name}`);
-  expect(state.diagnostics.effectiveBackend).toBe(renderer);
+  const rendererState = assertFontRenderer(state.diagnostics, renderer, document.local && choice === 'disabled');
   if (document.local) verifyFace(state, renderer, choice, name, fallback);
   const samples = [];
   for (let repetition = 0; repetition < 5; repetition++) {
@@ -119,5 +120,5 @@ async function observeDocument(document: { path: string; local: boolean; scroll:
     await verifyContent(name);
   }
   const longTasks = await finishLongTaskObservation();
-  observations.push({ scenario: 'editing', renderer, choice, document: name, firstOpen, samples, longTasks });
+  observations.push({ scenario: 'editing', renderer, ...rendererState, choice, document: name, firstOpen, samples, longTasks });
 }

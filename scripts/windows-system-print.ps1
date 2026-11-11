@@ -37,6 +37,14 @@ function Invoke-PrintControl($Control) {
   $pattern = $Control.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern)
   $pattern.Invoke()
 }
+function Write-PrintSaveObservation($Controls, $SubmittedHandle) {
+  $nodes = @($Controls | ForEach-Object {
+    @{ name = $_.Current.Name; id = $_.Current.AutomationId; class = $_.Current.ClassName
+       type = $_.Current.ControlType.ProgrammaticName; processId = $_.Current.ProcessId }
+  })
+  @{ status = 'waiting'; submittedHandle = $SubmittedHandle; controls = $nodes } |
+    ConvertTo-Json -Depth 8 | Set-Content -LiteralPath "$EvidencePath.save.json" -Encoding UTF8
+}
 function Save-PrintedPdf {
   if (-not [System.IO.Path]::IsPathRooted($TargetPath) -or (Test-Path -LiteralPath $TargetPath)) {
     throw 'Print verification requires a new absolute PDF path'
@@ -45,7 +53,9 @@ function Save-PrintedPdf {
   $submittedHandle = 0
   $saveProcessId = 0
   while ((Get-Date) -lt $saveDeadline) {
-    $dialogs = @(Get-PrintControls | Where-Object { $_.Current.ClassName -eq '#32770' })
+    $saveControls = @(Get-PrintControls)
+    Write-PrintSaveObservation $saveControls $submittedHandle
+    $dialogs = @($saveControls | Where-Object { $_.Current.ClassName -eq '#32770' })
     if ($submittedHandle -ne 0) {
       $remaining = @($dialogs | Where-Object { $_.Current.NativeWindowHandle -eq $submittedHandle })
       if ($remaining.Count -eq 0 -and (Test-Path -LiteralPath $TargetPath -PathType Leaf)) {
@@ -95,30 +105,24 @@ try {
       break
     }
     if ($cancel.Count -eq 1 -and $Mode -eq 'Save') {
-      $destination = @($controls | Where-Object {
-        $_.Current.ControlType -eq [System.Windows.Automation.ControlType]::ComboBox -and
-        $_.Current.Name -match 'Printer|Destination|프린터|대상'
+      $printer = @($controls | Where-Object {
+        $_.Current.ControlType -eq [System.Windows.Automation.ControlType]::Group -and
+        $_.Current.Name -in @('Printer', '프린터')
       })
-      if ($destination.Count -eq 1) {
-        $destination[0].GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern).Expand()
-        Start-Sleep -Milliseconds 250
-        $choices = @(Get-PrintControls | Where-Object { $_.Current.Name -in @('Save as PDF', 'PDF로 저장') })
-        foreach ($choice in $choices) {
-          $selection = $null
-          if ($choice.TryGetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern, [ref]$selection)) {
-            $selection.Select()
-            break
-          }
+      $pdf = @($printer | ForEach-Object { $_.FindAll($scope, $all) } | Where-Object {
+        $_.Current.Name -eq 'Microsoft Print to PDF'
+      })
+      if ($pdf.Count -eq 1) {
+        $print = @($controls | Where-Object {
+          $_.Current.ProcessId -eq $pdf[0].Current.ProcessId -and
+          $_.Current.ControlType -eq [System.Windows.Automation.ControlType]::Button -and
+          $_.Current.Name -in @('Print', '인쇄')
+        })
+        if ($print.Count -eq 1) {
+          Invoke-PrintControl $print[0]
+          Save-PrintedPdf
+          $completed = $true
         }
-      }
-      $save = @(Get-PrintControls | Where-Object {
-        $_.Current.ControlType -eq [System.Windows.Automation.ControlType]::Button -and
-        $_.Current.Name -in @('Save', '저장')
-      })
-      if ($save.Count -eq 1) {
-        Invoke-PrintControl $save[0]
-        Save-PrintedPdf
-        $completed = $true
       }
     }
     if (-not $completed) { Start-Sleep -Milliseconds 500 }

@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { browser, $, expect } from '@wdio/globals';
 import { HwpDocument, initSync } from '../../../apps/studio-host/vendor/rhwp-core/rhwp.js';
 import { installFixtureFont, verifyFixtures } from '../local-fonts/fixture.mjs';
+import { assertFontRenderer } from '../local-fonts/renderer-contract.mjs';
 import { choose, menu, output, rpc, settings, snapshot } from '../local-fonts/ui.ts';
 import { waitForInitialDesktopReady, waitForLoadedDocument } from '../support/document-ux.ts';
 import { readGuiHarnessInputs } from '../wdio.shared.conf.ts';
@@ -164,7 +165,10 @@ async function checkNewWindow(renderer: string, enabled: boolean) {
     if (enabled) assertLocalApplied(state, renderer);
     else {
       expect(state.fonts.faces.length).toBe(0);
-      if (renderer === 'canvaskit') expect(state.diagnostics.page.canvaskit?.localTypefaceCount).toBe(0);
+      assertFontRenderer(state.diagnostics, renderer, true);
+      if (state.diagnostics.effectiveBackend === 'canvaskit') {
+        expect(state.diagnostics.page.canvaskit?.localTypefaceCount).toBe(0);
+      }
     }
     observations.push({ scenario: 'new-window', renderer, enabled, parent, child, processIds: pids() });
   } finally {
