@@ -38,10 +38,15 @@ describe('Windows installed system print', () => {
         if (helper.child.exitCode === null) helper.child.kill();
       }
     }
-    expect((await readFile(pdf)).subarray(0, 5).toString()).toBe('%PDF-');
+    // Microsoft Print to PDF closes its dialog before the spooler finishes writing.
+    await browser.waitUntil(async () => {
+      const bytes = await readFile(pdf);
+      return bytes.subarray(0, 5).toString() === '%PDF-'
+        && /%%EOF\s*$/.test(bytes.subarray(-1024).toString('latin1'));
+    }, { timeout: 60000, interval: 500, timeoutMsg: 'print spooler did not finish the PDF' });
     await writeFile(join(inputs.outputDir, 'system-print.json'), JSON.stringify({
       sourceSha: inputs.buildRef, producerRunId: inputs.nativeRunId, status: 'passed',
-      pdf: 'windows-system-print.pdf', expectedPages: 6, expectedText: 'OO교육대학교',
+      pdf: 'windows-system-print.pdf', expectedPages: 6, expectedVisualText: 'OO교육대학교', textSearchVerified: false,
       editorTitleRestored: true,
     }, null, 2));
   });

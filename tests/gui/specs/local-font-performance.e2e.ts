@@ -4,7 +4,8 @@ import { basename, join } from 'node:path';
 import { browser, $, expect } from '@wdio/globals';
 import { HwpDocument, initSync } from '../../../apps/studio-host/vendor/rhwp-core/rhwp.js';
 import { installFixtureFont, verifyFixtures } from '../local-fonts/fixture.mjs';
-import { assertFontRenderer } from '../local-fonts/renderer-contract.mjs';
+import { FONT_RULE_CANVASKIT_SFNT_RULES } from '../../../third_party/rhwp/rhwp-studio/src/core/generated/font-rule-projections/canvaskit-sfnt.ts';
+import { assertFontRenderer, unavailableDeclaredFonts } from '../local-fonts/renderer-contract.mjs';
 import { choose, rpc, settings, snapshot, output } from '../local-fonts/ui.ts';
 import { measureInput, measureOpen, measureScroll, prepareDocument, focusFirstFormCell, startLongTaskObservation, finishLongTaskObservation } from '../local-fonts/performance.ts';
 import { resolveDocumentFixtures } from '../support/document-fixture.ts';
@@ -105,14 +106,16 @@ async function verifyContent(name: string) {
 async function observeDocument(document: { path: string; local: boolean; scroll: boolean },
   renderer: string, choice: string, fallback: Map<string, string>) {
   const name = basename(document.path);
-  await prepareDocument(Array.from(await readFile(document.path)), name);
+  const bytes = await readFile(document.path);
+  const unavailableFontFamilies = document.local ? [] : await inspectUnavailableFonts(bytes, choice);
+  await prepareDocument(Array.from(bytes), name);
   await startLongTaskObservation();
   const firstOpen = await measureOpen();
   const state = await snapshot(`${renderer}-${choice}-${name}`);
   const blockedFontSources = await browser.execute(() =>
     (window as Window & { __blockedFontSources?: string[] }).__blockedFontSources ?? []);
   const rendererState = assertFontRenderer(state.diagnostics, renderer, document.local && choice === 'disabled',
-    document.local ? [] : blockedFontSources);
+    document.local ? [] : blockedFontSources, unavailableFontFamilies);
   if (document.local) verifyFace(state, renderer, choice, name, fallback);
   const samples = [];
   for (let repetition = 0; repetition < 5; repetition++) {
@@ -124,7 +127,7 @@ async function observeDocument(document: { path: string; local: boolean; scroll:
     await verifyContent(name);
   }
   const longTasks = await finishLongTaskObservation();
-  observations.push({ scenario: 'editing', renderer, ...rendererState, choice, document: name, blockedFontSources, firstOpen, samples, longTasks });
+  observations.push({ scenario: 'editing', renderer, ...rendererState, choice, document: name, blockedFontSources, unavailableFontFamilies, firstOpen, samples, longTasks });
 }
 
 // Observe the installed product's existing enforced policy; do not relax CSP or inject fonts.
@@ -139,4 +142,19 @@ async function observeBlockedFonts() {
       }
     });
   });
+}
+
+async function inspectUnavailableFonts(bytes: Uint8Array, choice: string): Promise<string[]> {
+  const localNames = choice === 'disabled' ? [] : await browser.execute(async () => {
+    const host = window as unknown as { __TAURI_INTERNALS__: { invoke: (command: string) => Promise<{
+      family: string; fullName?: string; postScriptName: string; aliases?: string[];
+    }[]> } };
+    const entries = await host.__TAURI_INTERNALS__.invoke('list_local_fonts');
+    return entries.flatMap(entry => [entry.family, entry.fullName ?? '', entry.postScriptName, ...entry.aliases ?? []]);
+  });
+  const doc = new HwpDocument(bytes);
+  try {
+    return unavailableDeclaredFonts(JSON.parse(doc.getDocumentFontSelectionPlan()),
+      JSON.stringify(FONT_RULE_CANVASKIT_SFNT_RULES), localNames);
+  } finally { doc.free(); }
 }

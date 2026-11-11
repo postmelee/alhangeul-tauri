@@ -136,6 +136,8 @@ NSIS·MSI·AppImage에는 일반 파일 수용을 적용하고, x64 DEB에는 �
 
 Windows는 `Save Print Output As` 창까지 진입했으나 파일명 입력 ID를 Open 대화상자의 `1148`로 찾고 있었다. 두 설치본의 관찰은 파일명 `Edit/1001`과 주소 막대 `ToolbarWindow32/1001`을 구분한다. 정확한 ID와 class를 함께 선택하고 기존 native 소유 PID·자식 HWND·class 검사와 저장 후 파일 확인을 유지한다. 같은 파일로 영향받은 일반 설치 수용을 다시 실행한다.
 
+`42934573187`에서 Windows의 PDF 저장은 완료됐으나 스풀러가 출력 중인 빈 파일을 검사가 먼저 읽었다. 업로드 시점에는 정상 PDF 헤더가 있는 1,352,883바이트 파일을 확인했다. 새 파일의 PDF 헤더와 끝 표시(`%%EOF`)를 기다리도록 보정한다. AppImage의 HWP는 enforced CSP 대조를 통과했고 HWPX에서는 미설치 `한양신명조`로 전환했다. 고정 fixture의 WASM 선언 요구·embedded family, 고정 upstream supply registry, 공급 활성화 시 native catalog의 이름·별칭을 독립 대조해 실제 공급 경로가 없는 글꼴만 전환 근거로 인정한다. 대표 문서의 요청·실제 backend를 계속 분리하고 활성 Abel의 CanvasKit 적용 검사는 유지한다.
+
 ## Stage 4 — 후보 인계
 
 **산출물.** 버전 기록·노트, 6종 파일과 근거를 연결한 단계·최종 보고서, 오늘할일 및 devel 대상 PR.
