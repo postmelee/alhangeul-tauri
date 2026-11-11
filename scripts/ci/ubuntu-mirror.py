@@ -7,8 +7,8 @@ import sys
 import tempfile
 
 MIRRORS = {
-    "amd64": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu",
-    "arm64": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports",
+    "amd64": ("https://mirrors.edge.kernel.org/ubuntu", "https://mirrors.tuna.tsinghua.edu.cn/ubuntu"),
+    "arm64": ("https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports",),
 }
 HOSTS = {
     "amd64": ("azure.archive.ubuntu.com", "archive.ubuntu.com", "security.ubuntu.com"),
@@ -16,8 +16,8 @@ HOSTS = {
 }
 
 
-def rewrite_source(source, architecture):
-    mirror = MIRRORS[architecture]
+def rewrite_source(source, architecture, mirror=None):
+    mirror = mirror or MIRRORS[architecture][0]
     hosts = "|".join(re.escape(host) for host in HOSTS[architecture])
     archive = "ubuntu" if architecture == "amd64" else "ubuntu-ports"
     return re.sub(r"https?://(?:" + hosts + r")/" + archive + r"(?=[/\s]|$)", mirror, source)
@@ -38,7 +38,7 @@ def resolves(host):
         return False
 
 
-def verify_mirror(architecture, codename):
+def verify_mirror(mirror, codename):
     # Use the runner image's existing Ubuntu archive trust root, never a key from the mirror.
     keyring = Path("/usr/share/keyrings/ubuntu-archive-keyring.gpg")
     if not keyring.is_file():
@@ -46,11 +46,24 @@ def verify_mirror(architecture, codename):
     with tempfile.TemporaryDirectory(prefix="alhangeul-apt-") as root:
         for suite in (codename, codename + "-updates", codename + "-security"):
             target = str(Path(root) / suite)
-            url = MIRRORS[architecture] + "/dists/" + suite + "/InRelease"
+            url = mirror + "/dists/" + suite + "/InRelease"
             subprocess.run(["curl", "--fail", "--silent", "--show-error", "--location",
                             "--proto", "=https", "--proto-redir", "=https", "--max-time", "30",
                             "--output", target, url], check=True)
             subprocess.run(["gpgv", "--keyring", str(keyring), target], check=True)
+
+
+def choose_verified_mirror(architecture, codename, verify=verify_mirror):
+    for mirror in MIRRORS[architecture]:
+        try:
+            verify(mirror, codename)
+            return mirror
+        except subprocess.CalledProcessError as error:
+            # A network failure may try the next HTTPS mirror. A bad signature stops immediately.
+            if error.cmd[0] != "curl":
+                raise
+            print("HTTPS mirror fetch failed: " + mirror, flush=True)
+    raise RuntimeError("no-authenticated-ubuntu-mirror-available")
 
 
 def main():
@@ -77,13 +90,13 @@ def main():
             before = path.read_text()
             after = rewrite_source(before, architecture)
             if before != after:
-                changes.append((path, after))
+                changes.append((path, before))
     if not changes:
         print("No affected Ubuntu source URLs; existing sources preserved.")
         return
-    verify_mirror(architecture, release["VERSION_CODENAME"])
-    for path, after in changes:
-        path.write_text(after)
+    mirror = choose_verified_mirror(architecture, release["VERSION_CODENAME"])
+    for path, before in changes:
+        path.write_text(rewrite_source(before, architecture, mirror))
     print("Verified Ubuntu-signed HTTPS fallback applied to " + str(len(changes)) + " CI source files.")
 
 

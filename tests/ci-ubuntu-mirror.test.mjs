@@ -19,9 +19,9 @@ test('rewrites only exact affected archive URLs, preserving apt trust and third-
     + 'deb https://packages.microsoft.com/ubuntu/22.04/prod jammy main\n'
     + 'deb https://archive.ubuntu.com.example/ubuntu jammy main\n';
   const result = run('print(m.rewrite_source(value,"amd64"),end="")', before);
-  assert.equal(result, before.replaceAll('http://azure.archive.ubuntu.com/ubuntu', 'https://mirrors.tuna.tsinghua.edu.cn/ubuntu')
-    .replaceAll('https://archive.ubuntu.com/ubuntu', 'https://mirrors.tuna.tsinghua.edu.cn/ubuntu')
-    .replaceAll('https://security.ubuntu.com/ubuntu', 'https://mirrors.tuna.tsinghua.edu.cn/ubuntu'));
+  assert.equal(result, before.replaceAll('http://azure.archive.ubuntu.com/ubuntu', 'https://mirrors.edge.kernel.org/ubuntu')
+    .replaceAll('https://archive.ubuntu.com/ubuntu', 'https://mirrors.edge.kernel.org/ubuntu')
+    .replaceAll('https://security.ubuntu.com/ubuntu', 'https://mirrors.edge.kernel.org/ubuntu'));
 });
 test('arm64 fallback targets ports and does not rewrite x64 archives', () => {
   const before = 'URIs: http://ports.ubuntu.com/ubuntu-ports/\nURIs: https://archive.ubuntu.com/ubuntu\n';
@@ -38,8 +38,23 @@ test('rejects non-hosted, non-Ubuntu and unsupported runner environments', () =>
 });
 test('fallback authenticates every suite before applying sources and retains normal apt verification', () => {
   const source = readFileSync(modulePath, 'utf8');
-  assert.ok(source.indexOf('verify_mirror(architecture, release[') < source.indexOf('path.write_text(after)'));
+  assert.ok(source.indexOf('mirror = choose_verified_mirror(architecture, release[') < source.indexOf('path.write_text(rewrite_source('));
   assert.match(source, /codename \+ "-updates", codename \+ "-security"/);
   assert.match(source, /\["gpgv", "--keyring", str\(keyring\), target\], check=True/);
   assert.doesNotMatch(source, /trusted=yes|allow-unauthenticated|AllowInsecure|--insecure/);
+});
+
+test('network failures use the next authenticated mirror; signature errors stop immediately', () => {
+  const code = `calls=[]
+def verify(mirror,codename):
+ calls.append(mirror)
+ if len(calls)==1 or value=="all-network": raise m.subprocess.CalledProcessError(22 if value!="signature" else 1,["gpgv" if value=="signature" else "curl"])
+try:
+ selected=m.choose_verified_mirror("amd64","jammy",verify)
+ print(json.dumps({"selected":selected,"calls":len(calls)}))
+except (m.subprocess.CalledProcessError,RuntimeError): print(json.dumps({"failed":True,"calls":len(calls)}))`;
+  const last = value => JSON.parse(run(code, value).trim().split('\n').at(-1));
+  assert.deepEqual(last('network'), { selected: 'https://mirrors.tuna.tsinghua.edu.cn/ubuntu', calls: 2 });
+  assert.deepEqual(last('all-network'), { failed: true, calls: 2 });
+  assert.deepEqual(last('signature'), { failed: true, calls: 1 });
 });

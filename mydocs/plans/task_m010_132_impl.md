@@ -258,3 +258,16 @@ TUNA 대학 미러의 해당 archive/ports InRelease가 HTTP 200인 것을 확�
 보존하며 apt의 서명·유효기간 검사를 그대로 유지한다. 외부에서 새 신뢰 키를 받지 않는다.
 DNS가 정상이면 source를 바꾸지 않는다. 제품·릴리즈 파일이나 이 Mac의 DNS/apt 설정을
 변경하지 않는다. 실패 시 닫히는 guard와 URI 변환·서명 선행 순서를 회귀 검사한다.
+
+### Linux 미러의 지역별 접근 실패 보정
+
+run 43056867702의 x64 제품 job 130651397704는 TUNA InRelease 요청에 HTTP 403을 받아
+source를 변경하기 전에 실패했다. 같은 run의 x64/arm64 core는 기존 Ubuntu keyring의
+서명 세 개와 apt 설치를 통과했다. 이 차이를 제품 실패나 전체 성공으로 처리하지 않는다.
+amd64는 [Linux Kernel Archives 미러](https://mirrors.edge.kernel.org/)를 먼저 사용하고,
+HTTPS fetch 실패에만 다음 고정 미러를 시도한다. 서명 실패는 즉시 중단한다.
+모든 후보가 실패하면 원래 source를 유지한 채 실패하며 임의 URL·새 key·검증 생략은 허용하지 않는다.
+
+첫 Windows 후보 a647bcc9의 표준 사용자 job 130660728668은 24개 probe와 제품 자체 제거를
+통과했다. 문서 bitmap 12개는 모두 181×256, JPG 4개는 256×134이고 추가 잔여물 삭제는 없었다.
+이 증거는 초기 후보에만 해당하며 최신 후보의 장기 잠금·공개본 수동 재설치를 대체하지 않는다.
