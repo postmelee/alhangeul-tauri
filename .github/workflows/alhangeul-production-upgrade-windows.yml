@@ -64,7 +64,7 @@ jobs:
         run: >-
           ./scripts/updater/windows-native-acceptance.ps1 -Phase Install
           -Kind $env:ALHANGEUL_PRODUCTION_KIND -ArtifactRoot (Join-Path $env:EVIDENCE_ROOT 'n')
-          -OutputDirectory $env:EVIDENCE_ROOT -ExpectedVersion '0.1.1'
+          -OutputDirectory $env:EVIDENCE_ROOT -ExpectedVersion '0.1.2'
       - name: Apply production upgrade through app UI
         id: apply
         continue-on-error: true

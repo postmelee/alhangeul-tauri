@@ -82,3 +82,14 @@ test('Windows incomplete apply evidence stops before ten-minute installer wait',
   assert.ok(steps[gate].run.includes('if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }'));
   assert.notEqual(steps[validate].if, '${{ always() }}');
 });
+
+
+test('Windows initial install and final validation match the selected public release tuple', async () => {
+  const job = windows.jobs.windows;
+  assert.equal(job.env.ALHANGEUL_PRODUCTION_INPUTS, linux.jobs.linux.env.ALHANGEUL_PRODUCTION_INPUTS);
+  const spec = JSON.parse(await readFile(new URL(`../${job.env.ALHANGEUL_PRODUCTION_INPUTS}`, import.meta.url)));
+  const install = job.steps.find(step => step.run?.includes('windows-native-acceptance.ps1 -Phase Install'));
+  const validate = job.steps.find(step => step.id === 'validate');
+  assert.ok(install.run.includes(`-ExpectedVersion '${spec.releases.n.version}'`));
+  assert.ok(validate.run.includes(`-ExpectedVersion '${spec.releases.next.version}'`));
+});
