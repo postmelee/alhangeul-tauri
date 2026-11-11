@@ -50,7 +50,7 @@ test('Windows driver close is provisional until install and document evidence pa
   const steps = windows.jobs.windows.steps;
   assert.equal(steps.find(s => s.id === 'apply')['continue-on-error'], true);
   const validate = steps.find(s => s.id === 'validate');
-  assert.ok(validate.run.includes('-ExpectedVersion \'0.1.2\''));
+  assert.ok(validate.run.includes('-ExpectedVersion \'0.1.3\''));
   assert.ok(steps.some(s => s.run?.includes('production-upgrade.mjs finalize')));
   assert.ok(steps.some(s => s.id === 'cleanup' && s.if === '${{ always() }}'));
   assert.ok(steps.some(s => s.id === 'restore' && s.if === '${{ always() }}'));
@@ -81,4 +81,15 @@ test('Windows incomplete apply evidence stops before ten-minute installer wait',
   assert.notEqual(steps[gate]['continue-on-error'], true);
   assert.ok(steps[gate].run.includes('if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }'));
   assert.notEqual(steps[validate].if, '${{ always() }}');
+});
+
+
+test('Windows initial install and final validation match the selected public release tuple', async () => {
+  const job = windows.jobs.windows;
+  assert.equal(job.env.ALHANGEUL_PRODUCTION_INPUTS, linux.jobs.linux.env.ALHANGEUL_PRODUCTION_INPUTS);
+  const spec = JSON.parse(await readFile(new URL(`../${job.env.ALHANGEUL_PRODUCTION_INPUTS}`, import.meta.url)));
+  const install = job.steps.find(step => step.run?.includes('windows-native-acceptance.ps1 -Phase Install'));
+  const validate = job.steps.find(step => step.id === 'validate');
+  assert.ok(install.run.includes(`-ExpectedVersion '${spec.releases.n.version}'`));
+  assert.ok(validate.run.includes(`-ExpectedVersion '${spec.releases.next.version}'`));
 });

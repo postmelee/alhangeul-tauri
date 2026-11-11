@@ -12,10 +12,11 @@ const ENDPOINT = 'https://postmelee.github.io/alhangeul-tauri/updater/stable.jso
 const SOURCES_BY_MANIFEST = {
   [MANIFEST_HASH]: { n: ['0.1.0', 399698591, 'fc3cad15682f35723ab6558d1301e9096f7eec67'], next: ['0.1.1', 402604603, '96e89e900415ee9e1e942b5c01c833dea3415e86'] },
   '58ca348b234945e8330911ec6f77ba1c3af5ac6b5e05db8a585a29e55a107ad3': { n: ['0.1.1', 402604603, '96e89e900415ee9e1e942b5c01c833dea3415e86'], next: ['0.1.2', 407055948, '6dcb05e96ec2075d09d8a60160e1d82f08c0811b'] },
+  '91874d92fd583f6b9985fbc15ab844be33ccdd1b11041a3321ef2b6762381e52': { n: ['0.1.2', 407055948, '6dcb05e96ec2075d09d8a60160e1d82f08c0811b'], next: ['0.1.3', 441647361, 'bcb892d49a9003615f3acd980babd71e59e147dd'] },
 };
 
 export function productionInputsPath(root, value = process.env.ALHANGEUL_PRODUCTION_INPUTS ?? 'tests/gui/production-upgrade-inputs.json') {
-  assert.ok(['tests/gui/production-upgrade-inputs.json', 'tests/gui/production-upgrade-v0.1.2-inputs.json'].includes(value), 'approved production input path');
+  assert.ok(['tests/gui/production-upgrade-inputs.json', 'tests/gui/production-upgrade-v0.1.2-inputs.json', 'tests/gui/production-upgrade-v0.1.3-inputs.json'].includes(value), 'approved production input path');
   return join(root, value);
 }
 
