@@ -181,3 +181,21 @@ run 43042356555도 전체 failure다. 표준 사용자 썸네일 6개 성공과 
 Explorer/dllhost를 강제 종료하지 않는다. 원시 실패와 시험 환경 정리를 분리한다.
 반복 checkout 비용을 줄이기 위해 관측 job은 upstream 전체 submodule 대신 고정 rhwp SHA의
 공개 fixture 4개만 받아 각각의 기존 hash를 대조한다. fast의 submodule 검증은 유지한다.
+
+## Stage 2 확정 — NSIS 처리기 삭제 재시도와 지원 환경 기능 gate
+
+Stage 1은 43044745096에서 관측·시험 환경 정리를 수용했다. 실제 기존 제품 제거 실패는 유지한다.
+표준 사용자에서 Shell 사용 직후 NSIS가 처리기 DLL을 남기고, 30초 뒤 같은 파일 삭제는 성공했다.
+고정 Tauri CLI 2.10.1 installer template은 resource Delete를 한 번 수행하고 재시도하지 않는다.
+
+- windows/thumbnail-cleanup.nsh를 분리해 최대 60초의 제한된 대기/재시도를 구현한다.
+- 새 설치기 PREINSTALL에서는 기존 처리기 파일이 있을 때 수정 가능한 상태인지 기다린다.
+  기존 파일 내용을 바꾸지 않고 append open/close만 시도하며 timeout은 실패로 종료한다.
+- POSTUNINSTALL은 처리기 DLL 하나의 삭제를 재시도하고 빈 설치 폴더만 제거한다.
+  실패하면 0으로 숨기지 않으며 Explorer/dllhost 종료, 전역 캐시 삭제, 재부팅 예약은 하지 않는다.
+- 공개 v0.1.3에서 새 같은 버전 installer로 수동 재설치, 새 후보 반복 재설치와 제거를 검증한다.
+- 새 Windows bundle을 기존 provenance/inventory로 확인한 뒤 표준 사용자에서 실제 bitmap과
+  productUninstallPassed=true를 요구하는 기능 gate를 추가한다. 시험용 잔여물 삭제로 대체하지 않는다.
+- 기존 관리자 MSI strict-product와 관리자 NSIS limitation 관측을 유지하며 서로 대체하지 않는다.
+- 제품 변경은 Windows installer hook뿐이다. Rust renderer/등록 scope/upstream은 그대로다.
+- Windows package 후보를 먼저 실행하고 최종 CI 변경 범위 검증은 CI_VALIDATION 기준으로 확정한다.
