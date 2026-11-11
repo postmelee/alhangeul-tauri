@@ -20,7 +20,7 @@ export function readUpgradeInputs(env = process.env): UpgradeInputs {
   }
   const root = absolute('ALHANGEUL_PRODUCTION_ROOT');
   const inputPath = env.ALHANGEUL_PRODUCTION_INPUTS ?? 'tests/gui/production-upgrade-inputs.json';
-  if (!['tests/gui/production-upgrade-inputs.json', 'tests/gui/production-upgrade-v0.1.2-inputs.json'].includes(inputPath)) throw new Error('Invalid production input path');
+  if (!['tests/gui/production-upgrade-inputs.json', 'tests/gui/production-upgrade-v0.1.2-inputs.json', 'tests/gui/production-upgrade-v0.1.3-inputs.json'].includes(inputPath)) throw new Error('Invalid production input path');
   const spec = JSON.parse(readFileSync(join(root, inputPath), 'utf8'));
   return { kind: kind as UpgradeInputs['kind'], phase: phase as UpgradeInputs['phase'], root,
     appPath: absolute('ALHANGEUL_PRODUCTION_APP'), driverPath: absolute('ALHANGEUL_PRODUCTION_DRIVER'),
