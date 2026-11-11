@@ -11,7 +11,7 @@ test('disabled Abel records the real Canvas2D fallback separately from the reque
     backendFallbackReason: 'canvaskitResourcePreparationFailed',
   });
 });
-test('enabled font and representative documents must keep the requested renderer', () => {
+test('enabled Abel and unproven fallback must keep the requested renderer', () => {
   assert.throws(() => assertFontRenderer(absent, 'canvaskit'), /unexpected renderer fallback/);
   assert.deepEqual(assertFontRenderer({ effectiveBackend: 'canvaskit', backendFallbackReason: null }, 'canvaskit'), {
     requestedBackend: 'canvaskit', effectiveBackend: 'canvaskit', backendFallbackReason: null,
@@ -24,4 +24,13 @@ test('disabled-font exception refuses unrelated or undocumented fallback', () =>
     { page: { canvaskit: { localTypefaceCount: 1 } } },
     { effectiveBackend: 'unknown' },
   ]) assert.throws(() => assertFontRenderer({ ...absent, ...changed }, 'canvaskit', true));
+});
+
+test('remote font fallback requires an independently observed enforced CSP block', () => {
+  const url = 'https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_four@1.0/HCRDotum.woff';
+  const blocked = { ...absent, selection: { selectionError: `CanvasKit font source 준비 실패 (${url}): TypeError: Load failed` } };
+  assert.equal(assertFontRenderer(blocked, 'canvaskit', false, [url]).effectiveBackend, 'canvas2d');
+  assert.throws(() => assertFontRenderer(blocked, 'canvaskit', false), /unexpected renderer fallback/);
+  assert.throws(() => assertFontRenderer(blocked, 'canvaskit', false, ['https://unrelated.example/font.woff']));
+  assert.throws(() => assertFontRenderer(absent, 'canvaskit', false, [url]));
 });

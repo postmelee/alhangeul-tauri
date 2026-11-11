@@ -130,6 +130,12 @@ NSIS·MSI·AppImage에는 일반 파일 수용을 적용하고, x64 DEB에는 �
 
 일반 파일 run `42930164791`에서는 문서 roundtrip과 실제 폼·PDF Worker가 성공했다. AppImage의 공급 비활성화 Abel 성능 검사도 같은 CanvasKit 전제에서 실패했다. 예외는 해당 비활성화 fixture와 정확한 fallback 사유로 한정하고, 요청 backend와 실제 backend를 따로 기록한다. 공급 활성화 및 대표 문서는 기존 renderer 요구를 유지한다. Windows 인쇄 취소는 성공했고 출력 검증은 실제 창의 `Microsoft Print to PDF`·`Print` 조합을 찾도록 보정한다. 제품 bytes를 바꾸지 않고 같은 설치 파일로 영향받는 검증만 다시 실행한다.
 
+### 실제 보안 정책과 인쇄 파일명 컨트롤 관찰
+
+보정 후 `42932035740`의 글꼴 삭제·복구·새 창·재시작은 모두 통과했고 Fedora RPM VM `42932221022`도 성공했다. 일반 설치본 재검사 `42932488095`에서 AppImage 대표 문서는 고정된 CSP가 차단하는 HCRDotum 외부 글꼴 요청으로 Canvas2D로 전환했다. 대표 문서의 전환은 실제 브라우저의 enforced `connect-src` 위반 주소와 upstream 진단의 실패 URL이 일치할 때만 별도 수용한다. 이를 CanvasKit 실행 성공으로 집계하지 않으며, 활성 Abel fixture의 CanvasKit 요구는 유지한다. CSP나 제품 파일은 바꾸지 않는다.
+
+Windows는 `Save Print Output As` 창까지 진입했으나 파일명 입력 ID를 Open 대화상자의 `1148`로 찾고 있었다. 두 설치본의 관찰은 파일명 `Edit/1001`과 주소 막대 `ToolbarWindow32/1001`을 구분한다. 정확한 ID와 class를 함께 선택하고 기존 native 소유 PID·자식 HWND·class 검사와 저장 후 파일 확인을 유지한다. 같은 파일로 영향받은 일반 설치 수용을 다시 실행한다.
+
 ## Stage 4 — 후보 인계
 
 **산출물.** 버전 기록·노트, 6종 파일과 근거를 연결한 단계·최종 보고서, 오늘할일 및 devel 대상 PR.

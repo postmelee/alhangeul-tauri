@@ -59,6 +59,7 @@ describe('Installed local font performance', () => {
       for (const choice of ['disabled', 'enabled'] as const) {
         await browser.url(`${origin}?renderer=${renderer}&canvaskitSurface=software`);
         await waitForInitialDesktopReady(browser, inputs.timeoutMs);
+        await observeBlockedFonts();
         await settings();
         const detectionStart = Date.now();
         await choose(choice);
@@ -108,7 +109,10 @@ async function observeDocument(document: { path: string; local: boolean; scroll:
   await startLongTaskObservation();
   const firstOpen = await measureOpen();
   const state = await snapshot(`${renderer}-${choice}-${name}`);
-  const rendererState = assertFontRenderer(state.diagnostics, renderer, document.local && choice === 'disabled');
+  const blockedFontSources = await browser.execute(() =>
+    (window as Window & { __blockedFontSources?: string[] }).__blockedFontSources ?? []);
+  const rendererState = assertFontRenderer(state.diagnostics, renderer, document.local && choice === 'disabled',
+    document.local ? [] : blockedFontSources);
   if (document.local) verifyFace(state, renderer, choice, name, fallback);
   const samples = [];
   for (let repetition = 0; repetition < 5; repetition++) {
@@ -120,5 +124,19 @@ async function observeDocument(document: { path: string; local: boolean; scroll:
     await verifyContent(name);
   }
   const longTasks = await finishLongTaskObservation();
-  observations.push({ scenario: 'editing', renderer, ...rendererState, choice, document: name, firstOpen, samples, longTasks });
+  observations.push({ scenario: 'editing', renderer, ...rendererState, choice, document: name, blockedFontSources, firstOpen, samples, longTasks });
+}
+
+// Observe the installed product's existing enforced policy; do not relax CSP or inject fonts.
+async function observeBlockedFonts() {
+  await browser.execute(() => {
+    const state = window as Window & { __blockedFontSources?: string[] };
+    state.__blockedFontSources = [];
+    document.addEventListener('securitypolicyviolation', event => {
+      if (event.disposition === 'enforce' && event.effectiveDirective === 'connect-src'
+        && event.blockedURI.startsWith('https://') && !state.__blockedFontSources!.includes(event.blockedURI)) {
+        state.__blockedFontSources!.push(event.blockedURI);
+      }
+    });
+  });
 }

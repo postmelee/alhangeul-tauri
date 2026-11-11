@@ -5,5 +5,5 @@ interface FontRendererDiagnostics {
   page: { canvaskit: unknown | null };
 }
 export function assertFontRenderer(
-  diagnostics: FontRendererDiagnostics, requested: string, allowMissingAbel?: boolean,
+  diagnostics: FontRendererDiagnostics, requested: string, allowMissingAbel?: boolean, blockedFontSources?: string[],
 ): { requestedBackend: string; effectiveBackend: string; backendFallbackReason: string | null };

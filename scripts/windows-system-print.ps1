@@ -65,8 +65,11 @@ function Save-PrintedPdf {
       }
     } elseif ($dialogs.Count -eq 1) {
       $dialog = $dialogs[0]
-      $condition = [System.Windows.Automation.PropertyCondition]::new(
-        [System.Windows.Automation.AutomationElement]::AutomationIdProperty, '1148')
+      $condition = [System.Windows.Automation.AndCondition]::new(
+        [System.Windows.Automation.PropertyCondition]::new(
+          [System.Windows.Automation.AutomationElement]::AutomationIdProperty, '1001'),
+        [System.Windows.Automation.PropertyCondition]::new(
+          [System.Windows.Automation.AutomationElement]::ClassNameProperty, 'Edit'))
       $field = $dialog.FindFirst($scope, $condition)
       $saveProcessId = $dialog.Current.ProcessId
       $button = Find-PdfNativeButton $dialog '1' $saveProcessId
