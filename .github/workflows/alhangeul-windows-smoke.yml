@@ -16,6 +16,9 @@ on:
       support_artifact_id:
         type: string
         required: true
+      thumbnail_same_version_upgrade:
+        type: boolean
+        default: false
       thumbnail_context_experiment:
         type: boolean
         default: false
@@ -365,10 +368,12 @@ jobs:
         shell: powershell
         run: node scripts/windows-thumbnail-user-acceptance.mjs diagnostics/thumbnail-user-context $env:EXPECTED_SOURCE_SHA
       - name: Verify public same-version manual upgrade
+        if: ${{ inputs.thumbnail_same_version_upgrade }}
         id: upgrade
         shell: powershell
         run: ./scripts/windows-thumbnail-user-context.ps1 -Context standard -ArtifactRoot artifacts/windows-x64 -ExpectedSourceSha $env:EXPECTED_SOURCE_SHA -Scenario public-upgrade -CIConsent
       - name: Evaluate same-version upgrade evidence
+        if: ${{ inputs.thumbnail_same_version_upgrade }}
         id: upgrade-evaluate
         shell: powershell
         run: node scripts/windows-thumbnail-user-acceptance.mjs diagnostics/thumbnail-user-upgrade $env:EXPECTED_SOURCE_SHA
@@ -385,13 +390,17 @@ jobs:
         if: ${{ always() }}
         shell: powershell
         env:
+          UPGRADE_REQUIRED: ${{ inputs.thumbnail_same_version_upgrade }}
           UPGRADE_OUTCOME: ${{ steps.upgrade.outcome }}
           UPGRADE_EVALUATE_OUTCOME: ${{ steps.upgrade-evaluate.outcome }}
           PROBE_OUTCOME: ${{ steps.probe.outcome }}
           EVALUATE_OUTCOME: ${{ steps.evaluate.outcome }}
           UPLOAD_OUTCOME: ${{ steps.upload.outcome }}
         run: |
-          if ($env:UPGRADE_OUTCOME -cne 'success' -or $env:UPGRADE_EVALUATE_OUTCOME -cne 'success' -or $env:PROBE_OUTCOME -cne 'success' -or $env:EVALUATE_OUTCOME -cne 'success' -or $env:UPLOAD_OUTCOME -cne 'success') {
+          if ($env:UPGRADE_REQUIRED -ceq 'true' -and ($env:UPGRADE_OUTCOME -cne 'success' -or $env:UPGRADE_EVALUATE_OUTCOME -cne 'success')) {
+            throw 'Requested same-version upgrade was not accepted.'
+          }
+          if ($env:PROBE_OUTCOME -cne 'success' -or $env:EVALUATE_OUTCOME -cne 'success' -or $env:UPLOAD_OUTCOME -cne 'success') {
             throw 'Standard user product acceptance or evidence delivery failed.'
           }
 
@@ -423,5 +432,6 @@ jobs:
         id: status
         env:
           MATRIX_RESULT: ${{ needs.windows-installer-smoke.result }}
+          SAME_VERSION_UPGRADE: ${{ inputs.thumbnail_same_version_upgrade }}
           STANDARD_USER_RESULT: ${{ needs.windows-standard-user.result }}
         run: node scripts/ci/installer-status.mjs

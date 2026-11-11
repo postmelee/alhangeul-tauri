@@ -8,9 +8,9 @@ export const STANDARD_USER_JOB = Object.freeze({ name: 'nsis-standard-user', con
   jobName: 'NSIS standard user thumbnails and lifecycle', requiredSteps: [
     'Checkout standard user source', 'Prepare Node for standard user evidence', 'Download standard user bundle',
     'Verify standard user install thumbnails and lifecycle', 'Evaluate standard user product evidence',
-    'Verify public same-version manual upgrade', 'Evaluate same-version upgrade evidence',
     'Upload standard user evidence', 'Require standard user acceptance',
   ] });
+export const SAME_VERSION_UPGRADE_STEPS = Object.freeze(['Verify public same-version manual upgrade', 'Evaluate same-version upgrade evidence']);
 const clsid = '{C1DCF316-0771-49DD-BFEA-C85F69B1674B}';
 export function evaluateStandardUser(input, driver, report, expectedSha) {
   need(input?.schemaVersion === 1 && input.mode === 'fresh-standard-acceptance'

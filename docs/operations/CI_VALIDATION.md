@@ -215,3 +215,9 @@ cache miss 재실행은 cold 결과로 분류한다. hit여도 필요한 workspa
 보고서에는 attempt 번호와 해당 job URL을 고정해 다음 재실행이 과거 근거를 혼동시키지 않게 한다.
 
 GitHub의 [reusable workflow 계약](https://docs.github.com/en/actions/how-tos/reuse-automations/reuse-workflows)과 [cache 전략](https://github.com/actions/cache/blob/main/caching-strategies.md)을 따른다. 같은 저장소의 상대 workflow 호출은 caller commit의 정의를 사용하며 checkout source와 별도로 기록한다.
+
+같은 버전 공개본에서 후보로의 수동 재설치는 `ci.yml`의
+`thumbnail_same_version_upgrade=true`로 명시적으로 선택한다(`windows-package` 또는 `full`).
+이 옵션을 선택하면 고정된 최초 v0.1.3 설치 파일·해시와 수동 재설치 증거가 필수이며,
+파일 변경·누락·검사 생략은 실패다. 일반 CI는 이 역사적 공개 파일에 의존하지 않는다.
+재릴리즈 후 다른 bytes를 최초 공개본으로 간주하지 않으며 원본 보관과 재검증 입력은 별도 확정한다.

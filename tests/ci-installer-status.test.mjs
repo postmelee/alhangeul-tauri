@@ -1,4 +1,4 @@
-import { STANDARD_USER_JOB } from '../scripts/windows-thumbnail-user-acceptance.mjs';
+import { STANDARD_USER_JOB, SAME_VERSION_UPGRADE_STEPS } from '../scripts/windows-thumbnail-user-acceptance.mjs';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
@@ -106,4 +106,16 @@ test('standard-user job and every required step are mandatory in status aggregat
   }
   const f = deliveryFixture(); f.jobs = f.jobs.filter(row => row.name !== STANDARD_USER_JOB.jobName);
   await assert.rejects(verifyInstallerStatus(f.request, f));
+});
+
+test('explicit same-version acceptance cannot silently skip its historical-baseline steps', async () => {
+  const f = deliveryFixture();
+  await assert.rejects(verifyInstallerStatus(f.request, f, true));
+  const job = f.jobs.find(row => row.name === STANDARD_USER_JOB.jobName);
+  job.steps.push(...SAME_VERSION_UPGRADE_STEPS.map(name => ({ name, status: 'completed', conclusion: 'success' })));
+  assert.equal((await verifyInstallerStatus(f.request, f, true)).contractStatus, 'passed');
+  for (const name of SAME_VERSION_UPGRADE_STEPS) for (const state of ['failure', 'skipped', 'cancelled']) {
+    const step = job.steps.find(row => row.name === name); step.conclusion = state;
+    await assert.rejects(verifyInstallerStatus(f.request, f, true)); step.conclusion = 'success';
+  }
 });

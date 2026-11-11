@@ -1,4 +1,4 @@
-import { STANDARD_USER_JOB } from '../windows-thumbnail-user-acceptance.mjs';
+import { STANDARD_USER_JOB, SAME_VERSION_UPGRADE_STEPS } from '../windows-thumbnail-user-acceptance.mjs';
 import { appendFile, readFile } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 import { resolve } from 'node:path';
@@ -10,12 +10,13 @@ import { createGitHubApiClient } from '../github-api.mjs';
 
 // Status-only gate. Raw results are verified by each scenario's evaluator, not
 // replayed here. A green gate never grants product or release acceptance.
-export async function verifyInstallerStatus(request, services = {}) {
+export async function verifyInstallerStatus(request, services = {}, sameVersionUpgrade = false) {
   const api = services.fetchJson ?? createGitHubApiClient({ token: process.env.GITHUB_TOKEN });
   const { identity } = await resolveOrdinaryProduct(request, { fetchJson: api });
   const base = `/repos/${identity.repository}/actions/runs/${identity.runId}`;
   const jobs = await listEvidencePages(api, `${base}/attempts/${identity.runAttempt}/jobs`, 'jobs');
-  const selectedScenarios = [...DELIVERY, STANDARD_USER_JOB];
+  const standard = sameVersionUpgrade ? { ...STANDARD_USER_JOB, requiredSteps: [...STANDARD_USER_JOB.requiredSteps, ...SAME_VERSION_UPGRADE_STEPS] } : STANDARD_USER_JOB;
+  const selectedScenarios = [...DELIVERY, standard];
   const scenarios = selectedScenarios.map(selected => {
     verifyScenarioJob(jobs, selected, identity);
     const job = jobs.find(row => row.name === selected.jobName || row.name?.endsWith(` / ${selected.jobName}`));
@@ -45,7 +46,7 @@ async function main(env) {
     const product = JSON.parse(await readFile('package.json', 'utf8'));
     result = await verifyInstallerStatus({ repository: env.GITHUB_REPOSITORY, runId: env.GITHUB_RUN_ID,
       runAttempt: env.GITHUB_RUN_ATTEMPT, workflowSha: checkout, harnessSha: checkout, productSha: checkout,
-      artifactId: env.PRODUCT_ARTIFACT_ID, expectedVersion: product.version, sourceMode: 'ordinary' });
+      artifactId: env.PRODUCT_ARTIFACT_ID, expectedVersion: product.version, sourceMode: 'ordinary' }, {}, env.SAME_VERSION_UPGRADE === 'true');
     if (env.GITHUB_STEP_SUMMARY) await appendFile(env.GITHUB_STEP_SUMMARY, installerStatusSummary(result));
   } catch {
     result = undefined;

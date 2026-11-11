@@ -30,3 +30,20 @@ test('observation pins public bytes, creates only a standard account and preserv
   assert.match(child, /'shell', 'force-extract'/);
   assert.match(child, /raw Shell failures are preserved/);
 });
+
+test('normal CI always requires fresh standard-user acceptance; historical same-version check is explicit', () => {
+  const ci = parse(read('.github/workflows/ci.yml'));
+  const artifacts = parse(read('.github/workflows/alhangeul-artifacts.yml'));
+  const smoke = parse(read('.github/workflows/alhangeul-windows-smoke.yml'));
+  assert.equal(ci.on.workflow_dispatch.inputs.thumbnail_same_version_upgrade.default, false);
+  assert.equal(artifacts.on.workflow_call.inputs.thumbnail_same_version_upgrade.default, false);
+  assert.equal(smoke.on.workflow_call.inputs.thumbnail_same_version_upgrade.default, false);
+  assert.match(ci.jobs.artifacts.with.thumbnail_same_version_upgrade, /inputs.thumbnail_same_version_upgrade/);
+  assert.match(artifacts.jobs.smoke.with.thumbnail_same_version_upgrade, /inputs.thumbnail_same_version_upgrade/);
+  const job = smoke.jobs['windows-standard-user'];
+  assert.equal(job.if, undefined);
+  assert.equal(job.steps.find(row => row.name === 'Verify standard user install thumbnails and lifecycle').if, undefined);
+  for (const name of ['Verify public same-version manual upgrade', 'Evaluate same-version upgrade evidence']) {
+    assert.match(job.steps.find(row => row.name === name).if, /inputs.thumbnail_same_version_upgrade/);
+  }
+});

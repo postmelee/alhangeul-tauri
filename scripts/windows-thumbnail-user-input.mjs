@@ -47,6 +47,7 @@ async function main([root, artifactRoot, expectedSha, scenario = 'fresh'], env) 
     const sha = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
     requireEvidence(sha === expectedSha && sha === env.GITHUB_SHA && sha === env.GITHUB_WORKFLOW_SHA, 'user-input-checkout-mismatch');
     const product = JSON.parse(await readFile('package.json', 'utf8'));
+    requireEvidence(scenario !== 'public-upgrade' || product.version === '0.1.3', 'same-version-baseline-required');
     input = await prepareFreshInput(root, artifactRoot, { repository: env.GITHUB_REPOSITORY,
       runId: env.GITHUB_RUN_ID, runAttempt: env.GITHUB_RUN_ATTEMPT, workflowSha: sha, harnessSha: sha,
       productSha: sha, artifactId: env.PRODUCT_ARTIFACT_ID, expectedVersion: product.version, sourceMode: 'ordinary' });
