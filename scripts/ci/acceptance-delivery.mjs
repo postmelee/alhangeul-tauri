@@ -47,7 +47,7 @@ export function verifyScenarioJob(jobs, selected, identity) {
     && job.head_sha === identity.workflowSha, 'scenario-job-identity-mismatch');
   requireEvidence(job.status === 'completed' && job.conclusion === 'success', 'scenario-job-not-passed');
   requireEvidence(Array.isArray(job.steps), 'scenario-job-steps-missing');
-  for (const name of DELIVERY_STEPS) {
+  for (const name of selected.requiredSteps ?? DELIVERY_STEPS) {
     const steps = job.steps.filter(step => step.name === name);
     requireEvidence(steps.length === 1 && steps[0].status === 'completed'
       && steps[0].conclusion === 'success', 'scenario-step-not-passed');

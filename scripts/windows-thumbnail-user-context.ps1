@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param([ValidateSet('runner', 'standard')][string]$Context, [switch]$CIConsent)
+param([ValidateSet('runner', 'standard')][string]$Context, [switch]$CIConsent, [string]$ArtifactRoot, [string]$ExpectedSourceSha)
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 if (-not $CIConsent -or $env:GITHUB_ACTIONS -cne 'true' -or $env:RUNNER_ENVIRONMENT -cne 'github-hosted') { throw 'requires-disposable-hosted-ci' }
@@ -7,7 +7,7 @@ $root = Join-Path $env:SystemDrive ('alhangeul-observation-' + [Guid]::NewGuid()
 $destination = Join-Path $env:GITHUB_WORKSPACE 'diagnostics\thumbnail-user-context'
 [void][IO.Directory]::CreateDirectory($destination)
 $account = $null; $accountSid = $null; $created = $false
-$summary = [ordered]@{ schemaVersion = 1; context = $Context; status = 'invalid'; phase = 'prepare'; childExit = $null; accountRemoved = $false; profileRemoved = $false; scratchRemoved = $false; harnessSha = $env:GITHUB_SHA; imageVersion = $env:ImageVersion; productSha = 'bcb892d49a9003615f3acd980babd71e59e147dd'; installerSha256 = '932c3316d9ea83cd5c38e3fe528518535751ac60fedd72776c5306085437c490' }
+$summary = [ordered]@{ schemaVersion = 1; context = $Context; status = 'invalid'; phase = 'prepare'; childExit = $null; accountRemoved = $false; profileRemoved = $false; scratchRemoved = $false; harnessSha = $env:GITHUB_SHA; imageVersion = $env:ImageVersion; productSha = $null; installerSha256 = $null }
 try {
   [void][IO.Directory]::CreateDirectory((Join-Path $root 'scripts'))
   [void][IO.Directory]::CreateDirectory((Join-Path $root 'evidence'))
@@ -24,8 +24,21 @@ try {
     Invoke-WebRequest -UseBasicParsing -Uri ('https://raw.githubusercontent.com/edwardkim/rhwp/' + $upstream + '/' + $relative) -OutFile $target
     if ((Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash.ToLowerInvariant() -cne $fixture.sha256) { throw 'downloaded-fixture-mismatch' }
   }
-  Invoke-WebRequest -UseBasicParsing -Uri 'https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.3/Alhangeul_0.1.3_x64-setup.exe' -OutFile (Join-Path $root 'installer.exe')
-  if ((Get-FileHash -LiteralPath (Join-Path $root 'installer.exe') -Algorithm SHA256).Hash.ToLowerInvariant() -cne $summary.installerSha256) { throw 'published-installer-changed' }
+  $inputArgs = @((Join-Path $PSScriptRoot 'windows-thumbnail-user-input.mjs'), $root)
+  if ($ArtifactRoot -or $ExpectedSourceSha) {
+    if ($Context -ne 'standard' -or -not $ArtifactRoot -or -not $ExpectedSourceSha) { throw 'invalid-acceptance-request' }
+    $inputArgs += @($ArtifactRoot, $ExpectedSourceSha)
+  }
+  & node @inputArgs
+  if ($LASTEXITCODE -ne 0) { throw 'input-verification-failed' }
+  $productInput = Get-Content -LiteralPath (Join-Path $root 'input.json') -Raw | ConvertFrom-Json
+  $summary.productSha = $productInput.productSha
+  $summary.installerSha256 = $productInput.installerSha256
+  if ($productInput.mode -eq 'public-observation') {
+    Invoke-WebRequest -UseBasicParsing -Uri $productInput.installerUrl -OutFile (Join-Path $root 'installer.exe')
+  }
+  if ((Get-FileHash -LiteralPath (Join-Path $root 'installer.exe') -Algorithm SHA256).Hash.ToLowerInvariant() -cne $summary.installerSha256) { throw 'installer-changed' }
+  Copy-Item -LiteralPath (Join-Path $root 'input.json') -Destination $destination
   $summary.phase = 'launch'
   $executable = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
   $arguments = '-NoLogo -NoProfile -NonInteractive -STA -File "' + (Join-Path $root 'scripts\windows-thumbnail-user-probe.ps1') + '" -Root "' + $root + '" -Context ' + $Context + ' -CIConsent'
@@ -44,7 +57,11 @@ try {
     $options.Credential = [Management.Automation.PSCredential]::new($env:COMPUTERNAME + '\' + $account, $secret)
     $options.LoadUserProfile = $true
   }
-  $p = Start-Process @options
+  $token = $env:GITHUB_TOKEN
+  try {
+    Remove-Item Env:\GITHUB_TOKEN -ErrorAction SilentlyContinue
+    $p = Start-Process @options
+  } finally { $env:GITHUB_TOKEN = $token; $token = $null }
   try {
     [void]$p.Handle
     if (-not $p.WaitForExit(900000)) { $p.Kill(); throw 'child-timeout' }

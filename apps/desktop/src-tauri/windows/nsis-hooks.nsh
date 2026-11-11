@@ -22,6 +22,7 @@
 
 !define ALHANGEUL_ASSOC_BACKUP_KEY "Software\Alhangeul\FileAssocBackup"
 !define ALHANGEUL_THUMBNAIL_HANDLER "$INSTDIR\AlhangeulThumbnailHandler.dll"
+!include "${__FILEDIR__}\thumbnail-cleanup.nsh"
 
 !macro ALHANGEUL_INSTALL_THUMBNAIL
   Push $R0
@@ -143,6 +144,7 @@
 !macroend
 
 !macro NSIS_HOOK_PREINSTALL
+  !insertmacro ALHANGEUL_WAIT_THUMBNAIL_WRITABLE
   SetRegView 64
   !insertmacro ALHANGEUL_SNAPSHOT_EXTENSION_DEFAULT "hwp" ""
   !insertmacro ALHANGEUL_SNAPSHOT_EXTENSION_DEFAULT "hwpx" ""
@@ -176,4 +178,5 @@
   !insertmacro ALHANGEUL_REMOVE_EMPTY_EXTENSION_KEYS "hwpx"
   !insertmacro ALHANGEUL_REMOVE_EMPTY_BACKUP_KEYS
   !insertmacro UPDATEFILEASSOC
+  !insertmacro ALHANGEUL_REMOVE_THUMBNAIL_RESIDUAL
 !macroend

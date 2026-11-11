@@ -19,9 +19,9 @@ test('observation pins public bytes, creates only a standard account and preserv
   const parent = read('scripts/windows-thumbnail-user-context.ps1');
   const child = read('scripts/windows-thumbnail-user-probe.ps1');
   for (const source of [parent, child]) {
-    assert.match(source, /932c3316d9ea83cd5c38e3fe528518535751ac60fedd72776c5306085437c490/);
     assert.doesNotMatch(source, /DisableProcessIsolation|Set-ItemProperty|regsvr32|Stop-Process|EnableLUA/);
   }
+  assert.match(read('scripts/windows-thumbnail-user-input.mjs'), /932c3316d9ea83cd5c38e3fe528518535751ac60fedd72776c5306085437c490/);
   assert.match(parent, /RUNNER_ENVIRONMENT -cne 'github-hosted'/);
   assert.match(parent, /Add-LocalGroupMember -SID 'S-1-5-32-545'/);
   assert.doesNotMatch(parent, /S-1-5-32-544/);

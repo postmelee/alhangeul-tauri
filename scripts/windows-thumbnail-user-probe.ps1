@@ -12,6 +12,12 @@ $output = Join-Path $Root 'evidence'
 $report = [ordered]@{ schemaVersion = 1; context = $Context; status = 'invalid'; operation = 'preflight'; errorCode = $null; token = [Alhangeul.ThumbnailDiagnostics.TokenProbe]::Read(); installExit = $null; uninstallExit = $null; binaries = @(); probes = @(); cleanup = $false }
 $handlerKey = 'HKCU:\Software\Classes\CLSID\{C1DCF316-0771-49DD-BFEA-C85F69B1674B}\InprocServer32'
 $installDirectory = $null
+$productInput = Get-Content -LiteralPath (Join-Path $Root 'input.json') -Raw | ConvertFrom-Json
+$acceptance = $productInput.mode -ceq 'fresh-standard-acceptance'
+if ($productInput.mode -cnotin @('public-observation', 'fresh-standard-acceptance') -or ($acceptance -and $Context -ne 'standard')) { throw 'invalid-product-input' }
+$report['inputMode'] = $productInput.mode
+$report['installerSha256'] = $productInput.installerSha256
+$report['reinstallExit'] = $null
 
 function Invoke-OwnedProcess($Path, $Arguments) {
   $p = Start-Process -FilePath $Path -ArgumentList $Arguments -PassThru
@@ -27,6 +33,30 @@ function Invoke-Observation($Name, $Mode, $InputValue) {
   $code = $LASTEXITCODE
   $raw = Get-Content -LiteralPath $path -Raw -Encoding UTF8 | ConvertFrom-Json
   $report.probes += [ordered]@{ name = $Name; exitCode = $code; result = $raw }
+}
+function Assert-InstalledBinaries {
+  foreach ($expected in $productInput.binaries) {
+    if ($expected.name -cnotin @('AlhangeulThumbnailHandler.dll', 'AlhangeulThumbnailWorker.exe')) { throw 'invalid-binary-name' }
+    $file = Get-Item -LiteralPath (Join-Path $installDirectory $expected.name)
+    if ($file.Length -ne $expected.bytes -or (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant() -cne $expected.sha256) { throw 'installed-binary-mismatch' }
+  }
+}
+function Invoke-ProbeSet($Phase) {
+  Invoke-Observation ($Phase + '-environment') 'state' ''
+  $fixtures = (Get-Content -LiteralPath (Join-Path $PSScriptRoot 'windows-thumbnail-fixtures.json') -Raw | ConvertFrom-Json).fixtures
+  foreach ($mode in @('shell', 'force-extract')) {
+    foreach ($fixture in $fixtures) {
+      $source = Join-Path $Root $fixture.path
+      if ((Get-Item -LiteralPath $source).Length -ne $fixture.bytes -or (Get-FileHash -LiteralPath $source -Algorithm SHA256).Hash.ToLowerInvariant() -cne $fixture.sha256) { throw 'fixture-hash-mismatch' }
+      $copy = Join-Path $output ($fixture.id + '-' + $mode + '-' + [Guid]::NewGuid().ToString('N') + [IO.Path]::GetExtension($source))
+      Copy-Item -LiteralPath $source -Destination $copy
+      try { Invoke-Observation ($Phase + '-' + $fixture.id + '-' + $mode) $mode $copy }
+      finally { Remove-Item -LiteralPath $copy }
+    }
+  }
+  Invoke-Observation ($Phase + '-association-hwp') 'association' '.hwp'
+  Invoke-Observation ($Phase + '-association-hwpx') 'association' '.hwpx'
+  Invoke-Observation ($Phase + '-activation') 'activate' ''
 }
 try {
   if ($report.token.status -ne 'ok') { throw 'token-unreadable' }
@@ -48,7 +78,7 @@ try {
   }
   $report.operation = 'install'
   $installer = Join-Path $Root 'installer.exe'
-  if ((Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash.ToLowerInvariant() -cne '932c3316d9ea83cd5c38e3fe528518535751ac60fedd72776c5306085437c490') { throw 'installer-hash-mismatch' }
+  if ((Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash.ToLowerInvariant() -cne $productInput.installerSha256) { throw 'installer-hash-mismatch' }
   $report.installExit = Invoke-OwnedProcess $installer '/S'
   if ($report.installExit -ne 0) { throw 'install-failed' }
   $handler = (Get-Item -LiteralPath $handlerKey).GetValue('')
@@ -58,22 +88,17 @@ try {
     $file = Get-Item -LiteralPath (Join-Path $installDirectory $name)
     $report.binaries += [ordered]@{ name = $name; bytes = $file.Length; sha256 = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant() }
   }
-  $report.operation = 'probe'
-  Invoke-Observation 'environment' 'state' ''
-  $fixtures = (Get-Content -LiteralPath (Join-Path $PSScriptRoot 'windows-thumbnail-fixtures.json') -Raw | ConvertFrom-Json).fixtures
-  foreach ($mode in @('shell', 'force-extract')) {
-    foreach ($fixture in $fixtures) {
-      $source = Join-Path $Root $fixture.path
-      if ((Get-Item -LiteralPath $source).Length -ne $fixture.bytes -or (Get-FileHash -LiteralPath $source -Algorithm SHA256).Hash.ToLowerInvariant() -cne $fixture.sha256) { throw 'fixture-hash-mismatch' }
-      $copy = Join-Path $output ($fixture.id + '-' + $mode + '-' + [Guid]::NewGuid().ToString('N') + [IO.Path]::GetExtension($source))
-      Copy-Item -LiteralPath $source -Destination $copy
-      try { Invoke-Observation ($fixture.id + '-' + $mode) $mode $copy }
-      finally { Remove-Item -LiteralPath $copy }
-    }
+  Assert-InstalledBinaries
+  $report.operation = 'probe-installed'
+  Invoke-ProbeSet 'installed'
+  if ($acceptance) {
+    $report.operation = 'reinstall'
+    $report.reinstallExit = Invoke-OwnedProcess $installer '/S /UPDATE'
+    if ($report.reinstallExit -ne 0) { throw 'reinstall-failed' }
+    Assert-InstalledBinaries
+    $report.operation = 'probe-reinstalled'
+    Invoke-ProbeSet 'reinstalled'
   }
-  Invoke-Observation 'association-hwp' 'association' '.hwp'
-  Invoke-Observation 'association-hwpx' 'association' '.hwpx'
-  Invoke-Observation 'activation' 'activate' ''
   $report.status = 'observed'
 } catch {
   $report.errorCode = $_.Exception.HResult
@@ -91,6 +116,7 @@ try {
       # Preserve product uninstall failure before any test-owned cleanup. This is not product acceptance.
       $report['productUninstallPassed'] = $report.uninstallExit -eq 0 -and -not $report.uninstallState.directoryExists -and -not $report.uninstallState.handlerRegistered
       if (-not $report.productUninstallPassed) {
+        if ($acceptance) { throw 'product-uninstall-failed' }
         $loaders = @()
         foreach ($process in @(Get-Process dllhost -ErrorAction SilentlyContinue)) {
           try {

@@ -1,3 +1,4 @@
+import { STANDARD_USER_JOB } from '../windows-thumbnail-user-acceptance.mjs';
 import { appendFile, readFile } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 import { resolve } from 'node:path';
@@ -14,14 +15,15 @@ export async function verifyInstallerStatus(request, services = {}) {
   const { identity } = await resolveOrdinaryProduct(request, { fetchJson: api });
   const base = `/repos/${identity.repository}/actions/runs/${identity.runId}`;
   const jobs = await listEvidencePages(api, `${base}/attempts/${identity.runAttempt}/jobs`, 'jobs');
-  const scenarios = DELIVERY.map(selected => {
+  const selectedScenarios = [...DELIVERY, STANDARD_USER_JOB];
+  const scenarios = selectedScenarios.map(selected => {
     verifyScenarioJob(jobs, selected, identity);
     const job = jobs.find(row => row.name === selected.jobName || row.name?.endsWith(` / ${selected.jobName}`));
     requireEvidence(Number.isSafeInteger(job.id) && job.id > 0, 'invalid-scenario-job-id');
     return { name: selected.name, contract: selected.contract, status: 'passed',
       url: `https://github.com/${identity.repository}/actions/runs/${identity.runId}/job/${job.id}` };
   });
-  requireEvidence(new Set(scenarios.map(row => row.url)).size === DELIVERY.length, 'duplicate-scenario-job-id');
+  requireEvidence(new Set(scenarios.map(row => row.url)).size === selectedScenarios.length, 'duplicate-scenario-job-id');
   return { contractStatus: 'passed', productObservation: 'see-scenario-evidence', identity, scenarios,
     productAcceptance: 'unverified', releaseAcceptance: 'unverified', latestVdiAcceptance: 'unverified' };
 }
@@ -37,7 +39,7 @@ export function installerStatusSummary(result) {
 async function main(env) {
   let result;
   try {
-    requireEvidence(env.MATRIX_RESULT === 'success', 'installer-matrix-not-passed');
+    requireEvidence(env.MATRIX_RESULT === 'success' && env.STANDARD_USER_RESULT === 'success', 'installer-matrix-not-passed');
     const checkout = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
     requireEvidence(checkout === env.GITHUB_WORKFLOW_SHA && checkout === env.EXPECTED_SOURCE_SHA, 'status-checkout-mismatch');
     const product = JSON.parse(await readFile('package.json', 'utf8'));
