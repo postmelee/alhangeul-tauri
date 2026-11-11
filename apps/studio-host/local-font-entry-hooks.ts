@@ -2,21 +2,26 @@ import { resolve } from 'node:path';
 import { normalizePath, type Plugin } from 'vite';
 import { insertStudioMenuItem } from './studio-menu-hooks';
 
-const documentEntry = `async function initializeDocument(
+const initializeDocument = ['suppressDialogs?: boolean', 'suppressDialogs?: boolean; suppressLocalFontPrompt?: boolean']
+  .map(options => `async function initializeDocument(
   docInfo: DocumentInfo,
   displayName: string,
-  options: { suppressDialogs?: boolean } = {},
-): Promise<void> {`;
-const promptEntry = 'async function promptLocalFontsIfNeeded(docInfo: DocumentInfo, displayName: string): Promise<void> {';
+  options: { ${options} } = {},
+): Promise<void> {`);
+const promptLocalFonts = ['docInfo: DocumentInfo, displayName: string', 'displayName: string']
+  .map(params => `async function promptLocalFontsIfNeeded(${params}): Promise<void> {`);
 
-function replaceOnce(source: string, marker: string, replacement: string): string {
-  if (source.split(marker).length !== 2) throw new Error('upstream local-font hook marker mismatch');
-  return source.replace(marker, replacement);
+function appendHook(source: string, signatures: readonly string[], hook: string): string {
+  const matches = signatures.filter(signature => source.includes(signature));
+  if (matches.length !== 1 || source.indexOf(matches[0]) !== source.lastIndexOf(matches[0])) {
+    throw new Error('upstream local-font hook marker mismatch');
+  }
+  return source.replace(matches[0], () => matches[0] + hook);
 }
 
 export function transformLocalFontEntry(source: string, controllerPath: string): string {
   if (source.includes('__alhangeulPrepareFonts')) throw new Error('duplicate local-font entry hook');
-  const withDocument = replaceOnce(source, documentEntry, `${documentEntry}
+  const withDocument = appendHook(source, initializeDocument, `
   await __alhangeulPrepareFonts({
     fonts: docInfo.fontsUsed ?? [],
     refreshView: async (isCurrent) => {
@@ -36,11 +41,14 @@ export function transformLocalFontEntry(source: string, controllerPath: string):
         eventBus.emit('document-view-changed');
       }
     },
-    onFontsChanged: (fonts) => eventBus.emit('local-fonts-changed', {
-      fonts, report: analyzeDocumentFonts(docInfo.fontsUsed),
-    }),
+    onFontsChanged: (fonts) => {
+      clearDeclaredLocalPrograms();
+      eventBus.emit('local-fonts-changed', {
+        fonts, report: analyzeDocumentFonts(docInfo.fontsUsed),
+      });
+    },
   });`);
-  const withPrompt = replaceOnce(withDocument, promptEntry, `${promptEntry}
+  const withPrompt = appendHook(withDocument, promptLocalFonts, `
   if (await __alhangeulPromptFonts()) return;`);
   return `import { prepareDesktopDocumentFonts as __alhangeulPrepareFonts,
     promptDesktopLocalFonts as __alhangeulPromptFonts } from ${JSON.stringify(normalizePath(controllerPath))};\n${withPrompt}`;

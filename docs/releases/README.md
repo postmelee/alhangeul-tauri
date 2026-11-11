@@ -9,9 +9,12 @@
 
 | 버전 | 상태 | 이전 공개 버전 | GitHub Release | 기록 |
 |---|---|---|---|---|
-| v0.1.2 | 구현·6종 파일 수용 완료·미게시, draft JSON 완성 / main·공개 인계 | v0.1.1 | 미게시 | [v0.1.2 준비 기록](v0.1.2.md) |
+| v0.1.3 | 후보 검증 완료 · 알려진 제한 포함 · PR 검토 단계 | v0.1.2 | 미게시 | [v0.1.3 후보 기록과 노트](v0.1.3.md) |
+| v0.1.2 | Release·최종 본문·웹/feed·HTTP/화면 공개 수용, 실제011→012 지원3종 완료 / 최종 기록 인계 후속 | v0.1.1 | [v0.1.2](https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.2) | [v0.1.2 공개 기록](v0.1.2.md) |
 | v0.1.1 | Release·규격 body·웹·피드·검증 결과 안내 공개, 세 형식 실제 upgrade·HTTP 수용 완료 | v0.1.0 | [v0.1.1](https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.1) | [v0.1.1 공개 기록](v0.1.1.md), [안내 원문](v0.1.1.notes.json) |
 | v0.1.0 | stable 공개·Pages/updater 전환 및 동일 버전 조회 완료 | 없음 | [v0.1.0](https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.0) | [v0.1.0 공개 기록](v0.1.0.md) |
+
+2026-10-08T16:50:52.403Z 확인: GitHub 최신 Stable는 v0.1.2이며 main6dcb05e9의11파일·서명3·본문·tag 검산을 완료했다. 사이트/production feed는 v0.1.1, 실제011→012 미실행이다.
 
 최신 공개 버전은 실제 non-draft Release와 공개 read-back으로 판정한다. 가장 높은 파일명이나
 현재 source version을 최신 공개 버전으로 취급하지 않는다. 상태 확인 시점을 함께 갱신한다.
@@ -95,3 +98,25 @@ Linux/Windows 빠른 CI는 릴리즈 규격 계약을 검사하며 native 설치
 과거 Actions archive는 만료될 수 있다. 고유 SHA·run·digest·수용 한계는 Task 원본 보고서와
 고정 commit 링크로 보존하되 archive 가용성이나 현재 후보의 성공을 보장하는 값으로 쓰지 않는다.
 private key·암호·token·개인 문서·실제 credential 보관 경로는 기록하지 않는다.
+
+2026-10-08T17:03:40.244Z 확인: v0.1.2 본문을 actual published metadata로 보정해 read-back했다.012 원문/웹/manifest 데이터는 로컬 검증과 devel PR 준비 상태이며 원격 Pages/feed는011 유지다.
+
+2026-10-08T17:31:23.125Z 확인: PR119 일반 merge·devel `1f33d03918b50a5b9140978a9eb28d1b5e65ebe6` 및 Pages19/23 bytes 고정을 완료했다.012 Pages/manifest dispatch는 승인 대기, 현재 production feed는011이다.
+
+2026-10-08T18:00:10.828089+00:00 확인: exact Pages37819153172/source1f33·artifact/HTTP23·production012/hash58ca348b...·서명3/공개6파일·desktop/mobile 확인을 완료했다. updates 목록의 local v012 연결 보정 및 실제011→012는 후속 승인·검증 대상이다.
+
+2026-10-09 03:17 KST 확인: 새011→012 fixed 입력·동일형식3종 harness 및 local v012 목록 항목을 source/generic1347/75로 수용했다. 실제 upgrade·PR/필수CI/merge·목록 재배포는 후속이고 과거010→01159회귀와 공개012 bytes/key/endpoint를 유지한다.
+
+
+2026-10-09 04:45 (Asia/Seoul) 확인: v0.1.2 공개 product6d의 Windows NSIS/MSI·Linux x64 AppImage 실제011→012 업데이트·설정·HWP/HWPX 수용을 완료했다. [Stage4.8](../../mydocs/working/task_m010_113_stage4.8.md)에 Windows bc082d00/37828940744 각 success job과 Linux H8a5a28c7/37832348063 whole success의 별도 evidence identity를 기록했다. 두 과거 whole failure를 유지한다. 공개 안내의 미실행 문구 갱신·PR120 통합·새 Pages·#113 종료는 후속 승인이다.
+
+
+2026-10-09 23:07 (Asia/Seoul) 확인: 승인한 최종 업데이트 결과 안내6파일의 branch source/generic 수용을 [Stage4.9.1](../../mydocs/working/task_m010_113_stage4.9.1.md)에 기록했다. 공개 body03c/feed58ca는 그대로이며 새 required success 뒤 승인된 body-only 공개를 진행한다. 새 Pages f751 안내와 PR120 통합·#113 종료는 후속 승인이다.
+
+
+2026-10-09 23:15 (Asia/Seoul) 확인: GitHub v0.1.2의 최종 결과 body6208/d932...를 승인대로 공개하고 11asset/tag/source/채널/공개시각·feed58ca 불변을 검산했다. [Stage4.9](../../mydocs/working/task_m010_113_stage4.9.md)에 required37941878782 전체success와 원격 read-back을 기록했다. 웹/feed 최종 notes-only f751 게시·PR120 통합·#113 종료는 후속 승인이다.
+
+
+2026-10-09 23:31 (Asia/Seoul) 확인: PR120을 일반 merge해 actual devel2a78e113의 최종 Pages23/계약151 입력을 수용했다. [Stage4.10](../../mydocs/working/task_m010_113_stage4.10.md)에 실제 SHA/parents/tree·current GitHub body6208·feed58ca 유지와 exact S의 notes-only f751 Pages 배포 승인 경계를 기록했다. #113 OPEN·최종 웹/feed 공개/HTTP·종료가 후속이다.
+
+2026-10-09 23:49:56 (Asia/Seoul) 확인: [Stage4.11](../../mydocs/working/task_m010_113_stage4.11.md)의 exact merged devel2a78/Pages37945341425 attempt1 전체success·archive11622854980/ZIPsha7edea8b8...·HTTP23/23 첫 fetch·desktop1280/mobile390 화면 수용을 완료했다. 현재 production0.1.2/2434/hashf7517e3d...는 notes-only 갱신이며 3URL/3signature/공개6installer·GitHub body6208/11assets/tag/main6d는 같다. 실제3종 upgrade는 Windows bc082d00/37828940744 각 success job·Linux8a5a28c7/37832348063 whole success/historical58ca로 보존한다. 최종 공개 결과 안내와 local012 링크·최신badge·6다운로드·KST·기존한계를 확인했다. #113 OPEN·최종 기록 docs-only PR 인계/종료·cleanup은 후속 승인이다.

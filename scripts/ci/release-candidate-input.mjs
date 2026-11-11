@@ -6,6 +6,11 @@ import { fileURLToPath } from 'node:url';
 const SHA = /^[a-f0-9]{40}$/;
 const HASH = /^[a-f0-9]{64}$/;
 const VERSION = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
+const ORDINARY_CONTRACTS = Object.freeze({
+  nsis: ['alhangeul-desktop-windows-x64', 'windows-x64', 'nsis'],
+  msi: ['alhangeul-desktop-windows-x64', 'windows-x64', 'msi'],
+  appimage: ['alhangeul-desktop-linux-x64', 'linux-x64', 'appimage'],
+});
 const CONTRACTS = Object.freeze({
   nsis: ['alhangeul-updater-windows-x64', 'windows-x86_64-nsis'],
   msi: ['alhangeul-updater-windows-x64', 'windows-x86_64-msi'],
@@ -29,8 +34,8 @@ function validatePath(path) {
     !/[\r\n]/.test(path) && path.split('/').every(part => part && part !== '.' && part !== '..'), 'safe package path');
 }
 
-export function validateCandidate(document, kind) {
-  const contract = CONTRACTS[kind];
+export function validateCandidate(document, kind, ordinaryArtifacts = false) {
+  const contract = ordinaryArtifacts ? ORDINARY_CONTRACTS[kind] : CONTRACTS[kind];
   assert.ok(contract, 'supported candidate kind');
   assert.equal(document.schemaVersion, 1, 'candidate schema');
   assert.equal(document.tag, `v${document.version}`, 'version/tag agreement');
@@ -41,7 +46,7 @@ export function validateCandidate(document, kind) {
   assert.ok(Number.isSafeInteger(candidate.id) && candidate.id > 0, 'artifact ID');
   assert.match(candidate.digest, /^sha256:[a-f0-9]{64}$/, 'archive digest');
   validatePath(candidate.path);
-  const signed = kind === 'nsis' || kind === 'msi' || kind === 'appimage';
+  const signed = !ordinaryArtifacts && (kind === 'nsis' || kind === 'msi' || kind === 'appimage');
   const workflows = signed ? ['.github/workflows/alhangeul-desktop.yml'] :
     ['.github/workflows/ci.yml', '.github/workflows/alhangeul-desktop.yml'];
   assert.ok(workflows.includes(candidate.workflowPath), 'approved producer workflow');
@@ -57,11 +62,14 @@ export function validateCandidate(document, kind) {
     producerRun: candidate.producerRun, workflowPath: candidate.workflowPath, candidate: { ...candidate } };
 }
 
-export async function loadCandidate(kind, fallback, path = process.env.RELEASE_CANDIDATE_PATH) {
-  if (!path) return fallback;
+export async function loadCandidate(kind, fallback, path = process.env.RELEASE_CANDIDATE_PATH, ordinaryArtifacts = false) {
+  if (!path) {
+    assert.ok(!ordinaryArtifacts, 'ordinary artifacts require a candidate file');
+    return fallback;
+  }
   validatePath(path);
   assert.ok(!isAbsolute(path) && !relative(process.cwd(), resolve(path)).startsWith('..'), 'candidate JSON inside checkout');
-  return validateCandidate(JSON.parse(await readFile(path, 'utf8')), kind);
+  return validateCandidate(JSON.parse(await readFile(path, 'utf8')), kind, ordinaryArtifacts);
 }
 
 export async function recordCandidateIdentity(selection, evidence) {
@@ -79,4 +87,14 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   assert.equal(process.argv.length, 3, 'identity JSON argument');
   const identity = validateIdentity(JSON.parse(await readFile(process.argv[2], 'utf8')));
   process.stdout.write(`${identity.sourceSha} ${identity.producerRun} ${identity.version} ${identity.sha256}\n`);
+}
+
+export function selectOrdinaryInstaller(candidate, inventory, productSha) {
+  assert.equal(inventory.sourceSha, productSha, 'product source');
+  assert.equal(inventory.platform, candidate.platform, 'product platform');
+  const files = inventory.files.filter(file => file.kind === candidate.kind);
+  assert.equal(files.length, 1, 'exactly one selected installer');
+  assert.equal(files[0].path, candidate.path, 'installer path');
+  assert.equal(files[0].sha256, candidate.sha256, 'installer SHA-256');
+  return files[0];
 }

@@ -1,0 +1,200 @@
+import assert from 'node:assert/strict';
+import { readFile, mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { readUpgradeInputs } from './gui/production-upgrade/inputs.ts';
+import { join } from 'node:path';
+import test from 'node:test';
+import { validateInputs, productionInputsPath, digest, MANIFEST_HASH } from '../scripts/updater/production-contract.mjs';
+import { validateApply, validateVerify, validateWindowsInstallation } from '../scripts/updater/production-evidence.mjs';
+import { restartedAppImageProcess } from '../scripts/updater/production-process.mjs';
+import { observeWindowsHandoff } from './gui/production-upgrade/windows-handoff.ts';
+import { productionCapabilities } from './gui/production-upgrade/session.ts';
+import { observeAppImageRestart } from './gui/production-upgrade/restart-observation.ts';
+import { buildUpdaterManifest, serializeUpdaterManifest } from '../scripts/updater/manifest.mjs';
+
+const spec = JSON.parse(await readFile(new URL('gui/production-upgrade-v0.1.2-inputs.json', import.meta.url)));
+const legacy = JSON.parse(await readFile(new URL('gui/production-upgrade-inputs.json', import.meta.url)));
+// 실제 업그레이드 검증 당시 manifest58ca의 입력을 보존한다. 이후 공개 안내는 별도로 검사한다.
+const release = JSON.parse(await readFile(new URL('fixtures/production-upgrade-v012-release.json', import.meta.url)));
+const clone = value => structuredClone(value);
+test('new public tuple preserves legacy manifest and inputs', () => {
+  for (const kind of ['nsis', 'msi', 'appimage']) { validateInputs(spec, kind); validateInputs(legacy, kind); }
+  assert.equal(legacy.manifestSha256, MANIFEST_HASH);
+  assert.equal(digest(serializeUpdaterManifest(buildUpdaterManifest(release), release)), spec.manifestSha256);
+  assert.deepEqual(spec.releases.n, legacy.releases.next);
+});
+for (const [label, mutate] of Object.entries({
+  oldManifest: s => { s.manifestSha256 = MANIFEST_HASH; },
+  wrongSource: s => { s.releases.next.sourceSha = s.releases.n.sourceSha; },
+  wrongRelease: s => { s.releases.next.releaseId += 1; },
+  wrongVersion: s => { s.releases.n.version = '0.1.0'; },
+  wrongEndpoint: s => { s.endpoint = 'https://example.com'; },
+  wrongKey: s => { s.keyFingerprint = '0'.repeat(64); },
+})) test(`new tuple rejects ${label}`, () => {
+  const value = clone(spec); mutate(value); assert.throws(() => validateInputs(value, 'msi'));
+});
+test('input selector accepts only the two recorded relative files', () => {
+  for (const file of ['production-upgrade-inputs.json', 'production-upgrade-v0.1.2-inputs.json']) {
+    assert.equal(productionInputsPath('/tmp/harness', `tests/gui/${file}`), join('/tmp/harness/tests/gui', file));
+  }
+  for (const path of ['/tmp/other.json', '../input.json', 'tests/gui/other.json']) assert.throws(() => productionInputsPath('/tmp/harness', path));
+});
+function applied(kind) {
+  const target = kind === 'appimage' ? 'linux-x86_64-appimage' : `windows-x86_64-${kind}`;
+  const snapshot = { status: 'available', currentVersion: '0.1.1', availableVersion: '0.1.2', target: { target, artifactKind: kind }, failure: null };
+  return { kind, phase: 'apply', status: 'passed', startup: { ...snapshot, trigger: 'startup' }, manual: { ...snapshot, trigger: 'manual' }, dirty: { blocker: 'dirtyDocuments', status: 'available' }, consent: 'download-and-install-ui', manifestVerified: true, manifestSha256: spec.manifestSha256, installed: { status: 'restartRequired' }, restartRequested: true, restart: { observed: true, previous: { pid: 123, executable: '/tmp/.mount_old/usr/bin/alhangeul' }, current: { pid: 456, executable: '/tmp/.mount_new/usr/bin/alhangeul' } }, installObserved: true, requiresInstalledVersionVerification: true, transportClosed: 'invalid session id', windowsHandoff: { status: 'transportClosed', startedAt: '2026-10-09T00:00:00Z', closedAt: '2026-10-09T00:00:01Z', closureSource: 'state-poll', transitions: [] } };
+}
+function verified(kind) {
+  return { kind, phase: 'verify', manifestVerified: true, manifestSha256: spec.manifestSha256, status: 'passed', noUpdate: { status: 'idle', currentVersion: '0.1.2', availableVersion: null, failure: null, blocker: null }, productVersion: 'Alhangeul 0.1.2', settingsPreserved: true, documents: ['hwp', 'hwpx'].map(format => ({ format, pageCount: 1, unchanged: true, canvasReady: true })) };
+}
+for (const kind of ['nsis', 'msi', 'appimage']) test(`${kind}: legacy evidence cannot satisfy 0.1.2 acceptance`, () => {
+  validateApply(applied(kind), kind, spec); validateVerify(verified(kind), kind, spec);
+  const oldApply = applied(kind); oldApply.startup.currentVersion = '0.1.0';
+  assert.throws(() => validateApply(oldApply, kind, spec));
+  const oldVerify = verified(kind); oldVerify.noUpdate.currentVersion = '0.1.1';
+  assert.throws(() => validateVerify(oldVerify, kind, spec));
+  const missingDirty = applied(kind); delete missingDirty.dirty;
+  assert.throws(() => validateApply(missingDirty, kind, spec));
+  const missingDocs = verified(kind); missingDocs.documents.pop();
+  assert.throws(() => validateVerify(missingDocs, kind, spec));
+});
+test('0.1.2 Windows version accepts exact executable resources and rejects reboot or suffix drift', () => {
+  const value = { Status: 'passed', Kind: 'msi', DefaultsPreserved: true, Product: { Entry: { DisplayVersion: '0.1.2' }, Version: { ProductVersion: '0.1.2.0', FileVersion: '0.1.2' }, Handlers: [{ Extension: '.hwp', Valid: true }, { Extension: '.hwpx', Valid: true }] } };
+  validateWindowsInstallation(value, 'msi', spec);
+  for (const change of [v => { v.ExitCode = 3010; }, v => { v.Product.Version.ProductVersion = '0.1.20'; }]) {
+    const bad = clone(value); change(bad); assert.throws(() => validateWindowsInstallation(bad, 'msi', spec));
+  }
+});
+
+test('GUI reads the selected 0.1.1 to 0.1.2 versions', () => {
+  const root = fileURLToPath(new URL('../', import.meta.url));
+  const value = readUpgradeInputs({ ALHANGEUL_PRODUCTION_ROOT: root, ALHANGEUL_PRODUCTION_KIND: 'msi', ALHANGEUL_PRODUCTION_PHASE: 'apply', ALHANGEUL_PRODUCTION_APP: join(root, 'app'), ALHANGEUL_PRODUCTION_DRIVER: join(root, 'driver'), ALHANGEUL_PRODUCTION_OUTPUT: join(root, 'output'), ALHANGEUL_PRODUCTION_INPUTS: 'tests/gui/production-upgrade-v0.1.2-inputs.json' });
+  assert.equal(value.fromVersion, '0.1.1'); assert.equal(value.toVersion, '0.1.2');
+  assert.equal(value.manifestHash, spec.manifestSha256);
+});
+for (const kind of ['nsis', 'msi', 'appimage']) test(`${kind}: CLI selects new tuple and rejects an old apply receipt`, async () => {
+  const output = await mkdtemp(join(tmpdir(), 'production-012-apply-'));
+  const harness = 'a'.repeat(40);
+  try {
+    await mkdir(join(output, 'apply'));
+    await writeFile(join(output, 'public-input.json'), JSON.stringify({status:'passed',kind,harnessSha:harness,manifestSha256:spec.manifestSha256}));
+    const value = {...applied(kind),harnessSha:harness};
+    await writeFile(join(output, 'apply/result.json'),JSON.stringify(value));
+    const cli = fileURLToPath(new URL('../scripts/updater/production-upgrade.mjs',import.meta.url));
+    const args = [cli,'require-apply',kind,output];
+    const options = {encoding:'utf8',timeout:10000,env:{...process.env,HARNESS_SHA:harness,ALHANGEUL_PRODUCTION_INPUTS:'tests/gui/production-upgrade-v0.1.2-inputs.json'}};
+    assert.equal(spawnSync(process.execPath,args,options).status,0);
+    assert.equal(JSON.parse(await readFile(join(output,'apply-gate.json'))).status,'passed');
+    value.startup.availableVersion='0.1.1';
+    await writeFile(join(output,'apply/result.json'),JSON.stringify(value));
+    assert.equal(spawnSync(process.execPath,args,options).status,1);
+    assert.equal(JSON.parse(await readFile(join(output,'apply-gate.json'))).status,'failed');
+  } finally {await rm(output,{recursive:true,force:true});}
+});
+
+
+test('AppImage stop validation uses the selected tuple and preserves restart identity gates', () => {
+  const value = applied('appimage');
+  assert.deepEqual(restartedAppImageProcess(value, spec), value.restart.current);
+  assert.throws(() => restartedAppImageProcess(value));
+  for (const mutate of [v => { v.startup.currentVersion = '0.1.0'; },
+    v => { v.restart.current.pid = v.restart.previous.pid; },
+    v => { v.restart.current.executable = v.restart.previous.executable; }]) {
+    const bad = clone(value); mutate(bad);
+    assert.throws(() => restartedAppImageProcess(bad, spec));
+  }
+});
+
+test('Windows apply and verify share one disposable profile while formats stay isolated', () => {
+  const input = { appPath: '/vm/app.exe', output: '/vm/nsis/apply' };
+  const profile = output => productionCapabilities({ ...input, output }, 'win32')[0]['tauri:options'].webviewOptions.userDataFolder;
+  assert.equal(profile(input.output), profile('/vm/nsis/verify'));
+  assert.notEqual(profile(input.output), profile('/vm/msi/apply'));
+  assert.equal(productionCapabilities(input, 'linux')[0]['tauri:options'].webviewOptions, undefined);
+});
+
+function windowsState(status) {
+  return { ...applied('nsis').manual, status, trigger: 'manual' };
+}
+
+test('Windows null response keeps last installing state until actual window closure', async () => {
+  let clock = 0; let reads = 0; const evidence = {};
+  await observeWindowsHandoff({ now: () => clock, timeoutMs: 1000,
+    readState: async () => {
+      if (reads++ === 0) return windowsState('installing');
+      if (reads === 2) return null;
+      throw new Error('no such window: target window already closed');
+    }, pause: async ms => { assert.equal(evidence.installObserved, undefined); clock += ms; },
+  }, evidence);
+  assert.equal(evidence.windowsHandoff.emptyStateResponses, 1);
+  assert.equal(evidence.windowsHandoff.lastSnapshot.status, 'installing');
+  assert.equal(evidence.windowsHandoff.status, 'transportClosed');
+  validateApply({ ...applied('nsis'), ...evidence }, 'nsis', spec);
+});
+
+test('Windows null alone times out and never becomes a handoff', async () => {
+  let clock = 0; const evidence = {};
+  await assert.rejects(observeWindowsHandoff({ now: () => clock, timeoutMs: 500,
+    readState: async () => null, pause: async ms => { clock += ms; },
+  }, evidence), /observation deadline/);
+  assert.equal(evidence.windowsHandoff.emptyStateResponses, 2);
+  assert.equal(evidence.windowsHandoff.status, 'failed');
+  assert.equal(evidence.installObserved, undefined);
+  assert.throws(() => validateApply({ ...applied('nsis'), ...evidence }, 'nsis', spec));
+});
+
+for (const [name, next, pattern] of [
+  ['updater error', () => windowsState('error'), /Updater failed/],
+  ['unrelated driver error', () => { throw new Error('script timeout while session is active'); }, /script timeout/],
+]) test(`Windows null response cannot hide ${name}`, async () => {
+  let reads = 0; const evidence = {};
+  await assert.rejects(observeWindowsHandoff({ readState: async () => reads++ === 0 ? null : next(),
+    pause: async () => {},
+  }, evidence), pattern);
+  assert.equal(evidence.windowsHandoff.status, 'failed');
+  assert.equal(evidence.installObserved, undefined);
+});
+
+
+for (const message of [
+  'WebDriverError: unknown error when running "execute/async" with method "POST"',
+  'no such window: target window already closed',
+]) test(`AppImage restart still requires native observation after ${message}`, async () => {
+  const evidence = {}; const restart = applied('appimage').restart;
+  let waited = false;
+  await observeAppImageRestart({ previous: restart.previous,
+    click: async () => { throw new Error(message); },
+    wait: async previous => { waited = true; assert.equal(evidence.restart, undefined); assert.deepEqual(previous, restart.previous); return restart; },
+  }, evidence);
+  assert.equal(waited, true); assert.equal(evidence.restartTransportClosed, message);
+  assert.deepEqual(evidence.restart, restart);
+  validateApply({ ...applied('appimage'), ...evidence }, 'appimage', spec);
+});
+
+test('AppImage unknown async response cannot pass without a new native process', async () => {
+  const evidence = {}; const message = 'WebDriverError: unknown error when running "execute/async" with method "POST"';
+  await assert.rejects(observeAppImageRestart({ previous: applied('appimage').restart.previous,
+    click: async () => { throw new Error(message); },
+    wait: async () => { throw new Error('App restart UI did not produce a new product PID from a new FUSE mount'); },
+  }, evidence), /new product PID/);
+  assert.equal(evidence.restart, undefined); assert.equal(evidence.restartTransportClosed, message);
+  assert.throws(() => validateApply({ ...applied('appimage'), restart: undefined }, 'appimage', spec));
+});
+
+for (const message of ['WebDriverError: unknown error when running "screenshot" with method "GET"', 'script timeout', 'permission denied']) {
+  test(`AppImage restart does not hide unrelated ${message}`, async () => {
+    const evidence = {}; const original = new Error(message);
+    await assert.rejects(observeAppImageRestart({ previous: applied('appimage').restart.previous,
+      click: async () => { throw original; }, wait: async () => assert.fail('no native wait after unrelated failure'),
+    }, evidence), error => error === original);
+    assert.equal(evidence.restart, undefined); assert.equal(evidence.restartTransportClosed, undefined);
+  });
+}
+
+test('AppImage normal restart also observes native identity without transport error', async () => {
+  const evidence = {}; const restart = applied('appimage').restart;
+  await observeAppImageRestart({ previous: restart.previous, click: async () => {}, wait: async () => restart }, evidence);
+  assert.deepEqual(evidence.restart, restart); assert.equal(evidence.restartTransportClosed, undefined);
+});

@@ -12,6 +12,7 @@ on:
           - font-performance
           - site-capture
           - artifact
+          - artifact-file-acceptance
           - release-file-acceptance
           - production-updater-check
           - production-upgrade-check
@@ -190,13 +191,14 @@ jobs:
       candidate_path: ${{ inputs.release_candidate_path }}
 
   release-file-acceptance:
-    if: ${{ (inputs.mode == 'release-file-acceptance' || inputs.mode == 'production-updater-check') && !inputs.publish_release }}
+    if: ${{ (inputs.mode == 'release-file-acceptance' || inputs.mode == 'production-updater-check' || inputs.mode == 'artifact-file-acceptance') && !inputs.publish_release }}
     permissions:
       contents: read
       actions: read
     uses: ./.github/workflows/alhangeul-release-files.yml
     with:
       windows_only: ${{ inputs.artifact_platform == 'windows-x64' }}
+      ordinary_artifacts: ${{ inputs.mode == 'artifact-file-acceptance' }}
       production_check: ${{ inputs.mode == 'production-updater-check' }}
       candidate_path: ${{ inputs.release_candidate_path }}
 

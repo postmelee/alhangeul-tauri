@@ -66,6 +66,21 @@ describe('rhwp host font protocol at the product boundary', () => {
     expect(new Uint8Array(b!.bytes)[0]).toBe(1);
   });
 
+  it('returns split renderer programs in host order and preserves unambiguous face lookup', async () => {
+    const host = transport();
+    host.snapshot.faces = [
+      { ...regular, id: 'z', postscriptName: 'Host-Z' },
+      { ...regular, id: 'a', postscriptName: 'Host-A' }, bold,
+    ];
+    const fonts = await import('./local-fonts');
+    await fonts.setHostFontProvider(host.provider);
+    const style = { weight: 400, slant: 'normal' as const };
+    expect(fonts.resolveRendererLocalFont('Host Family', style)).toBeNull();
+    expect(fonts.resolveRendererLocalFontCandidates('Host Family', style).map(face => face.postscriptName))
+      .toEqual(['Host-Z', 'Host-A']);
+    expect(fonts.resolveRendererLocalFontCandidates('Host-A', style)).toHaveLength(1);
+  });
+
   it('discards pending bytes on a revision change and removes only its own subscription', async () => {
     const host = transport();
     let finish!: (data: { bytes: ArrayBuffer }) => void;

@@ -3,11 +3,15 @@ import { readFile, readlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { validateApply } from './production-evidence.mjs';
 
-export async function stopRestartedAppImage(output) {
+export function restartedAppImageProcess(apply, spec = null) {
+  validateApply(apply, 'appimage', spec);
+  return apply.restart.current;
+}
+
+export async function stopRestartedAppImage(output, spec = null) {
   assert.equal(process.platform, 'linux');
   const apply = JSON.parse(await readFile(join(output, 'apply', 'result.json'), 'utf8'));
-  validateApply(apply, 'appimage');
-  const { pid, executable } = apply.restart.current;
+  const { pid, executable } = restartedAppImageProcess(apply, spec);
   const path = `/proc/${pid}/exe`;
   const running = async () => {
     try { assert.equal(await readlink(path), executable, 'only this VM verified restarted process'); return true; }

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { basename } from 'node:path';
+import { basename, join } from 'node:path';
 import { publicKeyFingerprint, UPDATER_TARGETS } from './artifact-verifier.mjs';
 import { validateReleaseInventory } from './release-inventory.mjs';
 
@@ -9,16 +9,24 @@ export const MANIFEST_HASH = '654efd7efc5f57de061d56743d30ab55c0f152d693df52c402
 export const INVENTORY = 'alhangeul-updater-release-inventory.json';
 export const TARGETS = Object.freeze({ nsis: 'windows-x86_64-nsis', msi: 'windows-x86_64-msi', appimage: 'linux-x86_64-appimage' });
 const ENDPOINT = 'https://postmelee.github.io/alhangeul-tauri/updater/stable.json';
-const SOURCES = { n: ['0.1.0', 399698591, 'fc3cad15682f35723ab6558d1301e9096f7eec67'], next: ['0.1.1', 402604603, '96e89e900415ee9e1e942b5c01c833dea3415e86'] };
+const SOURCES_BY_MANIFEST = {
+  [MANIFEST_HASH]: { n: ['0.1.0', 399698591, 'fc3cad15682f35723ab6558d1301e9096f7eec67'], next: ['0.1.1', 402604603, '96e89e900415ee9e1e942b5c01c833dea3415e86'] },
+  '58ca348b234945e8330911ec6f77ba1c3af5ac6b5e05db8a585a29e55a107ad3': { n: ['0.1.1', 402604603, '96e89e900415ee9e1e942b5c01c833dea3415e86'], next: ['0.1.2', 407055948, '6dcb05e96ec2075d09d8a60160e1d82f08c0811b'] },
+};
+
+export function productionInputsPath(root, value = process.env.ALHANGEUL_PRODUCTION_INPUTS ?? 'tests/gui/production-upgrade-inputs.json') {
+  assert.ok(['tests/gui/production-upgrade-inputs.json', 'tests/gui/production-upgrade-v0.1.2-inputs.json'].includes(value), 'approved production input path');
+  return join(root, value);
+}
 
 export function validateInputs(spec, kind) {
   assert.equal(spec.schemaVersion, 1);
   assert.equal(spec.repository, 'postmelee/alhangeul-tauri');
   assert.equal(spec.endpoint, ENDPOINT);
-  assert.equal(spec.manifestSha256, MANIFEST_HASH);
+  assert.ok(Object.hasOwn(SOURCES_BY_MANIFEST, spec.manifestSha256), 'approved exact manifest');
   assert.equal(spec.keyFingerprint, '9f86f804067eff359cd32707137dfaaea8710450985dda86b0392da5db63b8f8');
   assert.ok(Object.hasOwn(TARGETS, kind), 'supported upgrade kind');
-  for (const [role, expected] of Object.entries(SOURCES)) {
+  for (const [role, expected] of Object.entries(SOURCES_BY_MANIFEST[spec.manifestSha256])) {
     const r = spec.releases[role];
     assert.deepEqual([r.version, r.releaseId, r.sourceSha], expected, 'exact released product');
     assert.equal(r.tag, `v${r.version}`);

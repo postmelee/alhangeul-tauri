@@ -47,7 +47,7 @@ test('tracked release data는 현재 상태의 전체 계약을 통과하고 sou
   assert.equal(validateReleaseData(release, { allowManifestPublished: true }), release);
   assert.deepEqual(
     await checkPages({ repositoryRoot, mode: 'source' }),
-    [{ mode: 'source', files: 18, status: release.status }],
+    [{ mode: 'source', files: 19, status: release.status }],
   );
   assert.equal(await readFile(releasePath, 'utf8'), sourceBefore);
 });

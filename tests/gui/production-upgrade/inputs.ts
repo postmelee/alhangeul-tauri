@@ -4,7 +4,7 @@ import { isAbsolute, join } from 'node:path';
 export interface UpgradeInputs {
   kind: 'msi' | 'nsis' | 'appimage'; phase: 'apply' | 'verify';
   appPath: string; driverPath: string; output: string; root: string;
-  target: string; manifestHash: string; endpoint: string;
+  target: string; manifestHash: string; endpoint: string; fromVersion: string; toVersion: string;
 }
 
 export function readUpgradeInputs(env = process.env): UpgradeInputs {
@@ -19,10 +19,12 @@ export function readUpgradeInputs(env = process.env): UpgradeInputs {
     throw new Error('Invalid production upgrade kind/phase');
   }
   const root = absolute('ALHANGEUL_PRODUCTION_ROOT');
-  const spec = JSON.parse(readFileSync(join(root, 'tests/gui/production-upgrade-inputs.json'), 'utf8'));
+  const inputPath = env.ALHANGEUL_PRODUCTION_INPUTS ?? 'tests/gui/production-upgrade-inputs.json';
+  if (!['tests/gui/production-upgrade-inputs.json', 'tests/gui/production-upgrade-v0.1.2-inputs.json'].includes(inputPath)) throw new Error('Invalid production input path');
+  const spec = JSON.parse(readFileSync(join(root, inputPath), 'utf8'));
   return { kind: kind as UpgradeInputs['kind'], phase: phase as UpgradeInputs['phase'], root,
     appPath: absolute('ALHANGEUL_PRODUCTION_APP'), driverPath: absolute('ALHANGEUL_PRODUCTION_DRIVER'),
     output: absolute('ALHANGEUL_PRODUCTION_OUTPUT'), endpoint: spec.endpoint,
-    manifestHash: spec.manifestSha256,
+    manifestHash: spec.manifestSha256, fromVersion: spec.releases.n.version, toVersion: spec.releases.next.version,
     target: kind === 'appimage' ? 'linux-x86_64-appimage' : `windows-x86_64-${kind}` };
 }

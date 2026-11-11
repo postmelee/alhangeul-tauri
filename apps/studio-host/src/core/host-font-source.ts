@@ -56,8 +56,8 @@ export class HostFontSource {
     const pending = Promise.resolve().then(() => provider.getSnapshot(signal)).then(value => {
       if (signal.aborted || generation !== this.epoch) return [];
       this.snapshot = copyHostSnapshot(value);
-      this.refs = new Map(this.snapshot.faces.map(face => {
-        const ref = Object.freeze({ key: JSON.stringify(['host', generation, this.snapshot!.revision, face.id]),
+      this.refs = new Map(this.snapshot.faces.map((face, order) => {
+        const ref = Object.freeze({ order, key: JSON.stringify(['host', generation, this.snapshot!.revision, face.id]),
           face, revision: this.snapshot!.revision, generation });
         return [ref.key, ref];
       }));

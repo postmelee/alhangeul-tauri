@@ -1,5 +1,6 @@
 import { join } from 'node:path';
-import type { TauriCapabilities, TauriServiceOptions } from '@wdio/tauri-service';
+import type { TauriServiceOptions } from '@wdio/tauri-service';
+import { productionCapabilities } from './production-upgrade/session.ts';
 import { readUpgradeInputs } from './production-upgrade/inputs.ts';
 
 const inputs = readUpgradeInputs();
@@ -9,7 +10,7 @@ const service: TauriServiceOptions = {
   autoDownloadEdgeDriver: process.platform === 'win32',
   captureBackendLogs: true, captureFrontendLogs: true, logDir: join(inputs.output, 'driver'),
 };
-const capabilities: TauriCapabilities[] = [{ browserName: 'tauri', 'tauri:options': { application: inputs.appPath } }];
+const capabilities = productionCapabilities(inputs);
 export const config: WebdriverIO.Config = {
   runner: 'local', specs: [join(import.meta.dirname, 'specs/production-upgrade.e2e.ts')],
   maxInstances: 1, capabilities, services: [['@wdio/tauri-service', service]],

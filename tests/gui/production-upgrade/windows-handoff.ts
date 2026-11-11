@@ -4,6 +4,7 @@ interface Handoff {
   status: 'observing' | 'transportClosed' | 'failed';
   startedAt: string;
   transitions: { status: string; observedAt: string }[];
+  emptyStateResponses?: number;
   lastSnapshot?: Snapshot;
   lastObservedAt?: string;
   closedAt?: string;
@@ -11,7 +12,7 @@ interface Handoff {
   error?: string;
 }
 interface Observation {
-  readState: () => Promise<Snapshot>;
+  readState: () => Promise<Snapshot | null>;
   pause: (ms: number) => Promise<unknown>;
   now?: () => number;
   timeoutMs?: number;
@@ -44,9 +45,15 @@ export async function observeWindowsHandoff(options: Observation, evidence: Upgr
   evidence.windowsHandoff = handoff;
   try {
     while (now() < deadline) {
-      let snapshot: Snapshot;
+      let snapshot: Snapshot | null;
       try { snapshot = await options.readState(); }
       catch (error) { recordWindowsClosure(evidence, error, 'state-poll', now); return; }
+      // A closing WebView can return null once; only a real transport error proves closure.
+      if (snapshot === null) {
+        handoff.emptyStateResponses = (handoff.emptyStateResponses ?? 0) + 1;
+        await options.pause(250);
+        continue;
+      }
       handoff.lastSnapshot = snapshot;
       handoff.lastObservedAt = new Date(now()).toISOString();
       evidence.installed = snapshot;

@@ -7,7 +7,9 @@ interface LocalFontPaths {
 }
 
 const relativeConsumers = ['core/document-font-status.ts', 'core/font-substitution.ts',
-  'core/host-font-requests.ts', 'core/host-canvas-fonts.ts', 'core/wasm-bridge.ts'];
+  'core/host-font-requests.ts', 'core/host-canvas-fonts.ts', 'core/wasm-bridge.ts',
+  'core/declared-font-environment.ts', 'core/font-decision-trace.ts',
+  'core/metafile-font-session.ts', 'core/native-pua-font-session.ts'];
 
 export function resolveAlhangeulLocalFontImport(
   source: string,

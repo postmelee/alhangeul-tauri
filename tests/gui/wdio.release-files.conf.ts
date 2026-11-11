@@ -22,6 +22,10 @@ export const config: WebdriverIO.Config = {
     join(import.meta.dirname, productionCheck
       ? 'specs/production-updater.e2e.ts' : 'specs/release-files.e2e.ts'),
     // New exact candidates also exercise font input/scrolling; no baseline comparison.
+    ...(process.env.ALHANGEUL_ORDINARY_ARTIFACTS === 'true'
+      ? [join(import.meta.dirname, 'specs/installed-workers.e2e.ts')] : []),
+    ...(process.env.ALHANGEUL_ORDINARY_ARTIFACTS === 'true' && process.platform === 'win32'
+      ? [join(import.meta.dirname, 'specs/windows-system-print.e2e.ts')] : []),
     ...(fontInteraction ? [join(import.meta.dirname, 'specs/local-font-performance.e2e.ts')] : []),
   ],
   services: [['@wdio/tauri-service', service]], capabilities,

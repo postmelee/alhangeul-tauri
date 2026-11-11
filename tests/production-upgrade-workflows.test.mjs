@@ -50,7 +50,7 @@ test('Windows driver close is provisional until install and document evidence pa
   const steps = windows.jobs.windows.steps;
   assert.equal(steps.find(s => s.id === 'apply')['continue-on-error'], true);
   const validate = steps.find(s => s.id === 'validate');
-  assert.ok(validate.run.includes('-ExpectedVersion \'0.1.1\''));
+  assert.ok(validate.run.includes('-ExpectedVersion \'0.1.2\''));
   assert.ok(steps.some(s => s.run?.includes('production-upgrade.mjs finalize')));
   assert.ok(steps.some(s => s.id === 'cleanup' && s.if === '${{ always() }}'));
   assert.ok(steps.some(s => s.id === 'restore' && s.if === '${{ always() }}'));

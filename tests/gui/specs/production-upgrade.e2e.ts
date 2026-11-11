@@ -8,7 +8,7 @@ import { verifyUpgrade } from '../production-upgrade/verify.ts';
 import { waitForProductionStartup } from '../production-upgrade/startup.ts';
 
 const input = readUpgradeInputs();
-describe(`Production ${input.kind} 0.1.0 → 0.1.1 ${input.phase}`, () => {
+describe(`Production ${input.kind} ${input.fromVersion} → ${input.toVersion} ${input.phase}`, () => {
   it('공개 제품 설치본에서 실제 updater와 재실행 문서 수용을 확인한다', async () => {
     await mkdir(input.output, { recursive: true });
     const evidence: UpgradeEvidence = { schemaVersion: 1, kind: input.kind, phase: input.phase,

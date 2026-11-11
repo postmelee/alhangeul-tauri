@@ -112,3 +112,31 @@ test('new exact candidates reach every acceptance workflow without production ac
     assert.doesNotMatch(script, /eval |source identity/);
   }
 });
+
+for (const kind of ['nsis', 'msi', 'appimage']) {
+  test(`${kind}: ordinary installer requires explicit mode and exact inventory`, async () => {
+    const { selectOrdinaryInstaller } = await import('../scripts/ci/release-candidate-input.mjs');
+    const input = document(kind);
+    const candidate = input.candidates[kind];
+    candidate.platform = kind === 'appimage' ? 'linux-x64' : 'windows-x64';
+    candidate.name = `alhangeul-desktop-${candidate.platform}`;
+    candidate.kind = kind;
+    delete candidate.target;
+    delete candidate.targets;
+    assert.throws(() => validateCandidate(input, kind), /artifact name/);
+    const selected = validateCandidate(input, kind, true);
+    const file = { path: candidate.path, kind, sha256: candidate.sha256 };
+    const inventory = { sourceSha, platform: candidate.platform, files: [file] };
+    assert.equal(selectOrdinaryInstaller(selected.candidate, inventory, sourceSha), file);
+    for (const changed of [
+      { ...inventory, sourceSha: 'b'.repeat(40) },
+      { ...inventory, platform: 'other' },
+      { ...inventory, files: [] },
+      { ...inventory, files: [file, file] },
+      { ...inventory, files: [{ ...file, path: 'replacement' }] },
+      { ...inventory, files: [{ ...file, sha256: '0'.repeat(64) }] },
+    ]) assert.throws(() => selectOrdinaryInstaller(candidate, changed, sourceSha));
+    assert.throws(() => validateCandidate(document(kind), kind, true), /artifact name/);
+    await assert.rejects(loadCandidate(kind, {}, '', true), /candidate file/);
+  });
+}

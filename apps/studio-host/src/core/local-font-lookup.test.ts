@@ -71,6 +71,20 @@ describe('local-font lookup semantics', () => {
     expect(fonts.resolveLocalFont('Lookup Family 0 Regular')).toBeNull();
   });
 
+  it('selects matching regular programs and rejects ambiguous physical identities', async () => {
+    const fonts = await detect([lookupFont(0), lookupFont(1), lookupFont(0, {
+      postScriptName: 'Split-Regular', path: '/synthetic-fonts/split.ttf',
+    })]);
+    const candidates = fonts.resolveLocalFontProgramCandidates('조회 글꼴 0');
+    expect(candidates.map(record => record.postscriptName).sort()).toEqual(['Lookup0-Regular', 'Split-Regular']);
+    const names = fonts.changedLocalFontNames([], candidates);
+    expect(fonts.localFontNamesIntersect(['조회 글꼴 0'.normalize('NFD')], names)).toBe(true);
+    expect(fonts.changedLocalFontNames(candidates, [...candidates].reverse())).toEqual([]);
+    invoke.mockResolvedValue([lookupFont(0), lookupFont(0, { path: '/synthetic-fonts/duplicate.ttf' })]);
+    await fonts.detectLocalFontEntries(true);
+    expect(fonts.resolveLocalFontProgramCandidates('Lookup0-Regular')).toEqual([]);
+  });
+
   it('merges localized rows for the same face without losing its source key', async () => {
     const fonts = await detect([lookupFont(0), lookupFont(0, { family: '조회 글꼴 0' })]);
     expect(fonts.getLocalFontRecords()).toHaveLength(1);
