@@ -88,7 +88,34 @@ try {
         $remaining = @(Get-ChildItem -LiteralPath $installDirectory -Force | ForEach-Object { [ordered]@{ name = $_.Name; directory = $_.PSIsContainer } })
       }
       $report['uninstallState'] = [ordered]@{ directoryExists = Test-Path -LiteralPath $installDirectory; handlerRegistered = Test-Path -LiteralPath $handlerKey; remaining = $remaining }
-      if ($report.uninstallExit -ne 0 -or $report.uninstallState.directoryExists -or $report.uninstallState.handlerRegistered) { throw 'uninstall-incomplete' }
+      # Preserve product uninstall failure before any test-owned cleanup. This is not product acceptance.
+      $report['productUninstallPassed'] = $report.uninstallExit -eq 0 -and -not $report.uninstallState.directoryExists -and -not $report.uninstallState.handlerRegistered
+      if (-not $report.productUninstallPassed) {
+        $loaders = @()
+        foreach ($process in @(Get-Process dllhost -ErrorAction SilentlyContinue)) {
+          try {
+            $loaded = @($process.Modules | Where-Object { $_.FileName -ieq $handler }).Count -gt 0
+            $loaders += [ordered]@{ pid = $process.Id; loaded = $loaded; readable = $true }
+          } catch { $loaders += [ordered]@{ pid = $process.Id; loaded = $null; readable = $false } }
+          finally { $process.Dispose() }
+        }
+        $report['handlerLoaders'] = $loaders
+        $report['ownedResidualRemoval'] = [ordered]@{ attempted = $false; removed = $false; errorCode = $null }
+        # One exact, hashed, non-reparse file in this disposable installation; never remove a shared host.
+        if (-not $report.uninstallState.handlerRegistered -and $remaining.Count -eq 1 -and $remaining[0].name -ceq 'AlhangeulThumbnailHandler.dll') {
+          $entry = Get-Item -LiteralPath $handler
+          $expected = @($report.binaries | Where-Object { $_.name -ceq $entry.Name })
+          if (($entry.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0 -or $expected.Count -ne 1 -or
+              (Get-FileHash -LiteralPath $handler -Algorithm SHA256).Hash.ToLowerInvariant() -cne $expected[0].sha256) { throw 'unexpected-residual' }
+          $report.ownedResidualRemoval.attempted = $true
+          try {
+            [IO.File]::Delete($handler)
+            [IO.Directory]::Delete($installDirectory, $false)
+            $report.ownedResidualRemoval.removed = -not (Test-Path -LiteralPath $installDirectory)
+          } catch { $report.ownedResidualRemoval.errorCode = $_.Exception.HResult }
+        }
+        if (Test-Path -LiteralPath $installDirectory) { throw 'uninstall-residual-locked' }
+      }
     }
     $report.cleanup = $true
   } catch { $report['cleanupError'] = $_.Exception.HResult; $report.status = 'invalid' }

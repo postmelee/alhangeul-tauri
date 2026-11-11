@@ -18,7 +18,11 @@ try {
   foreach ($fixture in $fixtures) {
     $target = Join-Path $root $fixture.path
     [void][IO.Directory]::CreateDirectory((Split-Path -Parent $target))
-    Copy-Item -LiteralPath (Join-Path $env:GITHUB_WORKSPACE $fixture.path) -Destination $target
+    $upstream = (Get-Content -LiteralPath (Join-Path $PSScriptRoot 'windows-thumbnail-fixtures.json') -Raw | ConvertFrom-Json).rhwpSha
+    $relative = $fixture.path.Substring('third_party/rhwp/'.Length)
+    if ($upstream -cnotmatch '^[a-f0-9]{40}$' -or -not $fixture.path.StartsWith('third_party/rhwp/') -or $relative.Contains('..')) { throw 'invalid-fixture-source' }
+    Invoke-WebRequest -UseBasicParsing -Uri ('https://raw.githubusercontent.com/edwardkim/rhwp/' + $upstream + '/' + $relative) -OutFile $target
+    if ((Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash.ToLowerInvariant() -cne $fixture.sha256) { throw 'downloaded-fixture-mismatch' }
   }
   Invoke-WebRequest -UseBasicParsing -Uri 'https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.3/Alhangeul_0.1.3_x64-setup.exe' -OutFile (Join-Path $root 'installer.exe')
   if ((Get-FileHash -LiteralPath (Join-Path $root 'installer.exe') -Algorithm SHA256).Hash.ToLowerInvariant() -cne $summary.installerSha256) { throw 'published-installer-changed' }
