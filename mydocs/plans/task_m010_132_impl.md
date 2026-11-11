@@ -4,6 +4,8 @@
 GitHub Issue: [#132](https://github.com/postmelee/alhangeul-tauri/issues/132)
 마일스톤: M010
 
+현재: Stage 2 구현·자동 회귀 완료(full 43102583324). Stage 3의 실제 Explorer 수용 기준 답변 대기.
+
 2026-11-11 수행계획 승인과 이슈 해결까지 연속 진행 지시를 적용한다. PR 생성 전 보고한다.
 
 ## 단계 개요
@@ -272,7 +274,7 @@ HTTPS fetch 실패에만 다음 고정 미러를 시도한다. 서명 실패는 
 통과했다. 문서 bitmap 12개는 모두 181×256, JPG 4개는 256×134이고 추가 잔여물 삭제는 없었다.
 이 증거는 초기 후보에만 해당하며 최신 후보의 장기 잠금·공개본 수동 재설치를 대체하지 않는다.
 
-최종 재검증 후보는 `4558204669f82a450a3ee66f3c3081a4b57e3ef0`,
+당시 재검증 후보는 `4558204669f82a450a3ee66f3c3081a4b57e3ef0`,
 [run 43061139226](https://github.com/postmelee/alhangeul-tauri/actions/runs/43061139226)의
 full + thumbnail_same_version_upgrade=true다. 선행 43056867702는 x64 미러 403 실패를
 보존한 뒤 중단했으며 수용하지 않는다. 새 후보는 첫 Windows 성공 build의 동일 workload
@@ -305,3 +307,59 @@ interactive desktop 및 기존 Shell의 사용자/session이 시험 사용자와
 checkpoint와 화면 관측 단계별 JSON을 남겨 전체 시간 초과가 기존 증거를 잃게 하지 않는다.
 독립 Windows fast 회귀에서 0/7 종료 코드와 3초 timeout 후 직접 만든 자식의 종료를 확인한다.
 실패한 run의 artifact를 성공 producer로 재사용하지 않으며 보정 후 새 full을 실행한다.
+
+### Windows 캐시 저장 제한 초과와 동일 후보 재검증
+
+run 43074541367(a2796fc0)은 Windows 제품 빌드·native 검사·잠금 회귀·artifact 업로드를
+통과했지만 job의 90분 제한으로 마지막 Cargo source cache 저장 중 취소됐다. 전체 결과는
+cancelled이며 후속 설치 검사는 실행되지 않았다. 부분 성공을 전체 수용으로 기록하지 않는다.
+원시 job 130712882531 로그와 artifact metadata를 T7에 보존했다.
+
+19:39:09 UTC에 동일 SHA의 Windows desktop target cache 저장은 완료됐다.
+GitHub cache API에서 ID 10374390010, 4,864,860,214 bytes와 exact SHA key를 확인했다.
+이 준비 상태 변화에 근거해 같은 source를 새 full run으로 검증한다. 검사·90분 제한·제품 코드는
+바꾸지 않으며 이전 실패 run의 설치 파일을 성공 producer로 재사용하지 않는다.
+실제 cache hit와 모든 필수 검사 결과는 새 실행에서 별도로 확인한다.
+
+동일 SHA 재검증은 [43089630194](https://github.com/postmelee/alhangeul-tauri/actions/runs/43089630194)다.
+2026-11-12 05:45 KST 확인 시 Windows 제품 검사·Tauri bundle·잠금 회귀와 세 core 검사가
+통과했다. Linux arm64의 native/package lifecycle도 통과했지만 package evidence upload가
+실패해 필수 gate가 실패했다. job 130764889488의 steps JSON을 보존했으며 로그 다운로드는
+CLI에서 HTTP 502, GitHub connector에서 ReadTimeout을 반환했다. run은 아직 in_progress다.
+Windows 및 Linux x64 증거 upload와 후속 Windows 설치 수용은 아직 확인되지 않았다.
+제품 결함이나 GitHub 전체 장애로 단정하지 않고, 원시 로그·필수 증거 확보 전에는 완료 처리하지 않는다.
+
+후속 로그 조회가 복구돼 Linux arm64의 원시 로그를 보존했다. artifact 생성 요청이 JSON 대신
+HTML(`<!DOCTYPE ...`) 응답을 받아 5회 재시도 뒤 `Failed to CreateArtifact`로 실패했다.
+Linux x64도 package evidence upload와 필수 gate가 실패했다. 기능 검사 통과를 증거 전달
+성공으로 바꾸지 않으며, 서비스 응답 이상을 제품 코드 변경으로 우회하지 않는다.
+실제 Windows 10/11 Explorer 조건을 유지해 PR을 보류할지, 명시적으로 후속 검증으로
+이관하고 CI·설치 수용 후 PR을 진행할지 작업지시자에게 확인했다. 아직 답변 전이므로 기존
+수용 기준은 유지한다. 이 확인은 실제 재릴리즈의 tag/asset/feed 교체 승인이 아니다.
+
+2026-11-12 06:16 KST에도 Windows support upload가 진행 상태로 남아 90분 job 제한을 넘겼다.
+Linux 두 필수 gate가 이미 실패한 실행의 취소를 요청했다. 제품/installer 수용은 미완료다.
+전체 build를 바로 반복하지 않고 동일 SHA의 fast 실행으로 작은 Windows script evidence의
+생성·upload·다운로드 digest 경로가 다시 동작하는지 확인한다. 이는 전송 복구 관측이며
+native·설치·Explorer 성공을 대신하지 않는다. 전송 실패가 계속되면 전체 build 재시도는 하지 않는다.
+
+전송 복구 관측 [43101751100](https://github.com/postmelee/alhangeul-tauri/actions/runs/43101751100)은
+같은 a2796fc0의 fast 전체 success다. Windows evidence artifact 13893020909(7,741 bytes)를
+다운로드했고 SHA256 37fc947b33b0932c1eba8208374ad3c2099bfc78c341676d962d391d979943a3이
+GitHub metadata와 일치했다. 이 외부 상태 변화에 근거해 동일 후보를 새 full run으로 검증한다.
+이전 run은 cancelled로 보존한다. 새 run ID를 사용해 기존 attempt의 artifact·이름·결과와
+섞지 않으며, fast 전송 성공을 설치/전체 수용으로 승격하지 않는다.
+
+### Stage 2 완료와 Stage 3 잔여 수용 — 2026-11-12
+
+[full run 43102583324](https://github.com/postmelee/alhangeul-tauri/actions/runs/43102583324),
+source a2796fc0fd93002ccdcf1e5c313701525b1668c6, attempt 1이 success로 끝났다.
+Windows/Linux core·native·패키지, 표준 사용자 fresh 24개/public-upgrade 36개 probe,
+제품 자체 제거, 합성 사용자 데이터 보존, MSI 및 기존 제한 관측 계약이 모두 통과했다.
+증거 다운로드 digest와 raw JSON을 대조했다. 자세한 식별자·성공 범위는
+[Stage 2 보고서](../working/task_m010_132_stage2.md)에 기록한다.
+
+Explorer는 interactive-shell-owner-mismatch로 preflight에서 unavailable을 기록했다.
+캡처는 없으며 실제 Windows 10/11 시각 수용은 미검증이다. 화면 조건 처리에 대한 답변 전에는
+Stage 3 완료, PR 생성, issue close, release/tag/asset/feed 교체를 진행하지 않는다.
+같은 버전 재설치는 설치기를 /S /UPDATE로 직접 실행한 자동화 경로다.
