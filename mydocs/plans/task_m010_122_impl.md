@@ -1,6 +1,6 @@
 # Task #122 구현계획서 — rhwp v0.9.0 통합과 Alhangeul v0.1.3 후보 검증
 
-M010 · 2026-11-09 · 구현계획 승인 · Stage 1 미완료 · 선행 보정 구현·검증 완료, 후보 재생성 예정
+M010 · 2026-11-09 · Stage 4 후보 인계 산출물 완료 · 최종 보고 및 PR 검토
 [수행계획서](task_m010_122.md) · [GitHub 이슈 #122](https://github.com/postmelee/alhangeul-tauri/issues/122)
 
 ## 단계 개요
@@ -97,6 +97,53 @@ pnpm run check:release-notes
 
 커밋 `Task #122 Stage 3: Windows와 Linux 설치 파일 6종과 대표 문서 검증`
 
+### 2026-11-10 첫 후보 검증과 보정 범위
+
+제품·workflow·GUI harness는 모두 `08a825d7c3e3fcf6a24e731d1a7e7753910374d6`다. [전체 빌드](https://github.com/postmelee/alhangeul-tauri/actions/runs/42743297537) attempt 1과 Windows PDF·Linux 전체 GUI는 성공했다. 설치 파일 6종과 archive 3종을 별도 다운로드해 크기와 SHA-256을 대조했다. 파일 식별자, 각 설치본의 실제 결과와 미결 범위는 [후보 기록](../../docs/releases/v0.1.3.md)에 둔다.
+
+| 검사 | 실행 / 증거 archive ID | 수용 범위 |
+|---|---|---|
+| Windows 설치·썸네일 | 전체 빌드 · 일반 MSI `13733397812`, NSIS `13733572264`, 강제 MSI `13734260741` | MSI 일반은 raw 성공. NSIS는 설치·제거 통과, 사용자별 썸네일 raw 실패 12건. 강제 MSI는 재부팅 필요로 raw 실패 1건. |
+| Windows NSIS PDF | [42751850219](https://github.com/postmelee/alhangeul-tauri/actions/runs/42751850219) · raw `13734104356`, 분석 `13734910742` | HWP/HWPX 편집 후 PDF 생성 및 재시작 덮어쓰기 4건, 페이지·한글 검색 검증 성공 |
+| Linux DEB 전체 GUI | [42751853554](https://github.com/postmelee/alhangeul-tauri/actions/runs/42751853554) · `13733454621` | 문서 저장·재열기, 직접 PDF, GTK·CUPS·취소 후 편집 복귀, Nautilus·Thunar 성공 |
+| Linux DEB 로컬 글꼴 | [42751857930](https://github.com/postmelee/alhangeul-tauri/actions/runs/42751857930) · `13733789528` | 설치·사용·새 창 확인 후 파일 삭제와 재감지에서 2개 시나리오 실패 |
+
+`checkRemovedFont`의 삭제 후 기대 face 수는 0개였다. 실제로는 각 시나리오에서 `Abel`이 1개 남았다. Canvas2D의 페이지 해시는 사용 전 `dac3ae866932…`에서 사용 후 `c41329374106…`로 바뀌고 삭제·재감지 후에도 후자였다. v0.9.0의 `declared-font-environment.ts`는 선언 글꼴 프로그램과 CSS face를 보관하고, upstream main은 `options-dialog-clear` 이벤트에서 `clearDeclaredLocalPrograms()`를 실행한다. 제품 설정의 재감지·비활성화 경로가 보내는 이벤트에는 해당 초기화 지시가 없다. 캐시와 등록 해제를 확인할 집중 회귀 검사를 추가하고 설치본에서 삭제·복구를 다시 검증하는 것이 보정 후보다.
+
+일반 설치 파일용 추가 검증에도 후속 작업이 있다. 공개용 NSIS·MSI·AppImage 검증기는 서명 inventory를 요구한다. RPM·arm64 GUI 검증기의 `verifyProductDependencies`는 20 MiB 버퍼로 26,836,346바이트 WASM을 읽다가 `ENOBUFS`로 실패함을 재현했다. 파일의 실제 Git blob 비교 방식과 일반 archive 검증 경로를 적용하는 안을 작업지시자에게 제시했다. 제품 보정 승인 시에는 새 제품 SHA와 설치 파일을 다시 생성하고 해당 파일로 수용해야 한다.
+
+### 2026-11-11 보정 승인과 제품 변경
+
+작업지시자의 “진행해줘”로 글꼴 재감지 보정, 일반 설치 파일 검증 경로, 새 제품 커밋의 6종 재빌드·재검증을 승인받았다. 제품의 글꼴 변경 알림에서 upstream의 `clearDeclaredLocalPrograms()`를 호출해 선언 글꼴의 CSS face·프로그램·별칭을 함께 해제한다. 해제가 새 카탈로그 분석과 갱신 알림보다 먼저 실행되는 회귀 검사를 추가했다. T7 검증 사본의 Studio 290개 검사와 빌드를 통과했다.
+
+일반 설치 파일 수용은 명시적인 artifact 모드에서 기존 provenance·archive digest·파일 inventory 검증을 재사용한다. 대용량 WASM의 출처 비교는 Git blob 해시를 사용한다. Windows/Linux 설치본의 실제 글꼴 삭제·복구와 미결 GUI 범위로 제품 결과를 판정한다. 일반 파일 검증 모드는 `artifact-file-acceptance`로 지정하고, 입력 candidate JSON은 실제 새 빌드의 파일 식별 정보로 작성한다. 이 경로에서 설치본의 모듈 Worker 두 종류, Windows 인쇄 UI 및 기존 문서 roundtrip 검사를 수행한다. 하네스 타입 검사와 자동화 1,365개를 통과했다. 제품 SHA와 하네스 SHA는 각각 기록한다. Windows 인쇄 저장창은 주 앱 또는 WebView2 하위 프로세스가 소유할 수 있으므로 앱의 프로세스 계보와 native dialog/control 핸들을 확인한 뒤 새 PDF 경로에 저장한다.
+
+### 새 설치 파일 생성과 추가 수용 입력
+
+제품 `2de5aa319d29e125bec0efc58f9e5526fc4a65d6`의 [전체 빌드 42919676345](https://github.com/postmelee/alhangeul-tauri/actions/runs/42919676345)가 성공했다. archive 3종과 내부 설치 파일 6종의 크기·SHA-256을 다운로드한 원본에서 대조했다. 추가 GUI의 고정 입력은 [task_m010_122.json](../working/task_m010_122.json)이다. 검증 도구의 인쇄 저장창 보정까지 포함한 [빠른 CI 42923441737](https://github.com/postmelee/alhangeul-tauri/actions/runs/42923441737)도 성공했다.
+
+NSIS·MSI·AppImage에는 일반 파일 수용을 적용하고, x64 DEB에는 기존 전체 GUI 및 글꼴 수용을 적용한다. arm64 DEB는 arm64 runner, RPM은 Fedora 데스크톱 VM에서 실제 문서 작업을 확인한다. RPM의 데스크톱 검증은 기존 VM 경로를 사용하며 컨테이너 결과로 대체하지 않는다. Windows 직접 PDF 검증도 같은 producer의 NSIS를 재사용한다. 각 실행의 실제 harness SHA와 원시 설치 결과는 Stage 3 결과에 기록한다.
+
+### 첫 추가 GUI 결과와 검증 도구 정합성
+
+새 제품의 Linux 전체 GUI `42930156329`는 성공했다. 글꼴 run `42930160784`에서 삭제 후 CSS face 0개·기존 fallback 픽셀 복귀, 복구 후 CanvasKit·localTypefaceCount 1 및 재시작 보존을 확인했다. 이후 공급 비활성화 상태의 새 창에서 CanvasKit 진단을 무조건 기대한 검사로 실패했다. v0.9.0은 Abel 프로그램이 없으면 `canvaskitResourcePreparationFailed`와 명시적인 Abel 오류를 보고하며 Canvas2D로 전환한다.
+
+일반 파일 run `42930164791`에서는 문서 roundtrip과 실제 폼·PDF Worker가 성공했다. AppImage의 공급 비활성화 Abel 성능 검사도 같은 CanvasKit 전제에서 실패했다. 예외는 해당 비활성화 fixture와 정확한 fallback 사유로 한정하고, 요청 backend와 실제 backend를 따로 기록한다. 공급 활성화 및 대표 문서는 기존 renderer 요구를 유지한다. Windows 인쇄 취소는 성공했고 출력 검증은 실제 창의 `Microsoft Print to PDF`·`Print` 조합을 찾도록 보정한다. 제품 bytes를 바꾸지 않고 같은 설치 파일로 영향받는 검증만 다시 실행한다.
+
+### 실제 보안 정책과 인쇄 파일명 컨트롤 관찰
+
+보정 후 `42932035740`의 글꼴 삭제·복구·새 창·재시작은 모두 통과했고 Fedora RPM VM `42932221022`도 성공했다. 일반 설치본 재검사 `42932488095`에서 AppImage 대표 문서는 고정된 CSP가 차단하는 HCRDotum 외부 글꼴 요청으로 Canvas2D로 전환했다. 대표 문서의 전환은 실제 브라우저의 enforced `connect-src` 위반 주소와 upstream 진단의 실패 URL이 일치할 때만 별도 수용한다. 이를 CanvasKit 실행 성공으로 집계하지 않으며, 활성 Abel fixture의 CanvasKit 요구는 유지한다. CSP나 제품 파일은 바꾸지 않는다.
+
+Windows는 `Save Print Output As` 창까지 진입했으나 파일명 입력 ID를 Open 대화상자의 `1148`로 찾고 있었다. 두 설치본의 관찰은 파일명 `Edit/1001`과 주소 막대 `ToolbarWindow32/1001`을 구분한다. 정확한 ID와 class를 함께 선택하고 기존 native 소유 PID·자식 HWND·class 검사와 저장 후 파일 확인을 유지한다. 같은 파일로 영향받은 일반 설치 수용을 다시 실행한다.
+
+`42934573187`에서 Windows의 PDF 저장은 완료됐으나 스풀러가 출력 중인 빈 파일을 검사가 먼저 읽었다. 업로드 시점에는 정상 PDF 헤더가 있는 1,352,883바이트 파일을 확인했다. 새 파일의 PDF 헤더와 끝 표시(`%%EOF`)를 기다리도록 보정한다. AppImage의 HWP는 enforced CSP 대조를 통과했고 HWPX에서는 미설치 `한양신명조`로 전환했다. 고정 fixture의 WASM 선언 요구·embedded family, 고정 upstream supply registry, 공급 활성화 시 native catalog의 이름·별칭을 독립 대조해 실제 공급 경로가 없는 글꼴만 전환 근거로 인정한다. 대표 문서의 요청·실제 backend를 계속 분리하고 활성 Abel의 CanvasKit 적용 검사는 유지한다.
+
+### Stage 3 최종 결과
+
+제품 `2de5aa319d29e125bec0efc58f9e5526fc4a65d6`의 설치 파일 6종을 수용 범위별로 확인했다. 최종 하네스 `c5f59294abefb6ad3251bb5f6a5083283ff8c6e0`의 일반 파일 run `42936058653`은 NSIS·MSI·AppImage 모두 성공했다. 각 설치본에서 16개 조합·80회 입력/저장, 실제 폼·PDF Worker, Windows 인쇄 출력·취소 복귀·제거를 확인했다. 같은 하네스의 빠른 CI `42936062390`도 성공했다.
+
+Windows 직접 PDF, Linux 전체 GUI·글꼴 삭제/복구, Fedora RPM 및 arm64 DEB의 앞선 성공 증거는 같은 제품 SHA·파일 hash를 확인해 재사용한다. 전체 결과·archive digest·알려진 NSIS Shell 제한과 강제 MSI 재부팅 미검증은 [Stage 3 보고서](../working/task_m010_122_stage3.md)에 기록했다. Windows 시스템 인쇄 PDF는 시각적으로 확인했으며 텍스트 추출이 되지 않는 제한을 직접 PDF 내보내기의 한글 검색 성공과 구분했다.
+
 ## Stage 4 — 후보 인계
 
 **산출물.** 버전 기록·노트, 6종 파일과 근거를 연결한 단계·최종 보고서, 오늘할일 및 devel 대상 PR.
@@ -105,6 +152,12 @@ pnpm run check:release-notes
 - `pnpm run check:release-notes`, `git diff --check` 및 최종 커밋 후 작업 트리를 확인한다. 최종 보고 승인 후 `publish/task122`에서 `devel`로 PR을 열고 required checks를 확인한다.
 
 커밋 `Task #122 Stage 4 + 최종 보고서: Alhangeul v0.1.3 릴리즈 후보 인계`
+
+### Stage 4 승인과 인계
+
+2026-11-11 작업지시자의 “진행해줘”는 Stage 4 후보 인계·최종 보고·검토용 PR 게시에 대한 승인이다. 이미 검증한 제품과 설치 파일을 그대로 인계하고 후보 기록·릴리즈 인덱스·단계/최종 보고·오늘할일만 정리한다. 새 제품 빌드나 서명·태그·Release·Pages·updater 전환은 수행하지 않는다.
+
+[Stage 4 보고서](../working/task_m010_122_stage4.md)와 [최종 보고서](../report/task_m010_122_report.md)에 승인된 문서 위치, 설치 형식별 근거, 알려진 제한 및 공개 준비로 남기는 서명 inventory를 기록한다. `devel`은 `9f811db9fe5d282b91cbe64867eaa79870cc053d`이며 작업 브랜치의 조상이다. PR은 `publish/task122`에서 `devel`로 Open 상태로 게시하고 최종 head/merge candidate의 필수 검사 결과를 PR 본문에 연결한다. 병합은 작업지시자 승인 후 일반 merge 경로를 따른다.
 
 ## 단계 의존성과 검증
 

@@ -5,7 +5,7 @@
 # 알한글 (Alhangeul)
 
 [![Alhangeul 안정 릴리즈](https://img.shields.io/github/v/release/postmelee/alhangeul-tauri?label=Alhangeul&color=0066cc)](https://postmelee.github.io/alhangeul-tauri/)
-[![포함된 rhwp v0.8.7](https://img.shields.io/badge/bundled%20rhwp-v0.8.7-5865f2)](https://github.com/edwardkim/rhwp/releases/tag/v0.8.7)
+[![포함된 rhwp v0.9.0](https://img.shields.io/badge/bundled%20rhwp-v0.9.0-5865f2)](https://github.com/edwardkim/rhwp/releases/tag/v0.9.0)
 [![지원 플랫폼 Windows와 Linux](https://img.shields.io/badge/platform-Windows%20%7C%20Linux-555555)](https://postmelee.github.io/alhangeul-tauri/updates/)
 [![MIT 라이선스](https://img.shields.io/badge/license-MIT-3da639)](LICENSE)
 
@@ -86,7 +86,7 @@ v0.1.2의 변경 사항과 알려진 제한은 [릴리즈 안내](https://postme
 문서 파싱·렌더링과 편집기는 [edwardkim/rhwp](https://github.com/edwardkim/rhwp)를 기반으로 합니다.
 Alhangeul은 Tauri 데스크톱 셸, 파일·창·글꼴·인쇄와 운영체제 통합을 담당합니다.
 
-- 현재 Stable pin: `v0.8.7` (`1a76570e833917d15817415a53c09ad61ab3203f`)
+- 현재 Stable pin: `v0.9.0` (`c9095c5f67632e6721e800ccc7fb43ea49d26682`)
 - 고정 버전과 출처: [rhwp-core.lock](rhwp-core.lock), [upstream 경계](docs/architecture/UPSTREAM.md)
 - 초기 코드와 제품 자산 출처: [PROVENANCE.md](docs/architecture/PROVENANCE.md)
 

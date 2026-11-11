@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict';
-import { loadCandidate, recordCandidateIdentity } from './release-candidate-input.mjs';
+import { loadCandidate, recordCandidateIdentity, selectOrdinaryInstaller } from './release-candidate-input.mjs';
 import { execFileSync } from 'node:child_process';
 import { openSync, closeSync } from 'node:fs';
 import { readFile, mkdir, writeFile, appendFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { verifyWorkflowArtifact } from '../verify-workflow-artifact.mjs';
-import { sha256File } from '../verify-desktop-artifacts.mjs';
+import { sha256File, verifyDesktopArtifacts } from '../verify-desktop-artifacts.mjs';
 import { verifyUpdaterArtifacts } from '../updater/release-inventory.mjs';
 
 export const PRODUCT_SHA = 'fc3cad15682f35723ab6558d1301e9096f7eec67';
@@ -54,8 +54,9 @@ export async function verifyProductDependencies(productSha = PRODUCT_SHA) {
     'apps/studio-host/vendor/rhwp-core/rhwp_bg.wasm',
     'apps/studio-host/vendor/rhwp-core/rhwp.js',
     'tests/gui/support/document-fixture.ts']) {
-    const product = execFileSync('git', ['show', `${productSha}:${path}`], { maxBuffer: 20 * 1024 * 1024 });
-    assert.deepEqual(await readFile(path), product, `product dependency mismatch: ${path}`);
+    const product = execFileSync('git', ['rev-parse', `${productSha}:${path}`], { encoding: 'utf8' }).trim();
+    const actual = execFileSync('git', ['hash-object', '--no-filters', path], { encoding: 'utf8' }).trim();
+    assert.equal(actual, product, `product dependency mismatch: ${path}`);
   }
   const pinned = execFileSync('git', ['rev-parse', `${productSha}:third_party/rhwp`], { encoding: 'utf8' }).trim();
   const actual = execFileSync('git', ['-C', 'third_party/rhwp', 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
@@ -84,8 +85,11 @@ with zipfile.ZipFile(sys.argv[1]) as z:
 
 async function prepare() {
   const kind = process.env.CANDIDATE_KIND;
+  const ordinaryArtifacts = process.env.ALHANGEUL_ORDINARY_ARTIFACTS === 'true';
+  assert.ok(!ordinaryArtifacts || process.env.ALHANGEUL_GUI_PRODUCTION_CHECK !== 'true', 'ordinary artifacts cannot verify production updates');
   const selection = await loadCandidate(kind, { productSha: PRODUCT_SHA, producerRun: PRODUCER_RUN,
-    version: '0.1.0', tag: 'v0.1.0', candidate: CANDIDATES[kind] });
+    version: '0.1.0', tag: 'v0.1.0', candidate: CANDIDATES[kind] },
+    process.env.RELEASE_CANDIDATE_PATH, ordinaryArtifacts);
   const { productSha, producerRun, version, tag, workflowPath, candidate } = selection;
   assert.ok(candidate, 'unsupported candidate kind');
   const root = resolve('candidate');
@@ -105,19 +109,36 @@ async function prepare() {
   assertCandidateIdentity(candidate, handoff, producerRun, productSha);
   await writeFile(resolve(evidence, 'handoff.json'), JSON.stringify(handoff, null, 2));
   await downloadCandidate(candidate, root);
+  const verified = await verifySelectedPackage(selection, root, ordinaryArtifacts);
+  const file = verified.selectedFile;
+  await writeFile(resolve(evidence, 'verified-candidate.json'), JSON.stringify({
+    ...handoff, harnessSha, archiveVerified: true, ...verified,
+  }, null, 2));
+  await recordCandidateIdentity(selection, evidence);
+  await appendFile(process.env.GITHUB_OUTPUT,
+    `installer=${resolve(root, file.path)}\nartifact_root=${root}\n`);
+}
+
+async function verifySelectedPackage(selection, root, ordinaryArtifacts) {
+  const { version, tag, productSha, candidate } = selection;
+  if (ordinaryArtifacts) {
+    const inventory = await verifyDesktopArtifacts({
+      platform: candidate.platform, root, sourceSha: productSha,
+      verifyInventoryPath: resolve(root, 'alhangeul-artifact-inventory.json'),
+    });
+    return {
+      selectedFile: selectOrdinaryInstaller(candidate, inventory, productSha),
+      inventory, inventoryVerified: true, signaturesVerified: false,
+      purpose: 'additional-validation-only',
+    };
+  }
   const config = JSON.parse(await readFile('apps/desktop/src-tauri/tauri.updater.conf.json', 'utf8'));
   const verified = await verifyUpdaterArtifacts({
     root, version, tag, sourceSha: productSha,
     publicKey: config.plugins.updater.pubkey, targets: candidate.targets,
   });
-  const file = assertCandidateFile(candidate, verified);
-  await writeFile(resolve(evidence, 'verified-candidate.json'), JSON.stringify({
-    ...handoff, harnessSha, archiveVerified: true, signaturesVerified: true,
-    keyFingerprint: verified.keyFingerprint, selectedFile: file,
-  }, null, 2));
-  await recordCandidateIdentity(selection, evidence);
-  await appendFile(process.env.GITHUB_OUTPUT,
-    `installer=${resolve(root, file.path)}\nartifact_root=${root}\n`);
+  return { selectedFile: assertCandidateFile(candidate, verified),
+    signaturesVerified: true, keyFingerprint: verified.keyFingerprint };
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

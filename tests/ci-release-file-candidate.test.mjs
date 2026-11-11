@@ -38,3 +38,18 @@ test('final file acceptance cannot rebuild, publish or mask failed GUI/install s
   assert.match(workflow, /id: webview-policy[\s\S]*?-Phase Setup -OutputDirectory \$env:ALHANGEUL_GUI_OUTPUT_DIR/);
   assert.match(workflow, /id: restore-webview-policy\n        if: always\(\) && runner\.os == 'Windows'[\s\S]*?-Phase Cleanup -OutputDirectory \$env:ALHANGEUL_GUI_OUTPUT_DIR/);
 });
+
+test('dependency verification accepts the pinned WASM larger than the old output buffer', async () => {
+  const { execFileSync } = await import('node:child_process');
+  const { verifyProductDependencies } = await import('../scripts/ci/release-file-candidate.mjs');
+  const sha = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
+  await verifyProductDependencies(sha);
+});
+
+test('ordinary-file dispatch selects inventory validation explicitly', async () => {
+  const dispatcher = await readFile(new URL('../.github/workflows/alhangeul-desktop.yml', import.meta.url), 'utf8');
+  const workflow = await readFile(new URL('../.github/workflows/alhangeul-release-files.yml', import.meta.url), 'utf8');
+  assert.match(dispatcher, /ordinary_artifacts: \$\{\{ inputs\.mode == 'artifact-file-acceptance' \}\}/);
+  assert.match(workflow, /ordinary_artifacts:\n        type: boolean\n        default: false/);
+  assert.match(workflow, /ALHANGEUL_ORDINARY_ARTIFACTS: \$\{\{ inputs\.ordinary_artifacts \}\}/);
+});

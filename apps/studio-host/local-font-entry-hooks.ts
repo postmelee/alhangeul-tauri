@@ -41,9 +41,12 @@ export function transformLocalFontEntry(source: string, controllerPath: string):
         eventBus.emit('document-view-changed');
       }
     },
-    onFontsChanged: (fonts) => eventBus.emit('local-fonts-changed', {
-      fonts, report: analyzeDocumentFonts(docInfo.fontsUsed),
-    }),
+    onFontsChanged: (fonts) => {
+      clearDeclaredLocalPrograms();
+      eventBus.emit('local-fonts-changed', {
+        fonts, report: analyzeDocumentFonts(docInfo.fontsUsed),
+      });
+    },
   });`);
   const withPrompt = appendHook(withDocument, promptLocalFonts, `
   if (await __alhangeulPromptFonts()) return;`);
