@@ -1,4 +1,4 @@
-"""Run only the new private QEMU guest, with bounded lifetime and no network."""
+"""Run only the new private QEMU guest, with bounded lifetime and a controlled network comparison."""
 import importlib.util
 import json
 import os
@@ -43,7 +43,8 @@ class Monitor:
 def command(root):
     return [
         "qemu-system-x86_64", "-machine", "q35,accel=kvm,smm=on", "-cpu", "host,hv_relaxed,hv_vapic,hv_spinlocks=0x1fff,hv_vpindex,hv_synic,hv_time,hv_stimer",
-        "-m", "8192", "-smp", "4", "-display", "none", "-vga", "std", "-nic", "none",
+        "-m", "8192", "-smp", "4", "-display", "none", "-vga", "std", "-S",
+        "-netdev", "user,id=net0", "-device", "e1000,netdev=net0,id=nic0",
         "-rtc", "base=localtime", "-global", "driver=cfi.pflash01,property=secure,value=on",
         "-drive", "if=pflash,format=raw,readonly=on,file=/usr/share/OVMF/OVMF_CODE_4M.secboot.fd",
         "-drive", "if=pflash,format=raw,file=" + str(root / "vars.fd"),
@@ -76,6 +77,9 @@ def observe(root, process):
     result = dict(guestEvidenceComplete=False, releaseAcceptance="unverified",
                   harnessSha=os.environ["GITHUB_SHA"])
     try:
+        monitor.call("set_link", {"name": "nic0", "up": False})
+        monitor.call("cont")
+        result["networkEnabledForRetry"] = False
         next_screen = 0
         serial = root / "evidence/serial.log"
         while time.monotonic() - start < 3600:
@@ -95,6 +99,11 @@ def observe(root, process):
                 if serial.stat().st_size > 30 * 1024**2:
                     raise RuntimeError("serial-size-limit")
                 content = serial.read_text(errors="replace")
+                if not result["networkEnabledForRetry"] and any(
+                        line.startswith("ALH ") and '"phase":"network-retry"' in line
+                        for line in content.splitlines()):
+                    monitor.call("set_link", {"name": "nic0", "up": True})
+                    result["networkEnabledForRetry"] = True
                 if any(line.startswith("ALH ") and '"kind":"done"' in line for line in content.splitlines()):
                     result["guestEvidenceComplete"] = module("guest-ui-evidence").decode(content, root / "evidence")
                     break

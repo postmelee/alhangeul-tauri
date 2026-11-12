@@ -57,8 +57,18 @@ try {
   if (Test-Path $key) { throw 'preexisting-handler' }
   $installer = Join-Path $root 'installer.exe'
   if ((Get-FileHash $installer -Algorithm SHA256).Hash.ToLowerInvariant() -cne $inputData.installerSha256) { throw 'installer-hash-mismatch' }
+  . (Join-Path $PSScriptRoot 'guest-ui-installer-state.ps1')
+  $report['beforeInstall'] = Get-GuestInstallerState
   $report.phase = 'install'; Save-State
-  $report.installExit = Run-Owned $installer '/S'
+  $report['offlineInstallExit'] = Run-Owned $installer '/S'
+  $report['afterOfflineInstall'] = Get-GuestInstallerState
+  $report.installExit = $report.offlineInstallExit
+  if ($report.installExit -ne 0) {
+    $report.phase = 'network-retry'; Save-State
+    Wait-GuestNetwork
+    $report.installExit = Run-Owned $installer '/S' 300
+    $report['afterOnlineInstall'] = Get-GuestInstallerState
+  }
   if ($report.installExit -ne 0) { throw 'install-failed' }
   $directory = Split-Path -Parent (Get-Item -LiteralPath $key).GetValue('')
   $report.reinstallExit = Run-Owned $installer '/S /UPDATE'

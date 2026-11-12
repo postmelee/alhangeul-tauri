@@ -82,7 +82,7 @@ def prepare_media(root):
                    "interop.cs", "token.cs", "fixtures.json", "user-visual.ps1", "user-visual.cs"):
         shutil.copyfile("scripts/windows-thumbnail-" + suffix,
                         payload / ("scripts/windows-thumbnail-" + suffix))
-    for name in ("guest-ui-probe.ps1", "hosted-ui-view.ps1"):
+    for name in ("guest-ui-probe.ps1", "guest-ui-installer-state.ps1", "hosted-ui-view.ps1"):
         shutil.copyfile("scripts/ci/" + name, payload / ("scripts/ci/" + name))
     shutil.copyfile("scripts/ci/guest-ui-bootstrap.ps1", media / "bootstrap.ps1")
     prepare_product(root, payload)

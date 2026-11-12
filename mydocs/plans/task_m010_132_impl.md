@@ -4,7 +4,7 @@
 GitHub Issue: [#132](https://github.com/postmelee/alhangeul-tauri/issues/132)
 마일스톤: M010
 
-현재: Stage 3.3 원인 분리 조사 완료. 설치 전 빈 폴더에서도 Explorer timeout, COM 접근 거부 확인. COM 없는 일반·/separate 실행도 exit 1이며 표준 사용자 창 미확보. MSI 화면/API·NSIS 설치/API/제거는 통과. Windows ISO 다운로드 중이며 실제 Windows guest 수용은 진행 전.
+현재: Stage 3.4 실제 Windows 11 설치·표준 사용자 로그인 성공. NSIS exit 2 원인 대조 중이며 Explorer·API 수용은 미완료. PR 전 보고 유지.
 
 2026-11-11 수행계획 승인과 이슈 해결까지 연속 진행 지시를 적용한다. PR 생성 전 보고한다.
 
@@ -443,3 +443,9 @@ run 43222471710(550eedb8)은 공식 ISO/inventory 검증과 KVM 실행까지 성
 ### Stage 3.4 두 번째 전송 지연 원인
 
 run 43227392794(fdedc7ac)의 fast 계약은 성공했다. guest 준비 중 실시간 웹 로그에서 curl이 1,200,000ms에 8,225,404,928 bytes 중 8,024,752,128 bytes(약 97.6%) 수신 후 timeout을 기록했다. 아직 Windows guest를 시작하지 않았다. 반복 전송을 중단하고 공식 URL·digest를 유지한 HTTPS 분할/재개 전송(서명된 Ubuntu aria2 패키지)으로 바꾼다. ISO 다운로드와 payload 준비를 별도 step으로 분리하고 fixture 요청에도 시간 제한을 둔다. ISO 전체 전송은 30분 상한, guest는 기존 60분 상한이며 준비·증거 여유를 포함한 job 상한은 105분이다. ISO/디스크를 cache나 공개 artifact로 올리지 않는다.
+
+### Stage 3.4 Windows 11 실제 로그인 성공과 설치기 대조
+
+run 43231951712(a9d014ac)은 ISO 전체 digest 검증 후 약 771초에 Windows 11 Enterprise Evaluation 설치와 표준 사용자 실제 로그인을 완료했다. ProductType=1/build=26300, medium token/관리 그룹 없음, desktop owner·session 일치다. NSIS는 exit 2로 실패해 재설치/썸네일/API 수용은 미실행이다. 증거 artifact 13952016906의 digest 9bb37043c411fb5a718fa138f34470fbc1135c36147feb952b70855bf6997f55를 검증했고 소유 QEMU/TPM/supervisor 종료·정리는 통과했다. PNG의 평가판 만료 watermark와 CIM build 불일치는 관측으로 남기며 원인을 추정하지 않는다.
+
+공식 Tauri CLI 2.10.1 NSIS 템플릿은 WebView2 pv가 없으면 bootstrapper 다운로드/설치 실패 시 Abort한다. 현재 제품은 기본 downloadBootstrapper이고 guest는 오프라인이다. 단, 제품 handler hook도 Abort하므로 exit 2만으로 WebView2 원인을 확정하지 않는다. 다음 대조는 같은 신규 guest에서 먼저 NIC link down 상태로 설치하고 WebView2 두 hive/view의 pv, 설치 파일 해시·handler 등록 여부를 기록한다. 실패 시 직렬 phase 신호를 받은 host가 해당 guest NIC만 user-mode NAT로 연결한 뒤 같은 installer bytes를 재시도한다. host forwarding/public port는 없으며 표준 계정/UAC/제품 설치 범위는 유지한다. 온라인 성공도 앞선 offline 실패를 보존하고 원인과 실사용 수용 범위를 구분한다. guest 평가판은 activation/rearm 우회 없이 원래 라이선스 상태를 유지한다.
