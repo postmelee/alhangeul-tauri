@@ -439,3 +439,7 @@ run 43221610929(d155bf97)은 fast Node/Studio 및 Windows PowerShell 계약이 �
 run 43222471710(550eedb8)은 공식 ISO/inventory 검증과 KVM 실행까지 성공했다. 약 20분에 중간 증거 회수를 위해 관측을 취소했다. PNG는 120초 설치 12%, 300초 32%, 600초 55%, 재부팅 후 1080/1140초 설치 42%를 보여 준다. Windows guest 부팅/설치 진행은 확인했지만 설치 실패나 완료로 단정하지 않는다. ZIP 13948292587의 SHA256 a94094d9c63d8ec83f6bbb2a912ac0c58c1e7ba3768eebec2e2ab585fa44eb56을 검증했다. 취소 후 QEMU가 살아 있어 disk-in-use guard가 삭제를 거부했으며 runner teardown에 맡겨졌다. 자체 정리 성공으로 기록하지 않는다.
 
 후속은 실행 중 5분/20분 checkpoint artifact를 제공한다. QEMU 문서의 Windows Hyper-V timer/APIC/spinlock 최적화를 적용하되 보안/설치 요구사항은 유지한다. /dev/kvm에 폐기 가능한 runner 사용자 접근만 부여하여 sudo supervisor 대신 같은 사용자 프로세스로 실행한다. PID+Linux starttime+UID/pidfd로 이번 실행의 프로세스만 정리하고 정리 결과도 최종 증거에 포함한다. 실제 설치 진행 관측에 따라 guest 상한은 60분, job은 준비/증거 포함 90분으로 둔다. 중간 화면으로 진행 여부를 판단하며 로그인/썸네일 성공을 추정하지 않는다.
+
+### Stage 3.4 두 번째 전송 지연 원인
+
+run 43227392794(fdedc7ac)의 fast 계약은 성공했다. guest 준비 중 실시간 웹 로그에서 curl이 1,200,000ms에 8,225,404,928 bytes 중 8,024,752,128 bytes(약 97.6%) 수신 후 timeout을 기록했다. 아직 Windows guest를 시작하지 않았다. 반복 전송을 중단하고 공식 URL·digest를 유지한 HTTPS 분할/재개 전송(서명된 Ubuntu aria2 패키지)으로 바꾼다. ISO 다운로드와 payload 준비를 별도 step으로 분리하고 fixture 요청에도 시간 제한을 둔다. ISO 전체 전송은 30분 상한, guest는 기존 60분 상한이며 준비·증거 여유를 포함한 job 상한은 105분이다. ISO/디스크를 cache나 공개 artifact로 올리지 않는다.

@@ -6,7 +6,7 @@ from pathlib import Path
 import secrets
 import shutil
 import subprocess
-import urllib.request
+import sys
 from xml.sax.saxutils import escape
 import zipfile
 
@@ -66,7 +66,10 @@ def prepare_product(root, payload):
         target.parent.mkdir(parents=True, exist_ok=True)
         relative = fixture["path"].removeprefix("third_party/rhwp/")
         url = "https://raw.githubusercontent.com/edwardkim/rhwp/" + manifest["rhwpSha"] + "/" + relative
-        urllib.request.urlretrieve(url, target)
+        print("Fetching fixture " + fixture["id"], flush=True)
+        subprocess.run(["curl", "--fail", "--location", "--silent", "--show-error",
+                        "--connect-timeout", "20", "--max-time", "110", "--output",
+                        str(target), url], check=True, timeout=120)
         if digest(target) != fixture["sha256"]:
             raise RuntimeError("fixture-hash-mismatch")
 
@@ -97,19 +100,36 @@ def prepare_media(root):
                     "ALHPAYLOAD", "-o", str(root / "payload.iso"), str(media)], check=True)
 
 
-def main():
-    root = guard()
-    if shutil.disk_usage(root).free < 55 * 1024**3:
-        raise RuntimeError("insufficient-free-disk")
+def download_iso(root):
     iso = root / "windows.iso"
-    subprocess.run(["curl", "--fail", "--location", "--silent", "--show-error",
-                    "--retry", "2", "--max-time", "1200", "--output", str(iso), ISO_URL], check=True)
+    print("Downloading pinned Microsoft ISO with bounded HTTPS segments", flush=True)
+    subprocess.run(["aria2c", "--no-conf=true", "--no-netrc=true",
+                    "--enable-rpc=false", "--follow-torrent=false", "--follow-metalink=false",
+                    "--check-certificate=true", "--continue=true", "--file-allocation=none",
+                    "--max-connection-per-server=8", "--split=8", "--min-split-size=16M",
+                    "--connect-timeout=30", "--timeout=60", "--max-tries=5", "--retry-wait=5",
+                    "--summary-interval=30", "--auto-file-renaming=false",
+                    "--dir=" + str(root), "--out=windows.iso", ISO_URL], check=True, timeout=1800)
     if iso.stat().st_size != ISO_SIZE or digest(iso) != ISO_SHA:
         raise RuntimeError("official-iso-hash-mismatch")
     (root / "evidence/iso.json").write_text(json.dumps(dict(
         url=ISO_URL, sha256=ISO_SHA, bytes=ISO_SIZE, officialHashMatched=True), indent=2))
     print("Official ISO digest verified", flush=True)
-    prepare_media(root)
+
+
+def main():
+    root = guard()
+    if sys.argv[1:] == ["iso"]:
+        if shutil.disk_usage(root).free < 55 * 1024**3:
+            raise RuntimeError("insufficient-free-disk")
+        download_iso(root)
+    elif sys.argv[1:] == ["media"]:
+        proof = json.loads((root / "evidence/iso.json").read_text())
+        if proof["sha256"] != ISO_SHA or not proof["officialHashMatched"]:
+            raise RuntimeError("verified-iso-required")
+        prepare_media(root)
+    else:
+        raise ValueError("expected-iso-or-media-mode")
 
 
 if __name__ == "__main__":
