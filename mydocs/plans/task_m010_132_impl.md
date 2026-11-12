@@ -433,3 +433,9 @@ run 43212274409(0f6f8e68)은 success이며 두 OS 모두 설치 전 빈 폴더�
 ### Stage 3.4 첫 실행과 host 준비 수정
 
 run 43221610929(d155bf97)은 fast Node/Studio 및 Windows PowerShell 계약이 성공했지만 guest job이 Ubuntu 준비에서 실패했다. sudo에 GITHUB_ACTIONS/RUNNER_ENVIRONMENT를 전달하지 않아 기존 hosted-linux-ci-required guard가 차단했다. Windows ISO 다운로드/설치 전의 harness 연결 오류다. 기존 다른 workflow와 동일하게 두 환경 변수를 보존하고 회귀 검사를 추가한다. 시작 단계에서도 preparation.json을 남겨 준비 실패와 guest 실행 실패를 구분한다. guard 자체는 완화하지 않는다.
+
+### Stage 3.4 KVM 설치 진행 관측과 후속 조정
+
+run 43222471710(550eedb8)은 공식 ISO/inventory 검증과 KVM 실행까지 성공했다. 약 20분에 중간 증거 회수를 위해 관측을 취소했다. PNG는 120초 설치 12%, 300초 32%, 600초 55%, 재부팅 후 1080/1140초 설치 42%를 보여 준다. Windows guest 부팅/설치 진행은 확인했지만 설치 실패나 완료로 단정하지 않는다. ZIP 13948292587의 SHA256 a94094d9c63d8ec83f6bbb2a912ac0c58c1e7ba3768eebec2e2ab585fa44eb56을 검증했다. 취소 후 QEMU가 살아 있어 disk-in-use guard가 삭제를 거부했으며 runner teardown에 맡겨졌다. 자체 정리 성공으로 기록하지 않는다.
+
+후속은 실행 중 5분/20분 checkpoint artifact를 제공한다. QEMU 문서의 Windows Hyper-V timer/APIC/spinlock 최적화를 적용하되 보안/설치 요구사항은 유지한다. /dev/kvm에 폐기 가능한 runner 사용자 접근만 부여하여 sudo supervisor 대신 같은 사용자 프로세스로 실행한다. PID+Linux starttime+UID/pidfd로 이번 실행의 프로세스만 정리하고 정리 결과도 최종 증거에 포함한다. 실제 설치 진행 관측에 따라 guest 상한은 60분, job은 준비/증거 포함 90분으로 둔다. 중간 화면으로 진행 여부를 판단하며 로그인/썸네일 성공을 추정하지 않는다.

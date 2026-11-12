@@ -7,7 +7,7 @@ permissions:
 jobs:
   guest:
     runs-on: ubuntu-24.04
-    timeout-minutes: 75
+    timeout-minutes: 90
     steps:
       - name: Select disposable runner storage
         run: |
@@ -27,16 +27,38 @@ jobs:
         run: |
           sudo --preserve-env=GITHUB_ACTIONS,RUNNER_ENVIRONMENT python3 scripts/ci/ubuntu-mirror.py
           sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends qemu-system-x86 qemu-utils ovmf swtpm xorriso
+          sudo apt-get install -y --no-install-recommends qemu-system-x86 qemu-utils ovmf swtpm xorriso acl
           test -c /dev/kvm
+          sudo setfacl -m "u:$(id -un):rw" /dev/kvm
       - name: Download exact existing product
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: node scripts/ci/hosted-ui-input.mjs
       - name: Verify official evaluation ISO and build private input media
         run: python3 -B scripts/ci/guest-ui-prepare.py
-      - name: Observe Windows 11 standard user in a fresh offline KVM guest
-        run: sudo --preserve-env=HOSTED_UI_ROOT,RUNNER_TEMP,GITHUB_ACTIONS,RUNNER_ENVIRONMENT,GITHUB_REPOSITORY,GITHUB_SHA python3 -B scripts/ci/guest-ui-run.py
+      - name: Start owned offline Windows 11 guest
+        run: python3 -B scripts/ci/guest-ui-lifecycle.py start
+      - name: Collect five minute checkpoint
+        run: python3 -B scripts/ci/guest-ui-lifecycle.py checkpoint 300
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: windows11-guest-checkpoint-5
+          path: ${{ env.HOSTED_UI_ROOT }}/checkpoint/**
+          if-no-files-found: error
+          retention-days: 7
+      - name: Collect twenty minute checkpoint
+        run: python3 -B scripts/ci/guest-ui-lifecycle.py checkpoint 900
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: windows11-guest-checkpoint-20
+          path: ${{ env.HOSTED_UI_ROOT }}/checkpoint/**
+          if-no-files-found: error
+          retention-days: 7
+      - name: Wait for standard user observation
+        run: python3 -B scripts/ci/guest-ui-lifecycle.py wait
+      - name: Stop only this run's owned processes
+        if: ${{ always() }}
+        run: python3 -B scripts/ci/guest-ui-lifecycle.py stop
       - name: Preserve only public-fixture observation evidence
         if: ${{ always() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -48,9 +70,5 @@ jobs:
       - name: Remove disposable evaluation disk and credentials
         if: ${{ always() }}
         run: |
-          if sudo fuser "$HOSTED_UI_ROOT/guest.qcow2" 2>/dev/null; then
-            echo "Guest disk is still in use; runner teardown will remove it." >&2
-            exit 1
-          fi
-          sudo rm -rf -- "$HOSTED_UI_ROOT"
+          python3 -B scripts/ci/guest-ui-lifecycle.py remove
           echo 'Windows 11 guest observation only. Windows 10 and release acceptance remain unverified.' >> "$GITHUB_STEP_SUMMARY"

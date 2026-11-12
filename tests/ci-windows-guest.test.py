@@ -28,3 +28,21 @@ for frames in [
  else: raise AssertionError("invalid evidence accepted")
 assert not m.decode(stream([header,chunk]),Sink())
 assert not m.decode(stream([header,chunk,end]),Sink())
+
+# Linux CI exercises real pidfds; local non-Linux contract runs only decode evidence.
+import os, subprocess, sys
+if sys.platform == "linux":
+ spec=importlib.util.spec_from_file_location("lifecycle", "scripts/ci/guest-ui-lifecycle.py")
+ lifecycle=importlib.util.module_from_spec(spec);spec.loader.exec_module(lifecycle)
+ child=subprocess.Popen([sys.executable,"-c","import time; time.sleep(30)"])
+ try:
+  record=lifecycle.identity(child.pid)
+  try: lifecycle.stop_owned(dict(record,start="invalid"))
+  except RuntimeError: pass
+  else: raise AssertionError("replaced PID identity accepted")
+  assert child.poll() is None
+  assert lifecycle.stop_owned(record)=="stopped"
+  child.wait(timeout=5)
+  assert lifecycle.stop_owned(record)=="already-exited"
+ finally:
+  if child.poll() is None: child.kill();child.wait()
