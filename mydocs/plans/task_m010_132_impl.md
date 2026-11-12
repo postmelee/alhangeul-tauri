@@ -4,7 +4,7 @@
 GitHub Issue: [#132](https://github.com/postmelee/alhangeul-tauri/issues/132)
 마일스톤: M010
 
-현재: Stage 3.4 실제 Windows 11 설치·표준 사용자 로그인 성공. NSIS exit 2 원인 대조 중이며 Explorer·API 수용은 미완료. PR 전 보고 유지.
+현재: Stage 3.5 — 새 Windows에서 VCRUNTIME140.dll 누락과 handler 로드 오류 126 확인. sidecar 정적 CRT 연결 및 새 제품 전체 검증 진행. PR 전 보고 유지.
 
 2026-11-11 수행계획 승인과 이슈 해결까지 연속 진행 지시를 적용한다. PR 생성 전 보고한다.
 
@@ -452,3 +452,17 @@ run 43231951712(a9d014ac)은 ISO 전체 digest 검증 후 약 771초에 Windows 
 
 
 대조 run 43236490785(993690d4)은 Node fast 성공 후 guest 시작 전 중단했다. exact producer ZIP과 두 binary SHA256을 로컬에서 다시 검증하고 PE import를 읽어 handler/worker 모두 VCRUNTIME140.dll 동적 의존성을 확인했다. 이것만으로 설치 실패를 확정하지 않는다. 재실행에는 System32 런타임 존재/로드 오류와 검증용 동일 handler DLL의 LoadLibraryEx 오류를 추가한다. 검증 DLL은 등록하지 않으며 로드 성공 시 즉시 해제하고 thread error mode를 원복한다. 제품 파일/등록 범위는 변경하지 않는다.
+
+## Stage 3.5 — 깨끗한 Windows의 VC 런타임 의존성 제거
+
+run 43237334829(9d026c2e)는 Windows 11 실제 표준 로그인과 온라인 재시도까지 약 816초에 완료했으나 두 설치 모두 exit 2다. 공식 ISO에는 WebView2 152.0.4191.66이 이미 있고 bootstrapper 다운로드는 없었다. System32 VCRUNTIME140.dll 없음, 해당 DLL과 exact handler의 LoadLibraryEx 오류 126, 제품 파일은 복사됐으나 handler 등록은 없음이다. 온라인 전환 뒤에도 같은 상태다. 앞서 확인한 두 binary의 VCRUNTIME140.dll import와 일치하여 필수 VC 런타임 누락이 handler 로드/설치를 막는 근거다. 증거 artifact 13953209802 digest 7e9e4aa8a32e72f89c989e9f5b1f05cf28aa4414445441ba141fc6c86ec7971b를 검증했다. 제품 제거는 미실행이며 private VM/disk 정리와 구분한다.
+
+기존 이슈 해결까지 연속 진행 승인과 수행계획의 원인별 최소 수정 범위로 다음을 진행한다.
+
+- Windows 전용 sidecar build에서 Rust의 crt-static을 명시해 handler와 worker에 CRT를 정적으로 연결한다. 사용자별 NSIS/UAC/HKCU·MSI/HKLM 정책은 유지하고 사용자에게 별도 관리자 권한 VC 설치를 요구하지 않는다. COM 객체는 모듈 안에서 할당/해제하고 외부에는 COM/GDI 경계만 노출하므로 CRT heap을 모듈 경계에서 공유하지 않는다.
+- 별도 helper scripts/windows-thumbnail-crt.mjs에서 Cargo 환경의 명시된 기존 flags를 보존하고 정적 CRT flag를 적용한다. scripts/windows-pe-imports.mjs에서 생성된 PE의 일반·delay import를 검사해 VCRUNTIME/MSVCP 등 외부 재배포 런타임 의존성이 남으면 staging을 중단한다. 실제 old artifact가 이 gate에서 실패하는지 확인한다.
+- tests/windows-thumbnail-crt.test.mjs에서 flag 우선순위 보존, 외부 CRT/지연 import 거부, 손상된 PE 거부를 검사한다. 기존 thumbnail build와 전체 automation/boundary/action pins/actionlint를 로컬에서 실행한다. Rust/Tauri는 Windows/Linux CI에서만 실행한다.
+- 공통 build script 영향에 따라 새 product source의 profile=full을 실행한다. 모든 지원 target 검사와 새 설치/재설치/public upgrade/MSI·타사 연결·제거를 검증한다. 성공한 새 Windows producer SHA/run/artifact/digest로 guest 입력을 명시적으로 갱신하고 같은 공식 clean ISO에서 오프라인 설치·reference DLL 로드·실제 일반 Explorer/API·제품 제거를 다시 확인한다. 외부 CRT 없는 조건에서 실패→성공을 확인하기 전에는 수정 완료로 주장하지 않는다.
+- 기존 impl/orders와 mydocs/working/task_m010_132_stage3.5.md, 승인된 docs/architecture/WINDOWS_THUMBNAILS.md의 빌드 경계를 필요한 부분만 갱신한다. PR 전 보고와 실제 Windows 10 미검증, 재릴리즈 미완료 상태를 유지한다.
+
+Stage 3.5 로컬 검증: automation 1,420/1,420, boundary 882 files, action pins 32 workflows/182 references/11 pins, Python AST 및 diff 통과. 실제 기존 producer의 DLL/worker 두 개 모두 새 PE gate에서 VCRUNTIME140.dll 의존성으로 예상대로 거부됐다. 전체 actionlint는 변경하지 않은 alhangeul-font-performance.yml:114의 기존 shellcheck SC2016 안내를 반환한다. shellcheck 제외 전체 workflow 구조 검사는 통과했으며 이 무관한 스크립트는 수정하지 않는다. 새 helper와 검증 함수는 파일 300/함수 50 LOC 권장 범위 내로 분리했다.

@@ -142,6 +142,8 @@ pnpm run clippy:thumbnail-worker:windows
 pnpm run clippy:thumbnail-handler:windows
 ```
 
+build script는 `crt-static`으로 handler와 worker의 CRT를 정적으로 연결한다. 생성된 PE의 일반·delay import에 `VCRUNTIME140.dll` 등 외부 VC 재배포 런타임이 남으면 staging을 중단한다. 개발 도구가 없는 새 Windows에서 별도 관리자 권한 런타임 설치를 요구하지 않기 위한 빌드 계약이며, 실제 clean Windows의 설치·Explorer 수용은 별도로 검증한다.
+
 build script는 DLL과 worker를 고정 filename으로 stage하고 PE x64 machine과 DLL/EXE 종류를 검사한다. native workflow는 bundle inventory에 두 binary를 포함하고 Windows installer smoke에서 다음을 확인한다.
 
 - COM class activation과 `IThumbnailProvider` 호출

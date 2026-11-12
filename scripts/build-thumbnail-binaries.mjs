@@ -4,6 +4,8 @@ import { copyFile, mkdir, readFile, rename } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
+import { staticThumbnailEnvironment } from './windows-thumbnail-crt.mjs';
+import { requireStaticThumbnailCrt } from './windows-pe-imports.mjs';
 import { repositoryIdentity, stageDiagnosticReference } from './windows-thumbnail-diagnostic-reference.mjs';
 
 export const WINDOWS_X64_TARGET = 'x86_64-pc-windows-msvc';
@@ -117,6 +119,7 @@ export async function stageThumbnailBinaries(plan) {
     const contents = await readFile(output.source);
     inspected.push(Object.freeze({
       kind: output.kind,
+      imports: requireStaticThumbnailCrt(contents),
       ...inspectPeImage(contents, { dll: output.dll }),
     }));
   }
@@ -132,6 +135,7 @@ export async function stageThumbnailBinaries(plan) {
 function runCargo(root, args) {
   const result = spawnSync('cargo', args, {
     cwd: root,
+    env: staticThumbnailEnvironment(),
     encoding: 'utf8',
     stdio: 'inherit',
     shell: false,
