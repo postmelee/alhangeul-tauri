@@ -59,6 +59,9 @@ def prepare_product(root, payload):
                  harnessSha=os.environ["GITHUB_SHA"], isoSha256=ISO_SHA,
                  binaries=[f for f in data["files"] if f["kind"] in
                            ("thumbnail-handler", "thumbnail-worker")])
+    (payload / "verification").mkdir()
+    handler = next(f for f in value["binaries"] if f["kind"] == "thumbnail-handler")
+    shutil.copyfile(bundle / handler["path"], payload / "verification/AlhangeulThumbnailHandler.dll")
     (payload / "input.json").write_text(json.dumps(value, indent=2))
     manifest = json.loads(Path("scripts/windows-thumbnail-fixtures.json").read_text())
     for fixture in manifest["fixtures"]:

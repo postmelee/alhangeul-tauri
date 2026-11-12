@@ -1,3 +1,24 @@
+Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+public static class AlhGuestLoad {
+  [DllImport("kernel32.dll", CharSet=CharSet.Unicode, SetLastError=true)]
+  static extern IntPtr LoadLibraryExW(string path, IntPtr file, uint flags);
+  [DllImport("kernel32.dll")] static extern bool FreeLibrary(IntPtr module);
+  [DllImport("kernel32.dll", SetLastError=true)]
+  static extern bool SetThreadErrorMode(uint mode, out uint oldMode);
+  public static int Read(string path) {
+    uint oldMode;
+    if (!SetThreadErrorMode(1, out oldMode)) return Marshal.GetLastWin32Error();
+    try {
+      IntPtr module = LoadLibraryExW(path, IntPtr.Zero, 0x100 | 0x1000);
+      if (module == IntPtr.Zero) return Marshal.GetLastWin32Error();
+      FreeLibrary(module); return 0;
+    } finally { uint ignored; SetThreadErrorMode(oldMode, out ignored); }
+  }
+}
+'@
+
 # Read only prerequisite and partial-install state from this disposable guest.
 function Get-GuestInstallerState {
   $versions = @()
@@ -21,7 +42,10 @@ function Get-GuestInstallerState {
       @{ name = $_.Name; bytes = $_.Length; sha256 = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant() }
     })
   }
-  return @{ webview2 = $versions; handlerRegistered = $registered; directory = $directory; files = $files;
+  $crt = Join-Path $env:SystemRoot 'System32\VCRUNTIME140.dll'
+  $reference = 'C:\AlhProbe\verification\AlhangeulThumbnailHandler.dll'
+  return @{ vcRuntimePresent = (Test-Path $crt); vcRuntimeLoadError = [AlhGuestLoad]::Read($crt);
+    referenceHandlerLoadError = [AlhGuestLoad]::Read($reference); webview2 = $versions; handlerRegistered = $registered; directory = $directory; files = $files;
     bootstrapperPresent = (Test-Path (Join-Path $env:TEMP 'MicrosoftEdgeWebview2Setup.exe')) }
 }
 
