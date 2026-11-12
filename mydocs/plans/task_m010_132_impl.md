@@ -363,3 +363,15 @@ Explorer는 interactive-shell-owner-mismatch로 preflight에서 unavailable을 �
 캡처는 없으며 실제 Windows 10/11 시각 수용은 미검증이다. 화면 조건 처리에 대한 답변 전에는
 Stage 3 완료, PR 생성, issue close, release/tag/asset/feed 교체를 진행하지 않는다.
 같은 버전 재설치는 설치기를 /S /UPDATE로 직접 실행한 자동화 경로다.
+
+## Stage 3.1 — 무료 hosted 자원 관측 (2026-11-12 승인)
+
+1. ci.yml에 기본 실행과 분리된 수동 scope=hosted-ui-probe를 추가한다. fast 계약 뒤 reusable 조사 workflow를 실행한다. 무료 windows-2022/windows-2025와 ubuntu-24.04만 사용한다.
+2. Windows는 현재 runner·Shell SID/session/token 및 OS build를 기록한다. 같은 사용자/session의 대화형 desktop을 확보할 때만 고정 run 43102583324/artifact 13896135792를 digest 검증 후 다운로드한다. 기존 inventory 검증기로 MSI/DLL/worker/source를 검증하고 MSI 설치 → 공개 fixture Explorer 캡처 → 제거를 실행한다. 일반 NSIS 표준 사용자 gate를 완화하지 않는다. capture 성공은 사람 검토 전 시각 수용이 아니다.
+3. Linux는 /dev/kvm의 KVM_GET_API_VERSION, KVM_CREATE_VM ioctl 실제 성공 여부와 VM fd close, CPU/memory/disk/Docker를 기록한다. 이 관측은 Windows 부팅·Windows 10/11 검증을 의미하지 않는다. 자원 부족은 실제 남은 용량으로 설명한다.
+4. 파일은 scripts/ci/hosted-ui-* 및 .github/workflows/alhangeul-hosted-ui-probe.yml로 분리한다. hosted 가드와 bounded child timeout을 적용하고 자기 창/프로세스만 정리한다. 공개 fixture/합성 데이터 외 화면은 캡처하지 않는다.
+5. 로컬 Node/automation·boundary·action pins·actionlint·diff 검사 후 후보를 publish/task132에 push하고 scope=hosted-ui-probe로 실행한다. 조사용 부분 검증이며 제품 rebuild/full 수용은 수행하지 않는다. 원시 JSON/PNG/로그를 T7 task132 output에 보존하고 각 OS 결과와 제한을 기록한다.
+
+T7 실제 mount는 확인했다. 기존 routing 도구는 Tauri 저장소 루트에 Cargo.toml이 없어 실패했으며 routing 완료로 주장하지 않는다. 로컬 private 산출물은 기존 T7 rhwp/workspaces/main/output/alhangeul-task132 아래 절대 경로에만 생성하고 로컬 output/target을 만들지 않는다. 기존 task worktree와 추적 source를 사용한다.
+
+원격 실행 전 후보 커밋과 실행 후 증거 보고 커밋을 분리하고 SHA를 연결한다. Stage 3 전체의 Windows 10/11 시각 수용이 남으면 완료 보고를 만들지 않고 구현계획에 조사 결과를 기록한다. PR 생성 전 보고는 유지한다.

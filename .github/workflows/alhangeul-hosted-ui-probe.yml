@@ -1,0 +1,72 @@
+name: Alhangeul free hosted desktop feasibility
+on:
+  workflow_call:
+permissions:
+  contents: read
+  actions: read
+env:
+  GIT_CONFIG_COUNT: "1"
+  GIT_CONFIG_KEY_0: core.autocrlf
+  GIT_CONFIG_VALUE_0: "false"
+jobs:
+  windows:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-2022, windows-2025]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          submodules: false
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+          package-manager-cache: false
+      - name: Inspect current interactive Shell ownership without changing UAC
+        id: desktop
+        shell: powershell
+        run: ./scripts/ci/hosted-ui-windows.ps1 -Phase preflight
+      - name: Verify and download exact existing candidate
+        if: ${{ steps.desktop.outputs.ready == 'true' }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/ci/hosted-ui-input.mjs
+      - name: Observe MSI Explorer and API output in existing Shell session
+        if: ${{ steps.desktop.outputs.ready == 'true' }}
+        shell: powershell
+        run: ./scripts/ci/hosted-ui-windows.ps1 -Phase product
+      - name: Preserve observation including unavailable desktop
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: hosted-ui-${{ matrix.os }}
+          path: ${{ env.HOSTED_UI_ROOT }}/evidence/**
+          if-no-files-found: error
+          retention-days: 7
+      - name: Keep feasibility separate from release acceptance
+        if: ${{ always() }}
+        shell: powershell
+        run: Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Value 'Windows Server observation only. A successful job is not Windows 10/11 or standard-user NSIS visual acceptance.'
+  linux:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          submodules: false
+          persist-credentials: false
+      - name: Probe KVM VM creation and available resources
+        run: sudo --preserve-env=GITHUB_ACTIONS,RUNNER_ENVIRONMENT,GITHUB_WORKSPACE,GITHUB_SHA python3 scripts/ci/hosted-ui-linux.py
+      - name: Preserve actual VM capability without claiming a guest boot
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: hosted-ui-linux-capability
+          path: diagnostics/hosted-ui-linux/**
+          if-no-files-found: error
+          retention-days: 7
