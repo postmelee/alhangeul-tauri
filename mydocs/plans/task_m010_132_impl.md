@@ -4,7 +4,7 @@
 GitHub Issue: [#132](https://github.com/postmelee/alhangeul-tauri/issues/132)
 마일스톤: M010
 
-현재: Stage 2 구현·자동 회귀 완료(full 43102583324). Stage 3의 실제 Explorer 수용 기준 답변 대기.
+현재: Stage 2 자동 회귀와 Stage 3.1 무료 hosted 관측 완료. Server 2022/2025 MSI Explorer 페이지 확인, Windows 10/11 guest·표준 사용자 NSIS 시각 수용은 미검증.
 
 2026-11-11 수행계획 승인과 이슈 해결까지 연속 진행 지시를 적용한다. PR 생성 전 보고한다.
 
@@ -381,3 +381,7 @@ T7 실제 mount는 확인했다. 기존 routing 도구는 Tauri 저장소 루트
 run 43175177459(84402ee7)은 fast와 무료 세 환경의 관측을 통과했다. Windows Server 2022/2025는 동일 Shell 사용자/session에서 PNG를 캡처했고 MSI 설치·제거 및 네 fixture의 force-extract를 통과했다. 직접 PNG를 확인한 결과 HWP/HWPX뿐 아니라 JPG도 기본 아이콘이다. 캡처 성공을 썸네일 표시 성공으로 바꾸지 않는다. Explorer 사용자별 IconsOnly와 DisableThumbnails 정책을 읽고, IconsOnly만 테스트 동안 0으로 적용한 뒤 원래 존재 여부·값·type을 복원하는 대조 실험을 추가한다. UAC/보안 정책/전역 캐시/다른 계정은 변경하지 않는다. 원본 PNG와 raw 결과를 보존하고 새 후보/run으로 비교한다.
 
 Ubuntu의 KVM API 12 및 실제 VM fd 생성·정리는 성공했고 CPU 4개, RAM 16,760,344,576 bytes, 여유 디스크 92,019,437,568 bytes다. Windows guest 부팅은 미실행이며 별도 이미지/설치 검증이 필요하다.
+
+### Stage 3.1 결과 — 무료 hosted 관측 완료
+
+설정 대조 run 43176532755(252a9c96, attempt 1)이 success다. 두 Server 이미지에서 IconsOnly=1을 관측하고 테스트 동안 0 적용 후 원래값 복원까지 통과했다. 에이전트가 원본 PNG를 직접 열어 HWP 시험 문서/HWPX 양식/JPG 실제 내용 표시를 확인했다. API 8개, MSI 설치·제거, 소유 창 닫기와 설정 복원 모두 성공했다. 자동 이미지 판정과 Windows 10/11 guest·일반 NSIS 시각 수용은 미검증으로 유지한다. [Stage 3.1 조사 보고](../working/task_m010_132_stage3.1.md)에 입력·증거·제한을 기록한다. 사용자 PC 준비는 무료 hosted 관측의 선행 조건이 아니다.
