@@ -429,3 +429,7 @@ run 43212274409(0f6f8e68)은 success이며 두 OS 모두 설치 전 빈 폴더�
 - guest는 네트워크 없이 입력 CD와 직렬 포트로 공개 fixture/시험 증거만 교환한다. 제품 a2796fc0/producer43102583324/artifact13896135792의 ZIP·inventory·개별 해시를 재검증하여 같은 NSIS bytes를 사용한다. 설치/재설치/API/표준 사용자 Explorer/제거를 관측한다. 기존 엄격한 desktop owner gate를 유지한다.
 - QEMU 전체는 45분, 설치기/캡처는 각 유한 timeout으로 제한한다. host 화면은 설치/시험 guest만 캡처하고 결과 JSON/PNG를 보존한다. 부팅·표준 로그인·제품 기능·실제 그림 표시를 별개 판정하며, Windows 10 및 MSI/최종 golden 비교·재릴리즈 수용은 자동 완료 처리하지 않는다.
 - source는 scripts/ci/guest-ui-*와 별도 reusable workflow로 분리한다. 문서는 기존 impl/orders와 mydocs/working/task_m010_132_stage3.4.md 위치를 사용한다. local automation/boundary/actionlint/diff, fast Windows parser, 실제 guest run 순서로 검증한다. 원격 실행용 후보 커밋과 결과 보고 커밋을 연결한다. private output은 기존 T7 task132 경로만 사용한다.
+
+### Stage 3.4 첫 실행과 host 준비 수정
+
+run 43221610929(d155bf97)은 fast Node/Studio 및 Windows PowerShell 계약이 성공했지만 guest job이 Ubuntu 준비에서 실패했다. sudo에 GITHUB_ACTIONS/RUNNER_ENVIRONMENT를 전달하지 않아 기존 hosted-linux-ci-required guard가 차단했다. Windows ISO 다운로드/설치 전의 harness 연결 오류다. 기존 다른 workflow와 동일하게 두 환경 변수를 보존하고 회귀 검사를 추가한다. 시작 단계에서도 preparation.json을 남겨 준비 실패와 guest 실행 실패를 구분한다. guard 자체는 완화하지 않는다.

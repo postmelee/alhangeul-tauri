@@ -10,7 +10,10 @@ jobs:
     timeout-minutes: 75
     steps:
       - name: Select disposable runner storage
-        run: echo "HOSTED_UI_ROOT=$RUNNER_TEMP/alh-windows-guest" >> "$GITHUB_ENV"
+        run: |
+          echo "HOSTED_UI_ROOT=$RUNNER_TEMP/alh-windows-guest" >> "$GITHUB_ENV"
+          mkdir -p "$RUNNER_TEMP/alh-windows-guest/evidence"
+          echo "{\"phase\":\"host-preparation\",\"releaseAcceptance\":\"unverified\"}" > "$RUNNER_TEMP/alh-windows-guest/evidence/preparation.json"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.sha }}
@@ -22,7 +25,7 @@ jobs:
           package-manager-cache: false
       - name: Install signed Ubuntu virtualization packages
         run: |
-          sudo python3 scripts/ci/ubuntu-mirror.py
+          sudo --preserve-env=GITHUB_ACTIONS,RUNNER_ENVIRONMENT python3 scripts/ci/ubuntu-mirror.py
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends qemu-system-x86 qemu-utils ovmf swtpm xorriso
           test -c /dev/kvm
