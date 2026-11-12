@@ -54,8 +54,13 @@ jobs:
           $image = Join-Path $env:HOSTED_UI_ROOT 'evidence\explorer.png'
           $output = Join-Path $env:HOSTED_UI_ROOT 'evidence\visual-comparison.json'
           if (Test-Path -LiteralPath $image) {
-            python -B scripts/ci/hosted-ui-image.py $image $env:PROBE_OS $output
-            if ($LASTEXITCODE -ne 0) { throw 'provisional-visual-regression-failed' }
+            $visual = Get-Content -LiteralPath (Join-Path $env:HOSTED_UI_ROOT 'evidence\explorer-visual.json') -Raw | ConvertFrom-Json
+            if ($env:PROBE_INSTALLER -eq 'nsis' -and $visual.PSObject.Properties.Name -contains 'viewControl' -and $visual.viewControl -eq 'keyboard-extra-large') {
+              @{ status = 'experimental-capture-awaiting-reference'; releaseAcceptance = 'unverified' } | ConvertTo-Json | Set-Content -LiteralPath $output -Encoding UTF8
+            } else {
+              python -B scripts/ci/hosted-ui-image.py $image $env:PROBE_OS $output
+              if ($LASTEXITCODE -ne 0) { throw 'provisional-visual-regression-failed' }
+            }
           } else {
             @{ status = 'unavailable'; releaseAcceptance = 'unverified' } | ConvertTo-Json | Set-Content -LiteralPath $output -Encoding UTF8
             if ($env:PROBE_INSTALLER -eq 'msi') { throw 'missing-msi-capture' }

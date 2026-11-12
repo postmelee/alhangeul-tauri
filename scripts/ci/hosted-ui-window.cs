@@ -19,6 +19,10 @@ namespace Alhangeul.HostedExplorer {
     [DllImport("user32.dll")] static extern bool IsWindowVisible(IntPtr window);
     [DllImport("user32.dll", SetLastError=true)] public static extern bool PostMessage(IntPtr window, uint message, IntPtr word, IntPtr data);
     [DllImport("kernel32.dll")] public static extern uint GetCurrentThreadId();
+    [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr window);
+    [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
+    [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr window, int command);
+    [DllImport("user32.dll")] public static extern bool IsWindow(IntPtr window);
     public static WindowInfo[] Read(string marker) {
       if (String.IsNullOrEmpty(marker) || !marker.StartsWith("alh-ui-")) throw new ArgumentException("owned-marker-required");
       var windows = new List<WindowInfo>();

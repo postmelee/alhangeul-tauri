@@ -408,3 +408,9 @@ run 43207576327(f564d1bf)과 43209155519(57ce3d75)가 success다. 후속 MSI는 
 - 성공 시 기존 캡처·내용 비교로 이어가되 창 owner/session과 실제 PNG 내용이 확인되지 않으면 미검증으로 유지한다. 조사 workflow/회귀만 바꾸며 exact product a2796fc0/producer43102583324/artifact13896135792를 재사용한다.
 - local automation/boundary/actionlint/diff, 무료 hosted-ui-probe fast 후 Server 2022/2025 matrix로 검증한다. 원격 후보 커밋과 결과 보고 SHA를 연결한다. private 출력은 연결된 T7 기존 task132 output에 둔다.
 - 문서 위치는 기존 impl, mydocs/working/task_m010_132_stage3.3.md, 오늘할일이다. 사용자가 질문한 T7/VM 가능성은 조사로 안내하며 이번 지시만으로 VM 앱 설치·디스크 포맷·새 Windows 설치를 시작하지 않는다. Mac은 VM 호스트일 뿐 제품 실행 검증 대상은 Windows guest다. M4 Pro ARM 호스트에서 x64 guest는 에뮬레이션이고 ARM64 guest는 x64 수용과 별도임을 명시한다.
+
+### Stage 3.3 첫 관측과 COM 조회를 제거한 후속 실험
+
+run 43212274409(0f6f8e68)은 success이며 두 OS 모두 설치 전 빈 폴더와 설치 후 Shell.Open이 약 60초 timeout이다. ShellBrowserWindow 생성과 ShellWindows 조회는 E_ACCESSDENIED이고 두 COM AppID의 RunAs=Interactive User를 읽기 전용으로 확인했다. 표준 token/SID와 로그인 desktop owner의 불일치에 따른 COM 경계 문제를 강하게 시사하며 제품 설치가 timeout 발생 조건은 아니다.
+
+직접 explorer.exe 실험도 뒤에서 ShellWindows를 조회했으므로 이를 직접 실행 자체의 실패로 결론 내릴 수 없다. 후속에서는 일반 실행과 /separate 실행 모두 COM 없이 native HWND를 기다리고 실제 SID/session을 확인한다. 창을 얻으면 소유 foreground 확인 후 큰 아이콘 단축키로 표시를 시도하고 PNG를 남긴다. 이 경로는 IconSize=192 기준과 다른 실험 레이아웃이므로 기존 MSI 기준을 통과한 것으로 기록하지 않고 experimental-capture-awaiting-reference로 남긴다. MSI 기존 192px 비교는 계속 필수다. 스크린샷 내용을 확인한 뒤 다음 판정 여부를 결정한다.

@@ -56,7 +56,7 @@ try {
     if ((Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant() -cne $file.sha256) { throw 'installed-binary-mismatch' }
   }
   $report['launchProbes'] = @()
-  foreach ($method in @('ShellOpen', 'Navigate', 'Process')) {
+  foreach ($method in @('ShellOpen', 'Navigate', 'Process', 'SeparateProcess')) {
     $name = 'after-install-' + $method.ToLowerInvariant()
     $observation = Invoke-HostedCapture $Root $name $method
     $report.launchProbes += $observation

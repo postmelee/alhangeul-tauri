@@ -1,6 +1,6 @@
 param(
   [Parameter(Mandatory = $true)][string]$Root, [switch]$StandardWindowOnly,
-  [ValidateSet('ShellOpen', 'Navigate', 'Process')][string]$OpenMethod = 'ShellOpen',
+  [ValidateSet('ShellOpen', 'Navigate', 'Process', 'SeparateProcess')][string]$OpenMethod = 'ShellOpen',
   [ValidatePattern('^$|^[a-z0-9-]{1,50}$')][string]$ProbeName = '',
   [switch]$EmptyFolder
 )
@@ -18,6 +18,11 @@ $timer = [Diagnostics.Stopwatch]::StartNew()
 if ($ProbeName) { Add-Type -Path (Join-Path $PSScriptRoot 'hosted-ui-window.cs') }
 $report = [ordered]@{ schemaVersion = 1; status = 'unavailable'; phase = 'preflight'; interactive = [Environment]::UserInteractive; sessionId = (Get-Process -Id $PID).SessionId; desktopOwnerMatches = $false; ownerMatches = $false; sessionMatches = $false; visible = $false; iconSize = $null; screenshotSha256 = $null; requiresVisualReview = $true; windowClosed = $false }
 $shell = $null; $window = $null; $owned = $false
+$nativeMode = $OpenMethod -in @('Process', 'SeparateProcess')
+if ($nativeMode) {
+  if (-not $StandardWindowOnly -or -not $ProbeName) { throw 'native-probe-context-required' }
+  . (Join-Path $PSScriptRoot 'hosted-ui-process.ps1')
+}
 $report['openMethod'] = $OpenMethod; $report['emptyFolder'] = [bool]$EmptyFolder; $report['capturePid'] = $PID
 function Save-VisualEvidence { if ($ProbeName) { $report['nativeThreadId'] = [Alhangeul.HostedExplorer.Native]::GetCurrentThreadId() }; $report['elapsedMs'] = $timer.ElapsedMilliseconds; $report | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $output 'explorer-visual.json') -Encoding UTF8 }
 Save-VisualEvidence
@@ -43,7 +48,9 @@ try {
   foreach ($fixture in @($fixtures | Where-Object { -not $EmptyFolder })) { Copy-Item -LiteralPath (Join-Path $Root $fixture.path) -Destination (Join-Path $folder ($fixture.id + [IO.Path]::GetExtension($fixture.path))) }
   $viewState = Set-HostedThumbnailView
   $report['displayPreference'] = $viewState
-  if ($OpenMethod -eq 'Navigate') {
+  if ($nativeMode) {
+    $handle = Open-HostedExplorerProcess $folder $report -Separate:($OpenMethod -eq 'SeparateProcess')
+  } elseif ($OpenMethod -eq 'Navigate') {
     $report.phase = 'create-browser-window'; Save-VisualEvidence
     # CLSID_ShellBrowserWindow, documented by Microsoft Developing with Windows Explorer.
     $window = [Activator]::CreateInstance([type]::GetTypeFromCLSID([guid]'C08AFD90-F2A1-11D1-8455-00A0C91F3880'))
@@ -51,11 +58,6 @@ try {
     $window.Navigate2($folder)
     $window.Visible = $true
   } else {
-    if ($OpenMethod -eq 'Process') {
-      $report.phase = 'start-explorer-process'; Save-VisualEvidence
-      $launcher = Start-Process -FilePath (Join-Path $env:SystemRoot 'explorer.exe') -ArgumentList ('/separate,"' + $folder + '"') -PassThru
-      $report['launcherPid'] = $launcher.Id; $launcher.Dispose()
-    }
     $report.phase = 'create-shell'; Save-VisualEvidence
     $shell = New-Object -ComObject Shell.Application
     if ($OpenMethod -eq 'ShellOpen') { $report.phase = 'open-folder'; Save-VisualEvidence; $shell.Open($folder) }
@@ -65,8 +67,10 @@ try {
       if ($window) { break }; Start-Sleep -Milliseconds 500
     }
   }
-  if (-not $window) { throw 'explorer-window-unavailable' }
-  $handle = [IntPtr]$window.HWND
+  if (-not $nativeMode) {
+    if (-not $window) { throw 'explorer-window-unavailable' }
+    $handle = [IntPtr]$window.HWND
+  }
   [uint32]$windowPid = 0
   [void][Alhangeul.ThumbnailUserVisual.Window]::GetWindowThreadProcessId($handle, [ref]$windowPid)
   $process = Get-CimInstance Win32_Process -Filter ('ProcessId=' + $windowPid)
@@ -76,10 +80,15 @@ try {
   if (-not $report.ownerMatches -or -not $report.sessionMatches -or $process.Name -ine 'explorer.exe') { throw 'explorer-owner-mismatch' }
   $owned = $true
   $report.phase = 'set-view'; Save-VisualEvidence
-  $window.Document.CurrentViewMode = 5
-  $window.Document.IconSize = 192
-  $report.iconSize = [int]$window.Document.IconSize
-  if ($report.iconSize -ne 192) { throw 'explorer-view-not-applied' }
+  if ($nativeMode) {
+    Set-HostedNativeView $handle
+    $report['viewControl'] = 'keyboard-extra-large'
+  } else {
+    $window.Document.CurrentViewMode = 5
+    $window.Document.IconSize = 192
+    $report.iconSize = [int]$window.Document.IconSize
+    if ($report.iconSize -ne 192) { throw 'explorer-view-not-applied' }
+  }
   [void][Alhangeul.ThumbnailUserVisual.Window]::MoveWindow($handle, 8, 8, 1000, 650, $true)
   Start-Sleep -Seconds 10
   $report.visible = [Alhangeul.ThumbnailUserVisual.Window]::IsWindowVisible($handle)
@@ -97,6 +106,7 @@ try {
   $report.status = 'captured-awaiting-review'
 } catch { $report['errorCode'] = $_.Exception.HResult; $report['failure'] = $_.Exception.Message }
 finally {
+  if ($owned -and $nativeMode) { $report.windowClosed = Close-HostedNativeWindow $handle }
   if ($owned -and $window) { $report.phase = 'close-window'; Save-VisualEvidence; try { $window.Quit(); $report.windowClosed = $true } catch { $report.windowClosed = $false } }
   if ($window) { [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($window) }
   if ($shell) { [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($shell) }
