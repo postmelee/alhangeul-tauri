@@ -71,6 +71,25 @@ def wait_socket(path, process):
     raise RuntimeError("owned-socket-timeout")
 
 
+def guest_observation_complete(guest, network_enabled):
+    probes = guest.get("probes", [])
+    if not isinstance(probes, list) or len(probes) != 4:
+        return False
+    expected = {"small-hwp", "large-hwp", "form-hwpx", "control-jpg"}
+    if {probe.get("id") for probe in probes} != expected:
+        return False
+    runtime = guest.get("beforeInstall", {})
+    return (guest.get("status") == "observed" and guest.get("productUninstallPassed") is True
+            and guest.get("offlineInstallExit") == 0 and not network_enabled
+            and runtime.get("vcRuntimePresent") is False
+            and runtime.get("vcRuntimeLoadError") == 126
+            and runtime.get("referenceHandlerLoadError") == 0
+            and guest.get("desktopOwnerMatches") is True and guest.get("sessionMatches") is True
+            and guest.get("displayPreference", {}).get("restored") is True
+            and guest.get("visual") == "captured-awaiting-review"
+            and all(p.get("status") == "ok" and p.get("bitmapPresent") is True for p in probes))
+
+
 def observe(root, process):
     monitor = Monitor(root / "qmp.sock")
     start = time.monotonic()
@@ -112,12 +131,7 @@ def observe(root, process):
         if not result["guestEvidenceComplete"]:
             raise RuntimeError("guest-evidence-timeout")
         guest = json.loads((root / "evidence/guest.json").read_text(encoding="utf-8-sig"))
-        result["observed"] = (guest["status"] == "observed" and guest["productUninstallPassed"]
-                              and guest.get("desktopOwnerMatches") is True
-                              and guest.get("sessionMatches") is True
-                              and guest.get("displayPreference", {}).get("restored") is True
-                              and guest["visual"] == "captured-awaiting-review"
-                              and len(guest["probes"]) == 4)
+        result["observed"] = guest_observation_complete(guest, result["networkEnabledForRetry"])
         if not result["observed"]:
             raise RuntimeError("guest-product-observation-incomplete")
     except BaseException as error:

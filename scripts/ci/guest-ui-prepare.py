@@ -14,7 +14,7 @@ ISO_NAME = "26300.9457.260913-1737.26h2_ge_release_svc_refresh_CLIENTENTERPRISEE
 ISO_URL = "https://software-static.download.prss.microsoft.com/dbazure/" + ISO_NAME
 ISO_SHA = "b7ec51f0d332ac2aa4f7faeffbefac961ce6eb7204b5876b48fa8d9f1cf0a9a6"
 ISO_SIZE = 8225404928
-PRODUCT_SHA = "a2796fc0fd93002ccdcf1e5c313701525b1668c6"
+PRODUCT_SHA = "1e08891d6411e17806a5b3a48635a5fbca7a639f"
 
 
 def digest(path):

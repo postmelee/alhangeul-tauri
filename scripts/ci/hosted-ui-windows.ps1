@@ -61,7 +61,7 @@ function Observe-Product {
     $preflight = Get-Content -LiteralPath (Join-Path $root 'evidence\preflight.json') -Raw | ConvertFrom-Json
     if ($preflight.status -ne 'ready') { throw 'desktop-not-ready' }
     Expand-Archive -LiteralPath (Join-Path $root 'candidate.zip') -DestinationPath $bundle
-    & node (Join-Path $scripts 'verify-desktop-artifacts.mjs') --platform windows-x64 --root $bundle --verify-inventory (Join-Path $bundle 'alhangeul-artifact-inventory.json') --source-sha a2796fc0fd93002ccdcf1e5c313701525b1668c6
+    & node (Join-Path $scripts 'verify-desktop-artifacts.mjs') --platform windows-x64 --root $bundle --verify-inventory (Join-Path $bundle 'alhangeul-artifact-inventory.json') --source-sha 1e08891d6411e17806a5b3a48635a5fbca7a639f
     if ($LASTEXITCODE -ne 0) { throw 'candidate-inventory-invalid' }
     $inventory = Get-Content -LiteralPath (Join-Path $bundle 'alhangeul-artifact-inventory.json') -Raw | ConvertFrom-Json
     $rows = @($inventory.files | Where-Object { $_.kind -eq 'msi' })

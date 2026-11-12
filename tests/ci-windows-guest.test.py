@@ -46,3 +46,29 @@ if sys.platform == "linux":
   assert lifecycle.stop_owned(record)=="already-exited"
  finally:
   if child.poll() is None: child.kill();child.wait()
+
+# A top-level observed flag cannot hide missing CRT, bitmap, owner, or cleanup proof.
+import copy
+spec=importlib.util.spec_from_file_location("guest_run", "scripts/ci/guest-ui-run.py")
+guest_run=importlib.util.module_from_spec(spec);spec.loader.exec_module(guest_run)
+good=dict(status="observed", productUninstallPassed=True, offlineInstallExit=0,
+ beforeInstall=dict(vcRuntimePresent=False,vcRuntimeLoadError=126,referenceHandlerLoadError=0),
+ desktopOwnerMatches=True,sessionMatches=True,displayPreference=dict(restored=True),
+ visual="captured-awaiting-review",probes=[dict(id=i,status="ok",bitmapPresent=True)
+ for i in ("small-hwp","large-hwp","form-hwpx","control-jpg")])
+assert guest_run.guest_observation_complete(good,False)
+assert not guest_run.guest_observation_complete(good,True)
+for path,value in [
+ (("productUninstallPassed",),False), (("offlineInstallExit",),2),
+ (("beforeInstall","vcRuntimePresent"),True),
+ (("beforeInstall","vcRuntimeLoadError"),0),
+ (("beforeInstall","referenceHandlerLoadError"),126),
+ (("desktopOwnerMatches",),False), (("sessionMatches",),False),
+ (("displayPreference","restored"),False),
+ (("visual",),"unavailable"), (("probes",0,"bitmapPresent"),False),
+ (("probes",0,"status"),"failed"), (("probes",0,"id"),"control-jpg"),
+]:
+ bad=copy.deepcopy(good);target=bad
+ for key in path[:-1]: target=target[key]
+ target[path[-1]]=value
+ assert not guest_run.guest_observation_complete(bad,False),path

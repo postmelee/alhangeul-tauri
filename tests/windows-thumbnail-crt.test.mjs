@@ -1,5 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { mkdtemp, mkdir, readFile, writeFile, rm } from 'node:fs/promises';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
+import { stageThumbnailBinaries } from '../scripts/build-thumbnail-binaries.mjs';
 import { staticThumbnailEnvironment } from '../scripts/windows-thumbnail-crt.mjs';
 import { readPeImports, requireStaticThumbnailCrt } from '../scripts/windows-pe-imports.mjs';
 
@@ -44,6 +48,30 @@ test('truncation, unmapped names and missing descriptor terminators fail closed'
   const oversized = image('KERNEL32.dll');
   oversized.writeUInt32LE(0xffffff00, 0x98 + 240 + 20);
   assert.throws(() => readPeImports(oversized), /Invalid PE range/);
+});
+
+
+test('a rejected handler leaves both previously staged binaries unchanged', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'thumbnail-crt-stage-'));
+  try {
+    const stagingDirectory = join(root, 'stage');
+    await mkdir(stagingDirectory);
+    const outputs = [
+      { kind: 'worker', source: join(root, 'new-worker.exe'), destination: join(stagingDirectory, 'worker.exe'), dll: false },
+      { kind: 'handler', source: join(root, 'new-handler.dll'), destination: join(stagingDirectory, 'handler.dll'), dll: true },
+    ];
+    await writeFile(outputs[0].source, image('KERNEL32.dll'));
+    const handler = image('VCRUNTIME140.dll');
+    handler.writeUInt16LE(0x2000, 0x96);
+    await writeFile(outputs[1].source, handler);
+    for (const output of outputs) await writeFile(output.destination, 'previous-' + output.kind);
+    await assert.rejects(stageThumbnailBinaries({ stagingDirectory, outputs }), /external VC runtime/);
+    for (const output of outputs) {
+      assert.equal(await readFile(output.destination, 'utf8'), 'previous-' + output.kind);
+    }
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
 });
 
 function image(name, delayed = false) {

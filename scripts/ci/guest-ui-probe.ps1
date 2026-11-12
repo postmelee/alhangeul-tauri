@@ -59,6 +59,8 @@ try {
   if ((Get-FileHash $installer -Algorithm SHA256).Hash.ToLowerInvariant() -cne $inputData.installerSha256) { throw 'installer-hash-mismatch' }
   . (Join-Path $PSScriptRoot 'guest-ui-installer-state.ps1')
   $report['beforeInstall'] = Get-GuestInstallerState
+  if ($report.beforeInstall.vcRuntimePresent -or $report.beforeInstall.vcRuntimeLoadError -ne 126) { throw 'clean-vc-runtime-absence-required' }
+  if ($report.beforeInstall.referenceHandlerLoadError -ne 0) { throw 'standalone-handler-load-failed' }
   $report.phase = 'install'; Save-State
   $report['offlineInstallExit'] = Run-Owned $installer '/S'
   $report['afterOfflineInstall'] = Get-GuestInstallerState
@@ -96,6 +98,7 @@ try {
     $report.probes += @{ id = $fixture.id; status = $raw.status; bitmapPresent = $raw.bitmapPresent }
     if ($raw.status -ne 'ok' -or -not $raw.bitmapPresent) { throw 'thumbnail-probe-failed' }
   }
+  if ($report.offlineInstallExit -ne 0) { throw 'fresh-offline-install-failed' }
   $report.status = 'observed'
 } catch { $report['failure'] = $_.Exception.Message }
 finally {

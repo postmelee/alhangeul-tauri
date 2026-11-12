@@ -11,7 +11,7 @@ try {
   [void][IO.Directory]::CreateDirectory((Join-Path $root 'evidence'))
   [void][IO.Directory]::CreateDirectory((Join-Path $root 'scripts\ci'))
   Expand-Archive -LiteralPath (Join-Path $original 'candidate.zip') -DestinationPath (Join-Path $root 'bundle')
-  & node (Join-Path $scripts 'verify-desktop-artifacts.mjs') --platform windows-x64 --root (Join-Path $root 'bundle') --verify-inventory (Join-Path $root 'bundle\alhangeul-artifact-inventory.json') --source-sha a2796fc0fd93002ccdcf1e5c313701525b1668c6
+  & node (Join-Path $scripts 'verify-desktop-artifacts.mjs') --platform windows-x64 --root (Join-Path $root 'bundle') --verify-inventory (Join-Path $root 'bundle\alhangeul-artifact-inventory.json') --source-sha 1e08891d6411e17806a5b3a48635a5fbca7a639f
   if ($LASTEXITCODE -ne 0) { throw 'candidate-inventory-invalid' }
   $inventory = Get-Content -LiteralPath (Join-Path $root 'bundle\alhangeul-artifact-inventory.json') -Raw | ConvertFrom-Json
   $installers = @($inventory.files | Where-Object { $_.kind -eq 'nsis' })

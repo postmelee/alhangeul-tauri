@@ -466,3 +466,10 @@ run 43237334829(9d026c2e)는 Windows 11 실제 표준 로그인과 온라인 재
 - 기존 impl/orders와 mydocs/working/task_m010_132_stage3.5.md, 승인된 docs/architecture/WINDOWS_THUMBNAILS.md의 빌드 경계를 필요한 부분만 갱신한다. PR 전 보고와 실제 Windows 10 미검증, 재릴리즈 미완료 상태를 유지한다.
 
 Stage 3.5 로컬 검증: automation 1,420/1,420, boundary 882 files, action pins 32 workflows/182 references/11 pins, Python AST 및 diff 통과. 실제 기존 producer의 DLL/worker 두 개 모두 새 PE gate에서 VCRUNTIME140.dll 의존성으로 예상대로 거부됐다. 전체 actionlint는 변경하지 않은 alhangeul-font-performance.yml:114의 기존 shellcheck SC2016 안내를 반환한다. shellcheck 제외 전체 workflow 구조 검사는 통과했으며 이 무관한 스크립트는 수정하지 않는다. 새 helper와 검증 함수는 파일 300/함수 50 LOC 권장 범위 내로 분리했다.
+
+2026-11-13 연속 진행: product source 1e08891d6411e17806a5b3a48635a5fbca7a639f의 full run 43241666433을 시작했고 fast 두 job이 성공했다. Tauri CLI 2.10.1은 본체에 STATIC_VCRUNTIME=true를 설정하고 tauri-build는 static_vcruntime::build를 호출하지만 독립 sidecar에는 이 경로가 없음을 공식 소스에서 확인했다. handler의 DllMain은 module handle 저장만 하며 정적 CRT에 필요한 thread 알림을 비활성화하지 않는다. 후속 guest gate는 시스템 VC runtime 부재/로드 오류 126, reference handler 로드 성공 0, offline install exit 0과 네트워크 재시도 없음까지 요구한다. 실제 PNG 내용 확인과 제거 결과는 별도 필수다.
+
+
+Stage 3.5 후속 후보: product source 1e08891d의 Windows artifact 13960733196(186,351,819 bytes)을 내려받아 ZIP SHA256 b9a9f28916954bcf6f7cef1b86904e09b38583a38421224c64e44fafd07267cf와 inventory를 확인했다. 새 handler/worker PE import에 VCRUNTIME 등 외부 VC 런타임이 없고 Windows 시스템 DLL만 남았다. NSIS SHA256은 22e9c4d17d4b3669510c6af70d5721ea0feed7a51f3d7911d11d989b56aa3a68, MSI는 09cd65ac1e3af59251fb058f777edbdc7d2527f6b14a1df01d6265eab56eb58c다. full producer 전체 success 확인 전 guest를 실행하지 않는다. 기존 시각 기준 fixture의 a2796fc0 provenance는 역사적 기준으로 유지한다.
+
+후속 harness는 네 개 fixture ID·각 bitmap·소유 사용자/세션·표시 설정 복원·제품 제거를 모두 요구하는 순수 판정 함수를 분리했고 누락/불일치 대조 12개를 검사했다. 패키징 거부 시 기존 두 staged binary가 덮어써지지 않는 회귀 검사를 추가했다. 로컬 automation 1,421/1,421, boundary 882 files, action pins 32/182/11, shellcheck 제외 actionlint와 diff가 통과했다.
