@@ -4,7 +4,7 @@
 GitHub Issue: [#132](https://github.com/postmelee/alhangeul-tauri/issues/132)
 마일스톤: M010
 
-현재: Stage 2 자동 회귀와 Stage 3.1 무료 hosted 관측 완료. Server 2022/2025 MSI Explorer 페이지 확인, Windows 10/11 guest·표준 사용자 NSIS 시각 수용은 미검증.
+현재: Stage 2 자동 회귀, Stage 3.1·3.2 무료 hosted 조사 완료. Server 2022/2025 MSI 화면 자동 비교와 표준 사용자 NSIS 설치·재설치·API·제거 통과. NSIS Explorer는 폴더 열기 timeout, Windows 10/11 guest는 ISO 미확보로 미검증.
 
 2026-11-11 수행계획 승인과 이슈 해결까지 연속 진행 지시를 적용한다. PR 생성 전 보고한다.
 
@@ -393,3 +393,7 @@ Ubuntu의 KVM API 12 및 실제 VM fd 생성·정리는 성공했고 CPU 4개, R
 - 표준 사용자 NSIS: 폐기 가능한 VM에서 임시 Users 계정을 만들고 고정 candidate를 설치/재설치한다. 배경 desktop Shell은 다른 계정일 수 있음을 관측으로 남기고, 해당 사용자가 연 탐색기 창의 실제 process SID/session과 child의 non-elevated medium token을 모두 확인한다. 이를 위해 별도 실험 플래그를 사용하며 기존 정식 표준 사용자 gate를 완화하지 않는다. 소유 창 외에는 닫거나 종료하지 않는다. 계정/profile/scratch를 정리하고 원시 미검증 상태를 보존한다.
 - 이미지 회귀: Stage 3.1에서 에이전트가 확인한 공개 fixture 화면의 내용 영역을 임시 기준으로 고정하고 source/artifact/PNG hash를 기록한다. 정상 이미지와 실제 기본 아이콘/빈 화면/다른 문서 대조군으로 자동 비교가 실패를 검출하는지 확인한다. 임시 기준은 작업지시자가 승인한 최종 golden image가 아니며 제품 시각 수용 전체를 자동 승인하지 않는다.
 - 검증은 local automation/boundary/diff와 무료 hosted-ui-probe scope를 사용한다. 제품 rebuild/full 수용·유료 자원·UAC/정책 변경·Explorer/dllhost 전역 종료는 제외한다. 로컬 산출물은 T7 기존 task132 output에만 기록한다. 원격 실행에 필요한 후보 커밋과 결과 보고의 SHA를 연결한다.
+
+### Stage 3.2 결과 — 관측 완료, 실제 Windows 수용은 진행 중
+
+run 43207576327(f564d1bf)과 43209155519(57ce3d75)가 success다. 후속 MSI는 두 Server에서 HWP/HWPX/JPG 내용 비교 6/6 matched, IconsOnly 복원·창 닫기 성공이다. NSIS는 medium token에서 설치/재설치/엄격 제거와 API 8/8을 통과했지만 다른 사용자의 desktop에서 Shell.Open이 90초 시간 초과됐다. raw open-folder/unavailable, restored=false를 유지하고 신규 임시 profile/account/scratch 제거를 별도로 확인했다. 화면 수용으로 올리지 않는다. 자동 비교 기준은 provisional-agent-reviewed이며 releaseAcceptance=unverified다. [Stage 3.2 보고](../working/task_m010_132_stage3.2.md)에 exact 입력·증거·평가판 준비 절차를 기록한다. Windows 11 ISO는 사용자 등록·확보 대기이고 Windows 10의 기존 평가 링크는 지원 종료 안내로 이동한다. PR·같은 버전 재릴리즈는 미완료다.
