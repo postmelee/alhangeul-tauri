@@ -54,6 +54,7 @@ test('모든 workflow가 공통 또는 전용 contract test inventory에 등록�
     'alhangeul-updater-native-negative-windows.yml',
     'alhangeul-updater-native-windows.yml',
     'alhangeul-windows-dialog.yml',
+    'alhangeul-windows-guest-probe.yml',
     'alhangeul-windows-pdf.yml',
     'alhangeul-windows-smoke.yml',
     'ci.yml',

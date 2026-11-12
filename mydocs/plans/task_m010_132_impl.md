@@ -418,3 +418,14 @@ run 43212274409(0f6f8e68)은 success이며 두 OS 모두 설치 전 빈 폴더�
 ### Stage 3.3 결과 — 현재 hosted 사용자 문맥의 Explorer 활성화 실패
 
 첫 run 43212274409(0f6f8e68)과 COM 없는 후속 43214335047(5095fa45)이 success다. 두 OS 모두 설치 전 빈 폴더에서도 timeout이며 ShellWindows/ShellBrowserWindow AppID의 Interactive User 설정과 실제 E_ACCESSDENIED를 확인했다. 일반·/separate explorer.exe는 native 창 탐색으로도 exit 1, 소유 문서 창 없음이다. NSIS 화면은 미검증이고 표시 설정 복구·제품 제거·임시 계정/profile/scratch 정리는 통과했다. [Stage 3.3 보고](../working/task_m010_132_stage3.3.md)에 관측·추론의 구분과 T7/UTM 가능성을 기록했다. 현재 Mac M4 Pro에서 x64 ISO는 에뮬레이션이 필요하다. ISO 경로/에디션/아키텍처를 요청했으며 무료 Linux KVM 또는 T7 Windows guest 검증이 후속 경로다. PR·재릴리즈로 넘어가지 않는다.
+
+## Stage 3.4 — 공식 Windows 11 ISO와 무료 KVM guest 실험
+
+기존 연속 진행 지시와 사용자가 제공한 ISO 입력에 따라 무료 Ubuntu runner의 후속 실험을 구체화한다. 로컬 Mac VM 앱 설치/포맷은 계속 범위 밖이다.
+
+- 입력은 Microsoft Windows 11 Enterprise Evaluation 26H2 한국어 x64 ISO다. 파일 크기 8,225,404,928 bytes 및 SHA256 b7ec51f0d332ac2aa4f7faeffbefac961ce6eb7204b5876b48fa8d9f1cf0a9a6을 공식 KO-KR x64 검증 항목과 대조했다. 원본 ISO는 수정/재배포하지 않으며 runner가 공식 고정 URL에서 받아 같은 digest를 검증한다.
+- ci.yml의 별도 수동 scope=windows-guest-probe에서 fast 계약 뒤 무료 ubuntu-24.04 한 대만 사용한다. QEMU/KVM, Ubuntu 서명 패키지의 OVMF/TPM2로 Windows 11을 새 임시 가상 디스크에 설치한다. Windows 요구사항 우회, UAC/보안 정책 완화, 원격 데스크톱 공개 포트, activation/rearm 변경은 추가하지 않는다.
+- Microsoft unattended 설정으로 폐기 가능한 관리 계정과 Users 전용 표준 계정을 만들고 표준 계정의 실제 자동 로그인/Explorer 소유권을 확인한다. 무작위 시험 암호와 answer media/guest disk는 로그·artifact에서 제외하고 runner 종료 시 폐기한다. 설치 XML의 disk wipe 대상은 코드가 새로 만든 guest disk 0뿐이다.
+- guest는 네트워크 없이 입력 CD와 직렬 포트로 공개 fixture/시험 증거만 교환한다. 제품 a2796fc0/producer43102583324/artifact13896135792의 ZIP·inventory·개별 해시를 재검증하여 같은 NSIS bytes를 사용한다. 설치/재설치/API/표준 사용자 Explorer/제거를 관측한다. 기존 엄격한 desktop owner gate를 유지한다.
+- QEMU 전체는 45분, 설치기/캡처는 각 유한 timeout으로 제한한다. host 화면은 설치/시험 guest만 캡처하고 결과 JSON/PNG를 보존한다. 부팅·표준 로그인·제품 기능·실제 그림 표시를 별개 판정하며, Windows 10 및 MSI/최종 golden 비교·재릴리즈 수용은 자동 완료 처리하지 않는다.
+- source는 scripts/ci/guest-ui-*와 별도 reusable workflow로 분리한다. 문서는 기존 impl/orders와 mydocs/working/task_m010_132_stage3.4.md 위치를 사용한다. local automation/boundary/actionlint/diff, fast Windows parser, 실제 guest run 순서로 검증한다. 원격 실행용 후보 커밋과 결과 보고 커밋을 연결한다. private output은 기존 T7 task132 경로만 사용한다.

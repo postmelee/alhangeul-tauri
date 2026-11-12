@@ -11,6 +11,7 @@ on:
           - full
           - pdf-cleanup-windows
           - hosted-ui-probe
+          - windows-guest-probe
 
       profile:
         description: Select validation scope; auto uses an exact base SHA and falls back to full.
@@ -59,7 +60,7 @@ env:
 
 jobs:
   hosted-ui-contracts:
-    if: ${{ inputs.scope == 'hosted-ui-probe' }}
+    if: ${{ (inputs.scope == 'hosted-ui-probe' || inputs.scope == 'windows-guest-probe') }}
     uses: ./.github/workflows/alhangeul-ci-fast.yml
     with:
       source_ref: ${{ github.sha }}
@@ -72,13 +73,21 @@ jobs:
       contents: read
     uses: ./.github/workflows/alhangeul-hosted-ui-probe.yml
 
+  windows-guest-probe:
+    needs: hosted-ui-contracts
+    if: ${{ inputs.scope == 'windows-guest-probe' }}
+    permissions:
+      actions: read
+      contents: read
+    uses: ./.github/workflows/alhangeul-windows-guest-probe.yml
+
   thumbnail-user-context:
     needs: fast
     if: ${{ inputs.thumbnail_user_context && inputs.profile == 'fast' && inputs.scope == 'full' }}
     uses: ./.github/workflows/alhangeul-thumbnail-user-context.yml
 
   select:
-    if: ${{ inputs.scope != 'pdf-cleanup-windows' && inputs.scope != 'hosted-ui-probe' }}
+    if: ${{ inputs.scope != 'pdf-cleanup-windows' && inputs.scope != 'hosted-ui-probe' && inputs.scope != 'windows-guest-probe' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     outputs:

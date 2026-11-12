@@ -1,0 +1,53 @@
+name: Alhangeul Windows 11 guest observation
+on:
+  workflow_call:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  guest:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    steps:
+      - name: Select disposable runner storage
+        run: echo "HOSTED_UI_ROOT=$RUNNER_TEMP/alh-windows-guest" >> "$GITHUB_ENV"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          submodules: false
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+          package-manager-cache: false
+      - name: Install signed Ubuntu virtualization packages
+        run: |
+          sudo python3 scripts/ci/ubuntu-mirror.py
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends qemu-system-x86 qemu-utils ovmf swtpm xorriso
+          test -c /dev/kvm
+      - name: Download exact existing product
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/ci/hosted-ui-input.mjs
+      - name: Verify official evaluation ISO and build private input media
+        run: python3 -B scripts/ci/guest-ui-prepare.py
+      - name: Observe Windows 11 standard user in a fresh offline KVM guest
+        run: sudo --preserve-env=HOSTED_UI_ROOT,RUNNER_TEMP,GITHUB_ACTIONS,RUNNER_ENVIRONMENT,GITHUB_REPOSITORY,GITHUB_SHA python3 -B scripts/ci/guest-ui-run.py
+      - name: Preserve only public-fixture observation evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: windows11-guest-observation
+          path: ${{ env.HOSTED_UI_ROOT }}/evidence/**
+          if-no-files-found: error
+          retention-days: 7
+      - name: Remove disposable evaluation disk and credentials
+        if: ${{ always() }}
+        run: |
+          if sudo fuser "$HOSTED_UI_ROOT/guest.qcow2" 2>/dev/null; then
+            echo "Guest disk is still in use; runner teardown will remove it." >&2
+            exit 1
+          fi
+          sudo rm -rf -- "$HOSTED_UI_ROOT"
+          echo 'Windows 11 guest observation only. Windows 10 and release acceptance remain unverified.' >> "$GITHUB_STEP_SUMMARY"
