@@ -375,3 +375,16 @@ test('builder는 site asset의 승인 root asset 경로 충돌을 거부한다',
     await rm(fixture.tmp, { recursive: true, force: true });
   }
 });
+
+
+test('Windows 설치 안내는 미서명 제한과 보호 기능 유지 및 안전한 제보 경로를 설명한다', async () => {
+  const home = await readFile(join(repositoryRoot, 'site/index.html'), 'utf8');
+  const updates = await readFile(join(repositoryRoot, 'site/updates/index.html'), 'utf8');
+  assert.match(home, /href="updates\/#windows-security"/);
+  assert.match(updates, /id="windows-security"/);
+  for (const text of ['Authenticode 코드 서명이 없습니다', 'Minisign 서명', 'Smart App Control', 'SmartScreen', 'EXE 대신 MSI를 선택한다고 해결되는 것은 아닙니다', '설치를 중단하고 보안 기능을 유지', '개인정보는 가려']) {
+    assert.ok(updates.includes(text), text);
+  }
+  assert.match(updates, /href="\.\.\/feedback\/"/);
+  assert.match(updates, /https:\/\/learn\.microsoft\.com\/en-us\/windows\/apps\/develop\/smart-app-control\/code-signing-for-smart-app-control/);
+});
