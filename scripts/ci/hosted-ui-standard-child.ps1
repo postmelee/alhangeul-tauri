@@ -10,12 +10,18 @@ $productInput = Get-Content -LiteralPath (Join-Path $Root 'input.json') -Raw | C
 $report = [ordered]@{ schemaVersion = 1; status = 'incomplete'; token = $token; installExit = $null; reinstallExit = $null; uninstallExit = $null; visual = 'unverified'; productUninstallPassed = $false; releaseAcceptance = 'unverified'; probes = @() }
 $directory = $null
 function Save-State { $report | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath (Join-Path $output 'standard-product.json') -Encoding UTF8 }
-function Run-Owned($File, $Arguments, [int]$Seconds = 180) {
-  $p = Start-Process -FilePath $File -ArgumentList $Arguments -PassThru
+function Run-Owned($File, $Arguments, [int]$Seconds = 180, [switch]$CaptureLogs) {
+  $options = @{ FilePath = $File; ArgumentList = $Arguments; PassThru = $true }
+  if ($CaptureLogs) { $options.RedirectStandardOutput = Join-Path $output 'capture-stdout.txt'; $options.RedirectStandardError = Join-Path $output 'capture-stderr.txt' }
+  $p = Start-Process @options
   try { [void]$p.Handle; if (-not $p.WaitForExit($Seconds * 1000)) { $p.Kill(); [void]$p.WaitForExit(5000); throw 'owned-child-timeout' }; $p.Refresh(); return [int]$p.ExitCode }
   finally { $p.Dispose() }
 }
 try {
+  if ($productInput.githubActions -cne 'true' -or $productInput.runnerEnvironment -cne 'github-hosted') { throw 'disposable-hosted-only' }
+  # Start-Process -Credential constructs a new user environment; forward only the validated hosted markers.
+  $env:GITHUB_ACTIONS = $productInput.githubActions
+  $env:RUNNER_ENVIRONMENT = $productInput.runnerEnvironment
   $local = [Environment]::GetFolderPath('LocalApplicationData')
   $temp = Join-Path $local 'Temp'; [void][IO.Directory]::CreateDirectory($temp)
   foreach ($pair in @{ USERPROFILE = [Environment]::GetFolderPath('UserProfile'); LOCALAPPDATA = $local; APPDATA = [Environment]::GetFolderPath('ApplicationData'); TEMP = $temp; TMP = $temp }.GetEnumerator()) {
@@ -39,7 +45,7 @@ try {
   Save-State
   $engine = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
   try {
-    $code = Run-Owned $engine ('-NoLogo -NoProfile -NonInteractive -STA -File "' + $PSScriptRoot + '\hosted-ui-capture.ps1" -Root "' + $Root + '" -StandardWindowOnly') 90
+    $code = Run-Owned $engine ('-NoLogo -NoProfile -NonInteractive -STA -File "' + $PSScriptRoot + '\hosted-ui-capture.ps1" -Root "' + $Root + '" -StandardWindowOnly') 90 -CaptureLogs
     if ($code -ne 0) { throw 'capture-child-failed' }
     $visual = Get-Content -LiteralPath (Join-Path $output 'explorer-visual.json') -Raw | ConvertFrom-Json
     $report.visual = $visual.status

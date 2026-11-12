@@ -17,7 +17,7 @@ try {
   $installers = @($inventory.files | Where-Object { $_.kind -eq 'nsis' })
   if ($installers.Count -ne 1) { throw 'nsis-not-unique' }
   Copy-Item -LiteralPath (Join-Path (Join-Path $root 'bundle') $installers[0].path) -Destination (Join-Path $root 'installer.exe')
-  $productInput = @{ installerSha256 = $installers[0].sha256; productSha = $inventory.sourceSha; binaries = @($inventory.files | Where-Object { $_.kind -in @('thumbnail-handler', 'thumbnail-worker') }) }
+  $productInput = @{ githubActions = $env:GITHUB_ACTIONS; runnerEnvironment = $env:RUNNER_ENVIRONMENT; installerSha256 = $installers[0].sha256; productSha = $inventory.sourceSha; binaries = @($inventory.files | Where-Object { $_.kind -in @('thumbnail-handler', 'thumbnail-worker') }) }
   $productInput | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $root 'input.json') -Encoding UTF8
   Copy-Item -LiteralPath (Join-Path $root 'input.json') -Destination $evidence
   foreach ($name in @('diagnostics.ps1', 'probe.ps1', 'state.ps1', 'native.cs', 'interop.cs', 'token.cs', 'fixtures.json', 'user-visual.cs')) {
