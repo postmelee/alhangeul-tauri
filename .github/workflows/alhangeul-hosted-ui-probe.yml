@@ -14,6 +14,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [windows-2022, windows-2025]
+        installer: [msi, nsis]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     steps:
@@ -35,15 +36,19 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: node scripts/ci/hosted-ui-input.mjs
-      - name: Observe MSI Explorer and API output in existing Shell session
+      - name: Observe owned Explorer window and installer output
         if: ${{ steps.desktop.outputs.ready == 'true' }}
         shell: powershell
-        run: ./scripts/ci/hosted-ui-windows.ps1 -Phase product
+        env:
+          PROBE_INSTALLER: ${{ matrix.installer }}
+        run: |
+          if ($env:PROBE_INSTALLER -eq 'nsis') { ./scripts/ci/hosted-ui-standard.ps1 }
+          else { ./scripts/ci/hosted-ui-windows.ps1 -Phase product }
       - name: Preserve observation including unavailable desktop
         if: ${{ always() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: hosted-ui-${{ matrix.os }}
+          name: hosted-ui-${{ matrix.os }}-${{ matrix.installer }}
           path: ${{ env.HOSTED_UI_ROOT }}/evidence/**
           if-no-files-found: error
           retention-days: 7

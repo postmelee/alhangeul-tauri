@@ -1,4 +1,4 @@
-param([ValidateSet('preflight', 'product')][string]$Phase)
+param([ValidateSet('preflight', 'product', 'definitions')][string]$Phase)
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 if ($env:GITHUB_ACTIONS -cne 'true' -or $env:RUNNER_ENVIRONMENT -cne 'github-hosted') { throw 'disposable-hosted-only' }
@@ -101,4 +101,4 @@ function Observe-Product {
   }
   if ($report.status -ne 'observed' -or $report.uninstallExit -ne 0) { throw 'product-observation-incomplete' }
 }
-if ($Phase -eq 'preflight') { Initialize-Probe } else { Observe-Product }
+if ($Phase -eq 'preflight') { Initialize-Probe } elseif ($Phase -eq 'product') { Observe-Product }

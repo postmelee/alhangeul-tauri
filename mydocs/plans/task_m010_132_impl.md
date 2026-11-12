@@ -385,3 +385,11 @@ Ubuntu의 KVM API 12 및 실제 VM fd 생성·정리는 성공했고 CPU 4개, R
 ### Stage 3.1 결과 — 무료 hosted 관측 완료
 
 설정 대조 run 43176532755(252a9c96, attempt 1)이 success다. 두 Server 이미지에서 IconsOnly=1을 관측하고 테스트 동안 0 적용 후 원래값 복원까지 통과했다. 에이전트가 원본 PNG를 직접 열어 HWP 시험 문서/HWPX 양식/JPG 실제 내용 표시를 확인했다. API 8개, MSI 설치·제거, 소유 창 닫기와 설정 복원 모두 성공했다. 자동 이미지 판정과 Windows 10/11 guest·일반 NSIS 시각 수용은 미검증으로 유지한다. [Stage 3.1 조사 보고](../working/task_m010_132_stage3.1.md)에 입력·증거·제한을 기록한다. 사용자 PC 준비는 무료 hosted 관측의 선행 조건이 아니다.
+
+## Stage 3.2 — 남은 hosted 검증 (2026-11-12 연속 진행 승인)
+
+작업지시자가 남은 검증도 가능하면 진행하도록 지시했다. Windows ISO/사용 권한은 아직 없고 무료 평가판 준비 방법 안내를 선택했다. 따라서 Windows guest 설치는 등록된 정식 이미지 확보를 기다리며, 무료 hosted에서 가능한 다음 항목을 실행한다.
+
+- 표준 사용자 NSIS: 폐기 가능한 VM에서 임시 Users 계정을 만들고 고정 candidate를 설치/재설치한다. 배경 desktop Shell은 다른 계정일 수 있음을 관측으로 남기고, 해당 사용자가 연 탐색기 창의 실제 process SID/session과 child의 non-elevated medium token을 모두 확인한다. 이를 위해 별도 실험 플래그를 사용하며 기존 정식 표준 사용자 gate를 완화하지 않는다. 소유 창 외에는 닫거나 종료하지 않는다. 계정/profile/scratch를 정리하고 원시 미검증 상태를 보존한다.
+- 이미지 회귀: Stage 3.1에서 에이전트가 확인한 공개 fixture 화면의 내용 영역을 임시 기준으로 고정하고 source/artifact/PNG hash를 기록한다. 정상 이미지와 실제 기본 아이콘/빈 화면/다른 문서 대조군으로 자동 비교가 실패를 검출하는지 확인한다. 임시 기준은 작업지시자가 승인한 최종 golden image가 아니며 제품 시각 수용 전체를 자동 승인하지 않는다.
+- 검증은 local automation/boundary/diff와 무료 hosted-ui-probe scope를 사용한다. 제품 rebuild/full 수용·유료 자원·UAC/정책 변경·Explorer/dllhost 전역 종료는 제외한다. 로컬 산출물은 T7 기존 task132 output에만 기록한다. 원격 실행에 필요한 후보 커밋과 결과 보고의 SHA를 연결한다.

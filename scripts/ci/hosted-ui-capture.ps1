@@ -1,4 +1,4 @@
-param([Parameter(Mandatory = $true)][string]$Root)
+param([Parameter(Mandatory = $true)][string]$Root, [switch]$StandardWindowOnly)
 Set-StrictMode -Version Latest
 if ($env:GITHUB_ACTIONS -cne 'true' -or $env:RUNNER_ENVIRONMENT -cne 'github-hosted') { throw 'disposable-hosted-only' }
 $scripts = Split-Path -Parent $PSScriptRoot
@@ -14,7 +14,8 @@ Save-VisualEvidence
 try {
   Add-Type -Path (Join-Path $scripts 'windows-thumbnail-token.cs')
   $report['token'] = [Alhangeul.ThumbnailDiagnostics.TokenProbe]::Read()
-  $report['scope'] = 'hosted-server-msi-observation'
+  $report['scope'] = $(if ($StandardWindowOnly) { 'hosted-server-nsis-window-observation' } else { 'hosted-server-msi-observation' })
+  if ($StandardWindowOnly -and ($report.token.elevated -or $report.token.integrityRid -ne 8192)) { throw 'standard-token-required' }
   Add-Type -AssemblyName System.Drawing
   Add-Type -Path (Join-Path $scripts 'windows-thumbnail-user-visual.cs')
   if (-not $report.interactive -or $report.sessionId -eq 0) { throw 'interactive-desktop-unavailable' }
@@ -25,7 +26,7 @@ try {
   $desktopProcess = Get-CimInstance Win32_Process -Filter ('ProcessId=' + $desktopPid)
   $desktopOwner = Invoke-CimMethod -InputObject $desktopProcess -MethodName GetOwnerSid
   $report.desktopOwnerMatches = $desktopOwner.ReturnValue -eq 0 -and $desktopOwner.Sid -eq [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
-  if (-not $report.desktopOwnerMatches -or $desktopProcess.SessionId -ne $report.sessionId) { throw 'interactive-shell-owner-mismatch' }
+  if (-not $StandardWindowOnly -and (-not $report.desktopOwnerMatches -or $desktopProcess.SessionId -ne $report.sessionId)) { throw 'interactive-shell-owner-mismatch' }
   [void][Alhangeul.ThumbnailUserVisual.Window]::SetProcessDPIAware()
   [void][IO.Directory]::CreateDirectory($folder)
   $fixtures = (Get-Content -LiteralPath (Join-Path $scripts 'windows-thumbnail-fixtures.json') -Raw | ConvertFrom-Json).fixtures
