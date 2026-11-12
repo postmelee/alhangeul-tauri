@@ -4,7 +4,7 @@
 GitHub Issue: [#132](https://github.com/postmelee/alhangeul-tauri/issues/132)
 마일스톤: M010
 
-현재: Stage 2 자동 회귀, Stage 3.1·3.2 무료 hosted 조사 완료. Server 2022/2025 MSI 화면 자동 비교와 표준 사용자 NSIS 설치·재설치·API·제거 통과. NSIS Explorer는 폴더 열기 timeout, Windows 10/11 guest는 ISO 미확보로 미검증.
+현재: Stage 3.3 원인 분리 조사 완료. 설치 전 빈 폴더에서도 Explorer timeout, COM 접근 거부 확인. COM 없는 일반·/separate 실행도 exit 1이며 표준 사용자 창 미확보. MSI 화면/API·NSIS 설치/API/제거는 통과. Windows ISO 다운로드 중이며 실제 Windows guest 수용은 진행 전.
 
 2026-11-11 수행계획 승인과 이슈 해결까지 연속 진행 지시를 적용한다. PR 생성 전 보고한다.
 
@@ -414,3 +414,7 @@ run 43207576327(f564d1bf)과 43209155519(57ce3d75)가 success다. 후속 MSI는 
 run 43212274409(0f6f8e68)은 success이며 두 OS 모두 설치 전 빈 폴더와 설치 후 Shell.Open이 약 60초 timeout이다. ShellBrowserWindow 생성과 ShellWindows 조회는 E_ACCESSDENIED이고 두 COM AppID의 RunAs=Interactive User를 읽기 전용으로 확인했다. 표준 token/SID와 로그인 desktop owner의 불일치에 따른 COM 경계 문제를 강하게 시사하며 제품 설치가 timeout 발생 조건은 아니다.
 
 직접 explorer.exe 실험도 뒤에서 ShellWindows를 조회했으므로 이를 직접 실행 자체의 실패로 결론 내릴 수 없다. 후속에서는 일반 실행과 /separate 실행 모두 COM 없이 native HWND를 기다리고 실제 SID/session을 확인한다. 창을 얻으면 소유 foreground 확인 후 큰 아이콘 단축키로 표시를 시도하고 PNG를 남긴다. 이 경로는 IconSize=192 기준과 다른 실험 레이아웃이므로 기존 MSI 기준을 통과한 것으로 기록하지 않고 experimental-capture-awaiting-reference로 남긴다. MSI 기존 192px 비교는 계속 필수다. 스크린샷 내용을 확인한 뒤 다음 판정 여부를 결정한다.
+
+### Stage 3.3 결과 — 현재 hosted 사용자 문맥의 Explorer 활성화 실패
+
+첫 run 43212274409(0f6f8e68)과 COM 없는 후속 43214335047(5095fa45)이 success다. 두 OS 모두 설치 전 빈 폴더에서도 timeout이며 ShellWindows/ShellBrowserWindow AppID의 Interactive User 설정과 실제 E_ACCESSDENIED를 확인했다. 일반·/separate explorer.exe는 native 창 탐색으로도 exit 1, 소유 문서 창 없음이다. NSIS 화면은 미검증이고 표시 설정 복구·제품 제거·임시 계정/profile/scratch 정리는 통과했다. [Stage 3.3 보고](../working/task_m010_132_stage3.3.md)에 관측·추론의 구분과 T7/UTM 가능성을 기록했다. 현재 Mac M4 Pro에서 x64 ISO는 에뮬레이션이 필요하다. ISO 경로/에디션/아키텍처를 요청했으며 무료 Linux KVM 또는 T7 Windows guest 검증이 후속 경로다. PR·재릴리즈로 넘어가지 않는다.
