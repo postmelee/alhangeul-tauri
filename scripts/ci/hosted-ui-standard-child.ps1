@@ -9,6 +9,7 @@ $output = Join-Path $Root 'evidence'
 $productInput = Get-Content -LiteralPath (Join-Path $Root 'input.json') -Raw | ConvertFrom-Json
 $report = [ordered]@{ schemaVersion = 1; status = 'incomplete'; token = $token; installExit = $null; reinstallExit = $null; uninstallExit = $null; visual = 'unverified'; productUninstallPassed = $false; releaseAcceptance = 'unverified'; probes = @() }
 $directory = $null
+. (Join-Path $PSScriptRoot 'hosted-ui-launch.ps1')
 function Save-State { $report | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath (Join-Path $output 'standard-product.json') -Encoding UTF8 }
 function Run-Owned($File, $Arguments, [int]$Seconds = 180, [switch]$CaptureLogs) {
   $options = @{ FilePath = $File; ArgumentList = $Arguments; PassThru = $true }
@@ -31,6 +32,19 @@ try {
   if (Test-Path -LiteralPath $handlerKey) { throw 'preexisting-handler' }
   $installer = Join-Path $Root 'installer.exe'
   if ((Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash.ToLowerInvariant() -cne $productInput.installerSha256) { throw 'installer-hash-mismatch' }
+  [void](New-Item -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced' -Force)
+  $report['shellActivation'] = @()
+  foreach ($id in @('13709620-C279-11CE-A49E-444553540000', '9BA05972-F6A8-11CF-A442-00A0C90A8F39', 'C08AFD90-F2A1-11D1-8455-00A0C91F3880')) {
+    $class = Get-Item -LiteralPath ('Registry::HKEY_CLASSES_ROOT\CLSID\{' + $id + '}')
+    $appId = $class.GetValue('AppID')
+    $runAs = $null
+    if ($appId) {
+      $appKey = Get-Item -LiteralPath ('Registry::HKEY_CLASSES_ROOT\AppID\' + $appId) -ErrorAction SilentlyContinue
+      if ($appKey) { $runAs = $appKey.GetValue('RunAs') }
+    }
+    $report.shellActivation += @{ clsid = $id; appId = $appId; runAsConfigured = $null -ne $runAs; interactiveUser = $runAs -eq 'Interactive User' }
+  }
+  $report['beforeInstall'] = Invoke-HostedCapture $Root 'before-install-empty' 'ShellOpen' -EmptyFolder
   Save-State
   $report.installExit = Run-Owned $installer '/S'
   if ($report.installExit -ne 0) { throw 'install-failed' }
@@ -41,15 +55,18 @@ try {
     $path = Join-Path $directory ([IO.Path]::GetFileName($file.path))
     if ((Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant() -cne $file.sha256) { throw 'installed-binary-mismatch' }
   }
-  [void](New-Item -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced' -Force)
-  Save-State
-  $engine = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
-  try {
-    $code = Run-Owned $engine ('-NoLogo -NoProfile -NonInteractive -STA -File "' + $PSScriptRoot + '\hosted-ui-capture.ps1" -Root "' + $Root + '" -StandardWindowOnly') 90 -CaptureLogs
-    if ($code -ne 0) { throw 'capture-child-failed' }
-    $visual = Get-Content -LiteralPath (Join-Path $output 'explorer-visual.json') -Raw | ConvertFrom-Json
-    $report.visual = $visual.status
-  } catch { $report['visualFailure'] = $_.Exception.Message }
+  $report['launchProbes'] = @()
+  foreach ($method in @('ShellOpen', 'Navigate', 'Process')) {
+    $name = 'after-install-' + $method.ToLowerInvariant()
+    $observation = Invoke-HostedCapture $Root $name $method
+    $report.launchProbes += $observation
+    if ($observation.Contains('visualStatus') -and $observation.visualStatus -eq 'captured-awaiting-review' -and -not (Test-Path -LiteralPath (Join-Path $output 'explorer.png'))) {
+      Copy-Item -LiteralPath (Join-Path $output ($name + '\explorer.png')) -Destination $output
+      Copy-Item -LiteralPath (Join-Path $output ($name + '\explorer-visual.json')) -Destination $output
+      $report.visual = 'captured-awaiting-review'
+    }
+    Save-State
+  }
   $fixtures = (Get-Content -LiteralPath (Join-Path $scripts 'windows-thumbnail-fixtures.json') -Raw | ConvertFrom-Json).fixtures
   foreach ($fixture in $fixtures) {
     $probe = Join-Path $output ('probe-' + $fixture.id + '.json')

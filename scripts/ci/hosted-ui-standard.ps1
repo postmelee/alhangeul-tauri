@@ -23,7 +23,7 @@ try {
   foreach ($name in @('diagnostics.ps1', 'probe.ps1', 'state.ps1', 'native.cs', 'interop.cs', 'token.cs', 'fixtures.json', 'user-visual.cs')) {
     Copy-Item -LiteralPath (Join-Path $scripts ('windows-thumbnail-' + $name)) -Destination (Join-Path $root 'scripts')
   }
-  foreach ($name in @('hosted-ui-standard-child.ps1', 'hosted-ui-capture.ps1', 'hosted-ui-view.ps1')) {
+  foreach ($name in @('hosted-ui-standard-child.ps1', 'hosted-ui-capture.ps1', 'hosted-ui-view.ps1', 'hosted-ui-launch.ps1', 'hosted-ui-window.cs')) {
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot $name) -Destination (Join-Path $root 'scripts\ci')
   }
   $env:HOSTED_UI_ROOT = $root; Prepare-Fixtures; $env:HOSTED_UI_ROOT = $original

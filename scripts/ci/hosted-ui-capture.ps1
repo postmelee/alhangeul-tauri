@@ -1,4 +1,9 @@
-param([Parameter(Mandatory = $true)][string]$Root, [switch]$StandardWindowOnly)
+param(
+  [Parameter(Mandatory = $true)][string]$Root, [switch]$StandardWindowOnly,
+  [ValidateSet('ShellOpen', 'Navigate', 'Process')][string]$OpenMethod = 'ShellOpen',
+  [ValidatePattern('^$|^[a-z0-9-]{1,50}$')][string]$ProbeName = '',
+  [switch]$EmptyFolder
+)
 Set-StrictMode -Version Latest
 if ($env:GITHUB_ACTIONS -cne 'true' -or $env:RUNNER_ENVIRONMENT -cne 'github-hosted') { throw 'disposable-hosted-only' }
 $scripts = Split-Path -Parent $PSScriptRoot
@@ -6,10 +11,15 @@ $scripts = Split-Path -Parent $PSScriptRoot
 $viewState = $null
 $ErrorActionPreference = 'Stop'
 $output = Join-Path $Root 'evidence'
-$folder = Join-Path $output 'explorer-fixtures'
+if ($ProbeName) { $output = Join-Path $output $ProbeName }
+[void][IO.Directory]::CreateDirectory($output)
+$folder = Join-Path $output $(if ($ProbeName) { 'alh-ui-' + $ProbeName } else { 'explorer-fixtures' })
+$timer = [Diagnostics.Stopwatch]::StartNew()
+if ($ProbeName) { Add-Type -Path (Join-Path $PSScriptRoot 'hosted-ui-window.cs') }
 $report = [ordered]@{ schemaVersion = 1; status = 'unavailable'; phase = 'preflight'; interactive = [Environment]::UserInteractive; sessionId = (Get-Process -Id $PID).SessionId; desktopOwnerMatches = $false; ownerMatches = $false; sessionMatches = $false; visible = $false; iconSize = $null; screenshotSha256 = $null; requiresVisualReview = $true; windowClosed = $false }
 $shell = $null; $window = $null; $owned = $false
-function Save-VisualEvidence { $report | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $output 'explorer-visual.json') -Encoding UTF8 }
+$report['openMethod'] = $OpenMethod; $report['emptyFolder'] = [bool]$EmptyFolder; $report['capturePid'] = $PID
+function Save-VisualEvidence { if ($ProbeName) { $report['nativeThreadId'] = [Alhangeul.HostedExplorer.Native]::GetCurrentThreadId() }; $report['elapsedMs'] = $timer.ElapsedMilliseconds; $report | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $output 'explorer-visual.json') -Encoding UTF8 }
 Save-VisualEvidence
 try {
   Add-Type -Path (Join-Path $scripts 'windows-thumbnail-token.cs')
@@ -30,17 +40,30 @@ try {
   [void][Alhangeul.ThumbnailUserVisual.Window]::SetProcessDPIAware()
   [void][IO.Directory]::CreateDirectory($folder)
   $fixtures = (Get-Content -LiteralPath (Join-Path $scripts 'windows-thumbnail-fixtures.json') -Raw | ConvertFrom-Json).fixtures
-  foreach ($fixture in $fixtures) { Copy-Item -LiteralPath (Join-Path $Root $fixture.path) -Destination (Join-Path $folder ($fixture.id + [IO.Path]::GetExtension($fixture.path))) }
+  foreach ($fixture in @($fixtures | Where-Object { -not $EmptyFolder })) { Copy-Item -LiteralPath (Join-Path $Root $fixture.path) -Destination (Join-Path $folder ($fixture.id + [IO.Path]::GetExtension($fixture.path))) }
   $viewState = Set-HostedThumbnailView
   $report['displayPreference'] = $viewState
-  $report.phase = 'create-shell'; Save-VisualEvidence
-  $shell = New-Object -ComObject Shell.Application
-  $report.phase = 'open-folder'; Save-VisualEvidence
-  $shell.Open($folder)
-  $report.phase = 'find-window'; Save-VisualEvidence
-  for ($i = 0; $i -lt 30; $i++) {
-    $window = @($shell.Windows() | Where-Object { try { $_.Document.Folder.Self.Path -eq $folder } catch { $false } }) | Select-Object -First 1
-    if ($window) { break }; Start-Sleep -Milliseconds 500
+  if ($OpenMethod -eq 'Navigate') {
+    $report.phase = 'create-browser-window'; Save-VisualEvidence
+    # CLSID_ShellBrowserWindow, documented by Microsoft Developing with Windows Explorer.
+    $window = [Activator]::CreateInstance([type]::GetTypeFromCLSID([guid]'C08AFD90-F2A1-11D1-8455-00A0C91F3880'))
+    $report.phase = 'navigate-folder'; Save-VisualEvidence
+    $window.Navigate2($folder)
+    $window.Visible = $true
+  } else {
+    if ($OpenMethod -eq 'Process') {
+      $report.phase = 'start-explorer-process'; Save-VisualEvidence
+      $launcher = Start-Process -FilePath (Join-Path $env:SystemRoot 'explorer.exe') -ArgumentList ('/separate,"' + $folder + '"') -PassThru
+      $report['launcherPid'] = $launcher.Id; $launcher.Dispose()
+    }
+    $report.phase = 'create-shell'; Save-VisualEvidence
+    $shell = New-Object -ComObject Shell.Application
+    if ($OpenMethod -eq 'ShellOpen') { $report.phase = 'open-folder'; Save-VisualEvidence; $shell.Open($folder) }
+    $report.phase = 'find-window'; Save-VisualEvidence
+    for ($i = 0; $i -lt 30; $i++) {
+      $window = @($shell.Windows() | Where-Object { try { $_.Document.Folder.Self.Path -eq $folder } catch { $false } }) | Select-Object -First 1
+      if ($window) { break }; Start-Sleep -Milliseconds 500
+    }
   }
   if (-not $window) { throw 'explorer-window-unavailable' }
   $handle = [IntPtr]$window.HWND

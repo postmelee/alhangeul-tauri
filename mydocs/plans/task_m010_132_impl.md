@@ -397,3 +397,14 @@ Ubuntu의 KVM API 12 및 실제 VM fd 생성·정리는 성공했고 CPU 4개, R
 ### Stage 3.2 결과 — 관측 완료, 실제 Windows 수용은 진행 중
 
 run 43207576327(f564d1bf)과 43209155519(57ce3d75)가 success다. 후속 MSI는 두 Server에서 HWP/HWPX/JPG 내용 비교 6/6 matched, IconsOnly 복원·창 닫기 성공이다. NSIS는 medium token에서 설치/재설치/엄격 제거와 API 8/8을 통과했지만 다른 사용자의 desktop에서 Shell.Open이 90초 시간 초과됐다. raw open-folder/unavailable, restored=false를 유지하고 신규 임시 profile/account/scratch 제거를 별도로 확인했다. 화면 수용으로 올리지 않는다. 자동 비교 기준은 provisional-agent-reviewed이며 releaseAcceptance=unverified다. [Stage 3.2 보고](../working/task_m010_132_stage3.2.md)에 exact 입력·증거·평가판 준비 절차를 기록한다. Windows 11 ISO는 사용자 등록·확보 대기이고 Windows 10의 기존 평가 링크는 지원 종료 안내로 이동한다. PR·같은 버전 재릴리즈는 미완료다.
+
+## Stage 3.3 — NSIS Explorer timeout 원인 분리 (2026-11-12 연속 진행 승인)
+
+작업지시자가 timeout 원인 분석과 무료 runner 해결 가능성 실험을 계속 지시했다. 같은 #132/local task worktree에서 진행하며 PR 전 알림을 유지한다.
+
+- 제품 설치 전 공개 빈 폴더를 Shell.Application.Open으로 여는 음성 대조군을 실행한다. 설치 후 문서 폴더는 Shell.Open, Microsoft 문서의 CLSID_ShellBrowserWindow/IWebBrowser2.Navigate2, explorer.exe 직접 실행을 비교한다. 각 child에는 유한 timeout을 두고 COM 호출 단계·시간·실제 창 process owner/session을 보존한다.
+- API 원인은 로그로 단정하지 않는다. HWND를 native 열거해 COM 호출이 멈춰도 실제 창이 생겼는지 관측한다. 시험 폴더와 일치하고 test user SID/session을 확인한 창만 닫는다. 기존 background Shell, UAC, DCOM RunAs/보안 정책, HKLM 등록, 설치 범위는 바꾸지 않는다.
+- child timeout 뒤에도 부모의 같은 임시 사용자 문맥에서 표시 설정 복원을 시도하고 별도 증거를 기록한다. 신규 계정/profile/scratch 정리와 제품 자체 제거를 각각 검증한다.
+- 성공 시 기존 캡처·내용 비교로 이어가되 창 owner/session과 실제 PNG 내용이 확인되지 않으면 미검증으로 유지한다. 조사 workflow/회귀만 바꾸며 exact product a2796fc0/producer43102583324/artifact13896135792를 재사용한다.
+- local automation/boundary/actionlint/diff, 무료 hosted-ui-probe fast 후 Server 2022/2025 matrix로 검증한다. 원격 후보 커밋과 결과 보고 SHA를 연결한다. private 출력은 연결된 T7 기존 task132 output에 둔다.
+- 문서 위치는 기존 impl, mydocs/working/task_m010_132_stage3.3.md, 오늘할일이다. 사용자가 질문한 T7/VM 가능성은 조사로 안내하며 이번 지시만으로 VM 앱 설치·디스크 포맷·새 Windows 설치를 시작하지 않는다. Mac은 VM 호스트일 뿐 제품 실행 검증 대상은 Windows guest다. M4 Pro ARM 호스트에서 x64 guest는 에뮬레이션이고 ARM64 guest는 x64 수용과 별도임을 명시한다.
