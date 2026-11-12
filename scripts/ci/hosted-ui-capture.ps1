@@ -2,6 +2,8 @@ param([Parameter(Mandatory = $true)][string]$Root)
 Set-StrictMode -Version Latest
 if ($env:GITHUB_ACTIONS -cne 'true' -or $env:RUNNER_ENVIRONMENT -cne 'github-hosted') { throw 'disposable-hosted-only' }
 $scripts = Split-Path -Parent $PSScriptRoot
+. (Join-Path $PSScriptRoot 'hosted-ui-view.ps1')
+$viewState = $null
 $ErrorActionPreference = 'Stop'
 $output = Join-Path $Root 'evidence'
 $folder = Join-Path $output 'explorer-fixtures'
@@ -28,6 +30,8 @@ try {
   [void][IO.Directory]::CreateDirectory($folder)
   $fixtures = (Get-Content -LiteralPath (Join-Path $scripts 'windows-thumbnail-fixtures.json') -Raw | ConvertFrom-Json).fixtures
   foreach ($fixture in $fixtures) { Copy-Item -LiteralPath (Join-Path $Root $fixture.path) -Destination (Join-Path $folder ($fixture.id + [IO.Path]::GetExtension($fixture.path))) }
+  $viewState = Set-HostedThumbnailView
+  $report['displayPreference'] = $viewState
   $report.phase = 'create-shell'; Save-VisualEvidence
   $shell = New-Object -ComObject Shell.Application
   $report.phase = 'open-folder'; Save-VisualEvidence
@@ -72,6 +76,10 @@ finally {
   if ($owned -and $window) { $report.phase = 'close-window'; Save-VisualEvidence; try { $window.Quit(); $report.windowClosed = $true } catch { $report.windowClosed = $false } }
   if ($window) { [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($window) }
   if ($shell) { [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($shell) }
+  if ($viewState) {
+    try { Restore-HostedThumbnailView $viewState } catch { $report['restoreFailure'] = $_.Exception.Message }
+    $report['displayPreference'] = $viewState
+  }
   Save-VisualEvidence
 }
 # Capture is evidence for human review, never automatic Explorer acceptance.

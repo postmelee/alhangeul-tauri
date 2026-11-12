@@ -375,3 +375,9 @@ Stage 3 완료, PR 생성, issue close, release/tag/asset/feed 교체를 진행�
 T7 실제 mount는 확인했다. 기존 routing 도구는 Tauri 저장소 루트에 Cargo.toml이 없어 실패했으며 routing 완료로 주장하지 않는다. 로컬 private 산출물은 기존 T7 rhwp/workspaces/main/output/alhangeul-task132 아래 절대 경로에만 생성하고 로컬 output/target을 만들지 않는다. 기존 task worktree와 추적 source를 사용한다.
 
 원격 실행 전 후보 커밋과 실행 후 증거 보고 커밋을 분리하고 SHA를 연결한다. Stage 3 전체의 Windows 10/11 시각 수용이 남으면 완료 보고를 만들지 않고 구현계획에 조사 결과를 기록한다. PR 생성 전 보고는 유지한다.
+
+### Stage 3.1 첫 관측과 표시 설정 대조
+
+run 43175177459(84402ee7)은 fast와 무료 세 환경의 관측을 통과했다. Windows Server 2022/2025는 동일 Shell 사용자/session에서 PNG를 캡처했고 MSI 설치·제거 및 네 fixture의 force-extract를 통과했다. 직접 PNG를 확인한 결과 HWP/HWPX뿐 아니라 JPG도 기본 아이콘이다. 캡처 성공을 썸네일 표시 성공으로 바꾸지 않는다. Explorer 사용자별 IconsOnly와 DisableThumbnails 정책을 읽고, IconsOnly만 테스트 동안 0으로 적용한 뒤 원래 존재 여부·값·type을 복원하는 대조 실험을 추가한다. UAC/보안 정책/전역 캐시/다른 계정은 변경하지 않는다. 원본 PNG와 raw 결과를 보존하고 새 후보/run으로 비교한다.
+
+Ubuntu의 KVM API 12 및 실제 VM fd 생성·정리는 성공했고 CPU 4개, RAM 16,760,344,576 bytes, 여유 디스크 92,019,437,568 bytes다. Windows guest 부팅은 미실행이며 별도 이미지/설치 검증이 필요하다.

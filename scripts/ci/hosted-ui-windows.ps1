@@ -81,6 +81,7 @@ function Observe-Product {
     if ($code -ne 0) { throw 'capture-child-failed' }
     $visual = Get-Content -LiteralPath (Join-Path $root 'evidence\explorer-visual.json') -Raw | ConvertFrom-Json
     $report.visual = $visual.status
+    if ($visual.PSObject.Properties.Name -contains 'displayPreference' -and -not $visual.displayPreference.restored) { throw 'explorer-preference-not-restored' }
     $report.phase = 'api-probes'; Save-Report 'product' $report
     $manifest = Get-Content -LiteralPath (Join-Path $scripts 'windows-thumbnail-fixtures.json') -Raw | ConvertFrom-Json
     foreach ($fixture in $manifest.fixtures) {
