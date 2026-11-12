@@ -4,7 +4,7 @@
 GitHub Issue: [#132](https://github.com/postmelee/alhangeul-tauri/issues/132)
 마일스톤: M010
 
-현재: Stage 3.5 — 새 Windows에서 VCRUNTIME140.dll 누락과 handler 로드 오류 126 확인. sidecar 정적 CRT 연결 및 새 제품 전체 검증 진행. PR 전 보고 유지.
+현재: Stage 3.5 — 정적 CRT 수정 full CI 및 clean Windows 11 NSIS 실제 Explorer·API·설치/재설치/제거 통과. 전체 Stage 3 수용은 진행 중이며 Windows 10/MSI 클라이언트/공개본 업그레이드·반복 시각 기준 검증이 남음. PR 전 보고 유지.
 
 2026-11-11 수행계획 승인과 이슈 해결까지 연속 진행 지시를 적용한다. PR 생성 전 보고한다.
 
@@ -473,3 +473,20 @@ Stage 3.5 로컬 검증: automation 1,420/1,420, boundary 882 files, action pins
 Stage 3.5 후속 후보: product source 1e08891d의 Windows artifact 13960733196(186,351,819 bytes)을 내려받아 ZIP SHA256 b9a9f28916954bcf6f7cef1b86904e09b38583a38421224c64e44fafd07267cf와 inventory를 확인했다. 새 handler/worker PE import에 VCRUNTIME 등 외부 VC 런타임이 없고 Windows 시스템 DLL만 남았다. NSIS SHA256은 22e9c4d17d4b3669510c6af70d5721ea0feed7a51f3d7911d11d989b56aa3a68, MSI는 09cd65ac1e3af59251fb058f777edbdc7d2527f6b14a1df01d6265eab56eb58c다. full producer 전체 success 확인 전 guest를 실행하지 않는다. 기존 시각 기준 fixture의 a2796fc0 provenance는 역사적 기준으로 유지한다.
 
 후속 harness는 네 개 fixture ID·각 bitmap·소유 사용자/세션·표시 설정 복원·제품 제거를 모두 요구하는 순수 판정 함수를 분리했고 누락/불일치 대조 12개를 검사했다. 패키징 거부 시 기존 두 staged binary가 덮어써지지 않는 회귀 검사를 추가했다. 로컬 automation 1,421/1,421, boundary 882 files, action pins 32/182/11, shellcheck 제외 actionlint와 diff가 통과했다.
+
+
+Stage 3.5 제품 full 결과: run 43241666433/attempt 1이 success로 완료됐다. Windows/Linux x64·arm64 native/build/package gate와 필수 Windows 설치 계약이 통과했다. Windows 빌드 후 target cache 압축·저장은 약 11분 33초였으며 제품 빌드/설치 timeout이 아니다.
+
+- 표준 사용자 NSIS evidence 13963150860(digest f2bdcb6b915c6d266a4f01deaf0a7032efd28e45bbb258c927587414ca7de130): 새 설치·재설치 문서 bitmap 12개/JPG 4개, 제품 제거·계정/profile/scratch 정리 통과. 화면은 아직 미검증이다.
+- MSI lifecycle evidence 13963201773(digest 9bb0d4cdccaee96ff171b29edbe652e3f5c08cae8c1f7467dfa201f8c3dcc805): strict-product, thumbnail/lifecycle passed.
+- 관리자 NSIS evidence 13962582179(digest 2cd26b42aaaacfc068ce76f66d0db04791cd6d051fb9b403a464b95fd6bc2e66): raw failure 12개와 thumbnail not-accepted가 유지된다. 지원 범위 제외 진단 통과이지 기능 해결이 아니다.
+- MSI forced evidence 13962223356(digest 069e49646ecb719f7a6ac350efe3d2983152aea61078ae53ef5895a36e6053c4): thumbnail passed, lifecycle reboot-required/3010, post-reboot-unverified이며 기존 제외 범위를 유지한다.
+- 이번 full 입력에는 thumbnail_same_version_upgrade를 선택하지 않았다. 공개본→새 CRT 후보의 동일 버전 수동 업그레이드는 이 full 결과로 새로 수용하지 않으며 후속 exact-artifact 검증으로 남긴다. 기존 a279 후보 결과도 새 bytes 수용으로 옮기지 않는다.
+
+후속 guest run 43259686576은 harness 84f852c916771642273ff543766ddcb514acf1ba와 product 1e08891d를 분리해 고정했다. fast 두 job이 통과했고 공식 ISO digest 확인 후 2026-11-13 01:36 KST에 새 Windows guest를 시작했다. 결과 확인 전 화면/clean 설치 성공으로 판정하지 않는다. 로컬 T7에는 약 398 GiB가 남아 있고 ARM64 Mac에서 x64 UTM VM 전체를 T7에 보관하는 구성이 가능하다. 로컬 VM 앱 설치/디스크 포맷/Windows 설치는 실행하지 않았다.
+
+
+문서 위치 보완: 기존 승인된 공식 운영 문서 CI_VALIDATION.md에 guest 실행·exact 입력·비밀/디스크 정리·시각 판정 경계를 추가하고 RELEASE_CHECKLIST.md에 clean VC runtime 부재 검사를 추가한다. 검증 작업자가 재현할 절차이므로 기존 운영 문서가 소유하며 새 문서 루트는 만들지 않는다. 실행별 성공/실패 근거는 현재 impl과 Stage 3.5 보고에 둔다.
+
+
+Stage 3.5 guest 결과: run 43259686576/attempt 1이 success다. 같은 ISO에 VC runtime이 없는 상태(로드 오류 126)를 유지하며 reference handler는 로드 0, 오프라인 설치·재설치·제거는 모두 0이다. 실제 non-admin/medium 사용자와 desktop/창 SID·session 일치, HWP 2/HWPX/JPG force-extract bitmap 4/4, 설정 복원·제품 자체 제거, owned VM 종료와 private disk/credentials 제거가 통과했다. guest 관측 880.86초, 네트워크 재시도 없음이다. artifact 13965300396/ZIP SHA256 33d35b1f9e4f72b0a480bde5744ba5502e3ebcdacbf2e4106c4aee8ca4e21a34와 PNG SHA256 42e59df5afca7836c96b5d3cff50c53e536f25af2478408141bbd5309c2cb6dd를 검증했다. 원본 화면에서 HWP 시험지·HWPX 표/본문·JPG를 직접 확인했고 빈 HWP는 내용 판정에서 제외했다. 사용자 golden 승인이나 전체 릴리즈 수용은 아니다. [Stage 3.5 보고](../working/task_m010_132_stage3.5.md)에 범위와 잔여 검증을 기록한다.
