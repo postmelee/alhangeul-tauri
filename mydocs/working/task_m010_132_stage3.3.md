@@ -1,7 +1,7 @@
 # Task #132 Stage 3.3 — NSIS Explorer timeout 원인 분리 보고
 
-GitHub Issue: [#132](https://github.com/postmelee/alhangeul-tauri/issues/132)  
-구현계획서: [task_m010_132_impl.md](../plans/task_m010_132_impl.md)  
+GitHub Issue: [#132](https://github.com/postmelee/alhangeul-tauri/issues/132)
+구현계획서: [task_m010_132_impl.md](../plans/task_m010_132_impl.md)
 Stage: 3.3 (현재 무료 hosted 조건의 원인 분리 조사 완료, Stage 3 제품 수용은 진행 중)
 
 ## 단계 목적

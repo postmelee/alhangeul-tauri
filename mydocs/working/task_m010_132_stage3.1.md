@@ -1,7 +1,7 @@
 # Task #132 Stage 3.1 — GitHub 무료 hosted 자원 가능성 실험 보고
 
-GitHub Issue: [#132](https://github.com/postmelee/alhangeul-tauri/issues/132)  
-구현계획서: [task_m010_132_impl.md](../plans/task_m010_132_impl.md)  
+GitHub Issue: [#132](https://github.com/postmelee/alhangeul-tauri/issues/132)
+구현계획서: [task_m010_132_impl.md](../plans/task_m010_132_impl.md)
 Stage: 3.1 (조사 하위 단계 완료, Stage 3 전체와 이슈는 진행 중)
 
 ## 단계 목적

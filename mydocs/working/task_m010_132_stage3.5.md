@@ -1,7 +1,7 @@
 # Task #132 Stage 3.5 — clean Windows 런타임 수정과 실제 Explorer 관측
 
-GitHub Issue: [#132](https://github.com/postmelee/alhangeul-tauri/issues/132)  
-구현계획서: [task_m010_132_impl.md](../plans/task_m010_132_impl.md)  
+GitHub Issue: [#132](https://github.com/postmelee/alhangeul-tauri/issues/132)
+구현계획서: [task_m010_132_impl.md](../plans/task_m010_132_impl.md)
 Stage: 3.5 (정적 CRT 수정·Windows 11 NSIS 단일 환경 관측 완료, 전체 Stage 3 수용은 진행 중)
 
 ## 단계 목적
