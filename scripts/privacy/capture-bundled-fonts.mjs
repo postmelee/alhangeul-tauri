@@ -16,6 +16,7 @@ for (let attempt = 0; attempt < 30; attempt++) {
 const results = [];
 try {
   await transport.evaluate(`(() => {
+    document.querySelector('.privacy-notice-dialog .dialog-footer button')?.click();
     const panel=document.createElement('div');panel.id='task135-font-observation';
     panel.style.cssText='position:fixed;inset:0;z-index:2147483647;background:white;color:black;padding:40px;overflow:auto;box-sizing:border-box';
     panel.innerHTML='<h1>Alhangeul bundled font observation</h1><p>Synthetic test text, rendered from this installed application.</p>';
@@ -29,11 +30,12 @@ try {
       if(bytes.byteLength>2000000)throw new Error('Unexpected font size');
       const family='Task135Font${index}';const face=new FontFace(family,bytes);await face.load();document.fonts.add(face);
       const panel=document.querySelector('#task135-font-observation');
-      const heading=document.createElement('h2');heading.textContent=${JSON.stringify(font.file)};panel.append(heading);
-      const sample=document.createElement('p');sample.style.fontFamily=family;sample.style.fontSize='28px';sample.style.lineHeight='1.6';
+      const heading=document.createElement('h2');heading.style.cssText='font-size:18px;margin:14px 0 6px';heading.textContent=${JSON.stringify(font.file)};panel.append(heading);
+      const sample=document.createElement('p');sample.style.fontFamily=family;sample.style.fontSize='24px';sample.style.lineHeight='1.4';sample.style.whiteSpace='pre-line';sample.style.margin='0 0 16px';
       sample.textContent=${JSON.stringify('가나다라마바사 한글 문서 · 훈민정음\nAlhangeul ABC xyz 0123456789')};panel.append(sample);
       await document.fonts.ready;
-      if(face.status!=='loaded' || sample.getBoundingClientRect().height<20)throw new Error('Font not rendered');
+      const bounds=sample.getBoundingClientRect();
+      if(face.status!=='loaded' || bounds.height<20 || bounds.bottom>innerHeight-20)throw new Error('Font sample not fully visible');
       return Array.from(new Uint8Array(bytes));
     })()`);
     const sha256 = createHash('sha256').update(Buffer.from(bytes)).digest('hex');
