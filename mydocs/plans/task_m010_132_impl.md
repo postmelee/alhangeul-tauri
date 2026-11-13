@@ -522,3 +522,6 @@ Windows 10 NSIS run 43362730721은 success, guest 495.4초다. agent 직접 PNG�
 
 
 Windows 11 upgrade run 43362414253은 실패로 보존한다(artifact 14008769768, digest eceffd118134d5038b5c7e66f72b8e7f00e01049b52706dd7b3ad0373ce669ab). VC 공식 서명/설치와 공개본 설치 exit 0·binary 해시는 통과했으나 baseline small-hwp force-extract가 0x8004B200/bitmap null이었다. 잘못된 baseline 성공 요구 때문에 후보 설치는 미실행이었다. baseline API는 네 fixture 모두 관측·원시 오류를 보존하되 기존 결함 때문에 업그레이드를 막지 않도록 수정한다. 후보 upgrade/reinstall은 계속 네 bitmap 모두 성공을 요구한다. baseline 누락/skipped와 후보 실패는 거부하는 회귀를 추가했다. sentinel을 baseline probe 전에 생성하고, 사전 실패로 sentinel이 없는 경우의 추가 cleanup 속성 오류를 방지한다. 기존 공개본 자체 제거 실패는 별도 보존하며 후보 제거 성공으로 치환하지 않는다.
+
+
+Windows 10 업그레이드 run 43363316610은 20분 checkpoint(artifact 14010271982, digest b78fefba85760484378f936efd2ccc326f9891d1eb1bfe7f23e4eda058a55a43)의 실제 화면에서 Windows setup의 unexpected restart/error로 설치가 진행 불가능함을 확인했다. 앱 검증 전 실패이며 실패 화면을 보존한 뒤 owned run을 취소해 always 정리/증거 업로드를 진행한다. 동일 ISO의 NSIS/MSI fresh는 이미 성공했지만 이 실패의 원인은 확정하지 않는다. 새 실행에는 specialize bootstrap의 고정 단계명·숫자 HRESULT만 COM1으로 전송하는 진단을 추가한다. 암호/예외 본문은 전송하지 않고 로그 전송 실패 자체가 OS setup을 실패시키지 않는다. baseline 관측 보정과 함께 새 fresh VM으로 다시 실행하며 원래 실패를 성공으로 소급 변경하지 않는다.
