@@ -78,3 +78,6 @@ Stage 5에서 양 OS TLS 요청 내부, HWP/HWPX 편집·native staged 저장·�
 
 ## 정책 공개 승인
 2026-11-14 작업지시자가 브라우저에서 확인했고 정책 PR·배포를 승인했다. Stage 1~6의 정책·검증 자료를 먼저 devel PR로 통합하고 exact commit Pages 배포를 수행한다. 이 승인은 앱 신규 릴리스나 SignPath 신청/계정 생성 승인이 아니다. 제품 보완은 정책 공개 뒤 후속 단계로 진행하며 이슈 #135는 유지한다.
+
+## 정책 PR 필수 검사 보완
+PR #136의 첫 필수 검사 run 43467248700에서 automation 1,384개 중 1개가 실패했다. 신규 개인정보 관측 workflow의 inventory 등록 누락이 원인이므로 기존 inventory와 수동 실행·contents:read 계약 검사에 추가했다. 정책 내용 변경은 없다. 필수 check 성공 전에는 병합하지 않는다.
