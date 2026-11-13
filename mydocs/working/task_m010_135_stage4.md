@@ -39,6 +39,8 @@ node --check prepare.mjs, bash -n observe-linux.sh, actionlint workflow 검사 �
 ### 발견 사항의 정책 반영
 WebView2 추가 외부 연결·로컬 진단 파일 관측과 Microsoft 공식 문서를 근거로 공개 정책에 Microsoft WebView2의 필수·선택 진단, 기본 SmartScreen·오류 보고, Windows 설정 및 Microsoft 정책 링크를 추가했다. 개별 IP가 특정 진단 요청이라는 추정은 하지 않았다. 최종 변경 뒤 사이트 build/check·106개 테스트 및 화면 검증을 다시 통과했다.
 
+보관한 텍스트 증거는 CRLF와 줄 끝 공백을 정규화했으며 값은 보존했다. sha256.json은 정규화된 저장소 파일 기준이다. 원시 artifact는 위 Actions run에 별도로 연결된다. 최종 전체 diff --check에서 발견한 원시 출력 공백을 정리한 뒤 통과했다.
+
 ## 잔여 위험
 관측은 앱을 실행한 뒤 45초 대기한 구간이다. 추출·초기화 시간이 포함되므로 45초 전체가 idle인 것은 아니다. 이 시작·idle 연결 관측은 모든 작업·시간대·환경의 무통신 증명이 아니다. TLS 본문·개인 문서를 수집하지 않는다. 사이트 전체 외부 서비스 접근성이나 모든 이메일 제공자의 수신도 보장하지 않는다.
 
