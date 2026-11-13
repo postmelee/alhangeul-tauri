@@ -113,3 +113,8 @@ full run 43475282411에서 세 target core가 통과했고 Windows helper 빌드
 47개 원문 보완을 ZIP에 실제 반영했다. 1,408개 package의 전체 notice hash를 검증했고 filename gap은 136→89개다. crate checksum·repository·VCS commit·원문 hash 불일치 네 경우가 거부됨을 검증했다. 기본 Python 3.9에는 tomllib가 없어 이 검사를 실행하지 못했으며 문서 요구에 맞는 Python 3.13으로 다시 검사했다. 단순 원문 확보를 대상별 라이선스 적합성 판정으로 바꾸지 않는다.
 
 나눔 3개의 공식 원본 전체 48,016 glyph는 outline/hint 차이 0, 변환 대상 외 table은 동일했다. DSIG 제거, head flag bit 11, glyf/loca 인코딩 차이는 WOFF2 변환 명세와 구분해 [추가 증거](../working/assets/task135/readiness/font-official-tables.json)에 기록했다. 이 단계에서는 폰트 bytes를 바꾸지 않았다. 로컬 고지/graph 테스트 4개, 설치/workflow 계약 43개, 변경 Rust 파일 format 및 diff check가 통과했다.
+
+## Stage 7 설치본 소비자 검증 준비
+이전 e0a674e7 full run은 Windows desktop/worker/handler 테스트·lint와 metadata, 세 target core 성공을 보존한 뒤 남은 패키징을 취소했다. Linux lint 실패를 수정한 7b37eec86f53db8eb02ca2e021493d2d0060d508 full run [43482991954](https://github.com/postmelee/alhangeul-tauri/actions/runs/43482991954)으로 전환했다. 이전 run을 성공으로 재분류하지 않는다.
+
+기존 privacy workflow에 candidate-audit 소비자를 추가했다. 성공한 producer의 source/run/artifact metadata 및 다운로드 digest·파일 inventory를 확인한 뒤 재빌드 없이 Windows 실제 안내 화면·설치 resource hash, Linux AppImage 내부 resource hash를 검증한다. 로컬 workflow 계약 28개·actionlint·resource verifier의 정상 bytes 수용/변조 bytes 거부가 통과했다. 실제 OS 소비자 결과는 아직 없다.

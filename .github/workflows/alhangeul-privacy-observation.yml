@@ -5,18 +5,24 @@ on:
       depth:
         type: choice
         default: startup
-        options: [startup, deep, package-audit, preferences]
+        options: [startup, deep, package-audit, preferences, candidate-audit]
         description: Direct startup metadata or TLS and lifecycle inspection.
       platform:
         type: choice
         default: both
         options: [both, linux, windows]
         description: Observe selected OS; reuse successful evidence for unchanged OS.
+      candidate_sha:
+        type: string
+        description: Candidate audit only - exact successful producer source SHA.
+      candidate_run:
+        type: string
+        description: Candidate audit only - successful full CI run ID.
 permissions:
   contents: read
 jobs:
   observe:
-    if: inputs.depth != 'preferences'
+    if: inputs.depth != 'preferences' && inputs.depth != 'candidate-audit'
     strategy:
       fail-fast: false
       matrix:
@@ -146,3 +152,72 @@ jobs:
             privacy-evidence/*.png
           retention-days: 7
           if-no-files-found: error
+  candidate-audit:
+    if: inputs.depth == 'candidate-audit'
+    permissions:
+      actions: read
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(inputs.platform == 'linux' && '[{"os":"ubuntu-24.04","platform":"linux-x64"}]' || inputs.platform == 'windows' && '[{"os":"windows-2025","platform":"windows-x64"}]' || '[{"os":"ubuntu-24.04","platform":"linux-x64"},{"os":"windows-2025","platform":"windows-x64"}]') }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    env:
+      PRODUCT_SHA: ${{ inputs.candidate_sha }}
+      PRODUCT_RUN_ID: ${{ inputs.candidate_run }}
+      PRODUCT_PLATFORM: ${{ matrix.platform }}
+      GIT_CONFIG_COUNT: '1'
+      GIT_CONFIG_KEY_0: core.autocrlf
+      GIT_CONFIG_VALUE_0: 'false'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Verify successful exact producer and artifact metadata
+        id: producer
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p privacy-evidence
+          node scripts/verify-workflow-artifact.mjs --repository "$GITHUB_REPOSITORY" --build-ref "$PRODUCT_SHA" --run-id "$PRODUCT_RUN_ID" --workflow-path .github/workflows/ci.yml --artifact-name "alhangeul-desktop-$PRODUCT_PLATFORM" --json-output privacy-evidence/producer.json --github-output "$GITHUB_OUTPUT"
+      - name: Download verified archive with strict digest
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          artifact-ids: ${{ steps.producer.outputs.artifact_id }}
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.candidate_run }}
+          path: artifacts/${{ matrix.platform }}
+          digest-mismatch: error
+      - name: Verify exact product file inventory
+        shell: bash
+        run: node scripts/verify-desktop-artifacts.mjs --platform "$PRODUCT_PLATFORM" --root "artifacts/$PRODUCT_PLATFORM" --source-sha "$PRODUCT_SHA" --verify-inventory "artifacts/$PRODUCT_PLATFORM/alhangeul-artifact-inventory.json"
+      - name: Read exact producer source for resource hash comparison
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.candidate_sha }}
+          path: product-source
+          persist-credentials: false
+      - name: Check actual Windows installer privacy UI and installed resources
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./scripts/privacy/candidate-notices-windows.ps1
+      - name: Check actual Linux AppImage resources
+        if: runner.os == 'Linux'
+        run: bash scripts/privacy/candidate-notices-linux.sh
+      - name: Preserve exact identity, installed hashes and actual UI
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: privacy-candidate-audit-${{ matrix.platform }}
+          path: |
+            privacy-evidence/*.json
+            privacy-evidence/*.png
+          if-no-files-found: error
+          retention-days: 7

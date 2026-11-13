@@ -113,3 +113,6 @@ MSI의 기존 en-US codepage와 충돌하지 않도록 새 dialog의 제목·버
 Rust 1.100.0 clippy가 기존 pdf_temp_cleanup의 비 Windows bool 분기 형태를 needless_bool로 거부했다. 원래 사용자 worktree에서 해당 파일 미수정을 확인했다. symlink/reparse 판정 의미를 유지하며 cfg별 반환식만 분리하고 기존 symlink/junction 회귀와 새 full 검증으로 확인한다. 읽기 전용 rhwp의 경고를 고치거나 lint gate를 낮추지 않는다.
 
 확보한 47개 원문 고지는 crate checksum·Cargo repository·VCS commit을 생성 시 다시 검증하고, 고정 URL·원문 hash에 맞는 경우에만 ZIP에 보완한다. 나머지 누락과 실제 target 적용 판정은 유지한다. 원문 목록은 기존 assets/licenses, generator는 scripts/privacy에 둔다. 조사 당시 임시 로컬 경로는 제품 inventory에 기록하지 않는다. 나눔 3개의 공식 프로그램 전체 glyph·hint·table 추가 검증은 working/assets/task135에 별도로 기록하며 제품 bytes는 바꾸지 않는다.
+
+### Stage 7 설치본 고지·화면 수용
+새 full producer가 성공하면 exact source SHA·run·artifact ID/digest를 검증하는 소비자 관측 모드에서 동일 Windows NSIS/MSI와 Linux AppImage를 재사용한다. 제품을 다시 빌드하지 않는다. Windows 설치 전 안내를 UI Automation과 screenshot으로 확인한 뒤 취소하고, silent 설치본의 모든 지정 고지·개인정보 안내 bytes를 producer source와 대조한 뒤 제거한다. Linux는 AppImage를 일회용 runner에서 추출해 동일 resource hash를 검사한다. OS 화면 실패는 정적 문자열 성공으로 대체하지 않는다. 소비자 harness는 기존 privacy workflow/scripts, 증거는 기존 task assets 경로를 사용한다.
