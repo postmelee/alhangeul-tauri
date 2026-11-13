@@ -1,0 +1,40 @@
+[
+  {
+    "title": "알한글 개인정보처리방침",
+    "width": 1440,
+    "scrollWidth": 1440,
+    "headings": [
+      "개인정보처리방침",
+      "문서와 기기 안의 데이터",
+      "시작 시 업데이트 확인과 다운로드",
+      "로그와 진단",
+      "사용자가 보내는 문의와 제보",
+      "웹사이트와 외부 서비스",
+      "보관과 삭제 문의",
+      "이 방침의 범위와 변경"
+    ],
+    "footerVisible": true,
+    "viewport": "desktop",
+    "errors": [],
+    "entryLinks": "home/updates/feedback passed"
+  },
+  {
+    "title": "알한글 개인정보처리방침",
+    "width": 390,
+    "scrollWidth": 390,
+    "headings": [
+      "개인정보처리방침",
+      "문서와 기기 안의 데이터",
+      "시작 시 업데이트 확인과 다운로드",
+      "로그와 진단",
+      "사용자가 보내는 문의와 제보",
+      "웹사이트와 외부 서비스",
+      "보관과 삭제 문의",
+      "이 방침의 범위와 변경"
+    ],
+    "footerVisible": true,
+    "viewport": "mobile",
+    "errors": [],
+    "entryLinks": "home/updates/feedback passed"
+  }
+]
