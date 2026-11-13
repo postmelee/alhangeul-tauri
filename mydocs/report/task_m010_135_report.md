@@ -167,3 +167,14 @@ CanvasKit의 [공식 npm 버전 metadata](https://registry.npmjs.org/canvaskit-w
 고지 basename 회귀를 포함한 Node 검사 3개, 정상 resource 23개 수용/이름 변경 거부 및 실패 경로 증거 검사, RTF 본문 유지·diff check가 통과했다. 수정 전 d48a4973 run 43495820535는 fast 두 job 성공 후 새 결함 대응을 위해 native 초기 단계에서 취소했다. 취소와 최종 result 실패를 전체 성공으로 기록하지 않는다. 수정 설치본을 새 full/소비자에서 다시 확인해야 한다.
 
 수정 후보 `34850d42537ebf1d9de55764be1b8ff8aea11c1a`의 [full run 43498370240](https://github.com/postmelee/alhangeul-tauri/actions/runs/43498370240)은 fast 두 job이 성공했고 native/package 검증 중이다. 이전 선택/TLS source 456451a8과 이 후보의 Studio host·updater Rust·등록 lib.rs를 비교했으며 차이가 없다. 이 근거로 기능 변경 없는 선택/TLS 결과를 재사용하되 서로 다른 source/config/설치 bytes라는 사실은 유지한다. 개인 신청 이름·발신/연락 주소의 task 문서·JSON/TXT 포함 여부 검색도 일치 0건이었다.
+
+설치 검증 harness `ddfdcc9cb49fa06aefab332568170ba22b85ca69`의 [fast run 43501025769](https://github.com/postmelee/alhangeul-tauri/actions/runs/43501025769)은 Node/Studio와 Windows PowerShell 모두 성공했다. Studio 45개 파일의 296개 테스트 및 Windows script 91개 parser·격리 회귀 16개를 확인했다. 실제 MSI `REINSTALL=ALL REINSTALLMODE=amus` 경로와 반환 코드·재부팅 필요 기록은 새 설치본 소비자에서 별도로 확인한다.
+
+CanvasKit registry gitHead는 공식 Gitiles에서도 404였고 공개 refs에는 0.41.1 tag가 없었다. npm metadata에는 source-build attestation이 없으며 registry signature를 소스 빌드 증명으로 해석하지 않았다. Gitiles path history는 401로 읽지 못했고 접근 제한을 우회하지 않았다. 기존 출처 연결 한계를 유지한다.
+
+현재 34850d42 producer가 올린 Windows x64·Linux x64/arm64 normal graph를 새 1,508개 고지 묶음과 대조했다. 세 target의 package·feature 목록은 이전 7b37eec8과 동일했다. desktop filename gap은 Windows 5개·Linux 각 6개, worker/thumbnailer는 각 1개, Windows handler는 0개다. [새 source/graph hash별 대조](../working/assets/task135/readiness/native-notice-coverage-34850.json). 이 결과는 바이너리 SBOM이나 아직 실행 중인 producer 전체 수용이 아니다.
+
+## Stage 7.9 추가 원문 고지 보완
+추가 WASM lock의 defmt-parser 1.0.0, quantette 0.6.0, skia-bindings/skia-safe 0.156.0, subsecond/subsecond-types 0.7.10은 배포 archive checksum·manifest repository·VCS commit과 일치하는 root 원문을 확보했다. 기존 생성기의 출처/hash 검증을 다시 거쳐 6개를 동봉했으며 전체 1,508개 inventory integrity와 모든 notice hash를 재검증했다. ZIP은 SHA-256 `1b780dec50d67dc70b203dc51e014795f8b61f9cecc22ffecdae2c45632be7f3`, 4,380,966 bytes이고 filename gap은 95→89개다. [원문별 근거](../working/assets/task135/readiness/wasm-notice-supplement.json). Rust Skia binding의 원문 확보를 CanvasKit/Skia C++ 내부 전체 고지 수용으로 확대하지 않는다.
+
+앱 코드·잠금·빌드 설정·설치 안내·폰트는 바꾸지 않았다. 34850d42 full/실제 UI 소비자 결과를 보존한 뒤 새 고지 resource에 대한 세 target package 생성과 exact 소비자를 수행한다. native/core를 생략한 후속 product profile은 부분 package 검증으로 기록하며 새 full 수용으로 부르지 않는다.

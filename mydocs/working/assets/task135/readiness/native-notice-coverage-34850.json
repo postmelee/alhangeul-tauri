@@ -1,0 +1,585 @@
+{
+  "scope": "Target-filtered Cargo normal graphs, including procedural macros and unified features. File-name notice coverage only; not binary SBOM, legal compliance or full producer acceptance. Nonregistry packages reviewed separately.",
+  "producerRun": 43498370240,
+  "noticeBundleSha256": "96c185671208223162027b8ef6d2203520b86f4048688cbac68066bb7651fa89",
+  "platforms": [
+    {
+      "platform": "windows-x64",
+      "sourceSha": "34850d42537ebf1d9de55764be1b8ff8aea11c1a",
+      "rawGraphSha256": "5ba72269fb61d0b6d01ac2d2aa2ab789ae3897d46c20e639f4eac3bf7c8e3ac8",
+      "unchangedFromSource": "7b37eec86f53db8eb02ca2e021493d2d0060d508",
+      "products": [
+        {
+          "root": "apps/desktop/src-tauri",
+          "normalGraphPackages": 532,
+          "registryPackagesWithNoticeFiles": 511,
+          "filenameNoticeGaps": [
+            {
+              "name": "convert_case",
+              "version": "0.4.0",
+              "license": "MIT"
+            },
+            {
+              "name": "fxhash",
+              "version": "0.2.1",
+              "license": "Apache-2.0/MIT"
+            },
+            {
+              "name": "mac",
+              "version": "0.1.1",
+              "license": "MIT/Apache-2.0"
+            },
+            {
+              "name": "seahash",
+              "version": "4.1.0",
+              "license": "MIT"
+            },
+            {
+              "name": "zune-core",
+              "version": "0.4.12",
+              "license": "MIT OR Apache-2.0 OR Zlib"
+            }
+          ],
+          "nonRegistryPackages": [
+            {
+              "name": "alhangeul-desktop",
+              "version": "0.1.3"
+            },
+            {
+              "name": "alhangeul-document-preview",
+              "version": "0.1.0"
+            },
+            {
+              "name": "rhwp-codec-resource",
+              "version": "0.1.0"
+            },
+            {
+              "name": "rhwp-contracts",
+              "version": "0.1.0"
+            },
+            {
+              "name": "rhwp-hayro-ccitt",
+              "version": "0.3.0-rhwp.1"
+            },
+            {
+              "name": "rhwp-hayro-jbig2",
+              "version": "0.3.0-rhwp.1"
+            },
+            {
+              "name": "rhwp-hayro-jpeg2000",
+              "version": "0.4.0-rhwp.1"
+            },
+            {
+              "name": "rhwp-jpeg-decoder",
+              "version": "0.3.2-rhwp.1"
+            },
+            {
+              "name": "rhwp-jpeg-encoder",
+              "version": "0.7.1-rhwp.1"
+            },
+            {
+              "name": "rhwp-ooxml-chart",
+              "version": "0.1.0"
+            },
+            {
+              "name": "rhwp-password-crypto",
+              "version": "0.1.0"
+            },
+            {
+              "name": "rhwp-pdf-import-backend",
+              "version": "0.3.78-rhwp.1"
+            },
+            {
+              "name": "rhwp-qcms",
+              "version": "0.3.0-rhwp.1"
+            },
+            {
+              "name": "rhwp-svg2pdf",
+              "version": "0.13.0-rhwp.1"
+            },
+            {
+              "name": "rhwp-zune-jpeg",
+              "version": "0.5.15-rhwp.1"
+            },
+            {
+              "name": "rhwp",
+              "version": "0.9.0"
+            }
+          ]
+        },
+        {
+          "root": "apps/thumbnail-worker",
+          "normalGraphPackages": 287,
+          "registryPackagesWithNoticeFiles": 270,
+          "filenameNoticeGaps": [
+            {
+              "name": "zune-core",
+              "version": "0.4.12",
+              "license": "MIT OR Apache-2.0 OR Zlib"
+            }
+          ],
+          "nonRegistryPackages": [
+            {
+              "name": "alhangeul-document-preview",
+              "version": "0.1.0"
+            },
+            {
+              "name": "alhangeul-thumbnail-worker",
+              "version": "0.1.0"
+            },
+            {
+              "name": "rhwp-codec-resource",
+              "version": "0.1.0"
+            },
+            {
+              "name": "rhwp-contracts",
+              "version": "0.1.0"
+            },
+            {
+              "name": "rhwp-hayro-ccitt",
+              "version": "0.3.0-rhwp.1"
+            },
+            {
+              "name": "rhwp-hayro-jbig2",
+              "version": "0.3.0-rhwp.1"
+            },
+            {
+              "name": "rhwp-hayro-jpeg2000",
+              "version": "0.4.0-rhwp.1"
+            },
+            {
+              "name": "rhwp-jpeg-decoder",
+              "version": "0.3.2-rhwp.1"
+            },
+            {
+              "name": "rhwp-jpeg-encoder",
+              "version": "0.7.1-rhwp.1"
+            },
+            {
+              "name": "rhwp-ooxml-chart",
+              "version": "0.1.0"
+            },
+            {
+              "name": "rhwp-password-crypto",
+              "version": "0.1.0"
+            },
+            {
+              "name": "rhwp-pdf-import-backend",
+              "version": "0.3.78-rhwp.1"
+            },
+            {
+              "name": "rhwp-qcms",
+              "version": "0.3.0-rhwp.1"
+            },
+            {
+              "name": "rhwp-svg2pdf",
+              "version": "0.13.0-rhwp.1"
+            },
+            {
+              "name": "rhwp-zune-jpeg",
+              "version": "0.5.15-rhwp.1"
+            },
+            {
+              "name": "rhwp",
+              "version": "0.9.0"
+            }
+          ]
+        },
+        {
+          "root": "apps/thumbnail-handler",
+          "normalGraphPackages": 9,
+          "registryPackagesWithNoticeFiles": 7,
+          "filenameNoticeGaps": [],
+          "nonRegistryPackages": [
+            {
+              "name": "alhangeul-document-preview",
+              "version": "0.1.0"
+            },
+            {
+              "name": "alhangeul-thumbnail-handler",
+              "version": "0.1.0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "platform": "linux-x64",
+      "sourceSha": "34850d42537ebf1d9de55764be1b8ff8aea11c1a",
+      "rawGraphSha256": "e498f9933a21ffc250b0859cacb780e879803cc28a00f6c3c079d9fbf04c9afe",
+      "unchangedFromSource": "7b37eec86f53db8eb02ca2e021493d2d0060d508",
+      "products": [
+        {
+          "root": "apps/desktop/src-tauri",
+          "normalGraphPackages": 593,
+          "registryPackagesWithNoticeFiles": 571,
+          "filenameNoticeGaps": [
+            {
+              "name": "convert_case",
+              "version": "0.4.0",
+              "license": "MIT"
+            },
+            {
+              "name": "fxhash",
+              "version": "0.2.1",
+              "license": "Apache-2.0/MIT"
+            },
+            {
+              "name": "libappindicator-sys",
+              "version": "0.9.0",
+              "license": "Apache-2.0 OR MIT"
+            },
+            {
+              "name": "mac",
+              "version": "0.1.1",
+              "license": "MIT/Apache-2.0"
+            },
+            {
+              "name": "seahash",
+              "version": "4.1.0",
+              "license": "MIT"
+            },
+            {
+              "name": "zune-core",
+              "version": "0.4.12",
+              "license": "MIT OR Apache-2.0 OR Zlib"
+            }
+          ],
+          "nonRegistryPackages": [
+            {
+              "name": "alhangeul-desktop",
+              "version": "0.1.3"
+            },
+            {
+              "name": "alhangeul-document-preview",
+              "version": "0.1.0"
+            },
+            {
+              "name": "rhwp-codec-resource",
+              "version": "0.1.0"
+            },
+            {
+              "name": "rhwp-contracts",
+              "version": "0.1.0"
+            },
+            {
+              "name": "rhwp-hayro-ccitt",
+              "version": "0.3.0-rhwp.1"
+            },
+            {
+              "name": "rhwp-hayro-jbig2",
+              "version": "0.3.0-rhwp.1"
+            },
+            {
+              "name": "rhwp-hayro-jpeg2000",
+              "version": "0.4.0-rhwp.1"
+            },
+            {
+              "name": "rhwp-jpeg-decoder",
+              "version": "0.3.2-rhwp.1"
+            },
+            {
+              "name": "rhwp-jpeg-encoder",
+              "version": "0.7.1-rhwp.1"
+            },
+            {
+              "name": "rhwp-ooxml-chart",
+              "version": "0.1.0"
+            },
+            {
+              "name": "rhwp-password-crypto",
+              "version": "0.1.0"
+            },
+            {
+              "name": "rhwp-pdf-import-backend",
+              "version": "0.3.78-rhwp.1"
+            },
+            {
+              "name": "rhwp-qcms",
+              "version": "0.3.0-rhwp.1"
+            },
+            {
+              "name": "rhwp-svg2pdf",
+              "version": "0.13.0-rhwp.1"
+            },
+            {
+              "name": "rhwp-zune-jpeg",
+              "version": "0.5.15-rhwp.1"
+            },
+            {
+              "name": "rhwp",
+              "version": "0.9.0"
+            }
+          ]
+        },
+        {
+          "root": "apps/linux-thumbnailer",
+          "normalGraphPackages": 285,
+          "registryPackagesWithNoticeFiles": 268,
+          "filenameNoticeGaps": [
+            {
+              "name": "zune-core",
+              "version": "0.4.12",
+              "license": "MIT OR Apache-2.0 OR Zlib"
+            }
+          ],
+          "nonRegistryPackages": [
+            {
+              "name": "alhangeul-document-preview",
+              "version": "0.1.0"
+            },
+            {
+              "name": "alhangeul-linux-thumbnailer",
+              "version": "0.1.0"
+            },
+            {
+              "name": "rhwp-codec-resource",
+              "version": "0.1.0"
+            },
+            {
+              "name": "rhwp-contracts",
+              "version": "0.1.0"
+            },
+            {
+              "name": "rhwp-hayro-ccitt",
+              "version": "0.3.0-rhwp.1"
+            },
+            {
+              "name": "rhwp-hayro-jbig2",
+              "version": "0.3.0-rhwp.1"
+            },
+            {
+              "name": "rhwp-hayro-jpeg2000",
+              "version": "0.4.0-rhwp.1"
+            },
+            {
+              "name": "rhwp-jpeg-decoder",
+              "version": "0.3.2-rhwp.1"
+            },
+            {
+              "name": "rhwp-jpeg-encoder",
+              "version": "0.7.1-rhwp.1"
+            },
+            {
+              "name": "rhwp-ooxml-chart",
+              "version": "0.1.0"
+            },
+            {
+              "name": "rhwp-password-crypto",
+              "version": "0.1.0"
+            },
+            {
+              "name": "rhwp-pdf-import-backend",
+              "version": "0.3.78-rhwp.1"
+            },
+            {
+              "name": "rhwp-qcms",
+              "version": "0.3.0-rhwp.1"
+            },
+            {
+              "name": "rhwp-svg2pdf",
+              "version": "0.13.0-rhwp.1"
+            },
+            {
+              "name": "rhwp-zune-jpeg",
+              "version": "0.5.15-rhwp.1"
+            },
+            {
+              "name": "rhwp",
+              "version": "0.9.0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "platform": "linux-arm64",
+      "sourceSha": "34850d42537ebf1d9de55764be1b8ff8aea11c1a",
+      "rawGraphSha256": "81e8c3d68e68bcc3580d66f23bbd068a68d8896a35411a510d22de0ec87121c9",
+      "unchangedFromSource": "7b37eec86f53db8eb02ca2e021493d2d0060d508",
+      "products": [
+        {
+          "root": "apps/desktop/src-tauri",
+          "normalGraphPackages": 592,
+          "registryPackagesWithNoticeFiles": 570,
+          "filenameNoticeGaps": [
+            {
+              "name": "convert_case",
+              "version": "0.4.0",
+              "license": "MIT"
+            },
+            {
+              "name": "fxhash",
+              "version": "0.2.1",
+              "license": "Apache-2.0/MIT"
+            },
+            {
+              "name": "libappindicator-sys",
+              "version": "0.9.0",
+              "license": "Apache-2.0 OR MIT"
+            },
+            {
+              "name": "mac",
+              "version": "0.1.1",
+              "license": "MIT/Apache-2.0"
+            },
+            {
+              "name": "seahash",
+              "version": "4.1.0",
+              "license": "MIT"
+            },
+            {
+              "name": "zune-core",
+              "version": "0.4.12",
+              "license": "MIT OR Apache-2.0 OR Zlib"
+            }
+          ],
+          "nonRegistryPackages": [
+            {
+              "name": "alhangeul-desktop",
+              "version": "0.1.3"
+            },
+            {
+              "name": "alhangeul-document-preview",
+              "version": "0.1.0"
+            },
+            {
+              "name": "rhwp-codec-resource",
+              "version": "0.1.0"
+            },
+            {
+              "name": "rhwp-contracts",
+              "version": "0.1.0"
+            },
+            {
+              "name": "rhwp-hayro-ccitt",
+              "version": "0.3.0-rhwp.1"
+            },
+            {
+              "name": "rhwp-hayro-jbig2",
+              "version": "0.3.0-rhwp.1"
+            },
+            {
+              "name": "rhwp-hayro-jpeg2000",
+              "version": "0.4.0-rhwp.1"
+            },
+            {
+              "name": "rhwp-jpeg-decoder",
+              "version": "0.3.2-rhwp.1"
+            },
+            {
+              "name": "rhwp-jpeg-encoder",
+              "version": "0.7.1-rhwp.1"
+            },
+            {
+              "name": "rhwp-ooxml-chart",
+              "version": "0.1.0"
+            },
+            {
+              "name": "rhwp-password-crypto",
+              "version": "0.1.0"
+            },
+            {
+              "name": "rhwp-pdf-import-backend",
+              "version": "0.3.78-rhwp.1"
+            },
+            {
+              "name": "rhwp-qcms",
+              "version": "0.3.0-rhwp.1"
+            },
+            {
+              "name": "rhwp-svg2pdf",
+              "version": "0.13.0-rhwp.1"
+            },
+            {
+              "name": "rhwp-zune-jpeg",
+              "version": "0.5.15-rhwp.1"
+            },
+            {
+              "name": "rhwp",
+              "version": "0.9.0"
+            }
+          ]
+        },
+        {
+          "root": "apps/linux-thumbnailer",
+          "normalGraphPackages": 284,
+          "registryPackagesWithNoticeFiles": 267,
+          "filenameNoticeGaps": [
+            {
+              "name": "zune-core",
+              "version": "0.4.12",
+              "license": "MIT OR Apache-2.0 OR Zlib"
+            }
+          ],
+          "nonRegistryPackages": [
+            {
+              "name": "alhangeul-document-preview",
+              "version": "0.1.0"
+            },
+            {
+              "name": "alhangeul-linux-thumbnailer",
+              "version": "0.1.0"
+            },
+            {
+              "name": "rhwp-codec-resource",
+              "version": "0.1.0"
+            },
+            {
+              "name": "rhwp-contracts",
+              "version": "0.1.0"
+            },
+            {
+              "name": "rhwp-hayro-ccitt",
+              "version": "0.3.0-rhwp.1"
+            },
+            {
+              "name": "rhwp-hayro-jbig2",
+              "version": "0.3.0-rhwp.1"
+            },
+            {
+              "name": "rhwp-hayro-jpeg2000",
+              "version": "0.4.0-rhwp.1"
+            },
+            {
+              "name": "rhwp-jpeg-decoder",
+              "version": "0.3.2-rhwp.1"
+            },
+            {
+              "name": "rhwp-jpeg-encoder",
+              "version": "0.7.1-rhwp.1"
+            },
+            {
+              "name": "rhwp-ooxml-chart",
+              "version": "0.1.0"
+            },
+            {
+              "name": "rhwp-password-crypto",
+              "version": "0.1.0"
+            },
+            {
+              "name": "rhwp-pdf-import-backend",
+              "version": "0.3.78-rhwp.1"
+            },
+            {
+              "name": "rhwp-qcms",
+              "version": "0.3.0-rhwp.1"
+            },
+            {
+              "name": "rhwp-svg2pdf",
+              "version": "0.13.0-rhwp.1"
+            },
+            {
+              "name": "rhwp-zune-jpeg",
+              "version": "0.5.15-rhwp.1"
+            },
+            {
+              "name": "rhwp",
+              "version": "0.9.0"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

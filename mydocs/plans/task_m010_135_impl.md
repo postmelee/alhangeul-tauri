@@ -128,3 +128,6 @@ MSI 재설치는 단순 `/i` maintenance 호출로 끝내지 않고 `REINSTALL=A
 
 ### Stage 7.8 실제 설치본에서 발견한 고지 경로·표시 수정
 7b37eec8 소비자에서 MSI의 `licenses/Alhangeul-LICENSE.txt` 부재를 확인했다. 고정 Tauri CLI 2.10.1의 MSI resource generator는 target 디렉터리는 사용하지만 File Name을 설정하지 않아 source basename을 유지한다. 모든 형식의 목적지를 `licenses/LICENSE`로 통일하고 기존 운영 문서·resource 계약을 맞춘다. 검사에서 임의 이름 fallback으로 통과시키지 않는다. 실제 screenshot에서 남은 NSIS 사용권 계약 header는 MUI page header 설정으로 설치 개인정보 안내로 바꾸고, MSI RTF에는 명시적 문단·줄 간격을 지정한다. 문구 본문은 TXT와 동일하게 유지한다. 소비자에서 옛 EULA header 부재와 첫 Windows 시스템 변경 줄의 화면 내 표시를 확인한다. 제품 설치본 bytes가 바뀌므로 새 full/package 및 exact 소비자로 검증하며 이전 d48a4973 초기 run은 중단한다.
+
+### Stage 7.9 추가 WASM 고지 원문 보완
+Stage 7.7에서 추가된 filename gap 6개 모두 검증된 crate checksum·Cargo repository·VCS commit의 root 원문을 찾았다. 기존 upstream-notice-sources.json 형식과 provenance 검증을 그대로 적용해 원문을 보완한다. readonly upstream/pin·앱 코드·설치 설정·폰트 bytes는 바꾸지 않는다. 현재 34850d42 full 및 실제 UI 소비자를 완료해 그 source의 결과를 보존한다. 그 후 고지 resource-only 차이는 CI_VALIDATION.md의 `alhangeul-desktop.yml`, artifact/all/product, run_tests=false로 새 세 target 패키지를 생성하고 exact 소비자를 실행한다. source diff로 native 코드·잠금·빌드 설정 동일성을 확인하고 이전 full의 native/core 검사를 구분해 재사용한다. 새 run은 선택한 package 검증 성공으로만 보고하며 새 full/native 성공이나 릴리스 수용으로 부르지 않는다. 결과·원문 hash는 기존 task evidence에 둔다.

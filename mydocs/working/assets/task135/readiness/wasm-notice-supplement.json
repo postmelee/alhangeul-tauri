@@ -1,0 +1,569 @@
+{
+  "scope": "Exact crate checksum/repository/VCS root original notices; not runtime SBOM or license eligibility approval.",
+  "previousArchiveSha256": "96c185671208223162027b8ef6d2203520b86f4048688cbac68066bb7651fa89",
+  "archiveSha256": "1b780dec50d67dc70b203dc51e014795f8b61f9cecc22ffecdae2c45632be7f3",
+  "packages": 1508,
+  "addedOriginalNoticePackages": [
+    {
+      "kind": "rust",
+      "name": "defmt-parser",
+      "version": "1.0.0",
+      "integrity": "10d60334b3b2e7c9d91ef8150abfb6fa4c1c39ebbcf4a81c2e346aad939fee3e",
+      "notices": [
+        {
+          "path": "rust/defmt-parser@1.0.0/upstream/LICENSE-APACHE",
+          "sha256": "8173d5c29b4f956d532781d2b86e4e30f83e6b7878dce18c919451d6ba707c90",
+          "sourceUrl": "https://raw.githubusercontent.com/knurling-rs/defmt/4a8cdb44891ed57b8ff5a023b6bec7137c48708f/LICENSE-APACHE",
+          "sourceCommit": "4a8cdb44891ed57b8ff5a023b6bec7137c48708f"
+        },
+        {
+          "path": "rust/defmt-parser@1.0.0/upstream/LICENSE-MIT",
+          "sha256": "2710a622a896bba67356913d4d0492cab5465f61b2ecce6d880aeb483834fb50",
+          "sourceUrl": "https://raw.githubusercontent.com/knurling-rs/defmt/4a8cdb44891ed57b8ff5a023b6bec7137c48708f/LICENSE-MIT",
+          "sourceCommit": "4a8cdb44891ed57b8ff5a023b6bec7137c48708f"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "quantette",
+      "version": "0.6.0",
+      "integrity": "ba5d37e94c17b8870a5b936001d2845a6782a22ebdb1706c84294eca777f6729",
+      "notices": [
+        {
+          "path": "rust/quantette@0.6.0/upstream/LICENSE-APACHE",
+          "sha256": "aac73b3148f6d1d7111dbca32099f68d26c644c6813ae1e4f05f6579aa2663fe",
+          "sourceUrl": "https://raw.githubusercontent.com/IanManske/quantette/066855ad3efb4143c3b901c812f80b9b17f8f303/LICENSE-APACHE",
+          "sourceCommit": "066855ad3efb4143c3b901c812f80b9b17f8f303"
+        },
+        {
+          "path": "rust/quantette@0.6.0/upstream/LICENSE-MIT",
+          "sha256": "8f2b430687de9562bfac3b9c2e58d5989d2f0b95772928e94c23a942878c919a",
+          "sourceUrl": "https://raw.githubusercontent.com/IanManske/quantette/066855ad3efb4143c3b901c812f80b9b17f8f303/LICENSE-MIT",
+          "sourceCommit": "066855ad3efb4143c3b901c812f80b9b17f8f303"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "skia-bindings",
+      "version": "0.156.0",
+      "integrity": "3fdac65e59d2ee3d2307397cc0a6a5156e4364debf3db465af1a8fd8252781f1",
+      "notices": [
+        {
+          "path": "rust/skia-bindings@0.156.0/upstream/LICENSE",
+          "sha256": "4b33ed5b329a3a79eb1243fd91373c68b0ae0b9df7503bfc50d0c5253adf1b9a",
+          "sourceUrl": "https://raw.githubusercontent.com/rust-skia/rust-skia/ce6727ef251518df37bcfdde4865b71f7e3a4352/LICENSE",
+          "sourceCommit": "ce6727ef251518df37bcfdde4865b71f7e3a4352"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "skia-safe",
+      "version": "0.156.0",
+      "integrity": "38c60bc899f4b9e23eba0223187ff572b25d26155d0176b26e9b3a743f1e75b1",
+      "notices": [
+        {
+          "path": "rust/skia-safe@0.156.0/upstream/LICENSE",
+          "sha256": "4b33ed5b329a3a79eb1243fd91373c68b0ae0b9df7503bfc50d0c5253adf1b9a",
+          "sourceUrl": "https://raw.githubusercontent.com/rust-skia/rust-skia/ce6727ef251518df37bcfdde4865b71f7e3a4352/LICENSE",
+          "sourceCommit": "ce6727ef251518df37bcfdde4865b71f7e3a4352"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "subsecond",
+      "version": "0.7.10",
+      "integrity": "d350d5788fa94d560d92269266a50efc77b036bfca6675e420b64df7b3211f37",
+      "notices": [
+        {
+          "path": "rust/subsecond@0.7.10/upstream/LICENSE-APACHE",
+          "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+          "sourceUrl": "https://raw.githubusercontent.com/DioxusLabs/dioxus/57d6794ad60b949e5bd8aa282f6f8c3dc97a365e/LICENSE-APACHE",
+          "sourceCommit": "57d6794ad60b949e5bd8aa282f6f8c3dc97a365e"
+        },
+        {
+          "path": "rust/subsecond@0.7.10/upstream/LICENSE-MIT",
+          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+          "sourceUrl": "https://raw.githubusercontent.com/DioxusLabs/dioxus/57d6794ad60b949e5bd8aa282f6f8c3dc97a365e/LICENSE-MIT",
+          "sourceCommit": "57d6794ad60b949e5bd8aa282f6f8c3dc97a365e"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "subsecond-types",
+      "version": "0.7.10",
+      "integrity": "dcf32d66269b5fbb8558334e8d22b657b2f7af0dd2ef56c231541099a862e464",
+      "notices": [
+        {
+          "path": "rust/subsecond-types@0.7.10/upstream/LICENSE-APACHE",
+          "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+          "sourceUrl": "https://raw.githubusercontent.com/DioxusLabs/dioxus/57d6794ad60b949e5bd8aa282f6f8c3dc97a365e/LICENSE-APACHE",
+          "sourceCommit": "57d6794ad60b949e5bd8aa282f6f8c3dc97a365e"
+        },
+        {
+          "path": "rust/subsecond-types@0.7.10/upstream/LICENSE-MIT",
+          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+          "sourceUrl": "https://raw.githubusercontent.com/DioxusLabs/dioxus/57d6794ad60b949e5bd8aa282f6f8c3dc97a365e/LICENSE-MIT",
+          "sourceCommit": "57d6794ad60b949e5bd8aa282f6f8c3dc97a365e"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    }
+  ],
+  "remainingFilenameGaps": [
+    {
+      "kind": "javascript",
+      "name": "@esbuild/aix-ppc64",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@esbuild/android-arm",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@esbuild/android-arm64",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@esbuild/android-x64",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@esbuild/darwin-arm64",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@esbuild/darwin-x64",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@esbuild/freebsd-arm64",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@esbuild/freebsd-x64",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@esbuild/linux-arm",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@esbuild/linux-arm64",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@esbuild/linux-ia32",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@esbuild/linux-loong64",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@esbuild/linux-mips64el",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@esbuild/linux-ppc64",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@esbuild/linux-riscv64",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@esbuild/linux-s390x",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@esbuild/linux-x64",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@esbuild/netbsd-arm64",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@esbuild/netbsd-x64",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@esbuild/openbsd-arm64",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@esbuild/openbsd-x64",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@esbuild/openharmony-arm64",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@esbuild/sunos-x64",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@esbuild/win32-arm64",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@esbuild/win32-ia32",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@esbuild/win32-x64",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@napi-rs/wasm-runtime",
+      "version": "1.1.4"
+    },
+    {
+      "kind": "javascript",
+      "name": "@nodable/entities",
+      "version": "3.0.0"
+    },
+    {
+      "kind": "javascript",
+      "name": "@promptbook/utils",
+      "version": "0.69.5"
+    },
+    {
+      "kind": "javascript",
+      "name": "@puppeteer/browsers",
+      "version": "2.13.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@rolldown/binding-android-arm64",
+      "version": "1.0.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@rolldown/binding-darwin-arm64",
+      "version": "1.0.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@rolldown/binding-darwin-x64",
+      "version": "1.0.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@rolldown/binding-freebsd-x64",
+      "version": "1.0.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@rolldown/binding-linux-arm-gnueabihf",
+      "version": "1.0.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@rolldown/binding-linux-arm64-gnu",
+      "version": "1.0.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@rolldown/binding-linux-arm64-musl",
+      "version": "1.0.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@rolldown/binding-linux-ppc64-gnu",
+      "version": "1.0.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@rolldown/binding-linux-s390x-gnu",
+      "version": "1.0.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@rolldown/binding-linux-x64-gnu",
+      "version": "1.0.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@rolldown/binding-linux-x64-musl",
+      "version": "1.0.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@rolldown/binding-openharmony-arm64",
+      "version": "1.0.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@rolldown/binding-wasm32-wasi",
+      "version": "1.0.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@rolldown/binding-win32-arm64-msvc",
+      "version": "1.0.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@rolldown/binding-win32-x64-msvc",
+      "version": "1.0.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@tauri-apps/cli-darwin-arm64",
+      "version": "2.10.1"
+    },
+    {
+      "kind": "javascript",
+      "name": "@tauri-apps/cli-darwin-x64",
+      "version": "2.10.1"
+    },
+    {
+      "kind": "javascript",
+      "name": "@tauri-apps/cli-linux-arm-gnueabihf",
+      "version": "2.10.1"
+    },
+    {
+      "kind": "javascript",
+      "name": "@tauri-apps/cli-linux-arm64-gnu",
+      "version": "2.10.1"
+    },
+    {
+      "kind": "javascript",
+      "name": "@tauri-apps/cli-linux-arm64-musl",
+      "version": "2.10.1"
+    },
+    {
+      "kind": "javascript",
+      "name": "@tauri-apps/cli-linux-riscv64-gnu",
+      "version": "2.10.1"
+    },
+    {
+      "kind": "javascript",
+      "name": "@tauri-apps/cli-linux-x64-gnu",
+      "version": "2.10.1"
+    },
+    {
+      "kind": "javascript",
+      "name": "@tauri-apps/cli-linux-x64-musl",
+      "version": "2.10.1"
+    },
+    {
+      "kind": "javascript",
+      "name": "@tauri-apps/cli-win32-arm64-msvc",
+      "version": "2.10.1"
+    },
+    {
+      "kind": "javascript",
+      "name": "@tauri-apps/cli-win32-ia32-msvc",
+      "version": "2.10.1"
+    },
+    {
+      "kind": "javascript",
+      "name": "@tauri-apps/cli-win32-x64-msvc",
+      "version": "2.10.1"
+    },
+    {
+      "kind": "javascript",
+      "name": "@tybys/wasm-util",
+      "version": "0.10.1"
+    },
+    {
+      "kind": "javascript",
+      "name": "boolbase",
+      "version": "1.0.0"
+    },
+    {
+      "kind": "javascript",
+      "name": "css-value",
+      "version": "0.0.1"
+    },
+    {
+      "kind": "javascript",
+      "name": "degenerator",
+      "version": "5.0.1"
+    },
+    {
+      "kind": "javascript",
+      "name": "eastasianwidth",
+      "version": "0.2.0"
+    },
+    {
+      "kind": "javascript",
+      "name": "easy-table",
+      "version": "1.2.0"
+    },
+    {
+      "kind": "javascript",
+      "name": "filelist",
+      "version": "1.0.6"
+    },
+    {
+      "kind": "javascript",
+      "name": "isarray",
+      "version": "1.0.0"
+    },
+    {
+      "kind": "javascript",
+      "name": "jake",
+      "version": "10.9.4"
+    },
+    {
+      "kind": "javascript",
+      "name": "spdx-exceptions",
+      "version": "2.5.0"
+    },
+    {
+      "kind": "javascript",
+      "name": "spdx-license-ids",
+      "version": "3.0.23"
+    },
+    {
+      "kind": "javascript",
+      "name": "stackback",
+      "version": "0.0.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "std-env",
+      "version": "4.1.0"
+    },
+    {
+      "kind": "javascript",
+      "name": "stream-buffers",
+      "version": "3.0.3"
+    },
+    {
+      "kind": "javascript",
+      "name": "tinyrainbow",
+      "version": "1.2.0"
+    },
+    {
+      "kind": "javascript",
+      "name": "tinyrainbow",
+      "version": "3.1.0"
+    },
+    {
+      "kind": "javascript",
+      "name": "type-fest",
+      "version": "3.13.1"
+    },
+    {
+      "kind": "javascript",
+      "name": "type-fest",
+      "version": "4.26.0"
+    },
+    {
+      "kind": "rust",
+      "name": "convert_case",
+      "version": "0.4.0"
+    },
+    {
+      "kind": "rust",
+      "name": "fxhash",
+      "version": "0.2.1"
+    },
+    {
+      "kind": "rust",
+      "name": "libappindicator-sys",
+      "version": "0.9.0"
+    },
+    {
+      "kind": "rust",
+      "name": "mac",
+      "version": "0.1.1"
+    },
+    {
+      "kind": "rust",
+      "name": "plist",
+      "version": "1.8.0"
+    },
+    {
+      "kind": "rust",
+      "name": "r-efi",
+      "version": "5.3.0"
+    },
+    {
+      "kind": "rust",
+      "name": "r-efi",
+      "version": "6.0.0"
+    },
+    {
+      "kind": "rust",
+      "name": "rustls-platform-verifier-android",
+      "version": "0.1.1"
+    },
+    {
+      "kind": "rust",
+      "name": "seahash",
+      "version": "4.1.0"
+    },
+    {
+      "kind": "rust",
+      "name": "selectors",
+      "version": "0.36.1"
+    },
+    {
+      "kind": "rust",
+      "name": "tao-macros",
+      "version": "0.1.3"
+    },
+    {
+      "kind": "rust",
+      "name": "tauri-plugin",
+      "version": "2.5.4"
+    },
+    {
+      "kind": "rust",
+      "name": "winapi-i686-pc-windows-gnu",
+      "version": "0.4.0"
+    },
+    {
+      "kind": "rust",
+      "name": "winapi-x86_64-pc-windows-gnu",
+      "version": "0.4.0"
+    },
+    {
+      "kind": "rust",
+      "name": "zune-core",
+      "version": "0.4.12"
+    }
+  ]
+}

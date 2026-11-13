@@ -55,6 +55,10 @@
     "originalNoticeBytes": 1635,
     "googleSkiaTreeLookup": "HTTP 422: SHA must identify a commit or a tree",
     "googleSkiaCommitPageLookup": "HTTP 404",
-    "conclusion": "The npm archive and bundled WASM bytes are pinned and the supplied BSD notice is preserved. A matching Skia source commit and internal third-party closure have not been established; do not claim complete third-party notice coverage from the package root license."
+    "conclusion": "The npm archive and bundled WASM bytes are pinned and the supplied BSD notice is preserved. A matching Skia source commit and internal third-party closure have not been established; do not claim complete third-party notice coverage from the package root license.",
+    "officialGitilesCommitLookup": "HTTP 404 for registry gitHead at skia.googlesource.com/skia",
+    "officialGitilesVersionRefs": "The public refs response contains canvaskit/0.41.0 but no canvaskit/0.41.1 tag.",
+    "registryProvenanceAttestation": "No dist.attestations metadata supplied for 0.41.1; registry distribution signatures are not a source-build attestation.",
+    "officialGitilesHistoryLookup": "HTTP 401 for public path history requests; access was not bypassed."
   }
 }
