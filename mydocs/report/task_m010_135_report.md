@@ -178,3 +178,5 @@ CanvasKit registry gitHead는 공식 Gitiles에서도 404였고 공개 refs에�
 추가 WASM lock의 defmt-parser 1.0.0, quantette 0.6.0, skia-bindings/skia-safe 0.156.0, subsecond/subsecond-types 0.7.10은 배포 archive checksum·manifest repository·VCS commit과 일치하는 root 원문을 확보했다. 기존 생성기의 출처/hash 검증을 다시 거쳐 6개를 동봉했으며 전체 1,508개 inventory integrity와 모든 notice hash를 재검증했다. ZIP은 SHA-256 `1b780dec50d67dc70b203dc51e014795f8b61f9cecc22ffecdae2c45632be7f3`, 4,380,966 bytes이고 filename gap은 95→89개다. [원문별 근거](../working/assets/task135/readiness/wasm-notice-supplement.json). Rust Skia binding의 원문 확보를 CanvasKit/Skia C++ 내부 전체 고지 수용으로 확대하지 않는다.
 
 앱 코드·잠금·빌드 설정·설치 안내·폰트는 바꾸지 않았다. 34850d42 full/실제 UI 소비자 결과를 보존한 뒤 새 고지 resource에 대한 세 target package 생성과 exact 소비자를 수행한다. native/core를 생략한 후속 product profile은 부분 package 검증으로 기록하며 새 full 수용으로 부르지 않는다.
+
+후속 resource-only product producer를 읽을 수 있도록 candidate-audit에 `ci.yml`/`alhangeul-desktop.yml` 명시 선택을 추가했다. 기본값 ci.yml과 shell allowlist를 두며 정확한 원격 workflow path·source·성공 상태·artifact/digest 검증은 유지한다. 공유 handoff/producer negative 포함 74개와 workflow 28개, actionlint·diff check가 통과했다. 원래 후보의 성공을 새 ZIP 설치 수용으로 바꾸지 않는다.
