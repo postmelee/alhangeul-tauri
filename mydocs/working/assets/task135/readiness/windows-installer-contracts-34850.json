@@ -1,0 +1,170 @@
+{
+  "sourceSha": "34850d42537ebf1d9de55764be1b8ff8aea11c1a",
+  "producerRun": "https://github.com/postmelee/alhangeul-tauri/actions/runs/43498370240",
+  "scope": "Completed configured installer contracts only; full producer result is recorded separately. NSIS activation and post-reboot MSI remain limited observations.",
+  "scenarios": [
+    {
+      "kind": "nsis-installer-smoke",
+      "artifactId": 14077171233,
+      "artifactDigest": "sha256:840a78e14e3e9bb54aeef1b953abfc5049cca9e7df119ca994b33bf2edf872f7",
+      "sourceFileSha256": {
+        "installer-evaluation.json": "bce2f4b44521615fb5cdbeec45a5587fdbbddeed387d76fa3ef71e827aceea54",
+        "smoke-process.json": "a70a67624b8b7427ecf0b49bab2e3a12297fed90ddfdfa29674e9df2d86c07dd",
+        "step-outcomes.json": "79a82541b896d9d80a68c72f6c3910743f9209a6ef21696f8f6f1c62db51d748"
+      },
+      "installer-evaluation": {
+        "schemaVersion": 1,
+        "policyVersion": 1,
+        "status": "passed",
+        "inputSha256": "df5f896128258b20e0432e396a3d943555e6ac822d61415b57ca2efadaa1a84a",
+        "provenanceStatus": "requires-io-verification",
+        "verdict": {
+          "schemaVersion": 1,
+          "policyVersion": 1,
+          "contractStatus": "passed",
+          "contract": "hosted-nsis-diagnostic",
+          "thumbnailStatus": "not-accepted",
+          "lifecycleStatus": "passed",
+          "reasonCodes": [
+            "nsis-per-user-shell-activation-failed"
+          ],
+          "productAcceptance": "limited-observation",
+          "releaseAcceptance": "unverified",
+          "reuseEligible": false,
+          "provenanceStatus": "requires-io-verification",
+          "rawSmoke": {
+            "status": "failed",
+            "outcome": "failure",
+            "exitCode": 1,
+            "failureCount": 12
+          }
+        }
+      },
+      "smoke-process": {
+        "schemaVersion": 1,
+        "status": "completed",
+        "exitCode": 1
+      },
+      "step-outcomes": {
+        "checkout": "success",
+        "verifyCommit": "success",
+        "download": "success",
+        "smoke": "failure",
+        "assessmentTests": "success",
+        "diagnosticContract": "success",
+        "supportDownload": "success",
+        "manualTests": "success",
+        "manualEvidence": "success"
+      }
+    },
+    {
+      "kind": "msi-installer-smoke",
+      "artifactId": 14077161319,
+      "artifactDigest": "sha256:8189981fb977e1f7872def416996c086e08c8ab2e7d46b262db47917d7f20795",
+      "sourceFileSha256": {
+        "installer-evaluation.json": "8bee66ca402615b5d109813214d2afbba5622fe76d6d1ee8cc99c8d02ee9ac40",
+        "smoke-process.json": "924eb791215675bc176fc46bb43a298838141466539eb56915ccc8d0cd88beaf",
+        "step-outcomes.json": "68e8d9e0a141b81bb05e88e4dbe01bda0153f845055b7ac19b90203e78611682"
+      },
+      "installer-evaluation": {
+        "schemaVersion": 1,
+        "policyVersion": 1,
+        "status": "passed",
+        "inputSha256": "4ca83290272a78110de1c0bb9ff4cc445cc51a3af5c2d749ef2bc04e29799b3e",
+        "provenanceStatus": "requires-io-verification",
+        "verdict": {
+          "schemaVersion": 1,
+          "policyVersion": 1,
+          "contractStatus": "passed",
+          "contract": "strict-product",
+          "thumbnailStatus": "passed",
+          "lifecycleStatus": "passed",
+          "reasonCodes": [
+            "scenario-observed"
+          ],
+          "productAcceptance": "scenario-only",
+          "releaseAcceptance": "unverified",
+          "reuseEligible": false,
+          "provenanceStatus": "requires-io-verification",
+          "rawSmoke": {
+            "status": "passed",
+            "outcome": "success",
+            "exitCode": 0,
+            "failureCount": 0
+          }
+        }
+      },
+      "smoke-process": {
+        "schemaVersion": 1,
+        "status": "completed",
+        "exitCode": 0
+      },
+      "step-outcomes": {
+        "checkout": "success",
+        "verifyCommit": "success",
+        "download": "success",
+        "smoke": "success",
+        "assessmentTests": "success",
+        "diagnosticContract": "success",
+        "supportDownload": "success",
+        "manualTests": "success",
+        "manualEvidence": "success"
+      }
+    },
+    {
+      "kind": "msi-forced-reinstall",
+      "artifactId": 14077101345,
+      "artifactDigest": "sha256:6749f2c670b9a7339a236c02014ecdceba5e20d010bac13c54a3293dec9750a1",
+      "sourceFileSha256": {
+        "installer-evaluation.json": "cde0057216d784528d757355dcd2453ae08da93e6f4261635281f093050edf08",
+        "smoke-process.json": "a70a67624b8b7427ecf0b49bab2e3a12297fed90ddfdfa29674e9df2d86c07dd",
+        "step-outcomes.json": "79a82541b896d9d80a68c72f6c3910743f9209a6ef21696f8f6f1c62db51d748"
+      },
+      "installer-evaluation": {
+        "schemaVersion": 1,
+        "policyVersion": 1,
+        "status": "passed",
+        "inputSha256": "7e9389af62e8e6c0c6a83826a3ec788aa84c6e62f8f6d3a1ccdd7839d6af65b7",
+        "provenanceStatus": "requires-io-verification",
+        "verdict": {
+          "schemaVersion": 1,
+          "policyVersion": 1,
+          "contractStatus": "passed",
+          "contract": "msi-forced-reinstall-reboot",
+          "thumbnailStatus": "passed",
+          "lifecycleStatus": "reboot-required",
+          "reasonCodes": [
+            "msi-reboot-required",
+            "post-reboot-unverified"
+          ],
+          "productAcceptance": "limited-observation",
+          "releaseAcceptance": "unverified",
+          "reuseEligible": false,
+          "provenanceStatus": "requires-io-verification",
+          "rawSmoke": {
+            "status": "failed",
+            "outcome": "failure",
+            "exitCode": 1,
+            "failureCount": 1
+          }
+        }
+      },
+      "smoke-process": {
+        "schemaVersion": 1,
+        "status": "completed",
+        "exitCode": 1
+      },
+      "step-outcomes": {
+        "checkout": "success",
+        "verifyCommit": "success",
+        "download": "success",
+        "smoke": "failure",
+        "assessmentTests": "success",
+        "diagnosticContract": "success",
+        "supportDownload": "success",
+        "manualTests": "success",
+        "manualEvidence": "success"
+      }
+    }
+  ]
+}

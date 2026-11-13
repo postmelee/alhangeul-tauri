@@ -133,3 +133,5 @@ MSI 재설치는 단순 `/i` maintenance 호출로 끝내지 않고 `REINSTALL=A
 Stage 7.7에서 추가된 filename gap 6개 모두 검증된 crate checksum·Cargo repository·VCS commit의 root 원문을 찾았다. 기존 upstream-notice-sources.json 형식과 provenance 검증을 그대로 적용해 원문을 보완한다. readonly upstream/pin·앱 코드·설치 설정·폰트 bytes는 바꾸지 않는다. 현재 34850d42 full 및 실제 UI 소비자를 완료해 그 source의 결과를 보존한다. 그 후 고지 resource-only 차이는 CI_VALIDATION.md의 `alhangeul-desktop.yml`, artifact/all/product, run_tests=false로 새 세 target 패키지를 생성하고 exact 소비자를 실행한다. source diff로 native 코드·잠금·빌드 설정 동일성을 확인하고 이전 full의 native/core 검사를 구분해 재사용한다. 새 run은 선택한 package 검증 성공으로만 보고하며 새 full/native 성공이나 릴리스 수용으로 부르지 않는다. 결과·원문 hash는 기존 task evidence에 둔다.
 
 후속 product producer를 소비할 수 있도록 candidate-audit에 승인된 두 producer workflow(`ci.yml`, `alhangeul-desktop.yml`)의 명시 선택만 추가한다. 입력 allowlist·원격 run path·성공 상태·source·artifact digest 확인은 유지하며 임의 workflow나 진행 중/실패 producer를 허용하지 않는다. 기본값은 기존 ci.yml이다.
+
+34850d42의 실제 NSIS 화면은 첫 Windows 줄이 보였으나 소비자에서 managed `GetBoundingRectangles()` 반환형을 COM flat double array로 잘못 처리했다. Rect[]의 Left/Top/Right/Bottom으로 판정하고 실제 좌표를 JSON에 남긴다. visible 검사 자체를 생략하거나 정적 문자열로 대체하지 않는다. 제품 bytes를 바꾸지 않고 동일 producer의 Windows 소비자만 재검증한다.

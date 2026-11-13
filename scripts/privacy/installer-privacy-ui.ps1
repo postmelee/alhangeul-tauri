@@ -29,19 +29,30 @@ function Save-Screen($Path) {
   try { $graphics.CopyFromScreen($bounds.Location,[System.Drawing.Point]::Empty,$bounds.Size); $bitmap.Save($Path) }
   finally { $graphics.Dispose(); $bitmap.Dispose() }
 }
-function Test-SystemChangesVisible($Nodes) {
+function Get-SystemChangesVisibility($Nodes) {
+  $observations = @()
   foreach ($node in $Nodes) {
     $pattern = $null
     if (-not $node.TryGetCurrentPattern([System.Windows.Automation.TextPattern]::Pattern, [ref]$pattern)) { continue }
     $range = $pattern.DocumentRange.FindText('Windows:', $false, $false)
     if ($null -eq $range) { continue }
-    $rectangles = $range.GetBoundingRectangles()
-    if ($rectangles.Length -ge 4) {
-      $bounds = $node.Current.BoundingRectangle
-      if ($rectangles[1] -ge $bounds.Top -and $rectangles[1] + $rectangles[3] -le $bounds.Bottom) { return $true }
+    # Managed UI Automation returns Rect[], not the native COM flat double array.
+    $rectangles = @($range.GetBoundingRectangles())
+    $bounds = $node.Current.BoundingRectangle
+    $inside = @($rectangles | Where-Object {
+      -not $_.IsEmpty -and $_.Width -gt 0 -and $_.Height -gt 0 -and
+      $_.Left -ge $bounds.Left -and $_.Top -ge $bounds.Top -and
+      $_.Right -le $bounds.Right -and $_.Bottom -le $bounds.Bottom
+    })
+    $observations += @{
+      controlBounds=@{left=$bounds.Left; top=$bounds.Top; right=$bounds.Right; bottom=$bounds.Bottom}
+      textRectangles=@($rectangles | ForEach-Object { @{left=$_.Left; top=$_.Top; right=$_.Right; bottom=$_.Bottom} })
+    }
+    if ($rectangles.Count -gt 0 -and $inside.Count -eq $rectangles.Count) {
+      return @{visible=$true; marker='Windows:'; observations=$observations}
     }
   }
-  return $false
+  return @{visible=$false; marker='Windows:'; observations=$observations}
 }
 if ($Kind -eq 'nsis') { $process = Start-Process $Installer -PassThru }
 else { $process = Start-Process msiexec.exe -ArgumentList @('/i', "`"$Installer`"") -PassThru }
@@ -60,7 +71,9 @@ try {
       if ($state.text -match 'License Agreement|Please review the license terms') {
         throw 'Disclosure still displays a license agreement header'
       }
-      if (-not (Test-SystemChangesVisible $state.nodes)) {
+      $visibility = Get-SystemChangesVisibility $state.nodes
+      $visibility | ConvertTo-Json -Depth 7 | Set-Content -Encoding utf8 (Join-Path $Output "$Kind-installer-visibility.json")
+      if (-not $visibility.visible) {
         throw 'The first Windows system-change paragraph is not visible in the initial disclosure viewport'
       }
       $checkboxes = @($state.nodes | Where-Object {

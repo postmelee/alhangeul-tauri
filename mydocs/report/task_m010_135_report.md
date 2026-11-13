@@ -180,3 +180,9 @@ CanvasKit registry gitHead는 공식 Gitiles에서도 404였고 공개 refs에�
 앱 코드·잠금·빌드 설정·설치 안내·폰트는 바꾸지 않았다. 34850d42 full/실제 UI 소비자 결과를 보존한 뒤 새 고지 resource에 대한 세 target package 생성과 exact 소비자를 수행한다. native/core를 생략한 후속 product profile은 부분 package 검증으로 기록하며 새 full 수용으로 부르지 않는다.
 
 후속 resource-only product producer를 읽을 수 있도록 candidate-audit에 `ci.yml`/`alhangeul-desktop.yml` 명시 선택을 추가했다. 기본값 ci.yml과 shell allowlist를 두며 정확한 원격 workflow path·source·성공 상태·artifact/digest 검증은 유지한다. 공유 handoff/producer negative 포함 74개와 workflow 28개, actionlint·diff check가 통과했다. 원래 후보의 성공을 새 ZIP 설치 수용으로 바꾸지 않는다.
+
+34850d42의 full run 43498370240이 최종 성공했다. Windows 일반 MSI strict-product 성공, NSIS는 hosted 진단 계약 성공이지만 썸네일 not-accepted·raw failure 12개, 강제 MSI는 재부팅 필요·재부팅 후 미확인이다. [현재 원시 판정](../working/assets/task135/readiness/windows-installer-contracts-34850.json). Linux x64 DEB/RPM·arm64 DEB의 설치·재설치·갱신 실패/복구·제거와 MIME·타사 thumbnailer·cache 보존도 통과했다. [패키지 수명주기](../working/assets/task135/readiness/linux-package-lifecycle-34850.json). 이 CI 계약 성공을 전체 릴리스 수용으로 확대하지 않는다.
+
+이 exact producer를 사용하는 [설치본 소비자 43507138554](https://github.com/postmelee/alhangeul-tauri/actions/runs/43507138554)를 실행했다. harness는 `dcd8af6a7cb909866f58f7f0a86103aac7e3931e`이며 제품 source 34850d42와 분리된다. 후속 6개 고지 보완 ZIP은 아직 이 설치 bytes에 포함되지 않는다.
+
+소비자 43507138554의 Windows는 NSIS 화면 viewport 판정에서 실패했다. [실제 화면/UIA/producer 증거](../working/assets/task135/readiness/candidate-34850-windows-first/)를 직접 확인했으며 새 header·계속 버튼·첫 Windows 줄은 화면에 보였다. 원인은 managed [GetBoundingRectangles](https://learn.microsoft.com/en-us/dotnet/api/system.windows.automation.text.textpatternrange.getboundingrectangles)의 Rect[] 반환을 native COM의 flat double array로 가정한 harness 오류다. Rect의 네 경계·면적을 검사하고 관측 좌표 JSON을 남기도록 수정했다. 검사를 삭제하거나 실제 보이지 않는 내용을 통과시키지 않는다. 제품 source/bytes는 변경하지 않고 동일 producer Windows-only 소비자로 재검증한다. 실패 run의 Windows 설치·font·설정 보존은 미실행으로 유지한다.
