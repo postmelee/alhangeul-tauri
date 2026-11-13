@@ -1,0 +1,17 @@
+{
+  "linux/app-linux.png": "3e315b5aded3a8a77cdd11cadc0611c9240eda2360514474ba8bf49b5d9ceac5",
+  "linux/connections.txt": "3be5c13752fed6e8ddb91ab1c78fd939c2b3d70b3abad167830ab926d06bb43e",
+  "linux/identity.json": "5695b88397a7534c3fa81a3b908f7a1e3be27a3d6b74ebb2d7eb57507de072ec",
+  "linux/log-inventory.txt": "9caaed72bab4d6933e6d32b478293a00a07b8c3caa433d1511cef1f74b4c7264",
+  "linux/pages-dns-after.txt": "128c495c279bb7b0fe3609e9dd7f41541e49f7480f0abce25ad980233f9dcef2",
+  "linux/processes.txt": "dba0d66562e4ccbf6b4be74648367118f056aff4d614c00ffe36ee63d8baf930",
+  "privacy-desktop.png": "1e7e695a2297f55c12f5a6aba04f75193aebbe068d1286946e6ea4555a8cc486",
+  "privacy-mobile.png": "8d3f3aa954abbd77e45800ae3940dfed007640bec7f79fa6eb0d54768edd87d8",
+  "visual-check.json": "1317c4333166a37744e13a126516b22ab824a785a737ba59e7d6884bb00c0452",
+  "windows/app-windows.png": "6886b5a1773608e6d7706ab3bcd72885c7e6623701bd1a4bc8c4f00b99803e9c",
+  "windows/connections.json": "db24fa1e11992509b2ccb2b9686e991d4e48114af4fb5ddca14c97fe070ee3f0",
+  "windows/identity.json": "b57b6f42e21e350f85fdbdb7ff6b0da6701462885580c5c411635cfb8bc5d3ee",
+  "windows/log-inventory.json": "fbad264b122b5a4dc57c6160e18713ebdfd0d797b2c81b56ac194d25332fe5bf",
+  "windows/pages-dns-after.json": "5c0807fa5f6608933471fe6f16f5e7543437323e67d8fdcf56e0c601a8c43c6b",
+  "windows/processes.json": "00c75f37054bd5f758f37d5baea35ea79ad1150c92f7291ac41e675a714541b3"
+}

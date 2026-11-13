@@ -60,3 +60,9 @@ SECURITY.md를 v0.1.3 확인 기준으로 갱신하고 활성 비공개 제보 �
 - [Tauri updater 2.10.1 source](https://github.com/tauri-apps/plugins-workspace/blob/updater-v2.10.1/plugins/updater/src/updater.rs)
 - [고정 upstream 복구 저장](https://github.com/edwardkim/rhwp/blob/c9095c5f67632e6721e800ccc7fb43ea49d26682/rhwp-studio/src/recovery/autosave-store.ts)
 - [고정 upstream 설정](https://github.com/edwardkim/rhwp/blob/c9095c5f67632e6721e800ccc7fb43ea49d26682/rhwp-studio/src/core/user-settings.ts)
+
+
+## 2026-11-14 추가 관측에 따른 보완
+Windows 2025 NSIS v0.1.3 시작·idle WFP 이벤트에서 Alhangeul.exe의 Pages DNS에 대응하는 185.199.108.153:443 연결과 별도 104.18.21.213:80 연결, WebView2의 52.123.247.12:443 연결이 관측되었다. IP만으로 목적·호스트명·payload를 확정하지 않는다. WebView2 프로세스와 로컬 진단 파일이 실제 존재하며, “앱 자체 별도 분석 구현을 찾지 못함”을 런타임 전체의 미수집으로 확대하면 안 된다.
+
+[Microsoft WebView2 공식 안내](https://learn.microsoft.com/en-us/microsoft-edge/webview2/concepts/data-privacy)는 필수·선택 진단, 기본 SmartScreen, crash reporting을 설명한다. 이를 공개 개인정보처리방침에 명시하고 [Microsoft 정책](https://privacy.microsoft.com/privacystatement)을 연결했다. 개별 관측 패킷이 특정 진단 기능이라는 결론은 내리지 않는다.
