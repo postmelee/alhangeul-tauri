@@ -1,0 +1,71 @@
+{
+  "appExists": false,
+  "phase": "uninstall",
+  "logs": [
+    {
+      "path": "\\EBWebView\\Default\\favorites_diagnostic.log",
+      "diagnostic": true,
+      "bytes": 2042
+    },
+    {
+      "path": "\\EBWebView\\Default\\settings_diagnostic.log",
+      "diagnostic": true,
+      "bytes": 27661
+    },
+    {
+      "path": "\\EBWebView\\Default\\Extension Rules\\000003.log",
+      "diagnostic": false,
+      "bytes": 38
+    },
+    {
+      "path": "\\EBWebView\\Default\\Extension Scripts\\000003.log",
+      "diagnostic": false,
+      "bytes": 38
+    },
+    {
+      "path": "\\EBWebView\\Default\\Extension State\\000003.log",
+      "diagnostic": false,
+      "bytes": 114
+    },
+    {
+      "path": "\\EBWebView\\Default\\IndexedDB\\http_tauri.localhost_0.indexeddb.leveldb\\000003.log",
+      "diagnostic": false,
+      "bytes": 1082
+    },
+    {
+      "path": "\\EBWebView\\Default\\Local Storage\\leveldb\\000003.log",
+      "diagnostic": false,
+      "bytes": 852
+    },
+    {
+      "path": "\\EBWebView\\Default\\Session Storage\\000003.log",
+      "diagnostic": false,
+      "bytes": 49
+    },
+    {
+      "path": "\\EBWebView\\Default\\shared_proto_db\\000003.log",
+      "diagnostic": false,
+      "bytes": 5757
+    },
+    {
+      "path": "\\EBWebView\\Default\\shared_proto_db\\metadata\\000003.log",
+      "diagnostic": false,
+      "bytes": 852
+    },
+    {
+      "path": "\\EBWebView\\Default\\Site Characteristics Database\\000003.log",
+      "diagnostic": false,
+      "bytes": 184
+    },
+    {
+      "path": "\\EBWebView\\Default\\Sync Data\\LevelDB\\000003.log",
+      "diagnostic": false,
+      "bytes": 65
+    },
+    {
+      "path": "\\logs\\Alhangeul.log",
+      "diagnostic": true,
+      "bytes": 27494
+    }
+  ]
+}

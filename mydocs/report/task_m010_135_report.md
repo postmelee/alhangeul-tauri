@@ -4,7 +4,7 @@ GitHub Issue: [#135](https://github.com/postmelee/alhangeul-tauri/issues/135)
 마일스톤: M010
 
 ## 작업 요약
-- 대상 이슈 #135, 단계 수 4 (추가 실증 검증 포함).
+- 대상 이슈 #135, 단계 수 5 (TLS·문서 작업·로그 삭제 추가 검증 포함).
 - 최신 안정 버전과 활성 보안 제보 경로를 확인해 SECURITY.md를 정비하고 실제 처리에 근거한 개인정보처리방침을 작성했다.
 - `local/task135`, 별도 worktree `/tmp/alhangeul-task135`. 기존 `local/task69` 변경은 보존했다.
 
@@ -15,21 +15,14 @@ GitHub Issue: [#135](https://github.com/postmelee/alhangeul-tauri/issues/135)
 | site/privacy/index.html | 로컬 문서/설정/복구·업데이트 통신·로그·제보·외부 서비스·삭제 문의 | 신규 공개 정책 원본 |
 | site/index.html, site/updates/index.html | 정책 푸터 링크 | 공개 진입 동선 |
 | site/feedback/index.html | 정책 링크·보안 제보 경로 | 제보 전 안내 |
-| tests/pages.test.mjs | 새 페이지에 따른 inventory 기대 개수 +1 | 기존 테스트 정합성 |
+| tests/pages.test.mjs | 두 새 페이지에 따른 inventory 기대 개수 +2 | 기존 테스트 정합성 |
 | .github/workflows/alhangeul-privacy-observation.yml, scripts/privacy/ | 수동 OS 선택·공개 파일 hash 검증·메타데이터 관측 | 검증 자동화 |
 | mydocs/working/assets/task135/ | 화면·연결·파일 identity·log inventory | 검증 증거 |
 | mydocs/tech/task_m010_135_signpath.md | source 근거·SignPath 요건과 미확정 항목 | 내부 신청 준비 |
 | plans/working/orders/report의 #135 문서 | 단계와 검증 기록 | 작업 추적 |
 
 ## 문서 위치 검증
-| 파일 | 계획된 위치 | 실제 위치 | 결과 | 근거 |
-|---|---|---|---|---|
-| 보안 정책 | root SECURITY.md | 동일 | OK | 기존 GitHub 정책 유지 |
-| 개인정보처리방침 | site/privacy/index.html | 동일 | OK | 기존 공개 사이트 구조 |
-| 진입 링크 | site 홈·업데이트·문의 | 동일 | OK | 기존 문구 보존·링크 추가 |
-| SignPath 조사 | .github/workflows/alhangeul-privacy-observation.yml, scripts/privacy/ | 수동 OS 선택·공개 파일 hash 검증·메타데이터 관측 | 검증 자동화 |
-| mydocs/working/assets/task135/ | 화면·연결·파일 identity·log inventory | 검증 증거 |
-| mydocs/tech/task_m010_135_signpath.md | 동일 | OK | 아직 확정되지 않은 후원·서명 정책 분리 |
+수행/구현계획서에 기록한 root SECURITY.md, site/privacy·code-signing, 기존 사이트 링크, scripts/privacy·workflow, mydocs 작업 기록·증거 위치와 일치한다. 폰트 출처 정정은 기존 assets/fonts/FONTS.md에서 수행했다.
 
 ## 변경 전·후 정량 비교
 | 지표 | 변경 전 | 변경 후 |
@@ -37,7 +30,7 @@ GitHub Issue: [#135](https://github.com/postmelee/alhangeul-tauri/issues/135)
 | SECURITY.md 지원 최신 버전 | v0.1.0 | v0.1.3 (2026-11-13 확인) |
 | 개인정보처리방침 페이지 | 0 | 1 |
 | 정책에 연결되는 기존 주요 페이지 | 0 | 3 |
-| Pages source 파일 | 20 | 21 |
+| Pages source 파일 | 20 | 22 |
 | Pages 테스트 | 106개 | 106개, 모두 통과 |
 
 ## 검증 결과
@@ -48,7 +41,7 @@ GitHub Issue: [#135](https://github.com/postmelee/alhangeul-tauri/issues/135)
 | 자동/수동 및 로컬/외부 처리 구분 | OK — 시작 확인·선택 다운로드·로그·자발적 제보와 GitHub/Google 구분 |
 | 미확인 무수집 주장 회피 | OK — 조사 범위와 제3자 처리, 삭제 보장 한계 명시 |
 | 후원·서명 완료 주장 방지 | OK — 신청 요구 조사로 한정, 공개 제공자 문구 미삽입 |
-| 사이트 build/check | OK — source 21·output 25 |
+| 사이트 build/check | OK — source 22·output 26 |
 | 기존 Pages 테스트 | OK — 106/106. 처음 5개 실패는 새 HTML로 인한 파일 개수 차이였으며 기대값만 갱신 |
 | whitespace·범위 | OK — diff check 통과, 제품/native/upstream 무변경 |
 | 기존 사용자 변경 보존 | OK — 원래 worktree 삭제 2건·미추적 2건 그대로 |
@@ -61,7 +54,7 @@ GitHub Issue: [#135](https://github.com/postmelee/alhangeul-tauri/issues/135)
 
 ## 잔여 위험과 후속 작업
 ### 잔여 위험
-추가 요청으로 Windows NSIS·Ubuntu AppImage 시작 연결 관측, 로그 파일 존재·크기, 이메일 INBOX 수신, 사이트 데스크톱·모바일 화면 검증을 완료했다. 첫 Linux 실패와 extract-and-run 재관측 성공을 구분한다. TLS 본문·HTTP 완료·문서 작업 및 다운로드 중 트래픽, MSI/DEB/RPM/arm64, 로그 내용·삭제·장기 보관은 미검증이다. 관측된 IP만으로 요청 목적이나 데이터 내용을 확정하지 않는다. 보관 기간·모든 사본 삭제·제3자 미수집을 보장하지 않는다. 라이선스/서명 대상 전체 적합성, 팀원 MFA, 서명 승인자, 검증 가능한 CI, 설치 시 안내/옵션 요구와 현재 자동 업데이트 동작의 적합성은 SignPath 신청 전 확인이 필요하다.
+Stage 5에서 양 OS TLS 요청 내부, HWP/HWPX 편집·native staged 저장·재열기, 종료·재시작·앱 제거 후 로그 잔존·진단 로그 삭제를 확인했다. Windows 편집 구간에도 Microsoft 런타임 요청이 발생했다. 합성 marker 미검출은 모든 문서 정보 미전송의 증거가 아니다. 파일 선택 UI·frontend fs plugin, graceful quit, 실제 새 버전 다운로드, MSI/DEB/RPM/arm64, 장기 인쇄/PDF/복구·프록시 우회 통신은 범위 밖이다. 설치 정책 안내/비활성화 옵션, WebView2 필수 처리의 취급, 전체 의존성 원문 동봉·서명 대상 경계는 신청 전 해결/확인이 필요하다. GitHub MFA와 세 역할은 사용자 확인을 받았다. SignPath MFA/계정은 만들지 않았다.
 
 조사용 임시 upstream 전체 checkout의 공간 부족은 이번 task의 복제본만 제거해 해소했다. 원본 사용자 worktree는 변경하지 않았다. submodule은 작업 worktree에서 미초기화 상태이며 사이트 문서 검사에는 필요하지 않다.
 
@@ -74,3 +67,7 @@ GitHub Issue: [#135](https://github.com/postmelee/alhangeul-tauri/issues/135)
 
 ## 추가 검증의 핵심 결과 (2026-11-14 KST)
 메일 시험 1건 INBOX 수신, 사이트 1440/390px 화면·진입 링크·가로 넘침 검사 통과. Windows 연결 관측에서 WebView2의 별도 외부 연결을 확인해 Microsoft 개인정보 처리 안내를 공개 정책에 보완했다. Windows 앱 log는 0 bytes, Linux 앱 log는 20,302 bytes로 이번 실행에서도 로컬 로그 차이가 관측되었다. 이를 통신·로그가 없다는 주장으로 바꾸지 않았다. Pages 106개·Action pin 14개 테스트와 actionlint 통과. SignPath 신청이나 후원·서명 적용은 수행하지 않았다.
+
+
+## Stage 5 후속 결과
+[심화 검증 보고](../working/task_m010_135_stage5.md)에 exact run·실패/재시도·증거와 한계를 기록했다. 정책과 Code signing policy 초안, 실제 신청 폼 필드를 준비했다. 공개 정책은 아직 배포 전이며 사용자의 최종 브라우저 승인 전 PR·배포를 하지 않는다. 현재 신청 요건 전체 충족이나 SignPath 후원·서명을 선언하지 않는다.

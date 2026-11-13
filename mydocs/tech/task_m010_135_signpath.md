@@ -66,3 +66,34 @@ SECURITY.md를 v0.1.3 확인 기준으로 갱신하고 활성 비공개 제보 �
 Windows 2025 NSIS v0.1.3 시작·idle WFP 이벤트에서 Alhangeul.exe의 Pages DNS에 대응하는 185.199.108.153:443 연결과 별도 104.18.21.213:80 연결, WebView2의 52.123.247.12:443 연결이 관측되었다. IP만으로 목적·호스트명·payload를 확정하지 않는다. WebView2 프로세스와 로컬 진단 파일이 실제 존재하며, “앱 자체 별도 분석 구현을 찾지 못함”을 런타임 전체의 미수집으로 확대하면 안 된다.
 
 [Microsoft WebView2 공식 안내](https://learn.microsoft.com/en-us/microsoft-edge/webview2/concepts/data-privacy)는 필수·선택 진단, 기본 SmartScreen, crash reporting을 설명한다. 이를 공개 개인정보처리방침에 명시하고 [Microsoft 정책](https://privacy.microsoft.com/privacystatement)을 연결했다. 개별 관측 패킷이 특정 진단 기능이라는 결론은 내리지 않는다.
+
+## Stage 5 신청 준비 확인
+
+### 운영자 확인
+작업지시자가 postmelee의 Author·Reviewer·Approver 겸임과 GitHub MFA 활성화를 확인했다. 이는 사용자 확인이며 API의 MFA null 값을 false/true로 해석한 것이 아니다. 신청용 개인 연락처는 대화에서 받았으며 공개 저장소에 기록하지 않는다. SignPath 계정·MFA·서명 권한은 아직 만들지 않았다.
+
+### 실제 신청 폼
+2026-11-14 KST [신청 페이지](https://signpath.org/apply)의 HubSpot embedded form을 브라우저에서 읽었다. 입력·동의·제출은 하지 않았다. 필수 필드는 Project Name, Repository URL, Homepage URL, Tagline, Category, Description, Reputation, First Name, Last Name, Email, Build System, Primary Discovery Channel이며 Code of Conduct 및 개인정보 처리 동의가 있다. Download/Privacy URL도 제공한다. 마케팅 동의는 별도 선택 사항이다.
+
+프로젝트 필드 초안:
+- Project Name: Alhangeul
+- Repository: https://github.com/postmelee/alhangeul-tauri
+- Homepage/Download: https://postmelee.github.io/alhangeul-tauri/
+- Privacy: https://postmelee.github.io/alhangeul-tauri/privacy/ (아직 배포 전)
+- Tagline: Windows와 Linux용 오픈 소스 HWP/HWPX 문서 편집기.
+- Description: 로컬 문서를 열고 편집·저장·인쇄·PDF 내보내기하는 데스크톱 앱. Alhangeul 소유 host·설치·배포 코드와 고정 rhwp 의존성 경계를 설명한다.
+- Build System: GitHub Actions. Category는 실제 선택지에서 문서/생산성에 맞는 항목을 제출자가 선택한다.
+- Reputation: 공개 저장소 2026-07-19 생성, 조회 시점 stars 3·forks 0. v0.1.3 2026-11-11 공개. 이 수치는 널리 신뢰받는다는 증거로 과장하지 않는다. 다운로드 수는 자동 검증·재다운로드를 포함하므로 사용자 수가 아니다. 최초 hop 또는 rhwp의 평판을 독립 제품의 평판으로 전용하지 않는다.
+
+### 아직 충족했다고 선언할 수 없는 조건
+1. 공개 정책 URL: 사용자 최종 브라우저 승인 전 PR·배포 금지. 로컬 초안을 공개 완료로 기재하지 않는다.
+2. 설치 시 개인정보 표시와 비활성화: v0.1.3 시작 업데이트 opt-out이 없고 Windows WebView2 별도 처리가 있다. IP·런타임 진단 등을 고려할 때 외부 처리 없음 문장을 사용할 수 없다. 설치 선택권의 정확한 적용과 WebView2 시스템 구성요소 예외는 제공자 판단이 필요한 사항이다. 현재 정책 문서만으로 충족했다고 주장하지 않는다.
+3. 라이선스: `vite.config.ts`는 assets/fonts의 모든 WOFF2를 복사한다. Cafe24·Happiness·Latin Modern Math도 실제 배포 입력에 포함된다. FONTS.md의 Happiness 출처를 파일 저작권과 [공식 제공자](https://thehyundaifont.com/)에 맞게 현대백화점으로 정정했다. 무료 이용·재배포 허락과 모든 구성요소의 OSI 적격성은 같은 판단이 아니다. 현재 tauri.conf.json의 별도 license resource는 FONTS.md와 Noto 두 원문뿐이다. 다른 글꼴·JS/Rust 의존성의 원문 동봉 및 적격성 전체 확인은 남아 있다.
+4. rhwp는 고정 OSS 의존성이다. 독립 Alhangeul host/설치 패키지와 정적 링크/bundled Studio 경계를 설명하고, 타 프로젝트 독립 바이너리를 자신의 서명 대상으로 신청하지 않는다. 최종 artifact configuration은 제공자 승인 후 확정한다.
+5. 제공자 표기: 신청 폼 Download 설명은 SignPath 사용 표기를 요구하지만 아직 승인받지 않았다. `site/code-signing/`은 준비 중 사실만 표기한다. 승인 전 허위 제공 문구로 요구를 맞추지 않는다.
+
+따라서 현재는 제출 준비 초안이며 모든 적격 조건이 확인된 신청 가능 상태로 판정하지 않는다. 신청·계정 생성·약관 동의·서명 구성은 수행하지 않았다.
+
+
+### Happiness 라이선스 후속 확인
+공식 `https://thehyundaifont.com/assets/fonts/HappinessSans-Screen.zip`의 `screen/HapinessSans_License.pdf` 1쪽에는 SIL OFL 1.1을 명시하고, 2~3쪽에 원문을 제공한다. PDF 텍스트 추출은 문자 매핑이 깨져 화면 렌더링으로 확인했다. 저장소의 Happiness WOFF2 4개는 공식 ZIP의 같은 이름 파일과 bytes가 모두 일치한다. 따라서 Happiness를 비-OFL custom license라고 단정하지 않는다. FONTS.md는 OFL 1.1과 현대백화점 출처로 정정한다. 다만 현재 제품 resource에 이 원문이 동봉되는지와 전체 제3자 의존성 고지 검사는 별도 미완료 항목이다.

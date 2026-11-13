@@ -57,14 +57,19 @@
                     <h2 id="services">웹사이트와 외부 서비스</h2>
                     <p>공식 사이트는 GitHub Pages에서 제공됩니다. 페이지·이미지·스타일과 다운로드 안내 데이터를 불러올 때 요청이 발생합니다. 다운로드 안내는 브라우저의 운영체제 정보를 기기 안에서 참고해 초기 선택을 표시합니다. GitHub는 로그인 여부와 관계없이 Pages 방문자의 IP 주소를 보안 목적으로 기록·보관한다고 안내합니다.</p>
                     <p>GitHub Pages·Releases·Issues·비공개 취약점 제보에는 <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">GitHub 개인정보처리방침</a>이 적용됩니다. <a href="https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages#data-collection">Pages의 데이터 수집 안내</a>도 확인할 수 있습니다. 접속·계정·쿠키·제출 내용의 처리 범위는 서비스와 사용 방식에 따라 다릅니다.</p>
-                    <p>Windows 앱은 Microsoft Edge WebView2 런타임을 사용합니다. WebView2는 보안·신뢰성 유지와 문제 진단을 위해 필수 진단 데이터를 수집하며, 선택적 진단 데이터는 Windows의 진단 데이터 설정에 영향을 받습니다. 기본 활성 기능인 Microsoft Defender SmartScreen의 보안 검사와 런타임 오류 보고 등에서도 Microsoft로 정보가 전송될 수 있습니다. 이는 Alhangeul의 업데이트 확인과 별도의 처리입니다.</p>
+                    <p>Windows 앱은 Microsoft Edge WebView2 런타임을 사용합니다. WebView2는 보안·신뢰성 유지와 문제 진단을 위해 필수 진단 데이터를 수집하며, 선택적 진단 데이터는 Windows의 진단 데이터 설정에 영향을 받습니다. 기본 활성 기능인 Microsoft Defender SmartScreen의 보안 검사와 런타임 오류 보고 등에서도 Microsoft로 정보가 전송될 수 있습니다. 런타임의 구성·구성요소 업데이트 요청에는 운영체제·아키텍처·하드웨어 특성, 런타임과 구성요소 버전, 설치·업데이트 상태, 요청·세션 식별자 등의 정보가 포함될 수 있습니다. 이런 통신은 앱 시작뿐 아니라 문서를 편집하는 동안에도 발생할 수 있으며, Alhangeul의 업데이트 확인과 별도의 처리입니다.</p>
                     <p><a href="https://learn.microsoft.com/en-us/microsoft-edge/webview2/concepts/data-privacy">WebView2 데이터·개인정보 안내</a>와 <a href="https://privacy.microsoft.com/privacystatement">Microsoft 개인정보처리방침</a>을 확인해 주세요. Windows 10·11의 개인정보 설정에서 선택적 진단 데이터를 관리할 수 있지만 모든 필수 데이터 처리가 꺼지는 것은 아닙니다.</p>
                     <p>문의 수신함은 Gmail을 사용하므로 <a href="https://policies.google.com/privacy">Google 개인정보처리방침</a>을 확인해 주세요. 사용자가 사용하는 발신 메일 서비스에도 해당 사업자의 정책이 적용됩니다. 외부 링크를 열면 브라우저 및 방문한 서비스가 자체 정책에 따라 정보를 처리할 수 있습니다.</p>
                 </section>
                 <section class="updates-section" aria-labelledby="retention">
                     <h2 id="retention">보관과 삭제 문의</h2>
-                    <p>로컬 데이터는 해당 기기의 앱 저장소, 사용자가 선택한 폴더 또는 운영체제 캐시에 남을 수 있습니다. 이 문서는 모든 데이터가 특정 기간 뒤 자동 삭제된다고 약속하지 않습니다. 문의·제보 자료의 보관이나 삭제를 요청하려면 메인테이너에게 <a href="mailto:alhangeul.feedback@gmail.com">이메일</a>로 연락해 주세요. 민감한 원본을 다시 첨부할 필요는 없습니다.</p>
+                    <p>로컬 데이터는 해당 기기의 앱 저장소, 사용자가 선택한 폴더 또는 운영체제 캐시에 남을 수 있습니다. Windows 앱을 제거하거나 Linux AppImage 파일을 삭제해도 앱 로그와 WebView 저장소는 별도로 남을 수 있습니다. 이 문서는 모든 데이터가 특정 기간 뒤 자동 삭제된다고 약속하지 않습니다. 문의·제보 자료의 보관이나 삭제를 요청하려면 메인테이너에게 <a href="mailto:alhangeul.feedback@gmail.com">이메일</a>로 연락해 주세요. 민감한 원본을 다시 첨부할 필요는 없습니다.</p>
                     <p>외부 서비스의 보관 기간과 삭제 절차는 각 서비스 정책에 따릅니다. 공개 이슈나 이미 공유된 자료는 복제·인용·백업 때문에 모든 사본의 삭제를 보장할 수 없습니다. 계정이나 서비스에 관한 요청은 해당 제공자의 개인정보 안내도 이용해 주세요.</p>
+                </section>
+                <section class="updates-section" aria-labelledby="local-cleanup">
+                    <h2 id="local-cleanup">기기에 남은 로그 정리</h2>
+                    <p>앱과 관련 창을 모두 닫은 뒤, 필요한 문제 진단 자료가 없는지 확인하고 해당 앱 로그만 삭제할 수 있습니다. Windows에서는 사용자 앱 데이터의 <code>%LOCALAPPDATA%\io.github.postmelee.alhangeul\logs</code>, Linux에서는 <code>$XDG_DATA_HOME/io.github.postmelee.alhangeul</code> 아래 로그를 확인합니다. Linux에서 XDG_DATA_HOME을 지정하지 않았다면 보통 <code>~/.local/share/io.github.postmelee.alhangeul/logs</code>입니다.</p>
+                    <p>앱 진단 로그는 <code>logs</code> 폴더의 <code>Alhangeul.log</code> 및 그 회전 파일을 대상으로 합니다. WebView 저장소 안의 LevelDB·IndexedDB <code>.log</code> 파일은 문서 복구·설정 데이터베이스의 일부일 수 있으므로 진단 로그로 보고 지우면 안 됩니다. 앱 데이터 폴더 전체를 지우면 설정·복구 자료도 함께 지워질 수 있습니다. 실행 중 삭제하면 파일이 사용 중이거나 다시 기록될 수 있고, 다음 실행에서도 새 로그가 생길 수 있습니다. 원본 문서, 운영체제 캐시, 백업·동기화 서비스의 사본은 별도로 관리해야 합니다.</p>
                 </section>
                 <section class="updates-section" aria-labelledby="changes">
                     <h2 id="changes">이 방침의 범위와 변경</h2>

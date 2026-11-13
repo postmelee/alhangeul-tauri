@@ -61,3 +61,8 @@ GitHub Issue: [#135](https://github.com/postmelee/alhangeul-tauri/issues/135)
 
 ### Stage 5 문서 위치 구체화
 공개 서명 정책은 기존 사이트의 새 `site/code-signing/index.html`에 두고 홈페이지·업데이트(다운로드)에서 `Code signing policy`로 연결한다. 사용자에게 현재 미승인 상태, 확인된 역할, 개인정보 방침을 함께 보여주기 위해 내부 조사 문서 대신 공개 페이지를 선택한다. 후원 제공 문장은 실제 승인 전 추가하지 않는다. 사용자 확인: postmelee가 세 역할 담당, GitHub MFA 활성화. 이 문서·경로 결정은 신청 준비 완료까지의 후속 명시 지시 범위에 해당한다.
+
+### 폰트 출처 정정
+신청 요건 조사에서 `assets/fonts/FONTS.md`의 Happiness 출처가 실제 파일 name table 저작권(THE HYUNDAI)과 공식 제공자 안내와 다름을 확인했다. 기존 제품 자산 manifest 위치에서 해당 행만 정정하고, 무료 재배포 가능성·원문 라이선스 동봉·SignPath의 OSI 적격 판단을 혼동하지 않도록 조사 보고에 기록한다. 폰트 바이너리나 upstream은 변경하지 않는다.
+
+정책의 긴 로그 경로가 모바일에서 넘치지 않도록 기존 site/styles.css의 updates-section code에 줄바꿈을 허용한다. 정책 공개 페이지 검증 범위에 포함한다.
