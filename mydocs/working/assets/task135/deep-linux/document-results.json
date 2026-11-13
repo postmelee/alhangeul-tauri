@@ -1,0 +1,28 @@
+[
+  {
+    "format": "hwp",
+    "opened": {
+      "pageCount": 1
+    },
+    "reopened": {
+      "pageCount": 1
+    },
+    "renderChanged": true,
+    "exportBytes": 13312,
+    "nativeSaveVerified": true,
+    "saveBoundary": "Studio export + native staged commit; file picker and frontend fs plugin omitted"
+  },
+  {
+    "format": "hwpx",
+    "opened": {
+      "pageCount": 1
+    },
+    "reopened": {
+      "pageCount": 1
+    },
+    "renderChanged": true,
+    "exportBytes": 7439,
+    "nativeSaveVerified": true,
+    "saveBoundary": "Studio export + native staged commit; file picker and frontend fs plugin omitted"
+  }
+]

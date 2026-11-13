@@ -1,0 +1,6 @@
+3418 strace -f -e trace=connect -o /tmp/privacy-connect.log <workspace>/privacy-evidence/Alhangeul_0.1.3_amd64.AppImage --appimage-extract-and-run
+3422 <workspace>/privacy-evidence/Alhangeul_0.1.3_amd64.AppImage --appimage-extract-and-run
+3437 Alhangeul
+3511 ././/lib/x86_64-linux-gnu/webkit2gtk-4.1/WebKitNetworkProcess 1 19 21
+3533 ././/lib/x86_64-linux-gnu/webkit2gtk-4.1/WebKitWebProcess 4 19 25
+3600 sed s|<workspace>|<workspace>|g

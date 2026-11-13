@@ -1,0 +1,13 @@
+{
+  "status": "idle",
+  "trigger": "startup",
+  "operationId": 1,
+  "currentVersion": "0.1.3",
+  "availableVersion": null,
+  "target": null,
+  "releaseNotes": null,
+  "progress": null,
+  "blocker": null,
+  "failure": null,
+  "manualDownloadsUrl": null
+}

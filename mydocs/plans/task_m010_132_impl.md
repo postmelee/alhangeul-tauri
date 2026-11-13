@@ -627,3 +627,6 @@ Windows 10 NSIS fresh run43469311200은 120~1,140초 화면이 같은 TianoCore 
 
 
 Windows 10 NSIS 재실행 run43473883158도 attempt 1 success다. 최종 artifact14062488370/digest06689455b43dc373eac5ec79f410d9ab83a8cf53d862ebe39e657f06aea19e8e, 정확한 설치 bytes·표준 사용자·install/reinstall/uninstall0·API4/4·VC 부재126·설정/제품/VM 정리를 독립 검산했다. 10/30/60초 PNG는 모두 05c92e4d2f5b792015a9454e9ec12dca53bc75d14dba1073652e0b39bde2a9a6이며 HWP/HWPX/JPG 내용을 직접 확인했다. 새 제품의 Windows10/11×세경로 관측을 완료했다. Stage3.6 보고서에 여섯 run/artifact/화면 hash와 한계를 기록하고 연속 승인 범위에서 Stage4 최종 보고·PR 전 알림으로 진행한다. 이전 부팅 실패의 원인 해결이나 최종 서명 파일·재배포 수용을 주장하지 않는다.
+
+
+PR 전 기준 정합화: devel이 644d0ac52bb364e57907fd7cd98c57ceaf86dce2(#135/#136)로 전진했음을 확인해 merge로 통합했다. 충돌은 오늘할일 20261113/20261114의 add/add 두 건이며 #132와 #135 행·기존 후속 승인 내용을 모두 보존했다. workflow 목록은 두 작업의 항목을 모두 유지했다. apps/packages/crates/third_party는 검증 제품 ece8bb5e와 diff가 없어 같은 installer 증거를 재사용하며, 들어온 정책/사이트/CI 스크립트는 최종 fast에서 통합 검사한다. 기존 최종 보고 commit51c487b6의 fast43477466190과 통합 head의 후속 fast를 구분한다.

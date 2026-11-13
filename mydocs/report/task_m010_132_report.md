@@ -66,6 +66,9 @@ upstream rhwp pin과 앱 버전은 이 타스크에서 변경하지 않았다. �
 | 증거 출처·정리 | OK — archive/inventory/source/설치 bytes/화면 hash, token/SID/session, owned cleanup 독립 확인 |
 | PR 전 문서·최종 fast | OK — product-boundary·상대 링크·증거 식별자·diff 확인. 보고서 commit의 원격 fast는 PR 전 알림에서 run 링크로 별도 보고하며 실제 통과 전 PR을 생성하지 않음 |
 
+
+PR 전 devel의 #135/#136 변경(644d0ac52bb364e57907fd7cd98c57ceaf86dce2)을 merge로 통합했다. 오늘할일 두 파일은 #132·#135의 기록과 후속 승인 내용을 모두 보존했고 workflow 목록도 합쳤다. apps/packages/crates/third_party는 검증 제품 ece8bb5e와 동일해 제품 재빌드는 하지 않는다. 정책·사이트·CI의 통합 fast는 제품 full/client 관측과 별도이며 최종 head 결과를 PR 전 알림에 연결한다.
+
 ### 단계별 검증 결과
 
 - [Stage 1](../working/task_m010_132_stage1.md): 같은 공개본의 일반 사용자 성공·관리자 NSIS 제한과 제거 DLL 잔존을 분리.

@@ -2,15 +2,16 @@
 
 ## 지원 버전
 
-보안 수정은 최신 안정 릴리즈를 대상으로 합니다. 현재 최신 안정 버전은
-[v0.1.0](https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.0)입니다.
+보안 수정은 최신 안정 릴리즈를 대상으로 합니다. 2026년 11월 13일 확인한 최신 안정 버전은
+[v0.1.3](https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.3)입니다.
+이후 버전은 [최신 안정 릴리즈](https://github.com/postmelee/alhangeul-tauri/releases/latest)에서 확인하세요.
 이전 버전과 개발·시험용 빌드는 보안 수정 지원을 보장하지 않습니다.
 
 ## 취약점 제보
 
 **보안 취약점과 재현에 필요한 민감한 정보는 공개 이슈에 올리지 마세요.**
 
-가능하면 GitHub의 [비공개 취약점 제보](https://github.com/postmelee/alhangeul-tauri/security/advisories/new)를
+GitHub의 [비공개 취약점 제보](https://github.com/postmelee/alhangeul-tauri/security/advisories/new)를
 이용하세요. GitHub 로그인이 필요합니다. 이 경로를 사용할 수 없으면
 [alhangeul.feedback@gmail.com](mailto:alhangeul.feedback@gmail.com)으로 보내고 제목에 `[보안 제보]`를 붙여주세요.
 
