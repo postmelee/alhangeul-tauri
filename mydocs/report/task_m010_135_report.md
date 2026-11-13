@@ -6,7 +6,7 @@ GitHub Issue: [#135](https://github.com/postmelee/alhangeul-tauri/issues/135)
 ## 작업 요약
 - 대상 이슈 #135, Stage 7 제품 보완 진행 중. 정책 공개는 완료했고 전체 신청 적격성 판정은 보류한다.
 - 공개 [개인정보처리방침](https://postmelee.github.io/alhangeul-tauri/privacy/)과 [코드 서명 정책](https://postmelee.github.io/alhangeul-tauri/code-signing/)은 PR #136·#137 및 exact Pages 배포로 반영했다. 아래 단계별 기록의 미배포·PR 없음·submodule 미초기화 표현은 각 관측 시점의 상태다.
-- Windows/Linux x64의 비게시 updater 시험 구성에서 기본 꺼짐·선택 저장·재시작·손상 설정과 TLS positive control을 수용했다. 일반 설치 후보 `7b37eec8`의 전체 CI·설치 UI·동봉 resource·폰트 화면 수용과 제공자 해석은 별도다.
+- Windows/Linux x64의 비게시 updater 시험 구성에서 기본 꺼짐·선택 저장·재시작·손상 설정과 TLS positive control을 수용했다. 첫 일반 설치 후보 `7b37eec8`에서 발견한 MSI 고지 경로·화면 문제를 고친 최신 후보는 `34850d42`다. 전체 신청 적격성·제품 릴리스 수용과 구분한다.
 - 최신 안정 버전과 활성 보안 제보 경로를 확인해 SECURITY.md를 정비하고 실제 처리에 근거한 개인정보처리방침을 작성했다.
 - `local/task135`, 별도 worktree `/tmp/alhangeul-task135`. 기존 `local/task69` 변경은 보존했다.
 
@@ -165,3 +165,5 @@ CanvasKit의 [공식 npm 버전 metadata](https://registry.npmjs.org/canvaskit-w
 [고정 Tauri CLI의 MSI generator](https://raw.githubusercontent.com/tauri-apps/tauri/tauri-cli-v2.10.1/crates/tauri-bundler/src/bundle/windows/msi/mod.rs)는 target 디렉터리만 쓰고 원본 basename을 유지한다. 따라서 전 형식의 제품 라이선스 목적지를 `licenses/LICENSE`로 통일했다. 확인기를 느슨하게 만들지 않았으며 이름이 다르면 관측 경로를 기록하고 실패한다. NSIS는 Welcome 다음 header page에만 적용되는 MUI header 설정을 추가했다. RTF는 문단/줄 간격을 명시했으며 기존 본문은 동일하다(파일 끝 개행만 별도 정규화). 첫 Windows 시스템 변경 줄이 실제 viewport에 보이는지와 옛 EULA header 부재를 소비자 검사에 추가했다.
 
 고지 basename 회귀를 포함한 Node 검사 3개, 정상 resource 23개 수용/이름 변경 거부 및 실패 경로 증거 검사, RTF 본문 유지·diff check가 통과했다. 수정 전 d48a4973 run 43495820535는 fast 두 job 성공 후 새 결함 대응을 위해 native 초기 단계에서 취소했다. 취소와 최종 result 실패를 전체 성공으로 기록하지 않는다. 수정 설치본을 새 full/소비자에서 다시 확인해야 한다.
+
+수정 후보 `34850d42537ebf1d9de55764be1b8ff8aea11c1a`의 [full run 43498370240](https://github.com/postmelee/alhangeul-tauri/actions/runs/43498370240)은 fast 두 job이 성공했고 native/package 검증 중이다. 이전 선택/TLS source 456451a8과 이 후보의 Studio host·updater Rust·등록 lib.rs를 비교했으며 차이가 없다. 이 근거로 기능 변경 없는 선택/TLS 결과를 재사용하되 서로 다른 source/config/설치 bytes라는 사실은 유지한다. 개인 신청 이름·발신/연락 주소의 task 문서·JSON/TXT 포함 여부 검색도 일치 0건이었다.

@@ -2,13 +2,16 @@ $ErrorActionPreference = 'Stop'
 $out = Join-Path $PWD 'privacy-evidence'
 New-Item -ItemType Directory -Path $out -Force | Out-Null
 $settings = Join-Path $env:APPDATA 'io.github.postmelee.alhangeul\updater-preferences.json'
-function Install-Silently($File, $Kind) {
+function Install-Silently($File, $Kind, $Reinstall = $false) {
   if ($Kind -eq 'nsis') {
     $result = Start-Process $File -ArgumentList '/S' -PassThru -Wait
   } else {
-    $result = Start-Process msiexec.exe -ArgumentList @('/i', "`"$File`"", '/qn', '/norestart') -PassThru -Wait
+    $arguments = @('/i', "`"$File`"", '/qn', '/norestart')
+    if ($Reinstall) { $arguments += @('REINSTALL=ALL', 'REINSTALLMODE=amus') }
+    $result = Start-Process msiexec.exe -ArgumentList $arguments -PassThru -Wait
   }
   if ($result.ExitCode -notin @(0,3010)) { throw "Install $Kind failed: $($result.ExitCode)" }
+  return $result.ExitCode
 }
 foreach ($kind in @('nsis', 'msi')) {
   if (Test-Path -LiteralPath $settings) { throw 'Disposable settings profile is not fresh' }
@@ -17,7 +20,7 @@ foreach ($kind in @('nsis', 'msi')) {
   if ($files.Count -ne 1) { throw "Expected one $kind package" }
   $file = $files[0].FullName
   & "$PSScriptRoot/installer-privacy-ui.ps1" -Installer $file -Kind $kind -Output $out
-  Install-Silently $file $kind
+  $initialInstallCode = Install-Silently $file $kind
   $preservation = @()
   try {
     if (Test-Path -LiteralPath $settings) { throw 'Silent install unexpectedly created an updater choice' }
@@ -46,11 +49,11 @@ foreach ($kind in @('nsis', 'msi')) {
       $fixture = @{version=1; automaticChecks=$choice} | ConvertTo-Json -Compress
       [IO.File]::WriteAllText($settings, $fixture)
       $expectedHash = (Get-FileHash -LiteralPath $settings -Algorithm SHA256).Hash
-      Install-Silently $file $kind
+      $reinstallCode = Install-Silently $file $kind $true
       if ((Get-FileHash -LiteralPath $settings -Algorithm SHA256).Hash -ne $expectedHash) {
         throw 'Reinstall changed the existing updater choice'
       }
-      $preservation += @{automaticChecks=$choice; sha256=$expectedHash.ToLowerInvariant(); reinstallPreserved=$true}
+      $preservation += @{automaticChecks=$choice; sha256=$expectedHash.ToLowerInvariant(); reinstallPreserved=$true; exitCode=$reinstallCode; rebootRequired=($reinstallCode -eq 3010)}
     }
   } finally {
     if ($kind -eq 'nsis') {
@@ -66,6 +69,11 @@ foreach ($kind in @('nsis', 'msi')) {
   }
   @{
     scope='Synthetic choice-file preservation by the installer; actual UI/TLS is verified separately.'
+    reinstallMode=$(if ($kind -eq 'msi') { 'REINSTALL=ALL REINSTALLMODE=amus' } else { 'NSIS /S with existing installation' })
+    initialInstallExitCode=$initialInstallCode
+    uninstallExitCode=$remove.ExitCode
+    rebootRequired=($initialInstallCode -eq 3010 -or $remove.ExitCode -eq 3010 -or @($preservation | Where-Object {$_.rebootRequired}).Count -gt 0)
+    postRebootValidated=$false
     freshSilentInstallChoiceAbsent=$true
     disclosureCloseChoiceAbsent=$true
     reinstall=$preservation

@@ -121,6 +121,8 @@ Rust 1.100.0 clippy가 기존 pdf_temp_cleanup의 비 Windows bool 분기 형태
 
 Windows 소비자는 fresh profile의 silent 설치가 선택 파일을 만들지 않는지 확인하고, 합성 true/false 선택 파일을 각각 둔 상태에서 같은 설치 파일을 재실행해 bytes 보존을 검사한다. 제거 뒤 마지막 false 파일의 잔존을 확인한 다음 이 시험이 만든 파일만 정리한다. 이 검사는 설치 프로그램의 설정 보존 계약이며, 실제 UI 선택·재시작 TLS 검사는 이미 성공한 별도 preferences run의 증거로 구분한다.
 
+MSI 재설치는 단순 `/i` maintenance 호출로 끝내지 않고 `REINSTALL=ALL REINSTALLMODE=amus`를 명시하여 실제 파일 재설치 경로에서 선택 보존을 확인한다. 실행 mode를 증거에 기록하며 재부팅 필요 반환은 별도로 구분한다.
+
 ### Stage 7 WASM 고지 범위 보완
 별도 Worker bundle 관측 중 native 네 잠금 파일과 bundled WASM의 원본 `third_party/rhwp/Cargo.lock`에 차이가 있음을 확인했다. 원본 lock의 SHA-256을 `rhwp-core.lock`과 먼저 대조하고 고지 생성 superset에 포함한다. 추가 100개 registry 버전의 archive checksum·원문을 검사하며 기존 ZIP의 검증된 원문은 각 hash·lock integrity를 재확인해 재사용할 수 있다. WASM 또는 readonly upstream source/pin을 재생성·수정하지 않는다. 기존 docs/operations/DEPENDENCY_NOTICES.md의 범위 설명과 task 증거를 갱신한다. 동봉 ZIP bytes가 바뀌므로 기존 설치본 성공을 새 ZIP의 설치 수용으로 세지 않으며, 새 Windows/Linux package와 exact 소비자에서 다시 확인한다.
 
