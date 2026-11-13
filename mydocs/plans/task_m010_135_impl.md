@@ -91,3 +91,12 @@ Stage 6 Windows 공개 NSIS·MSI를 exact hash로 확인해 일회용 실행기�
 
 ### 경계
 WebView2 opt-out/System Libraries 및 rhwp 서명 대상의 최종 해석은 발송한 사전 문의 답변 전 확정하지 않는다. SignPath 가입 후 MFA·origin·artifact restriction·수동 승인 검증은 현재 제외 범위로 남는다. 부분 성공을 전체 신청 요건 충족으로 기록하지 않는다.
+
+### Stage 7 폰트 대응 보완
+실제 name table·cmap과 고정 upstream 원문을 대조해 나눔 웹폰트 3개가 원본보다 적은 문자 범위를 포함하면서 Reserved Font Name을 유지함을 확인했다. 제품 보완 지시 범위에서 대응 원본·압축본을 확인하고, 필요한 경우 고정 v0.9.0에 이미 포함된 전체 원본 WOFF2로 제품 소유 assets/fonts의 세 파일만 복원한다. upstream 소스나 pin은 바꾸지 않는다. 기존 문자 cmap·advance·outline 비교와 Studio build 및 지원 OS 새 artifact 화면을 검증하며, 다른 글꼴 24개는 수정하지 않는다. 글꼴 변경 전후 hash·검사 한계와 원문 출처를 기존 FONTS.md 및 task 증거에 기록한다.
+
+### 원문 의존성 고지 묶음
+`assets/licenses/dependency-notices.zip`에는 네 native lock과 pnpm lock의 검증된 archive에서 얻은 원문 고지 및 고정 rhwp의 root/vendor/license 고지를 보존하고 설치 폴더의 licenses에 복사한다. 원문 묶음은 build/dev/optional을 포함하는 보수적인 superset으로 표시하며 실제 link/bundle closure라고 주장하지 않는다. 파일명 탐색에서 고지를 찾지 못한 항목은 inventory의 review gap으로 남겨 원문 확인과 대상 closure 분석이 필요함을 명시한다. 생성 절차는 scripts/privacy, 공개 유지보수 설명은 기존 docs/operations, task 근거는 working/assets에 둔다. generated zip의 checksum을 기록한다.
+
+### Stage 7 첫 실행 안내·native 의존 그래프 구체화
+Windows/Linux 앱 첫 실행과 제품 정보에서 설치본에 동봉한 동일 안내를 로컬로 표시한다. WebView 저장소의 표시 여부와 updater native 선택은 별개이며 닫기를 통신 동의로 처리하지 않는다. 지원 OS artifact CI에서 target-filtered Cargo normal dependency graph를 수집한다. build/dev-only edge는 제외하되 procedural macro·feature 통합 영향 때문에 binary SBOM이라고 하지 않는다. Windows helper 잠금 오류는 추가 변경을 기준 commit으로 되돌리고 각 helper 패키지만 지정한 Cargo 보수적 갱신으로 수정한다. 기존 모든 package 버전·source·checksum 보존을 검증하며 upstream sparse-checkout과 source/pin은 바꾸지 않는다.

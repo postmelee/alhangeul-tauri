@@ -1,0 +1,32 @@
+[
+  {
+    "file": "NanumGothic-Regular.woff2",
+    "oldSha256": "4a000e3bca1298c43c70dc97447e537a27e0a8c1585f410be57dfeff06d3f713",
+    "newSha256": "b2b25ce9c9179e0a4c867bd2610e1db5595965345aa1cdb857964ab802c4ee3e",
+    "officialProgramSha256": "76f45ef4a6bcff344c837c95a7dcc26e017e38b5846d5ae0cdcb5b86be2e2d31",
+    "oldCharacters": 11418,
+    "newCharacters": 11827,
+    "existingCharacterChanges": [],
+    "officialCmapNameMetricsMatch": true
+  },
+  {
+    "file": "NanumGothicCoding-Regular.woff2",
+    "oldSha256": "87ab32ebaf4e1f803099ad1d096744092c8f985b2e08a24e2304f5ac05d81d6a",
+    "newSha256": "6bd0831252dc3bd96f3257ec4eaf794d88ffb185346eb5d3f889248a7a3c6239",
+    "officialProgramSha256": "787effd7efed2abca88ade231faa8191f4e9fcf85b1805a13ee1dc3724b72089",
+    "oldCharacters": 11507,
+    "newCharacters": 12477,
+    "existingCharacterChanges": [],
+    "officialCmapNameMetricsMatch": true
+  },
+  {
+    "file": "NanumMyeongjo-Regular.woff2",
+    "oldSha256": "561e9193a6e848b3f7ce9f8f5907310a13e175bc9d69e77da2842a7517a97c16",
+    "newSha256": "52d27bf4ee205020a4aa9eb19ef4835e4aa04a94f7742b13e69e5c8b9a74072a",
+    "officialProgramSha256": "7ed9e8653a8ed04285d51dc343ffea6eb3d9c73afc27383ea8929ee4ffd03205",
+    "oldCharacters": 11476,
+    "newCharacters": 11882,
+    "existingCharacterChanges": [],
+    "officialCmapNameMetricsMatch": true
+  }
+]

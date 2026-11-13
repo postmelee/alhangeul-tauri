@@ -1,0 +1,468 @@
+{
+  "scope": "Alhangeul bundled Studio WOFF2 files; PDF OTF and thumbnail fallback notices are in FONTS.md",
+  "upstreamCommit": "c9095c5f67632e6721e800ccc7fb43ea49d26682",
+  "fonts": [
+    {
+      "file": "Cafe24Ssurround-v2.0.woff2",
+      "sha256": "2d726dbf8863d66e6d5cf56e2532c5d14d8a4b514461b565c513c1da6ae2f41a",
+      "copyrightNotices": [
+        "Copyright © Cafe24 Corp. All Rights Reserved."
+      ],
+      "license": "OFL-1.1",
+      "licenseFiles": [
+        "Cafe24Ssurround-LICENSE.pdf",
+        "SIL-OFL-1.1.txt"
+      ]
+    },
+    {
+      "file": "Cafe24Supermagic-Regular-v1.0.woff2",
+      "sha256": "65434a217b9532867a1fe41417d0ad51210a60027a51dca40748aafed48ef0ba",
+      "copyrightNotices": [
+        "Copyright ⓒ Cafe24 Corp. All Rights Reserved."
+      ],
+      "license": "OFL-1.1",
+      "licenseFiles": [
+        "Cafe24Supermagic-LICENSE.pdf",
+        "SIL-OFL-1.1.txt"
+      ]
+    },
+    {
+      "file": "D2Coding-Regular.woff2",
+      "sha256": "358df12fdf9b65d0fd31554a826f97af4eeefd96a047297a28a856315fe872c1",
+      "copyrightNotices": [
+        "Copyright (c) 2015-2016 NHN Corporation. All rights reserved. Font designed by FONTRIX Inc."
+      ],
+      "license": "OFL-1.1",
+      "licenseFiles": [
+        "D2Coding-OFL.txt"
+      ],
+      "originalCorrespondence": "All decoded font tables equal the pinned full-source WOFF2 except head.checkSumAdjustment; cmap, glyphs, shaping and name metadata preserved."
+    },
+    {
+      "file": "GowunBatang-Regular.woff2",
+      "sha256": "0c6a288aa0c12081dccde769c312f71f290b353243747dd24fb8c57f94f01d72",
+      "copyrightNotices": [
+        "Copyright 2021 The Gowun Batang Project Authors (https://github.com/yangheeryu/Gowun-Batang)"
+      ],
+      "license": "OFL-1.1",
+      "licenseFiles": [
+        "GowunBatang-OFL.txt"
+      ]
+    },
+    {
+      "file": "GowunDodum-Regular.woff2",
+      "sha256": "349c098a6181952dab564bf891b8efcacfbf855adc28d40b4aa2e5937c101c56",
+      "copyrightNotices": [
+        "Copyright 2021 The Gowun Dodum Project Authors (https://github.com/yangheeryu/Gowun-Dodum)"
+      ],
+      "license": "OFL-1.1",
+      "licenseFiles": [
+        "GowunDodum-OFL.txt"
+      ]
+    },
+    {
+      "file": "Happiness-Sans-Bold.woff2",
+      "sha256": "54becdfd4f7f58e872eba8fbc67778e29cff94c1cd03f9a0ebadfbe482b4aba0",
+      "copyrightNotices": [
+        "Copyright © 2022 by THE HYUNDAI. All right reserved."
+      ],
+      "license": "OFL-1.1",
+      "licenseFiles": [
+        "HappinessSans-LICENSE.pdf"
+      ]
+    },
+    {
+      "file": "Happiness-Sans-Regular.woff2",
+      "sha256": "4fc37e7663c3d440b5a6af6938bde0c6618b666553ed521745f3362050bd4988",
+      "copyrightNotices": [
+        "Copyright © 2022 by THE HYUNDAI. All right reserved."
+      ],
+      "license": "OFL-1.1",
+      "licenseFiles": [
+        "HappinessSans-LICENSE.pdf"
+      ]
+    },
+    {
+      "file": "Happiness-Sans-Title.woff2",
+      "sha256": "057e6821a062d9192964d99cf058fe6608230e9e4a464c9652b3756e02460e22",
+      "copyrightNotices": [
+        "Copyright © 2022 by THE HYUNDAI. All right reserved."
+      ],
+      "license": "OFL-1.1",
+      "licenseFiles": [
+        "HappinessSans-LICENSE.pdf"
+      ]
+    },
+    {
+      "file": "HappinessSansVF.woff2",
+      "sha256": "cd29de60acf8c466938400561fcbfb14812dd5981f4f78b0c8da74609682423c",
+      "copyrightNotices": [
+        "Copyright © 2022 by THE HYUNDAI. All right reserved."
+      ],
+      "license": "OFL-1.1",
+      "licenseFiles": [
+        "HappinessSans-LICENSE.pdf"
+      ]
+    },
+    {
+      "file": "LatinModernMath-Regular.woff2",
+      "sha256": "1177d9025d1e797c54b3c7676976365abd90f903423091de7f0f4e7a4b372162",
+      "copyrightNotices": [
+        "Copyright 2012--2014 for Latin Modern Math OTF by B. Jackowski, P. Strzelczyk and P. Pianowski (on behalf of TeX users groups). This work is released under the GUST Font License -- see http://tug.org/fonts/licenses/GUST-FONT-LICENSE.txt for details."
+      ],
+      "license": "GUST-Font-License-1.0 AND LPPL-1.3c-or-later",
+      "licenseFiles": [
+        "LatinModernMath-GUST-FONT-LICENSE.txt",
+        "LPPL-1.3c.txt"
+      ],
+      "originalCorrespondence": "bytes differ from pinned upstream; no unmodified-original equivalence claim"
+    },
+    {
+      "file": "NanumGothic-Regular.woff2",
+      "sha256": "b2b25ce9c9179e0a4c867bd2610e1db5595965345aa1cdb857964ab802c4ee3e",
+      "copyrightNotices": [
+        "Copyright © 2011 NHN Corporation. All rights reserved. Font designed by Sandoll Communications Inc."
+      ],
+      "license": "OFL-1.1",
+      "licenseFiles": [
+        "NanumGothic-OFL.txt"
+      ],
+      "officialProgram": {
+        "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/nanumgothic/NanumGothic-Regular.ttf",
+        "sha256": "76f45ef4a6bcff344c837c95a7dcc26e017e38b5846d5ae0cdcb5b86be2e2d31",
+        "localSourceName": "NanumGothic-Regular.ttf",
+        "conversion": "Full original; WOFF2 compression only; original metadata retained."
+      }
+    },
+    {
+      "file": "NanumGothicCoding-Regular.woff2",
+      "sha256": "6bd0831252dc3bd96f3257ec4eaf794d88ffb185346eb5d3f889248a7a3c6239",
+      "copyrightNotices": [
+        "Copyright © 2009 NHN Corporation. All rights reserved. Font designed by Sandoll Communications Inc."
+      ],
+      "license": "OFL-1.1",
+      "licenseFiles": [
+        "NanumGothicCoding-OFL.txt"
+      ],
+      "officialProgram": {
+        "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/nanumgothiccoding/NanumGothicCoding-Regular.ttf",
+        "sha256": "787effd7efed2abca88ade231faa8191f4e9fcf85b1805a13ee1dc3724b72089",
+        "localSourceName": "NanumGothicCoding-Regular.ttf",
+        "conversion": "Full original; WOFF2 compression only; original metadata retained."
+      }
+    },
+    {
+      "file": "NanumMyeongjo-Regular.woff2",
+      "sha256": "52d27bf4ee205020a4aa9eb19ef4835e4aa04a94f7742b13e69e5c8b9a74072a",
+      "copyrightNotices": [
+        "Copyright © 2010 NHN Corporation. All rights reserved. Font designed by FONTRIX."
+      ],
+      "license": "OFL-1.1",
+      "licenseFiles": [
+        "NanumMyeongjo-OFL.txt"
+      ],
+      "officialProgram": {
+        "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/nanummyeongjo/NanumMyeongjo-Regular.ttf",
+        "sha256": "7ed9e8653a8ed04285d51dc343ffea6eb3d9c73afc27383ea8929ee4ffd03205",
+        "localSourceName": "NanumMyeongjo-Regular.ttf",
+        "conversion": "Full original; WOFF2 compression only; original metadata retained."
+      }
+    },
+    {
+      "file": "NotoSansKR-Bold.woff2",
+      "sha256": "dab3d492daa687386292cff1499225db580f931f800ee0d124eb0636378c6020",
+      "copyrightNotices": [
+        "(c) 2014-2021 Adobe (http://www.adobe.com/), with Reserved Font Name 'Source'."
+      ],
+      "license": "OFL-1.1",
+      "licenseFiles": [
+        "NotoSansKR-OFL.txt"
+      ]
+    },
+    {
+      "file": "NotoSansKR-Regular.woff2",
+      "sha256": "3aa0d1d63f3b5b2a33053a41a34512eac63abfb1dc2112aeda04733656a1a6d9",
+      "copyrightNotices": [
+        "(c) 2014-2021 Adobe (http://www.adobe.com/), with Reserved Font Name 'Source'."
+      ],
+      "license": "OFL-1.1",
+      "licenseFiles": [
+        "NotoSansKR-OFL.txt"
+      ],
+      "originalCorrespondence": "bytes differ from pinned upstream; no unmodified-original equivalence claim"
+    },
+    {
+      "file": "NotoSerifKR-Bold.woff2",
+      "sha256": "504d6af6abb882acd912d47bafa383c4512a6c8c33635e4e8fb37111d9310941",
+      "copyrightNotices": [
+        "(c) 2017-2024 Adobe (http://www.adobe.com/)."
+      ],
+      "license": "OFL-1.1",
+      "licenseFiles": [
+        "NotoCJKSerif-OFL.txt"
+      ]
+    },
+    {
+      "file": "NotoSerifKR-Regular.woff2",
+      "sha256": "c9a1e3ac69994d680883b53b1fd83d520733b704792522a932bfaa276117de45",
+      "copyrightNotices": [
+        "(c) 2017-2024 Adobe (http://www.adobe.com/)."
+      ],
+      "license": "OFL-1.1",
+      "licenseFiles": [
+        "NotoCJKSerif-OFL.txt"
+      ]
+    },
+    {
+      "file": "Pretendard-Black.woff2",
+      "sha256": "c5fd0c3568fc1368a3edc0d0fbb36df029935954276e3573451b3bae09e27296",
+      "copyrightNotices": [
+        "Copyright © 2023 Kil Hyung-jin",
+        "Copyright © 2023 길형진"
+      ],
+      "license": "OFL-1.1",
+      "licenseFiles": [
+        "Pretendard-OFL.txt"
+      ],
+      "officialDistribution": {
+        "url": "https://raw.githubusercontent.com/orioncactus/pretendard/main/packages/pretendard/dist/web/static/woff2/Pretendard-Black.woff2",
+        "sha256": "c5fd0c3568fc1368a3edc0d0fbb36df029935954276e3573451b3bae09e27296",
+        "byteIdentical": true
+      }
+    },
+    {
+      "file": "Pretendard-Bold.woff2",
+      "sha256": "4609c3356e536fafe38f4add0daeceb3d8595d3057bce13c428c33ddbd43d362",
+      "copyrightNotices": [
+        "Copyright © 2023 Kil Hyung-jin",
+        "Copyright © 2023 길형진"
+      ],
+      "license": "OFL-1.1",
+      "licenseFiles": [
+        "Pretendard-OFL.txt"
+      ],
+      "officialDistribution": {
+        "url": "https://raw.githubusercontent.com/orioncactus/pretendard/main/packages/pretendard/dist/web/static/woff2/Pretendard-Bold.woff2",
+        "sha256": "4609c3356e536fafe38f4add0daeceb3d8595d3057bce13c428c33ddbd43d362",
+        "byteIdentical": true
+      }
+    },
+    {
+      "file": "Pretendard-ExtraBold.woff2",
+      "sha256": "dd7c1e156f508eb962acc7a33a7a1896d1e0b71e11156fad96e731689ceb6dc3",
+      "copyrightNotices": [
+        "Copyright © 2023 Kil Hyung-jin",
+        "Copyright © 2023 길형진"
+      ],
+      "license": "OFL-1.1",
+      "licenseFiles": [
+        "Pretendard-OFL.txt"
+      ],
+      "officialDistribution": {
+        "url": "https://raw.githubusercontent.com/orioncactus/pretendard/main/packages/pretendard/dist/web/static/woff2/Pretendard-ExtraBold.woff2",
+        "sha256": "dd7c1e156f508eb962acc7a33a7a1896d1e0b71e11156fad96e731689ceb6dc3",
+        "byteIdentical": true
+      }
+    },
+    {
+      "file": "Pretendard-ExtraLight.woff2",
+      "sha256": "df43dc9165dff4542114674bcd8b79b7daae6dec004004586d5d076fec6fe2aa",
+      "copyrightNotices": [
+        "Copyright © 2023 Kil Hyung-jin",
+        "Copyright © 2023 길형진"
+      ],
+      "license": "OFL-1.1",
+      "licenseFiles": [
+        "Pretendard-OFL.txt"
+      ],
+      "officialDistribution": {
+        "url": "https://raw.githubusercontent.com/orioncactus/pretendard/main/packages/pretendard/dist/web/static/woff2/Pretendard-ExtraLight.woff2",
+        "sha256": "df43dc9165dff4542114674bcd8b79b7daae6dec004004586d5d076fec6fe2aa",
+        "byteIdentical": true
+      }
+    },
+    {
+      "file": "Pretendard-Light.woff2",
+      "sha256": "b7426635cce2ea2b95c9c802e43fba1c620e0dafaf25f737c069b8b4e09fa841",
+      "copyrightNotices": [
+        "Copyright © 2023 Kil Hyung-jin",
+        "Copyright © 2023 길형진"
+      ],
+      "license": "OFL-1.1",
+      "licenseFiles": [
+        "Pretendard-OFL.txt"
+      ],
+      "officialDistribution": {
+        "url": "https://raw.githubusercontent.com/orioncactus/pretendard/main/packages/pretendard/dist/web/static/woff2/Pretendard-Light.woff2",
+        "sha256": "b7426635cce2ea2b95c9c802e43fba1c620e0dafaf25f737c069b8b4e09fa841",
+        "byteIdentical": true
+      }
+    },
+    {
+      "file": "Pretendard-Medium.woff2",
+      "sha256": "d03481330eeba0659ab5b87f25ceb504a35de377dd90a0d0aba2982eb2d05e2c",
+      "copyrightNotices": [
+        "Copyright © 2023 Kil Hyung-jin",
+        "Copyright © 2023 길형진"
+      ],
+      "license": "OFL-1.1",
+      "licenseFiles": [
+        "Pretendard-OFL.txt"
+      ],
+      "officialDistribution": {
+        "url": "https://raw.githubusercontent.com/orioncactus/pretendard/main/packages/pretendard/dist/web/static/woff2/Pretendard-Medium.woff2",
+        "sha256": "d03481330eeba0659ab5b87f25ceb504a35de377dd90a0d0aba2982eb2d05e2c",
+        "byteIdentical": true
+      }
+    },
+    {
+      "file": "Pretendard-Regular.woff2",
+      "sha256": "fad853f7f47c6c8b103171e7193fa095708cdcd70850a71d93aa5379e8a61d63",
+      "copyrightNotices": [
+        "Copyright © 2023 Kil Hyung-jin",
+        "Copyright © 2023 길형진"
+      ],
+      "license": "OFL-1.1",
+      "licenseFiles": [
+        "Pretendard-OFL.txt"
+      ],
+      "officialDistribution": {
+        "url": "https://raw.githubusercontent.com/orioncactus/pretendard/main/packages/pretendard/dist/web/static/woff2/Pretendard-Regular.woff2",
+        "sha256": "fad853f7f47c6c8b103171e7193fa095708cdcd70850a71d93aa5379e8a61d63",
+        "byteIdentical": true
+      }
+    },
+    {
+      "file": "Pretendard-SemiBold.woff2",
+      "sha256": "c863f76a7de5c1ddc1ed8b2fa794964530774592c4f31407a84e2a2ae93f17f0",
+      "copyrightNotices": [
+        "Copyright © 2023 Kil Hyung-jin",
+        "Copyright © 2023 길형진"
+      ],
+      "license": "OFL-1.1",
+      "licenseFiles": [
+        "Pretendard-OFL.txt"
+      ],
+      "officialDistribution": {
+        "url": "https://raw.githubusercontent.com/orioncactus/pretendard/main/packages/pretendard/dist/web/static/woff2/Pretendard-SemiBold.woff2",
+        "sha256": "c863f76a7de5c1ddc1ed8b2fa794964530774592c4f31407a84e2a2ae93f17f0",
+        "byteIdentical": true
+      }
+    },
+    {
+      "file": "Pretendard-Thin.woff2",
+      "sha256": "1539755224a64719d5b18406762c476db74fcc299b9e4641ca1e9812fbc7a09b",
+      "copyrightNotices": [
+        "Copyright © 2023 Kil Hyung-jin",
+        "Copyright © 2023 길형진"
+      ],
+      "license": "OFL-1.1",
+      "licenseFiles": [
+        "Pretendard-OFL.txt"
+      ],
+      "officialDistribution": {
+        "url": "https://raw.githubusercontent.com/orioncactus/pretendard/main/packages/pretendard/dist/web/static/woff2/Pretendard-Thin.woff2",
+        "sha256": "1539755224a64719d5b18406762c476db74fcc299b9e4641ca1e9812fbc7a09b",
+        "byteIdentical": true
+      }
+    },
+    {
+      "file": "SpoqaHanSans-Regular.woff2",
+      "sha256": "6568bf80b50c14f2e54f56f2c07e668416f39f880baf5ea2825d315767f98f69",
+      "copyrightNotices": [
+        "Copyright  2015 Spoqa (http://bi.spoqa.com/)"
+      ],
+      "license": "OFL-1.1",
+      "licenseFiles": [
+        "SpoqaHanSans-OFL.txt"
+      ],
+      "officialDistribution": {
+        "url": "https://raw.githubusercontent.com/spoqa/spoqa-han-sans/1.0.4/Subset/SpoqaHanSans/Spoqa%20Han%20sans_subset%28webfont%20inclued%29/SpoqaHanSans-Regular/SpoqaHanSans-Regular.woff2",
+        "sha256": "6568bf80b50c14f2e54f56f2c07e668416f39f880baf5ea2825d315767f98f69",
+        "byteIdentical": true
+      }
+    }
+  ],
+  "notices": [
+    {
+      "file": "Cafe24Ssurround-LICENSE.pdf",
+      "sha256": "de2158b3dc8aa27513451108fb09088f9afd8fce1d65c2cac29c7e554b37a7d9",
+      "source": "https://github.com/edwardkim/rhwp/blob/c9095c5f67632e6721e800ccc7fb43ea49d26682/assets/fonts/licenses/Cafe24Ssurround-LICENSE.pdf"
+    },
+    {
+      "file": "Cafe24Supermagic-LICENSE.pdf",
+      "sha256": "bdf5e278410f73faaf5a34db9ad4ce328cabd673d8f699bd986869a690193511",
+      "source": "https://github.com/edwardkim/rhwp/blob/c9095c5f67632e6721e800ccc7fb43ea49d26682/assets/fonts/licenses/Cafe24Supermagic-LICENSE.pdf"
+    },
+    {
+      "file": "D2Coding-OFL.txt",
+      "sha256": "1807e8dec4d65f474cbf9be39f5e2254ecb81702babc320749e272ea66ffcc69",
+      "source": "https://github.com/edwardkim/rhwp/blob/c9095c5f67632e6721e800ccc7fb43ea49d26682/assets/fonts/licenses/D2Coding-OFL.txt"
+    },
+    {
+      "file": "GowunBatang-OFL.txt",
+      "sha256": "49a57cc769fa9affd6eefb9070a61e3d3f6b757c97cafb15848bc6d1c81acc78",
+      "source": "https://github.com/edwardkim/rhwp/blob/c9095c5f67632e6721e800ccc7fb43ea49d26682/assets/fonts/licenses/GowunBatang-OFL.txt"
+    },
+    {
+      "file": "GowunDodum-OFL.txt",
+      "sha256": "a7c73f9521cd646bbdfb6684c99a62311bbd7bce11898dc11ef0b3c69eda1aca",
+      "source": "https://github.com/edwardkim/rhwp/blob/c9095c5f67632e6721e800ccc7fb43ea49d26682/assets/fonts/licenses/GowunDodum-OFL.txt"
+    },
+    {
+      "file": "HappinessSans-LICENSE.pdf",
+      "sha256": "f5bd344131ee034f3425517ea376ab6acea9126310e7b2cd74cd18673991b055",
+      "source": "https://github.com/edwardkim/rhwp/blob/c9095c5f67632e6721e800ccc7fb43ea49d26682/assets/fonts/licenses/HappinessSans-LICENSE.pdf"
+    },
+    {
+      "file": "LPPL-1.3c.txt",
+      "sha256": "3d262cdf34dafa6955f703c634a8c238ec44109bc8dd6ef34fb7aa54809f7e66",
+      "source": "https://github.com/edwardkim/rhwp/blob/c9095c5f67632e6721e800ccc7fb43ea49d26682/assets/fonts/licenses/LPPL-1.3c.txt"
+    },
+    {
+      "file": "LatinModernMath-GUST-FONT-LICENSE.txt",
+      "sha256": "49ea6cb9257bbee0a3979c48a774cd221550ac1c20c95549efe45fc99cc18050",
+      "source": "https://github.com/edwardkim/rhwp/blob/c9095c5f67632e6721e800ccc7fb43ea49d26682/assets/fonts/licenses/LatinModernMath-GUST-FONT-LICENSE.txt"
+    },
+    {
+      "file": "NanumGothic-OFL.txt",
+      "sha256": "eeacf16032901d0ed0456876ec77b8f0fda6b3fecec7d972f8543eb602e6c30f",
+      "source": "https://github.com/edwardkim/rhwp/blob/c9095c5f67632e6721e800ccc7fb43ea49d26682/assets/fonts/licenses/NanumGothic-OFL.txt"
+    },
+    {
+      "file": "NanumGothicCoding-OFL.txt",
+      "sha256": "eeacf16032901d0ed0456876ec77b8f0fda6b3fecec7d972f8543eb602e6c30f",
+      "source": "https://github.com/edwardkim/rhwp/blob/c9095c5f67632e6721e800ccc7fb43ea49d26682/assets/fonts/licenses/NanumGothicCoding-OFL.txt"
+    },
+    {
+      "file": "NanumMyeongjo-OFL.txt",
+      "sha256": "8eb1c1019fe7fe6d0b6e7d7bbbba1d9cbdd969d8c5f26455708f6cfb8a77284c",
+      "source": "https://github.com/edwardkim/rhwp/blob/c9095c5f67632e6721e800ccc7fb43ea49d26682/assets/fonts/licenses/NanumMyeongjo-OFL.txt"
+    },
+    {
+      "file": "NotoCJKSerif-OFL.txt",
+      "sha256": "6a73f9541c2de74158c0e7cf6b0a58ef774f5a780bf191f2d7ec9cc53efe2bf2",
+      "source": "https://github.com/edwardkim/rhwp/blob/c9095c5f67632e6721e800ccc7fb43ea49d26682/assets/fonts/licenses/NotoCJKSerif-OFL.txt"
+    },
+    {
+      "file": "NotoSansKR-OFL.txt",
+      "sha256": "1c05c68c34f9708415aada51f17e1b0092d2cea709bf4a94cd38114f9e73d7d9",
+      "source": "https://github.com/edwardkim/rhwp/blob/c9095c5f67632e6721e800ccc7fb43ea49d26682/assets/fonts/licenses/NotoSansKR-OFL.txt"
+    },
+    {
+      "file": "Pretendard-OFL.txt",
+      "sha256": "82e9c8a4b203261f10ddba1296422d64914ff3d4b7bd8a12896d03f0f088d70a",
+      "source": "https://github.com/edwardkim/rhwp/blob/c9095c5f67632e6721e800ccc7fb43ea49d26682/assets/fonts/licenses/Pretendard-OFL.txt"
+    },
+    {
+      "file": "SIL-OFL-1.1.txt",
+      "sha256": "f19c674290e5dc79f02e8efe16139ab56a06a7128876f5b1579ffd0db5bc897e",
+      "source": "https://github.com/edwardkim/rhwp/blob/c9095c5f67632e6721e800ccc7fb43ea49d26682/assets/fonts/licenses/SIL-OFL-1.1.txt"
+    },
+    {
+      "file": "SpoqaHanSans-OFL.txt",
+      "sha256": "279753543734e7a1846e3cb3f80d4dcdcc91f49c436411adaba82e3913c61cde",
+      "source": "https://github.com/edwardkim/rhwp/blob/c9095c5f67632e6721e800ccc7fb43ea49d26682/assets/fonts/licenses/SpoqaHanSans-OFL.txt"
+    }
+  ]
+}

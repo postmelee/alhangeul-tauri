@@ -44,7 +44,27 @@
     "resources": {
       "../../../assets/fonts/FONTS.md": "licenses/fonts/FONTS.md",
       "../../../assets/fonts/licenses/NotoSansKR-OFL-1.1.txt": "licenses/fonts/NotoSansKR-OFL-1.1.txt",
-      "../../../assets/fonts/licenses/NotoSerifKR-OFL-1.1.txt": "licenses/fonts/NotoSerifKR-OFL-1.1.txt"
+      "../../../assets/fonts/licenses/NotoSerifKR-OFL-1.1.txt": "licenses/fonts/NotoSerifKR-OFL-1.1.txt",
+      "../../../assets/fonts/licenses/Cafe24Ssurround-LICENSE.pdf": "licenses/fonts/Cafe24Ssurround-LICENSE.pdf",
+      "../../../assets/fonts/licenses/Cafe24Supermagic-LICENSE.pdf": "licenses/fonts/Cafe24Supermagic-LICENSE.pdf",
+      "../../../assets/fonts/licenses/D2Coding-OFL.txt": "licenses/fonts/D2Coding-OFL.txt",
+      "../../../assets/fonts/licenses/GowunBatang-OFL.txt": "licenses/fonts/GowunBatang-OFL.txt",
+      "../../../assets/fonts/licenses/GowunDodum-OFL.txt": "licenses/fonts/GowunDodum-OFL.txt",
+      "../../../assets/fonts/licenses/HappinessSans-LICENSE.pdf": "licenses/fonts/HappinessSans-LICENSE.pdf",
+      "../../../assets/fonts/licenses/LPPL-1.3c.txt": "licenses/fonts/LPPL-1.3c.txt",
+      "../../../assets/fonts/licenses/LatinModernMath-GUST-FONT-LICENSE.txt": "licenses/fonts/LatinModernMath-GUST-FONT-LICENSE.txt",
+      "../../../assets/fonts/licenses/NanumGothic-OFL.txt": "licenses/fonts/NanumGothic-OFL.txt",
+      "../../../assets/fonts/licenses/NanumGothicCoding-OFL.txt": "licenses/fonts/NanumGothicCoding-OFL.txt",
+      "../../../assets/fonts/licenses/NanumMyeongjo-OFL.txt": "licenses/fonts/NanumMyeongjo-OFL.txt",
+      "../../../assets/fonts/licenses/NotoCJKSerif-OFL.txt": "licenses/fonts/NotoCJKSerif-OFL.txt",
+      "../../../assets/fonts/licenses/NotoSansKR-OFL.txt": "licenses/fonts/NotoSansKR-OFL.txt",
+      "../../../assets/fonts/licenses/Pretendard-OFL.txt": "licenses/fonts/Pretendard-OFL.txt",
+      "../../../assets/fonts/licenses/SIL-OFL-1.1.txt": "licenses/fonts/SIL-OFL-1.1.txt",
+      "../../../assets/fonts/licenses/SpoqaHanSans-OFL.txt": "licenses/fonts/SpoqaHanSans-OFL.txt",
+      "../../../assets/fonts/licenses/font-notices.json": "licenses/fonts/font-notices.json",
+      "../../../LICENSE": "licenses/Alhangeul-LICENSE.txt",
+      "../../../assets/licenses/dependency-notices.zip": "licenses/dependency-notices.zip",
+      "resources/install-privacy.txt": "privacy/install-privacy.txt"
     },
     "fileAssociations": [
       {
@@ -93,6 +113,7 @@
           "/usr/share/mime/packages/alhangeul-hwpx.xml": "linux/alhangeul-hwpx.xml"
         }
       }
-    }
+    },
+    "licenseFile": "resources/install-privacy.rtf"
   }
 }

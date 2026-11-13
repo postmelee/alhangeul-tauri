@@ -4,7 +4,7 @@ GitHub Issue: [#135](https://github.com/postmelee/alhangeul-tauri/issues/135)
 마일스톤: M010
 
 ## 작업 요약
-- 대상 이슈 #135, 단계 수 5 (TLS·문서 작업·로그 삭제 추가 검증 포함).
+- 대상 이슈 #135, Stage 7 제품 보완 진행 중. 정책 공개는 완료했고 전체 신청 적격성 판정은 보류한다.
 - 최신 안정 버전과 활성 보안 제보 경로를 확인해 SECURITY.md를 정비하고 실제 처리에 근거한 개인정보처리방침을 작성했다.
 - `local/task135`, 별도 worktree `/tmp/alhangeul-task135`. 기존 `local/task69` 변경은 보존했다.
 
@@ -87,3 +87,11 @@ PR #136의 첫 필수 검사 run 43467248700에서 automation 1,384개 중 1개�
 
 ## Stage 7 진행
 자체 자동 업데이트 확인의 기본 꺼짐·명시 선택 저장과 Windows helper 제품명/버전 resource 보완을 구현했다. 새로운 bytes의 native/package 수용 전이므로 현재 안정 릴리스 기능으로 안내하지 않는다. 로컬 submodule 전체 다운로드는 대용량 때문에 중단했고 Git이 임시 clone을 정리했다. 이후 blob filter와 sparse checkout으로 exact v0.9.0 소스만 확보했다. 큰 saved fixture 모음은 내려받지 않아 전체 automation의 fixture 의존 검사는 CI에서 수행한다. 기존 사용자 checkout은 보존한다.
+
+## Stage 7.2 제품 보완 후보
+- 첫 실행·제품 정보에 설치본의 로컬 개인정보 안내를 연결하고 NSIS·MSI에는 설치 전 안내를 추가했다. 닫기/계속은 자체 자동 확인을 켜지 않는다. 선택 기본 꺼짐, native 사용자 파일에 명시 선택 저장, 표시 여부는 WebView 로컬 저장소로 분리한다. 공개 v0.1.3 방침은 미출시 기능으로 바꾸지 않았다.
+- Windows helper build dependency 잠금 파일의 초기 중복 버전 오류를 run 43470702938 Windows에서 확인했다. 자동 승인 검토가 upstream sparse-checkout 변경 + workspace 갱신 명령을 거절해 실행하지 않았다. Cargo 공식 도움말과 단일 helper dry-run을 확인한 뒤 upstream 변경 없이 보수적인 단일 패키지 갱신으로 수정했다. 기존 worker 330개/handler 26개의 version·source·checksum이 모두 보존됨을 별도 JSON에 기록했다. 새로운 native 빌드 성공 전에는 해결 수용으로 기록하지 않는다.
+- 27개 웹폰트 원문 고지와 설치 경로를 대조했다. 나눔 3개는 고정 upstream의 전체 원본 WOFF2로 제품 자산만 복원했으며 기존 문자 advance·outline 차이 0, 공식 원본 cmap/name/metrics 일치를 기록했다. 지원 OS 화면 수용은 별도로 남는다.
+- lock archive 1,408개에서 원문 고지 ZIP을 생성했다. 136개 filename-notice gap은 그대로 남기며 build/dev/optional을 포함한 목록을 실제 배포 SBOM으로 부르지 않는다. 지원 target normal graph 수집을 native CI에 추가했다.
+- 로컬: 개인정보 안내·설정·desktop event 14개, 설치/workflow/font/native graph 계약 45개, upstream 39개 통과. product-boundary·action pins·diff check 통과. Studio build 통과. 전체 Studio는 291/293, 없는 sparse 예제 문서 2개로 실패하여 전체 통과로 보고하지 않는다. 완전한 고정 checkout을 사용하는 CI에서 다시 검증한다.
+- 제품 변경은 CI 후보이며 앱 릴리스·제품 PR 병합·신청·계정 생성·서명 적용은 하지 않았다. 이슈 #135는 열린 상태로 유지한다.

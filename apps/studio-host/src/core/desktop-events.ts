@@ -4,6 +4,7 @@ import { findLatestSupportedDocumentPath, hasSupportedDocumentPath } from './doc
 import { ensureDesktopUpdater } from './desktop-updater';
 import { detectDesktopPlatform, isTauriRuntime } from './platform';
 import { installWindowsWheelZoomReroute } from './windows-wheel-zoom';
+import { showFirstRunPrivacyNotice } from '../ui/privacy-notice';
 
 type DesktopEventHost = Pick<
   DesktopHost,
@@ -58,6 +59,7 @@ export async function setupDesktopEvents({
     disposers.throwIfDisposed();
     await openLatestDesktopDocument(host, await host.takePendingOpenPaths(), setMessage);
     disposers.throwIfDisposed();
+    showFirstRunPrivacyNotice();
     return () => disposers.dispose();
   } catch (error) {
     disposers.dispose();

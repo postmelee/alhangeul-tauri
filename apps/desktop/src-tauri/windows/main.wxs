@@ -118,19 +118,24 @@
 
             <Property Id="WIXUI_INSTALLDIR" Value="INSTALLDIR" />
 
-            {{#unless license}}
-            <!-- Skip license dialog -->
-            <Publish Dialog="WelcomeDlg"
-                     Control="Next"
-                     Event="NewDialog"
-                     Value="InstallDirDlg"
-                     Order="2">1</Publish>
-            <Publish Dialog="InstallDirDlg"
-                     Control="Back"
-                     Event="NewDialog"
-                     Value="WelcomeDlg"
-                     Order="2">1</Publish>
-            {{/unless}}
+            <!-- Disclosure only: no EULA acceptance checkbox or optional traffic consent. -->
+            <Dialog Id="AlhangeulPrivacyDlg" Width="370" Height="270" Title="Alhangeul 설치·개인정보 안내">
+                <Control Id="Title" Type="Text" X="15" Y="12" Width="340" Height="20" Text="설치 시 시스템 변경과 개인정보 처리를 확인하세요." />
+                <Control Id="Policy" Type="ScrollableText" X="20" Y="40" Width="330" Height="185" Sunken="yes" TabSkip="no">
+                    <Text SourceFile="{{license}}" />
+                </Control>
+                <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="뒤로">
+                    <Publish Event="NewDialog" Value="WelcomeDlg">1</Publish>
+                </Control>
+                <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="계속">
+                    <Publish Event="NewDialog" Value="InstallDirDlg">1</Publish>
+                </Control>
+                <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="취소">
+                    <Publish Event="SpawnDialog" Value="CancelDlg">1</Publish>
+                </Control>
+            </Dialog>
+            <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="AlhangeulPrivacyDlg" Order="2">1</Publish>
+            <Publish Dialog="InstallDirDlg" Control="Back" Event="NewDialog" Value="AlhangeulPrivacyDlg" Order="2">1</Publish>
         </UI>
 
         <UIRef Id="WixUI_InstallDir" />

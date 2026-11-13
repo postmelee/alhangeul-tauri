@@ -18,6 +18,10 @@
 ; - UPDATEFILEASSOC는 Tauri installer.nsi가 제공하는 내부 macro이며 installerHooks 공개
 ;   계약의 일부가 아니다. Tauri를 올릴 때 존재 여부를 확인한다.
 
+; This is a disclosure page, not a license acceptance or consent to optional traffic.
+!define MUI_LICENSEPAGE_TEXT_TOP "설치 시 시스템 변경과 개인정보 처리를 확인하세요."
+!define MUI_LICENSEPAGE_TEXT_BOTTOM "자동 업데이트 확인은 새 설치에서 꺼져 있습니다. 계속은 설치 진행이며 별도 사용권 계약 동의가 아닙니다."
+!define MUI_LICENSEPAGE_BUTTON "계속"
 !include "x64.nsh"
 
 !define ALHANGEUL_ASSOC_BACKUP_KEY "Software\Alhangeul\FileAssocBackup"

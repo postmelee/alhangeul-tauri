@@ -47,5 +47,19 @@ Noto Sans KR OFL 원문이 함께 들어간다. 일회성 thumbnail worker는 1,
 | `D2Coding-Regular.woff2` | SIL OFL 1.1 | Naver D2 Coding |
 | `LatinModernMath-Regular.woff2` | GUST Font License | Latin Modern Math |
 | `SpoqaHanSans-Regular.woff2` | SIL OFL 1.1 | Spoqa Han Sans |
-| `Cafe24*.woff2` | Cafe24 무료 폰트 라이선스 | Cafe24 |
+| `Cafe24*.woff2` | SIL OFL 1.1 (공식 배포 PDF 동봉) | Cafe24 |
 | `Happiness*.woff2` | SIL OFL 1.1 (공식 배포물의 라이선스 PDF 확인) | [현대백화점 Happiness Sans](https://thehyundaifont.com/) |
+
+### 웹폰트 고지와 원본 대응
+
+배포 파일별 SHA-256·저작권·적용 원문은 [font-notices.json](licenses/font-notices.json)에 연결한다.
+대응 원문 16개(공식 PDF 포함)와 이 manifest를 설치 폴더의 `licenses/fonts/`에 동봉한다.
+고지는 고정 rhwp v0.9.0 (`c9095c5f67632e6721e800ccc7fb43ea49d26682`)에서 가져왔고,
+카페24 PDF 두 개는 공식 ZIP의 바이트와 대조했다. Happiness PDF는 공식 배포 원문이다.
+Latin Modern Math에는 GUST와 참조되는 LPPL 1.3c 전문을 함께 동봉한다.
+
+나눔고딕·나눔고딕코딩·나눔명조 Regular는 예약 이름을 유지하는 부분 폰트 대신 고정 upstream의
+전체 원본 WOFF2를 사용한다. 공식 TTF SHA·이름·문자 매핑·폭을 대조했고, 기존 문자 전체의
+윤곽과 수평 metrics 변화는 없었다. 새 문자 coverage는 각각 409·970·406개 늘었다.
+이는 모든 문서의 시각 일치를 보장하는 주장이 아니며 설치 산출물 검증과 구분한다.
+다른 폰트의 기존 bytes가 upstream과 다르면 원본 무수정 대응을 추정하지 않고 manifest에 표시한다.

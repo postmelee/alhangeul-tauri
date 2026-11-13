@@ -3,6 +3,7 @@ import { setupDesktopEvents } from './desktop-events';
 
 const tauriListen = vi.hoisted(() => vi.fn());
 const ensureDesktopUpdater = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
+const showFirstRunPrivacyNotice = vi.hoisted(() => vi.fn());
 const currentWindow = vi.hoisted(() => ({
   listen: vi.fn(),
   onCloseRequested: vi.fn(),
@@ -10,6 +11,7 @@ const currentWindow = vi.hoisted(() => ({
 
 vi.mock('@tauri-apps/api/event', () => ({ listen: tauriListen }));
 vi.mock('./desktop-updater', () => ({ ensureDesktopUpdater }));
+vi.mock('../ui/privacy-notice', () => ({ showFirstRunPrivacyNotice }));
 vi.mock('@tauri-apps/api/webviewWindow', () => ({
   getCurrentWebviewWindow: () => currentWindow,
 }));
@@ -28,6 +30,7 @@ describe('desktop events', () => {
 
     expect(tauriListen).not.toHaveBeenCalled();
     expect(ensureDesktopUpdater).not.toHaveBeenCalled();
+    expect(showFirstRunPrivacyNotice).not.toHaveBeenCalled();
     expect(currentWindow.listen).not.toHaveBeenCalled();
   });
 
@@ -46,6 +49,7 @@ describe('desktop events', () => {
     const dispose = await setupDesktopEvents(options({ host, setMessage }));
 
     expect(ensureDesktopUpdater).toHaveBeenCalledWith(setMessage);
+    expect(showFirstRunPrivacyNotice).toHaveBeenCalledOnce();
 
     await windowHandlers.get('alhangeul-open-paths')?.({
       payload: { paths: ['/documents/older.hwp', '/documents/latest.HWPX'] },

@@ -277,6 +277,18 @@ jobs:
         if: inputs.run_tests && matrix.name == 'windows-x64'
         run: pnpm run clippy:thumbnail-handler:windows
 
+      - name: Record target-filtered native notice review graph
+        run: node scripts/privacy/collect-native-notice-closure.mjs "${{ matrix.target }}" "diagnostics/native-notices-${{ matrix.name }}/closure.json"
+
+      - name: Upload native notice review graph
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: alhangeul-${{ matrix.name }}-native-notices
+          path: diagnostics/native-notices-${{ matrix.name }}/closure.json
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Build Tauri bundles
         shell: bash
         run: pnpm tauri build --verbose --target "${{ matrix.target }}" ${{ matrix.bundle_args }}

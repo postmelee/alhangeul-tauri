@@ -217,3 +217,21 @@ html:not(.alhangeul-toolbar-ready) .tb-note-group,
   box-sizing: border-box;
   text-decoration: none;
 }
+
+.privacy-notice-dialog {
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 32px);
+}
+
+.privacy-notice-dialog .dialog-body {
+  overflow-y: auto;
+}
+
+.privacy-notice-text {
+  max-height: 38vh;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: inherit;
+  line-height: 1.6;
+}

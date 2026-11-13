@@ -21,7 +21,7 @@ export function createUpdatePreferences(): HTMLElement {
     checkbox.checked = enabled;
     status.textContent = enabled ? '자동 확인이 켜져 있습니다.' : '자동 확인이 꺼져 있습니다. 수동 확인은 사용할 수 있습니다.';
   }).catch(() => {
-    status.textContent = '설정을 읽지 못해 이번 시작의 자동 확인을 건너뛰었습니다. 여기서 다시 저장할 수 있습니다.';
+    status.textContent = '저장된 선택을 읽지 못했습니다. 여기서 설정을 다시 저장할 수 있습니다.';
   }).finally(() => { checkbox.disabled = false; });
   checkbox.addEventListener('change', () => {
     const enabled = checkbox.checked;

@@ -1,6 +1,7 @@
 import { AboutDialog as UpstreamAboutDialog } from '@upstream/ui/about-dialog';
 import { isTauriRuntime } from '../core/platform';
 import { showUpdateDialog } from './update-dialog';
+import { showPrivacyNotice } from './privacy-notice';
 import { thumbnailDiagnosticsAvailable } from '../core/desktop-thumbnail-diagnostics';
 
 export class AboutDialog extends UpstreamAboutDialog {
@@ -28,6 +29,14 @@ export class AboutDialog extends UpstreamAboutDialog {
         });
       });
       alhangeulVersion.insertAdjacentElement('afterend', updateButton);
+      const privacyButton = document.createElement('button');
+      privacyButton.className = 'dialog-btn about-privacy-button';
+      privacyButton.textContent = '개인정보 안내…';
+      privacyButton.addEventListener('click', () => {
+        this.hide();
+        showPrivacyNotice();
+      });
+      body.appendChild(privacyButton);
     }
 
     if (thumbnailDiagnosticsAvailable()) {
