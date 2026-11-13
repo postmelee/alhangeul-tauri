@@ -16,7 +16,13 @@ foreach ($kind in @('nsis','msi')) {
     $install = Start-Process msiexec.exe -ArgumentList @('/i',"`"$installer`"",'/qn','/norestart') -Wait -PassThru
   }
   if ($install.ExitCode -notin @(0,3010)) { throw "Install $kind failed: $($install.ExitCode)" }
-  $files = @(Get-ChildItem $root -Recurse -File)
+  if (-not (Test-Path -LiteralPath (Join-Path $root 'Alhangeul.exe'))) {
+    $priorRoot = Join-Path $env:LOCALAPPDATA 'Alhangeul'
+    if ($kind -eq 'msi' -and (Test-Path -LiteralPath (Join-Path $priorRoot 'Alhangeul.exe'))) { $root = $priorRoot }
+    else { throw 'Installed app absent at expected and inherited product paths' }
+  }
+  Write-Host "Inspecting $kind product directory"
+  $files = @(Get-ChildItem -LiteralPath $root -Recurse -File)
   if (-not ($files.Name -contains 'Alhangeul.exe')) { throw 'Installed app absent' }
   $binaries = @($files | Where-Object {$_.Extension -in @('.exe','.dll')} | ForEach-Object {
     $signature=Get-AuthenticodeSignature $_.FullName
@@ -26,6 +32,7 @@ foreach ($kind in @('nsis','msi')) {
     @{path=$_.FullName.Substring($root.Length);sha256=(Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower();bytes=$_.Length}
   })
   $rows += @{kind=$kind; binaries=$binaries; noticeFiles=$notices}
+  $rows | ConvertTo-Json -Depth 8 | Set-Content (Join-Path $out 'windows-package-audit.json')
   if ($kind -eq 'nsis') {
     $remove=Start-Process (Join-Path $root 'uninstall.exe') -ArgumentList '/S' -Wait -PassThru
   } else {
