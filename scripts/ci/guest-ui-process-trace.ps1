@@ -1,42 +1,65 @@
-# Read-only kernel process observations, restricted to the two relevant executable names.
-function Start-GuestProcessTrace {
-  $trace = @{ sources = @{} }
+# Owned ETW session; raw ETL stays in protected guest storage and is never published.
+function Start-GuestProcessTrace([string]$Directory) {
+  $provider = Get-WinEvent -ListProvider 'Microsoft-Windows-Kernel-Process'
+  if ($provider.Id -ne [guid]'22fb2cd6-0e7b-422b-a0c7-2fad1fd0e716') { throw 'unexpected-kernel-provider' }
+  $name = 'AlhGuestProcess-' + [guid]::NewGuid().ToString()
+  $trace = @{ name = $name; file = (Join-Path $Directory ($name + '.etl')); active = $false }
+  if (-not (Test-Path -LiteralPath $Directory -PathType Container) -or (Test-Path $trace.file)) { throw 'fresh-trace-directory-required' }
   try {
-    foreach ($kind in @('Start', 'Stop')) {
-      $source = 'AlhGuestProcess-' + $kind + '-' + [guid]::NewGuid().ToString()
-      $query = "SELECT * FROM Win32_Process" + $kind + "Trace WHERE ProcessName='AlhangeulThumbnailWorker.exe' OR ProcessName='dllhost.exe'"
-      # Kernel StopTrace truncates this executable's name on observed Windows versions.
-      if ($kind -eq 'Stop') { $query += " OR ProcessName='AlhangeulThumb'" }
-      Register-WmiEvent -Namespace 'root\cimv2' -Query $query -SourceIdentifier $source | Out-Null
-      $trace.sources[$kind] = $source
-    }
+    & "$env:SystemRoot\System32\logman.exe" start $name -p 'Microsoft-Windows-Kernel-Process' 0x10 5 -o $trace.file -f bincirc -max 16 -bs 64 -nb 2 8 -ct perf -ets *> $null
+    if ($LASTEXITCODE -ne 0) { throw 'kernel-trace-start-failed' }
+    $trace.active = $true
     return $trace
   } catch { Clear-GuestProcessTrace $trace; throw }
 }
-function Read-GuestProcessTrace($Trace) {
-  $rows = @()
-  foreach ($kind in @('Start', 'Stop')) {
-    foreach ($event in @(Get-Event -SourceIdentifier $Trace.sources[$kind] -ErrorAction SilentlyContinue)) {
-      $value = $event.SourceEventArgs.NewEvent
-      $names = @('AlhangeulThumbnailWorker.exe', 'dllhost.exe')
-      if ($kind -eq 'Stop') { $names += 'AlhangeulThumb' }
-      if ($value.ProcessName -notin $names) { throw 'unexpected-process-trace-name' }
-      $row = @{
-        kind = $kind; name = [string]$value.ProcessName
-        processId = [uint32]$value.ProcessID; parentProcessId = [uint32]$value.ParentProcessID
-        sessionId = [uint32]$value.SessionID; timeUtc = [DateTime]::FromFileTimeUtc([long]$value.TIME_CREATED).ToString('o')
-      }
-      if ($kind -eq 'Stop') { $row['exitStatus'] = [uint32]$value.ExitStatus }
-      $rows += $row
-      if ($rows.Count -gt 500) { throw 'process-trace-size-limit' }
-    }
+function Stop-GuestProcessTrace($Trace) {
+  if ($Trace -and $Trace.active) {
+    & "$env:SystemRoot\System32\logman.exe" stop $Trace.name -ets *> $null
+    if ($LASTEXITCODE -ne 0) { throw 'kernel-trace-stop-failed' }
+    $Trace.active = $false
   }
-  return @($rows | Sort-Object timeUtc)
+}
+function Convert-GuestTraceNumber([string]$Value) {
+  if ($Value.StartsWith('0x')) { return [Convert]::ToUInt32($Value.Substring(2), 16) }
+  return [uint32]$Value
+}
+function Convert-GuestProcessEvent($Event) {
+  if ($Event.ProviderName -ne 'Microsoft-Windows-Kernel-Process' -or $Event.Id -notin @(1, 2)) { return }
+  [xml]$xml = $Event.ToXml()
+  $fields = @{}
+  foreach ($entry in $xml.Event.EventData.Data) { $fields[[string]$entry.Name] = [string]$entry.InnerText }
+  if (-not $fields.ContainsKey('ImageName') -or -not $fields.ContainsKey('ProcessID')) { throw 'kernel-process-schema-mismatch' }
+  $name = [IO.Path]::GetFileName($fields.ImageName)
+  if ($name -notin @('AlhangeulThumbnailWorker.exe', 'dllhost.exe')) { return }
+  $row = @{
+    kind = $(if ($Event.Id -eq 1) { 'Start' } else { 'Stop' }); name = $name
+    processId = (Convert-GuestTraceNumber $fields.ProcessID)
+    timeUtc = $Event.TimeCreated.ToUniversalTime().ToString('o'); clock = 'ETW-perf'
+  }
+  foreach ($field in @('ParentProcessID', 'SessionID')) {
+    if ($fields.ContainsKey($field)) { $row[$field] = Convert-GuestTraceNumber $fields[$field] }
+  }
+  if ($Event.Id -eq 2) {
+    if (-not $fields.ContainsKey('ExitCode')) { throw 'kernel-process-exit-schema-mismatch' }
+    $row['exitStatus'] = Convert-GuestTraceNumber $fields.ExitCode
+  }
+  return $row
+}
+function Read-GuestProcessTrace($Trace) {
+  Stop-GuestProcessTrace $Trace
+  if ((Get-Item -LiteralPath $Trace.file).Length -gt 17MB) { throw 'kernel-trace-file-size-limit' }
+  $rows = [Collections.Generic.List[object]]::new(); $count = 0
+  Get-WinEvent -Path $Trace.file -Oldest | ForEach-Object {
+    $count++
+    if ($count -gt 20000) { throw 'kernel-trace-event-limit' }
+    $row = Convert-GuestProcessEvent $_
+    if ($row) { $rows.Add($row) }
+    if ($rows.Count -gt 500) { throw 'process-trace-size-limit' }
+  }
+  return @($rows.ToArray() | Sort-Object { [DateTime]$_.timeUtc })
 }
 function Clear-GuestProcessTrace($Trace) {
   if (-not $Trace) { return }
-  foreach ($source in @($Trace.sources.Values)) {
-    Unregister-Event -SourceIdentifier $source -ErrorAction SilentlyContinue
-    Get-Event -SourceIdentifier $source -ErrorAction SilentlyContinue | Remove-Event -ErrorAction SilentlyContinue
-  }
+  Stop-GuestProcessTrace $Trace
+  if (Test-Path -LiteralPath $Trace.file) { Remove-Item -LiteralPath $Trace.file -Force }
 }

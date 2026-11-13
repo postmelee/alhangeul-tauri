@@ -7,6 +7,7 @@ function Measure-GuestProvider([ValidateSet('provider', 'cache-default', 'cache-
     RedirectStandardOutput = $true; RedirectStandardError = $true
   }
   $started = $false; $result = $null; $childId = $null
+  $startedAt = [DateTime]::UtcNow.ToString('o')
   try {
     $started = $process.Start()
     if (-not $started) { throw 'provider-child-start' }
@@ -19,7 +20,7 @@ function Measure-GuestProvider([ValidateSet('provider', 'cache-default', 'cache-
   } finally {
     if ($started -and -not $process.HasExited) { $process.Kill(); [void]$process.WaitForExit(5000) }
     if ($started -and $Mode -eq 'provider') { $report['providerChildReaped'] = $process.HasExited; $report['providerChildProcessId'] = $childId }
-    if ($result) { $result | Add-Member -NotePropertyName childProcessId -NotePropertyValue $childId; $result | Add-Member -NotePropertyName childReaped -NotePropertyValue $process.HasExited }
+    if ($result) { $result | Add-Member -NotePropertyName startedAt -NotePropertyValue $startedAt; $result | Add-Member -NotePropertyName finishedAt -NotePropertyValue ([DateTime]::UtcNow.ToString('o')); $result | Add-Member -NotePropertyName childProcessId -NotePropertyValue $childId; $result | Add-Member -NotePropertyName childReaped -NotePropertyValue $process.HasExited }
     $process.Dispose()
   }
   return $result

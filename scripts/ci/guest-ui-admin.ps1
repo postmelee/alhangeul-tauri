@@ -28,7 +28,7 @@ try {
     try {
       if ($operation -eq 'prerequisites') {
         $result['packages'] = @(Install-GuestPrerequisites)
-        if ($inputData.scenario -eq 'nsis-upgrade') { $trace = Start-GuestProcessTrace; $result['processTraceStarted'] = $true }
+        if ($inputData.scenario -eq 'nsis-upgrade') { $trace = Start-GuestProcessTrace $results; $result['processTraceStarted'] = $true }
         $result.exitCode = 0
       } elseif ($operation -eq 'trace-stop') {
         $result['events'] = @(Read-GuestProcessTrace $trace)
