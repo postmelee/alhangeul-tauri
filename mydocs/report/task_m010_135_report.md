@@ -75,3 +75,6 @@ Stage 5에서 양 OS TLS 요청 내부, HWP/HWPX 편집·native staged 저장·�
 
 ## Stage 6 전체 조건 감사
 [조건별 감사](../working/task_m010_135_stage6.md)에서 고정 의존성 1,316개 archive 무결성, 공개 NSIS/MSI 설치 산출물의 signature·metadata·notice와 제거를 확인했다. worker/DLL 제품명·버전 resource 부재, 별도 notice 구성 부족, 공개 URL 404를 확인해 전체 충족 판정을 유지 보류한다. 사용자 승인한 사전 문의를 실제 발송했고 답변 대기 중이다. 아직 제품 보완·브라우저 승인·정책 공개 및 가입 후 SignPath 설정 검증이 남아 있어 Task #135 전체 완료가 아니다.
+
+## 정책 공개 승인
+2026-11-14 작업지시자가 브라우저에서 확인했고 정책 PR·배포를 승인했다. Stage 1~6의 정책·검증 자료를 먼저 devel PR로 통합하고 exact commit Pages 배포를 수행한다. 이 승인은 앱 신규 릴리스나 SignPath 신청/계정 생성 승인이 아니다. 제품 보완은 정책 공개 뒤 후속 단계로 진행하며 이슈 #135는 유지한다.
