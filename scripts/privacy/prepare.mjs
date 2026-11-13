@@ -1,7 +1,7 @@
 import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 const kind = process.argv[2];
-const suffix = { windows: '_x64-setup.exe', linux: '_amd64.AppImage' }[kind];
+const suffix = { windows: '_x64-setup.exe', 'windows-msi': '_x64_en-US.msi', linux: '_amd64.AppImage' }[kind];
 if (!suffix) throw new Error('unsupported observation platform');
 const inputs = JSON.parse(readFileSync('tests/gui/production-upgrade-v0.1.3-inputs.json'));
 const release = Object.values(inputs.releases).find(value => value.version === '0.1.3');

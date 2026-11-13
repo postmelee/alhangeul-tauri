@@ -5,7 +5,7 @@ on:
       depth:
         type: choice
         default: startup
-        options: [startup, deep]
+        options: [startup, deep, package-audit]
         description: Direct startup metadata or TLS and lifecycle inspection.
       platform:
         type: choice
@@ -38,6 +38,10 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libfuse2 dbus-x11 libgtk-3-0 libwebkit2gtk-4.1-0 xvfb openbox strace imagemagick fonts-noto-cjk
+      - name: Audit public Windows packages
+        if: runner.os == 'Windows' && inputs.depth == 'package-audit'
+        shell: pwsh
+        run: ./scripts/privacy/audit-windows-packages.ps1
       - name: Install TLS inspection tooling
         if: inputs.depth == 'deep'
         run: python -m pip install mitmproxy==11.0.2
@@ -54,10 +58,10 @@ jobs:
         shell: pwsh
         run: ./scripts/privacy/deep-windows.ps1
       - name: Observe Linux startup and idle connections
-        if: runner.os == 'Linux' && inputs.depth != 'deep'
+        if: runner.os == 'Linux' && inputs.depth == 'startup'
         run: dbus-run-session -- bash scripts/privacy/observe-linux.sh
       - name: Observe Windows startup and idle connections
-        if: runner.os == 'Windows' && inputs.depth != 'deep'
+        if: runner.os == 'Windows' && inputs.depth == 'startup'
         shell: pwsh
         run: ./scripts/privacy/observe-windows.ps1
       - name: Preserve metadata and screenshots only

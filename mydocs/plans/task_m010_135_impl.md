@@ -66,3 +66,8 @@ GitHub Issue: [#135](https://github.com/postmelee/alhangeul-tauri/issues/135)
 신청 요건 조사에서 `assets/fonts/FONTS.md`의 Happiness 출처가 실제 파일 name table 저작권(THE HYUNDAI)과 공식 제공자 안내와 다름을 확인했다. 기존 제품 자산 manifest 위치에서 해당 행만 정정하고, 무료 재배포 가능성·원문 라이선스 동봉·SignPath의 OSI 적격 판단을 혼동하지 않도록 조사 보고에 기록한다. 폰트 바이너리나 upstream은 변경하지 않는다.
 
 정책의 긴 로그 경로가 모바일에서 넘치지 않도록 기존 site/styles.css의 updates-section code에 줄바꿈을 허용한다. 정책 공개 페이지 검증 범위에 포함한다.
+
+## Stage 6 — 전체 신청 조건 판정 (2026-11-14 후속 지시)
+사용자의 전체 요건 충족 판정까지 검증하라는 지시에 따라 공식 조건별 수용표를 만들고, 공개 URL·팀 권한·릴리스 출처·설치 안내/선택권·라이선스 고지를 점검한다. Stage 5 성공을 전체 적격성으로 확대하지 않는다. 라이선스 검사는 exact lockfile과 로컬 cached package manifest/원문 존재를 대조하며 누락 자료는 미확인으로 표시한다. 산출물은 기존 scripts/privacy와 working/assets/task135, working/task_m010_135_stage6.md에 둔다. 제공자의 해석이 필요한 항목은 구체적인 문의 초안까지만 준비하며 외부 발송·신청·계정 생성은 하지 않는다. PR·배포의 사용자 승인 게이트는 유지한다.
+
+Stage 6 Windows 공개 NSIS·MSI를 exact hash로 확인해 일회용 실행기에서 각각 설치·제거한다. PE product/version/signature, 설치된 license/notice 파일의 목록·hash를 보존한다. 서명을 새로 만들거나 바이너리를 수정하지 않는다. 신규 package-audit 관측 모드만 실행하며 성공한 TLS 시험은 반복하지 않는다.
