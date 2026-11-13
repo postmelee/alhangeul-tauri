@@ -594,3 +594,12 @@ Windows 최소 수정: 기존 frame 선택 1,500ms와 256MiB/active process 1/�
 
 
 재개(2026-11-14): 작업지시자의 계속 진행 승인과 T7 연결을 확인했다. full 검증을 막은 pdf_temp_cleanup.rs의 cfg별 bool 표현을 최소 정리한다. Windows는 symlink 또는 reparse 속성, Linux는 symlink 판정이라는 기존 동작을 보존한다. 기존 Linux symlink/Windows junction 보존 회귀와 desktop clippy를 각 지원 OS CI에서 재검증한다. 새 문서 위치는 추가하지 않으며 오늘할일은 기존 형식의 20261114.md로 이어간다. 미커밋 worker 진단 label 변경은 새 artifact 고정과 함께 후속 harness에 반영한다.
+
+
+재개 검증 후보 ece8bb5e46a1a81e4d74ad2f1dbf84bde7fd59d4를 게시하고 full run 43453382283(scope=full/profile=full/thumbnail_same_version_upgrade=true)을 시작했다. 로컬 automation 1,421/1,421, boundary 904 files, diff가 통과했다. 이전 run43405485144의 최종 전체 conclusion은 cancelled이고 ARM64 lint/집계 job은 failure였음을 구분한다. 아직 새 제품을 수용하지 않는다.
+
+
+새 후보의 Windows/Linux core와 native 테스트·clippy가 통과했다. Linux x64/ARM64의 symlink 보존 회귀 및 Windows junction 보존 회귀가 성공했고, Windows handler의 warm/cold 시작·전체 예산 상한·만료 후 queued frame 거부 회귀 3개도 성공했다. Windows artifact 14059615097(186,401,417 bytes), ZIP digest e799040e52d81e670eda4ed9080c7d8f6a3a0d1321c1088cf68a2f8f17ba0bb9를 다운로드해 source ece8bb5e와 내부 MSI/NSIS/DLL/Worker inventory 해시를 검증했다. 새 handler/worker의 PE import에서도 외부 VC 런타임 의존성이 없었다. 전체 생산 run은 아직 설치 검사 진행 중이므로 수용하지 않는다. 후속 harness의 네 source/run/artifact/digest 참조와 진단의 5,000ms/1,500ms 표기를 로컬에 준비했고 automation 1,421/1,421, boundary 904 files, diff가 통과했다. 생산 run 전체 성공 확인 후에만 이 harness를 게시·실행한다.
+
+
+run43453382283 attempt 1 전체 success를 확인했다. 세 플랫폼 core/native/package와 Windows installer 계약·일반 사용자 NSIS 및 공개 v0.1.3 동일 버전 수동 업그레이드가 통과했다. NSIS elevated 진단과 MSI forced-reinstall의 조건부 계약은 실제 client 화면이나 재부팅 후 수용을 대체하지 않는다. 확인된 artifact 14059615097/e799040e52d81e670eda4ed9080c7d8f6a3a0d1321c1088cf68a2f8f17ba0bb9를 고정한 후속 harness를 게시하고 Windows 11/10 × NSIS/MSI/NSIS-upgrade 여섯 독립 guest를 실행한다. 화면 10/30/60초와 최초 후보 요청·정리 결과를 모두 검토하며 PR 전 보고를 유지한다.

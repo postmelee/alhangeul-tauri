@@ -40,7 +40,8 @@ function Measure-GuestWorker($Directory) {
   if ((Get-FileHash $request -Algorithm SHA256).Hash.ToLowerInvariant() -cne $inputData.workerDiagnostic.requestSha256) { throw 'worker-request-hash-mismatch' }
   $worker = Join-Path $Directory 'AlhangeulThumbnailWorker.exe'
   Assert-GuestBinaries $inputData.binaries $Directory
-  $result = @{ status = 'failed'; handlerDeadlineMs = 1500; request = $inputData.workerDiagnostic; frames = @(); processReaped = $false }
+  $result = @{ status = 'failed'; handlerRequestDeadlineMs = 5000; handlerFrameDeadlineMs = 1500;
+    request = $inputData.workerDiagnostic; frames = @(); processReaped = $false }
   $process = [Diagnostics.Process]::new()
   $process.StartInfo = [Diagnostics.ProcessStartInfo]@{
     FileName = $worker; UseShellExecute = $false; CreateNoWindow = $true

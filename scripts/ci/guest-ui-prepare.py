@@ -22,7 +22,7 @@ def operating_system():
 ISO_URL = operating_system()["url"]
 ISO_SHA = operating_system()["sha256"]
 ISO_SIZE = operating_system()["bytes"]
-PRODUCT_SHA = "1e08891d6411e17806a5b3a48635a5fbca7a639f"
+PRODUCT_SHA = "ece8bb5e46a1a81e4d74ad2f1dbf84bde7fd59d4"
 
 
 def digest(path):

@@ -5,9 +5,9 @@ import { fileURLToPath } from 'node:url';
 
 export const candidate = Object.freeze({
   repository: 'postmelee/alhangeul-tauri',
-  source: '1e08891d6411e17806a5b3a48635a5fbca7a639f',
-  run: 43241666433, artifact: 13960733196,
-  digest: 'sha256:b9a9f28916954bcf6f7cef1b86904e09b38583a38421224c64e44fafd07267cf',
+  source: 'ece8bb5e46a1a81e4d74ad2f1dbf84bde7fd59d4',
+  run: 43453382283, artifact: 14059615097,
+  digest: 'sha256:e799040e52d81e670eda4ed9080c7d8f6a3a0d1321c1088cf68a2f8f17ba0bb9',
 });
 export function verifyProducer(run, artifact) {
   if (run.id !== candidate.run || run.head_sha !== candidate.source || run.conclusion !== 'success'
