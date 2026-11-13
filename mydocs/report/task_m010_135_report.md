@@ -71,3 +71,7 @@ Stage 5에서 양 OS TLS 요청 내부, HWP/HWPX 편집·native staged 저장·�
 
 ## Stage 5 후속 결과
 [심화 검증 보고](../working/task_m010_135_stage5.md)에 exact run·실패/재시도·증거와 한계를 기록했다. 정책과 Code signing policy 초안, 실제 신청 폼 필드를 준비했다. 공개 정책은 아직 배포 전이며 사용자의 최종 브라우저 승인 전 PR·배포를 하지 않는다. 현재 신청 요건 전체 충족이나 SignPath 후원·서명을 선언하지 않는다.
+
+
+## Stage 6 전체 조건 감사
+[조건별 감사](../working/task_m010_135_stage6.md)에서 고정 의존성 1,316개 archive 무결성, 공개 NSIS/MSI 설치 산출물의 signature·metadata·notice와 제거를 확인했다. worker/DLL 제품명·버전 resource 부재, 별도 notice 구성 부족, 공개 URL 404를 확인해 전체 충족 판정을 유지 보류한다. 사용자 승인한 사전 문의를 실제 발송했고 답변 대기 중이다. 아직 제품 보완·브라우저 승인·정책 공개 및 가입 후 SignPath 설정 검증이 남아 있어 Task #135 전체 완료가 아니다.
