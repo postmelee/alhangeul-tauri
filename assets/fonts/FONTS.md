@@ -48,4 +48,4 @@ Noto Sans KR OFL 원문이 함께 들어간다. 일회성 thumbnail worker는 1,
 | `LatinModernMath-Regular.woff2` | GUST Font License | Latin Modern Math |
 | `SpoqaHanSans-Regular.woff2` | SIL OFL 1.1 | Spoqa Han Sans |
 | `Cafe24*.woff2` | Cafe24 무료 폰트 라이선스 | Cafe24 |
-| `Happiness*.woff2` | 행복고흥 무료 폰트 라이선스 | 행복고흥 |
+| `Happiness*.woff2` | SIL OFL 1.1 (공식 배포물의 라이선스 PDF 확인) | [현대백화점 Happiness Sans](https://thehyundaifont.com/) |
