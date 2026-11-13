@@ -1,0 +1,27 @@
+{
+  "freshSilentInstallChoiceAbsent": true,
+  "scope": "Synthetic choice-file preservation by the installer; actual UI/TLS is verified separately.",
+  "postRebootValidated": false,
+  "uninstallRetainedLastChoice": true,
+  "disclosureCloseChoiceAbsent": true,
+  "reinstallMode": "NSIS /S with existing installation",
+  "initialInstallExitCode": 0,
+  "rebootRequired": false,
+  "reinstall": [
+    {
+      "rebootRequired": false,
+      "reinstallPreserved": true,
+      "sha256": "a270a7703ba4ead76c1fbffde498a47b68e9e49481e3d9d091ad60932e359ab4",
+      "exitCode": 0,
+      "automaticChecks": true
+    },
+    {
+      "rebootRequired": false,
+      "reinstallPreserved": true,
+      "sha256": "de2301676d8e57fe8658633f76dca9563e80ae70c4f9ec3ac5525fecbcfd42b1",
+      "exitCode": 0,
+      "automaticChecks": false
+    }
+  ],
+  "uninstallExitCode": 0
+}

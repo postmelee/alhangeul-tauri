@@ -31,7 +31,7 @@ try {
       const family='Task135Font${index}';const face=new FontFace(family,bytes);await face.load();document.fonts.add(face);
       const panel=document.querySelector('#task135-font-observation');
       const heading=document.createElement('h2');heading.style.cssText='font-size:18px;margin:14px 0 6px';heading.textContent=${JSON.stringify(font.file)};panel.append(heading);
-      const sample=document.createElement('p');sample.style.fontFamily=family;sample.style.fontSize='24px';sample.style.lineHeight='1.4';sample.style.whiteSpace='pre-line';sample.style.margin='0 0 16px';
+      const sample=document.createElement('p');sample.dataset.fontFile=${JSON.stringify(font.file)};sample.style.fontFamily=family;sample.style.fontSize='24px';sample.style.lineHeight='1.4';sample.style.whiteSpace='pre-line';sample.style.margin='0 0 16px';
       sample.textContent=${JSON.stringify('가나다라마바사 한글 문서 · 훈민정음\nAlhangeul ABC xyz 0123456789')};panel.append(sample);
       await document.fonts.ready;
       const bounds=sample.getBoundingClientRect();
@@ -42,8 +42,20 @@ try {
     assert.equal(sha256, font.sha256, `Installed font differs: ${font.file}`);
     results.push({ file: font.file, sha256, loaded: true });
   }
+  const rendering = await transport.evaluate(`(async () => {
+    await document.fonts.ready;
+    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+    await new Promise(resolve=>setTimeout(resolve,250));
+    const samples=Array.from(document.querySelectorAll('#task135-font-observation [data-font-file]'),sample=>{
+      const bounds=sample.getBoundingClientRect();
+      if(bounds.width<=0 || bounds.height<20 || bounds.top<0 || bounds.bottom>innerHeight-20)throw new Error('Font sample not fully visible at capture');
+      return {file:sample.dataset.fontFile,left:bounds.left,top:bounds.top,width:bounds.width,height:bounds.height};
+    });
+    if(samples.length!==3)throw new Error('Expected three rendered font samples');
+    return {samples,paintFramesAwaited:2,settleMilliseconds:250,devicePixelRatio};
+  })()`);
   await writeFile(`privacy-evidence/${label}-bundled-fonts.png`, await transport.capture());
-  await writeFile(`privacy-evidence/${label}-bundled-fonts.json`, `${JSON.stringify({ scope: 'Actual installed WebView FontFace loading and synthetic text; not document-layout equivalence.', fonts: results }, null, 2)}\n`);
+  await writeFile(`privacy-evidence/${label}-bundled-fonts.json`, `${JSON.stringify({ scope: 'Actual installed WebView FontFace loading and synthetic text; not document-layout equivalence.', fonts: results, rendering }, null, 2)}\n`);
 } finally {
   await transport.evaluate(`document.querySelector('#task135-font-observation')?.remove()`).catch(() => {});
   await transport.close();

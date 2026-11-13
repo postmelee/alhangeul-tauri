@@ -135,3 +135,5 @@ Stage 7.7에서 추가된 filename gap 6개 모두 검증된 crate checksum·Car
 후속 product producer를 소비할 수 있도록 candidate-audit에 승인된 두 producer workflow(`ci.yml`, `alhangeul-desktop.yml`)의 명시 선택만 추가한다. 입력 allowlist·원격 run path·성공 상태·source·artifact digest 확인은 유지하며 임의 workflow나 진행 중/실패 producer를 허용하지 않는다. 기본값은 기존 ci.yml이다.
 
 34850d42의 실제 NSIS 화면은 첫 Windows 줄이 보였으나 소비자에서 managed `GetBoundingRectangles()` 반환형을 COM flat double array로 잘못 처리했다. Rect[]의 Left/Top/Right/Bottom으로 판정하고 실제 좌표를 JSON에 남긴다. visible 검사 자체를 생략하거나 정적 문자열로 대체하지 않는다. 제품 bytes를 바꾸지 않고 동일 producer의 Windows 소비자만 재검증한다.
+
+34850d42 Linux 소비자는 고지 hash·FontFace/DOM 경계를 통과했지만 실제 screenshot에는 표본 paint가 반영되지 않았다. font load와 screenshot 사이 두 animation frame·짧은 compositor 대기를 두고 캡처 시점의 표본 경계를 기록한다. 시각 수용은 보류하며 새 고지 package exact 소비자에서 다시 확인한다. 동일 font/source의 로딩 증거와 이전 실제 화면은 각각 구분해 보존하고, 이 harness-only 보완을 제품 결함이나 새 binary 수용으로 부르지 않는다.
