@@ -9,7 +9,9 @@ function Set-TestRequest([byte]$Mode) {
   [IO.File]::WriteAllBytes($request, [byte[]]@($Mode))
   $script:inputData.workerDiagnostic.requestSha256 = (Get-FileHash $request -Algorithm SHA256).Hash.ToLowerInvariant()
 }
+$savedEncoding = [Console]::InputEncoding
 try {
+  [Console]::InputEncoding = [Text.UTF8Encoding]::new($true)
   New-Item -ItemType Directory -Path (Join-Path $root 'verification') | Out-Null
   $executable = Join-Path $root 'AlhangeulThumbnailWorker.exe'
   Add-Type -OutputAssembly $executable -OutputType ConsoleApplication -TypeDefinition @'
@@ -31,7 +33,8 @@ public static class GuestWorkerFixture {
   public static void Main() {
     Stream input = Console.OpenStandardInput(), output = Console.OpenStandardOutput();
     int mode = input.ReadByte();
-    while (input.ReadByte() >= 0) {}
+    int extra = input.ReadByte();
+    if (mode < 0 || mode > 2 || extra >= 0) { Environment.Exit(5); }
     if (mode == 1) { Thread.Sleep(30000); return; }
     Thread.Sleep(1700);
     byte[] header = Header(2, 4, 1, 1, 4);
@@ -64,5 +67,9 @@ public static class GuestWorkerFixture {
   $thrown = $false
   try { Measure-GuestWorker $root | Out-Null } catch { $thrown = $_.Exception.Message -eq 'worker-request-hash-mismatch' }
   Assert-WorkerCondition $thrown 'worker-request-mismatch-accepted'
-} finally { Remove-Item -LiteralPath $root -Recurse -Force }
+  Assert-WorkerCondition ([Console]::InputEncoding.GetPreamble().Length -eq 3) 'console-input-encoding-not-restored'
+} finally {
+  [Console]::InputEncoding = $savedEncoding
+  Remove-Item -LiteralPath $root -Recurse -Force
+}
 Write-Output 'Worker timing, malformed frame, request integrity and owned process timeout passed.'

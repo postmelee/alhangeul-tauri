@@ -1,4 +1,5 @@
 # Unrestricted timing diagnostic for the exact installed worker, never an acceptance substitute.
+. (Join-Path $PSScriptRoot '../windows-thumbnail-app-process.ps1')
 function Read-GuestWorkerBytes($Stream, [int]$Count, $Timer) {
   if ($Count -lt 0 -or $Count -gt 4MB) { throw 'worker-frame-size' }
   $bytes = New-Object byte[] $Count
@@ -47,7 +48,9 @@ function Measure-GuestWorker($Directory) {
   }
   $started = $false; $timer = [Diagnostics.Stopwatch]::StartNew()
   try {
-    $started = $process.Start()
+    $state = @{ processStarted = $false }
+    Start-AppDiagnosticProcess $process $state
+    $started = $state.processStarted
     if (-not $started) { throw 'worker-start-failed' }
     $result['processStartMs'] = $timer.ElapsedMilliseconds
     $errors = $process.StandardError.ReadToEndAsync()

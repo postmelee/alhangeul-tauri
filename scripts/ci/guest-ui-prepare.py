@@ -109,7 +109,7 @@ def prepare_media(root):
     payload = media / "payload"
     (payload / "scripts/ci").mkdir(parents=True)
     for suffix in ("diagnostics.ps1", "probe.ps1", "state.ps1", "native.cs",
-                   "interop.cs", "token.cs", "fixtures.json", "user-visual.ps1", "user-visual.cs"):
+                   "interop.cs", "token.cs", "fixtures.json", "user-visual.ps1", "user-visual.cs", "app-process.ps1"):
         shutil.copyfile("scripts/windows-thumbnail-" + suffix,
                         payload / ("scripts/windows-thumbnail-" + suffix))
     for name in ("guest-ui-probe.ps1", "guest-ui-installer-state.ps1", "hosted-ui-view.ps1",
