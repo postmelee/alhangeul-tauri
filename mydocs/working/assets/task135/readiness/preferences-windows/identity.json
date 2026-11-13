@@ -1,0 +1,10 @@
+{
+  "sourceSha": "456451a8ffae83213b8932e955939006187b2f2d",
+  "harnessSha": "456451a8ffae83213b8932e955939006187b2f2d",
+  "version": "0.1.3",
+  "asset": "Alhangeul_0.1.3_x64-setup.exe",
+  "size": 80117027,
+  "sha256": "3afb6934d7f8581c3af1c2ebf72b9caaaed63cdd8315072d4f253905150c8a98",
+  "configSha256": "0480f8385656ff322b5c29333751c7ce6d8f26b39fa10b51b0b10537c8950969",
+  "configuration": "Nonpublishing test build: existing public updater settings, createUpdaterArtifacts=false; no signing credentials."
+}

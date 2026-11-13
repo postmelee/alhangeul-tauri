@@ -208,9 +208,15 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: ./scripts/privacy/candidate-notices-windows.ps1
-      - name: Check actual Linux AppImage resources
+      - name: Prepare Linux installed-font observation
         if: runner.os == 'Linux'
-        run: bash scripts/privacy/candidate-notices-linux.sh
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libfuse2t64 dbus-x11 libgtk-3-0t64 libwebkit2gtk-4.1-0 xvfb openbox fonts-noto-cjk webkit2gtk-driver
+          cargo install tauri-driver --version 2.0.6 --locked
+      - name: Check actual Linux AppImage resources and fonts
+        if: runner.os == 'Linux'
+        run: dbus-run-session -- bash scripts/privacy/candidate-notices-linux.sh
       - name: Preserve exact identity, installed hashes and actual UI
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

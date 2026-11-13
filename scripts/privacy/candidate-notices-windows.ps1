@@ -19,6 +19,21 @@ foreach ($kind in @('nsis', 'msi')) {
     if (@($roots).Count -ne 1) { throw 'Expected exactly one installed product root' }
     node scripts/privacy/verify-installed-notices.mjs product-source $roots[0] (Join-Path $out "$kind-installed-notices.json")
     if ($LASTEXITCODE -ne 0) { throw 'Installed resource hash verification failed' }
+    $policy = 'HKLM:\SOFTWARE\Policies\Microsoft\Edge\WebView2\AdditionalBrowserArguments'
+    New-Item $policy -Force | Out-Null
+    New-ItemProperty $policy -Name 'Alhangeul.exe' -PropertyType String -Value '--remote-debugging-port=9222' -Force | Out-Null
+    $app = $null
+    try {
+      $app = Start-Process (Join-Path $roots[0] 'Alhangeul.exe') -PassThru
+      Start-Sleep 10
+      node scripts/privacy/capture-bundled-fonts.mjs $kind
+      if ($LASTEXITCODE -ne 0) { throw 'Actual bundled font rendering failed' }
+    } finally {
+      if ($app) { Stop-Process -Id $app.Id -Force -ErrorAction SilentlyContinue }
+      Remove-ItemProperty $policy -Name 'Alhangeul.exe' -ErrorAction SilentlyContinue
+      Start-Sleep 2
+    }
+
   } finally {
     if ($kind -eq 'nsis') {
       $root = Join-Path $env:LOCALAPPDATA 'Alhangeul'

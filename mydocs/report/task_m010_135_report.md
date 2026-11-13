@@ -125,3 +125,9 @@ run 43479164615의 Linux 관측 step과 증거 upload가 성공했다. exact sou
 실제 첫 실행 안내 화면에서 명시 checkbox 선택을 저장했다. 선택 없음/끄고 재시작/손상 설정의 자체 startup manifest 요청은 각 0건, 켠 뒤 재시작은 HTTP 200 1건이었다. 켜기 직후에는 요청하지 않았으며 수동 확인과 손상 설정 복구 뒤 수동 확인 각각 200 positive control을 확인했다. 스크린샷에서 기본 꺼짐/켜짐과 안내·닫기 버튼이 표시되는 것을 직접 확인했다. [증거](../working/assets/task135/readiness/preferences-linux/identity.json). 이 시험은 자체 업데이트 endpoint에 관한 것으로 OS·런타임 전체 무통신을 뜻하지 않는다. Windows 시험과 full/package/소비자 수용은 별도다.
 
 소비자 harness 60a0ba7d의 fast run [43483824931](https://github.com/postmelee/alhangeul-tauri/actions/runs/43483824931)은 Node/Studio와 Windows PowerShell parser·회귀 모두 성공했다. Linux 실제 선택 관측 job도 최종 성공했다. 새 full producer 43482991954는 native/package 단계가 진행 중이며 아직 설치본 소비자를 실행하지 않았다.
+
+## 실제 Windows 선택·재시작·TLS 수용
+run 43479164615 Windows 관측 step과 upload도 성공했다. 동일 source/config의 NSIS SHA-256은 `3afb6934d7f8581c3af1c2ebf72b9caaaed63cdd8315072d4f253905150c8a98`이다. 네 설정 phase가 모두 통과했고 기본/끄기/손상 자체 startup 요청 0건, 켜고 재시작 200 1건, 수동 positive control 200 두 건을 확인했다. Microsoft 구성 host 요청 2건은 자체 updater와 분리된다. 실제 기본 꺼짐·손상 안내 화면도 직접 확인했다. [Windows 증거](../working/assets/task135/readiness/preferences-windows/identity.json).
+
+## 실제 Studio 폰트 범위 보완
+제품 소유 assets의 27개가 전체 runtime 폰트 수는 아니었다. Vite는 고정 upstream public/fonts를 복사한 뒤 제품 WOFF2를 덮어쓴다. 합성 manifest로 실제 local dist의 40개(제품 override 27·upstream 13) 모두 hash·copyright·실제 복사된 원문 고지를 대조해 통과했다. 추가 13개의 bytes를 바꾸지 않았다. LMM Variable Outline OTF는 upstream repositoryOnlyFonts와 별도 provenance manifest에 연결된다. [전체 local build 대조](../working/assets/task135/readiness/built-font-coverage.json). 제품 소유 manifest와 upstream manifest를 합성해야 하며 기존 27개 테스트를 전체 font 수용이라고 해석하지 않는다. 설치본 소비자에는 변경한 나눔 3개 실제 WebView 로딩/hash/합성 표본 화면 검사도 추가했다.

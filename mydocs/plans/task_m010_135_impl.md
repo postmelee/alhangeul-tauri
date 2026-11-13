@@ -116,3 +116,5 @@ Rust 1.100.0 clippy가 기존 pdf_temp_cleanup의 비 Windows bool 분기 형태
 
 ### Stage 7 설치본 고지·화면 수용
 새 full producer가 성공하면 exact source SHA·run·artifact ID/digest를 검증하는 소비자 관측 모드에서 동일 Windows NSIS/MSI와 Linux AppImage를 재사용한다. 제품을 다시 빌드하지 않는다. Windows 설치 전 안내를 UI Automation과 screenshot으로 확인한 뒤 취소하고, silent 설치본의 모든 지정 고지·개인정보 안내 bytes를 producer source와 대조한 뒤 제거한다. Linux는 AppImage를 일회용 runner에서 추출해 동일 resource hash를 검사한다. OS 화면 실패는 정적 문자열 성공으로 대체하지 않는다. 소비자 harness는 기존 privacy workflow/scripts, 증거는 기존 task assets 경로를 사용한다.
+
+설치본 소비자에서 변경한 나눔 3개를 실제 Windows WebView2·Linux WebKit의 FontFace로 읽어 producer hash와 대조하고 합성 한글/영문 표본 화면을 보존한다. 제품 문서나 사용자 파일은 만들지 않는다. Linux 관측은 기존 tauri-driver의 고정 버전과 일회용 Xvfb를 사용한다. Studio는 upstream public/fonts 뒤 제품 override를 복사하므로 로컬 플랫폼 중립 Vite 산출물의 합집합 40개(제품 27·upstream 13)를 별도 읽기 검사한다. 이 검사는 설치본 bytes·모든 문서 시각 일치의 대체가 아니다.

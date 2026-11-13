@@ -1,0 +1,464 @@
+{
+  "scope": "Platform-neutral local Vite output; composite product overrides and pinned upstream public assets. Does not prove installed binary bytes or legal eligibility.",
+  "fonts": 40,
+  "productOverrides": 27,
+  "inheritedFonts": 13,
+  "rows": [
+    {
+      "file": "Cafe24Ssurround-v2.0.woff2",
+      "source": "product-override",
+      "sha256": "2d726dbf8863d66e6d5cf56e2532c5d14d8a4b514461b565c513c1da6ae2f41a",
+      "notices": [
+        {
+          "path": "fonts/licenses/Cafe24Ssurround-LICENSE.pdf",
+          "sha256": "de2158b3dc8aa27513451108fb09088f9afd8fce1d65c2cac29c7e554b37a7d9"
+        },
+        {
+          "path": "fonts/licenses/SIL-OFL-1.1.txt",
+          "sha256": "f19c674290e5dc79f02e8efe16139ab56a06a7128876f5b1579ffd0db5bc897e"
+        }
+      ]
+    },
+    {
+      "file": "Cafe24Supermagic-Regular-v1.0.woff2",
+      "source": "product-override",
+      "sha256": "65434a217b9532867a1fe41417d0ad51210a60027a51dca40748aafed48ef0ba",
+      "notices": [
+        {
+          "path": "fonts/licenses/Cafe24Supermagic-LICENSE.pdf",
+          "sha256": "bdf5e278410f73faaf5a34db9ad4ce328cabd673d8f699bd986869a690193511"
+        },
+        {
+          "path": "fonts/licenses/SIL-OFL-1.1.txt",
+          "sha256": "f19c674290e5dc79f02e8efe16139ab56a06a7128876f5b1579ffd0db5bc897e"
+        }
+      ]
+    },
+    {
+      "file": "D2Coding-Bold.woff2",
+      "source": "pinned-upstream",
+      "sha256": "cf59ac9e719ce9888870ec012cdf8cbc8ffdb632f823652d5b3ba3236ce6b7c8",
+      "notices": [
+        {
+          "path": "fonts/licenses/D2Coding-OFL.txt",
+          "sha256": "1807e8dec4d65f474cbf9be39f5e2254ecb81702babc320749e272ea66ffcc69"
+        }
+      ]
+    },
+    {
+      "file": "D2Coding-Regular.woff2",
+      "source": "product-override",
+      "sha256": "358df12fdf9b65d0fd31554a826f97af4eeefd96a047297a28a856315fe872c1",
+      "notices": [
+        {
+          "path": "fonts/licenses/D2Coding-OFL.txt",
+          "sha256": "1807e8dec4d65f474cbf9be39f5e2254ecb81702babc320749e272ea66ffcc69"
+        }
+      ]
+    },
+    {
+      "file": "GowunBatang-Bold.woff2",
+      "source": "pinned-upstream",
+      "sha256": "aef1b91ea9ea4688fb296044959b38dfeeaa3e1650af5d543a2b5c160fa30b36",
+      "notices": [
+        {
+          "path": "fonts/licenses/GowunBatang-OFL.txt",
+          "sha256": "49a57cc769fa9affd6eefb9070a61e3d3f6b757c97cafb15848bc6d1c81acc78"
+        }
+      ]
+    },
+    {
+      "file": "GowunBatang-Regular.woff2",
+      "source": "product-override",
+      "sha256": "0c6a288aa0c12081dccde769c312f71f290b353243747dd24fb8c57f94f01d72",
+      "notices": [
+        {
+          "path": "fonts/licenses/GowunBatang-OFL.txt",
+          "sha256": "49a57cc769fa9affd6eefb9070a61e3d3f6b757c97cafb15848bc6d1c81acc78"
+        }
+      ]
+    },
+    {
+      "file": "GowunDodum-Regular.woff2",
+      "source": "product-override",
+      "sha256": "349c098a6181952dab564bf891b8efcacfbf855adc28d40b4aa2e5937c101c56",
+      "notices": [
+        {
+          "path": "fonts/licenses/GowunDodum-OFL.txt",
+          "sha256": "a7c73f9521cd646bbdfb6684c99a62311bbd7bce11898dc11ef0b3c69eda1aca"
+        }
+      ]
+    },
+    {
+      "file": "Happiness-Sans-Bold.woff2",
+      "source": "product-override",
+      "sha256": "54becdfd4f7f58e872eba8fbc67778e29cff94c1cd03f9a0ebadfbe482b4aba0",
+      "notices": [
+        {
+          "path": "fonts/licenses/HappinessSans-LICENSE.pdf",
+          "sha256": "f5bd344131ee034f3425517ea376ab6acea9126310e7b2cd74cd18673991b055"
+        }
+      ]
+    },
+    {
+      "file": "Happiness-Sans-Regular.woff2",
+      "source": "product-override",
+      "sha256": "4fc37e7663c3d440b5a6af6938bde0c6618b666553ed521745f3362050bd4988",
+      "notices": [
+        {
+          "path": "fonts/licenses/HappinessSans-LICENSE.pdf",
+          "sha256": "f5bd344131ee034f3425517ea376ab6acea9126310e7b2cd74cd18673991b055"
+        }
+      ]
+    },
+    {
+      "file": "Happiness-Sans-Title.woff2",
+      "source": "product-override",
+      "sha256": "057e6821a062d9192964d99cf058fe6608230e9e4a464c9652b3756e02460e22",
+      "notices": [
+        {
+          "path": "fonts/licenses/HappinessSans-LICENSE.pdf",
+          "sha256": "f5bd344131ee034f3425517ea376ab6acea9126310e7b2cd74cd18673991b055"
+        }
+      ]
+    },
+    {
+      "file": "HappinessSansVF.woff2",
+      "source": "product-override",
+      "sha256": "cd29de60acf8c466938400561fcbfb14812dd5981f4f78b0c8da74609682423c",
+      "notices": [
+        {
+          "path": "fonts/licenses/HappinessSans-LICENSE.pdf",
+          "sha256": "f5bd344131ee034f3425517ea376ab6acea9126310e7b2cd74cd18673991b055"
+        }
+      ]
+    },
+    {
+      "file": "LatinModernMath-Regular.woff2",
+      "source": "product-override",
+      "sha256": "1177d9025d1e797c54b3c7676976365abd90f903423091de7f0f4e7a4b372162",
+      "notices": [
+        {
+          "path": "fonts/licenses/LatinModernMath-GUST-FONT-LICENSE.txt",
+          "sha256": "49ea6cb9257bbee0a3979c48a774cd221550ac1c20c95549efe45fc99cc18050"
+        },
+        {
+          "path": "fonts/licenses/LPPL-1.3c.txt",
+          "sha256": "3d262cdf34dafa6955f703c634a8c238ec44109bc8dd6ef34fb7aa54809f7e66"
+        }
+      ]
+    },
+    {
+      "file": "LatinModernMath-VariableOutline-subset.otf",
+      "source": "pinned-upstream",
+      "sha256": "c3b70b3a6ad5d7b03fb9c86067b6fc212b3a084870a9acff13238190137bf260",
+      "notices": [
+        {
+          "path": "fonts/licenses/LatinModernMath-GUST-FONT-LICENSE.txt",
+          "sha256": "49ea6cb9257bbee0a3979c48a774cd221550ac1c20c95549efe45fc99cc18050"
+        },
+        {
+          "path": "fonts/licenses/LPPL-1.3c.txt",
+          "sha256": "3d262cdf34dafa6955f703c634a8c238ec44109bc8dd6ef34fb7aa54809f7e66"
+        }
+      ]
+    },
+    {
+      "file": "NanumGothic-Bold.woff2",
+      "source": "pinned-upstream",
+      "sha256": "f1a3a97599e73746b1af08f88bc542c0f6b091818ffa67b31efb5b88d49ebc2e",
+      "notices": [
+        {
+          "path": "fonts/licenses/NanumGothic-OFL.txt",
+          "sha256": "eeacf16032901d0ed0456876ec77b8f0fda6b3fecec7d972f8543eb602e6c30f"
+        }
+      ]
+    },
+    {
+      "file": "NanumGothic-ExtraBold.woff2",
+      "source": "pinned-upstream",
+      "sha256": "a1961b5f8820d1c03519e21858508bedd32ea9f748805db5cad11536404c1801",
+      "notices": [
+        {
+          "path": "fonts/licenses/NanumGothic-OFL.txt",
+          "sha256": "eeacf16032901d0ed0456876ec77b8f0fda6b3fecec7d972f8543eb602e6c30f"
+        }
+      ]
+    },
+    {
+      "file": "NanumGothic-Regular.woff2",
+      "source": "product-override",
+      "sha256": "b2b25ce9c9179e0a4c867bd2610e1db5595965345aa1cdb857964ab802c4ee3e",
+      "notices": [
+        {
+          "path": "fonts/licenses/NanumGothic-OFL.txt",
+          "sha256": "eeacf16032901d0ed0456876ec77b8f0fda6b3fecec7d972f8543eb602e6c30f"
+        }
+      ]
+    },
+    {
+      "file": "NanumGothicCoding-Bold.woff2",
+      "source": "pinned-upstream",
+      "sha256": "81c3ae9d714c4b31fb0fac7596e4a472e1a19776193a4a595e6f7e5b23daeeb3",
+      "notices": [
+        {
+          "path": "fonts/licenses/NanumGothicCoding-OFL.txt",
+          "sha256": "eeacf16032901d0ed0456876ec77b8f0fda6b3fecec7d972f8543eb602e6c30f"
+        }
+      ]
+    },
+    {
+      "file": "NanumGothicCoding-Regular.woff2",
+      "source": "product-override",
+      "sha256": "6bd0831252dc3bd96f3257ec4eaf794d88ffb185346eb5d3f889248a7a3c6239",
+      "notices": [
+        {
+          "path": "fonts/licenses/NanumGothicCoding-OFL.txt",
+          "sha256": "eeacf16032901d0ed0456876ec77b8f0fda6b3fecec7d972f8543eb602e6c30f"
+        }
+      ]
+    },
+    {
+      "file": "NanumMyeongjo-Bold.woff2",
+      "source": "pinned-upstream",
+      "sha256": "65c47ec072dd91cbaac538f4482be3185fb0896b5f3909aa8a9834604b1eec08",
+      "notices": [
+        {
+          "path": "fonts/licenses/NanumMyeongjo-OFL.txt",
+          "sha256": "8eb1c1019fe7fe6d0b6e7d7bbbba1d9cbdd969d8c5f26455708f6cfb8a77284c"
+        }
+      ]
+    },
+    {
+      "file": "NanumMyeongjo-ExtraBold.woff2",
+      "source": "pinned-upstream",
+      "sha256": "dda2e9b5d670b63dd66a9a83468ee0ee9e64bef09d4fc24771865a7ab2529332",
+      "notices": [
+        {
+          "path": "fonts/licenses/NanumMyeongjo-OFL.txt",
+          "sha256": "8eb1c1019fe7fe6d0b6e7d7bbbba1d9cbdd969d8c5f26455708f6cfb8a77284c"
+        }
+      ]
+    },
+    {
+      "file": "NanumMyeongjo-Regular.woff2",
+      "source": "product-override",
+      "sha256": "52d27bf4ee205020a4aa9eb19ef4835e4aa04a94f7742b13e69e5c8b9a74072a",
+      "notices": [
+        {
+          "path": "fonts/licenses/NanumMyeongjo-OFL.txt",
+          "sha256": "8eb1c1019fe7fe6d0b6e7d7bbbba1d9cbdd969d8c5f26455708f6cfb8a77284c"
+        }
+      ]
+    },
+    {
+      "file": "NotoSansKR-Bold.woff2",
+      "source": "product-override",
+      "sha256": "dab3d492daa687386292cff1499225db580f931f800ee0d124eb0636378c6020",
+      "notices": [
+        {
+          "path": "fonts/licenses/NotoSansKR-OFL.txt",
+          "sha256": "1c05c68c34f9708415aada51f17e1b0092d2cea709bf4a94cd38114f9e73d7d9"
+        }
+      ]
+    },
+    {
+      "file": "NotoSansKR-ExtraLight.woff2",
+      "source": "pinned-upstream",
+      "sha256": "3b5cac6af73fd94fa91ded10f6cfc54c7ce52189986fe7ca6fd457208f1d3673",
+      "notices": [
+        {
+          "path": "fonts/licenses/NotoSansKR-OFL.txt",
+          "sha256": "1c05c68c34f9708415aada51f17e1b0092d2cea709bf4a94cd38114f9e73d7d9"
+        }
+      ]
+    },
+    {
+      "file": "NotoSansKR-Regular.woff2",
+      "source": "product-override",
+      "sha256": "3aa0d1d63f3b5b2a33053a41a34512eac63abfb1dc2112aeda04733656a1a6d9",
+      "notices": [
+        {
+          "path": "fonts/licenses/NotoSansKR-OFL.txt",
+          "sha256": "1c05c68c34f9708415aada51f17e1b0092d2cea709bf4a94cd38114f9e73d7d9"
+        }
+      ]
+    },
+    {
+      "file": "NotoSansMath-Regular.woff2",
+      "source": "pinned-upstream",
+      "sha256": "6836027b99d29fd0e6f668cf0c2e89107de4131b91116cd96516ad4a7e19d66d",
+      "notices": [
+        {
+          "path": "fonts/licenses/NotoSansMath-OFL.txt",
+          "sha256": "4fbd190167f23b4c0e2368160f412bf2d1fade887b78b6aec66689ce31698e8b"
+        }
+      ]
+    },
+    {
+      "file": "NotoSansSymbols2-Regular.ttf",
+      "source": "pinned-upstream",
+      "sha256": "876598db5f1e3bef2bc77c4d94c5b0d5d2c1620be4878a06f18fb5434e331688",
+      "notices": [
+        {
+          "path": "fonts/licenses/NotoSansSymbols2-OFL.txt",
+          "sha256": "075f91382875da1c4b491f1facf2586f55448705133264d98ce15cab6211b125"
+        }
+      ]
+    },
+    {
+      "file": "NotoSerifKR-Bold.woff2",
+      "source": "product-override",
+      "sha256": "504d6af6abb882acd912d47bafa383c4512a6c8c33635e4e8fb37111d9310941",
+      "notices": [
+        {
+          "path": "fonts/licenses/NotoCJKSerif-OFL.txt",
+          "sha256": "6a73f9541c2de74158c0e7cf6b0a58ef774f5a780bf191f2d7ec9cc53efe2bf2"
+        }
+      ]
+    },
+    {
+      "file": "NotoSerifKR-Regular.woff2",
+      "source": "product-override",
+      "sha256": "c9a1e3ac69994d680883b53b1fd83d520733b704792522a932bfaa276117de45",
+      "notices": [
+        {
+          "path": "fonts/licenses/NotoCJKSerif-OFL.txt",
+          "sha256": "6a73f9541c2de74158c0e7cf6b0a58ef774f5a780bf191f2d7ec9cc53efe2bf2"
+        }
+      ]
+    },
+    {
+      "file": "Pretendard-Black.woff2",
+      "source": "product-override",
+      "sha256": "c5fd0c3568fc1368a3edc0d0fbb36df029935954276e3573451b3bae09e27296",
+      "notices": [
+        {
+          "path": "fonts/licenses/Pretendard-OFL.txt",
+          "sha256": "82e9c8a4b203261f10ddba1296422d64914ff3d4b7bd8a12896d03f0f088d70a"
+        }
+      ]
+    },
+    {
+      "file": "Pretendard-Bold.woff2",
+      "source": "product-override",
+      "sha256": "4609c3356e536fafe38f4add0daeceb3d8595d3057bce13c428c33ddbd43d362",
+      "notices": [
+        {
+          "path": "fonts/licenses/Pretendard-OFL.txt",
+          "sha256": "82e9c8a4b203261f10ddba1296422d64914ff3d4b7bd8a12896d03f0f088d70a"
+        }
+      ]
+    },
+    {
+      "file": "Pretendard-ExtraBold.woff2",
+      "source": "product-override",
+      "sha256": "dd7c1e156f508eb962acc7a33a7a1896d1e0b71e11156fad96e731689ceb6dc3",
+      "notices": [
+        {
+          "path": "fonts/licenses/Pretendard-OFL.txt",
+          "sha256": "82e9c8a4b203261f10ddba1296422d64914ff3d4b7bd8a12896d03f0f088d70a"
+        }
+      ]
+    },
+    {
+      "file": "Pretendard-ExtraLight.woff2",
+      "source": "product-override",
+      "sha256": "df43dc9165dff4542114674bcd8b79b7daae6dec004004586d5d076fec6fe2aa",
+      "notices": [
+        {
+          "path": "fonts/licenses/Pretendard-OFL.txt",
+          "sha256": "82e9c8a4b203261f10ddba1296422d64914ff3d4b7bd8a12896d03f0f088d70a"
+        }
+      ]
+    },
+    {
+      "file": "Pretendard-Light.woff2",
+      "source": "product-override",
+      "sha256": "b7426635cce2ea2b95c9c802e43fba1c620e0dafaf25f737c069b8b4e09fa841",
+      "notices": [
+        {
+          "path": "fonts/licenses/Pretendard-OFL.txt",
+          "sha256": "82e9c8a4b203261f10ddba1296422d64914ff3d4b7bd8a12896d03f0f088d70a"
+        }
+      ]
+    },
+    {
+      "file": "Pretendard-Medium.woff2",
+      "source": "product-override",
+      "sha256": "d03481330eeba0659ab5b87f25ceb504a35de377dd90a0d0aba2982eb2d05e2c",
+      "notices": [
+        {
+          "path": "fonts/licenses/Pretendard-OFL.txt",
+          "sha256": "82e9c8a4b203261f10ddba1296422d64914ff3d4b7bd8a12896d03f0f088d70a"
+        }
+      ]
+    },
+    {
+      "file": "Pretendard-Regular.woff2",
+      "source": "product-override",
+      "sha256": "fad853f7f47c6c8b103171e7193fa095708cdcd70850a71d93aa5379e8a61d63",
+      "notices": [
+        {
+          "path": "fonts/licenses/Pretendard-OFL.txt",
+          "sha256": "82e9c8a4b203261f10ddba1296422d64914ff3d4b7bd8a12896d03f0f088d70a"
+        }
+      ]
+    },
+    {
+      "file": "Pretendard-SemiBold.woff2",
+      "source": "product-override",
+      "sha256": "c863f76a7de5c1ddc1ed8b2fa794964530774592c4f31407a84e2a2ae93f17f0",
+      "notices": [
+        {
+          "path": "fonts/licenses/Pretendard-OFL.txt",
+          "sha256": "82e9c8a4b203261f10ddba1296422d64914ff3d4b7bd8a12896d03f0f088d70a"
+        }
+      ]
+    },
+    {
+      "file": "Pretendard-Thin.woff2",
+      "source": "product-override",
+      "sha256": "1539755224a64719d5b18406762c476db74fcc299b9e4641ca1e9812fbc7a09b",
+      "notices": [
+        {
+          "path": "fonts/licenses/Pretendard-OFL.txt",
+          "sha256": "82e9c8a4b203261f10ddba1296422d64914ff3d4b7bd8a12896d03f0f088d70a"
+        }
+      ]
+    },
+    {
+      "file": "RHWPOldHangul-Regular.woff2",
+      "source": "pinned-upstream",
+      "sha256": "1a45a61e9a320c1bc62ca1401f7b23ceffffe8133dc2a9650ad4e12524f8dcab",
+      "notices": [
+        {
+          "path": "fonts/licenses/SourceHanSerifK-OFL.txt",
+          "sha256": "9ff5bb567e1b92c801fc1069e5fbf992ff8efccacb9db94e5959a5b3ba9bb903"
+        }
+      ]
+    },
+    {
+      "file": "RHWPPublicBatang-Regular.woff2",
+      "source": "pinned-upstream",
+      "sha256": "20d454f45cdf29cc4619e769f1f59f3b8920941b6b274a530e82d3b75e24dbfb",
+      "notices": [
+        {
+          "path": "fonts/licenses/RHWPPublicBatang-OFL.txt",
+          "sha256": "cc115f501827fffddcbf1ef86e5248ee55e40f0c3fb9725173b248ccc2d5df51"
+        }
+      ]
+    },
+    {
+      "file": "SpoqaHanSans-Regular.woff2",
+      "source": "product-override",
+      "sha256": "6568bf80b50c14f2e54f56f2c07e668416f39f880baf5ea2825d315767f98f69",
+      "notices": [
+        {
+          "path": "fonts/licenses/SpoqaHanSans-OFL.txt",
+          "sha256": "279753543734e7a1846e3cb3f80d4dcdcc91f49c436411adaba82e3913c61cde"
+        }
+      ]
+    }
+  ]
+}
