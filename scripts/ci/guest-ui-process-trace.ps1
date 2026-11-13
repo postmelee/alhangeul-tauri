@@ -5,6 +5,8 @@ function Start-GuestProcessTrace {
     foreach ($kind in @('Start', 'Stop')) {
       $source = 'AlhGuestProcess-' + $kind + '-' + [guid]::NewGuid().ToString()
       $query = "SELECT * FROM Win32_Process" + $kind + "Trace WHERE ProcessName='AlhangeulThumbnailWorker.exe' OR ProcessName='dllhost.exe'"
+      # Kernel StopTrace truncates this executable's name on observed Windows versions.
+      if ($kind -eq 'Stop') { $query += " OR ProcessName='AlhangeulThumb'" }
       Register-WmiEvent -Namespace 'root\cimv2' -Query $query -SourceIdentifier $source | Out-Null
       $trace.sources[$kind] = $source
     }
@@ -16,7 +18,9 @@ function Read-GuestProcessTrace($Trace) {
   foreach ($kind in @('Start', 'Stop')) {
     foreach ($event in @(Get-Event -SourceIdentifier $Trace.sources[$kind] -ErrorAction SilentlyContinue)) {
       $value = $event.SourceEventArgs.NewEvent
-      if ($value.ProcessName -notin @('AlhangeulThumbnailWorker.exe', 'dllhost.exe')) { throw 'unexpected-process-trace-name' }
+      $names = @('AlhangeulThumbnailWorker.exe', 'dllhost.exe')
+      if ($kind -eq 'Stop') { $names += 'AlhangeulThumb' }
+      if ($value.ProcessName -notin $names) { throw 'unexpected-process-trace-name' }
       $row = @{
         kind = $kind; name = [string]$value.ProcessName
         processId = [uint32]$value.ProcessID; parentProcessId = [uint32]$value.ParentProcessID

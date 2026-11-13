@@ -34,6 +34,7 @@ try {
   $starts = @($rows | Where-Object kind -eq 'Start'); $stops = @($rows | Where-Object kind -eq 'Stop')
   if ($starts.Count -ne 1 -or $stops.Count -ne 1 -or $stops[0].exitStatus -ne 0) { throw 'kernel-process-events-missing' }
   if ([DateTime]$stops[0].timeUtc -le [DateTime]$starts[0].timeUtc) { throw 'process-event-order-invalid' }
+  if ($starts[0].name -ne 'AlhangeulThumbnailWorker.exe' -or $stops[0].name -notin @('AlhangeulThumbnailWorker.exe', 'AlhangeulThumb')) { throw 'process-name-provenance-lost' }
   Clear-GuestProcessTrace $trace
   foreach ($source in $trace.sources.Values) {
     if (Get-EventSubscriber -SourceIdentifier $source -ErrorAction SilentlyContinue) { throw 'trace-subscription-not-removed' }
