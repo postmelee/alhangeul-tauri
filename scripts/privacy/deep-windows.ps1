@@ -8,7 +8,7 @@ $profile = Join-Path $env:LOCALAPPDATA 'io.github.postmelee.alhangeul'
 $cert = $null
 function Inventory($phase) {
   $logs = @(Get-ChildItem $profile -Recurse -File -Filter '*.log*' -ErrorAction SilentlyContinue | ForEach-Object {
-    @{path=$_.FullName.Substring($profile.Length); bytes=$_.Length}
+    @{path=$_.FullName.Substring($profile.Length); bytes=$_.Length; diagnostic=($_.DirectoryName -eq (Join-Path $profile 'logs') -or $_.Name -match '^(favorites|settings)_diagnostic\.log$')}
   })
   @{phase=$phase; logs=$logs; appExists=(Test-Path $appPath)} | ConvertTo-Json -Depth 5 | Set-Content (Join-Path $out "lifecycle-$phase.json")
 }
@@ -56,8 +56,10 @@ try {
   Start-Sleep 5
   if ($remove.ExitCode -ne 0 -or (Test-Path $appPath)) { throw 'uninstall incomplete' }
   Inventory 'uninstall'
-  Get-ChildItem $profile -Recurse -File -Filter '*.log*' -ErrorAction SilentlyContinue | Remove-Item -Force
+  # LevelDB *.log files are database journals, not diagnostic logs: preserve them.
+  Get-ChildItem (Join-Path $profile 'logs') -File -Filter 'Alhangeul.log*' -ErrorAction SilentlyContinue | Remove-Item -Force
   Inventory 'manual-log-delete'
+  if (@(Get-ChildItem (Join-Path $profile 'logs') -File -Filter 'Alhangeul.log*' -ErrorAction SilentlyContinue).Count -ne 0) { throw 'app diagnostic log deletion incomplete' }
   if ($documentFailed) { throw 'document observation failed; lifecycle still collected' }
 } finally {
   Get-Process Alhangeul -ErrorAction SilentlyContinue | Stop-Process -Force

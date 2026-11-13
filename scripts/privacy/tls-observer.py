@@ -14,10 +14,18 @@ def phase():
     except FileNotFoundError:
         return 'startup'
 
+def structure(value, depth=0):
+    if depth > 5:
+        return type(value).__name__
+    if isinstance(value, dict):
+        return {key: structure(item, depth + 1) for key, item in list(value.items())[:60]}
+    if isinstance(value, list):
+        return {'type': 'array', 'length': len(value), 'item': structure(value[0], depth + 1) if value else None}
+    return type(value).__name__
+
 def shape(data):
     try:
-        value = json.loads(data)
-        return sorted(value.keys()) if isinstance(value, dict) else type(value).__name__
+        return structure(json.loads(data))
     except (ValueError, UnicodeError):
         return 'non-json'
 
@@ -33,6 +41,7 @@ def record(flow, failed=False):
                 query_present=bool(urlsplit(request.url).query),
                 request_bytes=len(body), request_shape=shape(body),
                 header_names=sorted(request.headers.keys()),
+                user_agent=request.headers.get('user-agent'),
                 marker_present=MARKER in body or MARKER.decode() in request.url,
                 status=response.status_code if response else None,
                 response_bytes=len(response.raw_content or b'') if response else None,
