@@ -1,11 +1,25 @@
-param([Parameter(Mandatory = $true)][string]$Root)
+param([Parameter(Mandatory = $true)][string]$Root, [switch]$ObserveSettling)
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $output = Join-Path $Root 'evidence'
 $folder = Join-Path $output 'explorer-fixtures'
 $report = [ordered]@{ schemaVersion = 1; status = 'unavailable'; phase = 'preflight'; interactive = [Environment]::UserInteractive; sessionId = (Get-Process -Id $PID).SessionId; desktopOwnerMatches = $false; ownerMatches = $false; sessionMatches = $false; visible = $false; iconSize = $null; screenshotSha256 = $null; requiresVisualReview = $true; windowClosed = $false }
 $shell = $null; $window = $null; $owned = $false
+$report['captures'] = @()
 function Save-VisualEvidence { $report | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $output 'explorer-visual.json') -Encoding UTF8 }
+function Save-ExplorerCapture($Handle, [string]$Name) {
+  $report.visible = [Alhangeul.ThumbnailUserVisual.Window]::IsWindowVisible($Handle)
+  $rect = New-Object Alhangeul.ThumbnailUserVisual.Window+Rect
+  if (-not $report.visible -or -not [Alhangeul.ThumbnailUserVisual.Window]::GetWindowRect($Handle, [ref]$rect)) { throw 'explorer-not-visible' }
+  $bitmap = [Drawing.Bitmap]::new($rect.Right - $rect.Left, $rect.Bottom - $rect.Top)
+  $graphics = [Drawing.Graphics]::FromImage($bitmap)
+  $dc = $graphics.GetHdc()
+  try { if (-not [Alhangeul.ThumbnailUserVisual.Window]::PrintWindow($Handle, $dc, 2)) { throw 'explorer-capture-failed' } }
+  finally { $graphics.ReleaseHdc($dc); $graphics.Dispose() }
+  $path = Join-Path $output $Name
+  try { $bitmap.Save($path, [Drawing.Imaging.ImageFormat]::Png) } finally { $bitmap.Dispose() }
+  return (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
+}
 Save-VisualEvidence
 try {
   Add-Type -Path (Join-Path $PSScriptRoot 'windows-thumbnail-token.cs')
@@ -50,19 +64,19 @@ try {
   $report.iconSize = [int]$window.Document.IconSize
   if ($report.iconSize -ne 192) { throw 'explorer-view-not-applied' }
   [void][Alhangeul.ThumbnailUserVisual.Window]::MoveWindow($handle, 8, 8, 1100, 720, $true)
-  Start-Sleep -Seconds 10
-  $report.visible = [Alhangeul.ThumbnailUserVisual.Window]::IsWindowVisible($handle)
-  $rect = New-Object Alhangeul.ThumbnailUserVisual.Window+Rect
-  if (-not $report.visible -or -not [Alhangeul.ThumbnailUserVisual.Window]::GetWindowRect($handle, [ref]$rect)) { throw 'explorer-not-visible' }
-  $report.phase = 'capture'; Save-VisualEvidence
-  $bitmap = [Drawing.Bitmap]::new($rect.Right - $rect.Left, $rect.Bottom - $rect.Top)
-  $graphics = [Drawing.Graphics]::FromImage($bitmap)
-  $dc = $graphics.GetHdc()
-  try { if (-not [Alhangeul.ThumbnailUserVisual.Window]::PrintWindow($handle, $dc, 2)) { throw 'explorer-capture-failed' } }
-  finally { $graphics.ReleaseHdc($dc); $graphics.Dispose() }
-  $path = Join-Path $output 'explorer.png'
-  try { $bitmap.Save($path, [Drawing.Imaging.ImageFormat]::Png) } finally { $bitmap.Dispose() }
-  $report.screenshotSha256 = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
+  $timeline = if ($ObserveSettling) { @(10, 30, 60) } else { @(10) }
+  $timer = [Diagnostics.Stopwatch]::StartNew()
+  foreach ($seconds in $timeline) {
+    $remaining = [Math]::Max(0, [int]($seconds * 1000 - $timer.ElapsedMilliseconds))
+    Start-Sleep -Milliseconds $remaining
+    $report.phase = 'capture'; Save-VisualEvidence
+    $name = if ($seconds -eq 10) { 'explorer.png' } else { 'explorer-' + $seconds + '.png' }
+    $hash = Save-ExplorerCapture $handle $name
+    if ($seconds -eq 10) { $report.screenshotSha256 = $hash }
+    $report.captures += @{ file = $name; requestedSeconds = $seconds; elapsedMs = $timer.ElapsedMilliseconds; sha256 = $hash }
+    Save-VisualEvidence
+  }
+  $timer.Stop()
   $report.status = 'captured-awaiting-review'
 } catch { $report['errorCode'] = $_.Exception.HResult; $report['failure'] = $_.Exception.Message }
 finally {

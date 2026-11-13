@@ -4,7 +4,7 @@
 GitHub Issue: [#132](https://github.com/postmelee/alhangeul-tauri/issues/132)
 마일스톤: M010
 
-현재: Stage 3.5 — 정적 CRT 수정 full CI 및 clean Windows 11 NSIS 실제 Explorer·API·설치/재설치/제거 통과. 전체 Stage 3 수용은 진행 중이며 Windows 10/MSI 클라이언트/공개본 업그레이드·반복 시각 기준 검증이 남음. PR 전 보고 유지.
+현재: Stage 3.6 — 성공 제품의 MSI Windows 11 클라이언트·공개본 동일 버전 NSIS 업그레이드·Windows 10 guest 검증 진행 중. Stage 3.5 full/clean NSIS 근거는 보존하며 미완료 실행을 수용하지 않음. PR 전 보고 유지.
 
 2026-11-11 수행계획 승인과 이슈 해결까지 연속 진행 지시를 적용한다. PR 생성 전 보고한다.
 
@@ -502,3 +502,20 @@ Stage 3.5 guest 결과: run 43259686576/attempt 1이 success다. 같은 ISO에 V
 - guest 선택 입력과 concurrency를 분리해 서로 다른 실행이 취소되지 않게 한다. source는 기존 scripts/ci/guest-ui-*와 reusable guest workflow를 역할별 helper로 확장한다. 파일 300/함수 50 LOC 권장 범위를 유지하며 제품 rebuild는 하지 않는다.
 - parser·bounded process·고정 operation·시나리오별 evidence 누락/불일치 회귀, automation/boundary/action pins/actionlint/diff, fast 계약, 실제 guest 관측·PNG 검토·제품/VM 정리를 검증한다. 부분 실패를 전체 수용으로 올리지 않는다.
 - 문서 위치는 기존 impl/orders, mydocs/working/task_m010_132_stage3.6.md와 이미 승인된 CI_VALIDATION/RELEASE_CHECKLIST다. 새 공식 문서 루트는 만들지 않는다. 로컬 private 출력은 T7 연결을 확인한 기존 task132 output만 사용한다.
+
+
+Stage 3.6 실행 준비 기록(2026-11-13): T7 재연결을 확인한 뒤 private 증거 저장을 재개했다. 제품은 1e08891d의 성공 artifact를 그대로 재사용한다. 로컬 automation 1,421/1,421, boundary 891 files, action pins 32 workflows/182 references/11 pins, shellcheck 제외 actionlint 및 diff가 통과했다. Python guest helper는 파일/함수 권장 크기 안에 있다. Windows에서는 새 PowerShell 회귀가 세 단계의 원본 파일 분리, binary 해시 불일치, 사용자 데이터 변조, Microsoft 서명 실패/3010을 검사한다.
+
+- MSI guest: harness c1cdff2b, run 43361879933. Windows/Node fast 성공 후 새 Windows 11 guest 실행 중.
+- NSIS 공개본 업그레이드: harness 940d0c4c, run 43362414253. Windows/Node fast 성공 후 guest 준비 중. 최초 공개본 installer SHA256 932c3316d9ea83cd5c38e3fe528518535751ac60fedd72776c5306085437c490을 고정한다.
+- Windows 10 NSIS: harness f27414ed, run 43362730721. 아직 수용하지 않는다. Windows 10 Enterprise Evaluation 22H2 en-US x64 19045.2006 ISO의 공식 Microsoft hash PDF를 대조했다. SHA256 ef7312733a9f5d7d51cfa04ac497671995674ca5e1058d5164d6028f0938d668, 5,550,497,792 bytes다. 현재 평가판 안내 페이지는 지원 종료 안내로 redirect되지만 원래 공식 ISO URL은 HTTP 200이었다. 실제 CI에서 전체 bytes/hash를 다시 확인한다.
+- VC prerequisite는 공개본 업그레이드에서만 사용한다. 공식 고정 다운로드 SHA256 9c02c9ed120f671b900e6b9471d890e3b2414117a7e53f4ae2e855466fa2b7c9, 18,863,624 bytes다.
+- Windows 10용 WebView2는 공식 x64 Evergreen 링크가 가리킨 고정 URL에서 받은 215,195,856 bytes, SHA256 1d1c838e5971343c060415da7c630c3c1ca7ad33fbb61cca660f3c1122f4cca8이다. 다른 문서의 과거 WebView2 version/hash와 같다고 가정하지 않는다. 실제 guest에서 Authenticode Valid/Microsoft 서명과 설치 exit 0을 요구하며 제품 설치는 계속 오프라인이다.
+- 위 prerequisite 파일·ISO·VM disk는 공개 artifact/cache에 넣지 않는다. 동일 버전 NSIS 수동 업그레이드를 MSI forced-reinstall 3010/재부팅 후 수용이나 updater 자동 갱신으로 확대하지 않는다.
+
+
+Stage 3.6 첫 실제 결과: Windows 11 MSI run 43361879933은 자동 관측 gate와 설치/재설치/제거 exit 0, API 4/4, 표준 desktop owner, protected admin ACL, clean VC 부재/reference load 0, 설정·VM 정리를 통과했다. 그러나 직접 PNG를 보니 HWP/JPG는 내용이 보이고 HWPX는 앱 아이콘이었다. 따라서 MSI 화면 수용은 실패/보류이며 CI success를 시각 성공으로 기록하지 않는다. 원본 artifact 14008624350 digest e1e256c06a921ed09d29868f56a1ed3c6f8d1d7f56c78ae4b27265129e72bccd, PNG 95627450455c4a9ee81986783323509c0a9c13bf9a3b3f8736c6918204ff7805를 보존했다. HWPX 별도 API는 6,121ms에 bitmap을 반환했다. 원인은 아직 확정하지 않는다.
+
+같은 새 guest/동일 제품으로 API warm-up이나 cache 삭제 없이 동일 Explorer 창의 10/30/60초 원본을 모두 보존하는 settling 대조를 진행한다. 첫 10초 원본을 덮어쓰지 않고 이후 원본/실측 경과/SHA를 추가하며 기존 hosted 경로는 기본 10초 동작을 유지한다. 마지막 화면만 골라 최초 실패를 숨기지 않는다.
+
+Windows 10 NSIS run 43362730721은 success, guest 495.4초다. agent 직접 PNG에서 HWP/HWPX/JPG 내용을 확인했다. offline install/reinstall/uninstall 0, API 4/4, WebView2 공식 서명 Valid/설치 0, 표준 사용자·설정 복원·제품 제거/소유 VM 정리가 성공했다. artifact 14008953920 digest 6ec91bcd43dc400a9bda162c32a5c1bc80f0db05dcc79d77958d24435d3bb522다. 사용자 최종 golden/전체 제품 수용은 미완료다.

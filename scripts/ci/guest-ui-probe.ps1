@@ -97,7 +97,7 @@ try {
   . (Join-Path $PSScriptRoot 'hosted-ui-view.ps1')
   $view = Set-HostedThumbnailView
   $engine = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
-  $code = Run-Owned $engine ('-NoProfile -ExecutionPolicy Bypass -STA -File "' + $root + '\scripts\windows-thumbnail-user-visual.ps1" -Root "' + $root + '"') 120
+  $code = Run-Owned $engine ('-NoProfile -ExecutionPolicy Bypass -STA -File "' + $root + '\scripts\windows-thumbnail-user-visual.ps1" -Root "' + $root + '" -ObserveSettling') 150
   if ($code -ne 0) { throw 'capture-child-failed' }
   $visual = Get-Content (Join-Path $output 'explorer-visual.json') -Raw | ConvertFrom-Json
   $report.visual = $visual.status
