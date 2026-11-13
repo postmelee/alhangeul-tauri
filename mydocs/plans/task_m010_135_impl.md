@@ -50,3 +50,11 @@ GitHub Issue: [#135](https://github.com/postmelee/alhangeul-tauri/issues/135)
 - 수용: 실제 앱 생존·화면과 연결 기록을 확인한다. 기록 0개·앱 실패는 네트워크 없음으로 판정하지 않는다. 시작/idle 이외 편집·모든 통신 부재는 증명하지 않는다.
 - 산출: .github/workflows/alhangeul-privacy-observation.yml, scripts/privacy/{prepare.mjs,observe-linux.sh,observe-windows.ps1}, working의 stage4 보고 및 assets/task135, 최종 보고서 보완.
 - 파일 위치: 검증 자동화는 기존 .github/workflows·scripts/ 관습, 증거는 mydocs/working/assets/task135. 공개 제품 정책은 기존 위치 유지. 원격 실행을 위해 publish/task135 push만 수행하고 PR·merge는 하지 않는다.
+
+## Stage 5 — 신청 준비 심화 검증 (후속 명시 지시)
+작업지시자가 TLS 내용·편집 중 통신·로그 삭제를 포함하여 신청 가능한 상태까지 진행하도록 지시했다. PR·배포는 최종 개인정보처리방침 브라우저 검토 승인 뒤에만 수행한다.
+- 공개 v0.1.3 고정 바이너리의 별도 Windows/Linux 일회용 실행기에서 TLS 프록시를 사용한다. 해당 실행기에만 임시 CA를 신뢰시키고 종료 시 폐기한다. 서버 인증서 검증을 끄지 않는다. 개인 문서·메일·계정은 사용하지 않는다.
+- 시작/idle, 합성 문서 열기·편집·저장, 종료/재시작, uninstall 또는 AppImage 삭제, 남은 로그 수동 삭제를 단계별 관측한다. 원문·쿠키·토큰·임시 CA private key는 업로드하지 않는다. HTTP method/host/고정 경로, body 크기·구조와 합성 marker 포함 여부만 증거로 보존한다.
+- 프록시 사용이 동작을 바꾸므로 Stage 4의 직접 연결과 구분하고, 프록시 우회·TLS 실패는 미관측으로 명시한다. 성공한 업데이트 manifest 응답을 positive control로 요구한다.
+- 공식 신청 항목·역할·MFA·라이선스·공개 코드 서명 정책·설치 안내/선택권을 점검한다. 미확인 운영자 정보는 추정하지 않는다. 후원/서명 제공 사실은 승인 전 주장하지 않는다.
+- 검증 harness는 scripts/privacy와 기존 전용 workflow, 증거는 working/assets/task135, 조사·보고서는 기존 파일에 갱신한다. 제품 변경이 필요하면 범위·검증 계획을 구체화한 다음 구현한다. 신청 제출·서명 credential 생성은 제외한다.
