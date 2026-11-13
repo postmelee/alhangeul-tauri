@@ -12,10 +12,22 @@ try {
   [void]$child.Handle
   if (-not $child.WaitForExit(5000)) { throw 'trace-fixture-timeout' }
   $actualMs = ($child.ExitTime - $child.StartTime).TotalMilliseconds
+  $expectedId = $child.Id
+  $child.Dispose(); $child = $null
+  Start-Sleep -Milliseconds 250
   $all = @(Read-GuestProcessTrace $trace)
-  $rows = @($all | Where-Object { $_.processId -eq $child.Id })
+  Get-WinEvent -Path $trace.file -Oldest | ForEach-Object {
+    if ($_.ProviderName -eq 'Microsoft-Windows-Kernel-Process') {
+      [xml]$xml = $_.ToXml(); $fields = @{}
+      foreach ($entry in $xml.Event.EventData.Data) { $fields[[string]$entry.Name] = [string]$entry.InnerText }
+      if ($fields.ContainsKey('ProcessID') -and (Convert-GuestTraceNumber $fields.ProcessID) -eq $expectedId) {
+        Write-Output (@{ eventId = $_.Id; fieldNames = @($fields.Keys); imageName = [IO.Path]::GetFileName($fields.ImageName); timeUtc = $_.TimeCreated.ToUniversalTime().ToString('o') } | ConvertTo-Json -Compress)
+      }
+    }
+  }
+  $rows = @($all | Where-Object { $_.processId -eq $expectedId })
   $starts = @($rows | Where-Object kind -eq 'Start'); $stops = @($rows | Where-Object kind -eq 'Stop')
-  Write-Output (@{ expectedProcessId = $child.Id; actualMs = $actualMs; events = $rows } | ConvertTo-Json -Depth 5 -Compress)
+  Write-Output (@{ expectedProcessId = $expectedId; actualMs = $actualMs; events = $rows } | ConvertTo-Json -Depth 5 -Compress)
   if ($starts.Count -ne 1 -or $stops.Count -ne 1 -or $stops[0].exitStatus -ne 0) { throw 'kernel-process-events-missing' }
   $eventMs = ([DateTime]$stops[0].timeUtc - [DateTime]$starts[0].timeUtc).TotalMilliseconds
   if ($eventMs -lt 700 -or $eventMs -gt 5000 -or [Math]::Abs($eventMs - $actualMs) -gt 100) { throw 'process-event-clock-inaccurate' }
