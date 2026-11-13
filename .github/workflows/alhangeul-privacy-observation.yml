@@ -1,11 +1,12 @@
 name: Alhangeul privacy runtime observation
 on:
-  push:
-    branches: [publish/task135]
-    paths:
-      - '.github/workflows/alhangeul-privacy-observation.yml'
-      - 'scripts/privacy/**'
   workflow_dispatch:
+    inputs:
+      platform:
+        type: choice
+        default: both
+        options: [both, linux, windows]
+        description: Observe selected OS; reuse successful evidence for unchanged OS.
 permissions:
   contents: read
 jobs:
@@ -13,11 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - os: ubuntu-22.04
-            platform: linux
-          - os: windows-2025
-            platform: windows
+        include: ${{ fromJSON(inputs.platform == 'linux' && '[{"os":"ubuntu-22.04","platform":"linux"}]' || inputs.platform == 'windows' && '[{"os":"windows-2025","platform":"windows"}]' || '[{"os":"ubuntu-22.04","platform":"linux"},{"os":"windows-2025","platform":"windows"}]') }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     steps:

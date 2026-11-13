@@ -11,10 +11,13 @@ trap cleanup EXIT
 sleep 2
 openbox >/tmp/privacy-openbox.log 2>&1 &
 # Observe the unmodified public AppImage, including startup update check.
-strace -f -e trace=connect -o /tmp/privacy-connect.log "$app" >/tmp/privacy-app.log 2>&1 &
+strace -f -e trace=connect -o /tmp/privacy-connect.log "$app" --appimage-extract-and-run >/tmp/privacy-app.log 2>&1 &
 trace_pid=$!
 sleep 45
-kill -0 "$trace_pid"
+if ! kill -0 "$trace_pid" 2>/dev/null; then
+  tail -30 /tmp/privacy-app.log | sed "s|$PWD|<workspace>|g" > "$out/startup-error.txt"
+  exit 1
+fi
 pgrep -af 'Alhangeul|alhangeul|WebKit' | sed "s|$PWD|<workspace>|g" > "$out/processes.txt"
 import -window root "$out/app-linux.png"
 grep -E 'AF_INET6?|sin_port' /tmp/privacy-connect.log > "$out/connections.txt" || true
