@@ -71,3 +71,23 @@ GitHub Issue: [#135](https://github.com/postmelee/alhangeul-tauri/issues/135)
 사용자의 전체 요건 충족 판정까지 검증하라는 지시에 따라 공식 조건별 수용표를 만들고, 공개 URL·팀 권한·릴리스 출처·설치 안내/선택권·라이선스 고지를 점검한다. Stage 5 성공을 전체 적격성으로 확대하지 않는다. 라이선스 검사는 exact lockfile과 로컬 cached package manifest/원문 존재를 대조하며 누락 자료는 미확인으로 표시한다. 산출물은 기존 scripts/privacy와 working/assets/task135, working/task_m010_135_stage6.md에 둔다. 제공자의 해석이 필요한 항목은 구체적인 문의 초안까지만 준비하며 외부 발송·신청·계정 생성은 하지 않는다. PR·배포의 사용자 승인 게이트는 유지한다.
 
 Stage 6 Windows 공개 NSIS·MSI를 exact hash로 확인해 일회용 실행기에서 각각 설치·제거한다. PE product/version/signature, 설치된 license/notice 파일의 목록·hash를 보존한다. 서명을 새로 만들거나 바이너리를 수정하지 않는다. 신규 package-audit 관측 모드만 실행하며 성공한 TLS 시험은 반복하지 않는다.
+
+## Stage 7 — 정책 공개와 제품 보완 (2026-11-14 후속 승인)
+작업지시자가 사전 문의 답변 전 제품 보완 진행을 요청했고, 브라우저 검토 후 정책 PR·배포를 명시 승인했다. Stage 1~6 정책을 PR #136으로 먼저 통합·배포한다. 이슈 #135는 제품 보완과 제공자 답변 때문에 유지한다. 앱 릴리스·신청·가입·서명은 제외한다.
+
+### 변경과 문서 위치 판단
+- 자체 업데이트: 기존 updater Rust 경계에 사용자별 `updater-preferences.json`을 추가한다. 선택이 없거나 손상되면 자동 확인 기본 꺼짐. 앱 업데이트 창에서 켜기/끄기·설정 저장 오류를 안내하며 수동 확인·선택 다운로드를 유지한다. 기존 설정·문서를 건드리지 않고 재실행·앱 업데이트에도 선택을 보존한다. WebView2의 처리를 끄는 기능으로 표시하지 않는다.
+- 설치 안내: 기존 Windows NSIS hooks·WiX template에 설치 전 정책/시스템 변경 안내와 자체 자동 확인의 기본 꺼짐을 표시한다. silent 설치도 기본 꺼짐이며 사용자별 명시 선택이 있으면 보존한다. Linux package/AppImage는 패키지 동봉 안내와 앱 첫 실행 안내를 사용하며 GUI 없는 설치를 인터랙티브 prompt로 막지 않는다. 설치 화면 적용·제공자 조건 해석은 별도로 검증한다.
+- Windows helper metadata: worker/handler의 build script에 제품명 Alhangeul과 root 제품 버전을 고정한 VERSIONINFO를 삽입한다. 라이브러리 자체 crate 버전은 변경하지 않는다. 기존 desktop thumbnail reference 파일과 사용자 삭제 변경은 수정하지 않는다.
+- 라이선스: 기존 `assets/fonts/licenses/`에 해당 폰트 원문 고지를 보완하고 기존 FONTS.md에서 출처·동봉 파일을 연결한다. 실제 배포 closure와 build/dev inventory를 구별하며 부재 원문·적격성 불확실성을 남긴다. 제품 고지는 기존 bundle resources에서 설치 폴더로 복사한다.
+- 공식 설치 안내는 기존 `docs/operations/` 및 installer 동봉 resource를 사용한다. 대안인 mydocs/manual은 사용자 제품 안내 위치가 아니므로 제외한다. 공개 `site/privacy/`는 현재 안정 v0.1.3 설명을 유지하고, 미출시 동작을 현재 릴리스 기능으로 바꾸지 않는다. 작업 근거와 실패/수용은 기존 plans/working/report/orders에 기록한다.
+
+### 검증과 수용
+- 필수 fast 검사, 기본 product-boundary·upstream·Studio test/build. 로컬 submodule 미초기화에 필요한 검사는 exact pin을 준비한 Windows/Linux Actions에서 실행한다.
+- 자동 확인: 선택 없음/꺼짐/켜짐/손상/저장 실패/재시작 테스트, UI 설정 저장과 명시 수동 확인 테스트. 실제 Windows/Linux 새 bytes에서 설정에 따른 자체 updater 요청 유무를 positive control과 함께 확인한다. 런타임 통신 부재로 일반화하지 않는다.
+- metadata: Windows worker/DLL 파일의 ProductName·ProductVersion·FileVersion을 PowerShell로 읽어 root product version과 대조한다. 새 package 생성과 clean NSIS/MSI 설치 검증이 필요하다.
+- 설치: 정책 안내 표시, default-off·선택 보존, native 등록/제거 회귀. 라이선스는 원문 hash·설치 경로를 확인한다. 공유 native/product 변경에는 CI full, 필요하면 실패 원인에 한정한 profile을 사용한다. 기존 public v0.1.3 증거를 새 bytes 수용으로 재사용하지 않는다.
+- Pages는 PR 필수 검사 성공 후 exact merge SHA를 배포하고 공개 두 정책 URL 200·내용·진입 링크를 확인한다.
+
+### 경계
+WebView2 opt-out/System Libraries 및 rhwp 서명 대상의 최종 해석은 발송한 사전 문의 답변 전 확정하지 않는다. SignPath 가입 후 MFA·origin·artifact restriction·수동 승인 검증은 현재 제외 범위로 남는다. 부분 성공을 전체 신청 요건 충족으로 기록하지 않는다.
