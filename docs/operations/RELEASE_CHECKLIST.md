@@ -108,7 +108,7 @@ dialog 미진입·빈 페이지·쪽 수/방향 오류는 중단한다. 알려�
 ### 썸네일·패키지를 확인할 때
 
 - [ ] Windows installed handler/worker가 반환한 실제 bitmap과 앱/renderer provenance 확인.
-- [ ] Windows sidecar의 외부 VC 런타임 PE import가 없고, 개발 도구·VC 재배포 런타임 없는 clean Windows에서 같은 installer의 로드·설치·썸네일·제거를 검증. [guest 관측](CI_VALIDATION.md#무료-runner의-windows-11-guest-관측)의 화면 캡처와 시각 수용은 구분.
+- [ ] Windows sidecar의 외부 VC 런타임 PE import가 없고, 개발 도구·VC 재배포 런타임 없는 clean Windows에서 같은 installer의 로드·설치·썸네일·제거를 검증. [guest 관측](CI_VALIDATION.md#무료-runner의-windows-클라이언트-guest-관측)의 화면 캡처와 시각 수용은 구분.
 - [ ] Windows NSIS/MSI별 HKCU/HKLM·연결 조회·직접 COM 생성과 실제 문서 Shell/강제 추출·JPG 대조 결과를 분리. 캐시 조회만으로 새 생성 성공을 판정하지 않음.
 - [ ] 표준 사용자 NSIS 필수 기능 job과 기존 세 격리 설치 job의 원시 증거·evaluation·upload·최종 gate 확인. NSIS 새 설치·재설치와 공개본에서 같은 버전 수동 재설치의 실제 bitmap·제품 자체 제거 성공, 설치 파일·DLL·worker 해시를 대조. 시험 도구의 잔여 DLL 삭제는 제품 성공으로 인정하지 않음. `contract_status=passed`라도 `thumbnailStatus=not-accepted`이면 제한 유지, 새 오류·증거 누락은 실패.
 - [ ] 지원 묶음 사용 시 같은 run·exact SHA·archive digest·manifest 파일 해시·설치된 DLL/worker hash 확인. 만료/다른 빌드 혼용 금지. 진단 종료 0/1/2와 원시 증거를 대조하고 도구 성공을 제품 gate 성공으로 바꾸지 않음.

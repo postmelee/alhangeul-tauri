@@ -175,30 +175,46 @@ upload 실패도 최종 실패다. 종료 집계의 `contract_status=passed`와
 과거 실패 run을 새 계약으로 소급 통과시키지 않는다. 실제 후보별 관측은
 [버전별 기록](../releases/v0.1.0.md#windows-썸네일-진단-수용과-잔여-제한)에 둔다.
 
-### 무료 runner의 Windows 11 guest 관측
+### 무료 runner의 Windows 클라이언트 guest 관측
 
 `ci.yml`을 `scope=windows-guest-probe`, `profile=fast`로 실행하면 선행 Node/Windows
-계약 검사 뒤 표준 `ubuntu-24.04` runner에서 QEMU/KVM Windows 11 guest를 만든다.
-이는 Windows Server runner에서 다른 사용자로 띄운 프로세스와 실제 로그인 Explorer의
-소유권이 다른 문제를 피하고, Windows 클라이언트의 표준 사용자 화면을 관측하는 경로다.
+계약 검사 뒤 표준 `ubuntu-24.04` runner에서 QEMU/KVM Windows guest를 만든다.
+`guest_os=windows11|windows10`, `guest_scenario=nsis|msi|nsis-upgrade`로 선택하며
+기본은 Windows 11 NSIS다. OS/시나리오별 별도 fresh guest와 concurrency를 사용한다.
+이는 Windows Server에서 다른 사용자로 띄운 프로세스와 실제 로그인 Explorer의 소유권이
+다른 문제를 피하는 경로다. 제품의 Windows 클라이언트 전체 수용을 자동으로 뜻하지 않는다.
 
 입력은 `scripts/ci/hosted-ui-input.mjs`의 성공 producer SHA/run/artifact ID/ZIP digest와
-`guest-ui-prepare.py`의 같은 product SHA 및 공식 Microsoft ISO URL/크기/SHA256이다.
-새 제품을 검증할 때 이 고정을 함께 갱신하고 inventory·설치 파일·DLL/worker 해시를
-재검증한다. harness SHA는 product SHA와 별도로 기록하며 이 경로에서 제품을 재빌드하지 않는다.
+`guest-ui-prepare.py`의 같은 product SHA, `guest-ui-os.json`의 공식 ISO URL/크기/SHA256이다.
+새 제품을 검증할 때 고정을 함께 갱신하고 inventory·설치 파일·DLL/worker 해시를 재검증한다.
+harness SHA는 product SHA와 별도로 기록하며 이 경로에서 제품을 재빌드하지 않는다.
+실제 OS의 client ProductType·caption·정확한 build와 표준 사용자 SID/session을 확인한다.
 
-KVM과 최소 55 GiB 여유 공간을 실행마다 확인한다. 확보되지 않으면 실패하며 유료 runner로
-자동 전환하지 않는다. UEFI/Secure Boot/TPM2를 사용하고 OS 요구사항·UAC·activation을
-우회하지 않는다. ISO와 guest disk·시험 암호는 artifact/cache에 넣지 않는다.
-5분/20분 checkpoint와 최종 `windows11-guest-observation`에 공개 fixture의 화면·JSON을 보존하고
-소유 프로세스 종료 후 private VM 데이터를 제거한다. 정리 step 결과도 별도로 확인한다.
+MSI 설치·재설치·제거만 protected payload의 고정 SYSTEM 작업으로 실행하고 실제 로그인한
+non-admin 사용자가 Explorer/API를 검사한다. 사용자별 NSIS 정책과 UAC/DCOM은 유지한다.
+표준 사용자가 관리자 입력·스크립트·결과를 쓸 수 없는지도 실제 write-open 거부로 확인한다.
 
-현재 관측 gate는 VC 런타임 부재와 reference DLL 로드 성공, 오프라인 NSIS 설치·재설치,
-실제 표준 사용자와 Explorer의 SID/session 일치, HWP/HWPX/JPG bitmap, 표시 설정 복원,
-제품 자체 제거를 요구한다. 캡처 상태 `captured-awaiting-review`는 그림 내용의 자동 수용이 아니다.
-원본 PNG를 검토하고 잘못된 아이콘·빈 화면·다른 문서를 성공으로 처리하지 않는다.
-Windows 10, MSI 클라이언트 화면, 공개본에서 같은 버전 업그레이드, 실제 한컴/고DPI와
-최종 릴리즈 수용은 이 NSIS 관측 결과와 분리한다.
+`nsis-upgrade`는 최초 공개 v0.1.3 installer/binary 해시, 후보 덮어설치·재설치·제거와
+두 사용자 데이터 폴더의 합성 sentinel 보존을 확인한다. 공개본의 bitmap 실패도 원본으로
+보존하며 후보 설치를 막지 않는다. 후보 upgrade/reinstall의 bitmap 실패는 계속 거부한다.
+이 시나리오만 공개본용 VC 재배포 런타임을 준비한다. Windows 10은 WebView2를 별도 준비한다.
+두 prerequisite는 고정 공식 bytes/hash와 guest 안의 Microsoft Authenticode Valid·exit 0을
+요구한다. 최초 clean VC 부재 관측, prerequisite 준비, 제품 오프라인 설치 결과를 분리한다.
+이 결과를 MSI forced-reinstall 3010의 재부팅 후 검증이나 자동 updater 성공으로 쓰지 않는다.
+
+KVM과 최소 55 GiB 여유 공간을 확인하며 부족하면 실패한다. 유료 runner로 자동 전환하지
+않는다. UEFI/Secure Boot/TPM2를 사용하고 OS 요구사항·activation을 우회하지 않는다.
+ISO·prerequisite 설치 파일·guest disk·시험 암호는 artifact/cache에 넣지 않는다.
+checkpoint와 최종 `{guest_os}-{guest_scenario}-guest-observation`에 공개 fixture의 화면·JSON을
+보존하고 소유 프로세스 종료 뒤 private VM 데이터를 제거한다. 삭제 step 결과도 확인한다.
+이전 harness의 `windows11-guest-observation` 이름은 역사적 증거로 유지한다.
+
+관측 gate는 실제 표준 사용자와 Explorer의 SID/session 일치, HWP/HWPX/JPG bitmap,
+표시 설정 복원, 제품 자체 제거를 요구한다. `captured-awaiting-review`는 그림 내용의
+자동 수용이 아니다. guest는 같은 창의 10/30/60초 화면과 실측 시각·hash를 보존한다.
+첫 아이콘/빈 화면을 이후 성공으로 덮어쓰지 않고 각각 검토한다. 별도 API 성공이나
+workflow success만으로 Explorer의 문서 내용 표시를 통과시키지 않는다.
+OS/설치 방식·초기 표시와 정착 후 표시·실제 한컴/고DPI·최종 릴리즈 수용은 구분한다.
 
 ## 측정 기준
 
