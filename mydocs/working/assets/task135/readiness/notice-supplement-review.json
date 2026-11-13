@@ -1,0 +1,1177 @@
+{
+  "status": "Review candidates only; these upstream originals are not yet incorporated into the shipped ZIP. Root license applicability and target closure still require review.",
+  "packages": [
+    {
+      "name": "alloc-stdlib",
+      "version": "0.2.2",
+      "integrity": "94fb8275041c72129eb51b7d0322c29b8387a0386127718b096429201a5d6ece",
+      "repository": "https://github.com/dropbox/rust-alloc-no-stdlib",
+      "license": "BSD-3-Clause",
+      "vcs": {
+        "git": {
+          "sha1": "6032b6a9b20e03737135c55a0270ccffcc1438ef"
+        },
+        "path_in_vcs": "alloc-stdlib"
+      },
+      "sourceKey": "dropbox/rust-alloc-no-stdlib/6032b6a9b20e03737135c55a0270ccffcc1438ef",
+      "upstreamNotices": [
+        {
+          "url": "https://raw.githubusercontent.com/dropbox/rust-alloc-no-stdlib/6032b6a9b20e03737135c55a0270ccffcc1438ef/LICENSE",
+          "sha256": "c0c56f26d9c051cac4d200c34c84e7ae9aaa853e01a982a1df08b09931e518ae"
+        }
+      ]
+    },
+    {
+      "name": "alloc-stdlib",
+      "version": "0.3.0",
+      "integrity": "0b5c1865780388bfa186411ab5f247819487fc4864c6e9c3106611fa347586e1",
+      "repository": "https://github.com/dropbox/rust-alloc-no-stdlib",
+      "license": "BSD-3-Clause",
+      "vcs": {
+        "git": {
+          "sha1": "0a81fd6928ea3b33c8cd484aa4575d50ffb98012"
+        },
+        "path_in_vcs": "alloc-stdlib"
+      },
+      "sourceKey": "dropbox/rust-alloc-no-stdlib/0a81fd6928ea3b33c8cd484aa4575d50ffb98012",
+      "upstreamNotices": [
+        {
+          "url": "https://raw.githubusercontent.com/dropbox/rust-alloc-no-stdlib/0a81fd6928ea3b33c8cd484aa4575d50ffb98012/LICENSE",
+          "sha256": "c0c56f26d9c051cac4d200c34c84e7ae9aaa853e01a982a1df08b09931e518ae"
+        }
+      ]
+    },
+    {
+      "name": "block2",
+      "version": "0.6.2",
+      "integrity": "cdeb9d870516001442e364c5220d3574d2da8dc765554b4a617230d33fa58ef5",
+      "repository": "https://github.com/madsmtm/objc2",
+      "license": "MIT",
+      "vcs": {
+        "git": {
+          "sha1": "b4167b582b2f75f9a1be75495c41b765344fd03c"
+        },
+        "path_in_vcs": "crates/block2"
+      },
+      "sourceKey": "madsmtm/objc2/b4167b582b2f75f9a1be75495c41b765344fd03c",
+      "upstreamNotices": [
+        {
+          "url": "https://raw.githubusercontent.com/madsmtm/objc2/b4167b582b2f75f9a1be75495c41b765344fd03c/LICENSE.md",
+          "sha256": "7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54"
+        }
+      ]
+    },
+    {
+      "name": "convert_case",
+      "version": "0.4.0",
+      "integrity": "6245d59a3e82a7fc217c5828a6692dbc6dfb63a0c8c90495621f7b9d79704a0e",
+      "repository": "https://github.com/rutrum/convert-case",
+      "license": "MIT",
+      "vcs": {
+        "git": {
+          "sha1": "300d9eef9e8c970e15f324afbc3df8b6a4ebbf71"
+        }
+      },
+      "sourceKey": "rutrum/convert-case/300d9eef9e8c970e15f324afbc3df8b6a4ebbf71",
+      "upstreamNotices": []
+    },
+    {
+      "name": "dispatch2",
+      "version": "0.3.1",
+      "integrity": "1e0e367e4e7da84520dedcac1901e4da967309406d1e51017ae1abfb97adbd38",
+      "repository": "https://github.com/madsmtm/objc2",
+      "license": "Zlib OR Apache-2.0 OR MIT",
+      "vcs": {
+        "git": {
+          "sha1": "8852b424193ca41602281b3d7540d7c8ed51e49a"
+        },
+        "path_in_vcs": "crates/dispatch2"
+      },
+      "sourceKey": "madsmtm/objc2/8852b424193ca41602281b3d7540d7c8ed51e49a",
+      "upstreamNotices": [
+        {
+          "url": "https://raw.githubusercontent.com/madsmtm/objc2/8852b424193ca41602281b3d7540d7c8ed51e49a/LICENSE.md",
+          "sha256": "7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54"
+        }
+      ]
+    },
+    {
+      "name": "dlopen2",
+      "version": "0.8.2",
+      "integrity": "5e2c5bd4158e66d1e215c49b837e11d62f3267b30c92f1d171c4d3105e3dc4d4",
+      "repository": "https://github.com/OpenByteDev/dlopen2",
+      "license": "MIT",
+      "vcs": {
+        "git": {
+          "sha1": "cc80e4a0a90d499b677fdf7743699b4b3a43a989"
+        },
+        "path_in_vcs": "dlopen2"
+      },
+      "sourceKey": "OpenByteDev/dlopen2/cc80e4a0a90d499b677fdf7743699b4b3a43a989",
+      "upstreamNotices": [
+        {
+          "url": "https://raw.githubusercontent.com/OpenByteDev/dlopen2/cc80e4a0a90d499b677fdf7743699b4b3a43a989/LICENSE",
+          "sha256": "39fa265207450e77c62e90c5594a06c085b655d8374c7ced4bf7894b6bd95dd2"
+        }
+      ]
+    },
+    {
+      "name": "dlopen2_derive",
+      "version": "0.4.3",
+      "integrity": "0fbbb781877580993a8707ec48672673ec7b81eeba04cfd2310bd28c08e47c8f",
+      "repository": "https://github.com/OpenByteDev/dlopen2",
+      "license": "MIT",
+      "vcs": {
+        "git": {
+          "sha1": "cc80e4a0a90d499b677fdf7743699b4b3a43a989"
+        },
+        "path_in_vcs": "dlopen2-derive"
+      },
+      "sourceKey": "OpenByteDev/dlopen2/cc80e4a0a90d499b677fdf7743699b4b3a43a989",
+      "upstreamNotices": [
+        {
+          "url": "https://raw.githubusercontent.com/OpenByteDev/dlopen2/cc80e4a0a90d499b677fdf7743699b4b3a43a989/LICENSE",
+          "sha256": "39fa265207450e77c62e90c5594a06c085b655d8374c7ced4bf7894b6bd95dd2"
+        }
+      ]
+    },
+    {
+      "name": "fxhash",
+      "version": "0.2.1",
+      "integrity": "c31b6d751ae2c7f11320402d34e41349dd1016f8d5d45e48c4312bc8625af50c",
+      "repository": "https://github.com/cbreeden/fxhash",
+      "license": "Apache-2.0/MIT",
+      "vcs": null,
+      "upstreamNotices": []
+    },
+    {
+      "name": "jni-sys-macros",
+      "version": "0.4.1",
+      "integrity": "38c0b942f458fe50cdac086d2f946512305e5631e720728f2a61aabcd47a6264",
+      "repository": "https://github.com/jni-rs/jni-sys",
+      "license": "MIT OR Apache-2.0",
+      "vcs": {
+        "git": {
+          "sha1": "64d77b7a5f119d7b55b4e2c169a4668067ff59e6"
+        },
+        "path_in_vcs": "jni-sys-macros"
+      },
+      "sourceKey": "jni-rs/jni-sys/64d77b7a5f119d7b55b4e2c169a4668067ff59e6",
+      "upstreamNotices": [
+        {
+          "url": "https://raw.githubusercontent.com/jni-rs/jni-sys/64d77b7a5f119d7b55b4e2c169a4668067ff59e6/LICENSE-MIT",
+          "sha256": "1d85bd754b04ceec93e98e890edd1fa3c6a22e81bcb32135806beeccefa51cd1"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/jni-rs/jni-sys/64d77b7a5f119d7b55b4e2c169a4668067ff59e6/LICENSE-APACHE",
+          "sha256": "c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08"
+        }
+      ]
+    },
+    {
+      "name": "libappindicator-sys",
+      "version": "0.9.0",
+      "integrity": "6e9ec52138abedcc58dc17a7c6c0c00a2bdb4f3427c7f63fa97fd0d859155caf",
+      "repository": null,
+      "license": "Apache-2.0 OR MIT",
+      "vcs": {
+        "git": {
+          "sha1": "eafd1e3682a1247f595410266091e9684021cb6f"
+        },
+        "path_in_vcs": "sys"
+      },
+      "upstreamNotices": []
+    },
+    {
+      "name": "mac",
+      "version": "0.1.1",
+      "integrity": "c41e0c4fef86961ac6d6f8a82609f55f31b05e4fce149ac5710e439df7619ba4",
+      "repository": "https://github.com/reem/rust-mac.git",
+      "license": "MIT/Apache-2.0",
+      "vcs": null,
+      "upstreamNotices": []
+    },
+    {
+      "name": "match_token",
+      "version": "0.1.0",
+      "integrity": "88a9689d8d44bf9964484516275f5cd4c9b59457a6940c1d5d0ecbb94510a36b",
+      "repository": "https://github.com/servo/html5ever",
+      "license": "MIT OR Apache-2.0",
+      "vcs": {
+        "git": {
+          "sha1": "0e4e125b8672abad4ff14d1e0043d3be9305af6a"
+        },
+        "path_in_vcs": "match_token"
+      },
+      "sourceKey": "servo/html5ever/0e4e125b8672abad4ff14d1e0043d3be9305af6a",
+      "upstreamNotices": [
+        {
+          "url": "https://raw.githubusercontent.com/servo/html5ever/0e4e125b8672abad4ff14d1e0043d3be9305af6a/LICENSE-MIT",
+          "sha256": "86dd7f026f916daf7511e39951ad8ea8cf55a8db67ae64060dacf829761c18f3"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/servo/html5ever/0e4e125b8672abad4ff14d1e0043d3be9305af6a/LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        }
+      ]
+    },
+    {
+      "name": "ndk",
+      "version": "0.9.0",
+      "integrity": "c3f42e7bbe13d351b6bead8286a43aac9534b82bd3cc43e47037f012ebfd62d4",
+      "repository": "https://github.com/rust-mobile/ndk",
+      "license": "MIT OR Apache-2.0",
+      "vcs": {
+        "git": {
+          "sha1": "49bbbba16c58ff63cb8a0ad0eca5a9fb7ecaec25"
+        },
+        "path_in_vcs": "ndk"
+      },
+      "sourceKey": "rust-mobile/ndk/49bbbba16c58ff63cb8a0ad0eca5a9fb7ecaec25",
+      "upstreamNotices": [
+        {
+          "url": "https://raw.githubusercontent.com/rust-mobile/ndk/49bbbba16c58ff63cb8a0ad0eca5a9fb7ecaec25/LICENSE-MIT",
+          "sha256": "508a77d2e7b51d98adeed32648ad124b7b30241a8e70b2e72c99f92d8e5874d1"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/rust-mobile/ndk/49bbbba16c58ff63cb8a0ad0eca5a9fb7ecaec25/LICENSE-APACHE",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+        }
+      ]
+    },
+    {
+      "name": "ndk-context",
+      "version": "0.1.1",
+      "integrity": "27b02d87554356db9e9a873add8782d4ea6e3e58ea071a9adb9a2e8ddb884a8b",
+      "repository": "https://github.com/rust-windowing/android-ndk-rs",
+      "license": "MIT OR Apache-2.0",
+      "vcs": {
+        "git": {
+          "sha1": "10f2ba388fca20f7349996ebae26ccda7a6fda5c"
+        },
+        "path_in_vcs": "ndk-context"
+      },
+      "sourceKey": "rust-windowing/android-ndk-rs/10f2ba388fca20f7349996ebae26ccda7a6fda5c",
+      "upstreamNotices": [
+        {
+          "url": "https://raw.githubusercontent.com/rust-windowing/android-ndk-rs/10f2ba388fca20f7349996ebae26ccda7a6fda5c/LICENSE-MIT",
+          "sha256": "508a77d2e7b51d98adeed32648ad124b7b30241a8e70b2e72c99f92d8e5874d1"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/rust-windowing/android-ndk-rs/10f2ba388fca20f7349996ebae26ccda7a6fda5c/LICENSE-APACHE",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+        }
+      ]
+    },
+    {
+      "name": "ndk-sys",
+      "version": "0.6.0+11769913",
+      "integrity": "ee6cda3051665f1fb8d9e08fc35c96d5a244fb1be711a03b71118828afc9a873",
+      "repository": "https://github.com/rust-mobile/ndk",
+      "license": "MIT OR Apache-2.0",
+      "vcs": {
+        "git": {
+          "sha1": "49bbbba16c58ff63cb8a0ad0eca5a9fb7ecaec25"
+        },
+        "path_in_vcs": "ndk-sys"
+      },
+      "sourceKey": "rust-mobile/ndk/49bbbba16c58ff63cb8a0ad0eca5a9fb7ecaec25",
+      "upstreamNotices": [
+        {
+          "url": "https://raw.githubusercontent.com/rust-mobile/ndk/49bbbba16c58ff63cb8a0ad0eca5a9fb7ecaec25/LICENSE-MIT",
+          "sha256": "508a77d2e7b51d98adeed32648ad124b7b30241a8e70b2e72c99f92d8e5874d1"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/rust-mobile/ndk/49bbbba16c58ff63cb8a0ad0eca5a9fb7ecaec25/LICENSE-APACHE",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+        }
+      ]
+    },
+    {
+      "name": "objc2",
+      "version": "0.6.4",
+      "integrity": "3a12a8ed07aefc768292f076dc3ac8c48f3781c8f2d5851dd3d98950e8c5a89f",
+      "repository": "https://github.com/madsmtm/objc2",
+      "license": "MIT",
+      "vcs": {
+        "git": {
+          "sha1": "8852b424193ca41602281b3d7540d7c8ed51e49a"
+        },
+        "path_in_vcs": "crates/objc2"
+      },
+      "sourceKey": "madsmtm/objc2/8852b424193ca41602281b3d7540d7c8ed51e49a",
+      "upstreamNotices": [
+        {
+          "url": "https://raw.githubusercontent.com/madsmtm/objc2/8852b424193ca41602281b3d7540d7c8ed51e49a/LICENSE.md",
+          "sha256": "7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54"
+        }
+      ]
+    },
+    {
+      "name": "objc2-app-kit",
+      "version": "0.3.2",
+      "integrity": "d49e936b501e5c5bf01fda3a9452ff86dc3ea98ad5f283e1455153142d97518c",
+      "repository": "https://github.com/madsmtm/objc2",
+      "license": "Zlib OR Apache-2.0 OR MIT",
+      "vcs": {
+        "git": {
+          "sha1": "7b1abfd750a2cacaea71d6a56ecfb83cb7de560b"
+        },
+        "path_in_vcs": "framework-crates/objc2-app-kit"
+      },
+      "sourceKey": "madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "upstreamNotices": [
+        {
+          "url": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md",
+          "sha256": "7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54"
+        }
+      ]
+    },
+    {
+      "name": "objc2-core-foundation",
+      "version": "0.3.2",
+      "integrity": "2a180dd8642fa45cdb7dd721cd4c11b1cadd4929ce112ebd8b9f5803cc79d536",
+      "repository": "https://github.com/madsmtm/objc2",
+      "license": "Zlib OR Apache-2.0 OR MIT",
+      "vcs": {
+        "git": {
+          "sha1": "7b1abfd750a2cacaea71d6a56ecfb83cb7de560b"
+        },
+        "path_in_vcs": "framework-crates/objc2-core-foundation"
+      },
+      "sourceKey": "madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "upstreamNotices": [
+        {
+          "url": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md",
+          "sha256": "7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54"
+        }
+      ]
+    },
+    {
+      "name": "objc2-core-graphics",
+      "version": "0.3.2",
+      "integrity": "e022c9d066895efa1345f8e33e584b9f958da2fd4cd116792e15e07e4720a807",
+      "repository": "https://github.com/madsmtm/objc2",
+      "license": "Zlib OR Apache-2.0 OR MIT",
+      "vcs": {
+        "git": {
+          "sha1": "7b1abfd750a2cacaea71d6a56ecfb83cb7de560b"
+        },
+        "path_in_vcs": "framework-crates/objc2-core-graphics"
+      },
+      "sourceKey": "madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "upstreamNotices": [
+        {
+          "url": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md",
+          "sha256": "7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54"
+        }
+      ]
+    },
+    {
+      "name": "objc2-encode",
+      "version": "4.1.0",
+      "integrity": "ef25abbcd74fb2609453eb695bd2f860d389e457f67dc17cafc8b8cbc89d0c33",
+      "repository": "https://github.com/madsmtm/objc2",
+      "license": "MIT",
+      "vcs": {
+        "git": {
+          "sha1": "8d214f5477365ffcbcbb7de058c86ed9a518efb7"
+        },
+        "path_in_vcs": "crates/objc2-encode"
+      },
+      "sourceKey": "madsmtm/objc2/8d214f5477365ffcbcbb7de058c86ed9a518efb7",
+      "upstreamNotices": [
+        {
+          "url": "https://raw.githubusercontent.com/madsmtm/objc2/8d214f5477365ffcbcbb7de058c86ed9a518efb7/LICENSE.md",
+          "sha256": "7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54"
+        }
+      ]
+    },
+    {
+      "name": "objc2-exception-helper",
+      "version": "0.1.1",
+      "integrity": "c7a1c5fbb72d7735b076bb47b578523aedc40f3c439bea6dfd595c089d79d98a",
+      "repository": "https://github.com/madsmtm/objc2",
+      "license": "Zlib OR Apache-2.0 OR MIT",
+      "vcs": {
+        "git": {
+          "sha1": "8d214f5477365ffcbcbb7de058c86ed9a518efb7"
+        },
+        "path_in_vcs": "crates/objc2-exception-helper"
+      },
+      "sourceKey": "madsmtm/objc2/8d214f5477365ffcbcbb7de058c86ed9a518efb7",
+      "upstreamNotices": [
+        {
+          "url": "https://raw.githubusercontent.com/madsmtm/objc2/8d214f5477365ffcbcbb7de058c86ed9a518efb7/LICENSE.md",
+          "sha256": "7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54"
+        }
+      ]
+    },
+    {
+      "name": "objc2-io-surface",
+      "version": "0.3.2",
+      "integrity": "180788110936d59bab6bd83b6060ffdfffb3b922ba1396b312ae795e1de9d81d",
+      "repository": "https://github.com/madsmtm/objc2",
+      "license": "Zlib OR Apache-2.0 OR MIT",
+      "vcs": {
+        "git": {
+          "sha1": "7b1abfd750a2cacaea71d6a56ecfb83cb7de560b"
+        },
+        "path_in_vcs": "framework-crates/objc2-io-surface"
+      },
+      "sourceKey": "madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "upstreamNotices": [
+        {
+          "url": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md",
+          "sha256": "7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54"
+        }
+      ]
+    },
+    {
+      "name": "objc2-osa-kit",
+      "version": "0.3.2",
+      "integrity": "f112d1746737b0da274ef79a23aac283376f335f4095a083a267a082f21db0c0",
+      "repository": "https://github.com/madsmtm/objc2",
+      "license": "Zlib OR Apache-2.0 OR MIT",
+      "vcs": {
+        "git": {
+          "sha1": "7b1abfd750a2cacaea71d6a56ecfb83cb7de560b"
+        },
+        "path_in_vcs": "framework-crates/objc2-osa-kit"
+      },
+      "sourceKey": "madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "upstreamNotices": [
+        {
+          "url": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md",
+          "sha256": "7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54"
+        }
+      ]
+    },
+    {
+      "name": "objc2-quartz-core",
+      "version": "0.3.2",
+      "integrity": "96c1358452b371bf9f104e21ec536d37a650eb10f7ee379fff67d2e08d537f1f",
+      "repository": "https://github.com/madsmtm/objc2",
+      "license": "Zlib OR Apache-2.0 OR MIT",
+      "vcs": {
+        "git": {
+          "sha1": "7b1abfd750a2cacaea71d6a56ecfb83cb7de560b"
+        },
+        "path_in_vcs": "framework-crates/objc2-quartz-core"
+      },
+      "sourceKey": "madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "upstreamNotices": [
+        {
+          "url": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md",
+          "sha256": "7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54"
+        }
+      ]
+    },
+    {
+      "name": "objc2-ui-kit",
+      "version": "0.3.2",
+      "integrity": "d87d638e33c06f577498cbcc50491496a3ed4246998a7fbba7ccb98b1e7eab22",
+      "repository": "https://github.com/madsmtm/objc2",
+      "license": "Zlib OR Apache-2.0 OR MIT",
+      "vcs": {
+        "git": {
+          "sha1": "7b1abfd750a2cacaea71d6a56ecfb83cb7de560b"
+        },
+        "path_in_vcs": "framework-crates/objc2-ui-kit"
+      },
+      "sourceKey": "madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "upstreamNotices": [
+        {
+          "url": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md",
+          "sha256": "7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54"
+        }
+      ]
+    },
+    {
+      "name": "objc2-web-kit",
+      "version": "0.3.2",
+      "integrity": "b2e5aaab980c433cf470df9d7af96a7b46a9d892d521a2cbbb2f8a4c16751e7f",
+      "repository": "https://github.com/madsmtm/objc2",
+      "license": "Zlib OR Apache-2.0 OR MIT",
+      "vcs": {
+        "git": {
+          "sha1": "7b1abfd750a2cacaea71d6a56ecfb83cb7de560b"
+        },
+        "path_in_vcs": "framework-crates/objc2-web-kit"
+      },
+      "sourceKey": "madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "upstreamNotices": [
+        {
+          "url": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md",
+          "sha256": "7f976f7e9cb2d87df7230606feb932c3f21ac0e664045a775b600046ff850c54"
+        }
+      ]
+    },
+    {
+      "name": "phf",
+      "version": "0.10.1",
+      "integrity": "fabbf1ead8a5bcbc20f5f8b939ee3f5b0f6f281b6ad3468b84656b658b455259",
+      "repository": "https://github.com/sfackler/rust-phf",
+      "license": "MIT",
+      "vcs": {
+        "git": {
+          "sha1": "bed01538ae576876f11189d541875d228acef9e8"
+        },
+        "path_in_vcs": "phf"
+      },
+      "sourceKey": "sfackler/rust-phf/bed01538ae576876f11189d541875d228acef9e8",
+      "upstreamNotices": [
+        {
+          "url": "https://raw.githubusercontent.com/sfackler/rust-phf/bed01538ae576876f11189d541875d228acef9e8/LICENSE",
+          "sha256": "d8870d5e2ab20fc50915b711c5aa7588131c9abcc1bcb980da1efd7486522a46"
+        }
+      ]
+    },
+    {
+      "name": "phf",
+      "version": "0.8.0",
+      "integrity": "3dfb61232e34fcb633f43d12c58f83c1df82962dcdfa565a4e866ffc17dafe12",
+      "repository": "https://github.com/sfackler/rust-phf",
+      "license": "MIT",
+      "vcs": {
+        "git": {
+          "sha1": "81c7cc5b48649108428671d3b8ad151f6fbdb359"
+        }
+      },
+      "sourceKey": "sfackler/rust-phf/81c7cc5b48649108428671d3b8ad151f6fbdb359",
+      "upstreamNotices": [
+        {
+          "url": "https://raw.githubusercontent.com/sfackler/rust-phf/81c7cc5b48649108428671d3b8ad151f6fbdb359/LICENSE",
+          "sha256": "d8870d5e2ab20fc50915b711c5aa7588131c9abcc1bcb980da1efd7486522a46"
+        }
+      ]
+    },
+    {
+      "name": "phf_codegen",
+      "version": "0.8.0",
+      "integrity": "cbffee61585b0411840d3ece935cce9cb6321f01c45477d30066498cd5e1a815",
+      "repository": "https://github.com/sfackler/rust-phf",
+      "license": "MIT",
+      "vcs": {
+        "git": {
+          "sha1": "81c7cc5b48649108428671d3b8ad151f6fbdb359"
+        }
+      },
+      "sourceKey": "sfackler/rust-phf/81c7cc5b48649108428671d3b8ad151f6fbdb359",
+      "upstreamNotices": [
+        {
+          "url": "https://raw.githubusercontent.com/sfackler/rust-phf/81c7cc5b48649108428671d3b8ad151f6fbdb359/LICENSE",
+          "sha256": "d8870d5e2ab20fc50915b711c5aa7588131c9abcc1bcb980da1efd7486522a46"
+        }
+      ]
+    },
+    {
+      "name": "phf_generator",
+      "version": "0.10.0",
+      "integrity": "5d5285893bb5eb82e6aaf5d59ee909a06a16737a8970984dd7746ba9283498d6",
+      "repository": "https://github.com/sfackler/rust-phf",
+      "license": "MIT",
+      "vcs": {
+        "git": {
+          "sha1": "3ea14b2166553ad6e7b9afe7244144f5d661b6c6"
+        }
+      },
+      "sourceKey": "sfackler/rust-phf/3ea14b2166553ad6e7b9afe7244144f5d661b6c6",
+      "upstreamNotices": [
+        {
+          "url": "https://raw.githubusercontent.com/sfackler/rust-phf/3ea14b2166553ad6e7b9afe7244144f5d661b6c6/LICENSE",
+          "sha256": "d8870d5e2ab20fc50915b711c5aa7588131c9abcc1bcb980da1efd7486522a46"
+        }
+      ]
+    },
+    {
+      "name": "phf_generator",
+      "version": "0.8.0",
+      "integrity": "17367f0cc86f2d25802b2c26ee58a7b23faeccf78a396094c13dced0d0182526",
+      "repository": "https://github.com/sfackler/rust-phf",
+      "license": "MIT",
+      "vcs": {
+        "git": {
+          "sha1": "81c7cc5b48649108428671d3b8ad151f6fbdb359"
+        }
+      },
+      "sourceKey": "sfackler/rust-phf/81c7cc5b48649108428671d3b8ad151f6fbdb359",
+      "upstreamNotices": [
+        {
+          "url": "https://raw.githubusercontent.com/sfackler/rust-phf/81c7cc5b48649108428671d3b8ad151f6fbdb359/LICENSE",
+          "sha256": "d8870d5e2ab20fc50915b711c5aa7588131c9abcc1bcb980da1efd7486522a46"
+        }
+      ]
+    },
+    {
+      "name": "phf_macros",
+      "version": "0.10.0",
+      "integrity": "58fdf3184dd560f160dd73922bea2d5cd6e8f064bf4b13110abd81b03697b4e0",
+      "repository": "https://github.com/sfackler/rust-phf",
+      "license": "MIT",
+      "vcs": {
+        "git": {
+          "sha1": "3cc6f05cb07933af4cf886645d1170bdcb306b6b"
+        }
+      },
+      "sourceKey": "sfackler/rust-phf/3cc6f05cb07933af4cf886645d1170bdcb306b6b",
+      "upstreamNotices": [
+        {
+          "url": "https://raw.githubusercontent.com/sfackler/rust-phf/3cc6f05cb07933af4cf886645d1170bdcb306b6b/LICENSE",
+          "sha256": "d8870d5e2ab20fc50915b711c5aa7588131c9abcc1bcb980da1efd7486522a46"
+        }
+      ]
+    },
+    {
+      "name": "phf_shared",
+      "version": "0.10.0",
+      "integrity": "b6796ad771acdc0123d2a88dc428b5e38ef24456743ddb1744ed628f9815c096",
+      "repository": "https://github.com/sfackler/rust-phf",
+      "license": "MIT",
+      "vcs": {
+        "git": {
+          "sha1": "3ea14b2166553ad6e7b9afe7244144f5d661b6c6"
+        }
+      },
+      "sourceKey": "sfackler/rust-phf/3ea14b2166553ad6e7b9afe7244144f5d661b6c6",
+      "upstreamNotices": [
+        {
+          "url": "https://raw.githubusercontent.com/sfackler/rust-phf/3ea14b2166553ad6e7b9afe7244144f5d661b6c6/LICENSE",
+          "sha256": "d8870d5e2ab20fc50915b711c5aa7588131c9abcc1bcb980da1efd7486522a46"
+        }
+      ]
+    },
+    {
+      "name": "phf_shared",
+      "version": "0.8.0",
+      "integrity": "c00cf8b9eafe68dde5e9eaa2cef8ee84a9336a47d566ec55ca16589633b65af7",
+      "repository": "https://github.com/sfackler/rust-phf",
+      "license": "MIT",
+      "vcs": {
+        "git": {
+          "sha1": "81c7cc5b48649108428671d3b8ad151f6fbdb359"
+        }
+      },
+      "sourceKey": "sfackler/rust-phf/81c7cc5b48649108428671d3b8ad151f6fbdb359",
+      "upstreamNotices": [
+        {
+          "url": "https://raw.githubusercontent.com/sfackler/rust-phf/81c7cc5b48649108428671d3b8ad151f6fbdb359/LICENSE",
+          "sha256": "d8870d5e2ab20fc50915b711c5aa7588131c9abcc1bcb980da1efd7486522a46"
+        }
+      ]
+    },
+    {
+      "name": "plist",
+      "version": "1.8.0",
+      "integrity": "740ebea15c5d1428f910cd1a5f52cebf8d25006245ed8ade92702f4943d91e07",
+      "repository": "https://github.com/ebarnard/rust-plist/",
+      "license": "MIT",
+      "vcs": {
+        "git": {
+          "sha1": "441d8eca8541b6512997da18068f88455e4db90b"
+        },
+        "path_in_vcs": ""
+      },
+      "sourceKey": "ebarnard/rust-plist/441d8eca8541b6512997da18068f88455e4db90b",
+      "upstreamNotices": []
+    },
+    {
+      "name": "r-efi",
+      "version": "5.3.0",
+      "integrity": "69cdb34c158ceb288df11e18b4bd39de994f6657d83847bdffdbd7f346754b0f",
+      "repository": "https://github.com/r-efi/r-efi",
+      "license": "MIT OR Apache-2.0 OR LGPL-2.1-or-later",
+      "vcs": {
+        "git": {
+          "sha1": "97b55bed1c2c91dcbf787674849f05337ff80b33"
+        },
+        "path_in_vcs": ""
+      },
+      "sourceKey": "r-efi/r-efi/97b55bed1c2c91dcbf787674849f05337ff80b33",
+      "upstreamNotices": []
+    },
+    {
+      "name": "r-efi",
+      "version": "6.0.0",
+      "integrity": "f8dcc9c7d52a811697d2151c701e0d08956f92b0e24136cf4cf27b57a6a0d9bf",
+      "repository": "https://github.com/r-efi/r-efi",
+      "license": "MIT OR Apache-2.0 OR LGPL-2.1-or-later",
+      "vcs": {
+        "git": {
+          "sha1": "7e1b0322d31d625f81a5656096330934f9cd835d"
+        },
+        "path_in_vcs": ""
+      },
+      "sourceKey": "r-efi/r-efi/7e1b0322d31d625f81a5656096330934f9cd835d",
+      "upstreamNotices": []
+    },
+    {
+      "name": "rustls-platform-verifier-android",
+      "version": "0.1.1",
+      "integrity": "f87165f0995f63a9fbeea62b64d10b4d9d8e78ec6d7d51fb2125fda7bb36788f",
+      "repository": "https://github.com/rustls/rustls-platform-verifier",
+      "license": "MIT OR Apache-2.0",
+      "vcs": null,
+      "upstreamNotices": []
+    },
+    {
+      "name": "seahash",
+      "version": "4.1.0",
+      "integrity": "1c107b6f4780854c8b126e228ea8869f4d7b71260f962fefb57b996b8959ba6b",
+      "repository": "https://gitlab.redox-os.org/redox-os/seahash",
+      "license": "MIT",
+      "vcs": {
+        "git": {
+          "sha1": "94b632aeac099031c373599313d5b5f0acbbaec0"
+        }
+      },
+      "upstreamNotices": []
+    },
+    {
+      "name": "selectors",
+      "version": "0.24.0",
+      "integrity": "0c37578180969d00692904465fb7f6b3d50b9a2b952b87c23d0e2e5cb5013416",
+      "repository": "https://github.com/servo/servo",
+      "license": "MPL-2.0",
+      "vcs": {
+        "git": {
+          "sha1": "e82d7868d999d84f6d59719e4c397e5252aecb85"
+        },
+        "path_in_vcs": "components/selectors"
+      },
+      "sourceKey": "servo/servo/e82d7868d999d84f6d59719e4c397e5252aecb85",
+      "upstreamNotices": [
+        {
+          "url": "https://raw.githubusercontent.com/servo/servo/e82d7868d999d84f6d59719e4c397e5252aecb85/LICENSE",
+          "sha256": "1af2d2b02d9c86030d29ed77117ca7a1b0e4b6ff35bcf8eeb124867d0f5cb59e"
+        }
+      ]
+    },
+    {
+      "name": "selectors",
+      "version": "0.36.1",
+      "integrity": "c5d9c0c92a92d33f08817311cf3f2c29a3538a8240e94a6a3c622ce652d7e00c",
+      "repository": "https://github.com/servo/stylo",
+      "license": "MPL-2.0",
+      "vcs": {
+        "git": {
+          "sha1": "635e1a19d02960588a00e189bd4bd5bdb150ec3d"
+        },
+        "path_in_vcs": "selectors"
+      },
+      "sourceKey": "servo/stylo/635e1a19d02960588a00e189bd4bd5bdb150ec3d",
+      "upstreamNotices": []
+    },
+    {
+      "name": "taffy",
+      "version": "0.14.0",
+      "integrity": "639627c87f43b9181c811f40a6296409e093a17bc761214cba3c15df74f86b99",
+      "repository": "https://github.com/DioxusLabs/taffy",
+      "license": "MIT",
+      "vcs": {
+        "git": {
+          "sha1": "77f385683c1d698c91a23a259f87fdddf26925fb"
+        },
+        "path_in_vcs": ""
+      },
+      "sourceKey": "DioxusLabs/taffy/77f385683c1d698c91a23a259f87fdddf26925fb",
+      "upstreamNotices": [
+        {
+          "url": "https://raw.githubusercontent.com/DioxusLabs/taffy/77f385683c1d698c91a23a259f87fdddf26925fb/LICENSE",
+          "sha256": "f97daf1a0124413dccf399a4e6626b4b74acd05282f80b6d64ac82225650b77a"
+        }
+      ]
+    },
+    {
+      "name": "tao-macros",
+      "version": "0.1.3",
+      "integrity": "f4e16beb8b2ac17db28eab8bca40e62dbfbb34c0fcdc6d9826b11b7b5d047dfd",
+      "repository": "https://github.com/tauri-apps/tao",
+      "license": "MIT OR Apache-2.0",
+      "vcs": null,
+      "upstreamNotices": []
+    },
+    {
+      "name": "tauri-plugin",
+      "version": "2.5.4",
+      "integrity": "ddde7d51c907b940fb573006cdda9a642d6a7c8153657e88f8a5c3c9290cd4aa",
+      "repository": "https://github.com/tauri-apps/tauri",
+      "license": "Apache-2.0 OR MIT",
+      "vcs": {
+        "git": {
+          "sha1": "9b17a7aeae9a83222ffe829aa4e2d8a5ba6bed8c"
+        },
+        "path_in_vcs": "crates/tauri-plugin"
+      },
+      "sourceKey": "tauri-apps/tauri/9b17a7aeae9a83222ffe829aa4e2d8a5ba6bed8c",
+      "upstreamNotices": []
+    },
+    {
+      "name": "unic-char-property",
+      "version": "0.9.0",
+      "integrity": "a8c57a407d9b6fa02b4795eb81c5b6652060a15a7903ea981f3d723e6c0be221",
+      "repository": "https://github.com/open-i18n/rust-unic/",
+      "license": "MIT/Apache-2.0",
+      "vcs": {
+        "git": {
+          "sha1": "5878605364af97a3358368a6eaef02104af2e016"
+        }
+      },
+      "sourceKey": "open-i18n/rust-unic/5878605364af97a3358368a6eaef02104af2e016",
+      "upstreamNotices": [
+        {
+          "url": "https://raw.githubusercontent.com/open-i18n/rust-unic/5878605364af97a3358368a6eaef02104af2e016/LICENSE-MIT",
+          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/open-i18n/rust-unic/5878605364af97a3358368a6eaef02104af2e016/LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        }
+      ]
+    },
+    {
+      "name": "unic-char-range",
+      "version": "0.9.0",
+      "integrity": "0398022d5f700414f6b899e10b8348231abf9173fa93144cbc1a43b9793c1fbc",
+      "repository": "https://github.com/open-i18n/rust-unic/",
+      "license": "MIT/Apache-2.0",
+      "vcs": {
+        "git": {
+          "sha1": "5878605364af97a3358368a6eaef02104af2e016"
+        }
+      },
+      "sourceKey": "open-i18n/rust-unic/5878605364af97a3358368a6eaef02104af2e016",
+      "upstreamNotices": [
+        {
+          "url": "https://raw.githubusercontent.com/open-i18n/rust-unic/5878605364af97a3358368a6eaef02104af2e016/LICENSE-MIT",
+          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/open-i18n/rust-unic/5878605364af97a3358368a6eaef02104af2e016/LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        }
+      ]
+    },
+    {
+      "name": "unic-common",
+      "version": "0.9.0",
+      "integrity": "80d7ff825a6a654ee85a63e80f92f054f904f21e7d12da4e22f9834a4aaa35bc",
+      "repository": "https://github.com/open-i18n/rust-unic/",
+      "license": "MIT/Apache-2.0",
+      "vcs": {
+        "git": {
+          "sha1": "5878605364af97a3358368a6eaef02104af2e016"
+        }
+      },
+      "sourceKey": "open-i18n/rust-unic/5878605364af97a3358368a6eaef02104af2e016",
+      "upstreamNotices": [
+        {
+          "url": "https://raw.githubusercontent.com/open-i18n/rust-unic/5878605364af97a3358368a6eaef02104af2e016/LICENSE-MIT",
+          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/open-i18n/rust-unic/5878605364af97a3358368a6eaef02104af2e016/LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        }
+      ]
+    },
+    {
+      "name": "unic-ucd-ident",
+      "version": "0.9.0",
+      "integrity": "e230a37c0381caa9219d67cf063aa3a375ffed5bf541a452db16e744bdab6987",
+      "repository": "https://github.com/open-i18n/rust-unic/",
+      "license": "MIT/Apache-2.0",
+      "vcs": {
+        "git": {
+          "sha1": "8a6ce83063d90b91ae2ce59eddb803edd393fca9"
+        }
+      },
+      "sourceKey": "open-i18n/rust-unic/8a6ce83063d90b91ae2ce59eddb803edd393fca9",
+      "upstreamNotices": [
+        {
+          "url": "https://raw.githubusercontent.com/open-i18n/rust-unic/8a6ce83063d90b91ae2ce59eddb803edd393fca9/LICENSE-MIT",
+          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/open-i18n/rust-unic/8a6ce83063d90b91ae2ce59eddb803edd393fca9/LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        }
+      ]
+    },
+    {
+      "name": "unic-ucd-version",
+      "version": "0.9.0",
+      "integrity": "96bd2f2237fe450fcd0a1d2f5f4e91711124f7857ba2e964247776ebeeb7b0c4",
+      "repository": "https://github.com/open-i18n/rust-unic/",
+      "license": "MIT/Apache-2.0",
+      "vcs": {
+        "git": {
+          "sha1": "5878605364af97a3358368a6eaef02104af2e016"
+        }
+      },
+      "sourceKey": "open-i18n/rust-unic/5878605364af97a3358368a6eaef02104af2e016",
+      "upstreamNotices": [
+        {
+          "url": "https://raw.githubusercontent.com/open-i18n/rust-unic/5878605364af97a3358368a6eaef02104af2e016/LICENSE-MIT",
+          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/open-i18n/rust-unic/5878605364af97a3358368a6eaef02104af2e016/LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        }
+      ]
+    },
+    {
+      "name": "wasip3",
+      "version": "0.4.0+wasi-0.3.0-rc-2026-01-06",
+      "integrity": "5428f8bf88ea5ddc08faddef2ac4a67e390b88186c703ce6dbd955e1c145aca5",
+      "repository": "https://github.com/bytecodealliance/wasi-rs",
+      "license": "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT",
+      "vcs": {
+        "git": {
+          "sha1": "06ce201370fcde0d1b0d47cac8ecb1b0b312c9f9"
+        },
+        "path_in_vcs": "crates/wasip3"
+      },
+      "sourceKey": "bytecodealliance/wasi-rs/06ce201370fcde0d1b0d47cac8ecb1b0b312c9f9",
+      "upstreamNotices": [
+        {
+          "url": "https://raw.githubusercontent.com/bytecodealliance/wasi-rs/06ce201370fcde0d1b0d47cac8ecb1b0b312c9f9/LICENSE-MIT",
+          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/bytecodealliance/wasi-rs/06ce201370fcde0d1b0d47cac8ecb1b0b312c9f9/LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        }
+      ]
+    },
+    {
+      "name": "wasm-encoder",
+      "version": "0.244.0",
+      "integrity": "990065f2fe63003fe337b932cfb5e3b80e0b4d0f5ff650e6985b1048f62c8319",
+      "repository": "https://github.com/bytecodealliance/wasm-tools/tree/main/crates/wasm-encoder",
+      "license": "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT",
+      "vcs": {
+        "git": {
+          "sha1": "d4e317f22c3bace76cb3205003bcc34b4929037d"
+        },
+        "path_in_vcs": "crates/wasm-encoder"
+      },
+      "sourceKey": "bytecodealliance/wasm-tools/d4e317f22c3bace76cb3205003bcc34b4929037d",
+      "upstreamNotices": [
+        {
+          "url": "https://raw.githubusercontent.com/bytecodealliance/wasm-tools/d4e317f22c3bace76cb3205003bcc34b4929037d/LICENSE-MIT",
+          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/bytecodealliance/wasm-tools/d4e317f22c3bace76cb3205003bcc34b4929037d/LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        }
+      ]
+    },
+    {
+      "name": "wasmparser",
+      "version": "0.244.0",
+      "integrity": "47b807c72e1bac69382b3a6fb3dbe8ea4c0ed87ff5629b8685ae6b9a611028fe",
+      "repository": "https://github.com/bytecodealliance/wasm-tools/tree/main/crates/wasmparser",
+      "license": "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT",
+      "vcs": {
+        "git": {
+          "sha1": "d4e317f22c3bace76cb3205003bcc34b4929037d"
+        },
+        "path_in_vcs": "crates/wasmparser"
+      },
+      "sourceKey": "bytecodealliance/wasm-tools/d4e317f22c3bace76cb3205003bcc34b4929037d",
+      "upstreamNotices": [
+        {
+          "url": "https://raw.githubusercontent.com/bytecodealliance/wasm-tools/d4e317f22c3bace76cb3205003bcc34b4929037d/LICENSE-MIT",
+          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/bytecodealliance/wasm-tools/d4e317f22c3bace76cb3205003bcc34b4929037d/LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        }
+      ]
+    },
+    {
+      "name": "webview2-com",
+      "version": "0.38.2",
+      "integrity": "7130243a7a5b33c54a444e54842e6a9e133de08b5ad7b5861cd8ed9a6a5bc96a",
+      "repository": "https://github.com/wravery/webview2-rs",
+      "license": "MIT",
+      "vcs": {
+        "git": {
+          "sha1": "b74dc5e2b394044bea5191052868ce7a106c202c"
+        },
+        "path_in_vcs": "crates/webview2-com"
+      },
+      "sourceKey": "wravery/webview2-rs/b74dc5e2b394044bea5191052868ce7a106c202c",
+      "upstreamNotices": [
+        {
+          "url": "https://raw.githubusercontent.com/wravery/webview2-rs/b74dc5e2b394044bea5191052868ce7a106c202c/LICENSE",
+          "sha256": "0dcf41516e608bbcb6cdc5229feb7b86fe4a643b85e7df251133c93408fdac73"
+        }
+      ]
+    },
+    {
+      "name": "webview2-com-macros",
+      "version": "0.8.1",
+      "integrity": "67a921c1b6914c367b2b823cd4cde6f96beec77d30a939c8199bb377cf9b9b54",
+      "repository": "https://github.com/wravery/webview2-rs",
+      "license": "MIT",
+      "vcs": {
+        "git": {
+          "sha1": "dffa41a8a46d3f5565eefbff2de57d38d399f158"
+        },
+        "path_in_vcs": "crates/callback-macros"
+      },
+      "sourceKey": "wravery/webview2-rs/dffa41a8a46d3f5565eefbff2de57d38d399f158",
+      "upstreamNotices": [
+        {
+          "url": "https://raw.githubusercontent.com/wravery/webview2-rs/dffa41a8a46d3f5565eefbff2de57d38d399f158/LICENSE",
+          "sha256": "0dcf41516e608bbcb6cdc5229feb7b86fe4a643b85e7df251133c93408fdac73"
+        }
+      ]
+    },
+    {
+      "name": "webview2-com-sys",
+      "version": "0.38.2",
+      "integrity": "381336cfffd772377d291702245447a5251a2ffa5bad679c99e61bc48bacbf9c",
+      "repository": "https://github.com/wravery/webview2-rs",
+      "license": "MIT",
+      "vcs": {
+        "git": {
+          "sha1": "b74dc5e2b394044bea5191052868ce7a106c202c"
+        },
+        "path_in_vcs": "crates/bindings"
+      },
+      "sourceKey": "wravery/webview2-rs/b74dc5e2b394044bea5191052868ce7a106c202c",
+      "upstreamNotices": [
+        {
+          "url": "https://raw.githubusercontent.com/wravery/webview2-rs/b74dc5e2b394044bea5191052868ce7a106c202c/LICENSE",
+          "sha256": "0dcf41516e608bbcb6cdc5229feb7b86fe4a643b85e7df251133c93408fdac73"
+        }
+      ]
+    },
+    {
+      "name": "winapi-i686-pc-windows-gnu",
+      "version": "0.4.0",
+      "integrity": "ac3b87c63620426dd9b991e5ce0329eff545bccbbb34f3be09ff6fb6ab51b7b6",
+      "repository": "https://github.com/retep998/winapi-rs",
+      "license": "MIT/Apache-2.0",
+      "vcs": null,
+      "upstreamNotices": []
+    },
+    {
+      "name": "winapi-x86_64-pc-windows-gnu",
+      "version": "0.4.0",
+      "integrity": "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f",
+      "repository": "https://github.com/retep998/winapi-rs",
+      "license": "MIT/Apache-2.0",
+      "vcs": null,
+      "upstreamNotices": []
+    },
+    {
+      "name": "wit-component",
+      "version": "0.244.0",
+      "integrity": "9d66ea20e9553b30172b5e831994e35fbde2d165325bec84fc43dbf6f4eb9cb2",
+      "repository": "https://github.com/bytecodealliance/wasm-tools/tree/main/crates/wit-component",
+      "license": "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT",
+      "vcs": {
+        "git": {
+          "sha1": "d4e317f22c3bace76cb3205003bcc34b4929037d"
+        },
+        "path_in_vcs": "crates/wit-component"
+      },
+      "sourceKey": "bytecodealliance/wasm-tools/d4e317f22c3bace76cb3205003bcc34b4929037d",
+      "upstreamNotices": [
+        {
+          "url": "https://raw.githubusercontent.com/bytecodealliance/wasm-tools/d4e317f22c3bace76cb3205003bcc34b4929037d/LICENSE-MIT",
+          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/bytecodealliance/wasm-tools/d4e317f22c3bace76cb3205003bcc34b4929037d/LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        }
+      ]
+    },
+    {
+      "name": "wit-parser",
+      "version": "0.244.0",
+      "integrity": "ecc8ac4bc1dc3381b7f59c34f00b67e18f910c2c0f50015669dde7def656a736",
+      "repository": "https://github.com/bytecodealliance/wasm-tools/tree/main/crates/wit-parser",
+      "license": "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT",
+      "vcs": {
+        "git": {
+          "sha1": "d4e317f22c3bace76cb3205003bcc34b4929037d"
+        },
+        "path_in_vcs": "crates/wit-parser"
+      },
+      "sourceKey": "bytecodealliance/wasm-tools/d4e317f22c3bace76cb3205003bcc34b4929037d",
+      "upstreamNotices": [
+        {
+          "url": "https://raw.githubusercontent.com/bytecodealliance/wasm-tools/d4e317f22c3bace76cb3205003bcc34b4929037d/LICENSE-MIT",
+          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/bytecodealliance/wasm-tools/d4e317f22c3bace76cb3205003bcc34b4929037d/LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        }
+      ]
+    },
+    {
+      "name": "wuff",
+      "version": "0.2.9",
+      "integrity": "200a7b806377b65f1ff9a985874332f15357c87e5dd7855f35f06dade95b8b3d",
+      "repository": "https://github.com/nicoburns/wuff",
+      "license": "MIT",
+      "vcs": {
+        "git": {
+          "sha1": "78e67f52713c0a2c36bd083fea18ba029565c9ec"
+        },
+        "path_in_vcs": "wuff"
+      },
+      "sourceKey": "nicoburns/wuff/78e67f52713c0a2c36bd083fea18ba029565c9ec",
+      "upstreamNotices": [
+        {
+          "url": "https://raw.githubusercontent.com/nicoburns/wuff/78e67f52713c0a2c36bd083fea18ba029565c9ec/LICENSE",
+          "sha256": "4b373ba4395e35d44ba1f41202c179b57ca3c5ba5e4a1aaafa1547aede7e1eb7"
+        }
+      ]
+    },
+    {
+      "name": "zune-core",
+      "version": "0.4.12",
+      "integrity": "3f423a2c17029964870cfaabb1f13dfab7d092a62a29a89264f4d36990ca414a",
+      "repository": null,
+      "license": "MIT OR Apache-2.0 OR Zlib",
+      "vcs": {
+        "git": {
+          "sha1": "f8fbb123d5ed04441e8324a555bfcda0cb1bd28f"
+        },
+        "path_in_vcs": "crates/zune-core"
+      },
+      "upstreamNotices": []
+    },
+    {
+      "name": "zune-jpeg",
+      "version": "0.4.21",
+      "integrity": "29ce2c8a9384ad323cf564b67da86e21d3cfdff87908bc1223ed5c99bc792713",
+      "repository": "https://github.com/etemesi254/zune-image/tree/dev/crates/zune-jpeg",
+      "license": "MIT OR Apache-2.0 OR Zlib",
+      "vcs": {
+        "git": {
+          "sha1": "fa2c767a01d7d9373911d0bf63e0588553d67e0e"
+        },
+        "path_in_vcs": "crates/zune-jpeg"
+      },
+      "sourceKey": "etemesi254/zune-image/fa2c767a01d7d9373911d0bf63e0588553d67e0e",
+      "upstreamNotices": [
+        {
+          "url": "https://raw.githubusercontent.com/etemesi254/zune-image/fa2c767a01d7d9373911d0bf63e0588553d67e0e/LICENSE.md",
+          "sha256": "c6dff146a9f31848ac296faa5a08a4253caf2c384c86f906dc99e7fc0a39cc8c"
+        }
+      ]
+    }
+  ]
+}

@@ -5,7 +5,7 @@ on:
       depth:
         type: choice
         default: startup
-        options: [startup, deep, package-audit]
+        options: [startup, deep, package-audit, preferences]
         description: Direct startup metadata or TLS and lifecycle inspection.
       platform:
         type: choice
@@ -16,6 +16,7 @@ permissions:
   contents: read
 jobs:
   observe:
+    if: inputs.depth != 'preferences'
     strategy:
       fail-fast: false
       matrix:
@@ -73,6 +74,75 @@ jobs:
             privacy-evidence/*.json
             privacy-evidence/*.jsonl
             privacy-evidence/*.txt
+            privacy-evidence/*.png
+          retention-days: 7
+          if-no-files-found: error
+  preferences:
+    if: inputs.depth == 'preferences'
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(inputs.platform == 'linux' && '[{"os":"ubuntu-24.04","platform":"linux","target":"x86_64-unknown-linux-gnu","bundles":"appimage"}]' || inputs.platform == 'windows' && '[{"os":"windows-2025","platform":"windows","target":"x86_64-pc-windows-msvc","bundles":"nsis"}]' || '[{"os":"ubuntu-24.04","platform":"linux","target":"x86_64-unknown-linux-gnu","bundles":"appimage"},{"os":"windows-2025","platform":"windows","target":"x86_64-pc-windows-msvc","bundles":"nsis"}]') }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: true
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Prepare exact frontend dependencies
+        run: |
+          corepack enable
+          pnpm install --frozen-lockfile
+          pnpm run fetch:rhwp-pin-tag
+      - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: ./.github/actions/cargo-cache
+        with:
+          scope: desktop
+          target: ${{ matrix.target }}
+          paths: apps/desktop/src-tauri/target
+      - name: Prepare Linux build and observation tools
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential curl file libayatana-appindicator3-dev libgtk-3-dev librsvg2-dev libssl-dev libwebkit2gtk-4.1-dev libxdo-dev pkg-config rpm shared-mime-info xdg-utils zip libfuse2t64 dbus-x11 xvfb openbox imagemagick fonts-noto-cjk webkit2gtk-driver
+          cargo install tauri-driver --version 2.0.6 --locked
+      - name: Stage Linux thumbnail helper
+        if: runner.os == 'Linux'
+        shell: bash
+        run: pnpm run build:linux-thumbnailer -- --target x86_64-unknown-linux-gnu --output apps/desktop/src-tauri/linux/thumbnail-resources --repository-sha "$(git rev-parse HEAD)"
+      - name: Create nonpublishing updater observation configuration
+        shell: bash
+        run: |
+          node --input-type=module -e 'import fs from "node:fs";import path from "node:path";const c=JSON.parse(fs.readFileSync("apps/desktop/src-tauri/tauri.updater.conf.json","utf8"));c.bundle.createUpdaterArtifacts=false;fs.writeFileSync(path.join(process.env.RUNNER_TEMP,"privacy-updater.json"),JSON.stringify(c));'
+      - name: Build unsigned observation candidate
+        shell: bash
+        run: pnpm tauri build --target "${{ matrix.target }}" --bundles "${{ matrix.bundles }}" --config "$RUNNER_TEMP/privacy-updater.json"
+      - name: Identify locally built candidate bytes
+        run: node scripts/privacy/prepare-candidate.mjs ${{ matrix.platform }}
+      - name: Install bounded TLS observer
+        run: python -m pip install mitmproxy==11.0.2
+      - name: Observe Linux explicit preferences and restart requests
+        if: runner.os == 'Linux'
+        run: dbus-run-session -- bash scripts/privacy/preferences-linux.sh
+      - name: Observe Windows explicit preferences and restart requests
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./scripts/privacy/preferences-windows.ps1
+      - name: Preserve candidate identity, TLS structure and screenshots
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: privacy-preferences-${{ matrix.platform }}
+          path: |
+            privacy-evidence/*.json
+            privacy-evidence/*.jsonl
             privacy-evidence/*.png
           retention-days: 7
           if-no-files-found: error

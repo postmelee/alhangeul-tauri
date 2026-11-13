@@ -119,18 +119,18 @@
             <Property Id="WIXUI_INSTALLDIR" Value="INSTALLDIR" />
 
             <!-- Disclosure only: no EULA acceptance checkbox or optional traffic consent. -->
-            <Dialog Id="AlhangeulPrivacyDlg" Width="370" Height="270" Title="Alhangeul 설치·개인정보 안내">
-                <Control Id="Title" Type="Text" X="15" Y="12" Width="340" Height="20" Text="설치 시 시스템 변경과 개인정보 처리를 확인하세요." />
+            <Dialog Id="AlhangeulPrivacyDlg" Width="370" Height="270" Title="Alhangeul privacy notice">
+                <Control Id="Title" Type="Text" X="15" Y="12" Width="340" Height="20" Text="Review system changes and data processing before installing." />
                 <Control Id="Policy" Type="ScrollableText" X="20" Y="40" Width="330" Height="185" Sunken="yes" TabSkip="no">
                     <Text SourceFile="{{license}}" />
                 </Control>
-                <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="뒤로">
+                <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="Back">
                     <Publish Event="NewDialog" Value="WelcomeDlg">1</Publish>
                 </Control>
-                <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="계속">
+                <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="Continue">
                     <Publish Event="NewDialog" Value="InstallDirDlg">1</Publish>
                 </Control>
-                <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="취소">
+                <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="Cancel">
                     <Publish Event="SpawnDialog" Value="CancelDlg">1</Publish>
                 </Control>
             </Dialog>

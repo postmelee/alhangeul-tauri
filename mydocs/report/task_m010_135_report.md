@@ -95,3 +95,12 @@ PR #136의 첫 필수 검사 run 43467248700에서 automation 1,384개 중 1개�
 - lock archive 1,408개에서 원문 고지 ZIP을 생성했다. 136개 filename-notice gap은 그대로 남기며 build/dev/optional을 포함한 목록을 실제 배포 SBOM으로 부르지 않는다. 지원 target normal graph 수집을 native CI에 추가했다.
 - 로컬: 개인정보 안내·설정·desktop event 14개, 설치/workflow/font/native graph 계약 45개, upstream 39개 통과. product-boundary·action pins·diff check 통과. Studio build 통과. 전체 Studio는 291/293, 없는 sparse 예제 문서 2개로 실패하여 전체 통과로 보고하지 않는다. 완전한 고정 checkout을 사용하는 CI에서 다시 검증한다.
 - 제품 변경은 CI 후보이며 앱 릴리스·제품 PR 병합·신청·계정 생성·서명 적용은 하지 않았다. 이슈 #135는 열린 상태로 유지한다.
+
+## 공개 기본 브랜치 정렬과 Stage 7.3 검증 준비
+정책 PR [#137](https://github.com/postmelee/alhangeul-tauri/pull/137)을 devel→main 일반 merge했다. merge SHA `f52450053a391313bab6969e3bf8e4267151b471`. 실제 tree의 제품 코드/version/lock/pin/폰트 bytes 차이가 없음을 검토했고 공개 기본 SECURITY.md가 v0.1.3으로 바뀐 것을 재조회했다. main의 PR 자동 필수 검사는 구성되어 있지 않아 새 성공 check로 주장하지 않는다. Pages는 기존 승인된 exact devel 배포를 유지한다.
+
+수정 제품 후보 `e0a674e7`의 full run [43475282411](https://github.com/postmelee/alhangeul-tauri/actions/runs/43475282411)에서 Node/Studio·Windows PS fast가 성공했고 native/package 검증은 진행 중이다. 이전 run 43470702938은 Windows 잠금 충돌로 이미 실패했으므로 부분 결과를 보존하고 남은 작업을 취소했다. 전체 성공으로 기록하지 않는다.
+
+일반 artifact는 updater release 설정이 없어 실제 자동 확인 positive control에 사용할 수 없음을 확인했다. 기존 공개 endpoint/public key만 넣고 createUpdaterArtifacts=false인 별도 비게시 시험 구성으로 Windows/Linux x64 native 선택·재시작·TLS를 검사하는 preferences 모드를 준비했다. 앱 릴리스, tag, SignPath 신청·계정·서명 credential 생성은 포함하지 않는다. MSI의 새 제목/버튼은 en-US codepage와 맞는 영문으로 수정했고 한국어 정책은 Unicode escape RTF를 유지한다. 새 시험 실행 결과는 아직 미수용이다.
+
+원문 누락 Rust 62개 중 47개는 검증된 archive의 VCS commit에서 root 원문 고지를 찾았다. `notice-supplement-review.json`은 추가 검토 후보이며 현재 동봉 ZIP에 반영됐다고 주장하지 않는다. 남은 고지·실제 target graph·설치 화면·새 bytes 통신 검증과 제공자 해석은 별도 수용 항목이다. 사전 문의 thread를 다시 읽었으며 여전히 발송 메시지 1건만 있다.

@@ -100,3 +100,11 @@ WebView2 opt-out/System Libraries 및 rhwp 서명 대상의 최종 해석은 발
 
 ### Stage 7 첫 실행 안내·native 의존 그래프 구체화
 Windows/Linux 앱 첫 실행과 제품 정보에서 설치본에 동봉한 동일 안내를 로컬로 표시한다. WebView 저장소의 표시 여부와 updater native 선택은 별개이며 닫기를 통신 동의로 처리하지 않는다. 지원 OS artifact CI에서 target-filtered Cargo normal dependency graph를 수집한다. build/dev-only edge는 제외하되 procedural macro·feature 통합 영향 때문에 binary SBOM이라고 하지 않는다. Windows helper 잠금 오류는 추가 변경을 기준 commit으로 되돌리고 각 helper 패키지만 지정한 Cargo 보수적 갱신으로 수정한다. 기존 모든 package 버전·source·checksum 보존을 검증하며 upstream sparse-checkout과 source/pin은 바꾸지 않는다.
+
+### Stage 7.3 실제 선택 통신 검증
+일반 full CI artifact에는 updater release 설정이 없으므로 그 bytes의 무통신을 선택 기능 검증으로 사용하지 않는다. 기존 수동 개인정보 관측 workflow에 별도 preferences 모드를 추가해 Windows/Linux x64에서 현재 제품을 비게시 시험 구성으로 빌드한다. 기존 공개 updater endpoint/public key만 사용하고 createUpdaterArtifacts=false로 서명·키 생성·업데이트 게시를 하지 않는다. 자체 기본 꺼짐, 명시 UI 켜기 직후 무요청, 수동 확인 200 positive control, 켠 상태 재시작 요청, 끈 상태·손상 설정 재시작 무요청을 실제 프로세스와 TLS 관측으로 대조한다. 원문·임시 CA 키·문서 원본은 업로드하지 않으며 exact source/config/실행 파일 hash·요약·스크린샷만 보존한다. 원래 public v0.1.3 관측과 시험 구성의 차이를 명시한다. 경로는 기존 scripts/privacy·workflow·task 증거 체계를 사용한다.
+
+### 공개 기본 브랜치 정책 정렬
+DESKTOP_RELEASE.md의 공개 후 커뮤니티 안내 devel→main 정렬 절차를 적용했다. 사용자 정책 공개 승인 범위에서 main fd96e02d와 devel 644d0ac5의 실제 tree diff를 검토해 제품 코드·version·lock·upstream pin·폰트 bytes가 동일함을 확인한 뒤 PR #137을 일반 merge했다. 공개 SECURITY.md가 v0.1.3을 표시함을 재조회했다. 앱 릴리스/tag 및 미출시 Stage 7 제품 변경은 포함하지 않았다.
+
+MSI의 기존 en-US codepage와 충돌하지 않도록 새 dialog의 제목·버튼은 기존 설치 언어에 맞는 ASCII 영문으로 두고 한국어 정책 본문은 ASCII RTF Unicode escape로 보존한다. WiX의 UTF-8/Unicode database 비지원 안내(https://docs.firegiant.com/wix3/overview/codepage/)에 따른 호환성 보완이며 임의 codepage 변경은 하지 않는다. 이 installer-only 차이는 Windows package profile에서 검증하고 Linux/core의 동일 제품 코드 검사는 exact 이전 SHA로 구분해 재사용한다.
