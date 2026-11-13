@@ -40,3 +40,13 @@ GitHub Issue: [#135](https://github.com/postmelee/alhangeul-tauri/issues/135)
 
 ## 승인 및 진행 근거
 후속 명시 지시의 task-start·계획·구현·검증 범위 안에서 진행한다. 최종 보고 후 PR 게시·merge는 별도 지시를 기다린다.
+
+## Stage 4 — 추가 실증 검증 (2026-11-14 KST 승인)
+사용자가 “실제 OS 트래픽·이메일 수신·시각 렌더링 등 남은 작업” 진행을 명시했다.
+- 사이트: 로컬 Chrome 1440/390px 렌더링, 화면 read-back·가로 넘침·세 진입 링크 확인. 데스크톱 앱의 지원 외 OS 검증과 구분한다.
+- 메일: 사용자가 선택한 업무용 계정에서 제보함으로 시험 식별자만 보낸 뒤 INBOX 수신 확인. 개인 주소·메일 ID는 저장소에 기록하지 않는다.
+- OS: 로컬 실행 환경이 없어 publish/task135의 전용 Actions에서 Windows 2025 NSIS 및 Ubuntu 22.04 AppImage 공개 v0.1.3을 고정 SHA-256으로 확인 후 시작·idle 45초 관측. 빌드·릴리스·배포·서명·신청 없음.
+- Windows WFP 연결 이벤트, Linux strace connect syscall로 프로세스의 목적지·포트를 관측한다. 문서·계정·credential 없이 실행하고 TLS 복호화나 전체 패킷 본문 수집은 하지 않는다. 스크린샷과 로그 파일 존재·크기만 함께 기록한다.
+- 수용: 실제 앱 생존·화면과 연결 기록을 확인한다. 기록 0개·앱 실패는 네트워크 없음으로 판정하지 않는다. 시작/idle 이외 편집·모든 통신 부재는 증명하지 않는다.
+- 산출: .github/workflows/alhangeul-privacy-observation.yml, scripts/privacy/{prepare.mjs,observe-linux.sh,observe-windows.ps1}, working의 stage4 보고 및 assets/task135, 최종 보고서 보완.
+- 파일 위치: 검증 자동화는 기존 .github/workflows·scripts/ 관습, 증거는 mydocs/working/assets/task135. 공개 제품 정책은 기존 위치 유지. 원격 실행을 위해 publish/task135 push만 수행하고 PR·merge는 하지 않는다.
