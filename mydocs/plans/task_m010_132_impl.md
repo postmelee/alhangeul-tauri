@@ -558,3 +558,8 @@ Worker 측정 run 43374999732(d2b16313)은 failure로 보존한다. artifact 140
 
 
 첫 Shell 요청 당시 실제 Worker의 생성/종료 여부를 놓치지 않도록 기존 protected SYSTEM actor에 읽기 전용 Win32_ProcessStartTrace/StopTrace 구독을 준비한다. 고정 이름 AlhangeulThumbnailWorker.exe/dllhost.exe의 PID·부모 PID·session·UTC 시각·종료 코드만 최대 500건 수집하고 명령행·문서 내용은 수집하지 않는다. upgrade prerequisite 완료 전에 구독을 시작하고 표준 사용자 측 제거 후 고정 trace-stop marker로 회수·구독 해제한다. 결과는 protected 응답에서 guest.json에 포함해 기존 serial 20-file 상한을 유지한다. 첫 Shell·각 후속 probe 시각 및 직접 실행 PID를 함께 기록한다. 실제 소유 합성 child의 시작/정상 종료와 구독 정리 회귀를 별도 fast 실행으로 먼저 확인하며, 진행 중인 a572dec2/run43378283120 guest는 취소하지 않는다.
+
+
+프로세스 관측 fast run 43379594497/43380125698은 종료 이벤트 누락 회귀로 실패했다. 두 번째 대조에서 같은 합성 PID의 StartTrace 이름은 AlhangeulThumbnailWorker.exe, StopTrace 이름은 AlhangeulThumb로 잘리는 실제 차이를 확인했다. 종료 필터에 이 정확한 관측 이름만 추가하고 원시 이름·PID·시각을 보존했다. 수정 725caee4/run43380575230의 Windows fast 회귀가 통과했다. 이름만으로 worker 수명을 추정하지 않고 Start/Stop의 PID·시각을 대조한다.
+
+후속 guest는 최초 실패를 유지한 뒤 동일 원본의 기본 flags=4 재요청, SDK 디버그용 WTS_EXTRACTINPROC|FORCEEXTRACTION(0x104), 별도 surrogate 강제(0xC04)를 각각 새 STA child에서 비교한다. 이는 per-call 진단이며 제품의 DisableProcessIsolation·DCOM/UAC·등록 값을 변경하지 않는다. 각 child는 15초/출력 16KiB 제한과 소유 PID 종료를 적용하고 각 requestFlags·HRESULT·bitmap·시각·child PID를 구분한다. 이후 기존 직접 DLL/Worker 관측을 실행한다. 원래 upgrade 실패를 디버그 경로 성공으로 수용하지 않는다. 공식 플래그 근거: https://learn.microsoft.com/en-us/windows/win32/api/thumbcache/ne-thumbcache-wts_flags

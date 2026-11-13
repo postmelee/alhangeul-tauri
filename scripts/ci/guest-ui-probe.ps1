@@ -92,6 +92,12 @@ try {
     $report['upgradeProbes'] = @(Get-GuestProbes upgrade -ObserveFailures -OnFirstFailure {
       param($Id)
       if ($Id -eq 'small-hwp') {
+        $report['cacheComparisons'] = @()
+        foreach ($mode in @('cache-default', 'cache-inproc', 'cache-surrogate')) {
+          try { $result = Measure-GuestProvider $mode }
+          catch { $result = @{ status = 'failed'; failure = $_.Exception.Message } }
+          $report.cacheComparisons += @{ mode = $mode; result = $result }
+        }
         try { $report['providerDiagnostic'] = Measure-GuestProvider }
         catch { $report['providerDiagnostic'] = @{ status = 'failed'; failure = $_.Exception.Message } }
         try { $report['workerDiagnostic'] = Measure-GuestWorker $directory }
