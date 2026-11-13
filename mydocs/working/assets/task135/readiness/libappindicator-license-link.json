@@ -1,0 +1,24 @@
+{
+  "scope": "Matching published archive VCS metadata and preserved parent license texts. Neither archive declares a repository URL; no repository URL inferred. Child filename gap retained; not independent legal approval.",
+  "package": "libappindicator-sys",
+  "version": "0.9.0",
+  "sharedSourceCommit": "eafd1e3682a1247f595410266091e9684021cb6f",
+  "declaredRepository": null,
+  "declaredLicense": "Apache-2.0 OR MIT",
+  "childCrateChecksum": "6e9ec52138abedcc58dc17a7c6c0c00a2bdb4f3427c7f63fa97fd0d859155caf",
+  "parentCrateChecksum": "03589b9607c868cc7ae54c0b2a22c8dc03dd41692d48f2d7df73615c6a95dc0a",
+  "parent": "libappindicator@0.9.0",
+  "parentDeclaredDependency": {
+    "version": "0.9"
+  },
+  "preservedOriginalNotices": [
+    {
+      "path": "rust/libappindicator@0.9.0/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+    },
+    {
+      "path": "rust/libappindicator@0.9.0/LICENSE-MIT",
+      "sha256": "eb227437252b2a7a9c1fc342c93ade1f3d7ce38cc6dd754f613db07d53ceff0b"
+    }
+  ]
+}

@@ -131,3 +131,10 @@ run 43479164615 Windows 관측 step과 upload도 성공했다. 동일 source/con
 
 ## 실제 Studio 폰트 범위 보완
 제품 소유 assets의 27개가 전체 runtime 폰트 수는 아니었다. Vite는 고정 upstream public/fonts를 복사한 뒤 제품 WOFF2를 덮어쓴다. 합성 manifest로 실제 local dist의 40개(제품 override 27·upstream 13) 모두 hash·copyright·실제 복사된 원문 고지를 대조해 통과했다. 추가 13개의 bytes를 바꾸지 않았다. LMM Variable Outline OTF는 upstream repositoryOnlyFonts와 별도 provenance manifest에 연결된다. [전체 local build 대조](../working/assets/task135/readiness/built-font-coverage.json). 제품 소유 manifest와 upstream manifest를 합성해야 하며 기존 27개 테스트를 전체 font 수용이라고 해석하지 않는다. 설치본 소비자에는 변경한 나눔 3개 실제 WebView 로딩/hash/합성 표본 화면 검사도 추가했다.
+
+## 프런트엔드 메인 번들 고지 대조
+플랫폼 중립 Vite build에 임시 read-only generateBundle 관측 plugin을 붙여 renderedLength가 0보다 큰 메인 chunk의 package를 수집했다. build 성공 후 임시 config는 제거했다. @noble/hashes, @tauri-apps/api, @tauri-apps/plugin-dialog, @tauri-apps/plugin-fs, canvaskit-wasm 5개가 현재 고지 ZIP에 연결된다. plugin-dialog/fs의 JS archive는 SPDX metadata만 포함하므로 이를 전문이라고 세지 않았다. npm integrity와 Rust crate checksum을 검증하고 양 배포의 commit `d6a3898001a4bcc659e045f9501498751b77dbe6` 일치를 확인해 이미 ZIP에 동봉된 동일 버전 Rust plugin의 MIT/Apache 전문과 연결했다. [결과](../working/assets/task135/readiness/frontend-main-notice-coverage.json). Worker 별도 graph·WASM 내부·native/System Libraries는 이 메인 bundle 검사 범위 밖이다.
+
+설치 RTF를 제어문자 규칙에 따라 복원해 TXT 본문 5,873자와 일치함을 확인했다. 최종 소비자 harness 7cacdac5의 fast run [43486223370](https://github.com/postmelee/alhangeul-tauri/actions/runs/43486223370)은 성공했다. 마지막 공개 read-back에서도 최신 stable v0.1.3, 정책 두 URL 200, PR #136·#137 MERGED, 이슈 #135 OPEN을 확인했다.
+
+수정 후보 7b37eec8의 Linux x64·arm64 desktop 테스트와 lint가 통과했고, 세 target core 및 Linux arm64 native/package job이 성공했다. 새 Linux normal graph는 desktop 593/592개와 thumbnailer 285/284개다. filename gap은 desktop 각 6개·helper 각 1개로 [대조 결과](../working/assets/task135/readiness/linux-normal-notice-gaps.json)에 기록했다. 추가 libappindicator-sys 0.9.0은 부모 libappindicator 0.9.0과 archive VCS commit·의존 version·선언 license가 같고 부모 전문은 ZIP에 있다. 두 archive에 repository URL은 없어 추정하지 않았으며 [원문 연결 근거](../working/assets/task135/readiness/libappindicator-license-link.json)에 한계를 남겼다. 원시 filename gap 숫자를 조용히 지우거나 전체 법적 적합성으로 확대하지 않았다.

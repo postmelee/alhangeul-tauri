@@ -1,0 +1,184 @@
+[
+  {
+    "sourceSha": "7b37eec86f53db8eb02ca2e021493d2d0060d508",
+    "target": "x86_64-unknown-linux-gnu",
+    "scope": "Default-feature, target-filtered Cargo normal dependency graph. Includes procedural macros and unified features; not a binary-level SBOM or license approval. Build/dev-only edges excluded.",
+    "products": [
+      {
+        "root": "apps/desktop/src-tauri",
+        "normalGraphPackages": 593,
+        "noticeGaps": [
+          {
+            "name": "convert_case",
+            "version": "0.4.0",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "license": "MIT",
+            "repository": "https://github.com/rutrum/convert-case",
+            "proceduralMacro": false,
+            "features": []
+          },
+          {
+            "name": "fxhash",
+            "version": "0.2.1",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "license": "Apache-2.0/MIT",
+            "repository": "https://github.com/cbreeden/fxhash",
+            "proceduralMacro": false,
+            "features": []
+          },
+          {
+            "name": "libappindicator-sys",
+            "version": "0.9.0",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "license": "Apache-2.0 OR MIT",
+            "repository": null,
+            "proceduralMacro": false,
+            "features": [
+              "backcompat",
+              "default"
+            ]
+          },
+          {
+            "name": "mac",
+            "version": "0.1.1",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "license": "MIT/Apache-2.0",
+            "repository": "https://github.com/reem/rust-mac.git",
+            "proceduralMacro": false,
+            "features": []
+          },
+          {
+            "name": "seahash",
+            "version": "4.1.0",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "license": "MIT",
+            "repository": "https://gitlab.redox-os.org/redox-os/seahash",
+            "proceduralMacro": false,
+            "features": [
+              "default"
+            ]
+          },
+          {
+            "name": "zune-core",
+            "version": "0.4.12",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "license": "MIT OR Apache-2.0 OR Zlib",
+            "repository": null,
+            "proceduralMacro": false,
+            "features": [
+              "std"
+            ]
+          }
+        ]
+      },
+      {
+        "root": "apps/linux-thumbnailer",
+        "normalGraphPackages": 285,
+        "noticeGaps": [
+          {
+            "name": "zune-core",
+            "version": "0.4.12",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "license": "MIT OR Apache-2.0 OR Zlib",
+            "repository": null,
+            "proceduralMacro": false,
+            "features": [
+              "std"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "sourceSha": "7b37eec86f53db8eb02ca2e021493d2d0060d508",
+    "target": "aarch64-unknown-linux-gnu",
+    "scope": "Default-feature, target-filtered Cargo normal dependency graph. Includes procedural macros and unified features; not a binary-level SBOM or license approval. Build/dev-only edges excluded.",
+    "products": [
+      {
+        "root": "apps/desktop/src-tauri",
+        "normalGraphPackages": 592,
+        "noticeGaps": [
+          {
+            "name": "convert_case",
+            "version": "0.4.0",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "license": "MIT",
+            "repository": "https://github.com/rutrum/convert-case",
+            "proceduralMacro": false,
+            "features": []
+          },
+          {
+            "name": "fxhash",
+            "version": "0.2.1",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "license": "Apache-2.0/MIT",
+            "repository": "https://github.com/cbreeden/fxhash",
+            "proceduralMacro": false,
+            "features": []
+          },
+          {
+            "name": "libappindicator-sys",
+            "version": "0.9.0",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "license": "Apache-2.0 OR MIT",
+            "repository": null,
+            "proceduralMacro": false,
+            "features": [
+              "backcompat",
+              "default"
+            ]
+          },
+          {
+            "name": "mac",
+            "version": "0.1.1",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "license": "MIT/Apache-2.0",
+            "repository": "https://github.com/reem/rust-mac.git",
+            "proceduralMacro": false,
+            "features": []
+          },
+          {
+            "name": "seahash",
+            "version": "4.1.0",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "license": "MIT",
+            "repository": "https://gitlab.redox-os.org/redox-os/seahash",
+            "proceduralMacro": false,
+            "features": [
+              "default"
+            ]
+          },
+          {
+            "name": "zune-core",
+            "version": "0.4.12",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "license": "MIT OR Apache-2.0 OR Zlib",
+            "repository": null,
+            "proceduralMacro": false,
+            "features": [
+              "std"
+            ]
+          }
+        ]
+      },
+      {
+        "root": "apps/linux-thumbnailer",
+        "normalGraphPackages": 284,
+        "noticeGaps": [
+          {
+            "name": "zune-core",
+            "version": "0.4.12",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "license": "MIT OR Apache-2.0 OR Zlib",
+            "repository": null,
+            "proceduralMacro": false,
+            "features": [
+              "std"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]

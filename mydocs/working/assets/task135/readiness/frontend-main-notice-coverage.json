@@ -1,0 +1,61 @@
+{
+  "scope": "Local platform-neutral Vite main bundle generateBundle module graph, renderedLength > 0. Worker plugin graphs and embedded WASM/native/system libraries excluded; not a full binary SBOM.",
+  "chunks": 5,
+  "packages": [
+    {
+      "name": "@noble/hashes",
+      "version": "2.2.0",
+      "preservedNotices": [
+        "javascript/@noble_hashes@2.2.0/LICENSE"
+      ],
+      "renderedLength": 20143
+    },
+    {
+      "name": "@tauri-apps/api",
+      "version": "2.10.1",
+      "preservedNotices": [
+        "javascript/@tauri-apps_api@2.10.1/LICENSE_MIT",
+        "javascript/@tauri-apps_api@2.10.1/LICENSE_APACHE-2.0"
+      ],
+      "renderedLength": 41752
+    },
+    {
+      "name": "@tauri-apps/plugin-dialog",
+      "version": "2.7.0",
+      "preservedNotices": [
+        "javascript/@tauri-apps_plugin-dialog@2.7.0/LICENSE.spdx"
+      ],
+      "renderedLength": 2154,
+      "noticeScope": "JS archive contains SPDX metadata; full license texts are preserved from the matching-version, matching-commit Rust plugin archive.",
+      "sharedSourceCommit": "d6a3898001a4bcc659e045f9501498751b77dbe6",
+      "sourceRepository": "git+https://github.com/tauri-apps/plugins-workspace.git",
+      "fullLicensePaths": [
+        "rust/tauri-plugin-dialog@2.7.0/LICENSE_APACHE-2.0",
+        "rust/tauri-plugin-dialog@2.7.0/LICENSE_MIT"
+      ]
+    },
+    {
+      "name": "@tauri-apps/plugin-fs",
+      "version": "2.5.0",
+      "preservedNotices": [
+        "javascript/@tauri-apps_plugin-fs@2.5.0/LICENSE.spdx"
+      ],
+      "renderedLength": 2561,
+      "noticeScope": "JS archive contains SPDX metadata; full license texts are preserved from the matching-version, matching-commit Rust plugin archive.",
+      "sharedSourceCommit": "d6a3898001a4bcc659e045f9501498751b77dbe6",
+      "sourceRepository": "git+https://github.com/tauri-apps/plugins-workspace.git",
+      "fullLicensePaths": [
+        "rust/tauri-plugin-fs@2.5.0/LICENSE_APACHE-2.0",
+        "rust/tauri-plugin-fs@2.5.0/LICENSE_MIT"
+      ]
+    },
+    {
+      "name": "canvaskit-wasm",
+      "version": "0.41.1",
+      "preservedNotices": [
+        "javascript/canvaskit-wasm@0.41.1/LICENSE"
+      ],
+      "renderedLength": 177813
+    }
+  ]
+}
