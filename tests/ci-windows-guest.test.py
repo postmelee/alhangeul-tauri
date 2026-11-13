@@ -52,7 +52,8 @@ import copy
 spec=importlib.util.spec_from_file_location("guest_run", "scripts/ci/guest-ui-run.py")
 guest_run=importlib.util.module_from_spec(spec);spec.loader.exec_module(guest_run)
 good=dict(status="observed", productUninstallPassed=True, offlineInstallExit=0,
- input=dict(scenario="nsis",installerSha256="a"*64),installExit=0,reinstallExit=0,uninstallExit=0,
+ os=dict(caption="Windows 11 Enterprise Evaluation",build="26300",productType=1),
+ input=dict(scenario="nsis",installerSha256="a"*64,operatingSystem=dict(id="windows11")),installExit=0,reinstallExit=0,uninstallExit=0,
  beforeInstall=dict(vcRuntimePresent=False,vcRuntimeLoadError=126,referenceHandlerLoadError=0),
  desktopOwnerMatches=True,sessionMatches=True,displayPreference=dict(restored=True),
  visual="captured-awaiting-review",probes=[dict(id=i,status="ok",bitmapPresent=True)
@@ -111,3 +112,16 @@ for key,value in [("signatureStatus","UnknownError"),("signer","CN=Other"),("sha
  assert not guest_run.guest_observation_complete(bad,False,"nsis-upgrade"),key
 bad=copy.deepcopy(upgrade);bad["sentinels"][0]["preserved"]=False
 assert not guest_run.guest_observation_complete(bad,False,"nsis-upgrade")
+
+win10=copy.deepcopy(msi)
+win10["input"].update(operatingSystem=dict(id="windows10"),prerequisites=[dict(name="webview2",sha256="c"*64)])
+win10["os"]=dict(caption="Windows 10 Enterprise Evaluation",build="19045",productType=1)
+win10["adminOperations"]["prerequisites"]=copy.deepcopy(upgrade["adminOperations"]["prerequisites"])
+win10["adminOperations"]["prerequisites"]["packages"][0]["name"]="webview2"
+assert guest_run.guest_observation_complete(win10,False,"msi","windows10")
+assert not guest_run.guest_observation_complete(win10,False,"msi","windows11")
+for key,value in [("build","26300"),("productType",3),("caption","Windows Server 2025")]:
+ bad=copy.deepcopy(win10);bad["os"][key]=value
+ assert not guest_run.guest_observation_complete(bad,False,"msi","windows10"),key
+bad=copy.deepcopy(win10);bad["input"]["prerequisites"]=[]
+assert not guest_run.guest_observation_complete(bad,False,"msi","windows10")

@@ -2,8 +2,8 @@
 <unattend xmlns="urn:schemas-microsoft-com:unattend" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
   <settings pass="windowsPE">
     <component name="Microsoft-Windows-International-Core-WinPE" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
-      <SetupUILanguage><UILanguage>ko-KR</UILanguage></SetupUILanguage>
-      <InputLocale>ko-KR</InputLocale><SystemLocale>ko-KR</SystemLocale><UILanguage>ko-KR</UILanguage><UserLocale>ko-KR</UserLocale>
+      <SetupUILanguage><UILanguage>@@LOCALE@@</UILanguage></SetupUILanguage>
+      <InputLocale>@@LOCALE@@</InputLocale><SystemLocale>@@LOCALE@@</SystemLocale><UILanguage>@@LOCALE@@</UILanguage><UserLocale>@@LOCALE@@</UserLocale>
     </component>
     <component name="Microsoft-Windows-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
       <DiskConfiguration><Disk wcm:action="add">
@@ -35,7 +35,7 @@
   </settings>
   <settings pass="oobeSystem">
     <component name="Microsoft-Windows-International-Core" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
-      <InputLocale>ko-KR</InputLocale><SystemLocale>ko-KR</SystemLocale><UILanguage>ko-KR</UILanguage><UserLocale>ko-KR</UserLocale>
+      <InputLocale>@@LOCALE@@</InputLocale><SystemLocale>@@LOCALE@@</SystemLocale><UILanguage>@@LOCALE@@</UILanguage><UserLocale>@@LOCALE@@</UserLocale>
     </component>
     <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
       <UserAccounts><LocalAccounts>

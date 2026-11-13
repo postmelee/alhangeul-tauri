@@ -11,10 +11,17 @@ import sys
 from xml.sax.saxutils import escape
 import zipfile
 
-ISO_NAME = "26300.9457.260913-1737.26h2_ge_release_svc_refresh_CLIENTENTERPRISEEVAL_OEMRET_x64FRE_ko-kr.iso"
-ISO_URL = "https://software-static.download.prss.microsoft.com/dbazure/" + ISO_NAME
-ISO_SHA = "b7ec51f0d332ac2aa4f7faeffbefac961ce6eb7204b5876b48fa8d9f1cf0a9a6"
-ISO_SIZE = 8225404928
+def operating_system():
+    name = os.environ.get("GUEST_OS", "windows11")
+    catalog = json.loads(Path(__file__).with_name("guest-ui-os.json").read_text())
+    if name not in catalog:
+        raise RuntimeError("invalid-guest-os")
+    return dict(id=name, **catalog[name])
+
+
+ISO_URL = operating_system()["url"]
+ISO_SHA = operating_system()["sha256"]
+ISO_SIZE = operating_system()["bytes"]
 PRODUCT_SHA = "1e08891d6411e17806a5b3a48635a5fbca7a639f"
 
 
@@ -63,7 +70,7 @@ def prepare_product(root, payload):
     installer = installers[0]
     shutil.copyfile(bundle / installer["path"], payload / ("installer.msi" if scenario() == "msi" else "installer.exe"))
     shutil.copyfile(inventory, root / "evidence/inventory.json")
-    value = dict(scenario=scenario(), productSha=PRODUCT_SHA, installerSha256=installer["sha256"],
+    value = dict(scenario=scenario(), operatingSystem=operating_system(), productSha=PRODUCT_SHA, installerSha256=installer["sha256"],
                  harnessSha=os.environ["GITHUB_SHA"], isoSha256=ISO_SHA,
                  binaries=[f for f in data["files"] if f["kind"] in
                            ("thumbnail-handler", "thumbnail-worker")])
@@ -107,7 +114,7 @@ def prepare_media(root):
                "$v=Get-Volume | Where-Object FileSystemLabel -eq 'ALHPAYLOAD'; "
                "& ($v.DriveLetter + ':\\bootstrap.ps1')\"")
     xml = Path("scripts/ci/guest-ui-unattend.xml").read_text()
-    for key, value in dict(BOOTSTRAP=command, USER_SECRET="Aa1!" + secrets.token_hex(20),
+    for key, value in dict(BOOTSTRAP=command, LOCALE=operating_system()["locale"], USER_SECRET="Aa1!" + secrets.token_hex(20),
                            ADMIN_SECRET="Aa1!" + secrets.token_hex(20)).items():
         xml = xml.replace("@@" + key + "@@", escape(value))
     answer = media / "Autounattend.xml"

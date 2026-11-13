@@ -7,7 +7,7 @@ $taskName = 'AlhGuestInstaller'
 if ($env:COMPUTERNAME -cne 'ALH-GUEST' -or [Security.Principal.WindowsIdentity]::GetCurrent().User.Value -cne 'S-1-5-18') { throw 'isolated-system-task-required' }
 . (Join-Path $PSScriptRoot 'guest-ui-process.ps1')
 $inputData = Get-Content (Join-Path $root 'input.json') -Raw | ConvertFrom-Json
-if ($inputData.scenario -cnotin @('msi', 'nsis-upgrade')) { throw 'fixed-privileged-scenario-required' }
+if ($inputData.scenario -cnotin @('nsis', 'msi', 'nsis-upgrade')) { throw 'fixed-privileged-scenario-required' }
 . (Join-Path $PSScriptRoot 'guest-ui-prerequisites.ps1')
 $operations = @()
 if ($inputData.prerequisites.Count -gt 0) { $operations += 'prerequisites' }

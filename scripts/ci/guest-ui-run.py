@@ -71,8 +71,8 @@ def wait_socket(path, process):
     raise RuntimeError("owned-socket-timeout")
 
 
-def guest_observation_complete(guest, network_enabled, expected_scenario="nsis"):
-    return module("guest-ui-acceptance").complete(guest, network_enabled, expected_scenario)
+def guest_observation_complete(guest, network_enabled, expected_scenario="nsis", expected_os="windows11"):
+    return module("guest-ui-acceptance").complete(guest, network_enabled, expected_scenario, expected_os)
 
 
 def observe(root, process):
@@ -116,7 +116,7 @@ def observe(root, process):
         if not result["guestEvidenceComplete"]:
             raise RuntimeError("guest-evidence-timeout")
         guest = json.loads((root / "evidence/guest.json").read_text(encoding="utf-8-sig"))
-        result["observed"] = guest_observation_complete(guest, result["networkEnabledForRetry"], module("guest-ui-prepare").scenario())
+        result["observed"] = guest_observation_complete(guest, result["networkEnabledForRetry"], module("guest-ui-prepare").scenario(), module("guest-ui-prepare").operating_system()["id"])
         if not result["observed"]:
             raise RuntimeError("guest-product-observation-incomplete")
     except BaseException as error:

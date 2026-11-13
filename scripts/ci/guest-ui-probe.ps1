@@ -34,7 +34,9 @@ try {
   $installerKind = if ($inputData.scenario -eq 'msi') { 'msi' } else { 'nsis' }
   $os = Get-CimInstance Win32_OperatingSystem
   $report['os'] = @{ caption = $os.Caption; build = $os.BuildNumber; productType = $os.ProductType; architecture = $os.OSArchitecture }
-  if ($os.Caption -notmatch 'Windows 11 Enterprise' -or $os.ProductType -ne 1 -or [int]$os.BuildNumber -lt 22000 -or $env:COMPUTERNAME -ne 'ALH-GUEST') { throw 'windows11-test-guest-required' }
+  $expectedOs = $inputData.operatingSystem
+  if ($expectedOs.id -cnotin @('windows10', 'windows11') -or -not $os.Caption.Contains($expectedOs.caption) -or
+      $os.ProductType -ne 1 -or [int]$os.BuildNumber -ne $expectedOs.build -or $env:COMPUTERNAME -ne 'ALH-GUEST') { throw 'exact-windows-client-guest-required' }
   Add-Type -Path (Join-Path $root 'scripts\windows-thumbnail-token.cs')
   Add-Type -Path (Join-Path $root 'scripts\windows-thumbnail-user-visual.cs')
   $report['token'] = [Alhangeul.ThumbnailDiagnostics.TokenProbe]::Read()

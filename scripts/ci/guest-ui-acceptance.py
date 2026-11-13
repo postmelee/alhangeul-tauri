@@ -1,4 +1,6 @@
 """Fail closed on missing independent guest observations."""
+import json
+from pathlib import Path
 def probes_ok(probes):
     expected = {"small-hwp", "large-hwp", "form-hwpx", "control-jpg"}
     return (isinstance(probes, list) and len(probes) == 4
@@ -20,8 +22,15 @@ def admin_ok(guest, names):
 
 def prerequisites_ok(guest):
     expected = guest["input"].get("prerequisites", [])
+    required = []
+    if guest["input"]["scenario"] == "nsis-upgrade":
+        required.append("vc")
+    if guest["input"].get("operatingSystem", {}).get("id") == "windows10":
+        required.append("webview2")
+    if [item.get("name") for item in expected] != required:
+        return False
     if not expected:
-        return guest["input"]["scenario"] != "nsis-upgrade"
+        return True
     if not admin_ok(guest, ["prerequisites"]):
         return False
     actual = guest["adminOperations"]["prerequisites"].get("packages", [])
@@ -47,8 +56,16 @@ def upgrade_ok(guest):
             and all(s.get("preserved") is True for s in sentinels))
 
 
-def complete(guest, network_enabled, scenario):
+def complete(guest, network_enabled, scenario, operating_system="windows11"):
     data = guest.get("input", {})
+    catalog = json.loads(Path(__file__).with_name("guest-ui-os.json").read_text())
+    expected_os = catalog.get(operating_system, {})
+    observed_os = guest.get("os", {})
+    if (not expected_os or data.get("operatingSystem", {}).get("id") != operating_system
+            or str(observed_os.get("build")) != str(expected_os["build"])
+            or expected_os["caption"] not in observed_os.get("caption", "")
+            or observed_os.get("productType") != 1):
+        return False
     if scenario not in ("nsis", "msi", "nsis-upgrade") or data.get("scenario") != scenario:
         return False
     if any(guest.get(key) != 0 for key in ("installExit", "reinstallExit", "uninstallExit")):

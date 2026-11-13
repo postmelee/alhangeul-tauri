@@ -13,6 +13,12 @@ on:
           - hosted-ui-probe
           - windows-guest-probe
 
+      guest_os:
+        description: Official disposable Windows evaluation image.
+        type: choice
+        default: windows11
+        options: [windows11, windows10]
+
       guest_scenario:
         description: Exact existing product in a fresh Windows guest.
         type: choice
@@ -56,7 +62,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: alhangeul-ci-${{ github.ref }}-${{ inputs.profile }}-${{ inputs.scope }}-${{ inputs.guest_scenario }}
+  group: alhangeul-ci-${{ github.ref }}-${{ inputs.profile }}-${{ inputs.scope }}-${{ inputs.guest_scenario }}-${{ inputs.guest_os }}
   cancel-in-progress: ${{ inputs.profile == 'fast' && inputs.scope != 'pdf-cleanup-windows' }}
 
 env:
@@ -88,6 +94,7 @@ jobs:
     uses: ./.github/workflows/alhangeul-windows-guest-probe.yml
     with:
       scenario: ${{ inputs.guest_scenario }}
+      operating_system: ${{ inputs.guest_os }}
 
   thumbnail-user-context:
     needs: fast
