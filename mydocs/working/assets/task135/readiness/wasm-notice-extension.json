@@ -1,0 +1,2133 @@
+{
+  "previousArchiveSha256": "e6df850d7ce6dfd3881fe3cf82fc36344c40aaf3beded4b7ed6b2732b0207a3e",
+  "archiveSha256": "96c185671208223162027b8ef6d2203520b86f4048688cbac68066bb7651fa89",
+  "packages": 1508,
+  "reusedPackages": 1408,
+  "addedPackages": 100,
+  "scope": "Pinned WASM source lock superset added. Existing notices reused after all lock integrity and file hashes match; new crate archives fetched and checksum verified. Not a WASM binary SBOM or license approval.",
+  "added": [
+    {
+      "kind": "rust",
+      "name": "anyhow",
+      "version": "1.0.104",
+      "integrity": "330a5ed07fa54e4702c9d6c4174f74427fc0ef6e214bbd677ae50a5099946470",
+      "notices": [
+        {
+          "path": "rust/anyhow@1.0.104/LICENSE-APACHE",
+          "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a"
+        },
+        {
+          "path": "rust/anyhow@1.0.104/LICENSE-MIT",
+          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "async-trait",
+      "version": "0.1.92",
+      "integrity": "82f6aeea286b8eb4dd3431a1be1b59d290ace00f5bfd8e2a159bc2a05e2c1667",
+      "notices": [
+        {
+          "path": "rust/async-trait@0.1.92/LICENSE-APACHE",
+          "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a"
+        },
+        {
+          "path": "rust/async-trait@0.1.92/LICENSE-MIT",
+          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "bindgen",
+      "version": "0.73.2",
+      "integrity": "787ef8ef523575546b106a58213d6e6b06198a05c2f757258c68a74273670cfa",
+      "notices": [
+        {
+          "path": "rust/bindgen@0.73.2/LICENSE",
+          "sha256": "c23953d9deb0a3312dbeaf6c128a657f3591acee45067612fa68405eaa4525db"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "bit-set",
+      "version": "0.11.1",
+      "integrity": "56d87354e4229f54a44f7bf2435906a4656dba36026ab6eaca629a2c436a691c",
+      "notices": [
+        {
+          "path": "rust/bit-set@0.11.1/LICENSE-APACHE",
+          "sha256": "8173d5c29b4f956d532781d2b86e4e30f83e6b7878dce18c919451d6ba707c90"
+        },
+        {
+          "path": "rust/bit-set@0.11.1/LICENSE-MIT",
+          "sha256": "f51ac2c59a222f7476ce507ca879960e2b64ea64bb2786eefdbeb7b0b538d1b7"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "bit-vec",
+      "version": "0.10.1",
+      "integrity": "5727b15fa97d4f4fee0a3b7c3d550ed0269f54329207b86388de918604e31269",
+      "notices": [
+        {
+          "path": "rust/bit-vec@0.10.1/LICENSE-APACHE",
+          "sha256": "8173d5c29b4f956d532781d2b86e4e30f83e6b7878dce18c919451d6ba707c90"
+        },
+        {
+          "path": "rust/bit-vec@0.10.1/LICENSE-MIT",
+          "sha256": "f51ac2c59a222f7476ce507ca879960e2b64ea64bb2786eefdbeb7b0b538d1b7"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "bitvec",
+      "version": "1.1.1",
+      "integrity": "ddcec3d12c579d40898fe0a9a358a803c23e9c52ca3c425707f81c9436211837",
+      "notices": [
+        {
+          "path": "rust/bitvec@1.1.1/LICENSE.txt",
+          "sha256": "411781fd38700f2357a14126d0ab048164ab881f1dcb335c1bb932e232c9a2f5"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "borsh",
+      "version": "1.8.1",
+      "integrity": "553c5d846a6ba5150c65e3b1b8ec073bcf1abc20f9b7220de384a4443ea4e20a",
+      "notices": [
+        {
+          "path": "rust/borsh@1.8.1/LICENSE-APACHE",
+          "sha256": "7b724c8fa4a82af733caccabdaa21e2bf8bcb0822fe62d5cf03f99d458438705"
+        },
+        {
+          "path": "rust/borsh@1.8.1/LICENSE-MIT",
+          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "borsh-derive",
+      "version": "1.8.1",
+      "integrity": "12cdfe656708a01f89b451a7d36466e6fe6c414de0aa18fc54f864f6f9ca9f56",
+      "notices": [
+        {
+          "path": "rust/borsh-derive@1.8.1/LICENSE-APACHE",
+          "sha256": "7b724c8fa4a82af733caccabdaa21e2bf8bcb0822fe62d5cf03f99d458438705"
+        },
+        {
+          "path": "rust/borsh-derive@1.8.1/LICENSE-MIT",
+          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "by_address",
+      "version": "1.2.1",
+      "integrity": "64fa3c856b712db6612c019f14756e64e4bcea13337a6b33b696333a9eaa2d06",
+      "notices": [
+        {
+          "path": "rust/by_address@1.2.1/LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        },
+        {
+          "path": "rust/by_address@1.2.1/LICENSE-MIT",
+          "sha256": "daa94322de7eab889e055932396160395bd8e3af82f56ae8c419d3049111da72"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "cast",
+      "version": "0.3.0",
+      "integrity": "37b2a672a2cb129a2e41c10b1224bb368f9f37a2b16b612598138befd7b37eb5",
+      "notices": [
+        {
+          "path": "rust/cast@0.3.0/LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        },
+        {
+          "path": "rust/cast@0.3.0/LICENSE-MIT",
+          "sha256": "005b3f9b4687364514bbaea2a25e96d54ce6a59277d157386e8259cbcae8e095"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "cc",
+      "version": "1.4.3",
+      "integrity": "509591b7bcd67f4ef775afad7662703b4935daaa6ec0e5605cfb1090b32a2b6d",
+      "notices": [
+        {
+          "path": "rust/cc@1.4.3/LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        },
+        {
+          "path": "rust/cc@1.4.3/LICENSE-MIT",
+          "sha256": "378f5840b258e2779c39418f3f2d7b2ba96f1c7917dd6be0713f88305dbda397"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "cexpr",
+      "version": "0.6.0",
+      "integrity": "6fac387a98bb7c37292057cffc56d62ecb629900026402633ae9160df93a8766",
+      "notices": [
+        {
+          "path": "rust/cexpr@0.6.0/LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        },
+        {
+          "path": "rust/cexpr@0.6.0/LICENSE-MIT",
+          "sha256": "d9771b8c6cf4426d3846de54c1febe20907f1eeadf7adfb5ade89a83bd9ea77f"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "clang-sys",
+      "version": "1.9.1",
+      "integrity": "157a8ba7b480713b56f4c09fd13fc3e0a22a5dfab8097ba61cbc5feef950788a",
+      "notices": [
+        {
+          "path": "rust/clang-sys@1.9.1/LICENSE.txt",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "clap",
+      "version": "4.6.7",
+      "integrity": "aa8876b300ab35ba921adea3dfd70157a46249b33f95c9084ae5709785478946",
+      "notices": [
+        {
+          "path": "rust/clap@4.6.7/LICENSE-APACHE",
+          "sha256": "249fdb6694467dd615b259f7ddde07be3f8ae5a72cecebb0e24f6629af4215fe"
+        },
+        {
+          "path": "rust/clap@4.6.7/LICENSE-MIT",
+          "sha256": "6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "clap_builder",
+      "version": "4.6.7",
+      "integrity": "ec0797fb7aeb1406c84efac526901f7ec3ead2124f946b494e72879d4b54704d",
+      "notices": [
+        {
+          "path": "rust/clap_builder@4.6.7/LICENSE-APACHE",
+          "sha256": "249fdb6694467dd615b259f7ddde07be3f8ae5a72cecebb0e24f6629af4215fe"
+        },
+        {
+          "path": "rust/clap_builder@4.6.7/LICENSE-MIT",
+          "sha256": "6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "clap_derive",
+      "version": "4.6.7",
+      "integrity": "f9c751b79415d4e559e3d1fcf128e09e720eb673a06d26cf6f392d37d75b66e0",
+      "notices": [
+        {
+          "path": "rust/clap_derive@4.6.7/LICENSE-APACHE",
+          "sha256": "249fdb6694467dd615b259f7ddde07be3f8ae5a72cecebb0e24f6629af4215fe"
+        },
+        {
+          "path": "rust/clap_derive@4.6.7/LICENSE-MIT",
+          "sha256": "6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "clap_lex",
+      "version": "1.1.0",
+      "integrity": "c8d4a3bb8b1e0c1050499d1815f5ab16d04f0959b233085fb31653fbfc9d98f9",
+      "notices": [
+        {
+          "path": "rust/clap_lex@1.1.0/LICENSE-APACHE",
+          "sha256": "c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08"
+        },
+        {
+          "path": "rust/clap_lex@1.1.0/LICENSE-MIT",
+          "sha256": "6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "codepage",
+      "version": "0.1.3",
+      "integrity": "bdff162541cd8b79de82e2edcc7eff3a8c2a6dc3d75152636028f96d93de3b26",
+      "notices": [
+        {
+          "path": "rust/codepage@0.1.3/COPYRIGHT",
+          "sha256": "9cd0dc38d18929dc5c3dfc36ed2e96ab1a11d618a514a2e82de6b368b2c1604c"
+        },
+        {
+          "path": "rust/codepage@0.1.3/LICENSE-APACHE",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        },
+        {
+          "path": "rust/codepage@0.1.3/LICENSE-MIT",
+          "sha256": "3fa4ca83dcc9237839b1bdeb2e6d16bdfb5ec0c5ce42b24694d8bbf0dcbef72c"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "core_detect",
+      "version": "1.0.0",
+      "integrity": "7f8f80099a98041a3d1622845c271458a2d73e688351bf3cb999266764b81d48",
+      "notices": [
+        {
+          "path": "rust/core_detect@1.0.0/LICENSE-APACHE",
+          "sha256": "769f80b5bcb42ed0af4e4d2fd74e1ac9bf843cb80c5a29219d1ef3544428a6bb"
+        },
+        {
+          "path": "rust/core_detect@1.0.0/LICENSE-MIT",
+          "sha256": "8569ebf6bf52937b961d9c9c934d8400a2bb6b09651a9afacbb3fc18fe5c09b1"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "crc32fast",
+      "version": "1.5.3",
+      "integrity": "0ba106e844045ddc02c20768ac4b0b7cb45f2cc2ecbd833ac9f5dacb183c2055",
+      "notices": [
+        {
+          "path": "rust/crc32fast@1.5.3/LICENSE-APACHE",
+          "sha256": "c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08"
+        },
+        {
+          "path": "rust/crc32fast@1.5.3/LICENSE-MIT",
+          "sha256": "61d383b05b87d78f94d2937e2580cce47226d17823c0430fbcad09596537efcf"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "crossbeam-deque",
+      "version": "0.8.7",
+      "integrity": "5181e0de7b61eb03a81e347d6dd8797bae9da5146707b51077e2d71a54ec0ceb",
+      "notices": [
+        {
+          "path": "rust/crossbeam-deque@0.8.7/LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        },
+        {
+          "path": "rust/crossbeam-deque@0.8.7/LICENSE-MIT",
+          "sha256": "5734ed989dfca1f625b40281ee9f4530f91b2411ec01cb748223e7eb87e201ab"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "crossbeam-epoch",
+      "version": "0.9.20",
+      "integrity": "2d6914041f254d6e9176c01941b21115dcfb7089e55135a35411081bd106ef3f",
+      "notices": [
+        {
+          "path": "rust/crossbeam-epoch@0.9.20/LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        },
+        {
+          "path": "rust/crossbeam-epoch@0.9.20/LICENSE-MIT",
+          "sha256": "5734ed989dfca1f625b40281ee9f4530f91b2411ec01cb748223e7eb87e201ab"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "crossbeam-utils",
+      "version": "0.8.22",
+      "integrity": "61803da095bee82a81bb1a452ecc25d3b2f1416d1897eb86430c6159ef717c17",
+      "notices": [
+        {
+          "path": "rust/crossbeam-utils@0.8.22/LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        },
+        {
+          "path": "rust/crossbeam-utils@0.8.22/LICENSE-MIT",
+          "sha256": "5734ed989dfca1f625b40281ee9f4530f91b2411ec01cb748223e7eb87e201ab"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "defmt",
+      "version": "1.1.1",
+      "integrity": "e2953bfe4f93bbd20cc71198842756f77d161884c99ebbabc41d80231ded88d1",
+      "notices": [
+        {
+          "path": "rust/defmt@1.1.1/LICENSE-APACHE",
+          "sha256": "8173d5c29b4f956d532781d2b86e4e30f83e6b7878dce18c919451d6ba707c90"
+        },
+        {
+          "path": "rust/defmt@1.1.1/LICENSE-MIT",
+          "sha256": "2710a622a896bba67356913d4d0492cab5465f61b2ecce6d880aeb483834fb50"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "defmt-macros",
+      "version": "1.1.1",
+      "integrity": "bad9c72e7ca2137e0dc3813245a0d282fd6daad32fd800af018306a9169b5fe8",
+      "notices": [
+        {
+          "path": "rust/defmt-macros@1.1.1/LICENSE-APACHE",
+          "sha256": "8173d5c29b4f956d532781d2b86e4e30f83e6b7878dce18c919451d6ba707c90"
+        },
+        {
+          "path": "rust/defmt-macros@1.1.1/LICENSE-MIT",
+          "sha256": "2710a622a896bba67356913d4d0492cab5465f61b2ecce6d880aeb483834fb50"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "defmt-parser",
+      "version": "1.0.0",
+      "integrity": "10d60334b3b2e7c9d91ef8150abfb6fa4c1c39ebbcf4a81c2e346aad939fee3e",
+      "notices": [],
+      "status": "notice filename not found; review required"
+    },
+    {
+      "kind": "rust",
+      "name": "der",
+      "version": "0.8.1",
+      "integrity": "a69dedd701da44b0536442edf09c81a64b0ab97a7a4a5e3d1971f00027cbc63d",
+      "notices": [
+        {
+          "path": "rust/der@0.8.1/LICENSE-APACHE",
+          "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5"
+        },
+        {
+          "path": "rust/der@0.8.1/LICENSE-MIT",
+          "sha256": "73b9dc2e79c7308998dd30296e073aefaefb944a68fb89aa412c23c0edcabcaa"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "either",
+      "version": "1.17.0",
+      "integrity": "9e5e8f6c15a24b9a3ee5efec809ccd006d3b30e8b3bb63c39af737c7f87daa1d",
+      "notices": [
+        {
+          "path": "rust/either@1.17.0/LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        },
+        {
+          "path": "rust/either@1.17.0/LICENSE-MIT",
+          "sha256": "7576269ea71f767b99297934c0b2367532690f8c4badc695edf8e04ab6a1e545"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "encoding_rs",
+      "version": "0.8.42",
+      "integrity": "8e985e0451871ad22fb8d2b6b076e2028a502a0d3950998c2c5c0a4f9b5d9679",
+      "notices": [
+        {
+          "path": "rust/encoding_rs@0.8.42/COPYRIGHT",
+          "sha256": "11789f45bb180841cd362a5eee6789c68ddb573a11105e30768c308a6add0190"
+        },
+        {
+          "path": "rust/encoding_rs@0.8.42/LICENSE-APACHE",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        },
+        {
+          "path": "rust/encoding_rs@0.8.42/LICENSE-MIT",
+          "sha256": "3fa4ca83dcc9237839b1bdeb2e6d16bdfb5ec0c5ce42b24694d8bbf0dcbef72c"
+        },
+        {
+          "path": "rust/encoding_rs@0.8.42/LICENSE-WHATWG",
+          "sha256": "838118388fe5c2e7f1dbbaeed13e1c7f3ebf88be91319c7c1d77c18e987d1a50"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "glob",
+      "version": "0.3.4",
+      "integrity": "e4eba85ea1d0a966a983acd07deee566e67395d2d96b6fb39e62b5a833f1eb0b",
+      "notices": [
+        {
+          "path": "rust/glob@0.3.4/LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        },
+        {
+          "path": "rust/glob@0.3.4/LICENSE-MIT",
+          "sha256": "6485b8ed310d3f0340bf1ad1f47645069ce4069dcc6bb46c7d5c6faf41de1fdb"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "icy_sixel",
+      "version": "0.7.0",
+      "integrity": "c917a041c4c1e8438172eb0dc7a4cb0eba2f22975fbf6681c51e78e4f507e996",
+      "notices": [
+        {
+          "path": "rust/icy_sixel@0.7.0/LICENSE-APACHE",
+          "sha256": "66aaf920a0396276850341369ef155613b76ee53115eaeca2df61efedeb27043"
+        },
+        {
+          "path": "rust/icy_sixel@0.7.0/LICENSE-MIT",
+          "sha256": "7110f70a51841ce71ec9a2a156db30561aba84d3ad2323ef88ede17c9aa34ba0"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "jiff",
+      "version": "0.2.35",
+      "integrity": "668b7183bd07af9a4885f5c35b0cc5c83c4607a913c16b7e17291832910d2dcc",
+      "notices": [
+        {
+          "path": "rust/jiff@0.2.35/COPYING",
+          "sha256": "01c266bced4a434da0051174d6bee16a4c82cf634e2679b6155d40d75012390f"
+        },
+        {
+          "path": "rust/jiff@0.2.35/LICENSE-MIT",
+          "sha256": "0f96a83840e146e43c0ec96a22ec1f392e0680e6c1226e6f3ba87e0740af850f"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "jiff-core",
+      "version": "0.1.0",
+      "integrity": "7feca88439efe53da3754500c1851dedf3cb36c524dd5cf8225cc0794de95d09",
+      "notices": [
+        {
+          "path": "rust/jiff-core@0.1.0/COPYING",
+          "sha256": "01c266bced4a434da0051174d6bee16a4c82cf634e2679b6155d40d75012390f"
+        },
+        {
+          "path": "rust/jiff-core@0.1.0/LICENSE-MIT",
+          "sha256": "0f96a83840e146e43c0ec96a22ec1f392e0680e6c1226e6f3ba87e0740af850f"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "jiff-static",
+      "version": "0.2.35",
+      "integrity": "3a69dcb3a21cfb32ce1cd056169337ca284af0766dd766e7878819b251a49204",
+      "notices": [
+        {
+          "path": "rust/jiff-static@0.2.35/COPYING",
+          "sha256": "01c266bced4a434da0051174d6bee16a4c82cf634e2679b6155d40d75012390f"
+        },
+        {
+          "path": "rust/jiff-static@0.2.35/LICENSE-MIT",
+          "sha256": "0f96a83840e146e43c0ec96a22ec1f392e0680e6c1226e6f3ba87e0740af850f"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "keccak",
+      "version": "0.2.1",
+      "integrity": "ffd9697dc4a9a62e2da93389f34400b77a28f0287711263cabb203b3ccb9c0e4",
+      "notices": [
+        {
+          "path": "rust/keccak@0.2.1/LICENSE-APACHE",
+          "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5"
+        },
+        {
+          "path": "rust/keccak@0.2.1/LICENSE-MIT",
+          "sha256": "8c7516d4b27b1e495be5e38b612298b63de48d05f49cdac94f70f3cd70f8864b"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "libc",
+      "version": "0.2.191",
+      "integrity": "65cd87c9a6d60536580b316ad985726104730a5151c99845f2490428ef91240a",
+      "notices": [
+        {
+          "path": "rust/libc@0.2.191/LICENSE-APACHE",
+          "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a"
+        },
+        {
+          "path": "rust/libc@0.2.191/LICENSE-MIT",
+          "sha256": "123a331b5dbf04c30097fa43b8f858bc85df671fe776de498d01f3d6b7c1f69e"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "libloading",
+      "version": "0.8.9",
+      "integrity": "d7c4b02199fee7c5d21a5ae7d8cfa79a6ef5bb2fc834d6e9058e89c825efdc55",
+      "notices": [
+        {
+          "path": "rust/libloading@0.8.9/LICENSE",
+          "sha256": "b29f8b01452350c20dd1af16ef83b598fea3053578ccc1c7a0ef40e57be2620f"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "memfd",
+      "version": "0.6.5",
+      "integrity": "ad38eb12aea514a0466ea40a80fd8cc83637065948eb4a426e4aa46261175227",
+      "notices": [
+        {
+          "path": "rust/memfd@0.6.5/LICENSE-APACHE",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+        },
+        {
+          "path": "rust/memfd@0.6.5/LICENSE-MIT",
+          "sha256": "e5d8f26c5b92d382e7ab2826500e5099a40a7751e92a55bc51c6770933411f9e"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "minicov",
+      "version": "0.3.9",
+      "integrity": "c3aa3aa12b448ac225b3102217d1ac5cc717908f02722926524b0599c933c7a0",
+      "notices": [
+        {
+          "path": "rust/minicov@0.3.9/LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        },
+        {
+          "path": "rust/minicov@0.3.9/LICENSE-MIT",
+          "sha256": "ff8f68cb076caf8cefe7a6430d4ac086ce6af2ca8ce2c4e5a2004d4552ef52a2"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "minimal-lexical",
+      "version": "0.2.1",
+      "integrity": "68354c5c6bd36d73ff3feceb05efa59b6acb7626617f4962be322a825e61f79a",
+      "notices": [
+        {
+          "path": "rust/minimal-lexical@0.2.1/LICENSE-APACHE",
+          "sha256": "8173d5c29b4f956d532781d2b86e4e30f83e6b7878dce18c919451d6ba707c90"
+        },
+        {
+          "path": "rust/minimal-lexical@0.2.1/LICENSE-MIT",
+          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+        },
+        {
+          "path": "rust/minimal-lexical@0.2.1/LICENSE.md",
+          "sha256": "dbe1fff0fb1314b6af94f161511406275cf01c5a32441fbf24528a57a051d599"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "ml-kem",
+      "version": "0.3.3",
+      "integrity": "a9ba01ebcf90f6aff8e9b9f55bb69b19e6250e4ade5787d0040eaa27dd226238",
+      "notices": [
+        {
+          "path": "rust/ml-kem@0.3.3/LICENSE-APACHE",
+          "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5"
+        },
+        {
+          "path": "rust/ml-kem@0.3.3/LICENSE-MIT",
+          "sha256": "d0fb27c23e807f1fc6f506d161984b294a1f05c9888ae31f056d1712685948ad"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "multiversion_no_op",
+      "version": "1.0.0",
+      "integrity": "743fb55ba31b18fb1ecef6bdc9aa2743314978ac084044301a7eee33fb99a20d",
+      "notices": [
+        {
+          "path": "rust/multiversion_no_op@1.0.0/COPYRIGHT",
+          "sha256": "d2a809eafabba137f508bea16a1b93d8ff24df7da6f38129d830db9bc118bdfe"
+        },
+        {
+          "path": "rust/multiversion_no_op@1.0.0/LICENSE-APACHE",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        },
+        {
+          "path": "rust/multiversion_no_op@1.0.0/LICENSE-MIT",
+          "sha256": "3fa4ca83dcc9237839b1bdeb2e6d16bdfb5ec0c5ce42b24694d8bbf0dcbef72c"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "nom",
+      "version": "7.1.3",
+      "integrity": "d273983c5a657a70a3e8f2a01329822f3b8c8172b73826411a55751e404a0a4a",
+      "notices": [
+        {
+          "path": "rust/nom@7.1.3/LICENSE",
+          "sha256": "4dbda04344456f09a7a588140455413a9ac59b6b26a1ef7cdf9c800c012d87f0"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "nu-ansi-term",
+      "version": "0.50.3",
+      "integrity": "7957b9740744892f114936ab4a57b3f487491bbeafaf8083688b16841a4240e5",
+      "notices": [
+        {
+          "path": "rust/nu-ansi-term@0.50.3/LICENSE",
+          "sha256": "284465860407420254e39be4e1bdcaaf2e7f2d18e06f9bab75bc75341a5d8501"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "oorandom",
+      "version": "11.1.5",
+      "integrity": "d6790f58c7ff633d8771f42965289203411a5e5c68388703c06e14f24770b41e",
+      "notices": [
+        {
+          "path": "rust/oorandom@11.1.5/LICENSE-MIT",
+          "sha256": "e3f96201e81ea40ed151ec06694dd5b1d9e6b94a74f47a1c45779c4b8a293888"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "ordered-float",
+      "version": "5.5.0",
+      "integrity": "8c7c9e0d9b23589f26070720bac724174bfec1083e82f7854cdd0267518343c0",
+      "notices": [
+        {
+          "path": "rust/ordered-float@5.5.0/LICENSE-MIT",
+          "sha256": "f7715d38a3fa1b4ac97c5729740752505a39cb92ee83ab5b102aeb5eaa7cdea4"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "palette",
+      "version": "0.7.7",
+      "integrity": "ddeed8580d347d2abf3dcf06a5f0b3dc020258338526b277847cd4248a70fc64",
+      "notices": [
+        {
+          "path": "rust/palette@0.7.7/LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        },
+        {
+          "path": "rust/palette@0.7.7/LICENSE-MIT",
+          "sha256": "be1313a4b07ab509c80083966cdd209a7d81d75cd57fcea24441fc9041ccf184"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "palette_derive",
+      "version": "0.7.7",
+      "integrity": "88537020289b719d81be994ccf1bbf4990f477e2f69ee52fe3e45f43a02e56be",
+      "notices": [
+        {
+          "path": "rust/palette_derive@0.7.7/LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        },
+        {
+          "path": "rust/palette_derive@0.7.7/LICENSE-MIT",
+          "sha256": "be1313a4b07ab509c80083966cdd209a7d81d75cd57fcea24441fc9041ccf184"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "palette_math",
+      "version": "0.7.7",
+      "integrity": "6e6eb142958d64335fb0e345c5b9ead2ecd6fc438c307e9d7d3c4fd428dbaf12",
+      "notices": [
+        {
+          "path": "rust/palette_math@0.7.7/LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        },
+        {
+          "path": "rust/palette_math@0.7.7/LICENSE_MIT",
+          "sha256": "be1313a4b07ab509c80083966cdd209a7d81d75cd57fcea24441fc9041ccf184"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "pkg-config",
+      "version": "0.3.34",
+      "integrity": "f6b464fbc74e149a392436b17d523f769e057cb6877f6a5c4618bc6f11800548",
+      "notices": [
+        {
+          "path": "rust/pkg-config@0.3.34/LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        },
+        {
+          "path": "rust/pkg-config@0.3.34/LICENSE-MIT",
+          "sha256": "378f5840b258e2779c39418f3f2d7b2ba96f1c7917dd6be0713f88305dbda397"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "portable-atomic-util",
+      "version": "0.2.7",
+      "integrity": "c2a106d1259c23fac8e543272398ae0e3c0b8d33c88ed73d0cc71b0f1d902618",
+      "notices": [
+        {
+          "path": "rust/portable-atomic-util@0.2.7/LICENSE-APACHE",
+          "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594"
+        },
+        {
+          "path": "rust/portable-atomic-util@0.2.7/LICENSE-MIT",
+          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "prettyplease",
+      "version": "0.3.0",
+      "integrity": "2bfe0f4c752e450fc2faf62654f1c134747922825d5b04ca717b8874f41a40c0",
+      "notices": [
+        {
+          "path": "rust/prettyplease@0.3.0/LICENSE-APACHE",
+          "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a"
+        },
+        {
+          "path": "rust/prettyplease@0.3.0/LICENSE-MIT",
+          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "proptest",
+      "version": "1.12.0",
+      "integrity": "b8530004ccb15eae51c7e40009fbe317f341f804db54dc033eec1c50be28cfa0",
+      "notices": [
+        {
+          "path": "rust/proptest@1.12.0/LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        },
+        {
+          "path": "rust/proptest@1.12.0/LICENSE-MIT",
+          "sha256": "d8e0806926ce9f0a5030c382ecc0ffdf6de6fbea5c69a458435fd443fa7a5b92"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "quantette",
+      "version": "0.6.0",
+      "integrity": "ba5d37e94c17b8870a5b936001d2845a6782a22ebdb1706c84294eca777f6729",
+      "notices": [],
+      "status": "notice filename not found; review required"
+    },
+    {
+      "kind": "rust",
+      "name": "quick-error",
+      "version": "1.2.3",
+      "integrity": "a1d01941d82fa2ab50be1e79e6714289dd7cde78eba4c074bc5a4374f650dfe0",
+      "notices": [
+        {
+          "path": "rust/quick-error@1.2.3/LICENSE-APACHE",
+          "sha256": "c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08"
+        },
+        {
+          "path": "rust/quick-error@1.2.3/LICENSE-MIT",
+          "sha256": "058f01fe181608d027fcde7e528fc03ea3cf90f30903c407644b0a9bbc54f500"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "rand",
+      "version": "0.10.3",
+      "integrity": "65c9fb96cbc91e3478eaae79a69fcd3f1ae4ad052e471fe6732fff548984b4af",
+      "notices": [
+        {
+          "path": "rust/rand@0.10.3/COPYRIGHT",
+          "sha256": "90eb64f0279b0d9432accfa6023ff803bc4965212383697eee27a0f426d5f8d5"
+        },
+        {
+          "path": "rust/rand@0.10.3/LICENSE-APACHE",
+          "sha256": "35242e7a83f69875e6edeff02291e688c97caafe2f8902e4e19b49d3e78b4cab"
+        },
+        {
+          "path": "rust/rand@0.10.3/LICENSE-MIT",
+          "sha256": "209fbbe0ad52d9235e37badf9cadfe4dbdc87203179c0899e738b39ade42177b"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "rand_xorshift",
+      "version": "0.5.0",
+      "integrity": "60aa6af80be32871323012e02e6e65f8a7cc7890931ae421d217ad8fe0df2ccf",
+      "notices": [
+        {
+          "path": "rust/rand_xorshift@0.5.0/COPYRIGHT",
+          "sha256": "90eb64f0279b0d9432accfa6023ff803bc4965212383697eee27a0f426d5f8d5"
+        },
+        {
+          "path": "rust/rand_xorshift@0.5.0/LICENSE-APACHE",
+          "sha256": "35242e7a83f69875e6edeff02291e688c97caafe2f8902e4e19b49d3e78b4cab"
+        },
+        {
+          "path": "rust/rand_xorshift@0.5.0/LICENSE-MIT",
+          "sha256": "209fbbe0ad52d9235e37badf9cadfe4dbdc87203179c0899e738b39ade42177b"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "rand_xoshiro",
+      "version": "0.8.1",
+      "integrity": "662effc7698e08ea324d3acccf8d9d7f7bf79b9785e270a174ea36e56900c91d",
+      "notices": [
+        {
+          "path": "rust/rand_xoshiro@0.8.1/COPYRIGHT",
+          "sha256": "90eb64f0279b0d9432accfa6023ff803bc4965212383697eee27a0f426d5f8d5"
+        },
+        {
+          "path": "rust/rand_xoshiro@0.8.1/LICENSE-APACHE",
+          "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a"
+        },
+        {
+          "path": "rust/rand_xoshiro@0.8.1/LICENSE-MIT",
+          "sha256": "31edd94ac845052712d8044ae23c09a451227b522e8215ab4ea4f1ce4741b160"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "ref-cast",
+      "version": "1.0.27",
+      "integrity": "7e440fb4e4b4147295338efb76001ab9e4efc0e5839df2c47fc5ac2381d365c3",
+      "notices": [
+        {
+          "path": "rust/ref-cast@1.0.27/LICENSE-APACHE",
+          "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a"
+        },
+        {
+          "path": "rust/ref-cast@1.0.27/LICENSE-MIT",
+          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "ref-cast-impl",
+      "version": "1.0.27",
+      "integrity": "92ecd8964f8453721699a1ed72037b0db49ce2f5a5138486ee89bed6f67cdf3a",
+      "notices": [
+        {
+          "path": "rust/ref-cast-impl@1.0.27/LICENSE-APACHE",
+          "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a"
+        },
+        {
+          "path": "rust/ref-cast-impl@1.0.27/LICENSE-MIT",
+          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "roxmltree",
+      "version": "0.21.2",
+      "integrity": "9da7f59328b09405b181fee1018925fad50f157afb43c0c0f5c522c256dd5907",
+      "notices": [
+        {
+          "path": "rust/roxmltree@0.21.2/LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        },
+        {
+          "path": "rust/roxmltree@0.21.2/LICENSE-MIT",
+          "sha256": "fffe218c1e349e1d482a05677f2ce850502f88298174d77f6ac7c04821db7899"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "rusty-fork",
+      "version": "0.3.1",
+      "integrity": "cc6bf79ff24e648f6da1f8d1f011e9cac26491b619e6b9280f2b47f1774e6ee2",
+      "notices": [
+        {
+          "path": "rust/rusty-fork@0.3.1/LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        },
+        {
+          "path": "rust/rusty-fork@0.3.1/LICENSE-MIT",
+          "sha256": "d8e0806926ce9f0a5030c382ecc0ffdf6de6fbea5c69a458435fd443fa7a5b92"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "safe_arch",
+      "version": "1.2.0",
+      "integrity": "42c6efa15875e6ecb39ca61fb0b0c1a40b84fac5a5ffe71eef7d1000c8eb3f5f",
+      "notices": [
+        {
+          "path": "rust/safe_arch@1.2.0/LICENSE-APACHE.md",
+          "sha256": "e3ba223bb1423f0aad8c3dfce0fe3148db48926d41e6fbc3afbbf5ff9e1c89cb"
+        },
+        {
+          "path": "rust/safe_arch@1.2.0/LICENSE-MIT.md",
+          "sha256": "e57011537d230b14e790f6666dc00816f7b371ebbd7da8a12491e51086fec278"
+        },
+        {
+          "path": "rust/safe_arch@1.2.0/LICENSE-ZLIB.md",
+          "sha256": "c43b9a9b1387ed53d2c49263838261129a010e280e3a174a792242c3e2c98db9"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "serde_json",
+      "version": "1.0.154",
+      "integrity": "e7e9cc8b1b85264074fbcc02a88680c4096b1e47df8f739dceb03bf482f04bd6",
+      "notices": [
+        {
+          "path": "rust/serde_json@1.0.154/LICENSE-APACHE",
+          "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a"
+        },
+        {
+          "path": "rust/serde_json@1.0.154/LICENSE-MIT",
+          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "sha2",
+      "version": "0.11.1",
+      "integrity": "47d7069beb7d6ac7b9acd1039986e73443f24234f41074da099d6f994ac9ad19",
+      "notices": [
+        {
+          "path": "rust/sha2@0.11.1/LICENSE-APACHE",
+          "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5"
+        },
+        {
+          "path": "rust/sha2@0.11.1/LICENSE-MIT",
+          "sha256": "831e0f43ad0bf014c1c4fec5767aae470434c1d66d6e671be2d823e729063e25"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "sha3",
+      "version": "0.12.0",
+      "integrity": "bc9bad02c26382724b2d2692c6f179285e4b54eeecd7968f52a50059c3c11759",
+      "notices": [
+        {
+          "path": "rust/sha3@0.12.0/LICENSE-APACHE",
+          "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5"
+        },
+        {
+          "path": "rust/sha3@0.12.0/LICENSE-MIT",
+          "sha256": "6462612d92b861384dcd378168a7a0ef3ef28876d3d380d382cb5a3091e360b8"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "skia-bindings",
+      "version": "0.156.0",
+      "integrity": "3fdac65e59d2ee3d2307397cc0a6a5156e4364debf3db465af1a8fd8252781f1",
+      "notices": [],
+      "status": "notice filename not found; review required"
+    },
+    {
+      "kind": "rust",
+      "name": "skia-safe",
+      "version": "0.156.0",
+      "integrity": "38c60bc899f4b9e23eba0223187ff572b25d26155d0176b26e9b3a743f1e75b1",
+      "notices": [],
+      "status": "notice filename not found; review required"
+    },
+    {
+      "kind": "rust",
+      "name": "smallvec",
+      "version": "1.16.3",
+      "integrity": "5b3dc8af474f516a851ff4bd12db780f948b9250ad37211e4eec0bccea54e01b",
+      "notices": [
+        {
+          "path": "rust/smallvec@1.16.3/LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        },
+        {
+          "path": "rust/smallvec@1.16.3/LICENSE-MIT",
+          "sha256": "0b28172679e0009b655da42797c03fd163a3379d5cfa67ba1f1655e974a2a1a9"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "subsecond",
+      "version": "0.7.10",
+      "integrity": "d350d5788fa94d560d92269266a50efc77b036bfca6675e420b64df7b3211f37",
+      "notices": [],
+      "status": "notice filename not found; review required"
+    },
+    {
+      "kind": "rust",
+      "name": "subsecond-types",
+      "version": "0.7.10",
+      "integrity": "dcf32d66269b5fbb8558334e8d22b657b2f7af0dd2ef56c231541099a862e464",
+      "notices": [],
+      "status": "notice filename not found; review required"
+    },
+    {
+      "kind": "rust",
+      "name": "syn",
+      "version": "3.0.3",
+      "integrity": "53e9bae58849f64dfa4f5d5ae372c8341f7305f82a3868709269343628b659a3",
+      "notices": [
+        {
+          "path": "rust/syn@3.0.3/LICENSE-APACHE",
+          "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a"
+        },
+        {
+          "path": "rust/syn@3.0.3/LICENSE-MIT",
+          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "thiserror",
+      "version": "2.0.20",
+      "integrity": "ec86235f5fcc2a73650310756d2ac5b138a5780bbbdfae3eeccec992c435ba4f",
+      "notices": [
+        {
+          "path": "rust/thiserror@2.0.20/LICENSE-APACHE",
+          "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a"
+        },
+        {
+          "path": "rust/thiserror@2.0.20/LICENSE-MIT",
+          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "thiserror-impl",
+      "version": "2.0.20",
+      "integrity": "bc04cd3e1236dd4a98afca4569f2deb3f120e5422a4023be2cb683f8486292af",
+      "notices": [
+        {
+          "path": "rust/thiserror-impl@2.0.20/LICENSE-APACHE",
+          "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a"
+        },
+        {
+          "path": "rust/thiserror-impl@2.0.20/LICENSE-MIT",
+          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "toml",
+      "version": "1.1.4+spec-1.1.0",
+      "integrity": "3aace63f4bbcdfc2c965b059de67119c89c4017a70d633be6c104910f67056f5",
+      "notices": [
+        {
+          "path": "rust/toml@1.1.4+spec-1.1.0/LICENSE-APACHE",
+          "sha256": "c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08"
+        },
+        {
+          "path": "rust/toml@1.1.4+spec-1.1.0/LICENSE-MIT",
+          "sha256": "6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "toml_edit",
+      "version": "0.25.15+spec-1.1.0",
+      "integrity": "1340ea94a5856333492c9064b02c778b191dd2c853778d9609debdcdfea3a614",
+      "notices": [
+        {
+          "path": "rust/toml_edit@0.25.15+spec-1.1.0/LICENSE-APACHE",
+          "sha256": "c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08"
+        },
+        {
+          "path": "rust/toml_edit@0.25.15+spec-1.1.0/LICENSE-MIT",
+          "sha256": "6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "toml_parser",
+      "version": "1.1.3+spec-1.1.0",
+      "integrity": "1d38ac1cf9b95face32296c0a3ede1fdc270627c9d9c02a7274dd6d960dc4d56",
+      "notices": [
+        {
+          "path": "rust/toml_parser@1.1.3+spec-1.1.0/LICENSE-APACHE",
+          "sha256": "c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08"
+        },
+        {
+          "path": "rust/toml_parser@1.1.3+spec-1.1.0/LICENSE-MIT",
+          "sha256": "6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "toml_writer",
+      "version": "1.1.2+spec-1.1.0",
+      "integrity": "7d56353a2a665ad0f41a421187180aab746c8c325620617ad883a99a1cbe66d2",
+      "notices": [
+        {
+          "path": "rust/toml_writer@1.1.2+spec-1.1.0/LICENSE-APACHE",
+          "sha256": "c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08"
+        },
+        {
+          "path": "rust/toml_writer@1.1.2+spec-1.1.0/LICENSE-MIT",
+          "sha256": "6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "unarray",
+      "version": "0.1.4",
+      "integrity": "eaea85b334db583fe3274d12b4cd1880032beab409c0d774be044d4480ab9a94",
+      "notices": [
+        {
+          "path": "rust/unarray@0.1.4/LICENSE-APACHE",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+        },
+        {
+          "path": "rust/unarray@0.1.4/LICENSE-MIT",
+          "sha256": "002c2696d92b5c8cf956c11072baa58eaf9f6ade995c031ea635c6a1ee342ad1"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "unicode-normalization",
+      "version": "0.1.25",
+      "integrity": "5fd4f6878c9cb28d874b009da9e8d183b5abc80117c40bbd187a1fde336be6e8",
+      "notices": [
+        {
+          "path": "rust/unicode-normalization@0.1.25/COPYRIGHT",
+          "sha256": "23860c2a7b5d96b21569afedf033469bab9fe14a1b24a35068b8641c578ce24d"
+        },
+        {
+          "path": "rust/unicode-normalization@0.1.25/LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        },
+        {
+          "path": "rust/unicode-normalization@0.1.25/LICENSE-MIT",
+          "sha256": "7b63ecd5f1902af1b63729947373683c32745c16a10e8e6292e2e2dcd7e90ae0"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "unicode-width",
+      "version": "0.2.3",
+      "integrity": "ca718471876992059f251e33aafc334346ada08042b7661dd1fe313a9bced557",
+      "notices": [
+        {
+          "path": "rust/unicode-width@0.2.3/COPYRIGHT",
+          "sha256": "23860c2a7b5d96b21569afedf033469bab9fe14a1b24a35068b8641c578ce24d"
+        },
+        {
+          "path": "rust/unicode-width@0.2.3/LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        },
+        {
+          "path": "rust/unicode-width@0.2.3/LICENSE-MIT",
+          "sha256": "7b63ecd5f1902af1b63729947373683c32745c16a10e8e6292e2e2dcd7e90ae0"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "ureq",
+      "version": "3.4.0",
+      "integrity": "972d7902c8735f2695410b8aed7df6ed12a47394aa1c8d7af49f0497b731a94d",
+      "notices": [
+        {
+          "path": "rust/ureq@3.4.0/LICENSE-APACHE",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+        },
+        {
+          "path": "rust/ureq@3.4.0/LICENSE-MIT",
+          "sha256": "7e5886959f67f8c75063a9d55cd3cb08c5a8cbea9a944fa1df2d4ae038f53721"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "ureq-proto",
+      "version": "0.6.5",
+      "integrity": "841583fc36089d7d59419568ae157f43a5a03a2e5a81ba87c77d1596ef46e922",
+      "notices": [
+        {
+          "path": "rust/ureq-proto@0.6.5/LICENSE-APACHE.txt",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        },
+        {
+          "path": "rust/ureq-proto@0.6.5/LICENSE-MIT.txt",
+          "sha256": "5b460f37be48ac4cf2181596181cc6cae432fc2caae05944873f380730829a4b"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "uuid",
+      "version": "1.28.0",
+      "integrity": "7cc1186384beb7dd8eedea376413fd654937285ea6c9cfbb928dc3043ea4b606",
+      "notices": [
+        {
+          "path": "rust/uuid@1.28.0/LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        },
+        {
+          "path": "rust/uuid@1.28.0/LICENSE-MIT",
+          "sha256": "436bc5a105d8e57dcd8778730f3754f7bf39c14d2f530e4cde4bd2d17a83ec3d"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "wait-timeout",
+      "version": "0.2.1",
+      "integrity": "09ac3b126d3914f9849036f826e054cbabdc8519970b8998ddaf3b5bd3c65f11",
+      "notices": [
+        {
+          "path": "rust/wait-timeout@0.2.1/LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        },
+        {
+          "path": "rust/wait-timeout@0.2.1/LICENSE-MIT",
+          "sha256": "378f5840b258e2779c39418f3f2d7b2ba96f1c7917dd6be0713f88305dbda397"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "wasm-bindgen-futures",
+      "version": "0.4.77",
+      "integrity": "6b7777d5cc23d0e91404e53ce2d5e8ec7acae3026b16233dba62cd3246457950",
+      "notices": [
+        {
+          "path": "rust/wasm-bindgen-futures@0.4.77/LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        },
+        {
+          "path": "rust/wasm-bindgen-futures@0.4.77/LICENSE-MIT",
+          "sha256": "378f5840b258e2779c39418f3f2d7b2ba96f1c7917dd6be0713f88305dbda397"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "wasm-bindgen-test",
+      "version": "0.3.77",
+      "integrity": "895a2607575412a4eda1df892084a375ea10dfeadc4d7d2ab87b854e4ddc7ba1",
+      "notices": [
+        {
+          "path": "rust/wasm-bindgen-test@0.3.77/LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        },
+        {
+          "path": "rust/wasm-bindgen-test@0.3.77/LICENSE-MIT",
+          "sha256": "378f5840b258e2779c39418f3f2d7b2ba96f1c7917dd6be0713f88305dbda397"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "wasm-bindgen-test-macro",
+      "version": "0.3.77",
+      "integrity": "4288cb0ebe215033bf949ae1fd046726daa4c32a157f24b9dc6ac387a52aa759",
+      "notices": [
+        {
+          "path": "rust/wasm-bindgen-test-macro@0.3.77/LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        },
+        {
+          "path": "rust/wasm-bindgen-test-macro@0.3.77/LICENSE-MIT",
+          "sha256": "378f5840b258e2779c39418f3f2d7b2ba96f1c7917dd6be0713f88305dbda397"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "wasm-bindgen-test-shared",
+      "version": "0.2.127",
+      "integrity": "33ff1c1b360982e93b6d8ea9c04836f71dba0817a16f91e229cf3a51bdd9d987",
+      "notices": [
+        {
+          "path": "rust/wasm-bindgen-test-shared@0.2.127/LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        },
+        {
+          "path": "rust/wasm-bindgen-test-shared@0.2.127/LICENSE-MIT",
+          "sha256": "378f5840b258e2779c39418f3f2d7b2ba96f1c7917dd6be0713f88305dbda397"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "which",
+      "version": "8.0.6",
+      "integrity": "bae2f2b2b816647a1cab1acc91f5bd20812d53cb344382635ec2181940c8034f",
+      "notices": [
+        {
+          "path": "rust/which@8.0.6/LICENSE.txt",
+          "sha256": "0041560f5d419c30e1594567f3b7ac2bc078ff6a68f437e0348ba85d9cf99112"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "wide",
+      "version": "1.7.1",
+      "integrity": "d920ac99c3c8edce110cb8d07dbb324d6d026011dce85b1e9355b70f0adacc4f",
+      "notices": [
+        {
+          "path": "rust/wide@1.7.1/LICENSE-APACHE.txt",
+          "sha256": "d64ac6ba60c7352115244dcfcb46c24f934603dd92e64835beafe7631c485abc"
+        },
+        {
+          "path": "rust/wide@1.7.1/LICENSE-MIT.txt",
+          "sha256": "69c62cda6938d510467c134dc0b5c83fb9c8ca847b9cd9d9d2fe9ab427c82100"
+        },
+        {
+          "path": "rust/wide@1.7.1/LICENSE-ZLIB.txt",
+          "sha256": "3c6921f3dfec0bed0cfa2d632616edd7380a875c8ad76c7b23dc59892259f62c"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "windows",
+      "version": "0.62.2",
+      "integrity": "527fadee13e0c05939a6a05d5bd6eec6cd2e3dbd648b9f8e447c6518133d8580",
+      "notices": [
+        {
+          "path": "rust/windows@0.62.2/license-apache-2.0",
+          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
+        },
+        {
+          "path": "rust/windows@0.62.2/license-mit",
+          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "windows-collections",
+      "version": "0.3.2",
+      "integrity": "23b2d95af1a8a14a3c7367e1ed4fc9c20e0a26e79551b1454d72583c97cc6610",
+      "notices": [
+        {
+          "path": "rust/windows-collections@0.3.2/license-apache-2.0",
+          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
+        },
+        {
+          "path": "rust/windows-collections@0.3.2/license-mit",
+          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "windows-future",
+      "version": "0.3.2",
+      "integrity": "e1d6f90251fe18a279739e78025bd6ddc52a7e22f921070ccdc67dde84c605cb",
+      "notices": [
+        {
+          "path": "rust/windows-future@0.3.2/license-apache-2.0",
+          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
+        },
+        {
+          "path": "rust/windows-future@0.3.2/license-mit",
+          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "windows-numerics",
+      "version": "0.3.1",
+      "integrity": "6e2e40844ac143cdb44aead537bbf727de9b044e107a0f1220392177d15b0f26",
+      "notices": [
+        {
+          "path": "rust/windows-numerics@0.3.1/license-apache-2.0",
+          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
+        },
+        {
+          "path": "rust/windows-numerics@0.3.1/license-mit",
+          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "windows-threading",
+      "version": "0.2.1",
+      "integrity": "3949bd5b99cafdf1c7ca86b43ca564028dfe27d66958f2470940f73d86d75b37",
+      "notices": [
+        {
+          "path": "rust/windows-threading@0.2.1/license-apache-2.0",
+          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
+        },
+        {
+          "path": "rust/windows-threading@0.2.1/license-mit",
+          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "winnow",
+      "version": "1.0.4",
+      "integrity": "23b97319f7b8343df12cc98938e5c3eb436064524c8d2b4e30a1d3a36eecdf81",
+      "notices": [
+        {
+          "path": "rust/winnow@1.0.4/LICENSE-MIT",
+          "sha256": "cb5aedb296c5246d1f22e9099f925a65146f9f0d6b4eebba97fd27a6cdbbab2d"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "yoke",
+      "version": "0.8.3",
+      "integrity": "709fe23a0424b6a435d82152b1bd3fdfb0833487d5fa90d05d42762a9891fef5",
+      "notices": [
+        {
+          "path": "rust/yoke@0.8.3/LICENSE",
+          "sha256": "f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "zeroize",
+      "version": "1.9.1",
+      "integrity": "e13084392c5e4bc371903e2935a5eaeed24905a7511356b883835e18a78f6879",
+      "notices": [
+        {
+          "path": "rust/zeroize@1.9.1/LICENSE-APACHE",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        },
+        {
+          "path": "rust/zeroize@1.9.1/LICENSE-MIT",
+          "sha256": "8c7516d4b27b1e495be5e38b612298b63de48d05f49cdac94f70f3cd70f8864b"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    },
+    {
+      "kind": "rust",
+      "name": "zip",
+      "version": "9.1.3",
+      "integrity": "1156b39d142a34b999c2310a50455e0cb3760bf7efad0122f796d813bee26ccb",
+      "notices": [
+        {
+          "path": "rust/zip@9.1.3/LICENSE",
+          "sha256": "58545fed1565e42d687aecec6897d35c6d37ccb71479a137c0deb2203e125c79"
+        }
+      ],
+      "status": "original notice files preserved; target applicability not certified"
+    }
+  ],
+  "missingNoticeFiles": [
+    {
+      "kind": "javascript",
+      "name": "@esbuild/aix-ppc64",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@esbuild/android-arm",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@esbuild/android-arm64",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@esbuild/android-x64",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@esbuild/darwin-arm64",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@esbuild/darwin-x64",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@esbuild/freebsd-arm64",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@esbuild/freebsd-x64",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@esbuild/linux-arm",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@esbuild/linux-arm64",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@esbuild/linux-ia32",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@esbuild/linux-loong64",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@esbuild/linux-mips64el",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@esbuild/linux-ppc64",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@esbuild/linux-riscv64",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@esbuild/linux-s390x",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@esbuild/linux-x64",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@esbuild/netbsd-arm64",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@esbuild/netbsd-x64",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@esbuild/openbsd-arm64",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@esbuild/openbsd-x64",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@esbuild/openharmony-arm64",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@esbuild/sunos-x64",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@esbuild/win32-arm64",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@esbuild/win32-ia32",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@esbuild/win32-x64",
+      "version": "0.28.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@napi-rs/wasm-runtime",
+      "version": "1.1.4"
+    },
+    {
+      "kind": "javascript",
+      "name": "@nodable/entities",
+      "version": "3.0.0"
+    },
+    {
+      "kind": "javascript",
+      "name": "@promptbook/utils",
+      "version": "0.69.5"
+    },
+    {
+      "kind": "javascript",
+      "name": "@puppeteer/browsers",
+      "version": "2.13.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@rolldown/binding-android-arm64",
+      "version": "1.0.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@rolldown/binding-darwin-arm64",
+      "version": "1.0.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@rolldown/binding-darwin-x64",
+      "version": "1.0.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@rolldown/binding-freebsd-x64",
+      "version": "1.0.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@rolldown/binding-linux-arm-gnueabihf",
+      "version": "1.0.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@rolldown/binding-linux-arm64-gnu",
+      "version": "1.0.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@rolldown/binding-linux-arm64-musl",
+      "version": "1.0.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@rolldown/binding-linux-ppc64-gnu",
+      "version": "1.0.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@rolldown/binding-linux-s390x-gnu",
+      "version": "1.0.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@rolldown/binding-linux-x64-gnu",
+      "version": "1.0.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@rolldown/binding-linux-x64-musl",
+      "version": "1.0.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@rolldown/binding-openharmony-arm64",
+      "version": "1.0.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@rolldown/binding-wasm32-wasi",
+      "version": "1.0.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@rolldown/binding-win32-arm64-msvc",
+      "version": "1.0.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@rolldown/binding-win32-x64-msvc",
+      "version": "1.0.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "@tauri-apps/cli-darwin-arm64",
+      "version": "2.10.1"
+    },
+    {
+      "kind": "javascript",
+      "name": "@tauri-apps/cli-darwin-x64",
+      "version": "2.10.1"
+    },
+    {
+      "kind": "javascript",
+      "name": "@tauri-apps/cli-linux-arm-gnueabihf",
+      "version": "2.10.1"
+    },
+    {
+      "kind": "javascript",
+      "name": "@tauri-apps/cli-linux-arm64-gnu",
+      "version": "2.10.1"
+    },
+    {
+      "kind": "javascript",
+      "name": "@tauri-apps/cli-linux-arm64-musl",
+      "version": "2.10.1"
+    },
+    {
+      "kind": "javascript",
+      "name": "@tauri-apps/cli-linux-riscv64-gnu",
+      "version": "2.10.1"
+    },
+    {
+      "kind": "javascript",
+      "name": "@tauri-apps/cli-linux-x64-gnu",
+      "version": "2.10.1"
+    },
+    {
+      "kind": "javascript",
+      "name": "@tauri-apps/cli-linux-x64-musl",
+      "version": "2.10.1"
+    },
+    {
+      "kind": "javascript",
+      "name": "@tauri-apps/cli-win32-arm64-msvc",
+      "version": "2.10.1"
+    },
+    {
+      "kind": "javascript",
+      "name": "@tauri-apps/cli-win32-ia32-msvc",
+      "version": "2.10.1"
+    },
+    {
+      "kind": "javascript",
+      "name": "@tauri-apps/cli-win32-x64-msvc",
+      "version": "2.10.1"
+    },
+    {
+      "kind": "javascript",
+      "name": "@tybys/wasm-util",
+      "version": "0.10.1"
+    },
+    {
+      "kind": "javascript",
+      "name": "boolbase",
+      "version": "1.0.0"
+    },
+    {
+      "kind": "javascript",
+      "name": "css-value",
+      "version": "0.0.1"
+    },
+    {
+      "kind": "javascript",
+      "name": "degenerator",
+      "version": "5.0.1"
+    },
+    {
+      "kind": "javascript",
+      "name": "eastasianwidth",
+      "version": "0.2.0"
+    },
+    {
+      "kind": "javascript",
+      "name": "easy-table",
+      "version": "1.2.0"
+    },
+    {
+      "kind": "javascript",
+      "name": "filelist",
+      "version": "1.0.6"
+    },
+    {
+      "kind": "javascript",
+      "name": "isarray",
+      "version": "1.0.0"
+    },
+    {
+      "kind": "javascript",
+      "name": "jake",
+      "version": "10.9.4"
+    },
+    {
+      "kind": "javascript",
+      "name": "spdx-exceptions",
+      "version": "2.5.0"
+    },
+    {
+      "kind": "javascript",
+      "name": "spdx-license-ids",
+      "version": "3.0.23"
+    },
+    {
+      "kind": "javascript",
+      "name": "stackback",
+      "version": "0.0.2"
+    },
+    {
+      "kind": "javascript",
+      "name": "std-env",
+      "version": "4.1.0"
+    },
+    {
+      "kind": "javascript",
+      "name": "stream-buffers",
+      "version": "3.0.3"
+    },
+    {
+      "kind": "javascript",
+      "name": "tinyrainbow",
+      "version": "1.2.0"
+    },
+    {
+      "kind": "javascript",
+      "name": "tinyrainbow",
+      "version": "3.1.0"
+    },
+    {
+      "kind": "javascript",
+      "name": "type-fest",
+      "version": "3.13.1"
+    },
+    {
+      "kind": "javascript",
+      "name": "type-fest",
+      "version": "4.26.0"
+    },
+    {
+      "kind": "rust",
+      "name": "convert_case",
+      "version": "0.4.0"
+    },
+    {
+      "kind": "rust",
+      "name": "defmt-parser",
+      "version": "1.0.0"
+    },
+    {
+      "kind": "rust",
+      "name": "fxhash",
+      "version": "0.2.1"
+    },
+    {
+      "kind": "rust",
+      "name": "libappindicator-sys",
+      "version": "0.9.0"
+    },
+    {
+      "kind": "rust",
+      "name": "mac",
+      "version": "0.1.1"
+    },
+    {
+      "kind": "rust",
+      "name": "plist",
+      "version": "1.8.0"
+    },
+    {
+      "kind": "rust",
+      "name": "quantette",
+      "version": "0.6.0"
+    },
+    {
+      "kind": "rust",
+      "name": "r-efi",
+      "version": "5.3.0"
+    },
+    {
+      "kind": "rust",
+      "name": "r-efi",
+      "version": "6.0.0"
+    },
+    {
+      "kind": "rust",
+      "name": "rustls-platform-verifier-android",
+      "version": "0.1.1"
+    },
+    {
+      "kind": "rust",
+      "name": "seahash",
+      "version": "4.1.0"
+    },
+    {
+      "kind": "rust",
+      "name": "selectors",
+      "version": "0.36.1"
+    },
+    {
+      "kind": "rust",
+      "name": "skia-bindings",
+      "version": "0.156.0"
+    },
+    {
+      "kind": "rust",
+      "name": "skia-safe",
+      "version": "0.156.0"
+    },
+    {
+      "kind": "rust",
+      "name": "subsecond",
+      "version": "0.7.10"
+    },
+    {
+      "kind": "rust",
+      "name": "subsecond-types",
+      "version": "0.7.10"
+    },
+    {
+      "kind": "rust",
+      "name": "tao-macros",
+      "version": "0.1.3"
+    },
+    {
+      "kind": "rust",
+      "name": "tauri-plugin",
+      "version": "2.5.4"
+    },
+    {
+      "kind": "rust",
+      "name": "winapi-i686-pc-windows-gnu",
+      "version": "0.4.0"
+    },
+    {
+      "kind": "rust",
+      "name": "winapi-x86_64-pc-windows-gnu",
+      "version": "0.4.0"
+    },
+    {
+      "kind": "rust",
+      "name": "zune-core",
+      "version": "0.4.12"
+    }
+  ]
+}

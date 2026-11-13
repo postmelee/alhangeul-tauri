@@ -112,7 +112,11 @@ def inspect(entry, scratch):
 
 def entries():
     result = {}
-    for manifest in ['apps/desktop/src-tauri', 'apps/thumbnail-worker', 'apps/thumbnail-handler', 'apps/linux-thumbnailer']:
+    wasm_lock = ROOT / 'third_party/rhwp/Cargo.lock'
+    wasm_pin = tomllib.loads((ROOT / 'rhwp-core.lock').read_text())
+    if hashlib.sha256(wasm_lock.read_bytes()).hexdigest() != wasm_pin['source_cargo_lock_sha256']:
+        raise ValueError('WASM source lock does not match the pinned provenance')
+    for manifest in ['apps/desktop/src-tauri', 'apps/thumbnail-worker', 'apps/thumbnail-handler', 'apps/linux-thumbnailer', 'third_party/rhwp']:
         for package in tomllib.loads((ROOT / manifest / 'Cargo.lock').read_text())['package']:
             if package.get('source', '').startswith('registry+'):
                 key = ('rust', package['name'], package['version'])

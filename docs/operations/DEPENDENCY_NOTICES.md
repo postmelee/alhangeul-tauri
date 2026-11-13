@@ -9,7 +9,9 @@
 
 Python 3.11 이상과 PyYAML이 있는 환경에서 저장소의 고정 rhwp checkout을 준비한 뒤
 `python3 scripts/privacy/collect-dependency-notices.py`를 실행한다. crate archive는 네 native
-Cargo.lock의 SHA-256, JavaScript archive는 pnpm-lock.yaml의 integrity와 대조한다.
+Cargo.lock 및 bundled WASM의 원본 `third_party/rhwp/Cargo.lock`에 기록된 SHA-256,
+JavaScript archive는 pnpm-lock.yaml의 integrity와 대조한다. WASM 원본 lock 자체의 hash도
+`rhwp-core.lock`의 고정 출처와 일치해야 한다. native 잠금 파일만으로 WASM 의존성을 대신하지 않는다.
 archive의 코드는 실행하지 않으며 고지 이름의 일반 파일만 보존한다. ZIP의 시간은 고정한다.
 고정 rhwp의 LICENSE·THIRD_PARTY_LICENSES·vendor·licenses 고지도 포함한다.
 archive에 원문 고지가 없는 Rust 항목은 `assets/licenses/upstream-notice-sources.json`을

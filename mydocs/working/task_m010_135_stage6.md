@@ -62,7 +62,7 @@ Rust registry 773/773 SHA-256, JS registry 543/543 integrity 일치. source prod
 ## Stage 7 후속 대조
 정책 공개·기본 브랜치 SECURITY.md v0.1.3 정렬을 완료했다. 위 조건표는 이 후속 결과를 반영하며, 앞선 공개 v0.1.3 패키지 관측은 당시 제품의 역사적 증거다. 미출시 보완 기능을 기존 릴리스 기능으로 소급하지 않는다.
 
-검증한 원문 47개를 추가한 현재 ZIP은 1,408 package, filename gap 89개다. e0a674e7 Windows normal graph와 새 ZIP의 교차 검사에서 desktop 532 package 중 convert_case 0.4.0, fxhash 0.2.1, mac 0.1.1, seahash 4.1.0, zune-core 0.4.12가 남는다. worker 287개에서는 zune-core 1개, handler 9개에서는 0개다. 이 graph는 build/dev 전용 edge를 제외하지만 proc-macro·feature 통합을 포함하므로 최종 바이너리 SBOM으로 단정하지 않는다. fxhash 소스 header, mac README, zune-core 소스 header에서 허가 문구를 확인했으나 전체 원문 고지 동봉 완료로 세지 않는다. convert_case의 정확한 VCS root에는 별도 license 파일이 없었다. [대조 결과](assets/task135/readiness/windows-normal-notice-gaps.json).
+검증한 원문 47개를 추가한 7b37eec8 당시 ZIP은 1,408 package, filename gap 89개였다. 이후 Stage 7.7에서 별도 WASM 원본 lock을 포함해 1,508 package, gap 95개로 보완했다. [추가 검증](assets/task135/readiness/wasm-notice-extension.json). e0a674e7 Windows normal graph와 당시 ZIP의 교차 검사에서 desktop 532 package 중 convert_case 0.4.0, fxhash 0.2.1, mac 0.1.1, seahash 4.1.0, zune-core 0.4.12가 남는다. worker 287개에서는 zune-core 1개, handler 9개에서는 0개다. 이 graph는 build/dev 전용 edge를 제외하지만 proc-macro·feature 통합을 포함하므로 최종 바이너리 SBOM으로 단정하지 않는다. fxhash 소스 header, mac README, zune-core 소스 header에서 허가 문구를 확인했으나 전체 원문 고지 동봉 완료로 세지 않는다. convert_case의 정확한 VCS root에는 별도 license 파일이 없었다. [대조 결과](assets/task135/readiness/windows-normal-notice-gaps.json).
 
 사전 문의 thread를 재확인했으며 아직 발송 메시지 1건뿐이다. 새로운 문의나 신청을 발송하지 않았다. 진행 중 native/TLS/설치 수용은 최종 보고서에서 실제 run과 source SHA별로 구분한다.
 

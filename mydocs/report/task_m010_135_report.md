@@ -140,3 +140,15 @@ run 43479164615 Windows 관측 step과 upload도 성공했다. 동일 source/con
 설치 RTF를 제어문자 규칙에 따라 복원해 TXT 본문 5,873자와 일치함을 확인했다. 최종 소비자 harness 7cacdac5의 fast run [43486223370](https://github.com/postmelee/alhangeul-tauri/actions/runs/43486223370)은 성공했다. 마지막 공개 read-back에서도 최신 stable v0.1.3, 정책 두 URL 200, PR #136·#137 MERGED, 이슈 #135 OPEN을 확인했다.
 
 수정 후보 7b37eec8의 Linux x64·arm64 desktop 테스트와 lint가 통과했고, 세 target core 및 Linux arm64 native/package job이 성공했다. 새 Linux normal graph는 desktop 593/592개와 thumbnailer 285/284개다. filename gap은 desktop 각 6개·helper 각 1개로 [대조 결과](../working/assets/task135/readiness/linux-normal-notice-gaps.json)에 기록했다. 추가 libappindicator-sys 0.9.0은 부모 libappindicator 0.9.0과 archive VCS commit·의존 version·선언 license가 같고 부모 전문은 ZIP에 있다. 두 archive에 repository URL은 없어 추정하지 않았으며 [원문 연결 근거](../working/assets/task135/readiness/libappindicator-license-link.json)에 한계를 남겼다. 원시 filename gap 숫자를 조용히 지우거나 전체 법적 적합성으로 확대하지 않았다.
+
+## Linux 패키지 수명주기와 소비자 검사 보완
+같은 7b37eec8 full run에서 Linux x64도 최종 성공했다. x64 DEB/RPM·arm64 DEB의 clean install·동일 버전 재설치·업데이트·고의 실패/복구·제거 증거를 읽었으며, 기존 MIME 기본값·타사 thumbnailer·cache sentinel 보존 및 검사 대상 제품 파일 제거가 모두 true였다. [패키지별 hash·phase·artifact 근거](../working/assets/task135/readiness/linux-package-lifecycle.json). 이 검사는 사용자 데이터 전체 삭제나 arm64 화면·TLS 수용을 의미하지 않는다.
+
+소비자 harness 3abb18a4의 fast run [43492882800](https://github.com/postmelee/alhangeul-tauri/actions/runs/43492882800)은 성공했다. 후속 6371da0a에는 silent 설치·안내 닫기가 선택 파일을 만들지 않는지, 합성 true/false 기존 선택이 재설치에서 보존되는지, 제거 뒤 마지막 선택이 잔존하는지 검사를 추가했다. 실제 UI/TLS 관측을 합성 설정 fixture로 대체하지 않는다. Windows 패키징과 이 후속 소비자 결과는 아직 수용 전이다.
+
+## Stage 7.7 Worker/WASM 고지 범위 수정
+별도 Worker 관측 plugin으로 Vite build를 검사했다. 두 Worker는 고정 rhwp source/binding과 생성 runtime을 사용하며 추가 외부 npm module은 관측되지 않았다. rhwp WASM은 rhwp-core.lock의 hash와, CanvasKit WASM은 설치된 고정 npm archive의 파일과 일치했다. 관측 전후 JS/WASM 12개 파일 hash가 같았고 임시 plugin은 제거했다. [범위와 module 근거](../working/assets/task135/readiness/frontend-worker-wasm-coverage.json). WASM 내부 전체 의존성을 역분석한 SBOM은 아니다.
+
+이 대조에서 고지 생성기가 native 네 lock만 읽고 bundled rhwp WASM의 원본 lock을 포함하지 않는 누락을 확인했다. 원본 lock의 hash는 rhwp-core.lock과 일치한다. 해당 lock의 추가 registry 버전 100개를 공식 archive checksum으로 검증하여 원문을 보완했다. 기존 1,408개는 lock integrity와 고지 파일 전체 hash를 재검증해 재사용했다. 변경 후 1,508개이며 filename gap은 95개(추가 6개)다. 이 superset에는 build/dev/optional도 포함하므로 95개 모두가 실제 WASM에 포함됐거나 허가가 없다는 의미는 아니다. [추가 package·원문·ZIP hash](../working/assets/task135/readiness/wasm-notice-extension.json).
+
+새 generator는 WASM 원본 lock hash가 pin과 다르면 거부한다. 원본 포함/변조 pin 거부 검사와 전체 ZIP notice hash 검증이 통과했다. upstream source·pin·WASM bytes는 변경하지 않았다. 동봉 ZIP bytes가 달라졌으므로 7b37eec8 설치본의 수용은 새 고지 묶음의 설치 수용으로 재사용하지 않는다. 현 CI profile에 따라 새 전체 package 검증과 exact 설치본 소비자가 필요하다.

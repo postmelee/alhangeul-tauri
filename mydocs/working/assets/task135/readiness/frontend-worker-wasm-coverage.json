@@ -1,0 +1,49 @@
+{
+  "scope": "Read-only Vite main/worker observer; JS/WASM inventory unchanged (12 files). Worker module attribution and exact WASM provenance, not internal binary dependency closure or license approval.",
+  "workers": [
+    {
+      "file": "assets/form-action-worker-CMPfK3ze.js",
+      "modules": [
+        {
+          "id": "third_party/rhwp/rhwp-shared/forms/action-runtime.ts",
+          "renderedLength": 17272
+        },
+        {
+          "id": "third_party/rhwp/rhwp-studio/src/engine/form-action-worker.ts",
+          "renderedLength": 290
+        }
+      ]
+    },
+    {
+      "file": "assets/import-worker-DiDJBbv_.js",
+      "modules": [
+        {
+          "id": "\u0000rolldown/runtime.js",
+          "renderedLength": 348
+        },
+        {
+          "id": "apps/studio-host/vendor/rhwp-core/rhwp.js",
+          "renderedLength": 450208
+        },
+        {
+          "id": "third_party/rhwp/rhwp-shared/pdf/import-worker.js",
+          "renderedLength": 4806
+        }
+      ]
+    }
+  ],
+  "wasm": [
+    {
+      "path": "assets/canvaskit-DB1zH3nD.wasm",
+      "sha256": "bd669c88bd033eaf62d673103a42231a737c6d12e4cc99f8548b2784b5772430",
+      "bytes": 7159342,
+      "source": "canvaskit-wasm/bin/canvaskit.wasm"
+    },
+    {
+      "path": "assets/rhwp_bg-DBpb5G9i.wasm",
+      "sha256": "9d26197106cbe47236247c6c5cc8a32777dd794dc747d7360586f9b5dde7d7a6",
+      "bytes": 26836346,
+      "source": "rhwp-core.lock exact pinned WASM"
+    }
+  ]
+}

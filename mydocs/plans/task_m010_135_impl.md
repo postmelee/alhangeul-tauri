@@ -120,3 +120,6 @@ Rust 1.100.0 clippy가 기존 pdf_temp_cleanup의 비 Windows bool 분기 형태
 설치본 소비자에서 변경한 나눔 3개를 실제 Windows WebView2·Linux WebKit의 FontFace로 읽어 producer hash와 대조하고 합성 한글/영문 표본 화면을 보존한다. 제품 문서나 사용자 파일은 만들지 않는다. Linux 관측은 기존 tauri-driver의 고정 버전과 일회용 Xvfb를 사용한다. Studio는 upstream public/fonts 뒤 제품 override를 복사하므로 로컬 플랫폼 중립 Vite 산출물의 합집합 40개(제품 27·upstream 13)를 별도 읽기 검사한다. 이 검사는 설치본 bytes·모든 문서 시각 일치의 대체가 아니다.
 
 Windows 소비자는 fresh profile의 silent 설치가 선택 파일을 만들지 않는지 확인하고, 합성 true/false 선택 파일을 각각 둔 상태에서 같은 설치 파일을 재실행해 bytes 보존을 검사한다. 제거 뒤 마지막 false 파일의 잔존을 확인한 다음 이 시험이 만든 파일만 정리한다. 이 검사는 설치 프로그램의 설정 보존 계약이며, 실제 UI 선택·재시작 TLS 검사는 이미 성공한 별도 preferences run의 증거로 구분한다.
+
+### Stage 7 WASM 고지 범위 보완
+별도 Worker bundle 관측 중 native 네 잠금 파일과 bundled WASM의 원본 `third_party/rhwp/Cargo.lock`에 차이가 있음을 확인했다. 원본 lock의 SHA-256을 `rhwp-core.lock`과 먼저 대조하고 고지 생성 superset에 포함한다. 추가 100개 registry 버전의 archive checksum·원문을 검사하며 기존 ZIP의 검증된 원문은 각 hash·lock integrity를 재확인해 재사용할 수 있다. WASM 또는 readonly upstream source/pin을 재생성·수정하지 않는다. 기존 docs/operations/DEPENDENCY_NOTICES.md의 범위 설명과 task 증거를 갱신한다. 동봉 ZIP bytes가 바뀌므로 기존 설치본 성공을 새 ZIP의 설치 수용으로 세지 않으며, 새 Windows/Linux package와 exact 소비자에서 다시 확인한다.
