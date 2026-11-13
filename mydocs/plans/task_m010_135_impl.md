@@ -29,7 +29,7 @@ GitHub Issue: [#135](https://github.com/postmelee/alhangeul-tauri/issues/135)
 ## Stage 3 — 검증·최종 보고
 산출물: stage3 보고서와 report/task_m010_135_report.md, orders 상태.
 검증: `pnpm run build:pages`, `pnpm run check:pages`, `node --test tests/pages.test.mjs`, `git diff --check`.
-기존 검사로 충분한 문서 변경이므로 별도 구현 미러링 테스트는 추가하지 않는다. native 빌드·배포는 실행하지 않는다.
+기존 검사로 충분한 문서 변경이므로 별도 구현 미러링 테스트는 추가하지 않는다. Stage 3에서 신규 페이지로 인한 고정 파일 개수 실패가 확인되어 tests/pages.test.mjs의 기대 개수만 1 증가시킨다. native 빌드·배포는 실행하지 않는다.
 커밋: `Task #135 Stage 3 + 최종 보고서: 정책 문서 검증 결과 기록`
 
 ## 단계 의존성
