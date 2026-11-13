@@ -16,6 +16,7 @@ function Save-State {
 . (Join-Path $PSScriptRoot 'guest-ui-upgrade.ps1')
 . (Join-Path $PSScriptRoot 'guest-ui-upgrade-diagnostic.ps1')
 . (Join-Path $PSScriptRoot 'guest-ui-worker-diagnostic.ps1')
+. (Join-Path $PSScriptRoot 'guest-ui-provider-diagnostic.ps1')
 function Send-Evidence {
   foreach ($file in @(Get-ChildItem -LiteralPath $output -File | Where-Object { $_.Extension -in @('.json', '.png') })) {
     if ($file.Length -gt 5MB -or $file.Name -notmatch '^[a-z0-9-]+\.(json|png)$') { throw 'invalid-evidence-file' }
@@ -91,6 +92,8 @@ try {
     $report['upgradeProbes'] = @(Get-GuestProbes upgrade -ObserveFailures -OnFirstFailure {
       param($Id)
       if ($Id -eq 'small-hwp') {
+        try { $report['providerDiagnostic'] = Measure-GuestProvider }
+        catch { $report['providerDiagnostic'] = @{ status = 'failed'; failure = $_.Exception.Message } }
         try { $report['workerDiagnostic'] = Measure-GuestWorker $directory }
         catch { $report['workerDiagnostic'] = @{ status = 'failed'; failure = $_.Exception.Message } }
       }
