@@ -43,6 +43,16 @@ try {
     if ($state.text -match 'WebView2' -and $state.text -match '업데이트') {
       $state.rows | ConvertTo-Json -Depth 5 | Set-Content -Encoding utf8 (Join-Path $Output "$Kind-installer-ui.json")
       Save-Screen (Join-Path $Output "$Kind-installer-privacy.png")
+      $checkboxes = @($state.nodes | Where-Object {
+        $_.Current.ControlType -eq [System.Windows.Automation.ControlType]::CheckBox -and -not $_.Current.IsOffscreen
+      })
+      if ($checkboxes.Count -ne 0) { throw 'Disclosure unexpectedly requires a license acceptance checkbox' }
+      $buttonName = if ($Kind -eq 'nsis') { '^계속$' } else { '^Continue$' }
+      $continueButtons = @($state.nodes | Where-Object {
+        $_.Current.ControlType -eq [System.Windows.Automation.ControlType]::Button -and
+        $_.Current.Name -match $buttonName -and $_.Current.IsEnabled -and -not $_.Current.IsOffscreen
+      })
+      if ($continueButtons.Count -ne 1) { throw 'Expected disclosure Continue button was not observed' }
       $found = $true
       break
     }
