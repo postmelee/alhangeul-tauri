@@ -583,3 +583,14 @@ ETW 선행 1a498c05/run43386129362와 86caa629/run43386432825는 Windows 회귀�
 ac2ff713/run43400996382는 최초 실패를 보존해 failure이며 artifact 14027060413/digest 6e15ebf584881de2e47a63e408f089483dd0bf669649b468ca55afd153bedb58을 검증했다. cold DLL은 activate 1ms/initialize 0ms, GetThumbnail 1,946ms 뒤 E_FAIL이고 그 child의 실제 ETW 수명은 4.262ms였다. 별도 재설치 직후 raw Worker는 Process.Start 2,862ms, preview 완료 2,873ms, direct 완료 2,879ms, 전체 2,882ms/exit 0이며 실제 프로세스 수명은 20.391ms다. Worker 생성 비용이 기존 시작 포함 1,500ms 예산을 넘고, 생성 후 즉시 종료돼 정상 bitmap을 받지 못하는 경로가 확인됐다. 이 자료만으로 생성 지연의 OS 내부 원인(예: 특정 보안 제품)을 단정하지 않는다. 추가 재설치 두 번 및 마지막 일반 재설치/제거 모두 0이고 exact binary/sentinel/owned trace 정리를 확인했다.
 
 Windows 최소 수정: 기존 frame 선택 1,500ms와 256MiB/active process 1/격리 정책은 유지한다. Child::spawn 직후 frame 선택 deadline을 min(요청 시작+5,000ms, worker 준비+1,500ms)로 계산한다. cold 시작 2,862ms가 frame 예산 전체를 소진하지 않게 하면서 시작+선택은 5초 예산으로 제한한다. OS 생성 API 자체가 차단되거나 반환 뒤 cleanup하는 시간을 포함한 엄격한 전체 반환 시간 보장은 기존에도 없으며 새로 주장하지 않는다. 예산을 넘긴 시작 뒤 늦은 frame은 거부한다. warm/cold 시작, 전체 예산 끝 부근, 이미 만료한 시작을 Windows Rust 회귀로 검증한다. Linux의 shared 1,500ms 상수와 Linux 실행 경계는 그대로다. 승인된 docs/architecture/WINDOWS_THUMBNAILS.md의 resource budget/설명만 정합화한다. 실제 수정 commit으로 profile=full을 실행하고 성공한 exact 새 artifact로 Windows 11/10의 NSIS/MSI/동일 버전 업그레이드를 재검증한다. PR 전 보고를 유지한다.
+
+
+수정 후보 d0a896ba56a5316f262c60866a3ec23a10201563를 게시하고 run43405485144(scope=full/profile=full/thumbnail_same_version_upgrade=true)을 시작했다. 로컬 automation 1,421/1,421, boundary 904 files 및 diff가 통과했다. Windows Rust 신규 회귀와 새 package/설치 수용은 해당 CI 및 성공 artifact의 client guest에서 확인하며, 진행 중인 검증을 통과로 기록하지 않는다.
+
+
+안전한 중단 체크포인트(2026-11-13, 작업지시자 이동 요청): 새 작업·PR·릴리즈를 중단한다. 후보 d0a896ba의 full run 43405485144는 Linux ARM64 desktop clippy에서 src/pdf_temp_cleanup.rs:242의 needless_bool(-D warnings, Rust 1.100.0)로 실패했다. 해당 플랫폼의 desktop 테스트 187개와 별도 21/3개는 통과했고, 이 lint 실패를 썸네일 수정 실패로 혼동하지 않는다. Windows 제품 생성과 신규 handler 회귀는 아직 완료 확인 전이다. 사용자 요청으로 취소했고 모든 job의 completed 상태를 확인했다. Windows build/core와 Linux x64는 cancelled, Linux ARM64와 최종 집계는 failure다.
+
+미커밋 변경은 orders/20261113.md, 본 impl, guest-ui-worker-diagnostic.ps1의 요청 5,000ms/frame 1,500ms 구분이다. 진단 label 변경은 아직 이전 제품을 고정한 harness와 함께 실행하지 않았다. 재개 시 먼저 Linux cfg별 bool 표현을 동작 보존 방식으로 정리하고 Windows/Linux full 검증을 다시 수행한다. 성공한 새 제품 SHA/run/artifact/digest로 hosted-ui-input.mjs·guest-ui-prepare.py·hosted-ui-windows.ps1·hosted-ui-standard.ps1를 함께 고정한 뒤 Windows 10/11 × NSIS/MSI/공개본 동일 버전 업그레이드를 다시 검증한다. 이전 1e08891d 결과를 새 제품 수용으로 사용하지 않는다. PR 생성 전 보고 및 별도 v0.1.3 재배포 경계를 유지한다.
+
+
+재개(2026-11-14): 작업지시자의 계속 진행 승인과 T7 연결을 확인했다. full 검증을 막은 pdf_temp_cleanup.rs의 cfg별 bool 표현을 최소 정리한다. Windows는 symlink 또는 reparse 속성, Linux는 symlink 판정이라는 기존 동작을 보존한다. 기존 Linux symlink/Windows junction 보존 회귀와 desktop clippy를 각 지원 OS CI에서 재검증한다. 새 문서 위치는 추가하지 않으며 오늘할일은 기존 형식의 20261114.md로 이어간다. 미커밋 worker 진단 label 변경은 새 artifact 고정과 함께 후속 harness에 반영한다.
