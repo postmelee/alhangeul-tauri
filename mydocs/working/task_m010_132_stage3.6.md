@@ -1,7 +1,7 @@
 # Task #132 Stage 3.6 — cold 시작 수정과 Windows 10/11 실제 Explorer 검증
 
-GitHub Issue: [#132](https://github.com/postmelee/alhangeul-tauri/issues/132)  
-구현계획서: [task_m010_132_impl.md](../plans/task_m010_132_impl.md)  
+GitHub Issue: [#132](https://github.com/postmelee/alhangeul-tauri/issues/132)
+구현계획서: [task_m010_132_impl.md](../plans/task_m010_132_impl.md)
 Stage: 3.6
 
 ## 단계 목적

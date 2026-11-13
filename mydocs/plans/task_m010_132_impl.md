@@ -4,7 +4,7 @@
 GitHub Issue: [#132](https://github.com/postmelee/alhangeul-tauri/issues/132)
 마일스톤: M010
 
-현재: Stage 3.6 검증 완료 — 새 제품의 Windows 10/11 × NSIS/MSI/공개본 동일 버전 NSIS 업그레이드 여섯 경로 통과. Stage 4 최종 보고·PR 전 알림 진행 중. 최종 서명 파일·재배포는 별도.
+현재: Stage 4 최종 보고 완료 — 새 제품의 Windows 10/11 여섯 경로 통과, PR 생성 전 보고 상태. 기존 v0.1.3 태그·Release·Pages는 변경하지 않았으며 최종 서명 파일·재배포는 별도다.
 
 2026-11-11 수행계획 승인과 이슈 해결까지 연속 진행 지시를 적용한다. PR 생성 전 보고한다.
 
