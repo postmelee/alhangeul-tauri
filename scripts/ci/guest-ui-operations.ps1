@@ -1,4 +1,4 @@
-function Request-GuestAdmin([ValidateSet('install', 'reinstall', 'uninstall')][string]$Operation) {
+function Request-GuestAdmin([ValidateSet('prerequisites', 'install', 'reinstall', 'uninstall')][string]$Operation) {
   $request = Join-Path $root ('requests\' + $Operation + '.request')
   $response = Join-Path $root ('admin-results\' + $Operation + '.json')
   if ((Test-Path $request) -or (Test-Path $response)) { throw 'fresh-admin-operation-required' }
@@ -17,9 +17,9 @@ function Request-GuestAdmin([ValidateSet('install', 'reinstall', 'uninstall')][s
 }
 function Invoke-GuestInstall([ValidateSet('install', 'reinstall', 'uninstall')][string]$Operation) {
   if ($inputData.scenario -eq 'msi') { return Request-GuestAdmin $Operation }
-  if ($inputData.scenario -ne 'nsis') { throw 'unknown-guest-scenario' }
+  if ($inputData.scenario -notin @('nsis', 'nsis-upgrade')) { throw 'unknown-guest-scenario' }
   if ($Operation -eq 'uninstall') { return Run-Owned (Join-Path $directory 'uninstall.exe') '/S' }
-  return Run-Owned $installer $(if ($Operation -eq 'reinstall') { '/S /UPDATE' } else { '/S' })
+  return Run-Owned $installer $(if ($Operation -eq 'reinstall' -or $inputData.scenario -eq 'nsis-upgrade') { '/S /UPDATE' } else { '/S' })
 }
 
 function Assert-GuestAdminBoundary {

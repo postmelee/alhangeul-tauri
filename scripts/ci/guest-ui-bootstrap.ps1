@@ -16,7 +16,7 @@ $startup = [Environment]::GetFolderPath('CommonStartup')
   Set-Content -LiteralPath (Join-Path $startup 'alh-probe.cmd') -Encoding ASCII
 
 $inputData = Get-Content 'C:\AlhProbe\input.json' -Raw | ConvertFrom-Json
-if ($inputData.scenario -eq 'msi') {
+if ($inputData.scenario -eq 'msi' -or $inputData.prerequisites.Count -gt 0) {
   New-Item -ItemType Directory -Path 'C:\AlhProbe\requests', 'C:\AlhProbe\admin-results' | Out-Null
   & icacls.exe 'C:\AlhProbe\requests' /grant '*S-1-5-32-545:(OI)(CI)M' /Q | Out-Null
   if ($LASTEXITCODE -ne 0) { throw 'request-acl-failed' }

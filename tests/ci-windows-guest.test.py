@@ -89,3 +89,25 @@ for key in ("installExit","reinstallExit","uninstallExit"):
 for value in (False, None):
  bad=copy.deepcopy(msi);bad["adminBoundaryReadOnly"]=value
  assert not guest_run.guest_observation_complete(bad,False,"msi")
+
+upgrade=copy.deepcopy(good)
+upgrade["input"].update(scenario="nsis-upgrade", prerequisites=[dict(name="vc",sha256="c"*64)])
+upgrade.update(adminBoundaryReadOnly=True,baselineExit=0,baselineBinariesMatched=True,
+ upgradeBinariesMatched=True,reinstallBinariesMatched=True,afterPrerequisites=dict(vcRuntimeLoadError=0),
+ userDataPreservedAfterUninstall=True,baselineProbes=copy.deepcopy(good["probes"]),
+ upgradeProbes=copy.deepcopy(good["probes"]),sentinels=[dict(folder=f,preserved=True)
+ for f in ("LocalApplicationData","ApplicationData")])
+upgrade["adminOperations"]={"prerequisites":dict(operation="prerequisites",status="observed",
+ system=True,exitCode=0,installerSha256="a"*64,packages=[dict(name="vc",sha256="c"*64,
+ signatureStatus="Valid",signer="CN=Microsoft Corporation, O=Microsoft Corporation, C=US",exitCode=0)])}
+assert guest_run.guest_observation_complete(upgrade,False,"nsis-upgrade")
+for key,value in [("baselineExit",2),("baselineBinariesMatched",False),("upgradeBinariesMatched",False),
+ ("reinstallBinariesMatched",False),("baselineProbes",[]),("upgradeProbes",[]),
+ ("sentinels",[]),("userDataPreservedAfterUninstall",False),("afterPrerequisites",{})]:
+ bad=copy.deepcopy(upgrade);bad[key]=value
+ assert not guest_run.guest_observation_complete(bad,False,"nsis-upgrade"),key
+for key,value in [("signatureStatus","UnknownError"),("signer","CN=Other"),("sha256","d"*64),("exitCode",3010)]:
+ bad=copy.deepcopy(upgrade);bad["adminOperations"]["prerequisites"]["packages"][0][key]=value
+ assert not guest_run.guest_observation_complete(bad,False,"nsis-upgrade"),key
+bad=copy.deepcopy(upgrade);bad["sentinels"][0]["preserved"]=False
+assert not guest_run.guest_observation_complete(bad,False,"nsis-upgrade")

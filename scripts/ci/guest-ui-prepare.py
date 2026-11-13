@@ -1,5 +1,6 @@
 """Prepare an isolated Windows evaluation guest; never execute on the owner's Mac."""
 import hashlib
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -39,7 +40,7 @@ def guard():
 
 def scenario():
     value = os.environ.get("GUEST_SCENARIO", "nsis")
-    if value not in ("nsis", "msi"):
+    if value not in ("nsis", "msi", "nsis-upgrade"):
         raise RuntimeError("invalid-guest-scenario")
     return value
 
@@ -56,7 +57,7 @@ def prepare_product(root, payload):
                     "windows-x64", "--root", str(bundle), "--verify-inventory",
                     str(inventory), "--source-sha", PRODUCT_SHA], check=True)
     data = json.loads(inventory.read_text())
-    installers = [f for f in data["files"] if f["kind"] == scenario()]
+    installers = [f for f in data["files"] if f["kind"] == ("msi" if scenario() == "msi" else "nsis")]
     if len(installers) != 1:
         raise RuntimeError("installer-not-unique")
     installer = installers[0]
@@ -69,6 +70,10 @@ def prepare_product(root, payload):
     (payload / "verification").mkdir()
     handler = next(f for f in value["binaries"] if f["kind"] == "thumbnail-handler")
     shutil.copyfile(bundle / handler["path"], payload / "verification/AlhangeulThumbnailHandler.dll")
+    spec = importlib.util.spec_from_file_location("upgrade_input", Path(__file__).with_name("guest-ui-upgrade-input.py"))
+    upgrade = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(upgrade)
+    upgrade.prepare(payload, value)
     (payload / "input.json").write_text(json.dumps(value, indent=2))
     manifest = json.loads(Path("scripts/windows-thumbnail-fixtures.json").read_text())
     for fixture in manifest["fixtures"]:
@@ -93,7 +98,8 @@ def prepare_media(root):
         shutil.copyfile("scripts/windows-thumbnail-" + suffix,
                         payload / ("scripts/windows-thumbnail-" + suffix))
     for name in ("guest-ui-probe.ps1", "guest-ui-installer-state.ps1", "hosted-ui-view.ps1",
-                 "guest-ui-process.ps1", "guest-ui-admin.ps1", "guest-ui-operations.ps1"):
+                 "guest-ui-process.ps1", "guest-ui-admin.ps1", "guest-ui-operations.ps1",
+                 "guest-ui-upgrade.ps1", "guest-ui-prerequisites.ps1"):
         shutil.copyfile("scripts/ci/" + name, payload / ("scripts/ci/" + name))
     shutil.copyfile("scripts/ci/guest-ui-bootstrap.ps1", media / "bootstrap.ps1")
     prepare_product(root, payload)

@@ -72,37 +72,7 @@ def wait_socket(path, process):
 
 
 def guest_observation_complete(guest, network_enabled, expected_scenario="nsis"):
-    input_data = guest.get("input", {})
-    if expected_scenario not in ("nsis", "msi") or input_data.get("scenario") != expected_scenario:
-        return False
-    if any(guest.get(key) != 0 for key in ("installExit", "reinstallExit", "uninstallExit")):
-        return False
-    if expected_scenario == "msi":
-        if guest.get("adminBoundaryReadOnly") is not True:
-            return False
-        operations = guest.get("adminOperations", {})
-        for name in ("install", "reinstall", "uninstall"):
-            result = operations.get(name, {})
-            if (result.get("status") != "observed" or result.get("operation") != name
-                    or result.get("system") is not True or result.get("exitCode") != 0
-                    or result.get("installerSha256") != input_data.get("installerSha256")):
-                return False
-    probes = guest.get("probes", [])
-    if not isinstance(probes, list) or len(probes) != 4:
-        return False
-    expected = {"small-hwp", "large-hwp", "form-hwpx", "control-jpg"}
-    if {probe.get("id") for probe in probes} != expected:
-        return False
-    runtime = guest.get("beforeInstall", {})
-    return (guest.get("status") == "observed" and guest.get("productUninstallPassed") is True
-            and guest.get("offlineInstallExit") == 0 and not network_enabled
-            and runtime.get("vcRuntimePresent") is False
-            and runtime.get("vcRuntimeLoadError") == 126
-            and runtime.get("referenceHandlerLoadError") == 0
-            and guest.get("desktopOwnerMatches") is True and guest.get("sessionMatches") is True
-            and guest.get("displayPreference", {}).get("restored") is True
-            and guest.get("visual") == "captured-awaiting-review"
-            and all(p.get("status") == "ok" and p.get("bitmapPresent") is True for p in probes))
+    return module("guest-ui-acceptance").complete(guest, network_enabled, expected_scenario)
 
 
 def observe(root, process):

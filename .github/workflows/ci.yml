@@ -17,7 +17,7 @@ on:
         description: Exact existing product in a fresh Windows guest.
         type: choice
         default: nsis
-        options: [nsis, msi]
+        options: [nsis, msi, nsis-upgrade]
 
       profile:
         description: Select validation scope; auto uses an exact base SHA and falls back to full.
