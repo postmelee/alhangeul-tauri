@@ -30,15 +30,19 @@ function Convert-GuestProcessEvent($Event) {
   foreach ($entry in $xml.Event.EventData.Data) { $fields[[string]$entry.Name] = [string]$entry.InnerText }
   if (-not $fields.ContainsKey('ImageName') -or -not $fields.ContainsKey('ProcessID')) { throw 'kernel-process-schema-mismatch' }
   $name = [IO.Path]::GetFileName($fields.ImageName)
-  if ($name -notin @('AlhangeulThumbnailWorker.exe', 'dllhost.exe')) { return }
+  $names = @('AlhangeulThumbnailWorker.exe', 'dllhost.exe')
+  if ($Event.Id -eq 2) { $names += 'AlhangeulThumb' } # Observed kernel Stop image name.
+  if ($name -notin $names) { return }
   $row = @{
     kind = $(if ($Event.Id -eq 1) { 'Start' } else { 'Stop' }); name = $name
     processId = (Convert-GuestTraceNumber $fields.ProcessID)
     timeUtc = $Event.TimeCreated.ToUniversalTime().ToString('o'); clock = 'ETW-perf'
   }
-  foreach ($field in @('ParentProcessID', 'SessionID')) {
-    if ($fields.ContainsKey($field)) { $row[$field] = Convert-GuestTraceNumber $fields[$field] }
-  }
+  if ($fields.ContainsKey('ParentProcessID')) { $row['parentProcessId'] = Convert-GuestTraceNumber $fields.ParentProcessID }
+  if ($fields.ContainsKey('SessionID')) { $row['sessionId'] = Convert-GuestTraceNumber $fields.SessionID }
+  if ($fields.ContainsKey('ProcessSequenceNumber')) { $row['processSequenceNumber'] = [uint64]$fields.ProcessSequenceNumber }
+  if ($fields.ContainsKey('CreateTime')) { $row['processCreatedAt'] = $fields.CreateTime }
+  if ($fields.ContainsKey('ExitTime')) { $row['processExitedAt'] = $fields.ExitTime }
   if ($Event.Id -eq 2) {
     if (-not $fields.ContainsKey('ExitCode')) { throw 'kernel-process-exit-schema-mismatch' }
     $row['exitStatus'] = Convert-GuestTraceNumber $fields.ExitCode

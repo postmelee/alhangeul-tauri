@@ -33,7 +33,9 @@ try {
       } elseif ($operation -eq 'trace-stop') {
         $result['events'] = @(Read-GuestProcessTrace $trace)
         Clear-GuestProcessTrace $trace
-        $result['subscriptionsRemoved'] = $true
+        $result['traceMethod'] = 'ETW-perf'
+        $result['sessionRemoved'] = -not $trace.active
+        $result['rawTraceRemoved'] = -not (Test-Path -LiteralPath $trace.file)
         $result.exitCode = 0
       } else {
       if ((Get-FileHash $installer -Algorithm SHA256).Hash.ToLowerInvariant() -cne $inputData.installerSha256) { throw 'admin-installer-hash-mismatch' }
