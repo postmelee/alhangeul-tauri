@@ -29,9 +29,14 @@ try {
   $app=Start-Process $appPath -PassThru
   Start-Sleep 45
   if ($app.HasExited) { throw 'app died' }
+  Write-Host 'Startup finished'
   Inventory 'running'
-  node scripts/privacy/document-cdp.mjs
-  $documentFailed = $LASTEXITCODE -ne 0
+  $doc = Start-Process node -ArgumentList 'scripts/privacy/document-cdp.mjs' -PassThru -RedirectStandardOutput (Join-Path $env:RUNNER_TEMP 'privacy-doc-out.txt') -RedirectStandardError (Join-Path $env:RUNNER_TEMP 'privacy-doc-error.txt')
+  $finished = $doc.WaitForExit(300000)
+  $documentFailed = -not $finished -or $doc.ExitCode -ne 0
+  if (-not $finished) { Stop-Process -Id $doc.Id -Force }
+  if ($documentFailed) { Get-Content (Join-Path $env:RUNNER_TEMP 'privacy-doc-error.txt') -Tail 15 | Set-Content (Join-Path $out 'document-error.txt') }
+  Write-Host 'Document phase finished; collecting lifecycle'
   'exit' | Set-Content (Join-Path $out 'phase')
   Stop-Process -Id $app.Id -Force
   Start-Sleep 3
@@ -42,6 +47,7 @@ try {
   Stop-Process -Id $app.Id -Force
   Start-Sleep 3
   Inventory 'restart'
+  Write-Host 'Uninstall begins'
   $remove=Start-Process (Join-Path $env:LOCALAPPDATA 'Alhangeul\uninstall.exe') -ArgumentList '/S' -Wait -PassThru
   Start-Sleep 5
   if ($remove.ExitCode -ne 0 -or (Test-Path $appPath)) { throw 'uninstall incomplete' }

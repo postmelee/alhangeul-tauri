@@ -58,3 +58,6 @@ GitHub Issue: [#135](https://github.com/postmelee/alhangeul-tauri/issues/135)
 - 프록시 사용이 동작을 바꾸므로 Stage 4의 직접 연결과 구분하고, 프록시 우회·TLS 실패는 미관측으로 명시한다. 성공한 업데이트 manifest 응답을 positive control로 요구한다.
 - 공식 신청 항목·역할·MFA·라이선스·공개 코드 서명 정책·설치 안내/선택권을 점검한다. 미확인 운영자 정보는 추정하지 않는다. 후원/서명 제공 사실은 승인 전 주장하지 않는다.
 - 검증 harness는 scripts/privacy와 기존 전용 workflow, 증거는 working/assets/task135, 조사·보고서는 기존 파일에 갱신한다. 제품 변경이 필요하면 범위·검증 계획을 구체화한 다음 구현한다. 신청 제출·서명 credential 생성은 제외한다.
+
+### Stage 5 문서 위치 구체화
+공개 서명 정책은 기존 사이트의 새 `site/code-signing/index.html`에 두고 홈페이지·업데이트(다운로드)에서 `Code signing policy`로 연결한다. 사용자에게 현재 미승인 상태, 확인된 역할, 개인정보 방침을 함께 보여주기 위해 내부 조사 문서 대신 공개 페이지를 선택한다. 후원 제공 문장은 실제 승인 전 추가하지 않는다. 사용자 확인: postmelee가 세 역할 담당, GitHub MFA 활성화. 이 문서·경로 결정은 신청 준비 완료까지의 후속 명시 지시 범위에 해당한다.

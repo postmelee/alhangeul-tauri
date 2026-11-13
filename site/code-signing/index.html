@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ko">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>알한글 Code signing policy</title>
+        <meta name="description" content="알한글의 코드 서명 준비 상태와 담당 역할, 승인 원칙을 안내합니다." />
+        <link rel="canonical" href="https://postmelee.github.io/alhangeul-tauri/code-signing/" />
+        <link rel="icon" href="../../assets/logo/favicon.ico" />
+        <link rel="stylesheet" href="../styles.css?v=108-2" />
+    </head>
+    <body class="release-page">
+        <a class="skip-link" href="#main">본문으로 이동</a>
+        <header class="site-header" aria-label="주요 탐색">
+            <div class="site-header-inner">
+                <a class="brand-link" href="../" aria-label="알한글 홈"><img src="../../assets/logo/logo-256.png" alt="" width="28" height="28" /><span>알한글</span></a>
+                <nav class="header-actions" aria-label="주요 링크">
+                    <a class="header-link" href="../">홈</a>
+                    <a class="header-link" href="../updates/">업데이트</a>
+                    <a class="header-link" href="../feedback/">문의/제보</a>
+                </nav>
+            </div>
+        </header>
+        <main class="updates-page" id="main">
+            <section class="updates-hero" aria-labelledby="signing-title">
+                <h1 id="signing-title">Code signing policy</h1>
+                <p>Alhangeul 코드 서명 정책 · 2026년 11월 14일</p>
+            </section>
+            <div class="updates-content">
+                <section class="updates-section" aria-labelledby="status">
+                    <h2 id="status">현재 상태</h2>
+                    <p>Alhangeul은 SignPath Foundation 지원 신청을 준비하고 있습니다. 아직 지원 승인이나 SignPath를 통한 코드 서명을 받지 않았습니다. 이 페이지는 후원 또는 서명 제공 사실을 알리는 페이지가 아닙니다.</p>
+                    <p>현재 업데이트 파일의 Minisign 검증은 Windows Authenticode 코드 서명과 별개입니다. 지원이 승인되고 실제 서명 구성이 검증된 뒤 제공자와 적용 릴리스를 안내하겠습니다.</p>
+                </section>
+                <section class="updates-section" aria-labelledby="roles">
+                    <h2 id="roles">담당 역할</h2>
+                    <p><a href="https://github.com/postmelee">postmelee</a>가 소스 작성(Author), 외부 기여 검토(Reviewer), 릴리스 서명 승인(Approver)을 담당합니다. 현재 한 명이 세 역할을 수행하므로 독립된 두 사람의 승인 체계를 의미하지 않습니다.</p>
+                    <p>GitHub 접근에 MFA를 사용합니다. SignPath 계정을 도입할 때에도 MFA를 적용하고, 각 릴리스의 서명 요청을 담당자가 수동으로 승인하는 것을 운영 원칙으로 합니다. 현재 SignPath 계정이나 서명 자동화가 구성되었다는 뜻은 아닙니다.</p>
+                </section>
+                <section class="updates-section" aria-labelledby="scope">
+                    <h2 id="scope">서명 대상과 검토 원칙</h2>
+                    <p>서명 도입 시 Alhangeul 저장소에서 검토한 소스와 빌드 절차로 생성한 제품 실행 파일·설치 패키지를 대상으로 합니다. 고정한 의존성 출처와 제품명·버전, 빌드 결과의 동일성을 확인합니다. 외부 프로젝트의 독립 바이너리를 Alhangeul 소유 바이너리로 간주하지 않습니다.</p>
+                    <p>구체적인 인증서·산출물 설정과 의존성 취급은 제공자의 심사 및 승인 후 확정합니다. 신청 준비는 지원 또는 인증서 사용 권한을 보장하지 않습니다.</p>
+                </section>
+                <section class="updates-section" aria-labelledby="privacy">
+                    <h2 id="privacy">개인정보와 보안 제보</h2>
+                    <p>시작 시 업데이트 확인, 외부 런타임, 로그와 자발적 제보의 처리는 <a href="../privacy/">개인정보처리방침</a>에서 확인할 수 있습니다.</p>
+                    <p>보안 취약점은 <a href="https://github.com/postmelee/alhangeul-tauri/security/policy">보안 정책</a>의 비공개 경로로 제보해 주세요.</p>
+                </section>
+            </div>
+        </main>
+        <footer class="site-footer"><div class="site-footer-inner"><div class="footer-brand"><img src="../../assets/logo/logo-256.png" alt="" width="24" height="24" /><span>알한글</span></div><p>Windows와 Linux용 HWP/HWPX 문서 편집기입니다.</p><nav aria-label="푸터 링크"><a href="../">홈</a><a href="../feedback/">문의/제보</a></nav></div></footer>
+    </body>
+</html>

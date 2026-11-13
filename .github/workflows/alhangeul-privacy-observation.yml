@@ -21,7 +21,7 @@ jobs:
       matrix:
         include: ${{ fromJSON(inputs.platform == 'linux' && '[{"os":"ubuntu-22.04","platform":"linux"}]' || inputs.platform == 'windows' && '[{"os":"windows-2025","platform":"windows"}]' || '[{"os":"ubuntu-22.04","platform":"linux"},{"os":"windows-2025","platform":"windows"}]') }}
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -41,6 +41,11 @@ jobs:
       - name: Install TLS inspection tooling
         if: inputs.depth == 'deep'
         run: python -m pip install mitmproxy==11.0.2
+      - name: Prepare Linux document driver
+        if: runner.os == 'Linux' && inputs.depth == 'deep'
+        run: |
+          sudo apt-get install -y webkit2gtk-driver
+          cargo install tauri-driver --version 2.0.6 --locked
       - name: Deep Linux TLS and log lifecycle
         if: runner.os == 'Linux' && inputs.depth == 'deep'
         run: dbus-run-session -- bash scripts/privacy/deep-linux.sh

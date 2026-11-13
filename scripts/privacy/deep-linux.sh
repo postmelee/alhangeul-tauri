@@ -40,6 +40,16 @@ pkill -x Alhangeul || true
 kill "$app_pid" 2>/dev/null || true
 sleep 3
 inventory exit
+printf document > "$out/phase"
+export PRIVACY_APP="$app" APPIMAGE_EXTRACT_AND_RUN=1
+tauri-driver >/tmp/privacy-driver.log 2>&1 &
+driver_pid=$!
+sleep 2
+document_failed=0
+node scripts/privacy/document-cdp.mjs > /tmp/privacy-doc-out.txt 2>/tmp/privacy-doc-error.txt || document_failed=1
+kill "$driver_pid" 2>/dev/null || true
+pkill -x Alhangeul || true
+if test "$document_failed" = 1; then tail -15 /tmp/privacy-doc-error.txt > "$out/document-error.txt"; fi
 printf restart > "$out/phase"
 "$app" --appimage-extract-and-run >/tmp/privacy-deep-restart.log 2>&1 &
 app_pid=$!
@@ -54,3 +64,5 @@ inventory appimage-delete
 find "$profile" "$cache" -type f -name '*.log*' -delete 2>/dev/null || true
 inventory manual-log-delete
 test ! -s "$out/lifecycle-manual-log-delete.txt"
+
+test "$document_failed" = 0
