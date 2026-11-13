@@ -519,3 +519,6 @@ Stage 3.6 첫 실제 결과: Windows 11 MSI run 43361879933은 자동 관측 gat
 같은 새 guest/동일 제품으로 API warm-up이나 cache 삭제 없이 동일 Explorer 창의 10/30/60초 원본을 모두 보존하는 settling 대조를 진행한다. 첫 10초 원본을 덮어쓰지 않고 이후 원본/실측 경과/SHA를 추가하며 기존 hosted 경로는 기본 10초 동작을 유지한다. 마지막 화면만 골라 최초 실패를 숨기지 않는다.
 
 Windows 10 NSIS run 43362730721은 success, guest 495.4초다. agent 직접 PNG에서 HWP/HWPX/JPG 내용을 확인했다. offline install/reinstall/uninstall 0, API 4/4, WebView2 공식 서명 Valid/설치 0, 표준 사용자·설정 복원·제품 제거/소유 VM 정리가 성공했다. artifact 14008953920 digest 6ec91bcd43dc400a9bda162c32a5c1bc80f0db05dcc79d77958d24435d3bb522다. 사용자 최종 golden/전체 제품 수용은 미완료다.
+
+
+Windows 11 upgrade run 43362414253은 실패로 보존한다(artifact 14008769768, digest eceffd118134d5038b5c7e66f72b8e7f00e01049b52706dd7b3ad0373ce669ab). VC 공식 서명/설치와 공개본 설치 exit 0·binary 해시는 통과했으나 baseline small-hwp force-extract가 0x8004B200/bitmap null이었다. 잘못된 baseline 성공 요구 때문에 후보 설치는 미실행이었다. baseline API는 네 fixture 모두 관측·원시 오류를 보존하되 기존 결함 때문에 업그레이드를 막지 않도록 수정한다. 후보 upgrade/reinstall은 계속 네 bitmap 모두 성공을 요구한다. baseline 누락/skipped와 후보 실패는 거부하는 회귀를 추가했다. sentinel을 baseline probe 전에 생성하고, 사전 실패로 sentinel이 없는 경우의 추가 cleanup 속성 오류를 방지한다. 기존 공개본 자체 제거 실패는 별도 보존하며 후보 제거 성공으로 치환하지 않는다.

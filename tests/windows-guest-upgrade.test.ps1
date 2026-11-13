@@ -19,7 +19,7 @@ try {
   @'
 param($Mode, $InputPath, $OutputPath)
 if (Test-Path $OutputPath) { throw 'create-new-required' }
-'{"status":"ok","bitmapPresent":true}' | Set-Content $OutputPath
+'{"status":"ok","bitmapPresent":true,"hresult":"0x00000000"}' | Set-Content $OutputPath
 '@ | Set-Content (Join-Path $root 'scripts/windows-thumbnail-diagnostics.ps1')
   foreach ($phase in @('baseline', 'upgrade', 'reinstall')) {
     $actual = @(Get-GuestProbes $phase)
@@ -27,6 +27,14 @@ if (Test-Path $OutputPath) { throw 'create-new-required' }
   }
   if (@(Get-ChildItem $output -File).Count -ne 12) { throw 'raw-phases-overwritten' }
   Assert-Throws { Get-GuestProbes baseline }
+  Get-ChildItem $output -File | Remove-Item
+  @'
+param($Mode, $InputPath, $OutputPath)
+'{"status":"failed","bitmapPresent":null,"hresult":"0x8004B200"}' | Set-Content $OutputPath
+'@ | Set-Content (Join-Path $root 'scripts/windows-thumbnail-diagnostics.ps1')
+  $failedBaseline = @(Get-GuestProbes baseline)
+  if ($failedBaseline.Count -ne 4 -or @($failedBaseline | Where-Object hresult -ne '0x8004B200').Count -gt 0) { throw 'baseline-failure-not-preserved' }
+  Assert-Throws { Get-GuestProbes upgrade }
   $binary = [pscustomobject]@{ name = 'fixture.txt'; bytes = (Get-Item $file).Length; sha256 = $hash }
   Assert-GuestBinaries @($binary) $root
   $binary.sha256 = '0' * 64

@@ -44,11 +44,18 @@ def prerequisites_ok(guest):
     return True
 
 
+def baseline_observed(probes):
+    expected = {"small-hwp", "large-hwp", "form-hwpx", "control-jpg"}
+    return (isinstance(probes, list) and len(probes) == 4
+            and {p.get("id") for p in probes} == expected
+            and all(p.get("status") in ("ok", "failed") for p in probes))
+
+
 def upgrade_ok(guest):
     sentinels = guest.get("sentinels", [])
     return (guest.get("baselineExit") == 0 and guest.get("baselineBinariesMatched") is True
             and guest.get("upgradeBinariesMatched") is True and guest.get("reinstallBinariesMatched") is True
-            and probes_ok(guest.get("baselineProbes")) and probes_ok(guest.get("upgradeProbes"))
+            and baseline_observed(guest.get("baselineProbes")) and probes_ok(guest.get("upgradeProbes"))
             and guest.get("afterPrerequisites", {}).get("vcRuntimeLoadError") == 0
             and guest.get("userDataPreservedAfterUninstall") is True
             and isinstance(sentinels, list) and len(sentinels) == 2

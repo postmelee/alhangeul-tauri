@@ -118,7 +118,7 @@ finally {
       $report.uninstallExit = Invoke-GuestInstall uninstall
       for ($i=0; $i -lt 90 -and (Test-Path $directory); $i++) { Start-Sleep -Seconds 1 }
       $report.productUninstallPassed = $report.uninstallExit -eq 0 -and -not (Test-Path $directory) -and -not (Test-Path $key)
-      if ($inputData.scenario -eq 'nsis-upgrade') { Test-GuestSentinels; $report['userDataPreservedAfterUninstall'] = $true }
+      if ($inputData.scenario -eq 'nsis-upgrade' -and $report.Contains('sentinels')) { Test-GuestSentinels; $report['userDataPreservedAfterUninstall'] = $true }
     } catch { $report['cleanupFailure'] = $_.Exception.Message }
   }
   $report.phase = 'done'; Save-State

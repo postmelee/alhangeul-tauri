@@ -125,3 +125,10 @@ for key,value in [("build","26300"),("productType",3),("caption","Windows Server
  assert not guest_run.guest_observation_complete(bad,False,"msi","windows10"),key
 bad=copy.deepcopy(win10);bad["input"]["prerequisites"]=[]
 assert not guest_run.guest_observation_complete(bad,False,"msi","windows10")
+
+bad=copy.deepcopy(upgrade);bad["baselineProbes"][0].update(status="failed",bitmapPresent=None,hresult="0x8004B200")
+assert guest_run.guest_observation_complete(bad,False,"nsis-upgrade")
+bad["upgradeProbes"][0].update(status="failed",bitmapPresent=None)
+assert not guest_run.guest_observation_complete(bad,False,"nsis-upgrade")
+bad=copy.deepcopy(upgrade);bad["baselineProbes"][0]["status"]="skipped"
+assert not guest_run.guest_observation_complete(bad,False,"nsis-upgrade")

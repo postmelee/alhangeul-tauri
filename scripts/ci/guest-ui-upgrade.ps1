@@ -6,7 +6,7 @@ function Assert-GuestBinaries($Binaries, $Directory) {
     if ((Get-Item $path).Length -ne $size -or (Get-FileHash $path -Algorithm SHA256).Hash.ToLowerInvariant() -cne $binary.sha256) { throw 'installed-binary-mismatch' }
   }
 }
-function Get-GuestProbes([string]$Phase) {
+function Get-GuestProbes([ValidateSet('baseline', 'upgrade', 'reinstall')][string]$Phase) {
   $observed = @()
   $fixtures = (Get-Content (Join-Path $root 'scripts\windows-thumbnail-fixtures.json') -Raw | ConvertFrom-Json).fixtures
   foreach ($fixture in $fixtures) {
@@ -16,8 +16,9 @@ function Get-GuestProbes([string]$Phase) {
     $probePath = Join-Path $output ('probe-' + $Phase + '-' + $fixture.id + '.json')
     & (Join-Path $root 'scripts\windows-thumbnail-diagnostics.ps1') -Mode force-extract -InputPath $path -OutputPath $probePath
     $raw = Get-Content $probePath -Raw | ConvertFrom-Json
-    $observed += @{ id = $fixture.id; phase = $Phase; status = $raw.status; bitmapPresent = $raw.bitmapPresent }
-    if ($raw.status -ne 'ok' -or -not $raw.bitmapPresent) { throw 'thumbnail-probe-failed' }
+    $observed += @{ id = $fixture.id; phase = $Phase; status = $raw.status; bitmapPresent = $raw.bitmapPresent; hresult = $raw.hresult }
+    if ($raw.status -notin @('ok', 'failed')) { throw 'invalid-probe-status' }
+    if ($Phase -ne 'baseline' -and ($raw.status -ne 'ok' -or -not $raw.bitmapPresent)) { throw 'thumbnail-probe-failed' }
   }
   return $observed
 }
@@ -29,7 +30,6 @@ function Install-GuestBaseline {
   $script:directory = Split-Path -Parent (Get-Item -LiteralPath $key).GetValue('')
   Assert-GuestBinaries $inputData.baseline.binaries $directory
   $report['baselineBinariesMatched'] = $true
-  $report['baselineProbes'] = @(Get-GuestProbes baseline)
   $report['sentinels'] = @()
   foreach ($folder in @('LocalApplicationData', 'ApplicationData')) {
     $parent = Join-Path ([Environment]::GetFolderPath($folder)) 'io.github.postmelee.alhangeul'
@@ -38,6 +38,7 @@ function Install-GuestBaseline {
     Set-Content $path 'Synthetic Task 132 upgrade preservation check' -Encoding UTF8
     $report.sentinels += @{ folder = $folder; path = $path; sha256 = (Get-FileHash $path -Algorithm SHA256).Hash; preserved = $false }
   }
+  $report['baselineProbes'] = @(Get-GuestProbes baseline)
 }
 function Test-GuestSentinels {
   foreach ($sentinel in $report.sentinels) {
