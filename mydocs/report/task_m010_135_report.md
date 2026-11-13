@@ -5,6 +5,8 @@ GitHub Issue: [#135](https://github.com/postmelee/alhangeul-tauri/issues/135)
 
 ## 작업 요약
 - 대상 이슈 #135, Stage 7 제품 보완 진행 중. 정책 공개는 완료했고 전체 신청 적격성 판정은 보류한다.
+- 공개 [개인정보처리방침](https://postmelee.github.io/alhangeul-tauri/privacy/)과 [코드 서명 정책](https://postmelee.github.io/alhangeul-tauri/code-signing/)은 PR #136·#137 및 exact Pages 배포로 반영했다. 아래 단계별 기록의 미배포·PR 없음·submodule 미초기화 표현은 각 관측 시점의 상태다.
+- Windows/Linux x64의 비게시 updater 시험 구성에서 기본 꺼짐·선택 저장·재시작·손상 설정과 TLS positive control을 수용했다. 일반 설치 후보 `7b37eec8`의 전체 CI·설치 UI·동봉 resource·폰트 화면 수용과 제공자 해석은 별도다.
 - 최신 안정 버전과 활성 보안 제보 경로를 확인해 SECURITY.md를 정비하고 실제 처리에 근거한 개인정보처리방침을 작성했다.
 - `local/task135`, 별도 worktree `/tmp/alhangeul-task135`. 기존 `local/task69` 변경은 보존했다.
 
@@ -33,7 +35,7 @@ GitHub Issue: [#135](https://github.com/postmelee/alhangeul-tauri/issues/135)
 | Pages source 파일 | 20 | 22 |
 | Pages 테스트 | 106개 | 106개, 모두 통과 |
 
-## 검증 결과
+## 최초 정책 변경 검증 결과
 | 수용 기준 | 결과 |
 |---|---|
 | 실제 최신 안정 버전 | OK — GitHub latest API v0.1.3, draft/prerelease false |
@@ -56,13 +58,13 @@ GitHub Issue: [#135](https://github.com/postmelee/alhangeul-tauri/issues/135)
 ### 잔여 위험
 Stage 5에서 양 OS TLS 요청 내부, HWP/HWPX 편집·native staged 저장·재열기, 종료·재시작·앱 제거 후 로그 잔존·진단 로그 삭제를 확인했다. Windows 편집 구간에도 Microsoft 런타임 요청이 발생했다. 합성 marker 미검출은 모든 문서 정보 미전송의 증거가 아니다. 파일 선택 UI·frontend fs plugin, graceful quit, 실제 새 버전 다운로드, MSI/DEB/RPM/arm64, 장기 인쇄/PDF/복구·프록시 우회 통신은 범위 밖이다. 설치 정책 안내/비활성화 옵션, WebView2 필수 처리의 취급, 전체 의존성 원문 동봉·서명 대상 경계는 신청 전 해결/확인이 필요하다. GitHub MFA와 세 역할은 사용자 확인을 받았다. SignPath MFA/계정은 만들지 않았다.
 
-조사용 임시 upstream 전체 checkout의 공간 부족은 이번 task의 복제본만 제거해 해소했다. 원본 사용자 worktree는 변경하지 않았다. submodule은 작업 worktree에서 미초기화 상태이며 사이트 문서 검사에는 필요하지 않다.
+조사용 임시 upstream 전체 checkout의 공간 부족은 이번 task의 복제본만 제거해 해소했다. 원본 사용자 worktree는 변경하지 않았다. 최초 정책 검사 당시 submodule은 미초기화 상태였으며, Stage 7에서는 아래에 기록한 exact pin의 제한된 checkout을 사용했다.
 
 ### 후속 작업 후보
 실제 팀 역할·MFA·서명 대상·CI 신뢰 경계와 설치 개인정보 안내/옵션 확인. 후원 승인 후에만 공개 Code signing policy의 제공 관계를 확정한다. 이번 작업으로 신청 적합성이나 승인을 선언하지 않는다.
 
-## 작업지시자 보고
-구현·추가 검증 완료. 원격 실행을 위해 publish/task135 브랜치에 push했으며 PR은 만들지 않았다. PR 게시·merge·사이트 배포, SignPath 신청 제출·계정·자격증명 생성은 하지 않았다. 공개 정책 URL은 배포 전이므로 현재 접근 가능하다고 보고하지 않는다. 최종 검토 후 다음 지시 범위에 따라 진행한다.
+## 최초 정책 검토 보고 당시 상태
+정책 초안·추가 검증을 마치고 원격 실행을 위해 publish/task135 브랜치에 push했다. 이 시점에는 PR·배포 전이었다. 이후 사용자 브라우저 승인과 정책 공개 결과는 아래에 기록했다. SignPath 신청 제출·계정·자격증명 생성은 계속 제외한다.
 
 
 ## 추가 검증의 핵심 결과 (2026-11-14 KST)

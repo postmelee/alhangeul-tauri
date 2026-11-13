@@ -22,7 +22,7 @@
 | 자신의 바이너리만 서명 | 독립 host/installer와 bundled rhwp 경계 존재 | 제공자 해석 필요 |
 | 개인정보 정책 공개 | 사용자 브라우저 승인 후 PR #136·Pages exact 배포; /privacy/ HTTP 200·실제 화면 확인 | Stage 7 공개 완료 |
 | Code signing policy 공개 | /code-signing/ HTTP 200; 미승인·미서명 상태 명시 | Stage 7 공개 완료; 후원 주장 없음 |
-| 설치 시 정책 표시·통신 선택권 | Stage 7 로컬 설치/첫 실행 안내·기본 꺼짐·명시 선택 구현 | 새 bytes의 OS 화면·TLS 수용 진행 중 |
+| 설치 시 정책 표시·통신 선택권 | Stage 7 Windows/Linux x64 실제 첫 실행 화면·명시 선택·재시작 TLS 관측 성공 | 비게시 시험 구성 수용; 일반 설치본 안내 화면·제공자 해석 별도 |
 | 시스템 변경 안내 | COM/MIME·WebView2 bootstrap 존재 | installer 화면에서 전체 안내 확인 필요 |
 | 제거 | Stage 5 NSIS·AppImage 제거와 잔존 구분; MSI 추가 관측 | 제한된 실측 완료 |
 | 악성/PUA·취약점 공격 도구 없음 | 조사한 기능은 문서/썸네일 진단; 시험 harness는 제품 배포와 분리 | 전체 코드·AV 무위험 증명으로 확대 불가 |

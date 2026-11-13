@@ -1,19 +1,26 @@
 $ErrorActionPreference = 'Stop'
 $out = Join-Path $PWD 'privacy-evidence'
 New-Item -ItemType Directory -Path $out -Force | Out-Null
+$settings = Join-Path $env:APPDATA 'io.github.postmelee.alhangeul\updater-preferences.json'
+function Install-Silently($File, $Kind) {
+  if ($Kind -eq 'nsis') {
+    $result = Start-Process $File -ArgumentList '/S' -PassThru -Wait
+  } else {
+    $result = Start-Process msiexec.exe -ArgumentList @('/i', "`"$File`"", '/qn', '/norestart') -PassThru -Wait
+  }
+  if ($result.ExitCode -notin @(0,3010)) { throw "Install $Kind failed: $($result.ExitCode)" }
+}
 foreach ($kind in @('nsis', 'msi')) {
+  if (Test-Path -LiteralPath $settings) { throw 'Disposable settings profile is not fresh' }
   $pattern = if ($kind -eq 'nsis') { '*-setup.exe' } else { '*.msi' }
   $files = @(Get-ChildItem artifacts/windows-x64 -Recurse -File -Filter $pattern)
   if ($files.Count -ne 1) { throw "Expected one $kind package" }
   $file = $files[0].FullName
   & "$PSScriptRoot/installer-privacy-ui.ps1" -Installer $file -Kind $kind -Output $out
-  if ($kind -eq 'nsis') {
-    $install = Start-Process $file -ArgumentList '/S' -PassThru -Wait
-  } else {
-    $install = Start-Process msiexec.exe -ArgumentList @('/i', "`"$file`"", '/qn', '/norestart') -PassThru -Wait
-  }
-  if ($install.ExitCode -notin @(0,3010)) { throw "Install $kind failed: $($install.ExitCode)" }
+  Install-Silently $file $kind
+  $preservation = @()
   try {
+    if (Test-Path -LiteralPath $settings) { throw 'Silent install unexpectedly created an updater choice' }
     $roots = @(@((Join-Path $env:LOCALAPPDATA 'Alhangeul'), (Join-Path $env:ProgramFiles 'Alhangeul')) |
       Where-Object { Test-Path -LiteralPath (Join-Path $_ 'Alhangeul.exe') })
     if (@($roots).Count -ne 1) { throw 'Expected exactly one installed product root' }
@@ -33,7 +40,18 @@ foreach ($kind in @('nsis', 'msi')) {
       Remove-ItemProperty $policy -Name 'Alhangeul.exe' -ErrorAction SilentlyContinue
       Start-Sleep 2
     }
-
+    if (Test-Path -LiteralPath $settings) { throw 'Opening and closing disclosure unexpectedly created an updater choice' }
+    New-Item -ItemType Directory -Path (Split-Path $settings) -Force | Out-Null
+    foreach ($choice in @($true, $false)) {
+      $fixture = @{version=1; automaticChecks=$choice} | ConvertTo-Json -Compress
+      [IO.File]::WriteAllText($settings, $fixture)
+      $expectedHash = (Get-FileHash -LiteralPath $settings -Algorithm SHA256).Hash
+      Install-Silently $file $kind
+      if ((Get-FileHash -LiteralPath $settings -Algorithm SHA256).Hash -ne $expectedHash) {
+        throw 'Reinstall changed the existing updater choice'
+      }
+      $preservation += @{automaticChecks=$choice; sha256=$expectedHash.ToLowerInvariant(); reinstallPreserved=$true}
+    }
   } finally {
     if ($kind -eq 'nsis') {
       $root = Join-Path $env:LOCALAPPDATA 'Alhangeul'
@@ -43,4 +61,15 @@ foreach ($kind in @('nsis', 'msi')) {
     }
     if ($remove.ExitCode -notin @(0,3010)) { throw "Uninstall $kind failed" }
   }
+  if ((Get-FileHash -LiteralPath $settings -Algorithm SHA256).Hash -ne $expectedHash) {
+    throw 'Uninstall changed the retained updater choice'
+  }
+  @{
+    scope='Synthetic choice-file preservation by the installer; actual UI/TLS is verified separately.'
+    freshSilentInstallChoiceAbsent=$true
+    disclosureCloseChoiceAbsent=$true
+    reinstall=$preservation
+    uninstallRetainedLastChoice=$true
+  } | ConvertTo-Json -Depth 5 | Set-Content -Encoding utf8 (Join-Path $out "$kind-settings-lifecycle.json")
+  Remove-Item -LiteralPath $settings
 }
