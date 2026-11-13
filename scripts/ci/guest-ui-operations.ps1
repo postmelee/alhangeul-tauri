@@ -1,4 +1,4 @@
-function Request-GuestAdmin([ValidateSet('prerequisites', 'install', 'reinstall', 'uninstall')][string]$Operation) {
+function Request-GuestAdmin([ValidateSet('prerequisites', 'install', 'reinstall', 'uninstall', 'trace-stop')][string]$Operation) {
   $request = Join-Path $root ('requests\' + $Operation + '.request')
   $response = Join-Path $root ('admin-results\' + $Operation + '.json')
   if ((Test-Path $request) -or (Test-Path $response)) { throw 'fresh-admin-operation-required' }
@@ -9,7 +9,7 @@ function Request-GuestAdmin([ValidateSet('prerequisites', 'install', 'reinstall'
     Start-Sleep -Seconds 1
   }
   $result = Get-Content $response -Raw | ConvertFrom-Json
-  Copy-Item -LiteralPath $response -Destination (Join-Path $output ('admin-' + $Operation + '.json'))
+  if ($Operation -ne 'trace-stop') { Copy-Item -LiteralPath $response -Destination (Join-Path $output ('admin-' + $Operation + '.json')) }
   if ($result.operation -cne $Operation -or $result.status -cne 'observed' -or -not $result.system -or
       $result.installerSha256 -cne $inputData.installerSha256 -or $null -eq $result.exitCode) { throw 'admin-result-invalid' }
   $report.adminOperations[$Operation] = $result

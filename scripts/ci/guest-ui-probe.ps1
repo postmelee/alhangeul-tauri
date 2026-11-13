@@ -137,6 +137,11 @@ finally {
       if ($inputData.scenario -eq 'nsis-upgrade' -and $report.Contains('sentinels')) { Test-GuestSentinels; $report['userDataPreservedAfterUninstall'] = $true }
     } catch { $report['cleanupFailure'] = $_.Exception.Message }
   }
+  if ($report.adminOperations.ContainsKey('prerequisites') -and
+      $report.adminOperations.prerequisites.PSObject.Properties['processTraceStarted']) {
+    try { [void](Request-GuestAdmin 'trace-stop') }
+    catch { $report['traceFailure'] = $_.Exception.Message; $report.status = 'incomplete' }
+  }
   $report.phase = 'done'; Save-State
   try { Send-Evidence; Send-Event @{ kind = 'done' }; Set-Content (Join-Path $output 'done') 'complete' }
   finally { $serial.Close(); $serial.Dispose() }

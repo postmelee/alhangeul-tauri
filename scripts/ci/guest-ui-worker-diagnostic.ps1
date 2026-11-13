@@ -53,6 +53,7 @@ function Measure-GuestWorker($Directory) {
     $started = $state.processStarted
     if (-not $started) { throw 'worker-start-failed' }
     $result['processStartMs'] = $timer.ElapsedMilliseconds
+    $result['processId'] = $process.Id
     $errors = $process.StandardError.ReadToEndAsync()
     $bytes = [IO.File]::ReadAllBytes($request)
     $write = $process.StandardInput.BaseStream.WriteAsync($bytes, 0, $bytes.Length)

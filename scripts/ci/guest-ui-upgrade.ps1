@@ -14,9 +14,11 @@ function Get-GuestProbes([ValidateSet('baseline', 'upgrade', 'reinstall')][strin
     if ((Get-FileHash $path -Algorithm SHA256).Hash.ToLowerInvariant() -cne $fixture.sha256) { throw 'fixture-hash-mismatch' }
     # Keep independent raw evidence for all three phases (within the 20-file bound).
     $probePath = Join-Path $output ('probe-' + $Phase + '-' + $fixture.id + '.json')
+    $startedAt = [DateTime]::UtcNow.ToString('o')
     & (Join-Path $root 'scripts\windows-thumbnail-diagnostics.ps1') -Mode force-extract -InputPath $path -OutputPath $probePath
+    $finishedAt = [DateTime]::UtcNow.ToString('o')
     $raw = Get-Content $probePath -Raw | ConvertFrom-Json
-    $observed += @{ id = $fixture.id; phase = $Phase; status = $raw.status; bitmapPresent = $raw.bitmapPresent; hresult = $raw.hresult }
+    $observed += @{ id = $fixture.id; phase = $Phase; status = $raw.status; bitmapPresent = $raw.bitmapPresent; hresult = $raw.hresult; startedAt = $startedAt; finishedAt = $finishedAt }
     if ($raw.status -notin @('ok', 'failed')) { throw 'invalid-probe-status' }
     if ($ObserveFailures -and $OnFirstFailure -and -not $diagnosed -and ($raw.status -ne 'ok' -or -not $raw.bitmapPresent)) {
       $diagnosed = $true; & $OnFirstFailure $fixture.id | Out-Null

@@ -116,7 +116,7 @@ def prepare_media(root):
                  "guest-ui-process.ps1", "guest-ui-admin.ps1", "guest-ui-operations.ps1",
                  "guest-ui-upgrade.ps1", "guest-ui-prerequisites.ps1", "guest-ui-upgrade-diagnostic.ps1",
                  "guest-ui-worker-diagnostic.ps1", "guest-ui-provider.cs",
-                 "guest-ui-provider-probe.ps1", "guest-ui-provider-diagnostic.ps1"):
+                 "guest-ui-provider-probe.ps1", "guest-ui-provider-diagnostic.ps1", "guest-ui-process-trace.ps1"):
         shutil.copyfile("scripts/ci/" + name, payload / ("scripts/ci/" + name))
     shutil.copyfile("scripts/ci/guest-ui-bootstrap.ps1", media / "bootstrap.ps1")
     prepare_product(root, payload)

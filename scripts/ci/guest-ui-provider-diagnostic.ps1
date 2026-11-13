@@ -10,6 +10,7 @@ function Measure-GuestProvider {
   try {
     $started = $process.Start()
     if (-not $started) { throw 'provider-child-start' }
+    $report['providerChildProcessId'] = $process.Id
     $stdout = $process.StandardOutput.ReadToEndAsync(); $stderr = $process.StandardError.ReadToEndAsync()
     if (-not $process.WaitForExit(15000)) { throw 'provider-child-timeout' }
     if (-not $stdout.Wait(1000) -or -not $stderr.Wait(1000) -or $stderr.Result.Length -ne 0 -or

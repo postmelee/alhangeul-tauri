@@ -9,9 +9,12 @@ if ($env:COMPUTERNAME -cne 'ALH-GUEST' -or [Security.Principal.WindowsIdentity]:
 $inputData = Get-Content (Join-Path $root 'input.json') -Raw | ConvertFrom-Json
 if ($inputData.scenario -cnotin @('nsis', 'msi', 'nsis-upgrade')) { throw 'fixed-privileged-scenario-required' }
 . (Join-Path $PSScriptRoot 'guest-ui-prerequisites.ps1')
+. (Join-Path $PSScriptRoot 'guest-ui-process-trace.ps1')
+$trace = $null
 $operations = @()
 if ($inputData.prerequisites.Count -gt 0) { $operations += 'prerequisites' }
 if ($inputData.scenario -eq 'msi') { $operations += @('install', 'reinstall', 'uninstall') }
+if ($inputData.scenario -eq 'nsis-upgrade') { $operations += 'trace-stop' }
 $installer = Join-Path $root 'installer.msi'
 try {
   foreach ($operation in $operations) {
@@ -25,6 +28,12 @@ try {
     try {
       if ($operation -eq 'prerequisites') {
         $result['packages'] = @(Install-GuestPrerequisites)
+        if ($inputData.scenario -eq 'nsis-upgrade') { $trace = Start-GuestProcessTrace; $result['processTraceStarted'] = $true }
+        $result.exitCode = 0
+      } elseif ($operation -eq 'trace-stop') {
+        $result['events'] = @(Read-GuestProcessTrace $trace)
+        Clear-GuestProcessTrace $trace
+        $result['subscriptionsRemoved'] = $true
         $result.exitCode = 0
       } else {
       if ((Get-FileHash $installer -Algorithm SHA256).Hash.ToLowerInvariant() -cne $inputData.installerSha256) { throw 'admin-installer-hash-mismatch' }
@@ -40,5 +49,6 @@ try {
     Move-Item -LiteralPath $pending -Destination (Join-Path $results ($operation + '.json'))
   }
 } finally {
+  Clear-GuestProcessTrace $trace
   Unregister-ScheduledTask -TaskName $taskName -Confirm:$false -ErrorAction SilentlyContinue
 }
