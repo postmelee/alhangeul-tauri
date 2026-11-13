@@ -17,6 +17,7 @@ function Save-State {
 . (Join-Path $PSScriptRoot 'guest-ui-upgrade-diagnostic.ps1')
 . (Join-Path $PSScriptRoot 'guest-ui-worker-diagnostic.ps1')
 . (Join-Path $PSScriptRoot 'guest-ui-provider-diagnostic.ps1')
+. (Join-Path $PSScriptRoot 'guest-ui-cold-start.ps1')
 function Send-Evidence {
   foreach ($file in @(Get-ChildItem -LiteralPath $output -File | Where-Object { $_.Extension -in @('.json', '.png') })) {
     if ($file.Length -gt 5MB -or $file.Name -notmatch '^[a-z0-9-]+\.(json|png)$') { throw 'invalid-evidence-file' }
@@ -110,6 +111,9 @@ try {
       Measure-GuestUpgradeFailure
     }
     Test-GuestSentinels
+  }
+  if ($inputData.scenario -eq 'nsis-upgrade' -and $report.Contains('failure')) {
+    $report['diagnosticReinstallations'] = @(Measure-GuestColdStarts $directory)
   }
   $report.reinstallExit = Invoke-GuestInstall reinstall
   if ($report.reinstallExit -ne 0) { throw 'reinstall-failed' }
