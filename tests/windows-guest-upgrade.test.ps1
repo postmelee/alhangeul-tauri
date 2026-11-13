@@ -35,6 +35,8 @@ param($Mode, $InputPath, $OutputPath)
   $failedBaseline = @(Get-GuestProbes baseline)
   if ($failedBaseline.Count -ne 4 -or @($failedBaseline | Where-Object hresult -ne '0x8004B200').Count -gt 0) { throw 'baseline-failure-not-preserved' }
   Assert-Throws { Get-GuestProbes upgrade }
+  Get-ChildItem $output -File -Filter 'probe-upgrade-*.json' | Remove-Item
+  if (@(Get-GuestProbes upgrade -ObserveFailures).Count -ne 4) { throw 'upgrade-diagnostic-truncated' }
   $binary = [pscustomobject]@{ name = 'fixture.txt'; bytes = (Get-Item $file).Length; sha256 = $hash }
   Assert-GuestBinaries @($binary) $root
   $binary.sha256 = '0' * 64

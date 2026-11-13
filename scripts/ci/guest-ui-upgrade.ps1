@@ -6,7 +6,7 @@ function Assert-GuestBinaries($Binaries, $Directory) {
     if ((Get-Item $path).Length -ne $size -or (Get-FileHash $path -Algorithm SHA256).Hash.ToLowerInvariant() -cne $binary.sha256) { throw 'installed-binary-mismatch' }
   }
 }
-function Get-GuestProbes([ValidateSet('baseline', 'upgrade', 'reinstall')][string]$Phase) {
+function Get-GuestProbes([ValidateSet('baseline', 'upgrade', 'reinstall')][string]$Phase, [switch]$ObserveFailures) {
   $observed = @()
   $fixtures = (Get-Content (Join-Path $root 'scripts\windows-thumbnail-fixtures.json') -Raw | ConvertFrom-Json).fixtures
   foreach ($fixture in $fixtures) {
@@ -18,7 +18,7 @@ function Get-GuestProbes([ValidateSet('baseline', 'upgrade', 'reinstall')][strin
     $raw = Get-Content $probePath -Raw | ConvertFrom-Json
     $observed += @{ id = $fixture.id; phase = $Phase; status = $raw.status; bitmapPresent = $raw.bitmapPresent; hresult = $raw.hresult }
     if ($raw.status -notin @('ok', 'failed')) { throw 'invalid-probe-status' }
-    if ($Phase -ne 'baseline' -and ($raw.status -ne 'ok' -or -not $raw.bitmapPresent)) { throw 'thumbnail-probe-failed' }
+    if (-not $ObserveFailures -and $Phase -ne 'baseline' -and ($raw.status -ne 'ok' -or -not $raw.bitmapPresent)) { throw 'thumbnail-probe-failed' }
   }
   return $observed
 }

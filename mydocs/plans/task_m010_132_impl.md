@@ -525,3 +525,15 @@ Windows 11 upgrade run 43362414253은 실패로 보존한다(artifact 1400876976
 
 
 Windows 10 업그레이드 run 43363316610은 20분 checkpoint(artifact 14010271982, digest b78fefba85760484378f936efd2ccc326f9891d1eb1bfe7f23e4eda058a55a43)의 실제 화면에서 Windows setup의 unexpected restart/error로 설치가 진행 불가능함을 확인했다. 앱 검증 전 실패이며 실패 화면을 보존한 뒤 owned run을 취소해 always 정리/증거 업로드를 진행한다. 동일 ISO의 NSIS/MSI fresh는 이미 성공했지만 이 실패의 원인은 확정하지 않는다. 새 실행에는 specialize bootstrap의 고정 단계명·숫자 HRESULT만 COM1으로 전송하는 진단을 추가한다. 암호/예외 본문은 전송하지 않고 로그 전송 실패 자체가 OS setup을 실패시키지 않는다. baseline 관측 보정과 함께 새 fresh VM으로 다시 실행하며 원래 실패를 성공으로 소급 변경하지 않는다.
+
+
+MSI Windows 11 settling 대조 run 43364403752(ba0de2d5)은 success다. artifact 14010895820 digest 589874060b95f0e292d9697a373265eb7ce8c370f8ed0ffd1193acd6add8bb60을 검증했다. 같은 창의 10.254초·30.083초 PNG는 이전 실패 화면과 동일 SHA256 95627450455c4a9ee81986783323509c0a9c13bf9a3b3f8736c6918204ff7805이며 HWPX가 아이콘이다. 60.054초 PNG(f896e80c5ffb1bd33962c7749c4750fffe55ad76c22add697fab1597b68f34f9)에서는 HWPX 양식 내용이 보인다. API 선행 호출·새로고침·cache 삭제 없이 같은 창에서 전환됐다. agent 직접 검토와 기존 정상 Windows 11 NSIS의 내용 영역 signature 비교 모두 HWP/HWPX/JPG 일치를 확인했다. 30~60초 사이 초기 표시 지연으로 기록하며 즉시 표시 성공이나 1,500ms worker deadline 원인 확정으로 확대하지 않는다. 설치/재설치/제거 0, API 4/4, clean VC 부재, ACL·설정·VM 정리도 통과했다.
+
+Windows 10 MSI run 43363313049(f27414ed)도 success다. artifact 14009269591 digest 41a7a79fee8f9f261bf2101de419b1078ba9c1eec9108978cd14160671f3904d, PNG는 Windows 10 NSIS와 동일한 05c92e4d2f5b792015a9454e9ec12dca53bc75d14dba1073652e0b39bde2a9a6이다. 실제 표준 Explorer 내용·설치/재설치/제거·API 4/4·관리자 경계·설정/VM 정리가 통과했다. 두 Windows 10 fresh는 WebView2 준비 후와 제품 설치 후에도 System32 VC runtime 부재/로드 오류 126, reference handler 로드 0이다.
+
+OS 설치 실패 run 43363316610은 cancelled로 완료됐으며 final artifact 14010686374 digest 081851a5071caae1daed3826e8f2fcfc0653093c111610f3ea1302fc5b775f0e를 보존했다. supervisor stop과 QEMU/TPM 종료, private disk/시험 암호 삭제 step은 모두 success다. 재실행은 bootstrap 단계 진단과 baseline 관측 보정을 포함한 b6d4f278/run43366550152다. Windows 11 수정 업그레이드는 902fd0a8/run43365033227이다.
+
+
+Windows 11 upgrade 대조 run 43365033227은 후보 설치 exit 0·DLL/worker 정확한 hash·원본/후보 설치·사용자 데이터 보존·제품/VM 제거는 확인했지만, 공개본에서 실패했던 동일 small-hwp 경로가 후보 교체 직후에도 0x8004B200이었다. 후보 upgrade bitmap 실패 때문에 전체 수용은 실패다(artifact 14010348842, digest 8fd37b33b85da1a90c98c861f4f960e111a268fd41043de9749fe8915f3e28f1). 기존 hosted standard-user 검사는 각 phase마다 새 fixture 경로를 쓰지만 이번 guest는 같은 경로를 재사용했다. 차이가 원인인지 아직 단정하지 않는다.
+
+다음 진단은 후보 upgrade 네 원본 경로의 실패를 모두 보존하고, 첫 실패 fixture의 동일 bytes 새 경로와 60초 뒤 원래 경로를 별도로 요청한다. 파일 hash·attributes와 원시 결과를 기록한다. 그 뒤 재설치·화면·제거까지 관측하되 최초 후보 실패는 계속 최종 gate 실패로 유지한다. cache 삭제, Explorer/dllhost 종료, 입력 문서 수정이나 판정 완화로 성공을 만들지 않는다. 추가 raw JSON 두 개를 포함해 upgrade의 serial 파일은 기존 20개 상한 안에 둔다.

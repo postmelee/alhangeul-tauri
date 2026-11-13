@@ -14,6 +14,7 @@ function Save-State {
 . (Join-Path $PSScriptRoot 'guest-ui-process.ps1')
 . (Join-Path $PSScriptRoot 'guest-ui-operations.ps1')
 . (Join-Path $PSScriptRoot 'guest-ui-upgrade.ps1')
+. (Join-Path $PSScriptRoot 'guest-ui-upgrade-diagnostic.ps1')
 function Send-Evidence {
   foreach ($file in @(Get-ChildItem -LiteralPath $output -File | Where-Object { $_.Extension -in @('.json', '.png') })) {
     if ($file.Length -gt 5MB -or $file.Name -notmatch '^[a-z0-9-]+\.(json|png)$') { throw 'invalid-evidence-file' }
@@ -86,7 +87,12 @@ try {
   Assert-GuestBinaries $inputData.binaries $directory
   if ($inputData.scenario -eq 'nsis-upgrade') {
     $report['upgradeBinariesMatched'] = $true
-    $report['upgradeProbes'] = @(Get-GuestProbes upgrade)
+    $report['upgradeProbes'] = @(Get-GuestProbes upgrade -ObserveFailures)
+    if (@($report.upgradeProbes | Where-Object { $_.status -ne 'ok' -or -not $_.bitmapPresent }).Count -gt 0) {
+      $report['failure'] = 'upgrade-immediate-thumbnail-failed'
+      $report.phase = 'upgrade-diagnostic'; Save-State
+      Measure-GuestUpgradeFailure
+    }
     Test-GuestSentinels
   }
   $report.reinstallExit = Invoke-GuestInstall reinstall
@@ -105,7 +111,7 @@ try {
   $report.phase = 'api'; Save-State
   $report.probes = @(Get-GuestProbes reinstall)
   if ($report.offlineInstallExit -ne 0) { throw 'fresh-offline-install-failed' }
-  $report.status = 'observed'
+  if (-not $report.Contains('failure')) { $report.status = 'observed' }
 } catch { $report['failure'] = $_.Exception.Message }
 finally {
   if ($view) {
