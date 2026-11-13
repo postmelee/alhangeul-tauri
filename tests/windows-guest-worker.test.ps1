@@ -55,6 +55,7 @@ public static class GuestWorkerFixture {
   Assert-WorkerCondition ($result.frames[0].headerMs -ge 1700) 'worker-timing-not-measured'
   Set-TestRequest 2
   $bad = Measure-GuestWorker $root
+  Write-Output ($bad | ConvertTo-Json -Depth 6 -Compress)
   Assert-WorkerCondition ($bad.status -eq 'failed' -and $bad.failure -eq 'worker-frame-header' -and $bad.processReaped) 'worker-invalid-frame-accepted'
   Set-TestRequest 1
   $slow = Measure-GuestWorker $root
