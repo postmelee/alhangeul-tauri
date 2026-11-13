@@ -62,7 +62,7 @@ worker executable은 handler DLL과 같은 설치 디렉터리에 있어야 한�
 
 desktop의 `render_document_preview`도 같은 공유 `render_first_page_svg`를 호출한다. 이 경로는 원본 바이트를 직접 parse·render하며 편집 세션용 `convert_to_editable_native`를 호출하지 않는다. 현재 pinned `rhwp`의 editable 변환은 배포·직렬화 metadata만 정리하고 page render IR은 바꾸지 않으므로 HWP/HWPX에서 직접 결과와 변환 뒤 결과가 동일한지 회귀 test로 고정한다. desktop command에도 입력 64 MiB와 생성 SVG 16 MiB 상한이 그대로 적용되며 parse·render·상한 초과는 빈 SVG가 아니라 명시적 command error로 반환된다.
 
-- 일회성 worker는 설치된 system font directory를 스캔하지 않는다. 이는 문서마다 새 process를 시작하는 현재 격리 모델에서 1,500 ms cold-start 한도를 지키기 위한 경계이며 desktop editor·PDF의 system font 우선 규칙에는 영향을 주지 않는다.
+- 일회성 worker는 설치된 system font directory를 스캔하지 않는다. 이는 문서마다 새 process를 시작하는 현재 격리 모델에서 생성 후 1,500 ms frame 선택 예산을 지키기 위한 경계이며 desktop editor·PDF의 system font 우선 규칙에는 영향을 주지 않는다.
 - pinned `third_party/rhwp/ttfs/opensource`의 `NotoSansKR-Regular.ttf`와 `NotoSansKR-ExtraLight.ttf`를 worker에 compile-time 포함해 설치 경로나 current directory와 무관한 한글 glyph를 보장한다.
 - 두 TTF의 고정 SHA-256, 저작권과 SIL OFL 1.1은 `assets/fonts/FONTS.md`에 기록하고 desktop bundle의 `licenses/fonts/`에 manifest와 license 원문을 함께 포함한다.
 - 원본 family가 worker database에 없으면 SVG text는 실제 등록된 Noto Sans KR family로 해석한다. generic serif, sans-serif와 monospace도 같은 실존 family를 사용한다.
@@ -96,9 +96,10 @@ embedded preview는 빠른 후보일 뿐 최신 문서 내용의 진실 원천�
 | frame header | 64 bytes |
 | 전체 frame | 4,194,368 bytes |
 | worker process memory | 256 MiB |
-| worker 시작·frame 선택 | 1,500 ms |
+| Windows worker 시작·frame 선택 | 5,000 ms |
+| worker 준비 후 frame 선택 | 1,500 ms |
 
-요청 edge `0`은 거부하고 1024보다 큰 값은 1024로 제한한다. handler는 요청 처리를 시작한 시각부터 pipe·worker 시작과 frame 선택에 단일 1,500 ms deadline을 적용한다. deadline에는 이미 검증된 preview 후보만 선택하고 후보가 없으면 실패한 뒤 Job의 worker를 종료한다. worker 종료와 pipe thread join은 반환 전 cleanup이며 별도의 “전체 2,000 ms” 상한으로 표시하지 않는다.
+요청 edge `0`은 거부하고 1024보다 큰 값은 1024로 제한한다. Windows handler의 frame 선택 deadline은 `min(요청 시작 + 5,000 ms, worker 준비 + 1,500 ms)`다. 설치 직후 Windows 프로세스 생성 비용이 frame 예산을 모두 소진하지 않도록 시작 구간을 구분하며, 생성 후 처리 시간은 기존 1,500 ms 이내로 유지한다. deadline에는 이미 검증된 preview 후보만 선택하고 후보가 없으면 실패한 뒤 Job의 worker를 종료한다. OS 프로세스 생성 API 자체의 차단과 worker 종료·pipe thread join은 별도의 엄격한 전체 반환 시간 상한으로 보장하지 않는다. 이미 5,000 ms 예산을 넘겨 시작된 worker의 늦은 frame은 수용하지 않는다. Linux thumbnailer의 기존 1,500 ms 예산은 변경하지 않는다.
 
 worker는 `CREATE_NO_WINDOW | CREATE_SUSPENDED`로 시작하고 명시한 pipe handle만 상속한다. handler는 active process 1, kill-on-close와 256 MiB process memory 제한을 가진 Job Object에 worker를 배정한 뒤 실행한다. 반환 또는 오류 뒤에는 worker를 종료하고 pipe thread를 join한다.
 
