@@ -45,5 +45,16 @@
       "bytes": 26836346,
       "source": "rhwp-core.lock exact pinned WASM"
     }
-  ]
+  ],
+  "canvaskitProvenanceLimit": {
+    "package": "canvaskit-wasm@0.41.1",
+    "registryMetadataUrl": "https://registry.npmjs.org/canvaskit-wasm/0.41.1",
+    "registryGitHead": "fba4f1bf212eef642cb1359d7cdf93a227e49c93",
+    "registryRepository": null,
+    "originalNotice": "javascript/canvaskit-wasm@0.41.1/LICENSE",
+    "originalNoticeBytes": 1635,
+    "googleSkiaTreeLookup": "HTTP 422: SHA must identify a commit or a tree",
+    "googleSkiaCommitPageLookup": "HTTP 404",
+    "conclusion": "The npm archive and bundled WASM bytes are pinned and the supplied BSD notice is preserved. A matching Skia source commit and internal third-party closure have not been established; do not claim complete third-party notice coverage from the package root license."
+  }
 }

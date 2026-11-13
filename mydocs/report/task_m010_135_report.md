@@ -152,3 +152,7 @@ run 43479164615 Windows 관측 step과 upload도 성공했다. 동일 source/con
 이 대조에서 고지 생성기가 native 네 lock만 읽고 bundled rhwp WASM의 원본 lock을 포함하지 않는 누락을 확인했다. 원본 lock의 hash는 rhwp-core.lock과 일치한다. 해당 lock의 추가 registry 버전 100개를 공식 archive checksum으로 검증하여 원문을 보완했다. 기존 1,408개는 lock integrity와 고지 파일 전체 hash를 재검증해 재사용했다. 변경 후 1,508개이며 filename gap은 95개(추가 6개)다. 이 superset에는 build/dev/optional도 포함하므로 95개 모두가 실제 WASM에 포함됐거나 허가가 없다는 의미는 아니다. [추가 package·원문·ZIP hash](../working/assets/task135/readiness/wasm-notice-extension.json).
 
 새 generator는 WASM 원본 lock hash가 pin과 다르면 거부한다. 원본 포함/변조 pin 거부 검사와 전체 ZIP notice hash 검증이 통과했다. upstream source·pin·WASM bytes는 변경하지 않았다. 동봉 ZIP bytes가 달라졌으므로 7b37eec8 설치본의 수용은 새 고지 묶음의 설치 수용으로 재사용하지 않는다. 현 CI profile에 따라 새 전체 package 검증과 exact 설치본 소비자가 필요하다.
+
+새 제품 후보 `d48a4973ec476f48162ea3edc6b4173435bf2249`의 full run [43495820535](https://github.com/postmelee/alhangeul-tauri/actions/runs/43495820535)을 실행했다. 이전 7b37eec8 run은 Windows 패키지 생성·artifact 업로드를 마치고 NSIS/MSI/강제 재설치 검증으로 진행했다. 이전 full 전체 성공이나 새 고지 후보 성공을 미리 선언하지 않는다. 설치 설정 보존 harness 6371da0a의 fast run [43494498740](https://github.com/postmelee/alhangeul-tauri/actions/runs/43494498740)은 성공했다.
+
+CanvasKit의 [공식 npm 버전 metadata](https://registry.npmjs.org/canvaskit-wasm/0.41.1)는 gitHead를 제공하지만 repository 항목은 없었다. 그 gitHead를 공식 Skia mirror에서 조회했을 때 tree 422·commit 404로 출처 연결을 확정하지 못했다. 제공된 1,635-byte BSD 고지와 실제 WASM hash는 확인했지만 내부 제3자 구성의 전체 고지 수용까지 확대하지 않는다. 이 한계도 Worker/WASM 증거에 명시했다. 현재 native/WASM 원문 gap과 제공자 해석이 남아 있어 신청 요건 전체 충족은 보류한다.
