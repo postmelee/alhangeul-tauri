@@ -37,6 +37,13 @@ def guard():
     return root
 
 
+def scenario():
+    value = os.environ.get("GUEST_SCENARIO", "nsis")
+    if value not in ("nsis", "msi"):
+        raise RuntimeError("invalid-guest-scenario")
+    return value
+
+
 def prepare_product(root, payload):
     bundle = root / "bundle"
     with zipfile.ZipFile(root / "candidate.zip") as archive:
@@ -49,13 +56,13 @@ def prepare_product(root, payload):
                     "windows-x64", "--root", str(bundle), "--verify-inventory",
                     str(inventory), "--source-sha", PRODUCT_SHA], check=True)
     data = json.loads(inventory.read_text())
-    installers = [f for f in data["files"] if f["kind"] == "nsis"]
+    installers = [f for f in data["files"] if f["kind"] == scenario()]
     if len(installers) != 1:
-        raise RuntimeError("nsis-not-unique")
+        raise RuntimeError("installer-not-unique")
     installer = installers[0]
-    shutil.copyfile(bundle / installer["path"], payload / "installer.exe")
+    shutil.copyfile(bundle / installer["path"], payload / ("installer.msi" if scenario() == "msi" else "installer.exe"))
     shutil.copyfile(inventory, root / "evidence/inventory.json")
-    value = dict(productSha=PRODUCT_SHA, installerSha256=installer["sha256"],
+    value = dict(scenario=scenario(), productSha=PRODUCT_SHA, installerSha256=installer["sha256"],
                  harnessSha=os.environ["GITHUB_SHA"], isoSha256=ISO_SHA,
                  binaries=[f for f in data["files"] if f["kind"] in
                            ("thumbnail-handler", "thumbnail-worker")])
@@ -85,7 +92,8 @@ def prepare_media(root):
                    "interop.cs", "token.cs", "fixtures.json", "user-visual.ps1", "user-visual.cs"):
         shutil.copyfile("scripts/windows-thumbnail-" + suffix,
                         payload / ("scripts/windows-thumbnail-" + suffix))
-    for name in ("guest-ui-probe.ps1", "guest-ui-installer-state.ps1", "hosted-ui-view.ps1"):
+    for name in ("guest-ui-probe.ps1", "guest-ui-installer-state.ps1", "hosted-ui-view.ps1",
+                 "guest-ui-process.ps1", "guest-ui-admin.ps1", "guest-ui-operations.ps1"):
         shutil.copyfile("scripts/ci/" + name, payload / ("scripts/ci/" + name))
     shutil.copyfile("scripts/ci/guest-ui-bootstrap.ps1", media / "bootstrap.ps1")
     prepare_product(root, payload)

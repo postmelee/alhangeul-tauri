@@ -20,7 +20,7 @@ public static class AlhGuestLoad {
 '@
 
 # Read only prerequisite and partial-install state from this disposable guest.
-function Get-GuestInstallerState {
+function Get-GuestInstallerState([ValidateSet('nsis', 'msi')][string]$Installer = 'nsis') {
   $versions = @()
   foreach ($hive in @([Microsoft.Win32.RegistryHive]::LocalMachine, [Microsoft.Win32.RegistryHive]::CurrentUser)) {
     foreach ($view in @([Microsoft.Win32.RegistryView]::Registry32, [Microsoft.Win32.RegistryView]::Registry64)) {
@@ -34,6 +34,10 @@ function Get-GuestInstallerState {
   }
   $directory = Join-Path $env:LOCALAPPDATA 'Alhangeul'
   $handlerKey = 'HKCU:\Software\Classes\CLSID\{C1DCF316-0771-49DD-BFEA-C85F69B1674B}\InprocServer32'
+  if ($Installer -eq 'msi') {
+    $directory = Join-Path $env:ProgramFiles 'Alhangeul'
+    $handlerKey = $handlerKey.Replace('HKCU:', 'HKLM:')
+  }
   $registered = Test-Path $handlerKey
   if ($registered) { $directory = Split-Path -Parent (Get-Item $handlerKey).GetValue('') }
   $files = @()

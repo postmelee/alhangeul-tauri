@@ -52,6 +52,7 @@ import copy
 spec=importlib.util.spec_from_file_location("guest_run", "scripts/ci/guest-ui-run.py")
 guest_run=importlib.util.module_from_spec(spec);spec.loader.exec_module(guest_run)
 good=dict(status="observed", productUninstallPassed=True, offlineInstallExit=0,
+ input=dict(scenario="nsis",installerSha256="a"*64),installExit=0,reinstallExit=0,uninstallExit=0,
  beforeInstall=dict(vcRuntimePresent=False,vcRuntimeLoadError=126,referenceHandlerLoadError=0),
  desktopOwnerMatches=True,sessionMatches=True,displayPreference=dict(restored=True),
  visual="captured-awaiting-review",probes=[dict(id=i,status="ok",bitmapPresent=True)
@@ -72,3 +73,19 @@ for path,value in [
  for key in path[:-1]: target=target[key]
  target[path[-1]]=value
  assert not guest_run.guest_observation_complete(bad,False),path
+
+msi=copy.deepcopy(good);msi["input"]["scenario"]="msi";msi["adminBoundaryReadOnly"]=True
+msi["adminOperations"]={n:dict(operation=n,status="observed",system=True,exitCode=0,installerSha256="a"*64)
+ for n in ("install","reinstall","uninstall")}
+assert guest_run.guest_observation_complete(msi,False,"msi")
+assert not guest_run.guest_observation_complete(msi,False,"nsis")
+for key,value in [("system",False),("exitCode",3010),("installerSha256","b"*64),("operation","wrong")]:
+ bad=copy.deepcopy(msi);bad["adminOperations"]["install"][key]=value
+ assert not guest_run.guest_observation_complete(bad,False,"msi"),key
+for key in ("installExit","reinstallExit","uninstallExit"):
+ bad=copy.deepcopy(good);bad[key]=3010
+ assert not guest_run.guest_observation_complete(bad,False),key
+
+for value in (False, None):
+ bad=copy.deepcopy(msi);bad["adminBoundaryReadOnly"]=value
+ assert not guest_run.guest_observation_complete(bad,False,"msi")

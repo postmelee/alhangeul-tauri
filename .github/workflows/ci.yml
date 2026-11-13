@@ -13,6 +13,12 @@ on:
           - hosted-ui-probe
           - windows-guest-probe
 
+      guest_scenario:
+        description: Exact existing product in a fresh Windows guest.
+        type: choice
+        default: nsis
+        options: [nsis, msi]
+
       profile:
         description: Select validation scope; auto uses an exact base SHA and falls back to full.
         type: choice
@@ -50,7 +56,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: alhangeul-ci-${{ github.ref }}-${{ inputs.profile }}-${{ inputs.scope }}
+  group: alhangeul-ci-${{ github.ref }}-${{ inputs.profile }}-${{ inputs.scope }}-${{ inputs.guest_scenario }}
   cancel-in-progress: ${{ inputs.profile == 'fast' && inputs.scope != 'pdf-cleanup-windows' }}
 
 env:
@@ -80,6 +86,8 @@ jobs:
       actions: read
       contents: read
     uses: ./.github/workflows/alhangeul-windows-guest-probe.yml
+    with:
+      scenario: ${{ inputs.guest_scenario }}
 
   thumbnail-user-context:
     needs: fast

@@ -1,6 +1,10 @@
 name: Alhangeul Windows 11 guest observation
 on:
   workflow_call:
+    inputs:
+      scenario:
+        type: string
+        default: nsis
 permissions:
   contents: read
   actions: read
@@ -8,6 +12,8 @@ jobs:
   guest:
     runs-on: ubuntu-24.04
     timeout-minutes: 105
+    env:
+      GUEST_SCENARIO: ${{ inputs.scenario }}
     steps:
       - name: Select disposable runner storage
         run: |

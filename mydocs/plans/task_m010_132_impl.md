@@ -490,3 +490,15 @@ Stage 3.5 제품 full 결과: run 43241666433/attempt 1이 success로 완료됐�
 
 
 Stage 3.5 guest 결과: run 43259686576/attempt 1이 success다. 같은 ISO에 VC runtime이 없는 상태(로드 오류 126)를 유지하며 reference handler는 로드 0, 오프라인 설치·재설치·제거는 모두 0이다. 실제 non-admin/medium 사용자와 desktop/창 SID·session 일치, HWP 2/HWPX/JPG force-extract bitmap 4/4, 설정 복원·제품 자체 제거, owned VM 종료와 private disk/credentials 제거가 통과했다. guest 관측 880.86초, 네트워크 재시도 없음이다. artifact 13965300396/ZIP SHA256 33d35b1f9e4f72b0a480bde5744ba5502e3ebcdacbf2e4106c4aee8ca4e21a34와 PNG SHA256 42e59df5afca7836c96b5d3cff50c53e536f25af2478408141bbd5309c2cb6dd를 검증했다. 원본 화면에서 HWP 시험지·HWPX 표/본문·JPG를 직접 확인했고 빈 HWP는 내용 판정에서 제외했다. 사용자 golden 승인이나 전체 릴리즈 수용은 아니다. [Stage 3.5 보고](../working/task_m010_132_stage3.5.md)에 범위와 잔여 검증을 기록한다.
+
+
+## Stage 3.6 — MSI 실제 클라이언트와 동일 버전 업그레이드, Windows 10 확장
+
+2026-11-13 작업지시자가 남은 MSI 클라이언트 화면·동일 버전 업그레이드와 무료 runner의 Windows 10 가능한 범위 검증을 명시 지시했다. 기존 #132/local/task132 및 성공 제품 1e08891d/run43241666433/artifact13960733196/digest b9a9f28916954bcf6f7cef1b86904e09b38583a38421224c64e44fafd07267cf를 재사용한다. PR 생성 전 보고 요구는 유지한다.
+
+- 서로 다른 fresh guest에서 MSI와 NSIS public-upgrade를 수행한다. MSI는 protected payload의 고정 MSI만 SYSTEM 예약 작업으로 설치/일반 재설치/제거하고, 실제 로그인한 non-admin 사용자가 Explorer/API를 검증한다. UAC/DCOM·설치 범위는 바꾸지 않는다. 요청은 고정 operation marker뿐이며 임의 경로/명령을 privileged actor에 넘기지 않는다. 관리자 결과는 Users가 쓰지 못하는 경로에 생성한다.
+- NSIS upgrade는 고정된 최초 공개 v0.1.3 bytes와 binary 해시를 확인한 뒤 후보 /UPDATE·재설치·제거, 설정 sentinel 보존과 실제 화면/API를 검증한다. 이전 공개본이 필요로 하는 VC runtime은 이 시나리오에서만 공식 Microsoft 서명·hash가 확인된 재배포 패키지로 별도 준비한다. clean CRT 부재 수용과 구분하고 수정 후보를 위해 제품 prerequisite 정책을 바꾸지 않는다.
+- Windows 10은 공식 Microsoft 22H2 evaluation ISO의 제공 여부·공식 SHA256을 확인한다. 확보되면 동일 KVM 경로에 OS/locale/build 입력을 명시해 fresh NSIS/MSI 및 가능한 upgrade를 실행한다. 오래된 ISO의 WebView2 prerequisite는 공식 패키지/서명·hash 확인 또는 원래 installer의 명시된 다운로드 경로로 구분해 기록한다. OS activation/rearm·설치 요구사항 우회·비공식 ISO는 사용하지 않는다. 확보/사용권 확인이 안 되면 그 경계와 가능한 정적/hosted 결과를 보고한다.
+- guest 선택 입력과 concurrency를 분리해 서로 다른 실행이 취소되지 않게 한다. source는 기존 scripts/ci/guest-ui-*와 reusable guest workflow를 역할별 helper로 확장한다. 파일 300/함수 50 LOC 권장 범위를 유지하며 제품 rebuild는 하지 않는다.
+- parser·bounded process·고정 operation·시나리오별 evidence 누락/불일치 회귀, automation/boundary/action pins/actionlint/diff, fast 계약, 실제 guest 관측·PNG 검토·제품/VM 정리를 검증한다. 부분 실패를 전체 수용으로 올리지 않는다.
+- 문서 위치는 기존 impl/orders, mydocs/working/task_m010_132_stage3.6.md와 이미 승인된 CI_VALIDATION/RELEASE_CHECKLIST다. 새 공식 문서 루트는 만들지 않는다. 로컬 private 출력은 T7 연결을 확인한 기존 task132 output만 사용한다.

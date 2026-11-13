@@ -11,14 +11,8 @@ function Save-State {
   $report | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath (Join-Path $output 'guest.json') -Encoding UTF8
   Send-Event @{ kind = 'phase'; phase = $report.phase }
 }
-function Run-Owned($File, $Arguments, [int]$Seconds = 180) {
-  $p = Start-Process -FilePath $File -ArgumentList $Arguments -PassThru
-  try {
-    [void]$p.Handle
-    if (-not $p.WaitForExit($Seconds * 1000)) { $p.Kill(); [void]$p.WaitForExit(5000); throw 'owned-child-timeout' }
-    $p.Refresh(); return [int]$p.ExitCode
-  } finally { $p.Dispose() }
-}
+. (Join-Path $PSScriptRoot 'guest-ui-process.ps1')
+. (Join-Path $PSScriptRoot 'guest-ui-operations.ps1')
 function Send-Evidence {
   foreach ($file in @(Get-ChildItem -LiteralPath $output -File | Where-Object { $_.Extension -in @('.json', '.png') })) {
     if ($file.Length -gt 5MB -or $file.Name -notmatch '^[a-z0-9-]+\.(json|png)$') { throw 'invalid-evidence-file' }
@@ -30,10 +24,11 @@ function Send-Evidence {
     Send-Event @{ kind = 'end'; name = $file.Name }
   }
 }
-$report = [ordered]@{ schemaVersion = 1; status = 'incomplete'; phase = 'logon'; releaseAcceptance = 'unverified'; visual = 'unverified'; installExit = $null; reinstallExit = $null; uninstallExit = $null; productUninstallPassed = $false; probes = @() }
+$report = [ordered]@{ schemaVersion = 1; status = 'incomplete'; phase = 'logon'; releaseAcceptance = 'unverified'; visual = 'unverified'; installExit = $null; reinstallExit = $null; uninstallExit = $null; productUninstallPassed = $false; probes = @(); adminOperations = @{} }
 $directory = $null; $view = $null
 try {
   $inputData = Get-Content (Join-Path $root 'input.json') -Raw | ConvertFrom-Json
+  if ($inputData.scenario -cnotin @('nsis', 'msi')) { throw 'invalid-guest-scenario' }
   $report['input'] = $inputData
   $os = Get-CimInstance Win32_OperatingSystem
   $report['os'] = @{ caption = $os.Caption; build = $os.BuildNumber; productType = $os.ProductType; architecture = $os.OSArchitecture }
@@ -54,26 +49,28 @@ try {
   if (-not $report.desktopOwnerMatches -or -not $report.sessionMatches -or -not [Environment]::UserInteractive) { throw 'interactive-shell-owner-mismatch' }
   Save-State
   $key = 'HKCU:\Software\Classes\CLSID\{C1DCF316-0771-49DD-BFEA-C85F69B1674B}\InprocServer32'
+  if ($inputData.scenario -eq 'msi') { $key = $key.Replace('HKCU:', 'HKLM:') }
   if (Test-Path $key) { throw 'preexisting-handler' }
-  $installer = Join-Path $root 'installer.exe'
+  $installer = Join-Path $root $(if ($inputData.scenario -eq 'msi') { 'installer.msi' } else { 'installer.exe' })
   if ((Get-FileHash $installer -Algorithm SHA256).Hash.ToLowerInvariant() -cne $inputData.installerSha256) { throw 'installer-hash-mismatch' }
   . (Join-Path $PSScriptRoot 'guest-ui-installer-state.ps1')
-  $report['beforeInstall'] = Get-GuestInstallerState
+  $report['beforeInstall'] = Get-GuestInstallerState $inputData.scenario
   if ($report.beforeInstall.vcRuntimePresent -or $report.beforeInstall.vcRuntimeLoadError -ne 126) { throw 'clean-vc-runtime-absence-required' }
   if ($report.beforeInstall.referenceHandlerLoadError -ne 0) { throw 'standalone-handler-load-failed' }
+  if ($inputData.scenario -eq 'msi') { Assert-GuestAdminBoundary; $report['adminBoundaryReadOnly'] = $true }
   $report.phase = 'install'; Save-State
-  $report['offlineInstallExit'] = Run-Owned $installer '/S'
-  $report['afterOfflineInstall'] = Get-GuestInstallerState
+  $report['offlineInstallExit'] = Invoke-GuestInstall install
+  $report['afterOfflineInstall'] = Get-GuestInstallerState $inputData.scenario
   $report.installExit = $report.offlineInstallExit
-  if ($report.installExit -ne 0) {
+  if ($report.installExit -ne 0 -and $inputData.scenario -eq 'nsis') {
     $report.phase = 'network-retry'; Save-State
     Wait-GuestNetwork
     $report.installExit = Run-Owned $installer '/S' 300
-    $report['afterOnlineInstall'] = Get-GuestInstallerState
+    $report['afterOnlineInstall'] = Get-GuestInstallerState $inputData.scenario
   }
   if ($report.installExit -ne 0) { throw 'install-failed' }
   $directory = Split-Path -Parent (Get-Item -LiteralPath $key).GetValue('')
-  $report.reinstallExit = Run-Owned $installer '/S /UPDATE'
+  $report.reinstallExit = Invoke-GuestInstall reinstall
   if ($report.reinstallExit -ne 0) { throw 'reinstall-failed' }
   foreach ($binary in $inputData.binaries) {
     if ((Get-FileHash (Join-Path $directory ([IO.Path]::GetFileName($binary.path))) -Algorithm SHA256).Hash.ToLowerInvariant() -cne $binary.sha256) { throw 'installed-binary-mismatch' }
@@ -109,7 +106,7 @@ finally {
   if ($directory) {
     try {
       $report.phase = 'uninstall'; Save-State
-      $report.uninstallExit = Run-Owned (Join-Path $directory 'uninstall.exe') '/S'
+      $report.uninstallExit = Invoke-GuestInstall uninstall
       for ($i=0; $i -lt 90 -and (Test-Path $directory); $i++) { Start-Sleep -Seconds 1 }
       $report.productUninstallPassed = $report.uninstallExit -eq 0 -and -not (Test-Path $directory) -and -not (Test-Path $key)
     } catch { $report['cleanupFailure'] = $_.Exception.Message }

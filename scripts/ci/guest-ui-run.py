@@ -71,7 +71,22 @@ def wait_socket(path, process):
     raise RuntimeError("owned-socket-timeout")
 
 
-def guest_observation_complete(guest, network_enabled):
+def guest_observation_complete(guest, network_enabled, expected_scenario="nsis"):
+    input_data = guest.get("input", {})
+    if expected_scenario not in ("nsis", "msi") or input_data.get("scenario") != expected_scenario:
+        return False
+    if any(guest.get(key) != 0 for key in ("installExit", "reinstallExit", "uninstallExit")):
+        return False
+    if expected_scenario == "msi":
+        if guest.get("adminBoundaryReadOnly") is not True:
+            return False
+        operations = guest.get("adminOperations", {})
+        for name in ("install", "reinstall", "uninstall"):
+            result = operations.get(name, {})
+            if (result.get("status") != "observed" or result.get("operation") != name
+                    or result.get("system") is not True or result.get("exitCode") != 0
+                    or result.get("installerSha256") != input_data.get("installerSha256")):
+                return False
     probes = guest.get("probes", [])
     if not isinstance(probes, list) or len(probes) != 4:
         return False
@@ -131,7 +146,7 @@ def observe(root, process):
         if not result["guestEvidenceComplete"]:
             raise RuntimeError("guest-evidence-timeout")
         guest = json.loads((root / "evidence/guest.json").read_text(encoding="utf-8-sig"))
-        result["observed"] = guest_observation_complete(guest, result["networkEnabledForRetry"])
+        result["observed"] = guest_observation_complete(guest, result["networkEnabledForRetry"], module("guest-ui-prepare").scenario())
         if not result["observed"]:
             raise RuntimeError("guest-product-observation-incomplete")
     except BaseException as error:
