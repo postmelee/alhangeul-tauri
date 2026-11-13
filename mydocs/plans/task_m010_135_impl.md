@@ -123,3 +123,6 @@ Windows 소비자는 fresh profile의 silent 설치가 선택 파일을 만들�
 
 ### Stage 7 WASM 고지 범위 보완
 별도 Worker bundle 관측 중 native 네 잠금 파일과 bundled WASM의 원본 `third_party/rhwp/Cargo.lock`에 차이가 있음을 확인했다. 원본 lock의 SHA-256을 `rhwp-core.lock`과 먼저 대조하고 고지 생성 superset에 포함한다. 추가 100개 registry 버전의 archive checksum·원문을 검사하며 기존 ZIP의 검증된 원문은 각 hash·lock integrity를 재확인해 재사용할 수 있다. WASM 또는 readonly upstream source/pin을 재생성·수정하지 않는다. 기존 docs/operations/DEPENDENCY_NOTICES.md의 범위 설명과 task 증거를 갱신한다. 동봉 ZIP bytes가 바뀌므로 기존 설치본 성공을 새 ZIP의 설치 수용으로 세지 않으며, 새 Windows/Linux package와 exact 소비자에서 다시 확인한다.
+
+### Stage 7.8 실제 설치본에서 발견한 고지 경로·표시 수정
+7b37eec8 소비자에서 MSI의 `licenses/Alhangeul-LICENSE.txt` 부재를 확인했다. 고정 Tauri CLI 2.10.1의 MSI resource generator는 target 디렉터리는 사용하지만 File Name을 설정하지 않아 source basename을 유지한다. 모든 형식의 목적지를 `licenses/LICENSE`로 통일하고 기존 운영 문서·resource 계약을 맞춘다. 검사에서 임의 이름 fallback으로 통과시키지 않는다. 실제 screenshot에서 남은 NSIS 사용권 계약 header는 MUI page header 설정으로 설치 개인정보 안내로 바꾸고, MSI RTF에는 명시적 문단·줄 간격을 지정한다. 문구 본문은 TXT와 동일하게 유지한다. 소비자에서 옛 EULA header 부재와 첫 Windows 시스템 변경 줄의 화면 내 표시를 확인한다. 제품 설치본 bytes가 바뀌므로 새 full/package 및 exact 소비자로 검증하며 이전 d48a4973 초기 run은 중단한다.

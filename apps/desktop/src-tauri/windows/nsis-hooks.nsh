@@ -19,6 +19,9 @@
 ;   계약의 일부가 아니다. Tauri를 올릴 때 존재 여부를 확인한다.
 
 ; This is a disclosure page, not a license acceptance or consent to optional traffic.
+; Welcome is a full-window page; the next header page is the disclosure.
+!define MUI_PAGE_HEADER_TEXT "설치·개인정보 안내"
+!define MUI_PAGE_HEADER_SUBTEXT "설치 전 시스템 변경과 개인정보 처리를 확인하세요."
 !define MUI_LICENSEPAGE_TEXT_TOP "설치 시 시스템 변경과 개인정보 처리를 확인하세요."
 !define MUI_LICENSEPAGE_TEXT_BOTTOM "자동 업데이트 확인은 새 설치에서 꺼져 있습니다. 계속은 설치 진행이며 별도 사용권 계약 동의가 아닙니다."
 !define MUI_LICENSEPAGE_BUTTON "계속"

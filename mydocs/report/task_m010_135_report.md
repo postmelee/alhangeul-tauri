@@ -156,3 +156,12 @@ run 43479164615 Windows 관측 step과 upload도 성공했다. 동일 source/con
 새 제품 후보 `d48a4973ec476f48162ea3edc6b4173435bf2249`의 full run [43495820535](https://github.com/postmelee/alhangeul-tauri/actions/runs/43495820535)을 실행했다. 이전 7b37eec8 run은 Windows 패키지 생성·artifact 업로드를 마치고 NSIS/MSI/강제 재설치 검증으로 진행했다. 이전 full 전체 성공이나 새 고지 후보 성공을 미리 선언하지 않는다. 설치 설정 보존 harness 6371da0a의 fast run [43494498740](https://github.com/postmelee/alhangeul-tauri/actions/runs/43494498740)은 성공했다.
 
 CanvasKit의 [공식 npm 버전 metadata](https://registry.npmjs.org/canvaskit-wasm/0.41.1)는 gitHead를 제공하지만 repository 항목은 없었다. 그 gitHead를 공식 Skia mirror에서 조회했을 때 tree 422·commit 404로 출처 연결을 확정하지 못했다. 제공된 1,635-byte BSD 고지와 실제 WASM hash는 확인했지만 내부 제3자 구성의 전체 고지 수용까지 확대하지 않는다. 이 한계도 Worker/WASM 증거에 명시했다. 현재 native/WASM 원문 gap과 제공자 해석이 남아 있어 신청 요건 전체 충족은 보류한다.
+
+## Stage 7.8 실제 설치본 수용 실패와 수정
+7b37eec8 full run 43482991954가 최종 성공했다. 이는 구성된 CI 계약의 성공이다. 원시 Windows 결과는 일반 MSI strict-product 시나리오 성공, NSIS hosted 진단 기준 성공이지만 thumbnail not-accepted·raw failure 12개, 강제 MSI는 재부팅 필요·재부팅 후 미확인이었다. [원시 판정/step/exit와 hash](../working/assets/task135/readiness/windows-installer-contracts-7b.json). 전체 제품·릴리스 수용 성공으로 확대하지 않는다.
+
+소비자 [43497094754](https://github.com/postmelee/alhangeul-tauri/actions/runs/43497094754)는 Linux 성공·Windows 실패다. [Linux](../working/assets/task135/readiness/candidate-7b-linux-x64/)는 실제 AppImage에서 고지 23개 hash 및 나눔 3개 로딩/hash/화면이 통과했다. [Windows](../working/assets/task135/readiness/candidate-7b-windows-x64/)는 NSIS 고지 23개·나눔 화면·fresh 선택 부재·true/false 재설치 보존·제거 뒤 마지막 선택 잔존이 통과했지만 MSI에서 설정한 `licenses/Alhangeul-LICENSE.txt`를 찾지 못했다. 두 설치 화면을 직접 보니 NSIS 사용권 계약 header와 MSI 과도한 문단 간격도 남아 있었다. 초기 UI 자동 검사 통과를 시각 품질 수용으로 대체하지 않았다.
+
+[고정 Tauri CLI의 MSI generator](https://raw.githubusercontent.com/tauri-apps/tauri/tauri-cli-v2.10.1/crates/tauri-bundler/src/bundle/windows/msi/mod.rs)는 target 디렉터리만 쓰고 원본 basename을 유지한다. 따라서 전 형식의 제품 라이선스 목적지를 `licenses/LICENSE`로 통일했다. 확인기를 느슨하게 만들지 않았으며 이름이 다르면 관측 경로를 기록하고 실패한다. NSIS는 Welcome 다음 header page에만 적용되는 MUI header 설정을 추가했다. RTF는 문단/줄 간격을 명시했으며 기존 본문은 동일하다(파일 끝 개행만 별도 정규화). 첫 Windows 시스템 변경 줄이 실제 viewport에 보이는지와 옛 EULA header 부재를 소비자 검사에 추가했다.
+
+고지 basename 회귀를 포함한 Node 검사 3개, 정상 resource 23개 수용/이름 변경 거부 및 실패 경로 증거 검사, RTF 본문 유지·diff check가 통과했다. 수정 전 d48a4973 run 43495820535는 fast 두 job 성공 후 새 결함 대응을 위해 native 초기 단계에서 취소했다. 취소와 최종 result 실패를 전체 성공으로 기록하지 않는다. 수정 설치본을 새 full/소비자에서 다시 확인해야 한다.

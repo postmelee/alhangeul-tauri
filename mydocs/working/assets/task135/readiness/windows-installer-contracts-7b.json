@@ -1,0 +1,168 @@
+{
+  "sourceSha": "7b37eec86f53db8eb02ca2e021493d2d0060d508",
+  "producerRun": "https://github.com/postmelee/alhangeul-tauri/actions/runs/43482991954",
+  "workflowConclusion": "success",
+  "scope": "Configured CI contracts passed. NSIS thumbnail activation and post-reboot forced MSI are not accepted product scenarios. A green full run does not establish release readiness.",
+  "scenarios": [
+    {
+      "kind": "nsis-installer-smoke",
+      "artifactId": 14071594057,
+      "sourceFileSha256": {
+        "installer-evaluation.json": "f01b7d878e2dbb1e5da47137e988905cfa3a4924be9d6b6f268731f648827f11",
+        "smoke-process.json": "a70a67624b8b7427ecf0b49bab2e3a12297fed90ddfdfa29674e9df2d86c07dd",
+        "step-outcomes.json": "79a82541b896d9d80a68c72f6c3910743f9209a6ef21696f8f6f1c62db51d748"
+      },
+      "installer-evaluation": {
+        "schemaVersion": 1,
+        "policyVersion": 1,
+        "status": "passed",
+        "inputSha256": "3ae40d80bbb0cb20ed1374fc87d2ea8f45e30ff3f58459a046202f88fb64b946",
+        "provenanceStatus": "requires-io-verification",
+        "verdict": {
+          "schemaVersion": 1,
+          "policyVersion": 1,
+          "contractStatus": "passed",
+          "contract": "hosted-nsis-diagnostic",
+          "thumbnailStatus": "not-accepted",
+          "lifecycleStatus": "passed",
+          "reasonCodes": [
+            "nsis-per-user-shell-activation-failed"
+          ],
+          "productAcceptance": "limited-observation",
+          "releaseAcceptance": "unverified",
+          "reuseEligible": false,
+          "provenanceStatus": "requires-io-verification",
+          "rawSmoke": {
+            "status": "failed",
+            "outcome": "failure",
+            "exitCode": 1,
+            "failureCount": 12
+          }
+        }
+      },
+      "smoke-process": {
+        "schemaVersion": 1,
+        "status": "completed",
+        "exitCode": 1
+      },
+      "step-outcomes": {
+        "checkout": "success",
+        "verifyCommit": "success",
+        "download": "success",
+        "smoke": "failure",
+        "assessmentTests": "success",
+        "diagnosticContract": "success",
+        "supportDownload": "success",
+        "manualTests": "success",
+        "manualEvidence": "success"
+      }
+    },
+    {
+      "kind": "msi-installer-smoke",
+      "artifactId": 14071867775,
+      "sourceFileSha256": {
+        "installer-evaluation.json": "648cf12072b6e2cafc154ee262b10d062aac835e0c9c79b6ba0208bc400abdf6",
+        "smoke-process.json": "924eb791215675bc176fc46bb43a298838141466539eb56915ccc8d0cd88beaf",
+        "step-outcomes.json": "68e8d9e0a141b81bb05e88e4dbe01bda0153f845055b7ac19b90203e78611682"
+      },
+      "installer-evaluation": {
+        "schemaVersion": 1,
+        "policyVersion": 1,
+        "status": "passed",
+        "inputSha256": "f5dce93546a744de17843887b000dc55d3c01ae76a6bf0bb84ef13266000afa6",
+        "provenanceStatus": "requires-io-verification",
+        "verdict": {
+          "schemaVersion": 1,
+          "policyVersion": 1,
+          "contractStatus": "passed",
+          "contract": "strict-product",
+          "thumbnailStatus": "passed",
+          "lifecycleStatus": "passed",
+          "reasonCodes": [
+            "scenario-observed"
+          ],
+          "productAcceptance": "scenario-only",
+          "releaseAcceptance": "unverified",
+          "reuseEligible": false,
+          "provenanceStatus": "requires-io-verification",
+          "rawSmoke": {
+            "status": "passed",
+            "outcome": "success",
+            "exitCode": 0,
+            "failureCount": 0
+          }
+        }
+      },
+      "smoke-process": {
+        "schemaVersion": 1,
+        "status": "completed",
+        "exitCode": 0
+      },
+      "step-outcomes": {
+        "checkout": "success",
+        "verifyCommit": "success",
+        "download": "success",
+        "smoke": "success",
+        "assessmentTests": "success",
+        "diagnosticContract": "success",
+        "supportDownload": "success",
+        "manualTests": "success",
+        "manualEvidence": "success"
+      }
+    },
+    {
+      "kind": "msi-forced-reinstall",
+      "artifactId": 14071633941,
+      "sourceFileSha256": {
+        "installer-evaluation.json": "3f2ec1351da7de21424d35fdfa19d86b811791779c999ebf1ad4c6aa7598e002",
+        "smoke-process.json": "a70a67624b8b7427ecf0b49bab2e3a12297fed90ddfdfa29674e9df2d86c07dd",
+        "step-outcomes.json": "79a82541b896d9d80a68c72f6c3910743f9209a6ef21696f8f6f1c62db51d748"
+      },
+      "installer-evaluation": {
+        "schemaVersion": 1,
+        "policyVersion": 1,
+        "status": "passed",
+        "inputSha256": "ae8a895448eb4c4d5bc00728780df2041e29ecc392d751acf390b1391d0d180a",
+        "provenanceStatus": "requires-io-verification",
+        "verdict": {
+          "schemaVersion": 1,
+          "policyVersion": 1,
+          "contractStatus": "passed",
+          "contract": "msi-forced-reinstall-reboot",
+          "thumbnailStatus": "passed",
+          "lifecycleStatus": "reboot-required",
+          "reasonCodes": [
+            "msi-reboot-required",
+            "post-reboot-unverified"
+          ],
+          "productAcceptance": "limited-observation",
+          "releaseAcceptance": "unverified",
+          "reuseEligible": false,
+          "provenanceStatus": "requires-io-verification",
+          "rawSmoke": {
+            "status": "failed",
+            "outcome": "failure",
+            "exitCode": 1,
+            "failureCount": 1
+          }
+        }
+      },
+      "smoke-process": {
+        "schemaVersion": 1,
+        "status": "completed",
+        "exitCode": 1
+      },
+      "step-outcomes": {
+        "checkout": "success",
+        "verifyCommit": "success",
+        "download": "success",
+        "smoke": "failure",
+        "assessmentTests": "success",
+        "diagnosticContract": "success",
+        "supportDownload": "success",
+        "manualTests": "success",
+        "manualEvidence": "success"
+      }
+    }
+  ]
+}

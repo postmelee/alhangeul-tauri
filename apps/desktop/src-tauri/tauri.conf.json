@@ -62,7 +62,7 @@
       "../../../assets/fonts/licenses/SIL-OFL-1.1.txt": "licenses/fonts/SIL-OFL-1.1.txt",
       "../../../assets/fonts/licenses/SpoqaHanSans-OFL.txt": "licenses/fonts/SpoqaHanSans-OFL.txt",
       "../../../assets/fonts/licenses/font-notices.json": "licenses/fonts/font-notices.json",
-      "../../../LICENSE": "licenses/Alhangeul-LICENSE.txt",
+      "../../../LICENSE": "licenses/LICENSE",
       "../../../assets/licenses/dependency-notices.zip": "licenses/dependency-notices.zip",
       "resources/install-privacy.txt": "privacy/install-privacy.txt"
     },

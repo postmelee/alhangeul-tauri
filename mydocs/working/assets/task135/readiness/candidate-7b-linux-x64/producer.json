@@ -1,0 +1,10 @@
+{
+  "repository": "postmelee/alhangeul-tauri",
+  "buildRef": "7b37eec86f53db8eb02ca2e021493d2d0060d508",
+  "nativeRunId": 43482991954,
+  "workflowPath": ".github/workflows/ci.yml",
+  "artifactId": 14069268223,
+  "artifactName": "alhangeul-desktop-linux-x64",
+  "artifactSize": 730537808,
+  "artifactDigest": "sha256:3bacbc0076ed87845d374d22f763a32dfb4275f64746584b8558da51efb02c65"
+}

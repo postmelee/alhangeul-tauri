@@ -1,0 +1,18 @@
+{
+  "scope": "Synthetic choice-file preservation by the installer; actual UI/TLS is verified separately.",
+  "reinstall": [
+    {
+      "automaticChecks": true,
+      "sha256": "93bcead70551df1580f30bd99fd76db72672630251519c216244055039e68b97",
+      "reinstallPreserved": true
+    },
+    {
+      "automaticChecks": false,
+      "sha256": "cbdf1d7ac175a983f59374c526de73ffb442acad877a96431854fe7fdba5d1ab",
+      "reinstallPreserved": true
+    }
+  ],
+  "uninstallRetainedLastChoice": true,
+  "disclosureCloseChoiceAbsent": true,
+  "freshSilentInstallChoiceAbsent": true
+}

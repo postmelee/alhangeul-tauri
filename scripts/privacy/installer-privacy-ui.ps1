@@ -29,6 +29,20 @@ function Save-Screen($Path) {
   try { $graphics.CopyFromScreen($bounds.Location,[System.Drawing.Point]::Empty,$bounds.Size); $bitmap.Save($Path) }
   finally { $graphics.Dispose(); $bitmap.Dispose() }
 }
+function Test-SystemChangesVisible($Nodes) {
+  foreach ($node in $Nodes) {
+    $pattern = $null
+    if (-not $node.TryGetCurrentPattern([System.Windows.Automation.TextPattern]::Pattern, [ref]$pattern)) { continue }
+    $range = $pattern.DocumentRange.FindText('Windows:', $false, $false)
+    if ($null -eq $range) { continue }
+    $rectangles = $range.GetBoundingRectangles()
+    if ($rectangles.Length -ge 4) {
+      $bounds = $node.Current.BoundingRectangle
+      if ($rectangles[1] -ge $bounds.Top -and $rectangles[1] + $rectangles[3] -le $bounds.Bottom) { return $true }
+    }
+  }
+  return $false
+}
 if ($Kind -eq 'nsis') { $process = Start-Process $Installer -PassThru }
 else { $process = Start-Process msiexec.exe -ArgumentList @('/i', "`"$Installer`"") -PassThru }
 $deadline = (Get-Date).AddSeconds(60)
@@ -43,6 +57,12 @@ try {
     if ($state.text -match 'WebView2' -and $state.text -match '업데이트') {
       $state.rows | ConvertTo-Json -Depth 5 | Set-Content -Encoding utf8 (Join-Path $Output "$Kind-installer-ui.json")
       Save-Screen (Join-Path $Output "$Kind-installer-privacy.png")
+      if ($state.text -match 'License Agreement|Please review the license terms') {
+        throw 'Disclosure still displays a license agreement header'
+      }
+      if (-not (Test-SystemChangesVisible $state.nodes)) {
+        throw 'The first Windows system-change paragraph is not visible in the initial disclosure viewport'
+      }
       $checkboxes = @($state.nodes | Where-Object {
         $_.Current.ControlType -eq [System.Windows.Automation.ControlType]::CheckBox -and -not $_.Current.IsOffscreen
       })

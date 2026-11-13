@@ -1,11 +1,21 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFile, readdir } from 'node:fs/promises';
+import { posix } from 'node:path';
 import test from 'node:test';
 const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const root = new URL('../assets/fonts/', import.meta.url);
 const manifest = JSON.parse(await readFile(new URL('licenses/font-notices.json', root)));
 const config = JSON.parse(await readFile(new URL('../apps/desktop/src-tauri/tauri.conf.json', import.meta.url)));
+
+test('installed notice basenames work with pinned MSI resource generation', () => {
+  // Tauri CLI 2.10.1 MSI uses the target directory but preserves the source basename.
+  for (const [source, destination] of Object.entries(config.bundle.resources)) {
+    if (/^(licenses|privacy)\//.test(destination)) {
+      assert.equal(posix.basename(source), posix.basename(destination), destination);
+    }
+  }
+});
 
 test('every shipped Studio webfont has exact bytes, copyright and installed license texts', async () => {
   const files = (await readdir(root)).filter((name) => name.endsWith('.woff2')).sort();

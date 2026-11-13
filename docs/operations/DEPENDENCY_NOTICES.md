@@ -1,6 +1,6 @@
 # 배포 의존성 고지
 
-앱 설치 폴더의 `licenses/Alhangeul-LICENSE.txt`는 제품 소스 라이선스,
+앱 설치 폴더의 `licenses/LICENSE`는 제품 소스 라이선스,
 `licenses/fonts/`는 번들 글꼴의 개별 저작권·원문 고지,
 `licenses/dependency-notices.zip`은 고정 의존성에서 확보한 원문 고지 묶음이다.
 다른 프로젝트의 코드를 제품의 MIT 라이선스로 다시 허가하지 않는다.

@@ -18,6 +18,7 @@ async function walk(folder) {
   }
 }
 await walk(resolve(installed));
+await mkdir(dirname(output), { recursive: true });
 const hash = (data) => createHash('sha256').update(data).digest('hex');
 const rows = [];
 for (const [input, target] of expected) {
@@ -26,7 +27,12 @@ for (const [input, target] of expected) {
     const pathFromRoot = relative(resolve(installed), path).split(sep).join('/');
     return pathFromRoot === target || pathFromRoot.endsWith(`/${target}`);
   });
-  assert.equal(matches.length, 1, `Expected one installed resource: ${target}`);
+  if (matches.length !== 1) {
+    const observedResources = files.map((path) => relative(resolve(installed), path).split(sep).join('/'))
+      .filter((path) => /(^|\/)(licenses|privacy)\//.test(path));
+    await writeFile(output, `${JSON.stringify({ status: 'failed', expected: target, matches: matches.length, observedResources }, null, 2)}\n`);
+    assert.fail(`Expected one installed resource: ${target}; observed paths saved`);
+  }
   const expectedHash = hash(await readFile(resolve(configRoot, input)));
   const actualHash = hash(await readFile(matches[0]));
   assert.equal(actualHash, expectedHash, `Installed bytes differ: ${target}`);
