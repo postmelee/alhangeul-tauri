@@ -1,5 +1,5 @@
 {
-  "archiveSha256": "238fd66054b357efd097e30d9ffeab23f60e1b1ca2af449d5a237c5ead4250a9",
+  "archiveSha256": "e6df850d7ce6dfd3881fe3cf82fc36344c40aaf3beded4b7ed6b2732b0207a3e",
   "packages": 1408,
   "missingNoticeFiles": [
     {
@@ -374,48 +374,13 @@
     },
     {
       "kind": "rust",
-      "name": "alloc-stdlib",
-      "version": "0.2.2"
-    },
-    {
-      "kind": "rust",
-      "name": "alloc-stdlib",
-      "version": "0.3.0"
-    },
-    {
-      "kind": "rust",
-      "name": "block2",
-      "version": "0.6.2"
-    },
-    {
-      "kind": "rust",
       "name": "convert_case",
       "version": "0.4.0"
     },
     {
       "kind": "rust",
-      "name": "dispatch2",
-      "version": "0.3.1"
-    },
-    {
-      "kind": "rust",
-      "name": "dlopen2",
-      "version": "0.8.2"
-    },
-    {
-      "kind": "rust",
-      "name": "dlopen2_derive",
-      "version": "0.4.3"
-    },
-    {
-      "kind": "rust",
       "name": "fxhash",
       "version": "0.2.1"
-    },
-    {
-      "kind": "rust",
-      "name": "jni-sys-macros",
-      "version": "0.4.1"
     },
     {
       "kind": "rust",
@@ -426,121 +391,6 @@
       "kind": "rust",
       "name": "mac",
       "version": "0.1.1"
-    },
-    {
-      "kind": "rust",
-      "name": "match_token",
-      "version": "0.1.0"
-    },
-    {
-      "kind": "rust",
-      "name": "ndk",
-      "version": "0.9.0"
-    },
-    {
-      "kind": "rust",
-      "name": "ndk-context",
-      "version": "0.1.1"
-    },
-    {
-      "kind": "rust",
-      "name": "ndk-sys",
-      "version": "0.6.0+11769913"
-    },
-    {
-      "kind": "rust",
-      "name": "objc2",
-      "version": "0.6.4"
-    },
-    {
-      "kind": "rust",
-      "name": "objc2-app-kit",
-      "version": "0.3.2"
-    },
-    {
-      "kind": "rust",
-      "name": "objc2-core-foundation",
-      "version": "0.3.2"
-    },
-    {
-      "kind": "rust",
-      "name": "objc2-core-graphics",
-      "version": "0.3.2"
-    },
-    {
-      "kind": "rust",
-      "name": "objc2-encode",
-      "version": "4.1.0"
-    },
-    {
-      "kind": "rust",
-      "name": "objc2-exception-helper",
-      "version": "0.1.1"
-    },
-    {
-      "kind": "rust",
-      "name": "objc2-io-surface",
-      "version": "0.3.2"
-    },
-    {
-      "kind": "rust",
-      "name": "objc2-osa-kit",
-      "version": "0.3.2"
-    },
-    {
-      "kind": "rust",
-      "name": "objc2-quartz-core",
-      "version": "0.3.2"
-    },
-    {
-      "kind": "rust",
-      "name": "objc2-ui-kit",
-      "version": "0.3.2"
-    },
-    {
-      "kind": "rust",
-      "name": "objc2-web-kit",
-      "version": "0.3.2"
-    },
-    {
-      "kind": "rust",
-      "name": "phf",
-      "version": "0.10.1"
-    },
-    {
-      "kind": "rust",
-      "name": "phf",
-      "version": "0.8.0"
-    },
-    {
-      "kind": "rust",
-      "name": "phf_codegen",
-      "version": "0.8.0"
-    },
-    {
-      "kind": "rust",
-      "name": "phf_generator",
-      "version": "0.10.0"
-    },
-    {
-      "kind": "rust",
-      "name": "phf_generator",
-      "version": "0.8.0"
-    },
-    {
-      "kind": "rust",
-      "name": "phf_macros",
-      "version": "0.10.0"
-    },
-    {
-      "kind": "rust",
-      "name": "phf_shared",
-      "version": "0.10.0"
-    },
-    {
-      "kind": "rust",
-      "name": "phf_shared",
-      "version": "0.8.0"
     },
     {
       "kind": "rust",
@@ -570,17 +420,7 @@
     {
       "kind": "rust",
       "name": "selectors",
-      "version": "0.24.0"
-    },
-    {
-      "kind": "rust",
-      "name": "selectors",
       "version": "0.36.1"
-    },
-    {
-      "kind": "rust",
-      "name": "taffy",
-      "version": "0.14.0"
     },
     {
       "kind": "rust",
@@ -594,61 +434,6 @@
     },
     {
       "kind": "rust",
-      "name": "unic-char-property",
-      "version": "0.9.0"
-    },
-    {
-      "kind": "rust",
-      "name": "unic-char-range",
-      "version": "0.9.0"
-    },
-    {
-      "kind": "rust",
-      "name": "unic-common",
-      "version": "0.9.0"
-    },
-    {
-      "kind": "rust",
-      "name": "unic-ucd-ident",
-      "version": "0.9.0"
-    },
-    {
-      "kind": "rust",
-      "name": "unic-ucd-version",
-      "version": "0.9.0"
-    },
-    {
-      "kind": "rust",
-      "name": "wasip3",
-      "version": "0.4.0+wasi-0.3.0-rc-2026-01-06"
-    },
-    {
-      "kind": "rust",
-      "name": "wasm-encoder",
-      "version": "0.244.0"
-    },
-    {
-      "kind": "rust",
-      "name": "wasmparser",
-      "version": "0.244.0"
-    },
-    {
-      "kind": "rust",
-      "name": "webview2-com",
-      "version": "0.38.2"
-    },
-    {
-      "kind": "rust",
-      "name": "webview2-com-macros",
-      "version": "0.8.1"
-    },
-    {
-      "kind": "rust",
-      "name": "webview2-com-sys",
-      "version": "0.38.2"
-    },
-    {
-      "kind": "rust",
       "name": "winapi-i686-pc-windows-gnu",
       "version": "0.4.0"
     },
@@ -659,28 +444,8 @@
     },
     {
       "kind": "rust",
-      "name": "wit-component",
-      "version": "0.244.0"
-    },
-    {
-      "kind": "rust",
-      "name": "wit-parser",
-      "version": "0.244.0"
-    },
-    {
-      "kind": "rust",
-      "name": "wuff",
-      "version": "0.2.9"
-    },
-    {
-      "kind": "rust",
       "name": "zune-core",
       "version": "0.4.12"
-    },
-    {
-      "kind": "rust",
-      "name": "zune-jpeg",
-      "version": "0.4.21"
     }
   ]
 }

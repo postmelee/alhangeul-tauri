@@ -132,6 +132,14 @@
         "sha256": "76f45ef4a6bcff344c837c95a7dcc26e017e38b5846d5ae0cdcb5b86be2e2d31",
         "localSourceName": "NanumGothic-Regular.ttf",
         "conversion": "Full original; WOFF2 compression only; original metadata retained."
+      },
+      "programValidation": {
+        "glyphsCompared": 13297,
+        "outlineDifferences": 0,
+        "hintDifferences": 0,
+        "nonTransformTablesIdentical": true,
+        "omittedDsig": true,
+        "encodingReference": "https://www.w3.org/TR/WOFF2/"
       }
     },
     {
@@ -149,6 +157,14 @@
         "sha256": "787effd7efed2abca88ade231faa8191f4e9fcf85b1805a13ee1dc3724b72089",
         "localSourceName": "NanumGothicCoding-Regular.ttf",
         "conversion": "Full original; WOFF2 compression only; original metadata retained."
+      },
+      "programValidation": {
+        "glyphsCompared": 20024,
+        "outlineDifferences": 0,
+        "hintDifferences": 0,
+        "nonTransformTablesIdentical": true,
+        "omittedDsig": false,
+        "encodingReference": "https://www.w3.org/TR/WOFF2/"
       }
     },
     {
@@ -166,6 +182,14 @@
         "sha256": "7ed9e8653a8ed04285d51dc343ffea6eb3d9c73afc27383ea8929ee4ffd03205",
         "localSourceName": "NanumMyeongjo-Regular.ttf",
         "conversion": "Full original; WOFF2 compression only; original metadata retained."
+      },
+      "programValidation": {
+        "glyphsCompared": 14695,
+        "outlineDifferences": 0,
+        "hintDifferences": 0,
+        "nonTransformTablesIdentical": true,
+        "omittedDsig": true,
+        "encodingReference": "https://www.w3.org/TR/WOFF2/"
       }
     },
     {

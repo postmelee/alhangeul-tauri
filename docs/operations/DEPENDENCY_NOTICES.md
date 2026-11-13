@@ -12,6 +12,9 @@ Python 3.11 이상과 PyYAML이 있는 환경에서 저장소의 고정 rhwp che
 Cargo.lock의 SHA-256, JavaScript archive는 pnpm-lock.yaml의 integrity와 대조한다.
 archive의 코드는 실행하지 않으며 고지 이름의 일반 파일만 보존한다. ZIP의 시간은 고정한다.
 고정 rhwp의 LICENSE·THIRD_PARTY_LICENSES·vendor·licenses 고지도 포함한다.
+archive에 원문 고지가 없는 Rust 항목은 `assets/licenses/upstream-notice-sources.json`을
+참조한다. crate checksum·Cargo repository·배포 archive의 VCS commit이 일치하고 해당
+commit의 원문 URL과 고정 hash가 맞는 경우에만 보완한다. 원문 출처를 ZIP inventory에 남긴다.
 타스크별 요약 JSON이 필요하면 `--evidence <경로>`를 명시한다. 기본 실행은 과거 타스크
 증거 파일을 덮어쓰지 않는다.
 

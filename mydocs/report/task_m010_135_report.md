@@ -104,3 +104,12 @@ PR #136의 첫 필수 검사 run 43467248700에서 automation 1,384개 중 1개�
 일반 artifact는 updater release 설정이 없어 실제 자동 확인 positive control에 사용할 수 없음을 확인했다. 기존 공개 endpoint/public key만 넣고 createUpdaterArtifacts=false인 별도 비게시 시험 구성으로 Windows/Linux x64 native 선택·재시작·TLS를 검사하는 preferences 모드를 준비했다. 앱 릴리스, tag, SignPath 신청·계정·서명 credential 생성은 포함하지 않는다. MSI의 새 제목/버튼은 en-US codepage와 맞는 영문으로 수정했고 한국어 정책은 Unicode escape RTF를 유지한다. 새 시험 실행 결과는 아직 미수용이다.
 
 원문 누락 Rust 62개 중 47개는 검증된 archive의 VCS commit에서 root 원문 고지를 찾았다. `notice-supplement-review.json`은 추가 검토 후보이며 현재 동봉 ZIP에 반영됐다고 주장하지 않는다. 남은 고지·실제 target graph·설치 화면·새 bytes 통신 검증과 제공자 해석은 별도 수용 항목이다. 사전 문의 thread를 다시 읽었으며 여전히 발송 메시지 1건만 있다.
+
+## Stage 7.4 실패 수정과 고지 보완
+full run 43475282411에서 세 target core가 통과했고 Windows helper 빌드 및 PE 제품명/버전 검사도 통과했다. Linux x64/arm64 desktop Rust 테스트는 통과했으나 Rust 1.100 clippy가 기존 임시 PDF 정리의 `needless_bool`을 거부하여 두 package job은 실패했다. Windows package는 아직 진행 중이며 full 성공으로 기록하지 않는다. symlink/reparse 처리 의미를 유지한 cfg별 반환식으로 정리했고 새 full 검증이 필요하다.
+
+별도 fast run [43478394073](https://github.com/postmelee/alhangeul-tauri/actions/runs/43478394073)은 성공했다. 완전한 checkout의 automation 1,388개, Studio 296개, upstream 39개가 통과해 로컬 sparse fixture 부재와 구분했다. 실제 선택/TLS run [43479164615](https://github.com/postmelee/alhangeul-tauri/actions/runs/43479164615)은 456451a8의 비게시 후보를 빌드 중이며 아직 결과를 수용하지 않았다.
+
+47개 원문 보완을 ZIP에 실제 반영했다. 1,408개 package의 전체 notice hash를 검증했고 filename gap은 136→89개다. crate checksum·repository·VCS commit·원문 hash 불일치 네 경우가 거부됨을 검증했다. 기본 Python 3.9에는 tomllib가 없어 이 검사를 실행하지 못했으며 문서 요구에 맞는 Python 3.13으로 다시 검사했다. 단순 원문 확보를 대상별 라이선스 적합성 판정으로 바꾸지 않는다.
+
+나눔 3개의 공식 원본 전체 48,016 glyph는 outline/hint 차이 0, 변환 대상 외 table은 동일했다. DSIG 제거, head flag bit 11, glyf/loca 인코딩 차이는 WOFF2 변환 명세와 구분해 [추가 증거](../working/assets/task135/readiness/font-official-tables.json)에 기록했다. 이 단계에서는 폰트 bytes를 바꾸지 않았다. 로컬 고지/graph 테스트 4개, 설치/workflow 계약 43개, 변경 Rust 파일 format 및 diff check가 통과했다.

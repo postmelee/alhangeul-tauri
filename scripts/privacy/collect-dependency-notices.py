@@ -20,6 +20,10 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
 DESTINATION = ROOT / 'assets/licenses/dependency-notices.zip'
+UPSTREAM_SOURCES = {
+    (row['name'], row['version']): row
+    for row in json.loads((ROOT / 'assets/licenses/upstream-notice-sources.json').read_text())
+}
 
 
 def download(url, limit):
@@ -28,6 +32,41 @@ def download(url, limit):
     if len(data) > limit:
         raise ValueError('archive exceeds bound')
     return data
+
+
+def preserve_upstream_notices(entry, archive, scratch, prefix):
+    source = UPSTREAM_SOURCES.get((entry[1], entry[2]))
+    if entry[0] != 'rust' or not source:
+        return []
+    if source['crateSha256'] != entry[3]:
+        raise ValueError('supplement crate identity mismatch')
+    package_root = f'{entry[1]}-{entry[2]}/'
+    manifest = tomllib.loads(archive.extractfile(package_root + 'Cargo.toml').read().decode())['package']
+    vcs = json.loads(archive.extractfile(package_root + '.cargo_vcs_info.json').read())
+    if manifest.get('repository') != source['repository'] or vcs['git']['sha1'] != source['commit']:
+        raise ValueError('supplement source provenance mismatch')
+    repository = urllib.parse.urlsplit(source['repository'])
+    if repository.scheme != 'https' or repository.hostname != 'github.com':
+        raise ValueError('unsupported supplement source')
+    owner_repo = '/'.join(repository.path.strip('/').split('/')[:2]).removesuffix('.git')
+    expected_prefix = f'https://raw.githubusercontent.com/{owner_repo}/{source["commit"]}/'
+    result = []
+    for notice in source['files']:
+        url = notice['url']
+        if not url.startswith(expected_prefix):
+            raise ValueError('notice does not come from the verified commit')
+        name = url[len(expected_prefix):]
+        if '/' in name or '\\' in name or ':' in name or not name.upper().startswith(('LICENSE', 'COPYING', 'NOTICE', 'COPYRIGHT', 'UNLICENSE')):
+            raise ValueError('unsafe upstream notice name')
+        data = download(url, 10 * 1024 * 1024)
+        if hashlib.sha256(data).hexdigest() != notice['sha256']:
+            raise ValueError('upstream notice checksum mismatch')
+        relative = f'{prefix}/upstream/{name}'
+        target = Path(scratch) / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(data)
+        result.append(dict(path=relative, sha256=notice['sha256'], sourceUrl=url, sourceCommit=source['commit']))
+    return result
 
 
 def inspect(entry, scratch):
@@ -56,7 +95,7 @@ def inspect(entry, scratch):
                 continue
             if not parts[-1].upper().startswith(('LICENSE', 'COPYING', 'NOTICE', 'COPYRIGHT')):
                 continue
-            if '..' in parts or member.name.startswith('/') or member.size > 10 * 1024 * 1024:
+            if '..' in parts or '\\' in member.name or any(':' in part for part in parts) or member.name.startswith('/') or member.size > 10 * 1024 * 1024:
                 raise ValueError(f'unsafe notice path/size: {name}')
             relative = '/'.join(parts[1:])
             content = archive.extractfile(member).read()
@@ -64,8 +103,10 @@ def inspect(entry, scratch):
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(content)
             notices.append(dict(path=f'{prefix}/{relative}', sha256=hashlib.sha256(content).hexdigest()))
+        if not notices:
+            notices = preserve_upstream_notices(entry, archive, scratch, prefix)
     row['notices'] = notices
-    row['status'] = 'original notice files preserved' if notices else 'notice filename not found; review required'
+    row['status'] = 'original notice files preserved; target applicability not certified' if notices else 'notice filename not found; review required'
     return row
 
 

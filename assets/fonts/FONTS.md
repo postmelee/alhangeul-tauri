@@ -63,3 +63,7 @@ Latin Modern Math에는 GUST와 참조되는 LPPL 1.3c 전문을 함께 동봉�
 윤곽과 수평 metrics 변화는 없었다. 새 문자 coverage는 각각 409·970·406개 늘었다.
 이는 모든 문서의 시각 일치를 보장하는 주장이 아니며 설치 산출물 검증과 구분한다.
 다른 폰트의 기존 bytes가 upstream과 다르면 원본 무수정 대응을 추정하지 않고 manifest에 표시한다.
+
+공식 TTF와 전체 48,016개 glyph의 윤곽·힌트 및 비변환 table도 대조했다. DSIG 제거, head의
+변환 flag·checksum, glyf/loca의 표현 차이는 [WOFF2 변환 규칙](https://www.w3.org/TR/WOFF2/)과
+구분해 기록하며 TTF와 WOFF2의 파일 bytes 자체가 같다는 뜻으로 사용하지 않는다.
