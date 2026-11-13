@@ -42,6 +42,7 @@ use thumbnail_diagnostic_commands::{
     thumbnail_diagnostics_cancel, thumbnail_diagnostics_get_state, thumbnail_diagnostics_inspect,
     thumbnail_diagnostics_start,
 };
+use updater::preferences::{updater_get_automatic_checks, updater_set_automatic_checks};
 use updater::commands::{
     updater_apply, updater_check, updater_get_state, updater_open_manual_downloads, updater_restart,
 };
@@ -58,6 +59,7 @@ pub fn run() {
 
     let app = tauri::Builder::default()
         .manage(AppState::default())
+        .manage(updater::preferences::UpdaterPreferences::default())
         .manage(local_font_preferences::LocalFontPreferences::default())
         .plugin(tauri_plugin_log::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
@@ -122,6 +124,8 @@ pub fn run() {
             remove_recent_document,
             render_document_preview,
             updater_get_state,
+            updater_get_automatic_checks,
+            updater_set_automatic_checks,
             updater_check,
             updater_apply,
             updater_open_manual_downloads,

@@ -19,3 +19,6 @@ zip = { version = "8.5", default-features = false, features = ["deflate"] }
 
 [lints.rust]
 unsafe_code = "forbid"
+
+[target.'cfg(windows)'.build-dependencies]
+tauri-winres = "=0.3.5"

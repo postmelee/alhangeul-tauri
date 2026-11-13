@@ -81,3 +81,9 @@ Stage 5에서 양 OS TLS 요청 내부, HWP/HWPX 편집·native staged 저장·�
 
 ## 정책 PR 필수 검사 보완
 PR #136의 첫 필수 검사 run 43467248700에서 automation 1,384개 중 1개가 실패했다. 신규 개인정보 관측 workflow의 inventory 등록 누락이 원인이므로 기존 inventory와 수동 실행·contents:read 계약 검사에 추가했다. 정책 내용 변경은 없다. 필수 check 성공 전에는 병합하지 않는다.
+
+## 정책 공개 완료
+사용자 브라우저 승인 후 PR [#136](https://github.com/postmelee/alhangeul-tauri/pull/136)을 일반 merge로 병합했다. 필수 PR run [43467937687](https://github.com/postmelee/alhangeul-tauri/actions/runs/43467937687)의 Node/Studio·Windows PS·최종 required check 모두 성공. merge SHA `644d0ac52bb364e57907fd7cd98c57ceaf86dce2`를 [Pages run 43468722947](https://github.com/postmelee/alhangeul-tauri/actions/runs/43468722947)에서 성공 배포했다. 공개 privacy/code-signing 및 홈·updates·feedback 5개 URL의 HTTP 200·핵심 문구를 확인했고 공개 개인정보 페이지 브라우저 표시를 확인했다. [응답 hash 기록](../working/assets/task135/readiness/policy-public-readback.json). 이 단락이 앞선 미배포/PR 없음 시점 기록을 대체한다. 앱 릴리스·SignPath 신청/가입/서명은 하지 않았다.
+
+## Stage 7 진행
+자체 자동 업데이트 확인의 기본 꺼짐·명시 선택 저장과 Windows helper 제품명/버전 resource 보완을 구현했다. 새로운 bytes의 native/package 수용 전이므로 현재 안정 릴리스 기능으로 안내하지 않는다. 로컬 submodule 전체 다운로드는 대용량 때문에 중단했고 Git이 임시 clone을 정리했다. 이후 blob filter와 sparse checkout으로 exact v0.9.0 소스만 확보했다. 큰 saved fixture 모음은 내려받지 않아 전체 automation의 fixture 의존 검사는 CI에서 수행한다. 기존 사용자 checkout은 보존한다.

@@ -248,6 +248,11 @@ jobs:
         if: matrix.name == 'windows-x64'
         run: pnpm run build:thumbnail-binaries -- --target x86_64-pc-windows-msvc
 
+      - name: Verify Windows helper product metadata
+        if: matrix.name == 'windows-x64'
+        shell: pwsh
+        run: ./scripts/privacy/verify-windows-product-metadata.ps1
+
       - name: Test desktop Rust
         if: inputs.run_tests
         run: pnpm run test:desktop

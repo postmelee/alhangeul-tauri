@@ -1,3 +1,4 @@
+import { createUpdatePreferences } from './update-preferences';
 import { ModalDialog } from '@upstream/ui/dialog';
 import {
   ensureDesktopUpdater,
@@ -35,7 +36,9 @@ class UpdateDialog extends ModalDialog {
     this.content = document.createElement('div');
     this.content.className = 'updater-dialog-content';
     this.render(this.controller.current());
-    return this.content;
+    const body = document.createElement('div');
+    body.append(this.content, createUpdatePreferences());
+    return body;
   }
 
   protected onConfirm(): void {}

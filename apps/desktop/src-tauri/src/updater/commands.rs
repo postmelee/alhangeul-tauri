@@ -11,7 +11,7 @@ const MANUAL_DOWNLOADS_URL: &str = "https://postmelee.github.io/alhangeul-tauri/
 pub(crate) fn setup(app: &mut App) -> tauri::Result<()> {
     let eligibility = detect_updater_target(&NativeTargetProbe);
     let service = build_service(app, eligibility)?;
-    let startup_enabled = service.is_enabled();
+    let startup_enabled = service.is_enabled() && super::preferences::startup_enabled(app.handle());
     let _ = app.manage(service.clone());
     if startup_enabled {
         let app_handle = app.handle().clone();

@@ -1,0 +1,27 @@
+[
+  {
+    "url": "https://postmelee.github.io/alhangeul-tauri/privacy/",
+    "status": 200,
+    "sha256": "b50ad9d8519f44a30787f39906b3868917d99dd37ce1fcb7efdd3d6d3d936b47"
+  },
+  {
+    "url": "https://postmelee.github.io/alhangeul-tauri/code-signing/",
+    "status": 200,
+    "sha256": "4253d0e10a4b2c8c3788fcb87f3808c261715bcdeb8ac445efea595fb8885e33"
+  },
+  {
+    "url": "https://postmelee.github.io/alhangeul-tauri/",
+    "status": 200,
+    "sha256": "534a5f891e36c76583005065a06d54b7d860b104c8a4d4b87395c8103c639bb9"
+  },
+  {
+    "url": "https://postmelee.github.io/alhangeul-tauri/updates/",
+    "status": 200,
+    "sha256": "435ca4b2f1fb6cfb95ceeb6d0fba0a06bb933143d811eebe3eb8b8949234dd1c"
+  },
+  {
+    "url": "https://postmelee.github.io/alhangeul-tauri/feedback/",
+    "status": 200,
+    "sha256": "edc0f1b57caaf42a502a72f94431d67940ebb0d13a5c75c1019bb5da4f80bb23"
+  }
+]

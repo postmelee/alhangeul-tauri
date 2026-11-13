@@ -1,5 +1,6 @@
 pub(crate) mod commands;
 pub(crate) mod model;
+pub(crate) mod preferences;
 pub(crate) mod service;
 pub(crate) mod target;
 
