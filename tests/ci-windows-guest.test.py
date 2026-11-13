@@ -132,3 +132,26 @@ bad["upgradeProbes"][0].update(status="failed",bitmapPresent=None)
 assert not guest_run.guest_observation_complete(bad,False,"nsis-upgrade")
 bad=copy.deepcopy(upgrade);bad["baselineProbes"][0]["status"]="skipped"
 assert not guest_run.guest_observation_complete(bad,False,"nsis-upgrade")
+
+# Fixed public-fixture requests match the worker's binary protocol offsets; reject changed input.
+import struct, tempfile
+from pathlib import Path
+from unittest.mock import patch
+spec=importlib.util.spec_from_file_location("worker_input", "scripts/ci/guest-ui-worker-input.py")
+worker_input=importlib.util.module_from_spec(spec);spec.loader.exec_module(worker_input)
+with tempfile.TemporaryDirectory() as temporary:
+ p=Path(temporary);(p/"verification").mkdir()
+ data=b"synthetic-public-fixture";(p/"fixture.hwp").write_bytes(data)
+ fixture=dict(id="small-hwp",path="fixture.hwp",sha256=hashlib.sha256(data).hexdigest())
+ with patch.object(worker_input.subprocess,"check_output",return_value="ab"*32+"  fixture.hwp\n") as digest:
+  report=worker_input.prepare(p,fixture)
+  raw=(p/"verification/small-hwp.request").read_bytes()
+  assert raw[:8]==b"ALHGREQ\0" and struct.unpack_from("<H",raw,8)==(1,)
+  assert struct.unpack_from("<I",raw,12)==(256,) and struct.unpack_from("<Q",raw,16)==(len(data),)
+  assert raw[10:12]==bytes(2) and raw[24:32]==bytes(8) and raw[32:64]==bytes.fromhex("ab"*32)
+  assert raw[64:]==data and report["requestSha256"]==hashlib.sha256(raw).hexdigest()
+  digest.assert_called_once()
+  (p/"fixture.hwp").write_bytes(b"changed")
+  try: worker_input.prepare(p,fixture)
+  except RuntimeError: pass
+  else: raise AssertionError("changed worker fixture accepted")

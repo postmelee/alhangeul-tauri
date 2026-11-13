@@ -81,7 +81,11 @@ def prepare_product(root, payload):
     upgrade = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(upgrade)
     upgrade.prepare(payload, value)
+    prepare_fixtures(payload, value)
     (payload / "input.json").write_text(json.dumps(value, indent=2))
+
+
+def prepare_fixtures(payload, value):
     manifest = json.loads(Path("scripts/windows-thumbnail-fixtures.json").read_text())
     for fixture in manifest["fixtures"]:
         target = payload / fixture["path"]
@@ -94,6 +98,10 @@ def prepare_product(root, payload):
                         str(target), url], check=True, timeout=120)
         if digest(target) != fixture["sha256"]:
             raise RuntimeError("fixture-hash-mismatch")
+    spec = importlib.util.spec_from_file_location("worker_input", Path(__file__).with_name("guest-ui-worker-input.py"))
+    worker_input = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(worker_input)
+    value["workerDiagnostic"] = worker_input.prepare(payload, next(f for f in manifest["fixtures"] if f["id"] == "small-hwp"))
 
 
 def prepare_media(root):
@@ -106,7 +114,8 @@ def prepare_media(root):
                         payload / ("scripts/windows-thumbnail-" + suffix))
     for name in ("guest-ui-probe.ps1", "guest-ui-installer-state.ps1", "hosted-ui-view.ps1",
                  "guest-ui-process.ps1", "guest-ui-admin.ps1", "guest-ui-operations.ps1",
-                 "guest-ui-upgrade.ps1", "guest-ui-prerequisites.ps1", "guest-ui-upgrade-diagnostic.ps1"):
+                 "guest-ui-upgrade.ps1", "guest-ui-prerequisites.ps1", "guest-ui-upgrade-diagnostic.ps1",
+                 "guest-ui-worker-diagnostic.ps1"):
         shutil.copyfile("scripts/ci/" + name, payload / ("scripts/ci/" + name))
     shutil.copyfile("scripts/ci/guest-ui-bootstrap.ps1", media / "bootstrap.ps1")
     prepare_product(root, payload)

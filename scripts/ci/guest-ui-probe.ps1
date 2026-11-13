@@ -15,6 +15,7 @@ function Save-State {
 . (Join-Path $PSScriptRoot 'guest-ui-operations.ps1')
 . (Join-Path $PSScriptRoot 'guest-ui-upgrade.ps1')
 . (Join-Path $PSScriptRoot 'guest-ui-upgrade-diagnostic.ps1')
+. (Join-Path $PSScriptRoot 'guest-ui-worker-diagnostic.ps1')
 function Send-Evidence {
   foreach ($file in @(Get-ChildItem -LiteralPath $output -File | Where-Object { $_.Extension -in @('.json', '.png') })) {
     if ($file.Length -gt 5MB -or $file.Name -notmatch '^[a-z0-9-]+\.(json|png)$') { throw 'invalid-evidence-file' }
@@ -87,7 +88,13 @@ try {
   Assert-GuestBinaries $inputData.binaries $directory
   if ($inputData.scenario -eq 'nsis-upgrade') {
     $report['upgradeBinariesMatched'] = $true
-    $report['upgradeProbes'] = @(Get-GuestProbes upgrade -ObserveFailures)
+    $report['upgradeProbes'] = @(Get-GuestProbes upgrade -ObserveFailures -OnFirstFailure {
+      param($Id)
+      if ($Id -eq 'small-hwp') {
+        try { $report['workerDiagnostic'] = Measure-GuestWorker $directory }
+        catch { $report['workerDiagnostic'] = @{ status = 'failed'; failure = $_.Exception.Message } }
+      }
+    })
     if (@($report.upgradeProbes | Where-Object { $_.status -ne 'ok' -or -not $_.bitmapPresent }).Count -gt 0) {
       $report['failure'] = 'upgrade-immediate-thumbnail-failed'
       $report.phase = 'upgrade-diagnostic'; Save-State
