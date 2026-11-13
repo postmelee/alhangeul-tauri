@@ -12,10 +12,13 @@ function Inventory($phase) {
   })
   @{phase=$phase; logs=$logs; appExists=(Test-Path $appPath)} | ConvertTo-Json -Depth 5 | Set-Content (Join-Path $out "lifecycle-$phase.json")
 }
+Write-Host 'Starting isolated TLS proxy'
 $proxy = Start-Process mitmdump -ArgumentList @('-q','--listen-host','127.0.0.1','--listen-port','8080','--set',"confdir=$conf",'-s','scripts/privacy/tls-observer.py') -PassThru
 try {
   for ($n=0; $n -lt 30 -and -not (Test-Path "$conf/mitmproxy-ca-cert.cer"); $n++) { Start-Sleep 1 }
-  $cert = Import-Certificate -FilePath "$conf/mitmproxy-ca-cert.cer" -CertStoreLocation Cert:\CurrentUser\Root
+  Write-Host 'Installing test CA in disposable runner machine store'
+  $cert = Import-Certificate -FilePath "$conf/mitmproxy-ca-cert.cer" -CertStoreLocation Cert:\LocalMachine\Root
+  Write-Host 'Test CA installed'
   $env:HTTPS_PROXY='http://127.0.0.1:8080'
   $env:HTTP_PROXY=$env:HTTPS_PROXY
   $env:NO_PROXY='localhost,127.0.0.1'
@@ -23,6 +26,7 @@ try {
   foreach ($name in @('Alhangeul.exe','io.github.postmelee.alhangeul')) {
     New-ItemProperty $policy -Name $name -PropertyType String -Value '--remote-debugging-port=9222 --proxy-server=http://127.0.0.1:8080 --disable-quic' -Force | Out-Null
   }
+  Write-Host 'Installing public NSIS'
   $install=Start-Process (Join-Path $out 'Alhangeul_0.1.3_x64-setup.exe') -ArgumentList '/S' -Wait -PassThru
   if ($install.ExitCode -ne 0) { throw 'installation failed' }
   'startup' | Set-Content (Join-Path $out 'phase')
@@ -58,7 +62,7 @@ try {
 } finally {
   Get-Process Alhangeul -ErrorAction SilentlyContinue | Stop-Process -Force
   Stop-Process -Id $proxy.Id -Force -ErrorAction SilentlyContinue
-  if ($cert) { Remove-Item "Cert:\CurrentUser\Root\$($cert.Thumbprint)" }
+  if ($cert) { Remove-Item "Cert:\LocalMachine\Root\$($cert.Thumbprint)" }
   foreach ($name in @('Alhangeul.exe','io.github.postmelee.alhangeul')) { Remove-ItemProperty $policy -Name $name -ErrorAction SilentlyContinue }
   Remove-Item $conf -Recurse -Force -ErrorAction SilentlyContinue
 }
