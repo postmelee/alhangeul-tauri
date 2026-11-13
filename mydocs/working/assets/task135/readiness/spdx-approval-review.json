@@ -1,0 +1,32 @@
+[
+  {
+    "licenseId": "IJG",
+    "isOsiApproved": false,
+    "isFsfLibre": true,
+    "source": "https://spdx.org/licenses/IJG.json"
+  },
+  {
+    "licenseId": "CDLA-Permissive-2.0",
+    "isOsiApproved": false,
+    "isFsfLibre": null,
+    "source": "https://spdx.org/licenses/CDLA-Permissive-2.0.json"
+  },
+  {
+    "licenseId": "LPPL-1.3c",
+    "isOsiApproved": true,
+    "isFsfLibre": null,
+    "source": "https://spdx.org/licenses/LPPL-1.3c.json"
+  },
+  {
+    "licenseId": "OFL-1.1",
+    "isOsiApproved": true,
+    "isFsfLibre": true,
+    "source": "https://spdx.org/licenses/OFL-1.1.json"
+  },
+  {
+    "licenseId": "Unicode-3.0",
+    "isOsiApproved": true,
+    "isFsfLibre": null,
+    "source": "https://spdx.org/licenses/Unicode-3.0.json"
+  }
+]

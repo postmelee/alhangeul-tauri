@@ -118,3 +118,10 @@ full run 43475282411에서 세 target core가 통과했고 Windows helper 빌드
 이전 e0a674e7 full run은 Windows desktop/worker/handler 테스트·lint와 metadata, 세 target core 성공을 보존한 뒤 남은 패키징을 취소했다. Linux lint 실패를 수정한 7b37eec86f53db8eb02ca2e021493d2d0060d508 full run [43482991954](https://github.com/postmelee/alhangeul-tauri/actions/runs/43482991954)으로 전환했다. 이전 run을 성공으로 재분류하지 않는다.
 
 기존 privacy workflow에 candidate-audit 소비자를 추가했다. 성공한 producer의 source/run/artifact metadata 및 다운로드 digest·파일 inventory를 확인한 뒤 재빌드 없이 Windows 실제 안내 화면·설치 resource hash, Linux AppImage 내부 resource hash를 검증한다. 로컬 workflow 계약 28개·actionlint·resource verifier의 정상 bytes 수용/변조 bytes 거부가 통과했다. 실제 OS 소비자 결과는 아직 없다.
+
+## 실제 Linux 선택·재시작·TLS 수용
+run 43479164615의 Linux 관측 step과 증거 upload가 성공했다. exact source/harness `456451a8ffae83213b8932e955939006187b2f2d`, AppImage SHA-256 `a2781d4b0896212e628c12132ccd9e2b86e1c05243c7e7fd2b47e0a91b631b13`. 별도 비게시 updater 시험 구성이며 현재 일반 full 후보 7b37eec8의 같은 설치 bytes를 검사한 것은 아니다.
+
+실제 첫 실행 안내 화면에서 명시 checkbox 선택을 저장했다. 선택 없음/끄고 재시작/손상 설정의 자체 startup manifest 요청은 각 0건, 켠 뒤 재시작은 HTTP 200 1건이었다. 켜기 직후에는 요청하지 않았으며 수동 확인과 손상 설정 복구 뒤 수동 확인 각각 200 positive control을 확인했다. 스크린샷에서 기본 꺼짐/켜짐과 안내·닫기 버튼이 표시되는 것을 직접 확인했다. [증거](../working/assets/task135/readiness/preferences-linux/identity.json). 이 시험은 자체 업데이트 endpoint에 관한 것으로 OS·런타임 전체 무통신을 뜻하지 않는다. Windows 시험과 full/package/소비자 수용은 별도다.
+
+소비자 harness 60a0ba7d의 fast run [43483824931](https://github.com/postmelee/alhangeul-tauri/actions/runs/43483824931)은 Node/Studio와 Windows PowerShell parser·회귀 모두 성공했다. Linux 실제 선택 관측 job도 최종 성공했다. 새 full producer 43482991954는 native/package 단계가 진행 중이며 아직 설치본 소비자를 실행하지 않았다.
