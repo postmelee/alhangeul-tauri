@@ -4,7 +4,7 @@
 GitHub Issue: [#132](https://github.com/postmelee/alhangeul-tauri/issues/132)
 마일스톤: M010
 
-현재: Stage 3.6 — 성공 제품의 MSI Windows 11 클라이언트·공개본 동일 버전 NSIS 업그레이드·Windows 10 guest 검증 진행 중. Stage 3.5 full/clean NSIS 근거는 보존하며 미완료 실행을 수용하지 않음. PR 전 보고 유지.
+현재: Stage 3.6 검증 완료 — 새 제품의 Windows 10/11 × NSIS/MSI/공개본 동일 버전 NSIS 업그레이드 여섯 경로 통과. Stage 4 최종 보고·PR 전 알림 진행 중. 최종 서명 파일·재배포는 별도.
 
 2026-11-11 수행계획 승인과 이슈 해결까지 연속 진행 지시를 적용한다. PR 생성 전 보고한다.
 
@@ -603,3 +603,27 @@ Windows 최소 수정: 기존 frame 선택 1,500ms와 256MiB/active process 1/�
 
 
 run43453382283 attempt 1 전체 success를 확인했다. 세 플랫폼 core/native/package와 Windows installer 계약·일반 사용자 NSIS 및 공개 v0.1.3 동일 버전 수동 업그레이드가 통과했다. NSIS elevated 진단과 MSI forced-reinstall의 조건부 계약은 실제 client 화면이나 재부팅 후 수용을 대체하지 않는다. 확인된 artifact 14059615097/e799040e52d81e670eda4ed9080c7d8f6a3a0d1321c1088cf68a2f8f17ba0bb9를 고정한 후속 harness를 게시하고 Windows 11/10 × NSIS/MSI/NSIS-upgrade 여섯 독립 guest를 실행한다. 화면 10/30/60초와 최초 후보 요청·정리 결과를 모두 검토하며 PR 전 보고를 유지한다.
+
+
+새 제품 ece8bb5e / harness 92ed2d2b의 실제 guest 다섯 경로를 검산했다. Windows 11 NSIS run43469292558, MSI run43469285593, 공개본 동일 버전 NSIS 업그레이드 run43469281208과 Windows 10 MSI run43469304414, NSIS 업그레이드 run43469298756은 모두 attempt 1 success다. 각 ZIP digest·producer/source/harness·설치 binary 해시·표준 token·실제 Explorer 소유권·설치/재설치/제거 0·API 4/4·설정 복원·소유 VM/디스크 정리를 독립 확인했다. 10/30/60초 원본의 서로 다른 PNG를 직접 확인했으며 모든 시점에 HWP/HWPX/JPG 내용이 보였다. 빈 preview 원본 small-hwp는 내용 비교 대상에서 제외하되 bitmap 성공은 필수로 확인했다. MSI Windows 11의 10/30초와 60초 hash 차이는 UI/대조 JPG 크기 변화이며 HWPX는 첫 10초부터 내용이 있었다.
+
+특히 Windows 11 업그레이드는 같은 VM에서 공개본 최초 small-hwp가 0x8004B200/6,665ms로 실패한 뒤, 후보 교체 직후 같은 원본 경로의 첫 요청이 bitmap 181×256/5,070ms에 성공했다. 나머지 세 fixture도 첫 요청에 성공했고 실패 후 진단·추가 진단 재설치는 실행되지 않았다. 공개본/후보 첫 worker ETW 수명은 각각 10.824ms/27.072ms다. Shell API 전체 경과와 handler 내부 예산은 다른 구간이므로 5,070ms를 strict 5초 반환 보장이라고 해석하지 않는다. 재설치 후 small-hwp API는 2,820ms, 10/30/60초 화면은 모두 39663f96fd8a7ab4d4a39b1b96029d27c8bb035456f6fd01210f2113bafee6ac이다. Local/Roaming sentinel과 trace session/raw ETL 정리도 통과했다.
+
+Windows 10 NSIS fresh run43469311200은 120~1,140초 화면이 같은 TianoCore 로고(sha256 caf23d672e8def13d39bf3f899ac1fe31c371754160d9ae8d10742dde377dd32)에 정체됐다. 20분 checkpoint 14061837820/049381ce1de1b31a28e08f21b7745dd8deb90b0a7e2eb223640454cf0d2b97dd를 보존한 뒤 취소했다. guest.json은 없고 앱 수용은 미실행이다. 최종 artifact 14060404415/db434f61e7e16cbfede8ff6d0ea91a883370c21b5f9deafa69c35b3c027e3df1, supervisor 종료·QEMU/TPM 회수·증거 업로드·private disk/credentials 삭제 step success를 확인했다. OS 부팅 정체의 내부 원인은 미확정이다. 같은 제품·harness를 그대로 사용한 새 run43473883158에서 Windows 10 NSIS만 재실행한다. 이 재실행이 끝나기 전 전체 6경로 수용과 Stage 3.6 완료를 주장하지 않는다.
+
+
+## Stage 4 인계용 동일 v0.1.3 재배포안 (미실행)
+
+현재 검증한 ece8bb5e ordinary MSI/NSIS는 수정 기능의 수용 근거이며 최종 updater 서명 파일 수용을 대신하지 않는다. PR 생성 전 보고 후 devel 병합과 기존 release branch 절차를 거쳐 실제 배포할 source SHA를 고정한다. 이번 PR은 버전을 올리거나 기존 공개 태그·asset·feed를 변경하지 않는다.
+
+1. 기존 v0.1.3 source bcb892d49a9003615f3acd980babd71e59e147dd, Release metadata와 11개 asset의 원본/hash를 보존한다. 기존 보관본 11개는 digest 일치를 확인했으며 실제 교체 직전에 원격 상태를 다시 읽는다.
+2. 병합된 exact source에서 publish_release=false로 v0.1.3 서명 후보를 생성한다. ordinary 검증과 binary가 달라지면 새 NSIS/MSI·DLL/worker hash로 설치/Explorer/API/제거를 다시 수용한다. 새 파일 검증 전에 공개 asset을 먼저 교체하지 않는다.
+3. NSIS는 최초 공개본에서 같은 버전 후보로 /UPDATE·재설치·제거와 Local/Roaming 데이터 보존을 이미 검증했다. 최종 서명 후보에서도 이 경로를 확인한다. MSI의 이번 client 결과는 후보 새 설치와 일반 REINSTALLMODE=omus 재설치이며, 이전 공개 MSI에서 새 MSI로의 교체와 forced-reinstall 3010 재부팅 후 성공을 대신하지 않는다. 실제 최종 MSI ProductCode/UpgradeCode/PackageCode와 재부팅 요구를 대조해 교체 경로를 확정한다.
+4. 기존 updater는 update_version > current_version을 요구하므로 기존 v0.1.3에 자동 업데이트 알림이 뜬다고 안내하지 않는다. 같은 버전 재배포는 수동 다운로드/교체 안내가 필요하다.
+5. 현재 publish job은 기존 tag가 다른 source면 거부하고 gh release create만 수행한다. 따라서 일반 게시 workflow 재실행만으로 덮어쓸 수 없다. 최종 source·파일/hash·서명·보존/복구 자료가 준비된 뒤 기존 v0.1.3 tag 이동 여부와 asset 교체 목록, checksum/inventory/Pages 갱신 순서를 구체적으로 보고한다. tag 이동·기존 asset 교체는 그 구체안에 대한 명시 승인 후 실행한다.
+6. 게시한다면 공개 bytes를 다시 다운로드해 승인한 후보/hash/서명과 일치하는지 확인한다. 실패 시 이전 tag/11개 asset/inventory/checksum과 사이트 데이터를 복구할 수 있도록 교체 전 상태를 보존한다. Pages는 별도 승인된 devel source로 배포하며 제품 source와 혼동하지 않는다.
+
+이 안은 배포 준비 순서와 남은 검증을 명시한 것이며 PR·merge·서명 후보 생성·태그 이동·Release 교체·Pages 게시를 수행했다는 기록이 아니다.
+
+
+Windows 10 NSIS 재실행 run43473883158도 attempt 1 success다. 최종 artifact14062488370/digest06689455b43dc373eac5ec79f410d9ab83a8cf53d862ebe39e657f06aea19e8e, 정확한 설치 bytes·표준 사용자·install/reinstall/uninstall0·API4/4·VC 부재126·설정/제품/VM 정리를 독립 검산했다. 10/30/60초 PNG는 모두 05c92e4d2f5b792015a9454e9ec12dca53bc75d14dba1073652e0b39bde2a9a6이며 HWP/HWPX/JPG 내용을 직접 확인했다. 새 제품의 Windows10/11×세경로 관측을 완료했다. Stage3.6 보고서에 여섯 run/artifact/화면 hash와 한계를 기록하고 연속 승인 범위에서 Stage4 최종 보고·PR 전 알림으로 진행한다. 이전 부팅 실패의 원인 해결이나 최종 서명 파일·재배포 수용을 주장하지 않는다.
