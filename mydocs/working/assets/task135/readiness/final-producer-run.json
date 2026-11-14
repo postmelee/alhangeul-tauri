@@ -1,0 +1,1866 @@
+{
+  "conclusion": "success",
+  "headSha": "efe13e61d954a9ae5c801ed447bf3cbea105f5e2",
+  "jobs": [
+    {
+      "completedAt": "2026-11-13T21:11:53Z",
+      "conclusion": "success",
+      "databaseId": 132172201363,
+      "name": "artifact / plan",
+      "startedAt": "2026-11-13T21:11:43Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completedAt": "2026-11-13T21:11:45Z",
+          "conclusion": "success",
+          "name": "Set up job",
+          "number": 1,
+          "startedAt": "2026-11-13T21:11:44Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:11:49Z",
+          "conclusion": "success",
+          "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "number": 2,
+          "startedAt": "2026-11-13T21:11:45Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:11:50Z",
+          "conclusion": "success",
+          "name": "Run actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+          "number": 3,
+          "startedAt": "2026-11-13T21:11:49Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:11:50Z",
+          "conclusion": "success",
+          "name": "Run node scripts/ci/plan-artifacts.mjs",
+          "number": 4,
+          "startedAt": "2026-11-13T21:11:50Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:11:50Z",
+          "conclusion": "success",
+          "name": "Post Run actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+          "number": 7,
+          "startedAt": "2026-11-13T21:11:50Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:11:50Z",
+          "conclusion": "success",
+          "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "number": 8,
+          "startedAt": "2026-11-13T21:11:50Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:11:50Z",
+          "conclusion": "success",
+          "name": "Complete job",
+          "number": 9,
+          "startedAt": "2026-11-13T21:11:50Z",
+          "status": "completed"
+        }
+      ],
+      "url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/43508471859/job/132172201363"
+    },
+    {
+      "completedAt": "2026-11-13T21:11:40Z",
+      "conclusion": "skipped",
+      "databaseId": 132172202498,
+      "name": "Build updater ${{ matrix.name }}",
+      "startedAt": "2026-11-13T21:11:41Z",
+      "status": "completed",
+      "steps": [],
+      "url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/43508471859/job/132172202498"
+    },
+    {
+      "completedAt": "2026-11-13T21:11:40Z",
+      "conclusion": "skipped",
+      "databaseId": 132172203138,
+      "name": "Run updater native negative acceptance",
+      "startedAt": "2026-11-13T21:11:41Z",
+      "status": "completed",
+      "steps": [],
+      "url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/43508471859/job/132172203138"
+    },
+    {
+      "completedAt": "2026-11-13T21:11:40Z",
+      "conclusion": "skipped",
+      "databaseId": 132172203428,
+      "name": "Test dialog policy and observe controlled confirmation",
+      "startedAt": "2026-11-13T21:11:41Z",
+      "status": "completed",
+      "steps": [],
+      "url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/43508471859/job/132172203428"
+    },
+    {
+      "completedAt": "2026-11-13T21:11:40Z",
+      "conclusion": "skipped",
+      "databaseId": 132172203634,
+      "name": "release-file-acceptance",
+      "startedAt": "2026-11-13T21:11:41Z",
+      "status": "completed",
+      "steps": [],
+      "url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/43508471859/job/132172203634"
+    },
+    {
+      "completedAt": "2026-11-13T21:11:40Z",
+      "conclusion": "skipped",
+      "databaseId": 132172203671,
+      "name": "Diagnose Linux window automation only",
+      "startedAt": "2026-11-13T21:11:41Z",
+      "status": "completed",
+      "steps": [],
+      "url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/43508471859/job/132172203671"
+    },
+    {
+      "completedAt": "2026-11-13T21:11:40Z",
+      "conclusion": "skipped",
+      "databaseId": 132172203687,
+      "name": "release-linux-file-acceptance",
+      "startedAt": "2026-11-13T21:11:41Z",
+      "status": "completed",
+      "steps": [],
+      "url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/43508471859/job/132172203687"
+    },
+    {
+      "completedAt": "2026-11-13T21:11:40Z",
+      "conclusion": "skipped",
+      "databaseId": 132172203818,
+      "name": "Run updater native acceptance",
+      "startedAt": "2026-11-13T21:11:41Z",
+      "status": "completed",
+      "steps": [],
+      "url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/43508471859/job/132172203818"
+    },
+    {
+      "completedAt": "2026-11-13T21:11:40Z",
+      "conclusion": "skipped",
+      "databaseId": 132172204134,
+      "name": "Build updater acceptance ${{ matrix.role }} ${{ matrix.name }}",
+      "startedAt": "2026-11-13T21:11:41Z",
+      "status": "completed",
+      "steps": [],
+      "url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/43508471859/job/132172204134"
+    },
+    {
+      "completedAt": "2026-11-13T21:11:40Z",
+      "conclusion": "skipped",
+      "databaseId": 132172204992,
+      "name": "release-fedora-vm-acceptance",
+      "startedAt": "2026-11-13T21:11:41Z",
+      "status": "completed",
+      "steps": [],
+      "url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/43508471859/job/132172204992"
+    },
+    {
+      "completedAt": "2026-11-13T21:11:40Z",
+      "conclusion": "skipped",
+      "databaseId": 132172205035,
+      "name": "Verify complete updater release inventory",
+      "startedAt": "2026-11-13T21:11:41Z",
+      "status": "completed",
+      "steps": [],
+      "url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/43508471859/job/132172205035"
+    },
+    {
+      "completedAt": "2026-11-13T21:11:40Z",
+      "conclusion": "skipped",
+      "databaseId": 132172205089,
+      "name": "Verify nonpublishing updater acceptance candidate",
+      "startedAt": "2026-11-13T21:11:41Z",
+      "status": "completed",
+      "steps": [],
+      "url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/43508471859/job/132172205089"
+    },
+    {
+      "completedAt": "2026-11-13T21:11:40Z",
+      "conclusion": "skipped",
+      "databaseId": 132172205462,
+      "name": "Publish verified updater release",
+      "startedAt": "2026-11-13T21:11:41Z",
+      "status": "completed",
+      "steps": [],
+      "url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/43508471859/job/132172205462"
+    },
+    {
+      "completedAt": "2026-11-13T21:11:40Z",
+      "conclusion": "skipped",
+      "databaseId": 132172252084,
+      "name": "Verify existing Windows product PDF export",
+      "startedAt": "2026-11-13T21:11:46Z",
+      "status": "completed",
+      "steps": [],
+      "url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/43508471859/job/132172252084"
+    },
+    {
+      "completedAt": "2026-11-13T21:11:40Z",
+      "conclusion": "skipped",
+      "databaseId": 132172258746,
+      "name": "production-upgrade-windows",
+      "startedAt": "2026-11-13T21:11:47Z",
+      "status": "completed",
+      "steps": [],
+      "url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/43508471859/job/132172258746"
+    },
+    {
+      "completedAt": "2026-11-13T21:11:40Z",
+      "conclusion": "skipped",
+      "databaseId": 132172265528,
+      "name": "site-capture",
+      "startedAt": "2026-11-13T21:11:48Z",
+      "status": "completed",
+      "steps": [],
+      "url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/43508471859/job/132172265528"
+    },
+    {
+      "completedAt": "2026-11-13T21:11:40Z",
+      "conclusion": "skipped",
+      "databaseId": 132172276802,
+      "name": "font-performance",
+      "startedAt": "2026-11-13T21:11:49Z",
+      "status": "completed",
+      "steps": [],
+      "url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/43508471859/job/132172276802"
+    },
+    {
+      "completedAt": "2026-11-13T21:11:40Z",
+      "conclusion": "skipped",
+      "databaseId": 132172282256,
+      "name": "production-upgrade-linux",
+      "startedAt": "2026-11-13T21:11:50Z",
+      "status": "completed",
+      "steps": [],
+      "url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/43508471859/job/132172282256"
+    },
+    {
+      "completedAt": "2026-11-13T21:14:51Z",
+      "conclusion": "success",
+      "databaseId": 132172313172,
+      "name": "artifact / fast / Fast Windows PowerShell contracts",
+      "startedAt": "2026-11-13T21:11:57Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completedAt": "2026-11-13T21:11:59Z",
+          "conclusion": "success",
+          "name": "Set up job",
+          "number": 1,
+          "startedAt": "2026-11-13T21:11:58Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:12:09Z",
+          "conclusion": "success",
+          "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "number": 2,
+          "startedAt": "2026-11-13T21:11:59Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:12:15Z",
+          "conclusion": "success",
+          "name": "Run actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+          "number": 3,
+          "startedAt": "2026-11-13T21:12:09Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:12:16Z",
+          "conclusion": "success",
+          "name": "Check release notes",
+          "number": 4,
+          "startedAt": "2026-11-13T21:12:15Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:12:22Z",
+          "conclusion": "success",
+          "name": "Test release generation contracts",
+          "number": 5,
+          "startedAt": "2026-11-13T21:12:16Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:12:26Z",
+          "conclusion": "success",
+          "name": "Test production upgrade contracts",
+          "number": 6,
+          "startedAt": "2026-11-13T21:12:22Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:14:45Z",
+          "conclusion": "success",
+          "name": "Parse PowerShell and run isolated regressions",
+          "number": 7,
+          "startedAt": "2026-11-13T21:12:26Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:14:45Z",
+          "conclusion": "success",
+          "name": "Record limited scope",
+          "number": 8,
+          "startedAt": "2026-11-13T21:14:45Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:14:47Z",
+          "conclusion": "success",
+          "name": "Preserve Windows script regression evidence",
+          "number": 9,
+          "startedAt": "2026-11-13T21:14:45Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:14:47Z",
+          "conclusion": "success",
+          "name": "Post Run actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+          "number": 17,
+          "startedAt": "2026-11-13T21:14:47Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:14:49Z",
+          "conclusion": "success",
+          "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "number": 18,
+          "startedAt": "2026-11-13T21:14:47Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:14:49Z",
+          "conclusion": "success",
+          "name": "Complete job",
+          "number": 19,
+          "startedAt": "2026-11-13T21:14:49Z",
+          "status": "completed"
+        }
+      ],
+      "url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/43508471859/job/132172313172"
+    },
+    {
+      "completedAt": "2026-11-13T21:14:40Z",
+      "conclusion": "success",
+      "databaseId": 132172313212,
+      "name": "artifact / fast / Fast Node and Studio contracts",
+      "startedAt": "2026-11-13T21:11:55Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completedAt": "2026-11-13T21:11:58Z",
+          "conclusion": "success",
+          "name": "Set up job",
+          "number": 1,
+          "startedAt": "2026-11-13T21:11:56Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:14:04Z",
+          "conclusion": "success",
+          "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "number": 2,
+          "startedAt": "2026-11-13T21:11:58Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:14:07Z",
+          "conclusion": "success",
+          "name": "Run actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+          "number": 3,
+          "startedAt": "2026-11-13T21:14:04Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:14:07Z",
+          "conclusion": "success",
+          "name": "Run corepack enable",
+          "number": 4,
+          "startedAt": "2026-11-13T21:14:07Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:14:09Z",
+          "conclusion": "success",
+          "name": "Run pnpm run fetch:rhwp-pin-tag",
+          "number": 5,
+          "startedAt": "2026-11-13T21:14:07Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:14:11Z",
+          "conclusion": "success",
+          "name": "Run pnpm install --frozen-lockfile",
+          "number": 6,
+          "startedAt": "2026-11-13T21:14:09Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:14:12Z",
+          "conclusion": "success",
+          "name": "Run pnpm run check:product-boundary",
+          "number": 7,
+          "startedAt": "2026-11-13T21:14:11Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:14:12Z",
+          "conclusion": "success",
+          "name": "Run pnpm run check:product-version",
+          "number": 8,
+          "startedAt": "2026-11-13T21:14:12Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:14:12Z",
+          "conclusion": "success",
+          "name": "Run pnpm run check:release-metadata",
+          "number": 9,
+          "startedAt": "2026-11-13T21:14:12Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:14:13Z",
+          "conclusion": "success",
+          "name": "Run pnpm run check:rhwp-pin",
+          "number": 10,
+          "startedAt": "2026-11-13T21:14:12Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:14:13Z",
+          "conclusion": "success",
+          "name": "Run pnpm run check:committed-rhwp",
+          "number": 11,
+          "startedAt": "2026-11-13T21:14:13Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:14:14Z",
+          "conclusion": "success",
+          "name": "Run pnpm run check:release-notes",
+          "number": 12,
+          "startedAt": "2026-11-13T21:14:13Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:14:14Z",
+          "conclusion": "success",
+          "name": "Run pnpm run build:pages",
+          "number": 13,
+          "startedAt": "2026-11-13T21:14:14Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:14:14Z",
+          "conclusion": "success",
+          "name": "Run pnpm run check:pages",
+          "number": 14,
+          "startedAt": "2026-11-13T21:14:14Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:14:20Z",
+          "conclusion": "success",
+          "name": "Run pnpm run test:automation",
+          "number": 15,
+          "startedAt": "2026-11-13T21:14:14Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:14:22Z",
+          "conclusion": "success",
+          "name": "Run pnpm run typecheck:gui",
+          "number": 16,
+          "startedAt": "2026-11-13T21:14:20Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:14:24Z",
+          "conclusion": "success",
+          "name": "Run pnpm run test:upstream",
+          "number": 17,
+          "startedAt": "2026-11-13T21:14:22Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:14:32Z",
+          "conclusion": "success",
+          "name": "Run pnpm run test:studio",
+          "number": 18,
+          "startedAt": "2026-11-13T21:14:24Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:14:38Z",
+          "conclusion": "success",
+          "name": "Run pnpm run build:studio",
+          "number": 19,
+          "startedAt": "2026-11-13T21:14:32Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:14:38Z",
+          "conclusion": "success",
+          "name": "Record limited scope",
+          "number": 20,
+          "startedAt": "2026-11-13T21:14:38Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:14:38Z",
+          "conclusion": "success",
+          "name": "Post Run actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+          "number": 39,
+          "startedAt": "2026-11-13T21:14:38Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:14:39Z",
+          "conclusion": "success",
+          "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "number": 40,
+          "startedAt": "2026-11-13T21:14:38Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:14:39Z",
+          "conclusion": "success",
+          "name": "Complete job",
+          "number": 41,
+          "startedAt": "2026-11-13T21:14:39Z",
+          "status": "completed"
+        }
+      ],
+      "url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/43508471859/job/132172313212"
+    },
+    {
+      "completedAt": "2026-11-13T22:01:01Z",
+      "conclusion": "success",
+      "databaseId": 132173853884,
+      "name": "artifact / windows / Build windows-x64",
+      "startedAt": "2026-11-13T21:14:53Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completedAt": "2026-11-13T21:14:55Z",
+          "conclusion": "success",
+          "name": "Set up job",
+          "number": 1,
+          "startedAt": "2026-11-13T21:14:54Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:18:01Z",
+          "conclusion": "success",
+          "name": "Checkout",
+          "number": 2,
+          "startedAt": "2026-11-13T21:14:55Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:18:01Z",
+          "conclusion": "success",
+          "name": "Verify checked out commit",
+          "number": 3,
+          "startedAt": "2026-11-13T21:18:01Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:18:01Z",
+          "conclusion": "skipped",
+          "name": "Install Linux dependencies",
+          "number": 4,
+          "startedAt": "2026-11-13T21:18:01Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:18:08Z",
+          "conclusion": "success",
+          "name": "Setup Node.js",
+          "number": 5,
+          "startedAt": "2026-11-13T21:18:01Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:18:13Z",
+          "conclusion": "success",
+          "name": "Enable pnpm",
+          "number": 6,
+          "startedAt": "2026-11-13T21:18:08Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:18:25Z",
+          "conclusion": "success",
+          "name": "Resolve pnpm store path",
+          "number": 7,
+          "startedAt": "2026-11-13T21:18:13Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:18:25Z",
+          "conclusion": "success",
+          "name": "Cache pnpm store",
+          "number": 8,
+          "startedAt": "2026-11-13T21:18:25Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:18:47Z",
+          "conclusion": "success",
+          "name": "Setup Rust",
+          "number": 9,
+          "startedAt": "2026-11-13T21:18:25Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:19:03Z",
+          "conclusion": "success",
+          "name": "Cache Cargo workload",
+          "number": 10,
+          "startedAt": "2026-11-13T21:18:47Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:19:03Z",
+          "conclusion": "skipped",
+          "name": "Prepare Linux thumbnailer evidence",
+          "number": 11,
+          "startedAt": "2026-11-13T21:19:03Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:19:03Z",
+          "conclusion": "skipped",
+          "name": "Build Linux thumbnailer",
+          "number": 12,
+          "startedAt": "2026-11-13T21:19:03Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:19:03Z",
+          "conclusion": "skipped",
+          "name": "Record Linux thumbnailer build outcome",
+          "number": 13,
+          "startedAt": "2026-11-13T21:19:03Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:19:03Z",
+          "conclusion": "skipped",
+          "name": "Upload Linux thumbnailer evidence",
+          "number": 14,
+          "startedAt": "2026-11-13T21:19:03Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:19:03Z",
+          "conclusion": "skipped",
+          "name": "Require Linux thumbnailer build success",
+          "number": 15,
+          "startedAt": "2026-11-13T21:19:03Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:19:03Z",
+          "conclusion": "skipped",
+          "name": "Stage Linux thumbnailer package resources",
+          "number": 16,
+          "startedAt": "2026-11-13T21:19:03Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:19:12Z",
+          "conclusion": "success",
+          "name": "Install dependencies",
+          "number": 17,
+          "startedAt": "2026-11-13T21:19:03Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:19:12Z",
+          "conclusion": "skipped",
+          "name": "Test document preview Rust",
+          "number": 18,
+          "startedAt": "2026-11-13T21:19:12Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:19:12Z",
+          "conclusion": "skipped",
+          "name": "Lint document preview Rust",
+          "number": 19,
+          "startedAt": "2026-11-13T21:19:12Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:19:12Z",
+          "conclusion": "skipped",
+          "name": "Lint document preview protocol-only Rust",
+          "number": 20,
+          "startedAt": "2026-11-13T21:19:12Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:19:12Z",
+          "conclusion": "skipped",
+          "name": "Test Linux thumbnailer",
+          "number": 21,
+          "startedAt": "2026-11-13T21:19:12Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:19:12Z",
+          "conclusion": "skipped",
+          "name": "Lint Linux thumbnailer",
+          "number": 22,
+          "startedAt": "2026-11-13T21:19:12Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:19:12Z",
+          "conclusion": "skipped",
+          "name": "Record Linux thumbnailer test outcome",
+          "number": 23,
+          "startedAt": "2026-11-13T21:19:12Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:19:12Z",
+          "conclusion": "skipped",
+          "name": "Upload Linux thumbnailer test evidence",
+          "number": 24,
+          "startedAt": "2026-11-13T21:19:12Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:36:19Z",
+          "conclusion": "success",
+          "name": "Build Windows thumbnail binaries",
+          "number": 25,
+          "startedAt": "2026-11-13T21:19:12Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:36:20Z",
+          "conclusion": "success",
+          "name": "Verify Windows helper product metadata",
+          "number": 26,
+          "startedAt": "2026-11-13T21:36:19Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:36:20Z",
+          "conclusion": "skipped",
+          "name": "Test desktop Rust",
+          "number": 27,
+          "startedAt": "2026-11-13T21:36:20Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:36:20Z",
+          "conclusion": "skipped",
+          "name": "Lint desktop Rust",
+          "number": 28,
+          "startedAt": "2026-11-13T21:36:20Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:36:20Z",
+          "conclusion": "skipped",
+          "name": "Test Windows thumbnail worker",
+          "number": 29,
+          "startedAt": "2026-11-13T21:36:20Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:36:20Z",
+          "conclusion": "skipped",
+          "name": "Test Windows thumbnail handler",
+          "number": 30,
+          "startedAt": "2026-11-13T21:36:20Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:36:20Z",
+          "conclusion": "skipped",
+          "name": "Lint Windows thumbnail worker",
+          "number": 31,
+          "startedAt": "2026-11-13T21:36:20Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:36:20Z",
+          "conclusion": "skipped",
+          "name": "Lint Windows thumbnail handler",
+          "number": 32,
+          "startedAt": "2026-11-13T21:36:20Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:36:40Z",
+          "conclusion": "success",
+          "name": "Record target-filtered native notice review graph",
+          "number": 33,
+          "startedAt": "2026-11-13T21:36:20Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:36:41Z",
+          "conclusion": "success",
+          "name": "Upload native notice review graph",
+          "number": 34,
+          "startedAt": "2026-11-13T21:36:40Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T22:00:06Z",
+          "conclusion": "success",
+          "name": "Build Tauri bundles",
+          "number": 35,
+          "startedAt": "2026-11-13T21:36:41Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T22:00:06Z",
+          "conclusion": "skipped",
+          "name": "Prepare Linux thumbnail package diagnostics",
+          "number": 36,
+          "startedAt": "2026-11-13T22:00:06Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T22:00:06Z",
+          "conclusion": "skipped",
+          "name": "Run Linux thumbnail package lifecycle",
+          "number": 37,
+          "startedAt": "2026-11-13T22:00:06Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T22:00:06Z",
+          "conclusion": "skipped",
+          "name": "Record Linux thumbnail package outcome",
+          "number": 38,
+          "startedAt": "2026-11-13T22:00:06Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T22:00:06Z",
+          "conclusion": "skipped",
+          "name": "Upload Linux thumbnail package evidence",
+          "number": 39,
+          "startedAt": "2026-11-13T22:00:06Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T22:00:06Z",
+          "conclusion": "skipped",
+          "name": "Require Linux thumbnail package success",
+          "number": 40,
+          "startedAt": "2026-11-13T22:00:06Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T22:00:06Z",
+          "conclusion": "success",
+          "name": "Stage Windows thumbnail verification copies",
+          "number": 41,
+          "startedAt": "2026-11-13T22:00:06Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T22:00:07Z",
+          "conclusion": "success",
+          "name": "Verify bundle artifact",
+          "number": 42,
+          "startedAt": "2026-11-13T22:00:06Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T22:00:07Z",
+          "conclusion": "success",
+          "name": "Build Windows thumbnail support package",
+          "number": 43,
+          "startedAt": "2026-11-13T22:00:07Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T22:00:08Z",
+          "conclusion": "success",
+          "name": "Upload Windows thumbnail support package",
+          "number": 44,
+          "startedAt": "2026-11-13T22:00:07Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T22:00:16Z",
+          "conclusion": "success",
+          "name": "Upload bundle artifact",
+          "number": 45,
+          "startedAt": "2026-11-13T22:00:08Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T22:00:52Z",
+          "conclusion": "success",
+          "name": "Post Cache Cargo workload",
+          "number": 87,
+          "startedAt": "2026-11-13T22:00:16Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T22:00:57Z",
+          "conclusion": "success",
+          "name": "Post Cache pnpm store",
+          "number": 88,
+          "startedAt": "2026-11-13T22:00:52Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T22:00:57Z",
+          "conclusion": "success",
+          "name": "Post Setup Node.js",
+          "number": 89,
+          "startedAt": "2026-11-13T22:00:57Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T22:01:00Z",
+          "conclusion": "success",
+          "name": "Post Checkout",
+          "number": 90,
+          "startedAt": "2026-11-13T22:00:57Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T22:01:00Z",
+          "conclusion": "success",
+          "name": "Complete job",
+          "number": 91,
+          "startedAt": "2026-11-13T22:01:00Z",
+          "status": "completed"
+        }
+      ],
+      "url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/43508471859/job/132173853884"
+    },
+    {
+      "completedAt": "2026-11-13T21:50:16Z",
+      "conclusion": "success",
+      "databaseId": 132173853960,
+      "name": "artifact / linux / Build linux-x64",
+      "startedAt": "2026-11-13T21:14:53Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completedAt": "2026-11-13T21:14:56Z",
+          "conclusion": "success",
+          "name": "Set up job",
+          "number": 1,
+          "startedAt": "2026-11-13T21:14:54Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:17:24Z",
+          "conclusion": "success",
+          "name": "Checkout",
+          "number": 2,
+          "startedAt": "2026-11-13T21:14:56Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:17:24Z",
+          "conclusion": "success",
+          "name": "Verify checked out commit",
+          "number": 3,
+          "startedAt": "2026-11-13T21:17:24Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:18:14Z",
+          "conclusion": "success",
+          "name": "Install Linux dependencies",
+          "number": 4,
+          "startedAt": "2026-11-13T21:17:24Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:18:14Z",
+          "conclusion": "success",
+          "name": "Setup Node.js",
+          "number": 5,
+          "startedAt": "2026-11-13T21:18:14Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:18:15Z",
+          "conclusion": "success",
+          "name": "Enable pnpm",
+          "number": 6,
+          "startedAt": "2026-11-13T21:18:14Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:18:16Z",
+          "conclusion": "success",
+          "name": "Resolve pnpm store path",
+          "number": 7,
+          "startedAt": "2026-11-13T21:18:15Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:18:17Z",
+          "conclusion": "success",
+          "name": "Cache pnpm store",
+          "number": 8,
+          "startedAt": "2026-11-13T21:18:16Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:18:27Z",
+          "conclusion": "success",
+          "name": "Setup Rust",
+          "number": 9,
+          "startedAt": "2026-11-13T21:18:17Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:21:00Z",
+          "conclusion": "success",
+          "name": "Cache Cargo workload",
+          "number": 10,
+          "startedAt": "2026-11-13T21:18:27Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:21:00Z",
+          "conclusion": "success",
+          "name": "Prepare Linux thumbnailer evidence",
+          "number": 11,
+          "startedAt": "2026-11-13T21:21:00Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:26:56Z",
+          "conclusion": "success",
+          "name": "Build Linux thumbnailer",
+          "number": 12,
+          "startedAt": "2026-11-13T21:21:00Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:26:56Z",
+          "conclusion": "success",
+          "name": "Record Linux thumbnailer build outcome",
+          "number": 13,
+          "startedAt": "2026-11-13T21:26:56Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:26:59Z",
+          "conclusion": "success",
+          "name": "Upload Linux thumbnailer evidence",
+          "number": 14,
+          "startedAt": "2026-11-13T21:26:56Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:26:59Z",
+          "conclusion": "success",
+          "name": "Require Linux thumbnailer build success",
+          "number": 15,
+          "startedAt": "2026-11-13T21:26:59Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:27:00Z",
+          "conclusion": "success",
+          "name": "Stage Linux thumbnailer package resources",
+          "number": 16,
+          "startedAt": "2026-11-13T21:26:59Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:27:02Z",
+          "conclusion": "success",
+          "name": "Install dependencies",
+          "number": 17,
+          "startedAt": "2026-11-13T21:27:00Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:27:02Z",
+          "conclusion": "skipped",
+          "name": "Test document preview Rust",
+          "number": 18,
+          "startedAt": "2026-11-13T21:27:02Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:27:02Z",
+          "conclusion": "skipped",
+          "name": "Lint document preview Rust",
+          "number": 19,
+          "startedAt": "2026-11-13T21:27:02Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:27:02Z",
+          "conclusion": "skipped",
+          "name": "Lint document preview protocol-only Rust",
+          "number": 20,
+          "startedAt": "2026-11-13T21:27:02Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:27:02Z",
+          "conclusion": "skipped",
+          "name": "Test Linux thumbnailer",
+          "number": 21,
+          "startedAt": "2026-11-13T21:27:02Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:27:02Z",
+          "conclusion": "skipped",
+          "name": "Lint Linux thumbnailer",
+          "number": 22,
+          "startedAt": "2026-11-13T21:27:02Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:27:02Z",
+          "conclusion": "skipped",
+          "name": "Record Linux thumbnailer test outcome",
+          "number": 23,
+          "startedAt": "2026-11-13T21:27:02Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:27:02Z",
+          "conclusion": "skipped",
+          "name": "Upload Linux thumbnailer test evidence",
+          "number": 24,
+          "startedAt": "2026-11-13T21:27:02Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:27:02Z",
+          "conclusion": "skipped",
+          "name": "Build Windows thumbnail binaries",
+          "number": 25,
+          "startedAt": "2026-11-13T21:27:02Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:27:02Z",
+          "conclusion": "skipped",
+          "name": "Verify Windows helper product metadata",
+          "number": 26,
+          "startedAt": "2026-11-13T21:27:02Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:27:02Z",
+          "conclusion": "skipped",
+          "name": "Test desktop Rust",
+          "number": 27,
+          "startedAt": "2026-11-13T21:27:02Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:27:02Z",
+          "conclusion": "skipped",
+          "name": "Lint desktop Rust",
+          "number": 28,
+          "startedAt": "2026-11-13T21:27:02Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:27:02Z",
+          "conclusion": "skipped",
+          "name": "Test Windows thumbnail worker",
+          "number": 29,
+          "startedAt": "2026-11-13T21:27:02Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:27:02Z",
+          "conclusion": "skipped",
+          "name": "Test Windows thumbnail handler",
+          "number": 30,
+          "startedAt": "2026-11-13T21:27:02Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:27:02Z",
+          "conclusion": "skipped",
+          "name": "Lint Windows thumbnail worker",
+          "number": 31,
+          "startedAt": "2026-11-13T21:27:02Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:27:02Z",
+          "conclusion": "skipped",
+          "name": "Lint Windows thumbnail handler",
+          "number": 32,
+          "startedAt": "2026-11-13T21:27:02Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:27:03Z",
+          "conclusion": "success",
+          "name": "Record target-filtered native notice review graph",
+          "number": 33,
+          "startedAt": "2026-11-13T21:27:02Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:27:05Z",
+          "conclusion": "success",
+          "name": "Upload native notice review graph",
+          "number": 34,
+          "startedAt": "2026-11-13T21:27:03Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:46:44Z",
+          "conclusion": "success",
+          "name": "Build Tauri bundles",
+          "number": 35,
+          "startedAt": "2026-11-13T21:27:05Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:46:44Z",
+          "conclusion": "success",
+          "name": "Prepare Linux thumbnail package diagnostics",
+          "number": 36,
+          "startedAt": "2026-11-13T21:46:44Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:47:47Z",
+          "conclusion": "success",
+          "name": "Run Linux thumbnail package lifecycle",
+          "number": 37,
+          "startedAt": "2026-11-13T21:46:44Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:47:47Z",
+          "conclusion": "success",
+          "name": "Record Linux thumbnail package outcome",
+          "number": 38,
+          "startedAt": "2026-11-13T21:47:47Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:47:48Z",
+          "conclusion": "success",
+          "name": "Upload Linux thumbnail package evidence",
+          "number": 39,
+          "startedAt": "2026-11-13T21:47:47Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:47:48Z",
+          "conclusion": "success",
+          "name": "Require Linux thumbnail package success",
+          "number": 40,
+          "startedAt": "2026-11-13T21:47:48Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:47:48Z",
+          "conclusion": "skipped",
+          "name": "Stage Windows thumbnail verification copies",
+          "number": 41,
+          "startedAt": "2026-11-13T21:47:48Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:47:49Z",
+          "conclusion": "success",
+          "name": "Verify bundle artifact",
+          "number": 42,
+          "startedAt": "2026-11-13T21:47:48Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:47:49Z",
+          "conclusion": "skipped",
+          "name": "Build Windows thumbnail support package",
+          "number": 43,
+          "startedAt": "2026-11-13T21:47:49Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:47:49Z",
+          "conclusion": "skipped",
+          "name": "Upload Windows thumbnail support package",
+          "number": 44,
+          "startedAt": "2026-11-13T21:47:49Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:48:20Z",
+          "conclusion": "success",
+          "name": "Upload bundle artifact",
+          "number": 45,
+          "startedAt": "2026-11-13T21:47:49Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:50:07Z",
+          "conclusion": "success",
+          "name": "Post Cache Cargo workload",
+          "number": 87,
+          "startedAt": "2026-11-13T21:48:20Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:50:13Z",
+          "conclusion": "success",
+          "name": "Post Cache pnpm store",
+          "number": 88,
+          "startedAt": "2026-11-13T21:50:07Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:50:13Z",
+          "conclusion": "success",
+          "name": "Post Setup Node.js",
+          "number": 89,
+          "startedAt": "2026-11-13T21:50:13Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:50:13Z",
+          "conclusion": "success",
+          "name": "Post Checkout",
+          "number": 90,
+          "startedAt": "2026-11-13T21:50:13Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:50:13Z",
+          "conclusion": "success",
+          "name": "Complete job",
+          "number": 91,
+          "startedAt": "2026-11-13T21:50:13Z",
+          "status": "completed"
+        }
+      ],
+      "url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/43508471859/job/132173853960"
+    },
+    {
+      "completedAt": "2026-11-13T21:43:49Z",
+      "conclusion": "success",
+      "databaseId": 132173853962,
+      "name": "artifact / linux / Build linux-arm64",
+      "startedAt": "2026-11-13T21:14:56Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completedAt": "2026-11-13T21:14:59Z",
+          "conclusion": "success",
+          "name": "Set up job",
+          "number": 1,
+          "startedAt": "2026-11-13T21:14:57Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:23:20Z",
+          "conclusion": "success",
+          "name": "Checkout",
+          "number": 2,
+          "startedAt": "2026-11-13T21:14:59Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:23:20Z",
+          "conclusion": "success",
+          "name": "Verify checked out commit",
+          "number": 3,
+          "startedAt": "2026-11-13T21:23:20Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:24:31Z",
+          "conclusion": "success",
+          "name": "Install Linux dependencies",
+          "number": 4,
+          "startedAt": "2026-11-13T21:23:20Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:24:35Z",
+          "conclusion": "success",
+          "name": "Setup Node.js",
+          "number": 5,
+          "startedAt": "2026-11-13T21:24:31Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:24:36Z",
+          "conclusion": "success",
+          "name": "Enable pnpm",
+          "number": 6,
+          "startedAt": "2026-11-13T21:24:35Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:24:37Z",
+          "conclusion": "success",
+          "name": "Resolve pnpm store path",
+          "number": 7,
+          "startedAt": "2026-11-13T21:24:36Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:24:38Z",
+          "conclusion": "success",
+          "name": "Cache pnpm store",
+          "number": 8,
+          "startedAt": "2026-11-13T21:24:37Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:24:48Z",
+          "conclusion": "success",
+          "name": "Setup Rust",
+          "number": 9,
+          "startedAt": "2026-11-13T21:24:38Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:24:55Z",
+          "conclusion": "success",
+          "name": "Cache Cargo workload",
+          "number": 10,
+          "startedAt": "2026-11-13T21:24:48Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:24:55Z",
+          "conclusion": "success",
+          "name": "Prepare Linux thumbnailer evidence",
+          "number": 11,
+          "startedAt": "2026-11-13T21:24:55Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:31:40Z",
+          "conclusion": "success",
+          "name": "Build Linux thumbnailer",
+          "number": 12,
+          "startedAt": "2026-11-13T21:24:55Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:31:40Z",
+          "conclusion": "success",
+          "name": "Record Linux thumbnailer build outcome",
+          "number": 13,
+          "startedAt": "2026-11-13T21:31:40Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:31:43Z",
+          "conclusion": "success",
+          "name": "Upload Linux thumbnailer evidence",
+          "number": 14,
+          "startedAt": "2026-11-13T21:31:40Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:31:43Z",
+          "conclusion": "success",
+          "name": "Require Linux thumbnailer build success",
+          "number": 15,
+          "startedAt": "2026-11-13T21:31:43Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:31:43Z",
+          "conclusion": "success",
+          "name": "Stage Linux thumbnailer package resources",
+          "number": 16,
+          "startedAt": "2026-11-13T21:31:43Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:31:45Z",
+          "conclusion": "success",
+          "name": "Install dependencies",
+          "number": 17,
+          "startedAt": "2026-11-13T21:31:43Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:31:45Z",
+          "conclusion": "skipped",
+          "name": "Test document preview Rust",
+          "number": 18,
+          "startedAt": "2026-11-13T21:31:45Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:31:45Z",
+          "conclusion": "skipped",
+          "name": "Lint document preview Rust",
+          "number": 19,
+          "startedAt": "2026-11-13T21:31:45Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:31:45Z",
+          "conclusion": "skipped",
+          "name": "Lint document preview protocol-only Rust",
+          "number": 20,
+          "startedAt": "2026-11-13T21:31:45Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:31:45Z",
+          "conclusion": "skipped",
+          "name": "Test Linux thumbnailer",
+          "number": 21,
+          "startedAt": "2026-11-13T21:31:45Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:31:45Z",
+          "conclusion": "skipped",
+          "name": "Lint Linux thumbnailer",
+          "number": 22,
+          "startedAt": "2026-11-13T21:31:45Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:31:45Z",
+          "conclusion": "skipped",
+          "name": "Record Linux thumbnailer test outcome",
+          "number": 23,
+          "startedAt": "2026-11-13T21:31:45Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:31:45Z",
+          "conclusion": "skipped",
+          "name": "Upload Linux thumbnailer test evidence",
+          "number": 24,
+          "startedAt": "2026-11-13T21:31:45Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:31:45Z",
+          "conclusion": "skipped",
+          "name": "Build Windows thumbnail binaries",
+          "number": 25,
+          "startedAt": "2026-11-13T21:31:45Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:31:45Z",
+          "conclusion": "skipped",
+          "name": "Verify Windows helper product metadata",
+          "number": 26,
+          "startedAt": "2026-11-13T21:31:45Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:31:45Z",
+          "conclusion": "skipped",
+          "name": "Test desktop Rust",
+          "number": 27,
+          "startedAt": "2026-11-13T21:31:45Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:31:45Z",
+          "conclusion": "skipped",
+          "name": "Lint desktop Rust",
+          "number": 28,
+          "startedAt": "2026-11-13T21:31:45Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:31:45Z",
+          "conclusion": "skipped",
+          "name": "Test Windows thumbnail worker",
+          "number": 29,
+          "startedAt": "2026-11-13T21:31:45Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:31:45Z",
+          "conclusion": "skipped",
+          "name": "Test Windows thumbnail handler",
+          "number": 30,
+          "startedAt": "2026-11-13T21:31:45Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:31:45Z",
+          "conclusion": "skipped",
+          "name": "Lint Windows thumbnail worker",
+          "number": 31,
+          "startedAt": "2026-11-13T21:31:45Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:31:45Z",
+          "conclusion": "skipped",
+          "name": "Lint Windows thumbnail handler",
+          "number": 32,
+          "startedAt": "2026-11-13T21:31:45Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:31:47Z",
+          "conclusion": "success",
+          "name": "Record target-filtered native notice review graph",
+          "number": 33,
+          "startedAt": "2026-11-13T21:31:45Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:31:48Z",
+          "conclusion": "success",
+          "name": "Upload native notice review graph",
+          "number": 34,
+          "startedAt": "2026-11-13T21:31:47Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:42:28Z",
+          "conclusion": "success",
+          "name": "Build Tauri bundles",
+          "number": 35,
+          "startedAt": "2026-11-13T21:31:48Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:42:28Z",
+          "conclusion": "success",
+          "name": "Prepare Linux thumbnail package diagnostics",
+          "number": 36,
+          "startedAt": "2026-11-13T21:42:28Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:43:05Z",
+          "conclusion": "success",
+          "name": "Run Linux thumbnail package lifecycle",
+          "number": 37,
+          "startedAt": "2026-11-13T21:42:28Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:43:05Z",
+          "conclusion": "success",
+          "name": "Record Linux thumbnail package outcome",
+          "number": 38,
+          "startedAt": "2026-11-13T21:43:05Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:43:07Z",
+          "conclusion": "success",
+          "name": "Upload Linux thumbnail package evidence",
+          "number": 39,
+          "startedAt": "2026-11-13T21:43:05Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:43:07Z",
+          "conclusion": "success",
+          "name": "Require Linux thumbnail package success",
+          "number": 40,
+          "startedAt": "2026-11-13T21:43:07Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:43:07Z",
+          "conclusion": "skipped",
+          "name": "Stage Windows thumbnail verification copies",
+          "number": 41,
+          "startedAt": "2026-11-13T21:43:07Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:43:08Z",
+          "conclusion": "success",
+          "name": "Verify bundle artifact",
+          "number": 42,
+          "startedAt": "2026-11-13T21:43:07Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:43:08Z",
+          "conclusion": "skipped",
+          "name": "Build Windows thumbnail support package",
+          "number": 43,
+          "startedAt": "2026-11-13T21:43:08Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:43:08Z",
+          "conclusion": "skipped",
+          "name": "Upload Windows thumbnail support package",
+          "number": 44,
+          "startedAt": "2026-11-13T21:43:08Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:43:17Z",
+          "conclusion": "success",
+          "name": "Upload bundle artifact",
+          "number": 45,
+          "startedAt": "2026-11-13T21:43:08Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:43:41Z",
+          "conclusion": "success",
+          "name": "Post Cache Cargo workload",
+          "number": 87,
+          "startedAt": "2026-11-13T21:43:17Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:43:46Z",
+          "conclusion": "success",
+          "name": "Post Cache pnpm store",
+          "number": 88,
+          "startedAt": "2026-11-13T21:43:41Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:43:46Z",
+          "conclusion": "success",
+          "name": "Post Setup Node.js",
+          "number": 89,
+          "startedAt": "2026-11-13T21:43:46Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:43:46Z",
+          "conclusion": "success",
+          "name": "Post Checkout",
+          "number": 90,
+          "startedAt": "2026-11-13T21:43:46Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T21:43:46Z",
+          "conclusion": "success",
+          "name": "Complete job",
+          "number": 91,
+          "startedAt": "2026-11-13T21:43:46Z",
+          "status": "completed"
+        }
+      ],
+      "url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/43508471859/job/132173853962"
+    },
+    {
+      "completedAt": "2026-11-13T21:14:51Z",
+      "conclusion": "skipped",
+      "databaseId": 132173856020,
+      "name": "artifact / core",
+      "startedAt": "2026-11-13T21:14:52Z",
+      "status": "completed",
+      "steps": [],
+      "url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/43508471859/job/132173856020"
+    },
+    {
+      "completedAt": "2026-11-13T22:01:19Z",
+      "conclusion": "success",
+      "databaseId": 132196980747,
+      "name": "artifact / result",
+      "startedAt": "2026-11-13T22:01:04Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completedAt": "2026-11-13T22:01:05Z",
+          "conclusion": "success",
+          "name": "Set up job",
+          "number": 1,
+          "startedAt": "2026-11-13T22:01:04Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T22:01:08Z",
+          "conclusion": "success",
+          "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "number": 2,
+          "startedAt": "2026-11-13T22:01:05Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T22:01:16Z",
+          "conclusion": "success",
+          "name": "Run actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+          "number": 3,
+          "startedAt": "2026-11-13T22:01:08Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T22:01:16Z",
+          "conclusion": "success",
+          "name": "Require every selected gate, never skipped-as-passed",
+          "number": 4,
+          "startedAt": "2026-11-13T22:01:16Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T22:01:16Z",
+          "conclusion": "success",
+          "name": "Post Run actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+          "number": 7,
+          "startedAt": "2026-11-13T22:01:16Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T22:01:16Z",
+          "conclusion": "success",
+          "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "number": 8,
+          "startedAt": "2026-11-13T22:01:16Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-13T22:01:16Z",
+          "conclusion": "success",
+          "name": "Complete job",
+          "number": 9,
+          "startedAt": "2026-11-13T22:01:16Z",
+          "status": "completed"
+        }
+      ],
+      "url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/43508471859/job/132196980747"
+    },
+    {
+      "completedAt": "2026-11-13T22:01:02Z",
+      "conclusion": "skipped",
+      "databaseId": 132196982649,
+      "name": "artifact / smoke",
+      "startedAt": "2026-11-13T22:01:02Z",
+      "status": "completed",
+      "steps": [],
+      "url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/43508471859/job/132196982649"
+    }
+  ],
+  "status": "completed"
+}

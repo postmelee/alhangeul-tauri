@@ -1,0 +1,48 @@
+{
+  "scope": "Actual installed WebView FontFace loading and synthetic text; not document-layout equivalence.",
+  "fonts": [
+    {
+      "file": "NanumGothic-Regular.woff2",
+      "sha256": "b2b25ce9c9179e0a4c867bd2610e1db5595965345aa1cdb857964ab802c4ee3e",
+      "loaded": true
+    },
+    {
+      "file": "NanumGothicCoding-Regular.woff2",
+      "sha256": "6bd0831252dc3bd96f3257ec4eaf794d88ffb185346eb5d3f889248a7a3c6239",
+      "loaded": true
+    },
+    {
+      "file": "NanumMyeongjo-Regular.woff2",
+      "sha256": "52d27bf4ee205020a4aa9eb19ef4835e4aa04a94f7742b13e69e5c8b9a74072a",
+      "loaded": true
+    }
+  ],
+  "rendering": {
+    "devicePixelRatio": 1,
+    "paintFramesAwaited": 2,
+    "settleMilliseconds": 250,
+    "samples": [
+      {
+        "file": "NanumGothic-Regular.woff2",
+        "height": 66,
+        "left": 40,
+        "width": 1198,
+        "top": 138
+      },
+      {
+        "file": "NanumGothicCoding-Regular.woff2",
+        "height": 66,
+        "left": 40,
+        "width": 1198,
+        "top": 252
+      },
+      {
+        "file": "NanumMyeongjo-Regular.woff2",
+        "height": 66,
+        "left": 40,
+        "width": 1198,
+        "top": 366
+      }
+    ]
+  }
+}

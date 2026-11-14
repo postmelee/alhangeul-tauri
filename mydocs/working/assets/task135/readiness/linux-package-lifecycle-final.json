@@ -1,0 +1,193 @@
+{
+  "producerRun": "https://github.com/postmelee/alhangeul-tauri/actions/runs/43508471859",
+  "scope": "Linux package lifecycle observations only; not complete user-data removal or arm64 GUI validation. Injected failure statuses are expected observations.",
+  "platforms": [
+    {
+      "platform": "linux-x64",
+      "repositorySha": "efe13e61d954a9ae5c801ed447bf3cbea105f5e2",
+      "success": true,
+      "invariants": {
+        "mimeDefaultsPreserved": true,
+        "thirdPartyThumbnailerPreserved": true,
+        "cacheSentinelPreserved": true,
+        "productFilesRemovedAfterUninstall": true
+      },
+      "artifactId": 14079053272,
+      "artifactDigest": "sha256:c666a19ffa5990322fb6b4fc0246ba5f413822b8ed74982446b116baf6d4897e",
+      "reportSha256": "51cb59c2859f3c0f9a14e50cad63363da020a507ecb1fcb6acc4a8870aa8a2df",
+      "packages": [
+        {
+          "format": "deb",
+          "path": "deb/Alhangeul_0.1.3_amd64.deb",
+          "archiveSha256": "57e6191b5661f2d0afe1a92ff6676ba102031b442078ce810a603f26c2d3a2d1",
+          "architecture": "amd64",
+          "singleOwner": true,
+          "lifecycle": [
+            {
+              "name": "baseline",
+              "exitCode": 0
+            },
+            {
+              "name": "clean-install",
+              "exitCode": 0
+            },
+            {
+              "name": "same-version-reinstall",
+              "exitCode": 0
+            },
+            {
+              "name": "interim-uninstall",
+              "exitCode": 0
+            },
+            {
+              "name": "refresh-failure-observed",
+              "exitCode": 1
+            },
+            {
+              "name": "explicit-recovery",
+              "exitCode": 0
+            },
+            {
+              "name": "old-install",
+              "exitCode": 0
+            },
+            {
+              "name": "update",
+              "exitCode": 0
+            },
+            {
+              "name": "injected-failure-rollback",
+              "exitCode": 1
+            },
+            {
+              "name": "uninstall",
+              "exitCode": 0
+            },
+            {
+              "name": "purge-without-update-mime-database",
+              "exitCode": 0
+            }
+          ]
+        },
+        {
+          "format": "rpm",
+          "path": "rpm/Alhangeul-0.1.3-1.x86_64.rpm",
+          "archiveSha256": "109fe9e2769117303d0b5416d316a800e91dd89a67dfd43bcc0121137a058753",
+          "architecture": "x86_64",
+          "singleOwner": true,
+          "lifecycle": [
+            {
+              "name": "baseline",
+              "exitCode": 0
+            },
+            {
+              "name": "clean-install",
+              "exitCode": 0
+            },
+            {
+              "name": "same-version-reinstall",
+              "exitCode": 0
+            },
+            {
+              "name": "interim-uninstall",
+              "exitCode": 0
+            },
+            {
+              "name": "refresh-failure-observed",
+              "exitCode": 0
+            },
+            {
+              "name": "explicit-recovery",
+              "exitCode": 0
+            },
+            {
+              "name": "old-install",
+              "exitCode": 0
+            },
+            {
+              "name": "update",
+              "exitCode": 0
+            },
+            {
+              "name": "injected-failure-rollback",
+              "exitCode": 1
+            },
+            {
+              "name": "uninstall",
+              "exitCode": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "platform": "linux-arm64",
+      "repositorySha": "efe13e61d954a9ae5c801ed447bf3cbea105f5e2",
+      "success": true,
+      "invariants": {
+        "mimeDefaultsPreserved": true,
+        "thirdPartyThumbnailerPreserved": true,
+        "cacheSentinelPreserved": true,
+        "productFilesRemovedAfterUninstall": true
+      },
+      "artifactId": 14079067476,
+      "artifactDigest": "sha256:a7470c6bff6f84f7bc869dcff352dafcf0b48b361f09ab06d686f090a8dbfe08",
+      "reportSha256": "4f710ebdb19c89b7101452bbd2a753b5a07a1b3960aae9c1026fc344969c2ad3",
+      "packages": [
+        {
+          "format": "deb",
+          "path": "deb/Alhangeul_0.1.3_arm64.deb",
+          "archiveSha256": "6bbfde0cff5ff836ea231c53ee8a99202d8417257156a1e30b753f7829b7692b",
+          "architecture": "arm64",
+          "singleOwner": true,
+          "lifecycle": [
+            {
+              "name": "baseline",
+              "exitCode": 0
+            },
+            {
+              "name": "clean-install",
+              "exitCode": 0
+            },
+            {
+              "name": "same-version-reinstall",
+              "exitCode": 0
+            },
+            {
+              "name": "interim-uninstall",
+              "exitCode": 0
+            },
+            {
+              "name": "refresh-failure-observed",
+              "exitCode": 1
+            },
+            {
+              "name": "explicit-recovery",
+              "exitCode": 0
+            },
+            {
+              "name": "old-install",
+              "exitCode": 0
+            },
+            {
+              "name": "update",
+              "exitCode": 0
+            },
+            {
+              "name": "injected-failure-rollback",
+              "exitCode": 1
+            },
+            {
+              "name": "uninstall",
+              "exitCode": 0
+            },
+            {
+              "name": "purge-without-update-mime-database",
+              "exitCode": 0
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

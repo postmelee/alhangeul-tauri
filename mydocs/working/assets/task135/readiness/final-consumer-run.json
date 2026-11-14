@@ -1,0 +1,289 @@
+{
+  "conclusion": "success",
+  "headSha": "efe13e61d954a9ae5c801ed447bf3cbea105f5e2",
+  "jobs": [
+    {
+      "completedAt": "2026-11-14T03:16:49Z",
+      "conclusion": "success",
+      "databaseId": 132312026709,
+      "name": "candidate-audit (windows-2025, windows-x64)",
+      "startedAt": "2026-11-14T03:15:05Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completedAt": "2026-11-14T03:15:08Z",
+          "conclusion": "success",
+          "name": "Set up job",
+          "number": 1,
+          "startedAt": "2026-11-14T03:15:06Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-14T03:15:17Z",
+          "conclusion": "success",
+          "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "number": 2,
+          "startedAt": "2026-11-14T03:15:08Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-14T03:15:22Z",
+          "conclusion": "success",
+          "name": "Run actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+          "number": 3,
+          "startedAt": "2026-11-14T03:15:17Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-14T03:15:24Z",
+          "conclusion": "success",
+          "name": "Verify successful exact producer and artifact metadata",
+          "number": 4,
+          "startedAt": "2026-11-14T03:15:22Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-14T03:15:27Z",
+          "conclusion": "success",
+          "name": "Download verified archive with strict digest",
+          "number": 5,
+          "startedAt": "2026-11-14T03:15:24Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-14T03:15:28Z",
+          "conclusion": "success",
+          "name": "Verify exact product file inventory",
+          "number": 6,
+          "startedAt": "2026-11-14T03:15:27Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-14T03:15:35Z",
+          "conclusion": "success",
+          "name": "Read exact producer source for resource hash comparison",
+          "number": 7,
+          "startedAt": "2026-11-14T03:15:28Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-14T03:16:43Z",
+          "conclusion": "success",
+          "name": "Check actual Windows installer privacy UI and installed resources",
+          "number": 8,
+          "startedAt": "2026-11-14T03:15:35Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-14T03:16:43Z",
+          "conclusion": "skipped",
+          "name": "Prepare Linux installed-font observation",
+          "number": 9,
+          "startedAt": "2026-11-14T03:16:43Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-14T03:16:43Z",
+          "conclusion": "skipped",
+          "name": "Check actual Linux AppImage resources and fonts",
+          "number": 10,
+          "startedAt": "2026-11-14T03:16:43Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-14T03:16:44Z",
+          "conclusion": "success",
+          "name": "Preserve exact identity, installed hashes and actual UI",
+          "number": 11,
+          "startedAt": "2026-11-14T03:16:43Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-14T03:16:45Z",
+          "conclusion": "success",
+          "name": "Post Read exact producer source for resource hash comparison",
+          "number": 20,
+          "startedAt": "2026-11-14T03:16:44Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-14T03:16:46Z",
+          "conclusion": "success",
+          "name": "Post Run actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+          "number": 21,
+          "startedAt": "2026-11-14T03:16:45Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-14T03:16:47Z",
+          "conclusion": "success",
+          "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "number": 22,
+          "startedAt": "2026-11-14T03:16:46Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-14T03:16:47Z",
+          "conclusion": "success",
+          "name": "Complete job",
+          "number": 23,
+          "startedAt": "2026-11-14T03:16:47Z",
+          "status": "completed"
+        }
+      ],
+      "url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/43550628991/job/132312026709"
+    },
+    {
+      "completedAt": "2026-11-14T03:16:31Z",
+      "conclusion": "success",
+      "databaseId": 132312026990,
+      "name": "candidate-audit (ubuntu-24.04, linux-x64)",
+      "startedAt": "2026-11-14T03:15:03Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completedAt": "2026-11-14T03:15:05Z",
+          "conclusion": "success",
+          "name": "Set up job",
+          "number": 1,
+          "startedAt": "2026-11-14T03:15:04Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-14T03:15:07Z",
+          "conclusion": "success",
+          "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "number": 2,
+          "startedAt": "2026-11-14T03:15:05Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-14T03:15:10Z",
+          "conclusion": "success",
+          "name": "Run actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+          "number": 3,
+          "startedAt": "2026-11-14T03:15:07Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-14T03:15:11Z",
+          "conclusion": "success",
+          "name": "Verify successful exact producer and artifact metadata",
+          "number": 4,
+          "startedAt": "2026-11-14T03:15:10Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-14T03:15:19Z",
+          "conclusion": "success",
+          "name": "Download verified archive with strict digest",
+          "number": 5,
+          "startedAt": "2026-11-14T03:15:11Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-14T03:15:20Z",
+          "conclusion": "success",
+          "name": "Verify exact product file inventory",
+          "number": 6,
+          "startedAt": "2026-11-14T03:15:19Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-14T03:15:22Z",
+          "conclusion": "success",
+          "name": "Read exact producer source for resource hash comparison",
+          "number": 7,
+          "startedAt": "2026-11-14T03:15:20Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-14T03:15:22Z",
+          "conclusion": "skipped",
+          "name": "Check actual Windows installer privacy UI and installed resources",
+          "number": 8,
+          "startedAt": "2026-11-14T03:15:22Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-14T03:16:17Z",
+          "conclusion": "success",
+          "name": "Prepare Linux installed-font observation",
+          "number": 9,
+          "startedAt": "2026-11-14T03:15:22Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-14T03:16:28Z",
+          "conclusion": "success",
+          "name": "Check actual Linux AppImage resources and fonts",
+          "number": 10,
+          "startedAt": "2026-11-14T03:16:17Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-14T03:16:29Z",
+          "conclusion": "success",
+          "name": "Preserve exact identity, installed hashes and actual UI",
+          "number": 11,
+          "startedAt": "2026-11-14T03:16:28Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-14T03:16:29Z",
+          "conclusion": "success",
+          "name": "Post Read exact producer source for resource hash comparison",
+          "number": 20,
+          "startedAt": "2026-11-14T03:16:29Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-14T03:16:29Z",
+          "conclusion": "success",
+          "name": "Post Run actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+          "number": 21,
+          "startedAt": "2026-11-14T03:16:29Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-14T03:16:29Z",
+          "conclusion": "success",
+          "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "number": 22,
+          "startedAt": "2026-11-14T03:16:29Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-11-14T03:16:29Z",
+          "conclusion": "success",
+          "name": "Complete job",
+          "number": 23,
+          "startedAt": "2026-11-14T03:16:29Z",
+          "status": "completed"
+        }
+      ],
+      "url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/43550628991/job/132312026990"
+    },
+    {
+      "completedAt": "2026-11-14T03:15:01Z",
+      "conclusion": "skipped",
+      "databaseId": 132312027898,
+      "name": "preferences",
+      "startedAt": "2026-11-14T03:15:02Z",
+      "status": "completed",
+      "steps": [],
+      "url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/43550628991/job/132312027898"
+    },
+    {
+      "completedAt": "2026-11-14T03:15:01Z",
+      "conclusion": "skipped",
+      "databaseId": 132312028145,
+      "name": "observe",
+      "startedAt": "2026-11-14T03:15:02Z",
+      "status": "completed",
+      "steps": [],
+      "url": "https://github.com/postmelee/alhangeul-tauri/actions/runs/43550628991/job/132312028145"
+    }
+  ],
+  "status": "completed"
+}

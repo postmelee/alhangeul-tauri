@@ -137,3 +137,7 @@ Stage 7.7에서 추가된 filename gap 6개 모두 검증된 crate checksum·Car
 34850d42의 실제 NSIS 화면은 첫 Windows 줄이 보였으나 소비자에서 managed `GetBoundingRectangles()` 반환형을 COM flat double array로 잘못 처리했다. Rect[]의 Left/Top/Right/Bottom으로 판정하고 실제 좌표를 JSON에 남긴다. visible 검사 자체를 생략하거나 정적 문자열로 대체하지 않는다. 제품 bytes를 바꾸지 않고 동일 producer의 Windows 소비자만 재검증한다.
 
 34850d42 Linux 소비자는 고지 hash·FontFace/DOM 경계를 통과했지만 실제 screenshot에는 표본 paint가 반영되지 않았다. font load와 screenshot 사이 두 animation frame·짧은 compositor 대기를 두고 캡처 시점의 표본 경계를 기록한다. 시각 수용은 보류하며 새 고지 package exact 소비자에서 다시 확인한다. 동일 font/source의 로딩 증거와 이전 실제 화면은 각각 구분해 보존하고, 이 harness-only 보완을 제품 결함이나 새 binary 수용으로 부르지 않는다.
+
+최종 resource package 생성 대기 중에는 34850d42 동일 AppImage의 Linux-only 소비자로 paint 대기 보완을 먼저 확인한다. 화면 캡처 문제가 남은 경우 최종 package 소비자 전에 harness만 수정할 수 있도록 하며 제품 재빌드나 새 제품 수용으로 해석하지 않는다.
+
+최종 Linux arm64 DEB는 producer archive digest와 개별 package inventory hash를 확인한 뒤 payload의 고지 23개를 exact source blob과 읽기 전용으로 대조한다. 이는 압축 산출물 검사이며 macOS 제품 실행·빌드나 arm64 GUI 검증이 아니다. 실제 arm64 패키지 설치/제거 증거와 구분하여 기록한다.

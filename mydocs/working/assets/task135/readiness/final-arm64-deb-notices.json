@@ -1,0 +1,154 @@
+{
+  "scope": "Read-only exact DEB archive payload comparison; not arm64 GUI/runtime validation or release approval.",
+  "sourceSha": "efe13e61d954a9ae5c801ed447bf3cbea105f5e2",
+  "producerRun": 43508471859,
+  "producerWorkflow": ".github/workflows/alhangeul-desktop.yml",
+  "producerAttempt": 1,
+  "artifactId": 14078753993,
+  "artifactDigest": "sha256:c473e8f195d9dd26bf14ac10e173455cc031605ab538fcb97f6b69d8bb635a74",
+  "downloadedArchiveDigestVerified": true,
+  "individualInventoryFilesVerified": 42,
+  "debPath": "deb/Alhangeul_0.1.3_arm64.deb",
+  "debSha256": "6bbfde0cff5ff836ea231c53ee8a99202d8417257156a1e30b753f7829b7692b",
+  "matched": 23,
+  "resources": [
+    {
+      "path": "licenses/fonts/FONTS.md",
+      "archivePath": "usr/lib/Alhangeul/licenses/fonts/FONTS.md",
+      "sha256": "e9cb77fae15397c5f6b0012f8802e2dcd8b7449139696e6795ca6d153f9805e4",
+      "bytes": 5388
+    },
+    {
+      "path": "licenses/fonts/NotoSansKR-OFL-1.1.txt",
+      "archivePath": "usr/lib/Alhangeul/licenses/fonts/NotoSansKR-OFL-1.1.txt",
+      "sha256": "6a73f9541c2de74158c0e7cf6b0a58ef774f5a780bf191f2d7ec9cc53efe2bf2",
+      "bytes": 4301
+    },
+    {
+      "path": "licenses/fonts/NotoSerifKR-OFL-1.1.txt",
+      "archivePath": "usr/lib/Alhangeul/licenses/fonts/NotoSerifKR-OFL-1.1.txt",
+      "sha256": "6a73f9541c2de74158c0e7cf6b0a58ef774f5a780bf191f2d7ec9cc53efe2bf2",
+      "bytes": 4301
+    },
+    {
+      "path": "licenses/fonts/Cafe24Ssurround-LICENSE.pdf",
+      "archivePath": "usr/lib/Alhangeul/licenses/fonts/Cafe24Ssurround-LICENSE.pdf",
+      "sha256": "de2158b3dc8aa27513451108fb09088f9afd8fce1d65c2cac29c7e554b37a7d9",
+      "bytes": 1945706
+    },
+    {
+      "path": "licenses/fonts/Cafe24Supermagic-LICENSE.pdf",
+      "archivePath": "usr/lib/Alhangeul/licenses/fonts/Cafe24Supermagic-LICENSE.pdf",
+      "sha256": "bdf5e278410f73faaf5a34db9ad4ce328cabd673d8f699bd986869a690193511",
+      "bytes": 1944287
+    },
+    {
+      "path": "licenses/fonts/D2Coding-OFL.txt",
+      "archivePath": "usr/lib/Alhangeul/licenses/fonts/D2Coding-OFL.txt",
+      "sha256": "1807e8dec4d65f474cbf9be39f5e2254ecb81702babc320749e272ea66ffcc69",
+      "bytes": 4511
+    },
+    {
+      "path": "licenses/fonts/GowunBatang-OFL.txt",
+      "archivePath": "usr/lib/Alhangeul/licenses/fonts/GowunBatang-OFL.txt",
+      "sha256": "49a57cc769fa9affd6eefb9070a61e3d3f6b757c97cafb15848bc6d1c81acc78",
+      "bytes": 4397
+    },
+    {
+      "path": "licenses/fonts/GowunDodum-OFL.txt",
+      "archivePath": "usr/lib/Alhangeul/licenses/fonts/GowunDodum-OFL.txt",
+      "sha256": "a7c73f9521cd646bbdfb6684c99a62311bbd7bce11898dc11ef0b3c69eda1aca",
+      "bytes": 4395
+    },
+    {
+      "path": "licenses/fonts/HappinessSans-LICENSE.pdf",
+      "archivePath": "usr/lib/Alhangeul/licenses/fonts/HappinessSans-LICENSE.pdf",
+      "sha256": "f5bd344131ee034f3425517ea376ab6acea9126310e7b2cd74cd18673991b055",
+      "bytes": 194608
+    },
+    {
+      "path": "licenses/fonts/LPPL-1.3c.txt",
+      "archivePath": "usr/lib/Alhangeul/licenses/fonts/LPPL-1.3c.txt",
+      "sha256": "3d262cdf34dafa6955f703c634a8c238ec44109bc8dd6ef34fb7aa54809f7e66",
+      "bytes": 19102
+    },
+    {
+      "path": "licenses/fonts/LatinModernMath-GUST-FONT-LICENSE.txt",
+      "archivePath": "usr/lib/Alhangeul/licenses/fonts/LatinModernMath-GUST-FONT-LICENSE.txt",
+      "sha256": "49ea6cb9257bbee0a3979c48a774cd221550ac1c20c95549efe45fc99cc18050",
+      "bytes": 1377
+    },
+    {
+      "path": "licenses/fonts/NanumGothic-OFL.txt",
+      "archivePath": "usr/lib/Alhangeul/licenses/fonts/NanumGothic-OFL.txt",
+      "sha256": "eeacf16032901d0ed0456876ec77b8f0fda6b3fecec7d972f8543eb602e6c30f",
+      "bytes": 4534
+    },
+    {
+      "path": "licenses/fonts/NanumGothicCoding-OFL.txt",
+      "archivePath": "usr/lib/Alhangeul/licenses/fonts/NanumGothicCoding-OFL.txt",
+      "sha256": "eeacf16032901d0ed0456876ec77b8f0fda6b3fecec7d972f8543eb602e6c30f",
+      "bytes": 4534
+    },
+    {
+      "path": "licenses/fonts/NanumMyeongjo-OFL.txt",
+      "archivePath": "usr/lib/Alhangeul/licenses/fonts/NanumMyeongjo-OFL.txt",
+      "sha256": "8eb1c1019fe7fe6d0b6e7d7bbbba1d9cbdd969d8c5f26455708f6cfb8a77284c",
+      "bytes": 4497
+    },
+    {
+      "path": "licenses/fonts/NotoCJKSerif-OFL.txt",
+      "archivePath": "usr/lib/Alhangeul/licenses/fonts/NotoCJKSerif-OFL.txt",
+      "sha256": "6a73f9541c2de74158c0e7cf6b0a58ef774f5a780bf191f2d7ec9cc53efe2bf2",
+      "bytes": 4301
+    },
+    {
+      "path": "licenses/fonts/NotoSansKR-OFL.txt",
+      "archivePath": "usr/lib/Alhangeul/licenses/fonts/NotoSansKR-OFL.txt",
+      "sha256": "1c05c68c34f9708415aada51f17e1b0092d2cea709bf4a94cd38114f9e73d7d9",
+      "bytes": 4388
+    },
+    {
+      "path": "licenses/fonts/Pretendard-OFL.txt",
+      "archivePath": "usr/lib/Alhangeul/licenses/fonts/Pretendard-OFL.txt",
+      "sha256": "82e9c8a4b203261f10ddba1296422d64914ff3d4b7bd8a12896d03f0f088d70a",
+      "bytes": 4816
+    },
+    {
+      "path": "licenses/fonts/SIL-OFL-1.1.txt",
+      "archivePath": "usr/lib/Alhangeul/licenses/fonts/SIL-OFL-1.1.txt",
+      "sha256": "f19c674290e5dc79f02e8efe16139ab56a06a7128876f5b1579ffd0db5bc897e",
+      "bytes": 4069
+    },
+    {
+      "path": "licenses/fonts/SpoqaHanSans-OFL.txt",
+      "archivePath": "usr/lib/Alhangeul/licenses/fonts/SpoqaHanSans-OFL.txt",
+      "sha256": "279753543734e7a1846e3cb3f80d4dcdcc91f49c436411adaba82e3913c61cde",
+      "bytes": 4562
+    },
+    {
+      "path": "licenses/fonts/font-notices.json",
+      "archivePath": "usr/lib/Alhangeul/licenses/fonts/font-notices.json",
+      "sha256": "ab1f37f8bb1a0efec595526620bfb5910149ebab6a4ef6dc6496b7c232f3f15e",
+      "bytes": 19808
+    },
+    {
+      "path": "licenses/LICENSE",
+      "archivePath": "usr/lib/Alhangeul/licenses/LICENSE",
+      "sha256": "1c3a7d5643b163a3ead4965e1bea33b832caee5bfca265efe42afcd7bc696b5b",
+      "bytes": 1072
+    },
+    {
+      "path": "licenses/dependency-notices.zip",
+      "archivePath": "usr/lib/Alhangeul/licenses/dependency-notices.zip",
+      "sha256": "1b780dec50d67dc70b203dc51e014795f8b61f9cecc22ffecdae2c45632be7f3",
+      "bytes": 4380966
+    },
+    {
+      "path": "privacy/install-privacy.txt",
+      "archivePath": "usr/lib/Alhangeul/privacy/install-privacy.txt",
+      "sha256": "d2dd9838f0c51ddfbf842451499236aa070ebccb16e818820c900130059e1f80",
+      "bytes": 12223
+    }
+  ]
+}

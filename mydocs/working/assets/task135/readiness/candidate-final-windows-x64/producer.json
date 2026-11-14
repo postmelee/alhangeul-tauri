@@ -1,0 +1,31 @@
+{
+  "repository": "postmelee/alhangeul-tauri",
+  "buildRef": "efe13e61d954a9ae5c801ed447bf3cbea105f5e2",
+  "nativeRunId": 43508471859,
+  "workflowPath": ".github/workflows/alhangeul-desktop.yml",
+  "artifactId": 14079204693,
+  "artifactName": "alhangeul-desktop-windows-x64",
+  "artifactSize": 190381122,
+  "artifactDigest": "sha256:e8de1ccf3deddccdd16b864e4bcd6b0fbc84937af374fc1d8cd35831230dd26a",
+  "validationHandoff": {
+    "identity": {
+      "repository": "postmelee/alhangeul-tauri",
+      "runId": "43508471859",
+      "runAttempt": "1",
+      "workflowSha": "efe13e61d954a9ae5c801ed447bf3cbea105f5e2",
+      "harnessSha": "efe13e61d954a9ae5c801ed447bf3cbea105f5e2",
+      "productSha": "efe13e61d954a9ae5c801ed447bf3cbea105f5e2",
+      "artifactId": "14079204693",
+      "artifactDigest": "sha256:e8de1ccf3deddccdd16b864e4bcd6b0fbc84937af374fc1d8cd35831230dd26a",
+      "expectedVersion": "0.1.3",
+      "sourceMode": "ordinary"
+    },
+    "metadataStatus": "verified",
+    "downloadStatus": "unverified",
+    "producerStatus": "completed",
+    "producerConclusion": "success",
+    "purpose": "additional-validation-only",
+    "productAcceptance": "unverified",
+    "releaseAcceptance": "unverified"
+  }
+}

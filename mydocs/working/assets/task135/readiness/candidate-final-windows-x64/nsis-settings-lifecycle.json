@@ -1,0 +1,27 @@
+{
+  "reinstall": [
+    {
+      "reinstallPreserved": true,
+      "sha256": "a270a7703ba4ead76c1fbffde498a47b68e9e49481e3d9d091ad60932e359ab4",
+      "rebootRequired": false,
+      "automaticChecks": true,
+      "exitCode": 0
+    },
+    {
+      "reinstallPreserved": true,
+      "sha256": "de2301676d8e57fe8658633f76dca9563e80ae70c4f9ec3ac5525fecbcfd42b1",
+      "rebootRequired": false,
+      "automaticChecks": false,
+      "exitCode": 0
+    }
+  ],
+  "initialInstallExitCode": 0,
+  "reinstallMode": "NSIS /S with existing installation",
+  "scope": "Synthetic choice-file preservation by the installer; actual UI/TLS is verified separately.",
+  "rebootRequired": false,
+  "postRebootValidated": false,
+  "disclosureCloseChoiceAbsent": true,
+  "uninstallRetainedLastChoice": true,
+  "uninstallExitCode": 0,
+  "freshSilentInstallChoiceAbsent": true
+}

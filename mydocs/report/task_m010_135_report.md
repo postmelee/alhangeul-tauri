@@ -4,9 +4,9 @@ GitHub Issue: [#135](https://github.com/postmelee/alhangeul-tauri/issues/135)
 마일스톤: M010
 
 ## 작업 요약
-- 대상 이슈 #135, Stage 7 제품 보완 진행 중. 정책 공개는 완료했고 전체 신청 적격성 판정은 보류한다.
+- 대상 이슈 #135, Stage 7 제품 보완과 최종 설치본 검증을 완료했다. 정책 공개는 완료했으며 잔여 라이선스 고지·제공자 판단 때문에 전체 신청 적격성 판정은 보류한다.
 - 공개 [개인정보처리방침](https://postmelee.github.io/alhangeul-tauri/privacy/)과 [코드 서명 정책](https://postmelee.github.io/alhangeul-tauri/code-signing/)은 PR #136·#137 및 exact Pages 배포로 반영했다. 아래 단계별 기록의 미배포·PR 없음·submodule 미초기화 표현은 각 관측 시점의 상태다.
-- Windows/Linux x64의 비게시 updater 시험 구성에서 기본 꺼짐·선택 저장·재시작·손상 설정과 TLS positive control을 수용했다. 첫 일반 설치 후보 `7b37eec8`에서 발견한 MSI 고지 경로·화면 문제를 고친 최신 후보는 `34850d42`다. 전체 신청 적격성·제품 릴리스 수용과 구분한다.
+- Windows/Linux x64의 비게시 updater 시험 구성에서 기본 꺼짐·선택 저장·재시작·손상 설정과 TLS positive control을 수용했다. 첫 일반 설치 후보 `7b37eec8`의 MSI 고지 경로·화면 문제를 고친 `34850d42` full 결과와 고지 원문 6개를 추가한 최종 `efe13e61` package/설치본 소비자 성공을 구분해 보존했다. 전체 신청 적격성·제품 릴리스 수용과 구분한다.
 - 최신 안정 버전과 활성 보안 제보 경로를 확인해 SECURITY.md를 정비하고 실제 처리에 근거한 개인정보처리방침을 작성했다.
 - `local/task135`, 별도 worktree `/tmp/alhangeul-task135`. 기존 `local/task69` 변경은 보존했다.
 
@@ -190,3 +190,24 @@ CanvasKit registry gitHead는 공식 Gitiles에서도 404였고 공개 refs에�
 43507138554 Linux job은 고지 23개 hash(새 licenses/LICENSE 경로 포함)와 나눔 3개 FontFace/hash 검사를 통과했다. 다만 실제 screenshot은 표본 paint 이전의 제목만 보였으므로 시각 수용은 실패로 남긴다. font load/DOM 측정만으로 화면 성공을 선언하지 않았다. 캡처 전 두 animation frame과 250ms compositor 대기를 두고 캡처 시점의 세 표본 경계를 기록하도록 harness를 보완했다. 새 고지 package exact 소비자에서 화면을 다시 검토한다.
 
 동일 34850d42 bytes의 Windows-only [재검증 43507720764](https://github.com/postmelee/alhangeul-tauri/actions/runs/43507720764)은 성공했다(harness 6d72b87b). NSIS/MSI 실제 화면의 개인정보 header·첫 Windows 줄·계속 버튼과 체크박스 부재를 확인했고 전체 UIA 본문은 동봉 TXT의 공백 제거 4,738자와 일치했다. 두 설치본의 고지 23개 hash가 일치하여 MSI `licenses/LICENSE` 누락이 해소되었다. 나눔 세 글꼴 화면도 직접 확인했다(NSIS/MSI 캡처는 동일 PNG hash). 새 선택 부재·안내 닫기 무선택·true/false 재설치 보존·제거 뒤 마지막 false 잔존이 통과했고 모든 설치/재설치/제거 반환은 0이었다. MSI는 실제 REINSTALL=ALL REINSTALLMODE=amus를 사용했다. 이 시나리오에서는 재부팅 필요가 없었으며 별도 강제 재설치 smoke의 3010 제한을 없앤 것은 아니다. [원시 evidence](../working/assets/task135/readiness/candidate-34850-windows/). 새 원문 6개 ZIP의 패키지 수용은 후속 단계다.
+
+UIA harness의 fast run 43507715396은 성공했다. 최종 고지 후보 `efe13e61d954a9ae5c801ed447bf3cbea105f5e2`는 [package run 43508471859](https://github.com/postmelee/alhangeul-tauri/actions/runs/43508471859)에서 artifact/all/product, run_tests=false, publish_release=false로 생성 중이다. 34850d42 대비 apps·package/lock·rhwp pin·native build workflow 차이는 없고 제품 범위 차이는 고지 ZIP와 출처 목록뿐이다. 이 후속 run은 native/core/Windows smoke를 생략한 부분 package 검사이며 기존 full/native 결과와 구분한다. 전체 producer 성공 후 exact 새 bytes 소비자만 실행하도록 연결했다.
+
+동일 34850d42 AppImage의 Linux-only [재검증 43509352586](https://github.com/postmelee/alhangeul-tauri/actions/runs/43509352586)은 성공했다(harness efe13e61). 고지 23개·나눔 3개 hash/로딩이 일치했고 두 animation frame·250ms 대기 뒤 실제 screenshot에서 세 한글/영문 표본을 모두 확인했다. 각 표본의 캡처 직전 경계도 저장했다. [실제 화면·좌표·hash](../working/assets/task135/readiness/candidate-34850-linux/). 이전 blank screenshot의 시각 실패를 소급 성공으로 바꾸지 않는다.
+
+## 추가 사전 문의 발송 및 최종 패키지 확인
+2026-11-14(KST) 작업지시자가 IJG·CDLA-Permissive-2.0 쟁점의 제시된 추가 문의를 그대로 발송하도록 승인했다. 기존 SignPath thread의 수신자와 지정 발신 계정 profile을 확인하고 support@signpath.io에 reply로 발송했다. 승인 본문 일치·동일 thread·SENT 상태를 read-back으로 확인했으며 첨부·신청·계정 생성은 없다. 현재 발송 2건, 수신 답변 0건이다. 개인 발신 주소·메일 식별자는 공개 저장소에 기록하지 않는다.
+
+최종 efe13e61 package run 43508471859의 fast·Windows x64·Linux x64/arm64 package·최종 집계 성공을 확인했다. 이는 앞서 계획한 product 부분 검증이며 core/native test/Windows smoke 새 실행 성공이 아니다. 이전 대기 중단 후 후속 소비자는 실행되지 않았으므로 [새 exact 소비자 43550628991](https://github.com/postmelee/alhangeul-tauri/actions/runs/43550628991)를 명시 실행했다. source/harness efe13e61, producer workflow alhangeul-desktop.yml이다.
+
+
+최종 소비자 43550628991의 Windows x64·Linux x64 두 job은 모두 성공했다. exact producer/source·엄격한 archive digest·파일 inventory 검증 step 성공을 원격 로그와 job 결과에서 확인했다. `producer.json`은 다운로드 전 metadata 단계 기록이므로 그 안의 `downloadStatus=unverified`를 임의 수정하지 않고 이후 step 성공을 [최종 소비자 run](../working/assets/task135/readiness/final-consumer-run.json)으로 연결한다. [최종 producer run](../working/assets/task135/readiness/final-producer-run.json)은 core/smoke 생략을 함께 보존한다.
+
+- [Windows NSIS·MSI](../working/assets/task135/readiness/candidate-final-windows-x64/): 설치 안내 header·첫 Windows 줄·계속 버튼과 체크박스 부재를 실제 화면으로 확인했다. 공백 제거 4,738자의 TXT 전체가 UIA에 일치한다(NSIS는 별도 제목 추가, MSI UIA는 같은 본문 2회 반복). 설치된 고지 각각 23개와 최종 ZIP hash `1b780dec50d67dc70b203dc51e014795f8b61f9cecc22ffecdae2c45632be7f3`가 일치했다. 나눔 3개의 한글·영문 표본이 표시되었으며 NSIS/MSI font PNG는 동일 hash다. 새 선택 부재·안내 닫기 무선택·합성 true/false 설정의 실제 재설치 보존·제거 후 마지막 false 잔존이 통과했다. 이 시나리오의 설치/재설치/제거는 모두 exit 0·재부팅 필요 없음이다. 별도 강제 MSI smoke의 재부팅 후 미검증 제한을 해소한 것은 아니다.
+- [Linux x64 AppImage](../working/assets/task135/readiness/candidate-final-linux-x64/): 고지 23개와 최종 ZIP hash 일치, 나눔 3개 로딩·hash·캡처 직전 경계 및 실제 한글·영문 화면을 확인했다. 이는 합성 표본 관측이며 모든 문서의 조판 동일성을 증명하지 않는다.
+- [Linux arm64 DEB 고지](../working/assets/task135/readiness/final-arm64-deb-notices.json): producer artifact 14078753993의 다운로드 ZIP digest·전체 inventory 파일 크기/hash를 확인한 뒤 DEB payload의 고지 23개를 exact source blob과 대조했다. 최종 고지 ZIP도 일치했다. 읽기 전용 archive 검사이며 arm64 GUI 실행 결과로 확대하지 않는다.
+- [최종 Linux 패키지 수명주기](../working/assets/task135/readiness/linux-package-lifecycle-final.json): x64 DEB/RPM·arm64 DEB의 설치·동일 버전 재설치·갱신·주입 실패/복구·제거 계약과 MIME 기본 연결·타사 thumbnailer·cache sentinel 보존이 통과했다. 주입 실패의 nonzero와 RPM refresh 실패 관측의 exit 0을 원시 기록대로 보존했다. 제거 후 모든 사용자 데이터 삭제를 뜻하지 않는다.
+
+34850d42→efe13e61에서 앱 코드·잠금·rhwp pin·native build workflow가 동일한 것을 다시 확인했다. 이전 full/native/core 결과 및 별도 비게시 updater 구성의 실제 선택/TLS 결과를 이 동일성 범위 안에서 재사용한다. 새 일반 package에서 updater positive control을 다시 실행했다고 주장하지 않는다. 최종 제품 source는 efe13e61이며 이후 보고서/evidence-only 커밋과 구분한다.
+
+남은 항목은 (1) CanvasKit 0.41.1의 정확한 upstream source와 C++ 내부 원문 고지 연결, native filename gap의 원문 수록 범위 및 실제 배포 closure, (2) SignPath의 WebView2·rhwp 경계 및 IJG/CDLA 조건 해석이다. 계정 MFA·origin·artifact 제한·서명 승인 설정은 가입 후 단계로 이번 범위에서 제외한다. 공개 정책은 현재 안정 v0.1.3 동작을 유지하며 미출시 후보의 기본 꺼짐 기능을 이미 배포된 것으로 기술하지 않는다. 제품 PR·릴리스·신청·이슈 close는 수행하지 않았다.

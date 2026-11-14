@@ -1,0 +1,57 @@
+{
+  "consumerRun": 43550628991,
+  "productSha": "efe13e61d954a9ae5c801ed447bf3cbea105f5e2",
+  "visualReview": "NSIS/MSI privacy headers, first Windows line, Continue button, no acceptance checkbox, all three Nanum samples reviewed. Identical font screenshot hashes are intentional.",
+  "bodyComparison": "Whitespace normalized; NSIS includes a separate heading, MSI UIA repeats the same complete body twice.",
+  "installers": {
+    "nsis": {
+      "normalizedBodyCharacters": 4738,
+      "completeBodyOccurrences": 1,
+      "remainingText": "설치시시스템변경과개인정보처리를확인하세요.",
+      "firstWindowsLineVisible": true,
+      "fontScreenshotSha256": "596c3fb5d5cba9c51dcad486624b018f310cd4451558370a8ba8d2763cc08ee0"
+    },
+    "msi": {
+      "normalizedBodyCharacters": 4738,
+      "completeBodyOccurrences": 2,
+      "remainingText": "",
+      "firstWindowsLineVisible": true,
+      "fontScreenshotSha256": "596c3fb5d5cba9c51dcad486624b018f310cd4451558370a8ba8d2763cc08ee0"
+    }
+  },
+  "evidenceStorage": {
+    "transformation": "Physical CRLF line endings normalized to LF; parsed JSON and escaped UI text unchanged.",
+    "files": [
+      {
+        "file": "nsis-installer-visibility.json",
+        "originalSha256": "aa33a53566e36104dc8f88dec0fdc14ae0f51697d2f6771eaaf3aa3bb8556595",
+        "storedSha256": "cbe6ae9745a744012e944e055b806ef3e9b6090e7746da8a90a92dcc503dcddb"
+      },
+      {
+        "file": "msi-installer-ui.json",
+        "originalSha256": "0a871b07b0db50558eb64d7ed78e237099ecf85171e90f3e85474c8a677f34d0",
+        "storedSha256": "a5f188ce428695734d86d63235a2e55f782e4a0d88868796cbf86fa015191d28"
+      },
+      {
+        "file": "msi-settings-lifecycle.json",
+        "originalSha256": "a0c95c3154b72651b05f178bfe8ff390383c9a0302735b29de0ffff16ff64ebb",
+        "storedSha256": "0675c9c90ea2647bc66a61019996845b7fab82fe416782783059dfca732a892b"
+      },
+      {
+        "file": "nsis-installer-ui.json",
+        "originalSha256": "514d6ccd8c7f864e3471691836ef063531a29f561f5ee1f1072cd1e2c28d51ee",
+        "storedSha256": "733babd6197a0f038f3d6b1b66ee55efa90a6aa30f6c9383ef6ad4f8d6b51f27"
+      },
+      {
+        "file": "msi-installer-visibility.json",
+        "originalSha256": "a066b2f084e50b4cce6a2b3cb1c58540ff6af4edf70fe2dc9339f7b766ab6a42",
+        "storedSha256": "a5d6ba9d3011dd06f260bdf431f7783813a4bbd30b56ce2813d7ab07e3dc3b7f"
+      },
+      {
+        "file": "nsis-settings-lifecycle.json",
+        "originalSha256": "07db24f4dc982a0ee10c4e6c1005494591ecbd944757caa955dd7bf9a735d0cb",
+        "storedSha256": "f3d65d3e881cbef70ae9e55b3ab9c588c48015a280beec355b6fce742a03a57a"
+      }
+    ]
+  }
+}

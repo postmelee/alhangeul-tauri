@@ -1,0 +1,22 @@
+{
+  "marker": "Windows:",
+  "visible": true,
+  "observations": [
+    {
+      "textRectangles": [
+        {
+          "right": 343.0,
+          "top": 385.0,
+          "bottom": 401.0,
+          "left": 289.0
+        }
+      ],
+      "controlBounds": {
+        "right": 736.0,
+        "top": 288.0,
+        "bottom": 439.0,
+        "left": 286.0
+      }
+    }
+  ]
+}
