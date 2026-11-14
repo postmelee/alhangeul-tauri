@@ -6,10 +6,10 @@ GitHub Issue: [#132](https://github.com/postmelee/alhangeul-tauri/issues/132)
 ## 작업 요약
 
 - 대상 이슈: #132, Windows 썸네일 지원 환경·실제 기능 검증 정합화.
-- 단계: 4개 본 단계. Stage 3은 무료 runner·실제 client 실험과 최소 수정에 따라 3.1~3.6으로 세분화했다.
+- 단계: 5개 본 단계. Stage 3은 무료 runner·실제 client 실험과 최소 수정에 따라 3.1~3.6으로 세분화했다.
 - 결과: 사용자별 NSIS 정책을 유지하면서 DLL 잠금 정리, clean Windows VC 런타임 누락, 설치 직후 worker 시작 예산 소진을 수정했다.
-- Windows 10/11의 NSIS 새 설치·MSI 일반 설치·공개본 동일 버전 NSIS 업그레이드 여섯 경로에서 실제 표준 사용자 Explorer 내용·API bitmap·설치 생명주기를 확인했다.
-- PR 생성 전 보고 상태다. 기존 v0.1.3 Release/tag/asset/feed와 사이트는 변경하지 않았다.
+- Windows 10/11의 NSIS/MSI 새 설치·공개본 동일 버전 업그레이드 여덟 경로에서 최종 서명 파일의 표준 사용자 Explorer·API bitmap·설치 생명주기를 확인했다. 설치 파일6종 문서 작업도 통과했다.
+- #138과 릴리즈 PR #139를 승인에 따라 병합했다. 제품4e99e883의 비게시 서명·검증은 완료했고 검증 후속 PR을 준비한다. 기존 v0.1.3 Release/tag/asset/feed와 사이트는 변경하지 않았다.
 
 ## 변경 파일 목록과 영향 범위
 
@@ -34,6 +34,7 @@ upstream rhwp pin과 앱 버전은 이 타스크에서 변경하지 않았다. �
 | README.md | 기존 진입 문서 | 동일 | OK | 설치 형식 지원 조건 보완 |
 | WINDOWS_THUMBNAILS.md | docs/architecture | 동일 | OK | 승인된 시간 예산·CRT·등록 경계 |
 | CI_VALIDATION.md, DESKTOP_RELEASE.md, RELEASE_CHECKLIST.md | docs/operations | 동일 | OK | strict gate·실제 guest·재사용/배포 경계 |
+| docs/releases/v0.1.3.md | 기존 릴리즈 기록 | 동일 | OK | Stage5 승인 위치, 최초 공개와 비게시 후보 구분 |
 | 계획·단계 보고·본 보고·오늘할일 | mydocs의 기존 역할별 폴더 | plans/working/report/orders | OK | 새 공식 문서 루트 없음 |
 
 ## 변경 전·후 정량 비교
@@ -51,7 +52,13 @@ upstream rhwp pin과 앱 버전은 이 타스크에서 변경하지 않았다. �
 
 ## 검증 결과
 
-최종 기능 검증 제품은 `ece8bb5e46a1a81e4d74ad2f1dbf84bde7fd59d4`, 실제 client harness는 `92ed2d2b2d132e5ba25fd17d56503a20654b63cd`다. 후속 보고서 commit은 문서만 추가하며 새 제품 bytes로 오인하지 않는다. 상세 run/artifact/installer/화면 hash는 [Stage 3.6](../working/task_m010_132_stage3.6.md)에 기록했다.
+### Stage 5 — 최종 배포 후보 수용
+
+제품 `4e99e883eec6bdf9d6ce59070c769f175052fc3f`의 signing43551466131과 full43551469171이 성공했다. 최종 signed Windows10/11×4경로(공개 MSI 동일 버전 교체 포함), NSIS/MSI/AppImage와 Linux DEB/RPM/arm64 DEB 문서 작업을 검증했다. 세 production Minisign, 실제 installer·설치 binary·저장 문서·PNG hash와 owned cleanup을 독립 확인했다. 공개 교체11개·복구 원본·Pages 적용/복구 patch도 준비했다. 전체 실행·정확한 파일 hash·수용 한계는 [Stage 5](../working/task_m010_132_stage5.md)에 기록했다.
+
+### Stage 1~4 — 병합 전 ordinary 후보 이력
+
+이전 기능 검증 제품은 `ece8bb5e46a1a81e4d74ad2f1dbf84bde7fd59d4`, 실제 client harness는 `92ed2d2b2d132e5ba25fd17d56503a20654b63cd`다. 후속 보고서 commit은 문서만 추가하며 새 제품 bytes로 오인하지 않는다. 상세 run/artifact/installer/화면 hash는 [Stage 3.6](../working/task_m010_132_stage3.6.md)에 기록했다.
 
 | 수용 기준 | 결과 |
 |---|---|
@@ -78,32 +85,33 @@ PR 전 devel의 #135/#136 변경(644d0ac52bb364e57907fd7cd98c57ceaf86dce2)을 me
 - [Stage 3.5](../working/task_m010_132_stage3.5.md): Stage3.4 guest 준비·실패를 이어 clean Windows VC 의존성을 수정하고 첫 실제 Explorer 수용.
 - [Stage 3.6](../working/task_m010_132_stage3.6.md): 정확한 cold 시작 측정·예산 수정·새 제품 전체 CI와 두 OS 여섯 경로.
 - Stage 4: 본 보고, 기존 계획서의 재배포 인계안과 오늘할일 정리, PR 전 알림.
+- [Stage 5](../working/task_m010_132_stage5.md): #138/#139 병합·최종 signed bytes·MSI 동일 버전 교체·Windows8경로·Linux 파일3종과 공개 교체/복구 준비.
 
 ## 잔여 위험과 후속 작업
 
 ### 잔여 위험
 
 - 관리자/UAC 비활성 환경은 MSI를 사용한다. 관리자 NSIS 실패를 수정했다고 주장하지 않는다.
-- MSI forced-reinstall 3010 뒤 재부팅 후 수용은 기존 제외 범위다. 이번 MSI guest는 새 설치·일반 omus 재설치다.
+- MSI forced-reinstall 3010 뒤 재부팅 후 수용은 기존 제외 범위다. 최종 MSI guest는 새 설치·일반 omus 재설치와 공개본 동일 버전 교체이며 실제3010은 발생하지 않았다.
 - 특정 OS build/공개 fixture/표준 DPI 결과다. 실제 한컴·고DPI·모든 PC, 사용자 golden 승인, Windows10 지원 정책을 대신하지 않는다.
 - 무료 runner에서 한 번 OS 부팅 정체가 발생했다. 원본 실패·취소·정리는 보존했고 같은 입력의 새 VM 성공과 구분한다. 장기 무중단 운영을 보장하지 않는다.
-- 최종 updater 서명 installer는 아직 생성·수용하지 않았다. ordinary artifact와 다르면 새 bytes로 검증해야 한다.
+- 최종 updater 서명 installer는 새 bytes로 생성·수용했다. 공개 tag/asset/feed 교체와 공개 URL read-back은 아직 실행하지 않았다.
 - 기존 font-performance의 shellcheck SC2016 경고는 이 변경 밖이며 actionlint 검사는 shellcheck 제외로 수행했다.
 
 ### 동일 v0.1.3 재배포 인계
 
 [구현계획서의 구체안](../plans/task_m010_132_impl.md#stage-4-인계용-동일-v013-재배포안-미실행)에 기존 원본11개 보존, 병합 source 고정, 비게시 서명 후보, exact 최종 파일 재검증, 수동 교체 안내, tag/asset/inventory/checksum/Pages와 복구 순서를 정리했다.
 
-기존 updater는 version이 더 커야 하므로 같은 v0.1.3 사용자에게 자동 갱신을 약속하지 않는다. NSIS 공개본 교체는 ordinary 후보에서 검증됐고 최종 서명 bytes에서 재확인한다. 이전 공개 MSI에서 새 MSI로의 교체는 실제 ProductCode/UpgradeCode/PackageCode와 재부팅 요구를 별도로 확인한다.
+기존 updater는 version이 더 커야 하므로 같은 v0.1.3 사용자에게 자동 갱신을 약속하지 않는다. NSIS/MSI 공개본 교체는 최종 서명 bytes에서 두 OS 모두 재확인했다. MSI 식별자·실제 등록 교체와 일반 exit0을 확인했으며 강제3010 재부팅 이후 수용을 대신하지 않는다.
 
 현재 게시 workflow는 다른 source를 가리키는 기존 tag를 거부하고 Release 생성만 수행한다. 최종 source·파일/hash·서명과 복구 자료가 준비된 뒤 태그 이동과 asset 교체의 구체적 승인을 받는다. 기존 v0.1.3 원본과 링크를 지금 변경하지 않았다.
 
 ### 후속 작업 후보
 
-- 최종 서명 파일 검증과 같은 버전 재배포.
+- 승인 후 같은 버전 tag/11개 파일/본문/Pages 교체와 공개 read-back. 비게시 최종 서명 파일 검증은 완료했다.
 - 실제 한컴·고DPI·현장 PC 조합 및 MSI3010 재부팅 수용은 필요 시 별도 범위로 진행.
 - guest 부팅 실패의 추가 운영 진단·기준 이미지 승인·지속 시각 gate는 후속 개선 대상으로 남긴다. 미등록 이슈를 등록됐다고 기록하지 않는다.
 
 ## 작업지시자 승인 요청
 
-사용자의 이슈 해결까지 연속 진행 승인 범위에서 구현·검증·보고를 마쳤다. 요청대로 PR 생성 전에 이 보고서를 전달한다. PR·merge·이슈 close·v0.1.3 tag 이동·Release/Pages 게시는 아직 수행하지 않았다. PR 검토·병합과 최종 파일 배포는 각 구체적 결과를 기준으로 이어간다.
+사용자 승인에 따라 #138/#139 병합과 비게시 최종 파일 검증을 완료했다. 검증 하네스·보고 후속 PR을 게시하고 필수 검사를 확인한다. #132는 열어 두며 요청된 사전 보고 경계에서 태그 이동·11개 파일과 본문·Pages/feed 교체 및 실패 시 원본 복구의 명시 승인을 받는다.

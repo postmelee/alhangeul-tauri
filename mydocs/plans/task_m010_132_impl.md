@@ -4,7 +4,7 @@
 GitHub Issue: [#132](https://github.com/postmelee/alhangeul-tauri/issues/132)
 마일스톤: M010
 
-현재: Stage 4 최종 보고 완료 — 새 제품의 Windows 10/11 여섯 경로 통과, PR 생성 전 보고 상태. 기존 v0.1.3 태그·Release·Pages는 변경하지 않았으며 최종 서명 파일·재배포는 별도다.
+현재: Stage 5 비게시 서명·최종 파일 검증 완료 — #138/#139 병합, 제품4e99e883 고정, 최종 signed Windows 10/11 여덟 경로와 설치 파일6종 수용. 검증 후속 PR을 준비하며 태그·Release·Pages 교체는 사전 보고·승인 대기다.
 
 2026-11-11 수행계획 승인과 이슈 해결까지 연속 진행 지시를 적용한다. PR 생성 전 보고한다.
 
@@ -16,6 +16,7 @@ GitHub Issue: [#132](https://github.com/postmelee/alhangeul-tauri/issues/132)
 | 2 | 원인에 따른 최소 수정 | handler/등록/installer 또는 실행 문맥 | 수정 전/후 기능 회귀 |
 | 3 | 실제 Windows 수용 | 설치 생명주기·Explorer 증거 | 새 이미지/타사 연결/MSI 회귀 |
 | 4 | 최종 보고 | 기존 공식 문서·최종 보고 | 계약 일치, PR 전 보고 |
+| 5 | 비게시 재릴리즈 준비 | 병합 source·signed 후보·복구/교체안 | Windows8경로·파일6종·서명·full CI |
 
 ## 문서 위치 확인
 
