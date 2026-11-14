@@ -6,10 +6,10 @@ GitHub Issue: [#132](https://github.com/postmelee/alhangeul-tauri/issues/132)
 ## 작업 요약
 
 - 대상 이슈: #132, Windows 썸네일 지원 환경·실제 기능 검증 정합화.
-- 단계: 5개 본 단계. Stage 3은 무료 runner·실제 client 실험과 최소 수정에 따라 3.1~3.6으로 세분화했다.
+- 단계: 6개 본 단계. Stage 3은 무료 runner·실제 client 실험과 최소 수정에 따라 3.1~3.6으로 세분화했다.
 - 결과: 사용자별 NSIS 정책을 유지하면서 DLL 잠금 정리, clean Windows VC 런타임 누락, 설치 직후 worker 시작 예산 소진을 수정했다.
 - Windows 10/11의 NSIS/MSI 새 설치·공개본 동일 버전 업그레이드 여덟 경로에서 최종 서명 파일의 표준 사용자 Explorer·API bitmap·설치 생명주기를 확인했다. 설치 파일6종 문서 작업도 통과했다.
-- #138과 릴리즈 PR #139를 승인에 따라 병합했다. 제품4e99e883의 비게시 서명·검증은 완료했고 검증 후속 PR을 준비한다. 기존 v0.1.3 Release/tag/asset/feed와 사이트는 변경하지 않았다.
+- #138/#139/#140 병합과 최종 파일 검증 후, 명시 승인에 따라 같은 v0.1.3을 재릴리즈했다. 제품4e99e883·tag4860b8ef, Release11개/본문과 #141/#142의 Pages/feed 전환을 완료했다. 공개 API/URL22개 파일·Pages26개·feed3target·웹8조합 검증을 통과했다.
 
 ## 변경 파일 목록과 영향 범위
 
@@ -52,6 +52,10 @@ upstream rhwp pin과 앱 버전은 이 타스크에서 변경하지 않았다. �
 
 ## 검증 결과
 
+### Stage 6 — 공개 재릴리즈 완료
+
+[Stage 6](../working/task_m010_132_stage6.md)에 공개 실행과 독립 재검산을 기록했다. Release ID441647361·stable/latest·버전0.1.3을 유지하며 검증한11개 bytes와 본문을 교체했다. tag ref는 기존 object를 조건으로4e99e883을 가리키는 새 annotated object로 이동했다. API/URL 각각11개 actual 파일과 각3서명, checksum/inventory/body/tag를 대조했고 exact Pages43566571950의 공개26파일·다운로드6종·feed3target·웹8조합을 확인했다. 원본 복구 자료를 보존했고 복구 실행은 필요하지 않았다.
+
 ### Stage 5 — 최종 배포 후보 수용
 
 제품 `4e99e883eec6bdf9d6ce59070c769f175052fc3f`의 signing43551466131과 full43551469171이 성공했다. 최종 signed Windows10/11×4경로(공개 MSI 동일 버전 교체 포함), NSIS/MSI/AppImage와 Linux DEB/RPM/arm64 DEB 문서 작업을 검증했다. 세 production Minisign, 실제 installer·설치 binary·저장 문서·PNG hash와 owned cleanup을 독립 확인했다. 공개 교체11개·복구 원본·Pages 적용/복구 patch도 준비했다. 전체 실행·정확한 파일 hash·수용 한계는 [Stage 5](../working/task_m010_132_stage5.md)에 기록했다.
@@ -86,6 +90,7 @@ PR 전 devel의 #135/#136 변경(644d0ac52bb364e57907fd7cd98c57ceaf86dce2)을 me
 - [Stage 3.6](../working/task_m010_132_stage3.6.md): 정확한 cold 시작 측정·예산 수정·새 제품 전체 CI와 두 OS 여섯 경로.
 - Stage 4: 본 보고, 기존 계획서의 재배포 인계안과 오늘할일 정리, PR 전 알림.
 - [Stage 5](../working/task_m010_132_stage5.md): #138/#139 병합·최종 signed bytes·MSI 동일 버전 교체·Windows8경로·Linux 파일3종과 공개 교체/복구 준비.
+- [Stage 6](../working/task_m010_132_stage6.md): 승인된 tag·11파일·본문·Pages/feed 교체, 실제 공개 파일·서명·HTTP·화면 검증 완료.
 
 ## 잔여 위험과 후속 작업
 
@@ -95,7 +100,7 @@ PR 전 devel의 #135/#136 변경(644d0ac52bb364e57907fd7cd98c57ceaf86dce2)을 me
 - MSI forced-reinstall 3010 뒤 재부팅 후 수용은 기존 제외 범위다. 최종 MSI guest는 새 설치·일반 omus 재설치와 공개본 동일 버전 교체이며 실제3010은 발생하지 않았다.
 - 특정 OS build/공개 fixture/표준 DPI 결과다. 실제 한컴·고DPI·모든 PC, 사용자 golden 승인, Windows10 지원 정책을 대신하지 않는다.
 - 무료 runner에서 한 번 OS 부팅 정체가 발생했다. 원본 실패·취소·정리는 보존했고 같은 입력의 새 VM 성공과 구분한다. 장기 무중단 운영을 보장하지 않는다.
-- 최종 updater 서명 installer는 새 bytes로 생성·수용했다. 공개 tag/asset/feed 교체와 공개 URL read-back은 아직 실행하지 않았다.
+- 최종 updater 서명 installer의 공개 tag/asset/feed 교체와 공개 URL read-back을 완료했다. 이는 새 파일의 실제 v0.1.2→v0.1.3 앱 내 업데이트를 실행했다는 뜻은 아니며, 같은0.1.3은 수동 설치한다.
 - 기존 font-performance의 shellcheck SC2016 경고는 이 변경 밖이며 actionlint 검사는 shellcheck 제외로 수행했다.
 
 ### 동일 v0.1.3 재배포 인계
@@ -104,14 +109,14 @@ PR 전 devel의 #135/#136 변경(644d0ac52bb364e57907fd7cd98c57ceaf86dce2)을 me
 
 기존 updater는 version이 더 커야 하므로 같은 v0.1.3 사용자에게 자동 갱신을 약속하지 않는다. NSIS/MSI 공개본 교체는 최종 서명 bytes에서 두 OS 모두 재확인했다. MSI 식별자·실제 등록 교체와 일반 exit0을 확인했으며 강제3010 재부팅 이후 수용을 대신하지 않는다.
 
-현재 게시 workflow는 다른 source를 가리키는 기존 tag를 거부하고 Release 생성만 수행한다. 최종 source·파일/hash·서명과 복구 자료가 준비된 뒤 태그 이동과 asset 교체의 구체적 승인을 받는다. 기존 v0.1.3 원본과 링크를 지금 변경하지 않았다.
+일반 게시 workflow를 재실행하지 않고 명시 승인된 maintainer CLI 경로로 기존 Release ID·동일 URL을 유지하며 교체했다. 공개 새 bytes/서명을 검증한 뒤 Pages/feed를 전환했고 원본11개·본문·tag·Pages 복구 자료는 보존했다. 현재 식별자와 파일 목록은 Stage6와 기존 릴리즈 기록에 있다.
 
 ### 후속 작업 후보
 
-- 승인 후 같은 버전 tag/11개 파일/본문/Pages 교체와 공개 read-back. 비게시 최종 서명 파일 검증은 완료했다.
+- 요청된 같은 버전 재배포와 공개 검증은 완료했다. 이번 파일의 별도 실제 구버전 앱 내 업데이트 관측은 추가 범위가 필요한 경우 진행한다.
 - 실제 한컴·고DPI·현장 PC 조합 및 MSI3010 재부팅 수용은 필요 시 별도 범위로 진행.
 - guest 부팅 실패의 추가 운영 진단·기준 이미지 승인·지속 시각 gate는 후속 개선 대상으로 남긴다. 미등록 이슈를 등록됐다고 기록하지 않는다.
 
 ## 작업지시자 승인 요청
 
-사용자 승인에 따라 #138/#139 병합과 비게시 최종 파일 검증을 완료했다. 검증 하네스·보고 후속 PR을 게시하고 필수 검사를 확인한다. #132는 열어 두며 요청된 사전 보고 경계에서 태그 이동·11개 파일과 본문·Pages/feed 교체 및 실패 시 원본 복구의 명시 승인을 받는다.
+사용자가 #140 병합·준비한 공개 교체·실패 시 원본 복구·공개 검증까지 승인했고 해당 재릴리즈와 검증을 완료했다. 완료 보고 PR의 필수 검사·병합, #132 종료와 안전한 작업 정리를 같은 승인 범위에서 마무리한다. 추가 공개 승인을 요청하지 않는다.
