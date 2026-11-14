@@ -23,7 +23,12 @@ on:
         description: Exact existing product in a fresh Windows guest.
         type: choice
         default: nsis
-        options: [nsis, msi, nsis-upgrade]
+        options: [nsis, msi, nsis-upgrade, msi-upgrade]
+
+      guest_candidate_path:
+        description: Exact signed release candidate JSON; empty retains historical ordinary observation.
+        type: string
+        default: ""
 
       profile:
         description: Select validation scope; auto uses an exact base SHA and falls back to full.
@@ -93,6 +98,7 @@ jobs:
       contents: read
     uses: ./.github/workflows/alhangeul-windows-guest-probe.yml
     with:
+      candidate_path: ${{ inputs.guest_candidate_path }}
       scenario: ${{ inputs.guest_scenario }}
       operating_system: ${{ inputs.guest_os }}
 
