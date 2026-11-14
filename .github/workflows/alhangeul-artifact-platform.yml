@@ -59,6 +59,11 @@ jobs:
           fi
           echo "Building commit: $actual_sha"
 
+      - name: Recover Ubuntu mirror DNS in disposable CI
+        if: runner.os == 'Linux'
+        shell: bash
+        run: sudo --preserve-env=GITHUB_ACTIONS,RUNNER_ENVIRONMENT python3 scripts/ci/ubuntu-mirror.py
+
       - name: Install Linux dependencies
         if: runner.os == 'Linux'
         shell: bash
@@ -275,6 +280,20 @@ jobs:
       - name: Build Tauri bundles
         shell: bash
         run: pnpm tauri build --verbose --target "${{ matrix.target }}" ${{ matrix.bundle_args }}
+
+      - name: Test bounded NSIS handler cleanup
+        if: matrix.name == 'windows-x64'
+        shell: powershell
+        run: ./scripts/windows-thumbnail-cleanup-regression.ps1
+
+      - name: Upload NSIS cleanup regression evidence
+        if: ${{ always() && matrix.name == 'windows-x64' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: alhangeul-windows-x64-cleanup-regression
+          path: diagnostics/thumbnail-cleanup/result.json
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Prepare Linux thumbnail package diagnostics
         if: startsWith(matrix.name, 'linux-')

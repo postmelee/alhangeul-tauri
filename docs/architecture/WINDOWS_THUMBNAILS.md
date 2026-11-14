@@ -62,7 +62,7 @@ worker executable은 handler DLL과 같은 설치 디렉터리에 있어야 한�
 
 desktop의 `render_document_preview`도 같은 공유 `render_first_page_svg`를 호출한다. 이 경로는 원본 바이트를 직접 parse·render하며 편집 세션용 `convert_to_editable_native`를 호출하지 않는다. 현재 pinned `rhwp`의 editable 변환은 배포·직렬화 metadata만 정리하고 page render IR은 바꾸지 않으므로 HWP/HWPX에서 직접 결과와 변환 뒤 결과가 동일한지 회귀 test로 고정한다. desktop command에도 입력 64 MiB와 생성 SVG 16 MiB 상한이 그대로 적용되며 parse·render·상한 초과는 빈 SVG가 아니라 명시적 command error로 반환된다.
 
-- 일회성 worker는 설치된 system font directory를 스캔하지 않는다. 이는 문서마다 새 process를 시작하는 현재 격리 모델에서 1,500 ms cold-start 한도를 지키기 위한 경계이며 desktop editor·PDF의 system font 우선 규칙에는 영향을 주지 않는다.
+- 일회성 worker는 설치된 system font directory를 스캔하지 않는다. 이는 문서마다 새 process를 시작하는 현재 격리 모델에서 생성 후 1,500 ms frame 선택 예산을 지키기 위한 경계이며 desktop editor·PDF의 system font 우선 규칙에는 영향을 주지 않는다.
 - pinned `third_party/rhwp/ttfs/opensource`의 `NotoSansKR-Regular.ttf`와 `NotoSansKR-ExtraLight.ttf`를 worker에 compile-time 포함해 설치 경로나 current directory와 무관한 한글 glyph를 보장한다.
 - 두 TTF의 고정 SHA-256, 저작권과 SIL OFL 1.1은 `assets/fonts/FONTS.md`에 기록하고 desktop bundle의 `licenses/fonts/`에 manifest와 license 원문을 함께 포함한다.
 - 원본 family가 worker database에 없으면 SVG text는 실제 등록된 Noto Sans KR family로 해석한다. generic serif, sans-serif와 monospace도 같은 실존 family를 사용한다.
@@ -96,9 +96,10 @@ embedded preview는 빠른 후보일 뿐 최신 문서 내용의 진실 원천�
 | frame header | 64 bytes |
 | 전체 frame | 4,194,368 bytes |
 | worker process memory | 256 MiB |
-| worker 시작·frame 선택 | 1,500 ms |
+| Windows worker 시작·frame 선택 | 5,000 ms |
+| worker 준비 후 frame 선택 | 1,500 ms |
 
-요청 edge `0`은 거부하고 1024보다 큰 값은 1024로 제한한다. handler는 요청 처리를 시작한 시각부터 pipe·worker 시작과 frame 선택에 단일 1,500 ms deadline을 적용한다. deadline에는 이미 검증된 preview 후보만 선택하고 후보가 없으면 실패한 뒤 Job의 worker를 종료한다. worker 종료와 pipe thread join은 반환 전 cleanup이며 별도의 “전체 2,000 ms” 상한으로 표시하지 않는다.
+요청 edge `0`은 거부하고 1024보다 큰 값은 1024로 제한한다. Windows handler의 frame 선택 deadline은 `min(요청 시작 + 5,000 ms, worker 준비 + 1,500 ms)`다. 설치 직후 Windows 프로세스 생성 비용이 frame 예산을 모두 소진하지 않도록 시작 구간을 구분하며, 생성 후 처리 시간은 기존 1,500 ms 이내로 유지한다. deadline에는 이미 검증된 preview 후보만 선택하고 후보가 없으면 실패한 뒤 Job의 worker를 종료한다. OS 프로세스 생성 API 자체의 차단과 worker 종료·pipe thread join은 별도의 엄격한 전체 반환 시간 상한으로 보장하지 않는다. 이미 5,000 ms 예산을 넘겨 시작된 worker의 늦은 frame은 수용하지 않는다. Linux thumbnailer의 기존 1,500 ms 예산은 변경하지 않는다.
 
 worker는 `CREATE_NO_WINDOW | CREATE_SUSPENDED`로 시작하고 명시한 pipe handle만 상속한다. handler는 active process 1, kill-on-close와 256 MiB process memory 제한을 가진 Job Object에 worker를 배정한 뒤 실행한다. 반환 또는 오류 뒤에는 worker를 종료하고 pipe thread를 join한다.
 
@@ -142,6 +143,8 @@ pnpm run clippy:thumbnail-worker:windows
 pnpm run clippy:thumbnail-handler:windows
 ```
 
+build script는 `crt-static`으로 handler와 worker의 CRT를 정적으로 연결한다. 생성된 PE의 일반·delay import에 `VCRUNTIME140.dll` 등 외부 VC 재배포 런타임이 남으면 staging을 중단한다. 개발 도구가 없는 새 Windows에서 별도 관리자 권한 런타임 설치를 요구하지 않기 위한 빌드 계약이며, 실제 clean Windows의 설치·Explorer 수용은 별도로 검증한다.
+
 build script는 DLL과 worker를 고정 filename으로 stage하고 PE x64 machine과 DLL/EXE 종류를 검사한다. native workflow는 bundle inventory에 두 binary를 포함하고 Windows installer smoke에서 다음을 확인한다.
 
 - COM class activation과 `IThumbnailProvider` 호출
@@ -153,11 +156,19 @@ build script는 DLL과 worker를 고정 filename으로 stage하고 PE x64 machin
 
 다른 host의 platform-neutral test는 protocol, bounds와 source 계약을 고정하지만 PE, COM host, installer transaction과 실제 Shell 호출을 대신하지 않는다.
 
-현재 CI는 NSIS-only·MSI-only·MSI 강제 재설치를 별도 runner에서 검사한다. 개별 진단 계약이
+현재 CI는 표준 사용자 NSIS 실제 기능, 관리자 NSIS 진단, MSI 일반 설치와 MSI 강제 재설치를 별도 runner에서 검사한다.
+표준 사용자 NSIS는 새 설치·같은 버전 재설치 뒤 HWP/HWPX의 Shell/강제 추출 bitmap과 JPG 대조군,
+연결 조회·직접 COM 생성 및 제품 자체 제거 성공이 필수다. 시험 도구가 잔여 DLL을 대신 지운
+결과는 통과가 아니다. 공개 v0.1.3에서 같은 버전 후보로 수동 재설치하는 경로도 별도로 확인한다. 개별 진단 계약이
 통과해도 NSIS의 실제 bitmap 실패나 forced MSI의 재부팅 후 미검증은 남을 수 있다.
 경량 집계는 필수 검사·upload·최종 gate 상태를 확인할 뿐 독립 증거 재검산이 아니다.
 `contract_status=passed`만으로 썸네일 지원을 판단하지 말고
 [실제 관측 판독 기준](../operations/CI_VALIDATION.md#windows-설치-계약과-실제-관측)을 따른다.
+
+NSIS 설치 전에는 기존 처리기 DLL을 내용 변경 없이 열 수 있을 때까지 최대 60초 기다린다.
+제거 후에는 처리기 DLL 한 개의 삭제를 최대 60초 재시도하고 빈 설치 폴더만 정리한다.
+시간 내 완료하지 못하면 실패를 알린다. 사용자가 추가한 파일을 재귀 삭제하거나 Explorer/dllhost를
+종료하지 않는다. 파일 잠금이 계속되면 미리보기 창을 닫은 뒤 설치·제거를 다시 시도한다.
 
 ## 수동 Explorer gate와 한계
 
@@ -189,7 +200,15 @@ NSIS의 연결 조회·직접 COM 생성·JPG 썸네일이 성공하고 HWP/HWPX
 NSIS의 같은 실패와 MSI 성공이 확인됐다. 전체 CI가 성공한 것은 제한을 보존하는 검사 계약을
 통과했기 때문이지 NSIS 문제가 해결됐기 때문이 아니다. 사용자별 NSIS와 MSI 배포 방식을
 유지하며 전체 사용자 NSIS·UAC/HKLM 변경 실험은 중단했다. UAC 값·관리자 여부·한컴 버전만으로
-실패를 단정하거나 MSI 설치를 일괄 권유하지 않는다. 아래의 실제 진단 패턴에 해당할 때 대안을 검토한다.
+실패 원인을 단정하지 않는다. #132에서 확정한 지원 정책은 일반 사용자 NSIS, 관리자 환경 MSI다.
+사용자별 NSIS를 시스템 전체 설치로 바꾸거나 관리자 문맥에서 HKCU COM을 강제로 활성화하지 않는다.
+일반 사용자 환경의 다른 오류는 아래 실제 진단 패턴으로 구분한다.
+
+공개 v0.1.3의 동일 NSIS bytes를 비교한 [관측 43044745096](https://github.com/postmelee/alhangeul-tauri/actions/runs/43044745096)에서는
+표준 사용자(중간 무결성)에서 HWP/HWPX Shell·강제 추출 6개가 성공했고 관리자(높은 무결성)에서는
+6개가 `0x80040154`로 실패했다. JPG와 직접 COM은 양쪽 모두 성공했다. 별도 계정·runner 비교이며
+UAC 값 하나만 통제한 실험은 아니다. 같은 공개본은 표준 사용자에서 제거 코드 0 뒤 DLL 한 개를
+남겼고 30초 후 시험 도구의 개별 삭제는 성공했다. 이 관측 run의 성공은 제품 제거 성공을 뜻하지 않는다.
 앱 내 진단과 별도 수동 진단 묶음을 제공한다. 앱 진단은 공개 테스트 문서를 사용하고,
 수동 묶음은 사용자가 지정한 문서의 증상을 조사한다. 두 검사 대상과 결과를 혼동하지 않는다.
 
