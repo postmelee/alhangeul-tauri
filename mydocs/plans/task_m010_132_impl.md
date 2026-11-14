@@ -630,3 +630,16 @@ Windows 10 NSIS 재실행 run43473883158도 attempt 1 success다. 최종 artifac
 
 
 PR 전 기준 정합화: devel이 644d0ac52bb364e57907fd7cd98c57ceaf86dce2(#135/#136)로 전진했음을 확인해 merge로 통합했다. 충돌은 오늘할일 20261113/20261114의 add/add 두 건이며 #132와 #135 행·기존 후속 승인 내용을 모두 보존했다. workflow 목록은 두 작업의 항목을 모두 유지했다. apps/packages/crates/third_party는 검증 제품 ece8bb5e와 diff가 없어 같은 installer 증거를 재사용하며, 들어온 정책/사이트/CI 스크립트는 최종 fast에서 통합 검사한다. 기존 최종 보고 commit51c487b6의 fast43477466190과 통합 head의 후속 fast를 구분한다.
+
+## Stage 5 — 승인된 동일 버전 재릴리즈 준비 (2026-11-14)
+
+사용자가 PR 생성·재릴리즈 준비를 지시했고, 이어 “병합과 비게시 서명·검증까지 진행”을 명시 승인했다. 태그·공개 파일·Pages 교체 직전에 결과를 알린다. #138을 devel에 병합한 a79ce6c1과 devel→main #139를 병합한 4e99e883eec6bdf9d6ce59070c769f175052fc3f를 기록한다. 기존 main 정책을 보존한 merge-tree는 devel과 동일하다.
+
+- 제품 source는 main 4e99e883으로 고정한다. updater run43551466131은 publish_release=false, full CI43551469171은 같은 SHA다. 두 workflow의 concurrency 충돌을 피하려 일반 패키지는 기존 ci.yml full 경로로 확보한다.
+- 이 단계의 변경은 검증 도구·입력·기존 작업 문서와 릴리즈 기록이다. 제품 apps/packages/crates/third_party 및 production key/version은 변경하지 않는다. 같은 #132의 승인된 재배포 준비를 이어가며 기존 작업 브랜치를 재사용한다.
+- signed guest 입력은 tracked candidate JSON의 source/run/archive ID·digest와 NSIS/MSI hash를 고정하고 production key로 서명을 확인한다. MSI에서 추출한 handler/worker를 기준으로 NSIS/MSI의 실제 설치 파일 hash·CRT 독립성을 확인한다. 일반 파일 입력은 기존 관측 재현용으로 유지한다.
+- guest 시나리오에 공개 MSI→새 MSI의 같은 버전 교체를 추가한다. 공식 installer hash, MSI ProductCode/UpgradeCode/PackageCode/Version, 실제 등록과 이전 ProductCode 제거, Local/Roaming 데이터 보존, 처음 API 요청, Explorer, 재설치/제거를 검사한다. VC 없는 clean 상태와 baseline용 VC 설치를 구분한다. 3010은 재부팅 후 확인 전 실패/미검증으로 유지한다.
+- 기존 Windows 10/11 세 경로와 새 MSI upgrade를 최종 signed bytes로 검증한다. 후보 생성 후 새 source/run을 가리키는 release_candidate_path로 NSIS/MSI/AppImage 문서 작업과 수동 Linux 패키지 검증을 실행한다.
+- 정확한 입력/identity·실패 수용 회귀는 Node/Python과 Windows PowerShell CI로 검사한다. Mac에서는 Rust/Tauri를 실행하지 않으며 private 출력은 연결된 T7만 사용한다.
+- 기존 승인 위치인 mydocs/plans/working/report/orders와 docs/releases/v0.1.3 기록만 갱신한다. 새 공식 문서 루트는 만들지 않는다. 짧은 사용자 notes는 현재 지원 범위·수동 교체·재배포 날짜를 반영하고 생성기 검증을 거친다.
+- 공개 원본 11개 actual hash와 checksum, 서명 3개, tag object·body·현재 Pages 3개 JSON을 재검증·보존했다. 실제 교체 목록·tag SHA·notes hash와 복구 범위는 최종 bytes 수용 후 제시한다. 공개 assets·tag·feed는 아직 그대로다.
