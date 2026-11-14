@@ -4,7 +4,7 @@
   "version": "0.1.3",
   "tag": "v0.1.3",
   "publishedAt": "2026-11-11T12:19:34Z",
-  "notes": "rhwp v0.9.0의 표 페이지 배치와 문서 저장 개선을 반영합니다. PDF 가져오기 Worker를 같은 문서 엔진에 연결하고 로컬 글꼴 삭제·재감지 문제를 보정했습니다.\n\nWindows/Linux 6종 설치 파일을 제공합니다. Windows NSIS·MSI와 Linux x64 AppImage의 v0.1.2 → v0.1.3 앱 내 업데이트, 설정 유지와 HWP/HWPX 문서 재열기를 검증했습니다. Windows 코드 서명과 일부 탐색기 썸네일에는 제한이 있습니다. 자세한 변경과 설치 안내는 v0.1.3 릴리즈 노트를 확인하세요.",
+  "notes": "Windows 탐색기 썸네일의 첫 실행 지연과 별도 VC 런타임 의존, NSIS 제거 후 파일 잔존을 보정한 v0.1.3 재배포입니다. rhwp v0.9.0은 유지합니다. 기존 v0.1.3 사용자는 같은 버전 자동 알림 대신 새 파일을 수동 설치해야 합니다. 일반 사용자 환경은 NSIS, 관리자 환경은 MSI를 사용하세요.",
   "downloads": {
     "windows-x86_64-nsis": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.3/Alhangeul_0.1.3_x64-setup.exe",
     "windows-x86_64-msi": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.3/Alhangeul_0.1.3_x64_en-US.msi",
@@ -12,7 +12,40 @@
   },
   "updater": {
     "endpoint": "https://postmelee.github.io/alhangeul-tauri/updater/stable.json",
-    "manifestPublished": false,
-    "inventory": null
+    "manifestPublished": true,
+    "inventory": {
+      "schemaVersion": 1,
+      "repository": "postmelee/alhangeul-tauri",
+      "sourceSha": "4e99e883eec6bdf9d6ce59070c769f175052fc3f",
+      "version": "0.1.3",
+      "tag": "v0.1.3",
+      "keyFingerprint": "9f86f804067eff359cd32707137dfaaea8710450985dda86b0392da5db63b8f8",
+      "targets": {
+        "windows-x86_64-nsis": {
+          "kind": "nsis",
+          "path": "nsis/Alhangeul_0.1.3_x64-setup.exe",
+          "size": 78770000,
+          "sha256": "d5b21111a9df1d68587e1bec341565a2e42cc02e1658f094eeba84e69bd7372a",
+          "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUaEFNampwWnpESVdqUjRGSERRTG4wUnpLZzJEN3Q5aUk4SEVaaG1kQlUydGljU2cwQ3c2Yk9xbHJycEcwSFBocGR0RXNQazZMQ0JRaDI2OW84M0lhWTJjN0hIWklHYWdzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NjI4ODk2CWZpbGU6QWxoYW5nZXVsXzAuMS4zX3g2NC1zZXR1cC5leGUKRThyNjNSMmtwMk5PcjhpSjNXNFQ0OUY0WEdhWFUvTWVRRUx2RnVuVDMvYlRBVVNyVUpIMkExV1Zzczh2Q2pDL3hGZE1XRUcrSlBGTjlpL1A0SGpmQXc9PQo=",
+          "url": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.3/Alhangeul_0.1.3_x64-setup.exe"
+        },
+        "windows-x86_64-msi": {
+          "kind": "msi",
+          "path": "msi/Alhangeul_0.1.3_x64_en-US.msi",
+          "size": 91357184,
+          "sha256": "e3d1a5eff7c239f04292ad152ca5e0c9972cf086086809b7d8d6e7b5f38a2373",
+          "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUaEFNampwWnpESVVsZDVOdVpYRk83emRncHZuNkN1dytGa2VhMm5ieVEzNFpTRzdLMHhxYjE5aTRhNEl1OEVJVE8yVUprOGZQeXRaVnVEMGlBQWVCYWVWV2F0b2Q5eVFrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NjI4ODk2CWZpbGU6QWxoYW5nZXVsXzAuMS4zX3g2NF9lbi1VUy5tc2kKNHo1aGJFN1RGQkJMNzV3RmhlT2ZhL0x3VjJrY2grL3VOSkkrb28wZWxmSHNlekFmSEhuRXhVcy9KdVFyS2RBb3d5UzFDNWJQTUdDUXFVWWJCQWtFQ2c9PQo=",
+          "url": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.3/Alhangeul_0.1.3_x64_en-US.msi"
+        },
+        "linux-x86_64-appimage": {
+          "kind": "appimage",
+          "path": "Alhangeul_0.1.3_amd64.AppImage",
+          "size": 153930232,
+          "sha256": "56054103d8e18f0fa472bee96fe0bb6b0d1ee709af28f62f8faa0be89cbdcd54",
+          "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUaEFNampwWnpESVRkUFpCSGhOcXpWMUVOTWdnem05N3ZvS2V0dUVnRENxL1ZPMDFQUXV5MjZYWncwZ1I3T2JJYXlnaHVHK0M1cDJSSjZOSnZ6OHAyRUxCdGt0RnVTYVFjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NjI3NjY1CWZpbGU6QWxoYW5nZXVsXzAuMS4zX2FtZDY0LkFwcEltYWdlClRGTHZFeXQzSjhBL2RNUHkwWVVYMHBmU3RCRjhyUUVKbEtxd2NqSmtLMExaU0hxcXlSUDc1K0krQjBITWY4TTA4eC9HbU5MUy9PbUpRdkRwdE9VWkN3PT0K",
+          "url": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.3/Alhangeul_0.1.3_amd64.AppImage"
+        }
+      }
+    }
   }
 }
