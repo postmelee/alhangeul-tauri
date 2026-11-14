@@ -211,3 +211,27 @@ UIA harness의 fast run 43507715396은 성공했다. 최종 고지 후보 `efe13
 34850d42→efe13e61에서 앱 코드·잠금·rhwp pin·native build workflow가 동일한 것을 다시 확인했다. 이전 full/native/core 결과 및 별도 비게시 updater 구성의 실제 선택/TLS 결과를 이 동일성 범위 안에서 재사용한다. 새 일반 package에서 updater positive control을 다시 실행했다고 주장하지 않는다. 최종 제품 source는 efe13e61이며 이후 보고서/evidence-only 커밋과 구분한다.
 
 남은 항목은 (1) CanvasKit 0.41.1의 정확한 upstream source와 C++ 내부 원문 고지 연결, native filename gap의 원문 수록 범위 및 실제 배포 closure, (2) SignPath의 WebView2·rhwp 경계 및 IJG/CDLA 조건 해석이다. 계정 MFA·origin·artifact 제한·서명 승인 설정은 가입 후 단계로 이번 범위에서 제외한다. 공개 정책은 현재 안정 v0.1.3 동작을 유지하며 미출시 후보의 기본 꺼짐 기능을 이미 배포된 것으로 기술하지 않는다. 제품 PR·릴리스·신청·이슈 close는 수행하지 않았다.
+
+
+## Stage 7.10 답변 대기 중 독립 검증
+작업지시자의 후속 확인 지시에 따라 기존 source/lock·성공 producer·공식 원문을 읽기 전용으로 재검사했다. 제품 source/ZIP/pin·공개 정책은 변경하지 않았으며 새 CI 빌드를 반복하지 않았다.
+
+| 확인 | 새 결과 | 남은 경계 |
+|---|---|---|
+| 최종 native graph | efe13e61 producer의 Windows x64·Linux x64/arm64 graph를 다운로드하여 34850d42의 package·feature 목록과 동일함 확인 | proc-macro·feature 통합을 포함한 normal graph이며 바이너리 SBOM 아님 |
+| 라이선스 표현 | 공식 SPDX 목록의 고정 commit 31846481de7ea17d92f2f46fad76abe58b2e9bb0으로 37종의 AND/OR 표현 대조. OSI 표시만 있는 선택지를 찾지 못한 표현은 IJG 필수 AND 2종과 CDLA-Permissive-2.0 | 이미 발송한 쟁점과 일치. 이 metadata 검사를 SignPath 승인 또는 전체 라이선스 적합성으로 확대하지 않음 |
+| zune-core 0.4.12 | crate checksum·VCS commit f8fbb123…·homepage의 공식 저장소와 연결. 원본 Cargo.toml 및 src/lib.rs가 동일하고 같은 commit의 전체 LICENSE-ZLIB 818 bytes 확보 | Zlib 고지는 task evidence에만 보존. 최종 설치본 ZIP에는 이 원문 bytes가 아직 없음 |
+| libappindicator-sys 0.9.0 | root libappindicator와 동일 VCS commit eafd1e36…, root의 명시적 sys/ path 의존성·같은 license 선언 확인. root의 MIT/Apache 원문은 기존 ZIP에 이미 존재 | child inventory와 root 고지의 대응을 정식 생성기에 반영하는 일은 별도. OS 제공 native library 전체 고지를 증명한 것이 아님 |
+| convert_case 0.4.0 | 공식 MIT LICENSE 추가 commit f72ca63c… 발견. archive commit보다 2개 앞서며 src/case.rs 변경도 존재 | 후대 원문을 이전 배포 commit에 있던 원문으로 소급하지 않음 |
+| fxhash·mac·seahash | 해당 3개를 포함한 archive 총 7개의 잠금 hash 재검증. fxhash source header와 mac README 선언을 재확인했고 공식 root에는 별도 고지 파일 없음 | full attributed 원문 미해결. seahash 공식 GitLab 접근 제한을 우회하지 않음 |
+
+[최종 graph·SPDX 표현 결과](../working/assets/task135/readiness/final-native-license-expression-review.json), [7개 archive와 원문 관계](../working/assets/task135/readiness/independent-notice-source-review.json), [확보한 Zlib 원문](../working/assets/task135/readiness/zune-core-0.4.12-LICENSE-ZLIB.txt)에 source URL·commit·hash를 남겼다. 기존 고지 ZIP의 1,508 package/filename gap 89개는 바뀌지 않았다. 원문을 찾은 것과 설치 산출물에 동봉한 것을 구분한다. 기존 zune-jpeg 경로에 들어 있던 짧은 LICENSE.md는 동일 root의 저작권·허가 링크 선언이며 전체 LICENSE-ZLIB와 다르다.
+
+### CanvasKit 공식 릴리스와 실제 WASM의 연결 범위
+공식 Skia의 npm_build/package.json·CHANGELOG 이력을 따라 [0.41.1 릴리스 commit 3c68f3ff](https://github.com/google/skia/commit/3c68f3ffd7c9bc781494cdb85e718ff1e6f49d84)을 확인했다. 이 commit의 package.json 2,359 bytes 및 BSD LICENSE 1,635 bytes는 현재 고정 npm 배포본과 byte-for-byte 일치한다. 이는 앞선 registry gitHead 조회만으로 확보하지 못했던 공식 릴리스 출처 근거다.
+
+그러나 npm gitHead fba4f1bf…와 위 commit은 다르고, 동일 WASM이 이 commit에서 생성됐음을 입증하는 build attestation은 아직 없다. 실제 번들 SHA-256 bd669c88…의 7,159,342-byte WASM을 정적 검사해 custom section이 없으며 libjpeg-turbo/Unicode 저작권·libpng 1.6.56 문자열이 존재함을 확인했다. 문자열만으로 모든 내부 library의 정확한 버전/기능/고지 범위를 확정하지 않는다. 공식 후보의 DEPS·compile 설정에서 FreeType·HarfBuzz·ICU·JPEG·PNG·WebP·Brotli·zlib·Wuffs·Emscripten 출처를 기록했으나 이를 최종 링크 SBOM으로 부르지 않는다.
+
+빌드 설정의 NotoMono 내장 글꼴 후보 bytes도 대조했다. 제품이 선택한 표준 bin/canvaskit.wasm에서 전체 파일 bytes의 연속 일치는 없었다. 이 음성 검색을 글꼴 미포함 증명으로 바꾸지 않으며, 별도의 full/profiling npm 변형을 실제 제품 WASM과 혼동하지 않는다. [릴리스 후보·원문 hash·WASM 정적 관측](../working/assets/task135/readiness/canvaskit-official-release-review.json).
+
+현재 자체 검증으로 좁힌 후속 항목은 zune-core 전체 원문 동봉과 root/child 고지 대응, 나머지 원문 출처의 확정, CanvasKit의 실제 build-source/variant와 내부 고지 연결이다. 제공자 해석이 필요한 항목과 분리해 유지한다. 신규 문의 발송·신청·계정·서명·제품 PR/배포는 수행하지 않았다.

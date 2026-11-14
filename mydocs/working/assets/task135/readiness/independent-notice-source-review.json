@@ -1,0 +1,307 @@
+{
+  "scope": "Read-only source provenance review. No production notice ZIP, dependency pin or executable changed. Finding a source notice does not mean the installed package already includes it or that SignPath has accepted it.",
+  "baselineSource": "efe13e61d954a9ae5c801ed447bf3cbea105f5e2",
+  "baselineNoticeZipSha256": "1b780dec50d67dc70b203dc51e014795f8b61f9cecc22ffecdae2c45632be7f3",
+  "verifiedArchiveCount": 7,
+  "archives": [
+    {
+      "name": "convert_case",
+      "version": "0.4.0",
+      "archiveUrl": "https://static.crates.io/crates/convert_case/convert_case-0.4.0.crate",
+      "archiveSha256": "6245d59a3e82a7fc217c5828a6692dbc6dfb63a0c8c90495621f7b9d79704a0e",
+      "vcs": {
+        "git": {
+          "sha1": "300d9eef9e8c970e15f324afbc3df8b6a4ebbf71"
+        }
+      },
+      "fileHashes": {
+        ".gitignore": "44c92e3a70ad3307b7056871c2bdb096d8bfa9373f5bf06a79bb6324a20ff2fb",
+        "Cargo.toml.orig": "5f821f7641c67da8a4e0eb2ebf994f5ba88ad811a3529cb91017d26c8075aea2",
+        "Cargo.toml": "bbd8c27bde074b1c78539307cc2f1770efdaf890253cce4b9557cfdc32d4e605",
+        "README.md": "e2c239f152b34058cca9848c12a357eabd4af3df9d97bac11cfdcdd09f612b72",
+        "src/case.rs": "2c46022c41ce580a23f298d56599ae506ae905b12fecb55f5ed02db4c05a1362",
+        "src/lib.rs": "bcd9f76f198f739ec65d01b7186a12e7cbbaad8101728e4053b7f1a1efd3b3c8",
+        "src/words.rs": "b1cf6a6d1fa57297c7111e4f64fa4fed22b322a14fa20062aa79fddb34bc1651",
+        ".cargo_vcs_info.json": "6767418947faf807ea6d3c9be160eb052da1d035f4d0d86fe8d2285e491083a3"
+      },
+      "existingNotices": []
+    },
+    {
+      "name": "fxhash",
+      "version": "0.2.1",
+      "archiveUrl": "https://static.crates.io/crates/fxhash/fxhash-0.2.1.crate",
+      "archiveSha256": "c31b6d751ae2c7f11320402d34e41349dd1016f8d5d45e48c4312bc8625af50c",
+      "vcs": null,
+      "fileHashes": {
+        ".gitignore": "89c358fac86a5eb00bcea9fd3df772fc981998fd14e3cdb92d2273a21d18fcf6",
+        "Cargo.toml.orig": "42f07fb23f8b37acf45914ccb71df077455a353850e148afeabb5c684f8ebaab",
+        "Cargo.toml": "83bb4c3e7fbfb7380c175923ba7dfe150e4e09bd4ebfb45e65e5f8a494d36ab9",
+        "README.md": "7b9227f966b312e221bd372fef79438b2446a21241eb7542520eac29bfbc10d0",
+        "bench.rs": "b4dc3ef9eeb043ffb470b37a0c2a36306a024af808eac8517924359298d3e183",
+        "lib.rs": "885b72a1c977dc1c3ff4e0652719e62b6d8c3e713403e571afd581283f72df7b"
+      },
+      "existingNotices": []
+    },
+    {
+      "name": "mac",
+      "version": "0.1.1",
+      "archiveUrl": "https://static.crates.io/crates/mac/mac-0.1.1.crate",
+      "archiveSha256": "c41e0c4fef86961ac6d6f8a82609f55f31b05e4fce149ac5710e439df7619ba4",
+      "vcs": null,
+      "fileHashes": {
+        ".gitignore": "f58cbb29ee4ff8a030c1e32d3f4ac2b19753d7fdf8f72d050d4bda1353364fda",
+        ".travis.yml": "180cc837b1ea2ce0ed737c2e15208e83abf6f92291a77ed1ebcc564c628c2077",
+        "Cargo.toml": "6d465c5e5a4b3e197049e9fb7393b2f996c1c654e6ded700afce046fac2f7969",
+        "README.md": "8edb7a912d295acf1e1cfeafdd19a6813a63b301c7bbfda3c67f65509bd8d8cc",
+        "src/cfg.rs": "63e9c4da8b0f588c6af1e157e626044fc1fb52757348aa466d08d69795335f33",
+        "src/format.rs": "3c528949cdde598d3ddc5abea31b136ca256c7bb3932e053c5ff6e49775579a3",
+        "src/inspect.rs": "cf039cc721daa177b13d6b432589ceef3bdfa6078af3f71c34c28d2eca68d0c3",
+        "src/lib.rs": "f9c7705196f71dcabb4cfe1636f1b71b6362abb7eac70ddaa6e05cf9a0683dee",
+        "src/matches.rs": "1ef2b80946cc5e3cd15e20a22f62b832066d2e2445881191741a83abe80e7566",
+        "src/mem.rs": "f74d9172bb136b370c33fa524aae3543cf37815eeacf1d862b29b3c8c32a6aee",
+        "src/syntax_ext.rs": "5c938b44d7aaa0f47eef495f4a42f1f91cd11fb0d1b20915786085b77e1db284",
+        "src/test.rs": "895fc0aed7f5f3863025b85de4d01c2551bed51778ca8846920be7febff837ac"
+      },
+      "existingNotices": []
+    },
+    {
+      "name": "seahash",
+      "version": "4.1.0",
+      "archiveUrl": "https://static.crates.io/crates/seahash/seahash-4.1.0.crate",
+      "archiveSha256": "1c107b6f4780854c8b126e228ea8869f4d7b71260f962fefb57b996b8959ba6b",
+      "vcs": {
+        "git": {
+          "sha1": "94b632aeac099031c373599313d5b5f0acbbaec0"
+        }
+      },
+      "fileHashes": {
+        ".cargo_vcs_info.json": "891efcfccd34579199c16b76ea79adcb7356226765300af5c18a574e6ecdaf61",
+        ".gitignore": "9cc2c8cc102e0b2a0a177c8f594abc9b9776300a04473c24b45d52c1007a4119",
+        ".gitlab-ci.yml": "5c7a196a17ca1517693e56cd2fade762e08caaed77119f16e62b88f28b9cf31f",
+        "Cargo.toml": "1d610f6d1bce065add6ec5f2fb764e97eeda505afbe26271acc5f3d73a8c410a",
+        "Cargo.toml.orig": "dd213de338ca98b7ef7a2562bcf4e4214d215d1a8277750a6a72b4e809c8d0dd",
+        "README.md": "38357210ef69a97bf9858ff22661cb1c2384179f5e6b73143cb33193e36c6473",
+        "benches/bench.rs": "b06245bcf2fd0ef28a15dcdb89c6482f82f285aa928158e5518acf64e858dacd",
+        "logo.png": "993cef1046e27ab784907dc50ad35abaa889683e6ef1d3127cd4fe450d561772",
+        "src/buffer.rs": "24476bc2a380d78e0b70f8465ee90b0ea1ce8bd761474766d93491c633a85cbe",
+        "src/helper.rs": "d266d15724dbe705818aa31db08027a63bee077e5859e3e3d06ee7192c258a2f",
+        "src/impl_std.rs": "1a83d003954cb11e6712922573d3de978c8646113838b3ca033e6b3e129c1d14",
+        "src/lib.rs": "09694fcbc9ebede5a5edd79debd23cae4d8b5c37c104e9b87a4952d7f4fc199a",
+        "src/reference.rs": "15898feb23b1241dd4dd80f0f53f5819715c6ba0a45e57a3f61b7acc099bdb84",
+        "src/stream.rs": "72e765d1ef7ec098fb3303d5635a3d543515d80052ebb5ce8ce6e478c7a8e91f",
+        "tests/chunking.rs": "7faed951772ccd4366c1871b774879139f77bce3750bc68225d72012f0416d76",
+        "tests/quickchecks.rs": "e45e1819bcdc9dedc0c7068f5aad6502b283288677e2a13bf0667feea3575100"
+      },
+      "existingNotices": []
+    },
+    {
+      "name": "zune-core",
+      "version": "0.4.12",
+      "archiveUrl": "https://static.crates.io/crates/zune-core/zune-core-0.4.12.crate",
+      "archiveSha256": "3f423a2c17029964870cfaabb1f13dfab7d092a62a29a89264f4d36990ca414a",
+      "vcs": {
+        "git": {
+          "sha1": "f8fbb123d5ed04441e8324a555bfcda0cb1bd28f"
+        },
+        "path_in_vcs": "crates/zune-core"
+      },
+      "fileHashes": {
+        ".cargo_vcs_info.json": "5800ab418f46ded6c368ef3d2177c824f02e7c30411e03e8c19b595496976041",
+        "CHANGELOG.md": "3b6dcd5ee2c52ab91265c12d8dfaa7d0a2d4f05a08de2557041dece734e98e41",
+        "Cargo.toml": "65d39b608d230ee0a4d39d4de9388d695f2117322aff7005243d5b8e742a6526",
+        "Cargo.toml.orig": "cc3fa616bb3dd673abbdebce2d8b2a1a1ecb6a3dd9654313d6fcc0ab2d3c5f84",
+        "README.md": "1adae359f289c130fe2b098b412820d7da9924cb1bc52aeee8707971bab412b2",
+        "src/bit_depth.rs": "879b5b4b3ac99fc567f8d281662dc4125109f835b3944d023d038a084b2c0dd9",
+        "src/bytestream/reader.rs": "ca798f96876670bd8bd2a915cafc0eefaef57a09543a2fd310b0b4c3d48ad84a",
+        "src/bytestream/traits.rs": "fed12794c3bb7ee0fecc00ca96f96e96a6e3086407efb7b2b2aa10fbf2e01675",
+        "src/bytestream/writer.rs": "96227f650b813f68e1fd805ed523bbce7bf97af558bbe02b940e6dc2821eaeab",
+        "src/bytestream.rs": "ec12a04b4e1cfe1e592877b5ddc12df1f913677727525b88bfce935fc631519b",
+        "src/colorspace.rs": "070830c5f1056d3d0747f6cba1a12159379c192f5044584fb8d20b61abc338e7",
+        "src/lib.rs": "a627136eedec33bdf69996a43f8e8885c065f94d7c450d1503576e5b5922f44c",
+        "src/log.rs": "1655ea004aee621e4a93e57b6787693348348d8bb23f06feffc1e49537ea7565",
+        "src/options/decoder.rs": "f2c419e41c725319ebd777992e74dad19e4454869eed893145c882913ba26baf",
+        "src/options/encoder.rs": "22f86e152392a6f1d97832873498c172da34985454a7a0f2d1cb86295c7c58d0",
+        "src/options.rs": "9a29e94bed783c49f664f1583705fdd5a8b80a5e4e78868fd229d12691eec09d",
+        "src/result.rs": "92a098ba09ae4e5202da45a2d2165a6df804d3952e8c657950d064e4714afcaa",
+        "src/serde.rs": "23fe068415888dadb3daa1795f09214fb0d79e1a775fd7dce066386ee9334d59"
+      },
+      "existingNotices": []
+    },
+    {
+      "name": "libappindicator",
+      "version": "0.9.0",
+      "archiveUrl": "https://static.crates.io/crates/libappindicator/libappindicator-0.9.0.crate",
+      "archiveSha256": "03589b9607c868cc7ae54c0b2a22c8dc03dd41692d48f2d7df73615c6a95dc0a",
+      "vcs": {
+        "git": {
+          "sha1": "eafd1e3682a1247f595410266091e9684021cb6f"
+        },
+        "path_in_vcs": ""
+      },
+      "fileHashes": {
+        ".cargo_vcs_info.json": "415a0343e684487048df8f40b710fd06e06860988d3b379821a574b19108b104",
+        ".changes/config.json": "ee9b18965998cca81faf9d6ee4b20f77329f5c4ba965b8e21d6606b70ee5da00",
+        ".changes/readme.md": "f362141d1ec0a1efc7c3da8056be9fa8cf104aecf5f6ec7ec64e4c06cef3c1aa",
+        ".github/CODEOWNERS": "1525064e12cb99794b0c8fa408bc337da725643d1576cfa076e91cb0e92fd4c0",
+        ".github/CODE_OF_CONDUCT.md": "4ab8117a3f99524999fee1689e9b620ad9eff48d7b3cf763fbeb349b922a49ba",
+        ".github/CONTRIBUTING.md": "765314dadfbdccd65b1b9c582c3528a69a1b8a1bb12340d69e3240fff398ec32",
+        ".github/FUNDING.yml": "79ce93ce40873a93be59032fd1c4290e0b0ed148ca39947d31a3e05705841986",
+        ".github/ISSUE_TEMPLATE/bug_report.md": "ee2095c589fd3d23d8032ed6be742ccd364841c03e1e4139acb596becef8781f",
+        ".github/ISSUE_TEMPLATE/feature_request.md": "987db993b91be765528958577552cc098142e7deb08b2de55bf98ec4948f0290",
+        ".github/PULL_REQUEST_TEMPLATE.md": "9c449da1f65070c03dcc6a00c74df4068553c748a67c7c2539b4b29403611145",
+        ".github/workflows/build.yml": "b941a5a8e7c0486eb1188bd644bffd293b0f9a2b85c0dcbf2cb1b6a0ef5b7f2b",
+        ".github/workflows/covector-status.yml": "06d3f703271706b3933c0c186242d735d783ea2206dcd664e9ef0230ef12524d",
+        ".github/workflows/covector-version-or-publish.yml": "b426d827453f9eb5b0f3ec5c84d8799fc5850a6f817581c849a38409c7de834d",
+        ".gitignore": "f9b1ca6ae27d1c18215265024629a8960c31379f206d9ed20f64e0b2dcf79805",
+        ".license_template": "9aca48869404894538e54a881bcc2ece2142a709b665ced1fd2d284ae7c44595",
+        "CHANGELOG.md": "9b3496d9231d61737ed228cc7ef0a67b1ae857dbc9baacae4b54e819dd4c3030",
+        "Cargo.lock": "cbb2ec7fab072ac2557256af08784697c0b1c504e5f85a24c4024dce6eea2d3a",
+        "Cargo.toml": "ab35819c217045d7a83b724ed25f85c5aacd3927cc3cfe558886a1a794c351cf",
+        "Cargo.toml.orig": "0a952bcd72745e1ff4a7d265ffcdae8f688b6882c4fe3f99107f19f0ca0b549a",
+        "LICENSE-APACHE": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+        "LICENSE-MIT": "eb227437252b2a7a9c1fc342c93ade1f3d7ce38cc6dd754f613db07d53ceff0b",
+        "README.md": "57f3c2133c3b3c388a96512c1a447c94118b22cf37c7099a65563b3d0c408383",
+        "examples/hello.rs": "72f817125f6adf90e27e7ede32ca246178b91f3bec8df9b0d0d84b4bae734944",
+        "examples/rust-logo.png": "f6839dffe09e69d1cf6b822dc87c1c6153b308bb888f63b24ebfa76d32c19503",
+        "rustfmt.toml": "355f303583e15d1518e0c89eeaf2a4034bcc7c2a292087dfc17d00dc8173a5fd",
+        "src/lib.rs": "a7ebb47555d628d88e2e048d7bda5977136d234604c00b37a9d27c01bb463c4b"
+      },
+      "existingNotices": [
+        {
+          "path": "rust/libappindicator@0.9.0/LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        },
+        {
+          "path": "rust/libappindicator@0.9.0/LICENSE-MIT",
+          "sha256": "eb227437252b2a7a9c1fc342c93ade1f3d7ce38cc6dd754f613db07d53ceff0b"
+        }
+      ]
+    },
+    {
+      "name": "libappindicator-sys",
+      "version": "0.9.0",
+      "archiveUrl": "https://static.crates.io/crates/libappindicator-sys/libappindicator-sys-0.9.0.crate",
+      "archiveSha256": "6e9ec52138abedcc58dc17a7c6c0c00a2bdb4f3427c7f63fa97fd0d859155caf",
+      "vcs": {
+        "git": {
+          "sha1": "eafd1e3682a1247f595410266091e9684021cb6f"
+        },
+        "path_in_vcs": "sys"
+      },
+      "fileHashes": {
+        ".cargo_vcs_info.json": "2eb6d78db3efbbb1c498618238bad1377e08f43f12e9ba7e1fb128a8aedfe2c5",
+        "CHANGELOG.md": "bdcb483931833f9e6a9ec584655212aa4e502b11541f330a186a284aae80647d",
+        "Cargo.toml": "5f1a49e786206ea35dca5d45a82b84cfb99839ecaff47f579ae3b63496586e86",
+        "Cargo.toml.orig": "ffa544131659aeeff24cdf56faf7f89e0dcd4e1eb0f6e03b1616436eab4bc815",
+        "src/lib.rs": "742a25cd2a4c09762f57c3dfaa8958e6c62c771e28916a58b45a85fae84aea6d"
+      },
+      "existingNotices": []
+    }
+  ],
+  "findings": [
+    {
+      "package": "zune-core@0.4.12",
+      "status": "Exact VCS source and full Zlib notice located; not bundled yet",
+      "repositoryEvidence": "Published Cargo.toml.orig homepage identifies github.com/etemesi254/zune-image; repository field is absent.",
+      "commit": "f8fbb123d5ed04441e8324a555bfcda0cb1bd28f",
+      "pathInVcs": "crates/zune-core",
+      "originalManifestAndLibBytesMatch": true,
+      "fullNotice": {
+        "url": "https://raw.githubusercontent.com/etemesi254/zune-image/f8fbb123d5ed04441e8324a555bfcda0cb1bd28f/LICENSE-ZLIB",
+        "sha256": "7fa429541e55b1509909e058f2d21a37467e4958ec713b357f6e0cf9dc4ee352",
+        "bytes": 818,
+        "alreadyInNoticeZip": false
+      },
+      "existingRootDeclaration": {
+        "sha256": "c6dff146a9f31848ac296faa5a08a4253caf2c384c86f906dc99e7fc0a39cc8c",
+        "sameBytesAlreadyBundledAt": "rust/zune-jpeg@0.4.21/upstream/LICENSE.md",
+        "limitation": "Short copyright/license declaration with external links; not the full Zlib text."
+      }
+    },
+    {
+      "package": "libappindicator-sys@0.9.0",
+      "status": "Shared root notice relation verified; package-specific inventory mapping still absent",
+      "rootPackage": "libappindicator@0.9.0",
+      "sameVcsCommit": true,
+      "commit": "eafd1e3682a1247f595410266091e9684021cb6f",
+      "rootManifestPathDependency": "libappindicator-sys = { version = \"0.9\", path = \"sys/\" }",
+      "childPathInVcs": "sys",
+      "matchingLicenseDeclarations": "Apache-2.0 OR MIT",
+      "alreadyBundledRootNotices": [
+        {
+          "path": "rust/libappindicator@0.9.0/LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        },
+        {
+          "path": "rust/libappindicator@0.9.0/LICENSE-MIT",
+          "sha256": "eb227437252b2a7a9c1fc342c93ade1f3d7ce38cc6dd754f613db07d53ceff0b"
+        }
+      ],
+      "limitation": "This supports root-notice attribution for the Rust binding; it is not a claim about all OS-provided libappindicator implementations."
+    },
+    {
+      "package": "convert_case@0.4.0",
+      "status": "Later original MIT notice located; exact old-version attribution remains unresolved",
+      "archiveCommit": "300d9eef9e8c970e15f324afbc3df8b6a4ebbf71",
+      "licenseAdditionCommit": "f72ca63c9d579fbab22e361c76e39d31d1e86a2e",
+      "compareUrl": "https://github.com/rutrum/convert-case/compare/300d9eef9e8c970e15f324afbc3df8b6a4ebbf71...f72ca63c9d579fbab22e361c76e39d31d1e86a2e",
+      "relationship": {
+        "ahead_by": 2,
+        "behind_by": 0,
+        "files": [
+          {
+            "filename": "LICENSE",
+            "status": "added"
+          },
+          {
+            "filename": "README.md",
+            "status": "modified"
+          },
+          {
+            "filename": "src/case.rs",
+            "status": "modified"
+          }
+        ],
+        "status": "ahead",
+        "total_commits": 2
+      },
+      "limitation": "The later commit is two commits ahead and includes a source change. Do not silently describe its license file as present at the published archive commit."
+    },
+    {
+      "package": "fxhash@0.2.1",
+      "status": "Rust copyright/license source header confirmed; full attributed originals remain unresolved",
+      "sourceFile": "lib.rs",
+      "sha256": "885b72a1c977dc1c3ff4e0652719e62b6d8c3e713403e571afd581283f72df7b",
+      "officialRepository": "https://github.com/cbreeden/fxhash",
+      "currentRootFiles": [
+        ".gitignore",
+        "Cargo.toml",
+        "README.md",
+        "bench.rs",
+        "lib.rs"
+      ],
+      "vcsInArchive": false
+    },
+    {
+      "package": "mac@0.1.1",
+      "status": "README license declaration confirmed; full attributed originals remain unresolved",
+      "sourceFile": "README.md",
+      "sha256": "8edb7a912d295acf1e1cfeafdd19a6813a63b301c7bbfda3c67f65509bd8d8cc",
+      "officialRepository": "https://github.com/reem/rust-mac",
+      "currentRootFiles": [
+        ".gitignore",
+        ".travis.yml",
+        "Cargo.toml",
+        "README.md",
+        "src"
+      ],
+      "vcsInArchive": false
+    },
+    {
+      "package": "seahash@4.1.0",
+      "status": "Published archive reverified; original full notice still unresolved",
+      "commit": "94b632aeac099031c373599313d5b5f0acbbaec0",
+      "limitation": "Existing official GitLab access restriction was not bypassed; current review does not infer a replacement notice from a different project."
+    }
+  ]
+}

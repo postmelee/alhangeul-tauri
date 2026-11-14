@@ -70,3 +70,9 @@ Rust registry 773/773 SHA-256, JS registry 543/543 integrity 일치. source prod
 [SignPath 조건](https://signpath.org/terms.html)의 OSI 승인 요구와 [SPDX 공식 JSON](https://spdx.org/licenses/IJG.json)을 별도로 대조했다. 실제 Windows normal graph의 필수 AND 항목인 IJG는 SPDX `isOsiApproved=false`, `isFsfLibre=true`다. CDLA-Permissive-2.0도 OSI 승인 표시는 false다. OFL-1.1·LPPL-1.3c·Unicode-3.0은 true다. 이는 metadata에 허가명이 있거나 일반적인 자유 이용이 가능하다는 점만으로 모든 SignPath 요건 충족을 선언할 수 없다는 추가 근거다. [조회 결과](assets/task135/readiness/spdx-approval-review.json).
 
 기존 사전 문의는 WebView2/rhwp 경계 두 항목만 다뤘으므로 이 라이선스 쟁점까지 제공자가 승인했다고 보지 않는다. 원문 고지 완성·정확한 포함 범위를 먼저 구분하고 제공자 해석이 필요하다. upstream 라이선스를 임의 변경하거나 readonly pin을 바꾸지 않았다. 작업지시자가 제시한 추가 문의 본문 그대로 발송을 승인하여 같은 thread에 보냈으며, 라이선스 쟁점에 대한 제공자 답변을 기다린다.
+
+
+### Stage 7.10 독립 재검사
+최종 efe13e61의 세 target normal graph는 34850d42와 package/feature가 동일하다. 37종의 선언 표현을 고정 공식 SPDX 목록과 대조했으며 OSI-only 선택지를 찾지 못한 표현은 이미 문의한 IJG 필수 AND 및 CDLA-Permissive-2.0이다. 이 제한된 metadata 검사는 전체 라이선스/신청 승인 판정이 아니다.
+
+zune-core의 exact VCS 전체 Zlib 원문을 확보했고, libappindicator-sys와 동일 commit root의 기존 MIT/Apache 고지를 연결했다. 설치 ZIP과 package별 inventory는 아직 바꾸지 않았으므로 원문 확보를 동봉 완료로 세지 않는다. CanvasKit 공식 0.41.1 release commit과 npm package.json/LICENSE의 bytes 일치는 확인했지만 registry gitHead 차이와 실제 WASM build attestation·내부 C++ 고지 연결은 남는다. 상세 근거와 미해결 구분은 최종 보고서 Stage 7.10에 둔다.

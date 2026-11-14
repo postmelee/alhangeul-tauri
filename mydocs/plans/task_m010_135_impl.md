@@ -141,3 +141,7 @@ Stage 7.7에서 추가된 filename gap 6개 모두 검증된 crate checksum·Car
 최종 resource package 생성 대기 중에는 34850d42 동일 AppImage의 Linux-only 소비자로 paint 대기 보완을 먼저 확인한다. 화면 캡처 문제가 남은 경우 최종 package 소비자 전에 harness만 수정할 수 있도록 하며 제품 재빌드나 새 제품 수용으로 해석하지 않는다.
 
 최종 Linux arm64 DEB는 producer archive digest와 개별 package inventory hash를 확인한 뒤 payload의 고지 23개를 exact source blob과 읽기 전용으로 대조한다. 이는 압축 산출물 검사이며 macOS 제품 실행·빌드나 arm64 GUI 검증이 아니다. 실제 arm64 패키지 설치/제거 증거와 구분하여 기록한다.
+
+
+### Stage 7.10 제공자 답변 대기 중 독립 검증
+작업지시자의 후속 확인 지시에 따라 기존 exact source/lock·검증된 archive·최종 설치본을 재사용해 남은 원문 고지와 배포 의존성 범위를 조사한다. 공식 CanvasKit release 기록·npm 원본·WASM 자체 metadata를 대조하고, Rust의 고지 파일명 누락 항목은 source header/README와 정확한 VCS/동일 archive 관계로 구분한다. 제품 bytes·readonly upstream pin·공개 정책은 이 조사만으로 변경하지 않는다. 조사 결과는 기존 `mydocs/working/assets/task135/readiness/`와 최종 보고서에 둔다. Mac에서 Rust desktop 실행·빌드 없이 파일/압축/metadata만 검사하며, 새 OS 실행이 필요하면 기존 승인 profile의 exact artifact 소비 범위로 한정한다. 접근 제한 우회·제3자 문의 추가 발송·신청·계정 생성은 하지 않는다. 원문 확보와 실제 동봉, normal graph와 최종 링크 SBOM, 제공자의 최종 해석을 분리한다.

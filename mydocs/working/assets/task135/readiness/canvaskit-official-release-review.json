@@ -1,0 +1,124 @@
+{
+  "scope": "Read-only official release-source candidate and exact shipped WASM inspection. Matching npm metadata/license and binary strings are not a source-to-binary build attestation or complete C++ SBOM.",
+  "package": "canvaskit-wasm@0.41.1",
+  "officialReleaseCommit": "3c68f3ffd7c9bc781494cdb85e718ff1e6f49d84",
+  "officialReleaseUrl": "https://github.com/google/skia/commit/3c68f3ffd7c9bc781494cdb85e718ff1e6f49d84",
+  "reviewUrl": "https://skia-review.googlesource.com/c/skia/+/1205057",
+  "registryGitHead": "fba4f1bf212eef642cb1359d7cdf93a227e49c93",
+  "registryGitHeadEqualsOfficialReleaseCommit": false,
+  "files": [
+    {
+      "url": "https://raw.githubusercontent.com/google/skia/3c68f3ffd7c9bc781494cdb85e718ff1e6f49d84/modules/canvaskit/npm_build/package.json",
+      "sha256": "6526a853e9feec1322ba5a6708676878114a9ae2ec60e789586df6cf2f32ac84",
+      "bytes": 2359,
+      "exactNpmFileBytesMatch": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/skia/3c68f3ffd7c9bc781494cdb85e718ff1e6f49d84/modules/canvaskit/npm_build/LICENSE",
+      "sha256": "d27678cba0d529e77201e2d2a053628143e986aad8f1e77f7039ad4366c8f978",
+      "bytes": 1635,
+      "exactNpmFileBytesMatch": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/skia/3c68f3ffd7c9bc781494cdb85e718ff1e6f49d84/modules/canvaskit/compile.sh",
+      "sha256": "8b88398fd494e3d2ff6049df97e5f4d3f687dd21b7872ec39034ad6f23120bb5",
+      "bytes": 8106
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/skia/3c68f3ffd7c9bc781494cdb85e718ff1e6f49d84/modules/canvaskit/BUILD.gn",
+      "sha256": "8cb2d97839b0c4b62386706b3c4b52d54e06d0ff610569f162d5682a12f86b6e",
+      "bytes": 10644
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/skia/3c68f3ffd7c9bc781494cdb85e718ff1e6f49d84/DEPS",
+      "sha256": "e21b92419d10aa9ba25fb5c6d8e7ddb41dc9d02bb72cc0e91e45d5f1f289c19f",
+      "bytes": 10372
+    }
+  ],
+  "wasm": {
+    "path": "canvaskit-wasm/bin/canvaskit.wasm",
+    "bytes": 7159342,
+    "sha256": "bd669c88bd033eaf62d673103a42231a737c6d12e4cc99f8548b2784b5772430",
+    "customSections": [],
+    "markers": [
+      {
+        "text": "Copyright (C) 1991-2024 The libjpeg-turbo Project and many others",
+        "offset": 5561575,
+        "count": 1
+      },
+      {
+        "text": " Copyright (C) 2016 and later: Unicode, Inc. and others. License & terms of use: http://www.unicode.org/copyright.html ",
+        "offset": 6387308,
+        "count": 10
+      },
+      {
+        "text": "1.6.56",
+        "offset": 5634609,
+        "count": 1
+      }
+    ]
+  },
+  "candidateDependencyPins": [
+    {
+      "name": "brotli",
+      "repository": "https://skia.googlesource.com/external/github.com/google/brotli.git",
+      "commit": "6d03dfbedda1615c4cba1211f8d81735575209c8"
+    },
+    {
+      "name": "emsdk",
+      "repository": "https://skia.googlesource.com/external/github.com/emscripten-core/emsdk.git",
+      "commit": "c69d433d8509c5c64564c2f0d054bf102a5cf67e"
+    },
+    {
+      "name": "freetype",
+      "repository": "https://chromium.googlesource.com/chromium/src/third_party/freetype2.git",
+      "commit": "264b5fbf5b912b39f98d038bf75d39be0a73f21b"
+    },
+    {
+      "name": "harfbuzz",
+      "repository": "https://chromium.googlesource.com/external/github.com/harfbuzz/harfbuzz.git",
+      "commit": "9cb1fee51069b206effb4736e443b038d230789d"
+    },
+    {
+      "name": "icu",
+      "repository": "https://chromium.googlesource.com/chromium/deps/icu.git",
+      "commit": "364118a1d9da24bb5b770ac3d762ac144d6da5a4"
+    },
+    {
+      "name": "libjpeg-turbo",
+      "repository": "https://chromium.googlesource.com/chromium/deps/libjpeg_turbo.git",
+      "commit": "e14cbfaa85529d47f9f55b0f104a579c1061f9ad"
+    },
+    {
+      "name": "libpng",
+      "repository": "https://skia.googlesource.com/third_party/libpng.git",
+      "commit": "d5515b5b8be3901aac04e5bd8bd5c89f287bcd33"
+    },
+    {
+      "name": "libwebp",
+      "repository": "https://chromium.googlesource.com/webm/libwebp.git",
+      "commit": "845d5476a866141ba35ac133f856fa62f0b7445f"
+    },
+    {
+      "name": "wuffs",
+      "repository": "https://skia.googlesource.com/external/github.com/google/wuffs-mirror-release-c.git",
+      "commit": "e3f919ccfe3ef542cfc983a82146070258fb57f8"
+    },
+    {
+      "name": "zlib",
+      "repository": "https://chromium.googlesource.com/chromium/src/third_party/zlib",
+      "commit": "646b7f569718921d7d4b5b8e22572ff6c76f2596"
+    }
+  ],
+  "embeddedFontProbe": {
+    "candidateSourceFont": "modules/canvaskit/fonts/NotoMono-Regular.ttf",
+    "sourceSha256": "41fd7ccc82375e2a1e47f0cc2c941c14d7c99ba2f57cf69c9f738d07fb257686",
+    "contiguousBytesFoundInShippedStandardWasm": false,
+    "limitation": "A negative contiguous-byte search does not prove absence. Full/profiling npm variants are not the selected Alhangeul WASM."
+  },
+  "remaining": [
+    "The npm gitHead does not resolve to the identified official release source; no source-build attestation has been established.",
+    "DEPS and compile defaults list source candidates, not observed exact linked dependency versions.",
+    "Original internal C++/Emscripten notices and any embedded data/font obligations require exact build-source/variant attribution before claiming complete coverage."
+  ]
+}

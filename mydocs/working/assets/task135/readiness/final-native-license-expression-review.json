@@ -1,0 +1,321 @@
+{
+  "scope": "SPDX flag and declared AND/OR expression review for target-filtered normal dependency graphs. Includes proc macros/unified features; not binary SBOM, legal compliance or SignPath eligibility. Legacy slash notation is treated as OR and preserved in original expressions. Exception-modified atoms are not independently accepted; explicit unmodified OR alternatives may pass this narrow screen.",
+  "sourceSha": "efe13e61d954a9ae5c801ed447bf3cbea105f5e2",
+  "producerRun": 43508471859,
+  "spdx": {
+    "commit": "31846481de7ea17d92f2f46fad76abe58b2e9bb0",
+    "licenseListVersion": "8791eda",
+    "sha256": "ab735654671a6d53f30717b14f6f1060eac23699403ce0ffdf4f6f3273360c0b",
+    "url": "https://raw.githubusercontent.com/spdx/license-list-data/31846481de7ea17d92f2f46fad76abe58b2e9bb0/json/licenses.json"
+  },
+  "expressions": [
+    {
+      "declared": "(Apache-2.0 OR MIT) AND BSD-3-Clause",
+      "hasUnmodifiedOsiOnlyChoice": true
+    },
+    {
+      "declared": "(MIT OR Apache-2.0 OR Zlib) AND IJG",
+      "hasUnmodifiedOsiOnlyChoice": false
+    },
+    {
+      "declared": "(MIT OR Apache-2.0) AND IJG",
+      "hasUnmodifiedOsiOnlyChoice": false
+    },
+    {
+      "declared": "(MIT OR Apache-2.0) AND Unicode-3.0",
+      "hasUnmodifiedOsiOnlyChoice": true
+    },
+    {
+      "declared": "0BSD OR MIT OR Apache-2.0",
+      "hasUnmodifiedOsiOnlyChoice": true
+    },
+    {
+      "declared": "Apache-2.0",
+      "hasUnmodifiedOsiOnlyChoice": true
+    },
+    {
+      "declared": "Apache-2.0 / MIT",
+      "hasUnmodifiedOsiOnlyChoice": true
+    },
+    {
+      "declared": "Apache-2.0 AND ISC",
+      "hasUnmodifiedOsiOnlyChoice": true
+    },
+    {
+      "declared": "Apache-2.0 AND MIT",
+      "hasUnmodifiedOsiOnlyChoice": true
+    },
+    {
+      "declared": "Apache-2.0 OR BSL-1.0",
+      "hasUnmodifiedOsiOnlyChoice": true
+    },
+    {
+      "declared": "Apache-2.0 OR ISC OR MIT",
+      "hasUnmodifiedOsiOnlyChoice": true
+    },
+    {
+      "declared": "Apache-2.0 OR MIT",
+      "hasUnmodifiedOsiOnlyChoice": true
+    },
+    {
+      "declared": "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT",
+      "hasUnmodifiedOsiOnlyChoice": true
+    },
+    {
+      "declared": "Apache-2.0/MIT",
+      "hasUnmodifiedOsiOnlyChoice": true
+    },
+    {
+      "declared": "BSD-2-Clause",
+      "hasUnmodifiedOsiOnlyChoice": true
+    },
+    {
+      "declared": "BSD-2-Clause OR Apache-2.0 OR MIT",
+      "hasUnmodifiedOsiOnlyChoice": true
+    },
+    {
+      "declared": "BSD-3-Clause",
+      "hasUnmodifiedOsiOnlyChoice": true
+    },
+    {
+      "declared": "BSD-3-Clause AND MIT",
+      "hasUnmodifiedOsiOnlyChoice": true
+    },
+    {
+      "declared": "BSD-3-Clause OR Apache-2.0",
+      "hasUnmodifiedOsiOnlyChoice": true
+    },
+    {
+      "declared": "BSD-3-Clause/MIT",
+      "hasUnmodifiedOsiOnlyChoice": true
+    },
+    {
+      "declared": "CC0-1.0 OR Apache-2.0 OR Apache-2.0 WITH LLVM-exception",
+      "hasUnmodifiedOsiOnlyChoice": true
+    },
+    {
+      "declared": "CC0-1.0 OR MIT-0 OR Apache-2.0",
+      "hasUnmodifiedOsiOnlyChoice": true
+    },
+    {
+      "declared": "CDLA-Permissive-2.0",
+      "hasUnmodifiedOsiOnlyChoice": false
+    },
+    {
+      "declared": "ISC",
+      "hasUnmodifiedOsiOnlyChoice": true
+    },
+    {
+      "declared": "MIT",
+      "hasUnmodifiedOsiOnlyChoice": true
+    },
+    {
+      "declared": "MIT / Apache-2.0",
+      "hasUnmodifiedOsiOnlyChoice": true
+    },
+    {
+      "declared": "MIT OR Apache-2.0",
+      "hasUnmodifiedOsiOnlyChoice": true
+    },
+    {
+      "declared": "MIT OR Apache-2.0 OR WTFPL",
+      "hasUnmodifiedOsiOnlyChoice": true
+    },
+    {
+      "declared": "MIT OR Apache-2.0 OR Zlib",
+      "hasUnmodifiedOsiOnlyChoice": true
+    },
+    {
+      "declared": "MIT OR Zlib OR Apache-2.0",
+      "hasUnmodifiedOsiOnlyChoice": true
+    },
+    {
+      "declared": "MIT/Apache-2.0",
+      "hasUnmodifiedOsiOnlyChoice": true
+    },
+    {
+      "declared": "MPL-2.0",
+      "hasUnmodifiedOsiOnlyChoice": true
+    },
+    {
+      "declared": "Unicode-3.0",
+      "hasUnmodifiedOsiOnlyChoice": true
+    },
+    {
+      "declared": "Unlicense OR MIT",
+      "hasUnmodifiedOsiOnlyChoice": true
+    },
+    {
+      "declared": "Unlicense/MIT",
+      "hasUnmodifiedOsiOnlyChoice": true
+    },
+    {
+      "declared": "Zlib",
+      "hasUnmodifiedOsiOnlyChoice": true
+    },
+    {
+      "declared": "Zlib OR Apache-2.0 OR MIT",
+      "hasUnmodifiedOsiOnlyChoice": true
+    }
+  ],
+  "platforms": [
+    {
+      "platform": "windows-x64",
+      "artifactId": 14078617850,
+      "artifactDigest": "sha256:69f4835350412dc91481af1f3aa6647817d04fdf9fd3411653b77870c93a0cdd",
+      "graphSha256": "2e9e7819396af1d227cb059bda584761321439bfd1cd0ecdafec9b4b3e52b36c",
+      "productsIdenticalTo34850": true,
+      "products": [
+        {
+          "root": "apps/desktop/src-tauri",
+          "normalGraphPackageCount": 532,
+          "noUnmodifiedOsiOnlyChoice": [
+            {
+              "name": "rhwp-jpeg-encoder",
+              "version": "0.7.1-rhwp.1",
+              "license": "(MIT OR Apache-2.0) AND IJG"
+            },
+            {
+              "name": "rhwp-zune-jpeg",
+              "version": "0.5.15-rhwp.1",
+              "license": "(MIT OR Apache-2.0 OR Zlib) AND IJG"
+            },
+            {
+              "name": "webpki-roots",
+              "version": "1.0.11",
+              "license": "CDLA-Permissive-2.0"
+            }
+          ]
+        },
+        {
+          "root": "apps/thumbnail-worker",
+          "normalGraphPackageCount": 287,
+          "noUnmodifiedOsiOnlyChoice": [
+            {
+              "name": "rhwp-jpeg-encoder",
+              "version": "0.7.1-rhwp.1",
+              "license": "(MIT OR Apache-2.0) AND IJG"
+            },
+            {
+              "name": "rhwp-zune-jpeg",
+              "version": "0.5.15-rhwp.1",
+              "license": "(MIT OR Apache-2.0 OR Zlib) AND IJG"
+            },
+            {
+              "name": "webpki-roots",
+              "version": "1.0.11",
+              "license": "CDLA-Permissive-2.0"
+            }
+          ]
+        },
+        {
+          "root": "apps/thumbnail-handler",
+          "normalGraphPackageCount": 9,
+          "noUnmodifiedOsiOnlyChoice": []
+        }
+      ]
+    },
+    {
+      "platform": "linux-x64",
+      "artifactId": 14078815660,
+      "artifactDigest": "sha256:01cce7e298a994e0e88aa63d5fc222e29e3a8fb3ab5cd864013684f8a3fe654f",
+      "graphSha256": "664abf47c80519c516aca373bcef427048c50b457121f3a81ec0220507c0437a",
+      "productsIdenticalTo34850": true,
+      "products": [
+        {
+          "root": "apps/desktop/src-tauri",
+          "normalGraphPackageCount": 593,
+          "noUnmodifiedOsiOnlyChoice": [
+            {
+              "name": "rhwp-jpeg-encoder",
+              "version": "0.7.1-rhwp.1",
+              "license": "(MIT OR Apache-2.0) AND IJG"
+            },
+            {
+              "name": "rhwp-zune-jpeg",
+              "version": "0.5.15-rhwp.1",
+              "license": "(MIT OR Apache-2.0 OR Zlib) AND IJG"
+            },
+            {
+              "name": "webpki-roots",
+              "version": "1.0.11",
+              "license": "CDLA-Permissive-2.0"
+            }
+          ]
+        },
+        {
+          "root": "apps/linux-thumbnailer",
+          "normalGraphPackageCount": 285,
+          "noUnmodifiedOsiOnlyChoice": [
+            {
+              "name": "rhwp-jpeg-encoder",
+              "version": "0.7.1-rhwp.1",
+              "license": "(MIT OR Apache-2.0) AND IJG"
+            },
+            {
+              "name": "rhwp-zune-jpeg",
+              "version": "0.5.15-rhwp.1",
+              "license": "(MIT OR Apache-2.0 OR Zlib) AND IJG"
+            },
+            {
+              "name": "webpki-roots",
+              "version": "1.0.11",
+              "license": "CDLA-Permissive-2.0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "platform": "linux-arm64",
+      "artifactId": 14078004024,
+      "artifactDigest": "sha256:21ba6ecd31840c8b8e1f4d0326ae77bd7252a2a0ca8d8eaa8e8d3f8c2597f5eb",
+      "graphSha256": "c9fac02b8d7b57147ee9595569b40f6c090c5d451c65a314127cdaf92316b7c9",
+      "productsIdenticalTo34850": true,
+      "products": [
+        {
+          "root": "apps/desktop/src-tauri",
+          "normalGraphPackageCount": 592,
+          "noUnmodifiedOsiOnlyChoice": [
+            {
+              "name": "rhwp-jpeg-encoder",
+              "version": "0.7.1-rhwp.1",
+              "license": "(MIT OR Apache-2.0) AND IJG"
+            },
+            {
+              "name": "rhwp-zune-jpeg",
+              "version": "0.5.15-rhwp.1",
+              "license": "(MIT OR Apache-2.0 OR Zlib) AND IJG"
+            },
+            {
+              "name": "webpki-roots",
+              "version": "1.0.11",
+              "license": "CDLA-Permissive-2.0"
+            }
+          ]
+        },
+        {
+          "root": "apps/linux-thumbnailer",
+          "normalGraphPackageCount": 284,
+          "noUnmodifiedOsiOnlyChoice": [
+            {
+              "name": "rhwp-jpeg-encoder",
+              "version": "0.7.1-rhwp.1",
+              "license": "(MIT OR Apache-2.0) AND IJG"
+            },
+            {
+              "name": "rhwp-zune-jpeg",
+              "version": "0.5.15-rhwp.1",
+              "license": "(MIT OR Apache-2.0 OR Zlib) AND IJG"
+            },
+            {
+              "name": "webpki-roots",
+              "version": "1.0.11",
+              "license": "CDLA-Permissive-2.0"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
