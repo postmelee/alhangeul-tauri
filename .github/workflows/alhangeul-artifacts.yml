@@ -14,6 +14,9 @@ on:
       run_tests:
         type: boolean
         default: true
+      thumbnail_same_version_upgrade:
+        type: boolean
+        default: false
       thumbnail_context_experiment:
         type: boolean
         default: false
@@ -88,6 +91,7 @@ jobs:
       build_ref: ${{ needs.plan.outputs.source }}
       artifact_id: ${{ needs.windows.outputs.artifact_id }}
       support_artifact_id: ${{ needs.windows.outputs.support_artifact_id }}
+      thumbnail_same_version_upgrade: ${{ inputs.thumbnail_same_version_upgrade }}
       thumbnail_context_experiment: ${{ inputs.thumbnail_context_experiment && inputs.run_tests && inputs.profile == 'full' }}
   result:
     needs: [plan, fast, core, windows, linux, smoke]

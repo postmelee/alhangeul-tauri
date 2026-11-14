@@ -72,7 +72,9 @@
 profile과 기존 bytes 재사용은 [CI 검증 가이드](CI_VALIDATION.md)를 따른다. 일반 artifact도
 workflow SHA와 실제 제품 checkout SHA가 같아야 한다.
 
-Windows 설치 검사는 NSIS-only·MSI-only·강제 재설치의 개별 계약과 경량 상태 집계를 사용한다.
+Windows 설치 검사는 표준 사용자 NSIS 실제 기능·관리자 NSIS 진단·MSI 일반 설치·강제 재설치의
+개별 계약과 경량 상태 집계를 사용한다. 지원 정책은 일반 사용자 NSIS, 관리자 환경 MSI다.
+표준 사용자 NSIS의 실제 bitmap·재설치·제품 자체 제거가 실패하면 진단 성공으로 대체하지 않는다.
 CI 전체 성공도 모든 썸네일 환경의 성공을 뜻하지 않는다. 원시 실패와 `thumbnailStatus`·
 `lifecycleStatus`를 [CI 상태 해석](CI_VALIDATION.md#windows-설치-계약과-실제-관측)에 따라 읽는다.
 성공 producer의 Windows bytes는 `additional-validation-only`로 추가 검사에 사용할 수 있으나

@@ -10,14 +10,36 @@ on:
         options:
           - full
           - pdf-cleanup-windows
+          - hosted-ui-probe
+          - windows-guest-probe
+
+      guest_os:
+        description: Official disposable Windows evaluation image.
+        type: choice
+        default: windows11
+        options: [windows11, windows10]
+
+      guest_scenario:
+        description: Exact existing product in a fresh Windows guest.
+        type: choice
+        default: nsis
+        options: [nsis, msi, nsis-upgrade]
 
       profile:
         description: Select validation scope; auto uses an exact base SHA and falls back to full.
         type: choice
         default: native
         options: [auto, fast, native, installer, windows-package, linux-package, full]
+      thumbnail_same_version_upgrade:
+        description: Task 132 acceptance only - pinned original v0.1.3 NSIS to same-version candidate.
+        type: boolean
+        default: false
       thumbnail_context_experiment:
         description: Separately approved disposable Windows context experiment (package/full only).
+        type: boolean
+        default: false
+      thumbnail_user_context:
+        description: Observe pinned public NSIS in disposable elevated and standard user profiles (fast only).
         type: boolean
         default: false
       base_sha:
@@ -40,7 +62,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: alhangeul-ci-${{ github.ref }}-${{ inputs.profile }}-${{ inputs.scope }}
+  group: alhangeul-ci-${{ github.ref }}-${{ inputs.profile }}-${{ inputs.scope }}-${{ inputs.guest_scenario }}-${{ inputs.guest_os }}
   cancel-in-progress: ${{ inputs.profile == 'fast' && inputs.scope != 'pdf-cleanup-windows' }}
 
 env:
@@ -49,8 +71,38 @@ env:
   NODE_VERSION: "24"
 
 jobs:
+  hosted-ui-contracts:
+    if: ${{ (inputs.scope == 'hosted-ui-probe' || inputs.scope == 'windows-guest-probe') }}
+    uses: ./.github/workflows/alhangeul-ci-fast.yml
+    with:
+      source_ref: ${{ github.sha }}
+
+  hosted-ui-probe:
+    needs: hosted-ui-contracts
+    if: ${{ inputs.scope == 'hosted-ui-probe' }}
+    permissions:
+      actions: read
+      contents: read
+    uses: ./.github/workflows/alhangeul-hosted-ui-probe.yml
+
+  windows-guest-probe:
+    needs: hosted-ui-contracts
+    if: ${{ inputs.scope == 'windows-guest-probe' }}
+    permissions:
+      actions: read
+      contents: read
+    uses: ./.github/workflows/alhangeul-windows-guest-probe.yml
+    with:
+      scenario: ${{ inputs.guest_scenario }}
+      operating_system: ${{ inputs.guest_os }}
+
+  thumbnail-user-context:
+    needs: fast
+    if: ${{ inputs.thumbnail_user_context && inputs.profile == 'fast' && inputs.scope == 'full' }}
+    uses: ./.github/workflows/alhangeul-thumbnail-user-context.yml
+
   select:
-    if: ${{ inputs.scope != 'pdf-cleanup-windows' }}
+    if: ${{ inputs.scope != 'pdf-cleanup-windows' && inputs.scope != 'hosted-ui-probe' && inputs.scope != 'windows-guest-probe' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     outputs:
@@ -231,6 +283,7 @@ jobs:
       platform: ${{ needs.select.outputs.profile == 'windows-package' && 'windows-x64' || needs.select.outputs.profile == 'linux-package' && 'linux' || 'all' }}
       profile: full
       run_tests: true
+      thumbnail_same_version_upgrade: ${{ inputs.thumbnail_same_version_upgrade }}
       thumbnail_context_experiment: ${{ inputs.thumbnail_context_experiment }}
 
   pdf-cleanup-windows:
