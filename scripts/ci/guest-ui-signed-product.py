@@ -22,9 +22,9 @@ def prepare(root, payload, scenario):
     msi = data["targets"]["windows-x86_64-msi"]
     identity, binaries = msi_tools().inspect(bundle / msi["path"], root / "signed-msi-reference")
     for binary in binaries:
-        subprocess.run(["node", "--input-type=module", "-e",
-            "import {readFileSync} from 'node:fs'; import {requireStaticThumbnailCrt} from './scripts/windows-pe-imports.mjs'; requireStaticThumbnailCrt(readFileSync(process.argv[1]));",
-            binary["path"]], check=True)
+        binary["imports"] = json.loads(subprocess.check_output(["node", "--input-type=module", "-e",
+            "import {readFileSync} from 'node:fs'; import {requireStaticThumbnailCrt} from './scripts/windows-pe-imports.mjs'; console.log(JSON.stringify(requireStaticThumbnailCrt(readFileSync(process.argv[1]))));",
+            binary["path"]], text=True))
     kind = "msi" if scenario.startswith("msi") else "nsis"
     selected = data["targets"]["windows-x86_64-" + kind]
     shutil.copyfile(bundle / selected["path"], payload / ("installer.msi" if kind == "msi" else "installer.exe"))
@@ -34,6 +34,8 @@ def prepare(root, payload, scenario):
     for binary in binaries:
         del binary["path"]
     (root / "evidence/signed-selection.json").write_text(json.dumps(data, indent=2))
-    return dict(productSha=data["productSha"], installerSha256=selected["sha256"],
+    value = dict(productSha=data["productSha"], installerSha256=selected["sha256"],
                 signaturesVerified=True, producerRun=data["producerRun"],
                 keyFingerprint=data["keyFingerprint"], msiIdentity=identity, binaries=binaries)
+    (root / "evidence/signed-product.json").write_text(json.dumps(value, indent=2))
+    return value
