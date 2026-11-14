@@ -24,7 +24,7 @@ def decode(serial, output):
             continue
         if kind == "begin":
             name = frame.get("name", "")
-            if (active or len(seen) >= 20 or name in seen
+            if (active or len(seen) >= 24 or name in seen
                     or not re.fullmatch(r"[a-z0-9-]+\.(json|png)", name)
                     or type(frame.get("bytes")) is not int
                     or not 0 < frame["bytes"] <= LIMIT

@@ -23,7 +23,7 @@ def admin_ok(guest, names):
 def prerequisites_ok(guest):
     expected = guest["input"].get("prerequisites", [])
     required = []
-    if guest["input"]["scenario"] == "nsis-upgrade":
+    if guest["input"]["scenario"] in ("nsis-upgrade", "msi-upgrade"):
         required.append("vc")
     if guest["input"].get("operatingSystem", {}).get("id") == "windows10":
         required.append("webview2")
@@ -73,13 +73,15 @@ def complete(guest, network_enabled, scenario, operating_system="windows11"):
             or expected_os["caption"] not in observed_os.get("caption", "")
             or observed_os.get("productType") != 1):
         return False
-    if scenario not in ("nsis", "msi", "nsis-upgrade") or data.get("scenario") != scenario:
+    if scenario not in ("nsis", "msi", "nsis-upgrade", "msi-upgrade") or data.get("scenario") != scenario:
         return False
     if any(guest.get(key) != 0 for key in ("installExit", "reinstallExit", "uninstallExit")):
         return False
-    if scenario == "msi" and not admin_ok(guest, ["install", "reinstall", "uninstall"]):
+    if scenario in ("msi", "msi-upgrade") and not admin_ok(guest, ["install", "reinstall", "uninstall"]):
         return False
-    if not prerequisites_ok(guest) or (scenario == "nsis-upgrade" and not upgrade_ok(guest)):
+    if not prerequisites_ok(guest) or (scenario in ("nsis-upgrade", "msi-upgrade") and not upgrade_ok(guest)):
+        return False
+    if scenario == "msi-upgrade" and not msi_upgrade_ok(guest):
         return False
     runtime = guest.get("beforeInstall", {})
     return (guest.get("status") == "observed" and guest.get("productUninstallPassed") is True
@@ -89,3 +91,25 @@ def complete(guest, network_enabled, scenario, operating_system="windows11"):
             and guest.get("desktopOwnerMatches") is True and guest.get("sessionMatches") is True
             and guest.get("displayPreference", {}).get("restored") is True
             and guest.get("visual") == "captured-awaiting-review" and probes_ok(guest.get("probes")))
+
+
+def msi_upgrade_ok(guest):
+    data = guest["input"]
+    old = data.get("baseline", {}).get("msiIdentity", {})
+    new = data.get("msiIdentity", {})
+    if (not admin_ok(guest, ["baseline"]) or data.get("signaturesVerified") is not True
+            or old.get("ProductVersion") != "0.1.3" or new.get("ProductVersion") != "0.1.3"
+            or not old.get("UpgradeCode") or old.get("UpgradeCode") != new.get("UpgradeCode")
+            or not old.get("ProductCode") or not new.get("ProductCode")
+            or old["ProductCode"] == new["ProductCode"]
+            or not old.get("PackageCode") or not new.get("PackageCode")
+            or old["PackageCode"] == new["PackageCode"]):
+        return False
+    executed = guest["adminOperations"]["baseline"].get("executedInstallerSha256")
+    if executed != data.get("baseline", {}).get("installerSha256") or not executed:
+        return False
+    for key, identity in (("baselineRegistration", old), ("upgradeRegistration", new)):
+        entries = guest.get(key, {}).get("entries", [])
+        if len(entries) != 1 or entries[0].get("productCode") != identity["ProductCode"] or entries[0].get("version") != "0.1.3":
+            return False
+    return guest["upgradeRegistration"].get("previousProductRemoved") is True

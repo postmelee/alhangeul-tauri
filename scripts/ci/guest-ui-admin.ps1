@@ -7,13 +7,14 @@ $taskName = 'AlhGuestInstaller'
 if ($env:COMPUTERNAME -cne 'ALH-GUEST' -or [Security.Principal.WindowsIdentity]::GetCurrent().User.Value -cne 'S-1-5-18') { throw 'isolated-system-task-required' }
 . (Join-Path $PSScriptRoot 'guest-ui-process.ps1')
 $inputData = Get-Content (Join-Path $root 'input.json') -Raw | ConvertFrom-Json
-if ($inputData.scenario -cnotin @('nsis', 'msi', 'nsis-upgrade')) { throw 'fixed-privileged-scenario-required' }
+if ($inputData.scenario -cnotin @('nsis', 'msi', 'nsis-upgrade', 'msi-upgrade')) { throw 'fixed-privileged-scenario-required' }
 . (Join-Path $PSScriptRoot 'guest-ui-prerequisites.ps1')
 . (Join-Path $PSScriptRoot 'guest-ui-process-trace.ps1')
 $trace = $null
 $operations = @()
 if ($inputData.prerequisites.Count -gt 0) { $operations += 'prerequisites' }
-if ($inputData.scenario -eq 'msi') { $operations += @('install', 'reinstall', 'uninstall') }
+if ($inputData.scenario -eq 'msi-upgrade') { $operations += 'baseline' }
+if ($inputData.scenario -in @('msi', 'msi-upgrade')) { $operations += @('install', 'reinstall', 'uninstall') }
 if ($inputData.scenario -eq 'nsis-upgrade') { $operations += 'trace-stop' }
 $installer = Join-Path $root 'installer.msi'
 try {
@@ -38,7 +39,10 @@ try {
         $result['rawTraceRemoved'] = -not (Test-Path -LiteralPath $trace.file)
         $result.exitCode = 0
       } else {
-      if ((Get-FileHash $installer -Algorithm SHA256).Hash.ToLowerInvariant() -cne $inputData.installerSha256) { throw 'admin-installer-hash-mismatch' }
+      $installer = Join-Path $root $(if ($operation -eq 'baseline') { 'baseline.msi' } else { 'installer.msi' })
+      $expectedHash = if ($operation -eq 'baseline') { $inputData.baseline.installerSha256 } else { $inputData.installerSha256 }
+      if ((Get-FileHash $installer -Algorithm SHA256).Hash.ToLowerInvariant() -cne $expectedHash) { throw 'admin-installer-hash-mismatch' }
+      $result['executedInstallerSha256'] = $expectedHash
       $mode = if ($operation -eq 'uninstall') { '/x' } else { '/i' }
       $arguments = $mode + ' "' + $installer + '" /qn /norestart /L*v "' + (Join-Path $results ($operation + '.log')) + '"'
       if ($operation -eq 'reinstall') { $arguments += ' REINSTALL=ALL REINSTALLMODE=omus' }

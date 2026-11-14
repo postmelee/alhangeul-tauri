@@ -643,3 +643,5 @@ PR 전 기준 정합화: devel이 644d0ac52bb364e57907fd7cd98c57ceaf86dce2(#135/
 - 정확한 입력/identity·실패 수용 회귀는 Node/Python과 Windows PowerShell CI로 검사한다. Mac에서는 Rust/Tauri를 실행하지 않으며 private 출력은 연결된 T7만 사용한다.
 - 기존 승인 위치인 mydocs/plans/working/report/orders와 docs/releases/v0.1.3 기록만 갱신한다. 새 공식 문서 루트는 만들지 않는다. 짧은 사용자 notes는 현재 지원 범위·수동 교체·재배포 날짜를 반영하고 생성기 검증을 거친다.
 - 공개 원본 11개 actual hash와 checksum, 서명 3개, tag object·body·현재 Pages 3개 JSON을 재검증·보존했다. 실제 교체 목록·tag SHA·notes hash와 복구 범위는 최종 bytes 수용 후 제시한다. 공개 assets·tag·feed는 아직 그대로다.
+
+검증 하네스 구현: MSI upgrade의 관리자 단계 JSON 4개 추가에 맞춰 serial 증거 상한을 20→24개로 제한 확장한다. 파일당 5MiB·파일명·hash·중복·전체 완료 검사는 유지한다. 로컬 자동화 1,421개, guest identity 실패 회귀, boundary 및 변경 workflow actionlint를 통과했다. 실제 Windows PowerShell와 signed guest 실행은 이어서 검증한다.
