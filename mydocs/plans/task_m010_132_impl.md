@@ -4,7 +4,7 @@
 GitHub Issue: [#132](https://github.com/postmelee/alhangeul-tauri/issues/132)
 마일스톤: M010
 
-현재: Stage 5 비게시 서명·최종 파일 검증 완료 — #138/#139 병합, 제품4e99e883 고정, 최종 signed Windows 10/11 여덟 경로와 설치 파일6종 수용. 검증 후속 PR을 준비하며 태그·Release·Pages 교체는 사전 보고·승인 대기다.
+현재: Stage 6 동일 v0.1.3 공개 교체·검증 완료 — 제품4e99e883, 새 tag4860b8ef, Release11개 교체, API/URL22파일·Pages26파일·feed3target·웹8조합 통과. 완료 보고 PR과 안전한 작업 정리를 진행한다.
 
 2026-11-11 수행계획 승인과 이슈 해결까지 연속 진행 지시를 적용한다. PR 생성 전 보고한다.
 
@@ -17,6 +17,7 @@ GitHub Issue: [#132](https://github.com/postmelee/alhangeul-tauri/issues/132)
 | 3 | 실제 Windows 수용 | 설치 생명주기·Explorer 증거 | 새 이미지/타사 연결/MSI 회귀 |
 | 4 | 최종 보고 | 기존 공식 문서·최종 보고 | 계약 일치, PR 전 보고 |
 | 5 | 비게시 재릴리즈 준비 | 병합 source·signed 후보·복구/교체안 | Windows8경로·파일6종·서명·full CI |
+| 6 | 동일 버전 공개 교체 | tag·11파일·본문·Pages/feed·완료 기록 | 공개 bytes/서명·HTTP·화면 |
 
 ## 문서 위치 확인
 
