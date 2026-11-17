@@ -1,0 +1,83 @@
+[
+  {
+    "time": "2026-11-13T15:41:58.5741930Z",
+    "process": "alhangeul.exe",
+    "pid": "2172",
+    "destination": "104.18.21.213",
+    "port": "80",
+    "protocol": "6",
+    "direction": "%%14593"
+  },
+  {
+    "time": "2026-11-13T15:41:58.4946491Z",
+    "process": "alhangeul.exe",
+    "pid": "2172",
+    "destination": "185.199.108.153",
+    "port": "443",
+    "protocol": "6",
+    "direction": "%%14593"
+  },
+  {
+    "time": "2026-11-13T15:41:58.4738914Z",
+    "process": "msedgewebview2.exe",
+    "pid": "2336",
+    "destination": "52.123.247.12",
+    "port": "443",
+    "protocol": "6",
+    "direction": "%%14593"
+  },
+  {
+    "time": "2026-11-13T15:41:58.4734950Z",
+    "process": "msedgewebview2.exe",
+    "pid": "2336",
+    "destination": "52.123.247.12",
+    "port": "443",
+    "protocol": "17",
+    "direction": "%%14593"
+  },
+  {
+    "time": "2026-11-13T15:41:58.4404522Z",
+    "process": "msedgewebview2.exe",
+    "pid": "2336",
+    "destination": "::1",
+    "port": "80",
+    "protocol": "6",
+    "direction": "%%14593"
+  },
+  {
+    "time": "2026-11-13T15:41:58.4231656Z",
+    "process": "msedgewebview2.exe",
+    "pid": "2336",
+    "destination": "::1",
+    "port": "80",
+    "protocol": "6",
+    "direction": "%%14593"
+  },
+  {
+    "time": "2026-11-13T15:41:56.6795234Z",
+    "process": "msedgewebview2.exe",
+    "pid": "2336",
+    "destination": "52.123.247.12",
+    "port": "443",
+    "protocol": "6",
+    "direction": "%%14593"
+  },
+  {
+    "time": "2026-11-13T15:41:56.6675001Z",
+    "process": "msedgewebview2.exe",
+    "pid": "2336",
+    "destination": "168.63.129.16",
+    "port": "53",
+    "protocol": "17",
+    "direction": "%%14593"
+  },
+  {
+    "time": "2026-11-13T15:41:56.6673469Z",
+    "process": "msedgewebview2.exe",
+    "pid": "2336",
+    "destination": "168.63.129.16",
+    "port": "53",
+    "protocol": "17",
+    "direction": "%%14593"
+  }
+]

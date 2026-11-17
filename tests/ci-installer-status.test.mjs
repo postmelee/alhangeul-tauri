@@ -1,17 +1,25 @@
+import { STANDARD_USER_JOB, SAME_VERSION_UPGRADE_STEPS } from '../scripts/windows-thumbnail-user-acceptance.mjs';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
 import { verifyInstallerStatus, installerStatusSummary } from '../scripts/ci/installer-status.mjs';
-import { deliveryFixture, statusOutputs, aggregateOutputs } from './fixtures/ci-delivery.mjs';
+import { deliveryFixture as baseFixture, statusOutputs, aggregateOutputs } from './fixtures/ci-delivery.mjs';
 import { artifactPlan, evaluateArtifactResults } from '../scripts/ci/profiles.mjs';
 import { evaluateReuseGate, requiredSteps } from '../scripts/ci/installer-evidence.mjs';
+
+function deliveryFixture() {
+  const f = baseFixture();
+  f.jobs.splice(-1, 0, { ...structuredClone(f.jobs[0]), id: 599, name: STANDARD_USER_JOB.jobName,
+    steps: STANDARD_USER_JOB.requiredSteps.map(name => ({ name, status: 'completed', conclusion: 'success' })) });
+  return f;
+}
 
 test('status gate needs no acceptance archive, raw files or replay and grants no product acceptance', async () => {
   const f = deliveryFixture();
   f.artifacts = [f.artifact]; f.jobs.pop();
   const result = await verifyInstallerStatus(f.request, f);
   assert.equal(result.contractStatus, 'passed');
-  assert.equal(result.scenarios.length, 3);
+  assert.equal(result.scenarios.length, 4);
   assert.equal(result.productObservation, 'see-scenario-evidence');
   assert.equal(result.productAcceptance, 'unverified');
   assert.equal(result.releaseAcceptance, 'unverified');
@@ -78,8 +86,36 @@ test('workflow replaces independent replay with status-only gate, retaining orig
   const source = readFileSync(new URL('../.github/workflows/alhangeul-windows-smoke.yml', import.meta.url), 'utf8');
   assert.match(source, /jobs.installer-status.outputs.contract/);
   assert.match(source, /scripts\/ci\/installer-status.mjs/);
-  assert.match(source, /needs: windows-installer-smoke/);
+  assert.match(source, /needs: \[windows-installer-smoke, windows-standard-user\]/);
+  assert.match(source, /STANDARD_USER_RESULT: \$\{\{ needs.windows-standard-user.result \}\}/);
   assert.match(source, /MATRIX_RESULT: \$\{\{ needs.windows-installer-smoke.result \}\}/);
   assert.match(source, /Require Windows installer contract success/);
   assert.doesNotMatch(source, /installer-aggregate.mjs|alhangeul-ci-acceptance|installer-replay.mjs|reuse_eligible/);
+});
+
+test('standard-user job and every required step are mandatory in status aggregation', async () => {
+  for (const state of ['failure', 'skipped', 'cancelled', undefined]) {
+    const f = deliveryFixture();
+    f.jobs.find(row => row.name === STANDARD_USER_JOB.jobName).conclusion = state;
+    await assert.rejects(verifyInstallerStatus(f.request, f));
+    for (const step of STANDARD_USER_JOB.requiredSteps) {
+      const g = deliveryFixture();
+      g.jobs.find(row => row.name === STANDARD_USER_JOB.jobName).steps.find(row => row.name === step).conclusion = state;
+      await assert.rejects(verifyInstallerStatus(g.request, g));
+    }
+  }
+  const f = deliveryFixture(); f.jobs = f.jobs.filter(row => row.name !== STANDARD_USER_JOB.jobName);
+  await assert.rejects(verifyInstallerStatus(f.request, f));
+});
+
+test('explicit same-version acceptance cannot silently skip its historical-baseline steps', async () => {
+  const f = deliveryFixture();
+  await assert.rejects(verifyInstallerStatus(f.request, f, true));
+  const job = f.jobs.find(row => row.name === STANDARD_USER_JOB.jobName);
+  job.steps.push(...SAME_VERSION_UPGRADE_STEPS.map(name => ({ name, status: 'completed', conclusion: 'success' })));
+  assert.equal((await verifyInstallerStatus(f.request, f, true)).contractStatus, 'passed');
+  for (const name of SAME_VERSION_UPGRADE_STEPS) for (const state of ['failure', 'skipped', 'cancelled']) {
+    const step = job.steps.find(row => row.name === name); step.conclusion = state;
+    await assert.rejects(verifyInstallerStatus(f.request, f, true)); step.conclusion = 'success';
+  }
 });

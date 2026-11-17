@@ -28,8 +28,8 @@
 
 | 운영체제 | 설치 형식 | 선택 안내 |
 |---|---|---|
-| Windows x64 | NSIS (`.exe`) | 일반 설치 권장 |
-| Windows x64 | MSI (`.msi`) | 조직·관리 배포, NSIS 썸네일 문제 시 대안 |
+| Windows x64 | NSIS (`.exe`) | 일반 사용자 계정의 사용자별 설치 |
+| Windows x64 | MSI (`.msi`) | 관리자 환경·조직 배포용 시스템 설치 |
 | Linux x64 | AppImage | 실행 권한을 부여해 실행, 자동 업데이트 지원 |
 | Linux x64 | DEB / RPM | 배포판에 맞는 패키지, 파일 관리자 썸네일 지원 |
 | Linux arm64 | DEB | 수동 패키지 설치·업데이트 |
@@ -64,7 +64,7 @@
 
 - 문서 구성과 글꼴에 따라 한컴에서 보이는 배치와 달라질 수 있습니다. 모든 문서·글꼴·프린터 조합을 검증한 것은 아닙니다.
 - 직접 공급하는 로컬 글꼴은 지원되는 정적 TTF/OTF에 한정됩니다. 일부 글꼴은 대체 글꼴로 표시되며, 한컴 전용 글꼴을 제품에 포함하지 않습니다. [글꼴 처리 범위](docs/architecture/LOCAL_FONTS.md)를 참고하세요.
-- Windows NSIS 설치에서 환경에 따라 썸네일이 표시되지 않는 문제가 있습니다. [진단과 MSI 대안](docs/architecture/WINDOWS_THUMBNAILS.md#수동-진단과-msi-대안)을 확인하세요.
+- 사용자별 NSIS는 일반 사용자 환경을 대상으로 합니다. 관리자 환경에서는 MSI를 사용하세요. 관리자 권한의 NSIS 환경에서는 썸네일이 표시되지 않을 수 있습니다. [진단과 MSI 대안](docs/architecture/WINDOWS_THUMBNAILS.md#수동-진단과-msi-대안)을 확인하세요.
 - 별도의 데스크톱 자동 복구 저장소는 제공하지 않습니다. 작업 중 문서를 자주 저장하세요.
 
 v0.1.3의 변경 사항과 알려진 제한은 [릴리즈 안내](https://postmelee.github.io/alhangeul-tauri/updates/v0.1.3.html)에서 확인하세요.

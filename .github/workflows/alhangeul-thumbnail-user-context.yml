@@ -1,0 +1,35 @@
+name: Alhangeul public NSIS user context observation
+on:
+  workflow_call:
+permissions:
+  contents: read
+env:
+  GIT_CONFIG_COUNT: "1"
+  GIT_CONFIG_KEY_0: core.autocrlf
+  GIT_CONFIG_VALUE_0: "false"
+jobs:
+  observe:
+    runs-on: windows-2025
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        context: [runner, standard]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          submodules: false
+      - name: Observe public installer without changing UAC or registration scope
+        shell: powershell
+        env:
+          OBSERVATION_CONTEXT: ${{ matrix.context }}
+        run: ./scripts/windows-thumbnail-user-context.ps1 -Context $env:OBSERVATION_CONTEXT -CIConsent
+      - name: Preserve raw observation including failures
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: thumbnail-user-context-${{ matrix.context }}
+          path: diagnostics/thumbnail-user-context/**
+          if-no-files-found: error
+          retention-days: 14

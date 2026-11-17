@@ -1,0 +1,17 @@
+import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+const kind = process.argv[2];
+const suffix = { windows: '_x64-setup.exe', 'windows-msi': '_x64_en-US.msi', linux: '_amd64.AppImage' }[kind];
+if (!suffix) throw new Error('unsupported observation platform');
+const inputs = JSON.parse(readFileSync('tests/gui/production-upgrade-v0.1.3-inputs.json'));
+const release = Object.values(inputs.releases).find(value => value.version === '0.1.3');
+const asset = release.assets.find(value => value.name.endsWith(suffix));
+if (!asset || !asset.browser_download_url.startsWith('https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.3/')) throw new Error('unexpected public asset');
+const response = await fetch(asset.browser_download_url);
+if (!response.ok) throw new Error(`download failed: ${response.status}`);
+const bytes = Buffer.from(await response.arrayBuffer());
+const sha256 = createHash('sha256').update(bytes).digest('hex');
+if (bytes.length !== asset.size || `sha256:${sha256}` !== asset.digest) throw new Error('public bytes identity mismatch');
+mkdirSync('privacy-evidence', { recursive: true });
+writeFileSync(`privacy-evidence/${asset.name}`, bytes);
+writeFileSync('privacy-evidence/identity.json', JSON.stringify({ version: release.version, sourceSha: release.sourceSha, asset: asset.name, sha256, size: bytes.length, harnessSha: process.env.GITHUB_SHA }, null, 2));

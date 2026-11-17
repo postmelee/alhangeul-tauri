@@ -1,0 +1,132 @@
+[
+  {
+    "manifest": "Cargo.toml",
+    "name": "rhwp",
+    "version": "0.9.0",
+    "license": "MIT",
+    "workspace_license": null,
+    "source_sha": "c9095c5f67632e6721e800ccc7fb43ea49d26682",
+    "manifest_sha256": "f9b27a36d6feb82f66e456489398b6406b48e6ebbe1c8d2dc4c7f960edb5c505"
+  },
+  {
+    "manifest": "crates/rhwp-contracts/Cargo.toml",
+    "name": "rhwp-contracts",
+    "version": "0.1.0",
+    "license": "MIT",
+    "workspace_license": null,
+    "source_sha": "c9095c5f67632e6721e800ccc7fb43ea49d26682",
+    "manifest_sha256": "e0578c32d0a67126a216d1feb3ce0915d9c9670b62d3e11b67fefb7d657049d7"
+  },
+  {
+    "manifest": "crates/rhwp-ooxml-chart/Cargo.toml",
+    "name": "rhwp-ooxml-chart",
+    "version": "0.1.0",
+    "license": "MIT",
+    "workspace_license": null,
+    "source_sha": "c9095c5f67632e6721e800ccc7fb43ea49d26682",
+    "manifest_sha256": "80f463fc10ec10881d6297bb44813bfdf027c3ec3eb7f4637d3ccf7369676b20"
+  },
+  {
+    "manifest": "crates/rhwp-password-crypto/Cargo.toml",
+    "name": "rhwp-password-crypto",
+    "version": "0.1.0",
+    "license": "MIT",
+    "workspace_license": null,
+    "source_sha": "c9095c5f67632e6721e800ccc7fb43ea49d26682",
+    "manifest_sha256": "11d358f8f9fdfd25f31647cb09c2ca27e062a0cdf4e223e66ce4b2deec8014eb"
+  },
+  {
+    "manifest": "vendor/rhwp-pdf-import-backend/Cargo.toml",
+    "name": "rhwp-pdf-import-backend",
+    "version": "0.3.78-rhwp.1",
+    "license": "MIT OR Apache-2.0",
+    "workspace_license": null,
+    "source_sha": "c9095c5f67632e6721e800ccc7fb43ea49d26682",
+    "manifest_sha256": "f4e6e34744d370a6ec618cd4f6e1d231dbe4873b5c095b63d52b7b9644360505"
+  },
+  {
+    "manifest": "vendor/rhwp-zune-jpeg/Cargo.toml",
+    "name": "rhwp-zune-jpeg",
+    "version": "0.5.15-rhwp.1",
+    "license": "(MIT OR Apache-2.0 OR Zlib) AND IJG",
+    "workspace_license": null,
+    "source_sha": "c9095c5f67632e6721e800ccc7fb43ea49d26682",
+    "manifest_sha256": "3e62bf7cc3534be9354c6ef9ab8e9bd5f7701de1db0459d8d31c9771d73c7ec2"
+  },
+  {
+    "manifest": "vendor/rhwp-jpeg-encoder/Cargo.toml",
+    "name": "rhwp-jpeg-encoder",
+    "version": "0.7.1-rhwp.1",
+    "license": "(MIT OR Apache-2.0) AND IJG",
+    "workspace_license": null,
+    "source_sha": "c9095c5f67632e6721e800ccc7fb43ea49d26682",
+    "manifest_sha256": "5c75254f19d5442effbf7e0d7c8ca36ee1ce22dbf19f73913b8a84dc6c5a5571"
+  },
+  {
+    "manifest": "vendor/svg2pdf/Cargo.toml",
+    "name": "rhwp-svg2pdf",
+    "version": {
+      "workspace": true
+    },
+    "license": {
+      "workspace": true
+    },
+    "workspace_license": "MIT OR Apache-2.0",
+    "source_sha": "c9095c5f67632e6721e800ccc7fb43ea49d26682",
+    "manifest_sha256": "59d55ed57951b0aa35f7372186db31608b0e7e3ac8b3c6d7b3f0d9f258d2a443"
+  },
+  {
+    "manifest": "vendor/rhwp-hayro-jbig2/Cargo.toml",
+    "name": "rhwp-hayro-jbig2",
+    "version": "0.3.0-rhwp.1",
+    "license": "Apache-2.0 OR MIT",
+    "workspace_license": null,
+    "source_sha": "c9095c5f67632e6721e800ccc7fb43ea49d26682",
+    "manifest_sha256": "62c20ca13cfbcae4c2b38f6ca4f2dce9494e4e27163db2d0a3e098936ebbb695"
+  },
+  {
+    "manifest": "vendor/rhwp-hayro-jpeg2000/Cargo.toml",
+    "name": "rhwp-hayro-jpeg2000",
+    "version": "0.4.0-rhwp.1",
+    "license": "Apache-2.0 OR MIT",
+    "workspace_license": null,
+    "source_sha": "c9095c5f67632e6721e800ccc7fb43ea49d26682",
+    "manifest_sha256": "624d3247d587ef0778a5d6e901d848aea1915764ef3a62bb6d6ca3b66954fc7e"
+  },
+  {
+    "manifest": "vendor/rhwp-qcms/Cargo.toml",
+    "name": "rhwp-qcms",
+    "version": "0.3.0-rhwp.1",
+    "license": "MIT",
+    "workspace_license": null,
+    "source_sha": "c9095c5f67632e6721e800ccc7fb43ea49d26682",
+    "manifest_sha256": "da2a145196fbc77664e74b776ad15a42fd8783b16cda71740a37bf692044ddfd"
+  },
+  {
+    "manifest": "vendor/rhwp-jpeg-decoder/Cargo.toml",
+    "name": "rhwp-jpeg-decoder",
+    "version": "0.3.2-rhwp.1",
+    "license": "MIT OR Apache-2.0",
+    "workspace_license": null,
+    "source_sha": "c9095c5f67632e6721e800ccc7fb43ea49d26682",
+    "manifest_sha256": "90880546722045eba1c3b280f58ae1a1bfc2d7effed3744ca3274d4b79d0743f"
+  },
+  {
+    "manifest": "vendor/rhwp-codec-resource/Cargo.toml",
+    "name": "rhwp-codec-resource",
+    "version": "0.1.0",
+    "license": "MIT",
+    "workspace_license": null,
+    "source_sha": "c9095c5f67632e6721e800ccc7fb43ea49d26682",
+    "manifest_sha256": "f0f542e98692da59ce1fee27d80c6dd6c8d2f4008e812dfa4d0d1758782324a3"
+  },
+  {
+    "manifest": "vendor/rhwp-hayro-ccitt/Cargo.toml",
+    "name": "rhwp-hayro-ccitt",
+    "version": "0.3.0-rhwp.1",
+    "license": "Apache-2.0 OR MIT",
+    "workspace_license": null,
+    "source_sha": "c9095c5f67632e6721e800ccc7fb43ea49d26682",
+    "manifest_sha256": "b196455b543e6a65c62cfa981b8657860e0eca1d7d2d9c7d09c970f3820a3baa"
+  }
+]

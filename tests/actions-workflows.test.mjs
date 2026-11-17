@@ -17,6 +17,7 @@ const platformWorkflow = await readFile(join(workflowRoot, 'alhangeul-artifact-p
 const smokeWorkflow = await readFile(join(workflowRoot, 'alhangeul-windows-smoke.yml'), 'utf8');
 const artifactWorkflow = await readFile(join(workflowRoot, 'alhangeul-artifacts.yml'), 'utf8');
 const fastWorkflow = await readFile(join(workflowRoot, 'alhangeul-ci-fast.yml'), 'utf8');
+const privacyWorkflow = await readFile(join(workflowRoot, 'alhangeul-privacy-observation.yml'), 'utf8');
 const coreWorkflow = await readFile(join(workflowRoot, 'alhangeul-thumbnail-core.yml'), 'utf8');
 const [ciWorkflow, desktopWorkflow, linuxGuiWorkflow, pagesWorkflow] = await Promise.all([
   readFile(ciPath, 'utf8'),
@@ -35,8 +36,10 @@ test('모든 workflow가 공통 또는 전용 contract test inventory에 등록�
     'alhangeul-ci-fast.yml',
     'alhangeul-desktop.yml',
     'alhangeul-font-performance.yml',
+    'alhangeul-hosted-ui-probe.yml',
     'alhangeul-installer-reuse.yml',
     'alhangeul-linux-gui.yml',
+    'alhangeul-privacy-observation.yml',
     'alhangeul-production-upgrade-linux.yml',
     'alhangeul-production-upgrade-windows.yml',
     'alhangeul-release-fedora-vm.yml',
@@ -44,6 +47,7 @@ test('모든 workflow가 공통 또는 전용 contract test inventory에 등록�
     'alhangeul-release-linux-files.yml',
     'alhangeul-site-capture.yml',
     'alhangeul-thumbnail-core.yml',
+    'alhangeul-thumbnail-user-context.yml',
     'alhangeul-updater-linux-window-probe.yml',
     'alhangeul-updater-native-acceptance.yml',
     'alhangeul-updater-native-linux.yml',
@@ -52,6 +56,7 @@ test('모든 workflow가 공통 또는 전용 contract test inventory에 등록�
     'alhangeul-updater-native-negative-windows.yml',
     'alhangeul-updater-native-windows.yml',
     'alhangeul-windows-dialog.yml',
+    'alhangeul-windows-guest-probe.yml',
     'alhangeul-windows-pdf.yml',
     'alhangeul-windows-smoke.yml',
     'ci.yml',
@@ -63,6 +68,7 @@ test('모든 workflow가 공통 또는 전용 contract test inventory에 등록�
 
 test('대상 workflow는 수동 trigger와 최소 권한만 사용한다', () => {
   for (const [name, source] of [
+    ['alhangeul-privacy-observation.yml', privacyWorkflow],
     ['ci.yml', ciWorkflow],
     ['alhangeul-desktop.yml', desktopWorkflow],
   ]) {

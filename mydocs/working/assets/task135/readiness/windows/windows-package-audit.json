@@ -1,0 +1,118 @@
+[
+  {
+    "noticeFiles": [
+      {
+        "path": "\\licenses\\fonts\\FONTS.md",
+        "sha256": "91c696e91971afd78b1e29e79521525b11414886c5cf62129a0fb340024ea7f7",
+        "bytes": 3832
+      },
+      {
+        "path": "\\licenses\\fonts\\NotoSansKR-OFL-1.1.txt",
+        "sha256": "6a73f9541c2de74158c0e7cf6b0a58ef774f5a780bf191f2d7ec9cc53efe2bf2",
+        "bytes": 4301
+      },
+      {
+        "path": "\\licenses\\fonts\\NotoSerifKR-OFL-1.1.txt",
+        "sha256": "6a73f9541c2de74158c0e7cf6b0a58ef774f5a780bf191f2d7ec9cc53efe2bf2",
+        "bytes": 4301
+      }
+    ],
+    "binaries": [
+      {
+        "fileVersion": "0.1.3",
+        "productName": "Alhangeul",
+        "signatureStatus": "NotSigned",
+        "signer": null,
+        "sha256": "df9d1b157065cb9b31218cd9e54af2a2b3f491b714a0174c0c45c99af9085670",
+        "productVersion": "0.1.3",
+        "path": "\\Alhangeul.exe"
+      },
+      {
+        "fileVersion": null,
+        "productName": null,
+        "signatureStatus": "NotSigned",
+        "signer": null,
+        "sha256": "5cae0049fbf31e0d66bb411eaf452244fde0e07f82f03a12372d0fb34cf268bb",
+        "productVersion": null,
+        "path": "\\AlhangeulThumbnailHandler.dll"
+      },
+      {
+        "fileVersion": null,
+        "productName": null,
+        "signatureStatus": "NotSigned",
+        "signer": null,
+        "sha256": "560236cadc4b06b8358e604f5a919b6d22a07c0eb8082fe782d5795dabf37e26",
+        "productVersion": null,
+        "path": "\\AlhangeulThumbnailWorker.exe"
+      },
+      {
+        "fileVersion": "0.1.3",
+        "productName": "Alhangeul",
+        "signatureStatus": "NotSigned",
+        "signer": null,
+        "sha256": "7fbb5500bb37e0d417803fceab77a1790a65434fda4d04894070a125c9aec6b7",
+        "productVersion": "0.1.3",
+        "path": "\\uninstall.exe"
+      }
+    ],
+    "kind": "nsis"
+  },
+  {
+    "noticeFiles": [
+      {
+        "path": "\\licenses\\fonts\\FONTS.md",
+        "sha256": "91c696e91971afd78b1e29e79521525b11414886c5cf62129a0fb340024ea7f7",
+        "bytes": 3832
+      },
+      {
+        "path": "\\licenses\\fonts\\NotoSansKR-OFL-1.1.txt",
+        "sha256": "6a73f9541c2de74158c0e7cf6b0a58ef774f5a780bf191f2d7ec9cc53efe2bf2",
+        "bytes": 4301
+      },
+      {
+        "path": "\\licenses\\fonts\\NotoSerifKR-OFL-1.1.txt",
+        "sha256": "6a73f9541c2de74158c0e7cf6b0a58ef774f5a780bf191f2d7ec9cc53efe2bf2",
+        "bytes": 4301
+      }
+    ],
+    "binaries": [
+      {
+        "fileVersion": null,
+        "productName": null,
+        "signatureStatus": "NotSigned",
+        "signer": null,
+        "sha256": "5cae0049fbf31e0d66bb411eaf452244fde0e07f82f03a12372d0fb34cf268bb",
+        "productVersion": null,
+        "path": "\\alhangeul_thumbnail_handler.dll"
+      },
+      {
+        "fileVersion": "0.1.3",
+        "productName": "Alhangeul",
+        "signatureStatus": "NotSigned",
+        "signer": null,
+        "sha256": "48b765bb39ceb56f4b149b0873e19e1b4d50342292cc5d8cc5205ebadac68a19",
+        "productVersion": "0.1.3",
+        "path": "\\Alhangeul.exe"
+      },
+      {
+        "fileVersion": null,
+        "productName": null,
+        "signatureStatus": "NotSigned",
+        "signer": null,
+        "sha256": "5cae0049fbf31e0d66bb411eaf452244fde0e07f82f03a12372d0fb34cf268bb",
+        "productVersion": null,
+        "path": "\\AlhangeulThumbnailHandler.dll"
+      },
+      {
+        "fileVersion": null,
+        "productName": null,
+        "signatureStatus": "NotSigned",
+        "signer": null,
+        "sha256": "560236cadc4b06b8358e604f5a919b6d22a07c0eb8082fe782d5795dabf37e26",
+        "productVersion": null,
+        "path": "\\AlhangeulThumbnailWorker.exe"
+      }
+    ],
+    "kind": "msi"
+  }
+]

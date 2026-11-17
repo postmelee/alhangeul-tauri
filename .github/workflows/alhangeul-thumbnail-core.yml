@@ -39,6 +39,11 @@ jobs:
         env:
           SOURCE_REF: ${{ inputs.build_ref }}
         run: test "$(git rev-parse HEAD)" = "$SOURCE_REF"
+      - name: Recover Ubuntu mirror DNS in disposable CI
+        if: runner.os == 'Linux'
+        shell: bash
+        run: sudo --preserve-env=GITHUB_ACTIONS,RUNNER_ENVIRONMENT python3 scripts/ci/ubuntu-mirror.py
+
       - name: Install Linux dependencies
         if: runner.os == 'Linux'
         run: |

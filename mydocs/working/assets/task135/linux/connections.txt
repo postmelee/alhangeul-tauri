@@ -1,0 +1,10 @@
+3543  connect(25, {sa_family=AF_INET, sin_port=htons(53), sin_addr=inet_addr("127.0.0.53")}, 16) = 0
+3543  connect(22, {sa_family=AF_INET, sin_port=htons(0), sin_addr=inet_addr("185.199.108.153")}, 16) = 0
+3543  connect(22, {sa_family=AF_INET, sin_port=htons(0), sin_addr=inet_addr("185.199.109.153")}, 16) = 0
+3543  connect(22, {sa_family=AF_INET, sin_port=htons(0), sin_addr=inet_addr("185.199.110.153")}, 16) = 0
+3543  connect(22, {sa_family=AF_INET, sin_port=htons(0), sin_addr=inet_addr("185.199.111.153")}, 16) = 0
+3543  connect(22, {sa_family=AF_INET6, sin6_port=htons(0), sin6_flowinfo=htonl(0), inet_pton(AF_INET6, "2606:50c0:8000::153", &sin6_addr), sin6_scope_id=0}, 28) = -1 ENETUNREACH (Network is unreachable)
+3543  connect(22, {sa_family=AF_INET6, sin6_port=htons(0), sin6_flowinfo=htonl(0), inet_pton(AF_INET6, "2606:50c0:8001::153", &sin6_addr), sin6_scope_id=0}, 28) = -1 ENETUNREACH (Network is unreachable)
+3543  connect(22, {sa_family=AF_INET6, sin6_port=htons(0), sin6_flowinfo=htonl(0), inet_pton(AF_INET6, "2606:50c0:8002::153", &sin6_addr), sin6_scope_id=0}, 28) = -1 ENETUNREACH (Network is unreachable)
+3543  connect(22, {sa_family=AF_INET6, sin6_port=htons(0), sin6_flowinfo=htonl(0), inet_pton(AF_INET6, "2606:50c0:8003::153", &sin6_addr), sin6_scope_id=0}, 28) = -1 ENETUNREACH (Network is unreachable)
+3535  connect(22, {sa_family=AF_INET, sin_port=htons(443), sin_addr=inet_addr("185.199.108.153")}, 16) = -1 EINPROGRESS (Operation now in progress)

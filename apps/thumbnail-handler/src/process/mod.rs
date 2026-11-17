@@ -12,6 +12,9 @@ use std::sync::mpsc::{Receiver, RecvTimeoutError};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
+// Allow cold Windows startup without extending worker rendering time.
+const WINDOWS_REQUEST_DEADLINE_MS: u64 = 5_000;
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BitmapData {
     pub width: u32,
@@ -45,27 +48,24 @@ pub fn render_thumbnail(bytes: Arc<[u8]>, requested_edge: u32) -> Result<BitmapD
     let request = encode_request_header(&bytes, edge).map_err(|_| ProcessError::Protocol)?;
     let pipes = Pipes::create()?;
     let mut child = Child::spawn(&pipes)?;
+    let deadline = frame_deadline(started, Instant::now());
     let writer = spawn_writer(pipes.parent_input, request, Arc::clone(&bytes));
     let (receiver, reader) = spawn_reader(pipes.parent_output);
     drop(pipes.child_input);
     drop(pipes.child_output);
     drop(pipes.child_error);
     drop(pipes.parent_error);
-    let result = await_result(receiver, started);
+    let result = await_result_until(receiver, deadline);
     child.terminate();
     let _ = writer.join();
     let _ = reader.join();
     result
 }
 
-fn await_result(
-    receiver: Receiver<Result<Frame, ProcessError>>,
-    started: Instant,
-) -> Result<BitmapData, ProcessError> {
-    await_result_until(
-        receiver,
-        started + Duration::from_millis(FRAME_SELECTION_DEADLINE_MS),
-    )
+fn frame_deadline(started: Instant, worker_ready: Instant) -> Instant {
+    let request_deadline = started + Duration::from_millis(WINDOWS_REQUEST_DEADLINE_MS);
+    let render_deadline = worker_ready + Duration::from_millis(FRAME_SELECTION_DEADLINE_MS);
+    request_deadline.min(render_deadline)
 }
 
 fn await_result_until(
@@ -209,6 +209,50 @@ mod tests {
         assert_eq!(
             await_result_until(receiver, expired),
             Err(ProcessError::WorkerUnavailable)
+        );
+    }
+
+    #[test]
+    fn warm_and_cold_start_keep_the_same_render_budget() {
+        for startup_ms in [5, 2_862] {
+            let ready = Instant::now();
+            let started = ready.checked_sub(Duration::from_millis(startup_ms)).unwrap();
+            assert_eq!(
+                frame_deadline(started, ready).duration_since(ready),
+                Duration::from_millis(FRAME_SELECTION_DEADLINE_MS),
+            );
+            let (sender, receiver) = mpsc::channel();
+            sender.send(Ok(bitmap(FrameKind::DirectBitmap, 4))).unwrap();
+            assert_eq!(
+                await_result_until(receiver, frame_deadline(started, ready))
+                    .unwrap()
+                    .bgra,
+                vec![4; 4],
+            );
+        }
+    }
+
+    #[test]
+    fn slow_start_cannot_extend_the_total_request_budget() {
+        let started = Instant::now();
+        let ready = started + Duration::from_millis(4_700);
+        let deadline = frame_deadline(started, ready);
+        assert_eq!(deadline.duration_since(ready), Duration::from_millis(300));
+        assert_eq!(
+            deadline.duration_since(started),
+            Duration::from_millis(WINDOWS_REQUEST_DEADLINE_MS),
+        );
+    }
+
+    #[test]
+    fn expired_startup_rejects_even_an_already_queued_bitmap() {
+        let ready = Instant::now();
+        let started = ready.checked_sub(Duration::from_millis(5_001)).unwrap();
+        let (sender, receiver) = mpsc::channel();
+        sender.send(Ok(bitmap(FrameKind::DirectBitmap, 4))).unwrap();
+        assert_eq!(
+            await_result_until(receiver, frame_deadline(started, ready)),
+            Err(ProcessError::WorkerUnavailable),
         );
     }
 

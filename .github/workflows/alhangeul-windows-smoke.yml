@@ -16,6 +16,9 @@ on:
       support_artifact_id:
         type: string
         required: true
+      thumbnail_same_version_upgrade:
+        type: boolean
+        default: false
       thumbnail_context_experiment:
         type: boolean
         default: false
@@ -328,9 +331,82 @@ jobs:
             throw 'Installer contract unverified; raw smoke failure is not accepted by default.'
           }
 
+  windows-standard-user:
+    name: NSIS standard user thumbnails and lifecycle
+    permissions:
+      contents: read
+      actions: read
+    runs-on: windows-2025
+    timeout-minutes: 25
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+      EXPECTED_SOURCE_SHA: ${{ inputs.build_ref }}
+      PRODUCT_ARTIFACT_ID: ${{ inputs.artifact_id }}
+    steps:
+      - name: Checkout standard user source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.build_ref }}
+          submodules: false
+      - name: Prepare Node for standard user evidence
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+          package-manager-cache: false
+      - name: Download standard user bundle
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          artifact-ids: ${{ inputs.artifact_id }}
+          digest-mismatch: error
+          path: artifacts/windows-x64
+      - name: Verify standard user install thumbnails and lifecycle
+        id: probe
+        shell: powershell
+        run: ./scripts/windows-thumbnail-user-context.ps1 -Context standard -ArtifactRoot artifacts/windows-x64 -ExpectedSourceSha $env:EXPECTED_SOURCE_SHA -CIConsent
+      - name: Evaluate standard user product evidence
+        id: evaluate
+        shell: powershell
+        run: node scripts/windows-thumbnail-user-acceptance.mjs diagnostics/thumbnail-user-context $env:EXPECTED_SOURCE_SHA
+      - name: Verify public same-version manual upgrade
+        if: ${{ inputs.thumbnail_same_version_upgrade }}
+        id: upgrade
+        shell: powershell
+        run: ./scripts/windows-thumbnail-user-context.ps1 -Context standard -ArtifactRoot artifacts/windows-x64 -ExpectedSourceSha $env:EXPECTED_SOURCE_SHA -Scenario public-upgrade -CIConsent
+      - name: Evaluate same-version upgrade evidence
+        if: ${{ inputs.thumbnail_same_version_upgrade }}
+        id: upgrade-evaluate
+        shell: powershell
+        run: node scripts/windows-thumbnail-user-acceptance.mjs diagnostics/thumbnail-user-upgrade $env:EXPECTED_SOURCE_SHA
+      - name: Upload standard user evidence
+        id: upload
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: alhangeul-windows-x64-standard-user
+          path: diagnostics/thumbnail-user-*/**
+          if-no-files-found: error
+          retention-days: 14
+      - name: Require standard user acceptance
+        if: ${{ always() }}
+        shell: powershell
+        env:
+          UPGRADE_REQUIRED: ${{ inputs.thumbnail_same_version_upgrade }}
+          UPGRADE_OUTCOME: ${{ steps.upgrade.outcome }}
+          UPGRADE_EVALUATE_OUTCOME: ${{ steps.upgrade-evaluate.outcome }}
+          PROBE_OUTCOME: ${{ steps.probe.outcome }}
+          EVALUATE_OUTCOME: ${{ steps.evaluate.outcome }}
+          UPLOAD_OUTCOME: ${{ steps.upload.outcome }}
+        run: |
+          if ($env:UPGRADE_REQUIRED -ceq 'true' -and ($env:UPGRADE_OUTCOME -cne 'success' -or $env:UPGRADE_EVALUATE_OUTCOME -cne 'success')) {
+            throw 'Requested same-version upgrade was not accepted.'
+          }
+          if ($env:PROBE_OUTCOME -cne 'success' -or $env:EVALUATE_OUTCOME -cne 'success' -or $env:UPLOAD_OUTCOME -cne 'success') {
+            throw 'Standard user product acceptance or evidence delivery failed.'
+          }
+
   installer-status:
     name: Verify Windows installer contract status
-    needs: windows-installer-smoke
+    needs: [windows-installer-smoke, windows-standard-user]
     if: ${{ !cancelled() }}
     permissions:
       contents: read
@@ -356,4 +432,6 @@ jobs:
         id: status
         env:
           MATRIX_RESULT: ${{ needs.windows-installer-smoke.result }}
+          SAME_VERSION_UPGRADE: ${{ inputs.thumbnail_same_version_upgrade }}
+          STANDARD_USER_RESULT: ${{ needs.windows-standard-user.result }}
         run: node scripts/ci/installer-status.mjs

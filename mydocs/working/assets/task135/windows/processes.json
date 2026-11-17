@@ -1,0 +1,37 @@
+[
+  {
+    "Name": "Alhangeul.exe",
+    "ProcessId": 2172,
+    "ParentProcessId": 7412
+  },
+  {
+    "Name": "msedgewebview2.exe",
+    "ProcessId": 7456,
+    "ParentProcessId": 2172
+  },
+  {
+    "Name": "msedgewebview2.exe",
+    "ProcessId": 6304,
+    "ParentProcessId": 7456
+  },
+  {
+    "Name": "msedgewebview2.exe",
+    "ProcessId": 2336,
+    "ParentProcessId": 7456
+  },
+  {
+    "Name": "msedgewebview2.exe",
+    "ProcessId": 3828,
+    "ParentProcessId": 7456
+  },
+  {
+    "Name": "msedgewebview2.exe",
+    "ProcessId": 4344,
+    "ParentProcessId": 7456
+  },
+  {
+    "Name": "msedgewebview2.exe",
+    "ProcessId": 1916,
+    "ParentProcessId": 7456
+  }
+]
