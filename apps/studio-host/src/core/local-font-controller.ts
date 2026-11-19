@@ -20,6 +20,7 @@ interface FontDocument {
 
 let activeDocument: FontDocument | null = null;
 let generation = 0;
+let detachDocumentAbort: (() => void) | undefined;
 let showing: Promise<void> | null = null;
 let refreshQueue: Promise<void> = Promise.resolve();
 let lastWarning: string | null = null;
@@ -35,18 +36,38 @@ function setMessage(toast = false): void {
   if (toast) showToast({ message, durationMs: 8000 });
 }
 
-export async function prepareDesktopDocumentFonts(document: FontDocument): Promise<void> {
-  if (!isTauriRuntime()) return;
+export async function prepareDesktopDocumentFonts(document: FontDocument, signal?: AbortSignal): Promise<void> {
+  if (!isTauriRuntime() || signal?.aborted) return;
   const started = ++generation;
+  detachDocumentAbort?.();
+  detachDocumentAbort = undefined;
   activeDocument = null;
   viewError = null;
   closeDesktopLocalFontSettings();
   resetDesktopFontProvider();
+  if (signal) {
+    const onAbort = () => {
+      if (started !== generation) return;
+      generation += 1;
+      activeDocument = null;
+      resetDesktopFontProvider();
+      detachDocumentAbort = undefined;
+    };
+    signal.addEventListener('abort', onAbort, { once: true });
+    detachDocumentAbort = () => signal.removeEventListener('abort', onAbort);
+  }
+  const current = () => started === generation && !signal?.aborted;
+  const binding: FontDocument = {
+    fonts: document.fonts,
+    refreshView: (isCurrent) => document.refreshView(() => current() && isCurrent()),
+    onFontsChanged: (fonts) => { if (current()) document.onFontsChanged(fonts); },
+  };
   await refreshFontPreferences();
+  if (!current()) return;
   await loadStoredLocalFonts();
-  if (started !== generation) return;
-  try { await ensureLocalFontsAvailable(document.fonts); } catch { /* Catalog state carries retry guidance. */ }
-  if (started === generation) activeDocument = document;
+  if (!current()) return;
+  try { await ensureLocalFontsAvailable(document.fonts, current); } catch { /* Catalog state carries retry guidance. */ }
+  if (current()) activeDocument = binding;
 }
 
 export function refreshDesktopLocalFontView(force = false): Promise<void> {
@@ -60,7 +81,7 @@ export function refreshDesktopLocalFontView(force = false): Promise<void> {
     } catch { /* Continue with the empty catalog so the view can fall back. */ }
     try {
       if (started !== generation || document !== activeDocument) return;
-      try { await ensureLocalFontsAvailable(document?.fonts ?? []); } catch { /* Continue to fallback view. */ }
+      try { await ensureLocalFontsAvailable(document?.fonts ?? [], () => started === generation && document === activeDocument); } catch { /* Continue to fallback view. */ }
       if (started !== generation || document !== activeDocument) return;
       document?.onFontsChanged(getLocalFonts());
       await document?.refreshView(() => started === generation && document === activeDocument);

@@ -11,6 +11,7 @@ export interface HostFontFace {
 }
 export interface HostFontSnapshot { revision: string; faces: readonly HostFontFace[] }
 export interface HostFontData { bytes: ArrayBuffer; faceIndex?: number }
+export interface HostFontOptions { layout?: boolean }
 export interface HostFontProvider {
   getSnapshot(signal: AbortSignal): Promise<HostFontSnapshot>;
   readFace(id: string, revision: string, signal: AbortSignal): Promise<HostFontData>;

@@ -8,6 +8,15 @@ const initializeDocument = ['suppressDialogs?: boolean', 'suppressDialogs?: bool
   displayName: string,
   options: { ${options} } = {},
 ): Promise<void> {`);
+const abortableInitializeDocument = `async function initializeDocument(
+  docInfo: DocumentInfo,
+  displayName: string,
+  signal: AbortSignal,
+  options: { suppressDialogs?: boolean; suppressLocalFontPrompt?: boolean; preserveStatus?: boolean } = {},
+): Promise<void> {
+  const msg = options.preserveStatus ? null : sbMessage();
+  try {
+    signal.throwIfAborted();`;
 const promptLocalFonts = ['docInfo: DocumentInfo, displayName: string', 'displayName: string']
   .map(params => `async function promptLocalFontsIfNeeded(${params}): Promise<void> {`);
 
@@ -21,10 +30,12 @@ function appendHook(source: string, signatures: readonly string[], hook: string)
 
 export function transformLocalFontEntry(source: string, controllerPath: string): string {
   if (source.includes('__alhangeulPrepareFonts')) throw new Error('duplicate local-font entry hook');
-  const withDocument = appendHook(source, initializeDocument, `
+  const abortable = source.includes(abortableInitializeDocument);
+  const withDocument = appendHook(source, [...initializeDocument, abortableInitializeDocument], `
   await __alhangeulPrepareFonts({
     fonts: docInfo.fontsUsed ?? [],
     refreshView: async (isCurrent) => {
+      if (!isCurrent()) return;
       const session = rendererSession;
       const view = canvasView;
       await view?.refreshFontResources();
@@ -47,7 +58,7 @@ export function transformLocalFontEntry(source: string, controllerPath: string):
         fonts, report: analyzeDocumentFonts(docInfo.fontsUsed),
       });
     },
-  });`);
+  }${abortable ? ", signal);\n    signal.throwIfAborted();" : ");"}`);
   const withPrompt = appendHook(withDocument, promptLocalFonts, `
   if (await __alhangeulPromptFonts()) return;`);
   return `import { prepareDesktopDocumentFonts as __alhangeulPrepareFonts,

@@ -1,4 +1,4 @@
-import { copyHostSnapshot, type HostFontData, type HostFontProvider,
+import { copyHostSnapshot, type HostFontData, type HostFontOptions, type HostFontProvider,
   type HostFontReference, type HostFontSnapshot } from './host-font-contract';
 
 /** Optional host transport; metadata is indexed by the existing product catalog. */
@@ -10,12 +10,15 @@ export class HostFontSource {
   private controller = new AbortController();
   private snapshot: HostFontSnapshot | null = null;
   private refs = new Map<string, HostFontReference>();
+  private layout = false;
+  private readonly layoutReads = new Map<string, Promise<HostFontData | null>>();
   private pending: Promise<readonly HostFontReference[]> | null = null;
   private reads = new Map<string, Promise<HostFontData | null>>();
   private error: string | null = null;
 
   constructor(private readonly changed: () => void) {}
   get active(): boolean { return this.provider !== null; }
+  get layoutEnabled(): boolean { return this.active && this.layout; }
   get lastError(): string | null { return this.error; }
 
   reset(): void {
@@ -26,14 +29,17 @@ export class HostFontSource {
     this.refs.clear();
     this.pending = null;
     this.reads.clear();
+    this.releaseLayoutPrograms();
     this.error = null;
   }
 
-  setProvider(provider: HostFontProvider | null): void {
+  setProvider(provider: HostFontProvider | null, options: HostFontOptions = {}): void {
     const connection = ++this.connection;
     const off = this.off;
     this.off = null;
     this.provider = provider;
+    this.layout = provider !== null && options.layout === true;
+    this.releaseLayoutPrograms();
     this.changed();
     try { off?.(); } catch { /* A replaced transport cannot affect the new catalog. */ }
     if (!provider || connection !== this.connection) return;
@@ -70,13 +76,21 @@ export class HostFontSource {
     return pending;
   }
 
-  read(ref: HostFontReference): Promise<HostFontData | null> {
+  releaseLayoutPrograms(): void {
+    // Do not cancel callers already awaiting a read; only subsequent lookups
+    // must load again, and a late completion must not restore the old entry.
+    this.layoutReads.clear();
+  }
+
+  read(ref: HostFontReference, layout = false): Promise<HostFontData | null> {
     if (!this.provider || this.refs.get(ref.key) !== ref || ref.generation !== this.epoch) {
       return Promise.resolve(null);
     }
     const signal = this.controller.signal;
     const provider = this.provider;
-    let pending = this.reads.get(ref.key);
+    const isLayout = layout && this.layoutEnabled;
+    const reads = isLayout ? this.layoutReads : this.reads;
+    let pending = reads.get(ref.key);
     if (!pending) {
       pending = Promise.resolve().then(() => provider.readFace(ref.face.id, ref.revision, signal))
         .then(data => {
@@ -84,9 +98,10 @@ export class HostFontSource {
             || !data.bytes.byteLength || data.bytes.byteLength > 64 * 1024 * 1024
             || !Number.isSafeInteger(data.faceIndex ?? 0) || (data.faceIndex ?? 0) < 0) return null;
           return { bytes: data.bytes.slice(0), faceIndex: data.faceIndex ?? 0 };
-        }, () => null).finally(() => { if (this.reads.get(ref.key) === pending) this.reads.delete(ref.key); });
-      this.reads.set(ref.key, pending);
+        }, () => null).finally(() => { if (!isLayout && reads.get(ref.key) === pending) reads.delete(ref.key); });
+      reads.set(ref.key, pending);
     }
-    return pending.then(data => signal.aborted || !data ? null : { ...data, bytes: data.bytes.slice(0) });
+    return pending.then(data => signal.aborted || !data
+      ? null : { ...data, bytes: data.bytes.slice(0) });
   }
 }

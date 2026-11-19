@@ -13,7 +13,7 @@ export async function loadRendererLocalFont(record: LocalFontRecord): Promise<Ho
   const catalog = getFontCatalog();
   const entry = catalog.lookup?.entryFor(record.sourceKey);
   if (!entry || isAuthoringBlockedFontFamily(record.family)) return null;
-  if (entry.hostReference) return hostFontSource.read(entry.hostReference);
+  if (entry.hostReference) return hostFontSource.read(entry.hostReference, hostFontSource.layoutEnabled);
   if (!entry.path) return null;
   const started = desktopFontGeneration();
   try {

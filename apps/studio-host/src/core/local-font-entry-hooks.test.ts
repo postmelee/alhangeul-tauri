@@ -28,6 +28,40 @@ describe('pinned local-font entry hooks', () => {
     expect(hook).not.toContain('documentState');
   });
 
+  it('checks the v0.9.1 signal before and after preparing a document', async () => {
+    const abortable = `async function initializeDocument(
+  docInfo: DocumentInfo,
+  displayName: string,
+  signal: AbortSignal,
+  options: { suppressDialogs?: boolean; suppressLocalFontPrompt?: boolean; preserveStatus?: boolean } = {},
+): Promise<void> {
+  const msg = options.preserveStatus ? null : sbMessage();
+  try {
+    signal.throwIfAborted();
+    observe(msg, displayName);
+  } catch (error) { throw error; }
+}
+async function promptLocalFontsIfNeeded(displayName: string): Promise<void> {}`;
+    const result = transformLocalFontEntry(abortable, '/controller.ts');
+    const ast = ts.createSourceFile('main.ts', result, ts.ScriptTarget.Latest, true);
+    const first = ast.statements.find((node) => ts.isFunctionDeclaration(node)
+      && node.name?.text === 'initializeDocument')!;
+    const code = ts.transpileModule(first.getText(ast), { compilerOptions: {
+      target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext,
+    } }).outputText;
+    const run = new Function('__alhangeulPrepareFonts', 'sbMessage', 'observe', `${code}; return initializeDocument;`);
+    const abort = new AbortController();
+    const calls: string[] = [];
+    const initialize = run(async (_document: unknown, signal: AbortSignal) => {
+      expect(signal).toBe(abort.signal);
+      calls.push('prepare');
+      abort.abort();
+    }, () => { calls.push('status'); }, () => { calls.push('continue'); });
+    await expect(initialize({}, 'one.hwp', abort.signal, { preserveStatus: true })).rejects.toHaveProperty('name', 'AbortError');
+    await expect(initialize({}, 'two.hwp', abort.signal, { preserveStatus: true })).rejects.toHaveProperty('name', 'AbortError');
+    expect(calls).toEqual(['prepare']);
+  });
+
   it('returns from the real upstream prompt before browser font logic in Tauri', async () => {
     const result = transformLocalFontEntry(main, '/controller.ts');
     const ast = ts.createSourceFile('main.ts', result, ts.ScriptTarget.Latest, true);
