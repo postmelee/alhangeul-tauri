@@ -182,10 +182,12 @@ export function resetLocalFontsForTests(): void {
   invalidateFontCatalog();
 }
 
-export async function ensureLocalFontsAvailable(targetFamilies?: Iterable<string>): Promise<Set<string>> {
+export async function ensureLocalFontsAvailable(
+  targetFamilies?: Iterable<string>, isCurrent: () => boolean = () => true,
+): Promise<Set<string>> {
   const started = desktopFontGeneration();
   const entries = await detectLocalFontEntries();
-  if (started !== desktopFontGeneration()) return new Set();
+  if (!isCurrent() || started !== desktopFontGeneration()) return new Set();
   const available = new Set(
     entries
       .filter((entry) => entry.sourceKind === 'system-installed')
@@ -201,8 +203,9 @@ export async function ensureLocalFontsAvailable(targetFamilies?: Iterable<string
     if (entry?.sourceKind !== 'file-backed' || !entry.path) continue;
     try {
       for (const family of new Set([record.family, requested])) {
+        if (!isCurrent()) return new Set();
         await ensureDesktopFontFace({ ...entry, family });
-        if (started !== desktopFontGeneration()) return new Set();
+        if (!isCurrent() || started !== desktopFontGeneration()) return new Set();
       }
       if (!desktopFontUnavailable(entry.path)) available.add(record.family);
     } catch {
@@ -210,7 +213,7 @@ export async function ensureLocalFontsAvailable(targetFamilies?: Iterable<string
     }
   }
 
-  return started === desktopFontGeneration() ? available : new Set();
+  return isCurrent() && started === desktopFontGeneration() ? available : new Set();
 }
 
 async function detectBrowserFontEntries(): Promise<LocalFontEntry[]> {
