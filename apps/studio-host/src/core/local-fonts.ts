@@ -14,12 +14,12 @@ import { isTauriRuntime } from './platform';
 import { ensureFontPreferences, getFontPreferences } from './local-font-preferences';
 import { getFontCatalog, hostFontSource, invalidateFontCatalog, loadFontCatalog,
   onFontCatalogChanged } from './local-font-state';
-import type { HostFontProvider } from './host-font-contract';
+import type { HostFontOptions, HostFontProvider } from './host-font-contract';
 import { loadRendererLocalFont } from './local-font-renderer';
 export { changedLocalFontNames, localFontNamesIntersect, localFontProgramOrder, loadPreferredLocalFontBytes,
   resolveLocalFontProgramCandidates, resolveRendererLocalFontCandidates } from './local-font-programs';
 export { resolveRendererLocalFont, loadRendererLocalFont } from './local-font-renderer';
-export type { HostFontProvider, LocalFontStyleRequest } from './host-font-contract';
+export type { HostFontOptions, HostFontProvider, LocalFontStyleRequest } from './host-font-contract';
 
 export type { LocalFontEntry, LocalFontRecord } from './local-font-records';
 
@@ -257,8 +257,10 @@ export function hasHostFontProvider(): boolean {
 export function onHostFontsChanged(listener: () => void): () => void {
   return onFontCatalogChanged(listener);
 }
-export async function setHostFontProvider(provider: HostFontProvider | null): Promise<void> {
-  hostFontSource.setProvider(provider);
+export function hostFontLayoutEnabled(): boolean { return hasHostFontProvider() && hostFontSource.layoutEnabled; }
+export function releaseHostLayoutPrograms(): void { hostFontSource.releaseLayoutPrograms(); }
+export async function setHostFontProvider(provider: HostFontProvider | null, options?: HostFontOptions): Promise<void> {
+  hostFontSource.setProvider(provider, options);
   await prepareHostFontCatalog();
 }
 export async function prepareHostFontCatalog(): Promise<void> {

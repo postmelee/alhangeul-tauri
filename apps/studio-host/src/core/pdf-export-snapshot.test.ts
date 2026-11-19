@@ -197,6 +197,13 @@ describe('PDF export snapshot fixture round-trip', () => {
       expect(snapshotSvg.join('')).toMatch(/[가-힣]/);
       expect(format === 'hwp' ? source.exportHwp : source.exportHwpx).toHaveBeenCalledOnce();
       expect(format === 'hwp' ? source.exportHwpx : source.exportHwp).not.toHaveBeenCalled();
+      snapshot.dispose();
+      snapshot.dispose();
+      live.releaseDocument();
+      live.loadDocument(readFileSync(path), basename(path));
+      live.loadDocument(readFileSync(path), basename(path));
+      expect(live.pageCount).toBe(expectedPages);
+      expect(live.renderPageSvg(0)).toEqual(liveSvg[0]);
     } finally {
       snapshot.dispose();
       live.releaseDocument();
