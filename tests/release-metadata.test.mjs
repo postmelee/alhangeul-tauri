@@ -28,7 +28,7 @@ test('현재 HWP/HWPX release metadata를 읽기 전용으로 승인한다', asy
     fixturePaths.map((path) => readFile(join(repositoryRoot, path), 'utf8')),
   );
   assert.equal(result.productName, 'Alhangeul');
-  assert.equal(result.version, '0.1.3');
+  assert.equal(result.version, '0.1.4');
   assert.deepEqual(result.fileAssociations, ['hwp', 'hwpx']);
   assert.equal(result.updaterKeyFingerprint, '9f86f804067eff359cd32707137dfaaea8710450985dda86b0392da5db63b8f8');
   assert.deepEqual(after, before);
