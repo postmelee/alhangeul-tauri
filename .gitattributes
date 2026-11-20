@@ -1,0 +1,3 @@
+# Preserve upstream font notices exactly, including line endings and spacing.
+assets/fonts/licenses/studio/*.txt -text -whitespace
+assets/fonts/licenses/studio/*.pdf binary

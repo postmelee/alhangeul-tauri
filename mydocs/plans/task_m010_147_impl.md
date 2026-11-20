@@ -17,4 +17,5 @@
 - #146의 head와 base·required 성공을 재확인한다. [44746621403](https://github.com/postmelee/alhangeul-tauri/actions/runs/44746621403)의 필수 결과와 installer의 원시 판정을 함께 확인한다. Windows PDF 및 Linux GUI는 성공한 run의 exact artifact를 사용한다.
 - Windows Explorer는 현재 guest harness에서 신선한 NSIS/MSI 설치를 확인한다. 과거 업그레이드 경로는 최초 v0.1.3의 해시, 버전, 같은 버전 MSI identity를 요구한다. v0.1.4 업그레이드의 입력이나 성공 판정으로 재사용하지 않는다.
 - 최종 공개 파일은 같은 main SHA의 비게시 run에서 가져온다. AppImage/NSIS/MSI의 production Minisign과 세 수동 패키지의 hash를 대조한다. 서명 환경 reviewer와 보호 규칙을 적용한다. Authenticode 미서명·Smart App Control은 따로 기록한다.
+- Studio WOFF2는 같은 rhwp 태그의 파일별 고지와 대조한다. 다른 6개는 그 태그의 검증된 입력으로 교체한다. 글꼴 원문은 `assets/fonts/licenses/studio/`에 보존하고 패키지 `licenses/`에 배치한다. 이전 PDF·썸네일 fallback 입력은 별도로 검증한다.
 - 릴리즈 노트 원문은 스키마에 필요한 실제 source, 6개 size/hash 및 inventory가 확보된 뒤 확정한다. 공개 전후 검증·복구는 runbook을 따른다. 각 단계의 검증·근거를 해당 기록에 묶어 Task #147 커밋으로 남긴다.

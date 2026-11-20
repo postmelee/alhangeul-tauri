@@ -44,7 +44,11 @@
     "resources": {
       "../../../assets/fonts/FONTS.md": "licenses/fonts/FONTS.md",
       "../../../assets/fonts/licenses/NotoSansKR-OFL-1.1.txt": "licenses/fonts/NotoSansKR-OFL-1.1.txt",
-      "../../../assets/fonts/licenses/NotoSerifKR-OFL-1.1.txt": "licenses/fonts/NotoSerifKR-OFL-1.1.txt"
+      "../../../assets/fonts/licenses/NotoSerifKR-OFL-1.1.txt": "licenses/fonts/NotoSerifKR-OFL-1.1.txt",
+      "../../../assets/fonts/licenses/studio/": "licenses/fonts/studio/",
+      "../../../LICENSE": "licenses/Alhangeul-MIT.txt",
+      "../../../third_party/rhwp/LICENSE": "licenses/rhwp-MIT.txt",
+      "../../../third_party/rhwp/THIRD_PARTY_LICENSES.md": "licenses/rhwp-THIRD_PARTY_LICENSES.md"
     },
     "fileAssociations": [
       {
