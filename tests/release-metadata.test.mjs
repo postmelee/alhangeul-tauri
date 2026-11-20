@@ -95,7 +95,7 @@ test('tracked updater release overlay 누락을 거부한다', async () => {
 test('CLI는 repository, root override와 잘못된 인자를 구분한다', async () => {
   const direct = runCli([]);
   assert.equal(direct.status, 0, direct.stderr);
-  assert.match(direct.stdout, /Release metadata check passed: Alhangeul 0\.1\.3/);
+  assert.match(direct.stdout, /Release metadata check passed: Alhangeul 0\.1\.4/);
 
   const fixture = await createFixture();
   try {
