@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 
-export const RHWP_SHA = 'c9095c5f67632e6721e800ccc7fb43ea49d26682';
+export const RHWP_SHA = '981ce66b4183b13c1a3b5907e04a8969c8c42034';
 export const EDGES = Object.freeze([128, 256, 512, 1024]);
 export const MODES = Object.freeze(['direct', 'preview']);
 export const BUDGETS = Object.freeze({ wallMs: 1500, peakRssBytes: 268435456 });

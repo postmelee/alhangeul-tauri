@@ -2,7 +2,7 @@
   "name": "rhwp",
   "type": "module",
   "description": "HWP/HWPX document engine for Rust applications, WebAssembly, and CLI automation",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "license": "MIT",
   "repository": {
     "type": "git",
