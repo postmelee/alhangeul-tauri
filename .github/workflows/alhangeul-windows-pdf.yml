@@ -62,6 +62,11 @@ permissions:
   actions: read
   contents: read
 
+env:
+  GIT_CONFIG_COUNT: '1'
+  GIT_CONFIG_KEY_0: core.autocrlf
+  GIT_CONFIG_VALUE_0: 'false'
+
 concurrency:
   group: windows-pdf-${{ inputs.build_ref }}-${{ inputs.native_run_id }}
   cancel-in-progress: false
@@ -152,7 +157,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           CANDIDATE_KIND: nsis
         run: |
-          git fetch --no-tags origin $env:PDF_BUILD_REF
+          git fetch --no-tags --no-recurse-submodules origin $env:PDF_BUILD_REF
           if ($LASTEXITCODE -ne 0) { throw 'Signed product source fetch failed' }
           node scripts/ci/release-file-candidate.mjs
           if ($LASTEXITCODE -ne 0) { throw 'Signed NSIS verification failed' }
@@ -189,7 +194,7 @@ jobs:
           SIGNED_ARTIFACT_ROOT: ${{ steps.signed-nsis.outputs.artifact_root }}
         run: |
           # Read the version from the product source, not the acceptance harness version.
-          git fetch --no-tags origin $env:PDF_BUILD_REF
+          git fetch --no-tags --no-recurse-submodules origin $env:PDF_BUILD_REF
           if ($LASTEXITCODE -ne 0) { throw 'Product metadata fetch failed' }
           $version = (git show "${env:PDF_BUILD_REF}:package.json" | ConvertFrom-Json).version
           $installerRoot = if ($env:RELEASE_CANDIDATE_PATH) { $env:SIGNED_ARTIFACT_ROOT } else { $env:ARTIFACT_ROOT }

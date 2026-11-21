@@ -84,7 +84,8 @@ if (inputs.appVersion === '0.1.4' && process.platform === 'linux' && inputs.appP
         { id: 'biz-plan-hwp', pages: 6, title: '사업수행계획서', minText: [20, 300, 200, 300, 200, 100] },
         { id: 'form-hwpx', pages: 10, title: '암조직 저산소', minText: Array(10).fill(100) },
       ] as const;
-      for (const { id, pages, title, minText } of cases) {
+      for (const [index, { id, pages, title, minText }] of cases.entries()) {
+        if (index > 0) await restartSession();
         const fixture = fixtureById(fixtures, id);
         const pdfPath = join(inputs.outputDir, 'generated', `signed-appimage-${id}.pdf`);
         const adapter = new LinuxNativeUiAdapter({

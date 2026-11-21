@@ -72,6 +72,7 @@ test('PDF handoff는 두 ordinary producer만 허용하고 설치 전 source와 
 test('signed Windows PDF input must use the exact signature and product identity before install', () => {
   const signed = workflow.split('name: Verify signed NSIS candidate before installation')[1]
     .split('name: Verify inventory and install dependencies')[0];
+  assert.match(workflow, /GIT_CONFIG_KEY_0: core\.autocrlf\n  GIT_CONFIG_VALUE_0: 'false'/);
   assert.match(signed, /node scripts\/ci\/release-file-candidate\.mjs/);
   assert.match(signed, /sourceSha -cne \$env:PDF_BUILD_REF/);
   assert.match(signed, /producerRun -cne \$env:NATIVE_RUN_ID/);
