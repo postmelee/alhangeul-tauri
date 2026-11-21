@@ -95,6 +95,18 @@ jobs:
             gir1.2-gtk-3.0 libgtk-3-0 libwebkit2gtk-4.1-0 openbox poppler-utils python3-gi python3-pyatspi \
             scrot webkit2gtk-driver xdotool xvfb
           test -c /dev/fuse
+      - name: Record Windows installer Authenticode status
+        if: runner.os == 'Windows' && env.ALHANGEUL_GUI_APP_VERSION == '0.1.4'
+        shell: pwsh
+        env:
+          INSTALLER_PATH: ${{ steps.candidate.outputs.installer }}
+        run: |
+          $authenticode = Get-AuthenticodeSignature -LiteralPath $env:INSTALLER_PATH
+          [ordered]@{
+            installer = Split-Path -Leaf $env:INSTALLER_PATH
+            status = [string]$authenticode.Status
+            hasSignerCertificate = $null -ne $authenticode.SignerCertificate
+          } | ConvertTo-Json | Set-Content -LiteralPath candidate-evidence/authenticode.json -Encoding UTF8
       - name: Configure elevated WebView2 automation policy
         id: webview-policy
         if: runner.os == 'Windows'
