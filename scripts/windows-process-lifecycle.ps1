@@ -49,11 +49,16 @@ function Write-CloseSample($Process, $Iteration, $Phase, $Elapsed) {
     phase = $Phase
     elapsedMs = $Elapsed
     pid = $Process.Id
+    closeTarget = $env:ALH_CLOSE_TARGET
     exited = $exited
     windows = if ($exited) { @() } else { @([CloseWindowTrace]::Capture($Process.Id)) }
     handle = if ($exited) { $null } else { $Process.MainWindowHandle.ToInt64() }
   }
   $row | ConvertTo-Json -Depth 5 -Compress | Add-Content -LiteralPath (Join-Path $OutputDirectory 'close-window-trace.jsonl') -Encoding UTF8
+}
+
+if ($env:ALH_CLOSE_TARGET -eq 'editor') {
+  Add-Type -Path (Join-Path $PSScriptRoot 'windows-editor-window.cs')
 }
 
 function Wait-ForStableMainWindow($Process, $Iteration) {
@@ -63,8 +68,10 @@ function Wait-ForStableMainWindow($Process, $Iteration) {
   while ([DateTime]::UtcNow -lt $deadline) {
     $Process.Refresh()
     Assert-Condition (-not $Process.HasExited) "Alhangeul cycle $Iteration exited before readiness."
-    $currentHandle = $Process.MainWindowHandle
-    if ($currentHandle -ne [IntPtr]::Zero -and $Process.Responding) {
+    $currentHandle = if ($env:ALH_CLOSE_TARGET -eq 'editor') {
+      [Alhangeul.InstallerSmoke.EditorWindow]::FindResponsive($Process.Id)
+    } elseif ($Process.Responding) { $Process.MainWindowHandle } else { [IntPtr]::Zero }
+    if ($currentHandle -ne [IntPtr]::Zero) {
       if ($currentHandle -eq $stableHandle) { $stableSamples += 1 } else { $stableHandle = $currentHandle; $stableSamples = 1 }
       if ($stableSamples -ge 11) { return [ordered]@{ Handle = $currentHandle.ToInt64(); Title = $Process.MainWindowTitle; StableSamples = $stableSamples } }
     } else { $stableHandle = [IntPtr]::Zero; $stableSamples = 0 }
@@ -79,7 +86,10 @@ function Invoke-Launch($Executable) {
       $ready = Wait-ForStableMainWindow $process $iteration
       Write-CloseSample $process $iteration 'before-close' 0
       $timer = [Diagnostics.Stopwatch]::StartNew()
-      Assert-Condition ($process.CloseMainWindow()) "Alhangeul cycle $iteration close request failed."
+      $requested = if ($env:ALH_CLOSE_TARGET -eq 'editor') {
+        [Alhangeul.InstallerSmoke.EditorWindow]::RequestClose([IntPtr]$ready.Handle, $process.Id)
+      } else { $process.CloseMainWindow() }
+      Assert-Condition $requested "Alhangeul cycle $iteration close request failed."
       while (!$process.HasExited -and $timer.ElapsedMilliseconds -lt 30000) {
         $remaining = 30000 - [int]$timer.ElapsedMilliseconds
         if ($remaining -le 0) { break }
