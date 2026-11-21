@@ -26,3 +26,6 @@
 세 경로의 trace archive digest를 확인했다. 기존 선택은 이전 source 4,036ms·85ms, 후보 3,431ms·156ms에 종료했다. HWND 지정 후보는 2,018ms·430ms에 종료했다. 세 경우 모두 두 cycle이 통과했고 `DiagnosticContract=true`였다. 원시 exit 1과 `0x80040154` 12건은 기존 관리자 NSIS 제한으로 보존한다. 두 차례 기존 timeout의 원인은 확정되지 않았다.
 
 별도 후보 SHA `241918e623c699d2e18bdfa1119cbc57178eeac0`에는 편집기 선택 및 계약 검사만 추가했다. #146과 앱, crate, submodule 및 pin은 일치한다. 기존 11개 안정 표본과 정상 종료 30초 제한을 유지한다. Node 계약 12/12 및 diff 검사를 통과했다. [전체 네이티브 검증 44930124104](https://github.com/postmelee/alhangeul-tauri/actions/runs/44930124104)의 릴리즈 통과 여부는 미확인이다.
+
+
+[Linux 전용 패키지 run 44928832041](https://github.com/postmelee/alhangeul-tauri/actions/runs/44928832041)은 exact #146 source에서 x64·ARM64 패키지 및 설치 수명주기를 통과했다. 일반 패키지의 [Linux x64 GUI 검증 44933050953](https://github.com/postmelee/alhangeul-tauri/actions/runs/44933050953)을 시작했다. 이 검사는 대체 runner의 앱 내 문서 기능을 확인하며 최종 서명 후보의 수용과 별개다.
