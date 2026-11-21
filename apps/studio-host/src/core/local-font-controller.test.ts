@@ -148,4 +148,26 @@ describe('desktop local-font controller', () => {
     await refreshing;
   });
 
+  it('does not activate a document aborted during asynchronous preparation', async () => {
+    const implementation = invoke.getMockImplementation()!;
+    let finish!: (value: FontPreferences) => void;
+    const waiting = new Promise<FontPreferences>(resolve => { finish = resolve; });
+    invoke.mockImplementationOnce(() => waiting);
+    const controller = await import('./local-font-controller');
+    const old = document();
+    const abort = new AbortController();
+    const preparing = controller.prepareDesktopDocumentFonts(old, abort.signal);
+    await vi.waitFor(() => expect(invoke).toHaveBeenCalled());
+    abort.abort();
+    finish({ ...initial });
+    await preparing;
+    invoke.mockImplementation(implementation);
+    const next = document();
+    await controller.prepareDesktopDocumentFonts(next);
+    await controller.refreshDesktopLocalFontView();
+    expect(old.onFontsChanged).not.toHaveBeenCalled();
+    expect(old.refreshView).not.toHaveBeenCalled();
+    expect(next.onFontsChanged).toHaveBeenCalled();
+  });
+
 });

@@ -28,13 +28,15 @@ function Get-GuestProbes([ValidateSet('baseline', 'upgrade', 'reinstall')][strin
   return $observed
 }
 function Install-GuestBaseline {
-  $baseline = Join-Path $root 'baseline.exe'
+  $isMsi = $inputData.scenario -eq 'msi-upgrade'
+  $baseline = Join-Path $root $(if ($isMsi) { 'baseline.msi' } else { 'baseline.exe' })
   if ((Get-FileHash $baseline -Algorithm SHA256).Hash.ToLowerInvariant() -cne $inputData.baseline.installerSha256) { throw 'baseline-installer-mismatch' }
-  $report['baselineExit'] = Run-Owned $baseline '/S'
+  $report['baselineExit'] = if ($isMsi) { Request-GuestAdmin baseline } else { Run-Owned $baseline '/S' }
   if ($report.baselineExit -ne 0) { throw 'baseline-install-failed' }
   $script:directory = Split-Path -Parent (Get-Item -LiteralPath $key).GetValue('')
   Assert-GuestBinaries $inputData.baseline.binaries $directory
   $report['baselineBinariesMatched'] = $true
+  if ($isMsi) { $report['baselineRegistration'] = Test-GuestMsiRegistration $inputData.baseline.msiIdentity }
   $report['sentinels'] = @()
   foreach ($folder in @('LocalApplicationData', 'ApplicationData')) {
     $parent = Join-Path ([Environment]::GetFolderPath($folder)) 'io.github.postmelee.alhangeul'

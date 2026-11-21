@@ -155,3 +155,49 @@ with tempfile.TemporaryDirectory() as temporary:
   try: worker_input.prepare(p,fixture)
   except RuntimeError: pass
   else: raise AssertionError("changed worker fixture accepted")
+
+
+# Same-version MSI replacement must remove the old product and install different package bytes.
+msi_upgrade=copy.deepcopy(upgrade)
+old=dict(ProductVersion="0.1.3",UpgradeCode="{5B708917-6E23-58E3-B391-8F6EA66312A2}",
+ ProductCode="{11111111-1111-1111-1111-111111111111}",PackageCode="{22222222-2222-2222-2222-222222222222}")
+new=dict(old,ProductCode="{33333333-3333-3333-3333-333333333333}",PackageCode="{44444444-4444-4444-4444-444444444444}")
+msi_upgrade["input"].update(scenario="msi-upgrade",signaturesVerified=True,msiIdentity=new,
+ baseline=dict(msiIdentity=old,installerSha256="b"*64))
+msi_upgrade["adminOperations"].update(copy.deepcopy(msi["adminOperations"]))
+msi_upgrade["adminOperations"]["baseline"]=dict(msi_upgrade["adminOperations"]["install"],
+ operation="baseline",executedInstallerSha256="b"*64)
+msi_upgrade["baselineRegistration"]=dict(entries=[dict(productCode=old["ProductCode"],version="0.1.3")])
+msi_upgrade["upgradeRegistration"]=dict(entries=[dict(productCode=new["ProductCode"],version="0.1.3")],previousProductRemoved=True)
+assert guest_run.guest_observation_complete(msi_upgrade,False,"msi-upgrade")
+for path,value in [
+ (("input","signaturesVerified"),False),
+ (("input","msiIdentity","ProductCode"),old["ProductCode"]),
+ (("input","msiIdentity","PackageCode"),old["PackageCode"]),
+ (("input","msiIdentity","UpgradeCode"),"wrong"),
+ (("upgradeRegistration","previousProductRemoved"),False),
+ (("upgradeRegistration","entries"),[]),
+ (("upgradeRegistration","entries",0,"version"),"0.1.2"),
+ (("adminOperations","baseline","exitCode"),3010),
+ (("adminOperations","baseline","executedInstallerSha256"),"c"*64),
+]:
+ bad=copy.deepcopy(msi_upgrade);target=bad
+ for key in path[:-1]: target=target[key]
+ target[path[-1]]=value
+ assert not guest_run.guest_observation_complete(bad,False,"msi-upgrade"),path
+
+spec=importlib.util.spec_from_file_location("msi_input", "scripts/ci/guest-ui-msi-input.py")
+msi_input=importlib.util.module_from_spec(spec);spec.loader.exec_module(msi_input)
+msi_input.require_same_version_upgrade(old,new)
+for key in ("ProductCode","PackageCode"):
+ try: msi_input.require_same_version_upgrade(old,dict(new,**{key:old[key]}))
+ except RuntimeError: pass
+ else: raise AssertionError("same MSI identity accepted")
+with tempfile.TemporaryDirectory() as temporary:
+ target=Path(temporary)/"extracted"
+ def fake_extract(args,**kwargs):
+  for name in msi_input.BINARY_NAMES.values(): (target/name).write_bytes(b"synthetic PE reference")
+ properties="Property\tValue\ns72\tl0\nProperty\tProperty\n"+"".join(k+"\t"+v+"\n" for k,v in new.items() if k!="PackageCode")
+ with patch.object(msi_input.subprocess,"check_output",side_effect=[properties,"Revision number (UUID): "+new["PackageCode"]]), patch.object(msi_input.subprocess,"run",side_effect=fake_extract):
+  identity,binaries=msi_input.inspect(Path("candidate.msi"),target)
+  assert identity==new and len(binaries)==2 and all(b["size"]==22 for b in binaries)

@@ -1,5 +1,6 @@
 """Exact historical installer and signed prerequisite inputs, never product outputs."""
 import hashlib
+import importlib.util
 import json
 from pathlib import Path
 import subprocess
@@ -30,15 +31,33 @@ def download(value, destination):
 
 def prepare(payload, value):
     value["prerequisites"] = []
-    if value["scenario"] == "nsis-upgrade":
+    if value["scenario"] in ("nsis-upgrade", "msi-upgrade"):
         baseline = json.loads(subprocess.check_output(["node", "--input-type=module", "-e",
             "import {PUBLIC_INPUT} from './scripts/windows-thumbnail-user-input.mjs'; console.log(JSON.stringify(PUBLIC_INPUT))"],
             text=True))
+        if value["scenario"] == "msi-upgrade":
+            baseline["installerUrl"] = "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.3/Alhangeul_0.1.3_x64_en-US.msi"
+            baseline["installerSha256"] = "a953c0d09dec29246ae77340e019e7acae759aac24b21fc7a524326ab81b6085"
         download(dict(url=baseline["installerUrl"], sha256=baseline["installerSha256"]),
-                 payload / "baseline.exe")
+                 payload / ("baseline.msi" if value["scenario"] == "msi-upgrade" else "baseline.exe"))
+        if value["scenario"] == "msi-upgrade":
+            prepare_msi_baseline(payload, value, baseline)
         value["baseline"] = baseline
         value["prerequisites"].append(VC)
     if value["operatingSystem"]["id"] == "windows10":
         value["prerequisites"].append(WEBVIEW)
     for item in value["prerequisites"]:
         download(item, payload / item["file"])
+
+
+def prepare_msi_baseline(payload, value, baseline):
+    spec = importlib.util.spec_from_file_location("msi_input", Path(__file__).with_name("guest-ui-msi-input.py"))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    identity, binaries = module.inspect(payload / "baseline.msi", payload.parent.parent / "baseline-msi-reference")
+    module.require_same_version_upgrade(identity, value["msiIdentity"])
+    for binary in binaries:
+        expected = next(b for b in baseline["binaries"] if b["name"] == binary["name"])
+        if (binary["size"], binary["sha256"]) != (expected["bytes"], expected["sha256"]):
+            raise RuntimeError("public-msi-binary-mismatch")
+    baseline["msiIdentity"] = identity

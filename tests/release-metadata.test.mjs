@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { cp, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -28,7 +29,7 @@ test('현재 HWP/HWPX release metadata를 읽기 전용으로 승인한다', asy
     fixturePaths.map((path) => readFile(join(repositoryRoot, path), 'utf8')),
   );
   assert.equal(result.productName, 'Alhangeul');
-  assert.equal(result.version, '0.1.3');
+  assert.equal(result.version, '0.1.4');
   assert.deepEqual(result.fileAssociations, ['hwp', 'hwpx']);
   assert.equal(result.updaterKeyFingerprint, '9f86f804067eff359cd32707137dfaaea8710450985dda86b0392da5db63b8f8');
   assert.deepEqual(after, before);
@@ -95,7 +96,7 @@ test('tracked updater release overlay 누락을 거부한다', async () => {
 test('CLI는 repository, root override와 잘못된 인자를 구분한다', async () => {
   const direct = runCli([]);
   assert.equal(direct.status, 0, direct.stderr);
-  assert.match(direct.stdout, /Release metadata check passed: Alhangeul 0\.1\.3/);
+  assert.match(direct.stdout, /Release metadata check passed: Alhangeul 0\.1\.4/);
 
   const fixture = await createFixture();
   try {
@@ -107,6 +108,26 @@ test('CLI는 repository, root override와 잘못된 인자를 구분한다', asy
   const invalid = runCli(['--unknown']);
   assert.notEqual(invalid.status, 0);
   assert.match(invalid.stderr, /지원하지 않는 인자입니다/);
+});
+
+test('배포하는 Studio 웹폰트와 동봉 라이선스 원문을 파일별로 대조한다', async () => {
+  const fonts = join(repositoryRoot, 'assets/fonts');
+  const notices = join(fonts, 'licenses/studio');
+  const config = JSON.parse(await readFile(join(repositoryRoot, 'apps/desktop/src-tauri/tauri.conf.json'), 'utf8'));
+  const { fonts: fontRecords, notices: noticeRecords } = JSON.parse(
+    await readFile(join(notices, 'font-notices.json'), 'utf8'),
+  );
+  const actualFonts = (await readdir(fonts)).filter(file => file.endsWith('.woff2'));
+  const usedNotices = new Set(fontRecords.flatMap(record => record.licenseFiles));
+  assert.equal(config.bundle.resources['../../../assets/fonts/licenses/studio/'], 'licenses/fonts/studio/');
+  assert.deepEqual(fontRecords.map(record => record.file).sort(), actualFonts.sort());
+  assert.deepEqual(noticeRecords.map(record => record.file).sort(), [...usedNotices].sort());
+  for (const [root, records] of [[fonts, fontRecords], [notices, noticeRecords]]) {
+    for (const { file, sha256 } of records) {
+      const bytes = await readFile(join(root, file));
+      assert.equal(createHash('sha256').update(bytes).digest('hex'), sha256, file);
+    }
+  }
 });
 
 async function createFixture() {

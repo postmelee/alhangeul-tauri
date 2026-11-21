@@ -14,6 +14,7 @@ function Save-State {
 . (Join-Path $PSScriptRoot 'guest-ui-process.ps1')
 . (Join-Path $PSScriptRoot 'guest-ui-operations.ps1')
 . (Join-Path $PSScriptRoot 'guest-ui-upgrade.ps1')
+. (Join-Path $PSScriptRoot 'guest-ui-msi-upgrade.ps1')
 . (Join-Path $PSScriptRoot 'guest-ui-upgrade-diagnostic.ps1')
 . (Join-Path $PSScriptRoot 'guest-ui-worker-diagnostic.ps1')
 . (Join-Path $PSScriptRoot 'guest-ui-provider-diagnostic.ps1')
@@ -33,9 +34,9 @@ $report = [ordered]@{ schemaVersion = 1; status = 'incomplete'; phase = 'logon';
 $directory = $null; $view = $null
 try {
   $inputData = Get-Content (Join-Path $root 'input.json') -Raw | ConvertFrom-Json
-  if ($inputData.scenario -cnotin @('nsis', 'msi', 'nsis-upgrade')) { throw 'invalid-guest-scenario' }
+  if ($inputData.scenario -cnotin @('nsis', 'msi', 'nsis-upgrade', 'msi-upgrade')) { throw 'invalid-guest-scenario' }
   $report['input'] = $inputData
-  $installerKind = if ($inputData.scenario -eq 'msi') { 'msi' } else { 'nsis' }
+  $installerKind = if ($inputData.scenario -in @('msi', 'msi-upgrade')) { 'msi' } else { 'nsis' }
   $os = Get-CimInstance Win32_OperatingSystem
   $report['os'] = @{ caption = $os.Caption; build = $os.BuildNumber; productType = $os.ProductType; architecture = $os.OSArchitecture }
   $expectedOs = $inputData.operatingSystem
@@ -57,21 +58,21 @@ try {
   if (-not $report.desktopOwnerMatches -or -not $report.sessionMatches -or -not [Environment]::UserInteractive) { throw 'interactive-shell-owner-mismatch' }
   Save-State
   $key = 'HKCU:\Software\Classes\CLSID\{C1DCF316-0771-49DD-BFEA-C85F69B1674B}\InprocServer32'
-  if ($inputData.scenario -eq 'msi') { $key = $key.Replace('HKCU:', 'HKLM:') }
+  if ($inputData.scenario -in @('msi', 'msi-upgrade')) { $key = $key.Replace('HKCU:', 'HKLM:') }
   if (Test-Path $key) { throw 'preexisting-handler' }
-  $installer = Join-Path $root $(if ($inputData.scenario -eq 'msi') { 'installer.msi' } else { 'installer.exe' })
+  $installer = Join-Path $root $(if ($inputData.scenario -in @('msi', 'msi-upgrade')) { 'installer.msi' } else { 'installer.exe' })
   if ((Get-FileHash $installer -Algorithm SHA256).Hash.ToLowerInvariant() -cne $inputData.installerSha256) { throw 'installer-hash-mismatch' }
   . (Join-Path $PSScriptRoot 'guest-ui-installer-state.ps1')
   $report['beforeInstall'] = Get-GuestInstallerState $installerKind
   if ($report.beforeInstall.vcRuntimePresent -or $report.beforeInstall.vcRuntimeLoadError -ne 126) { throw 'clean-vc-runtime-absence-required' }
   if ($report.beforeInstall.referenceHandlerLoadError -ne 0) { throw 'standalone-handler-load-failed' }
-  if ($inputData.scenario -eq 'msi' -or $inputData.prerequisites.Count -gt 0) { Assert-GuestAdminBoundary; $report['adminBoundaryReadOnly'] = $true }
+  if ($inputData.scenario -in @('msi', 'msi-upgrade') -or $inputData.prerequisites.Count -gt 0) { Assert-GuestAdminBoundary; $report['adminBoundaryReadOnly'] = $true }
   if ($inputData.prerequisites.Count -gt 0) {
     $report.phase = 'prerequisites'; Save-State
     if ((Request-GuestAdmin prerequisites) -ne 0) { throw 'prerequisite-install-failed' }
     $report['afterPrerequisites'] = Get-GuestInstallerState $installerKind
   }
-  if ($inputData.scenario -eq 'nsis-upgrade') {
+  if ($inputData.scenario -in @('nsis-upgrade', 'msi-upgrade')) {
     $report.phase = 'baseline'; Save-State
     Install-GuestBaseline
   }
@@ -112,6 +113,12 @@ try {
     }
     Test-GuestSentinels
   }
+  if ($inputData.scenario -eq 'msi-upgrade') {
+    $report['upgradeRegistration'] = Test-GuestMsiRegistration $inputData.msiIdentity $inputData.baseline.msiIdentity.ProductCode
+    $report['upgradeBinariesMatched'] = $true
+    $report['upgradeProbes'] = @(Get-GuestProbes upgrade)
+    Test-GuestSentinels
+  }
   if ($inputData.scenario -eq 'nsis-upgrade' -and $report.Contains('failure')) {
     $report['diagnosticReinstallations'] = @(Measure-GuestColdStarts $directory)
   }
@@ -144,7 +151,7 @@ finally {
       $report.uninstallExit = Invoke-GuestInstall uninstall
       for ($i=0; $i -lt 90 -and (Test-Path $directory); $i++) { Start-Sleep -Seconds 1 }
       $report.productUninstallPassed = $report.uninstallExit -eq 0 -and -not (Test-Path $directory) -and -not (Test-Path $key)
-      if ($inputData.scenario -eq 'nsis-upgrade' -and $report.Contains('sentinels')) { Test-GuestSentinels; $report['userDataPreservedAfterUninstall'] = $true }
+      if ($inputData.scenario -in @('nsis-upgrade', 'msi-upgrade') -and $report.Contains('sentinels')) { Test-GuestSentinels; $report['userDataPreservedAfterUninstall'] = $true }
     } catch { $report['cleanupFailure'] = $_.Exception.Message }
   }
   if ($report.adminOperations.ContainsKey('prerequisites') -and

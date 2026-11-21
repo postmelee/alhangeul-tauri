@@ -14,12 +14,12 @@ import { isTauriRuntime } from './platform';
 import { ensureFontPreferences, getFontPreferences } from './local-font-preferences';
 import { getFontCatalog, hostFontSource, invalidateFontCatalog, loadFontCatalog,
   onFontCatalogChanged } from './local-font-state';
-import type { HostFontProvider } from './host-font-contract';
+import type { HostFontOptions, HostFontProvider } from './host-font-contract';
 import { loadRendererLocalFont } from './local-font-renderer';
 export { changedLocalFontNames, localFontNamesIntersect, localFontProgramOrder, loadPreferredLocalFontBytes,
   resolveLocalFontProgramCandidates, resolveRendererLocalFontCandidates } from './local-font-programs';
 export { resolveRendererLocalFont, loadRendererLocalFont } from './local-font-renderer';
-export type { HostFontProvider, LocalFontStyleRequest } from './host-font-contract';
+export type { HostFontOptions, HostFontProvider, LocalFontStyleRequest } from './host-font-contract';
 
 export type { LocalFontEntry, LocalFontRecord } from './local-font-records';
 
@@ -182,10 +182,12 @@ export function resetLocalFontsForTests(): void {
   invalidateFontCatalog();
 }
 
-export async function ensureLocalFontsAvailable(targetFamilies?: Iterable<string>): Promise<Set<string>> {
+export async function ensureLocalFontsAvailable(
+  targetFamilies?: Iterable<string>, isCurrent: () => boolean = () => true,
+): Promise<Set<string>> {
   const started = desktopFontGeneration();
   const entries = await detectLocalFontEntries();
-  if (started !== desktopFontGeneration()) return new Set();
+  if (!isCurrent() || started !== desktopFontGeneration()) return new Set();
   const available = new Set(
     entries
       .filter((entry) => entry.sourceKind === 'system-installed')
@@ -201,8 +203,9 @@ export async function ensureLocalFontsAvailable(targetFamilies?: Iterable<string
     if (entry?.sourceKind !== 'file-backed' || !entry.path) continue;
     try {
       for (const family of new Set([record.family, requested])) {
+        if (!isCurrent()) return new Set();
         await ensureDesktopFontFace({ ...entry, family });
-        if (started !== desktopFontGeneration()) return new Set();
+        if (!isCurrent() || started !== desktopFontGeneration()) return new Set();
       }
       if (!desktopFontUnavailable(entry.path)) available.add(record.family);
     } catch {
@@ -210,7 +213,7 @@ export async function ensureLocalFontsAvailable(targetFamilies?: Iterable<string
     }
   }
 
-  return started === desktopFontGeneration() ? available : new Set();
+  return isCurrent() && started === desktopFontGeneration() ? available : new Set();
 }
 
 async function detectBrowserFontEntries(): Promise<LocalFontEntry[]> {
@@ -254,8 +257,10 @@ export function hasHostFontProvider(): boolean {
 export function onHostFontsChanged(listener: () => void): () => void {
   return onFontCatalogChanged(listener);
 }
-export async function setHostFontProvider(provider: HostFontProvider | null): Promise<void> {
-  hostFontSource.setProvider(provider);
+export function hostFontLayoutEnabled(): boolean { return hasHostFontProvider() && hostFontSource.layoutEnabled; }
+export function releaseHostLayoutPrograms(): void { hostFontSource.releaseLayoutPrograms(); }
+export async function setHostFontProvider(provider: HostFontProvider | null, options?: HostFontOptions): Promise<void> {
+  hostFontSource.setProvider(provider, options);
   await prepareHostFontCatalog();
 }
 export async function prepareHostFontCatalog(): Promise<void> {

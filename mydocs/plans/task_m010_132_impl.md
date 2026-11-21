@@ -4,7 +4,7 @@
 GitHub Issue: [#132](https://github.com/postmelee/alhangeul-tauri/issues/132)
 마일스톤: M010
 
-현재: Stage 4 최종 보고 완료 — 새 제품의 Windows 10/11 여섯 경로 통과, PR 생성 전 보고 상태. 기존 v0.1.3 태그·Release·Pages는 변경하지 않았으며 최종 서명 파일·재배포는 별도다.
+현재: Stage 6 동일 v0.1.3 공개 교체·검증 완료 — 제품4e99e883, 새 tag4860b8ef, Release11개 교체, API/URL22파일·Pages26파일·feed3target·웹8조합 통과. 완료 보고 PR과 안전한 작업 정리를 진행한다.
 
 2026-11-11 수행계획 승인과 이슈 해결까지 연속 진행 지시를 적용한다. PR 생성 전 보고한다.
 
@@ -16,6 +16,8 @@ GitHub Issue: [#132](https://github.com/postmelee/alhangeul-tauri/issues/132)
 | 2 | 원인에 따른 최소 수정 | handler/등록/installer 또는 실행 문맥 | 수정 전/후 기능 회귀 |
 | 3 | 실제 Windows 수용 | 설치 생명주기·Explorer 증거 | 새 이미지/타사 연결/MSI 회귀 |
 | 4 | 최종 보고 | 기존 공식 문서·최종 보고 | 계약 일치, PR 전 보고 |
+| 5 | 비게시 재릴리즈 준비 | 병합 source·signed 후보·복구/교체안 | Windows8경로·파일6종·서명·full CI |
+| 6 | 동일 버전 공개 교체 | tag·11파일·본문·Pages/feed·완료 기록 | 공개 bytes/서명·HTTP·화면 |
 
 ## 문서 위치 확인
 
@@ -630,3 +632,32 @@ Windows 10 NSIS 재실행 run43473883158도 attempt 1 success다. 최종 artifac
 
 
 PR 전 기준 정합화: devel이 644d0ac52bb364e57907fd7cd98c57ceaf86dce2(#135/#136)로 전진했음을 확인해 merge로 통합했다. 충돌은 오늘할일 20261113/20261114의 add/add 두 건이며 #132와 #135 행·기존 후속 승인 내용을 모두 보존했다. workflow 목록은 두 작업의 항목을 모두 유지했다. apps/packages/crates/third_party는 검증 제품 ece8bb5e와 diff가 없어 같은 installer 증거를 재사용하며, 들어온 정책/사이트/CI 스크립트는 최종 fast에서 통합 검사한다. 기존 최종 보고 commit51c487b6의 fast43477466190과 통합 head의 후속 fast를 구분한다.
+
+## Stage 5 — 승인된 동일 버전 재릴리즈 준비 (2026-11-14)
+
+사용자가 PR 생성·재릴리즈 준비를 지시했고, 이어 “병합과 비게시 서명·검증까지 진행”을 명시 승인했다. 태그·공개 파일·Pages 교체 직전에 결과를 알린다. #138을 devel에 병합한 a79ce6c1과 devel→main #139를 병합한 4e99e883eec6bdf9d6ce59070c769f175052fc3f를 기록한다. 기존 main 정책을 보존한 merge-tree는 devel과 동일하다.
+
+- 제품 source는 main 4e99e883으로 고정한다. updater run43551466131은 publish_release=false, full CI43551469171은 같은 SHA다. 두 workflow의 concurrency 충돌을 피하려 일반 패키지는 기존 ci.yml full 경로로 확보한다.
+- 이 단계의 변경은 검증 도구·입력·기존 작업 문서와 릴리즈 기록이다. 제품 apps/packages/crates/third_party 및 production key/version은 변경하지 않는다. 같은 #132의 승인된 재배포 준비를 이어가며 기존 작업 브랜치를 재사용한다.
+- signed guest 입력은 tracked candidate JSON의 source/run/archive ID·digest와 NSIS/MSI hash를 고정하고 production key로 서명을 확인한다. MSI에서 추출한 handler/worker를 기준으로 NSIS/MSI의 실제 설치 파일 hash·CRT 독립성을 확인한다. 일반 파일 입력은 기존 관측 재현용으로 유지한다.
+- guest 시나리오에 공개 MSI→새 MSI의 같은 버전 교체를 추가한다. 공식 installer hash, MSI ProductCode/UpgradeCode/PackageCode/Version, 실제 등록과 이전 ProductCode 제거, Local/Roaming 데이터 보존, 처음 API 요청, Explorer, 재설치/제거를 검사한다. VC 없는 clean 상태와 baseline용 VC 설치를 구분한다. 3010은 재부팅 후 확인 전 실패/미검증으로 유지한다.
+- 기존 Windows 10/11 세 경로와 새 MSI upgrade를 최종 signed bytes로 검증한다. 후보 생성 후 새 source/run을 가리키는 release_candidate_path로 NSIS/MSI/AppImage 문서 작업과 수동 Linux 패키지 검증을 실행한다.
+- 정확한 입력/identity·실패 수용 회귀는 Node/Python과 Windows PowerShell CI로 검사한다. Mac에서는 Rust/Tauri를 실행하지 않으며 private 출력은 연결된 T7만 사용한다.
+- 기존 승인 위치인 mydocs/plans/working/report/orders와 docs/releases/v0.1.3 기록만 갱신한다. 새 공식 문서 루트는 만들지 않는다. 짧은 사용자 notes는 현재 지원 범위·수동 교체·재배포 날짜를 반영하고 생성기 검증을 거친다.
+- 공개 원본 11개 actual hash와 checksum, 서명 3개, tag object·body·현재 Pages 3개 JSON을 재검증·보존했다. 실제 교체 목록·tag SHA·notes hash와 복구 범위는 최종 bytes 수용 후 제시한다. 공개 assets·tag·feed는 아직 그대로다.
+
+검증 하네스 구현: MSI upgrade의 관리자 단계 JSON 4개 추가에 맞춰 serial 증거 상한을 20→24개로 제한 확장한다. 파일당 5MiB·파일명·hash·중복·전체 완료 검사는 유지한다. 로컬 자동화 1,421개, guest identity 실패 회귀, boundary 및 변경 workflow actionlint를 통과했다. 실제 Windows PowerShell와 signed guest 실행은 이어서 검증한다.
+
+## Stage 6 — 승인된 동일 v0.1.3 공개 교체 (2026-11-14)
+
+작업지시자가 “PR #140 병합하고 준비한 교체안대로 같은 v0.1.3 재릴리즈를 완료해줘. 실패하면 원본으로 복구하고, 공개 파일과 Pages·피드 검증까지 계속 진행해줘”라고 승인했다. #140은 필수검사43560703698 통과 후0029d13f893006e51167a678189cd4e0e7609312로 병합했다.
+
+제품은4e99e883eec6bdf9d6ce59070c769f175052fc3f, 기존 Release ID441647361, 교체11개와 본문은 Stage5의 고정 SHA256을 사용한다. 새 빌드는 하지 않는다. 기존 tag object8bb3b997cd2279c1e92f440ed7d1f1810c14b7cd를 lease 조건으로 v0.1.3 ref만 이동한다. 원본11개 actual hash·3서명·checksum·본문·Pages와 새11개 actual hash를 다시 확인했다.
+
+1. devel 대상 유지보수 PR: site/release.json의 manifestPublished=false/inventory=null만 바꾼다. exact Pages 배포 후 manifest404·기존 다운로드 유지 확인.
+2. 승인 source를 가리키는 annotated tag 생성·조건부 ref 이동. 동일 Release의11개 파일·본문을 교체하고 공개 URL에서 실제 bytes·Minisign3개·inventory·checksum·본문을 재검산.
+3. 공개 파일 검증 후 기존 docs/releases/v0.1.3.notes.json, site/release.json, site/updates/v0.1.3.html의 준비된 교체 patch를 PR로 반영. 필수 검사와 exact Pages 배포 후 모든 생성 파일·다운로드 목록·feed를 HTTP read-back.
+4. 실패하면 배포 진행을 중단하고 원본11개·본문·lease 기반 tag ref·위3개 데이터 파일·Pages를 복구한 뒤 원본 bytes/서명/feed를 검증한다. 삭제된 asset ID·download count는 복구되지 않는다.
+5. 실제 공개 결과를 기존 docs/releases/v0.1.3.md, mydocs/working/task_m010_132_stage6.md, 최종 보고·오늘할일에 기록하고 필요한 보고 PR도 검증·병합한다. 공개 완료 후 #132와 더 이상 필요 없는 이 작업 브랜치/worktree를 정리한다. 다른 작업 브랜치는 보존한다.
+
+문서 위치는 Stage5의 승인된 기존 docs/releases 및 mydocs 역할별 폴더를 유지한다. 같은 버전은 수동 설치이며 캐시된 feed/진행 중 다운로드의 비원자적 전환 실패 가능성을 유지한다. 강제 MSI3010 재부팅 이후와 Authenticode/SAC는 이번 수용 범위가 아니다.

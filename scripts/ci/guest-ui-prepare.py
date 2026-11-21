@@ -47,12 +47,14 @@ def guard():
 
 def scenario():
     value = os.environ.get("GUEST_SCENARIO", "nsis")
-    if value not in ("nsis", "msi", "nsis-upgrade"):
+    if value not in ("nsis", "msi", "nsis-upgrade", "msi-upgrade"):
         raise RuntimeError("invalid-guest-scenario")
     return value
 
 
-def prepare_product(root, payload):
+def prepare_ordinary(root, payload):
+    if scenario() == "msi-upgrade":
+        raise RuntimeError("msi-upgrade-requires-signed-candidate")
     bundle = root / "bundle"
     with zipfile.ZipFile(root / "candidate.zip") as archive:
         for name in archive.namelist():
@@ -77,6 +79,19 @@ def prepare_product(root, payload):
     (payload / "verification").mkdir()
     handler = next(f for f in value["binaries"] if f["kind"] == "thumbnail-handler")
     shutil.copyfile(bundle / handler["path"], payload / "verification/AlhangeulThumbnailHandler.dll")
+    return value
+
+
+def prepare_product(root, payload):
+    if os.environ.get("RELEASE_CANDIDATE_PATH"):
+        spec = importlib.util.spec_from_file_location("signed_product", Path(__file__).with_name("guest-ui-signed-product.py"))
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        value = module.prepare(root, payload, scenario())
+        value.update(scenario=scenario(), operatingSystem=operating_system(),
+                     harnessSha=os.environ["GITHUB_SHA"], isoSha256=ISO_SHA)
+    else:
+        value = prepare_ordinary(root, payload)
     spec = importlib.util.spec_from_file_location("upgrade_input", Path(__file__).with_name("guest-ui-upgrade-input.py"))
     upgrade = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(upgrade)
@@ -113,7 +128,7 @@ def prepare_media(root):
         shutil.copyfile("scripts/windows-thumbnail-" + suffix,
                         payload / ("scripts/windows-thumbnail-" + suffix))
     for name in ("guest-ui-probe.ps1", "guest-ui-installer-state.ps1", "hosted-ui-view.ps1",
-                 "guest-ui-process.ps1", "guest-ui-admin.ps1", "guest-ui-operations.ps1",
+                 "guest-ui-process.ps1", "guest-ui-admin.ps1", "guest-ui-msi-upgrade.ps1", "guest-ui-operations.ps1",
                  "guest-ui-upgrade.ps1", "guest-ui-prerequisites.ps1", "guest-ui-upgrade-diagnostic.ps1",
                  "guest-ui-worker-diagnostic.ps1", "guest-ui-provider.cs",
                  "guest-ui-provider-probe.ps1", "guest-ui-provider-diagnostic.ps1", "guest-ui-process-trace.ps1",
