@@ -21,6 +21,9 @@ on:
       native_run_id:
         required: true
         type: string
+      candidate_path:
+        type: string
+        default: ""
   workflow_dispatch:
     inputs:
       open_only:
@@ -47,9 +50,13 @@ on:
         required: true
         type: string
       native_run_id:
-        description: Successful Desktop Artifact Build or Alhangeul CI product run ID
+        description: Successful product producer run ID
         required: true
         type: string
+      candidate_path:
+        description: Exact signed candidate JSON in the acceptance checkout.
+        type: string
+        default: ""
 
 permissions:
   actions: read
@@ -68,6 +75,7 @@ jobs:
       EVIDENCE_ROOT: ${{ github.workspace }}\pdf-evidence
       PDF_BUILD_REF: ${{ inputs.build_ref }}
       NATIVE_RUN_ID: ${{ inputs.native_run_id }}
+      RELEASE_CANDIDATE_PATH: ${{ inputs.candidate_path }}
       ACCEPTANCE_REF: ${{ github.workflow_sha }}
       PDF_SCENARIO: ${{ inputs.confirmation_verify && 'confirmation-verify' || inputs.confirmation_probe && 'confirmation-probe' || inputs.open_only && 'open-only' || 'pdf' }}
       PDF_CONFIRMATION_CASES: ${{ inputs.confirmation_cases }}
@@ -93,7 +101,7 @@ jobs:
           New-Item -ItemType Directory -Path $env:EVIDENCE_ROOT -Force | Out-Null
           @{ acceptanceRef = $env:ACCEPTANCE_REF; buildRef = $env:PDF_BUILD_REF;
              nativeRunId = $env:NATIVE_RUN_ID; runId = $env:GITHUB_RUN_ID;
-             scenario = $env:PDF_SCENARIO; confirmationCases = $env:PDF_CONFIRMATION_CASES } |
+             signedCandidate = [bool]$env:RELEASE_CANDIDATE_PATH; scenario = $env:PDF_SCENARIO; confirmationCases = $env:PDF_CONFIRMATION_CASES } |
             ConvertTo-Json | Set-Content "$env:EVIDENCE_ROOT/workflow-context.json"
       - name: Check dialog PowerShell before installation
         shell: powershell
@@ -115,6 +123,7 @@ jobs:
           node-version: "24"
           package-manager-cache: false
       - name: Verify existing product artifact handoff
+        if: inputs.candidate_path == ''
         id: handoff
         shell: pwsh
         env:
@@ -126,6 +135,7 @@ jobs:
           node scripts/verify-workflow-artifact.mjs --repository $env:GITHUB_REPOSITORY --build-ref $env:PDF_BUILD_REF --run-id $env:NATIVE_RUN_ID --workflow-path $workflowPath --artifact-name alhangeul-desktop-windows-x64 --json-output "$env:EVIDENCE_ROOT/artifact-handoff.json" --github-output $env:GITHUB_OUTPUT
           if ($LASTEXITCODE -ne 0) { throw 'Artifact handoff failed' }
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        if: inputs.candidate_path == ''
         with:
           artifact-ids: ${{ steps.handoff.outputs.artifact_id }}
           github-token: ${{ github.token }}
@@ -133,16 +143,36 @@ jobs:
           run-id: ${{ inputs.native_run_id }}
           path: ${{ env.ARTIFACT_ROOT }}
           digest-mismatch: error
+      - name: Verify signed NSIS candidate before installation
+        id: signed-nsis
+        if: inputs.candidate_path != ''
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ github.token }}
+          CANDIDATE_KIND: nsis
+        run: |
+          git fetch --no-tags origin $env:PDF_BUILD_REF
+          if ($LASTEXITCODE -ne 0) { throw 'Signed product source fetch failed' }
+          node scripts/ci/release-file-candidate.mjs
+          if ($LASTEXITCODE -ne 0) { throw 'Signed NSIS verification failed' }
+          $identity = Get-Content candidate-evidence/identity.json -Raw | ConvertFrom-Json
+          $verified = Get-Content candidate-evidence/verified-candidate.json -Raw | ConvertFrom-Json
+          if ($identity.sourceSha -cne $env:PDF_BUILD_REF -or [string]$identity.producerRun -cne $env:NATIVE_RUN_ID -or
+              $verified.signaturesVerified -ne $true) { throw 'Wrong signed NSIS product' }
+          Copy-Item -Recurse candidate-evidence "$env:EVIDENCE_ROOT/signed-candidate"
       - name: Verify inventory and install dependencies
         shell: pwsh
         run: |
-          if ('${{ steps.handoff.outputs.validation_purpose }}' -cne 'additional-validation-only') { throw 'Unexpected artifact purpose' }
           corepack enable
           if ($LASTEXITCODE -ne 0) { throw 'Corepack failed' }
           pnpm install --frozen-lockfile
           if ($LASTEXITCODE -ne 0) { throw 'Dependencies failed' }
-          pnpm run check:desktop-artifacts -- --platform windows-x64 --root $env:ARTIFACT_ROOT --source-sha $env:PDF_BUILD_REF --verify-inventory "$env:ARTIFACT_ROOT/alhangeul-artifact-inventory.json"
-          if ($LASTEXITCODE -ne 0) { throw 'Inventory failed' }
+          if (-not $env:RELEASE_CANDIDATE_PATH) {
+            if ('${{ steps.handoff.outputs.validation_purpose }}' -cne 'additional-validation-only') { throw 'Unexpected artifact purpose' }
+            pnpm run check:desktop-artifacts -- --platform windows-x64 --root $env:ARTIFACT_ROOT --source-sha $env:PDF_BUILD_REF --verify-inventory "$env:ARTIFACT_ROOT/alhangeul-artifact-inventory.json"
+            if ($LASTEXITCODE -ne 0) { throw 'Inventory failed' }
+          }
       - name: Install exact driver
         shell: pwsh
         run: |
@@ -155,12 +185,15 @@ jobs:
       - name: Install NSIS product
         id: install
         shell: pwsh
+        env:
+          SIGNED_ARTIFACT_ROOT: ${{ steps.signed-nsis.outputs.artifact_root }}
         run: |
           # Read the version from the product source, not the acceptance harness version.
           git fetch --no-tags origin $env:PDF_BUILD_REF
           if ($LASTEXITCODE -ne 0) { throw 'Product metadata fetch failed' }
           $version = (git show "${env:PDF_BUILD_REF}:package.json" | ConvertFrom-Json).version
-          ./scripts/updater/windows-native-acceptance.ps1 -Phase Install -Kind nsis -ArtifactRoot $env:ARTIFACT_ROOT -OutputDirectory $env:EVIDENCE_ROOT -ExpectedVersion $version
+          $installerRoot = if ($env:RELEASE_CANDIDATE_PATH) { $env:SIGNED_ARTIFACT_ROOT } else { $env:ARTIFACT_ROOT }
+          ./scripts/updater/windows-native-acceptance.ps1 -Phase Install -Kind nsis -ArtifactRoot $installerRoot -OutputDirectory $env:EVIDENCE_ROOT -ExpectedVersion $version
       - name: Run selected installed app scenario
         shell: pwsh
         env:

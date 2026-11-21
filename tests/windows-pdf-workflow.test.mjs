@@ -69,6 +69,16 @@ test('PDF handoff는 두 ordinary producer만 허용하고 설치 전 source와 
   assert.deepEqual(offsets, [...offsets].sort((a, b) => a - b));
 });
 
+test('signed Windows PDF input must use the exact signature and product identity before install', () => {
+  const signed = workflow.split('name: Verify signed NSIS candidate before installation')[1]
+    .split('name: Verify inventory and install dependencies')[0];
+  assert.match(signed, /node scripts\/ci\/release-file-candidate\.mjs/);
+  assert.match(signed, /sourceSha -cne \$env:PDF_BUILD_REF/);
+  assert.match(signed, /producerRun -cne \$env:NATIVE_RUN_ID/);
+  assert.match(signed, /signaturesVerified -ne \$true/);
+  assert.match(workflow, /SIGNED_ARTIFACT_ROOT: \$\{\{ steps.signed-nsis.outputs.artifact_root \}\}/);
+});
+
 test('Windows PDF workflow는 두 실제 앱 실행과 실패 증거 및 cleanup을 유지한다', () => {
   assert.match(workflow, /runs-on: windows-2025/);
   assert.match(workflow, /@\('fresh', 'restart'\)/);

@@ -896,6 +896,7 @@ jobs:
       confirmation_cases: ${{ inputs.confirmation_cases || 'all' }}
       build_ref: ${{ inputs.acceptance_candidate_sha }}
       native_run_id: ${{ inputs.acceptance_d1_run_id }}
+      candidate_path: ${{ inputs.release_candidate_path }}
 
   updater-linux-window-probe:
     name: Diagnose Linux window automation only

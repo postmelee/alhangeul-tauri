@@ -92,7 +92,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libfuse2 at-spi2-core dbus-x11 fonts-noto-cjk fonts-unfonts-core \
-            gir1.2-gtk-3.0 libgtk-3-0 libwebkit2gtk-4.1-0 openbox python3-gi python3-pyatspi \
+            gir1.2-gtk-3.0 libgtk-3-0 libwebkit2gtk-4.1-0 openbox poppler-utils python3-gi python3-pyatspi \
             scrot webkit2gtk-driver xdotool xvfb
           test -c /dev/fuse
       - name: Configure elevated WebView2 automation policy

@@ -6,7 +6,8 @@ import { basename, join } from 'node:path';
 import { browser, $, expect } from '@wdio/globals';
 import { HwpDocument, initSync } from '../../../apps/studio-host/vendor/rhwp-core/rhwp.js';
 import { LinuxNativeUiAdapter } from '../linux/native-ui/atspi.mjs';
-import { resolveDocumentFixtures } from '../support/document-fixture.ts';
+import { analyzePdf } from '../linux/pdf-analysis.mjs';
+import { fixtureById, resolveDocumentFixtures } from '../support/document-fixture.ts';
 import { createSessionExitGuard } from '../support/linux-session-lifecycle.mjs';
 import { describeEvidenceFile } from '../support/evidence.ts';
 import { runScenarioWithEvidence } from '../support/scenario-runner.ts';
@@ -73,6 +74,46 @@ describe('Final release file native document acceptance', () => {
     }
   });
 });
+
+if (inputs.appVersion === '0.1.4' && process.platform === 'linux' && inputs.appPath.endsWith('.AppImage')) {
+  describe('Signed AppImage direct PDF acceptance', () => {
+    it('produces searchable HWP and HWPX PDFs without modifying the originals', async () => {
+      await mkdir(join(inputs.outputDir, 'generated'), { recursive: true });
+      const fixtures = await resolveDocumentFixtures(inputs.fixtureRoot);
+      const cases = [
+        { id: 'biz-plan-hwp', pages: 6, title: '사업수행계획서', minText: [20, 300, 200, 300, 200, 100] },
+        { id: 'form-hwpx', pages: 10, title: '암조직 저산소', minText: Array(10).fill(100) },
+      ] as const;
+      for (const { id, pages, title, minText } of cases) {
+        const fixture = fixtureById(fixtures, id);
+        const pdfPath = join(inputs.outputDir, 'generated', `signed-appimage-${id}.pdf`);
+        const adapter = new LinuxNativeUiAdapter({
+          outputDir: inputs.outputDir, timeoutMs: inputs.timeoutMs, applicationNames: ['Alhangeul'],
+          saveTargets: {}, captureScreenshot: path => browser.saveScreenshot(path),
+        });
+        await runScenarioWithEvidence({
+          inputs, scenario: `signed-appimage-pdf-${id}`, fixtures: [fixture],
+          screenshotName: 'exported.png', captureScreenshot: path => browser.saveScreenshot(path),
+        }, async () => {
+          await waitForInitialDesktopReady(browser, inputs.timeoutMs);
+          await adapter.openDocument(fixture.absolutePath, () => trigger('file:open'));
+          await waitForLoadedDocument(browser, basename(fixture.absolutePath), pages, inputs.timeoutMs);
+          await adapter.saveDocument('file:print-to-pdf', pdfPath, () => trigger('file:print-to-pdf'));
+          await waitForStudioStatus(browser, /PDF 저장 완료/, inputs.timeoutMs);
+          const analysis = await analyzePdf({
+            pdfPath, outputDir: inputs.outputDir, label: `signed-appimage-${id}`,
+            expectedPageCount: pages, expectedTitle: title, minTextCounts: [...minText],
+          });
+          expect(createHash('sha256').update(await readFile(fixture.absolutePath)).digest('hex')).toBe(fixture.sha256);
+          return [
+            await describeEvidenceFile(inputs.outputDir, pdfPath, 'generated-document'),
+            await describeEvidenceFile(inputs.outputDir, analysis.summaryPath, 'log'),
+          ];
+        });
+      }
+    });
+  });
+}
 
 async function trigger(command: string) {
   await $('#menu-bar .menu-title').click();
