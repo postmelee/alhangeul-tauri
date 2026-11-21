@@ -34,6 +34,10 @@ Noto Sans KR OFL 원문이 함께 들어간다. 일회성 thumbnail worker는 1,
 
 ## Studio 웹폰트
 
+Studio에 배포하는 WOFF2 파일은 rhwp v0.9.1의 정식 폰트 목록과 바이트를 대조했다.
+파일별 SHA-256·저작권·라이선스 원문은 [font-notices.json](licenses/studio/font-notices.json)에 있다.
+설치 패키지의 `licenses/fonts/studio/`에 목록과 각 원문을 함께 제공한다.
+
 | 파일 | 라이선스 | 출처 |
 | --- | --- | --- |
 | `Pretendard-*.woff2` | SIL OFL 1.1 | Pretendard |
@@ -47,5 +51,5 @@ Noto Sans KR OFL 원문이 함께 들어간다. 일회성 thumbnail worker는 1,
 | `D2Coding-Regular.woff2` | SIL OFL 1.1 | Naver D2 Coding |
 | `LatinModernMath-Regular.woff2` | GUST Font License | Latin Modern Math |
 | `SpoqaHanSans-Regular.woff2` | SIL OFL 1.1 | Spoqa Han Sans |
-| `Cafe24*.woff2` | Cafe24 무료 폰트 라이선스 | Cafe24 |
+| `Cafe24*.woff2` | SIL OFL 1.1 (공식 ZIP의 라이선스 PDF 확인) | Cafe24 |
 | `Happiness*.woff2` | SIL OFL 1.1 (공식 배포물의 라이선스 PDF 확인) | [현대백화점 Happiness Sans](https://thehyundaifont.com/) |

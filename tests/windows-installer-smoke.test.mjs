@@ -175,8 +175,9 @@ test('version, shortcut, 제한 실행과 targeted cleanup을 검사한다', () 
   assert.match(source, /function Wait-ForStableMainWindow\(\$Process, \$Iteration\)/);
   assert.match(source, /\$stableSamples -ge 11/);
   assert.match(source, /Start-Sleep -Milliseconds 500/);
-  assert.match(source, /\$currentHandle -ne \[IntPtr\]::Zero -and \$Process\.Responding/);
-  assert.match(source, /\$process\.CloseMainWindow\(\)/);
+  assert.match(source, /EditorWindow\]::FindResponsive\(\$Process\.Id\)/);
+  assert.match(source, /EditorWindow\]::RequestClose\(\[IntPtr\]\$ready\.Handle, \$process\.Id\)/);
+  assert.doesNotMatch(sources.at(-1), /\.CloseMainWindow\(|\.MainWindowHandle/);
   assert.match(source, /WaitForExit\(30000\)/);
   assert.match(source, /CycleCount = \$cycles\.Count/);
   assert.doesNotMatch(source, /Start-Sleep -Seconds 5/);

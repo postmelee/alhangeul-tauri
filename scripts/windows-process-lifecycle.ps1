@@ -1,14 +1,16 @@
-﻿function Wait-ForStableMainWindow($Process, $Iteration) {
+﻿Add-Type -Path (Join-Path $PSScriptRoot 'windows-editor-window.cs')
+
+function Wait-ForStableMainWindow($Process, $Iteration) {
   $deadline = [DateTime]::UtcNow.AddSeconds(30)
   $stableSamples = 0
   $stableHandle = [IntPtr]::Zero
   while ([DateTime]::UtcNow -lt $deadline) {
     $Process.Refresh()
     Assert-Condition (-not $Process.HasExited) "Alhangeul cycle $Iteration exited before readiness."
-    $currentHandle = $Process.MainWindowHandle
-    if ($currentHandle -ne [IntPtr]::Zero -and $Process.Responding) {
+    $currentHandle = [Alhangeul.InstallerSmoke.EditorWindow]::FindResponsive($Process.Id)
+    if ($currentHandle -ne [IntPtr]::Zero) {
       if ($currentHandle -eq $stableHandle) { $stableSamples += 1 } else { $stableHandle = $currentHandle; $stableSamples = 1 }
-      if ($stableSamples -ge 11) { return [ordered]@{ Handle = $currentHandle.ToInt64(); Title = $Process.MainWindowTitle; StableSamples = $stableSamples } }
+      if ($stableSamples -ge 11) { return [ordered]@{ Handle = $currentHandle.ToInt64(); Class = 'Tauri Window'; StableSamples = $stableSamples } }
     } else { $stableHandle = [IntPtr]::Zero; $stableSamples = 0 }
     Start-Sleep -Milliseconds 500
   }
@@ -19,10 +21,10 @@ function Invoke-Launch($Executable) {
     $process = Start-Process -FilePath $Executable -PassThru; try {
       Assert-Condition ($process.WaitForInputIdle(30000)) "Alhangeul cycle $iteration input-idle timeout"
       $ready = Wait-ForStableMainWindow $process $iteration
-      Assert-Condition ($process.CloseMainWindow()) "Alhangeul cycle $iteration close request failed."
+      Assert-Condition ([Alhangeul.InstallerSmoke.EditorWindow]::RequestClose([IntPtr]$ready.Handle, $process.Id)) "Alhangeul cycle $iteration close request failed."
       if (-not $process.WaitForExit(30000)) {
-        $process.Refresh()
-        throw "Alhangeul cycle $iteration graceful-exit timeout (handle=$($process.MainWindowHandle.ToInt64()), title=$($process.MainWindowTitle), responding=$($process.Responding))"
+        $responsiveEditor = [Alhangeul.InstallerSmoke.EditorWindow]::FindResponsive($process.Id)
+        throw "Alhangeul cycle $iteration graceful-exit timeout (target=$($ready.Handle), responsiveEditor=$($responsiveEditor.ToInt64()))"
       }
       $cycles += [ordered]@{ Iteration = $iteration; Pid = $process.Id; Ready = $ready; GracefulExit = $true }
     } finally {
