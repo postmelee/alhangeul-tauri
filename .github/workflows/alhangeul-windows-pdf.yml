@@ -68,6 +68,7 @@ jobs:
           printf '%s\n' "$GITHUB_SHA" > evidence/harness-sha.txt
           gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$SUPPORT_ID/zip" > support.zip
           printf '%s  support.zip\n' "$SUPPORT_SHA256" | sha256sum -c -
+          mkdir -p artifacts/thumbnail-support
           unzip -q support.zip -d artifacts/thumbnail-support
           cp scripts/windows-process-lifecycle.ps1 "$RUNNER_TEMP/diagnostic-lifecycle.ps1"
           cp scripts/windows-editor-window.cs "$RUNNER_TEMP/windows-editor-window.cs"
