@@ -16,3 +16,9 @@
 
 - [Windows 비교 진단 44928820491](https://github.com/postmelee/alhangeul-tauri/actions/runs/44928820491)에서 이전 공개 source의 일반 패키지와 #146 일반 패키지에 같은 NSIS 설치·재설치 및 종료 절차를 적용한다. 30초 정상 종료 기준을 유지하고 앱 소유 창의 시간대별 상태를 기록한다. 진단에서 실패한 producer의 파일을 승인된 수용 파일로 취급하지 않는다.
 - [Linux 전용 44928832041](https://github.com/postmelee/alhangeul-tauri/actions/runs/44928832041)은 #146 exact SHA에서 별도 성공 producer를 확보하기 위한 실행이다. 두 기존 실행에서 통과한 native/core 결과와 별도로 GUI의 입력 자격을 만든다. Windows 전체 수용을 대체하지 않는다.
+
+
+### 정상 종료 계측
+
+첫 비교 run 44928820491의 trace zip 두 개를 발행 digest와 대조했다. 이전 source는 2,051ms·74ms, 후보는 268ms·63ms에 정상 종료했다. 종전 시간 초과는 이 실행에서 재현되지 않았다. 실행 전체는 지원 archive 누락으로 별도 실패했다. 계측에서 동일 PID의 편집기, single-instance, Tao event 창을 확인했으므로 재현 여부와 분리해 목표 HWND 선택을 비교한다.
+[보정한 비교 run 44929720833](https://github.com/postmelee/alhangeul-tauri/actions/runs/44929720833)은 exact 패키지와 support archive를 검산하고 기존 선택과 소유 PID·Tauri 클래스가 유일한 편집기 창 선택을 대조한다. 두 방식 모두 정상 종료를 30초 안에 요구한다.
