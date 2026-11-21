@@ -186,9 +186,35 @@ for path,value in [
  target[path[-1]]=value
  assert not guest_run.guest_observation_complete(bad,False,"msi-upgrade"),path
 
+# The v0.1.4 path must upgrade the verified replacement of v0.1.3.
+msi_v014 = copy.deepcopy(msi_upgrade)
+msi_v014["input"].update(productVersion="0.1.4", msiIdentity=dict(new, ProductVersion="0.1.4"))
+msi_v014["input"]["baseline"].update(
+    productVersion="0.1.3", sourceSha="4e99e883eec6bdf9d6ce59070c769f175052fc3f")
+msi_v014["upgradeRegistration"]["entries"][0]["version"] = "0.1.4"
+assert guest_run.guest_observation_complete(msi_v014, False, "msi-upgrade")
+for owner, key, value in [
+    (["input", "baseline"], "sourceSha", "0" * 40),
+    (["input", "msiIdentity"], "ProductVersion", "0.1.3"),
+    (["upgradeRegistration", "entries", 0], "version", "0.1.3"),
+]:
+    bad = copy.deepcopy(msi_v014)
+    target = bad
+    for part in owner:
+        target = target[part]
+    target[key] = value
+    assert not guest_run.guest_observation_complete(bad, False, "msi-upgrade"), key
+
 spec=importlib.util.spec_from_file_location("msi_input", "scripts/ci/guest-ui-msi-input.py")
 msi_input=importlib.util.module_from_spec(spec);spec.loader.exec_module(msi_input)
 msi_input.require_same_version_upgrade(old,new)
+msi_input.require_upgrade_identity(old, msi_v014["input"]["msiIdentity"], "0.1.3", "0.1.4")
+try:
+    msi_input.require_upgrade_identity(old, new, "0.1.3", "0.1.4")
+except RuntimeError:
+    pass
+else:
+    raise AssertionError("old MSI version accepted as v0.1.4")
 for key in ("ProductCode","PackageCode"):
  try: msi_input.require_same_version_upgrade(old,dict(new,**{key:old[key]}))
  except RuntimeError: pass

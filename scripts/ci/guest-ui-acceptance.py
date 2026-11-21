@@ -53,6 +53,12 @@ def baseline_observed(probes):
 
 def upgrade_ok(guest):
     sentinels = guest.get("sentinels", [])
+    data = guest["input"]
+    if data.get("productVersion") == "0.1.4" and (
+            data.get("signaturesVerified") is not True
+            or data.get("baseline", {}).get("sourceSha") != "4e99e883eec6bdf9d6ce59070c769f175052fc3f"
+            or data.get("baseline", {}).get("productVersion") != "0.1.3"):
+        return False
     return (guest.get("baselineExit") == 0 and guest.get("baselineBinariesMatched") is True
             and guest.get("upgradeBinariesMatched") is True and guest.get("reinstallBinariesMatched") is True
             and baseline_observed(guest.get("baselineProbes")) and probes_ok(guest.get("upgradeProbes"))
@@ -97,8 +103,10 @@ def msi_upgrade_ok(guest):
     data = guest["input"]
     old = data.get("baseline", {}).get("msiIdentity", {})
     new = data.get("msiIdentity", {})
+    candidate_version = data.get("productVersion", "0.1.3")
     if (not admin_ok(guest, ["baseline"]) or data.get("signaturesVerified") is not True
-            or old.get("ProductVersion") != "0.1.3" or new.get("ProductVersion") != "0.1.3"
+            or candidate_version not in ("0.1.3", "0.1.4")
+            or old.get("ProductVersion") != "0.1.3" or new.get("ProductVersion") != candidate_version
             or not old.get("UpgradeCode") or old.get("UpgradeCode") != new.get("UpgradeCode")
             or not old.get("ProductCode") or not new.get("ProductCode")
             or old["ProductCode"] == new["ProductCode"]
@@ -110,6 +118,6 @@ def msi_upgrade_ok(guest):
         return False
     for key, identity in (("baselineRegistration", old), ("upgradeRegistration", new)):
         entries = guest.get(key, {}).get("entries", [])
-        if len(entries) != 1 or entries[0].get("productCode") != identity["ProductCode"] or entries[0].get("version") != "0.1.3":
+        if len(entries) != 1 or entries[0].get("productCode") != identity["ProductCode"] or entries[0].get("version") != identity["ProductVersion"]:
             return False
     return guest["upgradeRegistration"].get("previousProductRemoved") is True

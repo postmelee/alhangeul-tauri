@@ -15,6 +15,16 @@ WEBVIEW = dict(name="webview2", file="webview2.exe", bytes=215195856,
     url="https://msedge.sf.dl.delivery.mp.microsoft.com/filestreamingservice/files/14f2cd10-e392-45ff-a699-5e08c803d4c7/MicrosoftEdgeWebView2RuntimeInstallerX64.exe")
 
 
+V013_REPLACEMENT_SOURCE = "4e99e883eec6bdf9d6ce59070c769f175052fc3f"
+V013_REPLACEMENT_ROOT = "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.3/"
+V013_REPLACEMENT_INSTALLERS = {
+    "nsis": dict(url=V013_REPLACEMENT_ROOT + "Alhangeul_0.1.3_x64-setup.exe",
+                 sha256="d5b21111a9df1d68587e1bec341565a2e42cc02e1658f094eeba84e69bd7372a", bytes=78770000),
+    "msi": dict(url=V013_REPLACEMENT_ROOT + "Alhangeul_0.1.3_x64_en-US.msi",
+                sha256="e3d1a5eff7c239f04292ad152ca5e0c9972cf086086809b7d8d6e7b5f38a2373", bytes=91357184),
+}
+
+
 def download(value, destination):
     subprocess.run(["curl", "--fail", "--location", "--silent", "--show-error",
                     "--connect-timeout", "20", "--max-time", "300", "--output",
@@ -32,16 +42,19 @@ def download(value, destination):
 def prepare(payload, value):
     value["prerequisites"] = []
     if value["scenario"] in ("nsis-upgrade", "msi-upgrade"):
-        baseline = json.loads(subprocess.check_output(["node", "--input-type=module", "-e",
-            "import {PUBLIC_INPUT} from './scripts/windows-thumbnail-user-input.mjs'; console.log(JSON.stringify(PUBLIC_INPUT))"],
-            text=True))
-        if value["scenario"] == "msi-upgrade":
-            baseline["installerUrl"] = "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.3/Alhangeul_0.1.3_x64_en-US.msi"
-            baseline["installerSha256"] = "a953c0d09dec29246ae77340e019e7acae759aac24b21fc7a524326ab81b6085"
-        download(dict(url=baseline["installerUrl"], sha256=baseline["installerSha256"]),
-                 payload / ("baseline.msi" if value["scenario"] == "msi-upgrade" else "baseline.exe"))
-        if value["scenario"] == "msi-upgrade":
-            prepare_msi_baseline(payload, value, baseline)
+        if value.get("productVersion") == "0.1.4":
+            baseline = prepare_v014_baseline(payload, value)
+        else:
+            baseline = json.loads(subprocess.check_output(["node", "--input-type=module", "-e",
+                "import {PUBLIC_INPUT} from './scripts/windows-thumbnail-user-input.mjs'; console.log(JSON.stringify(PUBLIC_INPUT))"],
+                text=True))
+            if value["scenario"] == "msi-upgrade":
+                baseline["installerUrl"] = "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.3/Alhangeul_0.1.3_x64_en-US.msi"
+                baseline["installerSha256"] = "a953c0d09dec29246ae77340e019e7acae759aac24b21fc7a524326ab81b6085"
+            download(dict(url=baseline["installerUrl"], sha256=baseline["installerSha256"]),
+                     payload / ("baseline.msi" if value["scenario"] == "msi-upgrade" else "baseline.exe"))
+            if value["scenario"] == "msi-upgrade":
+                prepare_msi_baseline(payload, value, baseline)
         value["baseline"] = baseline
         value["prerequisites"].append(VC)
     if value["operatingSystem"]["id"] == "windows10":
@@ -50,10 +63,33 @@ def prepare(payload, value):
         download(item, payload / item["file"])
 
 
-def prepare_msi_baseline(payload, value, baseline):
+def load_msi_tools():
     spec = importlib.util.spec_from_file_location("msi_input", Path(__file__).with_name("guest-ui-msi-input.py"))
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
+    return module
+
+
+def prepare_v014_baseline(payload, value):
+    if value.get("signaturesVerified") is not True:
+        raise RuntimeError("verified-v014-package-required")
+    kind = "msi" if value["scenario"] == "msi-upgrade" else "nsis"
+    chosen = V013_REPLACEMENT_INSTALLERS[kind]
+    source_msi = payload / "baseline.msi" if kind == "msi" else payload.parent.parent / "baseline-reference.msi"
+    download(V013_REPLACEMENT_INSTALLERS["msi"], source_msi)
+    if kind == "nsis":
+        download(chosen, payload / "baseline.exe")
+    module = load_msi_tools()
+    identity, binaries = module.inspect(source_msi, payload.parent.parent / "baseline-msi-reference")
+    module.require_upgrade_identity(identity, value["msiIdentity"], "0.1.3", "0.1.4")
+    for binary in binaries:
+        del binary["path"]
+    return dict(sourceSha=V013_REPLACEMENT_SOURCE, productVersion="0.1.3", installerUrl=chosen["url"],
+                installerSha256=chosen["sha256"], msiIdentity=identity, binaries=binaries)
+
+
+def prepare_msi_baseline(payload, value, baseline):
+    module = load_msi_tools()
     identity, binaries = module.inspect(payload / "baseline.msi", payload.parent.parent / "baseline-msi-reference")
     module.require_same_version_upgrade(identity, value["msiIdentity"])
     for binary in binaries:

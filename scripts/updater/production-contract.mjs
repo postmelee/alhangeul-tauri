@@ -16,7 +16,7 @@ const SOURCES_BY_MANIFEST = {
 };
 
 export function productionInputsPath(root, value = process.env.ALHANGEUL_PRODUCTION_INPUTS ?? 'tests/gui/production-upgrade-inputs.json') {
-  assert.ok(['tests/gui/production-upgrade-inputs.json', 'tests/gui/production-upgrade-v0.1.2-inputs.json', 'tests/gui/production-upgrade-v0.1.3-inputs.json'].includes(value), 'approved production input path');
+  assert.ok(['tests/gui/production-upgrade-inputs.json', 'tests/gui/production-upgrade-v0.1.2-inputs.json', 'tests/gui/production-upgrade-v0.1.3-inputs.json', 'tests/gui/production-upgrade-v0.1.4-inputs.json'].includes(value), 'approved production input path');
   return join(root, value);
 }
 
