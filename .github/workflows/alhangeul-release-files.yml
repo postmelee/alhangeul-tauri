@@ -150,7 +150,7 @@ jobs:
           JS
           if [[ "$ALHANGEUL_GUI_APP_VERSION" == 0.1.4 ]]; then
             if [[ "$RUNNER_OS" == Windows ]]; then
-              resource_root="$(dirname "$MSI_APP_PATH")"
+              resource_root="$(node -p 'require("node:path").dirname(process.env.MSI_APP_PATH)')"
             else
               mount_log=$(mktemp)
               "$INSTALLER_PATH" --appimage-mount > "$mount_log" &
