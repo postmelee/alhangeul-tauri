@@ -16,9 +16,9 @@ test "$(dpkg-query -W -f='${Architecture} ${Version}' "$package_name")" = "arm64
 dpkg-query -W -f='${Package} ${Architecture} ${Version}\n' "$package_name" > "$ALHANGEUL_GUI_OUTPUT_DIR/installed-package.txt"
 dpkg-query -W > "$ALHANGEUL_GUI_OUTPUT_DIR/packages.txt"
 if [[ "$ALHANGEUL_GUI_APP_VERSION" == 0.1.4 ]]; then
-  mapfile -t markers < <(dpkg-query -L "$package_name" | grep '/licenses/Alhangeul-MIT\.txt$')
+  mapfile -t markers < <(dpkg-query -L "$package_name" | grep '/licenses/alhangeul/LICENSE$')
   [[ "${#markers[@]}" == 1 ]]
-  node scripts/ci/verify-release-notices.mjs "$(dirname "$(dirname "${markers[0]}")")" "$ALHANGEUL_GUI_OUTPUT_DIR/license-notices.json"
+  node scripts/ci/verify-release-notices.mjs "${markers[0]%/licenses/alhangeul/LICENSE}" "$ALHANGEUL_GUI_OUTPUT_DIR/license-notices.json"
 fi
 phase=gui-dependencies
 sudo apt-get install -y at-spi2-core dbus-x11 fonts-noto-cjk fonts-unfonts-core \

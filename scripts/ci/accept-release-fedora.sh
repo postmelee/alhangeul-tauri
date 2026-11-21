@@ -16,9 +16,9 @@ test "$(rpm -q --qf '%{ARCH} %{VERSION}-%{RELEASE}' "$package_name")" = "x86_64 
 rpm -q --qf '%{NAME} %{ARCH} %{VERSION}-%{RELEASE}\n' "$package_name" > "$ALHANGEUL_GUI_OUTPUT_DIR/installed-package.txt"
 rpm -qa | sort > "$ALHANGEUL_GUI_OUTPUT_DIR/packages.txt"
 if [[ "$ALHANGEUL_GUI_APP_VERSION" == 0.1.4 ]]; then
-  mapfile -t markers < <(rpm -ql "$package_name" | grep '/licenses/Alhangeul-MIT\.txt$')
+  mapfile -t markers < <(rpm -ql "$package_name" | grep '/licenses/alhangeul/LICENSE$')
   [[ "${#markers[@]}" == 1 ]]
-  node scripts/ci/verify-release-notices.mjs "$(dirname "$(dirname "${markers[0]}")")" "$ALHANGEUL_GUI_OUTPUT_DIR/license-notices.json"
+  node scripts/ci/verify-release-notices.mjs "${markers[0]%/licenses/alhangeul/LICENSE}" "$ALHANGEUL_GUI_OUTPUT_DIR/license-notices.json"
 fi
 phase=gui-dependencies
 dnf install -y xorg-x11-server-Xvfb xorg-x11-xauth openbox dbus-x11 at-spi2-core \

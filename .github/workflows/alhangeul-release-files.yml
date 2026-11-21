@@ -150,7 +150,7 @@ jobs:
           JS
           if [[ "$ALHANGEUL_GUI_APP_VERSION" == 0.1.4 ]]; then
             if [[ "$RUNNER_OS" == Windows ]]; then
-              marker="$(dirname "$MSI_APP_PATH")/licenses/Alhangeul-MIT.txt"
+              resource_root="$(dirname "$MSI_APP_PATH")"
             else
               mount_log=$(mktemp)
               "$INSTALLER_PATH" --appimage-mount > "$mount_log" &
@@ -168,11 +168,11 @@ jobs:
               done
               IFS= read -r appimage_root < "$mount_log"
               [[ "$appimage_root" == /tmp/.mount_* && -d "$appimage_root" ]]
-              mapfile -t markers < <(find "$appimage_root" -type f -path '*/licenses/Alhangeul-MIT.txt')
+              mapfile -t markers < <(find "$appimage_root" -type f -path '*/licenses/alhangeul/LICENSE')
               [[ "${#markers[@]}" == 1 ]]
-              marker="${markers[0]}"
+              resource_root="${markers[0]%/licenses/alhangeul/LICENSE}"
             fi
-            node scripts/ci/verify-release-notices.mjs "$(dirname "$(dirname "$marker")")" candidate-evidence/license-notices.json
+            node scripts/ci/verify-release-notices.mjs "$resource_root" candidate-evidence/license-notices.json
           fi
       - name: Native release verification on Windows
         id: windows-gui

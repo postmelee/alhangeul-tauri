@@ -284,9 +284,9 @@ jobs:
           sudo apt-get install -y "$DEB_PATH"
           command -v Alhangeul
           if [[ "$(node -p "require('./package.json').version")" == 0.1.4 ]]; then
-            mapfile -t markers < <(dpkg-query -L alhangeul | grep '/licenses/Alhangeul-MIT\.txt$')
+            mapfile -t markers < <(dpkg-query -L alhangeul | grep '/licenses/alhangeul/LICENSE$')
             [[ "${#markers[@]}" == 1 ]]
-            node scripts/ci/verify-release-notices.mjs "$(dirname "$(dirname "${markers[0]}")")" "$EVIDENCE_ROOT/license-notices.json"
+            node scripts/ci/verify-release-notices.mjs "${markers[0]%/licenses/alhangeul/LICENSE}" "$EVIDENCE_ROOT/license-notices.json"
           fi
 
       - name: Verify installed Linux thumbnail package
