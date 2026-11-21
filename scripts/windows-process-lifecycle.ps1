@@ -1,4 +1,62 @@
-﻿function Wait-ForStableMainWindow($Process, $Iteration) {
+﻿# This branch captures observations only. The 30-second close criterion still applies.
+Add-Type -TypeDefinition @'
+using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using System.Text;
+
+public static class CloseWindowTrace {
+    private delegate bool EnumProc(IntPtr handle, IntPtr param);
+    [DllImport("user32.dll")] private static extern bool EnumWindows(EnumProc callback, IntPtr param);
+    [DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(IntPtr handle, out uint pid);
+    [DllImport("user32.dll")] private static extern bool IsWindowVisible(IntPtr handle);
+    [DllImport("user32.dll")] private static extern bool IsHungAppWindow(IntPtr handle);
+    [DllImport("user32.dll")] private static extern IntPtr GetWindow(IntPtr handle, uint flag);
+    [DllImport("user32.dll", CharSet=CharSet.Unicode)] private static extern int GetWindowText(IntPtr handle, StringBuilder text, int max);
+    [DllImport("user32.dll", CharSet=CharSet.Unicode)] private static extern int GetClassName(IntPtr handle, StringBuilder text, int max);
+    public sealed class Sample {
+        public long Handle, Owner;
+        public bool Visible, Hung;
+        public string Class, Title;
+    }
+    public static Sample[] Capture(uint pid) {
+        var result = new List<Sample>();
+        EnumWindows((handle, param) => {
+            uint ownerPid;
+            GetWindowThreadProcessId(handle, out ownerPid);
+            if (ownerPid != pid) return true;
+            var title = new StringBuilder(160);
+            var type = new StringBuilder(120);
+            GetWindowText(handle, title, title.Capacity);
+            GetClassName(handle, type, type.Capacity);
+            result.Add(new Sample {
+                Handle = handle.ToInt64(), Owner = GetWindow(handle, 4).ToInt64(),
+                Visible = IsWindowVisible(handle), Hung = IsHungAppWindow(handle),
+                Class = type.ToString(), Title = title.ToString()
+            });
+            return true;
+        }, IntPtr.Zero);
+        return result.ToArray();
+    }
+}
+'@
+
+function Write-CloseSample($Process, $Iteration, $Phase, $Elapsed) {
+  $Process.Refresh()
+  $exited = $Process.HasExited
+  $row = [ordered]@{
+    cycle = $Iteration
+    phase = $Phase
+    elapsedMs = $Elapsed
+    pid = $Process.Id
+    exited = $exited
+    windows = if ($exited) { @() } else { @([CloseWindowTrace]::Capture($Process.Id)) }
+    handle = if ($exited) { $null } else { $Process.MainWindowHandle.ToInt64() }
+  }
+  $row | ConvertTo-Json -Depth 5 -Compress | Add-Content -LiteralPath (Join-Path $OutputDirectory 'close-window-trace.jsonl') -Encoding UTF8
+}
+
+function Wait-ForStableMainWindow($Process, $Iteration) {
   $deadline = [DateTime]::UtcNow.AddSeconds(30)
   $stableSamples = 0
   $stableHandle = [IntPtr]::Zero
@@ -19,8 +77,16 @@ function Invoke-Launch($Executable) {
     $process = Start-Process -FilePath $Executable -PassThru; try {
       Assert-Condition ($process.WaitForInputIdle(30000)) "Alhangeul cycle $iteration input-idle timeout"
       $ready = Wait-ForStableMainWindow $process $iteration
+      Write-CloseSample $process $iteration 'before-close' 0
+      $timer = [Diagnostics.Stopwatch]::StartNew()
       Assert-Condition ($process.CloseMainWindow()) "Alhangeul cycle $iteration close request failed."
-      if (-not $process.WaitForExit(30000)) {
+      while (!$process.HasExited -and $timer.ElapsedMilliseconds -lt 30000) {
+        $remaining = 30000 - [int]$timer.ElapsedMilliseconds
+        if ($remaining -le 0) { break }
+        [void]$process.WaitForExit([Math]::Min(1000, $remaining))
+        Write-CloseSample $process $iteration 'after-close' $timer.ElapsedMilliseconds
+      }
+      if (-not $process.HasExited) {
         $process.Refresh()
         throw "Alhangeul cycle $iteration graceful-exit timeout (handle=$($process.MainWindowHandle.ToInt64()), title=$($process.MainWindowTitle), responding=$($process.Responding))"
       }
