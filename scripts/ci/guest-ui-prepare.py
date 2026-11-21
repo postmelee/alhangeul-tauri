@@ -97,6 +97,7 @@ def prepare_product(root, payload):
     spec.loader.exec_module(upgrade)
     upgrade.prepare(payload, value)
     prepare_fixtures(payload, value)
+    value["forceMsiRebootProbe"] = scenario() == "msi" and os.environ.get("GUEST_VERIFY_MSI_REBOOT") == "true"
     (payload / "input.json").write_text(json.dumps(value, indent=2))
 
 
@@ -132,7 +133,7 @@ def prepare_media(root):
                  "guest-ui-upgrade.ps1", "guest-ui-prerequisites.ps1", "guest-ui-upgrade-diagnostic.ps1",
                  "guest-ui-worker-diagnostic.ps1", "guest-ui-provider.cs",
                  "guest-ui-provider-probe.ps1", "guest-ui-provider-diagnostic.ps1", "guest-ui-process-trace.ps1",
-                 "guest-ui-cache-comparison.cs", "guest-ui-cold-start.ps1"):
+                 "guest-ui-cache-comparison.cs", "guest-ui-cold-start.ps1", "guest-ui-msi-reboot.ps1"):
         shutil.copyfile("scripts/ci/" + name, payload / ("scripts/ci/" + name))
     shutil.copyfile("scripts/ci/guest-ui-bootstrap.ps1", media / "bootstrap.ps1")
     prepare_product(root, payload)
@@ -143,6 +144,8 @@ def prepare_media(root):
     for key, value in dict(BOOTSTRAP=command, LOCALE=operating_system()["locale"], USER_SECRET="Aa1!" + secrets.token_hex(20),
                            ADMIN_SECRET="Aa1!" + secrets.token_hex(20)).items():
         xml = xml.replace("@@" + key + "@@", escape(value))
+    if scenario() == "msi" and os.environ.get("GUEST_VERIFY_MSI_REBOOT") == "true":
+        xml = xml.replace("<LogonCount>1</LogonCount>", "<LogonCount>2</LogonCount>")
     answer = media / "Autounattend.xml"
     answer.write_text(xml)
     answer.chmod(0o600)

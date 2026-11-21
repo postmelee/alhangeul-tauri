@@ -25,6 +25,11 @@ on:
         default: nsis
         options: [nsis, msi, nsis-upgrade, msi-upgrade]
 
+      guest_force_msi_reboot:
+        description: Observe an MSI forced reinstall through a reboot of the disposable guest.
+        type: boolean
+        default: false
+
       guest_candidate_path:
         description: Exact signed release candidate JSON; empty retains historical ordinary observation.
         type: string
@@ -67,7 +72,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: alhangeul-ci-${{ github.ref }}-${{ inputs.profile }}-${{ inputs.scope }}-${{ inputs.guest_scenario }}-${{ inputs.guest_os }}
+  group: alhangeul-ci-${{ github.ref }}-${{ inputs.profile }}-${{ inputs.scope }}-${{ inputs.guest_scenario }}-${{ inputs.guest_os }}-${{ inputs.guest_force_msi_reboot }}
   cancel-in-progress: ${{ inputs.profile == 'fast' && inputs.scope != 'pdf-cleanup-windows' }}
 
 env:
@@ -101,6 +106,7 @@ jobs:
       candidate_path: ${{ inputs.guest_candidate_path }}
       scenario: ${{ inputs.guest_scenario }}
       operating_system: ${{ inputs.guest_os }}
+      force_msi_reboot: ${{ inputs.guest_force_msi_reboot }}
 
   thumbnail-user-context:
     needs: fast

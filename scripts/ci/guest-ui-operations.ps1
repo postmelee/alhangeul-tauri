@@ -1,4 +1,4 @@
-function Request-GuestAdmin([ValidateSet('prerequisites', 'baseline', 'install', 'reinstall', 'uninstall', 'trace-stop')][string]$Operation) {
+function Request-GuestAdmin([ValidateSet('prerequisites', 'baseline', 'install', 'reinstall', 'restart', 'uninstall', 'trace-stop')][string]$Operation) {
   $request = Join-Path $root ('requests\' + $Operation + '.request')
   $response = Join-Path $root ('admin-results\' + $Operation + '.json')
   if ((Test-Path $request) -or (Test-Path $response)) { throw 'fresh-admin-operation-required' }
