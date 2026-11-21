@@ -26,6 +26,11 @@ dnf install -y ./candidate.rpm 2>&1 | tee evidence/install.log
 package_name=$(rpm -qp --qf '%{NAME}' candidate.rpm)
 test "$(rpm -q --qf '%{ARCH} %{VERSION}-%{RELEASE}' "$package_name")" = "x86_64 $ALHANGEUL_GUI_APP_VERSION-1"
 rpm -q --qf '%{NAME} %{ARCH} %{VERSION}-%{RELEASE}\n' "$package_name" > evidence/installed-package.txt
+if [[ "$ALHANGEUL_GUI_APP_VERSION" == 0.1.4 ]]; then
+  mapfile -t markers < <(rpm -ql "$package_name" | grep '/licenses/alhangeul/LICENSE$')
+  [[ "${#markers[@]}" == 1 ]]
+  ./node scripts/ci/verify-release-notices.mjs "${markers[0]%/licenses/alhangeul/LICENSE}" evidence/license-notices.json
+fi
 phase=desktop-dependencies
 dnf install -y lightdm lightdm-gtk xfce4-session xfwm4 xfdesktop xfce4-panel Thunar \
   xorg-x11-server-Xorg xorg-x11-drv-libinput mesa-dri-drivers dbus-x11 \

@@ -8,6 +8,9 @@ on:
       candidate_path:
         type: string
         default: ""
+      force_msi_reboot:
+        type: boolean
+        default: false
       scenario:
         type: string
         default: nsis
@@ -22,9 +25,11 @@ jobs:
       RELEASE_CANDIDATE_PATH: ${{ inputs.candidate_path }}
       GUEST_SCENARIO: ${{ inputs.scenario }}
       GUEST_OS: ${{ inputs.operating_system }}
+      GUEST_VERIFY_MSI_REBOOT: ${{ inputs.force_msi_reboot }}
     steps:
       - name: Select disposable runner storage
         run: |
+          [[ "$GUEST_VERIFY_MSI_REBOOT" != true || "$GUEST_SCENARIO" == msi ]]
           echo "HOSTED_UI_ROOT=$RUNNER_TEMP/alh-windows-guest" >> "$GITHUB_ENV"
           mkdir -p "$RUNNER_TEMP/alh-windows-guest/evidence"
           echo "{\"phase\":\"host-preparation\",\"releaseAcceptance\":\"unverified\"}" > "$RUNNER_TEMP/alh-windows-guest/evidence/preparation.json"
@@ -37,6 +42,14 @@ jobs:
         with:
           node-version: "24"
           package-manager-cache: false
+      - name: Check Windows guest PowerShell syntax
+        shell: pwsh
+        run: |
+          Get-ChildItem scripts/ci/guest-ui-*.ps1 | ForEach-Object {
+            $parseErrors = $null
+            [void][Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$null, [ref]$parseErrors)
+            if ($parseErrors.Count) { throw ($parseErrors | ForEach-Object Message | Out-String) }
+          }
       - name: Install signed Ubuntu virtualization packages
         run: |
           sudo --preserve-env=GITHUB_ACTIONS,RUNNER_ENVIRONMENT python3 scripts/ci/ubuntu-mirror.py

@@ -1,5 +1,7 @@
 """Fail closed on missing independent guest observations."""
+from datetime import datetime
 import json
+import os
 from pathlib import Path
 def probes_ok(probes):
     expected = {"small-hwp", "large-hwp", "form-hwpx", "control-jpg"}
@@ -8,13 +10,14 @@ def probes_ok(probes):
             and all(p.get("status") == "ok" and p.get("bitmapPresent") is True for p in probes))
 
 
-def admin_ok(guest, names):
+def admin_ok(guest, names, reinstall_codes=(0,)):
     if guest.get("adminBoundaryReadOnly") is not True:
         return False
     for name in names:
         result = guest.get("adminOperations", {}).get(name, {})
+        expected_codes = reinstall_codes if name == "reinstall" else (0,)
         if (result.get("status") != "observed" or result.get("operation") != name
-                or result.get("system") is not True or result.get("exitCode") != 0
+                or result.get("system") is not True or result.get("exitCode") not in expected_codes
                 or result.get("installerSha256") != guest["input"].get("installerSha256")):
             return False
     return True
@@ -53,6 +56,12 @@ def baseline_observed(probes):
 
 def upgrade_ok(guest):
     sentinels = guest.get("sentinels", [])
+    data = guest["input"]
+    if data.get("productVersion") == "0.1.4" and (
+            data.get("signaturesVerified") is not True
+            or data.get("baseline", {}).get("sourceSha") != "4e99e883eec6bdf9d6ce59070c769f175052fc3f"
+            or data.get("baseline", {}).get("productVersion") != "0.1.3"):
+        return False
     return (guest.get("baselineExit") == 0 and guest.get("baselineBinariesMatched") is True
             and guest.get("upgradeBinariesMatched") is True and guest.get("reinstallBinariesMatched") is True
             and baseline_observed(guest.get("baselineProbes")) and probes_ok(guest.get("upgradeProbes"))
@@ -75,9 +84,14 @@ def complete(guest, network_enabled, scenario, operating_system="windows11"):
         return False
     if scenario not in ("nsis", "msi", "nsis-upgrade", "msi-upgrade") or data.get("scenario") != scenario:
         return False
-    if any(guest.get(key) != 0 for key in ("installExit", "reinstallExit", "uninstallExit")):
+    force_reboot_probe = scenario == "msi" and os.environ.get("GUEST_VERIFY_MSI_REBOOT") == "true"
+    reinstall_codes = (0, 3010) if force_reboot_probe else (0,)
+    if (guest.get("installExit") != 0 or guest.get("reinstallExit") not in reinstall_codes
+            or guest.get("uninstallExit") != 0):
         return False
-    if scenario in ("msi", "msi-upgrade") and not admin_ok(guest, ["install", "reinstall", "uninstall"]):
+    if scenario in ("msi", "msi-upgrade") and not admin_ok(guest, ["install", "reinstall", "uninstall"], reinstall_codes):
+        return False
+    if force_reboot_probe and not forced_reboot_observed(guest):
         return False
     if not prerequisites_ok(guest) or (scenario in ("nsis-upgrade", "msi-upgrade") and not upgrade_ok(guest)):
         return False
@@ -93,12 +107,35 @@ def complete(guest, network_enabled, scenario, operating_system="windows11"):
             and guest.get("visual") == "captured-awaiting-review" and probes_ok(guest.get("probes")))
 
 
+def forced_reboot_observed(guest):
+    if (guest["input"].get("forceMsiRebootProbe") is not True or not admin_ok(guest, ["restart"])
+            or guest.get("restartVerified") is not True or guest.get("newEditorStarted") is not True
+            or guest.get("reinstallBinariesMatched") is not True or not probes_ok(guest.get("preRestartProbes"))):
+        return False
+    admin = guest["adminOperations"]
+    if (admin["reinstall"].get("reinstallMode") != "amus"
+            or admin["reinstall"].get("exitCode") != guest.get("reinstallExit")
+            or admin["reinstall"].get("executedInstallerSha256") != guest["input"].get("installerSha256")
+            or not guest.get("postRestartEditorSha256")
+            or guest.get("postRestartEditorSha256") != guest.get("preRestartEditorSha256")
+            or guest.get("postRestartMarkers", {}).get("pendingFileRename") is not False):
+        return False
+    try:
+        old_boot = datetime.fromisoformat(admin["restart"]["beforeBoot"])
+        new_boot = datetime.fromisoformat(guest["postRestartMarkers"]["boot"])
+        return new_boot > old_boot
+    except (KeyError, TypeError, ValueError):
+        return False
+
+
 def msi_upgrade_ok(guest):
     data = guest["input"]
     old = data.get("baseline", {}).get("msiIdentity", {})
     new = data.get("msiIdentity", {})
+    candidate_version = data.get("productVersion", "0.1.3")
     if (not admin_ok(guest, ["baseline"]) or data.get("signaturesVerified") is not True
-            or old.get("ProductVersion") != "0.1.3" or new.get("ProductVersion") != "0.1.3"
+            or candidate_version not in ("0.1.3", "0.1.4")
+            or old.get("ProductVersion") != "0.1.3" or new.get("ProductVersion") != candidate_version
             or not old.get("UpgradeCode") or old.get("UpgradeCode") != new.get("UpgradeCode")
             or not old.get("ProductCode") or not new.get("ProductCode")
             or old["ProductCode"] == new["ProductCode"]
@@ -110,6 +147,6 @@ def msi_upgrade_ok(guest):
         return False
     for key, identity in (("baselineRegistration", old), ("upgradeRegistration", new)):
         entries = guest.get(key, {}).get("entries", [])
-        if len(entries) != 1 or entries[0].get("productCode") != identity["ProductCode"] or entries[0].get("version") != "0.1.3":
+        if len(entries) != 1 or entries[0].get("productCode") != identity["ProductCode"] or entries[0].get("version") != identity["ProductVersion"]:
             return False
     return guest["upgradeRegistration"].get("previousProductRemoved") is True

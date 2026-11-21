@@ -93,7 +93,9 @@ printf '%s  candidate.rpm\n' "$candidate_sha" > "$vm_root/payload/candidate.sha2
 (cd "$vm_root/payload" && sha256sum --check candidate.sha256)
 tar -cf - package.json node_modules tests/gui scripts/ci/release-fedora-vm-guest.sh \
   scripts/ci/release-fedora-vm-session.sh scripts/ci/release-file-process-probe.sh \
-  scripts/ci/release-candidate-input.mjs apps/studio-host/vendor/rhwp-core \
+  scripts/ci/release-candidate-input.mjs scripts/ci/verify-release-notices.mjs \
+  LICENSE apps/desktop/src-tauri/tauri.conf.json assets/fonts/FONTS.md assets/fonts/licenses \
+  third_party/rhwp/LICENSE third_party/rhwp/THIRD_PARTY_LICENSES.md apps/studio-host/vendor/rhwp-core \
   third_party/rhwp/samples/biz_plan.hwp third_party/rhwp/samples/hwpx/form-002.hwpx \
   | tar -xf - -C "$vm_root/payload"
 tar -C "$vm_root/payload" -czf "$vm_root/payload.tar.gz" .

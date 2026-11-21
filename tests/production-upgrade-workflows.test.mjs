@@ -50,7 +50,7 @@ test('Windows driver close is provisional until install and document evidence pa
   const steps = windows.jobs.windows.steps;
   assert.equal(steps.find(s => s.id === 'apply')['continue-on-error'], true);
   const validate = steps.find(s => s.id === 'validate');
-  assert.ok(validate.run.includes('-ExpectedVersion \'0.1.3\''));
+  assert.ok(validate.run.includes('-ExpectedVersion $env:EXPECTED_PRODUCT_VERSION'));
   assert.ok(steps.some(s => s.run?.includes('production-upgrade.mjs finalize')));
   assert.ok(steps.some(s => s.id === 'cleanup' && s.if === '${{ always() }}'));
   assert.ok(steps.some(s => s.id === 'restore' && s.if === '${{ always() }}'));
@@ -84,12 +84,21 @@ test('Windows incomplete apply evidence stops before ten-minute installer wait',
 });
 
 
-test('Windows initial install and final validation match the selected public release tuple', async () => {
+test('Windows initial install and final validation use versions from the verified public tuple', () => {
   const job = windows.jobs.windows;
+  const version = desktop.on.workflow_dispatch.inputs.production_upgrade_version;
+  assert.equal(version.default, '0.1.3');
+  assert.deepEqual(version.options, ['0.1.3', '0.1.4']);
+  for (const os of ['windows', 'linux']) {
+    assert.equal(desktop.jobs[`production-upgrade-${os}`].with.version, '${{ inputs.production_upgrade_version }}');
+  }
+  assert.equal(job.env.ALHANGEUL_PRODUCTION_INPUTS, 'tests/gui/production-upgrade-v${{ inputs.version }}-inputs.json');
   assert.equal(job.env.ALHANGEUL_PRODUCTION_INPUTS, linux.jobs.linux.env.ALHANGEUL_PRODUCTION_INPUTS);
-  const spec = JSON.parse(await readFile(new URL(`../${job.env.ALHANGEUL_PRODUCTION_INPUTS}`, import.meta.url)));
-  const install = job.steps.find(step => step.run?.includes('windows-native-acceptance.ps1 -Phase Install'));
+  const install = job.steps.find(step => step.id === 'install');
   const validate = job.steps.find(step => step.id === 'validate');
-  assert.ok(install.run.includes(`-ExpectedVersion '${spec.releases.n.version}'`));
-  assert.ok(validate.run.includes(`-ExpectedVersion '${spec.releases.next.version}'`));
+  assert.equal(install.env.EXPECTED_PRODUCT_VERSION, '${{ steps.public.outputs.n_version }}');
+  assert.equal(validate.env.EXPECTED_PRODUCT_VERSION, '${{ steps.public.outputs.next_version }}');
+  for (const step of [install, validate]) {
+    assert.ok(step.run.includes('-ExpectedVersion $env:EXPECTED_PRODUCT_VERSION'));
+  }
 });
