@@ -136,6 +136,32 @@ jobs:
           }
           appendFileSync(process.env.GITHUB_ENV,`ALHANGEUL_GUI_APP_PATH=${app}\n`);
           JS
+          if [[ "$ALHANGEUL_GUI_APP_VERSION" == 0.1.4 ]]; then
+            if [[ "$RUNNER_OS" == Windows ]]; then
+              marker="$(dirname "$MSI_APP_PATH")/licenses/Alhangeul-MIT.txt"
+            else
+              mount_log=$(mktemp)
+              "$INSTALLER_PATH" --appimage-mount > "$mount_log" &
+              mount_pid=$!
+              cleanup_mount() {
+                kill "$mount_pid" 2>/dev/null || true
+                wait "$mount_pid" 2>/dev/null || true
+                rm -f "$mount_log"
+              }
+              trap cleanup_mount EXIT
+              for attempt in {1..30}; do
+                [[ -s "$mount_log" ]] && break
+                kill -0 "$mount_pid"
+                sleep 1
+              done
+              IFS= read -r appimage_root < "$mount_log"
+              [[ "$appimage_root" == /tmp/.mount_* && -d "$appimage_root" ]]
+              mapfile -t markers < <(find "$appimage_root" -type f -path '*/licenses/Alhangeul-MIT.txt')
+              [[ "${#markers[@]}" == 1 ]]
+              marker="${markers[0]}"
+            fi
+            node scripts/ci/verify-release-notices.mjs "$(dirname "$(dirname "$marker")")" candidate-evidence/license-notices.json
+          fi
       - name: Native release verification on Windows
         id: windows-gui
         if: runner.os == 'Windows'
