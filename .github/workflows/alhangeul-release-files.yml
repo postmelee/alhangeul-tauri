@@ -92,9 +92,21 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libfuse2 at-spi2-core dbus-x11 fonts-noto-cjk fonts-unfonts-core \
-            gir1.2-gtk-3.0 libgtk-3-0 libwebkit2gtk-4.1-0 openbox python3-gi python3-pyatspi \
+            gir1.2-gtk-3.0 libgtk-3-0 libwebkit2gtk-4.1-0 openbox poppler-utils python3-gi python3-pyatspi \
             scrot webkit2gtk-driver xdotool xvfb
           test -c /dev/fuse
+      - name: Record Windows installer Authenticode status
+        if: runner.os == 'Windows' && env.ALHANGEUL_GUI_APP_VERSION == '0.1.4'
+        shell: pwsh
+        env:
+          INSTALLER_PATH: ${{ steps.candidate.outputs.installer }}
+        run: |
+          $authenticode = Get-AuthenticodeSignature -LiteralPath $env:INSTALLER_PATH
+          [ordered]@{
+            installer = Split-Path -Leaf $env:INSTALLER_PATH
+            status = [string]$authenticode.Status
+            hasSignerCertificate = $null -ne $authenticode.SignerCertificate
+          } | ConvertTo-Json | Set-Content -LiteralPath candidate-evidence/authenticode.json -Encoding UTF8
       - name: Configure elevated WebView2 automation policy
         id: webview-policy
         if: runner.os == 'Windows'
@@ -136,6 +148,32 @@ jobs:
           }
           appendFileSync(process.env.GITHUB_ENV,`ALHANGEUL_GUI_APP_PATH=${app}\n`);
           JS
+          if [[ "$ALHANGEUL_GUI_APP_VERSION" == 0.1.4 ]]; then
+            if [[ "$RUNNER_OS" == Windows ]]; then
+              resource_root="$(node -p 'require("node:path").dirname(process.env.MSI_APP_PATH)')"
+            else
+              mount_log=$(mktemp)
+              "$INSTALLER_PATH" --appimage-mount > "$mount_log" &
+              mount_pid=$!
+              cleanup_mount() {
+                kill "$mount_pid" 2>/dev/null || true
+                wait "$mount_pid" 2>/dev/null || true
+                rm -f "$mount_log"
+              }
+              trap cleanup_mount EXIT
+              for attempt in {1..30}; do
+                [[ -s "$mount_log" ]] && break
+                kill -0 "$mount_pid"
+                sleep 1
+              done
+              IFS= read -r appimage_root < "$mount_log"
+              [[ "$appimage_root" == /tmp/.mount_* && -d "$appimage_root" ]]
+              mapfile -t markers < <(find "$appimage_root" -type f -path '*/licenses/alhangeul/LICENSE')
+              [[ "${#markers[@]}" == 1 ]]
+              resource_root="${markers[0]%/licenses/alhangeul/LICENSE}"
+            fi
+            node scripts/ci/verify-release-notices.mjs "$resource_root" candidate-evidence/license-notices.json
+          fi
       - name: Native release verification on Windows
         id: windows-gui
         if: runner.os == 'Windows'

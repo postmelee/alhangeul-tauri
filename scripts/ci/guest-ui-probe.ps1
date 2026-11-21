@@ -19,6 +19,7 @@ function Save-State {
 . (Join-Path $PSScriptRoot 'guest-ui-worker-diagnostic.ps1')
 . (Join-Path $PSScriptRoot 'guest-ui-provider-diagnostic.ps1')
 . (Join-Path $PSScriptRoot 'guest-ui-cold-start.ps1')
+. (Join-Path $PSScriptRoot 'guest-ui-msi-reboot.ps1')
 function Send-Evidence {
   foreach ($file in @(Get-ChildItem -LiteralPath $output -File | Where-Object { $_.Extension -in @('.json', '.png') })) {
     if ($file.Length -gt 5MB -or $file.Name -notmatch '^[a-z0-9-]+\.(json|png)$') { throw 'invalid-evidence-file' }
@@ -32,6 +33,7 @@ function Send-Evidence {
 }
 $report = [ordered]@{ schemaVersion = 1; status = 'incomplete'; phase = 'logon'; releaseAcceptance = 'unverified'; visual = 'unverified'; installExit = $null; reinstallExit = $null; uninstallExit = $null; productUninstallPassed = $false; probes = @(); adminOperations = @{} }
 $directory = $null; $view = $null
+$waitingForReboot = $false; $rebootEditor = $null
 try {
   $inputData = Get-Content (Join-Path $root 'input.json') -Raw | ConvertFrom-Json
   if ($inputData.scenario -cnotin @('nsis', 'msi', 'nsis-upgrade', 'msi-upgrade')) { throw 'invalid-guest-scenario' }
@@ -59,71 +61,101 @@ try {
   Save-State
   $key = 'HKCU:\Software\Classes\CLSID\{C1DCF316-0771-49DD-BFEA-C85F69B1674B}\InprocServer32'
   if ($inputData.scenario -in @('msi', 'msi-upgrade')) { $key = $key.Replace('HKCU:', 'HKLM:') }
-  if (Test-Path $key) { throw 'preexisting-handler' }
+  $forceMsiRebootProbe = $inputData.forceMsiRebootProbe -and $inputData.scenario -eq 'msi'
+  $checkpoint = Join-Path $output 'pre-reboot-guest.json'
+  $afterMsiReboot = $forceMsiRebootProbe -and (Test-Path -LiteralPath $checkpoint)
+  if ((Test-Path $key) -ne $afterMsiReboot) { throw 'unexpected-handler-registration' }
   $installer = Join-Path $root $(if ($inputData.scenario -in @('msi', 'msi-upgrade')) { 'installer.msi' } else { 'installer.exe' })
   if ((Get-FileHash $installer -Algorithm SHA256).Hash.ToLowerInvariant() -cne $inputData.installerSha256) { throw 'installer-hash-mismatch' }
   . (Join-Path $PSScriptRoot 'guest-ui-installer-state.ps1')
-  $report['beforeInstall'] = Get-GuestInstallerState $installerKind
-  if ($report.beforeInstall.vcRuntimePresent -or $report.beforeInstall.vcRuntimeLoadError -ne 126) { throw 'clean-vc-runtime-absence-required' }
-  if ($report.beforeInstall.referenceHandlerLoadError -ne 0) { throw 'standalone-handler-load-failed' }
-  if ($inputData.scenario -in @('msi', 'msi-upgrade') -or $inputData.prerequisites.Count -gt 0) { Assert-GuestAdminBoundary; $report['adminBoundaryReadOnly'] = $true }
-  if ($inputData.prerequisites.Count -gt 0) {
-    $report.phase = 'prerequisites'; Save-State
-    if ((Request-GuestAdmin prerequisites) -ne 0) { throw 'prerequisite-install-failed' }
-    $report['afterPrerequisites'] = Get-GuestInstallerState $installerKind
-  }
-  if ($inputData.scenario -in @('nsis-upgrade', 'msi-upgrade')) {
-    $report.phase = 'baseline'; Save-State
-    Install-GuestBaseline
-  }
-  $report.phase = 'install'; Save-State
-  $report['offlineInstallExit'] = Invoke-GuestInstall install
-  $report['afterOfflineInstall'] = Get-GuestInstallerState $installerKind
-  $report.installExit = $report.offlineInstallExit
-  if ($report.installExit -ne 0 -and $inputData.scenario -eq 'nsis') {
-    $report.phase = 'network-retry'; Save-State
-    Wait-GuestNetwork
-    $report.installExit = Run-Owned $installer '/S' 300
-    $report['afterOnlineInstall'] = Get-GuestInstallerState $installerKind
-  }
-  if ($report.installExit -ne 0) { throw 'install-failed' }
-  $directory = Split-Path -Parent (Get-Item -LiteralPath $key).GetValue('')
-  Assert-GuestBinaries $inputData.binaries $directory
-  if ($inputData.scenario -eq 'nsis-upgrade') {
-    $report['upgradeBinariesMatched'] = $true
-    $report['upgradeProbes'] = @(Get-GuestProbes upgrade -ObserveFailures -OnFirstFailure {
-      param($Id)
-      if ($Id -eq 'small-hwp') {
-        $report['cacheComparisons'] = @()
-        foreach ($mode in @('cache-default', 'cache-inproc', 'cache-surrogate')) {
-          try { $result = Measure-GuestProvider $mode }
-          catch { $result = @{ status = 'failed'; failure = $_.Exception.Message } }
-          $report.cacheComparisons += @{ mode = $mode; result = $result }
-        }
-        try { $report['providerDiagnostic'] = Measure-GuestProvider }
-        catch { $report['providerDiagnostic'] = @{ status = 'failed'; failure = $_.Exception.Message } }
-        try { $report['workerDiagnostic'] = Measure-GuestWorker $directory }
-        catch { $report['workerDiagnostic'] = @{ status = 'failed'; failure = $_.Exception.Message } }
-      }
-    })
-    if (@($report.upgradeProbes | Where-Object { $_.status -ne 'ok' -or -not $_.bitmapPresent }).Count -gt 0) {
-      $report['failure'] = 'upgrade-immediate-thumbnail-failed'
-      $report.phase = 'upgrade-diagnostic'; Save-State
-      Measure-GuestUpgradeFailure
+  if ($afterMsiReboot) {
+    Restore-ForcedMsiCheckpoint $checkpoint
+    $directory = Split-Path -Parent (Get-Item -LiteralPath $key).GetValue('')
+    $report.phase = 'post-restart'; Save-State
+    $report['postRestartEditorSha256'] = (Get-FileHash (Join-Path $directory 'Alhangeul.exe') -Algorithm SHA256).Hash.ToLowerInvariant()
+    if ($report.postRestartEditorSha256 -cne $report.preRestartEditorSha256) { throw 'post-restart-editor-hash-mismatch' }
+    $rebootEditor = Start-GuestRebootEditor $directory
+    $report['newEditorStarted'] = $rebootEditor.StartTime.ToUniversalTime() -gt ([DateTimeOffset]$report.postRestartMarkers.boot).UtcDateTime
+    if (-not $report.newEditorStarted -or -not $rebootEditor.CloseMainWindow() -or -not $rebootEditor.WaitForExit(30000)) {
+      throw 'post-restart-editor-lifecycle-failed'
     }
-    Test-GuestSentinels
+  } else {
+    $report['beforeInstall'] = Get-GuestInstallerState $installerKind
+    if ($report.beforeInstall.vcRuntimePresent -or $report.beforeInstall.vcRuntimeLoadError -ne 126) { throw 'clean-vc-runtime-absence-required' }
+    if ($report.beforeInstall.referenceHandlerLoadError -ne 0) { throw 'standalone-handler-load-failed' }
+    if ($inputData.scenario -in @('msi', 'msi-upgrade') -or $inputData.prerequisites.Count -gt 0) { Assert-GuestAdminBoundary; $report['adminBoundaryReadOnly'] = $true }
+    if ($inputData.prerequisites.Count -gt 0) {
+      $report.phase = 'prerequisites'; Save-State
+      if ((Request-GuestAdmin prerequisites) -ne 0) { throw 'prerequisite-install-failed' }
+      $report['afterPrerequisites'] = Get-GuestInstallerState $installerKind
+    }
+    if ($inputData.scenario -in @('nsis-upgrade', 'msi-upgrade')) {
+      $report.phase = 'baseline'; Save-State
+      Install-GuestBaseline
+    }
+    $report.phase = 'install'; Save-State
+    $report['offlineInstallExit'] = Invoke-GuestInstall install
+    $report['afterOfflineInstall'] = Get-GuestInstallerState $installerKind
+    $report.installExit = $report.offlineInstallExit
+    if ($report.installExit -ne 0 -and $inputData.scenario -eq 'nsis') {
+      $report.phase = 'network-retry'; Save-State
+      Wait-GuestNetwork
+      $report.installExit = Run-Owned $installer '/S' 300
+      $report['afterOnlineInstall'] = Get-GuestInstallerState $installerKind
+    }
+    if ($report.installExit -ne 0) { throw 'install-failed' }
+    $directory = Split-Path -Parent (Get-Item -LiteralPath $key).GetValue('')
+    Assert-GuestBinaries $inputData.binaries $directory
+    if ($inputData.scenario -eq 'nsis-upgrade') {
+      $report['upgradeBinariesMatched'] = $true
+      $report['upgradeProbes'] = @(Get-GuestProbes upgrade -ObserveFailures -OnFirstFailure {
+        param($Id)
+        if ($Id -eq 'small-hwp') {
+          $report['cacheComparisons'] = @()
+          foreach ($mode in @('cache-default', 'cache-inproc', 'cache-surrogate')) {
+            try { $result = Measure-GuestProvider $mode }
+            catch { $result = @{ status = 'failed'; failure = $_.Exception.Message } }
+            $report.cacheComparisons += @{ mode = $mode; result = $result }
+          }
+          try { $report['providerDiagnostic'] = Measure-GuestProvider }
+          catch { $report['providerDiagnostic'] = @{ status = 'failed'; failure = $_.Exception.Message } }
+          try { $report['workerDiagnostic'] = Measure-GuestWorker $directory }
+          catch { $report['workerDiagnostic'] = @{ status = 'failed'; failure = $_.Exception.Message } }
+        }
+      })
+      if (@($report.upgradeProbes | Where-Object { $_.status -ne 'ok' -or -not $_.bitmapPresent }).Count -gt 0) {
+        $report['failure'] = 'upgrade-immediate-thumbnail-failed'
+        $report.phase = 'upgrade-diagnostic'; Save-State
+        Measure-GuestUpgradeFailure
+      }
+      Test-GuestSentinels
+    }
+    if ($inputData.scenario -eq 'msi-upgrade') {
+      $report['upgradeRegistration'] = Test-GuestMsiRegistration $inputData.msiIdentity $inputData.baseline.msiIdentity.ProductCode
+      $report['upgradeBinariesMatched'] = $true
+      $report['upgradeProbes'] = @(Get-GuestProbes upgrade)
+      Test-GuestSentinels
+    }
+    if ($inputData.scenario -eq 'nsis-upgrade' -and $report.Contains('failure')) {
+      $report['diagnosticReinstallations'] = @(Measure-GuestColdStarts $directory)
+    }
+    if ($forceMsiRebootProbe) {
+      $report.phase = 'force-reinstall'; Save-State
+      $report['preRestartEditorSha256'] = (Get-FileHash (Join-Path $directory 'Alhangeul.exe') -Algorithm SHA256).Hash.ToLowerInvariant()
+      $rebootEditor = Start-GuestRebootEditor $directory
+      $report['preRestartProbes'] = @(Get-GuestProbes 'pre-restart')
+    }
+    $report.reinstallExit = Invoke-GuestInstall reinstall
+    if ($forceMsiRebootProbe -and $report.reinstallExit -in @(0, 3010)) {
+      $report['preRestartMarkers'] = Read-GuestBootMarkers
+      $report.phase = 'restart-request'; Save-State
+      Copy-Item -LiteralPath (Join-Path $output 'guest.json') -Destination $checkpoint
+      if ((Request-GuestAdmin restart) -ne 0) { throw 'guest-restart-request-failed' }
+      $waitingForReboot = $true
+      return
+    }
+    if ($report.reinstallExit -ne 0) { throw 'reinstall-failed' }
   }
-  if ($inputData.scenario -eq 'msi-upgrade') {
-    $report['upgradeRegistration'] = Test-GuestMsiRegistration $inputData.msiIdentity $inputData.baseline.msiIdentity.ProductCode
-    $report['upgradeBinariesMatched'] = $true
-    $report['upgradeProbes'] = @(Get-GuestProbes upgrade)
-    Test-GuestSentinels
-  }
-  if ($inputData.scenario -eq 'nsis-upgrade' -and $report.Contains('failure')) {
-    $report['diagnosticReinstallations'] = @(Measure-GuestColdStarts $directory)
-  }
-  $report.reinstallExit = Invoke-GuestInstall reinstall
-  if ($report.reinstallExit -ne 0) { throw 'reinstall-failed' }
   Assert-GuestBinaries $inputData.binaries $directory
   $report['reinstallBinariesMatched'] = $true
   $report.phase = 'capture'; Save-State
@@ -141,25 +173,36 @@ try {
   if (-not $report.Contains('failure')) { $report.status = 'observed' }
 } catch { $report['failure'] = $_.Exception.Message }
 finally {
-  if ($view) {
-    try { Restore-HostedThumbnailView $view; $report['displayPreference'] = $view }
-    catch { $report['preferenceFailure'] = $_.Exception.Message }
+  if ($rebootEditor) {
+    if (-not $waitingForReboot -and -not $rebootEditor.HasExited) {
+      [void]$rebootEditor.CloseMainWindow()
+      if (-not $rebootEditor.WaitForExit(5000)) { $rebootEditor.Kill(); [void]$rebootEditor.WaitForExit(5000) }
+    }
+    $rebootEditor.Dispose()
   }
-  if ($directory) {
-    try {
-      $report.phase = 'uninstall'; Save-State
-      $report.uninstallExit = Invoke-GuestInstall uninstall
-      for ($i=0; $i -lt 90 -and (Test-Path $directory); $i++) { Start-Sleep -Seconds 1 }
-      $report.productUninstallPassed = $report.uninstallExit -eq 0 -and -not (Test-Path $directory) -and -not (Test-Path $key)
-      if ($inputData.scenario -in @('nsis-upgrade', 'msi-upgrade') -and $report.Contains('sentinels')) { Test-GuestSentinels; $report['userDataPreservedAfterUninstall'] = $true }
-    } catch { $report['cleanupFailure'] = $_.Exception.Message }
+  if ($waitingForReboot) {
+    $serial.Close(); $serial.Dispose()
+  } else {
+    if ($view) {
+      try { Restore-HostedThumbnailView $view; $report['displayPreference'] = $view }
+      catch { $report['preferenceFailure'] = $_.Exception.Message }
+    }
+    if ($directory) {
+      try {
+        $report.phase = 'uninstall'; Save-State
+        $report.uninstallExit = Invoke-GuestInstall uninstall
+        for ($i=0; $i -lt 90 -and (Test-Path $directory); $i++) { Start-Sleep -Seconds 1 }
+        $report.productUninstallPassed = $report.uninstallExit -eq 0 -and -not (Test-Path $directory) -and -not (Test-Path $key)
+        if ($inputData.scenario -in @('nsis-upgrade', 'msi-upgrade') -and $report.Contains('sentinels')) { Test-GuestSentinels; $report['userDataPreservedAfterUninstall'] = $true }
+      } catch { $report['cleanupFailure'] = $_.Exception.Message }
+    }
+    if ($report.adminOperations.ContainsKey('prerequisites') -and
+        $report.adminOperations.prerequisites.PSObject.Properties['processTraceStarted']) {
+      try { [void](Request-GuestAdmin 'trace-stop') }
+      catch { $report['traceFailure'] = $_.Exception.Message; $report.status = 'incomplete' }
+    }
+    $report.phase = 'done'; Save-State
+    try { Send-Evidence; Send-Event @{ kind = 'done' }; Set-Content (Join-Path $output 'done') 'complete' }
+    finally { $serial.Close(); $serial.Dispose() }
   }
-  if ($report.adminOperations.ContainsKey('prerequisites') -and
-      $report.adminOperations.prerequisites.PSObject.Properties['processTraceStarted']) {
-    try { [void](Request-GuestAdmin 'trace-stop') }
-    catch { $report['traceFailure'] = $_.Exception.Message; $report.status = 'incomplete' }
-  }
-  $report.phase = 'done'; Save-State
-  try { Send-Evidence; Send-Event @{ kind = 'done' }; Set-Content (Join-Path $output 'done') 'complete' }
-  finally { $serial.Close(); $serial.Dispose() }
 }

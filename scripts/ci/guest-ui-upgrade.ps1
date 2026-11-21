@@ -6,7 +6,7 @@ function Assert-GuestBinaries($Binaries, $Directory) {
     if ((Get-Item $path).Length -ne $size -or (Get-FileHash $path -Algorithm SHA256).Hash.ToLowerInvariant() -cne $binary.sha256) { throw 'installed-binary-mismatch' }
   }
 }
-function Get-GuestProbes([ValidateSet('baseline', 'upgrade', 'reinstall')][string]$Phase, [switch]$ObserveFailures, [scriptblock]$OnFirstFailure) {
+function Get-GuestProbes([ValidateSet('baseline', 'upgrade', 'reinstall', 'pre-restart')][string]$Phase, [switch]$ObserveFailures, [scriptblock]$OnFirstFailure) {
   $observed = @(); $diagnosed = $false
   $fixtures = (Get-Content (Join-Path $root 'scripts\windows-thumbnail-fixtures.json') -Raw | ConvertFrom-Json).fixtures
   foreach ($fixture in $fixtures) {

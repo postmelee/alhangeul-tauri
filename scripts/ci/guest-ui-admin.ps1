@@ -16,9 +16,14 @@ if ($inputData.prerequisites.Count -gt 0) { $operations += 'prerequisites' }
 if ($inputData.scenario -eq 'msi-upgrade') { $operations += 'baseline' }
 if ($inputData.scenario -in @('msi', 'msi-upgrade')) { $operations += @('install', 'reinstall', 'uninstall') }
 if ($inputData.scenario -eq 'nsis-upgrade') { $operations += 'trace-stop' }
+$forceMsiRebootProbe = $inputData.forceMsiRebootProbe -and $inputData.scenario -eq 'msi'
+if ($forceMsiRebootProbe) { $operations = @($operations | Where-Object { $_ -ne 'uninstall' }) + @('restart', 'uninstall') }
+$restartScheduled = $false
 $installer = Join-Path $root 'installer.msi'
 try {
   foreach ($operation in $operations) {
+    $response = Join-Path $results ($operation + '.json')
+    if ($forceMsiRebootProbe -and (Test-Path -LiteralPath $response)) { continue }
     $request = Join-Path $root ('requests\' + $operation + '.request')
     $deadline = [DateTime]::UtcNow.AddMinutes(12)
     while (-not (Test-Path -LiteralPath $request)) {
@@ -31,6 +36,13 @@ try {
         $result['packages'] = @(Install-GuestPrerequisites)
         if ($inputData.scenario -eq 'nsis-upgrade') { $trace = Start-GuestProcessTrace $results; $result['processTraceStarted'] = $true }
         $result.exitCode = 0
+      } elseif ($operation -eq 'restart') {
+        $reinstall = Get-Content (Join-Path $results 'reinstall.json') -Raw | ConvertFrom-Json
+        if (-not $forceMsiRebootProbe -or $reinstall.exitCode -notin @(0, 3010)) { throw 'forced-msi-reinstall-evidence-required' }
+        $result['beforeBoot'] = (Get-CimInstance Win32_OperatingSystem).LastBootUpTime.ToUniversalTime().ToString('o')
+        $result.exitCode = Run-Owned (Join-Path $env:SystemRoot 'System32\shutdown.exe') '/r /t 20 /c "Alhangeul isolated forced MSI verification"' 10
+        if ($result.exitCode -ne 0) { throw 'guest-restart-not-scheduled' }
+        $restartScheduled = $true
       } elseif ($operation -eq 'trace-stop') {
         $result['events'] = @(Read-GuestProcessTrace $trace)
         Clear-GuestProcessTrace $trace
@@ -45,16 +57,23 @@ try {
       $result['executedInstallerSha256'] = $expectedHash
       $mode = if ($operation -eq 'uninstall') { '/x' } else { '/i' }
       $arguments = $mode + ' "' + $installer + '" /qn /norestart /L*v "' + (Join-Path $results ($operation + '.log')) + '"'
-      if ($operation -eq 'reinstall') { $arguments += ' REINSTALL=ALL REINSTALLMODE=omus' }
+      if ($operation -eq 'reinstall') {
+        $reinstallMode = if ($forceMsiRebootProbe) { 'amus' } else { 'omus' }
+        $arguments += " REINSTALL=ALL REINSTALLMODE=$reinstallMode"
+        $result['reinstallMode'] = $reinstallMode
+      }
       $result.exitCode = Run-Owned (Join-Path $env:SystemRoot 'System32\msiexec.exe') $arguments 300
       }
       $result.status = 'observed'
     } catch { $result['failure'] = $_.Exception.Message }
     $pending = Join-Path $results ($operation + '.pending')
     $result | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $pending -Encoding UTF8
-    Move-Item -LiteralPath $pending -Destination (Join-Path $results ($operation + '.json'))
+    Move-Item -LiteralPath $pending -Destination $response
+    if ($restartScheduled) { return }
   }
 } finally {
   Clear-GuestProcessTrace $trace
-  Unregister-ScheduledTask -TaskName $taskName -Confirm:$false -ErrorAction SilentlyContinue
+  if (-not $restartScheduled) {
+    Unregister-ScheduledTask -TaskName $taskName -Confirm:$false -ErrorAction SilentlyContinue
+  }
 }

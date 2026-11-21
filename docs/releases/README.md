@@ -5,12 +5,15 @@
 
 ## 릴리즈 목록
 
+2026-11-22 KST에 GitHub stable v0.1.4, 웹 다운로드와 안정 피드를 공개했다. 공개 파일 11개 및 웹 27개를 대조하고 실제 앱 안 v0.1.3→v0.1.4 업데이트 세 형식을 확인했다. [v0.1.4 공개 기록](v0.1.4.md)
+
 2026-11-11 22:13 KST 확인: 최신 stable v0.1.3, 공개 파일11개(설치6종)·최종 본문·웹/피드·HTTP24개 및 실제012→013 지원3종 업데이트 검증을 완료했다. [최종 보고서](../../mydocs/report/task_m010_126_report.md).
 
 2026-10-04T06:40:03.560Z 확인: GitHub stable v0.1.1과 설치 파일11개, 규격 body·웹 안내·production manifest0.1.1 및 실제 업데이트 검증 결과 문구를 공개했다. Windows NSIS·MSI와 Linux x64 AppImage의 v0.1.0 → v0.1.1 업데이트·설정 유지·HWP/HWPX 재열기를 수용했다. PR #101·#104 병합, exact Pages37183359064와 실제 공개 HTTP20/20 bytes·표시·링크 대조를 완료했다.
 
 | 버전 | 상태 | 이전 공개 버전 | GitHub Release | 기록 |
 |---|---|---|---|---|
+| v0.1.4 | GitHub stable·웹·피드 공개, 실제 0.1.3→0.1.4 업데이트 3종 확인 | v0.1.3 | [v0.1.4](https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.4) | [v0.1.4 공개 기록과 노트](v0.1.4.md) |
 | v0.1.3 | GitHub stable·웹/피드 공개 / 실제012→013 지원3종 검증 완료 | v0.1.2 | [v0.1.3](https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.3) | [v0.1.3 공개 기록과 노트](v0.1.3.md) |
 | v0.1.2 | Release·최종 본문·웹/feed·HTTP/화면 공개 수용, 실제011→012 지원3종 완료 / 최종 기록 인계 후속 | v0.1.1 | [v0.1.2](https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.2) | [v0.1.2 공개 기록](v0.1.2.md) |
 | v0.1.1 | Release·규격 body·웹·피드·검증 결과 안내 공개, 세 형식 실제 upgrade·HTTP 수용 완료 | v0.1.0 | [v0.1.1](https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.1) | [v0.1.1 공개 기록](v0.1.1.md), [안내 원문](v0.1.1.notes.json) |

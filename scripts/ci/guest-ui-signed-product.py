@@ -20,7 +20,7 @@ def prepare(root, payload, scenario):
         raise RuntimeError("signed-candidate-not-verified")
     bundle = root / "bundle"
     msi = data["targets"]["windows-x86_64-msi"]
-    identity, binaries = msi_tools().inspect(bundle / msi["path"], root / "signed-msi-reference")
+    identity, binaries = msi_tools().inspect(bundle / msi["path"], root / "signed-msi-reference", data["version"])
     for binary in binaries:
         binary["imports"] = json.loads(subprocess.check_output(["node", "--input-type=module", "-e",
             "import {readFileSync} from 'node:fs'; import {requireStaticThumbnailCrt} from './scripts/windows-pe-imports.mjs'; console.log(JSON.stringify(requireStaticThumbnailCrt(readFileSync(process.argv[1]))));",
@@ -34,7 +34,7 @@ def prepare(root, payload, scenario):
     for binary in binaries:
         del binary["path"]
     (root / "evidence/signed-selection.json").write_text(json.dumps(data, indent=2))
-    value = dict(productSha=data["productSha"], installerSha256=selected["sha256"],
+    value = dict(productSha=data["productSha"], productVersion=data["version"], installerSha256=selected["sha256"],
                 signaturesVerified=True, producerRun=data["producerRun"],
                 keyFingerprint=data["keyFingerprint"], msiIdentity=identity, binaries=binaries)
     (root / "evidence/signed-product.json").write_text(json.dumps(value, indent=2))

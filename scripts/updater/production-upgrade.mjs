@@ -33,7 +33,12 @@ async function prepare(kind, output) {
     validateUpdaterManifest(JSON.parse(bytes), await json(join(root, 'site/release.json')));
     await writeFile(join(output, 'production-manifest.json'), bytes);
     evidence.status = 'passed';
-    if (process.env.GITHUB_OUTPUT) await appendFile(process.env.GITHUB_OUTPUT, `n_path=${evidence.releases.n.selected.absolutePath}\nnext_sha256=${evidence.releases.next.selected.sha256}\n`);
+    if (process.env.GITHUB_OUTPUT) await appendFile(process.env.GITHUB_OUTPUT, [
+      `n_path=${evidence.releases.n.selected.absolutePath}`,
+      `next_sha256=${evidence.releases.next.selected.sha256}`,
+      `n_version=${evidence.releases.n.version}`,
+      `next_version=${evidence.releases.next.version}`,
+    ].join('\n') + '\n');
   } catch (error) { evidence.error = error.message; throw error; }
   finally { evidence.finishedAt = new Date().toISOString(); await writeJson(join(output, 'public-input.json'), evidence); }
 }

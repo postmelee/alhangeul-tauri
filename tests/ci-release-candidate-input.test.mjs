@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { parse } from 'yaml';
 import { validateCandidate, validateIdentity, loadCandidate } from '../scripts/ci/release-candidate-input.mjs';
 import { CANDIDATES, PRODUCT_SHA, PRODUCER_RUN, assertCandidateIdentity,
   assertCandidateFile } from '../scripts/ci/release-file-candidate.mjs';
@@ -94,7 +95,16 @@ test('VM identity parser rejects shell/newline values and requires a package has
 test('new exact candidates reach every acceptance workflow without production activation', async () => {
   const read = path => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
   const dispatcher = await read('.github/workflows/alhangeul-desktop.yml');
-  assert.equal((dispatcher.match(/candidate_path: \$\{\{ inputs\.release_candidate_path \}\}/g) ?? []).length, 3);
+  const candidateConsumers = Object.values(parse(dispatcher).jobs)
+    .filter(job => job.with?.candidate_path === '${{ inputs.release_candidate_path }}')
+    .map(job => job.uses)
+    .sort();
+  assert.deepEqual(candidateConsumers, [
+    './.github/workflows/alhangeul-release-fedora-vm.yml',
+    './.github/workflows/alhangeul-release-files.yml',
+    './.github/workflows/alhangeul-release-linux-files.yml',
+    './.github/workflows/alhangeul-windows-pdf.yml',
+  ]);
   const files = await read('.github/workflows/alhangeul-release-files.yml');
   assert.match(files, /inputs\.candidate_path != '' && inputs\.windows_only && '\[\{"kind":"nsis".*"kind":"msi"/);
   assert.match(files, /fromJSON\(!inputs\.production_check && inputs\.candidate_path/);

@@ -1,15 +1,19 @@
 name: Alhangeul Production Upgrade Linux
 on:
   workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
 permissions:
   contents: read
 jobs:
   linux:
-    name: Production Linux AppImage 0.1.2 to 0.1.3
+    name: Production Linux AppImage upgrade to ${{ inputs.version }}
     runs-on: ubuntu-22.04
     timeout-minutes: 50
     env:
-      ALHANGEUL_PRODUCTION_INPUTS: tests/gui/production-upgrade-v0.1.3-inputs.json
+      ALHANGEUL_PRODUCTION_INPUTS: tests/gui/production-upgrade-v${{ inputs.version }}-inputs.json
       HARNESS_SHA: ${{ github.workflow_sha }}
       EVIDENCE_ROOT: ${{ github.workspace }}/production-evidence-linux-appimage
       APPIMAGE_PATH: ${{ github.workspace }}/production-appimage/Alhangeul.AppImage
