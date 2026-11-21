@@ -22,3 +22,7 @@
 
 첫 비교 run 44928820491의 trace zip 두 개를 발행 digest와 대조했다. 이전 source는 2,051ms·74ms, 후보는 268ms·63ms에 정상 종료했다. 종전 시간 초과는 이 실행에서 재현되지 않았다. 실행 전체는 지원 archive 누락으로 별도 실패했다. 계측에서 동일 PID의 편집기, single-instance, Tao event 창을 확인했으므로 재현 여부와 분리해 목표 HWND 선택을 비교한다.
 [보정한 비교 run 44929720833](https://github.com/postmelee/alhangeul-tauri/actions/runs/44929720833)은 exact 패키지와 support archive를 검산하고 기존 선택과 소유 PID·Tauri 클래스가 유일한 편집기 창 선택을 대조한다. 두 방식 모두 정상 종료를 30초 안에 요구한다.
+
+세 경로의 trace archive digest를 확인했다. 기존 선택은 이전 source 4,036ms·85ms, 후보 3,431ms·156ms에 종료했다. HWND 지정 후보는 2,018ms·430ms에 종료했다. 세 경우 모두 두 cycle이 통과했고 `DiagnosticContract=true`였다. 원시 exit 1과 `0x80040154` 12건은 기존 관리자 NSIS 제한으로 보존한다. 두 차례 기존 timeout의 원인은 확정되지 않았다.
+
+별도 후보 SHA `241918e623c699d2e18bdfa1119cbc57178eeac0`에는 편집기 선택 및 계약 검사만 추가했다. #146과 앱, crate, submodule 및 pin은 일치한다. 기존 11개 안정 표본과 정상 종료 30초 제한을 유지한다. Node 계약 12/12 및 diff 검사를 통과했다. [전체 네이티브 검증 44930124104](https://github.com/postmelee/alhangeul-tauri/actions/runs/44930124104)의 릴리즈 통과 여부는 미확인이다.
