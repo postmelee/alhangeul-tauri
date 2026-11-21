@@ -3,7 +3,7 @@ import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { cp, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { dirname, join, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import { verifyReleaseMetadata } from '../scripts/check-release-metadata.mjs';
@@ -108,6 +108,23 @@ test('CLI는 repository, root override와 잘못된 인자를 구분한다', asy
   const invalid = runCli(['--unknown']);
   assert.notEqual(invalid.status, 0);
   assert.match(invalid.stderr, /지원하지 않는 인자입니다/);
+});
+
+test('WiX와 다른 패키저가 동봉 고지의 이름과 개별 설치 디렉터리를 보존한다', async () => {
+  const config = JSON.parse(await readFile(join(repositoryRoot, 'apps/desktop/src-tauri/tauri.conf.json'), 'utf8'));
+  const resources = config.bundle.resources;
+  assert.equal(resources['../../../LICENSE'], 'licenses/alhangeul/LICENSE');
+  assert.equal(resources['../../../third_party/rhwp/LICENSE'], 'licenses/rhwp/LICENSE');
+  assert.equal(resources['../../../third_party/rhwp/THIRD_PARTY_LICENSES.md'], 'licenses/rhwp/THIRD_PARTY_LICENSES.md');
+  const targets = new Set();
+  for (const [source, target] of Object.entries(resources)) {
+    if (!target.startsWith('licenses/')) continue;
+    // WiX takes the target directory and infers the filename from Source.
+    assert.equal(posix.basename(target), posix.basename(source), target);
+    const effectiveTarget = target.toLowerCase();
+    assert.ok(!targets.has(effectiveTarget), target);
+    targets.add(effectiveTarget);
+  }
 });
 
 test('배포하는 Studio 웹폰트와 동봉 라이선스 원문을 파일별로 대조한다', async () => {
