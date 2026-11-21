@@ -1,6 +1,23 @@
-# Task #147 Stage 1 — rhwp v0.9.1 후보 검증 중간 기록
+# Task #147 Stage 1 — rhwp v0.9.1 후보 검증
 
-[수행계획](../plans/task_m010_147.md) · [PR #146](https://github.com/postmelee/alhangeul-tauri/pull/146)
+[이슈 #147](https://github.com/postmelee/alhangeul-tauri/issues/147) · [구현계획](../plans/task_m010_147_impl.md) · [PR #146](https://github.com/postmelee/alhangeul-tauri/pull/146)
+
+## 단계 목적
+
+rhwp v0.9.1 고정 후보의 Windows·Linux 설치본을 검증하고, v0.1.4 버전 통합에 사용할 결과를 기록한다.
+
+## 산출물
+
+| 위치 | 변경 요약 |
+|---|---|
+| `scripts/windows-editor-window.cs`, `scripts/windows-process-lifecycle.ps1` | 설치 수명주기 검사에서 소유 편집기 창을 찾아 30초 안에 정상 종료를 요구한다. |
+| 이 보고서 | 원시 실패, 재검증 결과, 운영체제별 설치본 근거를 보존한다. |
+
+## 본문 변경과 동작 보존
+
+편집기 창 선택 보정은 Windows 설치 시험에 적용했다. 앱과 upstream 구현은 검증한 #146의 트리를 유지한다.
+
+## 검증 결과
 
 검증 head `d6350b7b51fea3e58259957e5bae7adece8e9ab3`, upstream fixed `981ce66b4183b13c1a3b5907e04a8969c8c42034`. PR required [44708765183](https://github.com/postmelee/alhangeul-tauri/actions/runs/44708765183)는 성공했다.
 
@@ -25,7 +42,33 @@
 
 세 경로의 trace archive digest를 확인했다. 기존 선택은 이전 source 4,036ms·85ms, 후보 3,431ms·156ms에 종료했다. HWND 지정 후보는 2,018ms·430ms에 종료했다. 세 경우 모두 두 cycle이 통과했고 `DiagnosticContract=true`였다. 원시 exit 1과 `0x80040154` 12건은 기존 관리자 NSIS 제한으로 보존한다. 두 차례 기존 timeout의 원인은 확정되지 않았다.
 
-별도 후보 SHA `241918e623c699d2e18bdfa1119cbc57178eeac0`에는 편집기 선택 및 계약 검사만 추가했다. #146과 앱, crate, submodule 및 pin은 일치한다. 기존 11개 안정 표본과 정상 종료 30초 제한을 유지한다. Node 계약 12/12 및 diff 검사를 통과했다. [전체 네이티브 검증 44930124104](https://github.com/postmelee/alhangeul-tauri/actions/runs/44930124104)의 릴리즈 통과 여부는 미확인이다.
+별도 후보 SHA `241918e623c699d2e18bdfa1119cbc57178eeac0`에는 편집기 선택 및 계약 검사만 추가했다. #146과 앱, crate, submodule 및 pin은 일치한다. 기존 11개 안정 표본과 정상 종료 30초 제한을 유지한다. Node 계약 12/12 및 diff 검사를 통과했다. [전체 네이티브 검증 44930124104](https://github.com/postmelee/alhangeul-tauri/actions/runs/44930124104)은 전체 성공했다. Windows/Linux 패키지와 native 검사가 통과했다. 관리자 문맥 NSIS 원시 결과는 종료·수명주기 통과와 기존 썸네일 제한을 각각 기록했고, 표준 사용자 NSIS 검사도 통과했다. MSI 강제 재설치의 재부팅 후 결과와 Explorer 화면은 별도 확인한다.
 
 
-[Linux 전용 패키지 run 44928832041](https://github.com/postmelee/alhangeul-tauri/actions/runs/44928832041)은 exact #146 source에서 x64·ARM64 패키지 및 설치 수명주기를 통과했다. 일반 패키지의 [Linux x64 GUI 검증 44933050953](https://github.com/postmelee/alhangeul-tauri/actions/runs/44933050953)을 시작했다. 이 검사는 대체 runner의 앱 내 문서 기능을 확인하며 최종 서명 후보의 수용과 별개다.
+[Linux 전용 패키지 run 44928832041](https://github.com/postmelee/alhangeul-tauri/actions/runs/44928832041)은 exact #146 source에서 x64·ARM64 패키지 및 설치 수명주기를 통과했다. 일반 패키지의 [Linux x64 GUI 검증 44933050953](https://github.com/postmelee/alhangeul-tauri/actions/runs/44933050953)은 설치·썸네일·시스템 인쇄 성공, WebDriver 실패로 종료했다. 원시 artifact `14719310789`의 SHA-256 `15a914b1524f73a8ad3cf8046839fef77c71c73a765a4979408b96b5625fe788`을 검산했다. 첫 HWP 다른 이름으로 저장은 대상 파일을 만들었으나 앱이 WASM aliasing 오류를 표시했다. 같은 세션에서 현재 저장·새 문서·드래그·직접 PDF가 실패했다.
+
+### 설치본 추가 검증
+
+- 정확한 Windows 패키지 artifact `14719284526`에서 [Windows 10 NSIS](https://github.com/postmelee/alhangeul-tauri/actions/runs/44940871042), [Windows 10 MSI](https://github.com/postmelee/alhangeul-tauri/actions/runs/44940874698), [Windows 11 NSIS](https://github.com/postmelee/alhangeul-tauri/actions/runs/44940874380), [Windows 11 MSI](https://github.com/postmelee/alhangeul-tauri/actions/runs/44940873998)와 [Windows PDF](https://github.com/postmelee/alhangeul-tauri/actions/runs/44940874356)를 각각 실행했다.
+- [후보 Linux 진단](https://github.com/postmelee/alhangeul-tauri/actions/runs/44941106714)과 [v0.1.3 비교](https://github.com/postmelee/alhangeul-tauri/actions/runs/44941472826)는 동일 스크립트에서 각 시나리오를 새 앱 세션으로 실행하고 브라우저 WASM 예외 스택을 수집한다. 각 패키지를 검증된 producer에 고정했다.
+- 최초 Linux 계측은 WebDriver에 직렬화된 `__name` 변수가 브라우저에 없어 문서 시나리오 전에 실패했다. 브라우저에 그 환경에서 실행할 원문 JS를 넘기고 다른 이름으로 저장의 성공 상태를 확인하도록 보정했다. [재검사 44941869158](https://github.com/postmelee/alhangeul-tauri/actions/runs/44941869158)과 [재검사 44941869614](https://github.com/postmelee/alhangeul-tauri/actions/runs/44941869614)는 동일한 보정 커밋을 사용한다. Node에서 동일 WASM과 두 fixture로 보고서 포함 저장·파일명 변경·재열기·SVG 생성을 형식별 세 번 통과했다. GUI 수용은 별도다.
+- Windows 10 NSIS/MSI의 초기 artifact `14721434007`, `14721703203`의 digest와 동일 설치본을 확인했다. 화면은 Windows 설치 단계였으며 Explorer 판정은 최종 artifact를 기다린다.
+- Windows 10 NSIS `14722101846`, Windows 10 MSI `14722366613`, Windows 11 MSI `14722152014`의 최종 archive와 Explorer 캡처 해시를 검산했다. 세 실행에서 설치·재설치·제거 exit 0과 표준 사용자 API 비트맵 4/4를 확인했다. HWP 시험 문서, HWPX 양식, JPG 썸네일 화면을 검토했다. 빈 HWP는 API 확인에 사용했다. MSI의 정상 재설치 결과와 강제 재설치 3010은 별도 기록이다.
+- [Windows PDF 44940874356](https://github.com/postmelee/alhangeul-tauri/actions/runs/44940874356) 성공. 원시 `14721998300`과 분석 `14722655002`의 archive digest 및 PDF 4개 hash를 검산했다. 처음 실행과 앱 재시작 후 직접 저장 모두 HWP 6쪽·HWPX 10쪽, A4·검색 가능한 한글·비어 있지 않은 렌더를 통과했다. 고유 렌더 16쪽을 검토했고, 실행 간 같은 페이지 PNG는 바이트 단위로 일치했다.
+- Windows 11 NSIS `14722730511`에서도 같은 검산과 화면 확인을 완료했다. 설치·재설치·제거 exit 0 및 표준 사용자 비트맵 4/4를 확인했다.
+- MSI 강제 재설치 `14720112149`는 계약 통과, 원시 exit 3010이다. MSI 로그가 재설치 시 사용 중인 `Alhangeul.exe`와 `AlhangeulThumbnailHandler.dll`을 기록했다. 재부팅 후 검증은 미확인이다.
+- [Linux 후보 GUI 44941869158](https://github.com/postmelee/alhangeul-tauri/actions/runs/44941869158)와 [v0.1.3 대조군 44941869614](https://github.com/postmelee/alhangeul-tauri/actions/runs/44941869614)가 각각 통과했다. archive는 `14722446688`, `14722118470`이다. 후보 DEB hash가 최초 실패와 같다. 새 세션별 저장·재열기·새 문서·드래그·직접 PDF와 시스템 인쇄를 확인했고 WASM 오류 수집 결과는 모두 비어 있었다. 최초 실패의 원인은 미확정이다.
+- [기존 연속 시나리오 44942778215](https://github.com/postmelee/alhangeul-tauri/actions/runs/44942778215)는 전체 producer `44930124104`에서, [반복 저장 44942975755](https://github.com/postmelee/alhangeul-tauri/actions/runs/44942975755)는 최초와 같은 DEB에서 실행했다. 반복 저장에서는 한 편집기 세션으로 HWP/HWPX Save As·현재 저장·재열기를 형식별 네 번 실행한다.
+- [기존 Linux 연속 44942778215](https://github.com/postmelee/alhangeul-tauri/actions/runs/44942778215)는 전체 Windows/Linux 검증과 같은 후보 SHA 및 producer를 사용했다. archive `14722612501`의 digest와 HWP/HWPX 열기, 저장·재열기, 새 문서, 드래그, 직접 PDF 두 형식, 시스템 인쇄 8개를 확인했다.
+
+## 잔여 위험
+
+최초 Linux GUI 오류는 원인이 확정되지 않았고 같은 DEB의 계측 실행 및 동일 소스의 연속 시나리오에서 재현되지 않았다. MSI 강제 재설치의 재부팅 후 결과는 [44943707292](https://github.com/postmelee/alhangeul-tauri/actions/runs/44943707292)에서 별도로 확인 중이다. Authenticode와 업데이터 서명은 각각 확인한다.
+
+## 다음 단계 영향
+
+#146의 upstream 고정 커밋과 검증용 Windows 편집기 선택 보정을 보존한다. 버전 통합 뒤 main의 정확한 소스에서 일반 및 비게시 서명 후보를 만들고 실제 게시 파일을 다시 검사한다.
+
+## 진행 승인
+
+작업지시자가 필수 검사를 통과하면 별도 승인 없이 배포와 후속 정리까지 진행하도록 지시했다.
