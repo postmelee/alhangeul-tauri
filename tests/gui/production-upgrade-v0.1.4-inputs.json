@@ -1,0 +1,183 @@
+{
+  "schemaVersion": 1,
+  "repository": "postmelee/alhangeul-tauri",
+  "endpoint": "https://postmelee.github.io/alhangeul-tauri/updater/stable.json",
+  "manifestSha256": "1bb8c4511a3aa25625a7f598f94555d75ef86868450da9faa21c57e48c1d10f1",
+  "keyFingerprint": "9f86f804067eff359cd32707137dfaaea8710450985dda86b0392da5db63b8f8",
+  "releases": {
+    "n": {
+      "version": "0.1.3",
+      "tag": "v0.1.3",
+      "sourceSha": "4e99e883eec6bdf9d6ce59070c769f175052fc3f",
+      "releaseId": 441647361,
+      "publishedAt": "2026-11-11T12:19:34Z",
+      "tagObject": "4860b8efb895e6f60d4afbb4a492687307d49a8d",
+      "assets": [
+        {
+          "id": 746530990,
+          "name": "Alhangeul-0.1.3-1.x86_64.rpm",
+          "size": 96353705,
+          "digest": "sha256:cc6ab762bf923b16784dbc04fa91c6da38d031301904c0a8b8e9bb6e6dd2dd52",
+          "browser_download_url": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.3/Alhangeul-0.1.3-1.x86_64.rpm"
+        },
+        {
+          "id": 746531411,
+          "name": "Alhangeul_0.1.3_amd64.AppImage",
+          "size": 153930232,
+          "digest": "sha256:56054103d8e18f0fa472bee96fe0bb6b0d1ee709af28f62f8faa0be89cbdcd54",
+          "browser_download_url": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.3/Alhangeul_0.1.3_amd64.AppImage"
+        },
+        {
+          "id": 746531898,
+          "name": "Alhangeul_0.1.3_amd64.AppImage.sig",
+          "size": 420,
+          "digest": "sha256:0cb7496f9f93decfaa647ff3fae0f6eba09f6ec7139993a95aff86622f7b8ed3",
+          "browser_download_url": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.3/Alhangeul_0.1.3_amd64.AppImage.sig"
+        },
+        {
+          "id": 746532017,
+          "name": "Alhangeul_0.1.3_amd64.deb",
+          "size": 96360794,
+          "digest": "sha256:e8f001e78023438a8d7f0928566bed0beb4d49ab0f209551f45f1b6b520b7c23",
+          "browser_download_url": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.3/Alhangeul_0.1.3_amd64.deb"
+        },
+        {
+          "id": 746532394,
+          "name": "Alhangeul_0.1.3_arm64.deb",
+          "size": 95426326,
+          "digest": "sha256:b7cb4c8b4f3657e2a45bd756e41e678104ca2db1b4f446e03e05e0669145bd47",
+          "browser_download_url": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.3/Alhangeul_0.1.3_arm64.deb"
+        },
+        {
+          "id": 746532728,
+          "name": "Alhangeul_0.1.3_x64-setup.exe",
+          "size": 78770000,
+          "digest": "sha256:d5b21111a9df1d68587e1bec341565a2e42cc02e1658f094eeba84e69bd7372a",
+          "browser_download_url": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.3/Alhangeul_0.1.3_x64-setup.exe"
+        },
+        {
+          "id": 746532944,
+          "name": "Alhangeul_0.1.3_x64-setup.exe.sig",
+          "size": 420,
+          "digest": "sha256:bd872f79c46e2b6252094c08d0c7d60e3b17bb6c38c5fa21fe6dd7e5671d0a0e",
+          "browser_download_url": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.3/Alhangeul_0.1.3_x64-setup.exe.sig"
+        },
+        {
+          "id": 746532999,
+          "name": "Alhangeul_0.1.3_x64_en-US.msi",
+          "size": 91357184,
+          "digest": "sha256:e3d1a5eff7c239f04292ad152ca5e0c9972cf086086809b7d8d6e7b5f38a2373",
+          "browser_download_url": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.3/Alhangeul_0.1.3_x64_en-US.msi"
+        },
+        {
+          "id": 746533237,
+          "name": "Alhangeul_0.1.3_x64_en-US.msi.sig",
+          "size": 420,
+          "digest": "sha256:69d2544a48c7726bc34ea9317c62b10b2ca6866ba0d9917121d50ffa0958d5de",
+          "browser_download_url": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.3/Alhangeul_0.1.3_x64_en-US.msi.sig"
+        },
+        {
+          "id": 746533294,
+          "name": "SHA256SUMS",
+          "size": 976,
+          "digest": "sha256:3995a6e84ff8ac08f4a97254bf7dafa0c0b8fdbe62747cd26fceda2128882074",
+          "browser_download_url": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.3/SHA256SUMS"
+        },
+        {
+          "id": 746533415,
+          "name": "alhangeul-updater-release-inventory.json",
+          "size": 2606,
+          "digest": "sha256:1d6eb0fbe8d8e01f2cfe805ebca9bf294d55df0353fef8a3954f5f0e5511a901",
+          "browser_download_url": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.3/alhangeul-updater-release-inventory.json"
+        }
+      ]
+    },
+    "next": {
+      "version": "0.1.4",
+      "tag": "v0.1.4",
+      "sourceSha": "dad348a78f059dad282c8803737306d31b163c9d",
+      "releaseId": 454047556,
+      "publishedAt": "2026-11-21T23:07:51Z",
+      "tagObject": "3c6e613ebed3c402e2ab73cd9484b686e37e75b5",
+      "assets": [
+        {
+          "id": 777147828,
+          "name": "Alhangeul-0.1.4-1.x86_64.rpm",
+          "size": 98497221,
+          "digest": "sha256:39bd72e2d3f9c1d1e4a33c225873bb18c1088f6d34f914ebbe48d426be31d294",
+          "browser_download_url": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.4/Alhangeul-0.1.4-1.x86_64.rpm"
+        },
+        {
+          "id": 777147840,
+          "name": "Alhangeul_0.1.4_amd64.AppImage",
+          "size": 155544056,
+          "digest": "sha256:4d307a0578cfdc2daa585d97a52b2346f81b9eeb54f9bd7df4634e4ac7db11ce",
+          "browser_download_url": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.4/Alhangeul_0.1.4_amd64.AppImage"
+        },
+        {
+          "id": 777147841,
+          "name": "Alhangeul_0.1.4_amd64.AppImage.sig",
+          "size": 420,
+          "digest": "sha256:6aa53f43cc55fce0c6cc166ff57f06767e32c0ea14c9f9bdd51b88e7aa5575a2",
+          "browser_download_url": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.4/Alhangeul_0.1.4_amd64.AppImage.sig"
+        },
+        {
+          "id": 777147844,
+          "name": "Alhangeul_0.1.4_amd64.deb",
+          "size": 98496270,
+          "digest": "sha256:ee26d57bc9f5f5be44172adbe3bf00036a72b0c198c6ab319498142e0b2c5e2c",
+          "browser_download_url": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.4/Alhangeul_0.1.4_amd64.deb"
+        },
+        {
+          "id": 777147829,
+          "name": "Alhangeul_0.1.4_arm64.deb",
+          "size": 97558102,
+          "digest": "sha256:e2b8a3fc4d2008b2da1814f42f44ed4a77b7cdc90a1b93d53ff20dfb4134c779",
+          "browser_download_url": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.4/Alhangeul_0.1.4_arm64.deb"
+        },
+        {
+          "id": 777147878,
+          "name": "Alhangeul_0.1.4_x64-setup.exe",
+          "size": 80123733,
+          "digest": "sha256:327ae7d9a7f1ff232ef36ce482bc68df801634a0cf0a48a9710383ecfa978890",
+          "browser_download_url": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.4/Alhangeul_0.1.4_x64-setup.exe"
+        },
+        {
+          "id": 777148314,
+          "name": "Alhangeul_0.1.4_x64-setup.exe.sig",
+          "size": 420,
+          "digest": "sha256:7fd76ff6244468e1b87c7b3175d900b85225b6117e12a7aad33aca67a22ab423",
+          "browser_download_url": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.4/Alhangeul_0.1.4_x64-setup.exe.sig"
+        },
+        {
+          "id": 777148383,
+          "name": "Alhangeul_0.1.4_x64_en-US.msi",
+          "size": 93388800,
+          "digest": "sha256:d2f05c9a67d8a54435695bbb5488b425390bed1a38c5b25f9a6dcee9adab13de",
+          "browser_download_url": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.4/Alhangeul_0.1.4_x64_en-US.msi"
+        },
+        {
+          "id": 777148858,
+          "name": "Alhangeul_0.1.4_x64_en-US.msi.sig",
+          "size": 420,
+          "digest": "sha256:3162df629dbadfdc67f2e4b42c6af6e2d95f7c1e9a98413d2ee5f0b6d1c16009",
+          "browser_download_url": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.4/Alhangeul_0.1.4_x64_en-US.msi.sig"
+        },
+        {
+          "id": 777148905,
+          "name": "SHA256SUMS",
+          "size": 976,
+          "digest": "sha256:0b36e95a92ba59c1081966508f904f0a7891e16c88241681bea795dead39e44c",
+          "browser_download_url": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.4/SHA256SUMS"
+        },
+        {
+          "id": 777148879,
+          "name": "alhangeul-updater-release-inventory.json",
+          "size": 2606,
+          "digest": "sha256:90df87ee0fdc386d66e26ce4ba5b438ea47a91c709df624cb3c34b14d37d517e",
+          "browser_download_url": "https://github.com/postmelee/alhangeul-tauri/releases/download/v0.1.4/alhangeul-updater-release-inventory.json"
+        }
+      ]
+    }
+  }
+}

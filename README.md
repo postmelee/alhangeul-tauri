@@ -14,7 +14,7 @@
 
 **[다운로드](https://postmelee.github.io/alhangeul-tauri/)** · [설치 안내·업데이트](https://postmelee.github.io/alhangeul-tauri/updates/) · [문의·제보](https://postmelee.github.io/alhangeul-tauri/feedback/)
 
-현재 안정 버전: **[v0.1.3](https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.3)**. rhwp v0.9.0을 반영한 Windows/Linux 설치 파일을 제공합니다.
+현재 안정 버전은 **v0.1.4**입니다. rhwp v0.9.1을 반영한 Windows/Linux 설치 파일을 제공합니다. [GitHub Release](https://github.com/postmelee/alhangeul-tauri/releases/tag/v0.1.4)
 무료로 사용할 수 있으며, 소스 코드는 [MIT 라이선스](LICENSE)로 공개합니다.
 
 | Windows | Linux |
@@ -67,7 +67,7 @@
 - 사용자별 NSIS는 일반 사용자 환경을 대상으로 합니다. 관리자 환경에서는 MSI를 사용하세요. 관리자 권한의 NSIS 환경에서는 썸네일이 표시되지 않을 수 있습니다. [진단과 MSI 대안](docs/architecture/WINDOWS_THUMBNAILS.md#수동-진단과-msi-대안)을 확인하세요.
 - 별도의 데스크톱 자동 복구 저장소는 제공하지 않습니다. 작업 중 문서를 자주 저장하세요.
 
-v0.1.3의 변경 사항과 알려진 제한은 [릴리즈 안내](https://postmelee.github.io/alhangeul-tauri/updates/v0.1.3.html)에서 확인하세요.
+v0.1.4의 변경 사항과 알려진 제한은 릴리즈 안내에서 확인하세요. [v0.1.4 릴리즈 안내](https://postmelee.github.io/alhangeul-tauri/updates/v0.1.4.html)
 버전별 실제 검증 환경과 남은 제한은 [버전별 릴리즈 기록](docs/releases/README.md)에 정리되어 있습니다.
 
 ## 문의와 기여
